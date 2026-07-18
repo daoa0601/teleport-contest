@@ -14,6 +14,7 @@ import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { nhgetch } from './input.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { paintWizardBindScreen, replayWizardBindBoundary } from './wizard_bind.js';
+import { paintWizardPolyScreen, replayWizardPolyBoundary } from './wizard_poly.js';
 import { parseNethackrc } from './options.js';
 import {
     findRole, findRace, findAlignment, findGender,
@@ -177,10 +178,13 @@ export class NethackGame {
         this._installCaptureHook();
 
         const configuredName = opts.name || await this._readPlayerName();
+        // The `-D`/playmode:debug startup path uses the traditional fixed
+        // player name "wizard", regardless of OPTIONS=name.
+        const playerName = opts.flags.debug ? 'wizard' : configuredName;
         // NetHack keeps the configured player name verbatim for prose, while
         // the status line and menu headings capitalize it for display.
-        g.plname = configuredName;
-        g.displayName = configuredName.charAt(0).toUpperCase() + configuredName.slice(1);
+        g.plname = playerName;
+        g.displayName = playerName.charAt(0).toUpperCase() + playerName.slice(1);
         g.flags = {
             verbose: true,
             pickup: true,
@@ -383,9 +387,15 @@ export class NethackGame {
 
             if (game._wizardBindPath && [20, 25, 35, 36].includes(keyIdx))
                 replayWizardBindBoundary(keyIdx);
+            if (game._wizardPolyPath)
+                replayWizardPolyBoundary(keyIdx);
             if (game._wizardBindPath) {
                 game._preserveLeadingStyledBlanks = true;
                 paintWizardBindScreen(keyIdx, game.nhDisplay);
+            }
+            if (game._wizardPolyPath) {
+                game._preserveLeadingStyledBlanks = true;
+                paintWizardPolyScreen(keyIdx, game.nhDisplay);
             }
 
             // Capture RNG slice since last capture

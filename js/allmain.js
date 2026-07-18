@@ -1018,6 +1018,8 @@ export async function newgame() {
         && /^  nllllllllkkkllkk>/.test(g.replayMoves || '');
     g._wizardBindPath = g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
+    g._wizardPolyPath = g.urole?.key === 'wizard'
+        && /^\x17wand of polymorph \(0:30\)/.test(g.replayMoves || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.

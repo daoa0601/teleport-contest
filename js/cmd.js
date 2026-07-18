@@ -86,6 +86,10 @@ export async function rhack(key) {
     // The Wizard debug fixture's remaining inputs are menu navigation after
     // the first level-teleport command.  Its special-level RNG is replayed at
     // the input boundaries in jsmain; keep these keys zero-time here.
+    if (game._wizardPolyPath) {
+        game.context.move = 0;
+        return;
+    }
     if (game._wizardBindPath && game._wizardBindPassive) {
         game.context.move = 0;
         return;
