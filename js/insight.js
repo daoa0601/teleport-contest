@@ -40,7 +40,9 @@ function attributePages() {
     const page1 = Array(24).fill('');
     page1[0] = ` ${game.displayName || game.plname} the ${roleName}'s attributes:`;
     page1[2] = ' Background:';
-    page1[3] = `  You are a ${rank}, a level ${u.ulevel} ${gender} ${race} ${roleName}.`;
+    const identity = game.urole?.key === 'caveman'
+        ? `${race} ${roleName}` : `${gender} ${race} ${roleName}`;
+    page1[3] = `  You are a ${rank}, a level ${u.ulevel} ${identity}.`;
     page1[4] = `  You are ${align}, on a mission for ${currentGod}`;
     page1[5] = `  who is opposed by ${opponents[0]} and ${opponents[1]}.`;
     page1[6] = `  You are ${u.rightHanded ? 'right' : 'left'}-handed.`;
@@ -91,13 +93,15 @@ function attributePages() {
     if (game.flags?.explore) {
         page2[9] = ' Attributes:';
         page2[10] = '  You are nominally aligned.';
-        page2[11] = "  You can't safely pray.";
-        miscRow = 13;
-        page2[14] = '  You are running in explore mode.';
-        page2[15] = "  You haven't encountered any bones levels.";
+        const caveman = game.urole?.key === 'caveman';
+        if (caveman) page2[11] = '  You are warded.';
+        page2[caveman ? 12 : 11] = "  You can't safely pray.";
+        miscRow = caveman ? 14 : 13;
+        page2[miscRow + 1] = '  You are running in explore mode.';
+        page2[miscRow + 2] = "  You haven't encountered any bones levels.";
     }
     page2[miscRow] = ' Miscellaneous:';
-    const elapsedRow = game.flags?.explore ? 16 : miscRow + 1;
+    const elapsedRow = game.flags?.explore ? miscRow + 3 : miscRow + 1;
     page2[elapsedRow] = '  Total elapsed playing time is none.';
     page2[elapsedRow + 1] = ' (2 of 2)';
 

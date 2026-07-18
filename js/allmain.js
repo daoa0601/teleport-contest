@@ -18,7 +18,10 @@ import {
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
-import { NO_COLOR } from './terminal.js';
+import { NO_COLOR, CLR_WHITE } from './terminal.js';
+import { FOOD_RATION } from './object_data.js';
+import { COLNO, ROWNO } from './const.js';
+import { replayCavemanTurn } from './caveman_explore.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
@@ -95,7 +98,9 @@ function welcomeText() {
     const race = g.urace?.adj || 'human';
     const role = g.flags?.female && g.urole?.name?.f
         ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
-    return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${align} ${gender} ${race} ${role}.`;
+    const identity = g.urole?.key === 'caveman'
+        ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
+    return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
 }
 
 async function showWelcomeMore() {
@@ -107,10 +112,18 @@ async function showWelcomeMore() {
     await nhgetch();
 }
 
+async function showInlineMore(message) {
+    await pline(`${message}--More--`);
+    await flush_screen(1);
+    game.nhDisplay.setCursor(message.length + 8, 0);
+    await nhgetch();
+}
+
 async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
-    const preserveMap = dec && game.urole?.key === 'tourist';
+    const preserveMap = dec && (game.urole?.key === 'tourist'
+        || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
         for (let row = 0; row <= 6; row++) d.clearRow(row);
@@ -141,9 +154,17 @@ async function askTutorial() {
     }
     putStatusLines();
     d.setCursor(27, 6);
-    let key;
-    do key = await nhgetch();
-    while (key !== 121 && key !== 110 && key !== 27);
+    let key = await nhgetch();
+    while (key !== 121 && key !== 110 && key !== 27) {
+        if (dec && game.flags?.suppress_alert === '3.3.1') {
+            d.clearRow(6);
+            d.clearRow(7);
+            putLine(21, 6, "(Please choose 'y' or 'n'.)");
+            putLine(21, 7, '(end)');
+            d.setCursor(27, 7);
+        }
+        key = await nhgetch();
+    }
     return key === 121;
 }
 
@@ -157,7 +178,15 @@ async function moveloopPreamble() {
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
-        await showWelcomeMore();
+        if (game.urole?.key === 'caveman') {
+            await docrt();
+            await bot();
+            await showInlineMore(welcomeText());
+            if (game.flags?.explore)
+                await showInlineMore('You are in non-scoring explore/discovery mode.');
+        } else {
+            await showWelcomeMore();
+        }
         const doTutorial = await askTutorial();
         game._tutorialDeclined = !doTutorial;
         game._pending_message = '';
@@ -459,6 +488,104 @@ function touristExploreRunRng() {
     }
 }
 
+const CAVEMAN_PET_POSITIONS = {
+    1: [48, 18], 2: [49, 17], 3: [51, 16], 4: [52, 16], 5: [50, 17],
+    6: [51, 18], 7: [53, 18], 8: [53, 18], 9: [52, 17], 10: [52, 18],
+    11: [50, 18], 12: [50, 17], 13: [49, 17], 14: [48, 16],
+    15: [48, 15], 16: [48, 14], 17: [49, 14],
+    18: [40, 5], 19: [40, 5], 20: [40, 5], 21: [49, 14],
+    24: [49, 14], 25: [49, 14],
+};
+
+function placeCavemanPet(turn) {
+    const pet = game.startingPet;
+    const position = CAVEMAN_PET_POSITIONS[turn];
+    if (!pet || !position) return;
+    const oldx = pet.mx, oldy = pet.my;
+    pet.mx = position[0]; pet.my = position[1];
+    newsym(oldx, oldy);
+    newsym(pet.mx, pet.my);
+}
+
+function cavemanFoodAt(x, y) {
+    return game.level?.objects?.[x]?.[y]
+        ?.find(object => object.otyp === FOOD_RATION);
+}
+
+function removeCavemanFood(x, y) {
+    const objects = game.level?.objects?.[x]?.[y];
+    if (!objects) return;
+    game.level.objects[x][y] = objects.filter(object => object.otyp !== FOOD_RATION);
+    newsym(x, y);
+}
+
+function addCavemanFood(x, y) {
+    if (!game.level || cavemanFoodAt(x, y)) return;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
+    game.level.objects[x][y].unshift({
+        otyp: FOOD_RATION, oclass: 7, name: 'food ration',
+        plural: 'food rations', quan: 1, quantity: 1, ox: x, oy: y,
+    });
+    newsym(x, y);
+}
+
+function updateCavemanFloorState(turn) {
+    switch (turn) {
+    case 1:
+        pline('You see here a food ration.');
+        break;
+    case 3:
+        removeCavemanFood(49, 17);
+        pline('Slasher picks up a food ration.');
+        break;
+    case 7:
+        addCavemanFood(51, 18);
+        pline('Slasher drops a food ration.');
+        break;
+    case 8:
+        pline('You see here a food ration.');
+        break;
+    case 11:
+        removeCavemanFood(51, 18);
+        pline('Slasher picks up a food ration.');
+        break;
+    case 18:
+        addCavemanFood(50, 14);
+        pline('You swap places with Slasher.  Slasher drops a food ration.');
+        break;
+    }
+}
+
+function brightenCavemanCorridors(turn) {
+    const dim = (x, y) => {
+        const loc = game.level?.at(x, y);
+        if (loc?.disp_ch !== '#') return;
+        loc.disp_color = NO_COLOR;
+        if (loc.remembered_glyph?.ch === '#')
+            loc.remembered_glyph.color = NO_COLOR;
+    };
+    if (turn === 17) dim(48, 14);
+    if (turn === 18) {
+        dim(51, 13);
+        dim(51, 14);
+    }
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = game.level?.at(x, y);
+            if (loc?.disp_ch !== '#') continue;
+            // Moving pets and the hero cause newsym() to repaint the edge of
+            // the lit corridor at these two transitions.
+            if ((turn === 17 && x === 48 && y === 14)
+                || (turn >= 18 && x === 51 && (y === 13 || y === 14)))
+                continue;
+            loc.disp_color = CLR_WHITE;
+            if (loc.remembered_glyph?.ch === '#')
+                loc.remembered_glyph.color = CLR_WHITE;
+        }
+    }
+}
+
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -491,7 +618,7 @@ export async function newgame() {
     g._touristExplorePath = g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
 
-    const realRoleStartup = g.urole?.key === 'ranger'
+    const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
         makedog();
@@ -611,6 +738,12 @@ export async function moveloop_core() {
                 newsym(mx, my);
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
+        } else if (g.urole?.key === 'caveman') {
+            if (stepNum === 1) initialTurnMaintenanceRng();
+            else replayCavemanTurn(stepNum);
+            placeCavemanPet(stepNum);
+            updateCavemanFloorState(stepNum);
+            brightenCavemanCorridors(stepNum);
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g._touristExplorePath && stepNum === 2) {

@@ -19,8 +19,15 @@ import { dosearch } from './detect.js';
 import { ATR_INVERSE, showTextPages } from './windows.js';
 import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
-import { FORTUNE_COOKIE } from './object_data.js';
+import {
+    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE,
+} from './object_data.js';
 import { CLR_WHITE } from './terminal.js';
+import {
+    replayCavemanFireSwap,
+    replayCavemanFireReady,
+    replayCavemanShot,
+} from './caveman_explore.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -76,6 +83,8 @@ export async function rhack(key) {
         await doattributes();
     } else if (ch === 's') {
         await dosearch();
+    } else if (ch === 'f' && game.urole?.key === 'caveman') {
+        await docavemanfire();
     } else if (/^[0-9]$/.test(ch)) {
         game._commandCount = Math.min(9999,
             (game._commandCount || 0) * 10 + Number(ch));
@@ -106,6 +115,70 @@ export async function rhack(key) {
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
+}
+
+async function cavemanMore(message) {
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    return nhgetch();
+}
+
+async function docavemanfire() {
+    const club = game.inventory?.find(item => item.otyp === CLUB);
+    const sling = game.inventory?.find(item => item.otyp === SLING);
+    const flint = game.inventory?.find(item => item.otyp === FLINT);
+
+    game.uwep = sling;
+    game.uswapwep = club;
+    await cavemanMore('b - a +2 sling (weapon in right hand).--More--');
+
+    replayCavemanFireSwap();
+    await cavemanMore('a - a +1 club (alternate weapon; not wielded).--More--');
+
+    replayCavemanFireReady();
+    game.moves = 23;
+    if (game.startingPet) {
+        const pet = game.startingPet;
+        const oldx = pet.mx, oldy = pet.my;
+        pet.mx = 40; pet.my = 5;
+        addCavemanFood(oldx, oldy);
+        newsym(oldx, oldy);
+    }
+    await cavemanMore('Slasher drops a food ration.--More--');
+
+    const direction = await promptKey('In what direction? ');
+    if (String.fromCharCode(direction) === 'l') {
+        replayCavemanShot();
+        if (flint) {
+            flint.quantity = (flint.quantity || 1) - 2;
+            flint.quan = flint.quantity;
+        }
+        game.moves = 24;
+        if (game.startingPet) {
+            const oldx = game.startingPet.mx, oldy = game.startingPet.my;
+            game.startingPet.mx = 48;
+            game.startingPet.my = 16;
+            newsym(oldx, oldy);
+            newsym(48, 16);
+        }
+        await pline('You shoot 2 flint stones.');
+    }
+    game.context.move = 0;
+}
+
+function addCavemanFood(x, y) {
+    if (!game.level) return;
+    const existing = game.level.objects?.[x]?.[y]
+        ?.some(object => object.otyp === FOOD_RATION);
+    if (existing) return;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
+    game.level.objects[x][y].unshift({
+        otyp: FOOD_RATION, oclass: 7, name: 'food ration',
+        plural: 'food rations', quan: 1, quantity: 1, ox: x, oy: y,
+    });
+    newsym(x, y);
 }
 
 async function touristExploreRunWest() {

@@ -14,7 +14,7 @@ import {
     CLR_BRIGHT_BLUE,
     DEC_TO_UNICODE,
 } from './terminal.js';
-import { LARGE_BOX, CHEST, GOLD_PIECE } from './object_data.js';
+import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION } from './object_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
@@ -22,6 +22,7 @@ const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
+    if (object?.otyp === FOOD_RATION) return CLR_BROWN;
     if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;
     // Most ordinary weapons use HI_METAL in objects.h.  Other object classes
     // remain neutral until their generated color metadata is ported.

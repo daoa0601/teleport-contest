@@ -9,14 +9,15 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SHORT_SWORD, KATANA, BOW, YUMI,
-    SPLINT_MAIL, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    ARROW, YA, DART, DAGGER, SHORT_SWORD, KATANA, CLUB, BOW, YUMI, SLING,
+    SPLINT_MAIL, LEATHER_ARMOR, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
     CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER, MAGIC_MARKER,
     BLINDFOLD,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
     POT_EXTRA_HEALING, SCR_MAGIC_MAPPING, WAN_WISHING, GOLD_PIECE,
+    FLINT, ROCK,
 } from './object_data.js';
 
 const WEAPON_CLASS = 2;
@@ -26,6 +27,7 @@ const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const WAND_CLASS = 11;
+const GEM_CLASS = 13;
 const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
@@ -49,6 +51,15 @@ const TOURIST_INVENTORY = [
     { typ: HAWAIIAN_SHIRT, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: EXPENSIVE_CAMERA, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: CREDIT_CARD, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+const CAVEMAN_INVENTORY = [
+    { typ: CLUB, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: SLING, spe: 2, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FLINT, spe: 0, cls: GEM_CLASS, min: 10, max: 20, bless: UNDEF_BLESS },
+    { typ: ROCK, spe: 0, cls: GEM_CLASS, min: 3, max: 3, bless: 0 },
+    { typ: LEATHER_ARMOR, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
@@ -79,6 +90,8 @@ const ITEM_PRESENTATION = new Map([
         class: 'Weapons', name: 'katana', plural: 'katanas', enchanted: true,
         omitUncursed: true,
     }],
+    [CLUB, { class: 'Weapons', name: 'club', plural: 'clubs', enchanted: true, omitUncursed: true }],
+    [SLING, { class: 'Weapons', name: 'sling', plural: 'slings', enchanted: true, omitUncursed: true }],
     [SHORT_SWORD, {
         class: 'Weapons', name: 'wakizashi', plural: 'wakizashi', enchanted: true,
         omitUncursed: true,
@@ -94,6 +107,11 @@ const ITEM_PRESENTATION = new Map([
         class: 'Armor', name: 'splint mail', plural: 'splint mails', enchanted: true,
         rustproof: true,
     }],
+    [LEATHER_ARMOR, {
+        class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
+    }],
+    [FLINT, { class: 'Gems/Stones', name: 'flint stone', plural: 'flint stones' }],
+    [ROCK, { class: 'Gems/Stones', name: 'rock', plural: 'rocks' }],
     [HAWAIIAN_SHIRT, {
         class: 'Armor', name: 'Hawaiian shirt', plural: 'Hawaiian shirts', enchanted: true,
     }],
@@ -226,7 +244,8 @@ export function makedog() {
     const g = game;
     if (g.preferred_pet === 'n') return null;
     const role = g.urole?.key;
-    if (role !== 'ranger' && role !== 'samurai' && role !== 'tourist') return null;
+    if (role !== 'caveman' && role !== 'ranger'
+        && role !== 'samurai' && role !== 'tourist') return null;
 
     let pettype = 16; // PM_LITTLE_DOG
     if (role === 'tourist') {
@@ -244,7 +263,7 @@ export function makedog() {
     let hp = d(1, 8);
     if (hp === 1) hp++;
     const female = !!rn2(2);
-    if (role === 'tourist') {
+    if (role === 'tourist' || role === 'caveman') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
         rn2(16);
         rn2(2);
@@ -259,7 +278,8 @@ export function makedog() {
         mtame: 10,
         mpeaceful: 1,
         symbol: pettype === 32 ? 'f' : 'd',
-        name: role === 'ranger' ? 'Sirius' : role === 'samurai' ? 'Hachi' : '',
+        name: role === 'caveman' ? 'Slasher' : role === 'ranger' ? 'Sirius'
+            : role === 'samurai' ? 'Hachi' : '',
         pet: true,
     };
     if (!g.level.monsters) g.level.monsters = [];
@@ -315,15 +335,16 @@ function addStartingItem(raw) {
 }
 
 function useStartingItem(item) {
-    if (item.otyp === ARROW || item.otyp === YA || item.otyp === DART) {
+    if (item.otyp === ARROW || item.otyp === YA || item.otyp === DART
+        || item.otyp === FLINT) {
         if (!game.uquiver) {
             game.uquiver = item;
             item.ready = true;
         }
-    } else if (item.otyp === DAGGER || item.otyp === KATANA) {
+    } else if (item.otyp === DAGGER || item.otyp === KATANA || item.otyp === CLUB) {
         game.uwep = item;
         item.wielded = true;
-    } else if (item.otyp === BOW) {
+    } else if (item.otyp === BOW || item.otyp === SLING) {
         game.uswapwep = item;
         item.alternate = true;
     } else if (item.otyp === SHORT_SWORD || item.otyp === YUMI) {
@@ -340,7 +361,7 @@ function useStartingItem(item) {
     } else if (item.otyp === HAWAIIAN_SHIRT) {
         game.uarmu = item;
         item.worn = true;
-    } else if (item.otyp === SPLINT_MAIL) {
+    } else if (item.otyp === SPLINT_MAIL || item.otyp === LEATHER_ARMOR) {
         game.uarm = item;
         item.worn = true;
     }
@@ -418,12 +439,21 @@ function initAttributes() {
 
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
-    if (role !== 'ranger' && role !== 'samurai' && role !== 'tourist') return false;
+    if (role !== 'caveman' && role !== 'ranger'
+        && role !== 'samurai' && role !== 'tourist') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarmc = game.uarmu = null;
     game.moves = 1;
-    if (role === 'tourist') {
+    if (role === 'caveman') {
+        iniInv(CAVEMAN_INVENTORY);
+        if (game.flags?.explore) {
+            iniInv([
+                { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS, min: 1, max: 1, bless: 0 },
+                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+            ]);
+        }
+    } else if (role === 'tourist') {
         game._goldCount = rnd(1000);
         iniInv(TOURIST_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(TIN_OPENER));
@@ -453,7 +483,12 @@ export function uInitInventoryAttrs() {
         iniInv(RANGER_INVENTORY);
     }
     initAttributes();
-    game.discoveries = role === 'tourist' ? [
+    game.discoveries = role === 'caveman' ? [
+        ...(game.flags?.explore ? [{
+            class: 'Wands', name: 'wand of wishing', appearance: 'hexagonal',
+        }] : []),
+        { class: 'Gems/Stones', name: 'flint stone', appearance: 'gray' },
+    ] : role === 'tourist' ? [
         { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'ANDOVA BEGARIN' },
         { class: 'Potions', name: 'potion of extra healing', appearance: 'murky' },
         ...(game.flags?.explore ? [{
@@ -498,7 +533,8 @@ export function uInitInventoryAttrs() {
 }
 
 export function setInitialArmorClass() {
-    if (game.urole?.key === 'ranger') game.u.uac = 7;
+    if (game.urole?.key === 'caveman') game.u.uac = 8;
+    else if (game.urole?.key === 'ranger') game.u.uac = 7;
     else if (game.urole?.key === 'samurai') game.u.uac = 4;
     else if (game.urole?.key === 'tourist') game.u.uac = 10;
 }
