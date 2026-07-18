@@ -918,6 +918,16 @@ async function doeat() {
         item = edible.find(candidate => candidate.invlet === String.fromCharCode(key));
         if (item) break;
 
+        // A selected inventory object which is not food is different from an
+        // absent inventory letter.  C rejects it immediately, without the
+        // modal "don't have that object" message used for a missing letter.
+        if ((game.inventory || []).some(candidate =>
+            candidate.invlet === String.fromCharCode(key))) {
+            await pline('You cannot eat that!');
+            game.context.move = 0;
+            return;
+        }
+
         const invalid = "You don't have that object.--More--";
         await pline(invalid);
         await flush_screen(1);
