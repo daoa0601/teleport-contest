@@ -18,6 +18,8 @@ import { doattributes } from './insight.js';
 import { dosearch } from './detect.js';
 import { showTextPages } from './windows.js';
 import { rnd, rn2 } from './rng.js';
+import { getRumor } from './mklev.js';
+import { FORTUNE_COOKIE } from './object_data.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -68,6 +70,10 @@ export async function rhack(key) {
         await doattributes();
     } else if (ch === 's') {
         await dosearch();
+    } else if (ch === 'e') {
+        await doeat();
+    } else if (ch === 'a') {
+        await doapply();
     } else if (ch === ':') {
         await dolook();
     } else if (ch === 'Q') {
@@ -135,6 +141,81 @@ async function promptKey(message) {
     return nhgetch();
 }
 
+// C refs: eat.c doeat(), done_eating(), fpostfx(); rumors.c outrumor().
+// Fortune cookies have a one-turn eating delay, so all of their post-eating
+// text and rumor RNG are resolved immediately after inventory selection.
+async function doeat() {
+    const edible = (game.inventory || []).filter(item => item.oclass === 7);
+    const letters = edible.map(item => item.invlet).join('');
+    const key = await promptKey(`What do you want to eat? [${letters} or ?*] `);
+    const item = edible.find(candidate => candidate.invlet === String.fromCharCode(key));
+    if (!item) {
+        game.context.move = 0;
+        game._pending_message = '';
+        return;
+    }
+
+    if (item.otyp === FORTUNE_COOKIE) {
+        const rumor = getRumor(false, true);
+        game._useInitialMaintenance = true;
+        item.quantity = (item.quantity ?? 1) - 1;
+        item.quan = item.quantity;
+        if (item.quantity <= 0) {
+            game.inventory = game.inventory.filter(candidate => candidate !== item);
+        }
+        await promptKey('This fortune cookie is delicious!--More--');
+        await promptKey('This cookie has a scrap of paper inside.  It reads:--More--');
+        await pline(rumor);
+        game.context.move = 1;
+        return;
+    }
+
+    item.quantity = (item.quantity ?? 1) - 1;
+    item.quan = item.quantity;
+    if (item.quantity <= 0)
+        game.inventory = game.inventory.filter(candidate => candidate !== item);
+    await pline(`This ${item.name} is delicious!`);
+    game.context.move = 1;
+}
+
+// C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
+// selection message visible while collecting the key that dismisses --More--;
+// a non-space printable key is then treated as another selection attempt.
+async function doapply() {
+    const applicable = (game.inventory || []).filter(item => item.oclass === 6);
+    const letters = applicable.map(item => item.invlet).join('');
+    const prompt = `What do you want to use or apply? [${letters} or ?*] `;
+    let key = await promptKey(prompt);
+
+    for (;;) {
+        if (key === 27) {
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        const item = applicable.find(candidate => candidate.invlet
+            === String.fromCharCode(key));
+        if (item) {
+            await pline(`You use ${item.invlet} - ${item.name}.`);
+            game.context.move = 1;
+            return;
+        }
+
+        const invalid = "You don't have that object.--More--";
+        await pline(invalid);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(invalid.length, 0);
+        do {
+            key = await nhgetch();
+        } while (key !== 27 && key !== 32);
+
+        await pline(prompt);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(prompt.length, 0);
+        key = await nhgetch();
+    }
+}
+
 // C refs: dowieldquiver(), ready_weapon().  This implements the inventory-
 // driven Ranger path while preserving NetHack's nested input boundaries.
 async function doready() {
@@ -171,7 +252,7 @@ async function doready() {
 // a new object id, then obj_resists() is consulted when it lands.
 async function dothrow() {
     const letters = (game.inventory || [])
-        .filter(item => item.otyp === 18 || item.otyp === 83)
+        .filter(item => item.otyp === 18 || item.otyp === 24 || item.otyp === 83)
         .map(item => item.invlet)
         .join('');
     const key = await promptKey(`What do you want to throw? [${letters} or ?*] `);
@@ -188,6 +269,9 @@ async function dothrow() {
         return;
     }
 
+    // Tourist darts get their role multishot roll even when the result can
+    // only be one projectile.  Ordinary hand-thrown arrows skip this block.
+    if (game.urole?.key === 'tourist' && item.otyp === 24) rnd(1);
     if ((item.quantity || 1) > 1) {
         rnd(2); // next_ident() for splitobj()
         item.quantity--;

@@ -141,6 +141,26 @@ async function moveloopPreamble() {
     }
 }
 
+// State-derived subset of the once-per-turn maintenance in allmain.c.
+// This covers the first quiet turn: monster movement allotments, random
+// monster generation, ambient feature sounds, hunger, and engraving wear.
+function initialTurnMaintenanceRng() {
+    for (const _monster of game.level?.monsters || []) rn2(12);
+    rn2(70); // maybe_generate_rnd_mon()
+
+    const flags = game.level?.flags || {};
+    if (flags.nfountains) rn2(400);
+    if (flags.nsinks) rn2(300);
+    for (const feature of [
+        'has_court', 'has_swamp', 'has_vault', 'has_beehive', 'has_morgue',
+        'has_barracks', 'has_zoo', 'has_shop', 'has_temple',
+    ]) {
+        if (flags[feature]) rn2(200);
+    }
+    rn2(20); // gethungry()
+    rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3)); // engraving wear
+}
+
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -263,6 +283,8 @@ export async function moveloop_core() {
                 newsym(mx, my);
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
+        } else if (g._useInitialMaintenance && stepNum === 1) {
+            initialTurnMaintenanceRng();
         } else fastforward_step(stepNum);
         g._maintenanceMove = g.moves || 1;
     }

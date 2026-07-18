@@ -699,12 +699,16 @@ function getRandomTextLine(lines) {
     return lines[(picked + 1) % lines.length];
 }
 
-function getRumor(excludeCookie) {
+export function getRumor(excludeCookie, exerciseWisdom = false, truth = 0) {
     let rumor = '';
     let count = 0;
     do {
-        rumor = getRandomTextLine(rn2(2) ? TRUE_RUMORS : FALSE_RUMORS);
+        rumor = getRandomTextLine(truth + rn2(2) > 0
+            ? TRUE_RUMORS : FALSE_RUMORS);
     } while (count++ < 50 && excludeCookie && rumor.startsWith('[cookie] '));
+    if (exerciseWisdom) rn2(19);
+    if (!excludeCookie && rumor.startsWith('[cookie] '))
+        rumor = rumor.slice('[cookie] '.length);
     return rumor;
 }
 

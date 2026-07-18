@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import {
-    COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS,
+    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
@@ -13,7 +13,7 @@ import {
     NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
     DEC_TO_UNICODE,
 } from './terminal.js';
-import { LARGE_BOX, CHEST } from './object_data.js';
+import { LARGE_BOX, CHEST, GOLD_PIECE } from './object_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
@@ -21,6 +21,7 @@ const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
+    if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;
     // Most ordinary weapons use HI_METAL in objects.h.  Other object classes
     // remain neutral until their generated color metadata is ported.
     return object?.oclass === 2 ? CLR_CYAN : CLR_GRAY;
@@ -56,11 +57,15 @@ function terrain_glyph(loc, x, y) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
     case ROOM:      return { ch: '~', color: NO_COLOR, dec: true };  // DEC middle dot
     case CORR:      return { ch: '#', color: NO_COLOR, dec: false };
+    case SDOOR:
+        return loc.horizontal
+            ? { ch: 'q', color: NO_COLOR, dec: true }
+            : { ch: 'x', color: NO_COLOR, dec: true };
     case DOOR:
         if (loc.doormask & D_ISOPEN)
             return { ch: 'a', color: CLR_BROWN, dec: true };
         if (loc.doormask & (D_CLOSED | D_LOCKED))
-            return { ch: 'a', color: CLR_BROWN, dec: true };
+            return { ch: '+', color: CLR_BROWN, dec: false };
         return { ch: '~', color: NO_COLOR, dec: true };  // D_NODOOR = floor
     case STAIRS:
         // Check upstair vs downstair
