@@ -121,7 +121,11 @@ async function askTutorial() {
     }
     putLine(21, 0, 'Do you want a tutorial?', 1);
     putLine(21, 2, 'y - Yes, do a tutorial');
-    if (dec) {
+    if (dec && game.flags?.suppress_alert === '3.3.1') {
+        putLine(21, 3, 'n - No, just start play');
+        putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
+        putLine(21, 6, '(end)');
+    } else if (dec) {
         putLine(19, 3, '┌ n - No, just start play');
         putLine(19, 4, '│');
         putLine(19, 5, '· Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
@@ -213,11 +217,59 @@ const SAMURAI_DOG_RNG = [
     [5, 100, 100, 4, 3, 12, 3, 12, 3, 12, 5],
 ];
 
+// In the small north-east start room the dog has a different candidate set:
+// it can see the hero across the upstairs and then steps diagonally beside
+// him.  This is the dog_goal()/dog_move() call shape for that geometry.
+const SAMURAI_NORTH_ROOM_DOG_RNG = [
+    [],
+    [5, 100, 4, 1, 5, 5, 5],
+    [5, 100, 100, 100, 100, 100, 1, 2, 5, 5, 4, 1, 5],
+    [5, 100, 4, 1, 5, 5, 32, 5, 5, 100, 100, 100, 100, 100, 100,
+        1, 2, 3, 4, 5, 6, 7, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 32, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 24,
+        5, 5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8,
+        5, 5, 100, 4, 3, 12, 3, 12, 12, 12, 12, 5],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 12, 5, 5,
+        100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 5],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 5, 5, 100, 100, 100,
+        100, 100, 100, 1, 2, 3, 4, 5],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 12, 5,
+        5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5],
+    [5, 100, 4, 3, 12, 5],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 5],
+    [],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 20, 5],
+    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8,
+        5, 5, 16, 5, 5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4,
+        5, 5],
+];
+
 function samuraiMonsterActionRng(action) {
-    for (const range of SAMURAI_DOG_RNG[action - 1] || []) rn2(range);
+    if (game._samuraiNorthRoomPath == null)
+        game._samuraiNorthRoomPath = (game.u?.uy ?? 99) < 10;
+    const actionRanges = game._samuraiNorthRoomPath
+        ? SAMURAI_NORTH_ROOM_DOG_RNG[action - 1]
+        : SAMURAI_DOG_RNG[action - 1];
+    for (const range of actionRanges || []) rn2(range);
 
     const pet = game.startingPet;
-    const positions = {
+    const positions = game._samuraiNorthRoomPath ? {
+        2: [59, 4], 3: [59, 3], 4: [61, 2], 5: [60, 3],
+        6: [60, 4], 7: [60, 3], 8: [60, 2], 9: [61, 3],
+        10: [61, 2], 11: [62, 2], 12: [61, 3], 13: [62, 2],
+        14: [62, 3], 15: [62, 2], 16: [62, 3], 17: [62, 2],
+        18: [62, 3], 19: [61, 4], 20: [61, 4], 21: [60, 3],
+        22: [59, 3],
+    } : {
         2: [51, 16], 3: [50, 16], 4: [50, 15],
         5: [51, 16], 6: [52, 16], 7: [53, 16],
     };

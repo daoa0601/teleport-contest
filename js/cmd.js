@@ -399,7 +399,12 @@ async function domove(dx, dy) {
 
     const loc = game.level?.at(newx, newy);
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
-        rnl(20);
+        const openRoll = rnl(20);
+        if (openRoll >= 18) {
+            rn2(19); // exercise(A_STR, false)
+            await pline('The door resists!');
+            return false;
+        }
         loc.doormask &= ~(D_CLOSED | D_LOCKED);
         loc.doormask |= 2; // D_ISOPEN
         await pline('The door opens.');
@@ -419,6 +424,21 @@ async function domove(dx, dy) {
 
     const monster = game.level?.monsters?.find(mon => mon.mx === newx && mon.my === newy);
     if (monster) {
+        if (monster.pet) {
+            // C ref: hack.c do_attack()/domove(): a tame monster normally
+            // yields to the hero.  The attack decision still takes its rn2(7)
+            // roll before the two positions are exchanged.
+            rn2(7);
+            const oldx = u.ux, oldy = u.uy;
+            u.ux0 = oldx; u.uy0 = oldy;
+            u.ux = newx; u.uy = newy;
+            monster.mx = oldx; monster.my = oldy;
+            await pline(`You swap places with ${monster.name || 'your pet'}.`);
+            newsym(oldx, oldy);
+            vision_recalc(1);
+            newsym(newx, newy);
+            return true;
+        }
         if (game.urole?.key === 'samurai' && monster.mnum === 158) {
             rn2(20); rn2(19);
             rnd(20); rn2(3); rnd(20); rnd(6); rn2(6); rn2(2); rnd(2);

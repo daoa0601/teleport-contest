@@ -83,7 +83,10 @@ const ITEM_PRESENTATION = new Map([
         class: 'Weapons', name: 'wakizashi', plural: 'wakizashi', enchanted: true,
         omitUncursed: true,
     }],
-    [YUMI, { class: 'Weapons', name: 'yumi', plural: 'yumi', enchanted: true }],
+    [YUMI, {
+        class: 'Weapons', name: 'yumi', plural: 'yumi', enchanted: true,
+        omitUncursed: true,
+    }],
     [YA, {
         class: 'Weapons', name: 'ya', plural: 'ya', enchanted: true, omitUncursed: true,
     }],

@@ -234,13 +234,22 @@ export function _statusLine1() {
     const name = game.displayName || game.plname || 'Hero';
     const role = game.urole?.rank?.m || game.urole?.name?.m || 'Adventurer';
     const title = `${name} the ${role}`;
-    const stats = `St:${u.acurr?.a?.[0] || '?'} Dx:${u.acurr?.a?.[1] || '?'} Co:${u.acurr?.a?.[2] || '?'} In:${u.acurr?.a?.[3] || '?'} Wi:${u.acurr?.a?.[4] || '?'} Ch:${u.acurr?.a?.[5] || '?'}`;
+    const stats = `St:${formatStrength(u.acurr?.a?.[0])} Dx:${u.acurr?.a?.[1] || '?'} Co:${u.acurr?.a?.[2] || '?'} In:${u.acurr?.a?.[3] || '?'} Wi:${u.acurr?.a?.[4] || '?'} Ch:${u.acurr?.a?.[5] || '?'}`;
     const align = u.ualign?.type === 0 ? 'Neutral' : u.ualign?.type > 0 ? 'Lawful' : 'Chaotic';
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column
     const gap = Math.max(1, 31 - title.length);
     if (gap > 4) return `${title}\x1b[${gap}C${stats} ${align}`;
     return `${title}${' '.repeat(gap)}${stats} ${align}`;
+}
+
+// C ref: botl.c strbuf(): strength values above 18 encode the exceptional
+// 18/xx range; 118 is the traditional 18/** maximum.
+export function formatStrength(value) {
+    if (value == null) return '?';
+    if (value <= 18) return String(value);
+    if (value >= 118) return '18/**';
+    return `18/${String(value - 18).padStart(2, '0')}`;
 }
 
 export function _statusLine2() {

@@ -2,7 +2,7 @@
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { game } from './gstate.js';
-import { flush_screen } from './display.js';
+import { flush_screen, formatStrength } from './display.js';
 import { showTextPages } from './windows.js';
 
 function alignmentName(value) {
@@ -60,7 +60,7 @@ function attributePages() {
         : '  Your wallet is empty.';
     page1[16] = `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
     page1[18] = ' Characteristics:';
-    page1[19] = `  Your strength is ${stats[0]}.`;
+    page1[19] = `  Your strength is ${formatStrength(stats[0])}.`;
     page1[20] = `  Your dexterity is ${stats[1]}.`;
     page1[21] = `  Your constitution is ${stats[2]}.`;
     page1[22] = `  Your intelligence is ${stats[3]}.`;
@@ -77,8 +77,10 @@ function attributePages() {
         page2[7] = '  Your skill in long sword is limited by being unskilled with two weapons.';
         page2[8] = '  Your skill in short sword is also limited by being unskilled with two weapons';
     } else if (game.uwep) {
-        page2[6] = `  You are wielding ${indefiniteArticle(game.uwep.name)} ${game.uwep.name}.`;
-        page2[7] = `  You have basic skill with ${game.uwep.name}.`;
+        const weaponSkill = game.urole?.key === 'samurai'
+            && game.uwep.name === 'katana' ? 'long sword' : game.uwep.name;
+        page2[6] = `  You are wielding ${indefiniteArticle(weaponSkill)} ${weaponSkill}.`;
+        page2[7] = `  You have basic skill with ${weaponSkill}.`;
     } else {
         page2[6] = '  You are bare handed.';
         page2[7] = '  You are unskilled in bare handed combat.';

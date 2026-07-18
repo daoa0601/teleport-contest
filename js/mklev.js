@@ -21,7 +21,7 @@ import {
     IS_WALL, IS_STWALL, IS_DOOR, IS_OBSTRUCTED, IS_FURNITURE, IS_POOL,
     SPACE_POS, isok, W_NONDIGGABLE, FILL_NORMAL,
     ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DBWALL,
-    A_LAWFUL, Align2amask,
+    A_NONE, A_LAWFUL, Align2amask,
     LR_UPTELE,
 } from './const.js';
 import {
@@ -256,7 +256,7 @@ export function mksobj(otyp, init, artif) {
         if (otmp.corpsenm == null) otmp.corpsenm = rndmonnum();
         const genderFlags = MONSTER_FLAGS2[otmp.corpsenm] || 0;
         if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
-        if (otyp === CORPSE && otmp.corpsenm !== 158) rnz(25);
+        if (otyp === CORPSE) startCorpseTimeout(otmp);
     }
     return otmp;
 }
@@ -381,7 +381,12 @@ function mksobj_init(otmp, artif) {
         break;
     case FOOD_CLASS:
         if (otyp === CORPSE) {
-            otmp.corpsenm = rndmonnum();
+            let tries = 50;
+            do {
+                otmp.corpsenm = undeadToCorpse(rndmonnum());
+            } while ((MONSTER_GENO[otmp.corpsenm] & 0x0010)
+                && --tries > 0);
+            if (!tries) otmp.corpsenm = 260; // PM_HUMAN fallback
         } else if (otyp === EGG) {
             // Typed eggs require the monster database; the common path is
             // still exact and keeps the decision visible for later ports.
@@ -594,15 +599,147 @@ function weight(otmp) { return otmp?.owt || 1; }
 function add_to_container(container, otmp) { /* stub */ }
 function sobj_at(otyp, x, y) { return false; }
 
-// set_corpsenm stub
-function set_corpsenm(otmp, pm) { /* stub */ }
+const PM_LICHEN = 158;
+const PM_LIZARD = 326;
+
+const UNDEAD_CORPSE_TYPES = new Map([
+    [239, 59], [187, 59],   // kobold zombie/mummy -> kobold
+    [242, 44], [190, 44],   // dwarf zombie/mummy -> dwarf
+    [240, 165], [188, 165], // gnome zombie/mummy -> gnome
+    [241, 72], [189, 72],   // orc zombie/mummy -> orc
+    [243, 264], [191, 264], // elf zombie/mummy -> elf
+    [226, 260], [227, 260], [244, 260], [192, 260],
+    [247, 169], [194, 169], // giant zombie/mummy -> giant
+    [245, 174], [193, 174], // ettin zombie/mummy -> ettin
+]);
+
+function undeadToCorpse(mndx) {
+    return UNDEAD_CORPSE_TYPES.get(mndx) ?? mndx;
+}
+
+function isSpecialCorpse(mndx) {
+    return mndx === PM_LICHEN || mndx === PM_LIZARD;
+}
+
+// C ref: mkobj.c start_corpse_timeout().  Ordinary corpses use rnz() to
+// vary their rot time; lichen and lizard corpses never receive a timer.
+function startCorpseTimeout(body) {
+    if (!body || isSpecialCorpse(body.corpsenm)) return;
+    rnz(game.in_mklev ? 25 : 10);
+}
+
+function set_corpsenm(otmp, pm) {
+    if (!otmp) return;
+    otmp.corpsenm = pm;
+    if (otmp.otyp === CORPSE) startCorpseTimeout(otmp);
+}
 
 // mkcorpstat stub
 function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
     // C ref: mkcorpstat() creates and initializes a statue, including its
     // random monster identity and possible container roll.
     const otmp = mksobj(objtyp, true, false);
+    if (pm != null) {
+        const oldCorpsenm = otmp.corpsenm;
+        otmp.corpsenm = pm;
+        // Replacing a timerless/specially-timed corpse requires rebuilding
+        // its timer for the overriding species.
+        if (objtyp === CORPSE
+            && (isSpecialCorpse(oldCorpsenm) || isSpecialCorpse(pm))) {
+            startCorpseTimeout(otmp);
+        }
+    }
     return place_object(otmp, x, y);
+}
+
+// C ref: makemon.c adj_lev() and mkclass_aligned().  mkclass does not pick
+// directly from the source-table order: NetHack first sorts every regular
+// monster by class and difficulty.  The original index is the stable tie
+// breaker for the generated monster table used by this version.
+function adjustedMonsterLevel(mndx) {
+    const baseLevel = MONSTER_LEVEL[mndx] || 0;
+    if (baseLevel > 49) return 50;
+    let adjusted = baseLevel;
+    const depthDelta = level_difficulty() - baseLevel;
+    if (depthDelta < 0) adjusted--;
+    else adjusted += Math.trunc(depthDelta / 5);
+    const heroDelta = (game.u?.ulevel || 1) - baseLevel;
+    if (heroDelta > 0) adjusted += Math.trunc(heroDelta / 4);
+    const upperLimit = Math.min(49, Math.trunc(3 * baseLevel / 2));
+    return Math.min(upperLimit, Math.max(0, adjusted));
+}
+
+const monsterGenerationOrder = Array.from(
+    { length: SPECIAL_PM }, (_, mndx) => mndx,
+).sort((left, right) => {
+    const leftKey = (MONSTER_SYMBOL[left] << 8) | MONSTER_DIFFICULTY[left];
+    const rightKey = (MONSTER_SYMBOL[right] << 8) | MONSTER_DIFFICULTY[right];
+    return leftKey - rightKey || left - right;
+});
+
+function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
+    const G_FREQ = 0x0007;
+    const G_HELL = 0x0400;
+    const G_NOHELL = 0x0800;
+    const G_UNIQ = 0x1000;
+    const G_NOGEN = 0x0200;
+    const G_IGNORE = 0x8000;
+    const S_LICH = 36;
+    const inHell = !!game.inhell;
+    const maxMonsterLevel = level_difficulty() >> 1;
+    const heroLevel = game.u?.ulevel || 1;
+    const classMembers = monsterGenerationOrder.filter(
+        mndx => MONSTER_SYMBOL[mndx] === monsterClass,
+    );
+    if (!classMembers.length) return null;
+    const zeroFrequencyClass = !MONSTER_GENO.some(
+        (geno, mndx) => MONSTER_SYMBOL[mndx] === monsterClass
+            && (geno & G_FREQ),
+    );
+    const weights = new Map();
+    let totalWeight = 0;
+    let lastCandidate = null;
+
+    if (spc & G_IGNORE) spc &= ~G_IGNORE;
+    for (const mndx of classMembers) {
+        if (atyp !== A_NONE
+            && Math.sign(MONSTER_ALIGNMENT[mndx]) !== Math.sign(atyp)) {
+            continue;
+        }
+        let generationMask = G_NOGEN | G_UNIQ;
+        if (rn2(9) || monsterClass === S_LICH)
+            generationMask |= inHell ? G_NOHELL : G_HELL;
+        generationMask &= ~spc;
+        const geno = MONSTER_GENO[mndx];
+        if (!(geno & generationMask)) {
+            if (totalWeight
+                && MONSTER_DIFFICULTY[mndx] > maxMonsterLevel
+                && MONSTER_DIFFICULTY[mndx]
+                    > MONSTER_DIFFICULTY[lastCandidate]
+                && rn2(2)) {
+                break;
+            }
+            const frequency = geno & G_FREQ;
+            if (frequency || zeroFrequencyClass) {
+                const weight = (frequency || 1) + 1
+                    - Number(adjustedMonsterLevel(mndx) > heroLevel * 2);
+                weights.set(mndx, weight);
+                totalWeight += weight;
+            }
+        }
+        lastCandidate = mndx;
+    }
+    if (!totalWeight) return null;
+    let choice = rnd(totalWeight);
+    for (const mndx of classMembers) {
+        const weight = weights.get(mndx) || 0;
+        if ((choice -= weight) <= 0) return mndx;
+    }
+    return null;
+}
+
+function mkclass(monsterClass, spc = 0) {
+    return mkclassAligned(monsterClass, spc, A_NONE);
 }
 
 // rndmonnum stub — consumes rn2 for random monster selection
@@ -1795,9 +1932,9 @@ async function makeniche(trap_type) {
                 if (!rn2(5) && loc && IS_WALL(loc.typ)) {
                     loc.typ = IRONBARS;
                     if (rn2(3)) {
-                        // human corpse — consume rn2 for mkclass + mkcorpstat
-                        rn2(398); // mkclass(S_HUMAN)
-                        mkcorpstat(CORPSE, null, 0, xx, yy + dy, 1);
+                        const S_HUMAN = 53;
+                        const human = mkclass(S_HUMAN, 0);
+                        mkcorpstat(CORPSE, null, human, xx, yy + dy, 1);
                     }
                 }
                 if (!g.level.flags.noteleport) {
