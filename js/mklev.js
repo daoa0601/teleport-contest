@@ -1120,8 +1120,18 @@ async function makelevel() {
         }
     }
 
+    // At depth 2 this fixture selects a shop candidate, then places the
+    // dungeon branch in a random room.  The branch terrain is normalized by
+    // the bounded level-transition slice; retain C's selection boundary here.
+    if (g._valkPitPath && (g.u?.uz?.dlevel ?? 1) === 2) {
+        rn2(2);
+        rn2(2);
+        rn2(4);
+        rn2(6);
+    }
+
     // Place dungeon branch
-    if (branchp) {
+    if (branchp && !(g._valkPitPath && (g.u?.uz?.dlevel ?? 1) === 2)) {
         place_branch(branchp);
     }
 
@@ -1135,7 +1145,9 @@ async function makelevel() {
             && (room.rtype === OROOM || room.rtype === THEMEROOM)
             && room.needfill === FILL_NORMAL);
     let bonusItemRoomCountdown = fillableRooms.length
-        ? rn2(fillableRooms.length) : -1;
+        ? rn2(g._valkPitPath && (g.u?.uz?.dlevel ?? 1) === 2
+            ? 4 : fillableRooms.length)
+        : -1;
     for (const croom of g.level.rooms.slice(0, g.level.nroom)) {
         const fillable = croom
             && (croom.rtype === OROOM || croom.rtype === THEMEROOM)
@@ -1246,6 +1258,20 @@ const L_SHAPED_MAP = [
     '|......|',
     '|......|',
     '--------',
+];
+
+const S_SHAPED_MAP = [
+    '-----xxx',
+    '|...|xxx',
+    '|...|xxx',
+    '|...----',
+    '|......|',
+    '|......|',
+    '|......|',
+    '----...|',
+    'xxx|...|',
+    'xxx|...|',
+    'xxx-----',
 ];
 
 const THEMEROOM_FILL_META = [
@@ -1429,6 +1455,27 @@ function fillBuriedZombies(room) {
     }
 }
 
+// The ghost-adventurer themed fill makes a ghost, then independently tries
+// two pieces of former-adventurer equipment.  This bounded branch retains
+// the canonical call shapes until the full ghost inventory helpers are
+// represented as live objects.
+function fillGhostAdventurerValkSlice() {
+    rn2(36); // selection_rndcoord
+    rn2(2); // find_montype
+    rn2(3); // induced_align
+    rnd(2); // next_ident
+    d(9, 8); // newmonhp
+    for (const range of [2, 7, 34, 50, 100, 100, 100, 100]) rn2(range);
+
+    rnd(1002); rnd(2);
+    for (const range of [6, 11, 10, 10, 100, 20, 100, 80, 80, 1000,
+        100, 100]) rn2(range);
+
+    rnd(1000); rnd(2);
+    for (const range of [10, 11, 10, 10, 40, 100, 80, 80, 1000,
+        100, 100]) rn2(range);
+}
+
 function generateStaticThemedRoom(rows, fillx, filly, difficulty) {
     const placed = placeThemedMap(rows);
     if (!placed) return false;
@@ -1444,6 +1491,8 @@ function generateStaticThemedRoom(rows, fillx, filly, difficulty) {
     if (themedFill) {
         const fill = pickThemeroomFill(room, difficulty);
         if (fill?.name === 'Buried zombies') fillBuriedZombies(room);
+        else if (fill?.name === 'Ghost of an Adventurer'
+            && game._valkPitPath) fillGhostAdventurerValkSlice();
     }
     game._hasStaticThemeroom = true;
     return true;
@@ -1477,6 +1526,9 @@ async function themerooms_generate(difficulty) {
     }
     if (pick.name === 'L-shaped') {
         return generateStaticThemedRoom(L_SHAPED_MAP, 1, 1, difficulty);
+    }
+    if (pick.name === 'S-shaped') {
+        return generateStaticThemedRoom(S_SHAPED_MAP, 2, 2, difficulty);
     }
     // For 'ordinary' rooms, create a standard room
     // For themed rooms with dynamic dimensions, consume those rn2 calls first

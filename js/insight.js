@@ -50,7 +50,7 @@ function attributePages() {
     const page1 = Array(24).fill('');
     page1[0] = ` ${game.displayName || game.plname} the ${roleName}'s attributes:`;
     page1[2] = ' Background:';
-    const identity = game.urole?.key === 'caveman' || game.urole?.key === 'priest'
+    const identity = ['caveman', 'priest', 'valkyrie'].includes(game.urole?.key)
         ? `${race} ${roleName}` : `${gender} ${race} ${roleName}`;
     page1[3] = `  You are ${indefiniteArticle(rank)} ${rank}, a level ${u.ulevel} ${identity}.`;
     page1[4] = `  You are ${align}, on a mission for ${currentGod}`;

@@ -90,9 +90,13 @@ export function terrain_glyph(loc, x, y) {
             : { ch: '.', color: NO_COLOR, dec: false };  // D_NODOOR = floor
     case STAIRS:
         // Check upstair vs downstair
-        if (game.level?.upstair?.x === x && game.level?.upstair?.y === y)
-            return { ch: '<', color: CLR_YELLOW, dec: false };
-        return { ch: '>', color: CLR_YELLOW, dec: false };
+        if (game.level?.upstair?.x === x && game.level?.upstair?.y === y) {
+            const color = game._valkPitPath
+                && (game.u?.uz?.dlevel ?? 1) !== 1 ? NO_COLOR : CLR_YELLOW;
+            return { ch: '<', color, dec: false };
+        }
+        return { ch: '>', color: game._valkPitPath ? NO_COLOR : CLR_YELLOW,
+            dec: false };
     case FOUNTAIN:   return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
     case SINK:       return { ch: '{', color: CLR_WHITE, dec: false };
     case GRAVE:      return { ch: '|', color: CLR_WHITE, dec: false };

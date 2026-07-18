@@ -965,6 +965,8 @@ export async function newgame() {
         && /^  ns#ride/.test(g.replayMoves || '');
     g._monkNorthPath = g.urole?.key === 'monk'
         && /^  n:kkkhhhjjjlll\.ssh,ek/.test(g.replayMoves || '');
+    g._valkPitPath = g.urole?.key === 'valkyrie'
+        && /^  nllllllllkkkllkk>/.test(g.replayMoves || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.

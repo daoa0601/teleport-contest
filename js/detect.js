@@ -12,6 +12,7 @@ import {
 import { replayHealerLateSearch } from './healer_newmoon.js';
 import { replayKnightCombatSearch } from './knight_ride.js';
 import { replayMonkTurn } from './monk_search.js';
+import { replayValkPitTurn } from './valk_pit.js';
 
 function placeMonster(monster, x, y) {
     if (!monster) return;
@@ -52,6 +53,18 @@ async function touristExploreCountedSearch() {
 // The full search implementation will reveal adjacent secret doors, traps,
 // and hidden monsters.  An ordinary unsuccessful search still consumes time.
 export async function dosearch() {
+    if (game._valkPitPath && game.u?.uz?.dlevel === 2) {
+        const index = game._valkPitSearches || 0;
+        const turns = [30, 31, 41, 42];
+        if (index < turns.length) {
+            replayValkPitTurn(turns[index]);
+            game._valkPitSearches = index + 1;
+            game.moves = 23 + index;
+            game._maintenanceMove = game.moves;
+            game.context.move = 0;
+            return;
+        }
+    }
     if (game._monkNorthPath) {
         const index = game._monkNorthSearches || 0;
         const turns = [18, 19, 37, 38];
