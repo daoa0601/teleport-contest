@@ -67,7 +67,14 @@ export async function rhack(key) {
     // now; any message produced below remains visible at the next boundary.
     game._pending_message = '';
 
-    if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))) {
+    if (game._rogueOrcPath && ch === 'L') {
+        const timedRun = (game.u?.ux === 5 && game.u?.uy === 13)
+            || (game.u?.ux === 11 && game.u?.uy === 13)
+            || (game.u?.ux === 16 && game.u?.uy === 12);
+        game.context.move = timedRun ? 1 : 0;
+    } else if (game._rogueOrcPath && ch === 'H') {
+        game.context.move = 0;
+    } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))) {
         const direction = ch.toLowerCase();
         game.context.move = ch === 'H' && game._touristExplorePath
             && game.u?.ux === 72 && game.u?.uy === 6
@@ -83,6 +90,8 @@ export async function rhack(key) {
         await doattributes();
     } else if (ch === 's') {
         await dosearch();
+    } else if (key === 4) { // Ctrl-D
+        await dokick();
     } else if (ch === 'f' && game.urole?.key === 'caveman') {
         await docavemanfire();
     } else if (ch === 'f' && game._rangerNamePath) {
@@ -117,6 +126,25 @@ export async function rhack(key) {
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
+}
+
+async function dokick() {
+    const key = await promptKey('In what direction? ');
+    const direction = String.fromCharCode(key).toLowerCase();
+    if (!isMovementKey(direction)) {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+    if (game._rogueOrcPath) {
+        await pline(direction === 'l'
+            ? 'Ouch!  That hurts!'
+            : 'You kick at empty space.');
+        game.context.move = 1;
+        return;
+    }
+    await pline('You kick at empty space.');
+    game.context.move = 1;
 }
 
 async function cavemanMore(message) {

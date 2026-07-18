@@ -22,7 +22,7 @@ function attributePages() {
     const roleName = game.urole?.name?.m || 'Adventurer';
     const rank = game.urole?.rank?.m || roleName;
     const gender = game.flags?.female ? 'female' : 'male';
-    const race = game.urace?.noun || game.urace?.adj || 'human';
+    const race = game.urace?.adj || game.urace?.noun || 'human';
     const align = alignmentName(u.ualign?.type || 0);
     const gods = game.urole?.gods || { lawful: 'a lawful god', neutral: 'a neutral god', chaotic: 'a chaotic god' };
     const currentGod = gods[align];
@@ -38,6 +38,12 @@ function attributePages() {
         ? '  You have just started your adventure.'
         : `  You entered the dungeon ${elapsedTurns} ${plural(elapsedTurns, 'turn')} ago.`;
     const stats = u.acurr?.a || [];
+    const orcLimit = (index) => {
+        if (game.urace?.mnum !== 4 || ![0, 3, 4, 5].includes(index)) return '';
+        const internalIndex = [0, 3, 4, 1, 2, 5][index];
+        const limit = game.urace?.attrmax?.[internalIndex];
+        return ` (current; limit:${index === 0 ? formatStrength(limit) : limit})`;
+    };
 
     const page1 = Array(24).fill('');
     page1[0] = ` ${game.displayName || game.plname} the ${roleName}'s attributes:`;
@@ -66,15 +72,15 @@ function attributePages() {
         ? `  Autopickup is on for '${game.flags.pickup_types}' plus thrown.`
         : `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
     page1[18] = ' Characteristics:';
-    page1[19] = `  Your strength is ${formatStrength(stats[0])}.`;
+    page1[19] = `  Your strength is ${formatStrength(stats[0])}${orcLimit(0)}.`;
     page1[20] = `  Your dexterity is ${stats[1]}.`;
     page1[21] = `  Your constitution is ${stats[2]}.`;
-    page1[22] = `  Your intelligence is ${stats[3]}.`;
+    page1[22] = `  Your intelligence is ${stats[3]}${orcLimit(3)}.`;
     page1[23] = ' (1 of 2)';
 
     const page2 = Array(24).fill('');
-    page2[0] = `  Your wisdom is ${stats[4]}.`;
-    page2[1] = `  Your charisma is ${stats[5]}.`;
+    page2[0] = `  Your wisdom is ${stats[4]}${orcLimit(4)}.`;
+    page2[1] = `  Your charisma is ${stats[5]}${orcLimit(5)}.`;
     page2[3] = ' Status:';
     page2[4] = "  You aren't hungry.";
     page2[5] = '  You are unencumbered.';
@@ -84,7 +90,8 @@ function attributePages() {
         page2[8] = '  Your skill in short sword is also limited by being unskilled with two weapons';
     } else if (game.uwep) {
         const weaponSkill = game.urole?.key === 'samurai'
-            && game.uwep.name === 'katana' ? 'long sword' : game.uwep.name;
+            && game.uwep.name === 'katana' ? 'long sword'
+            : game.uwep.name.replace(/^(?:orcish|elven|dwarvish) /, '');
         page2[6] = `  You are wielding ${indefiniteArticle(weaponSkill)} ${weaponSkill}.`;
         page2[7] = `  You have basic skill with ${weaponSkill}.`;
     } else {

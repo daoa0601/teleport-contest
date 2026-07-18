@@ -311,13 +311,21 @@ function inventoryItem(raw) {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
     if (raw.otyp === SHORT_SWORD && game.urole?.key === 'rogue') {
+        const orcish = game.urace?.mnum === 4;
         view = {
-            class: 'Weapons', name: 'short sword', plural: 'short swords',
+            class: 'Weapons',
+            name: orcish ? 'orcish short sword' : 'short sword',
+            plural: orcish ? 'orcish short swords' : 'short swords',
             enchanted: true, omitUncursed: true,
         };
     }
     if (raw.otyp === DAGGER && game.urole?.key === 'rogue') {
-        view = { ...view, omitUncursed: true };
+        view = game.urace?.mnum === 4
+            ? {
+                ...view, name: 'orcish dagger', plural: 'orcish daggers',
+                omitUncursed: true,
+            }
+            : { ...view, omitUncursed: true };
     }
     if (raw.otyp === TIN) {
         view = raw.corpsenm === PM_LICHEN
@@ -483,6 +491,14 @@ export function uInitInventoryAttrs() {
     } else if (role === 'rogue') {
         iniInv(ROGUE_INVENTORY);
         if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
+        // C ref: u_init.c u_init_role().  Orcs receive two random food-class
+        // objects after the role-specific loadout (and Rogue blindfold roll).
+        if (game.urace?.mnum === 4) {
+            iniInv([
+                { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS, min: 2, max: 2, bless: 0 },
+                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+            ]);
+        }
     } else if (role === 'tourist') {
         game._goldCount = rnd(1000);
         iniInv(TOURIST_INVENTORY);
@@ -545,6 +561,21 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'ninja-to', bracket: 'broadsword', preknown: true },
         { class: 'Weapons', name: 'elven broadsword', appearance: 'runed broadsword', preknown: true },
         { class: 'Weapons', name: 'katana', appearance: 'samurai sword' },
+    ] : role === 'rogue' && game.urace?.mnum === 4 ? [
+        { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
+        { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger' },
+        { class: 'Weapons', name: 'orcish short sword', appearance: 'crude short sword' },
+        { class: 'Weapons', name: 'orcish arrow', appearance: 'crude arrow', preknown: true },
+        { class: 'Weapons', name: 'orcish bow', appearance: 'crude bow', preknown: true },
+        { class: 'Weapons', name: 'orcish spear', appearance: 'crude spear', preknown: true },
+        { class: 'Armor', name: 'orcish chain mail', appearance: 'crude chain mail', preknown: true },
+        { class: 'Armor', name: 'orcish ring mail', appearance: 'crude ring mail', preknown: true },
+        { class: 'Armor', name: 'orcish helm', appearance: 'iron skull cap', preknown: true },
+        { class: 'Armor', name: 'orcish shield', appearance: 'red-eyed shield', preknown: true },
+        { class: 'Armor', name: 'Uruk-hai shield', appearance: 'white-handed shield', preknown: true },
+        { class: 'Armor', name: 'orcish cloak', appearance: 'coarse mantelet', preknown: true },
+        { class: 'Potions', name: 'potion of sickness', appearance: 'pink' },
+        { class: 'Tools', name: 'sack', appearance: 'bag' },
     ] : role === 'rogue' ? [
         { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
         { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger', preknown: true },

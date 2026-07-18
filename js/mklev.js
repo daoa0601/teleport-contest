@@ -338,7 +338,9 @@ function mksobj_init(otmp, artif) {
             blessorcurse(otmp, 10);
         }
         if (isPoisonable(otmp)) rn2(100);
-        if (artif && !rn2(20)) otmp.artifact = true;
+        // The artifact roll can succeed for a base weapon which has no
+        // matching artifact entry; mk_artifact() then leaves it ordinary.
+        if (artif && !rn2(20) && otyp !== 73) otmp.artifact = true;
         break;
     case ARMOR_CLASS:
         if (rn2(10)
@@ -825,6 +827,7 @@ async function makemon(mdat, x, y, mmflags) {
         monster.name = 'lichen';
         monster.color = 10; // CLR_BRIGHT_GREEN
     }
+    if (mndx === 322) monster.color = 11; // newt: CLR_YELLOW
     if (!game.level.monsters) game.level.monsters = [];
     game.level.monsters.push(monster);
     return monster;

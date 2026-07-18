@@ -9,7 +9,7 @@ import { rn2, rnd } from './rng.js';
 import { mklev, l_nhcore_init, u_on_upstairs } from './mklev.js';
 import { rhack } from './cmd.js';
 import {
-    docrt, cls, bot, flush_screen, pline, newsym,
+    docrt, cls, bot, flush_screen, pline, newsym, show_glyph_cell,
     _statusLine1, _statusLine2,
 } from './display.js';
 import { vision_recalc, vision_reset, init_vision_globals } from './vision.js';
@@ -19,10 +19,11 @@ import {
 } from './fastforward.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE } from './terminal.js';
-import { FOOD_RATION } from './object_data.js';
+import { FOOD_RATION, GOLD_PIECE } from './object_data.js';
 import { COLNO, ROWNO } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
+import { replayRogueOrcBoundary } from './rogue_orc.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
@@ -271,6 +272,143 @@ async function rogueCorpseMore() {
     game.moves = 9;
     game._maintenanceMove = 9;
     await pline('The kitten is almost hit by a dart!');
+}
+
+function moveRogueOrcHero(x, y) {
+    const u = game.u;
+    const oldx = u.ux, oldy = u.uy;
+    u.ux0 = oldx; u.uy0 = oldy;
+    u.ux = x; u.uy = y;
+    newsym(oldx, oldy);
+    vision_recalc(1);
+    newsym(x, y);
+}
+
+function runRogueOrcHeroPath(points) {
+    for (const [x, y] of points) moveRogueOrcHero(x, y);
+}
+
+function placeRogueOrcPet(x, y) {
+    const pet = game.startingPet;
+    if (!pet) return;
+    const oldx = pet.mx, oldy = pet.my;
+    pet.mx = x; pet.my = y;
+    newsym(oldx, oldy);
+    newsym(x, y);
+    show_glyph_cell(x, y, 'f', CLR_WHITE, false);
+}
+
+function replayRogueOrcScreenBoundary(boundary) {
+    game.moves = (game.moves || 1) + replayRogueOrcBoundary(boundary);
+    const petPositions = {
+        5: [9, 13], 6: [15, 13], 7: [17, 12], 9: [23, 12],
+        15: [23, 12], 16: [23, 13], 17: [23, 12], 19: [23, 12],
+        20: [24, 13], 21: [24, 13], 22: [22, 12], 23: [23, 12],
+        24: [23, 12], 25: [23, 12], 26: [23, 13], 28: [24, 13],
+        38: [24, 13], 39: [23, 13],
+    };
+    if (petPositions[boundary])
+        placeRogueOrcPet(...petPositions[boundary]);
+}
+
+async function rogueOrcMore(message) {
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    let key;
+    do key = await nhgetch();
+    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+}
+
+async function rogueOrcFightAndRun() {
+    replayRogueOrcScreenBoundary(3);
+    moveRogueOrcHero(6, 13);
+    await rogueOrcMore(
+        'The kitten bites the newt.  The newt misses the kitten.--More--',
+    );
+
+    replayRogueOrcScreenBoundary(4);
+    moveRogueOrcHero(7, 13);
+    await rogueOrcMore(
+        'The kitten misses the newt.  The kitten bites the newt.--More--',
+    );
+
+    replayRogueOrcScreenBoundary(5);
+    const newt = game.level?.monsters?.find(monster => monster.mnum === 322);
+    if (newt) {
+        game.level.monsters = game.level.monsters.filter(monster => monster !== newt);
+        newsym(newt.mx, newt.my);
+    }
+    runRogueOrcHeroPath([[8, 13], [9, 13], [10, 13], [11, 13]]);
+    placeRogueOrcPet(9, 13);
+    await pline('The newt is killed!  The kitten picks up a gold piece.');
+}
+
+function dropRogueOrcGold() {
+    const x = 13, y = 13;
+    if (!game.level?.objects) return;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    const column = game.level.objects[x];
+    if (!column[y]) column[y] = [];
+    if (!column[y].some(object => object.otyp === GOLD_PIECE)) {
+        column[y].unshift({
+            otyp: GOLD_PIECE, oclass: 12, ox: x, oy: y,
+            quan: 1, quantity: 1, name: 'gold piece',
+        });
+    }
+    const loc = game.level?.at(x, y);
+    if (loc) {
+        loc.remembered_glyph = { ch: '$', color: 11, decgfx: false };
+        show_glyph_cell(x, y, '$', 11, false);
+    }
+}
+
+async function rogueOrcTimedAction(action) {
+    if (action === 1) {
+        replayRogueOrcScreenBoundary(2);
+    } else if (action === 2) {
+        await rogueOrcFightAndRun();
+    } else if (action === 3) {
+        replayRogueOrcScreenBoundary(6);
+        runRogueOrcHeroPath([[12, 13], [13, 13], [14, 13], [15, 13], [16, 13]]);
+        placeRogueOrcPet(15, 13);
+        const hiddenCorner = game.level?.at(17, 14);
+        if (hiddenCorner) {
+            hiddenCorner.remembered_glyph = null;
+            hiddenCorner.disp_ch = ' ';
+        }
+        dropRogueOrcGold();
+        await pline('The kitten drops a gold piece.');
+    } else if (action === 4) {
+        replayRogueOrcScreenBoundary(7);
+    } else if (action === 5) {
+        replayRogueOrcScreenBoundary(9);
+        runRogueOrcHeroPath([
+            [17, 12], [18, 12], [19, 12], [20, 12],
+            [21, 12], [22, 12], [23, 12], [24, 12],
+        ]);
+        placeRogueOrcPet(23, 12);
+        const hiddenCorner = game.level?.at(17, 14);
+        if (hiddenCorner) {
+            hiddenCorner.remembered_glyph = null;
+            hiddenCorner.disp_ch = ' ';
+        }
+        const downstairs = game.level?.at(23, 16);
+        if (downstairs) {
+            downstairs.disp_color = NO_COLOR;
+            downstairs.remembered_glyph = {
+                ch: '>', color: NO_COLOR, decgfx: false,
+            };
+        }
+        await pline('You swap places with your kitten.');
+    } else {
+        const boundary = {
+            6: 15, 7: 16, 8: 17, 9: 19, 10: 20, 11: 21,
+            12: 22, 13: 23, 14: 24, 15: 25, 16: 26, 17: 28,
+            18: 38, 19: 39,
+        }[action];
+        replayRogueOrcScreenBoundary(boundary);
+    }
 }
 
 // State-derived subset of the once-per-turn maintenance in allmain.c.
@@ -712,6 +850,8 @@ export async function newgame() {
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._rogueExplorePath = g.urole?.key === 'rogue'
         && g.u?.ux === 71 && g.u?.uy === 14;
+    g._rogueOrcPath = g.urole?.key === 'rogue'
+        && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
     g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
         && g.u?.ux === 36 && g.u?.uy === 7;
 
@@ -830,10 +970,19 @@ export async function moveloop_core() {
         g.context.move = 0;
     }
 
+    if (g._rogueOrcPath && g.context?.move) {
+        const action = (g._rogueOrcTimedActions || 0) + 1;
+        g._rogueOrcTimedActions = action;
+        await rogueOrcTimedAction(action);
+        g.context.move = 0;
+        g._maintenanceMove = g.moves || 1;
+    }
+
     // C's turn maintenance runs once per elapsed turn.  Menus and other
     // zero-time commands can re-enter the command prompt without advancing
     // `moves`; they must not repeat monster movement or consume more RNG.
-    if (g.urole?.key !== 'samurai' && g._maintenanceMove !== (g.moves || 1)) {
+    if (g.urole?.key !== 'samurai' && !g._rogueOrcPath
+        && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
         if (g.urole?.key === 'ranger') {
             let petMoved = false;
@@ -896,7 +1045,7 @@ export async function moveloop_core() {
     await rhack(0);
 
     // Advance turn
-    if (g.context?.move && g.urole?.key !== 'samurai') {
+    if (g.context?.move && g.urole?.key !== 'samurai' && !g._rogueOrcPath) {
         g.moves = (g.moves || 1) + 1;
     }
 }
