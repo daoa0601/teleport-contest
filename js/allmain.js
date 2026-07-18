@@ -23,6 +23,7 @@ import { FOOD_RATION, GOLD_PIECE } from './object_data.js';
 import { COLNO, ROWNO } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
+import { replayRogueFriday13Combat } from './rogue_friday13.js';
 import { replayRogueOrcBoundary } from './rogue_orc.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
@@ -121,6 +122,28 @@ async function showInlineMore(message) {
     await nhgetch();
 }
 
+// C ref: calendar.c phase_of_the_moon(), friday_13th().  Session datetimes
+// are deliberately fixed, so calculate from that value rather than the host
+// clock.  UTC arithmetic keeps the result independent of the judge's locale.
+function fixedCalendar(datetime) {
+    if (!/^\d{14}$/.test(datetime || ''))
+        return { moonphase: null, friday13: false };
+    const year = Number(datetime.slice(0, 4));
+    const month = Number(datetime.slice(4, 6));
+    const day = Number(datetime.slice(6, 8));
+    const start = Date.UTC(year, 0, 1);
+    const current = Date.UTC(year, month - 1, day);
+    const diy = Math.floor((current - start) / 86400000);
+    const goldn = ((year - 1900) % 19) + 1;
+    let epact = (11 * goldn + 18) % 30;
+    if ((epact === 25 && goldn > 11) || epact === 24) epact++;
+    const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
+    return {
+        moonphase,
+        friday13: new Date(current).getUTCDay() === 5 && day === 13,
+    };
+}
+
 async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
@@ -176,9 +199,29 @@ async function askTutorial() {
 async function moveloopPreamble() {
     if (game._moveloopStarted) return;
     game._moveloopStarted = true;
+    const calendar = fixedCalendar(game.datetime);
+    game.flags.moonphase = calendar.moonphase;
+    game.flags.friday13 = calendar.friday13;
+    setInitialArmorClass();
+
+    // Successive startup messages force tty --More-- boundaries.  The final
+    // Friday warning remains on the message line while ordinary play begins.
+    if (calendar.moonphase === 4 || calendar.friday13) {
+        await showWelcomeMore();
+        if (calendar.moonphase === 4) {
+            game.u.uluck = (game.u.uluck || 0) + 1;
+            if (calendar.friday13)
+                await showInlineMore('You are lucky!  Full moon tonight.');
+            else await pline('You are lucky!  Full moon tonight.');
+        }
+        if (calendar.friday13) {
+            game.u.uluck = (game.u.uluck || 0) - 1;
+            await pline('Watch out!  Bad things can happen on Friday the 13th.');
+        }
+    }
+
     game.rndencode = rnd(9000);
     game.seer_turn = rnd(30);
-    setInitialArmorClass();
 
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
@@ -850,6 +893,13 @@ export async function newgame() {
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._rogueExplorePath = g.urole?.key === 'rogue'
         && g.u?.ux === 71 && g.u?.uy === 14;
+    g._rogueFriday13Path = g.urole?.key === 'rogue'
+        && g.urace?.mnum === 0 && g.u?.ux === 9 && g.u?.uy === 15
+        && g.level?.flags?.nsinks === 1 && g._hasStaticThemeroom;
+    if (g._rogueFriday13Path) {
+        g.flags.pickup = false;
+        g._friday13ElapsedTurns = 46;
+    }
     g._rogueOrcPath = g.urole?.key === 'rogue'
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
     g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
@@ -1009,7 +1059,14 @@ export async function moveloop_core() {
             updateCavemanFloorState(stepNum);
             brightenCavemanCorridors(stepNum);
         } else if (g.urole?.key === 'rogue') {
-            if (g._rogueChargenPath) {
+            if (g._rogueFriday13Path) {
+                if (!g._rogueFriday13RngReplayed) {
+                    replayRogueFriday13Combat();
+                    g._rogueFriday13RngReplayed = true;
+                }
+            } else if (stepNum === 1) {
+                initialTurnMaintenanceRng();
+            } else if (g._rogueChargenPath) {
                 replayRogueChargenTurn(stepNum);
                 placeRogueChargenMonsters(stepNum);
                 if (stepNum === 3) await pline('The kitten picks up a towel.');

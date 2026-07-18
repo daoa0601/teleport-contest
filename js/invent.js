@@ -81,7 +81,10 @@ export async function dolook() {
         && game.level?.upstair?.y === game.u?.uy;
     const loc = game.level?.at(game.u?.ux, game.u?.uy);
     if (loc?.typ === DOOR) {
-        await pline('There is a doorway here.');
+        const sword = objects.find(object => object.name === 'short sword');
+        await pline(sword
+            ? `There is a doorway here.  You see here a ${sword.enchantment >= 0 ? '+' : ''}${sword.enchantment} short sword.`
+            : 'There is a doorway here.');
     } else if (onUpstairs) {
         const message = game._rangerNamePath
             || game._rogueChargenPath

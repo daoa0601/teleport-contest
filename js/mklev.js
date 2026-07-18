@@ -839,6 +839,16 @@ async function maketrap(x, y, typ) {
     if (!game.level) return trap;
     if (!game.level.traps) game.level.traps = [];
     game.level.traps.push(trap);
+    if (typ === SQKY_BOARD) {
+        const used = new Set(game.level.traps
+            .filter(candidate => candidate !== trap && candidate.ttyp === SQKY_BOARD)
+            .map(candidate => candidate.tnote));
+        const available = [];
+        for (let note = 0; note < 12; note++)
+            if (!used.has(note)) available.push(note);
+        trap.tnote = available.length
+            ? available[rn2(available.length)] : rn2(12);
+    }
     return trap;
 }
 
@@ -1129,6 +1139,12 @@ async function makelevel() {
             fillVault(croom);
         if (fillable) bonusItemRoomCountdown--;
     }
+
+    // C ref: themerooms_post_level_generate().  Static map fragments use
+    // generic '-' and '|' walls; the final wallification pass resolves their
+    // corners and junctions after corridors and room contents are complete.
+    if (g._hasStaticThemeroom)
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
 // C ref: mklev.c makerooms()
@@ -1148,13 +1164,17 @@ async function makerooms() {
             }
         } else {
             // Themed room selection (reservoir sampling)
-            if (!(await themerooms_generate(difficulty))) {
+            g.in_mk_themerooms = true;
+            const generated = await themerooms_generate(difficulty);
+            g.in_mk_themerooms = false;
+            if (!generated) {
                 if (themeroom_tries++ > 10
                     || g.level.nroom >= Math.trunc(MAXNROFROOMS / 6))
                     break;
             }
         }
     }
+    g.in_mk_themerooms = false;
 }
 
 // Themed room metadata — must match C's themerms.lua frequency table exactly.
@@ -1193,6 +1213,224 @@ const THEMEROOM_META = [
     { name: 'Twin businesses', frequency: 1, mindiff: 4 },
 ];
 
+// C ref: themerms.lua "Four-leaf clover".  Static themed maps use 'x' as
+// see-through terrain: those cells neither participate in collision checks
+// nor overwrite the level beneath them.
+const FOUR_LEAF_CLOVER_MAP = [
+    '-----x-----',
+    '|...|x|...|',
+    '|...---...|',
+    '|.........|',
+    '---.....---',
+    'xx|.....|xx',
+    '---.....---',
+    '|.........|',
+    '|...---...|',
+    '|...|x|...|',
+    '-----x-----',
+];
+
+const THEMEROOM_FILL_META = [
+    { name: 'Ice room' },
+    { name: 'Cloud room' },
+    { name: 'Boulder room', mindiff: 4 },
+    { name: 'Spider nest' },
+    { name: 'Trap room' },
+    { name: 'Garden', eligible: room => !!room.rlit },
+    { name: 'Buried treasure' },
+    { name: 'Buried zombies' },
+    { name: 'Massacre' },
+    { name: 'Statuary' },
+    { name: 'Light source', eligible: room => !room.rlit },
+    { name: 'Temple of the gods' },
+    { name: 'Ghost of an Adventurer' },
+    { name: 'Storeroom' },
+    { name: 'Teleportation hub' },
+];
+
+function themedMapTerrain(ch) {
+    if (ch === '.') return ROOM;
+    if (ch === '-') return HWALL;
+    if (ch === '|') return VWALL;
+    if (ch === ' ') return STONE;
+    return null; // 'x' and any unsupported map character are see-through
+}
+
+function themedMapFits(rows, xstart, ystart) {
+    const width = Math.max(...rows.map(row => row.length));
+    const height = rows.length;
+    for (let y = ystart - 1; y <= ystart + height; y++) {
+        for (let x = xstart - 1; x <= xstart + width; x++) {
+            if (!isok(x, y)) return false;
+            const loc = game.level?.at(x, y);
+            if (!loc) return false;
+            const outside = x < xstart || x >= xstart + width
+                || y < ystart || y >= ystart + height;
+            if (outside) {
+                if (loc.typ !== STONE || loc.roomno) return false;
+                continue;
+            }
+            const terrain = themedMapTerrain(rows[y - ystart]?.[x - xstart]);
+            if (terrain == null) continue;
+            if ((loc.typ !== STONE && loc.typ !== terrain) || loc.roomno)
+                return false;
+        }
+    }
+    return true;
+}
+
+function placeThemedMap(rows) {
+    const width = Math.max(...rows.map(row => row.length));
+    const height = rows.length;
+    let xstart = 0, ystart = 0;
+    for (let tryct = 0; tryct <= 100; tryct++) {
+        xstart = 1 + rn2(COLNO - 1 - width);
+        ystart = rn2(ROWNO - height);
+        if (themedMapFits(rows, xstart, ystart)) break;
+        if (tryct === 100) return null;
+    }
+    for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+            const terrain = themedMapTerrain(rows[row]?.[col]);
+            if (terrain == null) continue;
+            const loc = game.level.at(xstart + col, ystart + row);
+            loc.typ = terrain;
+            loc.flags = 0;
+            loc.horizontal = false;
+            loc.roomno = 0;
+            loc.edge = false;
+            loc.lit = false;
+        }
+    }
+    return { xstart, ystart, width, height };
+}
+
+// C ref: mkmap.c flood_fill_rm(..., anyroom=TRUE) plus lspo_region().
+function createIrregularThemedRegion(x, y, rtype, lit, needfill = FILL_NORMAL) {
+    const roomIndex = game.level.nroom;
+    const roomno = roomIndex + ROOMOFFSET;
+    const terrain = game.level.at(x, y)?.typ;
+    if (terrain !== ROOM) return null;
+
+    const pending = [[x, y]];
+    const seen = new Set();
+    let minx = x, maxx = x, miny = y, maxy = y;
+    game.smeq[roomIndex] = roomIndex;
+    while (pending.length) {
+        const [cx, cy] = pending.pop();
+        const key = `${cx},${cy}`;
+        if (seen.has(key)) continue;
+        const loc = game.level.at(cx, cy);
+        if (!loc || loc.typ !== terrain || loc.roomno === roomno) continue;
+        seen.add(key);
+        loc.roomno = roomno;
+        loc.lit = !!lit;
+        minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
+        miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
+
+        for (let ax = cx - 1; ax <= cx + 1; ax++) {
+            for (let ay = cy - 1; ay <= cy + 1; ay++) {
+                const adjacent = game.level.at(ax, ay);
+                if (!adjacent || !(IS_WALL(adjacent.typ)
+                    || IS_DOOR(adjacent.typ) || adjacent.typ === SDOOR)) continue;
+                adjacent.edge = true;
+                if (lit) adjacent.lit = true;
+                adjacent.roomno = adjacent.roomno && adjacent.roomno !== roomno
+                    ? SHARED : roomno;
+            }
+        }
+        pending.push([cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]);
+    }
+
+    add_room(minx, miny, maxx, maxy, false, rtype, true);
+    const room = game.level.rooms[roomIndex];
+    room.rlit = lit ? 1 : 0;
+    room.irregular = true;
+    room.needjoining = true;
+    room.needfill = needfill;
+    return room;
+}
+
+function randomIrregularRoomPosition(room) {
+    const roomno = (room.roomnoidx ?? game.level.rooms.indexOf(room)) + ROOMOFFSET;
+    for (let tries = 0; tries < 100; tries++) {
+        const x = somex(room), y = somey(room);
+        const loc = game.level.at(x, y);
+        if (loc && !loc.edge && loc.roomno === roomno) return { x, y };
+    }
+    for (let x = room.lx; x <= room.hx; x++)
+        for (let y = room.ly; y <= room.hy; y++) {
+            const loc = game.level.at(x, y);
+            if (loc && !loc.edge && loc.roomno === roomno) return { x, y };
+        }
+    return null;
+}
+
+function pickThemeroomFill(room, difficulty) {
+    let pick = null;
+    let totalFrequency = 0;
+    for (const meta of THEMEROOM_FILL_META) {
+        if (meta.mindiff != null && difficulty < meta.mindiff) continue;
+        if (meta.maxdiff != null && difficulty > meta.maxdiff) continue;
+        if (meta.eligible && !meta.eligible(room)) continue;
+        totalFrequency++;
+        if (rn2(totalFrequency) < 1) pick = meta;
+    }
+    return pick;
+}
+
+function fillBuriedZombies(room) {
+    // Monster indices in the NetHack 5.0 mons[] table.
+    const zombifiable = [59, 165, 72, 44]; // kobold, gnome, orc, dwarf
+    const count = Math.floor(((room.hx - room.lx + 1)
+        * (room.hy - room.ly + 1)) / 2);
+    if (!game.level.buriedObjects) game.level.buriedObjects = [];
+    for (let corpseIndex = 0; corpseIndex < count; corpseIndex++) {
+        for (let i = zombifiable.length; i > 1; i--) {
+            const j = rn2(i);
+            [zombifiable[i - 1], zombifiable[j]]
+                = [zombifiable[j], zombifiable[i - 1]];
+        }
+        const pos = randomIrregularRoomPosition(room);
+        if (!pos) return;
+        const corpse = mksobj_at(CORPSE, pos.x, pos.y, true, false);
+        set_corpsenm(corpse, zombifiable[0]);
+
+        // bury_an_obj() calls obj_resists() before moving the object from the
+        // floor chain.  Ordinary corpses cannot resist, but the RNG call is
+        // unconditional and therefore part of the replay contract.
+        rn2(100);
+        const pile = game.level.objects[pos.x]?.[pos.y];
+        const pileIndex = pile?.indexOf(corpse) ?? -1;
+        if (pileIndex >= 0) pile.splice(pileIndex, 1);
+        corpse.buried = true;
+        game.level.buriedObjects.unshift(corpse);
+
+        // Lua's math.random(990, 1010), used for the zombify-mon timer.
+        corpse.zombifyTimeout = 990 + rn2(21);
+    }
+}
+
+function generateFourLeafClover(difficulty) {
+    const placed = placeThemedMap(FOUR_LEAF_CLOVER_MAP);
+    if (!placed) return false;
+
+    // themerms.lua filler_region(6,6): 30% chance to choose a themed fill.
+    const themedFill = rn2(100) < 30;
+    const lit = litstate_rnd(-1);
+    const room = createIrregularThemedRegion(
+        placed.xstart + 6, placed.ystart + 6,
+        themedFill ? THEMEROOM : OROOM, lit, FILL_NORMAL,
+    );
+    if (!room) return false;
+    if (themedFill) {
+        const fill = pickThemeroomFill(room, difficulty);
+        if (fill?.name === 'Buried zombies') fillBuriedZombies(room);
+    }
+    game._hasStaticThemeroom = true;
+    return true;
+}
+
 function is_themeroom_eligible(room, difficulty) {
     if (room.mindiff != null && difficulty < room.mindiff) return false;
     if (room.maxdiff != null && difficulty > room.maxdiff) return false;
@@ -1214,6 +1452,9 @@ async function themerooms_generate(difficulty) {
         }
     }
     if (!pick) return false;
+    if (pick.name === 'Four-leaf clover') {
+        return generateFourLeafClover(difficulty);
+    }
     // For 'ordinary' rooms, create a standard room
     // For themed rooms with dynamic dimensions, consume those rn2 calls first
     const chance = 100;
@@ -1514,6 +1755,31 @@ function good_rm_wall_doorpos(x, y, dir, room) {
 function finddpos_shift(xp, yp, dir, aroom) {
     const rdir = DIR_180(dir);
     if (good_rm_wall_doorpos(xp.v, yp.v, rdir, aroom)) return true;
+    // An irregular room's actual wall can sit inside its rectangular bounds.
+    // Walk inward across untouched stone/corridor cells until that wall is
+    // reached, exactly as mklev.c finddpos_shift() does.
+    if (aroom.irregular) {
+        const dx = xdir[rdir], dy = ydir[rdir];
+        let rx = xp.v, ry = yp.v;
+        let fail = false;
+        while (!fail && isok(rx, ry)) {
+            const current = game.level.at(rx, ry);
+            if (!current || (current.typ !== STONE && current.typ !== CORR)) break;
+            rx += dx;
+            ry += dy;
+            if (good_rm_wall_doorpos(rx, ry, rdir, aroom)) {
+                xp.v = rx;
+                yp.v = ry;
+                return true;
+            }
+            const advanced = game.level.at(rx, ry);
+            if (!advanced || (advanced.typ !== STONE && advanced.typ !== CORR))
+                fail = true;
+            if (rx < aroom.lx || rx > aroom.hx
+                || ry < aroom.ly || ry > aroom.hy)
+                fail = true;
+        }
+    }
     return false;
 }
 
@@ -1805,7 +2071,9 @@ function somexy(croom, c) {
 function occupied(x, y) {
     const loc = game.level.at(x, y);
     if (!loc) return false;
-    return !!(IS_FURNITURE(loc.typ) || loc.typ === LAVAPOOL || IS_POOL(loc.typ));
+    const trapped = game.level.traps?.some(trap => trap.tx === x && trap.ty === y);
+    return !!(trapped || IS_FURNITURE(loc.typ)
+        || loc.typ === LAVAPOOL || IS_POOL(loc.typ));
 }
 
 function somexyspace(croom, c) {

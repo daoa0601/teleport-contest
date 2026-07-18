@@ -88,6 +88,7 @@ export class NethackGame {
 
     async start() {
         const g = resetGame();
+        g.datetime = this._datetime;
 
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
@@ -368,10 +369,10 @@ export class NethackGame {
 // this segment. The harness concatenates them itself. Cross-segment
 // C-side state (bones, record file, save) lives in `input.storage`.
 export async function runSegment(input) {
-    const { seed, nethackrc, storage } = input;
+    const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
 
-    const nhGame = new NethackGame({ seed, nethackrc, storage });
+    const nhGame = new NethackGame({ seed, datetime, nethackrc, storage });
 
     const display = new GameDisplay(null);
     display.onEmptyQueue = () => { throw new Error('Input queue empty - test may be missing keystrokes'); };
