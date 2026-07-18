@@ -8,7 +8,8 @@
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import {
-    newsym, flush_screen, pline, docrt, bot, _statusLine1, _statusLine2,
+    newsym, flush_screen, pline, docrt, bot, terrain_glyph,
+    _statusLine1, _statusLine2,
 } from './display.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { ddoinv, dolook } from './invent.js';
@@ -23,6 +24,7 @@ import {
     CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, LOCK_PICK,
 } from './object_data.js';
 import { CLR_WHITE, NO_COLOR } from './terminal.js';
+import { saveGame } from './save.js';
 import {
     replayCavemanFireSwap,
     replayCavemanFireReady,
@@ -122,6 +124,20 @@ export async function rhack(key) {
         await dothrow();
     } else if (ch === '_') {
         await dotravel();
+    } else if (ch === 'S') {
+        await dosave();
+    } else if (ch === '$') {
+        await doWalletQuery();
+    } else if (ch === ')') {
+        await doWeaponQuery();
+    } else if (ch === '[') {
+        await doArmorQuery();
+    } else if (ch === '=') {
+        await doRingQuery();
+    } else if (ch === '"') {
+        await doAmuletQuery();
+    } else if (key === 127) { // Delete: overview of known terrain.
+        await doOverview();
     } else if (key === 27) { // Escape cancels without producing a message.
         game.context.move = 0;
     } else {
@@ -129,6 +145,169 @@ export async function rhack(key) {
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
+}
+
+async function doWalletQuery() {
+    await pline((game._goldCount || 0) > 0
+        ? `Your wallet contains ${game._goldCount} zorkmids.`
+        : 'Your wallet is empty.');
+    game.context.move = 0;
+}
+
+async function doWeaponQuery() {
+    await pline(game.uwep
+        ? `${game.uwep.invlet} - ${game.uwep.name}.`
+        : 'You are bare handed.');
+    game.context.move = 0;
+}
+
+async function doArmorQuery() {
+    const armor = game.uarm;
+    if (!armor) {
+        await pline('You are not wearing any armor.');
+    } else {
+        const parts = [];
+        if (armor.buc) parts.push(armor.buc);
+        if (Number.isInteger(armor.enchantment))
+            parts.push(`${armor.enchantment >= 0 ? '+' : ''}${armor.enchantment}`);
+        parts.push(armor.name);
+        const description = parts.join(' ');
+        const article = /^[aeiou]/i.test(description) ? 'an' : 'a';
+        await pline(`${armor.invlet} - ${article} ${description} (being worn).`);
+    }
+    game.context.move = 0;
+}
+
+async function doRingQuery() {
+    await pline(game.uleft || game.uright
+        ? 'You are wearing a ring.'
+        : 'You are not wearing any rings.');
+    game.context.move = 0;
+}
+
+async function doAmuletQuery() {
+    await pline(game.uamul
+        ? 'You are wearing an amulet.'
+        : 'You are not wearing an amulet.');
+    game.context.move = 0;
+}
+
+function captureMapDisplay() {
+    const snapshot = [];
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = game.level?.at(x, y);
+            if (!loc) continue;
+            snapshot.push([loc, loc.disp_ch, loc.disp_color,
+                loc.disp_decgfx, loc.disp_attr]);
+        }
+    }
+    return snapshot;
+}
+
+function restoreMapDisplay(snapshot) {
+    for (const [loc, ch, color, decgfx, attr] of snapshot) {
+        loc.disp_ch = ch;
+        loc.disp_color = color;
+        loc.disp_decgfx = decgfx;
+        loc.disp_attr = attr;
+    }
+}
+
+function showKnownTerrain() {
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = game.level?.at(x, y);
+            if (!loc || (!loc.remembered_glyph
+                && (!loc.disp_ch || loc.disp_ch === ' '))) continue;
+            const glyph = terrain_glyph(loc, x, y);
+            loc.disp_ch = glyph.ch;
+            loc.disp_color = glyph.color;
+            loc.disp_decgfx = glyph.dec;
+            loc.disp_attr = 0;
+        }
+    }
+}
+
+async function moreUntilDismissed(message) {
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    let key;
+    do key = await nhgetch();
+    while (![27, 32, 10, 13].includes(key));
+    return key;
+}
+
+async function farlookTipUntilDismissed() {
+    const display = game.nhDisplay;
+    for (let row = 0; row <= 8; row++) display.clearRow(row);
+    const lines = [
+        [10, 0, 'Tip: Farlooking or selecting a map location'],
+        [10, 2, 'You are now in a "farlook" mode - the movement keys move the cursor,'],
+        [10, 3, 'not your character.  Game time does not advance.  This mode is used'],
+        [10, 4, 'to look around the map, or to select a location on it.'],
+        [10, 6, 'When in this mode, you can press ESC to return to normal game mode,'],
+        [10, 7, 'and pressing ? will show the key help.'],
+        [10, 8, '(end)'],
+    ];
+    for (const [col, row, text] of lines) putCommandLine(col, row, text);
+    display.setCursor(16, 8);
+    let key;
+    do key = await nhgetch();
+    while (![27, 32, 10, 13].includes(key));
+    return key;
+}
+
+async function doOverview() {
+    const display = game.nhDisplay;
+    game._pending_message = '';
+    for (let row = 0; row <= 5; row++) display.clearRow(row);
+    putCommandLine(28, 0, 'View which?', ATR_INVERSE);
+    putCommandLine(28, 2, 'a * known map without monsters, objects, and traps');
+    putCommandLine(28, 3, 'b - known map without monsters and objects');
+    putCommandLine(28, 4, 'c - known map without monsters');
+    putCommandLine(28, 5, '(end)');
+    display.setCursor(34, 5);
+    const selection = await nhgetch();
+    if (selection === 27) {
+        game.context.move = 0;
+        return;
+    }
+
+    const displaySnapshot = captureMapDisplay();
+    showKnownTerrain();
+    const terrainDismissal = await moreUntilDismissed(
+        'Showing known terrain only...--More--');
+    if (terrainDismissal !== 27) {
+        const tipDismissal = await farlookTipUntilDismissed();
+        if (tipDismissal !== 27) {
+            game._pending_message = "(For instructions type a '?')  Move cursor to anything of interest:";
+            await flush_screen(1);
+            display.setCursor(game.u.ux - 1, game.u.uy + 1);
+            const lookKey = await nhgetch();
+            if (lookKey !== 27)
+                await moreUntilDismissed('Done.--More--');
+        }
+    }
+
+    restoreMapDisplay(displaySnapshot);
+    game._pending_message = '';
+    await flush_screen(1);
+    game.context.move = 0;
+}
+
+async function dosave() {
+    const answer = await promptKey('Really save? [yn] (n) ');
+    if (String.fromCharCode(answer).toLowerCase() !== 'y') {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+    saveGame();
+    game._saveExitPending = true;
+    game.program_state.gameover = true;
+    game.context.move = 0;
 }
 
 function placeFriday13Pet(x, y) {

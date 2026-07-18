@@ -76,7 +76,7 @@ export async function showInventoryWindow(sections) {
  * `{ lines, cursor }`; a line is either a string or `{ text, attr }`.
  * Escape closes the window, while any other key advances to the next page.
  */
-export async function showTextPages(pages) {
+export async function showTextPages(pages, { validKeys = null } = {}) {
     const d = display();
     if (!d) return 27;
 
@@ -91,7 +91,9 @@ export async function showTextPages(pages) {
         }
         const cursor = page.cursor || [0, 0];
         d.setCursor(cursor[0], cursor[1]);
-        key = await nhgetch();
+        do {
+            key = await nhgetch();
+        } while (validKeys && !validKeys.includes(key));
         if (key === 27) break;
     }
     return key;

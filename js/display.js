@@ -58,7 +58,7 @@ const ANSI_COLOR = [
 ];
 
 // ── Terrain to display character + color + DEC flag ──
-function terrain_glyph(loc, x, y) {
+export function terrain_glyph(loc, x, y) {
     const typ = loc.typ;
     const dec = /^DECgraphics$/i.test(game.symset || '');
     switch (typ) {

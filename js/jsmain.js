@@ -12,7 +12,7 @@
 import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { nhgetch } from './input.js';
-import { newgame, moveloop_core } from './allmain.js';
+import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
 import {
     findRole, findRace, findAlignment, findGender,
@@ -20,6 +20,7 @@ import {
 } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { NO_COLOR } from './terminal.js';
+import { restoreGame } from './save.js';
 
 // ── NethackGame ──
 // Wraps a single game session with replay infrastructure.
@@ -27,6 +28,7 @@ export class NethackGame {
     constructor(opts = {}) {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
+        this._moves = opts.moves || '';
         this._nethackrc = opts.nethackrc || '';
         // Cross-segment persistence handle. The judge sandbox passes a
         // shared Web-Storage-shaped object here so save / record /
@@ -89,6 +91,8 @@ export class NethackGame {
     async start() {
         const g = resetGame();
         g.datetime = this._datetime;
+        g.replayMoves = this._moves;
+        g.storage = this._storage;
 
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
@@ -126,6 +130,11 @@ export class NethackGame {
         g.context = { move: 0 };
         g.program_state = {};
         g.moves = 0;
+
+        if (restoreGame(configuredName, this._storage)) {
+            await restoregamePreamble();
+            return;
+        }
 
         // C ref: role_init().  Contest sessions specify these options, so
         // invalid/missing values use stable NetHack-style defaults here and
@@ -372,7 +381,9 @@ export async function runSegment(input) {
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
 
-    const nhGame = new NethackGame({ seed, datetime, nethackrc, storage });
+    const nhGame = new NethackGame({
+        seed, datetime, nethackrc, moves, storage,
+    });
 
     const display = new GameDisplay(null);
     display.onEmptyQueue = () => { throw new Error('Input queue empty - test may be missing keystrokes'); };

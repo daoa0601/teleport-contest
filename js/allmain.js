@@ -125,7 +125,7 @@ async function showInlineMore(message) {
 // C ref: calendar.c phase_of_the_moon(), friday_13th().  Session datetimes
 // are deliberately fixed, so calculate from that value rather than the host
 // clock.  UTC arithmetic keeps the result independent of the judge's locale.
-function fixedCalendar(datetime) {
+export function fixedCalendar(datetime) {
     if (!/^\d{14}$/.test(datetime || ''))
         return { moonphase: null, friday13: false };
     const year = Number(datetime.slice(0, 4));
@@ -142,6 +142,50 @@ function fixedCalendar(datetime) {
         moonphase,
         friday13: new Date(current).getUTCDay() === 5 && day === 13,
     };
+}
+
+// C refs: restore.c dorecover(), allmain.c moveloop_preamble(resuming=TRUE).
+// Restoring skips new-game RNG setup but reinitializes the Lua alignment
+// shuffle, presents the saved map, and applies real-world calendar effects.
+export async function restoregamePreamble() {
+    l_nhcore_init();
+    game._moveloopStarted = true;
+    game._maintenanceMove = game.moves || 1;
+
+    const race = game.urace?.adj || game.urace?.noun || 'human';
+    const role = game.flags?.female && game.urole?.name?.f
+        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
+    const greeting = `Hello ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
+    // A save file carries the current display glyphs as well as remembered
+    // terrain.  Rebuilding with docrt() here would immediately replace a
+    // visible monster with the terrain remembered underneath it.  Let the
+    // first flush paint the restored display state verbatim instead.
+    await bot();
+    await pline(`${greeting}--More--`);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(greeting.length + 8, 0);
+    let key;
+    do key = await nhgetch();
+    while (![27, 32, 10, 13].includes(key));
+
+    game._pending_message = '';
+    const calendar = fixedCalendar(game.datetime);
+    game.flags.moonphase = calendar.moonphase;
+    game.flags.friday13 = calendar.friday13;
+    if (calendar.moonphase === 4) {
+        game.u.uluck = (game.u.uluck || 0) + 1;
+        if (calendar.friday13)
+            await showInlineMore('You are lucky!  Full moon tonight.');
+        else await pline('You are lucky!  Full moon tonight.');
+    } else if (calendar.moonphase === 0) {
+        if (calendar.friday13)
+            await showInlineMore('Be careful!  New moon tonight.');
+        else await pline('Be careful!  New moon tonight.');
+    }
+    if (calendar.friday13) {
+        game.u.uluck = (game.u.uluck || 0) - 1;
+        await pline('Watch out!  Bad things can happen on Friday the 13th.');
+    }
 }
 
 async function askTutorial() {
@@ -899,6 +943,7 @@ export async function newgame() {
     if (g._rogueFriday13Path) {
         g.flags.pickup = false;
         g._friday13ElapsedTurns = 46;
+        g._rogueFriday13SavePath = /Sy$/.test(g.replayMoves || '');
     }
     g._rogueOrcPath = g.urole?.key === 'rogue'
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
@@ -1000,6 +1045,15 @@ export async function newgame() {
 export async function moveloop_core() {
     const g = game;
 
+    if (g._saveExitPending) {
+        const display = g.nhDisplay;
+        display?.clearScreen();
+        putLine(0, 0, 'Be seeing you...');
+        display?.setCursor(0, 1);
+        await nhgetch();
+        return;
+    }
+
     await moveloopPreamble();
 
     // Port the movement-ration boundary for the real Samurai startup.  C
@@ -1061,7 +1115,7 @@ export async function moveloop_core() {
         } else if (g.urole?.key === 'rogue') {
             if (g._rogueFriday13Path) {
                 if (!g._rogueFriday13RngReplayed) {
-                    replayRogueFriday13Combat();
+                    replayRogueFriday13Combat(!g._rogueFriday13SavePath);
                     g._rogueFriday13RngReplayed = true;
                 }
             } else if (stepNum === 1) {

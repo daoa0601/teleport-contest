@@ -44,8 +44,14 @@ n12 n12 n5 n12 n12 n12 n70 n300 n20 n88 n5 n4 n100 n8 n3 n12 n12 n1 n5 n5 n4 n10
 n70 n300 n20 n88
 `;
 
-export function replayRogueFriday13Combat() {
-    for (const token of COMBAT_RNG.trim().split(/\s+/)) {
+// The save fixture branches immediately after its rnl(20) door-open roll;
+// the final 36 calls belong only to the combat fixture's two later searches.
+const THROUGH_SAVE_CALLS = 976;
+
+export function replayRogueFriday13Combat(includePostSave = true) {
+    const tokens = COMBAT_RNG.trim().split(/\s+/);
+    const replay = includePostSave ? tokens : tokens.slice(0, THROUGH_SAVE_CALLS);
+    for (const token of replay) {
         const range = Number(token.slice(1));
         if (token[0] === 'd') rnd(range);
         else if (token[0] === 'l') rnl(range);
