@@ -7,7 +7,7 @@
 
 import { game } from './gstate.js';
 import { GameMap } from './game.js';
-import { rn2, rnd, rn1 } from './rng.js';
+import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level } from './hacklib.js';
 import {
@@ -24,43 +24,58 @@ import {
     A_LAWFUL, Align2amask,
     LR_UPTELE,
 } from './const.js';
+import {
+    OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_DIR,
+    OBJECT_SUBTYPE, CHARGED_OBJECTS,
+    WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
+    GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
+    AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
+    BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA,
+    CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER,
+    MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
+    DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, KELP_FROND,
+    SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, LUCKSTONE, LOADSTONE,
+    ROCK, BOULDER, STATUE,
+} from './object_data.js';
+import {
+    MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
+    MONSTER_FLAGS2, SPECIAL_PM,
+} from './monster_data.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
-const WEAPON_CLASS = 1;
-const ARMOR_CLASS = 2;
-const RING_CLASS = 3;
+const WEAPON_CLASS = 2;
+const ARMOR_CLASS = 3;
+const RING_CLASS = 4;
+const AMULET_CLASS = 5;
+const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
-const SCROLL_CLASS = 8;
-const POTION_CLASS = 9;
-const TOOL_CLASS = 12;
-const GEM_CLASS = 14;
-const BOULDER = 465;
-const GOLD_PIECE = 466;
-const ROCK = 467;
-const KELP_FROND = 172;
-const SCR_TELEPORTATION = 287;
-const BELL = 358;
-const CORPSE = 471;
-const STATUE = 472;
-const SPBOOK_no_NOVEL = 11;
+const POTION_CLASS = 8;
+const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
+const WAND_CLASS = 11;
+const COIN_CLASS = 12;
+const GEM_CLASS = 13;
+const ROCK_CLASS = 14;
+const SCR_TELEPORTATION = 333;
+const BELL = 255;
+const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 
 // Supply chest items
-const POT_HEALING = 235;
-const POT_EXTRA_HEALING = 236;
-const POT_SPEED = 245;
-const POT_GAIN_ENERGY = 250;
-const SCR_ENCHANT_WEAPON = 275;
-const SCR_ENCHANT_ARMOR = 276;
-const SCR_CONFUSE_MONSTER = 278;
-const SCR_SCARE_MONSTER = 279;
-const WAN_DIGGING = 305;
-const SPE_HEALING = 327;
-const LARGE_BOX = 214;
-const CHEST = 215;
-const FOOD_RATION = 143;
-const CRAM_RATION = 145;
-const LEMBAS_WAFER = 146;
+const POT_HEALING = 307;
+const POT_EXTRA_HEALING = 308;
+const POT_SPEED = 302;
+const POT_GAIN_ENERGY = 313;
+const SCR_ENCHANT_WEAPON = 328;
+const SCR_ENCHANT_ARMOR = 323;
+const SCR_CONFUSE_MONSTER = 325;
+const SCR_SCARE_MONSTER = 326;
+const WAN_DIGGING = 428;
+const SPE_HEALING = 374;
+const FOOD_RATION = 293;
+const CRAM_RATION = 292;
+const LEMBAS_WAFER = 291;
 const DUST = 3;
 const MARK = 6;
 
@@ -77,26 +92,26 @@ const TRAPNUM = 26;
 const ARROW_TRAP = 1;
 const DART_TRAP = 2;
 const ROCKTRAP = 3;
-const SLP_GAS_TRAP = 6;
+const SQKY_BOARD = 4;
+const LANDMINE = 6;
 const ROLLING_BOULDER_TRAP = 7;
-const RUST_TRAP = 4;
-const SQKY_BOARD = 5;
-const FIRE_TRAP = 8;
-const PIT = 9;
-const SPIKED_PIT = 10;
-const HOLE = 11;
+const SLP_GAS_TRAP = 8;
+const RUST_TRAP = 9;
+const FIRE_TRAP = 10;
+const PIT = 11;
+const SPIKED_PIT = 12;
+const HOLE = 13;
 const TRAPDOOR = 14;
 const TELEP_TRAP = 15;
 const LEVEL_TELEP = 16;
-const WEB = 17;
-const STATUE_TRAP = 18;
-const MAGIC_TRAP = 19;
-const LANDMINE = 20;
-const POLY_TRAP = 21;
-const VIBRATING_SQUARE = 22;
-const TRAPPED_DOOR = 23;
-const TRAPPED_CHEST = 24;
-const MAGIC_PORTAL = 25;
+const MAGIC_PORTAL = 17;
+const WEB = 18;
+const STATUE_TRAP = 19;
+const MAGIC_TRAP = 20;
+const POLY_TRAP = 22;
+const VIBRATING_SQUARE = 23;
+const TRAPPED_DOOR = 24;
+const TRAPPED_CHEST = 25;
 
 function is_hole(t) { return t === HOLE || t === TRAPDOOR; }
 function is_pit(t) { return t === PIT || t === SPIKED_PIT; }
@@ -179,8 +194,22 @@ export function u_on_upstairs() {
     place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
 }
 
-// oinit stub (level-dependent object probability reset)
-function oinit() { /* no-op for contest */ }
+// Object probabilities are mutable because gemstone rarity changes with
+// dungeon depth.  This is the level-dependent half of o_init.c.
+let objectProb = OBJECT_PROB.slice();
+function oinit() {
+    const firstGem = OBJECT_BASES[GEM_CLASS];
+    const lastRealGem = 460;
+    const ledger = Math.max(0, (game.u?.uz?.dlevel ?? 1));
+    let first = firstGem;
+    for (let j = 0; j < 9 - Math.trunc(ledger / 3); j++) {
+        objectProb[first++] = 0;
+    }
+    for (let j = first; j <= lastRealGem; j++) {
+        objectProb[j] = Math.trunc((171 + j - first)
+            / (lastRealGem + 1 - first));
+    }
+}
 
 // level_difficulty stub
 function level_difficulty() {
@@ -200,38 +229,226 @@ let _nextObjId = 1;
 function next_ident() { rnd(2); }
 
 // C ref: mkobj.c blessorcurse — rn2(4) BUC selection
-function blessorcurse(otmp) {
-    const r = rn2(4);
-    if (otmp) {
-        otmp.cursed = (r === 0);
-        otmp.blessed = false;
+function blessorcurse(otmp, chance = 10) {
+    if (!otmp || otmp.blessed || otmp.cursed) return;
+    if (!rn2(chance)) {
+        if (!rn2(2)) otmp.cursed = true;
+        else otmp.blessed = true;
     }
 }
 
 // C ref: mkobj.c mksobj — create a specific object
 // Minimal stub: consumes RNG for next_ident + type-specific init
 function mksobj(otyp, init, artif) {
-    const otmp = { otyp, ox: 0, oy: 0, quan: 1, owt: 1, cursed: false, blessed: false, olocked: false, spe: 0 };
+    const oclass = objectClass(otyp);
+    const otmp = { otyp, oclass, ox: 0, oy: 0, quan: 1, owt: 1,
+        cursed: false, blessed: false, olocked: false, spe: 0,
+        artifact: false };
     next_ident();
     if (init) {
-        mksobj_init(otmp, otyp);
+        mksobj_init(otmp, artif);
+    }
+    if (otyp === CORPSE || otyp === STATUE || otyp === FIGURINE) {
+        if (otmp.corpsenm == null) otmp.corpsenm = rndmonnum();
+        const genderFlags = MONSTER_FLAGS2[otmp.corpsenm] || 0;
+        if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
+        if (otyp === CORPSE && otmp.corpsenm !== 158) rnz(25);
     }
     return otmp;
 }
 
-// C ref: mkobj.c mksobj initialization RNG consumption
-// This varies by object class. For the contest, we need enough to match
-// the session's RNG pattern for objects created during mklev.
-function mksobj_init(otmp, otyp) {
-    // For BOULDER, GOLD_PIECE: no extra init RNG
-    // For scrolls: blessorcurse
-    // For potions: blessorcurse
-    // For general objects: varies
-    // We just do blessorcurse for scrolls/potions
-    if (otyp >= 270 && otyp < 300) { // scrolls
-        blessorcurse(otmp);
-    } else if (otyp >= 230 && otyp < 270) { // potions
-        blessorcurse(otmp);
+function objectClass(otyp) {
+    for (let cls = 2; cls < OBJECT_BASES.length - 1; cls++) {
+        if (otyp >= OBJECT_BASES[cls] && otyp < OBJECT_BASES[cls + 1])
+            return cls;
+    }
+    return 1;
+}
+
+function bcsign(otmp) {
+    return Number(!!otmp.blessed) - Number(!!otmp.cursed);
+}
+
+function isMultigen(otmp) {
+    const skill = OBJECT_SUBTYPE[otmp.otyp];
+    return otmp.oclass === WEAPON_CLASS && skill >= -24 && skill <= -20;
+}
+
+function isPoisonable(otmp) {
+    return isMultigen(otmp);
+}
+
+function mayGenerateEroded(otmp) {
+    if (otmp.artifact || otmp.otyp === WORM_TOOTH || otmp.otyp === UNICORN_HORN)
+        return false;
+    const matters = otmp.oclass === WEAPON_CLASS
+        || otmp.oclass === ARMOR_CLASS
+        || otmp.oclass === 15 || otmp.oclass === 16
+        || (otmp.oclass === TOOL_CLASS && OBJECT_SUBTYPE[otmp.otyp] !== 0);
+    if (!matters) return false;
+    const material = OBJECT_MATERIAL[otmp.otyp];
+    return material === 11 || material === 13 || material === 18
+        || material === 19 || material === 10
+        || (material <= 8 && material !== 1);
+}
+
+function mkobjErosions(otmp) {
+    if (!mayGenerateEroded(otmp)) return;
+    const material = OBJECT_MATERIAL[otmp.otyp];
+    if (!rn2(100)) {
+        otmp.oerodeproof = true;
+    } else {
+        const primary = !rn2(80);
+        if (primary && (material <= 8 && material !== 1
+            || material === 11 || material === 19)) {
+            let erosion = 1;
+            while (erosion < 3 && !rn2(9)) erosion++;
+        }
+        const secondary = !rn2(80);
+        if (secondary && ((material <= 8 && material !== 1)
+            || material === 10 || material === 11 || material === 13)) {
+            let erosion = 1;
+            while (erosion < 3 && !rn2(9)) erosion++;
+        }
+    }
+    rn2(1000);
+}
+
+// C ref: mkobj.c mksobj_init().  Object state is deliberately small, but
+// every decision is driven by the real object class/type metadata.
+function mksobj_init(otmp, artif) {
+    const otyp = otmp.otyp;
+    switch (otmp.oclass) {
+    case WEAPON_CLASS:
+        if (isMultigen(otmp)) otmp.quan = rn1(6, 6);
+        if (!rn2(11)) {
+            otmp.spe = rne(3);
+            otmp.blessed = !!rn2(2);
+        } else if (!rn2(10)) {
+            otmp.cursed = true;
+            otmp.spe = -rne(3);
+        } else {
+            blessorcurse(otmp, 10);
+        }
+        if (isPoisonable(otmp)) rn2(100);
+        if (artif && !rn2(20)) otmp.artifact = true;
+        break;
+    case ARMOR_CLASS:
+        if (rn2(10)
+            && (otyp === FUMBLE_BOOTS || otyp === LEVITATION_BOOTS
+                || otyp === HELM_OF_OPPOSITE_ALIGNMENT
+                || otyp === GAUNTLETS_OF_FUMBLING || !rn2(11))) {
+            otmp.cursed = true;
+            otmp.spe = -rne(3);
+        } else if (!rn2(10)) {
+            otmp.blessed = !!rn2(2);
+            otmp.spe = rne(3);
+        } else {
+            blessorcurse(otmp, 10);
+        }
+        if (artif && !rn2(40)) otmp.artifact = true;
+        break;
+    case RING_CLASS:
+        if (CHARGED_OBJECTS.has(otyp)) {
+            blessorcurse(otmp, 3);
+            if (rn2(10)) {
+                if (rn2(10) && bcsign(otmp)) {
+                    otmp.spe = bcsign(otmp) * rne(3);
+                } else {
+                    otmp.spe = (rn2(2) ? 1 : -1) * rne(3);
+                }
+            }
+            if (otmp.spe === 0) otmp.spe = rn2(4) - rn2(3);
+            if (otmp.spe < 0 && rn2(5)) otmp.cursed = true;
+        } else if (rn2(10)
+            && (otyp === 194 || otyp === 196 || otyp === 185
+                || otyp === 184 || !rn2(9))) {
+            otmp.cursed = true;
+        }
+        break;
+    case AMULET_CLASS:
+        if (rn2(10) && (otyp === AMULET_OF_STRANGULATION
+            || otyp === AMULET_OF_CHANGE
+            || otyp === AMULET_OF_RESTFUL_SLEEP)) otmp.cursed = true;
+        else blessorcurse(otmp, 10);
+        break;
+    case FOOD_CLASS:
+        if (otyp === CORPSE) {
+            otmp.corpsenm = rndmonnum();
+        } else if (otyp === EGG) {
+            // Typed eggs require the monster database; the common path is
+            // still exact and keeps the decision visible for later ports.
+            rn2(3);
+        } else if (otyp === TIN) {
+            if (rn2(6)) {
+                otmp.corpsenm = rndmonnum();
+                rn2(15); // random tin preparation
+            }
+            blessorcurse(otmp, 10);
+        } else if (otyp === KELP_FROND) {
+            otmp.quan = rnd(2);
+        }
+        if (otyp !== CORPSE && otyp !== MEAT_RING && otyp !== KELP_FROND)
+            if (!rn2(6)) otmp.quan = 2;
+        break;
+    case GEM_CLASS:
+        if (otyp === LOADSTONE) otmp.cursed = true;
+        else if (otyp === ROCK) otmp.quan = rn1(6, 6);
+        else if (otyp !== LUCKSTONE && !rn2(6)) otmp.quan = 2;
+        break;
+    case TOOL_CLASS:
+        initTool(otmp);
+        break;
+    case POTION_CLASS:
+    case SCROLL_CLASS:
+        blessorcurse(otmp, 4);
+        break;
+    case SPBOOK_CLASS:
+        blessorcurse(otmp, 17);
+        break;
+    case WAND_CLASS:
+        if (otyp === 414) otmp.spe = 1;
+        else if (otyp === 415) otmp.spe = rn1(4, 3);
+        else otmp.spe = rn1(5, OBJECT_DIR[otyp] === 1 ? 11 : 4);
+        blessorcurse(otmp, 17);
+        break;
+    }
+    mkobjErosions(otmp);
+}
+
+function initTool(otmp) {
+    const otyp = otmp.otyp;
+    if (otyp === TALLOW_CANDLE || otyp === WAX_CANDLE) {
+        otmp.quan = 1 + (rn2(2) ? rn2(7) : 0);
+        blessorcurse(otmp, 5);
+    } else if (otyp === 226 || otyp === 227) {
+        rn1(500, 1000);
+        blessorcurse(otmp, 5);
+    } else if (otyp === 228) {
+        blessorcurse(otmp, 2);
+    } else if (otyp === CHEST || otyp === LARGE_BOX) {
+        otmp.olocked = !!rn2(5);
+        const trapped = !rn2(10);
+        if (trapped) rn2(100);
+        // Container contents are the next object subsystem boundary.
+    } else if (otyp === EXPENSIVE_CAMERA || otyp === TINNING_KIT
+        || otyp === MAGIC_MARKER) {
+        otmp.spe = rn1(70, 30);
+    } else if (otyp === CAN_OF_GREASE) {
+        otmp.spe = rn1(21, 5);
+        blessorcurse(otmp, 10);
+    } else if (otyp === CRYSTAL_BALL) {
+        otmp.spe = rn1(5, 3);
+        blessorcurse(otmp, 2);
+    } else if (otyp === HORN_OF_PLENTY || otyp === BAG_OF_TRICKS) {
+        otmp.spe = rn1(18, 3);
+    } else if (otyp === FIGURINE) {
+        rndmonnum();
+        blessorcurse(otmp, 4);
+    } else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
+        || otyp === FROST_HORN || otyp === FIRE_HORN
+        || otyp === DRUM_OF_EARTHQUAKE) {
+        otmp.spe = rn1(5, 4);
     }
 }
 
@@ -240,9 +457,30 @@ function mksobj_at(otyp, x, y, init, artif) {
 }
 
 function mkobj(oclass, artif) {
-    // Class-based random object creation
-    // For contest, just consume the right RNG
-    return mksobj(0, false, artif);
+    if (oclass === RANDOM_CLASS) {
+        const classProbs = [[10, WEAPON_CLASS], [11, ARMOR_CLASS],
+            [20, FOOD_CLASS], [8, TOOL_CLASS], [7, GEM_CLASS],
+            [16, POTION_CLASS], [16, SCROLL_CLASS], [4, SPBOOK_CLASS],
+            [4, WAND_CLASS], [3, RING_CLASS], [1, AMULET_CLASS]];
+        let roll = rnd(100);
+        for (const [probability, cls] of classProbs) {
+            roll -= probability;
+            if (roll <= 0) { oclass = cls; break; }
+        }
+    }
+    let first = OBJECT_BASES[oclass];
+    let last = OBJECT_BASES[oclass + 1] - 1;
+    if (oclass === SPBOOK_no_NOVEL) {
+        oclass = SPBOOK_CLASS;
+        first = OBJECT_BASES[SPBOOK_CLASS];
+        last = 407; // SPE_BLANK_PAPER
+    }
+    let total = 0;
+    for (let i = first; i <= last; i++) total += objectProb[i];
+    let roll = rnd(total);
+    let otyp = first;
+    while ((roll -= objectProb[otyp]) > 0) otyp++;
+    return mksobj(otyp, true, artif);
 }
 
 function mkobj_at(oclass, x, y, artif) {
@@ -286,29 +524,50 @@ function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
 
 // rndmonnum stub — consumes rn2 for random monster selection
 function rndmonnum() {
-    // C: picks a random monster class then random within class
-    // For contest, this is called from mkcorpstat when pm=null.
-    // The actual RNG depends on monster database, but for statues
-    // created by fill_ordinary_room, it consumes at least rn2 calls.
-    rn2(398); // approximate: rn2(NUMMONS)
-    return 0;
+    const zlevel = level_difficulty();
+    const heroLevel = game.u?.ulevel || 1;
+    const minDifficulty = Math.trunc(zlevel / 6);
+    const maxDifficulty = Math.trunc((zlevel + heroLevel) / 2);
+    let totalWeight = 0;
+    let selected = -1;
+    for (let mndx = 0; mndx < SPECIAL_PM; mndx++) {
+        const difficulty = MONSTER_DIFFICULTY[mndx];
+        const geno = MONSTER_GENO[mndx];
+        if (difficulty < minDifficulty || difficulty > maxDifficulty) continue;
+        if (geno & (0x0200 | 0x1000 | 0x0400)) continue;
+        let weight = geno & 0x0007;
+        // The Dungeons of Doom is unaligned, so align_shift() is zero.
+        // Other dungeon alignments can add 0..5 once those branches are
+        // playable in the JS port.
+        if (weight > 0) {
+            totalWeight += weight;
+            if (rn2(totalWeight) < weight) selected = mndx;
+        }
+    }
+    return selected >= 0 ? selected : 322; // newt is the safe C fallback
 }
 
 // makemon stub
 async function makemon(mdat, x, y, mmflags) {
-    // C: makemon consumes RNG for monster HP, inventory, etc.
-    // For fill_ordinary_room: makemon(null, ...) = random monster
-    if (mdat === null) {
-        // rndmonst_adj + selection
-        rn2(398);
-    }
-    // newmonhp
-    const hp = rnd(8);
-    // m_initinv — monster inventory
-    // For random monsters this varies widely. Since fill_ordinary_room
-    // and mineralize calls are in fastforward, this stub won't be called
-    // for those. It's only needed if mklev structural code calls makemon.
-    return { mx: x, my: y, mhp: hp, msleeping: 0, mpeaceful: 0 };
+    const mndx = mdat == null ? rndmonnum() : mdat;
+    next_ident();
+    const baseLevel = MONSTER_LEVEL[mndx] || 0;
+    let hp;
+    if (!baseLevel) hp = rnd(4);
+    else hp = d(baseLevel, 8);
+
+    const genderFlags = MONSTER_FLAGS2[mndx] || 0;
+    if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
+
+    // m_initinv() finishes with two level-gated reservoir rolls for every
+    // monster, even one which cannot actually receive either item.
+    rn2(50);
+    rn2(100);
+    // makemon()'s rare domestic-saddle check is likewise unconditional on
+    // the random roll and short-circuits only after it fails.
+    rn2(100);
+    return { mnum: mndx, mx: x, my: y, mhp: hp,
+        msleeping: 0, mpeaceful: 0 };
 }
 
 // maketrap stub
@@ -514,8 +773,25 @@ async function makelevel() {
         place_branch(branchp);
     }
 
-    // Fill rooms + mineralize: consumed by fastforward_fill_mineralize
-    // Called externally from allmain.js after mklev structural phase
+    // Choose one of the ordinary rooms for any level-specific bonus item,
+    // then populate every ordinary room.  The choice must use the current
+    // layout's room count; replaying a fixed count immediately diverges for
+    // any seed which generated a different number of rooms.
+    const fillableRooms = g.level.rooms
+        .slice(0, g.level.nroom)
+        .filter(room => room
+            && (room.rtype === OROOM || room.rtype === THEMEROOM)
+            && room.needfill === FILL_NORMAL);
+    let bonusItemRoomCountdown = fillableRooms.length
+        ? rn2(fillableRooms.length) : -1;
+    for (const croom of g.level.rooms.slice(0, g.level.nroom)) {
+        const fillable = croom
+            && (croom.rtype === OROOM || croom.rtype === THEMEROOM)
+            && croom.needfill === FILL_NORMAL;
+        await fill_ordinary_room(croom,
+            fillable && bonusItemRoomCountdown === 0);
+        if (fillable) bonusItemRoomCountdown--;
+    }
 }
 
 // C ref: mklev.c makerooms()
@@ -1544,8 +1820,8 @@ function mktrap_victim(trap) {
     const x = trap.tx, y = trap.ty;
     // Object based on trap type
     switch (kind) {
-    case ARROW_TRAP: mksobj(349, true, false); break; // ARROW
-    case DART_TRAP: mksobj(353, true, false); break; // DART
+    case ARROW_TRAP: mksobj(18, true, false); break;
+    case DART_TRAP: mksobj(24, true, false); break;
     case ROCKTRAP: mksobj(ROCK, true, false); break;
     default: break;
     }
@@ -1569,7 +1845,7 @@ function mktrap_victim(trap) {
     case 6: case 7: case 8: case 9:
         victim_mnum = PM_GNOME;
         if (!rn2(10)) {
-            const otmp = mksobj(rn2(4) ? 370 : 371, true, false); // TALLOW_CANDLE / WAX_CANDLE
+            const otmp = mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
             curse(otmp);
         }
         break;
@@ -1689,11 +1965,17 @@ async function fill_ordinary_room(croom, bonus_items) {
     if (bonus_items && somexyspace(croom, pos)) {
         const branchp = is_branchlev();
         const oracle_dlevel = g.oracle_level?.dlevel ?? 5;
-        if (branchp) {
+        const minesDnum = g.dungeons?.findIndex(dungeon =>
+            dungeon?.dname === 'The Gnomish Mines') ?? -1;
+        const entersMines = branchp && (g.u?.uz?.dnum ?? 0) !== minesDnum
+            && (branchp.end1?.dnum === minesDnum
+                || branchp.end2?.dnum === minesDnum);
+        if (entersMines) {
             // Mines entrance bonus food
             mksobj_at((rn2(5) < 3) ? FOOD_RATION : rn2(2) ? CRAM_RATION : LEMBAS_WAFER,
                 pos.x, pos.y, true, false);
-        } else if (g.u?.uz?.dnum === 0 && (g.u?.uz?.dlevel ?? 1) < oracle_dlevel && rn2(3)) {
+        } else if ((g.u?.uz?.dnum ?? 0) === (g.oracle_level?.dnum ?? 0)
+            && (g.u?.uz?.dlevel ?? 1) < oracle_dlevel && rn2(3)) {
             // Supply chest
             const supply_chest = mksobj_at(rn2(3) ? CHEST : LARGE_BOX, pos.x, pos.y, false, false);
             if (supply_chest) {
@@ -1801,11 +2083,15 @@ function mineralize(kelp_pool, kelp_moat, goldprob, gemprob, skip_lvl_checks) {
                 if (rn2(1000) < goldprob) {
                     const otmp = mksobj(GOLD_PIECE, false, false);
                     otmp.quan = 1 + rnd(goldprob * 3);
+                    rn2(3); // buried versus placed on the floor
                 }
                 if (rn2(1000) < gemprob) {
                     const cnt = rnd(2 + Math.trunc(dunLevel / 3));
                     for (let i = 0; i < cnt; i++) {
-                        mkobj(GEM_CLASS, false);
+                        const gem = mkobj(GEM_CLASS, false);
+                        // Rocks selected from GEM_CLASS are discarded rather
+                        // than buried or placed.
+                        if (gem.otyp !== ROCK) rn2(3);
                     }
                 }
             }
@@ -1872,7 +2158,7 @@ function set_wall_state() { /* no-op for contest */ }
 
 function level_finalize_topology() {
     bound_digging();
-    // mineralize is consumed by fastforward_fill_mineralize
+    mineralize(-1, -1, -1, -1, false);
     game.in_mklev = false;
     if (!game.level?.flags?.is_maze_lev) {
         const nroom = game.level?.nroom ?? 0;
