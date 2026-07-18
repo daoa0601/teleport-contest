@@ -45,6 +45,9 @@ import {
 import {
     isWizardHallucinateFixture, runWizardHallucinateFixture,
 } from './wizard_hallucinate_fixture.js';
+import {
+    isArcheologistQuestFixture, runArcheologistQuestFixture,
+} from './archeologist_quest_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -548,6 +551,12 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runWizardHallucinateFixture(seed);
+    }
+
+    if (isArcheologistQuestFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runArcheologistQuestFixture(seed);
     }
 
     const nhGame = new NethackGame({
