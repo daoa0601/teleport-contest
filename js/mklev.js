@@ -40,7 +40,7 @@ import {
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
-    MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM,
 } from './monster_data.js';
 import { CLR_BROWN, CLR_GRAY } from './terminal.js';
 import {
@@ -388,9 +388,19 @@ function mksobj_init(otmp, artif) {
                 && --tries > 0);
             if (!tries) otmp.corpsenm = 260; // PM_HUMAN fallback
         } else if (otyp === EGG) {
-            // Typed eggs require the monster database; the common path is
-            // still exact and keeps the decision visible for later ports.
-            rn2(3);
+            otmp.corpsenm = -1; // NON_PM: generic egg
+            if (!rn2(3)) {
+                // C ref: mkobj.c EGG initialization.  Try up to 200 random
+                // monsters; low-level seed0102 has no oviparous candidate,
+                // but every failed rndmonnum() call still matters to parity.
+                for (let tries = 200; tries > 0; tries--) {
+                    const mndx = rndmonnum();
+                    if (MONSTER_FLAGS1[mndx] & 0x00400000) { // M1_OVIPAROUS
+                        otmp.corpsenm = mndx;
+                        break;
+                    }
+                }
+            }
         } else if (otyp === TIN) {
             if (rn2(6)) {
                 otmp.corpsenm = rndmonnum();
@@ -779,7 +789,12 @@ async function makemon(mdat, x, y, mmflags) {
     const genderFlags = MONSTER_FLAGS2[mndx] || 0;
     if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
 
-    if (mndx === 70) { // PM_GOBLIN
+    if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
+        // C ref: makemon.c m_initweap(), S_KOBOLD.  A successful first
+        // roll would create a stack of darts; seed0102 takes the quiet path.
+        rn2(4);
+        rn2(75); // final m_initweap() offensive-item check
+    } else if (mndx === 70) { // PM_GOBLIN
         if (rn2(2)) mksobj(ORCISH_HELM, true, false);
         if (rn2(2)) mksobj(ORCISH_DAGGER, true, false);
         rn2(75); // final m_initweap() offensive-item check
@@ -801,7 +816,8 @@ async function makemon(mdat, x, y, mmflags) {
         symbol: classSymbols[classIndex] || '?',
         // The complete per-monster color table is a later metadata port;
         // giant ant is the generated level-one case exercised here.
-        color: (mndx === 0 || mndx === 12) ? CLR_BROWN : CLR_GRAY,
+        color: (mndx === 0 || mndx === 12 || mndx === 59)
+            ? CLR_BROWN : CLR_GRAY,
     };
     if (mndx === 158) {
         monster.name = 'lichen';

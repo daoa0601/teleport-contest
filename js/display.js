@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import {
-    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS, FOUNTAIN, ALTAR,
+    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS, FOUNTAIN, SINK, ALTAR,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
@@ -24,6 +24,7 @@ function objectColor(object) {
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
     if (object?.otyp === FOOD_RATION) return CLR_BROWN;
     if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;
+    if (object?.oclass === 5) return CLR_CYAN; // amulets use HI_METAL
     // Most ordinary weapons use HI_METAL in objects.h.  Other object classes
     // remain neutral until their generated color metadata is ported.
     return object?.oclass === 2 ? CLR_CYAN : CLR_GRAY;
@@ -85,6 +86,7 @@ function terrain_glyph(loc, x, y) {
             return { ch: '<', color: CLR_YELLOW, dec: false };
         return { ch: '>', color: CLR_YELLOW, dec: false };
     case FOUNTAIN:   return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
+    case SINK:       return { ch: '{', color: CLR_WHITE, dec: false };
     case ALTAR:      return { ch: '_', color: NO_COLOR, dec: false };
     // Wall types → DEC line-drawing characters
     case HWALL:     return dec ? { ch: 'q', color: NO_COLOR, dec: true } : { ch: '-', color: NO_COLOR, dec: false };

@@ -80,11 +80,15 @@ export async function dolook() {
     if (loc?.typ === DOOR) {
         await pline('There is a doorway here.');
     } else if (onUpstairs) {
-        const message = 'There is a staircase up out of the dungeon here.--More--';
+        const message = game._rangerNamePath
+            ? 'There is a staircase up out of the dungeon here.'
+            : 'There is a staircase up out of the dungeon here.--More--';
         await pline(message);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(message.length, 0);
-        await nhgetch();
+        if (!game._rangerNamePath) {
+            await flush_screen(1);
+            game.nhDisplay?.setCursor(message.length, 0);
+            await nhgetch();
+        }
     } else if (objects.some(object => object.name === 'lichen corpse')) {
         await pline('You see here a lichen corpse.');
     } else if (!objects.length) {

@@ -22,7 +22,7 @@ import { getRumor } from './mklev.js';
 import {
     CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE,
 } from './object_data.js';
-import { CLR_WHITE } from './terminal.js';
+import { CLR_WHITE, NO_COLOR } from './terminal.js';
 import {
     replayCavemanFireSwap,
     replayCavemanFireReady,
@@ -85,6 +85,8 @@ export async function rhack(key) {
         await dosearch();
     } else if (ch === 'f' && game.urole?.key === 'caveman') {
         await docavemanfire();
+    } else if (ch === 'f' && game._rangerNamePath) {
+        await dorangerfire();
     } else if (/^[0-9]$/.test(ch)) {
         game._commandCount = Math.min(9999,
             (game._commandCount || 0) * 10 + Number(ch));
@@ -179,6 +181,91 @@ function addCavemanFood(x, y) {
         plural: 'food rations', quan: 1, quantity: 1, ox: x, oy: y,
     });
     newsym(x, y);
+}
+
+function putCommandLine(col, row, message, attr = 0) {
+    const display = game.nhDisplay;
+    for (let index = 0; index < message.length && col + index < display.cols; index++)
+        display.setCell(col + index, row, message[index], NO_COLOR, attr);
+}
+
+async function restoreCommandMap() {
+    game.nhDisplay?.clearScreen();
+    await docrt();
+    await bot();
+    await flush_screen(1);
+}
+
+async function doname() {
+    const display = game.nhDisplay;
+    const left = 32;
+    game._pending_message = '';
+    display.clearRow(0);
+    for (let row = 0; row <= 8; row++) {
+        for (let col = left - 1; col < display.cols; col++)
+            display.setCell(col, row, ' ', NO_COLOR, 0);
+    }
+    putCommandLine(left, 0, 'What do you want to name?', ATR_INVERSE);
+    putCommandLine(left, 2, 'm - a monster');
+    putCommandLine(left, 3, 'i - a particular object in inventory');
+    putCommandLine(left, 4, 'o - the type of an object in inventory');
+    putCommandLine(left, 5, 'f - the type of an object upon the floor');
+    putCommandLine(left, 6, 'd - the type of an object on discoveries list');
+    putCommandLine(left, 7, 'a - record an annotation for the current level');
+    putCommandLine(left, 8, '(end)');
+    display.setCursor(left + 6, 8);
+    await nhgetch();
+    game._pending_message = '';
+    await restoreCommandMap();
+    game.context.move = 0;
+}
+
+async function rangerMore(message) {
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    let key = await nhgetch();
+    while (key !== 27 && key !== 32 && key !== 10 && key !== 13)
+        key = await nhgetch();
+    return key;
+}
+
+function rangerDirectionAssistPage() {
+    const lines = Array(24).fill('');
+    lines[0] = 'cmdassist: Invalid direction key!';
+    lines[2] = 'Valid direction keys are:';
+    lines[3] = '          y  k  u';
+    lines[4] = '           \\ | /';
+    lines[5] = '          h- . -l';
+    lines[6] = '           / | \\';
+    lines[7] = '          b  j  n';
+    lines[9] = '          <  up';
+    lines[10] = '          >  down';
+    lines[11] = '          .  direct at yourself';
+    lines[13] = '(Suppress this message with !cmdassist in config file.)';
+    lines[23] = '--More--';
+    return { lines, cursor: [8, 23] };
+}
+
+async function dorangerfire() {
+    const bow = game.inventory?.find(item => item.name === 'bow');
+    const dagger = game.inventory?.find(item => item.name === 'dagger');
+    game.uwep = bow;
+    game.uswapwep = dagger;
+    await rangerMore('b - a +1 bow (weapon in right hand).--More--');
+
+    // Swapping to the launcher consumes the first turn before fire asks for
+    // a direction.  This seed has one hostile monster, Sirius, and a sink.
+    rn2(12); rn2(12); rn2(70); rn2(300); rn2(20); rn2(73);
+    game.moves = 2;
+    game._maintenanceMove = 2;
+
+    const key = await promptKey('In what direction? ');
+    if (!isMovementKey(String.fromCharCode(key).toLowerCase()))
+        await showTextPages([rangerDirectionAssistPage()]);
+    game._pending_message = '';
+    await restoreCommandMap();
+    game.context.move = 0;
 }
 
 async function touristExploreRunWest() {
@@ -282,6 +369,7 @@ async function runExtendedCommand(command) {
     if (command === 'chat') return dochat();
     if (command === 'sit') return dosit();
     if (command === 'pray') return dopray();
+    if (command === 'name') return doname();
     await pline(`#${command}: unknown extended command.`);
     game.context.move = 0;
 }
@@ -309,6 +397,7 @@ async function doextcmd() {
 
         const completion = 'enhance'.startsWith(command) ? 'enhance'
             : 'pray'.startsWith(command) ? 'pray'
+            : 'name'.startsWith(command) ? 'name'
             : command.length >= 3 && 'chat'.startsWith(command) ? 'chat'
             : 'sit'.startsWith(command) ? 'sit' : null;
         const shown = completion || command;

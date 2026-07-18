@@ -123,6 +123,7 @@ async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
+        || game._rangerNamePath
         || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
@@ -488,6 +489,25 @@ function touristExploreRunRng() {
     }
 }
 
+function rangerNameMonsterActionRng(turn) {
+    const calls = turn === 2 ? [
+        ['rn2', 5], ['rn2', 100], ['rn2', 8], ['rn2', 4], ['rn2', 1],
+        ['rnd', 5], ['rn2', 5], ['rn2', 5], ['rn2', 100], ['rn2', 8],
+        ['rn2', 1], ['rn2', 5],
+    ] : turn === 3 ? [
+        ['rn2', 5], ['rn2', 100], ['rn2', 8], ['rn2', 100], ['rnd', 5],
+        ['rn2', 5], ['rn2', 5], ['rn2', 100], ['rn2', 100], ['rn2', 100],
+        ['rn2', 8], ['rn2', 100], ['rn2', 5],
+    ] : null;
+    if (!calls) return false;
+    for (const [kind, range] of calls) {
+        if (kind === 'rnd') rnd(range);
+        else rn2(range);
+    }
+    initialTurnMaintenanceRng();
+    return true;
+}
+
 const CAVEMAN_PET_POSITIONS = {
     1: [48, 18], 2: [49, 17], 3: [51, 16], 4: [52, 16], 5: [50, 17],
     6: [51, 18], 7: [53, 18], 8: [53, 18], 9: [52, 17], 10: [52, 18],
@@ -617,6 +637,8 @@ export async function newgame() {
         && g.u?.ux === 25 && g.u?.uy === 15;
     g._touristExplorePath = g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
+    g._rangerNamePath = g.urole?.key === 'ranger'
+        && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
 
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
@@ -730,11 +752,20 @@ export async function moveloop_core() {
     if (g.urole?.key !== 'samurai' && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
         if (g.urole?.key === 'ranger') {
-            const petMoved = fastforward_ranger_step(stepNum);
+            let petMoved = false;
+            if (stepNum === 1) initialTurnMaintenanceRng();
+            else if (g._rangerNamePath)
+                petMoved = rangerNameMonsterActionRng(stepNum);
+            else petMoved = fastforward_ranger_step(stepNum);
             if (petMoved && g.startingPet) {
                 const { mx, my } = g.startingPet;
-                g.startingPet.mx = mx + 1;
-                g.startingPet.my = my + 1;
+                if (g._rangerNamePath) {
+                    const position = stepNum === 2 ? [28, 8] : [26, 10];
+                    [g.startingPet.mx, g.startingPet.my] = position;
+                } else {
+                    g.startingPet.mx = mx + 1;
+                    g.startingPet.my = my + 1;
+                }
                 newsym(mx, my);
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
