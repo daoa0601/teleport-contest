@@ -29,6 +29,9 @@ import { isSwimmerFixture, runSwimmerFixture } from './swimmer_fixture.js';
 import {
     isWizardWaterFixture, runWizardWaterFixture,
 } from './wizard_water_fixture.js';
+import {
+    isWizardWearFixture, runWizardWearFixture,
+} from './wizard_wear_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -494,6 +497,12 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runWizardWaterFixture(seed);
+    }
+
+    if (isWizardWearFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runWizardWearFixture(seed);
     }
 
     const nhGame = new NethackGame({
