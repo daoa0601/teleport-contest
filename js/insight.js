@@ -58,7 +58,9 @@ function attributePages() {
     page1[15] = game._goldCount
         ? `  Your wallet contains ${game._goldCount} zorkmids.`
         : '  Your wallet is empty.';
-    page1[16] = `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
+    page1[16] = game.flags?.pickup && game.flags?.pickup_types
+        ? `  Autopickup is on for '${game.flags.pickup_types}' plus thrown.`
+        : `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
     page1[18] = ' Characteristics:';
     page1[19] = `  Your strength is ${formatStrength(stats[0])}.`;
     page1[20] = `  Your dexterity is ${stats[1]}.`;

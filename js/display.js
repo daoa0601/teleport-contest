@@ -4,13 +4,14 @@
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import {
-    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS,
+    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS, FOUNTAIN, ALTAR,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
 } from './const.js';
 import {
     NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
+    CLR_BRIGHT_BLUE,
     DEC_TO_UNICODE,
 } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE } from './object_data.js';
@@ -82,6 +83,8 @@ function terrain_glyph(loc, x, y) {
         if (game.level?.upstair?.x === x && game.level?.upstair?.y === y)
             return { ch: '<', color: CLR_YELLOW, dec: false };
         return { ch: '>', color: CLR_YELLOW, dec: false };
+    case FOUNTAIN:   return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
+    case ALTAR:      return { ch: '_', color: NO_COLOR, dec: false };
     // Wall types → DEC line-drawing characters
     case HWALL:     return dec ? { ch: 'q', color: NO_COLOR, dec: true } : { ch: '-', color: NO_COLOR, dec: false };
     case VWALL:     return dec ? { ch: 'x', color: NO_COLOR, dec: true } : { ch: '|', color: NO_COLOR, dec: false };

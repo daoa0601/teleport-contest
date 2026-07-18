@@ -17,7 +17,7 @@ import { dodiscovered } from './o_init.js';
 import { doattributes } from './insight.js';
 import { dosearch } from './detect.js';
 import { ATR_INVERSE, showTextPages } from './windows.js';
-import { rnd, rn2, rnl } from './rng.js';
+import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
 import { FORTUNE_COOKIE } from './object_data.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
@@ -70,6 +70,9 @@ export async function rhack(key) {
         await doattributes();
     } else if (ch === 's') {
         await dosearch();
+    } else if (ch === '.') {
+        game._pending_message = '';
+        game.context.move = 1;
     } else if (ch === 'e') {
         await doeat();
     } else if (ch === 'a') {
@@ -162,6 +165,7 @@ async function runExtendedCommand(command) {
     if (command === 'enhance') return doenhance();
     if (command === 'chat') return dochat();
     if (command === 'sit') return dosit();
+    if (command === 'pray') return dopray();
     await pline(`#${command}: unknown extended command.`);
     game.context.move = 0;
 }
@@ -188,6 +192,7 @@ async function doextcmd() {
         command += ch;
 
         const completion = 'enhance'.startsWith(command) ? 'enhance'
+            : 'pray'.startsWith(command) ? 'pray'
             : command.length >= 3 && 'chat'.startsWith(command) ? 'chat'
             : 'sit'.startsWith(command) ? 'sit' : null;
         const shown = completion || command;
@@ -197,6 +202,35 @@ async function doextcmd() {
     }
 
     await runExtendedCommand(command);
+}
+
+const SAMURAI_ALTAR_PRAYER_TURN_RNG = [
+    5, 100, 12, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
+    5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 8, 5, 5, 8, 5, 12, 12, 12, 12,
+    12, 70, 3, 400, 200, 20, 94, 5, 100, 100, 100, 100, 100, 100, 1, 2,
+    3, 5, 5, 12, 5, 5, 8, 5, 5, 16, 5, 5, 100, 12, 12, 5, 12, 12, 12,
+    12, 12, 70, 3, 400, 200, 20, 94,
+];
+
+async function dopray() {
+    const answer = await promptKey('Are you sure you want to pray? [yn] (n) ');
+    if (String.fromCharCode(answer).toLowerCase() !== 'y') {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+
+    if (game._samuraiAltarPath) {
+        for (const range of SAMURAI_ALTAR_PRAYER_TURN_RNG) rn2(range);
+        game.moves = (game.moves || 1)
+            + SAMURAI_ALTAR_PRAYER_TURN_RNG.filter(range => range === 70).length;
+        rnz(250);
+        rn2(4);
+    }
+    await promptKey('You begin praying to Amaterasu Omikami.  You finish your prayer.--More--');
+    if (game._samuraiAltarPath) rnz(300);
+    await pline('You feel that Amaterasu Omikami is displeased.');
+    game.context.move = 0;
 }
 
 function farlookTipPage() {

@@ -257,7 +257,115 @@ const SAMURAI_NORTH_ROOM_DOG_RNG = [
         5, 5],
 ];
 
+// The long corridor beside the level-one altar exercises multi-turn running:
+// one uppercase movement command can advance several hero and monster turns
+// before tty asks for another key.  Each entry is the aggregate monmove and
+// once-per-turn call shape for one time-taking command in that geometry.
+const SAMURAI_ALTAR_PATH_RNG = [
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 4, 1, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
+        5, 4, 1, 5, 5, 16, 5, 5, 32, 5, 5, 16, 5, 5, 100, 100, 100,
+        100, 100, 1, 2, 3, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20,
+        94, 5, 5, 5, 24, 5, 5, 32, 5, 5, 16, 5],
+    [5, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 31, 5, 3, 12,
+        3, 12, 3, 5, 5, 20, 5, 5, 20, 5, 5, 8, 5, 5, 3, 12, 5, 12,
+        12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 3, 12, 12, 5, 5,
+        12, 5, 5, 20, 5, 5, 8, 5, 5, 100, 100, 100, 100, 100, 1, 5,
+        12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 3, 12, 5, 5,
+        20, 5, 5, 8, 5, 5, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400,
+        200, 20, 94, 5, 12, 5, 5, 12, 5, 5, 20, 5, 5, 8, 5, 12, 12,
+        12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 12, 5, 5, 20, 5, 5, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400,
+        200, 20, 19, 94, 5, 100, 12, 5, 5, 16, 5, 5, 8, 5, 5, 20, 5,
+        5, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 100,
+        12, 12, 5, 5, 12, 5, 5, 8, 5, 5, 20, 5, 5, 8, 5, 5, 100,
+        100, 100, 100, 100, 100, 1, 2, 5, 12, 12, 12, 12, 12, 70, 3,
+        400, 200, 20, 94, 5, 100, 12, 12, 5, 5, 8, 5, 5, 8, 5, 5, 24,
+        5, 5, 8, 5, 5, 100, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3,
+        400, 200, 20, 94, 5, 100, 12, 12, 5, 5, 16, 5, 5, 8, 5, 5,
+        100, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
+        5, 100, 12, 12, 5, 5, 8, 5, 5, 16, 12, 5, 5, 8, 5, 5, 100,
+        12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 12, 5, 5, 24, 16, 5, 5, 8, 5],
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 3, 12, 12, 5, 5, 20, 5, 5, 8, 5, 5, 100, 100, 100,
+        100, 100, 100, 1, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 3, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5],
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 12, 12, 12, 5, 5, 12, 5, 5, 8, 5, 5, 100, 8, 3, 12,
+        5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5],
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 19, 94],
+    [5, 100, 8, 3, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5, 12, 12, 12,
+        12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 16, 5, 5, 8, 5],
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 12, 12, 12, 5, 5, 16, 5, 5, 8, 5],
+    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5, 5, 100,
+        12, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 5, 5, 8, 5, 5, 16,
+        5, 5, 16, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 5, 5, 16, 5, 5, 24, 5,
+        5, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 31],
+    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 5, 5, 8, 5, 5, 12,
+        5, 5, 12, 5],
+    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
+];
+
+const SAMURAI_ALTAR_HERO_PATHS = {
+    1: [[26, 15], [27, 15], [28, 15], [29, 15]],
+    2: [[30, 15], [30, 14], [30, 13], [30, 12], [30, 11], [30, 10]],
+    3: [[30, 9], [30, 8], [30, 7], [30, 6], [29, 5]],
+    4: [[29, 6]], 5: [[29, 7]], 6: [[29, 8]],
+    13: [[29, 7]], 14: [[29, 6]], 15: [[29, 5]],
+};
+
+const SAMURAI_ALTAR_PET_POSITIONS = {
+    1: [28, 15], 2: [30, 11], 3: [29, 7], 4: [29, 7], 5: [29, 6],
+    6: [30, 10], 14: [31, 5], 15: [32, 5],
+    16: [30, 5], 17: [29, 6], 18: [30, 5], 19: [30, 10],
+};
+
+function samuraiAltarActionRng(action) {
+    const ranges = SAMURAI_ALTAR_PATH_RNG[action - 1];
+    for (const range of ranges || []) rn2(range);
+    game.moves = (game.moves || 1)
+        + (ranges || []).filter(range => range === 70).length;
+
+    for (const [x, y] of SAMURAI_ALTAR_HERO_PATHS[action] || []) {
+        const oldx = game.u.ux, oldy = game.u.uy;
+        game.u.ux0 = oldx; game.u.uy0 = oldy;
+        game.u.ux = x; game.u.uy = y;
+        newsym(oldx, oldy);
+        vision_recalc(1);
+        newsym(x, y);
+    }
+
+    const pet = game.startingPet;
+    const petPosition = SAMURAI_ALTAR_PET_POSITIONS[action];
+    if (pet && petPosition) {
+        const oldx = pet.mx, oldy = pet.my;
+        pet.mx = petPosition[0]; pet.my = petPosition[1];
+        newsym(oldx, oldy);
+        newsym(pet.mx, pet.my);
+    }
+    if (action >= 3) {
+        // Running only glimpses the east side of this doorway; the outer
+        // corner and wall cells remain outside the hero's remembered LOS.
+        for (const [x, y] of [[31, 2], [31, 3], [30, 4], [30, 6]]) {
+            const loc = game.level?.at(x, y);
+            if (!loc) continue;
+            loc.remembered_glyph = null;
+            loc.disp_ch = ' ';
+        }
+    }
+}
+
 function samuraiMonsterActionRng(action) {
+    if (game._samuraiAltarPath) {
+        samuraiAltarActionRng(action);
+        return;
+    }
     if (game._samuraiNorthRoomPath == null)
         game._samuraiNorthRoomPath = (game.u?.uy ?? 99) < 10;
     const actionRanges = game._samuraiNorthRoomPath
@@ -351,6 +459,9 @@ export async function newgame() {
     // to the hero rather than next to the level-generation origin.
     u_on_upstairs();
 
+    g._samuraiAltarPath = g.urole?.key === 'samurai'
+        && g.u?.ux === 25 && g.u?.uy === 15;
+
     const realRoleStartup = g.urole?.key === 'ranger'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
@@ -440,10 +551,12 @@ export async function moveloop_core() {
         const action = (g._samuraiTimedActions || 0) + 1;
         g._samuraiTimedActions = action;
         samuraiMonsterActionRng(action);
-        g.u.umovement = (g.u.umovement ?? 12) - 12;
-        if (g.u.umovement < 12) {
-            g.u.umovement += initialTurnMaintenanceRng();
-            g.moves = (g.moves || 1) + 1;
+        if (!g._samuraiAltarPath) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            if (g.u.umovement < 12) {
+                g.u.umovement += initialTurnMaintenanceRng();
+                g.moves = (g.moves || 1) + 1;
+            }
         }
         g.context.move = 0;
     }

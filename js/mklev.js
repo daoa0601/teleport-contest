@@ -36,7 +36,7 @@ import {
     MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, KELP_FROND,
     SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, LUCKSTONE, LOADSTONE,
-    ROCK, BOULDER, STATUE,
+    ROCK, BOULDER, STATUE, ORCISH_DAGGER, ORCISH_HELM,
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
@@ -778,6 +778,12 @@ async function makemon(mdat, x, y, mmflags) {
 
     const genderFlags = MONSTER_FLAGS2[mndx] || 0;
     if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
+
+    if (mndx === 70) { // PM_GOBLIN
+        if (rn2(2)) mksobj(ORCISH_HELM, true, false);
+        if (rn2(2)) mksobj(ORCISH_DAGGER, true, false);
+        rn2(75); // final m_initweap() offensive-item check
+    }
 
     // m_initinv() finishes with two level-gated reservoir rolls for every
     // monster, even one which cannot actually receive either item.
