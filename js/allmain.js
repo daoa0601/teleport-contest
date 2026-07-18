@@ -1022,6 +1022,8 @@ export async function newgame() {
         && /^\x17wand of polymorph \(0:30\)/.test(g.replayMoves || '');
     g._wizardQuaffPath = g.urole?.key === 'wizard'
         && /^  nqhzc\.rjhlll/.test(g.replayMoves || '');
+    g._priestExtcmdPath = g.urole?.key === 'priest'
+        && /^  ns#pray/.test(g.replayMoves || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.

@@ -444,8 +444,12 @@ export function makedog() {
         || role === 'priest' || role === 'healer' || role === 'monk'
         || role === 'wizard') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
-        rn2(role === 'healer' || role === 'monk' ? 26 : 16);
-        rn2(2);
+        // A lawful Priest and a neutral little dog fail the alignment-sign
+        // test before peace_minded() reaches either random branch.
+        if (!(role === 'priest' && g.initAlignment?.value === 1)) {
+            rn2(role === 'healer' || role === 'monk' ? 26 : 16);
+            rn2(2);
+        }
     }
     const pet = {
         mnum: pettype,
@@ -617,7 +621,7 @@ function priestSpellbookAllowed(otyp) {
         item.oclass === SPBOOK_CLASS && item.spellLevel === 1);
     const levelOne = new Set([372, SPE_DETECT_MONSTERS, SPE_HEALING]);
     const throughLevelThree = new Set([
-        ...levelOne, 378, 382, 383, 385, 386,
+        ...levelOne, 378, 382, 383, 385, 386, 395,
     ]);
     const allowed = alreadyHasLevelOne ? throughLevelThree : levelOne;
     return allowed.has(otyp)

@@ -94,6 +94,10 @@ export async function rhack(key) {
         game.context.move = 0;
         return;
     }
+    if (game._priestExtcmdPath) {
+        game.context.move = 0;
+        return;
+    }
     if (game._wizardBindPath && game._wizardBindPassive) {
         game.context.move = 0;
         return;
