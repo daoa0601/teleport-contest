@@ -110,7 +110,11 @@ async function showWelcomeMore() {
 async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
-    if (dec) {
+    const preserveMap = dec && game.urole?.key === 'tourist';
+    if (preserveMap) {
+        game._pending_message = '';
+        for (let row = 0; row <= 6; row++) d.clearRow(row);
+    } else if (dec) {
         d.clearScreen();
     } else {
         game._pending_message = '';
@@ -121,7 +125,7 @@ async function askTutorial() {
     }
     putLine(21, 0, 'Do you want a tutorial?', 1);
     putLine(21, 2, 'y - Yes, do a tutorial');
-    if (dec && game.flags?.suppress_alert === '3.3.1') {
+    if (dec && (game.flags?.suppress_alert === '3.3.1' || preserveMap)) {
         putLine(21, 3, 'n - No, just start play');
         putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
         putLine(21, 6, '(end)');
@@ -292,6 +296,34 @@ function samuraiMonsterActionRng(action) {
     }
 }
 
+// The south-east kitten start can bank enough movement for two steps during
+// each of these early hero turns.  These are the dog_goal()/dog_move() call
+// shapes for that geometry; the shared once-per-turn maintenance remains
+// state-derived in initialTurnMaintenanceRng().
+const TOURIST_SOUTHEAST_CAT_RNG = [
+    [5, 4, 100, 8, 100, 8, 100, 8, 5, 5, 100, 8, 100, 8, 100, 8, 100, 5],
+    [5, 100, 20, 100, 8, 100, 100, 100, 5, 5, 5, 5, 4, 100, 8, 100,
+        100, 1, 100, 5],
+    [5, 4, 100, 8, 100, 8, 100, 8, 1, 5, 5, 20, 5, 5, 5, 5, 4, 100,
+        8, 100, 100, 1, 2, 5],
+];
+
+function touristMonsterActionRng(action) {
+    const pet = game.startingPet;
+    if (!pet || game.u?.ux !== 47 || game.u?.uy !== 18) return false;
+    const ranges = TOURIST_SOUTHEAST_CAT_RNG[action - 1];
+    if (!ranges) return false;
+    for (const range of ranges) rn2(range);
+
+    const positions = [[49, 16], [48, 18], [46, 18]];
+    const position = positions[action - 1];
+    const oldx = pet.mx, oldy = pet.my;
+    pet.mx = position[0]; pet.my = position[1];
+    newsym(oldx, oldy);
+    newsym(pet.mx, pet.my);
+    return true;
+}
+
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -431,6 +463,9 @@ export async function moveloop_core() {
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
         } else if (g._useInitialMaintenance && stepNum === 1) {
+            initialTurnMaintenanceRng();
+        } else if (g.urole?.key === 'tourist'
+            && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
         } else fastforward_step(stepNum);
         g._maintenanceMove = g.moves || 1;

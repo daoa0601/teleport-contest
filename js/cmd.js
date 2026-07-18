@@ -359,10 +359,11 @@ async function doready() {
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
 async function dothrow() {
-    const letters = (game.inventory || [])
+    const inventoryLetters = (game.inventory || [])
         .filter(item => item.otyp === 18 || item.otyp === 24 || item.otyp === 83)
         .map(item => item.invlet)
         .join('');
+    const letters = `${(game._goldCount || 0) > 0 ? '$' : ''}${inventoryLetters}`;
     const key = await promptKey(`What do you want to throw? [${letters} or ?*] `);
     const item = game.inventory?.find(candidate => candidate.invlet === String.fromCharCode(key));
     if (!item) {
@@ -388,6 +389,7 @@ async function dothrow() {
     rn2(100); // obj_resists() while resolving the landed missile
     if (item.otyp === 18 && game.uwep?.otyp !== 83)
         await pline("You aren't wielding a bow, so you throw your arrow by hand.");
+    else game._pending_message = '';
     game.context.move = 1;
 }
 
