@@ -7,7 +7,7 @@ import { GameMap } from './game.js';
 
 const SAVE_VERSION = 1;
 const SAVE_PREFIX = 'teleport-save:';
-const EQUIPMENT_KEYS = ['uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmc', 'uarmu'];
+const EQUIPMENT_KEYS = ['uwep', 'uswapwep', 'uquiver', 'uarm', 'uarms', 'uarmc', 'uarmu'];
 const OMIT_KEYS = new Set([
     'nhDisplay', '_preNhgetchHook', 'coreCtx', 'currentSeed', 'mockStorage',
     'storage', 'datetime', 'replayMoves', '_screen_output', '_pending_message',

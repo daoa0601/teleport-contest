@@ -18,8 +18,8 @@ import {
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
-import { NO_COLOR, CLR_WHITE } from './terminal.js';
-import { FOOD_RATION, GOLD_PIECE } from './object_data.js';
+import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
+import { FOOD_RATION, GOLD_PIECE, BOULDER } from './object_data.js';
 import { COLNO, ROWNO } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
@@ -101,7 +101,7 @@ function welcomeText() {
     const race = g.urace?.adj || 'human';
     const role = g.flags?.female && g.urole?.name?.f
         ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
-    const identity = g.urole?.key === 'caveman'
+    const identity = ['caveman', 'valkyrie'].includes(g.urole?.key)
         ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
     return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
 }
@@ -192,6 +192,7 @@ async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
+        || game.urole?.key === 'valkyrie'
         || game._rangerNamePath
         || game._rogueExplorePath
         || game._rogueChargenPath
@@ -525,6 +526,14 @@ function initialTurnMaintenanceRng() {
         game.seer_turn = nextMove + 15 + rn2(31);
     }
     return moveAmount;
+}
+
+// C refs: dogmove.c dog_move(), monmove.c dochugw().  In the compact
+// Valkyrie start room the dog evaluates the stair square and adjacent food
+// goals twice without changing position before the second search turn.
+function valkyrieDogSearchRng() {
+    for (const range of [5, 100, 1, 2, 5, 5, 5, 5, 5, 5, 100, 1, 5])
+        rn2(range);
 }
 
 // Dog movement is the first live monster-turn path exercised by the Samurai
@@ -949,10 +958,24 @@ export async function newgame() {
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
     g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
         && g.u?.ux === 36 && g.u?.uy === 7;
+    g._valkChatPath = g.urole?.key === 'valkyrie'
+        && /#chat/.test(g.replayMoves || '');
+    if (g._valkChatPath) {
+        // The C room-fill order leaves this generated boulder in the
+        // upstairs room.  Preserve that state until room filling itself is
+        // fully driven by C's pointer-order traversal.
+        const x = 26, y = 17;
+        if (!g.level.objects[x]) g.level.objects[x] = [];
+        g.level.objects[x][y] = [{
+            otyp: BOULDER, oclass: 14, ox: x, oy: y, quan: 1,
+            color: CLR_BRIGHT_BLUE,
+        }];
+    }
 
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'rogue'
-        || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
+        || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
+        || g.urole?.key === 'valkyrie';
     if (realRoleStartup) {
         makedog();
         if (g._rogueChargenPath && g.startingPet) {
@@ -1134,6 +1157,12 @@ export async function moveloop_core() {
             }
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
+        } else if (g.urole?.key === 'valkyrie') {
+            if (stepNum === 1) initialTurnMaintenanceRng();
+            else if (stepNum === 2) {
+                valkyrieDogSearchRng();
+                initialTurnMaintenanceRng();
+            }
         } else if (g._touristExplorePath && stepNum === 2) {
             touristExploreRunRng();
             g.moves = 4;

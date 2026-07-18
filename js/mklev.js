@@ -2218,7 +2218,14 @@ async function makeniche(trap_type) {
             if (trap_type) {
                 let actualTrap = trap_type;
                 if (is_hole(actualTrap)) actualTrap = ROCKTRAP;
-                await maketrap(xx, yy + dy, actualTrap);
+                const trap = await maketrap(xx, yy + dy, actualTrap);
+                if (trap && actualTrap !== ROCKTRAP) trap.once = true;
+                const trapEngraving = actualTrap === TRAPDOOR
+                    ? 'Vlad was here'
+                    : (actualTrap === TELEP_TRAP || actualTrap === LEVEL_TELEP)
+                        ? 'ad aerarium' : null;
+                if (trapEngraving)
+                    wipeoutText(trapEngraving, 5);
             }
             dosdoor(xx, yy, aroom, SDOOR);
         } else {

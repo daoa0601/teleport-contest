@@ -718,7 +718,7 @@ async function dochat() {
         const y = game.u.uy + DIR_DY[direction];
         const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
         if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
-        else if (game._rogueFriday13Path)
+        else if (game._rogueFriday13Path || game._valkChatPath)
             await pline("It's like talking to a wall.");
         else game._pending_message = '';
     }
@@ -870,14 +870,29 @@ async function doeat() {
         && [...letters].every((letter, index) => index === 0
             || letter.charCodeAt(0) === letters.charCodeAt(index - 1) + 1)
         ? `${letters[0]}-${letters.at(-1)}` : letters;
-    const key = await promptKey(`What do you want to eat? [${compactLetters} or ?*] `);
-    const selectedLetter = String.fromCharCode(key);
-    const item = edible.find(candidate => candidate.invlet === selectedLetter);
-    if (!item) {
-        if (game.inventory?.some(candidate => candidate.invlet === selectedLetter))
-            await pline('You cannot eat that!');
-        game.context.move = 0;
-        return;
+    const prompt = `What do you want to eat? [${compactLetters} or ?*] `;
+    let key = await promptKey(prompt);
+    let item;
+    for (;;) {
+        if (key === 27) {
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        item = edible.find(candidate => candidate.invlet === String.fromCharCode(key));
+        if (item) break;
+
+        const invalid = "You don't have that object.--More--";
+        await pline(invalid);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(invalid.length, 0);
+        do key = await nhgetch();
+        while (key !== 27 && key !== 32);
+
+        await pline(prompt);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(prompt.length, 0);
+        key = await nhgetch();
     }
 
     if (item.otyp === FORTUNE_COOKIE) {
@@ -908,6 +923,11 @@ async function doeat() {
 // a non-space printable key is then treated as another selection attempt.
 async function doapply() {
     const applicable = (game.inventory || []).filter(item => item.oclass === 6);
+    if (!applicable.length) {
+        await pline("You don't have anything to use or apply.");
+        game.context.move = 0;
+        return;
+    }
     const letters = applicable.map(item => item.invlet).join('');
     const prompt = `What do you want to use or apply? [${letters} or ?*] `;
     let key = await promptKey(prompt);

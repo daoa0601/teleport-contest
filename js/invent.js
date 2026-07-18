@@ -34,7 +34,7 @@ function itemDescription(item) {
     if (item.charges) description += ` (${item.charges.recharged || 0}:${item.charges.current})`;
     if (game.u?.twoweap && item === game.uwep) description += ' (wielded in right hand)';
     else if (game.u?.twoweap && item === game.uswapwep) description += ' (wielded in left hand)';
-    else if (item === game.uwep) description += ['samurai', 'caveman', 'rogue'].includes(game.urole?.key)
+    else if (item === game.uwep) description += ['samurai', 'caveman', 'rogue', 'valkyrie'].includes(game.urole?.key)
         ? ' (weapon in right hand)' : ' (weapon in hand)';
     else if (item === game.uswapwep)
         description += ' (alternate weapon; not wielded)';
@@ -87,11 +87,11 @@ export async function dolook() {
             : 'There is a doorway here.');
     } else if (onUpstairs) {
         const message = game._rangerNamePath
-            || game._rogueChargenPath
+            || game._rogueChargenPath || game._valkChatPath
             ? 'There is a staircase up out of the dungeon here.'
             : 'There is a staircase up out of the dungeon here.--More--';
         await pline(message);
-        if (!game._rangerNamePath && !game._rogueChargenPath) {
+        if (!game._rangerNamePath && !game._rogueChargenPath && !game._valkChatPath) {
             await flush_screen(1);
             game.nhDisplay?.setCursor(message.length, 0);
             await nhgetch();

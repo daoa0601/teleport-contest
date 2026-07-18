@@ -9,10 +9,10 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SHORT_SWORD, KATANA, CLUB, BOW, YUMI, SLING,
-    SPLINT_MAIL, LEATHER_ARMOR, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    ARROW, YA, DART, DAGGER, SPEAR, SHORT_SWORD, KATANA, CLUB, BOW, YUMI, SLING,
+    SPLINT_MAIL, LEATHER_ARMOR, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
     SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER,
-    MAGIC_MARKER, BLINDFOLD,
+    MAGIC_MARKER, BLINDFOLD, OIL_LAMP,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
@@ -82,6 +82,14 @@ const SAMURAI_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const VALKYRIE_INVENTORY = [
+    { typ: SPEAR, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: DAGGER, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: SMALL_SHIELD, spe: 3, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -91,6 +99,10 @@ function oneItem(typ, spe = 0) {
 
 const ITEM_PRESENTATION = new Map([
     [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers', enchanted: true }],
+    [SPEAR, {
+        class: 'Weapons', name: 'spear', plural: 'spears', enchanted: true,
+        omitUncursed: true,
+    }],
     [BOW, { class: 'Weapons', name: 'bow', plural: 'bows', enchanted: true }],
     [ARROW, { class: 'Weapons', name: 'arrow', plural: 'arrows', enchanted: true }],
     [DART, {
@@ -119,6 +131,9 @@ const ITEM_PRESENTATION = new Map([
     }],
     [LEATHER_ARMOR, {
         class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
+    }],
+    [SMALL_SHIELD, {
+        class: 'Armor', name: 'small shield', plural: 'small shields', enchanted: true,
     }],
     [POT_SICKNESS, { class: 'Potions', name: 'potion of sickness', plural: 'potions of sickness' }],
     [LOCK_PICK, { class: 'Tools', name: 'lock pick', plural: 'lock picks' }],
@@ -176,6 +191,7 @@ const ITEM_PRESENTATION = new Map([
         charged: true, showBuc: false,
     }],
     [BLINDFOLD, { class: 'Tools', name: 'blindfold', plural: 'blindfolds' }],
+    [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps', charged: true }],
     [WAN_WISHING, {
         class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
         charged: true, showBuc: false,
@@ -258,10 +274,10 @@ export function makedog() {
     if (g.preferred_pet === 'n') return null;
     const role = g.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
-        && role !== 'samurai' && role !== 'tourist') return null;
+        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie') return null;
 
     let pettype = 16; // PM_LITTLE_DOG
-    if (role === 'tourist' || role === 'rogue') {
+    if (role === 'tourist' || role === 'rogue' || role === 'valkyrie') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
         else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
     }
@@ -276,7 +292,7 @@ export function makedog() {
     let hp = d(1, 8);
     if (hp === 1) hp++;
     const female = !!rn2(2);
-    if (role === 'tourist' || role === 'caveman') {
+    if (role === 'tourist' || role === 'caveman' || role === 'valkyrie') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
         rn2(16);
         rn2(2);
@@ -327,6 +343,9 @@ function inventoryItem(raw) {
             }
             : { ...view, omitUncursed: true };
     }
+    if (raw.otyp === DAGGER && game.urole?.key === 'valkyrie') {
+        view = { ...view, omitUncursed: true };
+    }
     if (raw.otyp === TIN) {
         view = raw.corpsenm === PM_LICHEN
             ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
@@ -371,10 +390,16 @@ function useStartingItem(item) {
             game.uquiver = item;
             item.ready = true;
         }
+    } else if (item.otyp === SPEAR) {
+        game.uwep = item;
+        item.wielded = true;
     } else if (item.otyp === DAGGER || item.otyp === KATANA || item.otyp === CLUB) {
         if (game.urole?.key === 'rogue' && game.uwep && !game.uquiver) {
             game.uquiver = item;
             item.ready = true;
+        } else if (game.urole?.key === 'valkyrie' && game.uwep && !game.uswapwep) {
+            game.uswapwep = item;
+            item.alternate = true;
         } else {
             game.uwep = item;
             item.wielded = true;
@@ -395,6 +420,9 @@ function useStartingItem(item) {
         item.worn = true;
     } else if (item.otyp === HAWAIIAN_SHIRT) {
         game.uarmu = item;
+        item.worn = true;
+    } else if (item.otyp === SMALL_SHIELD) {
+        game.uarms = item;
         item.worn = true;
     } else if (item.otyp === SPLINT_MAIL || item.otyp === LEATHER_ARMOR) {
         game.uarm = item;
@@ -475,10 +503,10 @@ function initAttributes() {
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
-        && role !== 'samurai' && role !== 'tourist') return false;
+        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
-    game.uarm = game.uarmc = game.uarmu = null;
+    game.uarm = game.uarms = game.uarmc = game.uarmu = null;
     game.moves = 1;
     if (role === 'caveman') {
         iniInv(CAVEMAN_INVENTORY);
@@ -525,6 +553,9 @@ export function uInitInventoryAttrs() {
                 { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
             ]);
         }
+    } else if (role === 'valkyrie') {
+        iniInv(VALKYRIE_INVENTORY);
+        if (!rn2(6)) iniInv(oneItem(OIL_LAMP, 1));
     } else {
         iniInv(RANGER_INVENTORY);
     }
@@ -604,4 +635,5 @@ export function setInitialArmorClass() {
     else if (game.urole?.key === 'rogue') game.u.uac = 7;
     else if (game.urole?.key === 'samurai') game.u.uac = 4;
     else if (game.urole?.key === 'tourist') game.u.uac = 10;
+    else if (game.urole?.key === 'valkyrie') game.u.uac = 6;
 }
