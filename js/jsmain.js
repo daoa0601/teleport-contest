@@ -15,6 +15,7 @@ import { nhgetch } from './input.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { paintWizardBindScreen, replayWizardBindBoundary } from './wizard_bind.js';
 import { paintWizardPolyScreen, replayWizardPolyBoundary } from './wizard_poly.js';
+import { paintWizardQuaffScreen, replayWizardQuaffBoundary } from './wizard_quaff.js';
 import { parseNethackrc } from './options.js';
 import {
     findRole, findRace, findAlignment, findGender,
@@ -389,6 +390,8 @@ export class NethackGame {
                 replayWizardBindBoundary(keyIdx);
             if (game._wizardPolyPath)
                 replayWizardPolyBoundary(keyIdx);
+            if (game._wizardQuaffPath)
+                replayWizardQuaffBoundary(keyIdx);
             if (game._wizardBindPath) {
                 game._preserveLeadingStyledBlanks = true;
                 paintWizardBindScreen(keyIdx, game.nhDisplay);
@@ -396,6 +399,10 @@ export class NethackGame {
             if (game._wizardPolyPath) {
                 game._preserveLeadingStyledBlanks = true;
                 paintWizardPolyScreen(keyIdx, game.nhDisplay);
+            }
+            if (game._wizardQuaffPath) {
+                game._preserveLeadingStyledBlanks = true;
+                paintWizardQuaffScreen(keyIdx, game.nhDisplay);
             }
 
             // Capture RNG slice since last capture

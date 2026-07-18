@@ -14,6 +14,30 @@ function ansiColor(code) {
     return 8;
 }
 
+// Decode an offline LZW-compressed JSON array.  Fixture screens are mostly
+// repeated dungeon rows, so this keeps large command sweeps compact without
+// depending on Node-only compression APIs in the browser build.
+export function decodeFixtureSnapshots(encoded) {
+    const binary = atob(encoded);
+    const codes = new Uint16Array(binary.length / 2);
+    for (let i = 0; i < codes.length; i++)
+        codes[i] = binary.charCodeAt(i * 2) | (binary.charCodeAt(i * 2 + 1) << 8);
+    const dictionary = Array.from({ length: 256 }, (_, i) => String.fromCharCode(i));
+    let next = 256;
+    let previous = dictionary[codes[0]] || '';
+    let decoded = previous;
+    for (let i = 1; i < codes.length; i++) {
+        const code = codes[i];
+        const entry = dictionary[code] ?? (code === next
+            ? previous + previous[0] : '');
+        if (!entry) throw new Error(`Invalid fixture LZW code ${code}`);
+        decoded += entry;
+        if (next < 65535) dictionary[next++] = previous + entry[0];
+        previous = entry;
+    }
+    return JSON.parse(decoded);
+}
+
 export function paintFixtureScreen(serialized, cursor, display) {
     if (serialized == null || !display) return;
     display.clearScreen();

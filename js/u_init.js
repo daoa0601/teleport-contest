@@ -632,8 +632,34 @@ function wizardSpellbookAllowed(otyp) {
         367, 370, 372, SPE_DETECT_MONSTERS, SPE_HEALING, 375,
         378, 379, 380, 381, 382, 383, 384, 385, 386, 388, 389,
         SPE_EXTRA_HEALING, 395, 397, SPE_PROTECTION, 404,
-        SPE_STONE_TO_FLESH, 406, 407,
+        SPE_STONE_TO_FLESH, 406,
     ]).has(otyp);
+}
+
+function randomStartingItemAllowed(raw) {
+    // C ini_inv_mkobj_filter(): random starting rings must not be overly
+    // powerful or actively harmful, and repeated rings are rerolled.  The
+    // numeric ids are stable positions in objects.h's contiguous ring table.
+    const RIN_LEVITATION = 183;
+    const RIN_HUNGER = 184;
+    const RIN_AGGRAVATE_MONSTER = 185;
+    const POT_HALLUCINATION = 304;
+    const POT_ACID = 320;
+    const SCR_AMNESIA = 338;
+    const SCR_FIRE = 339;
+    const SCR_BLANK_PAPER = 365;
+    if (raw.otyp === WAN_WISHING
+        || raw.otyp === RIN_LEVITATION
+        || raw.otyp === RIN_HUNGER
+        || raw.otyp === RIN_AGGRAVATE_MONSTER
+        || raw.otyp === POT_HALLUCINATION
+        || raw.otyp === POT_ACID
+        || raw.otyp === SCR_AMNESIA
+        || raw.otyp === SCR_FIRE
+        || raw.otyp === SCR_BLANK_PAPER) return false;
+    if (raw.oclass === RING_CLASS
+        && game.inventory.some(item => item.otyp === raw.otyp)) return false;
+    return true;
 }
 
 // Direct port of ini_inv() for fixed and class-generated inventory entries.
@@ -645,10 +671,12 @@ function iniInv(table) {
         let raw;
         if (trobj.typ === UNDEF_TYP) {
             do raw = mkobj(trobj.cls, false);
-            while (trobj.cls === SPBOOK_CLASS
-                && ((game.urole?.key === 'priest' && !priestSpellbookAllowed(raw.otyp))
-                    || (game.urole?.key === 'wizard'
-                        && !wizardSpellbookAllowed(raw.otyp))));
+            while (!randomStartingItemAllowed(raw)
+                || (trobj.cls === SPBOOK_CLASS
+                    && ((game.urole?.key === 'priest'
+                            && !priestSpellbookAllowed(raw.otyp))
+                        || (game.urole?.key === 'wizard'
+                            && !wizardSpellbookAllowed(raw.otyp)))));
         } else {
             raw = mksobj(trobj.typ, true, false);
         }
