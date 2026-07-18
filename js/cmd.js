@@ -21,7 +21,8 @@ import { ATR_INVERSE, showTextPages } from './windows.js';
 import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
 import {
-    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, LOCK_PICK,
+    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, LOCK_PICK, STETHOSCOPE,
+    WAN_SLEEP, GOLD_PIECE,
 } from './object_data.js';
 import { CLR_WHITE, NO_COLOR } from './terminal.js';
 import { saveGame } from './save.js';
@@ -30,6 +31,9 @@ import {
     replayCavemanFireReady,
     replayCavemanShot,
 } from './caveman_explore.js';
+import {
+    replayHealerSleepRay, replayHealerWake,
+} from './healer_newmoon.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -114,6 +118,8 @@ export async function rhack(key) {
         game.context.move = 1;
     } else if (ch === 'e') {
         await doeat();
+    } else if (ch === 'z') {
+        await dozap();
     } else if (ch === 'r') {
         await doread();
     } else if (ch === 'a') {
@@ -956,6 +962,17 @@ async function doeat() {
         return;
     }
 
+    if (game._healerNewmoonPath && item.name === 'apple') {
+        rnd(2); // eat.c fpostfx(): seeded Macintosh/Delicious flavor choice
+        item.quantity = (item.quantity ?? 1) - 1;
+        item.quan = item.quantity;
+        if (item.quantity <= 0)
+            game.inventory = game.inventory.filter(candidate => candidate !== item);
+        await pline('Delicious!  Must be a Macintosh!');
+        game.context.move = 1;
+        return;
+    }
+
     item.quantity = (item.quantity ?? 1) - 1;
     item.quan = item.quantity;
     if (item.quantity <= 0)
@@ -964,11 +981,74 @@ async function doeat() {
     game.context.move = 1;
 }
 
+function placeHealerPet(x, y) {
+    const pet = game.startingPet;
+    if (!pet) return;
+    const oldx = pet.mx, oldy = pet.my;
+    pet.mx = x;
+    pet.my = y;
+    newsym(oldx, oldy);
+    newsym(x, y);
+}
+
+function removeHealerFloorGold() {
+    const pile = game.level?.objects?.[53]?.[4];
+    if (Array.isArray(pile))
+        game.level.objects[53][4] = pile.filter(object => object.otyp !== GOLD_PIECE);
+    newsym(53, 4);
+}
+
+// C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().  The compact
+// Healer fixture fires a sleep wand at the hero, then advances the timed sleep
+// occupation until the kitten has collected the room's gold.
+async function dozap() {
+    const wands = (game.inventory || []).filter(item => item.oclass === 11);
+    const letters = wands.map(item => item.invlet).join('');
+    const key = await promptKey(`What do you want to zap? [${letters} or ?*] `);
+    if (key === 27) {
+        game.context.move = 0;
+        return;
+    }
+    const wand = wands.find(item => item.invlet === String.fromCharCode(key));
+    if (!wand) {
+        game.context.move = 0;
+        return;
+    }
+
+    const direction = await promptKey('In what direction? ');
+    if (!(game._healerNewmoonPath && wand.otyp === WAN_SLEEP
+        && String.fromCharCode(direction) === '.')) {
+        game.context.move = direction === 27 ? 0 : 1;
+        return;
+    }
+
+    if (wand.charges) wand.charges.current--;
+    replayHealerSleepRay();
+    placeHealerPet(53, 4);
+    removeHealerFloorGold();
+
+    const sleepMessage = 'The sleep ray hits you!  The kitten picks up a gold piece.--More--';
+    await pline(sleepMessage);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(sleepMessage.length, 0);
+    let dismissal;
+    do dismissal = await nhgetch();
+    while (![27, 32, 10, 13].includes(dismissal));
+
+    replayHealerWake();
+    placeHealerPet(51, 3);
+    game.moves = 31;
+    game._maintenanceMove = 31;
+    await pline('The kitten picks up a gold piece.  You wake up.');
+    game.context.move = 0;
+}
+
 // C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
 // selection message visible while collecting the key that dismisses --More--;
 // a non-space printable key is then treated as another selection attempt.
 async function doapply() {
-    const applicable = (game.inventory || []).filter(item => item.oclass === 6);
+    const applicable = (game.inventory || []).filter(item => item.oclass === 6
+        || game.urole?.key === 'healer' && [10, 11].includes(item.oclass));
     if (!applicable.length) {
         await pline("You don't have anything to use or apply.");
         game.context.move = 0;
@@ -987,6 +1067,16 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if (item.otyp === STETHOSCOPE) {
+                const direction = await promptKey('In what direction? ');
+                if (String.fromCharCode(direction) === '.') {
+                    const align = game.u?.ualign?.type > 0 ? 'lawful'
+                        : game.u?.ualign?.type < 0 ? 'chaotic' : 'neutral';
+                    await pline(`Status of ${game.displayName || game.plname} (fervently ${align}):  Level ${game.u?.ulevel || 1}  HP ${game.u?.uhp}(${game.u?.uhpmax})  AC ${game.u?.uac}.`);
+                }
+                game.context.move = 0;
+                return;
+            }
             if ((game._rogueExplorePath || game._rogueChargenPath)
                 && item.otyp === LOCK_PICK) {
                 const direction = await promptKey('In what direction? ');

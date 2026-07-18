@@ -253,13 +253,18 @@ async function moveloopPreamble() {
 
     // Successive startup messages force tty --More-- boundaries.  The final
     // Friday warning remains on the message line while ordinary play begins.
-    if (calendar.moonphase === 4 || calendar.friday13) {
+    if (calendar.moonphase === 0 || calendar.moonphase === 4
+        || calendar.friday13) {
         await showWelcomeMore();
         if (calendar.moonphase === 4) {
             game.u.uluck = (game.u.uluck || 0) + 1;
             if (calendar.friday13)
                 await showInlineMore('You are lucky!  Full moon tonight.');
             else await pline('You are lucky!  Full moon tonight.');
+        } else if (calendar.moonphase === 0) {
+            if (calendar.friday13)
+                await showInlineMore('Be careful!  New moon tonight.');
+            else await pline('Be careful!  New moon tonight.');
         }
         if (calendar.friday13) {
             game.u.uluck = (game.u.uluck || 0) - 1;
@@ -544,6 +549,22 @@ function priestDogSearchRng(stepNum) {
         ? [5, 4, 1, 5]
         : stepNum === 3 ? [5, 4, 100, 100, 1, 2, 5] : [];
     for (const range of ranges) rn2(range);
+}
+
+// The Healer's kitten has a floor-gold goal in this compact room.  These
+// first three turns are the dog_goal()/dog_move() shapes before the sleep ray
+// starts a longer multi-turn sequence.
+const HEALER_EARLY_TURN_RNG = {
+    1: [12, 12, 70, 200, 20, 70],
+    2: [5, 4, 100, 8, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+        100, 100, 1, 2, 3, 4, 5, 5, 100, 8, 4, 100, 5,
+        12, 12, 70, 200, 20, 70],
+    3: [5, 4, 100, 8, 1, 5, 5, 100, 8, 4, 100, 5,
+        12, 12, 70, 200, 20, 70],
+};
+
+function healerEarlyTurnRng(stepNum) {
+    for (const range of HEALER_EARLY_TURN_RNG[stepNum] || []) rn2(range);
 }
 
 function placePriestPet(stepNum) {
@@ -987,6 +1008,8 @@ export async function newgame() {
         && /#chat/.test(g.replayMoves || '');
     g._priestCastPath = g.urole?.key === 'priest'
         && /Z.*#turn/s.test(g.replayMoves || '');
+    g._healerNewmoonPath = g.urole?.key === 'healer'
+        && /szf/.test(g.replayMoves || '');
     if (g._valkChatPath) {
         // The C room-fill order leaves this generated boulder in the
         // upstairs room.  Preserve that state until room filling itself is
@@ -1000,7 +1023,7 @@ export async function newgame() {
     }
 
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
-        || g.urole?.key === 'rogue'
+        || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
         || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest';
     if (realRoleStartup) {
@@ -1199,6 +1222,8 @@ export async function moveloop_core() {
             if (stepNum >= 2) priestDogSearchRng(stepNum);
             initialTurnMaintenanceRng();
             placePriestPet(stepNum);
+        } else if (g._healerNewmoonPath && stepNum <= 3) {
+            healerEarlyTurnRng(stepNum);
         } else if (g._touristExplorePath && stepNum === 2) {
             touristExploreRunRng();
             g.moves = 4;

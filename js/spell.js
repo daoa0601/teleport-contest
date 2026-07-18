@@ -23,15 +23,17 @@ function clearMenu(left, bottom) {
 function spellLine(letter, spell, casting) {
     const name = spell.name.padEnd(23);
     const level = String(spell.level).padEnd(4);
-    const category = spell.category.padEnd(15);
-    const retention = casting ? '      100%' : '  76%-100%';
-    return `${letter} - ${name}${level}${category}0%${retention}`;
+    const category = spell.category.padEnd(14);
+    const fail = `${spell.fail ?? 0}%`.padStart(3);
+    const retention = casting ? '      100%'
+        : `  ${spell.retention ?? 100}%-100%`;
+    return `${letter} - ${name}${level}${category}${fail}${retention}`;
 }
 
 async function spellMenu(casting) {
     const spells = game.spells || [];
     const left = 20;
-    const endRow = casting ? 5 : 6;
+    const endRow = spells.length + (casting ? 3 : 4);
     clearMenu(left, endRow);
     putLine(left, 0, casting ? 'Choose which spell to cast' : 'Currently known spells', ATR_INVERSE);
     putLine(left, 2, '    Name                 Level Category     Fail Retention');
@@ -81,7 +83,11 @@ export async function docast() {
 
     if (spell.name === 'healing') {
         d(6, 4);
-        spell.retention = 76;
+        if (game.urole?.key === 'priest') {
+            for (const known of game.spells) known.retention = 76;
+        } else {
+            spell.retention = 76;
+        }
         await pline('You feel better.');
         game.context.move = 1;
         return;

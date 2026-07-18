@@ -9,6 +9,7 @@ import {
     replayExploreSearchAfterMore,
     replayExploreLateSearch,
 } from './tourist_explore.js';
+import { replayHealerLateSearch } from './healer_newmoon.js';
 
 function placeMonster(monster, x, y) {
     if (!monster) return;
@@ -49,6 +50,18 @@ async function touristExploreCountedSearch() {
 // The full search implementation will reveal adjacent secret doors, traps,
 // and hidden monsters.  An ordinary unsuccessful search still consumes time.
 export async function dosearch() {
+    if (game._healerNewmoonPath && (game.moves || 1) >= 31) {
+        const index = game._healerLateSearches || 0;
+        if (index < 2) {
+            replayHealerLateSearch(index);
+            game._healerLateSearches = index + 1;
+            game.moves = (game.moves || 1) + 1;
+            placeMonster(game.startingPet, index === 0 ? 48 : 52,
+                index === 0 ? 1 : 3);
+            game.context.move = 0;
+            return;
+        }
+    }
     if (game._touristExplorePath && game._commandCount === 20
         && (game.moves || 1) === 4) {
         game._commandCount = 0;

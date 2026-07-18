@@ -53,6 +53,7 @@ export function fastforward_pre_mklev() {
     // newpw(): Priest initial energy is 4 + rnd(3), before the human
     // racial point is added by u_init_misc().
     if (game.urole?.key === 'priest') game._initialPwBonus = rnd(3);
+    else if (game.urole?.key === 'healer') game._initialPwBonus = rnd(4);
     // u_init_misc; return the roll so the real hero state can retain it.
     return rn2(10);
 }

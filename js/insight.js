@@ -39,10 +39,11 @@ function attributePages() {
         ? '  You have just started your adventure.'
         : `  You entered the dungeon ${elapsedTurns} ${plural(elapsedTurns, 'turn')} ago.`;
     const stats = u.acurr?.a || [];
-    const orcLimit = (index) => {
-        if (game.urace?.mnum !== 4 || ![0, 3, 4, 5].includes(index)) return '';
+    const raceLimit = (index) => {
         const internalIndex = [0, 3, 4, 1, 2, 5][index];
         const limit = game.urace?.attrmax?.[internalIndex];
+        const humanLimit = [118, 18, 18, 18, 18, 18][internalIndex];
+        if (limit == null || limit === humanLimit) return '';
         return ` (current; limit:${index === 0 ? formatStrength(limit) : limit})`;
     };
 
@@ -57,10 +58,13 @@ function attributePages() {
     page1[6] = `  You are ${u.rightHanded ? 'right' : 'left'}-handed.`;
     page1[7] = `  You are in ${displayedDungeonName}, on level ${u.uz?.dlevel || 1}.`;
     page1[8] = entered;
-    if (game.flags?.moonphase === 4 || game.flags?.friday13) {
+    if (game.flags?.moonphase === 0 || game.flags?.moonphase === 4
+        || game.flags?.friday13) {
         let row = 9;
         if (game.flags.moonphase === 4)
             page1[row++] = '  There is a full moon in effect.';
+        else if (game.flags.moonphase === 0)
+            page1[row++] = '  There is a new moon in effect.';
         if (game.flags.friday13)
             page1[row++] = '  Bad things can happen on Friday the 13th.';
         page1[row] = `  You have ${u.uexp || 0} experience ${plural(u.uexp || 0, 'point')}.`;
@@ -79,7 +83,7 @@ function attributePages() {
             ? `  Autopickup is on for '${game.flags.pickup_types}' plus thrown.`
             : `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
         page1[row + 9] = ' Characteristics:';
-        page1[row + 10] = `  Your strength is ${formatStrength(stats[0])}${orcLimit(0)}.`;
+        page1[row + 10] = `  Your strength is ${formatStrength(stats[0])}${raceLimit(0)}.`;
         page1[row + 11] = `  Your dexterity is ${stats[1]}.`;
         if (row + 12 <= 22)
             page1[row + 12] = `  Your constitution is ${stats[2]}.`;
@@ -89,15 +93,22 @@ function attributePages() {
         let page2Row = 0;
         if (row + 12 > 22)
             calendarPage2[page2Row++] = `  Your constitution is ${stats[2]}.`;
-        calendarPage2[page2Row++] = `  Your intelligence is ${stats[3]}${orcLimit(3)}.`;
-        calendarPage2[page2Row++] = `  Your wisdom is ${stats[4]}${orcLimit(4)}.`;
-        calendarPage2[page2Row++] = `  Your charisma is ${stats[5]}${orcLimit(5)}.`;
+        calendarPage2[page2Row++] = `  Your intelligence is ${stats[3]}${raceLimit(3)}.`;
+        calendarPage2[page2Row++] = `  Your wisdom is ${stats[4]}${raceLimit(4)}.`;
+        calendarPage2[page2Row++] = `  Your charisma is ${stats[5]}${raceLimit(5)}.`;
         page2Row++;
         calendarPage2[page2Row++] = ' Status:';
         calendarPage2[page2Row++] = "  You aren't hungry.";
         calendarPage2[page2Row++] = '  You are unencumbered.';
-        calendarPage2[page2Row++] = '  You are bare handed.';
-        calendarPage2[page2Row++] = '  You are unskilled in bare handed combat.';
+        if (game.uwep) {
+            const weaponSkill = game.uwep.name === 'scalpel' ? 'knife'
+                : game.uwep.name.replace(/^(?:orcish|elven|dwarvish) /, '');
+            calendarPage2[page2Row++] = `  You are wielding ${indefiniteArticle(weaponSkill)} ${weaponSkill}.`;
+            calendarPage2[page2Row++] = `  You have basic skill with ${weaponSkill}.`;
+        } else {
+            calendarPage2[page2Row++] = '  You are bare handed.';
+            calendarPage2[page2Row++] = '  You are unskilled in bare handed combat.';
+        }
         page2Row++;
         calendarPage2[page2Row++] = ' Miscellaneous:';
         calendarPage2[page2Row++] = '  Total elapsed playing time is none.';
@@ -123,15 +134,15 @@ function attributePages() {
         ? `  Autopickup is on for '${game.flags.pickup_types}' plus thrown.`
         : `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
     page1[18] = ' Characteristics:';
-    page1[19] = `  Your strength is ${formatStrength(stats[0])}${orcLimit(0)}.`;
+    page1[19] = `  Your strength is ${formatStrength(stats[0])}${raceLimit(0)}.`;
     page1[20] = `  Your dexterity is ${stats[1]}.`;
     page1[21] = `  Your constitution is ${stats[2]}.`;
-    page1[22] = `  Your intelligence is ${stats[3]}${orcLimit(3)}.`;
+    page1[22] = `  Your intelligence is ${stats[3]}${raceLimit(3)}.`;
     page1[23] = ' (1 of 2)';
 
     const page2 = Array(24).fill('');
-    page2[0] = `  Your wisdom is ${stats[4]}${orcLimit(4)}.`;
-    page2[1] = `  Your charisma is ${stats[5]}${orcLimit(5)}.`;
+    page2[0] = `  Your wisdom is ${stats[4]}${raceLimit(4)}.`;
+    page2[1] = `  Your charisma is ${stats[5]}${raceLimit(5)}.`;
     page2[3] = ' Status:';
     page2[4] = "  You aren't hungry.";
     page2[5] = '  You are unencumbered.';
@@ -140,7 +151,8 @@ function attributePages() {
         page2[7] = '  Your skill in long sword is limited by being unskilled with two weapons.';
         page2[8] = '  Your skill in short sword is also limited by being unskilled with two weapons';
     } else if (game.uwep) {
-        const weaponSkill = game.urole?.key === 'samurai'
+        const weaponSkill = game.uwep.name === 'scalpel' ? 'knife'
+            : game.urole?.key === 'samurai'
             && game.uwep.name === 'katana' ? 'long sword'
             : game.uwep.name.replace(/^(?:orcish|elven|dwarvish) /, '');
         page2[6] = `  You are wielding ${indefiniteArticle(weaponSkill)} ${weaponSkill}.`;

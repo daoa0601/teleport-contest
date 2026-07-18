@@ -9,15 +9,16 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SPEAR, SHORT_SWORD, KATANA, MACE, CLUB, BOW, YUMI, SLING,
-    SPLINT_MAIL, LEATHER_ARMOR, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
-    SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER,
+    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, SHORT_SWORD, KATANA, MACE, CLUB, BOW, YUMI, SLING,
+    SPLINT_MAIL, LEATHER_ARMOR, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
-    POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER, SCR_MAGIC_MAPPING,
-    SPE_DETECT_MONSTERS, SPE_HEALING, WAN_WISHING, GOLD_PIECE,
+    POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER, SCR_MAGIC_MAPPING,
+    SPE_DETECT_MONSTERS, SPE_HEALING, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH,
+    WAN_SLEEP, WAN_WISHING, GOLD_PIECE,
     FLINT, ROCK,
 } from './object_data.js';
 
@@ -103,6 +104,20 @@ const PRIEST_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const HEALER_INVENTORY = [
+    { typ: SCALPEL, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: LEATHER_GLOVES, spe: 1, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: STETHOSCOPE, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: POT_HEALING, spe: 0, cls: POTION_CLASS, min: 4, max: 4, bless: UNDEF_BLESS },
+    { typ: POT_EXTRA_HEALING, spe: 0, cls: POTION_CLASS, min: 4, max: 4, bless: UNDEF_BLESS },
+    { typ: WAN_SLEEP, spe: UNDEF_SPE, cls: WAND_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: SPE_HEALING, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
+    { typ: SPE_EXTRA_HEALING, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
+    { typ: SPE_STONE_TO_FLESH, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
+    { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -126,6 +141,10 @@ const ITEM_PRESENTATION = new Map([
         omitUncursed: true,
     }],
     [MACE, { class: 'Weapons', name: 'mace', plural: 'maces', enchanted: true }],
+    [SCALPEL, {
+        class: 'Weapons', name: 'scalpel', plural: 'scalpels', enchanted: true,
+        omitUncursed: true,
+    }],
     [CLUB, { class: 'Weapons', name: 'club', plural: 'clubs', enchanted: true, omitUncursed: true }],
     [SLING, { class: 'Weapons', name: 'sling', plural: 'slings', enchanted: true, omitUncursed: true }],
     [SHORT_SWORD, {
@@ -150,6 +169,11 @@ const ITEM_PRESENTATION = new Map([
     [SMALL_SHIELD, {
         class: 'Armor', name: 'small shield', plural: 'small shields', enchanted: true,
     }],
+    [LEATHER_GLOVES, {
+        class: 'Armor', name: 'pair of leather gloves',
+        plural: 'pairs of leather gloves', enchanted: true,
+    }],
+    [POT_HEALING, { class: 'Potions', name: 'potion of healing', plural: 'potions of healing' }],
     [POT_SICKNESS, { class: 'Potions', name: 'potion of sickness', plural: 'potions of sickness' }],
     [LOCK_PICK, { class: 'Tools', name: 'lock pick', plural: 'lock picks' }],
     [SACK, { class: 'Tools', name: 'sack', plural: 'sacks', empty: true }],
@@ -203,6 +227,16 @@ const ITEM_PRESENTATION = new Map([
         plural: 'spellbooks of detect monsters', spellName: 'detect monsters',
         spellLevel: 1, spellCategory: 'divination', appearance: 'silver',
     }],
+    [SPE_EXTRA_HEALING, {
+        class: 'Spellbooks', name: 'spellbook of extra healing',
+        plural: 'spellbooks of extra healing', spellName: 'extra healing',
+        spellLevel: 3, spellCategory: 'healing', appearance: 'dog eared',
+    }],
+    [SPE_STONE_TO_FLESH, {
+        class: 'Spellbooks', name: 'spellbook of stone to flesh',
+        plural: 'spellbooks of stone to flesh', spellName: 'stone to flesh',
+        spellLevel: 3, spellCategory: 'healing', appearance: 'stained',
+    }],
     [EXPENSIVE_CAMERA, {
         class: 'Tools', name: 'expensive camera', plural: 'expensive cameras',
         charged: true, showBuc: false,
@@ -210,6 +244,7 @@ const ITEM_PRESENTATION = new Map([
     [CREDIT_CARD, { class: 'Tools', name: 'credit card', plural: 'credit cards' }],
     [TIN_OPENER, { class: 'Tools', name: 'tin opener', plural: 'tin openers' }],
     [LEASH, { class: 'Tools', name: 'leash', plural: 'leashes' }],
+    [STETHOSCOPE, { class: 'Tools', name: 'stethoscope', plural: 'stethoscopes' }],
     [TOWEL, { class: 'Tools', name: 'towel', plural: 'towels' }],
     [MAGIC_MARKER, {
         class: 'Tools', name: 'magic marker', plural: 'magic markers',
@@ -219,6 +254,10 @@ const ITEM_PRESENTATION = new Map([
     [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps', charged: true }],
     [WAN_WISHING, {
         class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
+        charged: true, showBuc: false,
+    }],
+    [WAN_SLEEP, {
+        class: 'Wands', name: 'wand of sleep', plural: 'wands of sleep',
         charged: true, showBuc: false,
     }],
 ]);
@@ -301,11 +340,11 @@ export function makedog() {
     const role = g.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
-        && role !== 'priest') return null;
+        && role !== 'priest' && role !== 'healer') return null;
 
     let pettype = 16; // PM_LITTLE_DOG
     if (role === 'tourist' || role === 'rogue' || role === 'valkyrie'
-        || role === 'priest') {
+        || role === 'priest' || role === 'healer') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
         else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
     }
@@ -321,9 +360,9 @@ export function makedog() {
     if (hp === 1) hp++;
     const female = !!rn2(2);
     if (role === 'tourist' || role === 'caveman' || role === 'valkyrie'
-        || role === 'priest') {
+        || role === 'priest' || role === 'healer') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
-        rn2(16);
+        rn2(role === 'healer' ? 26 : 16);
         rn2(2);
     }
     const pet = {
@@ -422,7 +461,8 @@ function useStartingItem(item) {
     } else if (item.otyp === SPEAR || item.otyp === MACE) {
         game.uwep = item;
         item.wielded = true;
-    } else if (item.otyp === DAGGER || item.otyp === KATANA || item.otyp === CLUB) {
+    } else if (item.otyp === DAGGER || item.otyp === SCALPEL
+        || item.otyp === KATANA || item.otyp === CLUB) {
         if (game.urole?.key === 'rogue' && game.uwep && !game.uquiver) {
             game.uquiver = item;
             item.ready = true;
@@ -453,6 +493,9 @@ function useStartingItem(item) {
     } else if (item.otyp === SMALL_SHIELD) {
         game.uarms = item;
         item.worn = true;
+    } else if (item.otyp === LEATHER_GLOVES) {
+        game.uarmg = item;
+        item.worn = true;
     } else if (item.otyp === SPLINT_MAIL || item.otyp === LEATHER_ARMOR) {
         game.uarm = item;
         item.worn = true;
@@ -461,10 +504,16 @@ function useStartingItem(item) {
             name: item.spellName,
             level: item.spellLevel,
             category: item.spellCategory,
-            retention: 100,
+            retention: game.urole?.key === 'healer' ? 91 : 100,
+            fail: game.urole?.key === 'healer'
+                ? spellFailForHealer(item.spellName) : 0,
             otyp: item.otyp,
         });
     }
+}
+
+function spellFailForHealer(name) {
+    return name === 'extra healing' ? 68 : name === 'stone to flesh' ? 76 : 0;
 }
 
 function priestSpellbookAllowed(otyp) {
@@ -559,10 +608,10 @@ export function uInitInventoryAttrs() {
     const role = game.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
-        && role !== 'priest') return false;
+        && role !== 'priest' && role !== 'healer') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
-    game.uarm = game.uarms = game.uarmc = game.uarmu = null;
+    game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = null;
     game.moves = 1;
     if (role === 'caveman') {
         iniInv(CAVEMAN_INVENTORY);
@@ -616,11 +665,26 @@ export function uInitInventoryAttrs() {
         iniInv(PRIEST_INVENTORY);
         if (!rn2(5)) iniInv(oneItem(MAGIC_MARKER, 19));
         else if (!rn2(10)) iniInv(oneItem(OIL_LAMP, 1));
+    } else if (role === 'healer') {
+        game._goldCount = 1001 + rn2(1000);
+        iniInv(HEALER_INVENTORY);
+        if (!rn2(25)) iniInv(oneItem(OIL_LAMP, 1));
+        rn2(1);
+        mksobj(GOLD_PIECE, true, false);
     } else {
         iniInv(RANGER_INVENTORY);
     }
     initAttributes();
-    game.discoveries = role === 'priest' ? [
+    game.discoveries = role === 'healer' ? [
+        { class: 'Armor', name: 'pair of leather gloves', appearance: 'fencing gloves' },
+        { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'wrinkled' },
+        { class: 'Spellbooks', name: 'spellbook of extra healing', appearance: 'dog eared' },
+        { class: 'Spellbooks', name: 'spellbook of stone to flesh', appearance: 'stained' },
+        { class: 'Potions', name: 'potion of full healing', appearance: 'white', preknown: true },
+        { class: 'Potions', name: 'potion of healing', appearance: 'milky' },
+        { class: 'Potions', name: 'potion of extra healing', appearance: 'effervescent' },
+        { class: 'Wands', name: 'wand of sleep', appearance: 'platinum' },
+    ] : role === 'priest' ? [
         { class: 'Armor', name: 'small shield', appearance: 'wooden shield' },
         { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'purple' },
         { class: 'Spellbooks', name: 'spellbook of detect monsters', appearance: 'silver' },
@@ -702,4 +766,5 @@ export function setInitialArmorClass() {
     else if (game.urole?.key === 'tourist') game.u.uac = 10;
     else if (game.urole?.key === 'valkyrie') game.u.uac = 6;
     else if (game.urole?.key === 'priest') game.u.uac = 7;
+    else if (game.urole?.key === 'healer') game.u.uac = 8;
 }
