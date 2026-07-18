@@ -1093,7 +1093,10 @@ async function makelevel() {
             if (!is_branchlev()) rn2(3);
             if (!rn2(3)) await makeniche(TELEP_TRAP);
         } else if (rnd_rect()) {
-            // Fallback vault attempt — simplified
+            // C retries the reserved vault in the remaining free rectangle.
+            // Even a rectangle too small to fit it is sampled for all 101
+            // create_room() attempts before the vault is abandoned.
+            create_room(-1, -1, 2, 2, -1, -1, VAULT, true);
         }
     }
 
@@ -2164,7 +2167,7 @@ function mktrap_victim(trap) {
     } while (!rn2(5));
     // Victim type
     const PM_ELF = 18, PM_DWARF = 19, PM_ORC = 20, PM_GNOME = 21, PM_HUMAN = 22;
-    const PM_ARCHEOLOGIST = 305, PM_WIZARD = 321;
+    const PM_ARCHEOLOGIST = 305, PM_WIZARD = 317;
     let victim_mnum;
     switch (rn2(15)) {
     case 0:

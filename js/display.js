@@ -10,11 +10,13 @@ import {
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
 } from './const.js';
 import {
-    NO_COLOR, CLR_RED, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
+    NO_COLOR, CLR_RED, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
     CLR_BRIGHT_BLUE,
     DEC_TO_UNICODE,
 } from './terminal.js';
-import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE } from './object_data.js';
+import {
+    LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL,
+} from './object_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
@@ -22,6 +24,7 @@ const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
     if (object?.otyp === CORPSE && object?.corpsenm === 20) return CLR_RED;
+    if (object?.otyp === TOWEL) return CLR_MAGENTA;
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
     if (object?.otyp === FOOD_RATION) return CLR_BROWN;
     if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;
@@ -132,7 +135,9 @@ export function newsym(x, y) {
     const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
     if (monster && cansee(x, y)) {
         show_glyph_cell(x, y, monster.symbol || '?',
-            monster.pet ? CLR_WHITE : (monster.color ?? CLR_GRAY), false);
+            monster.pet ? CLR_WHITE
+                : monster.mnum === 116 ? CLR_MAGENTA
+                    : (monster.color ?? CLR_GRAY), false);
         return;
     }
 

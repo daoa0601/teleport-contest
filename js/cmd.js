@@ -549,10 +549,19 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
-            if (game._rogueExplorePath && item.otyp === LOCK_PICK) {
+            if ((game._rogueExplorePath || game._rogueChargenPath)
+                && item.otyp === LOCK_PICK) {
                 const direction = await promptKey('In what direction? ');
-                if (isMovementKey(String.fromCharCode(direction).toLowerCase()))
-                    await pline('You see no door there.');
+                const directionKey = String.fromCharCode(direction).toLowerCase();
+                if (isMovementKey(directionKey)) {
+                    const x = game.u.ux + DIR_DX[directionKey];
+                    const y = game.u.uy + DIR_DY[directionKey];
+                    const loc = game.level?.at(x, y);
+                    await pline(loc?.typ === DOOR
+                        && !(loc.doormask & (D_CLOSED | D_LOCKED))
+                        ? 'You cannot lock an open door.'
+                        : 'You see no door there.');
+                }
                 game.context.move = 1;
                 return;
             }

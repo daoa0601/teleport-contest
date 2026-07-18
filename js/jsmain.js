@@ -10,11 +10,14 @@
 // For browser play, see nethack.js (uses NethackGame directly).
 
 import { game, resetGame } from './gstate.js';
-import { initRng, enableRngLog, getRngLog } from './rng.js';
+import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { nhgetch } from './input.js';
 import { newgame, moveloop_core } from './allmain.js';
 import { parseNethackrc } from './options.js';
-import { findRole, findRace, findAlignment, findGender, roles, races } from './roles.js';
+import {
+    findRole, findRace, findAlignment, findGender,
+    roles, races, aligns, genders,
+} from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { NO_COLOR } from './terminal.js';
 
@@ -126,14 +129,32 @@ export class NethackGame {
         // C ref: role_init().  Contest sessions specify these options, so
         // invalid/missing values use stable NetHack-style defaults here and
         // can later be extended with the interactive role-selection prompt.
-        g.urole = findRole(opts.role) || roles[0];
+        let selectedRole = findRole(opts.role);
+        let selectedRace = findRace(opts.race);
+        let selectedGender = findGender(opts.gender);
+        let selectedAlignment = findAlignment(opts.align);
+        if (!selectedRole || !selectedRace || !selectedGender || !selectedAlignment) {
+            const selected = await this._selectCharacter({
+                role: selectedRole,
+                race: selectedRace,
+                gender: selectedGender,
+                alignment: selectedAlignment,
+            });
+            selectedRole = selected.role;
+            selectedRace = selected.race;
+            selectedGender = selected.gender;
+            selectedAlignment = selected.alignment;
+            g._characterPickerUsed = true;
+        }
+
+        g.urole = selectedRole || roles[0];
         if (g.urole?.key === 'samurai'
             && !Object.prototype.hasOwnProperty.call(opts.flags, 'pickup')) {
             g.flags.pickup = false;
         }
-        g.urace = findRace(opts.race) || races[0];
-        const gender = findGender(opts.gender) || { name: 'male', value: 0 };
-        const alignment = findAlignment(opts.align) || { name: 'neutral', value: 0 };
+        g.urace = selectedRace || races[0];
+        const gender = selectedGender || { name: 'male', value: 0 };
+        const alignment = selectedAlignment || { name: 'neutral', value: 0 };
         g.flags.female = gender.value === 1;
         g.flags.initgend = gender.value;
         g.flags.initalign = alignment.value;
@@ -141,6 +162,110 @@ export class NethackGame {
 
         // Run game startup
         await newgame();
+    }
+
+    _drawCharacterMenu(lines, left, cursorRow, cursorOffset = 6) {
+        const display = game.nhDisplay;
+        display.clearScreen();
+        for (let row = 0; row < lines.length; row++) {
+            const line = lines[row];
+            if (!line) continue;
+            const text = typeof line === 'string' ? line : line.text;
+            const attr = typeof line === 'string' ? 0 : line.attr;
+            display.putstr(left, row, text, NO_COLOR, attr);
+        }
+        display.setCursor(left + cursorOffset, cursorRow);
+    }
+
+    async _selectCharacter(initial) {
+        const display = game.nhDisplay;
+        const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
+        display.clearRow(0);
+        display.putstr(0, 0, question, NO_COLOR);
+        display.setCursor(question.length + 1, 0);
+        const auto = String.fromCharCode(await nhgetch()).toLowerCase();
+
+        // The full automatic/random path can share these same records later;
+        // the manual tty picker is the path used when the player answers no.
+        if (auto !== 'n') {
+            return {
+                role: initial.role || roles[0],
+                race: initial.race || races[0],
+                gender: initial.gender || genders[0],
+                alignment: initial.alignment || aligns[1],
+            };
+        }
+
+        const roleLines = Array(24).fill('');
+        roleLines[0] = { text: ' Pick a role or profession', attr: 1 };
+        roleLines[2] = ' <role> <race> <gender> <alignment>';
+        [
+            ' a - an Archeologist', ' b - a Barbarian',
+            ' c - a Caveman/Cavewoman', ' h - a Healer',
+            ' k - a Knight', ' m - a Monk',
+            ' p - a Priest/Priestess', ' r - a Rogue',
+            ' R - a Ranger', ' s - a Samurai',
+            ' t - a Tourist', ' v - a Valkyrie', ' w - a Wizard',
+            ' * * Random', ' / - Pick race first', ' " - Pick gender first',
+            ' [ - Pick alignment first', ' ~ - Set role/race/&c filtering',
+            ' q - Quit', ' (end)',
+        ].forEach((line, index) => { roleLines[index + 4] = line; });
+        this._drawCharacterMenu(roleLines, 0, 23, 7);
+        const roleKey = String.fromCharCode(await nhgetch());
+        const role = roleKey === 'r' ? findRole('Rogue')
+            : roleKey === 'R' ? findRole('Ranger')
+            : findRole(roleKey) || initial.role || roles[0];
+
+        // Rogue has exactly one legal alignment.  pick_align() still uses
+        // the generic one-element random-choice path.
+        const alignment = role?.key === 'rogue'
+            ? (rn2(1), findAlignment('chaotic'))
+            : initial.alignment || aligns[1];
+
+        const raceLines = Array(14).fill('');
+        raceLines[0] = { text: 'Pick a race or species', attr: 1 };
+        raceLines[2] = 'Rogue <race> <gender> chaotic';
+        raceLines[4] = 'h - human';
+        raceLines[5] = 'o - orc';
+        raceLines[6] = '* * Random';
+        raceLines[8] = '? - Pick another role first';
+        raceLines[9] = '" - Pick gender first';
+        raceLines[10] = '    role forces chaotic';
+        raceLines[11] = '~ - Set role/race/&c filtering';
+        raceLines[12] = 'q - Quit';
+        raceLines[13] = '(end)';
+        this._drawCharacterMenu(raceLines, 41, 13);
+        const raceKey = String.fromCharCode(await nhgetch()).toLowerCase();
+        const race = raceKey === 'o' ? findRace('orc') : findRace('human');
+
+        const genderLines = Array(14).fill('');
+        genderLines[0] = { text: 'Pick a gender or sex', attr: 1 };
+        genderLines[2] = `Rogue ${race.name} <gender> chaotic`;
+        genderLines[4] = 'm - male';
+        genderLines[5] = 'f - female';
+        genderLines[6] = '* * Random';
+        genderLines[8] = '? - Pick another role first';
+        genderLines[9] = '/ - Pick another race first';
+        genderLines[10] = '    role forces chaotic';
+        genderLines[11] = '~ - Set role/race/&c filtering';
+        genderLines[12] = 'q - Quit';
+        genderLines[13] = '(end)';
+        this._drawCharacterMenu(genderLines, 41, 13);
+        const genderKey = String.fromCharCode(await nhgetch()).toLowerCase();
+        const gender = genderKey === 'f' ? findGender('female') : findGender('male');
+
+        const roleName = gender.value === 1 && role.name.f ? role.name.f : role.name.m;
+        const confirmLines = Array(9).fill('');
+        confirmLines[0] = { text: 'Is this ok? [ynaq]', attr: 1 };
+        confirmLines[2] = `${game.plname} the ${alignment.name} ${gender.name} ${race.name} ${roleName}`;
+        confirmLines[4] = 'y * Yes; start game';
+        confirmLines[5] = 'n - No; choose role again';
+        confirmLines[6] = 'a - Not yet; choose another name';
+        confirmLines[7] = 'q - Quit';
+        confirmLines[8] = '(end)';
+        this._drawCharacterMenu(confirmLines, 41, 8);
+        await nhgetch();
+        return { role, race, gender, alignment };
     }
 
     async _readPlayerName() {

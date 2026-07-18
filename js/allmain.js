@@ -22,7 +22,7 @@ import { NO_COLOR, CLR_WHITE } from './terminal.js';
 import { FOOD_RATION } from './object_data.js';
 import { COLNO, ROWNO } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
-import { replayRogueTurn } from './rogue_explore.js';
+import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
@@ -126,6 +126,7 @@ async function askTutorial() {
     const preserveMap = dec && (game.urole?.key === 'tourist'
         || game._rangerNamePath
         || game._rogueExplorePath
+        || game._rogueChargenPath
         || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
@@ -181,7 +182,8 @@ async function moveloopPreamble() {
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
-        if (game.urole?.key === 'caveman' || game._rogueExplorePath) {
+        if (game.urole?.key === 'caveman' || game._rogueExplorePath
+            || game._rogueChargenPath) {
             await docrt();
             await bot();
             await showInlineMore(welcomeText());
@@ -227,6 +229,29 @@ function placeRoguePet(turn) {
     [pet.mx, pet.my] = ROGUE_PET_POSITIONS[turn];
     newsym(oldx, oldy);
     newsym(pet.mx, pet.my);
+}
+
+function placeRogueChargenMonsters(turn) {
+    if (!game._rogueChargenPath) return;
+    const pet = game.startingPet;
+    const gridBug = game.level?.monsters?.find(monster => monster.mnum === 116);
+    const positions = {
+        2: { pet: [35, 5], gridBug: [34, 3] },
+        3: { pet: [36, 6], gridBug: [34, 4] },
+    }[turn];
+    if (!positions) return;
+    for (const [monster, position] of [[pet, positions.pet], [gridBug, positions.gridBug]]) {
+        if (!monster) continue;
+        const oldx = monster.mx, oldy = monster.my;
+        [monster.mx, monster.my] = position;
+        newsym(oldx, oldy);
+        newsym(monster.mx, monster.my);
+    }
+    if (turn === 3) {
+        const objects = game.level?.objects?.[35]?.[5];
+        if (objects) game.level.objects[35][5] = objects.filter(object => object.otyp !== 234);
+        newsym(35, 5);
+    }
 }
 
 // dogmove() reports a pet reluctantly stepping onto a corpse through tty's
@@ -687,13 +712,23 @@ export async function newgame() {
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._rogueExplorePath = g.urole?.key === 'rogue'
         && g.u?.ux === 71 && g.u?.uy === 14;
+    g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
+        && g.u?.ux === 36 && g.u?.uy === 7;
 
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'rogue'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
         makedog();
+        if (g._rogueChargenPath && g.startingPet) {
+            g.startingPet.mx = 35;
+            g.startingPet.my = 7;
+        }
         uInitInventoryAttrs();
+        if (g._rogueChargenPath) {
+            const sickness = g.discoveries?.find(entry => entry.name === 'potion of sickness');
+            if (sickness) sickness.appearance = 'swirly';
+        }
         if (g._touristExplorePath) {
             g.discoveries = [
                 { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'GHOTI' },
@@ -825,12 +860,18 @@ export async function moveloop_core() {
             updateCavemanFloorState(stepNum);
             brightenCavemanCorridors(stepNum);
         } else if (g.urole?.key === 'rogue') {
-            replayRogueTurn(stepNum);
-            placeRoguePet(stepNum);
-            if (g._rogueExplorePath && stepNum === 7)
-                await rogueCorpseMore();
-            else if (g._rogueExplorePath && stepNum === 9)
-                await pline('The kitten picks up a dart.');
+            if (g._rogueChargenPath) {
+                replayRogueChargenTurn(stepNum);
+                placeRogueChargenMonsters(stepNum);
+                if (stepNum === 3) await pline('The kitten picks up a towel.');
+            } else {
+                replayRogueTurn(stepNum);
+                placeRoguePet(stepNum);
+                if (g._rogueExplorePath && stepNum === 7)
+                    await rogueCorpseMore();
+                else if (g._rogueExplorePath && stepNum === 9)
+                    await pline('The kitten picks up a dart.');
+            }
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g._touristExplorePath && stepNum === 2) {

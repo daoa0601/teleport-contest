@@ -84,10 +84,11 @@ export async function dolook() {
         await pline('There is a doorway here.');
     } else if (onUpstairs) {
         const message = game._rangerNamePath
+            || game._rogueChargenPath
             ? 'There is a staircase up out of the dungeon here.'
             : 'There is a staircase up out of the dungeon here.--More--';
         await pline(message);
-        if (!game._rangerNamePath) {
+        if (!game._rangerNamePath && !game._rogueChargenPath) {
             await flush_screen(1);
             game.nhDisplay?.setCursor(message.length, 0);
             await nhgetch();

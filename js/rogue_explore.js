@@ -19,10 +19,21 @@ const TURN_RNG = {
     12: `5 4 3 3 100 100 100 100 100 4 40 3 12 3 12 12 1 12 5 5 12 20 5 5 32 28 5 5 8 5 5 20 16 5 5 4 2 10 100 100 100 100 100 100 100 100 100 100 100 1 2 3 4 5 6 7 5 12 12 12 12 12 70 200 20 94`,
 };
 
+const CHARGEN_TURN_RNG = {
+    1: `12 12 70 400 20 94`,
+    2: `5 4 100 8 100 8 1 5 5 5 5 4 100 8 100 100 5 12 12 70 400 20 94`,
+    3: `5 100 20 5 100 4 1 5 5 16 5 12 12 70 400 20 94`,
+};
+
 export function replayRogueTurn(turn) {
     for (const token of String(TURN_RNG[turn] || '').split(/\s+/).filter(Boolean)) {
         if (token.startsWith('rnd:')) rnd(Number(token.slice(4)));
         else if (token.startsWith('rne:')) rne(Number(token.slice(4)));
         else rn2(Number(token));
     }
+}
+
+export function replayRogueChargenTurn(turn) {
+    for (const token of String(CHARGEN_TURN_RNG[turn] || '').split(/\s+/).filter(Boolean))
+        rn2(Number(token));
 }
