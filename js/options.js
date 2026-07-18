@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 
 export function parseNethackrc(rc) {
     const result = {
-        name: '', role: -1, race: -1, gender: -1, align: -1,
+        name: '', role: null, race: null, gender: null, align: null,
         flags: {}, iflags: {},
     };
     if (!rc) return result;

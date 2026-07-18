@@ -14,6 +14,7 @@ import { initRng, enableRngLog, getRngLog } from './rng.js';
 import { pushKey, nhgetch } from './input.js';
 import { newgame, moveloop_core } from './allmain.js';
 import { parseNethackrc } from './options.js';
+import { findRole, findRace, findAlignment, findGender, roles, races } from './roles.js';
 import { flush_screen } from './display.js';
 import { GameDisplay } from './game_display.js';
 
@@ -87,8 +88,18 @@ export class NethackGame {
 
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
-        g.plname = opts.name || 'Hero';
-        g.flags = { verbose: true, ...opts.flags };
+        const configuredName = opts.name || 'Hero';
+        // NetHack keeps the configured player name verbatim for prose, while
+        // the status line and menu headings capitalize it for display.
+        g.plname = configuredName;
+        g.displayName = configuredName.charAt(0).toUpperCase() + configuredName.slice(1);
+        g.flags = {
+            verbose: true,
+            pickup: true,
+            legacy: true,
+            tutorial: true,
+            ...opts.flags,
+        };
         g.iflags = { ...opts.iflags };
         if (opts.preferred_pet) g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set) g.tutorial_set_in_config = true;
@@ -97,11 +108,19 @@ export class NethackGame {
         g.u = { ux: 0, uy: 0, ux0: 0, uy0: 0 };
         g.context = { move: 0 };
         g.program_state = {};
-        g.moves = 1;
+        g.moves = 0;
 
-        // TODO: Map role/race/gender/align from opts to role data
-        g.urole = { name: { m: 'Rambler', f: 'Rambler' } };
-        g.urace = { adj: 'human' };
+        // C ref: role_init().  Contest sessions specify these options, so
+        // invalid/missing values use stable NetHack-style defaults here and
+        // can later be extended with the interactive role-selection prompt.
+        g.urole = findRole(opts.role) || roles[0];
+        g.urace = findRace(opts.race) || races[0];
+        const gender = findGender(opts.gender) || { name: 'male', value: 0 };
+        const alignment = findAlignment(opts.align) || { name: 'neutral', value: 0 };
+        g.flags.female = gender.value === 1;
+        g.flags.initgend = gender.value;
+        g.flags.initalign = alignment.value;
+        g.initAlignment = alignment;
 
         // Initialize PRNG
         initRng(this._seed);
@@ -218,4 +237,3 @@ export async function runSegment(input) {
 
     return nhGame;
 }
-

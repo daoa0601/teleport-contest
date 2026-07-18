@@ -13,6 +13,10 @@ function plural(n, singular, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;
 }
 
+function indefiniteArticle(text) {
+    return /^[aeiou]/i.test(text) ? 'an' : 'a';
+}
+
 function attributePages() {
     const u = game.u;
     const roleName = game.urole?.name?.m || 'Adventurer';
@@ -33,7 +37,7 @@ function attributePages() {
     const stats = u.acurr?.a || [];
 
     const page1 = Array(24).fill('');
-    page1[0] = ` ${game.plname} the ${roleName}'s attributes:`;
+    page1[0] = ` ${game.displayName || game.plname} the ${roleName}'s attributes:`;
     page1[2] = ' Background:';
     page1[3] = `  You are a ${rank}, a level ${u.ulevel} ${gender} ${race} ${roleName}.`;
     page1[4] = `  You are ${align}, on a mission for ${currentGod}`;
@@ -50,7 +54,9 @@ function attributePages() {
         ? `  You have ${u.uen === 2 ? 'both' : `all ${u.uen}`} energy points (spell power).`
         : `  You have ${u.uen} of ${u.uenmax} energy points (spell power).`;
     page1[14] = `  Your armor class is ${u.uac}.`;
-    page1[15] = `  Your wallet contains ${game._goldCount || 0} zorkmids.`;
+    page1[15] = game._goldCount
+        ? `  Your wallet contains ${game._goldCount} zorkmids.`
+        : '  Your wallet is empty.';
     page1[16] = `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`;
     page1[18] = ' Characteristics:';
     page1[19] = `  Your strength is ${stats[0]}.`;
@@ -65,8 +71,13 @@ function attributePages() {
     page2[3] = ' Status:';
     page2[4] = "  You aren't hungry.";
     page2[5] = '  You are unencumbered.';
-    page2[6] = '  You are bare handed.';
-    page2[7] = '  You are unskilled in bare handed combat.';
+    if (game.uwep) {
+        page2[6] = `  You are wielding ${indefiniteArticle(game.uwep.name)} ${game.uwep.name}.`;
+        page2[7] = `  You have basic skill with ${game.uwep.name}.`;
+    } else {
+        page2[6] = '  You are bare handed.';
+        page2[7] = '  You are unskilled in bare handed combat.';
+    }
     page2[9] = ' Miscellaneous:';
     page2[10] = '  Total elapsed playing time is none.';
     page2[11] = ' (2 of 2)';

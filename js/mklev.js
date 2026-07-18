@@ -40,8 +40,9 @@ import {
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
-    MONSTER_FLAGS2, SPECIAL_PM,
+    MONSTER_FLAGS2, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
+import { CLR_BROWN, CLR_GRAY } from './terminal.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -239,7 +240,7 @@ function blessorcurse(otmp, chance = 10) {
 
 // C ref: mkobj.c mksobj — create a specific object
 // Minimal stub: consumes RNG for next_ident + type-specific init
-function mksobj(otyp, init, artif) {
+export function mksobj(otyp, init, artif) {
     const oclass = objectClass(otyp);
     const otmp = { otyp, oclass, ox: 0, oy: 0, quan: 1, owt: 1,
         cursed: false, blessed: false, olocked: false, spe: 0,
@@ -279,6 +280,9 @@ function isPoisonable(otmp) {
 }
 
 function mayGenerateEroded(otmp) {
+    // C ref: may_generate_eroded(): starting inventory is pristine, while
+    // objects produced by mklev on move zero may still be damaged.
+    if ((game.moves ?? 0) <= 1 && !game.in_mklev) return false;
     if (otmp.artifact || otmp.otyp === WORM_TOOTH || otmp.otyp === UNICORN_HORN)
         return false;
     const matters = otmp.oclass === WEAPON_CLASS
@@ -453,7 +457,7 @@ function initTool(otmp) {
 }
 
 function mksobj_at(otyp, x, y, init, artif) {
-    return mksobj(otyp, init, artif);
+    return place_object(mksobj(otyp, init, artif), x, y);
 }
 
 function mkobj(oclass, artif) {
@@ -484,7 +488,7 @@ function mkobj(oclass, artif) {
 }
 
 function mkobj_at(oclass, x, y, artif) {
-    return mkobj(oclass, artif);
+    return place_object(mkobj(oclass, artif), x, y);
 }
 
 function mkgold(amount, x, y) {
@@ -495,11 +499,25 @@ function mkgold(amount, x, y) {
         const mul = rnd(Math.trunc(30 / Math.max(12 - depthVal, 2)));
         amount = 1 + rnd(level_difficulty() + 2) * mul;
     }
-    // mksobj_at(GOLD_PIECE) calls next_ident
+    // mksobj_at(GOLD_PIECE) calls next_ident.  Gold skips normal object
+    // initialization but is still linked into the floor-object chain.
     next_ident();
+    place_object({
+        otyp: GOLD_PIECE, oclass: COIN_CLASS, ox: x, oy: y,
+        quan: amount, quantity: amount, cursed: false, blessed: false,
+    }, x, y);
 }
 
-function place_object(otmp, x, y) { /* stub */ }
+function place_object(otmp, x, y) {
+    if (!otmp || !game.level) return otmp;
+    otmp.ox = x;
+    otmp.oy = y;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
+    // C links newly placed objects at the head of the square's object chain.
+    game.level.objects[x][y].unshift(otmp);
+    return otmp;
+}
 function dealloc_obj(otmp) { /* stub */ }
 function curse(otmp) { if (otmp) otmp.cursed = true; }
 function weight(otmp) { return otmp?.owt || 1; }
@@ -519,7 +537,7 @@ function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
         // rndmonnum — pick random monster
         rndmonnum();
     }
-    return otmp;
+    return place_object(otmp, x, y);
 }
 
 // rndmonnum stub — consumes rn2 for random monster selection
@@ -566,8 +584,20 @@ async function makemon(mdat, x, y, mmflags) {
     // makemon()'s rare domestic-saddle check is likewise unconditional on
     // the random roll and short-circuits only after it fails.
     rn2(100);
-    return { mnum: mndx, mx: x, my: y, mhp: hp,
-        msleeping: 0, mpeaceful: 0 };
+    const classIndex = MONSTER_SYMBOL[mndx] || 0;
+    const classSymbols = ['', ...'abcdefghijklmnopqrstuvwxyz',
+        ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
+    const monster = {
+        mnum: mndx, mx: x, my: y, mhp: hp, mhpmax: hp,
+        msleeping: 0, mpeaceful: 0,
+        symbol: classSymbols[classIndex] || '?',
+        // The complete per-monster color table is a later metadata port;
+        // giant ant is the generated level-one case exercised here.
+        color: mndx === 0 ? CLR_BROWN : CLR_GRAY,
+    };
+    if (!game.level.monsters) game.level.monsters = [];
+    game.level.monsters.push(monster);
+    return monster;
 }
 
 // maketrap stub
@@ -1297,25 +1327,25 @@ function dosdoor(x, y, aroom, type) {
     loc.typ = type;
     if (type === DOOR) {
         if (!rn2(3)) {
-            if (!rn2(5)) loc.flags = D_ISOPEN;
-            else if (!rn2(6)) loc.flags = D_LOCKED;
-            else loc.flags = D_CLOSED;
-            if (loc.flags !== D_ISOPEN && !shdoor
+            if (!rn2(5)) loc.doormask = D_ISOPEN;
+            else if (!rn2(6)) loc.doormask = D_LOCKED;
+            else loc.doormask = D_CLOSED;
+            if (loc.doormask !== D_ISOPEN && !shdoor
                 && level_difficulty() >= 5 && !rn2(25))
-                loc.flags |= D_TRAPPED;
+                loc.doormask |= D_TRAPPED;
         } else {
-            loc.flags = shdoor ? D_ISOPEN : D_NODOOR;
+            loc.doormask = shdoor ? D_ISOPEN : D_NODOOR;
         }
-        if (loc.flags & D_TRAPPED) {
+        if (loc.doormask & D_TRAPPED) {
             if (level_difficulty() >= 9 && !rn2(5)) {
-                loc.flags = D_NODOOR;
+                loc.doormask = D_NODOOR;
             }
         }
     } else {
-        if (shdoor || !rn2(5)) loc.flags = D_LOCKED;
-        else loc.flags = D_CLOSED;
+        if (shdoor || !rn2(5)) loc.doormask = D_LOCKED;
+        else loc.doormask = D_CLOSED;
         if (!shdoor && level_difficulty() >= 4 && !rn2(20))
-            loc.flags |= D_TRAPPED;
+            loc.doormask |= D_TRAPPED;
     }
     add_door(x, y, aroom);
 }

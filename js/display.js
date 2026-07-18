@@ -9,7 +9,20 @@ import {
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
 } from './const.js';
-import { NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_WHITE, CLR_YELLOW, DEC_TO_UNICODE } from './terminal.js';
+import {
+    NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
+    DEC_TO_UNICODE,
+} from './terminal.js';
+
+const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
+    '+', '/', '$', '*', '`', '0', '_', '.'];
+
+function objectColor(object) {
+    if (Number.isInteger(object?.color)) return object.color;
+    // Most ordinary weapons use HI_METAL in objects.h.  Other object classes
+    // remain neutral until their generated color metadata is ported.
+    return object?.oclass === 2 ? CLR_CYAN : CLR_GRAY;
+}
 
 // ── ANSI color codes ──
 // Maps CLR_* constants (0-15) to ANSI SGR color codes.
@@ -42,8 +55,10 @@ function terrain_glyph(loc, x, y) {
     case ROOM:      return { ch: '~', color: NO_COLOR, dec: true };  // DEC middle dot
     case CORR:      return { ch: '#', color: NO_COLOR, dec: false };
     case DOOR:
-        if (loc.doormask & D_ISOPEN) return { ch: '|', color: CLR_BROWN, dec: false };
-        if (loc.doormask & (D_CLOSED | D_LOCKED)) return { ch: '+', color: CLR_BROWN, dec: false };
+        if (loc.doormask & D_ISOPEN)
+            return { ch: 'a', color: CLR_BROWN, dec: true };
+        if (loc.doormask & (D_CLOSED | D_LOCKED))
+            return { ch: 'a', color: CLR_BROWN, dec: true };
         return { ch: '~', color: NO_COLOR, dec: true };  // D_NODOOR = floor
     case STAIRS:
         // Check upstair vs downstair
@@ -90,7 +105,23 @@ export function newsym(x, y) {
         return;
     }
 
-    // Contestants: add monster, object, and trap display here.
+    const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
+    if (monster && cansee(x, y)) {
+        show_glyph_cell(x, y, monster.symbol || '?',
+            monster.pet ? CLR_WHITE : (monster.color ?? CLR_GRAY), false);
+        return;
+    }
+
+    const object = game.level?.objects?.[x]?.[y]?.[0];
+    if (object && cansee(x, y)) {
+        const glyph = {
+            ch: OBJECT_SYMBOLS[object.oclass] || '?',
+            color: objectColor(object), decgfx: false,
+        };
+        show_glyph_cell(x, y, glyph.ch, glyph.color, false);
+        if (game.level?.flags?.hero_memory) loc.remembered_glyph = glyph;
+        return;
+    }
 
     const tg = terrain_glyph(loc, x, y);
     // Only update display/memory if cell is IN_SIGHT (lit and visible)
@@ -180,10 +211,10 @@ function render_map_row(y) {
 }
 
 // ── Status lines ──
-function _statusLine1() {
+export function _statusLine1() {
     const u = game.u;
     if (!u) return '';
-    const name = game.plname || 'Hero';
+    const name = game.displayName || game.plname || 'Hero';
     const role = game.urole?.rank?.m || game.urole?.name?.m || 'Adventurer';
     const title = `${name} the ${role}`;
     const stats = `St:${u.acurr?.a?.[0] || '?'} Dx:${u.acurr?.a?.[1] || '?'} Co:${u.acurr?.a?.[2] || '?'} In:${u.acurr?.a?.[3] || '?'} Wi:${u.acurr?.a?.[4] || '?'} Ch:${u.acurr?.a?.[5] || '?'}`;
@@ -195,10 +226,13 @@ function _statusLine1() {
     return `${title}${' '.repeat(gap)}${stats} ${align}`;
 }
 
-function _statusLine2() {
+export function _statusLine2() {
     const u = game.u;
     if (!u) return '';
-    return `Dlvl:${u.uz?.dlevel || 1} $:${game._goldCount || 0} HP:${u.uhp || 0}(${u.uhpmax || 0}) Pw:${u.uen || 0}(${u.uenmax || 0}) AC:${u.uac ?? 10} Xp:${u.ulevel || 1}/${u.uexp || 0} T:${game.moves || 1}`;
+    let line = `Dlvl:${u.uz?.dlevel || 1} $:${game._goldCount || 0} HP:${u.uhp || 0}(${u.uhpmax || 0}) Pw:${u.uen || 0}(${u.uenmax || 0}) AC:${u.uac ?? 10} Xp:${u.ulevel || 1}`;
+    if (game.flags?.showexp) line += `/${u.uexp || 0}`;
+    if (game.flags?.time) line += ` T:${game.moves || 1}`;
+    return line;
 }
 
 // ── Serialize terminal grid for screen comparison ──

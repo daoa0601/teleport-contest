@@ -27,7 +27,7 @@ export async function dodiscovered() {
             previousClass = discovery.class;
         }
         const appearance = discovery.appearance ? ` (${discovery.appearance})` : '';
-        lines[row++] = `  ${discovery.name}${appearance}`;
+        lines[row++] = `${discovery.preknown ? '* ' : '  '}${discovery.name}${appearance}`;
     }
     lines[23] = '--More--';
     await showTextPages([{ lines, cursor: [8, 23] }]);

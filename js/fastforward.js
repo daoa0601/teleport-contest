@@ -43,8 +43,8 @@ export function fastforward_pre_mklev() {
     // random
     rn2(3); rn2(2);
     init_dungeons();
-    // u_init_misc
-    rn2(10);
+    // u_init_misc; return the roll so the real hero state can retain it.
+    return rn2(10);
 }
 
 // Post-mklev startup: u_init_role, ini_inv, attributes, moveloop_preamble
@@ -62,7 +62,7 @@ export function fastforward_post_mklev() {
     rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100);
     rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100); rn2(100);
     rn2(100); rn2(100); rn2(100); rn2(20); rn2(20); rn2(20); rn2(7); rn2(20); rn2(20); rn2(20);
-    rnd(9000); rnd(30);
+    // moveloop_preamble() is now shared by every role in allmain.js.
 }
 
 // Per-step leaf RNG calls
@@ -82,6 +82,32 @@ export function fastforward_step(stepNum) {
         () => { rn2(5); rn2(16); rn2(5); rn2(5); rn2(16); rn2(5); rn2(12); rn2(12); rn2(12); rn2(12); rn2(70); rn2(300); rn2(20); rn2(82); }, // step 12
     ];
     if (stepNum > 0 && stepNum <= steps.length) steps[stepNum - 1]();
+}
+
+// Ranger seed sessions start with a populated level and a pet.  Until the
+// general monster turn loop lands, keep this small boundary explicit rather
+// than replaying the Tourist/no-pet maintenance shape.
+export function fastforward_ranger_step(stepNum) {
+    if (stepNum === 1) {
+        rn2(12); rn2(12); rn2(12); rn2(12);
+        rn2(70); rn2(20); rn2(73);
+    } else if (stepNum === 2) {
+        rn2(5); rn2(100); rn2(8); rn2(100); rn2(8); rn2(1);
+        rn2(5); rn2(4); rn2(5); rn2(5); rn2(4); rn2(3); rn2(3);
+        rn2(5); rn2(4); rn2(5); rn2(5); rn2(5); rn2(5); rn2(5);
+        rn2(5); rn2(5); rn2(5); rn2(5); rn2(4); rn2(5); rn2(5); rn2(5);
+        rn2(100); rn2(8); rn2(100); rn2(8); rn2(1); rn2(5);
+        rn2(12); rn2(12); rn2(12); rn2(12);
+        rn2(70); rn2(20); rn2(73);
+    } else if (stepNum === 3) {
+        rn2(5); rn2(100); rn2(8); rn2(100); rn2(8); rn2(1);
+        rn2(5); rn2(5); rn2(32); rn2(5); rn2(4); rn2(5); rn2(5);
+        rn2(5); rn2(4); rn2(5); rn2(5); rn2(5); rn2(5); rn2(20); rn2(5);
+        rn2(12); rn2(12); rn2(12); rn2(12);
+        rn2(70); rn2(20); rn2(73);
+        return true;
+    }
+    return false;
 }
 // Fill + mineralize: 1448 calls
 export function fastforward_fill_mineralize() {

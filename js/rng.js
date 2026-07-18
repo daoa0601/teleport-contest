@@ -52,7 +52,11 @@ export function rn1(x, y) { return rn2(x) + y; }
 // C ref: d(n, x) — roll n dice of x sides
 export function d(n, x) {
     let sum = 0;
-    for (let i = 0; i < n; i++) sum += rnd(x);
+    // NetHack's recorder treats d(N,X) as one public call even though it
+    // advances the generator N times; using rnd() here would expose N nested
+    // log entries and shift every subsequent positional comparison.
+    for (let i = 0; i < n; i++) sum += RND(x) + 1;
+    if (_rngLogEnabled) _rngLog.push(`d(${n},${x})=${sum}`);
     return sum;
 }
 

@@ -4,6 +4,7 @@
 import { game } from './gstate.js';
 import { flush_screen, pline } from './display.js';
 import { showInventoryWindow } from './windows.js';
+import { nhgetch } from './input.js';
 
 const CLASS_ORDER = [
     'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
@@ -61,6 +62,16 @@ export async function ddoinv() {
 
 export async function dolook() {
     const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
-    if (!objects.length) await pline('You see no objects here.');
+    const onUpstairs = game.level?.upstair?.x === game.u?.ux
+        && game.level?.upstair?.y === game.u?.uy;
+    if (onUpstairs) {
+        const message = 'There is a staircase up out of the dungeon here.--More--';
+        await pline(message);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(message.length, 0);
+        await nhgetch();
+    } else if (!objects.length) {
+        await pline('You see no objects here.');
+    }
     game.context.move = 0;
 }
