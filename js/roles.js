@@ -204,7 +204,26 @@ export const roles = [
       initrecord: 0,
       petnum: -1,
       greeting: 'Velkommen' },
-    { name: { m: 'Wizard', f: 'Wizard' }, mnum: 12 },
+    { key: 'wizard', name: { m: 'Wizard', f: 'Wizard' }, mnum: 12,
+      title: [
+          { m: 'Evoker', f: 'Evoker' },
+          { m: 'Conjurer', f: 'Conjurer' },
+          { m: 'Thaumaturge', f: 'Thaumaturge' },
+          { m: 'Magician', f: 'Magician' },
+          { m: 'Enchanter', f: 'Enchantress' },
+          { m: 'Sorcerer', f: 'Sorceress' },
+          { m: 'Necromancer', f: 'Necromancer' },
+          { m: 'Wizard', f: 'Wizard' },
+          { m: 'Mage', f: 'Mage' },
+      ],
+      gods: { lawful: 'Ptah', neutral: 'Thoth', chaotic: 'Anhur' },
+      attrbase: [7, 10, 7, 7, 7, 7],
+      attrdist: [10, 30, 10, 20, 20, 10],
+      hpadv: { infix: 10, inrnd: 0 },
+      enadv: { infix: 4, inrnd: 0 },
+      initrecord: 0,
+      petnum: 17,
+      greeting: 'Hello' },
 ];
 
 export const races = [

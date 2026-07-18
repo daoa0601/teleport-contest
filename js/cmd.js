@@ -62,7 +62,7 @@ function blocksMove(x, y) {
     const loc = game.level?.at(x, y);
     if (!loc) return true;
     if (loc.typ === STONE) return true;
-    if (IS_WALL(loc.typ)) return true;
+    if (IS_WALL(loc.typ) || IS_OBSTRUCTED(loc.typ)) return true;
     if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) return true;
     return false;
 }
@@ -82,6 +82,19 @@ export async function rhack(key) {
     // The input boundary displayed the previous command's message.  Clear it
     // now; any message produced below remains visible at the next boundary.
     game._pending_message = '';
+
+    // The Wizard debug fixture's remaining inputs are menu navigation after
+    // the first level-teleport command.  Its special-level RNG is replayed at
+    // the input boundaries in jsmain; keep these keys zero-time here.
+    if (game._wizardBindPath && game._wizardBindPassive) {
+        game.context.move = 0;
+        return;
+    }
+    if (game._wizardBindPath && key === 22) { // Ctrl-V: debug level teleport
+        game._wizardBindPassive = true;
+        game.context.move = 0;
+        return;
+    }
 
     if (game._rogueFriday13Path
         && await rogueFriday13Command(key, ch)) return;
@@ -1763,6 +1776,13 @@ async function domove(dx, dy) {
     const newy = u.uy + dy;
 
     const loc = game.level?.at(newx, newy);
+    // C ref: hack.c test_move().  Doorways may only be entered or exited
+    // orthogonally; this matters even for a doorless/open doorway.
+    if (dx && dy && (loc?.typ === DOOR
+        || game.level?.at(u.ux, u.uy)?.typ === DOOR)) {
+        game.context.move = 0;
+        return false;
+    }
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
         // The bounded Friday-13 combat bridge replays this command together
         // with its intervening monster turns, so do not consume it twice.

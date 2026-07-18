@@ -206,7 +206,7 @@ export function init_dungeons() {
 
     for (const definition of DUNGEON_DEFINITIONS) {
         const chance = definition.chance ?? 100;
-        if (chance && chance <= rn2(100)) continue;
+        if (!game.flags?.debug && chance && chance <= rn2(100)) continue;
 
         const dnum = loaded.length;
         const num_dunlevs = definition.range
@@ -242,7 +242,7 @@ export function init_dungeons() {
         const finalByName = new Map();
         const levels = (definition.levels || []).map(spec => {
             const levelChance = spec.chance ?? 100;
-            if (levelChance <= rn2(100)) return null;
+            if (!game.flags?.debug && levelChance <= rn2(100)) return null;
             const level = { name: spec.name, spec, dlevel: 0, variants: spec.variants || 1 };
             finalByName.set(spec.name, level);
             return level;

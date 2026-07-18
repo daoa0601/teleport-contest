@@ -9,8 +9,8 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, SHORT_SWORD, LONG_SWORD, KATANA, LANCE, MACE, CLUB, BOW, YUMI, SLING,
-    HELMET, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, SHORT_SWORD, LONG_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BOW, YUMI, SLING,
+    HELMET, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
     SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH, STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
@@ -18,7 +18,7 @@ import {
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
     POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER,
     SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
-    SPE_DETECT_MONSTERS, SPE_HEALING, SPE_CONFUSE_MONSTER,
+    SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER,
     SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION,
     WAN_SLEEP, WAN_WISHING, GOLD_PIECE,
     FLINT, ROCK,
@@ -26,6 +26,7 @@ import {
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
+const RING_CLASS = 4;
 const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
@@ -144,6 +145,27 @@ const MONK_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const WIZARD_INVENTORY = [
+    { typ: QUARTERSTAFF, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: 1 },
+    { typ: CLOAK_OF_MAGIC_RESISTANCE, spe: 0, cls: ARMOR_CLASS,
+        min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: WAND_CLASS,
+        min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: RING_CLASS,
+        min: 2, max: 2, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: POTION_CLASS,
+        min: 3, max: 3, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SCROLL_CLASS,
+        min: 3, max: 3, bless: UNDEF_BLESS },
+    { typ: SPE_FORCE_BOLT, spe: 0, cls: SPBOOK_CLASS,
+        min: 1, max: 1, bless: 1 },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SPBOOK_CLASS,
+        min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: MAGIC_MARKER, spe: 19, cls: TOOL_CLASS,
+        min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -172,6 +194,9 @@ const ITEM_PRESENTATION = new Map([
         omitUncursed: true,
     }],
     [CLUB, { class: 'Weapons', name: 'club', plural: 'clubs', enchanted: true, omitUncursed: true }],
+    [QUARTERSTAFF, {
+        class: 'Weapons', name: 'quarterstaff', plural: 'quarterstaffs', enchanted: true,
+    }],
     [SLING, { class: 'Weapons', name: 'sling', plural: 'slings', enchanted: true, omitUncursed: true }],
     [SHORT_SWORD, {
         class: 'Weapons', name: 'wakizashi', plural: 'wakizashi', enchanted: true,
@@ -218,6 +243,10 @@ const ITEM_PRESENTATION = new Map([
         class: 'Armor', name: 'cloak of displacement', plural: 'cloaks of displacement',
         enchanted: true,
     }],
+    [CLOAK_OF_MAGIC_RESISTANCE, {
+        class: 'Armor', name: 'cloak of magic resistance',
+        plural: 'cloaks of magic resistance', enchanted: true,
+    }],
     [264, { class: 'Comestibles', name: 'tripe ration', plural: 'tripe rations' }],
     [266, { class: 'Comestibles', name: 'egg', plural: 'eggs' }],
     [EUCALYPTUS_LEAF, { class: 'Comestibles', name: 'eucalyptus leaf', plural: 'eucalyptus leaves' }],
@@ -256,6 +285,11 @@ const ITEM_PRESENTATION = new Map([
     [SPE_HEALING, {
         class: 'Spellbooks', name: 'spellbook of healing', plural: 'spellbooks of healing',
         spellName: 'healing', spellLevel: 1, spellCategory: 'healing', appearance: 'purple',
+    }],
+    [SPE_FORCE_BOLT, {
+        class: 'Spellbooks', name: 'spellbook of force bolt',
+        plural: 'spellbooks of force bolt', spellName: 'force bolt',
+        spellLevel: 1, spellCategory: 'attack', appearance: 'red',
     }],
     [SPE_CONFUSE_MONSTER, {
         class: 'Spellbooks', name: 'spellbook of confuse monster',
@@ -386,9 +420,10 @@ export function makedog() {
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
-        && role !== 'monk') return null;
+        && role !== 'monk' && role !== 'wizard') return null;
 
-    let pettype = role === 'knight' ? 102 : 16; // PM_PONY or PM_LITTLE_DOG
+    let pettype = role === 'knight' ? 102
+        : role === 'wizard' ? 32 : 16; // PM_PONY, PM_KITTEN, or PM_LITTLE_DOG
     if (role === 'tourist' || role === 'rogue' || role === 'valkyrie'
         || role === 'priest' || role === 'healer' || role === 'monk') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
@@ -406,7 +441,8 @@ export function makedog() {
     if (role !== 'knight' && hp === 1) hp++;
     const female = !!rn2(2);
     if (role === 'tourist' || role === 'caveman' || role === 'valkyrie'
-        || role === 'priest' || role === 'healer' || role === 'monk') {
+        || role === 'priest' || role === 'healer' || role === 'monk'
+        || role === 'wizard') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
         rn2(role === 'healer' || role === 'monk' ? 26 : 16);
         rn2(2);
@@ -512,7 +548,8 @@ function useStartingItem(item) {
             game.uquiver = item;
             item.ready = true;
         }
-    } else if (item.otyp === SPEAR || item.otyp === MACE || item.otyp === LONG_SWORD) {
+    } else if (item.otyp === SPEAR || item.otyp === MACE
+        || item.otyp === LONG_SWORD || item.otyp === QUARTERSTAFF) {
         game.uwep = item;
         item.wielded = true;
     } else if (item.otyp === DAGGER || item.otyp === SCALPEL
@@ -538,7 +575,8 @@ function useStartingItem(item) {
             game.uswapwep = item;
             item.alternate = true;
         }
-    } else if (item.otyp === CLOAK_OF_DISPLACEMENT || item.otyp === ROBE) {
+    } else if (item.otyp === CLOAK_OF_DISPLACEMENT || item.otyp === ROBE
+        || item.otyp === CLOAK_OF_MAGIC_RESISTANCE) {
         game.uarmc = item;
         item.worn = true;
     } else if (item.otyp === HAWAIIAN_SHIRT) {
@@ -586,6 +624,18 @@ function priestSpellbookAllowed(otyp) {
         && !game.inventory.some(item => item.otyp === otyp);
 }
 
+function wizardSpellbookAllowed(otyp) {
+    // Wizard begins with force bolt, so ini_inv_mkobj_filter() permits an
+    // additional book through level three, from any of Wizard's disciplines.
+    // Blank paper and a duplicate force bolt remain explicitly excluded.
+    return new Set([
+        367, 370, 372, SPE_DETECT_MONSTERS, SPE_HEALING, 375,
+        378, 379, 380, 381, 382, 383, 384, 385, 386, 388, 389,
+        SPE_EXTRA_HEALING, 395, 397, SPE_PROTECTION, 404,
+        SPE_STONE_TO_FLESH, 406, 407,
+    ]).has(otyp);
+}
+
 // Direct port of ini_inv() for fixed and class-generated inventory entries.
 function iniInv(table) {
     let index = 0;
@@ -595,8 +645,10 @@ function iniInv(table) {
         let raw;
         if (trobj.typ === UNDEF_TYP) {
             do raw = mkobj(trobj.cls, false);
-            while (game.urole?.key === 'priest' && trobj.cls === SPBOOK_CLASS
-                && !priestSpellbookAllowed(raw.otyp));
+            while (trobj.cls === SPBOOK_CLASS
+                && ((game.urole?.key === 'priest' && !priestSpellbookAllowed(raw.otyp))
+                    || (game.urole?.key === 'wizard'
+                        && !wizardSpellbookAllowed(raw.otyp))));
         } else {
             raw = mksobj(trobj.typ, true, false);
         }
@@ -667,7 +719,7 @@ export function uInitInventoryAttrs() {
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
-        && role !== 'monk') return false;
+        && role !== 'monk' && role !== 'wizard') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
@@ -744,6 +796,9 @@ export function uInitInventoryAttrs() {
         ]);
         if (!rn2(4)) iniInv(oneItem(MAGIC_MARKER, 19));
         else if (!rn2(10)) iniInv(oneItem(OIL_LAMP, 1));
+    } else if (role === 'wizard') {
+        iniInv(WIZARD_INVENTORY);
+        if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
     } else {
         iniInv(RANGER_INVENTORY);
     }
@@ -904,4 +959,5 @@ export function setInitialArmorClass() {
     else if (game.urole?.key === 'healer') game.u.uac = 8;
     else if (game.urole?.key === 'knight') game.u.uac = 3;
     else if (game.urole?.key === 'monk') game.u.uac = 4;
+    else if (game.urole?.key === 'wizard') game.u.uac = 9;
 }

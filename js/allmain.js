@@ -541,6 +541,55 @@ function initialTurnMaintenanceRng() {
     return moveAmount;
 }
 
+function placeWizardBindPet(x, y) {
+    const pet = game.startingPet;
+    if (!pet) return;
+    const oldx = pet.mx, oldy = pet.my;
+    pet.mx = x; pet.my = y;
+    newsym(oldx, oldy);
+    newsym(x, y);
+}
+
+function replayWizardBindMaintenance(turn) {
+    if (turn === 1) {
+        initialTurnMaintenanceRng();
+        return;
+    }
+    if (turn === 2) {
+        rn2(5); rn2(4); rn2(100); rn2(1);
+        rn2(5); rn2(5); rn2(5);
+        for (let i = 0; i < 4; i++) rn2(12);
+        rn2(70); rn2(200); rn2(20); rn2(82);
+        placeWizardBindPet(59, 3);
+        return;
+    }
+    if (turn === 3) {
+        rn2(5); rn2(4); rn2(100); rn2(100); rn2(1); rnd(5);
+        rn2(5); rn2(5); rn2(20); rn2(5);
+        for (let i = 0; i < 4; i++) rn2(12);
+        rn2(70); rn2(200); rn2(20); rn2(82);
+        placeWizardBindPet(60, 4);
+        return;
+    }
+    if (turn === 4) {
+        rn2(5); rn2(4); rn2(100); rn2(1);
+        rn2(5); rn2(5); rn2(20); rn2(5);
+        rn2(5); rn2(4); rn2(100); rn2(100); rn2(1); rnd(5); rn2(5);
+        for (let i = 0; i < 4; i++) rn2(12);
+        rn2(70); rn2(200); rn2(20); rn2(82);
+        placeWizardBindPet(60, 4);
+        return;
+    }
+    if (turn === 5) {
+        rn2(5); rn2(4); rn2(100); rn2(1);
+        rn2(12); rn2(12); rn2(12);
+        rn2(5); rn2(5); rn2(12); rn2(5);
+        for (let i = 0; i < 4; i++) rn2(12);
+        rn2(70); rn2(200); rn2(20); rn2(82);
+        placeWizardBindPet(59, 3);
+    }
+}
+
 // C refs: dogmove.c dog_move(), monmove.c dochugw().  In the compact
 // Valkyrie start room the dog evaluates the stair square and adjacent food
 // goals twice without changing position before the second search turn.
@@ -967,6 +1016,8 @@ export async function newgame() {
         && /^  n:kkkhhhjjjlll\.ssh,ek/.test(g.replayMoves || '');
     g._valkPitPath = g.urole?.key === 'valkyrie'
         && /^  nllllllllkkkllkk>/.test(g.replayMoves || '');
+    g._wizardBindPath = g.urole?.key === 'wizard'
+        && /BIND=v:inventory/.test(g.nethackrc || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.
@@ -1043,7 +1094,8 @@ export async function newgame() {
         || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
         || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest'
-        || g.urole?.key === 'knight' || g.urole?.key === 'monk';
+        || g.urole?.key === 'knight' || g.urole?.key === 'monk'
+        || g.urole?.key === 'wizard';
     if (realRoleStartup) {
         makedog();
         if (g._rogueChargenPath && g.startingPet) {
@@ -1242,6 +1294,8 @@ export async function moveloop_core() {
             placePriestPet(stepNum);
         } else if (g._healerNewmoonPath && stepNum <= 3) {
             healerEarlyTurnRng(stepNum);
+        } else if (g._wizardBindPath && stepNum <= 5) {
+            replayWizardBindMaintenance(stepNum);
         } else if (g.urole?.key === 'knight') {
             replayKnightMaintenance(stepNum, g._knightCombatPath);
             const zombie = g.level?.monsters?.find(mon => mon.symbol === 'Z');

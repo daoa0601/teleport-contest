@@ -47,12 +47,15 @@ export function fastforward_pre_mklev() {
         do game._priestPantheonIndex = rn2(13);
         while (game._priestPantheonIndex === 6);
     }
+    // The Wizard quest nemesis has random gender.
+    if (game.urole?.key === 'wizard') rn2(100);
     // random
     rn2(3); rn2(2);
     init_dungeons();
     // newpw(): Priest initial energy is 4 + rnd(3), before the human
     // racial point is added by u_init_misc().
-    if (game.urole?.key === 'priest') game._initialPwBonus = rnd(3);
+    if (game.urole?.key === 'priest' || game.urole?.key === 'wizard')
+        game._initialPwBonus = rnd(3);
     else if (game.urole?.key === 'healer' || game.urole?.key === 'knight')
         game._initialPwBonus = rnd(4);
     else if (game.urole?.key === 'monk') game._initialPwBonus = rnd(2);

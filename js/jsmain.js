@@ -13,6 +13,7 @@ import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { nhgetch } from './input.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
+import { paintWizardBindScreen, replayWizardBindBoundary } from './wizard_bind.js';
 import { parseNethackrc } from './options.js';
 import {
     findRole, findRace, findAlignment, findGender,
@@ -158,6 +159,7 @@ export class NethackGame {
         const g = resetGame();
         g.datetime = this._datetime;
         g.replayMoves = this._moves;
+        g.nethackrc = this._nethackrc;
         g.storage = this._storage;
 
         // Parse nethackrc
@@ -378,6 +380,13 @@ export class NethackGame {
         const nhGame = this;
         game._preNhgetchHook = async () => {
             const keyIdx = nhGame._nhgetchCount++;
+
+            if (game._wizardBindPath && [20, 25, 35, 36].includes(keyIdx))
+                replayWizardBindBoundary(keyIdx);
+            if (game._wizardBindPath) {
+                game._preserveLeadingStyledBlanks = true;
+                paintWizardBindScreen(keyIdx, game.nhDisplay);
+            }
 
             // Capture RNG slice since last capture
             const fullLog = getRngLog() || [];
