@@ -33,7 +33,8 @@ function spellLine(letter, spell, casting) {
 async function spellMenu(casting) {
     const spells = game.spells || [];
     const left = 20;
-    const endRow = spells.length + (casting ? 3 : 4);
+    const sortable = !casting && game.urole?.key !== 'monk';
+    const endRow = spells.length + (sortable ? 4 : 3);
     clearMenu(left, endRow);
     putLine(left, 0, casting ? 'Choose which spell to cast' : 'Currently known spells', ATR_INVERSE);
     putLine(left, 2, '    Name                 Level Category     Fail Retention');
@@ -42,7 +43,7 @@ async function spellMenu(casting) {
     putLine(left + 44, 2, 'Fail Retention', ATR_INVERSE);
     spells.forEach((spell, index) =>
         putLine(left, index + 3, spellLine(String.fromCharCode(97 + index), spell, casting)));
-    if (!casting) putLine(left, spells.length + 3, '+ - [sort spells]');
+    if (sortable) putLine(left, spells.length + 3, '+ - [sort spells]');
     putLine(left, endRow, '(end)');
     game.nhDisplay.setCursor(left + 6, endRow);
     game._preserveLeadingStyledBlanks = true;

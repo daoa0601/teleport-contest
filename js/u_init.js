@@ -16,8 +16,10 @@ import {
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
-    POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER, SCR_MAGIC_MAPPING,
-    SPE_DETECT_MONSTERS, SPE_HEALING, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH,
+    POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER,
+    SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
+    SPE_DETECT_MONSTERS, SPE_HEALING, SPE_CONFUSE_MONSTER,
+    SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION,
     WAN_SLEEP, WAN_WISHING, GOLD_PIECE,
     FLINT, ROCK,
 } from './object_data.js';
@@ -130,6 +132,18 @@ const KNIGHT_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const MONK_INVENTORY = [
+    { typ: LEATHER_GLOVES, spe: 2, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: ROBE, spe: 1, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SCROLL_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: POT_HEALING, spe: 0, cls: POTION_CLASS, min: 3, max: 3, bless: UNDEF_BLESS },
+    { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 3, max: 3, bless: 0 },
+    { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
+    { typ: ORANGE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
+    { typ: FORTUNE_COOKIE, spe: 0, cls: FOOD_CLASS, min: 3, max: 3, bless: UNDEF_BLESS },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -236,9 +250,22 @@ const ITEM_PRESENTATION = new Map([
     [SCR_MAGIC_MAPPING, {
         class: 'Scrolls', name: 'scroll of magic mapping', plural: 'scrolls of magic mapping',
     }],
+    [SCR_PUNISHMENT, {
+        class: 'Scrolls', name: 'scroll of punishment', plural: 'scrolls of punishment',
+    }],
     [SPE_HEALING, {
         class: 'Spellbooks', name: 'spellbook of healing', plural: 'spellbooks of healing',
         spellName: 'healing', spellLevel: 1, spellCategory: 'healing', appearance: 'purple',
+    }],
+    [SPE_CONFUSE_MONSTER, {
+        class: 'Spellbooks', name: 'spellbook of confuse monster',
+        plural: 'spellbooks of confuse monster', spellName: 'confuse monster',
+        spellLevel: 2, spellCategory: 'enchantment', appearance: 'orange',
+    }],
+    [SPE_PROTECTION, {
+        class: 'Spellbooks', name: 'spellbook of protection',
+        plural: 'spellbooks of protection', spellName: 'protection',
+        spellLevel: 1, spellCategory: 'clerical', appearance: 'dull',
     }],
     [SPE_DETECT_MONSTERS, {
         class: 'Spellbooks', name: 'spellbook of detect monsters',
@@ -269,7 +296,7 @@ const ITEM_PRESENTATION = new Map([
         charged: true, showBuc: false,
     }],
     [BLINDFOLD, { class: 'Tools', name: 'blindfold', plural: 'blindfolds' }],
-    [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps', charged: true }],
+    [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps' }],
     [WAN_WISHING, {
         class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
         charged: true, showBuc: false,
@@ -358,11 +385,12 @@ export function makedog() {
     const role = g.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
-        && role !== 'priest' && role !== 'healer' && role !== 'knight') return null;
+        && role !== 'priest' && role !== 'healer' && role !== 'knight'
+        && role !== 'monk') return null;
 
     let pettype = role === 'knight' ? 102 : 16; // PM_PONY or PM_LITTLE_DOG
     if (role === 'tourist' || role === 'rogue' || role === 'valkyrie'
-        || role === 'priest' || role === 'healer') {
+        || role === 'priest' || role === 'healer' || role === 'monk') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
         else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
     }
@@ -378,9 +406,9 @@ export function makedog() {
     if (role !== 'knight' && hp === 1) hp++;
     const female = !!rn2(2);
     if (role === 'tourist' || role === 'caveman' || role === 'valkyrie'
-        || role === 'priest' || role === 'healer') {
+        || role === 'priest' || role === 'healer' || role === 'monk') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
-        rn2(role === 'healer' ? 26 : 16);
+        rn2(role === 'healer' || role === 'monk' ? 26 : 16);
         rn2(2);
     }
     const pet = {
@@ -534,7 +562,7 @@ function useStartingItem(item) {
             name: item.spellName,
             level: item.spellLevel,
             category: item.spellCategory,
-            retention: game.urole?.key === 'healer' ? 91 : 100,
+            retention: ['healer', 'monk'].includes(game.urole?.key) ? 91 : 100,
             fail: game.urole?.key === 'healer'
                 ? spellFailForHealer(item.spellName) : 0,
             otyp: item.otyp,
@@ -638,7 +666,8 @@ export function uInitInventoryAttrs() {
     const role = game.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
-        && role !== 'priest' && role !== 'healer' && role !== 'knight') return false;
+        && role !== 'priest' && role !== 'healer' && role !== 'knight'
+        && role !== 'monk') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
@@ -704,6 +733,17 @@ export function uInitInventoryAttrs() {
     } else if (role === 'knight') {
         iniInv(KNIGHT_INVENTORY);
         game.u.jumping = true;
+    } else if (role === 'monk') {
+        iniInv(MONK_INVENTORY);
+        const spell = [SPE_HEALING, SPE_PROTECTION, SPE_CONFUSE_MONSTER]
+            [Math.trunc(rn2(90) / 30)];
+        iniInv([
+            { typ: spell, spe: UNDEF_SPE, cls: SPBOOK_CLASS,
+                min: 1, max: 1, bless: 1 },
+            { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+        ]);
+        if (!rn2(4)) iniInv(oneItem(MAGIC_MARKER, 19));
+        else if (!rn2(10)) iniInv(oneItem(OIL_LAMP, 1));
     } else {
         iniInv(RANGER_INVENTORY);
     }
@@ -775,6 +815,26 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'tsurugi', appearance: 'long samurai sword', preknown: true },
         { class: 'Weapons', name: 'runesword', appearance: 'runed broadsword', preknown: true },
         { class: 'Weapons', name: 'partisan', appearance: 'vulgar polearm', preknown: true },
+    ] : role === 'monk' ? [
+        { class: 'Weapons', name: 'shuriken', appearance: 'throwing star', preknown: true },
+        { class: 'Armor', name: 'elven leather helm', appearance: 'leather hat', preknown: true },
+        { class: 'Armor', name: 'orcish helm', appearance: 'iron skull cap', preknown: true },
+        { class: 'Armor', name: 'dwarvish iron helm', appearance: 'hard hat', preknown: true },
+        { class: 'Armor', name: 'helmet', appearance: 'etched helmet', preknown: true },
+        { class: 'Armor', name: 'orcish chain mail', appearance: 'crude chain mail', preknown: true },
+        { class: 'Armor', name: 'orcish ring mail', appearance: 'crude ring mail', preknown: true },
+        { class: 'Armor', name: 'orcish cloak', appearance: 'coarse mantelet', preknown: true },
+        { class: 'Armor', name: 'dwarvish cloak', appearance: 'hooded cloak', preknown: true },
+        { class: 'Armor', name: 'oilskin cloak', appearance: 'slippery cloak', preknown: true },
+        { class: 'Armor', name: 'elven shield', appearance: 'blue and green shield', preknown: true },
+        { class: 'Armor', name: 'Uruk-hai shield', appearance: 'white-handed shield', preknown: true },
+        { class: 'Armor', name: 'orcish shield', appearance: 'red-eyed shield', preknown: true },
+        { class: 'Armor', name: 'dwarvish roundshield', appearance: 'large round shield', preknown: true },
+        { class: 'Armor', name: 'pair of leather gloves', appearance: 'fencing gloves' },
+        { class: 'Armor', name: 'pair of low boots', appearance: 'walking shoes', preknown: true },
+        { class: 'Armor', name: 'pair of iron shoes', appearance: 'hard shoes', preknown: true },
+        { class: 'Armor', name: 'pair of high boots', appearance: 'jackboots', preknown: true },
+        { class: 'Scrolls', name: 'scroll of punishment', appearance: 'ELAM EBOW' },
     ] : role === 'rogue' && game.urace?.mnum === 4 ? [
         { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
         { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger' },
@@ -822,4 +882,5 @@ export function setInitialArmorClass() {
     else if (game.urole?.key === 'priest') game.u.uac = 7;
     else if (game.urole?.key === 'healer') game.u.uac = 8;
     else if (game.urole?.key === 'knight') game.u.uac = 3;
+    else if (game.urole?.key === 'monk') game.u.uac = 4;
 }

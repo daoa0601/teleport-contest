@@ -55,6 +55,7 @@ export function fastforward_pre_mklev() {
     if (game.urole?.key === 'priest') game._initialPwBonus = rnd(3);
     else if (game.urole?.key === 'healer' || game.urole?.key === 'knight')
         game._initialPwBonus = rnd(4);
+    else if (game.urole?.key === 'monk') game._initialPwBonus = rnd(2);
     // u_init_misc; return the roll so the real hero state can retain it.
     return rn2(10);
 }

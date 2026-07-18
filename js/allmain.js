@@ -283,6 +283,7 @@ async function moveloopPreamble() {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
         if (game.urole?.key === 'caveman' || game.urole?.key === 'priest'
+            || game._monkNorthPath
             || game._rogueExplorePath
             || game._rogueChargenPath) {
             await docrt();
@@ -962,6 +963,8 @@ export async function newgame() {
     // reached before the post-mklev path flags below can be derived.
     g._knightCombatPath = g.urole?.key === 'knight'
         && /^  ns#ride/.test(g.replayMoves || '');
+    g._monkNorthPath = g.urole?.key === 'monk'
+        && /^  n:kkkhhhjjjlll\.ssh,ek/.test(g.replayMoves || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.
@@ -1038,7 +1041,7 @@ export async function newgame() {
         || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
         || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest'
-        || g.urole?.key === 'knight';
+        || g.urole?.key === 'knight' || g.urole?.key === 'monk';
     if (realRoleStartup) {
         makedog();
         if (g._rogueChargenPath && g.startingPet) {

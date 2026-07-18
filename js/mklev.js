@@ -1237,6 +1237,17 @@ const FOUR_LEAF_CLOVER_MAP = [
     '-----x-----',
 ];
 
+const L_SHAPED_MAP = [
+    '-----xxx',
+    '|...|xxx',
+    '|...|xxx',
+    '|...----',
+    '|......|',
+    '|......|',
+    '|......|',
+    '--------',
+];
+
 const THEMEROOM_FILL_META = [
     { name: 'Ice room' },
     { name: 'Cloud room' },
@@ -1418,15 +1429,15 @@ function fillBuriedZombies(room) {
     }
 }
 
-function generateFourLeafClover(difficulty) {
-    const placed = placeThemedMap(FOUR_LEAF_CLOVER_MAP);
+function generateStaticThemedRoom(rows, fillx, filly, difficulty) {
+    const placed = placeThemedMap(rows);
     if (!placed) return false;
 
     // themerms.lua filler_region(6,6): 30% chance to choose a themed fill.
     const themedFill = rn2(100) < 30;
     const lit = litstate_rnd(-1);
     const room = createIrregularThemedRegion(
-        placed.xstart + 6, placed.ystart + 6,
+        placed.xstart + fillx, placed.ystart + filly,
         themedFill ? THEMEROOM : OROOM, lit, FILL_NORMAL,
     );
     if (!room) return false;
@@ -1460,7 +1471,12 @@ async function themerooms_generate(difficulty) {
     }
     if (!pick) return false;
     if (pick.name === 'Four-leaf clover') {
-        return generateFourLeafClover(difficulty);
+        return generateStaticThemedRoom(
+            FOUR_LEAF_CLOVER_MAP, 6, 6, difficulty,
+        );
+    }
+    if (pick.name === 'L-shaped') {
+        return generateStaticThemedRoom(L_SHAPED_MAP, 1, 1, difficulty);
     }
     // For 'ordinary' rooms, create a standard room
     // For themed rooms with dynamic dimensions, consume those rn2 calls first

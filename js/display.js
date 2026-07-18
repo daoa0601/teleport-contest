@@ -26,6 +26,7 @@ const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
 
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
+    if (game._monkNorthPath && object?.oclass === 8) return NO_COLOR;
     if (object?.otyp === CORPSE && object?.corpsenm === 20) return CLR_RED;
     if (object?.otyp === TOWEL) return CLR_MAGENTA;
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
@@ -141,7 +142,8 @@ export function newsym(x, y) {
     const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
     if (monster && cansee(x, y)) {
         show_glyph_cell(x, y, monster.symbol || '?',
-            monster.mnum === 102 || monster.mnum === 239 ? CLR_BROWN
+            game._monkNorthPath && monster.mnum === 70 ? NO_COLOR
+                : monster.mnum === 102 || monster.mnum === 239 ? CLR_BROWN
                 : monster.pet ? CLR_WHITE
                 : monster.mnum === 116 ? CLR_MAGENTA
                     : (monster.color ?? CLR_GRAY), false);

@@ -42,6 +42,7 @@ import {
     replayKnightCombatEast, replayKnightCombatKill,
     replayKnightCombatLanding, replayKnightPostDismount,
 } from './knight_ride.js';
+import { replayMonkTurn } from './monk_search.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -84,7 +85,10 @@ export async function rhack(key) {
     if (game._rogueFriday13Path
         && await rogueFriday13Command(key, ch)) return;
 
-    if (game._knightCombatPath && game.u?.usteed
+    if (game._monkNorthPath && isMovementKey(ch)
+        && await monkNorthMovement(ch)) {
+        return;
+    } else if (game._knightCombatPath && game.u?.usteed
         && (ch === 'L' || isMovementKey(ch))
         && await knightCombatMovement(ch)) {
         return;
@@ -125,11 +129,16 @@ export async function rhack(key) {
         if (game._commandCount >= 10)
             await pline(`Count: ${game._commandCount}`);
         game.context.move = 0;
+    } else if (ch === '.' && game._monkNorthPath) {
+        replayMonkTurn(17);
+        monkNorthFinish(10);
     } else if (ch === '.') {
         game._pending_message = '';
         game.context.move = 1;
     } else if (ch === 'e') {
         await doeat();
+    } else if (ch === ',' && game._monkNorthPath) {
+        await monkNorthPickup();
     } else if (ch === 'z') {
         await dozap();
     } else if (ch === 'r') {
@@ -167,6 +176,116 @@ export async function rhack(key) {
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
+}
+
+function placeMonkMonster(monster, x, y) {
+    if (!monster) return;
+    const oldx = monster.mx, oldy = monster.my;
+    monster.mx = x; monster.my = y;
+    newsym(oldx, oldy);
+    newsym(x, y);
+}
+
+function placeMonkHero(x, y) {
+    const u = game.u;
+    const oldx = u.ux, oldy = u.uy;
+    u.ux0 = oldx; u.uy0 = oldy;
+    u.ux = x; u.uy = y;
+    newsym(oldx, oldy);
+    vision_recalc(1);
+    newsym(x, y);
+}
+
+function monkNorthFinish(moves) {
+    game.moves = moves;
+    game._maintenanceMove = moves;
+    game.context.move = 0;
+}
+
+function monkNorthCorpse() {
+    const x = 54, y = 9;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    const pile = game.level.objects[x][y] || [];
+    let corpse = pile.find(object => object.name === 'goblin corpse');
+    if (!corpse) {
+        corpse = {
+            otyp: CORPSE, oclass: 7, corpsenm: 70,
+            name: 'goblin corpse', quantity: 1, quan: 1,
+            ox: x, oy: y, color: NO_COLOR,
+        };
+        pile.unshift(corpse);
+        game.level.objects[x][y] = pile;
+    }
+    newsym(x, y);
+    return corpse;
+}
+
+async function monkNorthMovement(ch) {
+    const index = game._monkNorthMovementIndex || 0;
+    const expected = [
+        'k', 'k', 'k', 'h', 'h', 'h', 'j', 'j', 'j', 'l', 'l', 'l', 'h',
+    ];
+    if (ch !== expected[index]) return false;
+    game._monkNorthMovementIndex = index + 1;
+
+    const pet = game.startingPet;
+    const turns = [5, 0, 0, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20];
+    const moveCounts = [2, 2, 2, 3, 4, 5, 6, 7, 7, 8, 9, 9, 12];
+    const hero = [
+        [56, 6], null, null, [55, 6], [54, 6], [53, 6],
+        [53, 7], [53, 8], [53, 9], null, [54, 9], [55, 9], [54, 9],
+    ];
+    const pets = [
+        [55, 6], null, null, [58, 8], [60, 10], [60, 11],
+        [59, 10], [59, 11], [58, 10], [58, 10], [57, 10], [57, 9], [60, 11],
+    ];
+
+    if (turns[index]) replayMonkTurn(turns[index]);
+    if (hero[index]) placeMonkHero(...hero[index]);
+    if (pets[index]) placeMonkMonster(pet, ...pets[index]);
+
+    if (index === 3) {
+        await pline('You swap places with your little dog.');
+    } else if (index === 6) {
+        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
+        placeMonkMonster(goblin, 55, 10);
+    } else if (index === 8) {
+        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
+        placeMonkMonster(goblin, 54, 9);
+    } else if (index === 9) {
+        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
+        if (goblin) {
+            game.level.monsters = game.level.monsters.filter(monster => monster !== goblin);
+            newsym(goblin.mx, goblin.my);
+        }
+        monkNorthCorpse();
+        game.u.uexp = 6;
+        await pline('You kill the goblin!');
+    } else if (index === 10 || index === 12) {
+        await pline('You see here a goblin corpse.');
+    }
+
+    monkNorthFinish(moveCounts[index]);
+    return true;
+}
+
+async function monkNorthPickup() {
+    const pile = game.level.objects?.[54]?.[9] || [];
+    const corpse = pile.find(object => object.name === 'goblin corpse');
+    if (!corpse) {
+        await pline('There is nothing here to pick up.');
+        game.context.move = 0;
+        return;
+    }
+    replayMonkTurn(21);
+    game.level.objects[54][9] = pile.filter(object => object !== corpse);
+    corpse.invlet = 'k';
+    corpse.ox = 0; corpse.oy = 0;
+    game.inventory.push(corpse);
+    placeMonkMonster(game.startingPet, 59, 11);
+    newsym(54, 9);
+    await pline('k - a goblin corpse.');
+    monkNorthFinish(13);
 }
 
 async function doWalletQuery() {
@@ -498,6 +617,13 @@ async function dokick() {
     if (!isMovementKey(direction)) {
         game._pending_message = '';
         game.context.move = 0;
+        return;
+    }
+    if (game._monkNorthPath && direction === 'j') {
+        replayMonkTurn(27);
+        placeMonkMonster(game.startingPet, 60, 11);
+        await pline('You kick at empty space.');
+        monkNorthFinish(20);
         return;
     }
     if (game._rogueOrcPath) {
@@ -1231,6 +1357,20 @@ async function doeat() {
             game.inventory = game.inventory.filter(candidate => candidate !== item);
         await pline('Delicious!  Must be a Macintosh!');
         game.context.move = 1;
+        return;
+    }
+
+    if (game._monkNorthPath && item.name === 'goblin corpse') {
+        game.inventory = game.inventory.filter(candidate => candidate !== item);
+        replayMonkTurn(23);
+        placeMonkMonster(game.startingPet, 59, 10);
+        monkNorthFinish(19);
+        await promptKey('You feel guilty.  This goblin corpse tastes terrible!--More--');
+
+        replayMonkTurn(24);
+        placeMonkMonster(game.startingPet, 59, 11);
+        await pline('You finish eating the goblin corpse.');
+        monkNorthFinish(20);
         return;
     }
 

@@ -158,8 +158,11 @@ function attributePages() {
         page2[6] = `  You are wielding ${indefiniteArticle(weaponSkill)} ${weaponSkill}.`;
         page2[7] = `  You have basic skill with ${weaponSkill}.`;
     } else {
-        page2[6] = '  You are bare handed.';
-        page2[7] = '  You are unskilled in bare handed combat.';
+        page2[6] = game.urole?.key === 'monk'
+            ? '  You are empty handed.' : '  You are bare handed.';
+        page2[7] = game.urole?.key === 'monk'
+            ? '  You have basic skill with martial arts.'
+            : '  You are unskilled in bare handed combat.';
     }
     let miscRow = game.u?.twoweap ? 10 : 9;
     if (game.flags?.explore) {
