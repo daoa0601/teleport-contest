@@ -43,30 +43,46 @@ async function showLegacy() {
     rn2(2);
 
     const d = game.nhDisplay;
-    d.clearScreen();
     const god = game.urole?.gods?.[game.initAlignment?.name] || 'your god';
     const rank = game.urole?.rank?.m || game.urole?.title?.[0]?.m || 'adventurer';
-    putLine(23, 0, `It is written in the Book of ${god}:`);
-    putLine(27, 2, 'After the Creation, the cruel god Moloch rebelled');
-    putLine(19, 3, '┌──');
-    putLine(27, 3, 'against the authority of Marduk the Creator.');
-    putLine(19, 4, '│··');
-    putLine(27, 4, 'Moloch stole from Marduk the most powerful of all');
-    putLine(19, 5, '···');
-    putLine(27, 5, 'the artifacts of the gods, the Amulet of Yendor,');
-    putLine(19, 6, '└──');
-    putLine(27, 6, 'and he hid it in the dark cavities of Gehennom, the');
-    putLine(27, 7, 'Under World, where he now lurks, and bides his time.');
-    putLine(23, 9, `Your god ${god} seeks to possess the Amulet, and with it`);
-    putLine(23, 10, 'to gain deserved ascendance over the other gods.');
-    putLine(23, 12, `You, a newly trained ${rank}, have been heralded`);
-    putLine(23, 13, `from birth as the instrument of ${god}.  You are destined`);
-    putLine(23, 14, 'to recover the Amulet for your deity, or die in the');
-    putLine(23, 15, 'attempt.  Your hour of destiny has come.  For the sake');
-    putLine(23, 16, `of us all:  Go bravely with ${god}!`);
-    putLine(23, 17, '--More--');
+    const deityNoun = god === 'The Lady' ? 'goddess' : 'god';
+    const outerLines = [
+        `It is written in the Book of ${god}:`,
+        `Your ${deityNoun} ${god} seeks to possess the Amulet, and with it`,
+        'to gain deserved ascendance over the other gods.',
+        `You, a newly trained ${rank}, have been heralded`,
+        `from birth as the instrument of ${god}.  You are destined`,
+        'to recover the Amulet for your deity, or die in the',
+        'attempt.  Your hour of destiny has come.  For the sake',
+        `of us all:  Go bravely with ${god}!`,
+        '--More--',
+    ];
+    const innerLines = [
+        'After the Creation, the cruel god Moloch rebelled',
+        'against the authority of Marduk the Creator.',
+        'Moloch stole from Marduk the most powerful of all',
+        'the artifacts of the gods, the Amulet of Yendor,',
+        'and he hid it in the dark cavities of Gehennom, the',
+        'Under World, where he now lurks, and bides his time.',
+    ];
+    const width = Math.max(...outerLines.map(line => line.length),
+        ...innerLines.map(line => line.length + 4));
+    const left = Math.max(0, 79 - width);
+    const windowLeft = Math.max(0, left - 1);
+    for (let row = 0; row <= 17; row++)
+        putLine(windowLeft, row, ' '.repeat(80 - windowLeft));
+    putLine(left, 0, outerLines[0]);
+    innerLines.forEach((line, index) => putLine(left + 4, index + 2, line));
+    putLine(left, 9, outerLines[1]);
+    putLine(left, 10, outerLines[2]);
+    putLine(left, 12, outerLines[3]);
+    putLine(left, 13, outerLines[4]);
+    putLine(left, 14, outerLines[5]);
+    putLine(left, 15, outerLines[6]);
+    putLine(left, 16, outerLines[7]);
+    putLine(left, 17, outerLines[8]);
     putStatusLines();
-    d.setCursor(31, 17);
+    d.setCursor(left + 8, 17);
     await nhgetch();
 }
 
@@ -152,8 +168,9 @@ export async function newgame() {
     // to the hero rather than next to the level-generation origin.
     u_on_upstairs();
 
-    const realRangerStartup = g.urole?.key === 'ranger';
-    if (realRangerStartup) {
+    const realRoleStartup = g.urole?.key === 'ranger'
+        || g.urole?.key === 'tourist';
+    if (realRoleStartup) {
         makedog();
         uInitInventoryAttrs();
     } else {
@@ -162,9 +179,9 @@ export async function newgame() {
         fastforward_post_mklev();
     }
 
-    // Hardcoded player state for seed8000 Tourist.
-    // Contestants: port u_init to compute these from game PRNG.
-    if (!realRangerStartup) {
+    // Roles whose inventory tables have not been ported yet keep the old
+    // starter state so their command paths remain executable.
+    if (!realRoleStartup) {
     g._goldCount = 757;
     g.u.ulevel = 1;
     g.u.uhp = 10; g.u.uhpmax = 10;

@@ -13,12 +13,14 @@ import {
     NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
     DEC_TO_UNICODE,
 } from './terminal.js';
+import { LARGE_BOX, CHEST } from './object_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
 
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
+    if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
     // Most ordinary weapons use HI_METAL in objects.h.  Other object classes
     // remain neutral until their generated color metadata is ported.
     return object?.oclass === 2 ? CLR_CYAN : CLR_GRAY;

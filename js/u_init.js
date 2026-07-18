@@ -3,19 +3,31 @@
 
 import { game } from './gstate.js';
 import { rn2, rnd, d } from './rng.js';
-import { mksobj } from './mklev.js';
+import { mkobj, mksobj } from './mklev.js';
 import {
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS,
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    DAGGER, BOW, ARROW, CLOAK_OF_DISPLACEMENT, CRAM_RATION,
+    ARROW, DART, DAGGER, BOW, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER, MAGIC_MARKER,
+    CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
+    MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
+    CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
+    POT_EXTRA_HEALING, SCR_MAGIC_MAPPING, WAN_WISHING, GOLD_PIECE,
 } from './object_data.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
+const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
+const POTION_CLASS = 8;
+const SCROLL_CLASS = 9;
+const WAND_CLASS = 11;
 const UNDEF_BLESS = 2;
+const UNDEF_TYP = -1;
+const UNDEF_SPE = null;
+const PM_LICHEN = 158;
 
 const RANGER_INVENTORY = [
     { typ: DAGGER, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -27,14 +39,85 @@ const RANGER_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const TOURIST_INVENTORY = [
+    { typ: DART, spe: 2, cls: WEAPON_CLASS, min: 21, max: 40, bless: UNDEF_BLESS },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS, min: 10, max: 10, bless: 0 },
+    { typ: POT_EXTRA_HEALING, spe: 0, cls: POTION_CLASS, min: 2, max: 2, bless: UNDEF_BLESS },
+    { typ: SCR_MAGIC_MAPPING, spe: 0, cls: SCROLL_CLASS, min: 4, max: 4, bless: UNDEF_BLESS },
+    { typ: HAWAIIAN_SHIRT, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: EXPENSIVE_CAMERA, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: CREDIT_CARD, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+function oneItem(typ, spe = 0) {
+    return [
+        { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+        { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    ];
+}
+
 const ITEM_PRESENTATION = new Map([
-    [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers' }],
-    [BOW, { class: 'Weapons', name: 'bow', plural: 'bows' }],
-    [ARROW, { class: 'Weapons', name: 'arrow', plural: 'arrows' }],
+    [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers', enchanted: true }],
+    [BOW, { class: 'Weapons', name: 'bow', plural: 'bows', enchanted: true }],
+    [ARROW, { class: 'Weapons', name: 'arrow', plural: 'arrows', enchanted: true }],
+    [DART, {
+        class: 'Weapons', name: 'dart', plural: 'darts', enchanted: true, omitUncursed: true,
+    }],
+    [HAWAIIAN_SHIRT, {
+        class: 'Armor', name: 'Hawaiian shirt', plural: 'Hawaiian shirts', enchanted: true,
+    }],
     [CLOAK_OF_DISPLACEMENT, {
         class: 'Armor', name: 'cloak of displacement', plural: 'cloaks of displacement',
+        enchanted: true,
     }],
+    [264, { class: 'Comestibles', name: 'tripe ration', plural: 'tripe rations' }],
+    [266, { class: 'Comestibles', name: 'egg', plural: 'eggs' }],
+    [EUCALYPTUS_LEAF, { class: 'Comestibles', name: 'eucalyptus leaf', plural: 'eucalyptus leaves' }],
+    [APPLE, { class: 'Comestibles', name: 'apple', plural: 'apples' }],
+    [ORANGE, { class: 'Comestibles', name: 'orange', plural: 'oranges' }],
+    [PEAR, { class: 'Comestibles', name: 'pear', plural: 'pears' }],
+    [MELON, { class: 'Comestibles', name: 'melon', plural: 'melons' }],
+    [BANANA, { class: 'Comestibles', name: 'banana', plural: 'bananas' }],
+    [CARROT, { class: 'Comestibles', name: 'carrot', plural: 'carrots' }],
+    [SPRIG_OF_WOLFSBANE, {
+        class: 'Comestibles', name: 'sprig of wolfsbane', plural: 'sprigs of wolfsbane',
+    }],
+    [CLOVE_OF_GARLIC, {
+        class: 'Comestibles', name: 'clove of garlic', plural: 'cloves of garlic',
+    }],
+    [SLIME_MOLD, { class: 'Comestibles', name: 'slime mold', plural: 'slime molds' }],
+    [CREAM_PIE, { class: 'Comestibles', name: 'cream pie', plural: 'cream pies' }],
+    [CANDY_BAR, { class: 'Comestibles', name: 'candy bar', plural: 'candy bars' }],
+    [FORTUNE_COOKIE, {
+        class: 'Comestibles', name: 'fortune cookie', plural: 'fortune cookies',
+    }],
+    [PANCAKE, { class: 'Comestibles', name: 'pancake', plural: 'pancakes' }],
+    [LEMBAS_WAFER, { class: 'Comestibles', name: 'lembas wafer', plural: 'lembas wafers' }],
     [CRAM_RATION, { class: 'Comestibles', name: 'cram ration', plural: 'cram rations' }],
+    [FOOD_RATION, { class: 'Comestibles', name: 'food ration', plural: 'food rations' }],
+    [POT_EXTRA_HEALING, {
+        class: 'Potions', name: 'potion of extra healing', plural: 'potions of extra healing',
+    }],
+    [SCR_MAGIC_MAPPING, {
+        class: 'Scrolls', name: 'scroll of magic mapping', plural: 'scrolls of magic mapping',
+    }],
+    [EXPENSIVE_CAMERA, {
+        class: 'Tools', name: 'expensive camera', plural: 'expensive cameras',
+        charged: true, showBuc: false,
+    }],
+    [CREDIT_CARD, { class: 'Tools', name: 'credit card', plural: 'credit cards' }],
+    [TIN_OPENER, { class: 'Tools', name: 'tin opener', plural: 'tin openers' }],
+    [LEASH, { class: 'Tools', name: 'leash', plural: 'leashes' }],
+    [TOWEL, { class: 'Tools', name: 'towel', plural: 'towels' }],
+    [MAGIC_MARKER, {
+        class: 'Tools', name: 'magic marker', plural: 'magic markers',
+        charged: true, showBuc: false,
+    }],
+    [WAN_WISHING, {
+        class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
+        charged: true, showBuc: false,
+    }],
 ]);
 
 function initialRoll(adv) {
@@ -103,23 +186,36 @@ function monsterGoodPos(x, y) {
     return loc.typ === DOOR && !!(loc.doormask & (D_ISOPEN | D_NODOOR));
 }
 
-// C ref: makedog().  Ranger has a fixed little dog, so pet_type() itself
-// consumes no RNG.  Other roles remain on the existing startup path.
+// C ref: dog.c makedog() and pet_type().
 export function makedog() {
     const g = game;
     if (g.preferred_pet === 'n') return null;
-    if (g.urole?.key !== 'ranger') return null;
+    const role = g.urole?.key;
+    if (role !== 'ranger' && role !== 'tourist') return null;
+
+    let pettype = 16; // PM_LITTLE_DOG
+    if (role === 'tourist') {
+        if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
+        else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
+    }
 
     const candidates = collectNearbyCoords(g.u.ux, g.u.uy, 3);
     const spot = candidates.find(({ x, y }) => monsterGoodPos(x, y));
     if (!spot) return null;
 
     rnd(2); // next_ident()
-    let hp = d(1, 8); // adj_lev(little dog) is one for a level-one hero
+    // adj_lev() reduces both little dogs and kittens to level one for a
+    // level-one hero on dungeon level one.
+    let hp = d(1, 8);
     if (hp === 1) hp++;
     const female = !!rn2(2);
+    if (role === 'tourist') {
+        // peace_minded(); initedog() below ultimately makes the pet tame.
+        rn2(16);
+        rn2(2);
+    }
     const pet = {
-        mnum: 16,
+        mnum: pettype,
         mx: spot.x,
         my: spot.y,
         mhp: hp,
@@ -127,8 +223,8 @@ export function makedog() {
         female,
         mtame: 10,
         mpeaceful: 1,
-        symbol: 'd',
-        name: 'Sirius',
+        symbol: pettype === 32 ? 'f' : 'd',
+        name: role === 'ranger' ? 'Sirius' : '',
         pet: true,
     };
     if (!g.level.monsters) g.level.monsters = [];
@@ -143,22 +239,31 @@ function trquan(trobj) {
 }
 
 function inventoryItem(raw) {
-    const view = ITEM_PRESENTATION.get(raw.otyp) || {
+    let view = ITEM_PRESENTATION.get(raw.otyp) || {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
+    if (raw.otyp === TIN) {
+        view = raw.corpsenm === PM_LICHEN
+            ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
+            : { class: 'Comestibles', name: 'tin', plural: 'tins' };
+    }
+    const buc = raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed';
     return {
         ...raw,
         ...view,
         quantity: raw.quan,
-        enchantment: raw.spe,
-        buc: raw.blessed ? 'blessed' : 'uncursed',
+        enchantment: view.enchanted ? raw.spe : undefined,
+        buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
+            ? undefined : buc,
+        charges: view.charged ? { recharged: 0, current: raw.spe } : undefined,
     };
 }
 
 function addStartingItem(raw) {
     const item = inventoryItem(raw);
     const merge = game.inventory.find(other => other.otyp === item.otyp
-        && other.enchantment === item.enchantment && other.buc === item.buc);
+        && other.enchantment === item.enchantment && other.buc === item.buc
+        && other.corpsenm === item.corpsenm && other.spe === item.spe);
     if (merge) {
         merge.quantity += item.quantity;
         merge.quan = merge.quantity;
@@ -170,7 +275,7 @@ function addStartingItem(raw) {
 }
 
 function useStartingItem(item) {
-    if (item.otyp === ARROW) {
+    if (item.otyp === ARROW || item.otyp === DART) {
         if (!game.uquiver) {
             game.uquiver = item;
             item.ready = true;
@@ -184,24 +289,31 @@ function useStartingItem(item) {
     } else if (item.otyp === CLOAK_OF_DISPLACEMENT) {
         game.uarmc = item;
         item.worn = true;
+    } else if (item.otyp === HAWAIIAN_SHIRT) {
+        game.uarmu = item;
+        item.worn = true;
     }
 }
 
-// Direct port of ini_inv() for fixed Ranger inventory entries.
+// Direct port of ini_inv() for fixed and class-generated inventory entries.
 function iniInv(table) {
     let index = 0;
     let quan = trquan(table[index]);
     while (table[index].cls) {
         const trobj = table[index];
-        const raw = mksobj(trobj.typ, true, false);
+        const raw = trobj.typ === UNDEF_TYP
+            ? mkobj(trobj.cls, false) : mksobj(trobj.typ, true, false);
 
         raw.cursed = false;
         let stop = false;
-        if (raw.oclass === WEAPON_CLASS) {
+        if (raw.oclass === WEAPON_CLASS || raw.oclass === TOOL_CLASS) {
             raw.quan = trquan(trobj);
             stop = true;
         }
-        raw.spe = trobj.spe;
+        if (trobj.spe !== UNDEF_SPE) {
+            raw.spe = trobj.spe;
+            if (trobj.typ === MAGIC_MARKER && raw.spe < 96) raw.spe += rn2(4);
+        }
         if (trobj.bless !== UNDEF_BLESS) raw.blessed = !!trobj.bless;
 
         const item = addStartingItem(raw);
@@ -254,12 +366,39 @@ function initAttributes() {
 }
 
 export function uInitInventoryAttrs() {
-    if (game.urole?.key !== 'ranger') return false;
+    const role = game.urole?.key;
+    if (role !== 'ranger' && role !== 'tourist') return false;
     game.inventory = [];
+    game.uwep = game.uswapwep = game.uquiver = null;
+    game.uarmc = game.uarmu = null;
     game.moves = 1;
-    iniInv(RANGER_INVENTORY);
+    if (role === 'tourist') {
+        game._goldCount = rnd(1000);
+        iniInv(TOURIST_INVENTORY);
+        if (!rn2(25)) iniInv(oneItem(TIN_OPENER));
+        else if (!rn2(25)) iniInv(oneItem(LEASH));
+        else if (!rn2(25)) iniInv(oneItem(TOWEL));
+        else if (!rn2(20)) iniInv(oneItem(MAGIC_MARKER, 19));
+        if (game.flags?.explore) {
+            iniInv([
+                { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS, min: 1, max: 1, bless: 0 },
+                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+            ]);
+        }
+        // ini_inv(Money): its object is kept outside the lettered inventory.
+        rn2(1);
+        mksobj(GOLD_PIECE, true, false);
+    } else {
+        iniInv(RANGER_INVENTORY);
+    }
     initAttributes();
-    game.discoveries = [
+    game.discoveries = role === 'tourist' ? [
+        { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'ANDOVA BEGARIN' },
+        { class: 'Potions', name: 'potion of extra healing', appearance: 'murky' },
+        ...(game.flags?.explore ? [{
+            class: 'Wands', name: 'wand of wishing', appearance: 'ebony',
+        }] : []),
+    ] : [
         { class: 'Weapons', name: 'elven arrow', appearance: 'runed arrow', preknown: true },
         { class: 'Weapons', name: 'orcish arrow', appearance: 'crude arrow', preknown: true },
         { class: 'Weapons', name: 'ya', appearance: 'bamboo arrow', preknown: true },
@@ -278,4 +417,5 @@ export function uInitInventoryAttrs() {
 
 export function setInitialArmorClass() {
     if (game.urole?.key === 'ranger') game.u.uac = 7;
+    else if (game.urole?.key === 'tourist') game.u.uac = 10;
 }

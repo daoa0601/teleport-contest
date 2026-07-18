@@ -40,9 +40,12 @@ import {
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
-    MONSTER_FLAGS2, MONSTER_SYMBOL, SPECIAL_PM,
+    MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM,
 } from './monster_data.js';
 import { CLR_BROWN, CLR_GRAY } from './terminal.js';
+import {
+    TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS,
+} from './random_text_data.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -416,6 +419,15 @@ function mksobj_init(otmp, artif) {
         else otmp.spe = rn1(5, OBJECT_DIR[otyp] === 1 ? 11 : 4);
         blessorcurse(otmp, 17);
         break;
+    case ROCK_CLASS:
+        if (otyp === STATUE) {
+            otmp.corpsenm = rndmonnum();
+            if ((MONSTER_SIZE[otmp.corpsenm] || 0) >= 1
+                && rn2(Math.trunc(level_difficulty() / 2) + 10) > 10) {
+                // Statue contents are a later object-container boundary.
+            }
+        }
+        break;
     }
     mkobjErosions(otmp);
 }
@@ -433,8 +445,12 @@ function initTool(otmp) {
     } else if (otyp === CHEST || otyp === LARGE_BOX) {
         otmp.olocked = !!rn2(5);
         const trapped = !rn2(10);
+        otmp.otrapped = trapped;
         if (trapped) rn2(100);
-        // Container contents are the next object subsystem boundary.
+        mkboxCnts(otmp);
+    } else if (otyp === ICE_BOX || otyp === SACK || otyp === OILSKIN_SACK
+        || otyp === BAG_OF_HOLDING) {
+        mkboxCnts(otmp);
     } else if (otyp === EXPENSIVE_CAMERA || otyp === TINNING_KIT
         || otyp === MAGIC_MARKER) {
         otmp.spe = rn1(70, 30);
@@ -456,11 +472,58 @@ function initTool(otmp) {
     }
 }
 
+// C ref: mkobj.c mkbox_cnts().
+function mkboxCnts(box) {
+    let maximum;
+    if (box.otyp === ICE_BOX) maximum = 20;
+    else if (box.otyp === CHEST) maximum = box.olocked ? 7 : 5;
+    else if (box.otyp === LARGE_BOX) maximum = box.olocked ? 5 : 3;
+    else if (box.otyp === SACK || box.otyp === OILSKIN_SACK) {
+        maximum = ((game.moves ?? 0) <= 1 && !game.in_mklev) ? 0 : 1;
+    } else if (box.otyp === BAG_OF_HOLDING) maximum = 1;
+    else maximum = 0;
+
+    box.contents = [];
+    const classProbs = [[18, GEM_CLASS], [15, FOOD_CLASS], [18, POTION_CLASS],
+        [18, SCROLL_CLASS], [12, SPBOOK_CLASS], [7, COIN_CLASS],
+        [6, WAND_CLASS], [5, RING_CLASS], [1, AMULET_CLASS]];
+    for (let count = rn2(maximum + 1); count > 0; count--) {
+        let content;
+        if (box.otyp === ICE_BOX) {
+            content = mksobj(CORPSE, true, false);
+            content.age = 0;
+        } else {
+            let roll = rnd(100);
+            let objectClass = AMULET_CLASS;
+            for (const [probability, candidate] of classProbs) {
+                roll -= probability;
+                if (roll <= 0) {
+                    objectClass = candidate;
+                    break;
+                }
+            }
+            content = mkobj(objectClass, false);
+            if (content.oclass === COIN_CLASS) {
+                content.quan = rnd(level_difficulty() + 2) * rnd(75);
+            } else if (content.otyp === ROCK) {
+                let gemRoll = rnd(OBJECT_PROB.slice(439, LOADSTONE + 1)
+                    .reduce((sum, probability) => sum + probability, 0));
+                let replacement = 439; // DILITHIUM_CRYSTAL
+                while ((gemRoll -= OBJECT_PROB[replacement]) > 0) replacement++;
+                content.otyp = replacement;
+                if (content.quan > 2) content.quan = 1;
+            }
+            // Magical-bag substitutions are state-only for now.
+        }
+        box.contents.push(content);
+    }
+}
+
 function mksobj_at(otyp, x, y, init, artif) {
     return place_object(mksobj(otyp, init, artif), x, y);
 }
 
-function mkobj(oclass, artif) {
+export function mkobj(oclass, artif) {
     if (oclass === RANDOM_CLASS) {
         const classProbs = [[10, WEAPON_CLASS], [11, ARMOR_CLASS],
             [20, FOOD_CLASS], [8, TOOL_CLASS], [7, GEM_CLASS],
@@ -499,10 +562,17 @@ function mkgold(amount, x, y) {
         const mul = rnd(Math.trunc(30 / Math.max(12 - depthVal, 2)));
         amount = 1 + rnd(level_difficulty() + 2) * mul;
     }
-    // mksobj_at(GOLD_PIECE) calls next_ident.  Gold skips normal object
+    const existing = game.level?.objects?.[x]?.[y]
+        ?.find(object => object.otyp === GOLD_PIECE);
+    if (existing) {
+        existing.quan += amount;
+        existing.quantity = existing.quan;
+        return existing;
+    }
+    // mksobj_at(GOLD_PIECE) calls next_ident. Gold skips normal object
     // initialization but is still linked into the floor-object chain.
     next_ident();
-    place_object({
+    return place_object({
         otyp: GOLD_PIECE, oclass: COIN_CLASS, ox: x, oy: y,
         quan: amount, quantity: amount, cursed: false, blessed: false,
     }, x, y);
@@ -529,14 +599,9 @@ function set_corpsenm(otmp, pm) { /* stub */ }
 
 // mkcorpstat stub
 function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
-    // C ref: mkcorpstat calls mksobj(objtyp) then set_corpsenm.
-    // For STATUE: mksobj(STATUE, false, false) then set corpse identity.
-    // RNG: next_ident from mksobj
-    const otmp = mksobj(objtyp, false, false);
-    if (pm === null) {
-        // rndmonnum — pick random monster
-        rndmonnum();
-    }
+    // C ref: mkcorpstat() creates and initializes a statue, including its
+    // random monster identity and possible container roll.
+    const otmp = mksobj(objtyp, true, false);
     return place_object(otmp, x, y);
 }
 
@@ -617,21 +682,73 @@ function make_grave(x, y, text) {
     if (loc) loc.typ = GRAVE;
 }
 
-// random_engraving stub — consumes rn2 for text selection
-function random_engraving() {
-    // C: reads from engrave data file, consumes rn2 for selection
-    const idx = rn2(48); // approximate: rn2(num_engravings)
-    return { text: 'placeholder', pristine: 'placeholder' };
+// C ref: rumors.c get_rnd_line().  makedefs pads each source line to a
+// minimum of 59 text bytes plus its newline.  Selection deliberately seeks
+// into one line and returns the following line.
+function getRandomTextLine(lines) {
+    const sizes = lines.map(line => Math.max(line.length, 59) + 1);
+    const fileSize = sizes.reduce((sum, size) => sum + size, 0);
+    let picked = 0;
+    for (let tries = 10; tries > 0; tries--) {
+        let offset = rn2(fileSize);
+        picked = 0;
+        while (offset >= sizes[picked]) offset -= sizes[picked++];
+        const remainder = sizes[picked] - offset;
+        if (remainder <= 61) break;
+    }
+    return lines[(picked + 1) % lines.length];
 }
 
-// wipeout_text stub — consumes rn2 for character corruption
-function wipeout_text(text) {
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] !== ' ') {
-            rn2(1 + 27 / (text.length - i));
+function getRumor(excludeCookie) {
+    let rumor = '';
+    let count = 0;
+    do {
+        rumor = getRandomTextLine(rn2(2) ? TRUE_RUMORS : FALSE_RUMORS);
+    } while (count++ < 50 && excludeCookie && rumor.startsWith('[cookie] '));
+    return rumor;
+}
+
+const RUBOUTS = new Map([
+    ['A', '^'], ['B', 'Pb['], ['C', '('], ['D', '|)['], ['E', '|FL[_'],
+    ['F', '|-'], ['G', 'C('], ['H', '|-'], ['I', '|'], ['K', '|<'],
+    ['L', '|_'], ['M', '|'], ['N', '|\\'], ['O', 'C('], ['P', 'F'],
+    ['Q', 'C('], ['R', 'PF'], ['T', '|'], ['U', 'J'], ['V', '/\\'],
+    ['W', 'V/\\'], ['Z', '/'], ['b', '|'], ['d', 'c|'], ['e', 'c'],
+    ['g', 'c'], ['h', 'n'], ['j', 'i'], ['k', '|'], ['l', '|'],
+    ['m', 'nr'], ['n', 'r'], ['o', 'c'], ['q', 'c'], ['w', 'v'],
+    ['y', 'v'], [':', '.'], [';', ',:'], [',', '.'], ['=', '-'],
+    ['+', '-|'], ['*', '+'], ['@', '0'], ['0', 'C('], ['1', '|'],
+    ['6', 'o'], ['7', '/'], ['8', '3o'],
+]);
+
+// C ref: engrave.c wipeout_text().
+function wipeoutText(text, count) {
+    const chars = [...text];
+    const length = chars.length;
+    while (length && count-- > 0) {
+        const next = rn2(length);
+        const useRubout = rn2(4);
+        const ch = chars[next];
+        if (ch === ' ') continue;
+        if ("?.,'`-|_".includes(ch)) {
+            chars[next] = ' ';
+            continue;
         }
+        const replacements = useRubout ? RUBOUTS.get(ch) : null;
+        chars[next] = replacements ? replacements[rn2(replacements.length)] : '?';
     }
-    return text;
+    return chars.join('').replace(/ +$/, '');
+}
+
+// C ref: engrave.c random_engraving().
+function random_engraving() {
+    let pristine;
+    if (!rn2(4)) pristine = getRandomTextLine(RANDOM_ENGRAVINGS);
+    else pristine = getRumor(true);
+    return {
+        pristine,
+        text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
+    };
 }
 
 // in_rooms stub
@@ -683,6 +800,16 @@ function recount_level_features() {
         }
     lvl.flags.nfountains = nfountains;
     lvl.flags.nsinks = nsinks;
+}
+
+function fillVault(room) {
+    if (!room) return;
+    const amountRange = Math.abs(depth_of_level(game.u?.uz)) * 100;
+    for (let x = room.lx; x <= room.hx; x++) {
+        for (let y = room.ly; y <= room.hy; y++) {
+            mkgold(51 + rn2(amountRange), x, y);
+        }
+    }
 }
 
 // C ref: mklev.c clear_level_structures()
@@ -790,7 +917,10 @@ async function makelevel() {
             add_room(vx.v, vy.v, vx.v + vw.v, vy.v + vh.v, true, VAULT, false);
             g.level.flags.has_vault = true;
             const vaultRoom = g.level.rooms[g.level.nroom - 1];
-            if (vaultRoom) vaultRoom.needfill = FILL_NORMAL;
+            if (vaultRoom) {
+                vaultRoom.needfill = FILL_NORMAL;
+                fillVault(vaultRoom);
+            }
             if (!is_branchlev()) rn2(3);
             if (!rn2(3)) await makeniche(TELEP_TRAP);
         } else if (rnd_rect()) {
@@ -820,6 +950,8 @@ async function makelevel() {
             && croom.needfill === FILL_NORMAL;
         await fill_ordinary_room(croom,
             fillable && bonusItemRoomCountdown === 0);
+        if (croom?.rtype === VAULT && croom.needfill === FILL_NORMAL)
+            fillVault(croom);
         if (fillable) bonusItemRoomCountdown--;
     }
 }
