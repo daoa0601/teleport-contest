@@ -49,6 +49,23 @@ export function rnd(x) {
 // C ref: rn1(x, y) — random number y..y+x-1
 export function rn1(x, y) { return rn2(x) + y; }
 
+// C ref: rnl(x) — luck-adjusted random number.  The base draw is logged as
+// rnl rather than rn2; only the conditional adjustment uses a nested rn2.
+export function rnl(x) {
+    if (x <= 0) return 0;
+    let adjustment = game.u?.uluck || 0;
+    if (x <= 15) {
+        adjustment = Math.trunc((Math.abs(adjustment) + 1) / 3)
+            * Math.sign(adjustment);
+    }
+    let value = RND(x);
+    if (adjustment && rn2(37 + Math.abs(adjustment))) {
+        value = Math.max(0, Math.min(x - 1, value - adjustment));
+    }
+    if (_rngLogEnabled) _rngLog.push(`rnl(${x})=${value}`);
+    return value;
+}
+
 // C ref: d(n, x) — roll n dice of x sides
 export function d(n, x) {
     let sum = 0;

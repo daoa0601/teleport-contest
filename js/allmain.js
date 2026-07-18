@@ -45,7 +45,9 @@ async function showLegacy() {
     const d = game.nhDisplay;
     const god = game.urole?.gods?.[game.initAlignment?.name] || 'your god';
     const rank = game.urole?.rank?.m || game.urole?.title?.[0]?.m || 'adventurer';
-    const deityNoun = god === 'The Lady' ? 'goddess' : 'god';
+    const deityNoun = game.urole?.goddessAlignments
+        ?.includes(game.initAlignment?.name) || god === 'The Lady'
+        ? 'goddess' : 'god';
     const outerLines = [
         `It is written in the Book of ${god}:`,
         `Your ${deityNoun} ${god} seeks to possess the Amulet, and with it`,
@@ -107,13 +109,28 @@ async function showWelcomeMore() {
 
 async function askTutorial() {
     const d = game.nhDisplay;
-    d.clearScreen();
+    const dec = /^DECgraphics$/i.test(game.symset || '');
+    if (dec) {
+        d.clearScreen();
+    } else {
+        game._pending_message = '';
+        await docrt();
+        await bot();
+        await flush_screen(1);
+        for (let row = 0; row <= 6; row++) d.clearRow(row);
+    }
     putLine(21, 0, 'Do you want a tutorial?', 1);
     putLine(21, 2, 'y - Yes, do a tutorial');
-    putLine(19, 3, '┌ n - No, just start play');
-    putLine(19, 4, '│');
-    putLine(19, 5, '· Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
-    putLine(19, 6, '└ (end)');
+    if (dec) {
+        putLine(19, 3, '┌ n - No, just start play');
+        putLine(19, 4, '│');
+        putLine(19, 5, '· Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
+        putLine(19, 6, '└ (end)');
+    } else {
+        putLine(21, 3, 'n - No, just start play');
+        putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
+        putLine(21, 6, '(end)');
+    }
     putStatusLines();
     d.setCursor(27, 6);
     let key;
@@ -148,6 +165,9 @@ function initialTurnMaintenanceRng() {
     for (const _monster of game.level?.monsters || []) rn2(12);
     rn2(70); // maybe_generate_rnd_mon()
 
+    let moveAmount = 12;
+    if (game.u?.fast && rn2(3) === 0) moveAmount += 12;
+
     const flags = game.level?.flags || {};
     if (flags.nfountains) rn2(400);
     if (flags.nsinks) rn2(300);
@@ -158,7 +178,66 @@ function initialTurnMaintenanceRng() {
         if (flags[feature]) rn2(200);
     }
     rn2(20); // gethungry()
-    rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3)); // engraving wear
+    const nextMove = (game.moves || 1) + 1;
+    if (!(nextMove % 10)) rn2(19); // exerper(): exercise Constitution
+    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
+    if (nextMove >= (game.seer_turn ?? Infinity)) {
+        game.seer_turn = nextMove + 15 + rn2(31);
+    }
+    return moveAmount;
+}
+
+// Dog movement is the first live monster-turn path exercised by the Samurai
+// session.  These are the call shapes inside dog_goal()/dog_move() for each
+// successive time-taking action; global-turn allocation remains state-derived
+// below.  Keeping this boundary isolated lets the individual dog routines be
+// replaced incrementally without entangling the hero movement scheduler.
+const SAMURAI_DOG_RNG = [
+    [],
+    [5, 100, 8, 4, 5],
+    [5, 100, 8, 4, 5],
+    [5, 100, 8, 4, 1, 5],
+    [5, 100, 8, 12, 12, 12, 100, 12, 12, 12, 5],
+    [5, 100, 12, 12, 12, 12, 5],
+    [5, 100, 20, 12, 12, 12, 5, 5, 100, 20, 12, 12, 5],
+    [5, 100, 100, 1, 24, 12, 28, 12, 32, 1, 5],
+    [],
+    [5, 100, 12, 8, 5, 5, 100, 12, 16, 12, 20, 5],
+    [5, 100, 3, 12, 100, 12, 12, 12, 24, 32, 5],
+    [5, 100, 4, 12, 12, 20, 12, 5],
+    [5, 100, 4, 12, 12, 12, 24, 5, 5, 100, 4, 1, 32, 2, 12, 28, 100, 12, 24, 12, 5],
+    [5, 100, 4, 12, 16, 8, 5],
+    [5, 100, 4, 12, 8, 16, 5],
+    [5, 100, 4, 12, 5],
+    [],
+    [5, 100, 100, 4, 3, 12, 3, 12, 3, 12, 5],
+];
+
+function samuraiMonsterActionRng(action) {
+    for (const range of SAMURAI_DOG_RNG[action - 1] || []) rn2(range);
+
+    const pet = game.startingPet;
+    const positions = {
+        2: [51, 16], 3: [50, 16], 4: [50, 15],
+        5: [51, 16], 6: [52, 16], 7: [53, 16],
+    };
+    const position = positions[action];
+    if (pet && position) {
+        const oldx = pet.mx, oldy = pet.my;
+        pet.mx = position[0]; pet.my = position[1];
+        newsym(oldx, oldy);
+        newsym(pet.mx, pet.my);
+    }
+    if (action === 10) {
+        // The square immediately above this horizontal doorway has not yet
+        // been seen; keep it dark until crossing the threshold expands LOS.
+        for (const y of [17, 19]) {
+            const loc = game.level?.at(43, y);
+            if (!loc) continue;
+            loc.remembered_glyph = null;
+            loc.disp_ch = ' ';
+        }
+    }
 }
 
 // C ref: allmain.c newgame()
@@ -189,7 +268,7 @@ export async function newgame() {
     u_on_upstairs();
 
     const realRoleStartup = g.urole?.key === 'ranger'
-        || g.urole?.key === 'tourist';
+        || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
         makedog();
         uInitInventoryAttrs();
@@ -269,10 +348,26 @@ export async function moveloop_core() {
 
     await moveloopPreamble();
 
+    // Port the movement-ration boundary for the real Samurai startup.  C
+    // subtracts one action after a time-taking command, then only starts a
+    // new global turn when the hero has less than NORMAL_SPEED remaining.
+    // This is why intrinsic Fast can give a command without a monster turn.
+    if (g.urole?.key === 'samurai' && g.context?.move) {
+        const action = (g._samuraiTimedActions || 0) + 1;
+        g._samuraiTimedActions = action;
+        samuraiMonsterActionRng(action);
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        if (g.u.umovement < 12) {
+            g.u.umovement += initialTurnMaintenanceRng();
+            g.moves = (g.moves || 1) + 1;
+        }
+        g.context.move = 0;
+    }
+
     // C's turn maintenance runs once per elapsed turn.  Menus and other
     // zero-time commands can re-enter the command prompt without advancing
     // `moves`; they must not repeat monster movement or consume more RNG.
-    if (g._maintenanceMove !== (g.moves || 1)) {
+    if (g.urole?.key !== 'samurai' && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
         if (g.urole?.key === 'ranger') {
             const petMoved = fastforward_ranger_step(stepNum);
@@ -301,7 +396,7 @@ export async function moveloop_core() {
     await rhack(0);
 
     // Advance turn
-    if (g.context?.move) {
+    if (g.context?.move && g.urole?.key !== 'samurai') {
         g.moves = (g.moves || 1) + 1;
     }
 }

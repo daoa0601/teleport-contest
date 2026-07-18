@@ -19,6 +19,7 @@ function itemDescription(item) {
     const quantity = item.quantity ?? 1;
     const parts = [];
     if (item.buc) parts.push(item.buc);
+    if (item.rustproof) parts.push('rustproof');
     if (Number.isInteger(item.enchantment)) {
         parts.push(`${item.enchantment >= 0 ? '+' : ''}${item.enchantment}`);
     }
@@ -29,7 +30,11 @@ function itemDescription(item) {
     else description = `${indefiniteArticle(description)} ${description}`;
 
     if (item.charges) description += ` (${item.charges.recharged || 0}:${item.charges.current})`;
-    if (item.ready) description += ' (at the ready)';
+    if (game.u?.twoweap && item === game.uwep) description += ' (wielded in right hand)';
+    else if (game.u?.twoweap && item === game.uswapwep) description += ' (wielded in left hand)';
+    else if (item === game.uwep) description += ' (weapon in hand)';
+    if (item.ready) description += game.urole?.key === 'samurai'
+        ? ' (in quiver)' : ' (at the ready)';
     if (item.worn) description += ' (being worn)';
     return description;
 }
@@ -55,6 +60,8 @@ function inventorySections() {
 }
 
 export async function ddoinv() {
+    game._pending_message = '';
+    game.nhDisplay?.clearRow(0);
     await showInventoryWindow(inventorySections());
     await flush_screen(1);
     game.context.move = 0;
@@ -70,6 +77,8 @@ export async function dolook() {
         await flush_screen(1);
         game.nhDisplay?.setCursor(message.length, 0);
         await nhgetch();
+    } else if (objects.some(object => object.name === 'lichen corpse')) {
+        await pline('You see here a lichen corpse.');
     } else if (!objects.length) {
         await pline('You see no objects here.');
     }

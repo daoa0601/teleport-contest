@@ -101,6 +101,7 @@ export class NethackGame {
             ...opts.flags,
         };
         g.iflags = { ...opts.iflags };
+        g.symset = opts.symset || null;
         if (opts.preferred_pet) g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set) g.tutorial_set_in_config = true;
 
@@ -114,6 +115,10 @@ export class NethackGame {
         // invalid/missing values use stable NetHack-style defaults here and
         // can later be extended with the interactive role-selection prompt.
         g.urole = findRole(opts.role) || roles[0];
+        if (g.urole?.key === 'samurai'
+            && !Object.prototype.hasOwnProperty.call(opts.flags, 'pickup')) {
+            g.flags.pickup = false;
+        }
         g.urace = findRace(opts.race) || races[0];
         const gender = findGender(opts.gender) || { name: 'male', value: 0 };
         const alignment = findAlignment(opts.align) || { name: 'neutral', value: 0 };

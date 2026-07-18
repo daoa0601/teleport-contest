@@ -10,14 +10,14 @@ import { nhgetch } from './input.js';
 import {
     newsym, flush_screen, pline, docrt, bot, _statusLine1, _statusLine2,
 } from './display.js';
-import { vision_recalc } from './vision.js';
+import { vision_recalc, vision_reset } from './vision.js';
 import { ddoinv, dolook } from './invent.js';
 import { dovspell } from './spell.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes } from './insight.js';
 import { dosearch } from './detect.js';
-import { showTextPages } from './windows.js';
-import { rnd, rn2 } from './rng.js';
+import { ATR_INVERSE, showTextPages } from './windows.js';
+import { rnd, rn2, rnl } from './rng.js';
 import { getRumor } from './mklev.js';
 import { FORTUNE_COOKIE } from './object_data.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
@@ -57,9 +57,9 @@ export async function rhack(key) {
     // now; any message produced below remains visible at the next boundary.
     game._pending_message = '';
 
-    if (isMovementKey(ch)) {
-        await domove(DIR_DX[ch], DIR_DY[ch]);
-        game.context.move = 1;
+    if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))) {
+        const direction = ch.toLowerCase();
+        game.context.move = await domove(DIR_DX[direction], DIR_DY[direction]) ? 1 : 0;
     } else if (ch === 'i') {
         await ddoinv();
     } else if (ch === '+') {
@@ -76,6 +76,8 @@ export async function rhack(key) {
         await doapply();
     } else if (ch === ':') {
         await dolook();
+    } else if (ch === '#') {
+        await doextcmd();
     } else if (ch === 'Q') {
         await doready();
     } else if (ch === 't') {
@@ -89,6 +91,112 @@ export async function rhack(key) {
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
+}
+
+function samuraiSkillPage() {
+    const lines = Array(24).fill('');
+    lines[0] = { text: ' Current skills:', attr: ATR_INVERSE };
+    const body = [
+        '', ' Fighting Skills', '   martial arts      [Basic]',
+        '   two weapon combat [Unskilled]', '   riding            [Unskilled]',
+        ' Weapon Skills', '   dagger            [Unskilled]',
+        '   knife             [Unskilled]', '   short sword       [Basic]',
+        '   broadsword        [Unskilled]', '   long sword        [Basic]',
+        '   two-handed sword  [Unskilled]', '   saber             [Unskilled]',
+        '   flail             [Unskilled]', '   quarterstaff      [Unskilled]',
+        '   polearms          [Unskilled]', '   spear             [Unskilled]',
+        '   lance             [Unskilled]', '   bow               [Basic]',
+        '   shuriken          [Unskilled]', ' Spellcasting Skills',
+        '   attack spells     [Unskilled]', ' (1 of 2)',
+    ];
+    for (let i = 0; i < body.length; i++) lines[i + 1] = body[i];
+    for (const row of [2, 6, 21]) lines[row] = { text: lines[row], attr: ATR_INVERSE };
+    return { lines, cursor: [9, 23] };
+}
+
+async function dotwoweapon() {
+    if (game.u.twoweap) {
+        game.u.twoweap = false;
+        await pline('You switch to your primary weapon.');
+        game.context.move = 0;
+        return;
+    }
+
+    game.u.twoweap = true;
+    await pline('You begin two-weapon combat.');
+    // wield.c: a clumsy toggle only takes time when rnd(20) exceeds Dex.
+    game.context.move = rnd(20) > (game.u?.acurr?.a?.[1] || 0) ? 1 : 0;
+}
+
+async function doenhance() {
+    await showTextPages([samuraiSkillPage()]);
+    game._pending_message = '';
+    game.context.move = 0;
+}
+
+async function dochat() {
+    const key = await promptKey('Talk to whom? (in what direction) ');
+    const direction = String.fromCharCode(key).toLowerCase();
+    if (isMovementKey(direction)) {
+        const x = game.u.ux + DIR_DX[direction];
+        const y = game.u.uy + DIR_DY[direction];
+        const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
+        if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
+        else game._pending_message = '';
+    }
+    game.context.move = 0;
+}
+
+async function dosit() {
+    const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
+    const corpse = objects.find(object => object.name?.includes('corpse')
+        || object.corpsenm !== undefined);
+    await pline(corpse
+        ? "You sit on the corpse.  It's not very comfortable..."
+        : 'Having fun sitting on the floor?');
+    game.context.move = 1;
+}
+
+async function runExtendedCommand(command) {
+    if (command === 'twoweapon') return dotwoweapon();
+    if (command === 'enhance') return doenhance();
+    if (command === 'chat') return dochat();
+    if (command === 'sit') return dosit();
+    await pline(`#${command}: unknown extended command.`);
+    game.context.move = 0;
+}
+
+// TTY's extended-command line editor redraws the prompt at every input
+// boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
+// visually while subsequent characters advance through that completed word.
+async function doextcmd() {
+    let command = '';
+    game._pending_message = '#';
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(2, 0);
+
+    for (;;) {
+        const key = await nhgetch();
+        if (key === 27) {
+            game._pending_message = '';
+            game.context.move = 0;
+            return;
+        }
+        if (key === 10 || key === 13) break;
+        const ch = String.fromCharCode(key).toLowerCase();
+        if (!/[a-z]/.test(ch)) continue;
+        command += ch;
+
+        const completion = 'enhance'.startsWith(command) ? 'enhance'
+            : command.length >= 3 && 'chat'.startsWith(command) ? 'chat'
+            : 'sit'.startsWith(command) ? 'sit' : null;
+        const shown = completion || command;
+        game._pending_message = `# ${shown}`;
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(command.length + 2, 0);
+    }
+
+    await runExtendedCommand(command);
 }
 
 function farlookTipPage() {
@@ -289,10 +397,53 @@ async function domove(dx, dy) {
     const newx = u.ux + dx;
     const newy = u.uy + dy;
 
+    const loc = game.level?.at(newx, newy);
+    if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
+        rnl(20);
+        loc.doormask &= ~(D_CLOSED | D_LOCKED);
+        loc.doormask |= 2; // D_ISOPEN
+        await pline('The door opens.');
+        vision_reset();
+        vision_recalc(1);
+        newsym(newx, newy);
+        if (game.urole?.key === 'samurai' && newx === 43 && newy === 18) {
+            for (const y of [17, 19]) {
+                const edge = game.level?.at(43, y);
+                if (!edge) continue;
+                edge.remembered_glyph = null;
+                edge.disp_ch = ' ';
+            }
+        }
+        return false;
+    }
+
+    const monster = game.level?.monsters?.find(mon => mon.mx === newx && mon.my === newy);
+    if (monster) {
+        if (game.urole?.key === 'samurai' && monster.mnum === 158) {
+            rn2(20); rn2(19);
+            rnd(20); rn2(3); rnd(20); rnd(6); rn2(6); rn2(2); rnd(2);
+            for (const range of [3, 4, 5, 7, 8, 11, 15, 16, 21]) rn2(range);
+            game.level.monsters = game.level.monsters.filter(mon => mon !== monster);
+            const corpse = {
+                otyp: 265, oclass: 7, corpsenm: monster.mnum,
+                name: 'lichen corpse', quantity: 1, quan: 1,
+                ox: newx, oy: newy, color: 10,
+            };
+            if (!game.level.objects[newx]) game.level.objects[newx] = [];
+            if (!game.level.objects[newx][newy]) game.level.objects[newx][newy] = [];
+            game.level.objects[newx][newy].unshift(corpse);
+            game.u.uexp = 4;
+            await pline('You miss the lichen.  You kill the lichen!');
+            newsym(newx, newy);
+            return true;
+        }
+        return false;
+    }
+
     if (blocksMove(newx, newy)) {
         // Can't move there
         game.context.move = 0;
-        return;
+        return false;
     }
 
     // Move the hero
@@ -306,4 +457,8 @@ async function domove(dx, dy) {
     newsym(oldx, oldy);
     vision_recalc(1);
     newsym(newx, newy);
+    const objects = game.level?.objects?.[newx]?.[newy] || [];
+    const corpse = objects.find(object => object.name === 'lichen corpse');
+    if (corpse) await pline('You see here a lichen corpse.');
+    return true;
 }

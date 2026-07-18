@@ -53,37 +53,47 @@ const ANSI_COLOR = [
 // ── Terrain to display character + color + DEC flag ──
 function terrain_glyph(loc, x, y) {
     const typ = loc.typ;
+    const dec = /^DECgraphics$/i.test(game.symset || '');
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
-    case ROOM:      return { ch: '~', color: NO_COLOR, dec: true };  // DEC middle dot
+    case ROOM:      return dec
+        ? { ch: '~', color: NO_COLOR, dec: true }
+        : { ch: '.', color: NO_COLOR, dec: false };
     case CORR:      return { ch: '#', color: NO_COLOR, dec: false };
     case SDOOR:
+        if (!dec) return loc.horizontal
+            ? { ch: '-', color: NO_COLOR, dec: false }
+            : { ch: '|', color: NO_COLOR, dec: false };
         return loc.horizontal
             ? { ch: 'q', color: NO_COLOR, dec: true }
             : { ch: 'x', color: NO_COLOR, dec: true };
     case DOOR:
         if (loc.doormask & D_ISOPEN)
-            return { ch: 'a', color: CLR_BROWN, dec: true };
+            return dec
+                ? { ch: 'a', color: CLR_BROWN, dec: true }
+                : { ch: '-', color: CLR_BROWN, dec: false };
         if (loc.doormask & (D_CLOSED | D_LOCKED))
             return { ch: '+', color: CLR_BROWN, dec: false };
-        return { ch: '~', color: NO_COLOR, dec: true };  // D_NODOOR = floor
+        return dec
+            ? { ch: '~', color: NO_COLOR, dec: true }
+            : { ch: '.', color: NO_COLOR, dec: false };  // D_NODOOR = floor
     case STAIRS:
         // Check upstair vs downstair
         if (game.level?.upstair?.x === x && game.level?.upstair?.y === y)
             return { ch: '<', color: CLR_YELLOW, dec: false };
         return { ch: '>', color: CLR_YELLOW, dec: false };
     // Wall types → DEC line-drawing characters
-    case HWALL:     return { ch: 'q', color: NO_COLOR, dec: true };  // ─
-    case VWALL:     return { ch: 'x', color: NO_COLOR, dec: true };  // │
-    case TLCORNER:  return { ch: 'l', color: NO_COLOR, dec: true };  // ┌
-    case TRCORNER:  return { ch: 'k', color: NO_COLOR, dec: true };  // ┐
-    case BLCORNER:  return { ch: 'm', color: NO_COLOR, dec: true };  // └
-    case BRCORNER:  return { ch: 'j', color: NO_COLOR, dec: true };  // ┘
-    case CROSSWALL: return { ch: 'n', color: NO_COLOR, dec: true };  // ┼
-    case TUWALL:    return { ch: 'v', color: NO_COLOR, dec: true };  // ┴
-    case TDWALL:    return { ch: 'w', color: NO_COLOR, dec: true };  // ┬
-    case TLWALL:    return { ch: 'u', color: NO_COLOR, dec: true };  // ┤
-    case TRWALL:    return { ch: 't', color: NO_COLOR, dec: true };  // ├
+    case HWALL:     return dec ? { ch: 'q', color: NO_COLOR, dec: true } : { ch: '-', color: NO_COLOR, dec: false };
+    case VWALL:     return dec ? { ch: 'x', color: NO_COLOR, dec: true } : { ch: '|', color: NO_COLOR, dec: false };
+    case TLCORNER:
+    case TRCORNER:
+    case BLCORNER:
+    case BRCORNER:  return dec ? { ch: ({ [TLCORNER]: 'l', [TRCORNER]: 'k', [BLCORNER]: 'm', [BRCORNER]: 'j' })[typ], color: NO_COLOR, dec: true } : { ch: '-', color: NO_COLOR, dec: false };
+    case CROSSWALL:
+    case TUWALL:
+    case TDWALL:
+    case TLWALL:
+    case TRWALL:    return dec ? { ch: ({ [CROSSWALL]: 'n', [TUWALL]: 'v', [TDWALL]: 'w', [TLWALL]: 'u', [TRWALL]: 't' })[typ], color: NO_COLOR, dec: true } : { ch: '|', color: NO_COLOR, dec: false };
     default:        return { ch: '?', color: NO_COLOR, dec: false };
     }
 }

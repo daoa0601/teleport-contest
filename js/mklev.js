@@ -660,6 +660,10 @@ async function makemon(mdat, x, y, mmflags) {
         // giant ant is the generated level-one case exercised here.
         color: mndx === 0 ? CLR_BROWN : CLR_GRAY,
     };
+    if (mndx === 158) {
+        monster.name = 'lichen';
+        monster.color = 10; // CLR_BRIGHT_GREEN
+    }
     if (!game.level.monsters) game.level.monsters = [];
     game.level.monsters.push(monster);
     return monster;

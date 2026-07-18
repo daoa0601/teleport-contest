@@ -26,7 +26,8 @@ export async function dodiscovered() {
             lines[row++] = { text: discovery.class, attr: ATR_INVERSE };
             previousClass = discovery.class;
         }
-        const appearance = discovery.appearance ? ` (${discovery.appearance})` : '';
+        const appearance = discovery.bracket ? ` [${discovery.bracket}]`
+            : discovery.appearance ? ` (${discovery.appearance})` : '';
         lines[row++] = `${discovery.preknown ? '* ' : '  '}${discovery.name}${appearance}`;
     }
     lines[23] = '--More--';

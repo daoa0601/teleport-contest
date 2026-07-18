@@ -31,9 +31,10 @@ function attributePages() {
         .map(([key, name]) => `${name} (${key})`);
     const dungeonName = game.dungeons?.[u.uz?.dnum || 0]?.dname || 'the dungeon';
     const displayedDungeonName = dungeonName.replace(/^The\b/, 'the');
-    const entered = game.moves === 1
+    const elapsedTurns = game.moves || 1;
+    const entered = elapsedTurns === 1
         ? '  You have just started your adventure.'
-        : `  You entered the dungeon ${game.moves} ${plural(game.moves, 'turn')} ago.`;
+        : `  You entered the dungeon ${elapsedTurns} ${plural(elapsedTurns, 'turn')} ago.`;
     const stats = u.acurr?.a || [];
 
     const page1 = Array(24).fill('');
@@ -71,20 +72,25 @@ function attributePages() {
     page2[3] = ' Status:';
     page2[4] = "  You aren't hungry.";
     page2[5] = '  You are unencumbered.';
-    if (game.uwep) {
+    if (game.u?.twoweap) {
+        page2[6] = '  You are wielding two weapons at once.';
+        page2[7] = '  Your skill in long sword is limited by being unskilled with two weapons.';
+        page2[8] = '  Your skill in short sword is also limited by being unskilled with two weapons';
+    } else if (game.uwep) {
         page2[6] = `  You are wielding ${indefiniteArticle(game.uwep.name)} ${game.uwep.name}.`;
         page2[7] = `  You have basic skill with ${game.uwep.name}.`;
     } else {
         page2[6] = '  You are bare handed.';
         page2[7] = '  You are unskilled in bare handed combat.';
     }
-    page2[9] = ' Miscellaneous:';
-    page2[10] = '  Total elapsed playing time is none.';
-    page2[11] = ' (2 of 2)';
+    const miscRow = game.u?.twoweap ? 10 : 9;
+    page2[miscRow] = ' Miscellaneous:';
+    page2[miscRow + 1] = '  Total elapsed playing time is none.';
+    page2[miscRow + 2] = ' (2 of 2)';
 
     return [
         { lines: page1, cursor: [9, 23] },
-        { lines: page2, cursor: [9, 11] },
+        { lines: page2, cursor: [9, miscRow + 2] },
     ];
 }
 
