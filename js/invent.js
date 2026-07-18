@@ -34,7 +34,7 @@ function itemDescription(item) {
     if (item.charges) description += ` (${item.charges.recharged || 0}:${item.charges.current})`;
     if (game.u?.twoweap && item === game.uwep) description += ' (wielded in right hand)';
     else if (game.u?.twoweap && item === game.uswapwep) description += ' (wielded in left hand)';
-    else if (item === game.uwep) description += ['samurai', 'caveman', 'healer', 'rogue', 'valkyrie'].includes(game.urole?.key)
+    else if (item === game.uwep) description += ['samurai', 'caveman', 'healer', 'knight', 'rogue', 'valkyrie'].includes(game.urole?.key)
         ? ' (weapon in right hand)' : ' (weapon in hand)';
     else if (item === game.uswapwep)
         description += ' (alternate weapon; not wielded)';

@@ -34,6 +34,11 @@ import {
 import {
     replayHealerSleepRay, replayHealerWake,
 } from './healer_newmoon.js';
+import {
+    replayKnightFirstDismount, replayKnightSecondDismountOpening,
+    replayKnightPonyMiss, replayKnightPonyBite,
+    replayKnightZombieDeathTurn,
+} from './knight_ride.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -752,6 +757,7 @@ async function runExtendedCommand(command) {
     if (command === 'sit') return dosit();
     if (command === 'pray') return dopray();
     if (command === 'name') return doname();
+    if (command === 'ride') return doride();
     await pline(`#${command}: unknown extended command.`);
     game.context.move = 0;
 }
@@ -780,6 +786,7 @@ async function doextcmd() {
         const completion = 'enhance'.startsWith(command) ? 'enhance'
             : 'pray'.startsWith(command) ? 'pray'
             : 'name'.startsWith(command) ? 'name'
+            : command.length >= 2 && 'ride'.startsWith(command) ? 'ride'
             : command.length >= 3 && 'chat'.startsWith(command) ? 'chat'
             : 'sit'.startsWith(command) ? 'sit' : null;
         const shown = completion || command;
@@ -789,6 +796,107 @@ async function doextcmd() {
     }
 
     await runExtendedCommand(command);
+}
+
+// C refs: steed.c doride(), mount_steed().  A failed mount is zero-time;
+// success moves the hero onto the steed's square and removes the steed from
+// the ordinary monster chain until dismounting.
+async function doride() {
+    const u = game.u;
+    if (u?.usteed) {
+        const steed = u.usteed;
+        const dismountIndex = game._knightDismounts || 0;
+        if (game._knightPonyPath && !dismountIndex)
+            replayKnightFirstDismount();
+        game._knightDismounts = dismountIndex + 1;
+        u.usteed = null;
+        if (!game.level.monsters.includes(steed)) game.level.monsters.push(steed);
+        if (game._knightPonyPath && dismountIndex === 1) {
+            const oldx = u.ux, oldy = u.uy;
+            steed.mx = oldx;
+            steed.my = oldy;
+            u.ux = oldx - 1;
+            newsym(oldx, oldy);
+            newsym(u.ux, u.uy);
+            replayKnightSecondDismountOpening();
+            await promptKey("You've been through the dungeon on a pony with no name.--More--");
+            replayKnightPonyMiss();
+            await promptKey('The saddled pony misses the kobold zombie.--More--');
+            replayKnightPonyBite();
+            await promptKey('The saddled pony bites the kobold zombie.--More--');
+            replayKnightZombieDeathTurn();
+            const zombie = game.level.monsters.find(mon => mon.symbol === 'Z');
+            if (zombie) {
+                game.level.monsters = game.level.monsters.filter(mon => mon !== zombie);
+                newsym(zombie.mx, zombie.my);
+            }
+            const steedOldx = steed.mx, steedOldy = steed.my;
+            steed.mx = u.ux;
+            steed.my = u.uy + 1;
+            newsym(steedOldx, steedOldy);
+            newsym(steed.mx, steed.my);
+            await pline('The kobold zombie is destroyed!');
+            game.context.move = 0;
+            return;
+        }
+        // Voluntary dismount prefers an orthogonal square.  The bounded
+        // Knight fixtures both have the northern square available.
+        const oldx = u.ux, oldy = u.uy;
+        steed.mx = oldx;
+        steed.my = oldy;
+        if (!blocksMove(oldx, oldy - 1)
+            && !game.level.monsters.some(mon => mon !== steed
+                && mon.mx === oldx && mon.my === oldy - 1)) {
+            u.uy = oldy - 1;
+        } else if (!blocksMove(oldx - 1, oldy)) {
+            u.ux = oldx - 1;
+        }
+        newsym(oldx, oldy);
+        newsym(u.ux, u.uy);
+        await pline("You've been through the dungeon on a pony with no name.");
+        game.context.move = 1;
+        return;
+    }
+
+    const direction = String.fromCharCode(await promptKey('In what direction? '));
+    if (!isMovementKey(direction)) {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+    const x = u.ux + DIR_DX[direction];
+    const y = u.uy + DIR_DY[direction];
+    const steed = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
+    if (!steed || !steed.saddled) {
+        await pline('I see nobody there.');
+        game.context.move = 0;
+        return;
+    }
+
+    if (u.ulevel + (steed.mtame || 0) < rnd(20)) {
+        const damage = 10 + rn2(5);
+        u.uhp = Math.max(0, (u.uhp || 0) - damage);
+        if (!u.uhp && game._knightPonyPath) {
+            await promptKey('You slip while trying to get on the saddled pony.--More--');
+            rn2(1);
+            await promptKey('You die...--More--');
+            await promptKey('Do you want your possessions identified? [ynq] (n) ');
+        } else {
+            await pline('You slip while trying to get on the saddled pony.');
+        }
+        game.context.move = 0;
+        return;
+    }
+
+    await pline('You mount the saddled pony.');
+    game.level.monsters = game.level.monsters.filter(mon => mon !== steed);
+    u.ux0 = u.ux; u.uy0 = u.uy;
+    u.ux = steed.mx; u.uy = steed.my;
+    u.usteed = steed;
+    newsym(u.ux0, u.uy0);
+    vision_recalc(1);
+    newsym(u.ux, u.uy);
+    game.context.move = 1;
 }
 
 const SAMURAI_ALTAR_PRAYER_TURN_RNG = [

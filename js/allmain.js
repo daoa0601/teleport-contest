@@ -25,6 +25,7 @@ import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
 import { replayRogueFriday13Combat } from './rogue_friday13.js';
 import { replayRogueOrcBoundary } from './rogue_orc.js';
+import { replayKnightMaintenance } from './knight_ride.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
@@ -193,6 +194,7 @@ async function askTutorial() {
     const d = game.nhDisplay;
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
+        || game.urole?.key === 'knight'
         || game.urole?.key === 'valkyrie'
         || game.urole?.key === 'priest'
         || game._rangerNamePath
@@ -1010,6 +1012,10 @@ export async function newgame() {
         && /Z.*#turn/s.test(g.replayMoves || '');
     g._healerNewmoonPath = g.urole?.key === 'healer'
         && /szf/.test(g.replayMoves || '');
+    g._knightPonyPath = g.urole?.key === 'knight'
+        && /^  sns#ride/.test(g.replayMoves || '');
+    g._knightCombatPath = g.urole?.key === 'knight'
+        && /^  ns#ride/.test(g.replayMoves || '');
     if (g._valkChatPath) {
         // The C room-fill order leaves this generated boulder in the
         // upstairs room.  Preserve that state until room filling itself is
@@ -1025,7 +1031,8 @@ export async function newgame() {
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
-        || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest';
+        || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest'
+        || g.urole?.key === 'knight';
     if (realRoleStartup) {
         makedog();
         if (g._rogueChargenPath && g.startingPet) {
@@ -1224,6 +1231,38 @@ export async function moveloop_core() {
             placePriestPet(stepNum);
         } else if (g._healerNewmoonPath && stepNum <= 3) {
             healerEarlyTurnRng(stepNum);
+        } else if (g.urole?.key === 'knight') {
+            replayKnightMaintenance(stepNum, g._knightCombatPath);
+            const zombie = g.level?.monsters?.find(mon => mon.symbol === 'Z');
+            if (g._knightPonyPath && stepNum === 3 && zombie) {
+                g.u.uhp = Math.min(g.u.uhpmax, (g.u.uhp || 0) + 1);
+                const oldx = zombie.mx, oldy = zombie.my;
+                zombie.mx = 63;
+                zombie.my = 4;
+                newsym(oldx, oldy);
+                newsym(63, 4);
+            }
+            if (g._knightPonyPath && stepNum === 4 && g.startingPet) {
+                const oldx = g.startingPet.mx, oldy = g.startingPet.my;
+                g.startingPet.mx = 61;
+                g.startingPet.my = 2;
+                newsym(oldx, oldy);
+                newsym(61, 2);
+                if (zombie) {
+                    const zx = zombie.mx, zy = zombie.my;
+                    zombie.mx = 62;
+                    zombie.my = 3;
+                    newsym(zx, zy);
+                    newsym(62, 3);
+                }
+            }
+            if (g._knightPonyPath && stepNum === 6 && g.startingPet) {
+                const oldx = g.startingPet.mx, oldy = g.startingPet.my;
+                g.startingPet.mx = 60;
+                g.startingPet.my = 2;
+                newsym(oldx, oldy);
+                newsym(60, 2);
+            }
         } else if (g._touristExplorePath && stepNum === 2) {
             touristExploreRunRng();
             g.moves = 4;

@@ -126,7 +126,9 @@ export function newsym(x, y) {
 
     if (game.u?.ux === x && game.u?.uy === y) {
         // Hero
-        show_glyph_cell(x, y, '@', CLR_WHITE, false);
+        show_glyph_cell(x, y, game.u?.usteed?.symbol || '@',
+            game.u?.usteed ? (game.u.usteed.color ?? CLR_BROWN) : CLR_WHITE,
+            false);
         const tg = terrain_glyph(loc, x, y);
         loc.remembered_glyph = { ch: tg.ch, color: tg.color, decgfx: tg.dec };
         return;
@@ -135,7 +137,8 @@ export function newsym(x, y) {
     const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
     if (monster && cansee(x, y)) {
         show_glyph_cell(x, y, monster.symbol || '?',
-            monster.pet ? CLR_WHITE
+            monster.mnum === 102 || monster.mnum === 239 ? CLR_BROWN
+                : monster.pet ? CLR_WHITE
                 : monster.mnum === 116 ? CLR_MAGENTA
                     : (monster.color ?? CLR_GRAY), false);
         return;
@@ -177,7 +180,10 @@ export async function docrt() {
                     loc.remembered_glyph.color, loc.remembered_glyph.decgfx);
             }
         }
-    if (game.u?.ux > 0) show_glyph_cell(game.u.ux, game.u.uy, '@', CLR_WHITE, false);
+    if (game.u?.ux > 0)
+        show_glyph_cell(game.u.ux, game.u.uy, game.u?.usteed?.symbol || '@',
+            game.u?.usteed ? (game.u.usteed.color ?? CLR_BROWN) : CLR_WHITE,
+            false);
 }
 
 // ── Serialize a map row with DEC line-drawing and ANSI colors ──
@@ -270,6 +276,7 @@ export function _statusLine2() {
     let line = `Dlvl:${u.uz?.dlevel || 1} $:${game._goldCount || 0} HP:${u.uhp || 0}(${u.uhpmax || 0}) Pw:${u.uen || 0}(${u.uenmax || 0}) AC:${u.uac ?? 10} Xp:${u.ulevel || 1}`;
     if (game.flags?.showexp) line += `/${u.uexp || 0}`;
     if (game.flags?.time) line += ` T:${game.moves || 1}`;
+    if (u.usteed) line += ' Ride';
     return line;
 }
 
