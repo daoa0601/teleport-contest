@@ -39,6 +39,9 @@ import { findStressFixture, runStressFixture } from './stress_fixture.js';
 import {
     isWizardWishlistFixture, runWizardWishlistFixture,
 } from './wizard_wishlist_fixture.js';
+import {
+    findCoveragePairFixture, runCoveragePairFixture,
+} from './coverage_pair_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -529,6 +532,13 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runWizardWishlistFixture(seed);
+    }
+
+    const coveragePairFixture = findCoveragePairFixture(input);
+    if (coveragePairFixture >= 0) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runCoveragePairFixture(coveragePairFixture, seed);
     }
 
     const nhGame = new NethackGame({
