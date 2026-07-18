@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import {
-    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS, FOUNTAIN, SINK, ALTAR,
+    COLNO, ROWNO, STONE, ROOM, CORR, SDOOR, DOOR, STAIRS, FOUNTAIN, SINK, GRAVE, ALTAR,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
@@ -15,11 +15,14 @@ import {
     DEC_TO_UNICODE,
 } from './terminal.js';
 import {
-    LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL,
+    LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE,
 } from './object_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
+const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
+    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
@@ -91,6 +94,7 @@ export function terrain_glyph(loc, x, y) {
         return { ch: '>', color: CLR_YELLOW, dec: false };
     case FOUNTAIN:   return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
     case SINK:       return { ch: '{', color: CLR_WHITE, dec: false };
+    case GRAVE:      return { ch: '|', color: CLR_WHITE, dec: false };
     case ALTAR:      return { ch: '_', color: NO_COLOR, dec: false };
     // Wall types → DEC line-drawing characters
     case HWALL:     return dec ? { ch: 'q', color: NO_COLOR, dec: true } : { ch: '-', color: NO_COLOR, dec: false };
@@ -146,10 +150,17 @@ export function newsym(x, y) {
 
     const object = game.level?.objects?.[x]?.[y]?.[0];
     if (object && cansee(x, y)) {
-        const glyph = {
-            ch: OBJECT_SYMBOLS[object.oclass] || '?',
-            color: objectColor(object), decgfx: false,
-        };
+        // Statues use the depicted monster's class glyph rather than the
+        // generic rock-class glyph.
+        const statueSymbol = object.otyp === STATUE
+            ? MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[object.corpsenm]]
+            : null;
+        const glyph = statueSymbol
+            ? { ch: statueSymbol, color: CLR_WHITE, decgfx: false }
+            : {
+                ch: OBJECT_SYMBOLS[object.oclass] || '?',
+                color: objectColor(object), decgfx: false,
+            };
         show_glyph_cell(x, y, glyph.ch, glyph.color, false);
         if (game.level?.flags?.hero_memory) loc.remembered_glyph = glyph;
         return;

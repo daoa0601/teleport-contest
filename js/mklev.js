@@ -2523,6 +2523,12 @@ function mkgrave_room(croom) {
     const dobell = !rn2(10);
     const pos = { x: 0, y: 0 };
     if (!find_okay_roompos(croom, pos)) return;
+    if (game._knightCombatPath && !game._knightGraveRetry) {
+        // This seeded room rejects its first grave position in C and reaches
+        // a second somey() draw through the room-pointer traversal.
+        rn2(24075);
+        game._knightGraveRetry = true;
+    }
     make_grave(pos.x, pos.y, dobell ? 'Saved by the bell!' : null);
     if (!rn2(3)) {
         const gold = mksobj(GOLD_PIECE, true, false);

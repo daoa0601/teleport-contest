@@ -416,6 +416,10 @@ function inventoryItem(raw) {
     let view = ITEM_PRESENTATION.get(raw.otyp) || {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
+    if (game.urole?.key === 'knight'
+        && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
+        view = { ...view, omitUncursed: true };
+    }
     if (raw.otyp === SHORT_SWORD && game.urole?.key === 'rogue') {
         const orcish = game.urace?.mnum === 4;
         view = {
@@ -750,6 +754,27 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'ninja-to', bracket: 'broadsword', preknown: true },
         { class: 'Weapons', name: 'elven broadsword', appearance: 'runed broadsword', preknown: true },
         { class: 'Weapons', name: 'katana', appearance: 'samurai sword' },
+    ] : role === 'knight' ? [
+        { class: 'Weapons', name: 'elven arrow', appearance: 'runed arrow', preknown: true },
+        { class: 'Weapons', name: 'orcish arrow', appearance: 'crude arrow', preknown: true },
+        { class: 'Weapons', name: 'ya', appearance: 'bamboo arrow', preknown: true },
+        { class: 'Weapons', name: 'shuriken', appearance: 'throwing star', preknown: true },
+        { class: 'Weapons', name: 'elven spear', appearance: 'runed spear', preknown: true },
+        { class: 'Weapons', name: 'orcish spear', appearance: 'crude spear', preknown: true },
+        { class: 'Weapons', name: 'dwarvish spear', appearance: 'stout spear', preknown: true },
+        { class: 'Weapons', name: 'javelin', appearance: 'throwing spear', preknown: true },
+        { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
+        { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger', preknown: true },
+        { class: 'Weapons', name: 'battle-axe', appearance: 'double-headed axe', preknown: true },
+        { class: 'Weapons', name: 'elven short sword', appearance: 'runed short sword', preknown: true },
+        { class: 'Weapons', name: 'orcish short sword', appearance: 'crude short sword', preknown: true },
+        { class: 'Weapons', name: 'dwarvish short sword', appearance: 'broad short sword', preknown: true },
+        { class: 'Weapons', name: 'scimitar', appearance: 'curved sword', preknown: true },
+        { class: 'Weapons', name: 'elven broadsword', appearance: 'runed broadsword', preknown: true },
+        { class: 'Weapons', name: 'katana', appearance: 'samurai sword', preknown: true },
+        { class: 'Weapons', name: 'tsurugi', appearance: 'long samurai sword', preknown: true },
+        { class: 'Weapons', name: 'runesword', appearance: 'runed broadsword', preknown: true },
+        { class: 'Weapons', name: 'partisan', appearance: 'vulgar polearm', preknown: true },
     ] : role === 'rogue' && game.urace?.mnum === 4 ? [
         { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
         { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger' },

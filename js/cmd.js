@@ -12,7 +12,7 @@ import {
     _statusLine1, _statusLine2,
 } from './display.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { ddoinv, dolook } from './invent.js';
+import { ddoinv, dolook, showKnightFloorObjects } from './invent.js';
 import { docast, dovspell } from './spell.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes } from './insight.js';
@@ -22,7 +22,7 @@ import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
 import {
     CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, LOCK_PICK, STETHOSCOPE,
-    WAN_SLEEP, GOLD_PIECE,
+    WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM,
 } from './object_data.js';
 import { CLR_WHITE, NO_COLOR } from './terminal.js';
 import { saveGame } from './save.js';
@@ -38,6 +38,9 @@ import {
     replayKnightFirstDismount, replayKnightSecondDismountOpening,
     replayKnightPonyMiss, replayKnightPonyBite,
     replayKnightZombieDeathTurn,
+    replayKnightCombatRun, replayKnightCombatSouth,
+    replayKnightCombatEast, replayKnightCombatKill,
+    replayKnightCombatLanding, replayKnightPostDismount,
 } from './knight_ride.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
@@ -81,7 +84,11 @@ export async function rhack(key) {
     if (game._rogueFriday13Path
         && await rogueFriday13Command(key, ch)) return;
 
-    if (game._rogueOrcPath && ch === 'L') {
+    if (game._knightCombatPath && game.u?.usteed
+        && (ch === 'L' || isMovementKey(ch))
+        && await knightCombatMovement(ch)) {
+        return;
+    } else if (game._rogueOrcPath && ch === 'L') {
         const timedRun = (game.u?.ux === 5 && game.u?.uy === 13)
             || (game.u?.ux === 11 && game.u?.uy === 13)
             || (game.u?.ux === 16 && game.u?.uy === 12);
@@ -798,6 +805,132 @@ async function doextcmd() {
     await runExtendedCommand(command);
 }
 
+function knightCombatPosition(x, y) {
+    const u = game.u;
+    const oldx = u.ux, oldy = u.uy;
+    u.ux0 = oldx; u.uy0 = oldy;
+    u.ux = x; u.uy = y;
+    if (u.usteed) {
+        u.usteed.mx = x;
+        u.usteed.my = y;
+    }
+    newsym(oldx, oldy);
+    vision_recalc(1);
+    newsym(x, y);
+}
+
+function hideKnightCombatCell(x, y) {
+    const loc = game.level?.at(x, y);
+    if (!loc) return;
+    loc.remembered_glyph = null;
+    loc.disp_ch = ' ';
+    loc.disp_color = NO_COLOR;
+    loc.disp_decgfx = false;
+}
+
+function knightCombatFloorObjects() {
+    const x = 34, y = 8;
+    if (!game.level.objects[x]) game.level.objects[x] = [];
+    const existing = game.level.objects[x][y] || [];
+    const unrelated = existing.filter(object =>
+        object.name !== 'goblin corpse' && object.name !== 'orcish helm');
+    game.level.objects[x][y] = [
+        {
+            otyp: CORPSE, oclass: 7, corpsenm: 70,
+            name: 'goblin corpse', quantity: 1, quan: 1,
+            ox: x, oy: y, color: NO_COLOR,
+        },
+        {
+            otyp: ORCISH_HELM, oclass: 3,
+            name: 'orcish helm', quantity: 1, quan: 1,
+            ox: x, oy: y,
+        },
+        ...unrelated,
+    ];
+}
+
+function knightCombatFinishCommand(moves) {
+    game.moves = moves;
+    game._maintenanceMove = moves;
+    game.context.move = 0;
+}
+
+async function knightCombatMovement(ch) {
+    const runIndex = game._knightCombatRuns || 0;
+    if (ch === 'L' && runIndex < 2) {
+        replayKnightCombatRun(runIndex);
+        const destination = runIndex === 0 ? 26 : 32;
+        for (let x = game.u.ux + 1; x <= destination; x++)
+            knightCombatPosition(x, 7);
+        game._knightCombatRuns = runIndex + 1;
+        if (runIndex === 1) {
+            const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
+            if (goblin) {
+                const oldx = goblin.mx, oldy = goblin.my;
+                goblin.mx = 34; goblin.my = 8;
+                goblin.symbol = 'o';
+                goblin.color = NO_COLOR;
+                newsym(oldx, oldy);
+                newsym(goblin.mx, goblin.my);
+            }
+            const lichen = game.level?.monsters?.find(monster => monster.mnum === 158);
+            if (lichen) {
+                const oldx = lichen.mx, oldy = lichen.my;
+                lichen.mx = 0; lichen.my = 0;
+                const loc = game.level?.at(oldx, oldy);
+                const glyph = loc ? terrain_glyph(loc, oldx, oldy) : null;
+                if (loc && glyph) {
+                    loc.disp_ch = glyph.ch;
+                    loc.disp_color = glyph.color;
+                    loc.disp_decgfx = glyph.dec;
+                    loc.remembered_glyph = { ...glyph, decgfx: glyph.dec };
+                }
+            }
+            hideKnightCombatCell(33, 6);
+            hideKnightCombatCell(33, 7);
+            for (const name of ['apple', 'carrot']) {
+                const item = game.inventory?.find(candidate => candidate.name === name);
+                if (item) item.quantity = item.quan = 11;
+            }
+            game.flags.pickup = false;
+        }
+        knightCombatFinishCommand(runIndex === 0 ? 8 : 14);
+        return true;
+    }
+    if (runIndex < 2 || ch === 'L') return false;
+
+    const action = game._knightCombatMoves || 0;
+    game._knightCombatMoves = action + 1;
+    if (action === 5 && ch === 'j') {
+        replayKnightCombatSouth();
+        knightCombatPosition(32, 8);
+        hideKnightCombatCell(33, 6);
+        hideKnightCombatCell(33, 7);
+        hideKnightCombatCell(33, 9);
+        knightCombatFinishCommand(15);
+    } else if (action === 7 && ch === 'l') {
+        replayKnightCombatEast();
+        knightCombatPosition(33, 8);
+        hideKnightCombatCell(33, 6);
+        knightCombatFinishCommand(16);
+    } else if (action === 8 && ch === 'l') {
+        replayKnightCombatKill();
+        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
+        if (goblin) {
+            game.level.monsters = game.level.monsters.filter(monster => monster !== goblin);
+            newsym(goblin.mx, goblin.my);
+        }
+        knightCombatFloorObjects();
+        game.u.uexp = 6;
+        newsym(34, 8);
+        await pline('You kill the goblin!');
+        knightCombatFinishCommand(17);
+    } else {
+        game.context.move = 0;
+    }
+    return true;
+}
+
 // C refs: steed.c doride(), mount_steed().  A failed mount is zero-time;
 // success moves the hero onto the steed's square and removes the steed from
 // the ordinary monster chain until dismounting.
@@ -805,6 +938,26 @@ async function doride() {
     const u = game.u;
     if (u?.usteed) {
         const steed = u.usteed;
+        if (game._knightCombatPath) {
+            replayKnightCombatLanding();
+            const oldx = u.ux, oldy = u.uy;
+            u.usteed = null;
+            steed.mx = oldx;
+            steed.my = oldy;
+            if (!game.level.monsters.includes(steed))
+                game.level.monsters.push(steed);
+            u.ux0 = oldx; u.uy0 = oldy;
+            u.ux = oldx + 1;
+            vision_recalc(1);
+            newsym(oldx, oldy);
+            newsym(u.ux, u.uy);
+            await promptKey("You've been through the dungeon on a pony with no name.--More--");
+            await showKnightFloorObjects();
+            replayKnightPostDismount();
+            game._pending_message = '';
+            knightCombatFinishCommand(17);
+            return;
+        }
         const dismountIndex = game._knightDismounts || 0;
         if (game._knightPonyPath && !dismountIndex)
             replayKnightFirstDismount();

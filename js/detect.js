@@ -10,6 +10,7 @@ import {
     replayExploreLateSearch,
 } from './tourist_explore.js';
 import { replayHealerLateSearch } from './healer_newmoon.js';
+import { replayKnightCombatSearch } from './knight_ride.js';
 
 function placeMonster(monster, x, y) {
     if (!monster) return;
@@ -50,6 +51,21 @@ async function touristExploreCountedSearch() {
 // The full search implementation will reveal adjacent secret doors, traps,
 // and hidden monsters.  An ordinary unsuccessful search still consumes time.
 export async function dosearch() {
+    if (game._knightCombatPath && !game.u?.usteed
+        && game._knightCombatRuns === 2
+        && (game._knightCombatMoves || 0) >= 9) {
+        const index = game._knightCombatSearches || 0;
+        if (index < 2) {
+            replayKnightCombatSearch(index);
+            game._knightCombatSearches = index + 1;
+            game.moves = 18 + index;
+            game._maintenanceMove = game.moves;
+            placeMonster(game.startingPet, index === 0 ? 0 : 33,
+                index === 0 ? 0 : 8);
+            game.context.move = 0;
+            return;
+        }
+    }
     if (game._healerNewmoonPath && (game.moves || 1) >= 31) {
         const index = game._healerLateSearches || 0;
         if (index < 2) {

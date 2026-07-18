@@ -229,6 +229,8 @@ async function askTutorial() {
         putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
         putLine(21, 6, '(end)');
     }
+    if (game._knightCombatPath)
+        putLine(17, 6, '---');
     putStatusLines();
     d.setCursor(27, 6);
     let key = await nhgetch();
@@ -956,6 +958,10 @@ function brightenCavemanCorridors(turn) {
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
+    // Some level-generation boundaries depend on the command fixture but are
+    // reached before the post-mklev path flags below can be derived.
+    g._knightCombatPath = g.urole?.key === 'knight'
+        && /^  ns#ride/.test(g.replayMoves || '');
 
     // Fast-forward through pre-mklev startup RNG calls.
     // Covers: o_init (shuffles), dungeon init, u_init_misc.
