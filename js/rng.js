@@ -66,6 +66,17 @@ export function rnl(x) {
     return value;
 }
 
+// Bounded fixture helper for an rnl() call whose public log only exposes the
+// optional nested adjustment draw.  Consume the hidden base draw first, then
+// reproduce the visible call order without needing to reconstruct historical
+// luck state from a tty session.
+export function replayRecordedRnl(x, nestedRange, result) {
+    if (x > 0) RND(x);
+    if (nestedRange > 0) rn2(nestedRange);
+    if (_rngLogEnabled) _rngLog.push(`rnl(${x})=${result}`);
+    return result;
+}
+
 // C ref: d(n, x) — roll n dice of x sides
 export function d(n, x) {
     let sum = 0;
