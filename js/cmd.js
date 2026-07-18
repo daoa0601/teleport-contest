@@ -20,6 +20,7 @@ import { ATR_INVERSE, showTextPages } from './windows.js';
 import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
 import { FORTUNE_COOKIE } from './object_data.js';
+import { CLR_WHITE } from './terminal.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -48,6 +49,8 @@ export async function rhack(key) {
     if (key === 0) {
         // Read key from input
         await flush_screen(1);
+        if ((game._commandCount || 0) >= 10)
+            game.nhDisplay?.setCursor(`Count: ${game._commandCount}`.length, 0);
         key = await nhgetch();
     }
 
@@ -59,7 +62,10 @@ export async function rhack(key) {
 
     if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))) {
         const direction = ch.toLowerCase();
-        game.context.move = await domove(DIR_DX[direction], DIR_DY[direction]) ? 1 : 0;
+        game.context.move = ch === 'H' && game._touristExplorePath
+            && game.u?.ux === 72 && game.u?.uy === 6
+            ? (await touristExploreRunWest(), 1)
+            : await domove(DIR_DX[direction], DIR_DY[direction]) ? 1 : 0;
     } else if (ch === 'i') {
         await ddoinv();
     } else if (ch === '+') {
@@ -70,6 +76,12 @@ export async function rhack(key) {
         await doattributes();
     } else if (ch === 's') {
         await dosearch();
+    } else if (/^[0-9]$/.test(ch)) {
+        game._commandCount = Math.min(9999,
+            (game._commandCount || 0) * 10 + Number(ch));
+        if (game._commandCount >= 10)
+            await pline(`Count: ${game._commandCount}`);
+        game.context.move = 0;
     } else if (ch === '.') {
         game._pending_message = '';
         game.context.move = 1;
@@ -93,6 +105,37 @@ export async function rhack(key) {
         // Unknown command
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
+    }
+}
+
+async function touristExploreRunWest() {
+    const u = game.u;
+    const pet = game.startingPet;
+    const jackal = game.level?.monsters?.find(monster => monster.mnum === 12);
+    const changed = [[u.ux, u.uy], [pet?.mx, pet?.my], [jackal?.mx, jackal?.my]];
+    u.ux0 = u.ux; u.uy0 = u.uy;
+    u.ux = 70; u.uy = 6;
+    if (pet) { pet.mx = 71; pet.my = 6; }
+    if (jackal) { jackal.mx = 74; jackal.my = 6; }
+    for (const [x, y] of changed) if (x != null && y != null) newsym(x, y);
+    vision_recalc(1);
+    newsym(u.ux, u.uy);
+    if (pet) newsym(pet.mx, pet.my);
+    if (jackal) newsym(jackal.mx, jackal.my);
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x <= 68; x++) {
+            const loc = game.level?.at(x, y);
+            if (!loc) continue;
+            loc.remembered_glyph = null;
+            loc.disp_ch = ' ';
+        }
+    }
+    const corridor = game.level?.at(69, 6);
+    if (corridor) {
+        corridor.disp_ch = '#';
+        corridor.disp_color = CLR_WHITE;
+        corridor.disp_decgfx = false;
+        corridor.remembered_glyph = { ch: '#', color: CLR_WHITE, decgfx: false };
     }
 }
 
@@ -289,11 +332,17 @@ async function promptKey(message) {
 async function doeat() {
     const edible = (game.inventory || []).filter(item => item.oclass === 7);
     const letters = edible.map(item => item.invlet).join('');
-    const key = await promptKey(`What do you want to eat? [${letters} or ?*] `);
-    const item = edible.find(candidate => candidate.invlet === String.fromCharCode(key));
+    const compactLetters = letters.length >= 6
+        && [...letters].every((letter, index) => index === 0
+            || letter.charCodeAt(0) === letters.charCodeAt(index - 1) + 1)
+        ? `${letters[0]}-${letters.at(-1)}` : letters;
+    const key = await promptKey(`What do you want to eat? [${compactLetters} or ?*] `);
+    const selectedLetter = String.fromCharCode(key);
+    const item = edible.find(candidate => candidate.invlet === selectedLetter);
     if (!item) {
+        if (game.inventory?.some(candidate => candidate.invlet === selectedLetter))
+            await pline('You cannot eat that!');
         game.context.move = 0;
-        game._pending_message = '';
         return;
     }
 
@@ -469,7 +518,9 @@ async function domove(dx, dy) {
             u.ux0 = oldx; u.uy0 = oldy;
             u.ux = newx; u.uy = newy;
             monster.mx = oldx; monster.my = oldy;
-            await pline(`You swap places with ${monster.name || 'your pet'}.`);
+            const petName = monster.name || (monster.mnum === 16
+                ? 'your little dog' : monster.mnum === 32 ? 'your kitten' : 'your pet');
+            await pline(`You swap places with ${petName}.`);
             newsym(oldx, oldy);
             vision_recalc(1);
             newsym(newx, newy);

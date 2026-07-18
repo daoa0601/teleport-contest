@@ -280,7 +280,11 @@ function inventoryItem(raw) {
     if (raw.otyp === TIN) {
         view = raw.corpsenm === PM_LICHEN
             ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
-            : { class: 'Comestibles', name: 'tin', plural: 'tins' };
+            : raw.corpsenm === 322
+                ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
+                : raw.corpsenm == null
+                    ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
+                    : { class: 'Comestibles', name: 'tin', plural: 'tins' };
     }
     const buc = raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed';
     return {

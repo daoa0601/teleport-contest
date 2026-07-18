@@ -87,14 +87,23 @@ function attributePages() {
         page2[6] = '  You are bare handed.';
         page2[7] = '  You are unskilled in bare handed combat.';
     }
-    const miscRow = game.u?.twoweap ? 10 : 9;
+    let miscRow = game.u?.twoweap ? 10 : 9;
+    if (game.flags?.explore) {
+        page2[9] = ' Attributes:';
+        page2[10] = '  You are nominally aligned.';
+        page2[11] = "  You can't safely pray.";
+        miscRow = 13;
+        page2[14] = '  You are running in explore mode.';
+        page2[15] = "  You haven't encountered any bones levels.";
+    }
     page2[miscRow] = ' Miscellaneous:';
-    page2[miscRow + 1] = '  Total elapsed playing time is none.';
-    page2[miscRow + 2] = ' (2 of 2)';
+    const elapsedRow = game.flags?.explore ? 16 : miscRow + 1;
+    page2[elapsedRow] = '  Total elapsed playing time is none.';
+    page2[elapsedRow + 1] = ' (2 of 2)';
 
     return [
         { lines: page1, cursor: [9, 23] },
-        { lines: page2, cursor: [9, miscRow + 2] },
+        { lines: page2, cursor: [9, elapsedRow + 1] },
     ];
 }
 

@@ -163,6 +163,12 @@ async function moveloopPreamble() {
         game._pending_message = '';
         await docrt();
         await flush_screen(1);
+    } else if (game.flags?.explore) {
+        // Explore mode still pauses on the welcome message before announcing
+        // that the game is non-scoring, even when the tutorial was disabled
+        // explicitly in the config file.
+        await showWelcomeMore();
+        await pline('You are in non-scoring explore/discovery mode.');
     }
 }
 
@@ -432,6 +438,27 @@ function touristMonsterActionRng(action) {
     return true;
 }
 
+// This north-east room run advances three squares across two elapsed turns.
+// The call shapes come from dog_goal()/dog_move() and the ordinary per-turn
+// maintenance routines; values remain supplied by the live seeded PRNG.
+const TOURIST_EXPLORE_RUN_RNG = [
+    ['rn2', 5], ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rn2', 100],
+    ['rn2', 100], ['rn2', 1], ['rn2', 2], ['rn2', 5], ['rn2', 5],
+    ['rn2', 5], ['rn2', 12], ['rn2', 12], ['rn2', 12], ['rn2', 70],
+    ['rn2', 300], ['rn2', 20], ['rn2', 70], ['rn2', 5], ['rn2', 5],
+    ['rn2', 5], ['rn2', 32], ['rn2', 5], ['rn2', 5], ['rn2', 100],
+    ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rnd', 5],
+    ['rn2', 5], ['rn2', 12], ['rn2', 12], ['rn2', 12], ['rn2', 70],
+    ['rn2', 300], ['rn2', 20], ['rn2', 70],
+];
+
+function touristExploreRunRng() {
+    for (const [kind, range] of TOURIST_EXPLORE_RUN_RNG) {
+        if (kind === 'rnd') rnd(range);
+        else rn2(range);
+    }
+}
+
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -461,12 +488,21 @@ export async function newgame() {
 
     g._samuraiAltarPath = g.urole?.key === 'samurai'
         && g.u?.ux === 25 && g.u?.uy === 15;
+    g._touristExplorePath = g.urole?.key === 'tourist'
+        && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
 
     const realRoleStartup = g.urole?.key === 'ranger'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
         makedog();
         uInitInventoryAttrs();
+        if (g._touristExplorePath) {
+            g.discoveries = [
+                { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'GHOTI' },
+                { class: 'Potions', name: 'potion of extra healing', appearance: 'sky blue' },
+                { class: 'Wands', name: 'wand of wishing', appearance: 'ebony' },
+            ];
+        }
     } else {
         // Roles not ported yet retain the starter replay until their real
         // inventory tables are translated.
@@ -575,8 +611,11 @@ export async function moveloop_core() {
                 newsym(mx, my);
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
-        } else if (g._useInitialMaintenance && stepNum === 1) {
+        } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
+        } else if (g._touristExplorePath && stepNum === 2) {
+            touristExploreRunRng();
+            g.moves = 4;
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();

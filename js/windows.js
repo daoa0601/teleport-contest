@@ -53,15 +53,19 @@ export async function showInventoryWindow(sections) {
     }
     rows.push({ text: '(end)', attr: ATR_NONE });
 
+    const fullPage = rows.length > 22;
     const widest = rows.reduce((n, row) => Math.max(n, row.text.length), 0);
-    // tty menus reserve two blank columns at the right edge.
-    const left = Math.max(0, d.cols - widest - 2);
-    clearRect(left, 0, d.cols, Math.min(22, rows.length));
-    for (let row = 0; row < rows.length && row < 22; row++) {
+    // A menu which displaces the two status rows becomes a full tty page and
+    // is laid out from column one.  Shorter menus remain right-aligned over
+    // the map with two blank columns at the edge.
+    const left = fullPage ? 1 : Math.max(0, d.cols - widest - 2);
+    if (fullPage) d.clearScreen();
+    else clearRect(left, 0, d.cols, Math.min(22, rows.length));
+    for (let row = 0; row < rows.length && row < d.rows; row++) {
         putLine(left, row, rows[row].text, rows[row].attr);
     }
 
-    const endRow = Math.min(rows.length - 1, 21);
+    const endRow = Math.min(rows.length - 1, d.rows - 1);
     d.setCursor(Math.min(d.cols - 1, left + 6), endRow);
     return nhgetch();
 }

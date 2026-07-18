@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { flush_screen, pline } from './display.js';
 import { showInventoryWindow } from './windows.js';
 import { nhgetch } from './input.js';
+import { DOOR } from './const.js';
 
 const CLASS_ORDER = [
     'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
@@ -74,7 +75,10 @@ export async function dolook() {
     const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
     const onUpstairs = game.level?.upstair?.x === game.u?.ux
         && game.level?.upstair?.y === game.u?.uy;
-    if (onUpstairs) {
+    const loc = game.level?.at(game.u?.ux, game.u?.uy);
+    if (loc?.typ === DOOR) {
+        await pline('There is a doorway here.');
+    } else if (onUpstairs) {
         const message = 'There is a staircase up out of the dungeon here.--More--';
         await pline(message);
         await flush_screen(1);

@@ -801,7 +801,7 @@ async function makemon(mdat, x, y, mmflags) {
         symbol: classSymbols[classIndex] || '?',
         // The complete per-monster color table is a later metadata port;
         // giant ant is the generated level-one case exercised here.
-        color: mndx === 0 ? CLR_BROWN : CLR_GRAY,
+        color: (mndx === 0 || mndx === 12) ? CLR_BROWN : CLR_GRAY,
     };
     if (mndx === 158) {
         monster.name = 'lichen';
