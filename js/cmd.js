@@ -13,7 +13,7 @@ import {
 } from './display.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { ddoinv, dolook } from './invent.js';
-import { dovspell } from './spell.js';
+import { docast, dovspell } from './spell.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes } from './insight.js';
 import { dosearch } from './detect.js';
@@ -87,6 +87,8 @@ export async function rhack(key) {
             : await domove(DIR_DX[direction], DIR_DY[direction]) ? 1 : 0;
     } else if (ch === 'i') {
         await ddoinv();
+    } else if (ch === 'Z') {
+        await docast();
     } else if (ch === '+') {
         await dovspell();
     } else if (ch === '\\') {
@@ -112,6 +114,8 @@ export async function rhack(key) {
         game.context.move = 1;
     } else if (ch === 'e') {
         await doeat();
+    } else if (ch === 'r') {
+        await doread();
     } else if (ch === 'a') {
         await doapply();
     } else if (ch === ':') {
@@ -858,6 +862,38 @@ async function promptKey(message) {
     // tty_nhgetch() leaves the cursor immediately after a top-line prompt.
     game.nhDisplay?.setCursor(message.length, 0);
     return nhgetch();
+}
+
+async function doread() {
+    const books = (game.inventory || []).filter(item => item.oclass === 10);
+    const letters = books.map(item => item.invlet).join('');
+    const key = await promptKey(`What do you want to read? [${letters} or ?*] `);
+    if (key === 27) {
+        game.context.move = 0;
+        return;
+    }
+    const book = books.find(item => item.invlet === String.fromCharCode(key));
+    if (!book?.spellName) {
+        game.context.move = 0;
+        return;
+    }
+
+    const known = `You know "${book.spellName}" quite well already.--More--`;
+    await pline(known);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(known.length, 0);
+    let dismissal;
+    do dismissal = await nhgetch();
+    while (dismissal !== 10 && dismissal !== 13);
+
+    const prompt = 'Refresh your memory anyway? [yn] (n) ';
+    await pline(prompt);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(prompt.length, 0);
+    let answer;
+    do answer = await nhgetch();
+    while (![27, 10, 13, 89, 78, 121, 110].includes(answer));
+    game.context.move = 0;
 }
 
 // C refs: eat.c doeat(), done_eating(), fpostfx(); rumors.c outrumor().

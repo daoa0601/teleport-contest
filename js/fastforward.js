@@ -6,6 +6,7 @@
 
 import { rn2, rnd, d, rne, rnz } from "./rng.js";
 import { init_dungeons } from "./dungeon.js";
+import { game } from "./gstate.js";
 
 // Pre-mklev startup: o_init shuffles, dungeon init, u_init_misc
 // 303 leaf RNG calls (session indices 0-308)
@@ -40,9 +41,18 @@ export function fastforward_pre_mklev() {
     rn2(3); rn2(2); rn2(1);
     // init_objects
     rn2(2);
+    // Priests borrow a pantheon from a randomly selected non-Priest role.
+    // C's randrole() retries while it selects Priest itself (role index 6).
+    if (game.urole?.key === 'priest') {
+        do game._priestPantheonIndex = rn2(13);
+        while (game._priestPantheonIndex === 6);
+    }
     // random
     rn2(3); rn2(2);
     init_dungeons();
+    // newpw(): Priest initial energy is 4 + rnd(3), before the human
+    // racial point is added by u_init_misc().
+    if (game.urole?.key === 'priest') game._initialPwBonus = rnd(3);
     // u_init_misc; return the roll so the real hero state can retain it.
     return rn2(10);
 }

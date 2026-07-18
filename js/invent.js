@@ -87,11 +87,12 @@ export async function dolook() {
             : 'There is a doorway here.');
     } else if (onUpstairs) {
         const message = game._rangerNamePath
-            || game._rogueChargenPath || game._valkChatPath
+            || game._rogueChargenPath || game._valkChatPath || game._priestCastPath
             ? 'There is a staircase up out of the dungeon here.'
             : 'There is a staircase up out of the dungeon here.--More--';
         await pline(message);
-        if (!game._rangerNamePath && !game._rogueChargenPath && !game._valkChatPath) {
+        if (!game._rangerNamePath && !game._rogueChargenPath
+            && !game._valkChatPath && !game._priestCastPath) {
             await flush_screen(1);
             game.nhDisplay?.setCursor(message.length, 0);
             await nhgetch();

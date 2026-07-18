@@ -9,14 +9,15 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SPEAR, SHORT_SWORD, KATANA, CLUB, BOW, YUMI, SLING,
-    SPLINT_MAIL, LEATHER_ARMOR, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
+    ARROW, YA, DART, DAGGER, SPEAR, SHORT_SWORD, KATANA, MACE, CLUB, BOW, YUMI, SLING,
+    SPLINT_MAIL, LEATHER_ARMOR, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
     SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
-    POT_EXTRA_HEALING, POT_SICKNESS, SCR_MAGIC_MAPPING, WAN_WISHING, GOLD_PIECE,
+    POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER, SCR_MAGIC_MAPPING,
+    SPE_DETECT_MONSTERS, SPE_HEALING, WAN_WISHING, GOLD_PIECE,
     FLINT, ROCK,
 } from './object_data.js';
 
@@ -26,6 +27,7 @@ const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
 const WAND_CLASS = 11;
 const GEM_CLASS = 13;
 const UNDEF_BLESS = 2;
@@ -90,6 +92,17 @@ const VALKYRIE_INVENTORY = [
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
+const PRIEST_INVENTORY = [
+    { typ: MACE, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: 1 },
+    { typ: ROBE, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: SMALL_SHIELD, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: POT_WATER, spe: 0, cls: POTION_CLASS, min: 4, max: 4, bless: 1 },
+    { typ: CLOVE_OF_GARLIC, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: SPRIG_OF_WOLFSBANE, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SPBOOK_CLASS, min: 2, max: 2, bless: UNDEF_BLESS },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
@@ -112,6 +125,7 @@ const ITEM_PRESENTATION = new Map([
         class: 'Weapons', name: 'katana', plural: 'katanas', enchanted: true,
         omitUncursed: true,
     }],
+    [MACE, { class: 'Weapons', name: 'mace', plural: 'maces', enchanted: true }],
     [CLUB, { class: 'Weapons', name: 'club', plural: 'clubs', enchanted: true, omitUncursed: true }],
     [SLING, { class: 'Weapons', name: 'sling', plural: 'slings', enchanted: true, omitUncursed: true }],
     [SHORT_SWORD, {
@@ -132,6 +146,7 @@ const ITEM_PRESENTATION = new Map([
     [LEATHER_ARMOR, {
         class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
     }],
+    [ROBE, { class: 'Armor', name: 'robe', plural: 'robes', enchanted: true }],
     [SMALL_SHIELD, {
         class: 'Armor', name: 'small shield', plural: 'small shields', enchanted: true,
     }],
@@ -175,8 +190,18 @@ const ITEM_PRESENTATION = new Map([
     [POT_EXTRA_HEALING, {
         class: 'Potions', name: 'potion of extra healing', plural: 'potions of extra healing',
     }],
+    [POT_WATER, { class: 'Potions', name: 'potion of water', plural: 'potions of water' }],
     [SCR_MAGIC_MAPPING, {
         class: 'Scrolls', name: 'scroll of magic mapping', plural: 'scrolls of magic mapping',
+    }],
+    [SPE_HEALING, {
+        class: 'Spellbooks', name: 'spellbook of healing', plural: 'spellbooks of healing',
+        spellName: 'healing', spellLevel: 1, spellCategory: 'healing', appearance: 'purple',
+    }],
+    [SPE_DETECT_MONSTERS, {
+        class: 'Spellbooks', name: 'spellbook of detect monsters',
+        plural: 'spellbooks of detect monsters', spellName: 'detect monsters',
+        spellLevel: 1, spellCategory: 'divination', appearance: 'silver',
     }],
     [EXPENSIVE_CAMERA, {
         class: 'Tools', name: 'expensive camera', plural: 'expensive cameras',
@@ -208,7 +233,8 @@ export function uInitMisc(handednessRoll) {
     const g = game;
     const u = g.u || (g.u = {});
     const hp = initialRoll(g.urole?.hpadv) + initialRoll(g.urace?.hpadv);
-    const pw = initialRoll(g.urole?.enadv) + initialRoll(g.urace?.enadv);
+    const pw = initialRoll(g.urole?.enadv) + (g._initialPwBonus || 0)
+        + initialRoll(g.urace?.enadv);
 
     u.uz = { dnum: 0, dlevel: 1 };
     u.ulevel = u.ulevelmax = 1;
@@ -274,10 +300,12 @@ export function makedog() {
     if (g.preferred_pet === 'n') return null;
     const role = g.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
-        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie') return null;
+        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
+        && role !== 'priest') return null;
 
     let pettype = 16; // PM_LITTLE_DOG
-    if (role === 'tourist' || role === 'rogue' || role === 'valkyrie') {
+    if (role === 'tourist' || role === 'rogue' || role === 'valkyrie'
+        || role === 'priest') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
         else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
     }
@@ -292,7 +320,8 @@ export function makedog() {
     let hp = d(1, 8);
     if (hp === 1) hp++;
     const female = !!rn2(2);
-    if (role === 'tourist' || role === 'caveman' || role === 'valkyrie') {
+    if (role === 'tourist' || role === 'caveman' || role === 'valkyrie'
+        || role === 'priest') {
         // peace_minded(); initedog() below ultimately makes the pet tame.
         rn2(16);
         rn2(2);
@@ -390,7 +419,7 @@ function useStartingItem(item) {
             game.uquiver = item;
             item.ready = true;
         }
-    } else if (item.otyp === SPEAR) {
+    } else if (item.otyp === SPEAR || item.otyp === MACE) {
         game.uwep = item;
         item.wielded = true;
     } else if (item.otyp === DAGGER || item.otyp === KATANA || item.otyp === CLUB) {
@@ -415,7 +444,7 @@ function useStartingItem(item) {
             game.uswapwep = item;
             item.alternate = true;
         }
-    } else if (item.otyp === CLOAK_OF_DISPLACEMENT) {
+    } else if (item.otyp === CLOAK_OF_DISPLACEMENT || item.otyp === ROBE) {
         game.uarmc = item;
         item.worn = true;
     } else if (item.otyp === HAWAIIAN_SHIRT) {
@@ -427,7 +456,27 @@ function useStartingItem(item) {
     } else if (item.otyp === SPLINT_MAIL || item.otyp === LEATHER_ARMOR) {
         game.uarm = item;
         item.worn = true;
+    } else if (item.oclass === SPBOOK_CLASS && item.spellName) {
+        game.spells.push({
+            name: item.spellName,
+            level: item.spellLevel,
+            category: item.spellCategory,
+            retention: 100,
+            otyp: item.otyp,
+        });
     }
+}
+
+function priestSpellbookAllowed(otyp) {
+    const alreadyHasLevelOne = game.inventory.some(item =>
+        item.oclass === SPBOOK_CLASS && item.spellLevel === 1);
+    const levelOne = new Set([372, SPE_DETECT_MONSTERS, SPE_HEALING]);
+    const throughLevelThree = new Set([
+        ...levelOne, 378, 382, 383, 385, 386,
+    ]);
+    const allowed = alreadyHasLevelOne ? throughLevelThree : levelOne;
+    return allowed.has(otyp)
+        && !game.inventory.some(item => item.otyp === otyp);
 }
 
 // Direct port of ini_inv() for fixed and class-generated inventory entries.
@@ -436,8 +485,14 @@ function iniInv(table) {
     let quan = trquan(table[index]);
     while (table[index].cls) {
         const trobj = table[index];
-        const raw = trobj.typ === UNDEF_TYP
-            ? mkobj(trobj.cls, false) : mksobj(trobj.typ, true, false);
+        let raw;
+        if (trobj.typ === UNDEF_TYP) {
+            do raw = mkobj(trobj.cls, false);
+            while (game.urole?.key === 'priest' && trobj.cls === SPBOOK_CLASS
+                && !priestSpellbookAllowed(raw.otyp));
+        } else {
+            raw = mksobj(trobj.typ, true, false);
+        }
 
         raw.cursed = false;
         let stop = false;
@@ -503,7 +558,8 @@ function initAttributes() {
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
     if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
-        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie') return false;
+        && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
+        && role !== 'priest') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = null;
@@ -556,11 +612,20 @@ export function uInitInventoryAttrs() {
     } else if (role === 'valkyrie') {
         iniInv(VALKYRIE_INVENTORY);
         if (!rn2(6)) iniInv(oneItem(OIL_LAMP, 1));
+    } else if (role === 'priest') {
+        iniInv(PRIEST_INVENTORY);
+        if (!rn2(5)) iniInv(oneItem(MAGIC_MARKER, 19));
+        else if (!rn2(10)) iniInv(oneItem(OIL_LAMP, 1));
     } else {
         iniInv(RANGER_INVENTORY);
     }
     initAttributes();
-    game.discoveries = role === 'caveman' ? [
+    game.discoveries = role === 'priest' ? [
+        { class: 'Armor', name: 'small shield', appearance: 'wooden shield' },
+        { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'purple' },
+        { class: 'Spellbooks', name: 'spellbook of detect monsters', appearance: 'silver' },
+        { class: 'Potions', name: 'potion of water', appearance: 'clear' },
+    ] : role === 'caveman' ? [
         ...(game.flags?.explore ? [{
             class: 'Wands', name: 'wand of wishing', appearance: 'hexagonal',
         }] : []),
@@ -636,4 +701,5 @@ export function setInitialArmorClass() {
     else if (game.urole?.key === 'samurai') game.u.uac = 4;
     else if (game.urole?.key === 'tourist') game.u.uac = 10;
     else if (game.urole?.key === 'valkyrie') game.u.uac = 6;
+    else if (game.urole?.key === 'priest') game.u.uac = 7;
 }

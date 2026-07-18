@@ -837,6 +837,13 @@ async function makemon(mdat, x, y, mmflags) {
 async function maketrap(x, y, typ) {
     const trap = { ttyp: typ, tx: x, ty: y, tseen: false, once: false, launch: { x: 0, y: 0 } };
     if (!game.level) return trap;
+    if (is_hole(typ)) {
+        // C ref: trap.c hole_destination().  Ordinary holes and trapdoors
+        // choose a destination within the next four dungeon levels when the
+        // trap is created, before any buried-victim roll is considered.
+        const depth = game.u?.uz?.dlevel ?? 1;
+        trap.dst = { dnum: game.u?.uz?.dnum ?? 0, dlevel: depth + 1 + rn2(4) };
+    }
     if (!game.level.traps) game.level.traps = [];
     game.level.traps.push(trap);
     if (typ === SQKY_BOARD) {

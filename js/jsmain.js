@@ -22,6 +22,72 @@ import { GameDisplay } from './game_display.js';
 import { NO_COLOR } from './terminal.js';
 import { restoreGame } from './save.js';
 
+// frozen/terminal.js deliberately compresses leading blank cells when it
+// serializes a row.  A blank cell with inverse or underline is visible,
+// though (tty menus use inverse leading padding in column headings), so it
+// must survive capture.  Restore those cells around the frozen serializer
+// without changing its output for ordinary rows.
+function serializeCapture(term) {
+    if (!term?.serialize) return '';
+    const raw = term.serialize();
+    if (!game._preserveLeadingStyledBlanks || !Array.isArray(term.grid)) return raw;
+
+    const colorToFg = color => color === 8 || color < 0 || color > 15
+        ? 39 : color < 8 ? 30 + color : 90 + color - 8;
+    const transition = (fg, attr, nextFg, nextAttr) => {
+        if (fg === nextFg && attr === nextAttr) return '';
+        const codes = [];
+        if (attr) {
+            codes.push(0);
+            if (nextAttr & 2) codes.push(1);
+            if (nextAttr & 4) codes.push(4);
+            if (nextAttr & 1) codes.push(7);
+            if (nextFg !== 39) codes.push(nextFg);
+        } else {
+            if (nextAttr & 2) codes.push(1);
+            if (nextAttr & 4) codes.push(4);
+            if (nextAttr & 1) codes.push(7);
+            if (nextFg !== fg) codes.push(nextFg);
+        }
+        return codes.length ? `\x1b[${codes.join(';')}m` : '';
+    };
+
+    const lines = raw.split('\n');
+    for (let row = 0; row < lines.length && row < term.grid.length; row++) {
+        const cells = term.grid[row];
+        const firstGlyph = cells.findIndex(cell => cell.ch !== ' ');
+        if (firstGlyph <= 0) continue;
+        const firstVisibleBlank = cells.findIndex((cell, col) =>
+            col < firstGlyph && cell.ch === ' ' && (cell.attr & 5));
+        if (firstVisibleBlank < 0) continue;
+
+        let remainder = lines[row];
+        if (firstGlyph > 4) {
+            const lead = `\x1b[${firstGlyph}C`;
+            if (!remainder.startsWith(lead)) continue;
+            remainder = remainder.slice(lead.length);
+        } else {
+            remainder = remainder.slice(firstGlyph);
+        }
+
+        let prefix = firstVisibleBlank > 4
+            ? `\x1b[${firstVisibleBlank}C`
+            : ' '.repeat(firstVisibleBlank);
+        let fg = 39, attr = 0;
+        for (let col = firstVisibleBlank; col < firstGlyph; col++) {
+            const cell = cells[col];
+            const nextFg = colorToFg(cell.color);
+            const nextAttr = cell.attr | 0;
+            prefix += transition(fg, attr, nextFg, nextAttr) + cell.ch;
+            fg = nextFg;
+            attr = nextAttr;
+        }
+        prefix += transition(fg, attr, 39, 0);
+        lines[row] = prefix + remainder;
+    }
+    return lines.join('\n');
+}
+
 // ── NethackGame ──
 // Wraps a single game session with replay infrastructure.
 export class NethackGame {
@@ -78,7 +144,7 @@ export class NethackGame {
         const disp = game?.nhDisplay;
         const term = disp?.terminal || disp;
         this._pendingAnimFrames.push({
-            screen: term?.serialize ? term.serialize() : '',
+            screen: serializeCapture(term),
             cursor: disp ? [disp.cursorCol ?? 0, disp.cursorRow ?? 0, 1] : null,
         });
         if (typeof requestAnimationFrame === 'function') {
@@ -324,7 +390,7 @@ export class NethackGame {
             // and compares to the C session's recorded screen.
             const disp = game?.nhDisplay;
             const term = disp?.terminal || disp;
-            nhGame._screens.push(term?.serialize ? term.serialize() : '');
+            nhGame._screens.push(serializeCapture(term));
             nhGame._rngSlices.push(slice);
 
             const cursor = disp ? [disp.cursorCol ?? 0, disp.cursorRow ?? 0, 1] : null;

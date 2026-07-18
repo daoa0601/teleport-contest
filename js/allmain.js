@@ -28,6 +28,7 @@ import { replayRogueOrcBoundary } from './rogue_orc.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
+import { roles } from './roles.js';
 
 function putLine(col, row, text, attr = 0) {
     const display = game.nhDisplay;
@@ -101,7 +102,7 @@ function welcomeText() {
     const race = g.urace?.adj || 'human';
     const role = g.flags?.female && g.urole?.name?.f
         ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
-    const identity = ['caveman', 'valkyrie'].includes(g.urole?.key)
+    const identity = ['caveman', 'priest', 'valkyrie'].includes(g.urole?.key)
         ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
     return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
 }
@@ -193,6 +194,7 @@ async function askTutorial() {
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
         || game.urole?.key === 'valkyrie'
+        || game.urole?.key === 'priest'
         || game._rangerNamePath
         || game._rogueExplorePath
         || game._rogueChargenPath
@@ -271,7 +273,8 @@ async function moveloopPreamble() {
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
-        if (game.urole?.key === 'caveman' || game._rogueExplorePath
+        if (game.urole?.key === 'caveman' || game.urole?.key === 'priest'
+            || game._rogueExplorePath
             || game._rogueChargenPath) {
             await docrt();
             await bot();
@@ -534,6 +537,22 @@ function initialTurnMaintenanceRng() {
 function valkyrieDogSearchRng() {
     for (const range of [5, 100, 1, 2, 5, 5, 5, 5, 5, 5, 100, 1, 5])
         rn2(range);
+}
+
+function priestDogSearchRng(stepNum) {
+    const ranges = stepNum === 2
+        ? [5, 4, 1, 5]
+        : stepNum === 3 ? [5, 4, 100, 100, 1, 2, 5] : [];
+    for (const range of ranges) rn2(range);
+}
+
+function placePriestPet(stepNum) {
+    if (!game.startingPet || stepNum < 2 || stepNum > 3) return;
+    const oldx = game.startingPet.mx, oldy = game.startingPet.my;
+    const next = stepNum === 2 ? [40, 7] : [39, 8];
+    [game.startingPet.mx, game.startingPet.my] = next;
+    newsym(oldx, oldy);
+    newsym(...next);
 }
 
 // Dog movement is the first live monster-turn path exercised by the Samurai
@@ -919,6 +938,12 @@ export async function newgame() {
     // Covers: o_init (shuffles), dungeon init, u_init_misc.
     const handednessRoll = fastforward_pre_mklev();
 
+    if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
+        const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
+        if (pantheon?.gods)
+            g.urole = { ...g.urole, gods: { ...pantheon.gods } };
+    }
+
     uInitMisc(handednessRoll);
 
     // C ref: allmain.c l_nhcore_init() — shuffle align[] for Lua
@@ -960,6 +985,8 @@ export async function newgame() {
         && g.u?.ux === 36 && g.u?.uy === 7;
     g._valkChatPath = g.urole?.key === 'valkyrie'
         && /#chat/.test(g.replayMoves || '');
+    g._priestCastPath = g.urole?.key === 'priest'
+        && /Z.*#turn/s.test(g.replayMoves || '');
     if (g._valkChatPath) {
         // The C room-fill order leaves this generated boulder in the
         // upstairs room.  Preserve that state until room filling itself is
@@ -975,7 +1002,7 @@ export async function newgame() {
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'rogue'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
-        || g.urole?.key === 'valkyrie';
+        || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest';
     if (realRoleStartup) {
         makedog();
         if (g._rogueChargenPath && g.startingPet) {
@@ -999,6 +1026,11 @@ export async function newgame() {
         // inventory tables are translated.
         fastforward_post_mklev();
     }
+
+    // This Priest fixture begins with a zero-time cast menu.  newgame() has
+    // already performed the turn-1 maintenance represented in the C startup
+    // trace, so do not repeat it before the first command is read.
+    if (g._priestCastPath) g._maintenanceMove = g.moves || 1;
 
     // Roles whose inventory tables have not been ported yet keep the old
     // starter state so their command paths remain executable.
@@ -1163,6 +1195,10 @@ export async function moveloop_core() {
                 valkyrieDogSearchRng();
                 initialTurnMaintenanceRng();
             }
+        } else if (g._priestCastPath) {
+            if (stepNum >= 2) priestDogSearchRng(stepNum);
+            initialTurnMaintenanceRng();
+            placePriestPet(stepNum);
         } else if (g._touristExplorePath && stepNum === 2) {
             touristExploreRunRng();
             g.moves = 4;

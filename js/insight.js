@@ -19,7 +19,8 @@ function indefiniteArticle(text) {
 
 function attributePages() {
     const u = game.u;
-    const roleName = game.urole?.name?.m || 'Adventurer';
+    const roleName = game.flags?.female && game.urole?.name?.f
+        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const rank = game.urole?.rank?.m || roleName;
     const gender = game.flags?.female ? 'female' : 'male';
     const race = game.urace?.adj || game.urace?.noun || 'human';
@@ -48,9 +49,9 @@ function attributePages() {
     const page1 = Array(24).fill('');
     page1[0] = ` ${game.displayName || game.plname} the ${roleName}'s attributes:`;
     page1[2] = ' Background:';
-    const identity = game.urole?.key === 'caveman'
+    const identity = game.urole?.key === 'caveman' || game.urole?.key === 'priest'
         ? `${race} ${roleName}` : `${gender} ${race} ${roleName}`;
-    page1[3] = `  You are a ${rank}, a level ${u.ulevel} ${identity}.`;
+    page1[3] = `  You are ${indefiniteArticle(rank)} ${rank}, a level ${u.ulevel} ${identity}.`;
     page1[4] = `  You are ${align}, on a mission for ${currentGod}`;
     page1[5] = `  who is opposed by ${opponents[0]} and ${opponents[1]}.`;
     page1[6] = `  You are ${u.rightHanded ? 'right' : 'left'}-handed.`;
@@ -69,7 +70,7 @@ function attributePages() {
             : `  You have ${u.uhp} of ${u.uhpmax} hit points.`;
         page1[row + 4] = u.uen === u.uenmax
             ? `  You have ${u.uen === 2 ? 'both' : `all ${u.uen}`} energy points (spell power).`
-            : `  You have ${u.uen} of ${u.uenmax} energy points (spell power).`;
+            : `  You have ${u.uen} out of ${u.uenmax} energy points (spell power).`;
         page1[row + 5] = `  Your armor class is ${u.uac}.`;
         page1[row + 6] = game._goldCount
             ? `  Your wallet contains ${game._goldCount} zorkmids.`
@@ -113,7 +114,7 @@ function attributePages() {
         : `  You have ${u.uhp} of ${u.uhpmax} hit points.`;
     page1[13] = u.uen === u.uenmax
         ? `  You have ${u.uen === 2 ? 'both' : `all ${u.uen}`} energy points (spell power).`
-        : `  You have ${u.uen} of ${u.uenmax} energy points (spell power).`;
+        : `  You have ${u.uen} out of ${u.uenmax} energy points (spell power).`;
     page1[14] = `  Your armor class is ${u.uac}.`;
     page1[15] = game._goldCount
         ? `  Your wallet contains ${game._goldCount} zorkmids.`
