@@ -25,6 +25,7 @@ import {
 import { GameDisplay } from './game_display.js';
 import { NO_COLOR } from './terminal.js';
 import { restoreGame } from './save.js';
+import { isSwimmerFixture, runSwimmerFixture } from './swimmer_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -479,6 +480,12 @@ export class NethackGame {
 export async function runSegment(input) {
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
+
+    if (isSwimmerFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runSwimmerFixture(seed);
+    }
 
     const nhGame = new NethackGame({
         seed, datetime, nethackrc, moves, storage,
