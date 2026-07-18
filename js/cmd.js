@@ -9,6 +9,11 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { newsym, flush_screen, pline } from './display.js';
 import { vision_recalc } from './vision.js';
+import { ddoinv, dolook } from './invent.js';
+import { dovspell } from './spell.js';
+import { dodiscovered } from './o_init.js';
+import { doattributes } from './insight.js';
+import { dosearch } from './detect.js';
 import { COLNO, ROWNO, STONE, DOOR, D_CLOSED, D_LOCKED,
          IS_WALL, IS_OBSTRUCTED } from './const.js';
 
@@ -42,9 +47,27 @@ export async function rhack(key) {
 
     const ch = String.fromCharCode(key);
 
+    // The input boundary displayed the previous command's message.  Clear it
+    // now; any message produced below remains visible at the next boundary.
+    game._pending_message = '';
+
     if (isMovementKey(ch)) {
         await domove(DIR_DX[ch], DIR_DY[ch]);
         game.context.move = 1;
+    } else if (ch === 'i') {
+        await ddoinv();
+    } else if (ch === '+') {
+        await dovspell();
+    } else if (ch === '\\') {
+        await dodiscovered();
+    } else if (key === 24) { // Ctrl-X
+        await doattributes();
+    } else if (ch === 's') {
+        await dosearch();
+    } else if (ch === ':') {
+        await dolook();
+    } else if (key === 27) { // Escape cancels without producing a message.
+        game.context.move = 0;
     } else {
         // Unknown command
         game.context.move = 0;
