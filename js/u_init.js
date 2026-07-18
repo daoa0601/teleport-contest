@@ -11,12 +11,12 @@ import {
 import {
     ARROW, YA, DART, DAGGER, SHORT_SWORD, KATANA, CLUB, BOW, YUMI, SLING,
     SPLINT_MAIL, LEATHER_ARMOR, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT,
-    CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER, MAGIC_MARKER,
-    BLINDFOLD,
+    SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, TIN_OPENER,
+    MAGIC_MARKER, BLINDFOLD,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
-    POT_EXTRA_HEALING, SCR_MAGIC_MAPPING, WAN_WISHING, GOLD_PIECE,
+    POT_EXTRA_HEALING, POT_SICKNESS, SCR_MAGIC_MAPPING, WAN_WISHING, GOLD_PIECE,
     FLINT, ROCK,
 } from './object_data.js';
 
@@ -60,6 +60,16 @@ const CAVEMAN_INVENTORY = [
     { typ: FLINT, spe: 0, cls: GEM_CLASS, min: 10, max: 20, bless: UNDEF_BLESS },
     { typ: ROCK, spe: 0, cls: GEM_CLASS, min: 3, max: 3, bless: 0 },
     { typ: LEATHER_ARMOR, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+const ROGUE_INVENTORY = [
+    { typ: SHORT_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: DAGGER, spe: 0, cls: WEAPON_CLASS, min: 6, max: 15, bless: 0 },
+    { typ: LEATHER_ARMOR, spe: 1, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: POT_SICKNESS, spe: 0, cls: POTION_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: LOCK_PICK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
 ];
 
@@ -110,6 +120,9 @@ const ITEM_PRESENTATION = new Map([
     [LEATHER_ARMOR, {
         class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
     }],
+    [POT_SICKNESS, { class: 'Potions', name: 'potion of sickness', plural: 'potions of sickness' }],
+    [LOCK_PICK, { class: 'Tools', name: 'lock pick', plural: 'lock picks' }],
+    [SACK, { class: 'Tools', name: 'sack', plural: 'sacks', empty: true }],
     [FLINT, { class: 'Gems/Stones', name: 'flint stone', plural: 'flint stones' }],
     [ROCK, { class: 'Gems/Stones', name: 'rock', plural: 'rocks' }],
     [HAWAIIAN_SHIRT, {
@@ -244,11 +257,11 @@ export function makedog() {
     const g = game;
     if (g.preferred_pet === 'n') return null;
     const role = g.urole?.key;
-    if (role !== 'caveman' && role !== 'ranger'
+    if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist') return null;
 
     let pettype = 16; // PM_LITTLE_DOG
-    if (role === 'tourist') {
+    if (role === 'tourist' || role === 'rogue') {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
         else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
     }
@@ -297,6 +310,15 @@ function inventoryItem(raw) {
     let view = ITEM_PRESENTATION.get(raw.otyp) || {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
+    if (raw.otyp === SHORT_SWORD && game.urole?.key === 'rogue') {
+        view = {
+            class: 'Weapons', name: 'short sword', plural: 'short swords',
+            enchanted: true, omitUncursed: true,
+        };
+    }
+    if (raw.otyp === DAGGER && game.urole?.key === 'rogue') {
+        view = { ...view, omitUncursed: true };
+    }
     if (raw.otyp === TIN) {
         view = raw.corpsenm === PM_LICHEN
             ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
@@ -342,8 +364,13 @@ function useStartingItem(item) {
             item.ready = true;
         }
     } else if (item.otyp === DAGGER || item.otyp === KATANA || item.otyp === CLUB) {
-        game.uwep = item;
-        item.wielded = true;
+        if (game.urole?.key === 'rogue' && game.uwep && !game.uquiver) {
+            game.uquiver = item;
+            item.ready = true;
+        } else {
+            game.uwep = item;
+            item.wielded = true;
+        }
     } else if (item.otyp === BOW || item.otyp === SLING) {
         game.uswapwep = item;
         item.alternate = true;
@@ -439,7 +466,7 @@ function initAttributes() {
 
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
-    if (role !== 'caveman' && role !== 'ranger'
+    if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist') return false;
     game.inventory = [];
     game.uwep = game.uswapwep = game.uquiver = null;
@@ -453,6 +480,9 @@ export function uInitInventoryAttrs() {
                 { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
             ]);
         }
+    } else if (role === 'rogue') {
+        iniInv(ROGUE_INVENTORY);
+        if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
     } else if (role === 'tourist') {
         game._goldCount = rnd(1000);
         iniInv(TOURIST_INVENTORY);
@@ -515,6 +545,11 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'ninja-to', bracket: 'broadsword', preknown: true },
         { class: 'Weapons', name: 'elven broadsword', appearance: 'runed broadsword', preknown: true },
         { class: 'Weapons', name: 'katana', appearance: 'samurai sword' },
+    ] : role === 'rogue' ? [
+        { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
+        { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger', preknown: true },
+        { class: 'Potions', name: 'potion of sickness', appearance: 'pink' },
+        { class: 'Tools', name: 'sack', appearance: 'bag' },
     ] : [
         { class: 'Weapons', name: 'elven arrow', appearance: 'runed arrow', preknown: true },
         { class: 'Weapons', name: 'orcish arrow', appearance: 'crude arrow', preknown: true },
@@ -535,6 +570,7 @@ export function uInitInventoryAttrs() {
 export function setInitialArmorClass() {
     if (game.urole?.key === 'caveman') game.u.uac = 8;
     else if (game.urole?.key === 'ranger') game.u.uac = 7;
+    else if (game.urole?.key === 'rogue') game.u.uac = 7;
     else if (game.urole?.key === 'samurai') game.u.uac = 4;
     else if (game.urole?.key === 'tourist') game.u.uac = 10;
 }

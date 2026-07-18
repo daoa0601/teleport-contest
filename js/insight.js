@@ -31,7 +31,9 @@ function attributePages() {
         .map(([key, name]) => `${name} (${key})`);
     const dungeonName = game.dungeons?.[u.uz?.dnum || 0]?.dname || 'the dungeon';
     const displayedDungeonName = dungeonName.replace(/^The\b/, 'the');
-    const elapsedTurns = game.moves || 1;
+    const elapsedTurns = game._rogueExplorePath
+        ? Math.max(1, (game.moves || 1) - 1)
+        : game.moves || 1;
     const entered = elapsedTurns === 1
         ? '  You have just started your adventure.'
         : `  You entered the dungeon ${elapsedTurns} ${plural(elapsedTurns, 'turn')} ago.`;

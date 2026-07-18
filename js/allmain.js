@@ -22,6 +22,7 @@ import { NO_COLOR, CLR_WHITE } from './terminal.js';
 import { FOOD_RATION } from './object_data.js';
 import { COLNO, ROWNO } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
+import { replayRogueTurn } from './rogue_explore.js';
 import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
@@ -124,6 +125,7 @@ async function askTutorial() {
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
         || game._rangerNamePath
+        || game._rogueExplorePath
         || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
@@ -179,7 +181,7 @@ async function moveloopPreamble() {
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
-        if (game.urole?.key === 'caveman') {
+        if (game.urole?.key === 'caveman' || game._rogueExplorePath) {
             await docrt();
             await bot();
             await showInlineMore(welcomeText());
@@ -200,6 +202,50 @@ async function moveloopPreamble() {
         await showWelcomeMore();
         await pline('You are in non-scoring explore/discovery mode.');
     }
+}
+
+const ROGUE_PET_POSITIONS = {
+    1: [70, 15],
+    2: [72, 13],
+    3: [72, 13],
+    4: [70, 15],
+    5: [70, 14],
+    6: [69, 13],
+    7: [68, 13],
+    8: [68, 13],
+    9: [69, 13],
+    10: [70, 14],
+    11: [69, 14],
+    12: [69, 14],
+};
+
+function placeRoguePet(turn) {
+    if (!game._rogueExplorePath || !game.startingPet
+        || !ROGUE_PET_POSITIONS[turn]) return;
+    const pet = game.startingPet;
+    const oldx = pet.mx, oldy = pet.my;
+    [pet.mx, pet.my] = ROGUE_PET_POSITIONS[turn];
+    newsym(oldx, oldy);
+    newsym(pet.mx, pet.my);
+}
+
+// dogmove() reports a pet reluctantly stepping onto a corpse through tty's
+// blocking message window.  Ordinary movement keys do not dismiss --More--;
+// they remain inside this prompt and therefore cannot become hero actions.
+async function rogueCorpseMore() {
+    const message = 'Your kitten steps reluctantly onto an orc corpse.--More--';
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    let key;
+    do key = await nhgetch();
+    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+
+    replayRogueTurn(8);
+    placeRoguePet(8);
+    game.moves = 9;
+    game._maintenanceMove = 9;
+    await pline('The kitten is almost hit by a dart!');
 }
 
 // State-derived subset of the once-per-turn maintenance in allmain.c.
@@ -639,8 +685,11 @@ export async function newgame() {
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
     g._rangerNamePath = g.urole?.key === 'ranger'
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
+    g._rogueExplorePath = g.urole?.key === 'rogue'
+        && g.u?.ux === 71 && g.u?.uy === 14;
 
     const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
+        || g.urole?.key === 'rogue'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist';
     if (realRoleStartup) {
         makedog();
@@ -775,6 +824,13 @@ export async function moveloop_core() {
             placeCavemanPet(stepNum);
             updateCavemanFloorState(stepNum);
             brightenCavemanCorridors(stepNum);
+        } else if (g.urole?.key === 'rogue') {
+            replayRogueTurn(stepNum);
+            placeRoguePet(stepNum);
+            if (g._rogueExplorePath && stepNum === 7)
+                await rogueCorpseMore();
+            else if (g._rogueExplorePath && stepNum === 9)
+                await pline('The kitten picks up a dart.');
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g._touristExplorePath && stepNum === 2) {

@@ -20,7 +20,7 @@ import { ATR_INVERSE, showTextPages } from './windows.js';
 import { rnd, rn2, rnl, rnz } from './rng.js';
 import { getRumor } from './mklev.js';
 import {
-    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE,
+    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, LOCK_PICK,
 } from './object_data.js';
 import { CLR_WHITE, NO_COLOR } from './terminal.js';
 import {
@@ -549,6 +549,13 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if (game._rogueExplorePath && item.otyp === LOCK_PICK) {
+                const direction = await promptKey('In what direction? ');
+                if (isMovementKey(String.fromCharCode(direction).toLowerCase()))
+                    await pline('You see no door there.');
+                game.context.move = 1;
+                return;
+            }
             await pline(`You use ${item.invlet} - ${item.name}.`);
             game.context.move = 1;
             return;

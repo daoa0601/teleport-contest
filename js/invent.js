@@ -19,6 +19,7 @@ function indefiniteArticle(text) {
 function itemDescription(item) {
     const quantity = item.quantity ?? 1;
     const parts = [];
+    if (item.empty) parts.push('empty');
     if (item.buc) parts.push(item.buc);
     if (item.rustproof) parts.push('rustproof');
     if (Number.isInteger(item.enchantment)) {
@@ -33,11 +34,13 @@ function itemDescription(item) {
     if (item.charges) description += ` (${item.charges.recharged || 0}:${item.charges.current})`;
     if (game.u?.twoweap && item === game.uwep) description += ' (wielded in right hand)';
     else if (game.u?.twoweap && item === game.uswapwep) description += ' (wielded in left hand)';
-    else if (item === game.uwep) description += ['samurai', 'caveman'].includes(game.urole?.key)
+    else if (item === game.uwep) description += ['samurai', 'caveman', 'rogue'].includes(game.urole?.key)
         ? ' (weapon in right hand)' : ' (weapon in hand)';
     else if (item === game.uswapwep)
         description += ' (alternate weapon; not wielded)';
-    if (item.ready) description += game.urole?.key === 'samurai'
+    if (item.ready) description += game.urole?.key === 'rogue'
+        ? ' (alternate weapons; not wielded)'
+        : game.urole?.key === 'samurai'
         ? ' (in quiver)' : game.urole?.key === 'caveman'
             ? ' (in quiver pouch)' : ' (at the ready)';
     if (item.worn) description += ' (being worn)';

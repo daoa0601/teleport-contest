@@ -10,17 +10,18 @@ import {
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
 } from './const.js';
 import {
-    NO_COLOR, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
+    NO_COLOR, CLR_RED, CLR_GRAY, CLR_BROWN, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
     CLR_BRIGHT_BLUE,
     DEC_TO_UNICODE,
 } from './terminal.js';
-import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION } from './object_data.js';
+import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE } from './object_data.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
 
 function objectColor(object) {
     if (Number.isInteger(object?.color)) return object.color;
+    if (object?.otyp === CORPSE && object?.corpsenm === 20) return CLR_RED;
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
     if (object?.otyp === FOOD_RATION) return CLR_BROWN;
     if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;

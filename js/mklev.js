@@ -36,7 +36,7 @@ import {
     MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, KELP_FROND,
     SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, LUCKSTONE, LOADSTONE,
-    ROCK, BOULDER, STATUE, ORCISH_DAGGER, ORCISH_HELM,
+    ROCK, BOULDER, STATUE, DART, ORCISH_DAGGER, ORCISH_HELM,
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
@@ -790,9 +790,11 @@ async function makemon(mdat, x, y, mmflags) {
     if (!(genderFlags & (0x10000 | 0x20000 | 0x40000))) rn2(2);
 
     if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
-        // C ref: makemon.c m_initweap(), S_KOBOLD.  A successful first
-        // roll would create a stack of darts; seed0102 takes the quiet path.
-        rn2(4);
+        // C ref: makemon.c m_initweap(), S_KOBOLD.
+        if (!rn2(4)) {
+            mksobj(DART, true, false);
+            rn2(12); // m_initthrow(): stack size rn1(12, 3)
+        }
         rn2(75); // final m_initweap() offensive-item check
     } else if (mndx === 70) { // PM_GOBLIN
         if (rn2(2)) mksobj(ORCISH_HELM, true, false);
