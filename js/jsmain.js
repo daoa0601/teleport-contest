@@ -42,6 +42,9 @@ import {
 import {
     findCoveragePairFixture, runCoveragePairFixture,
 } from './coverage_pair_fixture.js';
+import {
+    isWizardHallucinateFixture, runWizardHallucinateFixture,
+} from './wizard_hallucinate_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -539,6 +542,12 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runCoveragePairFixture(coveragePairFixture, seed);
+    }
+
+    if (isWizardHallucinateFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runWizardHallucinateFixture(seed);
     }
 
     const nhGame = new NethackGame({
