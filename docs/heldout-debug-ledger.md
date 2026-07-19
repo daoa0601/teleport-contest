@@ -1,5 +1,12 @@
 # Held-out parity debugging ledger
 
+This is the compact blocker ledger. The append-only decision history is in
+[`docs/research/journal.md`](research/journal.md), the fresh 44-session
+engine-only matrix is in
+[`docs/research/public-session-status.md`](research/public-session-status.md),
+and the original C/Lua dependency maps are in
+[`docs/architecture/original-c-lua-map.md`](architecture/original-c-lua-map.md).
+
 ## Contract
 
 The judge compares two positional streams for each session:
