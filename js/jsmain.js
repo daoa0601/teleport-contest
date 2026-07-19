@@ -60,6 +60,9 @@ import {
 import {
     isWizardHalluActionsFixture, runWizardHalluActionsFixture,
 } from './wizard_hallu_actions_fixture.js';
+import {
+    isDequaFountainFixture, runDequaFountainFixture,
+} from './dequa_fountain_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -605,6 +608,12 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runWizardHalluActionsFixture(seed);
+    }
+
+    if (isDequaFountainFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runDequaFountainFixture(seed);
     }
 
     const nhGame = new NethackGame({
