@@ -47,8 +47,10 @@ export function fastforward_pre_mklev() {
         do game._priestPantheonIndex = rn2(13);
         while (game._priestPantheonIndex === 6);
     }
-    // The Wizard quest nemesis has random gender.
-    if (game.urole?.key === 'wizard') rn2(100);
+    // The Wizard and Archeologist quest nemeses have random gender, chosen
+    // during role_init() before Lua and dungeon initialization.
+    if (game.urole?.key === 'wizard' || game.urole?.key === 'archeologist')
+        rn2(100);
     // random
     rn2(3); rn2(2);
     init_dungeons();

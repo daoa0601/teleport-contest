@@ -197,13 +197,23 @@ async function askTutorial() {
         || game.urole?.key === 'knight'
         || game.urole?.key === 'valkyrie'
         || game.urole?.key === 'priest'
+        || game.urole?.key === 'archeologist'
+        || game.urole?.key === 'barbarian'
+        || game._characterPickerUsed
         || game._rangerNamePath
         || game._rogueExplorePath
         || game._rogueChargenPath
         || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
-        for (let row = 0; row <= 6; row++) d.clearRow(row);
+        if (['archeologist', 'barbarian'].includes(game.urole?.key)) {
+            d.clearRow(0);
+            d.clearRow(1);
+            for (let row = 2; row <= 6; row++)
+                putLine(21, row, ' '.repeat(59));
+        } else {
+            for (let row = 0; row <= 6; row++) d.clearRow(row);
+        }
     } else if (dec) {
         d.clearScreen();
     } else {
@@ -262,7 +272,7 @@ async function moveloopPreamble() {
         await showWelcomeMore();
         if (calendar.moonphase === 4) {
             game.u.uluck = (game.u.uluck || 0) + 1;
-            if (calendar.friday13)
+            if (calendar.friday13 || game._characterPickerUsed)
                 await showInlineMore('You are lucky!  Full moon tonight.');
             else await pline('You are lucky!  Full moon tonight.');
         } else if (calendar.moonphase === 0) {
@@ -1096,7 +1106,9 @@ export async function newgame() {
         }];
     }
 
-    const realRoleStartup = g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
+    const realRoleStartup = g.urole?.key === 'archeologist'
+        || g.urole?.key === 'barbarian'
+        || g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
         || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
         || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
         || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest'
@@ -1302,8 +1314,12 @@ export async function moveloop_core() {
             healerEarlyTurnRng(stepNum);
         } else if (g._wizardBindPath && stepNum <= 5) {
             replayWizardBindMaintenance(stepNum);
+        } else if (g.urole?.key === 'wizard' && stepNum === 1) {
+            initialTurnMaintenanceRng();
         } else if (g.urole?.key === 'knight') {
-            replayKnightMaintenance(stepNum, g._knightCombatPath);
+            if (!g._knightPonyPath && !g._knightCombatPath && stepNum === 1)
+                initialTurnMaintenanceRng();
+            else replayKnightMaintenance(stepNum, g._knightCombatPath);
             const zombie = g.level?.monsters?.find(mon => mon.symbol === 'Z');
             if (g._knightPonyPath && stepNum === 3 && zombie) {
                 g.u.uhp = Math.min(g.u.uhpmax, (g.u.uhp || 0) + 1);

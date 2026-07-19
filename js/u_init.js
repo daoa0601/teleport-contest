@@ -9,10 +9,14 @@ import {
     D_ISOPEN, D_NODOOR,
 } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, SHORT_SWORD, LONG_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BOW, YUMI, SLING,
-    HELMET, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
+    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD,
+    LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF,
+    BULLWHIP, BOW, YUMI, SLING,
+    HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET,
+    LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT,
+    CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
     SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH, STETHOSCOPE, TIN_OPENER,
-    MAGIC_MARKER, BLINDFOLD, OIL_LAMP,
+    MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
@@ -21,7 +25,7 @@ import {
     SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER,
     SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION,
     WAN_SLEEP, WAN_WISHING, GOLD_PIECE,
-    FLINT, ROCK,
+    TOUCHSTONE, FLINT, ROCK,
 } from './object_data.js';
 
 const WEAPON_CLASS = 2;
@@ -38,6 +42,34 @@ const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
 const PM_LICHEN = 158;
+
+const ARCHEOLOGIST_INVENTORY = [
+    { typ: BULLWHIP, spe: 2, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: LEATHER_JACKET, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FEDORA, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 3, max: 3, bless: 0 },
+    { typ: PICK_AXE, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: TINNING_KIT, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: TOUCHSTONE, spe: 0, cls: GEM_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+const BARBARIAN_SWORD_INVENTORY = [
+    { typ: TWO_HANDED_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: AXE, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+const BARBARIAN_AXE_INVENTORY = [
+    { typ: BATTLE_AXE, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: SHORT_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
+    { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
 
 const RANGER_INVENTORY = [
     { typ: DAGGER, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -175,6 +207,10 @@ function oneItem(typ, spe = 0) {
 
 const ITEM_PRESENTATION = new Map([
     [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers', enchanted: true }],
+    [AXE, { class: 'Weapons', name: 'axe', plural: 'axes', enchanted: true }],
+    [BATTLE_AXE, {
+        class: 'Weapons', name: 'battle-axe', plural: 'battle-axes', enchanted: true,
+    }],
     [SPEAR, {
         class: 'Weapons', name: 'spear', plural: 'spears', enchanted: true,
         omitUncursed: true,
@@ -205,6 +241,11 @@ const ITEM_PRESENTATION = new Map([
     [LONG_SWORD, {
         class: 'Weapons', name: 'long sword', plural: 'long swords', enchanted: true,
     }],
+    [TWO_HANDED_SWORD, {
+        class: 'Weapons', name: 'two-handed sword', plural: 'two-handed swords',
+        enchanted: true,
+    }],
+    [BULLWHIP, { class: 'Weapons', name: 'bullwhip', plural: 'bullwhips', enchanted: true }],
     [LANCE, { class: 'Weapons', name: 'lance', plural: 'lances', enchanted: true }],
     [YUMI, {
         class: 'Weapons', name: 'yumi', plural: 'yumi', enchanted: true,
@@ -222,6 +263,10 @@ const ITEM_PRESENTATION = new Map([
     [LEATHER_ARMOR, {
         class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
     }],
+    [LEATHER_JACKET, {
+        class: 'Armor', name: 'leather jacket', plural: 'leather jackets', enchanted: true,
+    }],
+    [FEDORA, { class: 'Armor', name: 'fedora', plural: 'fedoras', enchanted: true }],
     [ROBE, { class: 'Armor', name: 'robe', plural: 'robes', enchanted: true }],
     [SMALL_SHIELD, {
         class: 'Armor', name: 'small shield', plural: 'small shields', enchanted: true,
@@ -322,6 +367,14 @@ const ITEM_PRESENTATION = new Map([
     }],
     [CREDIT_CARD, { class: 'Tools', name: 'credit card', plural: 'credit cards' }],
     [TIN_OPENER, { class: 'Tools', name: 'tin opener', plural: 'tin openers' }],
+    [PICK_AXE, { class: 'Tools', name: 'pick-axe', plural: 'pick-axes', enchanted: true }],
+    [TINNING_KIT, {
+        class: 'Tools', name: 'tinning kit', plural: 'tinning kits', charged: true,
+        showBuc: false,
+    }],
+    [TOUCHSTONE, {
+        class: 'Gems/Stones', name: 'touchstone', plural: 'touchstones', showBuc: false,
+    }],
     [LEASH, { class: 'Tools', name: 'leash', plural: 'leashes' }],
     [STETHOSCOPE, { class: 'Tools', name: 'stethoscope', plural: 'stethoscopes' }],
     [TOWEL, { class: 'Tools', name: 'towel', plural: 'towels' }],
@@ -417,17 +470,17 @@ export function makedog() {
     const g = game;
     if (g.preferred_pet === 'n') return null;
     const role = g.urole?.key;
-    if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
+    if (role !== 'archeologist' && role !== 'barbarian'
+        && role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
         && role !== 'monk' && role !== 'wizard') return null;
 
-    let pettype = role === 'knight' ? 102
-        : role === 'wizard' ? 32 : 16; // PM_PONY, PM_KITTEN, or PM_LITTLE_DOG
-    if (role === 'tourist' || role === 'rogue' || role === 'valkyrie'
-        || role === 'priest' || role === 'healer' || role === 'monk') {
+    let pettype = g.urole?.petnum;
+    if (pettype == null || pettype < 0) {
         if (g.preferred_pet === 'c') pettype = 32; // PM_KITTEN
-        else if (g.preferred_pet !== 'd') pettype = rn2(2) ? 32 : 16;
+        else if (g.preferred_pet === 'd') pettype = 16; // PM_LITTLE_DOG
+        else pettype = rn2(2) ? 32 : 16;
     }
 
     const candidates = collectNearbyCoords(g.u.ux, g.u.uy, 3);
@@ -440,16 +493,13 @@ export function makedog() {
     let hp = d(role === 'knight' ? 2 : 1, 8);
     if (role !== 'knight' && hp === 1) hp++;
     const female = !!rn2(2);
-    if (role === 'tourist' || role === 'caveman' || role === 'valkyrie'
-        || role === 'priest' || role === 'healer' || role === 'monk'
-        || role === 'wizard') {
-        // peace_minded(); initedog() below ultimately makes the pet tame.
-        // A lawful Priest and a neutral little dog fail the alignment-sign
-        // test before peace_minded() reaches either random branch.
-        if (!(role === 'priest' && g.initAlignment?.value === 1)) {
-            rn2(role === 'healer' || role === 'monk' ? 26 : 16);
-            rn2(2);
-        }
+    // Dogs, cats, and ponies are neutral. C's peace_minded() reaches its two
+    // random branches only for a neutral hero, and the first denominator is
+    // derived from the live alignment record rather than the role name.
+    if ((g.initAlignment?.value ?? 0) === 0) {
+        const record = g.u?.ualign?.record ?? 0;
+        if (rn2(16 + Math.max(-15, record)))
+            rn2(2); // 2 + abs(monster alignment), which is 0 here
     }
     const pet = {
         mnum: pettype,
@@ -552,7 +602,8 @@ function useStartingItem(item) {
             game.uquiver = item;
             item.ready = true;
         }
-    } else if (item.otyp === SPEAR || item.otyp === MACE
+    } else if (item.otyp === SPEAR || item.otyp === MACE || item.otyp === BULLWHIP
+        || item.otyp === BATTLE_AXE || item.otyp === TWO_HANDED_SWORD
         || item.otyp === LONG_SWORD || item.otyp === QUARTERSTAFF) {
         game.uwep = item;
         item.wielded = true;
@@ -571,7 +622,7 @@ function useStartingItem(item) {
     } else if (item.otyp === BOW || item.otyp === SLING || item.otyp === LANCE) {
         game.uswapwep = item;
         item.alternate = true;
-    } else if (item.otyp === SHORT_SWORD || item.otyp === YUMI) {
+    } else if (item.otyp === AXE || item.otyp === SHORT_SWORD || item.otyp === YUMI) {
         if (!game.uwep) {
             game.uwep = item;
             item.wielded = true;
@@ -589,14 +640,14 @@ function useStartingItem(item) {
     } else if (item.otyp === SMALL_SHIELD) {
         game.uarms = item;
         item.worn = true;
-    } else if (item.otyp === HELMET) {
+    } else if (item.otyp === HELMET || item.otyp === FEDORA) {
         game.uarmh = item;
         item.worn = true;
     } else if (item.otyp === LEATHER_GLOVES) {
         game.uarmg = item;
         item.worn = true;
     } else if (item.otyp === SPLINT_MAIL || item.otyp === RING_MAIL
-        || item.otyp === LEATHER_ARMOR) {
+        || item.otyp === LEATHER_ARMOR || item.otyp === LEATHER_JACKET) {
         game.uarm = item;
         item.worn = true;
     } else if (item.oclass === SPBOOK_CLASS && item.spellName) {
@@ -748,7 +799,8 @@ function initAttributes() {
 
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
-    if (role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
+    if (role !== 'archeologist' && role !== 'barbarian'
+        && role !== 'caveman' && role !== 'ranger' && role !== 'rogue'
         && role !== 'samurai' && role !== 'tourist' && role !== 'valkyrie'
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
         && role !== 'monk' && role !== 'wizard') return false;
@@ -756,7 +808,16 @@ export function uInitInventoryAttrs() {
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
     game.moves = 1;
-    if (role === 'caveman') {
+    if (role === 'archeologist') {
+        iniInv(ARCHEOLOGIST_INVENTORY);
+        if (!rn2(10)) iniInv(oneItem(TIN_OPENER));
+        else if (!rn2(4)) iniInv(oneItem(OIL_LAMP, 1));
+        else if (!rn2(5)) iniInv(oneItem(MAGIC_MARKER, 19));
+    } else if (role === 'barbarian') {
+        iniInv(rn2(100) >= 50
+            ? BARBARIAN_SWORD_INVENTORY : BARBARIAN_AXE_INVENTORY);
+        if (!rn2(6)) iniInv(oneItem(OIL_LAMP, 1));
+    } else if (role === 'caveman') {
         iniInv(CAVEMAN_INVENTORY);
         if (game.flags?.explore) {
             iniInv([
@@ -981,7 +1042,9 @@ export function uInitInventoryAttrs() {
 }
 
 export function setInitialArmorClass() {
-    if (game.urole?.key === 'caveman') game.u.uac = 8;
+    if (game.urole?.key === 'archeologist') game.u.uac = 9;
+    else if (game.urole?.key === 'barbarian') game.u.uac = 7;
+    else if (game.urole?.key === 'caveman') game.u.uac = 8;
     else if (game.urole?.key === 'ranger') game.u.uac = 7;
     else if (game.urole?.key === 'rogue') game.u.uac = 7;
     else if (game.urole?.key === 'samurai') game.u.uac = 4;

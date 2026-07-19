@@ -355,7 +355,12 @@ function mksobj_init(otmp, artif) {
         } else {
             blessorcurse(otmp, 10);
         }
-        if (artif && !rn2(40)) otmp.artifact = true;
+        if (artif) {
+            // C still performs the artifact chance for armor, but every
+            // armor-based artifact in this version is non-generatable.  A
+            // successful roll therefore leaves the ordinary armor intact.
+            rn2(40);
+        }
         break;
     case RING_CLASS:
         if (CHARGED_OBJECTS.has(otyp)) {
@@ -824,7 +829,7 @@ async function makemon(mdat, x, y, mmflags) {
         symbol: classSymbols[classIndex] || '?',
         // The complete per-monster color table is a later metadata port;
         // giant ant is the generated level-one case exercised here.
-        color: (mndx === 0 || mndx === 12 || mndx === 59)
+        color: (mndx === 0 || mndx === 12 || mndx === 59 || mndx === 88)
             ? CLR_BROWN : CLR_GRAY,
     };
     if (mndx === 158) {
@@ -1332,6 +1337,147 @@ const L_SHAPED_MAP = [
     '--------',
 ];
 
+const BLOCKED_CENTER_MAP = [
+    '-----------',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '|...LLL...|',
+    '|...LLL...|',
+    '|...LLL...|',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '-----------',
+];
+
+const L_SHAPED_ROT_1_MAP = [
+    'xxx-----',
+    'xxx|...|',
+    'xxx|...|',
+    '----...|',
+    '|......|',
+    '|......|',
+    '|......|',
+    '--------',
+];
+
+const L_SHAPED_ROT_2_MAP = [
+    '--------',
+    '|......|',
+    '|......|',
+    '|......|',
+    '----...|',
+    'xxx|...|',
+    'xxx|...|',
+    'xxx-----',
+];
+
+const L_SHAPED_ROT_3_MAP = [
+    '--------',
+    '|......|',
+    '|......|',
+    '|......|',
+    '|...----',
+    '|...|xxx',
+    '|...|xxx',
+    '-----xxx',
+];
+
+const CIRCULAR_SMALL_MAP = [
+    'xx---xx',
+    'x--.--x',
+    '--...--',
+    '|.....|',
+    '--...--',
+    'x--.--x',
+    'xx---xx',
+];
+
+const CIRCULAR_MEDIUM_MAP = [
+    'xx-----xx',
+    'x--...--x',
+    '--.....--',
+    '|.......|',
+    '|.......|',
+    '|.......|',
+    '--.....--',
+    'x--...--x',
+    'xx-----xx',
+];
+
+const CIRCULAR_BIG_MAP = [
+    'xxx-----xxx',
+    'x---...---x',
+    'x-.......-x',
+    '--.......--',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '--.......--',
+    'x-.......-x',
+    'x---...---x',
+    'xxx-----xxx',
+];
+
+const T_SHAPED_MAP = [
+    'xxx-----xxx',
+    'xxx|...|xxx',
+    'xxx|...|xxx',
+    '----...----',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '-----------',
+];
+
+const T_SHAPED_ROT_2_MAP = [
+    '-----------',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '----...----',
+    'xxx|...|xxx',
+    'xxx|...|xxx',
+    'xxx-----xxx',
+];
+
+const S_SHAPED_ROT_1_MAP = [
+    'xxx--------',
+    'xxx|......|',
+    'xxx|......|',
+    '----......|',
+    '|......----',
+    '|......|xxx',
+    '|......|xxx',
+    '--------xxx',
+];
+
+const Z_SHAPED_ROT_1_MAP = [
+    '--------xxx',
+    '|......|xxx',
+    '|......|xxx',
+    '|......----',
+    '----......|',
+    'xxx|......|',
+    'xxx|......|',
+    'xxx--------',
+];
+
+const CROSS_MAP = [
+    'xxx-----xxx',
+    'xxx|...|xxx',
+    'xxx|...|xxx',
+    '----...----',
+    '|.........|',
+    '|.........|',
+    '|.........|',
+    '----...----',
+    'xxx|...|xxx',
+    'xxx|...|xxx',
+    'xxx-----xxx',
+];
+
 const S_SHAPED_MAP = [
     '-----xxx',
     '|...|xxx',
@@ -1345,6 +1491,40 @@ const S_SHAPED_MAP = [
     'xxx|...|',
     'xxx-----',
 ];
+
+const Z_SHAPED_MAP = [
+    'xxx-----',
+    'xxx|...|',
+    'xxx|...|',
+    '----...|',
+    '|......|',
+    '|......|',
+    '|......|',
+    '----...|',
+    'xxx|...|',
+    'xxx|...|',
+    'xxx-----',
+];
+
+const STATIC_THEMED_ROOMS = new Map([
+    ['L-shaped', [L_SHAPED_MAP, 1, 1]],
+    ['L-shaped, rot 1', [L_SHAPED_ROT_1_MAP, 5, 1]],
+    ['L-shaped, rot 2', [L_SHAPED_ROT_2_MAP, 1, 1]],
+    ['L-shaped, rot 3', [L_SHAPED_ROT_3_MAP, 1, 1]],
+    ['Circular, small', [CIRCULAR_SMALL_MAP, 3, 3]],
+    ['Circular, medium', [CIRCULAR_MEDIUM_MAP, 4, 4]],
+    ['Circular, big', [CIRCULAR_BIG_MAP, 5, 5]],
+    ['T-shaped', [T_SHAPED_MAP, 5, 5]],
+    ['T-shaped, rot 1', [S_SHAPED_MAP, 2, 2]],
+    ['T-shaped, rot 2', [T_SHAPED_ROT_2_MAP, 2, 2]],
+    ['T-shaped, rot 3', [Z_SHAPED_MAP, 5, 5]],
+    ['S-shaped', [S_SHAPED_MAP, 2, 2]],
+    ['S-shaped, rot 1', [S_SHAPED_ROT_1_MAP, 5, 5]],
+    ['Z-shaped', [Z_SHAPED_MAP, 5, 5]],
+    ['Z-shaped, rot 1', [Z_SHAPED_ROT_1_MAP, 2, 2]],
+    ['Cross', [CROSS_MAP, 6, 6]],
+    ['Four-leaf clover', [FOUR_LEAF_CLOVER_MAP, 6, 6]],
+]);
 
 const THEMEROOM_FILL_META = [
     { name: 'Ice room' },
@@ -1368,6 +1548,8 @@ function themedMapTerrain(ch) {
     if (ch === '.') return ROOM;
     if (ch === '-') return HWALL;
     if (ch === '|') return VWALL;
+    if (ch === 'L') return LAVAPOOL;
+    if (ch === 'P') return POOL;
     if (ch === ' ') return STONE;
     return null; // 'x' and any unsupported map character are see-through
 }
@@ -1556,9 +1738,10 @@ function fillTempleOfGods(room) {
     }
 }
 
-function generateStaticThemedRoom(rows, fillx, filly, difficulty) {
+function generateStaticThemedRoom(rows, fillx, filly, difficulty, prepare = null) {
     const placed = placeThemedMap(rows);
     if (!placed) return false;
+    if (prepare) prepare(placed);
 
     // themerms.lua filler_region(6,6): 30% chance to choose a themed fill.
     const themedFill = rn2(100) < 30;
@@ -1576,6 +1759,25 @@ function generateStaticThemedRoom(rows, fillx, filly, difficulty) {
     }
     game._hasStaticThemeroom = true;
     return true;
+}
+
+function generateBlockedCenter(difficulty) {
+    return generateStaticThemedRoom(
+        BLOCKED_CENTER_MAP, 1, 1, difficulty,
+        placed => {
+            if (rn2(100) >= 30) return;
+            // Lua shuffles { horizontal wall, pool } before selecting its
+            // first element.  Preserve both the draw and its terrain effect.
+            const terrain = rn2(2) === 0 ? POOL : HWALL;
+            for (let row = 4; row <= 6; row++) {
+                for (let col = 4; col <= 6; col++) {
+                    const loc = game.level.at(placed.xstart + col,
+                        placed.ystart + row);
+                    if (loc?.typ === LAVAPOOL) loc.typ = terrain;
+                }
+            }
+        },
+    );
 }
 
 function is_themeroom_eligible(room, difficulty) {
@@ -1599,17 +1801,11 @@ async function themerooms_generate(difficulty) {
         }
     }
     if (!pick) return false;
-    if (pick.name === 'Four-leaf clover') {
-        return generateStaticThemedRoom(
-            FOUR_LEAF_CLOVER_MAP, 6, 6, difficulty,
-        );
-    }
-    if (pick.name === 'L-shaped') {
-        return generateStaticThemedRoom(L_SHAPED_MAP, 1, 1, difficulty);
-    }
-    if (pick.name === 'S-shaped') {
-        return generateStaticThemedRoom(S_SHAPED_MAP, 2, 2, difficulty);
-    }
+    if (pick.name === 'Blocked center')
+        return generateBlockedCenter(difficulty);
+    const staticRoom = STATIC_THEMED_ROOMS.get(pick.name);
+    if (staticRoom)
+        return generateStaticThemedRoom(...staticRoom, difficulty);
     // For 'ordinary' rooms, create a standard room
     // For themed rooms with dynamic dimensions, consume those rn2 calls first
     const chance = 100;

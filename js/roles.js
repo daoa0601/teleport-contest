@@ -6,8 +6,56 @@
 // NetHack's C order: Str, Int, Wis, Dex, Con, Cha.
 
 export const roles = [
-    { name: { m: 'Archeologist', f: 'Archeologist' }, mnum: 0 },
-    { name: { m: 'Barbarian', f: 'Barbarian' }, mnum: 1 },
+    { key: 'archeologist', name: { m: 'Archeologist', f: 'Archeologist' }, mnum: 0,
+      title: [
+          { m: 'Digger', f: 'Digger' },
+          { m: 'Field Worker', f: 'Field Worker' },
+          { m: 'Investigator', f: 'Investigator' },
+          { m: 'Exhumer', f: 'Exhumer' },
+          { m: 'Excavator', f: 'Excavator' },
+          { m: 'Spelunker', f: 'Spelunker' },
+          { m: 'Speleologist', f: 'Speleologist' },
+          { m: 'Collector', f: 'Collector' },
+          { m: 'Curator', f: 'Curator' },
+      ],
+      gods: { lawful: 'Quetzalcoatl', neutral: 'Camaxtli', chaotic: 'Huhetotl' },
+      attrbase: [7, 10, 10, 7, 7, 7],
+      attrdist: [20, 20, 20, 10, 20, 10],
+      hpadv: {
+          infix: 11, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 14,
+      initrecord: 10,
+      petnum: -1,
+      greeting: 'Hello' },
+    { key: 'barbarian', name: { m: 'Barbarian', f: 'Barbarian' }, mnum: 1,
+      title: [
+          { m: 'Plunderer', f: 'Plunderess' },
+          { m: 'Pillager', f: 'Pillager' },
+          { m: 'Bandit', f: 'Bandit' },
+          { m: 'Brigand', f: 'Brigand' },
+          { m: 'Raider', f: 'Raider' },
+          { m: 'Reaver', f: 'Reaver' },
+          { m: 'Slayer', f: 'Slayer' },
+          { m: 'Chieftain', f: 'Chieftainess' },
+          { m: 'Conqueror', f: 'Conqueress' },
+      ],
+      gods: { lawful: 'Mitra', neutral: 'Crom', chaotic: 'Set' },
+      attrbase: [16, 7, 7, 15, 16, 6],
+      attrdist: [30, 6, 7, 20, 30, 7],
+      hpadv: {
+          infix: 14, inrnd: 0, lofix: 0, lornd: 10, hifix: 2, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 10,
+      initrecord: 10,
+      petnum: -1,
+      greeting: 'Hello' },
     { key: 'caveman', name: { m: 'Caveman', f: 'Cavewoman' }, mnum: 2,
       title: [
           { m: 'Troglodyte', f: 'Troglodyte' },
@@ -18,8 +66,13 @@ export const roles = [
       goddessAlignments: ['neutral'],
       attrbase: [10, 7, 7, 7, 8, 6],
       attrdist: [30, 6, 7, 20, 30, 7],
-      hpadv: { infix: 14, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 14, inrnd: 0, lofix: 0, lornd: 8, hifix: 2, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 10,
       initrecord: 0,
       petnum: 16,
       greeting: 'Hello' },
@@ -39,9 +92,14 @@ export const roles = [
       goddessAlignments: ['lawful'],
       attrbase: [7, 7, 13, 7, 11, 16],
       attrdist: [15, 20, 20, 15, 25, 5],
-      hpadv: { infix: 11, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
-      initrecord: 0,
+      hpadv: {
+          infix: 11, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 2,
+      },
+      xlev: 20,
+      initrecord: 10,
       petnum: -1,
       greeting: 'Hello' },
     { key: 'knight', name: { m: 'Knight', f: 'Knight' }, mnum: 4,
@@ -60,8 +118,13 @@ export const roles = [
       goddessAlignments: ['neutral'],
       attrbase: [13, 7, 14, 8, 10, 17],
       attrdist: [30, 15, 15, 10, 20, 10],
-      hpadv: { infix: 14, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 14, inrnd: 0, lofix: 0, lornd: 8, hifix: 2, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 2,
+      },
+      xlev: 10,
       initrecord: 10,
       petnum: 102,
       greeting: 'Salutations' },
@@ -82,10 +145,15 @@ export const roles = [
       },
       attrbase: [10, 7, 8, 8, 7, 7],
       attrdist: [25, 10, 20, 20, 15, 10],
-      hpadv: { infix: 12, inrnd: 0 },
-      enadv: { infix: 2, inrnd: 0 },
+      hpadv: {
+          infix: 12, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 2, inrnd: 0, lofix: 0, lornd: 2, hifix: 0, hirnd: 2,
+      },
+      xlev: 10,
       initrecord: 10,
-      petnum: 16,
+      petnum: -1,
       greeting: 'Hello' },
     { key: 'priest', name: { m: 'Priest', f: 'Priestess' }, mnum: 6,
       title: [
@@ -101,8 +169,13 @@ export const roles = [
       ],
       attrbase: [7, 7, 10, 7, 7, 7],
       attrdist: [15, 10, 30, 15, 20, 10],
-      hpadv: { infix: 12, inrnd: 0 },
-      enadv: { infix: 4, inrnd: 0 },
+      hpadv: {
+          infix: 12, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 4, inrnd: 0, lofix: 0, lornd: 2, hifix: 0, hirnd: 2,
+      },
+      xlev: 10,
       initrecord: 0,
       petnum: -1,
       greeting: 'Hello' },
@@ -121,8 +194,13 @@ export const roles = [
       gods: { lawful: 'Mercury', neutral: 'Venus', chaotic: 'Mars' },
       attrbase: [13, 13, 13, 9, 13, 7],
       attrdist: [30, 10, 10, 20, 20, 10],
-      hpadv: { infix: 13, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 13, inrnd: 0, lofix: 0, lornd: 6, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 12,
       initrecord: 10,
       petnum: 16,
       greeting: 'Hello' },
@@ -141,8 +219,13 @@ export const roles = [
       gods: { lawful: 'Issek', neutral: 'Mog', chaotic: 'Kos' },
       attrbase: [7, 7, 7, 10, 7, 6],
       attrdist: [20, 10, 10, 30, 20, 10],
-      hpadv: { infix: 10, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 10, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 11,
       initrecord: 10,
       petnum: -1,
       greeting: 'Hello' },
@@ -164,8 +247,13 @@ export const roles = [
       goddessAlignments: ['lawful'],
       attrbase: [10, 8, 7, 10, 17, 6],
       attrdist: [30, 10, 8, 30, 14, 8],
-      hpadv: { infix: 13, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 13, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 11,
       intrinsicFast: true,
       initrecord: 10,
       petnum: 16,
@@ -178,8 +266,13 @@ export const roles = [
       gods: { lawful: 'Blind Io', neutral: 'The Lady', chaotic: 'Offler' },
       attrbase: [7, 10, 6, 7, 7, 10],
       attrdist: [15, 10, 10, 15, 30, 20],
-      hpadv: { infix: 8, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 8, inrnd: 0, lofix: 0, lornd: 8, hifix: 0, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 14,
       initrecord: 0,
       petnum: -1,
       greeting: 'Aloha',
@@ -199,8 +292,13 @@ export const roles = [
       gods: { lawful: 'Tyr', neutral: 'Odin', chaotic: 'Loki' },
       attrbase: [10, 7, 7, 7, 10, 7],
       attrdist: [30, 6, 7, 20, 30, 7],
-      hpadv: { infix: 14, inrnd: 0 },
-      enadv: { infix: 1, inrnd: 0 },
+      hpadv: {
+          infix: 14, inrnd: 0, lofix: 0, lornd: 8, hifix: 2, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 1,
+      },
+      xlev: 10,
       initrecord: 0,
       petnum: -1,
       greeting: 'Velkommen' },
@@ -219,29 +317,59 @@ export const roles = [
       gods: { lawful: 'Ptah', neutral: 'Thoth', chaotic: 'Anhur' },
       attrbase: [7, 10, 7, 7, 7, 7],
       attrdist: [10, 30, 10, 20, 20, 10],
-      hpadv: { infix: 10, inrnd: 0 },
-      enadv: { infix: 4, inrnd: 0 },
+      hpadv: {
+          infix: 10, inrnd: 0, lofix: 0, lornd: 8, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 4, inrnd: 0, lofix: 0, lornd: 2, hifix: 0, hirnd: 3,
+      },
+      xlev: 12,
       initrecord: 0,
-      petnum: 17,
+      petnum: 32,
       greeting: 'Hello' },
 ];
 
 export const races = [
     { name: 'human', noun: 'human', adj: 'human', mnum: 0,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 18, 18, 18, 18, 18],
-      hpadv: { infix: 2, inrnd: 0 }, enadv: { infix: 1, inrnd: 0 } },
+      hpadv: {
+          infix: 2, inrnd: 0, lofix: 0, lornd: 2, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 2, lornd: 0, hifix: 2, hirnd: 0,
+      } },
     { name: 'elf', noun: 'elf', adj: 'elven', mnum: 1,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [18, 20, 20, 18, 16, 18],
-      hpadv: { infix: 1, inrnd: 0 }, enadv: { infix: 2, inrnd: 0 } },
+      hpadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 1, hirnd: 0,
+      },
+      enadv: {
+          infix: 2, inrnd: 0, lofix: 3, lornd: 0, hifix: 3, hirnd: 0,
+      } },
     { name: 'dwarf', noun: 'dwarf', adj: 'dwarven', mnum: 2,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 16, 16, 20, 20, 16],
-      hpadv: { infix: 4, inrnd: 0 }, enadv: { infix: 0, inrnd: 0 } },
+      hpadv: {
+          infix: 4, inrnd: 0, lofix: 0, lornd: 3, hifix: 2, hirnd: 0,
+      },
+      enadv: {
+          infix: 0, inrnd: 0, lofix: 0, lornd: 0, hifix: 0, hirnd: 0,
+      } },
     { name: 'gnome', noun: 'gnome', adj: 'gnomish', mnum: 3,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 19, 18, 18, 18, 18],
-      hpadv: { infix: 1, inrnd: 0 }, enadv: { infix: 2, inrnd: 0 } },
+      hpadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 0,
+      },
+      enadv: {
+          infix: 2, inrnd: 0, lofix: 2, lornd: 0, hifix: 2, hirnd: 0,
+      } },
     { name: 'orc', noun: 'orc', adj: 'orcish', mnum: 4,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 16, 16, 18, 18, 16],
-      hpadv: { infix: 1, inrnd: 0 }, enadv: { infix: 1, inrnd: 0 } },
+      hpadv: {
+          infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 0,
+      },
+      enadv: {
+          infix: 1, inrnd: 0, lofix: 1, lornd: 0, hifix: 1, hirnd: 0,
+      } },
 ];
 
 export const aligns = [

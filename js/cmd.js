@@ -1081,6 +1081,139 @@ async function dosit() {
     game.context.move = 1;
 }
 
+function xlevToRank(level) {
+    return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
+}
+
+function newExperienceThreshold(level) {
+    if (level < 1) return 0;
+    if (level < 10) return 10 * (2 ** level);
+    if (level < 20) return 10000 * (2 ** (level - 10));
+    return 10000000 * (level - 19);
+}
+
+function conHpBonus(con) {
+    if (con <= 3) return -2;
+    if (con <= 6) return -1;
+    if (con <= 14) return 0;
+    if (con <= 16) return 1;
+    if (con === 17) return 2;
+    if (con === 18) return 3;
+    return 4;
+}
+
+function levelHpIncrease() {
+    const u = game.u;
+    const role = game.urole?.hpadv || {};
+    const race = game.urace?.hpadv || {};
+    const lower = u.ulevel < (game.urole?.xlev ?? 10);
+    const fixKey = lower ? 'lofix' : 'hifix';
+    const rndKey = lower ? 'lornd' : 'hirnd';
+    let hp = (role[fixKey] || 0) + (race[fixKey] || 0);
+    if ((role[rndKey] || 0) > 0) hp += rnd(role[rndKey]);
+    if ((race[rndKey] || 0) > 0) hp += rnd(race[rndKey]);
+    return Math.max(1, hp + conHpBonus(u.acurr?.a?.[2] || 0));
+}
+
+function energyModifier(energy) {
+    if (['priest', 'wizard'].includes(game.urole?.key)) return 2 * energy;
+    if (['healer', 'knight'].includes(game.urole?.key))
+        return Math.trunc((3 * energy) / 2);
+    if (['barbarian', 'valkyrie'].includes(game.urole?.key))
+        return Math.trunc((3 * energy) / 4);
+    return energy;
+}
+
+function levelEnergyIncrease() {
+    const u = game.u;
+    const role = game.urole?.enadv || {};
+    const race = game.urace?.enadv || {};
+    const lower = u.ulevel < (game.urole?.xlev ?? 10);
+    const fixKey = lower ? 'lofix' : 'hifix';
+    const rndKey = lower ? 'lornd' : 'hirnd';
+    const range = Math.trunc((u.acurr?.a?.[4] || 0) / 2)
+        + (role[rndKey] || 0) + (race[rndKey] || 0);
+    const fixed = (role[fixKey] || 0) + (race[fixKey] || 0);
+    return Math.max(1, energyModifier(rn2(range) + fixed));
+}
+
+function gainExperienceLevel() {
+    const u = game.u;
+    const hp = levelHpIncrease();
+    const energy = levelEnergyIncrease();
+    u.uhp += hp;
+    u.uhpmax += hp;
+    u.uhppeak = Math.max(u.uhppeak || 0, u.uhpmax);
+    u.uen += energy;
+    u.uenmax += energy;
+    u.uenpeak = Math.max(u.uenpeak || 0, u.uenmax);
+    u.uexp = newExperienceThreshold(u.ulevel);
+    u.ulevel++;
+    u.ulevelmax = Math.max(u.ulevelmax || 0, u.ulevel);
+    game.urole.rank = game.urole.title?.[xlevToRank(u.ulevel)]
+        || game.urole.name;
+}
+
+async function getLine(prompt) {
+    let value = '';
+    await pline(prompt);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(prompt.length + 1, 0);
+    for (;;) {
+        const key = await nhgetch();
+        if (key === 27) return null;
+        if (key === 10 || key === 13) return value;
+        if (key === 8 || key === 127) value = value.slice(0, -1);
+        else {
+            const ch = String.fromCharCode(key);
+            if (/^[0-9+-]$/.test(ch)) value += ch;
+        }
+        game._pending_message = `${prompt} ${value}`;
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(prompt.length + 1 + value.length, 0);
+    }
+}
+
+function levelChangeMessage(role, level) {
+    if (role === 'archeologist' && level === 6)
+        return 'You feel stealthy!  You feel more experienced.';
+    if (role === 'archeologist' && level >= 7 && level <= 10)
+        return `Welcome to experience level ${level - 1}.  You feel more experienced.`;
+    if (role === 'barbarian' && level === 8)
+        return 'You feel quick!  You feel more experienced.';
+    if (role === 'barbarian' && level >= 9 && level <= 15)
+        return `Welcome to experience level ${level - 1}.  You feel more experienced.`;
+    return `You feel more experienced.  Welcome to experience level ${level}.`;
+}
+
+async function wizLevelChange() {
+    const value = await getLine('To what experience level do you want to be set?');
+    if (value === null || !/^[+-]?\d+$/.test(value)) {
+        await pline('Never mind.');
+        game.context.move = 0;
+        return;
+    }
+    const target = Math.max(1, Math.min(30, Number(value)));
+    const role = game.urole?.key;
+    while (game.u.ulevel < target) {
+        gainExperienceLevel();
+        const level = game.u.ulevel;
+        if (level < target) {
+            await promptKey(`${levelChangeMessage(role, level)}--More--`);
+            if ((role === 'archeologist' && level === 10)
+                || (role === 'barbarian' && level === 15)) {
+                if (role === 'archeologist') game.u.fast = true;
+                const ability = role === 'archeologist' ? 'quick' : 'stealthy';
+                await promptKey(`Welcome to experience level ${level}.  You feel ${ability}!--More--`);
+            }
+        } else {
+            await pline(levelChangeMessage(role, level));
+        }
+    }
+    game.u.ulevelmax = game.u.ulevel;
+    game.context.move = 0;
+}
+
 async function runExtendedCommand(command) {
     if (command === 'twoweapon') return dotwoweapon();
     if (command === 'enhance') return doenhance();
@@ -1089,6 +1222,7 @@ async function runExtendedCommand(command) {
     if (command === 'pray') return dopray();
     if (command === 'name') return doname();
     if (command === 'ride') return doride();
+    if (command === 'levelchange') return wizLevelChange();
     await pline(`#${command}: unknown extended command.`);
     game.context.move = 0;
 }
@@ -1117,6 +1251,7 @@ async function doextcmd() {
         const completion = 'enhance'.startsWith(command) ? 'enhance'
             : 'pray'.startsWith(command) ? 'pray'
             : 'name'.startsWith(command) ? 'name'
+            : command.length >= 2 && 'levelchange'.startsWith(command) ? 'levelchange'
             : command.length >= 2 && 'ride'.startsWith(command) ? 'ride'
             : command.length >= 3 && 'chat'.startsWith(command) ? 'chat'
             : 'sit'.startsWith(command) ? 'sit' : null;
