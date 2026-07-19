@@ -4,6 +4,7 @@
 import { game } from './gstate.js';
 import { rn2, rnd, d } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
+import { MONSTER_MOVE } from './monster_data.js';
 import {
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS,
     D_ISOPEN, D_NODOOR,
@@ -510,7 +511,11 @@ export function makedog() {
         female,
         mtame: 10,
         mpeaceful: 1,
-        symbol: pettype === 102 ? 'u' : pettype === 32 ? 'f' : 'd',
+        mcanmove: 1,
+        movement: 0,
+        mmove: MONSTER_MOVE[pettype] ?? 0,
+        mspeed: 0,
+        symbol: pettype === 100 ? 'u' : pettype === 32 ? 'f' : 'd',
         name: role === 'caveman' ? 'Slasher' : role === 'ranger' ? 'Sirius'
             : role === 'samurai' ? 'Hachi' : '',
         pet: true,

@@ -149,7 +149,8 @@ export function newsym(x, y) {
     if (monster && cansee(x, y)) {
         show_glyph_cell(x, y, monster.symbol || '?',
             game._monkNorthPath && monster.mnum === 70 ? NO_COLOR
-                : monster.mnum === 102 || monster.mnum === 239 ? CLR_BROWN
+                : monster.mnum === 100 || monster.mnum === 102
+                    || monster.mnum === 239 ? CLR_BROWN
                 : monster.pet ? CLR_WHITE
                 : monster.mnum === 116 ? CLR_MAGENTA
                     : (monster.color ?? CLR_GRAY), false);

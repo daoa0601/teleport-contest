@@ -1,6 +1,6 @@
-# Public session status: real engine at `78bdc85`
+# Public session status: movement-ration checkpoint
 
-Measured 2026-07-19 15:06 EEST with:
+Measured 2026-07-19 15:37 EEST from the working tree based on `a783285` with:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
@@ -9,13 +9,14 @@ TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 Top-level exact-session fixtures are disabled. Some passing paths still use
 older bounded, state-derived bridges; `Exact` therefore means “current
 engine-only regression passes,” not “the corresponding subsystem is complete
-for unseen inputs.” Fixture-on public scoring remains 44/44.
+for unseen inputs.” The current result is **25/44 exact**. Fixture-on public
+scoring remains 44/44.
 
 | Public session | Engine-only result | Current interpretation / next cone |
 | --- | ---: | --- |
 | `seed0002-healer-reflection-drummer` | 2,336/27,158 RNG; 8/595 screens | Broad elapsed-turn combat, reflection/drumming, and animation; start with shared monster scheduler |
-| `seed0004-feeding-pony` | 3,715/12,084; 10/409 | First active pony/monster turn; `mcalcmove` → `movemon` → tame `dog_move` |
-| `seed0006-wizard-water-demon` | 2,514/6,736; 38/123 | First active kitten/rat turn, then fountain/water demon; same scheduler cone |
+| `seed0004-feeding-pony` | 3,718/12,084; 10/409 | Movement allocation and first quiet actor schedule now align; next exact-prefix blocker is pet-object handling inside `dog_move` |
+| `seed0006-wizard-water-demon` | 2,525/6,736; 38/123 | First kitten/zombie/rat actor schedule now aligns; next exact-prefix blocker is command/elapsed-turn ordering before combat |
 | `seed0007-rogue-snake-swamp` | 69/16,373; 8/302 | Early random chargen/level branch, then swamp and monster behavior; re-audit earliest call |
 | `seed0009-swimmer-mforce` | 3,337/3,713; 12/73 | Startup mostly aligned; swimmer/mysterious-force command and transition tail |
 | `seed0012-monk-vault-escort` | 0/13,878; 0/308; input queue error | Water-surrounded vault content plus nested input/escort behavior |
@@ -25,7 +26,7 @@ for unseen inputs.” Fixture-on public scoring remains 44/44.
 | `seed0015-valk-level2-pit-dog-wait` | **Exact** 8,563; 44 | Level-two/pit/dog bounded regression witness |
 | `seed0016-healer-newmoon-eat-zap` | **Exact** 3,656; 36 | Healer startup/sleep-wake regression witness |
 | `seed0017-samurai-altar-pray` | **Exact** 3,465; 67 | Samurai/prayer regression witness |
-| `seed0030-ten-diverse-deaths` | 6,416/105,529; 11/1,953 | Multi-role death/endgame breadth; defer until shared scheduler/transition/death cones exist |
+| `seed0030-ten-diverse-deaths` | 6,413/105,529; 11/1,953 | Multi-role death/endgame breadth; defer until shared scheduler/transition/death cones exist |
 | `seed0060-orc-rogue-kick-search` | **Exact** 3,626; 41 | Orc Rogue/startup/kick regression witness |
 | `seed0077-rogue-chargen` | **Exact** 3,242; 33 | Manual chargen regression witness |
 | `seed0101-ranger-quiver-throw-travel-engrave` | **Exact** 2,371; 27 | Ranger command regression witness |
@@ -35,10 +36,10 @@ for unseen inputs.” Fixture-on public scoring remains 44/44.
 | `seed0105-valk-chat-lamp-ration` | **Exact** 2,499; 30 | Valkyrie startup/chat regression witness |
 | `seed0106-priest-extcmd-sweep` | **Exact** 4,194; 267 | Priest extended-command regression witness |
 | `seed0107-samurai-twoweapon-enhance` | **Exact** 2,902; 98 | Samurai two-weapon regression witness |
-| `seed0108-wizard-extcmd-wishlist` | 2,677/16,958; 0/303 | Extended command breadth plus later turn/transition behavior |
+| `seed0108-wizard-extcmd-wishlist` | 2,678/16,958; 0/303 | Extended command breadth plus later turn/transition behavior |
 | `seed0116-wizard-wear-shop` | 2,980/12,562; 3/127 | First ordinary level transition; `goto_level` → `getbones` ordering |
 | `seed0200-monk-north-search` | **Exact** 3,822; 40 | Monk/static-map/search regression witness |
-| `seed0360-wizard-world-tour` | 2,814/120,639; 0/833 | Debug level teleport, special-level generation, arrivals |
+| `seed0360-wizard-world-tour` | 2,815/120,639; 0/833 | Debug level teleport, special-level generation, arrivals |
 | `seed0361-archeologist-tour` | 2,979/53,865; 40/366 | `#levelchange` exact; next debug level teleport/special generation |
 | `seed0367-priest-quest-tour` | 1,909/50,125; 1/324 | Quest generation/transition and world-tour breadth; re-audit earliest call |
 | `seed0373-barbarian-quest-tour` | 2,549/35,386; 1/124 | `#levelchange` exact; next `#wizlevelport` |
@@ -53,9 +54,9 @@ for unseen inputs.” Fixture-on public scoring remains 44/44.
 | `seed1800-tourist-eat-throw` | **Exact** 2,458; 26 | Tourist eat/throw regression witness |
 | `seed2200-wizard-quaff-zap-read` | **Exact** 3,018; 230 | Wizard item-command regression witness |
 | `seed2600-wizard-custom-binds` | **Exact** 11,647; 38 | Custom binding/debug regression witness |
-| `seed4500-knight-coverage` | 2,801/108,275; 3/1,814 | Broad ordinary turn/monster/command coverage; downstream of scheduler |
-| `seed5002-wizard-coverage-pair` | 2,487/12,167; 2/410 | Broad Wizard commands, turns, and transitions |
-| `seed5006-tourist-stress-disaster` | 4,189/13,923; 2/249 | First ordinary level transition; `goto_level`/bones, then disaster behavior |
+| `seed4500-knight-coverage` | 2,809/108,275; 3/1,814 | Broad ordinary turn/monster/command coverage; downstream of scheduler |
+| `seed5002-wizard-coverage-pair` | 2,493/12,167; 2/410 | Broad Wizard commands, turns, and transitions |
+| `seed5006-tourist-stress-disaster` | 4,190/13,923; 2/249 | First ordinary level transition; `goto_level`/bones, then disaster behavior |
 | `seed8000-tourist-starter` | **Exact** 3,130; 23 | Startup/tty baseline regression witness |
 
 ## Priority clusters

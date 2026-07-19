@@ -40,7 +40,8 @@ import {
 } from './object_data.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL,
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE,
+    SPECIAL_PM,
 } from './monster_data.js';
 import { CLR_BROWN, CLR_GRAY } from './terminal.js';
 import {
@@ -825,7 +826,8 @@ async function makemon(mdat, x, y, mmflags) {
         ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
     const monster = {
         mnum: mndx, mx: x, my: y, mhp: hp, mhpmax: hp,
-        msleeping: 0, mpeaceful: 0,
+        msleeping: 0, mpeaceful: 0, mcanmove: 1,
+        movement: 0, mmove: MONSTER_MOVE[mndx] ?? 0, mspeed: 0,
         symbol: classSymbols[classIndex] || '?',
         // The complete per-monster color table is a later metadata port;
         // giant ant is the generated level-one case exercised here.

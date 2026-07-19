@@ -126,7 +126,7 @@ export const roles = [
       },
       xlev: 10,
       initrecord: 10,
-      petnum: 102,
+      petnum: 100,
       greeting: 'Salutations' },
     { key: 'monk', name: { m: 'Monk', f: 'Monk' }, mnum: 5,
       title: [

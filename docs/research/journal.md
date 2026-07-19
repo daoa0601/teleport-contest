@@ -288,3 +288,78 @@ validate it against both the kitten (`seed0006`) and pony (`seed0004`) before
 adding food selection or attacks.
 
 ---
+
+### [2026-07-19 15:28] {#heldout #movement #diagnostic #monster-order}
+
+**Experiment:** compared the fixture-disabled PRNG streams for the two ordinary
+play witnesses at their first active monster boundary, then traced
+`allmain.c:moveloop_core()`, `mon.c:mcalcmove()`/`movemon()`, and
+`makemon.c:makemon()` against the live JS entity layout.
+
+**Evidence:** `seed0004` is exact through PRNG call 3,695. Its first quiet turn
+already has the correct two `rn2(12)` calls, followed by the correct shared
+maintenance ranges. `seed0006` likewise has the correct four allocation calls
+before its divergence at call 2,510. The missing allocation-call hypothesis is
+therefore falsified: the calls exist, but their results are discarded and no
+monster owns a movement balance.
+
+**Structural findings:** C inserts each new monster at the head of `fmon`, so
+the starting pet is allocated and scanned first. JS appends generated monsters
+and then the pet, which is the reverse traversal unless the scheduler adapts
+it explicitly. The pinned metadata also identifies `PM_PONY` as index 100,
+while `roles.js` currently assigns the Knight pet index 102 (`gray unicorn`).
+That mismatch was harmless only while pet behavior was hardcoded.
+
+**Decision:** add source-derived natural movement metadata, persist
+`monster.movement`, traverse the JS array in reverse insertion order, and make
+the quiet scan report/debit the actual scheduled actors without consuming RNG.
+Correct the Knight pet identity as part of that same invariant. Keep the
+existing replay bridges temporarily, but use the resulting actor schedule to
+define the next `dochug`/`dog_move` port rather than extending range tables.
+
+**Next blocker:** validate the stored allocations and scan order for pony,
+kitten, rat, and generated monsters; then replace the first pet replay boundary
+with live tame movement.
+
+---
+
+### [2026-07-19 15:38] {#heldout #movement #implementation #regression}
+
+**Changes:** added all 383 source-derived `permonst.mmove` values and a new
+movement owner in `js/monmove.js`. New and starting monsters now retain natural
+speed, speed status, and a movement balance. `mcalcmove()` implements C's
+slow/fast arithmetic and mandatory randomized rounding; allocation and quiet
+scans traverse reverse JS creation order to reproduce newest-first `fmon`.
+Corrected the Knight's pet identity from index 102 to `PM_PONY` 100.
+
+**First quiet action slice:** the live scan now drives the first clean
+`dochug()` phase rather than choosing a recorded per-session list. Its actor
+types and balances determine the source call shape: every actor enters
+`distfleeck()`, a non-adjacent pet enters `dog_goal()`, and successful quiet
+movement returns through `distfleeck()`. Focused tests prove the pony/kobold
+schedule `[pony, kobold, pony]` and kitten/zombie/rat schedule
+`[kitten, zombie, rat]` from their observed allocation rolls.
+
+**Measured effect:** `seed0004`'s exact positional prefix advanced from call
+3,696 to 3,707; the new blocker is the pair of `obj_resists()` calls inside the
+next pony action. `seed0006` advanced from 2,510 to 2,523; its new blocker is
+hero-command versus monster-turn ordering. These are 11- and 13-call causal
+boundary advances, respectively, without adding a seed matcher.
+
+**Regression found and fixed:** changing the pony identity initially reduced
+engine-only exact sessions from 25 to 23 because the display's old index-102
+special case painted the mount brown before the generic pet-white rule. Giving
+the actual index-100 pony its source color restored both Knight screen
+regressions. Final gates: focused movement tests 5/5, engine-only 25/44, and
+fixture-on public 44/44.
+
+**Decision:** nodes A (allocation) and B (quiet scan) in the dependency graph
+now have real state owners. The first quiet portion of node C is validated, but
+position selection is not yet implemented and must not be described as full
+`dog_move` parity.
+
+**Next blocker:** port `dog_goal()` object screening and `mfndpos()` candidate
+generation for the pony, while separately moving hero movement/run semantics
+into the scheduler for the Wizard witness.
+
+---

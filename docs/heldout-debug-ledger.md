@@ -32,8 +32,8 @@ scorer outage.
 
 | Witness | Earliest real-engine divergence | Dependency cone | Current result |
 | --- | --- | --- | --- |
-| `seed0004` Knight | First active pony/monster turn after startup | `movemon` -> `dochug` -> `distfleeck`/`dog_move` | Startup PRNG prefix reaches 3,696; next pet scheduling differs |
-| `seed0006` Wizard | First active kitten/rat turn after startup | Same monster scheduler | Character selection and startup boundaries match; PRNG prefix reaches 2,510 |
+| `seed0004` Knight | Second pony turn after the first global allocation | `dog_move` object/cursed-square handling (`obj_resists`) | Exact PRNG prefix now reaches 3,707, up from 3,696 |
+| `seed0006` Wizard | Hero command immediately after the first kitten/zombie/rat round | `rhack` run/combat and elapsed-turn ordering | Exact PRNG prefix now reaches 2,523, up from 2,510 |
 | `seed0116` Wizard | First ordinary level transition | `goto_level` -> bones lookup -> level creation | Diverges at `getbones` ordering |
 | `seed5006` Tourist | First ordinary level transition | Same transition cone | Startup prefix reaches 4,182 |
 | `seed0361` Archeologist | Debug world tour after level-up | `#levelchange`, then debug level teleport | All 19 level-ups now match; next divergence is later tour generation |
@@ -59,6 +59,10 @@ when one elapsed turn enters an incomplete monster scheduler.
   witnesses match every command boundary and PRNG call in that subsystem.
 - Terminal capture serializes semantic cells, including DEC line drawing,
   ANSI style transitions, styled blanks, and cursor-forward gaps.
+- Every monster now owns its source-derived natural speed and movement balance.
+  Allocation and scan traverse reverse JS creation order to reproduce C's
+  newest-first `fmon`; the seed0004 and seed0006 actor schedules are covered by
+  focused tests.
 
 ## Falsified hypotheses
 
@@ -70,14 +74,17 @@ when one elapsed turn enters an incomplete monster scheduler.
   missing rotated L-shaped level, then moved to the shared monster scheduler.
 - **A single missing RNG call can be patched locally:** themed-room selection
   and monster scheduling change downstream state as well as the call stream.
+- **The first held-out monster boundary lacked allocation calls:** both
+  witnesses already had the exact `mcalcmove()` calls. Their results were being
+  discarded, so actor ownership and scan order—not the draws—were missing.
 
 ## Next dependency cones
 
-1. Port movement ration state (`monster.movement`, natural speed, randomized
-   rounding) and the quiet `movemon` scan before combat behavior.
-2. Port the tame-animal slice of `dochug`/`dog_move`, deriving candidate counts
-   from live map geometry. Validate against both kitten and pony witnesses;
-   do not encode their recorded range lists.
+1. Extend the new movement-ration state beyond the first quiet round into the
+   command loop, including fast/run/multi-action ordering.
+2. Port the tame-animal object and candidate slice of `dog_move`, starting with
+   `obj_resists()`/cursed squares in `seed0004`, then deriving `mfndpos()`
+   candidates from live geometry. Do not encode recorded range lists.
 3. Port ordinary `goto_level`/bones ordering and validate against `0116` and
    `5006`.
 4. Treat Water-surrounded vault as a content subsystem: shuffled chest

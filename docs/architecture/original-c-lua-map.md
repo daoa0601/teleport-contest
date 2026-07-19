@@ -323,7 +323,7 @@ This is a planning map, not a claim that the JS side is already equivalent.
 | `newgame`, `role_init`, `u_init` | `js/allmain.js`, `js/roles.js`, `js/u_init.js`, `js/options.js` | Keep selection, role data, inventory, and startup draw order in one contract |
 | `mklev` + `themerms.lua` + `sp_lev.c` | `js/mklev.js`, `js/dungeon.js` | Model theme selection, placement failure, topology, and content separately but mutate one live level |
 | `parse`/`rhack` and modal tty input | `js/cmd.js`, `js/input.js`, `js/windows.js` | A command must declare whether it consumes time; nested prompts own later keys until dismissal |
-| `moveloop_core`, `mcalcmove`, `movemon`, `dochug`, `dog_move` | mostly `js/allmain.js` plus scenario modules | Highest-priority refactor: introduce explicit movement/scheduler/monster/pet ownership before adding more cases |
+| `moveloop_core`, `mcalcmove`, `movemon`, `dochug`, `dog_move` | `js/allmain.js`, `js/monmove.js`, then scenario modules | Movement balances, randomized allocation, and `fmon`-ordered quiet scans now have explicit ownership; candidate movement and full command-loop integration remain |
 | vision, glyph mapping, tty capture | `js/vision.js`, `js/display.js`, `js/game_display.js`, `js/terminal.js` | Render from live state; serializer correctness cannot repair wrong world state |
 | `goto_level`, save/load, bones | `js/save.js`, `js/storage.js`, `js/mklev.js`, command paths | Separate current-level persistence, destination construction, and arrival pipeline |
 | exact public transcript modules | `js/*_fixture.js`, `js/fixture_screen.js` | Keep as regression witnesses; never count them as held-out architecture |
@@ -357,3 +357,30 @@ flowchart TD
 Each node should advance the earliest exact boundary for at least two witnesses
 before the next node begins. A change that only improves a later symptom while
 an earlier node still diverges is not evidence for that node.
+
+## 10. Movement implementation overlay
+
+```mermaid
+flowchart LR
+    metadata["monsters.h: permonst.mmove<br/>383 source-derived rates"]
+    construct["makemon / makedog<br/>movement = 0"]
+    allocate["mon.c:mcalcmove<br/>js/monmove.js:mcalcmove"]
+    fmon["C fmon newest-first<br/>JS creation array reversed"]
+    scan["movemon ration scan<br/>debit and repeat rounds"]
+    quiet["first quiet dochug phase<br/>distfleeck / dog_goal / distfleeck"]
+    candidate["NEXT: dog_goal objects<br/>mfndpos candidates"]
+    ordering["NEXT: hero movement<br/>run/combat turn ordering"]
+
+    metadata --> construct --> allocate --> fmon --> scan --> quiet
+    quiet --> candidate
+    scan --> ordering
+
+    pony["seed0004<br/>pony → kobold → pony"] --> scan
+    kitten["seed0006<br/>kitten → zombie → rat"] --> scan
+```
+
+The overlay deliberately stops before claiming full monster movement. The
+first quiet phase now derives its actor multiplicity and order from live
+balances, but it does not yet choose or apply destination squares. That boundary
+is visible in the two new counterexamples: pony object resistance at PRNG call
+3,707 and Wizard command/turn ordering at call 2,523.

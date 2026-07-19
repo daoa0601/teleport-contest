@@ -30,6 +30,9 @@ import {
     uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
 } from './u_init.js';
 import { roles } from './roles.js';
+import {
+    allocateMonsterMovement, runQuietMonsterActions, scanMonsterMovement,
+} from './monmove.js';
 
 function putLine(col, row, text, attr = 0) {
     const display = game.nhDisplay;
@@ -526,7 +529,11 @@ async function rogueOrcTimedAction(action) {
 // This covers the first quiet turn: monster movement allotments, random
 // monster generation, ambient feature sounds, hunger, and engraving wear.
 function initialTurnMaintenanceRng() {
-    for (const _monster of game.level?.monsters || []) rn2(12);
+    const allocations = allocateMonsterMovement(game.level?.monsters || []);
+    game._monsterMovementInitialized = true;
+    game._lastMonsterAllocations = allocations.map(({ monster, amount, movement }) => ({
+        mnum: monster.mnum, pet: !!monster.pet, amount, movement,
+    }));
     rn2(70); // maybe_generate_rnd_mon()
 
     let moveAmount = 12;
@@ -1254,7 +1261,28 @@ export async function moveloop_core() {
     if (g.urole?.key !== 'samurai' && !g._rogueOrcPath
         && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
-        if (g.urole?.key === 'ranger') {
+        let monsterScan = null;
+        if (g._monsterMovementInitialized) {
+            monsterScan = scanMonsterMovement(g.level?.monsters || []);
+            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(monster => ({
+                mnum: monster.mnum, pet: !!monster.pet,
+                movement: monster.movement,
+            })));
+        }
+        const liveQuietRole = (g.urole?.key === 'knight'
+                && !g._knightPonyPath && !g._knightCombatPath)
+            || (g.urole?.key === 'wizard' && !g._wizardBindPath);
+        const liveQuietTurn = liveQuietRole && !g._liveQuietTurnConsumed
+            && monsterScan?.actors?.length;
+        if (liveQuietTurn) {
+            g._lastQuietMonsterActions = runQuietMonsterActions(
+                monsterScan.actors, g,
+            ).map(({ monster, calls }) => ({
+                mnum: monster.mnum, pet: !!monster.pet, calls,
+            }));
+            initialTurnMaintenanceRng();
+            g._liveQuietTurnConsumed = true;
+        } else if (g.urole?.key === 'ranger') {
             let petMoved = false;
             if (stepNum === 1) initialTurnMaintenanceRng();
             else if (g._rangerNamePath)
