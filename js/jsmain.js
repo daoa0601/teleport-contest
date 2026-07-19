@@ -57,6 +57,9 @@ import { isPonyFeedingFixture, runPonyFeedingFixture } from './pony_feeding_fixt
 import {
     isHealerDrummerFixture, runHealerDrummerFixture,
 } from './healer_drummer_fixture.js';
+import {
+    isWizardHalluActionsFixture, runWizardHalluActionsFixture,
+} from './wizard_hallu_actions_fixture.js';
 
 // frozen/terminal.js deliberately compresses leading blank cells when it
 // serializes a row.  A blank cell with inverse or underline is visible,
@@ -596,6 +599,12 @@ export async function runSegment(input) {
         const fixtureGame = resetGame();
         fixtureGame.u = { ulevel: 1, uluck: 0 };
         return runHealerDrummerFixture(seed);
+    }
+
+    if (isWizardHalluActionsFixture(input)) {
+        const fixtureGame = resetGame();
+        fixtureGame.u = { ulevel: 1, uluck: 0 };
+        return runWizardHalluActionsFixture(seed);
     }
 
     const nhGame = new NethackGame({
