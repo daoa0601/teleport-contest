@@ -1,19 +1,61 @@
 // vision.js — C ref: vision.c Algorithm C shadow-casting
-// Stripped-down port for the contest skeleton: no light sources, boulders,
-// mimics, underwater, blindness, or pit handling.
+// Stripped-down port for the contest skeleton: no light sources, underwater,
+// blindness, or pit handling.
 // Contestants should port the full vision.c for complete parity.
 
 import { game } from './gstate.js';
 import {
-    COLNO, ROWNO, DOOR, SDOOR, POOL,
+    COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD,
     D_CLOSED, D_LOCKED, D_TRAPPED,
+    M_AP_OBJECT,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     IS_WALL,
 } from './const.js';
 import { newsym } from './display.js';
+import { BOULDER } from './object_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 
 const COULD_SEE = 0x1;
 const IN_SIGHT = 0x2;
+
+// C refs: mondata.h:emits_light(), light.c:do_light_sources().  Every
+// currently light-emitting monster has range 1.  Keep temporary illumination
+// in the vision transaction rather than mutating levl[].lit: the source owns
+// these bits and they move with the monster.
+const LIGHT_EMITTING_MONSTERS = new Set([
+    30,  // flaming sphere
+    31,  // shocking sphere
+    111, // fire vortex
+    134, // baby gold dragon
+    144, // gold dragon
+    155, // fire elemental
+]);
+
+function monsterEmitsLight(mnum) {
+    return MONSTER_SYMBOL[mnum] === 25 // S_LIGHT
+        || LIGHT_EMITTING_MONSTERS.has(mnum);
+}
+
+function monsterLightMap(level) {
+    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+    const sources = (level?.monsters || []).filter(monster =>
+        !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum));
+    if ((game.u?.mtimedone ?? 0) > 0 && monsterEmitsLight(game.u.umonnum)) {
+        sources.push({ mx: game.u.ux, my: game.u.uy });
+    }
+    for (const source of sources) {
+        for (let y = Math.max(0, source.my - 1);
+            y <= Math.min(ROWNO - 1, source.my + 1); y++) {
+            for (let x = Math.max(1, source.mx - 1);
+                x <= Math.min(COLNO - 1, source.mx + 1); x++) {
+                // With radius 1 there are no intermediate cells for
+                // clear_path() to reject, so this is the exact circle.
+                lit[y][x] = 1;
+            }
+        }
+    }
+    return lit;
+}
 
 // C ref: vision.c seenv_matrix
 const seenv_matrix = [
@@ -59,6 +101,10 @@ const cs_rmax1 = new Int16Array(ROWNO).fill(0);
 
 function mark_visible_range(row, left, right) {
     if (left > right) return;
+    if (typeof game.vis_func === 'function') {
+        for (let i = left; i <= right; i++) game.vis_func(i, row);
+        return;
+    }
     const rowp = game.cs_rows?.[row];
     if (!rowp) return;
     for (let i = left; i <= right; i++) rowp[i] = COULD_SEE;
@@ -66,16 +112,36 @@ function mark_visible_range(row, left, right) {
     if (game.cs_right[row] < right) game.cs_right[row] = right;
 }
 
-// Simplified blockage check: walls, closed doors, stone
+// C ref: vision.c does_block().  In addition to terrain, boulders and
+// monsters disguised as boulders participate in the shadow-casting dig pass.
 function _blocks(level, x, y) {
     const loc = level.at(x, y);
     if (!loc) return true;
     const typ = loc.typ ?? 0;
-    if (typ < POOL) return true;  // STONE, walls, SDOOR, SCORR
+    // C vision.c:does_block(): rock, trees, water/lava walls, and clouds all
+    // participate in the same shadow-casting boundary.  LAVAWALL is above
+    // POOL in the terrain enum, so the old numeric shortcut missed it and
+    // exposed the tutorial cells beyond the lava curtain.
+    if (typ < POOL || typ === TREE || typ === WATER
+        || typ === LAVAWALL || typ === CLOUD) return true;
     if (typ === DOOR) {
         const mask = loc.doormask ?? 0;
         if (mask & (D_CLOSED | D_LOCKED | D_TRAPPED)) return true;
     }
+    if (level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER
+        && object.visionBlocker !== false))
+        return true;
+    const monster = level.monsters?.find(candidate => !candidate.dead
+        && candidate.mx === x && candidate.my === y);
+    if (monster?.m_ap_type === M_AP_OBJECT
+        && monster.mappearance === BOULDER) return true;
+    // C vision.c:does_block() delegates the last opacity class to
+    // region.c:visible_region_at().  Gas and steam clouds are level-owned
+    // regions rather than CLOUD terrain, so they must participate in the
+    // same Algorithm C blocker table for their complete lifetime.
+    if (level.regions?.some(region => region.visible && region.ttl !== -2
+        && region.cells?.some(cell => cell.x === x && cell.y === y)))
+        return true;
     return false;
 }
 
@@ -119,6 +185,37 @@ export function vision_reset() {
     }
     game._viz_rmin = null;
     game._viz_rmax = null;
+}
+
+// C ref: vision.c:block_point()/unblock_point().  The source updates its
+// blocker dig table immediately but defers the expensive vision_recalc() to
+// the ordinary scheduler boundary.  Rebuilding the compact JS table is
+// equivalent to the incremental fill/dig operation; retain the old visible
+// row bounds so vision_recalc() can repaint cells which become hidden.
+export function vision_note_blocker_change(x, y) {
+    if (!game.level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO) return;
+    const wasInVisibilityMap = !!game.viz_array?.[y]?.[x];
+    const oldRmin = game._viz_rmin;
+    const oldRmax = game._viz_rmax;
+    vision_reset();
+    game._viz_rmin = oldRmin;
+    game._viz_rmax = oldRmax;
+    if (wasInVisibilityMap) game.vision_full_recalc = 1;
+}
+
+// C's level-change transaction starts visibility with no cells inherited
+// from the previous level.  Coordinate overlap between two maps must not
+// suppress the first newsym() repaint on the destination.
+export function vision_reset_new_level() {
+    for (let y = 0; y < ROWNO; y++) {
+        cs_buf0[y].fill(0);
+        cs_buf1[y].fill(0);
+    }
+    game.viz_array = cs_buf0;
+    game.active_buf = 0;
+    game._viz_rmin = null;
+    game._viz_rmax = null;
+    vision_reset();
 }
 
 // Bresenham quadrant path functions (C ref: vision.c q1-q4_path)
@@ -351,12 +448,13 @@ function left_side(row, left_mark, right, limitsIdx) {
 }
 
 // C ref: vision.c view_from()
-function view_from(srow, scol, cs_rows, cs_left, cs_right, range = 0) {
+function view_from(srow, scol, cs_rows, cs_left, cs_right, range = 0, func = null) {
     game.vis_start_col = scol;
     game.vis_start_row = srow;
     game.cs_rows = cs_rows;
     game.cs_left = cs_left;
     game.cs_right = cs_right;
+    game.vis_func = func;
 
     let left, right;
     if (viz_clear[srow][scol]) {
@@ -392,6 +490,99 @@ function view_from(srow, scol, cs_rows, cs_left, cs_right, range = 0) {
     }
 }
 
+// C ref: vision.c do_clear_area() when the origin is not the hero. Return
+// cells exposed by the same shadow-casting engine so non-rendering consumers
+// can reason about visibility from another actor's position.
+export function visibleCellsFrom(scol, srow, range) {
+    if (!game.level || scol < 1 || scol >= COLNO
+        || srow < 0 || srow >= ROWNO) return [];
+    const scratch = {
+        vis_start_col: game.vis_start_col,
+        vis_start_row: game.vis_start_row,
+        vis_step: game.vis_step,
+        cs_rows: game.cs_rows,
+        cs_left: game.cs_left,
+        cs_right: game.cs_right,
+        vis_func: game.vis_func,
+    };
+
+    const cells = [];
+    view_from(srow, scol, null, null, null, range,
+        (x, y) => cells.push({ x, y }));
+
+    Object.assign(game, scratch);
+    return cells;
+}
+
+// C ref: vision.c do_clear_area().  When the effect is centered on the hero,
+// C deliberately avoids view_from()'s recursive callback order: it refreshes
+// the shared vision matrix and scans the radius-clipped circle row-major,
+// retaining only couldsee() cells.  RNG-using callbacks such as fountain.c's
+// gush() make that otherwise-internal ordering observable.
+export function clearAreaCells(scol, srow, range) {
+    if (!game.level || range < 1 || range >= circle_start.length
+        || scol < 1 || scol >= COLNO || srow < 0 || srow >= ROWNO) {
+        return [];
+    }
+    if (scol !== game.u?.ux || srow !== game.u?.uy)
+        return visibleCellsFrom(scol, srow, range);
+
+    if (game.vision_full_recalc) vision_recalc(0);
+    const cells = [];
+    const limitsStart = circle_start[range];
+    const minY = Math.max(0, srow - range);
+    const maxY = Math.min(ROWNO - 1, srow + range);
+    for (let y = minY; y <= maxY; y++) {
+        const offset = circle_data[limitsStart + Math.abs(y - srow)];
+        const minX = Math.max(1, scol - offset);
+        const maxX = Math.min(COLNO - 1, scol + offset);
+        for (let x = minX; x <= maxX; x++) {
+            if (couldsee(x, y)) cells.push({ x, y });
+        }
+    }
+    return cells;
+}
+
+// C ref: vision.c clear_path() (Algorithm A).  Monster sight and light-source
+// projection use an integer Bresenham line, checking only intermediate cells;
+// this is intentionally distinct from Algorithm C hero shadow casting.
+export function clearPath(col1, row1, col2, row2) {
+    if (col1 === col2 && row1 === row2) return true;
+    let x = col1;
+    let y = row1;
+    const dx = Math.abs(col2 - col1);
+    const dy = Math.abs(row2 - row1);
+    const xstep = col2 >= col1 ? 1 : -1;
+    const ystep = row2 >= row1 ? 1 : -1;
+    const dxs = dx << 1;
+    const dys = dy << 1;
+
+    if (dy > dx) {
+        let error = dxs - dy;
+        for (let remaining = dy - 1; remaining > 0; remaining--) {
+            if (error >= 0) {
+                x += xstep;
+                error -= dys;
+            }
+            y += ystep;
+            error += dxs;
+            if (!viz_clear[y]?.[x]) return false;
+        }
+    } else {
+        let error = dys - dx;
+        for (let remaining = dx - 1; remaining > 0; remaining--) {
+            if (error >= 0) {
+                y += ystep;
+                error -= dxs;
+            }
+            x += xstep;
+            error += dys;
+            if (!viz_clear[y]?.[x]) return false;
+        }
+    }
+    return true;
+}
+
 // C ref: vision_recalc(control)
 export function vision_recalc(control = 0) {
     const u = game.u;
@@ -410,39 +601,52 @@ export function vision_recalc(control = 0) {
         next_rmax[y] = 0;
     }
 
+    // C still builds COULD_SEE while the hero is blind.  That bitmap is the
+    // geometric line-of-sight used by monster movement; only IN_SIGHT is
+    // suppressed.  Clearing both here makes distant monsters incorrectly
+    // become shortsighted/aimless on the same turn blindness starts.
+    const blindRecalc = control !== 2 && game.blind;
     if (control !== 2) {
         view_from(u.uy, u.ux, next, next_rmin, next_rmax);
     }
 
     // Compute IN_SIGHT from COULD_SEE + lighting
     const level = game.level;
+    const temporaryLight = monsterLightMap(level);
+    const isLitAt = (x, y) => !!level?.at(x, y)?.lit
+        || !!temporaryLight[y]?.[x];
     const ux = u.ux, uy = u.uy;
 
-    for (let row = 0; row < ROWNO; row++) {
-        const dy = Math.sign(uy - row);
-        for (let col = next_rmin[row]; col <= next_rmax[row]; col++) {
-            if (!(next[row][col] & COULD_SEE)) continue;
-            const loc = level?.at(col, row);
-            if (!loc) continue;
+    if (!blindRecalc) {
+        for (let row = 0; row < ROWNO; row++) {
+            const dy = Math.sign(uy - row);
+            for (let col = next_rmin[row]; col <= next_rmax[row]; col++) {
+                if (!(next[row][col] & COULD_SEE)) continue;
+                const loc = level?.at(col, row);
+                if (!loc) continue;
 
-            // Night vision: adjacent cells always IN_SIGHT
-            if (Math.abs(col - ux) <= 1 && Math.abs(row - uy) <= 1) {
-                next[row][col] |= IN_SIGHT;
-                continue;
-            }
+                // Night vision: adjacent cells always IN_SIGHT
+                if (Math.abs(col - ux) <= 1 && Math.abs(row - uy) <= 1) {
+                    next[row][col] |= IN_SIGHT;
+                    continue;
+                }
 
-            // Lit cells
-            if (loc.lit) {
-                if ((loc.typ === DOOR || loc.typ === SDOOR || IS_WALL(loc.typ))
-                    && !viz_clear[row]?.[col]) {
-                    // Walls/doors: only IN_SIGHT if adjacent cell toward hero is lit
-                    const dx = Math.sign(ux - col);
-                    const flev = level?.at(col + dx, row + dy);
-                    if (flev?.lit) {
+                // Lit cells
+                if (isLitAt(col, row)) {
+                    if ((loc.typ === DOOR || loc.typ === SDOOR
+                            || IS_WALL(loc.typ))
+                        && !viz_clear[row]?.[col]) {
+                        // Walls/doors: only IN_SIGHT if the adjacent cell
+                        // toward the hero is lit.
+                        const dx = Math.sign(ux - col);
+                        const fx = col + dx, fy = row + dy;
+                        const flev = level?.at(fx, fy);
+                        if (flev && isLitAt(fx, fy)) {
+                            next[row][col] |= IN_SIGHT;
+                        }
+                    } else {
                         next[row][col] |= IN_SIGHT;
                     }
-                } else {
-                    next[row][col] |= IN_SIGHT;
                 }
             }
         }
@@ -455,7 +659,27 @@ export function vision_recalc(control = 0) {
 
     const old_rmin = game._viz_rmin;
     const old_rmax = game._viz_rmax;
-    if (old_array && control !== 2 && game.level) {
+    // C vision_recalc(2) installs an empty sight buffer and still runs this
+    // update loop against the old one.  That departure/engulf repaint is
+    // observable under Hallucination because newsym() consumes display RNG.
+    if (old_array && game.level && blindRecalc) {
+        // C's blind branch installs the fresh COULD_SEE map, then redraws
+        // only cells which were previously IN_SIGHT.  Do not send the new
+        // geometric visibility through the normal lit-cell update below.
+        for (let row = 0; row < ROWNO; row++) {
+            const old_row = old_array[row];
+            const start = old_rmin
+                ? Math.min(old_rmin[row], next_rmin[row])
+                : next_rmin[row];
+            const stop = old_rmax
+                ? Math.max(old_rmax[row], next_rmax[row])
+                : next_rmax[row];
+            if (start > stop) continue;
+            for (let col = start; col <= stop; col++) {
+                if (old_row[col] & IN_SIGHT) newsym(col, row);
+            }
+        }
+    } else if (old_array && game.level) {
         for (let row = 0; row < ROWNO; row++) {
             const old_row = old_array[row];
             const next_row = next[row];
@@ -480,12 +704,13 @@ export function vision_recalc(control = 0) {
                     if (!(ov & IN_SIGHT) || oldseenv !== loc.seenv) {
                         newsym(col, row);
                     }
-                } else if ((nv & COULD_SEE) && loc.lit) {
+                } else if ((nv & COULD_SEE) && isLitAt(col, row)) {
                     if ((IS_WALL(loc.typ) || loc.typ === DOOR || loc.typ === SDOOR)
                         && !viz_clear[row][col]) {
                         const dx = Math.sign(ux - col);
-                        const adjLoc = game.level.at(col + dx, row + dy);
-                        if (adjLoc?.lit) {
+                        const ax = col + dx, ay = row + dy;
+                        const adjLoc = game.level.at(ax, ay);
+                        if (adjLoc && isLitAt(ax, ay)) {
                             next_row[col] |= IN_SIGHT;
                             const oldseenv = loc.seenv || 0;
                             const sv = seenv_matrix[dy + 1][(col < ux) ? 0 : (col > ux ? 2 : 1)];

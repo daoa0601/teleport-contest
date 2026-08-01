@@ -20,10 +20,22 @@ const DUNGEON_DEFINITIONS = [
         branches: [
             { name: 'The Gnomish Mines', base: 2, range: 3 },
             { name: 'Sokoban', chain: 'oracle', base: 1, up: true },
-            { name: 'The Quest', chain: 'oracle', base: 6, range: 2, portal: true },
-            { name: 'Fort Ludios', base: 18, range: 4, portal: true },
-            { name: 'Gehennom', chain: 'castle', base: 0 },
-            { name: 'The Elemental Planes', base: 1, up: true },
+            {
+                name: 'The Quest', chain: 'oracle', base: 6, range: 2,
+                branchType: 'portal',
+            },
+            {
+                name: 'Fort Ludios', base: 18, range: 4,
+                branchType: 'portal',
+            },
+            {
+                name: 'Gehennom', chain: 'castle', base: 0,
+                branchType: 'no_down',
+            },
+            {
+                name: 'The Elemental Planes', base: 1, up: true,
+                branchType: 'no_down',
+            },
         ],
     },
     {
@@ -186,6 +198,18 @@ function entryLevel(definition, count) {
     return 1;
 }
 
+// C dungeon.c:correct_branch_type().  Retain the corrected branch kind on
+// the live graph so traversal, level menus, and #wizwhere all project the
+// same Lua-owned branch semantics.
+function correctedBranchType(spec) {
+    if (spec.branchType === 'portal') return 'portal';
+    if (spec.branchType === 'no_up')
+        return spec.up ? 'no_end1' : 'no_end2';
+    if (spec.branchType === 'no_down')
+        return spec.up ? 'no_end2' : 'no_end1';
+    return 'stair';
+}
+
 function exposeSpecialLevels(loaded) {
     const all = new Map();
     for (const entry of loaded) {
@@ -196,8 +220,15 @@ function exposeSpecialLevels(loaded) {
     game.specialLevels = all;
     game.oracle_level = all.get('oracle');
     game.medusa_level = all.get('medusa');
+    game.knox_level = all.get('knox');
     game.stronghold_level = all.get('castle');
     game.valley_level = all.get('valley');
+    game.sanctum_level = all.get('sanctum');
+    game.astral_level = all.get('astral');
+    game.water_level = all.get('water');
+    game.fire_level = all.get('fire');
+    game.air_level = all.get('air');
+    game.earth_level = all.get('earth');
 }
 
 export function init_dungeons() {
@@ -228,7 +259,8 @@ export function init_dungeons() {
                 end1: { dnum: parentInfo.dnum, dlevel: parentLevel },
                 end2: { dnum, dlevel: dungeon.entry_lev },
                 end1_up: !!parentInfo.branch.up,
-                portal: !!parentInfo.branch.portal,
+                type: correctedBranchType(parentInfo.branch),
+                portal: parentInfo.branch.branchType === 'portal',
             };
             branches.push(branch);
             const parentDepth = parent.dungeon.depth_start + parentLevel - 1;
@@ -255,11 +287,21 @@ export function init_dungeons() {
         loaded.push(entry);
     }
 
-    for (let i = 0; i < 5; i++) rn2(7); // init_castle_tune()
+    const castleTune = [];
+    for (let i = 0; i < 5; i++)
+        castleTune.push(String.fromCharCode('A'.charCodeAt(0) + rn2(7)));
+    game.castleTune = castleTune.join(''); // init_castle_tune()
 
     game.dungeons = loaded.map(entry => entry.dungeon);
     game.branches = branches;
     exposeSpecialLevels(loaded);
+    // C dungeon.c:fixup_level_locations() leaves Fort Ludios floating by
+    // replacing its source dungeon with the out-of-range n_dgns sentinel.
+    // mk_knox_portal() resolves that endpoint only after an eligible deep
+    // vault is generated.
+    const knoxBranch = branches.find(branch =>
+        game.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
+    if (knoxBranch) knoxBranch.end1.dnum = loaded.length;
 }
 
 export { DUNGEON_DEFINITIONS };
