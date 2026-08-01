@@ -4887,7 +4887,7 @@ async function kickLiveMonster(monster, x, y) {
     // actors, then overexertion() charges combat metabolism.
     getHungry();
 
-    wakeMonstersNearKick(
+    wakeMonstersNear(
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     wipeEngravingAt(game.u.ux, game.u.uy, 2, false);
@@ -5007,7 +5007,7 @@ async function dokick() {
     // dokick() wakes the broad hero-level neighborhood before it dispatches
     // the concrete terrain owner.  kick_ouch() then performs the smaller
     // impact-centered wake after its attribute exercise draws.
-    wakeMonstersNearKick(
+    wakeMonstersNear(
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     if (!location || IS_STWALL(location.typ)) {
@@ -11782,7 +11782,7 @@ async function resolvePhysicalMonsterExplosion(
     }
 
     const wakeDistance = Math.max(50, damage * damage);
-    wakeMonstersNearKick(x, y, wakeDistance);
+    wakeMonstersNear(x, y, wakeDistance);
 }
 
 // C ref: mondata.h vegan()/vegetarian().  These classifications describe
