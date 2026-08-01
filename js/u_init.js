@@ -2,13 +2,13 @@
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 
 import { game } from './gstate.js';
-import { rn2, rnd, d } from './rng.js';
-import { mkobj, mksobj } from './mklev.js';
+import { nextIdent } from './ident.js';
+import { rn2, rnd, d, rne } from './rng.js';
+import { mkobj, mksobj, monsterGoodPosition } from './mklev.js';
 import { MONSTER_MOVE } from './monster_data.js';
-import {
-    COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS,
-    D_ISOPEN, D_NODOOR,
-} from './const.js';
+import { armorSlotFor, findArmorClass } from './armor.js';
+import { ensureQuestStatus } from './quest.js';
+import { COLNO, ROWNO } from './const.js';
 import {
     ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD,
     LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF,
@@ -16,8 +16,11 @@ import {
     HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET,
     LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
-    SACK, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH, STETHOSCOPE, TIN_OPENER,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, STATUE,
+    LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH,
+    STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT,
+    WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM,
     CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
@@ -25,24 +28,65 @@ import {
     SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
     SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER,
     SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION,
-    WAN_SLEEP, WAN_WISHING, GOLD_PIECE,
+    WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR,
     TOUCHSTONE, FLINT, ROCK,
+    OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_WEIGHT,
+    OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, MAGIC_OBJECTS,
+    ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER,
+    ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD,
+    ELVEN_BOOTS, ELVEN_CLOAK, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD,
+    DWARVISH_IRON_HELM,
 } from './object_data.js';
+import {
+    recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
+import { ensureHeroSkills } from './skills.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
+const AMULET_CLASS = 5;
 const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const WAND_CLASS = 11;
+const COIN_CLASS = 12;
 const GEM_CLASS = 13;
+const ROCK_CLASS = 14;
 const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
 const PM_LICHEN = 158;
+
+// C u_init.c inv_subs[].  These numeric object identities come from the
+// configured objects.h table; substitution happens before inventory linking
+// so presentation, equipment, and combat all observe the same concrete type.
+const INITIAL_RACE_SUBSTITUTIONS = new Map([
+    [1, new Map([
+        [DAGGER, 35], [SPEAR, 28], [SHORT_SWORD, 47], [BOW, 84],
+        [ARROW, 19], [HELMET, 89], [CLOAK_OF_DISPLACEMENT, 139],
+        [CRAM_RATION, LEMBAS_WAFER],
+    ])],
+    [4, new Map([
+        [DAGGER, 36], [SPEAR, 29], [SHORT_SWORD, 48], [BOW, 85],
+        [ARROW, 20], [HELMET, 90], [SMALL_SHIELD, 155],
+        [RING_MAIL, 133], [128, 129], [CRAM_RATION, 264],
+        [LEMBAS_WAFER, 264],
+    ])],
+    [2, new Map([
+        [SPEAR, DWARVISH_SPEAR],
+        [SHORT_SWORD, DWARVISH_SHORT_SWORD],
+        [HELMET, DWARVISH_IRON_HELM],
+        [LEMBAS_WAFER, CRAM_RATION],
+    ])],
+]);
+const DAGGER_TYPES = new Set([DAGGER, 35, 36]);
+const SPEAR_TYPES = new Set([SPEAR, ELVEN_SPEAR, 29, DWARVISH_SPEAR]);
+const SHORT_SWORD_TYPES = new Set([
+    SHORT_SWORD, ELVEN_SHORT_SWORD, 48, DWARVISH_SHORT_SWORD,
+]);
 
 const ARCHEOLOGIST_INVENTORY = [
     { typ: BULLWHIP, spe: 2, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -239,6 +283,10 @@ const ITEM_PRESENTATION = new Map([
         class: 'Weapons', name: 'wakizashi', plural: 'wakizashi', enchanted: true,
         omitUncursed: true,
     }],
+    [AMULET_OF_YENDOR, {
+        class: 'Amulets', name: 'Amulet of Yendor',
+        plural: 'Amulets of Yendor',
+    }],
     [LONG_SWORD, {
         class: 'Weapons', name: 'long sword', plural: 'long swords', enchanted: true,
     }],
@@ -412,28 +460,63 @@ export function uInitMisc(handednessRoll) {
     u.ulevel = u.ulevelmax = 1;
     u.uhp = u.uhpmax = u.uhppeak = hp;
     u.uen = u.uenmax = u.uenpeak = pw;
+    // C u_init_misc() calls newhp()/newpw() while ulevel is zero.  Those
+    // helpers retain the initial rolls at slot zero so newman() can remove
+    // the old body's complete level-based contribution before rebuilding it.
+    u.uhpinc = Array(30).fill(0);
+    u.ueninc = Array(30).fill(0);
+    u.uhpinc[0] = hp;
+    u.ueninc[0] = pw;
     u.uexp = 0;
+    u.urexp = 0;
+    // C u_init_misc(): prayer starts on its own 300-turn cooldown.  Wishes,
+    // prayer outcomes, and once-per-turn decay all compose with this value;
+    // it is not a disclosure-only default.
+    u.ublesscnt = 300;
+    u._propertySources = {};
     u.uac = 0; // set_wear() computes this in moveloop_preamble()
     u.ualign = {
         type: g.initAlignment?.value ?? 0,
         record: g.urole?.initrecord || 0,
     };
+    // C keeps converted/current and original alignment bases separately from
+    // the live alignment record.  Quest readiness consumes all three.
+    u.ualignbase = [u.ualign.type, u.ualign.type];
+    ensureQuestStatus(g);
     u.rightHanded = !!handednessRoll;
     // C initializes the hero with one ordinary action available.  Samurai
     // also gain intrinsic Fast at level 1 (attrib.c sam_abil[]).
     u.umovement = 12;
     u.fast = !!g.urole?.intrinsicFast;
+    // C attrib.c race ability tables: dwarves, elves, gnomes, and orcs gain
+    // intrinsic infravision at level 1.  It affects monster projection in
+    // dark but geometrically visible cells; it does not light the terrain.
+    u.infravision = ['dwarf', 'elf', 'gnome', 'orc'].includes(g.urace?.name);
+    // C attrib.c level-one role/race ability tables.  Keep these properties
+    // on the hero rather than reconstructing them from identity during end
+    // disclosure; combat and enlightenment must share the same owner.
+    u.poisonResistance = ['barbarian', 'healer'].includes(g.urole?.key)
+        || g.urace?.name === 'orc';
+    u.stealth = g.urole?.key === 'rogue';
+    u.searching = ['archeologist', 'ranger'].includes(g.urole?.key);
+    if (g.urole?.key === 'monk') {
+        u.sleepResistance = true;
+        u.seeInvisible = true;
+    }
     u.nv_range = 1;
     u.xray_range = -1;
     g._goldCount = 0;
     g.inventory = [];
+    g._lastInvNr = 51;
     g.discoveries = [];
     g.spells = [];
 }
 
 // C ref: collect_coords().  Each of the first three rings is completely
 // collected and shuffled before enexto_core() tests candidate positions.
-function collectNearbyCoords(cx, cy, maxradius = 3) {
+export function collectNearbyCoords(
+    cx, cy, maxradius = 3, random = rn2, calls = null,
+) {
     const coords = [];
     for (let radius = 1; radius <= maxradius; radius++) {
         const start = coords.length;
@@ -448,22 +531,14 @@ function collectNearbyCoords(cx, cy, maxradius = 3) {
         let pass = start;
         let n = coords.length - start;
         while (n > 1) {
-            const k = rn2(n);
+            const k = random(n);
+            if (calls) calls.push(`rn2(${n})`);
             if (k) [coords[pass], coords[pass + k]] = [coords[pass + k], coords[pass]];
             pass++;
             n--;
         }
     }
     return coords;
-}
-
-function monsterGoodPos(x, y) {
-    if (x === game.u?.ux && y === game.u?.uy) return false;
-    if (game.level?.monsters?.some(mon => mon.mx === x && mon.my === y)) return false;
-    const loc = game.level?.at(x, y);
-    if (!loc || loc.typ === STONE) return false;
-    if (loc.typ === ROOM || loc.typ === CORR || loc.typ === STAIRS) return true;
-    return loc.typ === DOOR && !!(loc.doormask & (D_ISOPEN | D_NODOOR));
 }
 
 // C ref: dog.c makedog() and pet_type().
@@ -485,10 +560,11 @@ export function makedog() {
     }
 
     const candidates = collectNearbyCoords(g.u.ux, g.u.uy, 3);
-    const spot = candidates.find(({ x, y }) => monsterGoodPos(x, y));
+    const spot = candidates.find(({ x, y }) =>
+        monsterGoodPosition(pettype, x, y, true));
     if (!spot) return null;
 
-    rnd(2); // next_ident()
+    const monsterId = nextIdent();
     // adj_lev() reduces dogs and kittens to level one; a starting pony is
     // level two here and therefore rolls two hit dice.
     let hp = d(role === 'knight' ? 2 : 1, 8);
@@ -503,11 +579,14 @@ export function makedog() {
             rn2(2); // 2 + abs(monster alignment), which is 0 here
     }
     const pet = {
-        mnum: pettype,
+        mnum: pettype, m_id: monsterId,
         mx: spot.x,
         my: spot.y,
         mhp: hp,
         mhpmax: hp,
+        // makemon()->adj_lev() lowers the Knight's starting pony from its
+        // species level three to level two before rolling its two hit dice.
+        m_lev: role === 'knight' ? 2 : 1,
         female,
         mtame: 10,
         mpeaceful: 1,
@@ -519,6 +598,25 @@ export function makedog() {
         name: role === 'caveman' ? 'Slasher' : role === 'ranger' ? 'Sirius'
             : role === 'samurai' ? 'Hachi' : '',
         pet: true,
+        mtrack: [],
+        // C dog.c initedog(): this state belongs to the pet, not to replay
+        // logic in the scheduler. More dog inventory/nutrition fields can be
+        // added here without changing the movement owner.
+        edog: {
+            droptime: 0,
+            dropdist: 10000,
+            // The pet is created before u_init_inventory_attrs(). At this
+            // point C's ACURR(A_CHA) clamps the zeroed attribute to 3; the
+            // finalized hero Charisma must not be read retroactively.
+            apport: g.u?.acurr?.a?.[5] ?? 3,
+            whistletime: 0,
+            hungrytime: (g.moves ?? 0) + 1000,
+            ogoal: { x: -1, y: -1 },
+            abuse: 0,
+            revivals: 0,
+            mhpmax_penalty: 0,
+            killed_by_u: 0,
+        },
     };
     if (role === 'knight') {
         pet.saddled = true;
@@ -527,6 +625,8 @@ export function makedog() {
     if (!g.level.monsters) g.level.monsters = [];
     g.level.monsters.push(pet);
     g.startingPet = pet;
+    if (!g.u.uconduct) g.u.uconduct = {};
+    g.u.uconduct.pets = (g.u.uconduct.pets || 0) + 1;
     return pet;
 }
 
@@ -535,25 +635,189 @@ function trquan(trobj) {
     return trobj.min + rn2(trobj.max - trobj.min + 1);
 }
 
-function inventoryItem(raw) {
-    let view = ITEM_PRESENTATION.get(raw.otyp) || {
+const CLASS_PRESENTATION = {
+    [WEAPON_CLASS]: 'Weapons', [ARMOR_CLASS]: 'Armor',
+    [RING_CLASS]: 'Rings', [AMULET_CLASS]: 'Amulets',
+    [TOOL_CLASS]: 'Tools', [FOOD_CLASS]: 'Comestibles',
+    [POTION_CLASS]: 'Potions', [SCROLL_CLASS]: 'Scrolls',
+    [SPBOOK_CLASS]: 'Spellbooks', [WAND_CLASS]: 'Wands',
+    [COIN_CLASS]: 'Coins', [GEM_CLASS]: 'Gems/Stones',
+    [ROCK_CLASS]: 'Boulders',
+};
+
+function qualifiedObjectName(raw) {
+    const name = OBJECT_NAMES[raw.otyp] || `object ${raw.otyp}`;
+    switch (raw.oclass) {
+    case RING_CLASS: return `ring of ${name}`;
+    case POTION_CLASS: return `potion of ${name}`;
+    case SCROLL_CLASS: return `scroll of ${name}`;
+    case SPBOOK_CLASS: return `spellbook of ${name}`;
+    case WAND_CLASS: return `wand of ${name}`;
+    default: return name;
+    }
+}
+
+function sourceKnownPresentation(raw) {
+    const name = qualifiedObjectName(raw);
+    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJECT_NAMES[raw.otyp]}`
+        : raw.oclass === POTION_CLASS ? `potions of ${OBJECT_NAMES[raw.otyp]}`
+        : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJECT_NAMES[raw.otyp]}`
+        : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJECT_NAMES[raw.otyp]}`
+        : raw.oclass === WAND_CLASS ? `wands of ${OBJECT_NAMES[raw.otyp]}`
+        : `${name}s`;
+    return {
+        class: CLASS_PRESENTATION[raw.oclass] || 'Other',
+        name, plural,
+        enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
+            || (raw.oclass === RING_CLASS && raw.spe !== 0),
+        charged: raw.oclass === WAND_CLASS && !!OBJECT_CHARGED[raw.otyp],
+        showBuc: raw.oclass === WAND_CLASS ? false : undefined,
+        spellName: raw.oclass === SPBOOK_CLASS ? OBJECT_NAMES[raw.otyp] : undefined,
+        spellLevel: raw.oclass === SPBOOK_CLASS
+            ? OBJECT_SPELL_LEVEL[raw.otyp] : undefined,
+        spellCategory: raw.oclass === SPBOOK_CLASS
+            ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
+    };
+}
+
+const DISCOVERY_CLASS_ORDER = [
+    'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
+    'Spellbooks', 'Potions', 'Rings', 'Wands', 'Tools', 'Gems/Stones',
+    'Boulders', 'Other',
+];
+
+function wizardInitialDiscoveries() {
+    const byType = new Map();
+    let discoveryOrder = 0;
+    const add = (otyp, preknown = false) => {
+        const raw = { otyp, oclass: objectClassForType(otyp) };
+        const entry = {
+            otyp,
+            class: CLASS_PRESENTATION[raw.oclass] || 'Other',
+            name: qualifiedObjectName(raw),
+            appearance: game.objectDescriptions?.[otyp],
+            preknown,
+            order: discoveryOrder++,
+        };
+        // An actual starting object is an encountered discovery and should
+        // not carry the '*' used for skill-only preknowledge.
+        if (!byType.has(otyp) || !preknown) byType.set(otyp, entry);
+    };
+
+    for (const item of game.inventory || [])
+        if (item._startingInventory) add(item.otyp, false);
+
+    // weapon.c:skill_based_spellbook_id(): Wizards start basic in attack
+    // and enchantment, identifying those schools through level 3; their
+    // other unrestricted schools begin unskilled and identify level 1.
+    for (let otyp = 366; otyp <= 406; otyp++) {
+        const category = OBJECT_SPELL_CATEGORY[otyp];
+        if (!category) continue;
+        const knownLevel = category === 'attack' || category === 'enchantment'
+            ? 3 : 1;
+        if (OBJECT_SPELL_LEVEL[otyp] <= knownLevel) add(otyp, true);
+    }
+
+    return [...byType.values()].sort((a, b) => {
+        const classOrder = DISCOVERY_CLASS_ORDER.indexOf(a.class)
+            - DISCOVERY_CLASS_ORDER.indexOf(b.class);
+        return classOrder || Number(a.preknown) - Number(b.preknown)
+            || a.order - b.order;
+    });
+}
+
+function objectClassForType(otyp) {
+    for (let cls = 2; cls < OBJECT_BASES.length - 1; cls++)
+        if (otyp >= OBJECT_BASES[cls] && otyp < OBJECT_BASES[cls + 1])
+            return cls;
+    return 1;
+}
+
+// C ref: u_init.c knows_class().  Role preknowledge is installed before
+// ini_inv_use_obj() records starting-inventory encounters, so discovery order
+// within each class remains the object-table order followed by any exceptions
+// such as the Knight's ordinary small shield.
+function knowsClass(oclass, role) {
+    const low = OBJECT_BASES[oclass];
+    const high = OBJECT_BASES[oclass + 1] || OBJECT_NAMES.length;
+    const excludedArmor = new Set([
+        OBJECT_NAMES.indexOf('cornuthaum'),
+        OBJECT_NAMES.indexOf('dunce cap'),
+        SMALL_SHIELD,
+    ]);
+    for (let otyp = low; otyp < high; otyp++) {
+        if (MAGIC_OBJECTS.has(otyp)) continue;
+        if (oclass === ARMOR_CLASS && excludedArmor.has(otyp)) continue;
+        if (oclass === WEAPON_CLASS) {
+            const skill = OBJECT_SUBTYPE[otyp] || 0;
+            if (['barbarian', 'valkyrie'].includes(role) && skill === 16)
+                continue;
+            if (role === 'ranger'
+                && !([-20, -22, 17, 20, 21, 22].includes(skill)))
+                continue;
+            if (role === 'rogue' && skill !== 1) continue;
+        }
+        recordObjectKnowledge(otyp);
+    }
+}
+
+function initializeRolePreknowledge(role) {
+    if (role === 'archeologist') {
+        // u_init_role() installs these before the later starting-inventory
+        // encounter pass, so they are known rather than Ranger-style class
+        // preknowledge inherited through a presentation fallback.
+        recordObjectKnowledge(SACK);
+        recordObjectKnowledge(TOUCHSTONE);
+    } else if (['barbarian', 'knight', 'samurai', 'valkyrie'].includes(role))
+        knowsClass(WEAPON_CLASS, role);
+    else if (role === 'ranger' || role === 'rogue')
+        knowsClass(WEAPON_CLASS, role);
+
+    if (['barbarian', 'knight', 'monk', 'samurai', 'valkyrie'].includes(role))
+        knowsClass(ARMOR_CLASS, role);
+    if (role === 'monk')
+        recordObjectKnowledge(OBJECT_NAMES.indexOf('shuriken'));
+}
+
+// C ref: u_init_skills_discoveries()->ini_inv_use_obj().  This runs after
+// the first map/status display and turns fully known starting objects with an
+// appearance into encountered discoveries without changing their earlier
+// role-preknowledge position.
+export function finishStartingDiscoveries() {
+    for (const item of game.inventory || []) {
+        if (!item._startingInventory || !OBJECT_DESCRIPTIONS[item.otyp])
+            continue;
+        recordObjectKnowledge(item.otyp);
+        recordObjectEncounter(item.otyp);
+    }
+}
+
+export function inventoryItem(raw, presentation = null) {
+    let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
+        || (raw._startingInventory ? sourceKnownPresentation(raw) : null) || {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
     if (game.urole?.key === 'knight'
         && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
         view = { ...view, omitUncursed: true };
     }
-    if (raw.otyp === SHORT_SWORD && game.urole?.key === 'rogue') {
-        const orcish = game.urace?.mnum === 4;
+    if (raw.otyp === SHORT_SWORD && game.urole?.key !== 'samurai') {
         view = {
-            class: 'Weapons',
-            name: orcish ? 'orcish short sword' : 'short sword',
-            plural: orcish ? 'orcish short swords' : 'short swords',
-            enchanted: true, omitUncursed: true,
+            ...view, name: 'short sword', plural: 'short swords',
+            omitUncursed: true,
         };
     }
-    if (raw.otyp === DAGGER && game.urole?.key === 'rogue') {
-        view = game.urace?.mnum === 4
+    if (SHORT_SWORD_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
+        const orcish = game.urace?.mnum === 4;
+        view = raw.otyp === SHORT_SWORD ? {
+            ...view,
+            name: orcish ? 'orcish short sword' : 'short sword',
+            plural: orcish ? 'orcish short swords' : 'short swords',
+            omitUncursed: true,
+        } : { ...view, omitUncursed: true };
+    }
+    if (DAGGER_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
+        view = raw.otyp === DAGGER && game.urace?.mnum === 4
             ? {
                 ...view, name: 'orcish dagger', plural: 'orcish daggers',
                 omitUncursed: true,
@@ -564,15 +828,22 @@ function inventoryItem(raw) {
         view = { ...view, omitUncursed: true };
     }
     if (raw.otyp === TIN) {
-        view = raw.corpsenm === PM_LICHEN
-            ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
-            : raw.corpsenm === 322
-                ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
-                : raw.corpsenm == null
-                    ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
-                    : { class: 'Comestibles', name: 'tin', plural: 'tins' };
+        // objnam.c:xname() appends tin_details() only after the individual
+        // tin's contents have become known.  Generation may already retain
+        // corpsenm without making that state legal presentation data.
+        view = !raw.known
+            ? { class: 'Comestibles', name: 'tin', plural: 'tins' }
+            : raw.corpsenm === PM_LICHEN
+                ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
+                : raw.corpsenm === 322
+                    ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
+                    : raw.corpsenm == null
+                        ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
+                        : { class: 'Comestibles', name: 'tin', plural: 'tins' };
     }
-    const buc = raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed';
+    const buc = raw.bknown
+        ? raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed'
+        : undefined;
     return {
         ...raw,
         ...view,
@@ -585,8 +856,44 @@ function inventoryItem(raw) {
     };
 }
 
-function addStartingItem(raw) {
-    const item = inventoryItem(raw);
+export function assignInventoryLetter(item) {
+    // invent.c:assigninvlet() uses a persistent rotating cursor rather than
+    // inventory length.  Consuming p and r must not make a later wished item
+    // reuse q; after the last assignment was r, the next free slot is s.
+    if (!Number.isInteger(game._lastInvNr)) {
+        const previous = Array.from(game.inventory).reverse().find(object =>
+            /^[a-zA-Z]$/.test(object.invlet || ''));
+        if (!previous) game._lastInvNr = 51;
+        else {
+            const code = previous.invlet.charCodeAt(0);
+            game._lastInvNr = code >= 97 ? code - 97 : code - 65 + 26;
+        }
+    }
+    const inUse = new Set(game.inventory.map(object => object.invlet));
+    // C invent.c:assigninvlet() first preserves a valid incoming letter when
+    // no carried object currently owns it.  Stolen/dropped/recovered objects
+    // retain identity across freeinv(), so reassignment must not advance the
+    // rotating cursor merely because the object left hero inventory.
+    if (/^[a-zA-Z]$/.test(item.invlet || '')
+        && !inUse.has(item.invlet)) return item;
+    item.invlet = null;
+    let index = game._lastInvNr;
+    for (let count = 0; count < 52; count++) {
+        index = (index + 1) % 52;
+        const letter = index < 26
+            ? String.fromCharCode(97 + index)
+            : String.fromCharCode(65 + index - 26);
+        if (inUse.has(letter)) continue;
+        item.invlet = letter;
+        game._lastInvNr = index;
+        break;
+    }
+    return item;
+}
+
+export function addInventoryItem(raw, presentation = null, observe = true) {
+    const item = inventoryItem(raw, presentation);
+    if (observe) item.dknown = true;
     const merge = game.inventory.find(other => other.otyp === item.otyp
         && other.enchantment === item.enchantment && other.buc === item.buc
         && other.corpsenm === item.corpsenm && other.spe === item.spe);
@@ -595,8 +902,24 @@ function addStartingItem(raw) {
         merge.quan = merge.quantity;
         return merge;
     }
-    item.invlet = String.fromCharCode(97 + game.inventory.length);
+    assignInventoryLetter(item);
     game.inventory.push(item);
+    return item;
+}
+
+function addStartingItem(raw) {
+    // C ini_inv_adjust_obj() makes every aspect of starting inventory
+    // observable, then ini_inv_use_obj() discovers its concrete type.
+    raw._startingInventory = true;
+    raw.known = true;
+    raw.dknown = raw.bknown = raw.rknown = true;
+    if ([LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
+        BAG_OF_HOLDING, STATUE].includes(raw.otyp)) {
+        raw.cknown = raw.lknown = true;
+        raw.otrapped = 0;
+    }
+    const item = addInventoryItem(raw);
+    item.typeKnown = true;
     return item;
 }
 
@@ -607,12 +930,13 @@ function useStartingItem(item) {
             game.uquiver = item;
             item.ready = true;
         }
-    } else if (item.otyp === SPEAR || item.otyp === MACE || item.otyp === BULLWHIP
+    } else if (SPEAR_TYPES.has(item.otyp)
+        || item.otyp === MACE || item.otyp === BULLWHIP
         || item.otyp === BATTLE_AXE || item.otyp === TWO_HANDED_SWORD
         || item.otyp === LONG_SWORD || item.otyp === QUARTERSTAFF) {
         game.uwep = item;
         item.wielded = true;
-    } else if (item.otyp === DAGGER || item.otyp === SCALPEL
+    } else if (DAGGER_TYPES.has(item.otyp) || item.otyp === SCALPEL
         || item.otyp === KATANA || item.otyp === CLUB) {
         if (game.urole?.key === 'rogue' && game.uwep && !game.uquiver) {
             game.uquiver = item;
@@ -627,7 +951,9 @@ function useStartingItem(item) {
     } else if (item.otyp === BOW || item.otyp === SLING || item.otyp === LANCE) {
         game.uswapwep = item;
         item.alternate = true;
-    } else if (item.otyp === AXE || item.otyp === SHORT_SWORD || item.otyp === YUMI) {
+    } else if (item.otyp === PICK_AXE || item.otyp === TIN_OPENER) {
+        // u_init.c:ini_inv_use_obj() treats weapon-tools and the tin opener
+        // like weapons for initial primary/alternate slot assignment.
         if (!game.uwep) {
             game.uwep = item;
             item.wielded = true;
@@ -635,31 +961,30 @@ function useStartingItem(item) {
             game.uswapwep = item;
             item.alternate = true;
         }
-    } else if (item.otyp === CLOAK_OF_DISPLACEMENT || item.otyp === ROBE
-        || item.otyp === CLOAK_OF_MAGIC_RESISTANCE) {
-        game.uarmc = item;
-        item.worn = true;
-    } else if (item.otyp === HAWAIIAN_SHIRT) {
-        game.uarmu = item;
-        item.worn = true;
-    } else if (item.otyp === SMALL_SHIELD) {
-        game.uarms = item;
-        item.worn = true;
-    } else if (item.otyp === HELMET || item.otyp === FEDORA) {
-        game.uarmh = item;
-        item.worn = true;
-    } else if (item.otyp === LEATHER_GLOVES) {
-        game.uarmg = item;
-        item.worn = true;
-    } else if (item.otyp === SPLINT_MAIL || item.otyp === RING_MAIL
-        || item.otyp === LEATHER_ARMOR || item.otyp === LEATHER_JACKET) {
-        game.uarm = item;
+    } else if (item.otyp === AXE || SHORT_SWORD_TYPES.has(item.otyp)
+        || item.otyp === YUMI) {
+        if (!game.uwep) {
+            game.uwep = item;
+            item.wielded = true;
+        } else if (!game.uswapwep) {
+            game.uswapwep = item;
+            item.alternate = true;
+        }
+    } else if (item.oclass === ARMOR_CLASS && armorSlotFor(item.otyp)) {
+        game[armorSlotFor(item.otyp)] = item;
         item.worn = true;
     } else if (item.oclass === SPBOOK_CLASS && item.spellName) {
         game.spells.push({
             name: item.spellName,
             level: item.spellLevel,
             category: item.spellCategory,
+            skill: (game.urole?.key === 'wizard'
+                    && ['attack', 'enchantment'].includes(item.spellCategory))
+                || ['healer', 'monk'].includes(game.urole?.key)
+                || (game.urole?.key === 'priest'
+                    && item.spellCategory === 'clerical')
+                ? 'basic' : 'unskilled',
+            know: 20000,
             retention: ['healer', 'monk'].includes(game.urole?.key) ? 91 : 100,
             fail: game.urole?.key === 'healer'
                 ? spellFailForHealer(item.spellName) : 0,
@@ -675,12 +1000,16 @@ function spellFailForHealer(name) {
 function priestSpellbookAllowed(otyp) {
     const alreadyHasLevelOne = game.inventory.some(item =>
         item.oclass === SPBOOK_CLASS && item.spellLevel === 1);
-    const levelOne = new Set([372, SPE_DETECT_MONSTERS, SPE_HEALING]);
-    const throughLevelThree = new Set([
-        ...levelOne, 378, 382, 383, 385, 386, 395,
+    // C u_init.c:restricted_spell_discipline() consults Skill_P rather than
+    // enumerating object identities.  Priests may start with any healing,
+    // divination, or clerical book under the current level threshold.
+    const allowedDisciplines = new Set([
+        'healing', 'divination', 'clerical',
     ]);
-    const allowed = alreadyHasLevelOne ? throughLevelThree : levelOne;
-    return allowed.has(otyp)
+    const level = OBJECT_SPELL_LEVEL[otyp] ?? 0;
+    return level > 0
+        && level <= (alreadyHasLevelOne ? 3 : 1)
+        && allowedDisciplines.has(OBJECT_SPELL_CATEGORY[otyp])
         && !game.inventory.some(item => item.otyp === otyp);
 }
 
@@ -708,6 +1037,7 @@ function randomStartingItemAllowed(raw) {
     const SCR_AMNESIA = 338;
     const SCR_FIRE = 339;
     const SCR_BLANK_PAPER = 365;
+    const SCR_ENCHANT_WEAPON = 328;
     if (raw.otyp === WAN_WISHING
         || raw.otyp === RIN_LEVITATION
         || raw.otyp === RIN_HUNGER
@@ -716,7 +1046,11 @@ function randomStartingItemAllowed(raw) {
         || raw.otyp === POT_ACID
         || raw.otyp === SCR_AMNESIA
         || raw.otyp === SCR_FIRE
-        || raw.otyp === SCR_BLANK_PAPER) return false;
+        || raw.otyp === SCR_BLANK_PAPER
+        // C u_init.c:ini_inv_mkobj_filter(): Monks have no weapon skill
+        // use for this otherwise legal random starting scroll.
+        || (game.urole?.key === 'monk' && raw.otyp === SCR_ENCHANT_WEAPON))
+        return false;
     if (raw.oclass === RING_CLASS
         && game.inventory.some(item => item.otyp === raw.otyp)) return false;
     return true;
@@ -741,6 +1075,13 @@ function iniInv(table) {
             raw = mksobj(trobj.typ, true, false);
         }
 
+        const substituted = INITIAL_RACE_SUBSTITUTIONS
+            .get(game.urace?.mnum)?.get(raw.otyp);
+        if (substituted !== undefined) {
+            raw.otyp = substituted;
+            raw.owt = OBJECT_WEIGHT[substituted] ?? raw.owt;
+        }
+
         raw.cursed = false;
         let stop = false;
         if (raw.oclass === WEAPON_CLASS || raw.oclass === TOOL_CLASS) {
@@ -750,6 +1091,13 @@ function iniInv(table) {
         if (trobj.spe !== UNDEF_SPE) {
             raw.spe = trobj.spe;
             if (trobj.typ === MAGIC_MARKER && raw.spe < 96) raw.spe += rn2(4);
+        } else if (raw.oclass === RING_CLASS
+            && OBJECT_CHARGED[raw.otyp] && (raw.spe ?? 0) <= 0) {
+            // u_init.c:ini_inv_adjust_obj(): a random charged starting ring
+            // must never retain a zero or negative constructor enchantment.
+            // This occurs after mksobj_init() and before the next template
+            // entry, so both the rne calls and the positive spe are visible.
+            raw.spe = rne(3);
         }
         if (trobj.bless !== UNDEF_BLESS) raw.blessed = !!trobj.bless;
 
@@ -802,6 +1150,29 @@ function initAttributes() {
     game.u.amax = { a: displayOrder.slice() };
 }
 
+const ELF_INSTRUMENTS = [
+    WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM,
+];
+
+const ELF_PREKNOWN_OBJECTS = [
+    ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER,
+    ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD,
+    ELVEN_BOOTS, ELVEN_CLOAK,
+];
+
+function uInitRaceInventoryAndKnowledge(role) {
+    if (game.urace?.mnum !== 1) return;
+    // u_init.c:u_init_race().  Non-warrior elves receive exactly one
+    // non-magical instrument; ROLL_FROM owns the selection draw before the
+    // chosen one-entry inventory template is constructed.
+    if (role === 'priest' || role === 'wizard') {
+        const instrument = ELF_INSTRUMENTS[rn2(ELF_INSTRUMENTS.length)];
+        iniInv(oneItem(instrument));
+    }
+    for (const otyp of ELF_PREKNOWN_OBJECTS)
+        recordObjectKnowledge(otyp);
+}
+
 export function uInitInventoryAttrs() {
     const role = game.urole?.key;
     if (role !== 'archeologist' && role !== 'barbarian'
@@ -810,9 +1181,11 @@ export function uInitInventoryAttrs() {
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
         && role !== 'monk' && role !== 'wizard') return false;
     game.inventory = [];
+    game._lastInvNr = 51;
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
     game.moves = 1;
+    game.u.uhunger = 900;
     if (role === 'archeologist') {
         iniInv(ARCHEOLOGIST_INVENTORY);
         if (!rn2(10)) iniInv(oneItem(TIN_OPENER));
@@ -843,6 +1216,7 @@ export function uInitInventoryAttrs() {
         }
     } else if (role === 'tourist') {
         game._goldCount = rnd(1000);
+        game._initialGoldCount = game._goldCount;
         iniInv(TOURIST_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(TIN_OPENER));
         else if (!rn2(25)) iniInv(oneItem(LEASH));
@@ -900,8 +1274,14 @@ export function uInitInventoryAttrs() {
     } else {
         iniInv(RANGER_INVENTORY);
     }
+    uInitRaceInventoryAndKnowledge(role);
+    // C u_init_inventory_attrs(): any hero who starts with a learned spell
+    // receives enough power to cast a level-one spell at least once.
+    if (game.spells.length && (game.u.uenmax || 0) < 5)
+        game._startingPwMinimum = 5;
     initAttributes();
-    game.discoveries = role === 'healer' ? [
+    game.discoveries = role === 'archeologist' || role === 'barbarian'
+        ? [] : role === 'healer' ? [
         { class: 'Armor', name: 'pair of leather gloves', appearance: 'fencing gloves' },
         { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'wrinkled' },
         { class: 'Spellbooks', name: 'spellbook of extra healing', appearance: 'dog eared' },
@@ -910,16 +1290,10 @@ export function uInitInventoryAttrs() {
         { class: 'Potions', name: 'potion of healing', appearance: 'milky' },
         { class: 'Potions', name: 'potion of extra healing', appearance: 'effervescent' },
         { class: 'Wands', name: 'wand of sleep', appearance: 'platinum' },
-    ] : role === 'priest' ? [
-        { class: 'Armor', name: 'small shield', appearance: 'wooden shield' },
-        { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'purple' },
-        { class: 'Spellbooks', name: 'spellbook of detect monsters', appearance: 'silver' },
-        { class: 'Potions', name: 'potion of water', appearance: 'clear' },
-    ] : role === 'caveman' ? [
+    ] : role === 'priest' ? [] : role === 'caveman' ? [
         ...(game.flags?.explore ? [{
             class: 'Wands', name: 'wand of wishing', appearance: 'hexagonal',
         }] : []),
-        { class: 'Gems/Stones', name: 'flint stone', appearance: 'gray' },
     ] : role === 'tourist' ? [
         { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'ANDOVA BEGARIN' },
         { class: 'Potions', name: 'potion of extra healing', appearance: 'murky' },
@@ -1042,22 +1416,31 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'yumi', appearance: 'long bow', preknown: true },
         { class: 'Armor', name: 'cloak of displacement', appearance: 'opera cloak' },
     ];
+    if (role === 'wizard') {
+        game.discoveries = wizardInitialDiscoveries();
+        // weapon.c:skill_based_spellbook_id() and ini_inv_use_obj() both
+        // feed o_init.c's authoritative object-knowledge table.  The legacy
+        // discoveries projection is only a menu view; naming code must see
+        // the same knowledge before the first command is processed.
+        for (const discovery of game.discoveries) {
+            recordObjectKnowledge(discovery.otyp);
+            if (!discovery.preknown) recordObjectEncounter(discovery.otyp);
+        }
+    }
+    if (role === 'priest') {
+        // u_init_role() pre-discovers water before the later
+        // u_init_skills_discoveries() inventory pass marks it encountered.
+        recordObjectKnowledge(POT_WATER);
+    }
+    initializeRolePreknowledge(role);
     game.urole.rank = game.urole.title?.[0] || game.urole.name;
+    // weapon.c:skill_init() snapshots the startup inventory here.  Later
+    // wishes, pickups, drops, and weapon changes must not redefine which
+    // classes began at Basic.
+    ensureHeroSkills(game);
     return true;
 }
 
 export function setInitialArmorClass() {
-    if (game.urole?.key === 'archeologist') game.u.uac = 9;
-    else if (game.urole?.key === 'barbarian') game.u.uac = 7;
-    else if (game.urole?.key === 'caveman') game.u.uac = 8;
-    else if (game.urole?.key === 'ranger') game.u.uac = 7;
-    else if (game.urole?.key === 'rogue') game.u.uac = 7;
-    else if (game.urole?.key === 'samurai') game.u.uac = 4;
-    else if (game.urole?.key === 'tourist') game.u.uac = 10;
-    else if (game.urole?.key === 'valkyrie') game.u.uac = 6;
-    else if (game.urole?.key === 'priest') game.u.uac = 7;
-    else if (game.urole?.key === 'healer') game.u.uac = 8;
-    else if (game.urole?.key === 'knight') game.u.uac = 3;
-    else if (game.urole?.key === 'monk') game.u.uac = 4;
-    else if (game.urole?.key === 'wizard') game.u.uac = 9;
+    findArmorClass(game);
 }
