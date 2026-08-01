@@ -1,6 +1,7 @@
 // rng.js — PRNG wrappers around ISAAC64.
-// C ref: rng.c — three RNG contexts: core, display, lua.
-// Contest: only core context is used for parity.
+// C ref: rng.c — independent core and display RNG contexts.  The display
+// stream owns hallucinated glyphs and names; it must never perturb the core
+// sequence which controls gameplay.
 
 import { isaac64_init, isaac64_next_uint64 } from './isaac64.js';
 import { game } from './gstate.js';
@@ -18,6 +19,7 @@ export function initRng(seed) {
         s >>= 8n;
     }
     game.coreCtx = isaac64_init(bytes);
+    game.displayCtx = isaac64_init(bytes);
     _rngLog = [];
 }
 
@@ -36,6 +38,14 @@ export function rn2(x) {
     const val = RND(x);
     if (_rngLogEnabled) _rngLog.push(`rn2(${x})=${val}`);
     return val;
+}
+
+// C ref: rn2_on_display_rng().  Deliberately absent from the public gameplay
+// RNG log: recorder sessions score the core stream separately from cosmetic
+// hallucination choices.
+export function rn2Display(x) {
+    if (x <= 0) return 0;
+    return Number(isaac64_next_uint64(game.displayCtx) % BigInt(x));
 }
 
 // C ref: rnd(x) — random number 1..x

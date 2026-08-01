@@ -537,6 +537,7 @@ export const G_GENOD = 0x02;
 export const G_EXTINCT = 0x01;
 export const G_GONE = (G_GENOD | G_EXTINCT);
 export const MV_KNOWS_EGG = 0x08;
+export const G_NOCORPSE = 0x0010;
 
 // ===== prop.h =====
 export const W_ART = 0x00001000;
@@ -2279,6 +2280,16 @@ export const VIBRATING_SQUARE = 23;
 export const TRAPPED_DOOR = 24;
 export const TRAPPED_CHEST = 25;
 export const TRAPNUM = 26;
+
+// C ref: defsym.h trap explanations, consumed by trapname(ttyp, FALSE).
+export const TRAP_EXPLANATIONS = [
+    '', 'arrow trap', 'dart trap', 'falling rock trap', 'squeaky board',
+    'bear trap', 'land mine', 'rolling boulder trap', 'sleeping gas trap',
+    'rust trap', 'fire trap', 'pit', 'spiked pit', 'hole', 'trap door',
+    'teleportation trap', 'level teleporter', 'magic portal', 'web',
+    'statue trap', 'magic trap', 'anti-magic field', 'polymorph trap',
+    'vibrating square', 'trapped door', 'trapped chest',
+];
 
 // Trap helpers (trap.h)
 export function is_pit(ttyp) { return ttyp === PIT || ttyp === SPIKED_PIT; }
