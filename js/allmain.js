@@ -5200,7 +5200,7 @@ export async function moveloop_core() {
                 movement: monster.movement,
             })));
         }
-        if (liveQuietRole
+        if (liveQuietRole && !g._tutorialActive
             && (monsterScan?.actors?.length || g._ordinaryDescentLive
                 || (g.flags?.debug && (g.u?.ulevel ?? 1) > 1))) {
             if (monsterScan?.actors?.length)
