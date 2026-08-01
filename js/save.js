@@ -9,7 +9,8 @@ const SAVE_VERSION = 1;
 const SAVE_PREFIX = 'teleport-save:';
 const EQUIPMENT_KEYS = ['uwep', 'uswapwep', 'uquiver', 'uarm', 'uarms', 'uarmc', 'uarmu'];
 const OMIT_KEYS = new Set([
-    'nhDisplay', '_preNhgetchHook', 'coreCtx', 'currentSeed', 'mockStorage',
+    'nhDisplay', '_preNhgetchHook', 'coreCtx', 'displayCtx', 'currentSeed',
+    'mockStorage',
     'storage', 'datetime', 'replayMoves', '_screen_output', '_pending_message',
     '_saveExitPending', 'program_state', 'startingPet', 'fmon',
     ...EQUIPMENT_KEYS,
@@ -43,6 +44,8 @@ function snapshotState() {
 function replacer(_key, value) {
     if (value instanceof Map)
         return { __teleportType: 'Map', entries: [...value.entries()] };
+    if (value instanceof Set)
+        return { __teleportType: 'Set', values: [...value.values()] };
     if (ArrayBuffer.isView(value)) return Array.from(value);
     if (typeof value === 'bigint') return Number(value);
     return value;
@@ -50,6 +53,7 @@ function replacer(_key, value) {
 
 function reviver(_key, value) {
     if (value?.__teleportType === 'Map') return new Map(value.entries || []);
+    if (value?.__teleportType === 'Set') return new Set(value.values || []);
     return value;
 }
 

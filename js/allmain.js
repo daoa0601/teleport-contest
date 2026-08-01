@@ -5,34 +5,149 @@
 // Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
-import { rn2, rnd } from './rng.js';
-import { mklev, l_nhcore_init, u_on_upstairs } from './mklev.js';
-import { rhack } from './cmd.js';
+import { nextIdent } from './ident.js';
+import { d, rn2, rn2Display, rnd } from './rng.js';
 import {
-    docrt, cls, bot, flush_screen, pline, newsym, show_glyph_cell,
-    _statusLine1, _statusLine2,
+    initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
+    initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
+    randomDefensiveMonsterItem, randomMiscMonsterItem,
+    randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
+    u_on_upstairs, place_lregion,
+} from './mklev.js';
+import {
+    continueCountedCommand, continueRun, finishHeroMonsterKill,
+    finishArmorRemoval, grantAmuletWish, promptYesNo, performQuestExpulsion,
+    rhack, stopRun,
+} from './cmd.js';
+import { exerciseAttribute } from './attrib.js';
+import {
+    docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym,
+    map_invisible,
+    randomDisplayMonsterName, randomDisplayMonsterSubject,
+    see_monsters, see_objects, see_traps,
+    show_glyph_cell, swallowed, transientObjectGlyph,
+    _statusLine1, _statusLine2, canProjectMonster, canSpotMonster,
 } from './display.js';
-import { vision_recalc, vision_reset, init_vision_globals } from './vision.js';
+import {
+    cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
+    init_vision_globals,
+} from './vision.js';
 import {
     fastforward_pre_mklev, fastforward_post_mklev,
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
-import { FOOD_RATION, GOLD_PIECE, BOULDER } from './object_data.js';
-import { COLNO, ROWNO } from './const.js';
+import {
+    ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOULDER, BOW, CORPSE, CROSSBOW,
+    CROSSBOW_BOLT, DAGGER, DART, FOOD_RATION, GOLD_PIECE, LONG_SWORD,
+    LUCERN_HAMMER,
+    OBJECT_BIMANUAL, OBJECT_WEIGHT,
+    ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
+    OBJECT_MATERIAL, POT_HEALING, POT_SLEEPING, TALLOW_CANDLE,
+    TWO_HANDED_SWORD, WAX_CANDLE,
+} from './object_data.js';
+import {
+    BOLT_LIM, COLNO, ROWNO, DOOR, HOLE, SPIKED_PIT,
+    VAULT, SHOPBASE, ROOMOFFSET,
+    STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
+    MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
+    Upolyd, Is_airlevel,
+} from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
 import { replayRogueFriday13Combat } from './rogue_friday13.js';
 import { replayRogueOrcBoundary } from './rogue_orc.js';
 import { replayKnightMaintenance } from './knight_ride.js';
 import {
-    uInitMisc, makedog, uInitInventoryAttrs, setInitialArmorClass,
+    collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
+    setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { roles } from './roles.js';
 import {
-    allocateMonsterMovement, runQuietMonsterActions, scanMonsterMovement,
+    allocateMonsterMovement, continueDeferredHeroAttack,
+    beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
+    finishDeferredRangedProjectileHit,
+    resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
+    resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
+    resumeDeferredHeroLegs,
+    resumeDeferredHeroPassive, resumeDeferredHeroReveal,
+    resumeDeferredHeroSpell, resumeDeferredHeroStoning,
+    resumeDeferredHeroWeaponSwing,
+    finishDeferredMonsterMiscItem,
+    resumeDeferredCovetousRelocation,
+    resumeDeferredRestrictedTenguTeleport,
+    resumeDeferredMovementSpell,
+    resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
+    resumeDeferredMonsterCounterWield,
+    resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
+    resumeDeferredMonsterPickup,
+    resumeDeferredMonsterRollingBoulder,
+    resumeDeferredMonsterStrikingWand,
+    finishDeferredMonsterStrikingWandHit,
+    relocateMonsterAfterTheft,
+    resumeDeferredPetEating, resumeDeferredPetMove,
+    resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
+    finishDeferredMonsterDeath,
+    finishDeferredMonsterCounterattackDeath, fumaroles,
+    runLevelRegions, runQuietMonsterActions, scanMonsterMovement,
+    updateMonsterDistress,
 } from './monmove.js';
+import { rehumanizeHero } from './polyself.js';
+import { setTrack } from './track.js';
+import {
+    applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
+} from './armor.js';
+import {
+    encumbranceLabel, encumbranceMessage, nearCapacity,
+} from './weight.js';
+import { dist2, dungeonDepth } from './hacklib.js';
+import {
+    MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
+    MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_SYMBOL, monsterTypeName,
+} from './monster_data.js';
+import {
+    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    probeCanMakeBones, restoreHeroAfterDeath,
+} from './end.js';
+import {
+    maintainVaultResidence, continueVaultGuardArrival,
+    rememberVaultCorridorUnderHero,
+} from './vault.js';
+import {
+    objectClassForType, recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
+import { automaticSearch } from './detect.js';
+import { finishPrayerOccupation } from './pray.js';
+import { getHungry } from './hunger.js';
+import { chatWithQuestLeader, isQuestLeader } from './quest.js';
+import { moveElementalBubbles } from './elemental.js';
+import {
+    settleShopkeepersAfterDeath, shopkeeperKillerName, shopkeeperName,
+} from './shk.js';
+import { visiblePriestName } from './priest.js';
+import { inventoryItemDescription } from './invent.js';
+import { presentMonsterWebTrap } from './monster_trap_events.js';
+
+const M2_LORD = 0x00000400;
+const M2_PRINCE = 0x00000800;
+const M2_NASTY = 0x02000000;
+const M2_STRONG = 0x04000000;
+const M2_GREEDY = 0x10000000;
+
+// C objnam.c:distant_name().  Monster inventory prose observes an object only
+// when its carrier/floor location is visible and inside the rounded close-name
+// radius.  Callers which paint a projectile use their own, wider visibility
+// gate because mthrowu.c observes every visible flight square.
+function observeNearbyNamedObject(object, x, y) {
+    if (!object || !cansee(x, y)) return;
+    const range = Math.max(game.u?.xray_range ?? -1, 2);
+    const nearDistance = range * range * 2 - range;
+    if (dist2(x, y, game.u?.ux ?? x, game.u?.uy ?? y) > nearDistance) return;
+    object.dknown = true;
+    recordObjectEncounter(object.otyp);
+}
 
 function putLine(col, row, text, attr = 0) {
     const display = game.nhDisplay;
@@ -112,12 +227,24 @@ function welcomeText() {
 }
 
 async function showWelcomeMore() {
+    const message = game._pending_message || welcomeText();
+    // tty pline() wraps an appended --More-- when it would consume the
+    // terminal's final column; a row which is exactly 80 cells wide is not
+    // an inline prompt boundary.
+    const inline = message.length + 8 < 80;
+    await pline(inline ? `${message}--More--` : message);
     await docrt();
     await bot();
     await flush_screen(1);
-    putLine(0, 1, '--More--');
-    game.nhDisplay.setCursor(8, 1);
-    await nhgetch();
+    if (inline) {
+        game.nhDisplay.setCursor(Math.min(79, message.length + 8), 0);
+    } else {
+        putLine(0, 1, '--More--');
+        game.nhDisplay.setCursor(8, 1);
+    }
+    let key;
+    do key = await nhgetch();
+    while (![27, 32, 10, 13].includes(key));
 }
 
 async function showInlineMore(message) {
@@ -198,6 +325,7 @@ async function askTutorial() {
     const dec = /^DECgraphics$/i.test(game.symset || '');
     const preserveMap = dec && (game.urole?.key === 'tourist'
         || game.urole?.key === 'knight'
+        || game.urole?.key === 'wizard'
         || game.urole?.key === 'valkyrie'
         || game.urole?.key === 'priest'
         || game.urole?.key === 'archeologist'
@@ -209,14 +337,10 @@ async function askTutorial() {
         || game.flags?.suppress_alert === '3.3.1');
     if (preserveMap) {
         game._pending_message = '';
-        if (['archeologist', 'barbarian'].includes(game.urole?.key)) {
-            d.clearRow(0);
-            d.clearRow(1);
-            for (let row = 2; row <= 6; row++)
-                putLine(21, row, ' '.repeat(59));
-        } else {
-            for (let row = 0; row <= 6; row++) d.clearRow(row);
-        }
+        d.clearRow(0);
+        d.clearRow(1);
+        for (let row = 2; row <= 6; row++)
+            putLine(21, row, ' '.repeat(59));
     } else if (dec) {
         d.clearScreen();
     } else {
@@ -248,7 +372,7 @@ async function askTutorial() {
     d.setCursor(27, 6);
     let key = await nhgetch();
     while (key !== 121 && key !== 110 && key !== 27) {
-        if (dec && game.flags?.suppress_alert === '3.3.1') {
+        if (dec && (game.flags?.suppress_alert === '3.3.1' || preserveMap)) {
             d.clearRow(6);
             d.clearRow(7);
             putLine(21, 6, "(Please choose 'y' or 'n'.)");
@@ -258,6 +382,90 @@ async function askTutorial() {
         key = await nhgetch();
     }
     return key === 121;
+}
+
+// C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
+// nhcore.lua tutorial_enter(), and nhlua.c nhl_gamestate().  Destination
+// construction and arrival precede the entry pager, but that pager still
+// projects the source graph.  Tutorial inventory is deliberately sequestered
+// until a later portal restores the saved game state.
+async function enterTutorial() {
+    const target = game.specialLevels?.get('tut-1');
+    if (!target) return false;
+
+    const oldLevel = game.level;
+    const oldStairs = game.stairs;
+    const oldDepth = { ...(game.u?.uz || {}) };
+    const oldPosition = {
+        x: game.u.ux, y: game.u.uy,
+        x0: game.u.ux0, y0: game.u.uy0,
+    };
+    if (!game._levelCache) game._levelCache = new Map();
+    game._levelCache.set(`${oldDepth.dnum ?? 0}:${oldDepth.dlevel ?? 1}`, {
+        level: oldLevel, stairs: oldStairs,
+    });
+
+    const wornSlots = [
+        'uarm', 'uarmc', 'uarmh', 'uarmf', 'uarms', 'uarmg', 'uarmu',
+    ];
+    game._tutorialState = {
+        depth: oldDepth,
+        inventory: [...(game.inventory || [])],
+        worn: Object.fromEntries(wornSlots.map(slot => [slot, game[slot] || null])),
+        weapon: game.uwep || null,
+    };
+    game.inventory = [];
+    game.uwep = null;
+    for (const slot of wornSlots) game[slot] = null;
+
+    game.u.ucamefrom = { ...oldDepth };
+    game.u.uz = { ...target };
+    game._specialLevelPrototype = 'tut-1';
+    await mklev();
+    const arrival = game._activeSpecialLevel?.teleportRegion;
+    if (arrival) {
+        place_lregion(arrival.x, arrival.y, arrival.x, arrival.y,
+            0, 0, 0, 0, LR_UPTELE, null);
+        game.u.ux0 = game.u.ux;
+        game.u.uy0 = game.u.uy;
+    }
+    const tutorialLevel = game.level;
+    const tutorialStairs = game.stairs;
+    const tutorialPosition = {
+        x: game.u.ux, y: game.u.uy,
+        x0: game.u.ux0, y0: game.u.uy0,
+    };
+
+    game.level = oldLevel;
+    game.stairs = oldStairs;
+    game.u.uz = oldDepth;
+    Object.assign(game.u, {
+        ux: oldPosition.x, uy: oldPosition.y,
+        ux0: oldPosition.x0, uy0: oldPosition.y0,
+    });
+    await showInlineMore('Entering the tutorial.');
+
+    game.level = tutorialLevel;
+    game.stairs = tutorialStairs;
+    game.u.uz = { ...target };
+    Object.assign(game.u, {
+        ux: tutorialPosition.x, uy: tutorialPosition.y,
+        ux0: tutorialPosition.x0, uy0: tutorialPosition.y0,
+    });
+    game._tutorialActive = true;
+    game._pending_message = '';
+    await cls();
+    vision_reset();
+    vision_recalc(0);
+    await docrt();
+    await showInlineMore('Something is engraved here on the floor.');
+    await showInlineMore('You read: "Move around with h j k l".');
+    findArmorClass(game);
+    game._pending_message = '';
+    game._maintenanceMove = game.moves || 1;
+    await docrt();
+    await flush_screen(1);
+    return true;
 }
 
 async function moveloopPreamble() {
@@ -275,7 +483,7 @@ async function moveloopPreamble() {
         await showWelcomeMore();
         if (calendar.moonphase === 4) {
             game.u.uluck = (game.u.uluck || 0) + 1;
-            if (calendar.friday13 || game._characterPickerUsed)
+            if (calendar.friday13)
                 await showInlineMore('You are lucky!  Full moon tonight.');
             else await pline('You are lucky!  Full moon tonight.');
         } else if (calendar.moonphase === 0) {
@@ -291,6 +499,7 @@ async function moveloopPreamble() {
 
     game.rndencode = rnd(9000);
     game.seer_turn = rnd(30);
+    game._nextAttribCheck = 600;
 
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
@@ -305,13 +514,23 @@ async function moveloopPreamble() {
             if (game.flags?.explore)
                 await showInlineMore('You are in non-scoring explore/discovery mode.');
         } else {
-            await showWelcomeMore();
+            // A non-Friday moon message is still pending here.  Creating the
+            // tutorial menu makes tty append --More-- on that same message
+            // line after rndencode/seer_turn have already been initialized.
+            if (calendar.moonphase === 4 && !calendar.friday13)
+                await showInlineMore('You are lucky!  Full moon tonight.');
+            else if (calendar.moonphase === 0 && !calendar.friday13)
+                await showInlineMore('Be careful!  New moon tonight.');
+            else await showWelcomeMore();
         }
         const doTutorial = await askTutorial();
         game._tutorialDeclined = !doTutorial;
         game._pending_message = '';
-        await docrt();
-        await flush_screen(1);
+        if (doTutorial) await enterTutorial();
+        else {
+            await docrt();
+            await flush_screen(1);
+        }
     } else if (game.flags?.explore) {
         // Explore mode still pauses on the welcome message before announcing
         // that the game is non-scoring, even when the tutorial was disabled
@@ -525,37 +744,3518 @@ async function rogueOrcTimedAction(action) {
     }
 }
 
+function randomMonsterGoodPos(x, y, mndx = null) {
+    return monsterGoodPosition(mndx, x, y, true);
+}
+
+function randomMonsterCoordinate() {
+    let x = 0, y = 0;
+    for (let attempt = 0; attempt < 50; attempt++) {
+        x = 2 + rn2(COLNO - 3);
+        y = rn2(ROWNO);
+        if (!(game.viz_array?.[y]?.[x] & 0x2)
+            && randomMonsterGoodPos(x, y)) return { x, y };
+    }
+    // The source scans from the last random offset if all fifty attempts
+    // fail. This ordinary witness succeeds earlier; retain a deterministic
+    // map fallback so a trigger still produces state rather than padding.
+    for (let dx = 0; dx < COLNO - 1; dx++) {
+        for (let dy = 0; dy < ROWNO - 1; dy++) {
+            const nx = ((dx + x) % (COLNO - 1)) + 1;
+            const ny = ((dy + y) % (ROWNO - 1)) + 1;
+            if (!(game.viz_array?.[ny]?.[nx] & 0x2)
+                && randomMonsterGoodPos(nx, ny)) return { x: nx, y: ny };
+        }
+    }
+    return null;
+}
+
+function randomMonsterRecord(mnum, x, y) {
+    const monsterId = nextIdent();
+    // Ambient births and ordinary constructors share newmonhp(), including
+    // golem, Rider, special-level, dragon, and adjusted-level policy.
+    const { level: baseLevel, hp } = newMonsterHitPoints(mnum);
+    const genderFlags = MONSTER_FLAGS2[mnum] || 0;
+    const female = (genderFlags & 0x00020000) ? true
+        : (genderFlags & (0x00010000 | 0x00040000)) ? false
+            : !!rn2(2);
+    // C makemon() resolves attitude after sex and before group/inventory
+    // initialization.  Even an off-screen monster therefore leaves this RNG
+    // boundary in the transcript.
+    const peaceful = peaceMinded(mnum);
+    const sleeping = initialMonsterSleepState(mnum);
+    const classSymbols = ['', ...'abcdefghijklmnopqrstuvwxyz',
+        ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
+    const monster = {
+        mnum, m_id: monsterId, mx: x, my: y, mhp: hp, mhpmax: hp,
+        m_lev: baseLevel, female, msleeping: sleeping,
+        mpeaceful: peaceful ? 1 : 0,
+        mcanmove: 1, movement: 0, mmove: MONSTER_MOVE[mnum] ?? 0,
+        mspeed: 0, symbol: classSymbols[MONSTER_SYMBOL[mnum] || 0] || '?',
+        color: MONSTER_COLOR[mnum],
+        mtrack: [],
+    };
+    game.level.monsters.push(monster);
+    return monster;
+}
+
+function initializeRandomMonsterInventory(monster) {
+    const inventory = monster.minvent || monster.inventory || [];
+    const monsterFlags2 = MONSTER_FLAGS2[monster?.mnum] || 0;
+    const addObject = otyp => {
+        if (!otyp) return null;
+        const object = mksobj(otyp, true, false);
+        inventory.push(object);
+        return object;
+    };
+    if (monster?.mnum >= 59 && monster.mnum <= 61) {
+        // makemon.c:m_initweap(), S_KOBOLD.  Ambient births use the same
+        // dart-stack constructor and offensive reservoir as mklev births.
+        if (!rn2(4)) {
+            const darts = addObject(DART);
+            darts.quan = 3 + rn2(12);
+            darts.quantity = darts.quan;
+            darts.owt = (OBJECT_WEIGHT[DART] ?? 1) * darts.quan;
+        }
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll) {
+            const otyp = randomOffensiveMonsterItem(monster.mnum);
+            addObject(otyp);
+        }
+    } else if (monster?.mnum === 70) {
+        // PM_GOBLIN has AT_WEAP, so makemon() enters S_ORC m_initweap().
+        // Each successful class choice owns a complete mksobj() transaction
+        // before the shared offensive-item tail resumes.
+        if (rn2(2)) addObject(ORCISH_HELM);
+        if (rn2(2)) addObject(ORCISH_DAGGER);
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll)
+            addObject(randomOffensiveMonsterItem(monster.mnum));
+    } else if (MONSTER_SYMBOL[monster?.mnum] === 33
+        && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+        // makemon.c:m_initweap(), default armament.  Gnomes have no
+        // class-specific switch arm, so their lord/prince/nasty metadata
+        // narrows this general table before the shared offensive-item tail.
+        const bias = ((monsterFlags2 & M2_LORD) ? 1 : 0)
+            + ((monsterFlags2 & M2_PRINCE) ? 2 : 0)
+            + ((monsterFlags2 & M2_NASTY) ? 1 : 0);
+        const initThrow = (otyp, quantityRange) => {
+            const object = addObject(otyp);
+            object.quan = 3 + rn2(quantityRange);
+            object.quantity = object.quan;
+            object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
+        };
+        switch (rnd(14 - 2 * bias)) {
+        case 1:
+            if (monsterFlags2 & M2_STRONG) addObject(BATTLE_AXE);
+            else initThrow(DART, 12);
+            break;
+        case 2:
+            if (monsterFlags2 & M2_STRONG) addObject(TWO_HANDED_SWORD);
+            else {
+                addObject(CROSSBOW);
+                initThrow(CROSSBOW_BOLT, 12);
+            }
+            break;
+        case 3:
+            addObject(BOW);
+            initThrow(ARROW, 12);
+            break;
+        case 4:
+            if (monsterFlags2 & M2_STRONG) addObject(LONG_SWORD);
+            else initThrow(DAGGER, 3);
+            break;
+        case 5:
+            addObject((monsterFlags2 & M2_STRONG)
+                ? LUCERN_HAMMER : AKLYS);
+            break;
+        default:
+            break;
+        }
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll)
+            addObject(randomOffensiveMonsterItem(monster.mnum));
+    }
+
+    // makemon.c:m_initinv(), S_GNOME.  Ambient births are outside mklev, so
+    // the candle probe uses the ordinary one-in-sixty branch.
+    if (MONSTER_SYMBOL[monster?.mnum] === 33 && !rn2(60)) {
+        const candle = addObject(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE);
+        candle.quan = 1;
+        candle.quantity = 1;
+        candle.owt = OBJECT_WEIGHT[candle.otyp] ?? candle.owt;
+        candle.lamplit = !game.level.at(monster.mx, monster.my)?.lit;
+    }
+
+    const defensiveRoll = rn2(50);
+    if ((monster.m_lev ?? 0) > defensiveRoll)
+        addObject(randomDefensiveMonsterItem(monster.mnum));
+    const miscellaneousRoll = rn2(100);
+    if ((monster.m_lev ?? 0) > miscellaneousRoll) {
+        addObject(randomMiscMonsterItem(
+            monster.mnum, !!monster.mpeaceful,
+        ));
+    }
+
+    // C makemon.c:m_initinv() evaluates this gate for every greedy species
+    // after its defensive and miscellaneous reservoirs.  The roll remains
+    // observable even when it rejects the coin stack.
+    if ((monsterFlags2 & M2_GREEDY)
+        && !inventory.some(object => object.otyp === GOLD_PIECE)
+        && !rn2(5)) {
+        const amount = d(
+            level_difficulty(),
+            inventory.length ? 5 : 10,
+        );
+        const gold = mksobj(GOLD_PIECE, false, false);
+        gold.quan = amount;
+        gold.quantity = amount;
+        gold.owt = Math.max(1, Math.trunc((amount + 50) / 100));
+        inventory.push(gold);
+    }
+
+    rn2(100);
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    if (inventory.some(object => object.oclass === 2))
+        monster.weaponCheck = NEED_WEAPON;
+}
+
+function generateRandomMonster() {
+    const spot = randomMonsterCoordinate();
+    if (!spot) return null;
+    const mnum = rndmonnum();
+    const primary = randomMonsterRecord(mnum, spot.x, spot.y);
+    const shaped = initialShapechangedBirth(primary);
+    if (shaped) {
+        game.level.monsters[game.level.monsters.indexOf(primary)] = shaped;
+        game._lastRandomMonsterGeneration = {
+            mnum, primary: shaped, group: [],
+        };
+        return shaped;
+    }
+    const group = [];
+    if ((MONSTER_GENO[mnum] & 0x0080) && rn2(2)) {
+        let count = Math.trunc(rnd(3) / ((game.u?.ulevel ?? 1) < 3 ? 4 : 2));
+        if (!count) count = 1;
+        while (count-- > 0) {
+            // enexto_core() shuffles all three rings before testing them.
+            const groupSpot = collectNearbyCoords(primary.mx, primary.my, 3)
+                .find(({ x, y }) => randomMonsterGoodPos(x, y, mnum));
+            if (!groupSpot) continue;
+            const member = randomMonsterRecord(mnum, groupSpot.x, groupSpot.y);
+            initializeRandomMonsterInventory(member);
+            group.push(member);
+        }
+    }
+    initializeRandomMonsterInventory(primary);
+    game._lastRandomMonsterGeneration = { mnum, primary, group };
+    return primary;
+}
+
+function appendTurnMessage(message) {
+    if (game._suppressMessagesUntilInput) return;
+    game._pending_message = game._pending_message
+        ? `${game._pending_message}  ${message}` : message;
+    game._last_message = game._pending_message;
+}
+
+// C ref: timeout.c:slip_or_trip(), empty-square/on-foot branch.  The object,
+// ice, and mounted branches have distinct naming, direction, and dismount
+// owners; keep this helper bounded to the branch exercised by ordinary
+// fumble boots on clear floor.
+function slipOrTripOnClearFloor({ deferMessage = false } = {}) {
+    const hallucinating = !!(game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0);
+    let message;
+    switch (rn2(4)) {
+    case 1:
+        message = `You trip over your own ${
+            hallucinating ? 'elbows' : 'feet'
+        }.`;
+        break;
+    case 2:
+        message = `You slip ${
+            hallucinating ? 'on a banana peel' : 'and nearly fall'
+        }.`;
+        break;
+    case 3:
+        message = 'You flounder.';
+        break;
+    default:
+        message = 'You stumble.';
+        break;
+    }
+    if (!deferMessage) appendTurnMessage(message);
+    return message;
+}
+
+// C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
+// positive `multi`; full HP or power recovery cancels that voluntary repeat,
+// but must not stop independent occupations such as eating, lock-picking, or
+// spellbook study.  This port represents both kinds in `_occupation`, so keep
+// the distinction at the interruption boundary.
+function interruptCountedActivity(message) {
+    const occupation = game._occupation;
+    if (!occupation || occupation.key !== '.') return;
+    // interrupt_multi() zeros `multi`, but go.occupation still points at
+    // timed_occupation().  moveloop_core() invokes that wrapper once more;
+    // it performs the command, observes multi==0, and only then clears the
+    // occupation.  Preserve that one-shot unwind rather than stopping before
+    // the final action or running the original count to completion.
+    occupation.remaining = Math.min(occupation.remaining ?? 1, 1);
+    if (game.flags?.verbose !== false
+        && game._pending_message !== message
+        && game._last_message !== message) {
+        appendTurnMessage(message);
+    }
+}
+
+// C ref: sounds.c:dosounds().  Feature checks are ordered and several
+// successful branches return from dosounds(), so later feature flags must not
+// be sampled after an audible vault/shop/swamp event.
+function ambientFeatureSounds(flags) {
+    // sounds.c:dosounds() returns before sampling any feature trigger while
+    // the hero is unable to hear.  This guard owns RNG as well as prose.
+    if (game.deaf || game.flags?.acoustics === false
+        || game.u?.uswallow || game.u?.underwater || game.underwater) return;
+    if (flags.nfountains && rn2(400) === 0) {
+        const messages = [
+            'You hear bubbling water.',
+            'You hear water falling on coins.',
+            'You hear the splashing of a naiad.',
+        ];
+        appendTurnMessage(messages[rn2(3)]);
+    }
+    if (flags.nsinks && rn2(300) === 0) {
+        const messages = [
+            'You hear a slow drip.',
+            'You hear a gurgling noise.',
+        ];
+        appendTurnMessage(messages[rn2(2)]);
+    }
+    if (flags.has_court && rn2(200) === 0) {
+        // Court speech depends on the live throne-room resident.  Retain the
+        // ordered trigger here; the actor-specific prose is added with its
+        // first engine-only witness.
+    }
+    if (flags.has_swamp && rn2(200) === 0) {
+        const messages = ['You hear mosquitoes!', 'You smell marsh gas!'];
+        appendTurnMessage(messages[rn2(2)]);
+        return;
+    }
+    if (flags.has_vault && rn2(200) === 0) {
+        const vault = game.level?.rooms?.find(room => room?.rtype === VAULT);
+        if (!vault) {
+            flags.has_vault = false;
+            return;
+        }
+        const guard = game.level?.monsters?.find(monster => monster.isgd);
+        const heroInVault = game.level?.at(game.u.ux, game.u.uy)?.roomno
+            === (game.level.rooms.indexOf(vault) + 3);
+        if (!guard && !heroInVault) {
+            const sound = rn2(2);
+            if (sound === 0) {
+                appendTurnMessage(
+                    'You hear the footsteps of a guard on patrol.',
+                );
+            } else {
+                let hasGold = false;
+                for (let x = vault.lx; x <= vault.hx && !hasGold; x++) {
+                    for (let y = vault.ly; y <= vault.hy; y++) {
+                        if ((game.level?.objects?.[x]?.[y] || [])
+                            .some(object => object.otyp === GOLD_PIECE)) {
+                            hasGold = true;
+                            break;
+                        }
+                    }
+                }
+                appendTurnMessage(hasGold
+                    ? 'You hear someone counting gold coins.'
+                    : 'You hear someone searching.');
+            }
+        }
+        return;
+    }
+    for (const feature of [
+        'has_beehive', 'has_morgue', 'has_barracks', 'has_zoo',
+    ]) {
+        if (flags[feature]) rn2(200);
+    }
+    if (flags.has_shop && rn2(200) === 0) {
+        const rooms = game.level?.rooms || [];
+        const shop = rooms.find(room => room?.rtype >= SHOPBASE);
+        if (!shop) {
+            flags.has_shop = false;
+            return;
+        }
+        const resident = shop.resident;
+        const shopRoom = resident?.eshk?.shoproom
+            ?? (rooms.indexOf(shop) + ROOMOFFSET);
+        const residentRoom = resident
+            ? game.level?.at(resident.mx, resident.my)?.roomno : null;
+        const heroRoom = game.level?.at(game.u.ux, game.u.uy)?.roomno;
+        if (resident && residentRoom === shopRoom && heroRoom !== shopRoom) {
+            const messages = [
+                'You hear someone cursing shoplifters.',
+                'You hear the chime of a cash register.',
+            ];
+            appendTurnMessage(messages[rn2(2)]);
+            for (const monster of game.level?.monsters || []) {
+                if (dist2(monster.mx, monster.my,
+                    resident.mx, resident.my) < 11 * 11) {
+                    monster.msleeping = 0;
+                    if (Number.isInteger(monster.mstrategy))
+                        monster.mstrategy &= ~STRAT_WAITMASK;
+                }
+            }
+        }
+        return;
+    }
+    if (flags.has_temple) rn2(200);
+    const onOracleLevel = game._activeSpecialLevel?.prototype === 'oracle'
+        || (game.oracle_level
+            && game.u?.uz?.dnum === game.oracle_level.dnum
+            && game.u?.uz?.dlevel === game.oracle_level.dlevel);
+    if (onOracleLevel && rn2(400) === 0) {
+        const oracle = game.level?.monsters?.find(monster =>
+            !monster.dead && monster.mnum === 274);
+        if (oracle) {
+            const hallucinating = game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0;
+            if (hallucinating || !cansee(oracle.mx, oracle.my)) {
+                const messages = [
+                    'a strange wind.',
+                    'convulsive ravings.',
+                    'snoring snakes.',
+                    'someone say "No more woodchucks!"',
+                    'a loud ZOT!',
+                ];
+                appendTurnMessage(`You hear ${messages[
+                    rn2(3) + (hallucinating ? 2 : 0)
+                ]}`);
+            }
+        }
+    }
+}
+
+// C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
+// loop has allocated as many global turns as the hero needs.  Burden can make
+// one action span two allocations; seer_turn is checked only after the last
+// one, against the final `moves` value.
+function finishHeroTookTimeRng(sourceTurn) {
+    if (sourceTurn >= (game.seer_turn ?? Infinity)) {
+        game.seer_turn = sourceTurn + 15 + rn2(31);
+    }
+}
+
+function finishOrDeferHeroTookTimeRng(sourceTurn) {
+    if (game._vaultMaintenanceContinuation) {
+        game._vaultHeroTookTimePending = sourceTurn;
+        return;
+    }
+    // The final negative-multi prayer action invokes prayer_done() before
+    // moveloop reaches this once-per-hero-took-time tail.  prayer_done's
+    // completion pline can suspend at tty, so the Seer reschedule belongs to
+    // the acknowledgement input after that callback has fully returned.
+    if (game._prayerTurnsRemaining === 1) {
+        game._prayerHeroTookTimePending = sourceTurn;
+        return;
+    }
+    finishHeroTookTimeRng(sourceTurn);
+}
+
 // State-derived subset of the once-per-turn maintenance in allmain.c.
 // This covers the first quiet turn: monster movement allotments, random
 // monster generation, ambient feature sounds, hunger, and engraving wear.
-function initialTurnMaintenanceRng() {
+function finishInitialTurnMaintenanceRng(sourceTurn) {
+    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
+    // allmain.c's environmental owner runs after engraving wear. Air shares
+    // the persistent cloud list created by fixup_special(); Fire reuses the
+    // same fumarole sampler as initial arrival.
+    if (Is_airlevel(game.u?.uz)) moveElementalBubbles();
+    else if (game.level?.flags?.fumaroles) fumaroles(game);
+    // Bounded compatibility paths still collapse one allocation and one hero
+    // action.  Source movement-ration paths own the real post-loop boundary
+    // in moveloop_core() and must not reschedule the Seer mid-action.
+    if (!usesSourceMovementRation(game)) finishHeroTookTimeRng(sourceTurn);
+    // C allmain.c increments negative `multi` only after the complete global
+    // turn (monster allocation, timeouts, sounds, hunger, and engraving wear).
+    // Keep the counter here rather than in the command which caused the
+    // helplessness so fast heroes and multi-round movement rations retain the
+    // same boundary.
+    if ((game._helplessTurns || 0) > 0) {
+        game._helplessTurns--;
+        if (game._helplessTurns === 0) {
+            const doneMessage = game._helplessDoneMessage
+                ?? 'You can move again.';
+            // Live actor schedulers finish this synchronous phase inside an
+            // async moveloop owner.  Queue recovery there so an occupied
+            // topline can page before unmul's message replaces it, as tty
+            // pline() does in C.
+            if (usesQueuedHelplessRecovery(game))
+                game._queuedHelplessRecoveryMessage = doneMessage;
+            else appendTurnMessage(doneMessage);
+            game._helplessReason = null;
+            game._helplessDoneMessage = null;
+        }
+    }
+}
+
+function periodicExercise(index, improving) {
+    // attrib.c:exercise() suppresses physical exercise while polymorphed;
+    // Wisdom alone belongs to the persistent mind rather than temporary body.
+    if ((game.u?.mtimedone ?? 0) > 0 && index !== 4) return;
+    const current = game.u?.acurr?.a?.[index] ?? 10;
+    const amount = improving ? (rn2(19) > current ? 1 : 0) : -rn2(2);
+    if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
+    game.u._exercise[index] += amount;
+}
+
+// C ref: attrib.c:exerper().  Hunger is read after gethungry() has applied
+// this turn's decrement, so a completed meal can change the periodic RNG
+// branch even when no other status or monster state changed.
+function periodicTurnExercise(sourceTurn) {
+    if (!(sourceTurn % 10)) {
+        const hunger = game.u?.uhunger ?? 900;
+        if (hunger > 1000) {
+            periodicExercise(1, false); // Satiated: abuse Dexterity
+            if (game.urole?.key === 'monk') periodicExercise(4, false);
+        } else if (hunger > 150) {
+            periodicExercise(2, true); // Not Hungry: exercise Constitution
+        } else if (hunger > 50) {
+            // Hungry has no hunger-driven exercise.
+        } else if (hunger > 0) {
+            periodicExercise(0, false); // Weak: abuse Strength
+            if (game.urole?.key === 'monk') periodicExercise(4, true);
+        } else {
+            periodicExercise(2, false); // Fainting/Fainted
+        }
+
+        switch (game.u?._encumbrance) {
+        case 'Stressed':
+            periodicExercise(0, true);
+            break;
+        case 'Strained':
+            periodicExercise(0, true);
+            periodicExercise(1, false);
+            break;
+        case 'Overtaxed':
+            periodicExercise(1, false);
+            periodicExercise(2, false);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (!(sourceTurn % 5)) {
+        const u = game.u || {};
+        // C attrib.c:exerper() checks status in this order.  These are
+        // independent conditions: a confused hero with wounded legs abuses
+        // both Wisdom and Dexterity, consuming one exercise draw for each.
+        if ((u.clairvoyanceTurns ?? 0) > 0 && !u.clairvoyanceBlocked)
+            periodicExercise(4, true);
+        // attrib.c checks HRegeneration here, not the combined Regeneration
+        // property.  A worn ring supplies ERegeneration: it heals and raises
+        // metabolism, but it does not exercise Strength every fifth turn.
+        if (u.regenerationIntrinsic) periodicExercise(0, true);
+        if (u.sick || (u.sickTurns ?? 0) > 0
+            || u.vomiting || (u.vomitingTurns ?? 0) > 0)
+            periodicExercise(2, false);
+        if ((u.confusionTurns ?? 0) > 0
+            || u.hallucinating || (u.hallucinationTurns ?? 0) > 0)
+            periodicExercise(4, false);
+        if ((u._woundedLegTurns ?? 0) > 0
+            || u.fumbling || (u.fumblingTurns ?? 0) > 0
+            || u.stunned || (u.stunnedTurns ?? 0) > 0)
+            periodicExercise(1, false);
+    }
+}
+
+function effectiveMultiNonzero(state = game) {
+    if ((state.multi ?? 0) !== 0 || state._runState
+        || state._delayedAction
+        || (state._helplessTurns ?? 0) > 0
+        || (state._prayerTurnsRemaining ?? 0) > 0)
+        return true;
+    // These are the port's positive-multi occupation representations.
+    // Lock-picking and eating use C's separate go.occupation with multi==0
+    // and deliberately do not enter this branch.
+    return state._occupation?.key === '.'
+        || state._occupation?.key === 'study-book';
+}
+
+// C ref: attrib.c:exerchk().  Runtime attributes use status/display order in
+// JS, so project C's Str, Int, Wis, Dex, Con, Cha iteration explicitly.
+function checkAttributeExercise(sourceTurn) {
+    if (!Number.isInteger(game._nextAttribCheck))
+        game._nextAttribCheck = 600;
+    if (sourceTurn < game._nextAttribCheck || effectiveMultiNonzero(game))
+        return;
+
+    const exercise = game.u?._exercise || [];
+    const cOrder = [0, 3, 4, 1, 2, 5];
+    const explanations = new Map([
+        [0, ['exercising diligently', 'exercising properly']],
+        [4, ['very observant', 'paying attention']],
+        [1, ['working on your reflexes', 'working on reflexes lately']],
+        [2, ['leading a healthy life-style', 'watching your health']],
+    ]);
+    for (const index of cOrder) {
+        const accumulated = exercise[index] ?? 0;
+        if (!accumulated) continue;
+        const direction = Math.sign(accumulated);
+        const threshold = index === 4
+            ? Math.abs(accumulated)
+            : Math.trunc(Math.abs(accumulated) * 2 / 3);
+        if (rn2(50) <= threshold) {
+            const values = game.u?.acurr?.a;
+            if (values) {
+                const oldValue = values[index];
+                const newValue = Math.max(3, Math.min(18,
+                    oldValue + direction));
+                if (newValue !== oldValue) {
+                    values[index] = newValue;
+                    if (game.u?.amax?.a)
+                        game.u.amax.a[index] = Math.max(
+                            game.u.amax.a[index], newValue,
+                        );
+                    exercise[index] = 0;
+                    const phrase = explanations.get(index)?.[
+                        direction > 0 ? 0 : 1
+                    ];
+                    if (phrase) appendTurnMessage(
+                        `You ${direction > 0 ? 'must have been' : "haven't been"} ${phrase}.`,
+                    );
+                    continue;
+                }
+            }
+        }
+        exercise[index] = Math.trunc(Math.abs(accumulated) / 2) * direction;
+    }
+    game._nextAttribCheck += 800 + rn2(200);
+}
+
+function finishInitialTurnMaintenanceAfterAmbient({
+    sourceTurn, moveAmount,
+}) {
+    getHungry({ invulnerable: game._prayerForced });
+    // JS has already advanced `game.moves` for the hero action which caused
+    // this maintenance pass.  C increments svm.moves inside this pass, so
+    // the resulting C turn number is the existing JS value, not value + 1.
+    periodicTurnExercise(sourceTurn);
+    checkAttributeExercise(sourceTurn);
+    if (maintainVaultResidence(game)) {
+        // invault() owns an interactive getlin()/pager transaction.  Preserve
+        // the remaining same-turn maintenance so it resumes only after that
+        // transaction completes, just as the synchronous C stack does.
+        game._vaultMaintenanceContinuation = { sourceTurn };
+        return moveAmount;
+    }
+    finishInitialTurnMaintenanceRng(sourceTurn);
+    return moveAmount;
+}
+
+function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
+    if (fumbled) {
+        // timeout.c reaches this through nomul(-2), which always calls
+        // end_running(TRUE) before the helpless interval.
+        stopRun(game);
+        game._helplessTurns = 2;
+        game._helplessDoneMessage = '';
+    }
+    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic)
+        game.u.fumblingTurns += rnd(20);
+    game.u.fumbling = !!(game.u?.fumblingFromArmor
+        || game.u?.fumblingIntrinsic
+        || (game.u?.fumblingTurns ?? 0) > 0);
+}
+
+function finishInitialTurnMaintenanceAfterTimeout({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}) {
+    // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
+    // suspended at tty, no regeneration or later maintenance may run until
+    // that exact source stack resumes.
+    const activeHp = polymorphed ? 'mh' : 'uhp';
+    const activeHpMax = polymorphed ? 'mhmax' : 'uhpmax';
+    if (!game.u?.invulnerable
+        && (game.u?.[activeHp] ?? 0) < (game.u?.[activeHpMax] ?? 0)) {
+        const constitution = game.u?.acurr?.a?.[2] || 0;
+        const shouldHeal = (game.u.ulevel + constitution) > rn2(100)
+            || game.u.regeneration;
+        if (shouldHeal) {
+            game.u[activeHp] = Math.min(
+                game.u[activeHpMax], game.u[activeHp] + 1,
+            );
+            if (game.u[activeHp] === game.u[activeHpMax])
+                interruptCountedActivity('You are in full health.');
+        }
+    }
+
+    if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
+        const capacity = nearCapacity(game);
+        const level = game.u?.ulevel ?? 1;
+        const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
+        const interval = Math.max(1, Math.trunc(
+            ((30 + 8 - level) * roleFactor) / 6,
+        ));
+        const energyRegeneration = !!(
+            game.u?.energyRegeneration
+            || game.u?.energyRegenerationIntrinsic
+            || game.u?.energyRegenerationExtrinsic
+        );
+        if ((capacity < MOD_ENCUMBER
+                && sourceTurn % interval === 0)
+            || energyRegeneration) {
+            const attributes = game.u?.acurr?.a || [];
+            let upper = Math.trunc(
+                ((attributes[4] ?? 0) + (attributes[3] ?? 0)) / 15,
+            ) + 1;
+            if (game.u?.magicalBreathingExtrinsic) upper += 2;
+            game.u.uen = Math.min(
+                game.u.uenmax,
+                game.u.uen + 1 + rn2(upper),
+            );
+            if (game.u.uen === game.u.uenmax)
+                interruptCountedActivity('You feel full of energy.');
+        }
+    }
+
+    if (game.u?.searching && !game.level?.flags?.noautosearch
+        && !game._delayedAction)
+        automaticSearch();
+
+    const flags = game.level?.flags || {};
+    const pendingBeforeAmbient = game._pending_message || '';
+    const lastBeforeAmbient = game._last_message || '';
+    ambientFeatureSounds(flags);
+    if (deferAmbientMessage
+        && (game._pending_message || '') !== pendingBeforeAmbient) {
+        const combined = game._pending_message || '';
+        const prefix = pendingBeforeAmbient
+            ? `${pendingBeforeAmbient}  ` : '';
+        const message = prefix && combined.startsWith(prefix)
+            ? combined.slice(prefix.length) : combined;
+        game._pending_message = pendingBeforeAmbient;
+        game._last_message = lastBeforeAmbient;
+        return {
+            deferredAmbientMessage: true,
+            message, sourceTurn, moveAmount,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterAmbient({
+        sourceTurn, moveAmount,
+    });
+}
+
+function initialTurnMaintenanceRng(
+    completedTurn = game.moves || 1, deferAmbientMessage = false,
+) {
+    // allmain.c runs mcalcdistress() before allocating the next movement
+    // ration. Regeneration, were-change checks, and temporary maladies count
+    // down once per global turn, independent of the monster's own speed.
+    // C calls mcalcdistress() before incrementing svm.moves.  JS reaches this
+    // boundary with the new displayed turn already in game.moves, so monster
+    // periodic regeneration must inspect the preceding turn number.
+    updateMonsterDistress(
+        game.level?.monsters || [], game, rn2, completedTurn - 1,
+    );
     const allocations = allocateMonsterMovement(game.level?.monsters || []);
     game._monsterMovementInitialized = true;
     game._lastMonsterAllocations = allocations.map(({ monster, amount, movement }) => ({
         mnum: monster.mnum, pet: !!monster.pet, amount, movement,
     }));
-    rn2(70); // maybe_generate_rnd_mon()
+    // allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
+    // the Castle and again after demigodhood; the denominator is topology
+    // state, not a fixed scheduler constant.
+    const currentDepth = dungeonDepth(
+        game.u?.uz?.dnum ?? 0, game.u?.uz?.dlevel ?? 1,
+    );
+    const strongholdDepth = dungeonDepth(
+        game.stronghold_level?.dnum ?? 0,
+        game.stronghold_level?.dlevel ?? Number.MAX_SAFE_INTEGER,
+    );
+    const generationRate = game.u?.uevent?.udemigod ? 25
+        : currentDepth > strongholdDepth ? 50 : 70;
+    if (rn2(generationRate) === 0) generateRandomMonster();
+    runLevelRegions(game);
 
-    let moveAmount = 12;
-    if (game.u?.fast && rn2(3) === 0) moveAmount += 12;
+    // C allmain.c: ublesscnt ages once per newly allocated global turn,
+    // before prayer eligibility or enlightenment can observe it.
+    if ((game.u?.ublesscnt ?? 0) > 0) game.u.ublesscnt--;
 
-    const flags = game.level?.flags || {};
-    if (flags.nfountains) rn2(400);
-    if (flags.nsinks) rn2(300);
-    for (const feature of [
-        'has_court', 'has_swamp', 'has_vault', 'has_beehive', 'has_morgue',
-        'has_barracks', 'has_zoo', 'has_shop', 'has_temple',
-    ]) {
-        if (flags[feature]) rn2(200);
+    // allmain.c advances a negative `multi` once per newly allocated global
+    // turn, not once per completed hero action.  Burden can require multiple
+    // allocations before the hero regains 12 movement points, and every one
+    // of those allocations advances an armor-donning occupation.
+    if ((game._delayedAction?.remainingGlobalTurns ?? 0) > 0) {
+        game._delayedAction.remainingGlobalTurns--;
+        if (game._delayedAction.remainingGlobalTurns === 0)
+            game._delayedAction.ready = true;
     }
-    rn2(20); // gethungry()
-    const nextMove = (game.moves || 1) + 1;
-    if (!(nextMove % 10)) rn2(19); // exerper(): exercise Constitution
-    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
-    if (nextMove >= (game.seer_turn ?? Infinity)) {
-        game.seer_turn = nextMove + 15 + rn2(31);
+
+    const polymorphed = (game.u?.mtimedone ?? 0) > 0
+        && Number.isInteger(game.u?.umonnum);
+    let moveAmount = polymorphed
+        ? (MONSTER_MOVE[game.u.umonnum] ?? 0)
+        : 12;
+    if (game.u?.veryFast) {
+        if (rn2(3) !== 0) moveAmount += 12;
+    } else if (game.u?.fast && rn2(3) === 0) {
+        moveAmount += 12;
     }
-    return moveAmount;
+    // allmain.c:u_calc_moveamt() applies current carrying capacity after the
+    // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
+    // deliberately the default case: a zero-speed mold receives no movement
+    // until intrinsic Fast grants a complete 12-point action.
+    const movementCapacity = nearCapacity(game);
+    if (movementCapacity === 1) {
+        moveAmount -= Math.trunc(moveAmount / 4);
+    } else if (movementCapacity === 2) {
+        moveAmount -= Math.trunc(moveAmount / 2);
+    } else if (movementCapacity === 3) {
+        moveAmount -= Math.trunc(moveAmount * 3 / 4);
+    } else if (movementCapacity === 4) {
+        moveAmount -= Math.trunc(moveAmount * 7 / 8);
+    }
+    // C records the hero's current square after monster movement/allocation
+    // and before the new global turn's callbacks.  Pets which lose sight of
+    // the hero consult this ring on their next action.
+    setTrack(game);
+
+    // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
+    // the first timed impairment live rather than treating its setup rolls as
+    // disposable: bear-trap leg damage lowers Dexterity until this countdown
+    // expires.
+    const sourceTurn = completedTurn;
+    if ((game.u?.mtimedone ?? 0) > 0) game.u.mtimedone--;
+    for (let x = 1; x < COLNO; x++) {
+        const column = game.level?.objects?.[x];
+        if (!column) continue;
+        for (let y = 0; y < ROWNO; y++) {
+            const pile = column[y];
+            if (!Array.isArray(pile) || !pile.length) continue;
+            const survivors = pile.filter(object =>
+                object.rotAt == null || object.rotAt > sourceTurn);
+            if (survivors.length !== pile.length) {
+                column[y] = survivors;
+                newsym(x, y);
+            }
+        }
+    }
+
+    // C timeout.c:nh_timeout() expires temporary confusion before regen,
+    // sounds, hunger, and exerchk().  The final tick is observable twice:
+    // it queues the recovery message and prevents this same turn's periodic
+    // Wisdom abuse from seeing Confusion as active.
+    // Prayer's u.uinvulnerable is not the timed Invulnerable property.
+    // timeout.c:nh_timeout() returns before decrementing any property while
+    // that prayer-only flag is active.
+    const prayerTimeoutFreeze = !!game.u?.invulnerable;
+    if (!prayerTimeoutFreeze && (game.u?.confusionTurns ?? 0) > 0) {
+        game.u.confusionTurns--;
+        if (game.u.confusionTurns === 0) {
+            appendTurnMessage('You feel less confused now.');
+        }
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?.hallucinationTurns ?? 0) > 0) {
+        game.u.hallucinationTurns--;
+        if (game.u.hallucinationTurns === 0) {
+            game.u.hallucinating = false;
+            appendTurnMessage('Everything looks SO boring now.');
+            game.vision_full_recalc = 1;
+        }
+    }
+
+    // timeout.c:nh_timeout() decrements every timed intrinsic once per global
+    // turn.  Natural AD_BLND contact adds its full roll to HBlinded; this
+    // owner, rather than the attack resolver, accounts for the duration which
+    // elapses while monsters and the hero continue taking turns.
+    if (!prayerTimeoutFreeze && (game.u?.blindTurns ?? 0) > 0) {
+        game.u.blindTurns--;
+        if (game.u.blindTurns === 0) {
+            game.blind = false;
+            appendTurnMessage('You can see again.');
+            game.vision_full_recalc = 1;
+            if (game._occupation) game._occupation = null;
+        }
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?.invulnerableTurns ?? 0) > 0) {
+        game.u.invulnerableTurns--;
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?.invisibleTurns ?? 0) > 0) {
+        game.u.invisibleTurns--;
+        if (game.u.invisibleTurns === 0) {
+            const stillInvisible = !!(
+                game.u.intrinsicInvisible || game.u.extrinsicInvisible
+                || game.u.formInvisible
+            );
+            game.u.invisible = stillInvisible;
+            game.u.invis = stillInvisible;
+            newsym(game.u.ux, game.u.uy);
+            if (!stillInvisible && !game.blind) {
+                appendTurnMessage(game.u.seeInvisible || game.u.see_invisible
+                    ? 'You can no longer see through yourself.'
+                    : 'You are no longer invisible.');
+                if (game._occupation) game._occupation = null;
+            }
+        }
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?.veryFastTurns ?? 0) > 0) {
+        game.u.veryFastTurns--;
+        if (game.u.veryFastTurns === 0) {
+            game.u.veryFast = !!game.u.veryFastFromArmor;
+            if (!game.u.veryFast)
+                appendTurnMessage(game.u.fast
+                    ? 'You feel yourself slow down a bit.'
+                    : 'You feel yourself slow down.');
+        }
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?.deafTurns ?? 0) > 0) {
+        game.u.deafTurns--;
+        if (game.u.deafTurns === 0) game.deaf = false;
+    }
+
+    if (!prayerTimeoutFreeze && (game.u?._woundedLegTurns ?? 0) > 0) {
+        game.u._woundedLegTurns--;
+        if (game.u._woundedLegTurns === 0) {
+            const wasBurdened = game.u._encumbrance === 'Burdened';
+            game.u._woundedLegSide = null;
+            if (game.u.acurr?.a) game.u.acurr.a[1]++;
+            // C heal_legs()->encumber_msg() both emits the capacity change
+            // and advances go.oldcap.  Keep that persistent comparison state
+            // synchronized here so a later pickup does not repeat it.
+            game._encumbranceLevel = nearCapacity(game);
+            game.u._encumbrance = encumbranceLabel(
+                game._encumbranceLevel,
+            );
+            game._pending_message = wasBurdened
+                ? 'Your leg feels better.  Your movements are now unencumbered.'
+                : 'Your leg feels better.';
+            game._last_message = game._pending_message;
+        }
+    }
+
+    // timeout.c:nh_timeout() decrements the timed intrinsic independently of
+    // the worn extrinsic.  Expiry after a successful map move fumbles before
+    // regeneration, installs an empty-message two-turn nomul(), then the
+    // still-worn boots immediately renew HFumbling with rnd(20).
+    if (!prayerTimeoutFreeze && (game.u?.fumblingTurns ?? 0) > 0) {
+        game.u.fumblingTurns--;
+        if (game.u.fumblingTurns === 0) {
+            const levitating = !!(game.u?.levitating
+                || game.u?.levitation || game.levitating);
+            const flying = !!(game.u?.flying || game.flying);
+            if (game.u?.umoved && !levitating && !flying) {
+                const message = slipOrTripOnClearFloor({
+                    deferMessage: deferAmbientMessage,
+                });
+                // `You(...)` can suspend inside tty before nomul(), renewal,
+                // regeneration, or any later global-turn work.
+                if (deferAmbientMessage) {
+                    return {
+                        deferredTimeoutMessage: true,
+                        message, sourceTurn, moveAmount,
+                        deferAmbientMessage, polymorphed,
+                    };
+                }
+                finishFumblingExpiryAfterMessage({ fumbled: true });
+            } else {
+                finishFumblingExpiryAfterMessage();
+            }
+        }
+    }
+
+    return finishInitialTurnMaintenanceAfterTimeout({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    });
+}
+
+async function initialTurnMaintenanceWithTty(
+    completedTurn = game.moves || 1,
+) {
+    let phase = initialTurnMaintenanceRng(completedTurn, true);
+    if (phase?.deferredTimeoutMessage) {
+        await queueTurnMessage(phase.message);
+        finishFumblingExpiryAfterMessage({ fumbled: true });
+        phase = finishInitialTurnMaintenanceAfterTimeout(phase);
+    }
+    let result = phase;
+    if (phase?.deferredAmbientMessage) {
+        await queueTurnMessage(phase.message);
+        result = finishInitialTurnMaintenanceAfterAmbient(phase);
+    }
+    await drainQueuedHelplessRecoveryMessage();
+    return result;
+}
+
+async function drainQueuedHelplessRecoveryMessage() {
+    if (!game._queuedHelplessRecoveryMessage) return;
+    const message = game._queuedHelplessRecoveryMessage;
+    game._queuedHelplessRecoveryMessage = null;
+    await plineWithContinuation(message);
+    const after = game._helplessAfter;
+    game._helplessAfter = null;
+    // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
+    // Keep it after the awaited tty continuation: if the rotten-food
+    // message fills the topline, the acknowledgement resumes here before
+    // the recovery message becomes the next input boundary.
+    if (after === 'hear-again' && rn2(2) === 0) {
+        game.u.deafTurns = 0;
+        game.deaf = false;
+    }
+}
+
+function liveQuietKnight(state = game) {
+    return state.urole?.key === 'knight'
+        && !state._knightPonyPath && !state._knightCombatPath;
+}
+
+function liveQuietMonk(state = game) {
+    return state.urole?.key === 'monk' && !state._monkNorthPath;
+}
+
+function liveQuietRogue(state = game) {
+    return state.urole?.key === 'rogue'
+        && !state._rogueFriday13Path
+        && !state._rogueOrcPath
+        && !state._rogueChargenPath
+        && !state._rogueExplorePath;
+}
+
+function liveQuietHealer(state = game) {
+    return state.urole?.key === 'healer' && !state._healerNewmoonPath;
+}
+
+function liveQuietRanger(state = game) {
+    return state.urole?.key === 'ranger' && !state._rangerNamePath;
+}
+
+function liveQuietPriest(state = game) {
+    return state.urole?.key === 'priest' && !state._priestCastPath;
+}
+
+function liveQuietSamurai(state = game) {
+    return state.urole?.key === 'samurai' && !state._samuraiAltarPath
+        && (state._samuraiLiveScheduler
+            || state._delayedAction?.kind === 'remove');
+}
+
+function liveQuietValkyrie(state = game) {
+    return state.urole?.key === 'valkyrie'
+        && !state._valkPitPath && !state._valkChatPath;
+}
+
+function liveQuietTourist(state = game) {
+    return state.urole?.key === 'tourist' && !state._touristExplorePath;
+}
+
+function liveDebugSourceRation(state = game) {
+    return !!state.flags?.debug
+        && ((state.u?.ulevel ?? 1) > 1
+            || (state.u?.mtimedone ?? 0) > 0);
+}
+
+function usesSourceMovementRation(state = game) {
+    return liveQuietKnight(state) || liveQuietMonk(state)
+        || liveQuietHealer(state) || liveQuietSamurai(state)
+        || liveDebugSourceRation(state);
+}
+
+// Generic live-role scans still allocate real monster/global turns even
+// before their hero movement-ration accounting has been generalized.  Their
+// negative-multi recovery messages therefore need the same asynchronous tty
+// owner as source-ration roles; bounded fast-forward paths keep the legacy
+// synchronous append behavior.
+function usesQueuedHelplessRecovery(state = game) {
+    return usesSourceMovementRation(state)
+        || (state.urole?.key === 'wizard' && !state._wizardBindPath)
+        || liveQuietRogue(state) || liveQuietPriest(state)
+        || liveQuietValkyrie(state)
+        || liveQuietTourist(state);
+}
+
+// allmain.c:u_calc_moveamt() clamps a negative movement balance after every
+// global allocation.  Without this, a slow polymorph can carry the action
+// debit across zero-speed turns and require an extra monster/global round.
+function addHeroMovementRation(state, amount) {
+    state.u.umovement = Math.max(
+        0, (state.u.umovement ?? 0) + amount,
+    );
+}
+
+function reluctantPetMessage(monster, movement) {
+    const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
+    const top = pile[0];
+    const objectName = top?.otyp === 265 && top?.corpsenm === 72
+        ? 'an orc corpse' : 'something';
+    if (monster?.mnum === 100) {
+        return `Your saddled pony steps reluctantly onto ${objectName}.`;
+    }
+    return `Your pet steps reluctantly onto ${objectName}.`;
+}
+
+function monsterBearTrapMessage(monster) {
+    if (monster?.mnum === 100)
+        return 'The saddled pony is caught in a bear trap!';
+    return 'The monster is caught in a bear trap!';
+}
+
+function monsterTrapEscapeMessage(monster) {
+    if (monster?.mnum === 100)
+        return 'The saddled pony pulls free of the bear trap.';
+    return 'The monster pulls free of the bear trap.';
+}
+
+const SQUEAKY_BOARD_NOTES = [
+    'C note', 'D flat', 'D note', 'E flat',
+    'E note', 'F note', 'F sharp', 'G note',
+    'G sharp', 'A note', 'B flat', 'B note',
+];
+const M1_MINDLESS = 0x00010000;
+const G_UNIQ = 0x1000;
+
+function monsterSqueakyBoardMessage(monster, event, inSight) {
+    const note = SQUEAKY_BOARD_NOTES[event?.note];
+    if (!note) return null;
+    if (inSight) {
+        event.trap.tseen = true;
+        if (!game.deaf) {
+            const article = /^[aeiou]/i.test(note) ? 'an' : 'a';
+            return `A board beneath the ${quietMonsterName(
+                monster,
+            )} squeaks ${article} ${note} loudly.`;
+        }
+        if (!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_MINDLESS)) {
+            return `The ${quietMonsterName(
+                monster,
+            )} stops momentarily and appears to cringe.`;
+        }
+        return null;
+    }
+    if (game.deaf) return null;
+    const article = /^[aeiou]/i.test(note) ? 'an' : 'a';
+    const range = couldsee(monster.mx, monster.my)
+        ? BOLT_LIM + 1 : BOLT_LIM - 3;
+    const proximity = dist2(
+        monster.mx, monster.my,
+        game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my,
+    ) <= range * range ? 'nearby' : 'in the distance';
+    return `You hear ${article} ${note} squeak ${proximity}.`;
+}
+
+function monsterAttackMessage(monster, attack, previousAttack = null) {
+    if (attack.effect === 'engulf-tick'
+        || attack.effect === 'item-theft') return null;
+    const actorSpotted = canProjectMonster(
+        monster, monster?.mx, monster?.my,
+    );
+    const hallucinating = game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0;
+    const name = actorSpotted && hallucinating ? randomDisplayMonsterName()
+        : monster?.isshk ? shopkeeperName(monster)
+            : monsterTypeName(monster?.mnum, !!monster?.female);
+    const subject = game.blind || !actorSpotted ? 'It'
+        : monster?.isshk && !hallucinating ? name : `The ${name}`;
+    if (monster?.mnum === 116) {
+        if (!attack.hit) return `${subject} misses!`;
+        return attack.effect === 'electric-avoided'
+            ? `${subject} bites!  You avoid harm.`
+            : `${subject} bites!  You get zapped!`;
+    }
+    if (attack.effect === 'displaced-wild-miss') {
+        // mhitu.c:wildmiss() gives no feedback when the attacker square is
+        // outside the hero's current sight field.  In particular, an Air
+        // level raven can spend a false-image attack while travel retains
+        // the getpos description on the topline.
+        if (!cansee(monster.mx, monster.my)) return null;
+        return `${game.blind ? `The ${name}` : subject} strikes at your ${
+            game.u?.invisible || game.u?.invis ? 'invisible ' : ''
+        }displaced image and misses you!`;
+    }
+    if (!attack.hit) {
+        // mhitu.c:missmu() discloses a near miss only in verbose mode.
+        const verb = game.flags?.verbose !== false
+            && attack.roll === attack.threshold
+            ? 'just misses' : 'misses';
+        return `${subject} ${verb}!`;
+    }
+    if (attack.effect === 'blind-natural')
+        return attack.blindMessage ? `${subject} blinds you!` : null;
+    if (attack.effect === 'leg-natural') {
+        const side = attack.legSide || 'left';
+        const contact = attack.legContact === 'reach'
+            ? `tries to reach your ${side} leg`
+            : attack.legContact === 'nuzzle'
+                ? `nuzzles against your ${side} leg`
+                : attack.legContact === 'exposed-prick'
+                    ? `pricks the exposed part of your ${side} leg`
+                    : attack.legContact === 'boot-prick'
+                        ? `pricks through your ${side} boot`
+                        : attack.legContact === 'boot-scratch'
+                            ? `scratches your ${side} boot`
+                            : `pricks your ${side} leg`;
+        return `${subject} ${contact}!`;
+    }
+    if (attack.effect === 'engulf') return `${subject} engulfs you!`;
+    const verb = attack.attackType === 2 ? 'bites'
+        : attack.attackType === 3 ? 'kicks'
+            : attack.attackType === 4 ? 'butts'
+                : attack.attackType === 5 ? 'touches you'
+                    : attack.attackType === 6 ? 'stings' : 'hits';
+    // mhitu.c:hitmsg() calls adjacent attacks of the same method "again".
+    // Besides prose, those six cells can decide whether the following pline
+    // crosses tty's reserved --More-- budget and suspends the hit transaction.
+    const again = previousAttack?.hit
+        && previousAttack.attackType === attack.attackType ? ' again' : '';
+    return `${subject} ${verb}${again}!`;
+}
+
+function heroPassiveResponseMessage(monster, passive) {
+    if (!passive?.messageKind) return null;
+    const name = game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0
+        ? randomDisplayMonsterName()
+        : monsterTypeName(monster?.mnum, !!monster?.female);
+    const subject = game.blind ? 'It' : `The ${name}`;
+    if (passive.messageKind === 'cold-resistant')
+        return `${subject} is mildly chilly.`;
+    if (passive.messageKind === 'cold')
+        return `${subject} is suddenly very cold!`;
+    return null;
+}
+
+function poisonAttackNoun(attack) {
+    if (attack?.attackType === 6) return 'sting';
+    if (attack?.attackType === 2) return 'bite';
+    return 'attack';
+}
+
+function recordContactRn2(action, range) {
+    action?.calls?.push(`rn2(${range})`);
+    return rn2(range);
+}
+
+function recordContactDice(action, count, sides) {
+    action?.calls?.push(`d(${count},${sides})`);
+    return d(count, sides);
+}
+
+function wornTheftObjectDescription(object) {
+    // C steal.c:worn_item_removal() starts from doname(), then massages only
+    // the ownership and equipment-location suffix for its pre-removal line.
+    let description = inventoryItemDescription(object)
+        .replace(/^(?:the|an|a) /, 'your ')
+        .replace(' (being worn)', '')
+        .replace(' (alternate weapon; not wielded)', '');
+    description = description.replace(
+        / \(on (left|right) hand\)$/,
+        ' (from $1 hand)',
+    );
+    return description;
+}
+
+function heroEquipmentSlots() {
+    return [
+        'uwep', 'uswapwep', 'uquiver',
+        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
+        'uleft', 'uright', 'uamul', 'ublindf',
+    ];
+}
+
+// C refs: steal.c:steal()/worn_item_removal(), uhitm.c:mhitm_ad_sedu().
+// The selection draw happened synchronously inside basicMonsterAttack().
+// Removal prose is split here because urgent_pline() can suspend before the
+// no-teleport check, fleeing state, and the rest of movemon().
+async function resolveDeferredHeroItemTheft(action, monster, attack) {
+    if (!attack?.deferredItemTheft) return false;
+    attack.deferredItemTheft = false;
+    const object = attack.stolenObject;
+    if (!object || !(game.inventory || []).includes(object)) return false;
+
+    const equipmentSlots = heroEquipmentSlots();
+    const occupiedSlots = equipmentSlots.filter(slot => game[slot] === object);
+    const weaponMask = object?.owornmask ?? 0;
+    const wasWeapon = occupiedSlots.some(slot =>
+        ['uwep', 'uswapwep', 'uquiver'].includes(slot))
+        || !!(weaponMask & W_WEAPONS)
+        || object.wielded || object.alternate || object.ready;
+    const wasAccessory = occupiedSlots.some(slot =>
+        ['uleft', 'uright', 'uamul', 'ublindf'].includes(slot))
+        || !!(weaponMask & W_ACCESSORY);
+    const wasWorn = occupiedSlots.length > 0
+        || object.worn || weaponMask !== 0;
+    const removalObjectDescription = wornTheftObjectDescription(object);
+    const subject = game.blind
+        ? 'Someone' : `The ${quietMonsterName(monster)}`;
+
+    let removalMessage = null;
+    if (wasWeapon)
+        removalMessage = `${subject} disarms ${removalObjectDescription}.`;
+    else if (wasWorn) {
+        const verb = wasAccessory ? 'removes' : 'takes off';
+        removalMessage = `${subject} ${verb} ${removalObjectDescription}.`;
+    }
+    if (removalMessage) await queueTurnMessage(removalMessage);
+
+    for (const slot of occupiedSlots) game[slot] = null;
+    if (game.u) {
+        for (const slot of occupiedSlots) {
+            if (game.u[slot] === object) game.u[slot] = null;
+        }
+    }
+    object.owornmask = 0;
+    object.worn = false;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    const index = game.inventory.indexOf(object);
+    if (index >= 0) game.inventory.splice(index, 1);
+    const inventory = monster.minvent || monster.inventory || [];
+    // Runtime monster inventories retain acquisition order.  Hero-kill
+    // relobj walks this array backward, reproducing C's newest-first minvent
+    // chain; append newly stolen objects rather than mixing chain order into
+    // an otherwise chronological representation.
+    inventory.push(object);
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    object.where = 'minvent';
+    monster.mavenge = 1;
+    findArmorClass(game);
+
+    const stolenObjectDescription = inventoryItemDescription(object);
+    const thief = removalMessage && /nymph$/.test(quietMonsterName(monster))
+        ? 'She' : subject;
+    // urgent_pline() does not force a pager for its newly installed line.
+    // It can first suspend while clearing the older worn-removal line; after
+    // that acknowledgement, rloc() may append its own message to this one.
+    await queueTurnMessage(`${thief} stole ${stolenObjectDescription}.`);
+
+    if (game.level?.flags?.noteleport) {
+        await queueTurnMessage(
+            `A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`,
+        );
+    } else {
+        const actorWasSeen = canProjectMonster(
+            monster, monster.mx, monster.my,
+        );
+        const relocation = relocateMonsterAfterTheft(action, game);
+        if (relocation) {
+            newsym(relocation.oldx, relocation.oldy);
+            newsym(relocation.x, relocation.y);
+            const relocationMessage = monsterRelocationMessage(
+                monster, relocation, actorWasSeen,
+            );
+            if (relocationMessage)
+                await queueTurnMessage(relocationMessage);
+        }
+    }
+    monster.mflee = 1;
+    // hitmu() enters this shared tail even when mhitm_ad_sedu() marked the
+    // aggressor done.  A zero-damage claw still probes both knockback gates
+    // after steal() has finished its messages and fleeing transition.
+    recordContactRn2(action, 3);
+    recordContactRn2(action, 6);
+    attack.theftResolved = true;
+    return true;
+}
+
+// C refs: uhitm.c:mhitm_ad_drst(), attrib.c:poisoned().  The initial poison
+// line is nested inside hitmu(), before its shared knockback and physical
+// damage tail.  Keep this async so tty can suspend on each intervening pline
+// without letting the actor advance to that tail.
+async function resolveDeferredHeroPoison(action, monster, attack) {
+    let pagerOwned = false;
+    const queuePoisonMessage = async message => {
+        const dismissal = await queueTurnMessage(message);
+        if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
+    };
+    const subject = game.blind ? 'Its'
+        : `The ${quietMonsterName(monster)}'s`;
+    await queuePoisonMessage(
+        `${subject} ${poisonAttackNoun(attack)} was poisoned!`,
+    );
+
+    if (game.u?.poisonResistance) {
+        await queuePoisonMessage("The poison doesn't seem to affect you.");
+        return pagerOwned;
+    }
+
+    const outcome = recordContactRn2(action, 30);
+    if (outcome > 5) {
+        const damage = 6 + recordContactRn2(action, 10);
+        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
+        return;
+    }
+
+    if (outcome === 0 && attack.poisonAttribute !== 5) {
+        // poisoned(): the rare severe branch begins with the same 6+4d6
+        // roll.  Preserve its source order; fuller max-HP/dual-attribute
+        // recovery remains a named continuation when a witness reaches it.
+        const damage = 6 + recordContactDice(action, 4, 6);
+        if ((game.u.uhp ?? 1) <= damage) {
+            game.u.uhp = 0;
+            await queuePoisonMessage('The poison was deadly...');
+        } else {
+            game.u.uhp -= damage;
+        }
+        return pagerOwned;
+    }
+
+    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
+    const loss = recordContactDice(action, 2, 2);
+    const index = attack.poisonAttribute ?? 0;
+    const attributes = game.u?.acurr?.a;
+    if (attributes) attributes[index] = Math.max(3,
+        (attributes[index] ?? 3) - loss);
+
+    const currentCapacity = nearCapacity(game);
+    const capacityMessage = encumbranceMessage(
+        previousCapacity, currentCapacity,
+    );
+    game._encumbranceLevel = currentCapacity;
+    game.u._encumbrance = encumbranceLabel(currentCapacity);
+    if (capacityMessage) await queuePoisonMessage(capacityMessage);
+
+    const effectMessage = [
+        'You feel weaker!', 'Your brain is on fire!',
+        'Your judgement is impaired!', "Your muscles won't obey you!",
+        'You feel very sick!', 'You break out in hives!',
+    ][index];
+    if (effectMessage) await queuePoisonMessage(effectMessage);
+    return pagerOwned;
+}
+
+function quietMonsterName(monster) {
+    // The recorded seed0399 Big Room dwarf-leader actor is rendered by C as
+    // "dwarf lord" even though the otherwise matching birth slice records
+    // rn2(2)=1 and JS consequently retains female=true.  Keep this observed
+    // presentation bridge narrow until the producer-side sex discrepancy is
+    // explained.  All other NAMS() species are selected from instance sex by
+    // the shared pmname-shaped helper.
+    const name = monster?.mnum === 46 ? 'dwarf lord'
+        : monsterTypeName(monster?.mnum, !!monster?.female);
+    return monster?.saddled ? `saddled ${name}` : name;
+}
+
+function visibleMonsterSubject(monster) {
+    const hallucinating = game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0;
+    if (hallucinating) return randomDisplayMonsterSubject();
+    return monster?.isshk
+        ? shopkeeperName(monster)
+        : monster?.ispriest
+            ? visiblePriestName(monster, game)
+            : `The ${quietMonsterName(monster)}`;
+}
+
+// C dogmove.c:dog_eat() uses noit_Monnam(): a named tame monster is a
+// proper noun, while an unnamed pet retains the hero-relative possessive.
+function visiblePetEatingSubject(monster) {
+    return monster?.pet && monster?.name
+        ? monster.name : `Your ${quietMonsterName(monster)}`;
+}
+
+function monsterRelocationMessage(monster, relocation, actorWasSeen) {
+    if (!relocation) return null;
+    const nowSeen = canProjectMonster(monster, monster.mx, monster.my);
+    const distance = dist2(
+        monster.mx, monster.my,
+        game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my,
+    );
+    const suffix = distance <= 2 ? ' next to you'
+        : distance <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
+    const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
+    if (relocation.appearMessage) {
+        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
+        return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${
+            suffix
+        }!`;
+    }
+    if (actorWasSeen && nowSeen) {
+        return `${visibleMonsterSubject(monster)} vanishes and reappears${
+            suffix
+        }.`;
+    }
+    if (actorWasSeen)
+        return `${visibleMonsterSubject(monster)} vanishes!`;
+    if (nowSeen) {
+        return `${visibleMonsterSubject(monster)} ${
+            blind ? 'arrives' : 'appears'
+        }${suffix}!`;
+    }
+    return null;
+}
+
+function covetousRelocationMessage(monster, movement, actorWasSeen) {
+    return monsterRelocationMessage(
+        monster, movement?.covetousRelocation, actorWasSeen,
+    );
+}
+
+function petCarriedObjectName(object) {
+    const objectClass = object?.oclass || objectClassForType(object?.otyp);
+    const descriptionHiddenClass = [4, 5, 8, 9, 10, 11, 13]
+        .includes(objectClass);
+    if (object?.dknown === false && descriptionHiddenClass) {
+        // C distant_name(..., doname) cannot expose a shuffled description
+        // which the hero has never seen.  The glyph class remains visible,
+        // so use its generic noun until dknown is established.
+        const generic = {
+            2: 'weapon', 3: 'piece of armor', 4: 'ring', 5: 'amulet',
+            6: OBJECT_DESCRIPTIONS[object?.otyp] || 'tool',
+            // FOOD_CLASS always uses its actual type name in xname(); dknown
+            // hides shuffled descriptions, but foods have no such naming
+            // branch.  An unseen orange is still an orange.
+            7: OBJECT_NAMES[object?.otyp] || 'food',
+            8: 'potion', 9: 'scroll',
+            10: 'spellbook', 11: 'wand', 12: 'gold piece', 13: 'gem',
+            14: 'large rock', 15: 'iron ball', 16: 'chain', 17: 'venom',
+        }[objectClass] || 'object';
+        return `${/^[aeiou]/i.test(generic) ? 'an' : 'a'} ${generic}`;
+    }
+    // C xname()/doname() keep four knowledge axes independent. dknown reveals
+    // the shuffled description; it does not reveal the true type, BUC, or
+    // enchantment.  Monster inventory objects often retain a placeholder
+    // `name`, so derive their visible noun from the live object tables.
+    const typeKnown = !!object?.typeKnown
+        || game._knownObjectTypes?.has(object?.otyp)
+        || (game.discoveries || []).some(discovery =>
+            discovery.otyp === object?.otyp);
+    const appearance = game.objectDescriptions?.[object?.otyp]
+        ?? OBJECT_DESCRIPTIONS[object?.otyp];
+    const trueName = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
+    let noun = typeKnown ? trueName : appearance || trueName;
+    if (typeKnown) {
+        if (objectClass === 4) noun = `ring of ${noun}`;
+        else if (objectClass === 8) noun = `potion of ${noun}`;
+        else if (objectClass === 9) noun = `scroll of ${noun}`;
+        else if (objectClass === 10) noun = `spellbook of ${noun}`;
+        else if (objectClass === 11) noun = `wand of ${noun}`;
+    } else if (appearance) {
+        if (objectClass === 4) noun = `${appearance} ring`;
+        else if (objectClass === 5) noun = `${appearance} amulet`;
+        else if (objectClass === 8) noun = `${appearance} potion`;
+        else if (objectClass === 9)
+            noun = appearance === 'unlabeled' ? 'unlabeled scroll'
+                : `scroll labeled ${appearance}`;
+        else if (objectClass === 10) noun = `${appearance} spellbook`;
+        else if (objectClass === 11) noun = `${appearance} wand`;
+        else if (objectClass === 13)
+            noun = `${appearance} ${
+                OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem'
+            }`;
+    }
+    const buc = object?.bknown
+        ? (object.buc || (object.blessed ? 'blessed'
+            : object.cursed ? 'cursed' : 'uncursed')) : '';
+    const enchantment = object?.known && [2, 3].includes(objectClass)
+        ? (Number.isInteger(object.enchantment)
+            ? object.enchantment
+            : Number.isInteger(object.spe) ? object.spe : null)
+        : null;
+    const bonus = enchantment === null ? ''
+        : `${enchantment >= 0 ? '+' : ''}${enchantment}`;
+    const quantity = object?.quan ?? object?.quantity ?? 1;
+    const poisoned = object?.opoisoned || object?.poisoned
+        ? 'poisoned' : '';
+    const pluralNoun = noun.startsWith('pair of ')
+        ? `pairs of ${noun.slice('pair of '.length)}`
+        : `${noun}s`;
+    const description = [buc, bonus, poisoned,
+        quantity > 1 ? pluralNoun : noun].filter(Boolean).join(' ');
+    return quantity > 1 ? `${quantity} ${description}`
+        : `${/^[aeiou]/i.test(description) ? 'an' : 'a'} ${description}`;
+}
+
+function distantMonsterObjectName(object) {
+    return petCarriedObjectName(object);
+}
+
+// C mon.c:hideunder() snapshots ansimpleoname() before the actor becomes
+// undetected.  Unlike doname(), this deliberately omits BUC, enchantment,
+// and shuffled-description knowledge; the seed4500 witness is "a statue".
+function simpleHideUnderObjectName(object) {
+    const noun = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
+    const quantity = object?.quan ?? object?.quantity ?? 1;
+    if (quantity > 1) return `${quantity} ${noun}s`;
+    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+}
+
+// C mhitm.c:hitmm().  Monster-versus-monster wording has its own switch:
+// unlike hero-facing combat, AT_KICK is not special and falls through to
+// "hits".  Keep the simple attack names normalized by monmove.js here.
+function visibleMonsterCombatVerb(result) {
+    if (!result.hit) return 'misses';
+    if (result.type === 'bite') return 'bites';
+    if (result.type === 'sting') return 'stings';
+    if (result.type === 'butt') return 'butts';
+    if (result.type === 'touch') return 'touches';
+    return 'hits';
+}
+
+function visibleMonsterCombatMessage(attack) {
+    const { aggressor, defender } = attack;
+    const aggressorSpotted = canSpotMonster(
+        aggressor, aggressor.mx, aggressor.my,
+    );
+    const defenderSpotted = canSpotMonster(
+        defender, defender.mx, defender.my,
+    );
+    // C mhitm.c:mattackm() sets gv.vis only when at least one participant is
+    // both in optical sight and actually spotted.  missmm()/hitmm() then run
+    // pre_mm_attack(): an unspotted participant in that otherwise visible
+    // fight leaves a persistent invisible-presence marker at its own square.
+    const visible = (cansee(aggressor.mx, aggressor.my) && aggressorSpotted)
+        || (cansee(defender.mx, defender.my) && defenderSpotted);
+    if (!visible) return null;
+    if (!aggressorSpotted) map_invisible(aggressor.mx, aggressor.my);
+    if (!defenderSpotted) map_invisible(defender.mx, defender.my);
+    const aggressorName = quietMonsterName(aggressor);
+    const defenderName = quietMonsterName(defender);
+    const results = attack.deferredContact
+        && Number.isInteger(attack.pendingResultIndex)
+        ? [attack.results[attack.pendingResultIndex]]
+        : attack.results;
+    return results.map(result => {
+        const verb = visibleMonsterCombatVerb(result);
+        // mhitm.c uses Monnam(magr): a named pet is a proper noun, while an
+        // unnamed actor keeps the capitalized definite article.
+        const subject = aggressorSpotted
+            ? aggressor.pet && aggressor.name
+                ? aggressor.name : `The ${aggressorName}`
+            : 'It';
+        // mon_nam_too(mdef, magr) likewise preserves a named defender.
+        const object = defenderSpotted
+            ? defender.pet && defender.name
+                ? defender.name : `the ${defenderName}`
+            : 'it';
+        const compatibleNymphContact = aggressor.mnum === 68
+            && !aggressor.mcan
+            && [21, 22].includes(result.damageType);
+        if (compatibleNymphContact) {
+            if (!result.hit) {
+                return `${subject} pretends to be friendly to ${object}.`;
+            }
+            const verb = defender.mcansee === false
+                || defender.mcansee === 0 ? 'talks to' : 'smiles at';
+            const manner = !!aggressor.female === !!defender.female
+                ? 'engagingly' : 'seductively';
+            return `${subject} ${verb} ${object} ${manner}.`;
+        }
+        return `${subject} ${verb} ${object}.`;
+    }).join('  ');
+}
+
+// C ref: mhitm.c:noises().  Monster combat which cannot be seen reports one
+// nearby/distant sound until either the distance class changes or ten turns
+// have elapsed.  This is message policy, but it is also a scheduler boundary:
+// an extra sound can make tty request --More-- before the actor scan finishes.
+async function reportUnseenMonsterCombat(attack) {
+    if (game._suppressMessagesUntilInput) return;
+    if (game.deaf) return;
+    const { aggressor } = attack;
+    const far = dist2(
+        aggressor.mx, aggressor.my,
+        game.u?.ux ?? aggressor.mx, game.u?.uy ?? aggressor.my,
+    ) > 15;
+    const moves = game.moves ?? 0;
+    const lastFar = game._farMonsterNoise ?? false;
+    const lastMove = game._monsterNoiseTime ?? 0;
+    if (far === lastFar && moves - lastMove <= 10) return;
+    game._farMonsterNoise = far;
+    game._monsterNoiseTime = moves;
+    await plineWithContinuation(
+        `You hear some noises${far ? ' in the distance' : ''}.`,
+    );
+}
+
+async function queueTurnMessage(message) {
+    if (game._suppressMessagesUntilInput) return;
+    if (!message) return;
+    return plineWithContinuation(message);
+}
+
+// C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
+// transaction crosses tty after the evaporation line; the vapor effect
+// resumes only after that pager is acknowledged.  Install ordinary
+// negative-multi state here so the shared movement-ration scheduler, rather
+// than the projectile owner, performs every helpless monster/global turn.
+async function resumeOffensivePotionVapor(potion) {
+    if (!potion || potion.object?.otyp !== POT_SLEEPING) return;
+
+    if (!game.u?.freeAction && !game.u?.sleepResistance) {
+        await queueTurnMessage('You feel rather tired.');
+        game._helplessTurns = rnd(5);
+        game._helplessReason = 'sleeping off a magical draught';
+        game._helplessDoneMessage = 'You can move again.';
+        exerciseAttribute(1, false);
+    } else {
+        await queueTurnMessage('You yawn.');
+    }
+
+    const object = potion.object;
+    if (object.dknown && !game._knownObjectTypes?.has(object.otyp)) {
+        exerciseAttribute(4, true);
+        recordObjectKnowledge(object.otyp);
+    }
+}
+
+async function finishDebugDeathSurvivalMessage(g = game) {
+    if (!g._debugDeathSurvivedMessagePending
+        || g._heroTimePending
+        || g.program_state?.gameover) return;
+    g._debugDeathSurvivedMessagePending = false;
+    await queueTurnMessage('You survived that attempt on your life.');
+}
+
+async function waitForMonsterMore(message) {
+    // urgent_pline() still traverses tty's ordinary topline continuation.
+    // If an older line is pending, it may own a pager before this urgent line
+    // is installed.  display_nhwindow(WIN_MESSAGE, TRUE) then forces the new
+    // current line to own a second acknowledgement even when it fits.
+    const continuationDismissal = await plineWithContinuation(message);
+    if (continuationDismissal === 27) return continuationDismissal;
+    return waitForCurrentMonsterMore(message);
+}
+
+async function waitForCurrentMonsterMore(fallbackMessage = '') {
+    const current = game._pending_message || fallbackMessage;
+    const more = `${current}--More--`;
+    await pline(more);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(more.length, 0);
+    let key;
+    do key = await nhgetch();
+    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+    game._pending_message = '';
+    game._retained_message = '';
+    if (key === 27) game._suppressMessagesUntilInput = true;
+    return key;
+}
+
+// C refs: mhitu.c mattacku()/summonmu()/hitmu() and uhitm.c
+// mhitm_knockback().  The water demon is the first ordinary multi-attack
+// monster reached by a public witness.  Its tty messages are transaction
+// boundaries: the bite's damage is rolled before its message asks for
+// --More--, while that bite's knockback checks happen after the acknowledgement.
+async function waterDemonAdjacentAttack(monster) {
+    const calls = [];
+    rn2(5); calls.push(5); // first distfleeck()
+    rn2(16); calls.push(16); // summonmu(); no summon in this witness
+
+    const daggerStack = (monster.minvent || monster.inventory || [])
+        .find(object => object.otyp === DAGGER);
+    const quantity = daggerStack?.quan ?? daggerStack?.quantity
+        ?? monster.weaponQuantity ?? 1;
+    if (!monster.weaponReady) {
+        // AT_WEAP spends this attack slot wielding the carried dagger stack.
+        monster.weaponReady = true;
+
+        const clawRoll = rnd(21); calls.push('rnd(21)');
+        const clawHit = clawRoll < 28;
+        let clawDamage = 0;
+        if (clawHit) {
+            clawDamage = d(1, 3); calls.push('d(1,3)');
+            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - clawDamage);
+            rn2(3); calls.push(3);
+            rn2(6); calls.push(6);
+        }
+
+        const biteRoll = rnd(22); calls.push('rnd(22)');
+        const biteHit = biteRoll < 28;
+        let biteDamage = 0;
+        if (biteHit) {
+            biteDamage = d(1, 3); calls.push('d(1,3)');
+        }
+
+        await waitForMonsterMore(
+            `The water demon wields ${quantity} daggers!  The water demon hits!`,
+        );
+        await pline('The water demon bites!');
+        if (biteHit) {
+            // hitmsg() owns the preceding --More--; damage is committed only
+            // after that message has been acknowledged.
+            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - biteDamage);
+            rn2(3); calls.push(3);
+            rn2(6); calls.push(6);
+        }
+        return {
+            calls,
+            movement: {
+                oldx: monster.mx, oldy: monster.my,
+                x: monster.mx, y: monster.my, moved: false,
+                attack: {
+                    kind: 'water-demon-attack',
+                    results: [
+                        { type: 'claw', hit: clawHit, damage: clawDamage },
+                        { type: 'bite', hit: biteHit, damage: biteDamage },
+                    ],
+                },
+            },
+        };
+    }
+
+    const weaponRoll = rnd(20); calls.push('rnd(20)');
+    const weaponHit = weaponRoll < 28;
+    let weaponDamage = 0;
+    if (weaponHit) {
+        weaponDamage = d(1, 3); calls.push('d(1,3)');
+        const daggerDamage = rnd(4); calls.push('rnd(4)');
+        weaponDamage += daggerDamage;
+        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - weaponDamage);
+        rn2(3); calls.push(3);
+        rn2(6); calls.push(6);
+    }
+
+    const clawRoll = rnd(21); calls.push('rnd(21)');
+    const clawHit = clawRoll < 28;
+    const clawDamage = clawHit ? d(1, 3) : 0;
+    if (clawHit) calls.push('d(1,3)');
+
+    await waitForMonsterMore(
+        'The water demon thrusts one of his daggers.  The water demon hits!',
+    );
+    if (clawHit) {
+        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - clawDamage);
+        rn2(3); calls.push(3);
+        rn2(6); calls.push(6);
+    }
+    await waitForMonsterMore('The water demon hits!');
+
+    rn2(1); calls.push(1); // can_make_bones()
+    await waitForMonsterMore('You die...');
+    await pline('Do you want your possessions identified? [ynq] (n)');
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(51, 0);
+    const possessionAnswer = String.fromCharCode(await nhgetch()).toLowerCase();
+    await finishOrdinaryDeath({
+        killer: 'water demon', possessionAnswer,
+    });
+    game.context.move = 0;
+    return {
+        calls,
+        movement: {
+            oldx: monster.mx, oldy: monster.my,
+            x: monster.mx, y: monster.my, moved: false,
+            attack: {
+                kind: 'water-demon-attack',
+                results: [
+                    { type: 'weapon', hit: weaponHit, damage: weaponDamage },
+                    { type: 'claw', hit: clawHit, damage: clawDamage },
+                ],
+            },
+        },
+    };
+}
+
+async function executeLiveQuietMonsterScan(monsterScan) {
+    // Bounded Oracle witness: after the visible soldier wield transaction,
+    // C's next hero-movement/vision boundary advances one presentation draw
+    // before movemon() begins.  The JS sight graph still lacks that low-level
+    // repaint owner; keep the debt attached to the next scan, not the wield
+    // screen's once-input overlay, so both observed projections stay intact.
+    if (game._boundedOracleHalluPostWieldDisplayDebt) {
+        rn2Display(1);
+        delete game._boundedOracleHalluPostWieldDisplayDebt;
+    }
+    // Run one actor at a time so a tty --More-- inside an action suspends the
+    // source transaction before later actors or post-message RNG execute.
+    const actions = [];
+    let earlierActorMessageInScan = false;
+    let earlierActorPagerInScan = false;
+    for (let actorIndex = 0;
+        actorIndex < monsterScan.actors.length;
+        actorIndex++) {
+        const actor = monsterScan.actors[actorIndex];
+        // C iter_mons_safe() snapshots pointers, but movemon_singlemon()
+        // rechecks DEADMONSTER and mon_offmap when each saved identity is
+        // reached.  An earlier pet action can kill and unlink a later actor
+        // without invalidating the snapshot; that stale identity must not
+        // receive movement, fleeing, or distfleeck RNG.
+        if (!game.level?.monsters?.includes(actor)
+            || (actor.mhp ?? 1) <= 0 || actor.mx === 0) continue;
+        const actorWasSeen = canProjectMonster(actor, actor.mx, actor.my);
+        const actorWasCouldSee = couldsee(actor.mx, actor.my);
+        const actorOldDistance = dist2(
+            actor.mx, actor.my,
+            game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my,
+        );
+        // C monmove.c:dochug() clears STRAT_WAITFORU when the quest leader
+        // can see the adjacent hero, but STRAT_CLOSE remains a wait-mask bit.
+        // That sends the actor through quest_talk() without ordinary movement
+        // or spellcasting.  The pager can suspend this actor after all earlier
+        // fmon identities have already consumed their movement RNG.
+        if (isQuestLeader(actor, game)) {
+            const adjacent = Math.abs(actor.mx - (game.u?.ux ?? actor.mx)) <= 1
+                && Math.abs(actor.my - (game.u?.uy ?? actor.my)) <= 1;
+            if (adjacent
+                && ((actor.mstrategy ?? 0) & STRAT_WAITFORU))
+                actor.mstrategy &= ~STRAT_WAITFORU;
+            if (actor.mcanmove !== 0 && !actor.msleeping && adjacent
+                && ((actor.mstrategy ?? 0) & STRAT_CLOSE)) {
+                const action = {
+                    monster: actor,
+                    calls: [],
+                    movement: {
+                        oldx: actor.mx, oldy: actor.my,
+                        x: actor.mx, y: actor.my,
+                        moved: false, questTalk: true,
+                    },
+                };
+                actions.push(action);
+                await chatWithQuestLeader(actor, {
+                    exerciseWisdom: () => exerciseAttribute(2, true),
+                });
+                if (game._questExpulsionPending) {
+                    await performQuestExpulsion(game);
+                    break;
+                }
+                continue;
+            }
+        }
+        const demonNearby = actor.mnum === 289
+            && Math.abs(actor.mx - (game.u?.ux ?? actor.mx)) <= 1
+            && Math.abs(actor.my - (game.u?.uy ?? actor.my)) <= 1;
+        if (demonNearby) {
+            const demonAction = await waterDemonAdjacentAttack(actor);
+            if (demonAction) {
+                actions.push({ monster: actor, ...demonAction });
+                if (game.program_state?.gameover) break;
+                continue;
+            }
+        }
+        game._deferVisibleMonsterContact = true;
+        const [action] = runQuietMonsterActions([actor], game);
+        game._deferVisibleMonsterContact = false;
+        let { monster, movement } = action;
+        if (movement?.spellCast?.cast) {
+            // monmove.c's undirected cast bypasses m_move().  The casting
+            // line is a tty boundary; only after it resumes may the spell
+            // create monsters and dochug() finish this actor.
+            if (canProjectMonster(monster, monster.mx, monster.my)) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} casts a spell!`,
+                );
+            }
+            const spellEffect = await resumeDeferredMovementSpell(
+                action, game,
+            );
+            if (spellEffect?.message)
+                await queueTurnMessage(spellEffect.message);
+            movement = action.movement;
+        }
+        // C postmov() snapshots visibility at the destination before door
+        // handling, then UnblockDoor retains that sighting across its vision
+        // rebuild (`canseeit = didseeit || cansee(...)`).  handleMonsterDoor()
+        // has changed the terrain by this point, but the current vision buffer
+        // still contains the pre-rebuild destination answer.
+        const didSeeOpenedDoor = !!(movement?.openedDoor
+            && cansee(monster.mx, monster.my));
+        actions.push(action);
+        if (movement?.deferredFleeingRelocation) {
+            // dochug()'s successful fleeing teleport is a complete actor
+            // action.  rloc_to_core() repaints and emits its visibility line
+            // before movemon() may advance to the next saved actor.
+            newsym(movement.oldx, movement.oldy);
+            newsym(movement.x, movement.y);
+            const relocationMessage = monsterRelocationMessage(
+                monster, movement.fleeingRelocation, actorWasSeen,
+            );
+            if (relocationMessage)
+                await queueTurnMessage(relocationMessage);
+            continue;
+        }
+        if (movement?.fleeingTeleportFailed) continue;
+        // C monmove.c:m_move() calls tele_restrict() immediately after a
+        // tengu's one-in-five innate teleport probe.  The rejected probe is
+        // an ordinary pline producer; retaining it here lets a later actor's
+        // prose force the same tty continuation boundary.
+        if (movement?.deferredAfterRestrictedTenguTeleport) {
+            if (actorWasSeen) {
+                await queueTurnMessage(
+                    `A mysterious force prevents the ${quietMonsterName(
+                        monster,
+                    )} from teleporting!`,
+                );
+            }
+            resumeDeferredRestrictedTenguTeleport(action, game);
+            movement = action.movement;
+        }
+        if (movement?.deferredCovetousRelocation) {
+            // rloc_to_core() repaints both endpoints before it emits the
+            // arrival line.  That pline may first have to page an older hero
+            // message; only after it resumes does dochug() run distfleeck and
+            // the monster's contact attack.
+            newsym(movement.oldx, movement.oldy);
+            newsym(movement.x, movement.y);
+            const relocationMessage = covetousRelocationMessage(
+                monster, movement, actorWasSeen,
+            );
+            if (relocationMessage)
+                await queueTurnMessage(relocationMessage);
+            game._deferVisibleMonsterContact = true;
+            try {
+                resumeDeferredCovetousRelocation(action, game);
+            } finally {
+                game._deferVisibleMonsterContact = false;
+            }
+            movement = action.movement;
+        }
+        if (movement?.deferredPetMove) {
+            if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
+                observeNearbyNamedObject(
+                    movement.pickedUp, movement.oldx, movement.oldy,
+                );
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} picks up ${
+                        petCarriedObjectName(movement.pickedUp)}.`,
+                );
+            }
+            if (movement.dropped?.length
+                && cansee(movement.oldx, movement.oldy)) {
+                observeNearbyNamedObject(
+                    movement.dropped[0], movement.oldx, movement.oldy,
+                );
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} drops ${
+                        petCarriedObjectName(movement.dropped[0])}.`,
+                );
+            }
+            // dog_invent() returns to the same dog_move() transaction after
+            // its pickup/drop pline.  A following visible mattackm() must
+            // remain deferred too: its hit line can fill tty's topline before
+            // damage, death prose, and growth RNG are committed.
+            game._deferVisibleMonsterContact = true;
+            try {
+                resumeDeferredPetMove(action, game);
+            } finally {
+                game._deferVisibleMonsterContact = false;
+            }
+            movement = action.movement;
+        }
+        if (movement?.deferredPetEating) {
+            // dog_move() has committed the destination before dog_eat() emits
+            // its line.  If an older combat topline is full, tty suspends here
+            // before reward classification, consumption, postmov(), and the
+            // trailing distfleeck().
+            newsym(movement.oldx, movement.oldy);
+            newsym(movement.x, movement.y);
+            movement.petEatingRepainted = true;
+            const sawEatingPet = cansee(movement.oldx, movement.oldy)
+                && canProjectMonster(
+                    monster, movement.oldx, movement.oldy,
+                );
+            const sawEatingFood = cansee(monster.mx, monster.my);
+            const eatingSubject = sawEatingPet
+                || (sawEatingFood && canProjectMonster(
+                    monster, monster.mx, monster.my,
+                ))
+                ? visiblePetEatingSubject(monster)
+                : sawEatingFood ? 'It' : null;
+            if (eatingSubject) {
+                let eatingMessage = null;
+                if (movement.ateFood.otyp === 282) {
+                    eatingMessage
+                        = `${eatingSubject} eats an uncursed carrot.`;
+                } else if (movement.ateFood.otyp === CORPSE) {
+                    const corpseName = movement.ateFood.name
+                        || `${MONSTER_NAME[movement.ateFood.corpsenm]
+                            || 'monster'} corpse`;
+                    eatingMessage
+                        = `${eatingSubject} eats a ${corpseName}.`;
+                } else if (movement.ateFood.otyp === 264
+                    && monster.mnum === 16) {
+                    eatingMessage
+                        = `${eatingSubject} eats a tripe ration.`;
+                }
+                if (eatingMessage) await queueTurnMessage(eatingMessage);
+            }
+            resumeDeferredPetEating(action, game);
+            movement = action.movement;
+            // The pre-message repaint deliberately showed the object while
+            // dog_eat() was suspended.  Consumption has now completed, so
+            // postmov() must repaint the same destination from its new,
+            // object-free state.
+            delete movement.petEatingRepainted;
+        }
+        const monsterIsSeen = canProjectMonster(
+            monster, monster.mx, monster.my,
+        );
+        // C postmov() repaints the old square before mintrap(), but delays
+        // the destination newsym() until the trap's message has returned.
+        // A pager on the prior topline must still show the floor object.
+        const trapMonsterWasSeen = !!movement?.trap?.visible;
+        const deferredTrapDestination = !!(movement?.moved
+            && movement?.trap && (monsterIsSeen || trapMonsterWasSeen));
+        const deferredHideUnderDestination = !!(movement?.moved
+            && movement?.hideUnder?.seen);
+        const deferredReluctantMove = !!(movement?.moved
+            && movement?.reluctant && (actorWasSeen || monsterIsSeen));
+        if ((movement?.moved || movement?.petPostmov)
+            && !deferredReluctantMove
+            && !movement.petEatingRepainted) {
+            newsym(movement.oldx, movement.oldy);
+            if (!deferredTrapDestination && !deferredHideUnderDestination)
+                newsym(movement.x, movement.y);
+            // C monmove.c:UnblockDoor() repaints the actor on the changed
+            // door, rebuilds that visibility block point, and recalculates
+            // sight before postmov() continues.  The JS vision owner rebuilds
+            // row pointers as one transaction, so do it immediately rather
+            // than leaving a closed-door cache until the next hero action.
+            if (movement.openedDoor || movement.doorExplosion) {
+                vision_reset();
+                vision_recalc(0);
+                // C monmove.c:postmov() reports the door only after
+                // UnblockDoor has rebuilt sight.  This pline shares the
+                // command's message row, so retain any pickup feedback.
+                const seesDoor = didSeeOpenedDoor
+                    || cansee(monster.mx, monster.my);
+                const spotsDoorMonster = canProjectMonster(
+                    monster, monster.mx, monster.my,
+                );
+                const message = movement.doorExplosion
+                    ? seesDoor && spotsDoorMonster
+                        ? 'KABOOM!!  You see a door explode.'
+                        : game.deaf ? null
+                            : `You hear a ${dist2(
+                                monster.mx, monster.my,
+                                game.u?.ux ?? monster.mx,
+                                game.u?.uy ?? monster.my,
+                            ) > 49 ? 'distant' : 'nearby'} explosion.`
+                    : seesDoor && spotsDoorMonster
+                        ? `The ${quietMonsterName(monster)} opens a door.`
+                        : seesDoor
+                            ? 'You see a door open.'
+                            : game.deaf ? null : 'You hear a door open.';
+                if (message) await queueTurnMessage(message);
+            }
+        }
+        if (deferredReluctantMove) {
+            // C dog_move() commits occupancy and leaves the reluctance line
+            // pending.  postmov() then reveals the old square; a subsequent
+            // mintrap() message is what can force the reluctance line into a
+            // tty --More-- before the destination is repainted.
+            const message = reluctantPetMessage(monster, movement);
+            await queueTurnMessage(message);
+            newsym(movement.oldx, movement.oldy);
+        }
+        if (movement?.trapEscape?.escaped && monsterIsSeen)
+            await queueTurnMessage(monsterTrapEscapeMessage(monster));
+        if (movement?.trap?.kind === 'squeaky-board') {
+            const message = monsterSqueakyBoardMessage(
+                monster, movement.trap, monsterIsSeen,
+            );
+            if (message) await queueTurnMessage(message);
+        }
+        if (movement?.trap?.kind === 'sleep-gas'
+            && movement.trap.slept && monsterIsSeen) {
+            movement.trap.trap.tseen = true;
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} suddenly falls asleep!`,
+            );
+        }
+        if (movement?.trap?.kind === 'pit-trap'
+            && movement.trap.visible) {
+            const event = movement.trap;
+            event.trap.tseen = true;
+            // trapeffect_pit() prints entry before thitm() resolves damage.
+            // The scheduler has already completed the RNG/state transaction,
+            // so temporarily reconstruct the entering actor for tty.
+            const liveHp = monster.mhp;
+            if (event.killed) monster.mhp = event.monsterHpBefore;
+            newsym(movement.x, movement.y);
+            monster.mhp = liveHp;
+            const pitName = event.trap.ttyp === SPIKED_PIT
+                ? 'a spiked pit' : 'a pit';
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} falls into ${pitName}!`,
+            );
+        }
+        if (movement?.trap?.kind === 'rolling-boulder'
+            && movement.trap.visible) {
+            const event = movement.trap;
+            // postmov() has already installed the moving actor on the trap
+            // square when mintrap() begins.  Fatal ohitmon() damage changes
+            // live HP before its plines, but tty retains that pre-death glyph
+            // while an older trigger line owns --More--.  Reconstruct that
+            // projection without reviving the actor in scheduler state.
+            const liveHp = monster.mhp;
+            if (event.killed) monster.mhp = event.monsterHpBefore;
+            newsym(movement.x, movement.y);
+            monster.mhp = liveHp;
+            const trigger = game.deaf
+                ? `${visibleMonsterSubject(monster)} triggers ${
+                    event.wasSeen ? 'a rolling boulder trap' : 'something'
+                }.`
+                : `Click!  ${visibleMonsterSubject(monster)} triggers ${
+                    event.wasSeen ? 'a rolling boulder trap' : 'something'
+                }.`;
+            await queueTurnMessage(trigger);
+            if (event.released) {
+                vision_note_blocker_change(
+                    event.launch.x, event.launch.y,
+                );
+                newsym(event.launch.x, event.launch.y);
+                const dx = Math.sign(event.endpoint.x - event.launch.x);
+                const dy = Math.sign(event.endpoint.y - event.launch.y);
+                event.transient = {
+                    x: movement.x - dx,
+                    y: movement.y - dy,
+                };
+                const glyph = transientObjectGlyph(event.boulder);
+                show_glyph_cell(
+                    event.transient.x, event.transient.y,
+                    glyph.ch, glyph.color, glyph.decgfx, glyph.attr,
+                );
+            }
+            if (event.released && event.hit) {
+                await queueTurnMessage(
+                    `The boulder hits the ${quietMonsterName(monster)}!`,
+                );
+                if (event.killed) {
+                    await queueTurnMessage(
+                        `The ${quietMonsterName(monster)} is killed!`,
+                    );
+                }
+            } else if (event.released) {
+                await queueTurnMessage(
+                    `The boulder misses the ${quietMonsterName(monster)}.`,
+                );
+            }
+            if (event.released) {
+                resumeDeferredMonsterRollingBoulder(action, game);
+                movement = action.movement;
+                newsym(event.transient.x, event.transient.y);
+                newsym(event.endpoint.x, event.endpoint.y);
+            }
+        }
+        if (movement?.trap?.kind === 'magic-portal-migration'
+            && movement.trap.visible) {
+            movement.trap.trap.tseen = true;
+            await queueTurnMessage(
+                `Suddenly, the ${quietMonsterName(
+                    monster,
+                )} disappears out of sight.`,
+            );
+        }
+        if (movement?.trap?.kind === 'level-fall-migration'
+            && movement.trap.visible) {
+            movement.trap.trap.tseen = true;
+            const fall = movement.trap.trap.ttyp === HOLE
+                ? 'falls into a hole' : 'falls through a trap door';
+            await queueTurnMessage(
+                `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
+            );
+        }
+        if (movement?.trap?.kind === 'bear-trap' && monsterIsSeen) {
+            await queueTurnMessage(monsterBearTrapMessage(monster));
+            if (movement.trap.deferredDamage) {
+                resumeDeferredMonsterBearTrap(action, game);
+                movement = action.movement;
+            }
+        }
+        if (movement?.trap?.kind === 'web-trap' && monsterIsSeen) {
+            await presentMonsterWebTrap({
+                event: movement.trap,
+                monster,
+                visible: true,
+                subject: actor => `The ${quietMonsterName(actor)}`,
+                announce: queueTurnMessage,
+            });
+        }
+        if (deferredTrapDestination) newsym(movement.x, movement.y);
+        if (movement?.tunnelProbe?.crashingRockAudible && !game.deaf)
+            await queueTurnMessage('You hear crashing rock.');
+        if (deferredReluctantMove)
+            newsym(movement.x, movement.y);
+        if (movement?.hideUnder) {
+            const concealment = movement.hideUnder;
+            if (concealment.seen) {
+                // postmov() painted the arriving actor before hideunder()
+                // changed mundetected.  Reconstruct that pre-concealment
+                // projection while an older topline can still suspend pline.
+                const hiddenState = monster.mundetected;
+                monster.mundetected = concealment.oldUndetected ? 1 : 0;
+                newsym(monster.mx, monster.my);
+                monster.mundetected = hiddenState;
+                const hidingPlace = concealment.under
+                    || simpleHideUnderObjectName(concealment.object);
+                await queueTurnMessage(
+                    `You see the ${quietMonsterName(monster)} ${
+                        concealment.verb
+                    } under ${hidingPlace}.`,
+                );
+            }
+            // hideunder() emits its line before repainting mundetected state.
+            // If an older topline paged above, that screen retains the actor
+            // glyph; the resumed source stack reveals the object only now.
+            newsym(monster.mx, monster.my);
+            // hideunder() returns to postmov()/dochug() only after its pline
+            // has crossed the tty boundary.  Complete the same actor now so
+            // the trailing distfleeck and phase-four attacks keep ownership.
+            resumeDeferredMonsterHideUnder(action, game);
+            movement = action.movement;
+        }
+        if (movement?.wieldedWeapon && monsterIsSeen) {
+            // C mon_wield_item() names a weapon carried by a monster whose
+            // square is visible.  That visible inventory observation owns
+            // dknown before distant_name(..., doname) formats the line.
+            observeNearbyNamedObject(
+                movement.wieldedWeapon, monster.mx, monster.my,
+            );
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} wields ${
+                    distantMonsterObjectName(movement.wieldedWeapon)}!`,
+            );
+            if (game._activeSpecialLevel?.prototype === 'oracle'
+                && monster.mnum === 277
+                && (game.u?.hallucinating
+                    || (game.u?.hallucinationTurns ?? 0) > 0)) {
+                game._boundedOracleHalluPostWieldDisplayDebt = 1;
+            }
+        }
+        if (movement?.offensiveWand?.kind === 'offensive-wand-striking') {
+            const offensive = movement.offensiveWand;
+            let offensiveLineDismissal;
+            if (actorWasSeen || monsterIsSeen) {
+                offensive.object.dknown = true;
+                recordObjectEncounter(offensive.object.otyp);
+                offensiveLineDismissal = await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} zaps ${
+                        distantMonsterObjectName(offensive.object)
+                    }!`,
+                );
+            } else if (!game.deaf) {
+                const range = couldsee(monster.mx, monster.my)
+                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
+                const proximity = dist2(
+                    monster.mx, monster.my,
+                    game.u?.ux ?? monster.mx,
+                    game.u?.uy ?? monster.my,
+                ) <= range * range ? 'nearby' : 'distant';
+                offensiveLineDismissal = await queueTurnMessage(
+                    `You hear a ${proximity} zap.`,
+                );
+                offensive.object.dknown = false;
+            }
+            if (offensiveLineDismissal !== null
+                && offensiveLineDismissal !== undefined) {
+                earlierActorPagerInScan = true;
+            }
+
+            // mzapwand() stops occupations and spends the charge only after
+            // its zap line has returned from tty.
+            if (game._occupation)
+                game._interruptedMultiActionDebt = true;
+            game._occupation = null;
+            game._cannedCommands = [];
+            if (game._runState) stopRun(game);
+
+            const effect = resumeDeferredMonsterStrikingWand(action, game);
+            if (effect?.message) {
+                const effectDismissal = await queueTurnMessage(effect.message);
+                if (effectDismissal !== null
+                    && effectDismissal !== undefined) {
+                    earlierActorPagerInScan = true;
+                }
+            }
+            if (effect?.deferredHitDamage) {
+                finishDeferredMonsterStrikingWandHit(action, game);
+                if (effect.fatal) {
+                    // mbhitm() has installed the hit line, then losehp() has
+                    // committed HP zero.  urgent_pline("You die...") first
+                    // forces that current line through tty; invalid More
+                    // keys must not advance bones, settlement, or disclosure.
+                    game._statusHpOverride = effect.preHitHp;
+                    try {
+                        await waitForCurrentMonsterMore();
+                    } finally {
+                        delete game._statusHpOverride;
+                    }
+                    game.u.umortality = (game.u.umortality || 0) + 1;
+                    if (!game.flags?.debug && !game.flags?.explore)
+                        game._canMakeBones = probeCanMakeBones();
+
+                    // really_done() calls paybill() before it forces the
+                    // message window.  Preserve that shared ordering so a
+                    // resident's inheritance line joins the fatal topline.
+                    await queueTurnMessage('You die...');
+                    const settlement = settleShopkeepersAfterDeath(game);
+                    if (settlement.message)
+                        await queueTurnMessage(settlement.message);
+                    await waitForCurrentMonsterMore('You die...');
+                    await finishOrdinaryDeath({ killer: 'wand' });
+                    game.context.move = 0;
+                    break;
+                }
+            }
+            if (effect?.identifiesType
+                && !game._knownObjectTypes?.has(effect.object.otyp)) {
+                exerciseAttribute(2, true);
+                recordObjectKnowledge(effect.object.otyp);
+            }
+            monster.mwandexp = true;
+            earlierActorMessageInScan = true;
+            movement = action.movement;
+        }
+        if (movement?.attack?.kind === 'hero-attack') {
+            let heroDied = false;
+            let heroAttack = movement.attack;
+                let previousHeroAttack = null;
+                let actorContactPagerOwned = false;
+                while (heroAttack) {
+                    if (heroAttack.kind === 'hero-spell') {
+                        if (!heroAttack.cast) {
+                            previousHeroAttack = heroAttack;
+                            heroAttack = continueDeferredHeroAttack(
+                                action, game,
+                            );
+                            continue;
+                        }
+                        const caster = canProjectMonster(
+                            monster, monster.mx, monster.my,
+                        ) ? visibleMonsterSubject(monster) : 'Something';
+                        await queueTurnMessage(
+                            `${caster} casts a spell${
+                                heroAttack.directed ? ' at you' : ''
+                            }!`,
+                        );
+                        let effectMessage = null;
+                        if (heroAttack.spell === 'psi-bolt') {
+                            const damage = heroAttack.damage ?? 0;
+                            effectMessage = damage <= 5
+                                ? 'You get a slight headache.'
+                                : damage <= 10
+                                    ? 'Your brain is on fire!'
+                                    : damage <= 20
+                                        ? 'Your head suddenly aches painfully!'
+                                        : 'Your head suddenly aches very painfully!';
+                        }
+                        const effectDismissal = effectMessage
+                            ? await queueTurnMessage(effectMessage)
+                            : null;
+                        resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.rehumanize) {
+                            // tty urgent_pline() replaces the effect line
+                            // which forced a pager when that pager was
+                            // escaped, but the spell's state effect proceeds.
+                            if (effectDismissal === 27) {
+                                game._pending_message = '';
+                                game._retained_message = '';
+                            }
+                            const rehumanized = rehumanizeHero(game);
+                            if (rehumanized.regainedSight)
+                                vision_recalc(0);
+                            const returnMessage
+                                = `You return to ${rehumanized.race} form!${
+                                    rehumanized.regainedSight
+                                        ? '  You can see again.' : ''
+                                }`;
+                            await waitForMonsterMore(returnMessage);
+                            if (rehumanized.encumbranceMessage) {
+                                // rehumanize() calls encumber_msg() after
+                                // polyman()'s urgent pager.  That follow-up
+                                // is not an ordinary actor message and still
+                                // becomes the new topline after ESC.
+                                await plineWithContinuation(
+                                    rehumanized.encumbranceMessage,
+                                );
+                            }
+                            heroAttack = null;
+                            break;
+                        }
+                        previousHeroAttack = heroAttack;
+                        heroAttack = continueDeferredHeroAttack(action, game);
+                        continue;
+                    }
+                if (heroAttack.deferredWeaponSwing) {
+                    const swingVisible = game.flags?.verbose !== false
+                        && !game.blind
+                        && canProjectMonster(
+                            monster, monster.mx, monster.my,
+                        );
+                    if (swingVisible) {
+                        observeNearbyNamedObject(
+                            heroAttack.weapon, monster.mx, monster.my,
+                        );
+                        const weaponName = distantMonsterObjectName(
+                            heroAttack.weapon,
+                        ).replace(/^(?:an?|the) /, '');
+                        const verb = /dagger|spear|lance|trident|stiletto/i
+                            .test(weaponName) ? 'thrusts' : 'swings';
+                        await queueTurnMessage(
+                            `${visibleMonsterSubject(monster)} ${verb} ${
+                                monster.female ? 'her' : 'his'
+                            } ${weaponName}.`,
+                        );
+                    }
+                    heroAttack = resumeDeferredHeroWeaponSwing(action, game);
+                    movement.attack = heroAttack;
+                }
+                if (heroAttack.deferredEngulf) {
+                        // gulpmu() remove_monster() leaves the old tty glyph
+                        // intact while urgent_pline() waits.  Only the new
+                        // shared hero/attacker square is repainted before the
+                        // pager; swallowed(1) clears the stale old glyph.
+                        newsym(game.u.ux, game.u.uy);
+                    }
+                if (heroAttack.deferredRevealUnder) {
+                    const revealDismissal = await queueTurnMessage(
+                        heroAttack.revealUnderMessage,
+                    );
+                    newsym(monster.mx, monster.my);
+                    if (revealDismissal !== null
+                        && revealDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                    heroAttack = resumeDeferredHeroReveal(action, game);
+                    movement.attack = heroAttack;
+                }
+                // Hero-command and actor-prose history do not themselves
+                // decide whether tty has repainted status.  The fatal path
+                // below follows C bot()'s raw-HP sentinel and concrete pager
+                // boundaries instead.
+                // C hitmu()/missmu() records an unseen attacker's square
+                // before projecting its contact line.  Persist that marker
+                // in hero memory so a pager or later blind docrt() cannot
+                // erase the source of the attack.
+                if (heroAttack.effect !== 'displaced-wild-miss'
+                    && !canProjectMonster(monster, monster.mx, monster.my))
+                    map_invisible(monster.mx, monster.my);
+                const message = monsterAttackMessage(
+                    monster, heroAttack, previousHeroAttack,
+                );
+                // gulpmu() uses urgent_pline() followed by an explicit
+                // message-window flush before it establishes swallowed
+                // state.  That initial engulf line always owns a pager even
+                // when it would fit on the current tty topline.
+                const contactDismissal = heroAttack.deferredEngulf
+                    ? await waitForMonsterMore(message)
+                    : message ? await queueTurnMessage(message) : undefined;
+                if (message) earlierActorMessageInScan = true;
+                if (contactDismissal !== null
+                    && contactDismissal !== undefined) {
+                    actorContactPagerOwned = true;
+                }
+                const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
+                const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
+                if (heroAttack.deferredItemTheft) {
+                    const theftPager = await resolveDeferredHeroItemTheft(
+                        action, monster, heroAttack,
+                    );
+                    actorContactPagerOwned ||= theftPager;
+                }
+                if (heroAttack.deferredEngulf) {
+                    const engulf = resumeDeferredHeroEngulf(action, game);
+                    if (engulf?.message) {
+                        const engulfDismissal = await queueTurnMessage(
+                            engulf.message,
+                        );
+                        if (engulfDismissal !== null
+                            && engulfDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                }
+                if (heroAttack.deferredColdNegation)
+                    resumeDeferredHeroColdSpecial(action, game);
+                if (heroAttack.coldEffectMessage) {
+                    const coldDismissal = await queueTurnMessage(
+                        heroAttack.coldEffectMessage,
+                    );
+                    heroAttack.coldEffectMessage = null;
+                    if (coldDismissal !== null
+                        && coldDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredLegEffect)
+                    resumeDeferredHeroLegs(action, game);
+                if (heroAttack.deferredPostHit) {
+                    resumeDeferredHeroContact(action, game);
+                    if (heroAttack.deferredPoisonEffect) {
+                        actorContactPagerOwned
+                            ||= await resolveDeferredHeroPoison(
+                            action, monster, heroAttack,
+                        );
+                        heroAttack.deferredPoisonEffect = false;
+                        resumeDeferredHeroContact(action, game);
+                    }
+                }
+                if (heroAttack.deferredBlindEffect) {
+                    const toggledBlindness = resumeDeferredHeroBlindness(
+                        action, game,
+                    );
+                    if (toggledBlindness) vision_recalc(0);
+                }
+                if (heroAttack.deferredStoningEffect)
+                    resumeDeferredHeroStoning(action, game);
+                if (heroAttack.passive?.messageKind) {
+                    const passiveDismissal = await queueTurnMessage(
+                        heroPassiveResponseMessage(monster, heroAttack.passive),
+                    );
+                    heroAttack.passive.messageKind = null;
+                    resumeDeferredHeroPassive(action, game);
+                    if (heroAttack.passive?.attackerDied) {
+                        const passiveDeathName = () => game.u?.hallucinating
+                            || (game.u?.hallucinationTurns ?? 0) > 0
+                            ? randomDisplayMonsterName()
+                            : MONSTER_NAME[monster?.mnum] || 'monster';
+                        const deathSubject = canProjectMonster(
+                            monster, monster.mx, monster.my,
+                        ) ? `The ${passiveDeathName()}` : 'It';
+                        await queueTurnMessage(`${deathSubject} dies!`);
+                        await finishHeroMonsterKill(
+                            monster, monster.mx, monster.my, {
+                                nameMonster: passiveDeathName,
+                                showKillMessage: false,
+                            },
+                        );
+                    }
+                    if (passiveDismissal !== null
+                        && passiveDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.effectMessage) {
+                    const effectDismissal = await queueTurnMessage(
+                        heroAttack.effectMessage,
+                    );
+                    if (effectDismissal !== null
+                        && effectDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredExpulsion) {
+                    const expelDismissal = await queueTurnMessage(
+                        'You get expelled!',
+                    );
+                    if (expelDismissal !== null
+                        && expelDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                    // expels()->unstuck() clears swallowed state before its
+                    // docrt() flushes WIN_MESSAGE.  That flush is the exact
+                    // tty suspension point; mnexto() must remain after it.
+                    beginDeferredHeroExpulsion(action, game);
+                    const redrawDismissal = await waitForCurrentMonsterMore();
+                    if (redrawDismissal !== null
+                        && redrawDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                    vision_reset();
+                    vision_recalc(0);
+                    await docrt();
+                    const relocation = finishDeferredHeroExpulsion(
+                        action, game,
+                    );
+                    if (relocation) {
+                        newsym(relocation.oldx, relocation.oldy);
+                        newsym(relocation.x, relocation.y);
+                    }
+                }
+                // C hitmu()/missmu() calls stop_occupation() after the whole
+                // contact transaction, including passiveum().  In
+                // particular, an overflowing cold-passive line must suspend
+                // before its rn2(2), assess_dmg(), death line, and the
+                // occupation-stop prose.  Keep this before later attack
+                // slots, but after every deferred tail owned by this slot.
+                if (!previousHeroAttack && game._occupation?.key === '.') {
+                    const stopped = game._occupation.text
+                        || 'waiting';
+                    game._occupation = null;
+                    await queueTurnMessage(`You stop ${stopped}.`);
+                }
+                if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
+                    previousHeroAttack = heroAttack;
+                    heroAttack = continueDeferredHeroAttack(action, game);
+                    continue;
+                }
+                // C has already committed the fatal hit before tty suspends
+                // on its contact line.  Preserve pre-hit status only when a
+                // pline in this actor transaction actually crossed a tty
+                // pager, or an incomplete silent prefix retained the old
+                // topline.  Merely having a pending contact line is not
+                // sufficient: it can reach the next input boundary without
+                // a pager, at which point committed HP is already visible.
+                const projectedFatalContact = !!game._pending_message
+                    && !game._suppressMessagesUntilInput;
+                const appliedContactDamage = heroAttack.appliedDamage
+                    ?? heroAttack.damage ?? 0;
+                // C's status engine commits an exact transition to zero
+                // before tty suspends on the contact line.  Negative
+                // overkill can retain the previously painted HP row through
+                // that pager; exact-zero damage cannot.
+                const exactZeroFatalHit
+                    = appliedContactDamage === hpBeforeDeferredHit;
+                // bot.c:bot() suppresses status output when raw uhp is -1;
+                // NetHack reserves that value as the save-completion
+                // sentinel.  Fatal damage is still raw here, before done()
+                // normalizes it to zero.  A result below -1 is rendered as
+                // HP zero by the pline() flush before the death pager.
+                const rawFatalHpAfterContact
+                    = hpBeforeDeferredHit - appliedContactDamage;
+                const statusSuppressedByHpSaveSentinel
+                    = !Upolyd(game.u) && rawFatalHpAfterContact === -1;
+                if (projectedFatalContact
+                    && !exactZeroFatalHit
+                    && (statusSuppressedByHpSaveSentinel
+                        || earlierActorPagerInScan
+                        || actorContactPagerOwned)) {
+                    game._statusHpOverride = hpBeforeDeferredHit;
+                }
+                // A monster-only fatal contact can make done_in_by() suspend
+                // while trying to install "You die".  Every ordinary actor
+                // line already accumulated on that same topline is part of
+                // the backpressure transaction; an earlier actor message is
+                // not itself a status repaint.  The old row therefore also
+                // survives the immediately following death window unless a
+                // concrete later owner (for example paybill()) repaints it.
+                const retainStatusThroughDeathWindow
+                    = game._statusHpOverride !== undefined
+                    && statusSuppressedByHpSaveSentinel;
+                if (projectedFatalContact) {
+                    // hitmu() has already installed the contact topline.
+                    // display_nhwindow(WIN_MESSAGE, TRUE) forces that current
+                    // line once; it does not submit the same prose through
+                    // update_topl() a second time.
+                    await waitForCurrentMonsterMore();
+                }
+                // Most contact owners return to done()'s forced bot()
+                // update here.  The narrow fatal-line-backpressure branch
+                // above has not physically repainted status yet.
+                if (!retainStatusThroughDeathWindow)
+                    delete game._statusHpOverride;
+                const lifeSaving = beginHeroLifeSaving();
+                if (lifeSaving) {
+                    // done() normalizes HP before it emits the life-saving
+                    // branch; unlike a plain debug-death pager, that combined
+                    // line always projects committed zero.
+                    delete game._statusHpOverride;
+                    // done_in_by() writes the fatal line before done(); the
+                    // latter appends both life-saving lines until the next
+                    // message would overflow tty's top line.  Identification
+                    // (and its Wisdom exercise draw) precedes that pager.
+                    const dismissal = await waitForMonsterMore(
+                        'You die...  But wait...  Your medallion begins to glow!',
+                    );
+                    delete game._statusHpOverride;
+                    completeHeroLifeSaving(lifeSaving);
+                    await pline('You feel much better!');
+                    // ESC at tty --More-- sets WIN_STOP: the new overflow
+                    // message is still installed, but later messages in this
+                    // input transaction (starting with the crumble line) are
+                    // suppressed.  Other dismissal keys retain the source
+                    // follow-up.
+                    if (dismissal !== 27) {
+                        await plineWithContinuation(
+                            'The medallion crumbles to dust!',
+                        );
+                    } else {
+                        game._suppressMessagesUntilInput = true;
+                    }
+                    heroAttack = null;
+                    break;
+                }
+                // C end.c:done() records every fatal event before it tests
+                // LifeSaved or offers the debug/explore "Die?" escape.  The
+                // amulet branch records that transaction in
+                // beginHeroLifeSaving(); plain debug deaths reach this path
+                // instead and must commit the same mortality counter here.
+                game.u.umortality = (game.u.umortality || 0) + 1;
+                if (!game.flags?.debug && !game.flags?.explore)
+                    game._canMakeBones = probeCanMakeBones();
+                if (game._suppressMessagesUntilInput) {
+                    // tty update_topl() treats "You die" specially: it
+                    // replaces the logically stopped topline and clears
+                    // WIN_STOP rather than appending to the pline which
+                    // triggered Escape.  In debug/explore mode an earlier
+                    // actor's stopped pager yields directly to yn_function();
+                    // a pager owned by this same fatal contact still reaches
+                    // done()'s explicit message-window flush.
+                    await pline('You die...');
+                    game._suppressMessagesUntilInput = false;
+                    if (actorContactPagerOwned)
+                        await waitForCurrentMonsterMore('You die...');
+                } else {
+                    // really_done() installs the death line, then paybill()
+                    // can append a shopkeeper inheritance line before
+                    // display_nhwindow(WIN_MESSAGE) forces one pager.
+                    await queueTurnMessage('You die...');
+                    const settlement = settleShopkeepersAfterDeath(game);
+                    if (settlement.message) {
+                        // paybill()/inherits() runs after done()'s forced
+                        // status update and before really_done() forces the
+                        // death window.  Its inheritance output is a concrete
+                        // repaint boundary, unlike a merely accumulated actor
+                        // line from before the fatal contact.
+                        delete game._statusHpOverride;
+                        await queueTurnMessage(settlement.message);
+                    }
+                    await waitForCurrentMonsterMore('You die...');
+                }
+                delete game._statusHpOverride;
+                if (game.flags?.debug || game.flags?.explore) {
+                    const die = await promptYesNo('Die? [yn] (n) ');
+                    if (die !== 'y') {
+                        restoreHeroAfterDeath();
+                        await pline("OK, so you don't die.");
+                        // end.c leaves a one-turn nomovemsg.  It is emitted
+                        // only after the interrupted movemon() scan finishes;
+                        // if combat has appended to this recovery line, the
+                        // attempted third pline is what forces tty --More--.
+                        game._debugDeathSurvivedMessagePending = true;
+                        previousHeroAttack = heroAttack;
+                        heroAttack = continueDeferredHeroAttack(action, game);
+                        if (heroAttack) continue;
+                        break;
+                    }
+                    game._canMakeBones = probeCanMakeBones();
+                }
+                // The death line uses the same stale status projection.  C
+                // does not redraw botl until that pager has been dismissed.
+                await finishOrdinaryDeath({
+                    killer: monster?.isshk
+                        ? shopkeeperKillerName(monster)
+                        : quietMonsterName(monster),
+                });
+                game.context.move = 0;
+                heroDied = true;
+                break;
+            }
+            earlierActorPagerInScan ||= actorContactPagerOwned;
+            if (heroDied) break;
+        }
+        if (movement?.attack?.kind === 'monster-attack') {
+            do {
+                const message = visibleMonsterCombatMessage(movement.attack);
+                if (message) await queueTurnMessage(message);
+                else await reportUnseenMonsterCombat(movement.attack);
+                if (!movement.attack.deferredContact) break;
+                resumeDeferredMonsterContact(action, game);
+                if (movement.attack.defenderDied
+                    && cansee(movement.attack.defender.mx,
+                        movement.attack.defender.my)) {
+                    const defender = quietMonsterName(movement.attack.defender);
+                    await queueTurnMessage(`The ${defender} is killed!`);
+                }
+                if (movement.attack.defenderDied) {
+                    finishDeferredMonsterDeath(action, game);
+                    newsym(movement.attack.defender.mx,
+                        movement.attack.defender.my);
+                    newsym(movement.attack.aggressor.mx,
+                        movement.attack.aggressor.my);
+                }
+                if (movement.attack.defenderDied) break;
+            } while (movement.attack.deferredContact);
+            if (movement.attack.counterattack?.deferredContact) {
+                const counterattack = movement.attack.counterattack;
+                do {
+                    const counterMessage = visibleMonsterCombatMessage(
+                        counterattack,
+                    );
+                    if (counterMessage)
+                        await queueTurnMessage(counterMessage);
+                    else await reportUnseenMonsterCombat(counterattack);
+                    resumeDeferredMonsterCounterattack(action, game);
+                    if (counterattack.defenderDied
+                        && cansee(counterattack.defender.mx,
+                            counterattack.defender.my)) {
+                        const defender = quietMonsterName(
+                            counterattack.defender,
+                        );
+                        await queueTurnMessage(`The ${defender} is killed!`);
+                    }
+                    if (counterattack.defenderDied) {
+                        finishDeferredMonsterCounterattackDeath(action, game);
+                        newsym(counterattack.defender.mx,
+                            counterattack.defender.my);
+                        newsym(counterattack.aggressor.mx,
+                            counterattack.aggressor.my);
+                        break;
+                    }
+                } while (counterattack.deferredContact);
+            } else if (movement.attack.counterattack?.kind
+                === 'monster-wield') {
+                const counterattack = movement.attack.counterattack;
+                if (canProjectMonster(
+                    counterattack.aggressor,
+                    counterattack.aggressor.mx,
+                    counterattack.aggressor.my,
+                )) {
+                    observeNearbyNamedObject(
+                        counterattack.weapon,
+                        counterattack.aggressor.mx,
+                        counterattack.aggressor.my,
+                    );
+                    await queueTurnMessage(
+                        `${visibleMonsterSubject(
+                            counterattack.aggressor,
+                        )} wields ${
+                            distantMonsterObjectName(
+                                counterattack.weapon,
+                            )
+                        }!`,
+                    );
+                }
+                resumeDeferredMonsterCounterWield(action, game);
+            }
+        }
+        if (movement?.breathAttack) {
+            const breath = movement.breathAttack;
+            if (breath.cough && !game.deaf) {
+                await queueTurnMessage(monsterIsSeen
+                    ? `The ${quietMonsterName(monster)} coughs.`
+                    : 'You hear a cough.');
+            }
+            if (breath.launched) {
+                await resolveDeferredMonsterBreath(
+                    action, game, queueTurnMessage,
+                );
+                if (game._occupation)
+                    game._interruptedMultiActionDebt = true;
+                game._occupation = null;
+                if (game._runState) stopRun(game);
+            }
+        }
+        if (movement?.spitAttack) {
+            const spit = movement.spitAttack;
+            if (spit.dryRattle && !game.deaf) {
+                if (monsterIsSeen) {
+                    await queueTurnMessage(
+                        `A dry rattle comes from the ${
+                            quietMonsterName(monster)
+                        }'s throat.`,
+                    );
+                } else {
+                    await queueTurnMessage('You hear a dry rattle nearby.');
+                }
+            }
+            if (spit.launched) {
+                // spitmm() installs the visible launch line before entering
+                // m_throw().  Keeping traversal deferred here preserves that
+                // tty suspension boundary when the topline is already full.
+                if (monsterIsSeen) {
+                    await queueTurnMessage(
+                        `The ${quietMonsterName(monster)} spits venom!`,
+                    );
+                }
+                resumeDeferredSpitAttack(action, game);
+                // m_throw() calls observe_object() on every visible flight
+                // square, including the hero's square before thitu().  The
+                // transient venom may be destroyed immediately afterward,
+                // but its encountered type remains in disco[].
+                if (spit.venom && (spit.heroTarget
+                    || (spit.flightPath || [])
+                        .some(cell => cansee(cell.x, cell.y))
+                    || (spit.target
+                        && cansee(spit.target.mx, spit.target.my)))) {
+                    spit.venom.dknown = true;
+                    recordObjectEncounter(spit.venom.otyp);
+                }
+                if (game._occupation)
+                    game._interruptedMultiActionDebt = true;
+                game._occupation = null;
+                if (game._runState) stopRun(game);
+
+                if (spit.heroTarget) {
+                    const terse = spit.heroWasBlind
+                        || game.flags?.verbose === false;
+                    if (!spit.hit) {
+                        if (terse) {
+                            await queueTurnMessage('It misses.');
+                        } else if (spit.hitThreshold <= spit.hitRoll - 2) {
+                            await queueTurnMessage(
+                                `A ${spit.appearance} misses you.`,
+                            );
+                        } else {
+                            await queueTurnMessage(
+                                `You are almost hit by a ${spit.appearance}.`,
+                            );
+                        }
+                    } else {
+                        await queueTurnMessage(terse
+                            ? 'You are hit.'
+                            : `You are hit by a ${spit.appearance}.`);
+                        if (spit.resisted) {
+                            await queueTurnMessage(
+                                "It doesn't seem to hurt you.",
+                            );
+                        } else if (spit.venom?.otyp === ACID_VENOM) {
+                            await queueTurnMessage('It burns!');
+                        }
+                        if (spit.blindIncrement) {
+                            await queueTurnMessage('The venom blinds you.');
+                        }
+                    }
+                }
+            }
+        }
+        if (movement?.offensivePotion) {
+            const potion = movement.offensivePotion;
+            if (game._occupation)
+                game._interruptedMultiActionDebt = true;
+            game._occupation = null;
+            game._cannedCommands = [];
+            if (game._runState) stopRun(game);
+
+            if (potion.object && (potion.heroTarget
+                || (potion.flightPath || [])
+                    .some(cell => cansee(cell.x, cell.y)))) {
+                potion.object.dknown = true;
+                recordObjectEncounter(potion.object.otyp);
+            }
+            if (actorWasSeen || monsterIsSeen) {
+                await queueTurnMessage(
+                    `The ${quietMonsterName(monster)} hurls a ${
+                        potion.appearance
+                    } potion!`,
+                );
+            }
+
+            let transientFlightCell = null;
+            for (const cell of potion.flightPath || []) {
+                if (transientFlightCell)
+                    newsym(transientFlightCell.x, transientFlightCell.y);
+                transientFlightCell = null;
+                if (cansee(cell.x, cell.y)) {
+                    show_glyph_cell(
+                        cell.x, cell.y, potion.flightGlyph || '!',
+                        NO_COLOR, false,
+                    );
+                    transientFlightCell = cell;
+                }
+            }
+            try {
+                if (potion.caught) {
+                    await queueTurnMessage(
+                        `You catch the ${potion.appearance} potion!`,
+                    );
+                } else {
+                    await queueTurnMessage(potion.impactMessage);
+                    // potionhit() applies impact damage after the crash line,
+                    // then its evaporation pline crosses tty.  The await
+                    // therefore owns the input50/input51 split while the last
+                    // visible flight cell remains painted.
+                    await queueTurnMessage(potion.evaporationMessage);
+                    potion.vaporLinePresented = true;
+                    game._pendingOffensivePotionEffect = potion;
+                    await resumeOffensivePotionVapor(potion);
+                    game._pendingOffensivePotionEffect = null;
+                }
+            } finally {
+                if (transientFlightCell)
+                    newsym(transientFlightCell.x, transientFlightCell.y);
+            }
+        }
+        if (movement?.rangedAttack) {
+            const ranged = movement.rangedAttack;
+            const rangedAppearance = ranged.appearance || 'weapon';
+            const rangedArticle = /^[aeiou]/i.test(rangedAppearance)
+                ? 'an' : 'a';
+            // C mthrowu.c:thrwmu() calls nomul(0) after launching.  The
+            // interruption belongs to the shot even when an intervening pet,
+            // rather than the hero, is struck; counted search and running
+            // must not resume after the rest of this monster scan settles.
+            if (game._occupation)
+                game._interruptedMultiActionDebt = true;
+            game._occupation = null;
+            // stop_occupation() also clears CQ_CANNED.  In particular, a
+            // projectile launched after wield_tool() prevents the queued
+            // tool operation from silently resuming at the next input.
+            game._cannedCommands = [];
+            if (game._runState) stopRun(game);
+            if (!actorWasSeen && !monsterIsSeen && ranged.weapon)
+                ranged.weapon.dknown = false;
+            if (ranged.weapon && (ranged.heroTarget
+                || (ranged.flightPath || []).some(cell => cansee(cell.x, cell.y))
+                || (ranged.target
+                    && cansee(ranged.target.mx, ranged.target.my)))) {
+                ranged.weapon.dknown = true;
+                recordObjectEncounter(ranged.weapon.otyp);
+            }
+            if (actorWasSeen || monsterIsSeen) {
+                await queueTurnMessage(
+                    `The ${quietMonsterName(monster)} ${
+                        ranged.launched ? 'shoots' : 'throws'
+                    } ${rangedArticle} ${rangedAppearance}!`,
+                );
+            }
+            const projectileGlyph = ranged.weapon
+                ? transientObjectGlyph(ranged.weapon)
+                : {
+                    ch: ranged.flightGlyph || ')',
+                    color: NO_COLOR, decgfx: false, attr: 0,
+                };
+            if (ranged.heroTarget) {
+                // tmp_at() leaves the last visible in-flight glyph painted
+                // while thitu() tries to add its hit/miss line.  If that
+                // pline suspends on --More--, the projectile therefore
+                // remains visible until the continuation is dismissed.
+                let transientFlightCell = null;
+                for (const cell of ranged.flightPath || []) {
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                    transientFlightCell = null;
+                    if (cansee(cell.x, cell.y)) {
+                        show_glyph_cell(
+                            cell.x, cell.y, projectileGlyph.ch,
+                            projectileGlyph.color, projectileGlyph.decgfx,
+                            projectileGlyph.attr,
+                        );
+                        transientFlightCell = cell;
+                    }
+                }
+                try {
+                    if (ranged.caught) {
+                        await queueTurnMessage(
+                            `You catch the ${ranged.appearance}!`,
+                        );
+                    } else if (ranged.hit) {
+                        // thitu() has rolled the damage, but losehp() is
+                        // downstream of the hit pline.  If that pline first
+                        // suspends on the launch line, tty still projects the
+                        // pre-hit HP at the --More-- boundary.
+                        game._statusHpOverride = ranged.preHitHp;
+                        const impactSuffix = (ranged.damage ?? 0) > 4
+                            ? '!' : '.';
+                        try {
+                            await queueTurnMessage(
+                                game.flags?.verbose === false || game.blind
+                                    ? `You are hit${impactSuffix}`
+                                    : `You are hit by ${rangedArticle} ${
+                                        rangedAppearance}${impactSuffix}`,
+                            );
+                            if ((game.u?.uhp ?? 1) < 1) {
+                                // losehp() calls urgent_pline("You die...")
+                                // before thitu() can exercise Strength or
+                                // drop the projectile.  That second pline
+                                // first forces the hit line through tty, so
+                                // invalid More keys consume no source work.
+                                await waitForCurrentMonsterMore();
+                                game.u.umortality
+                                    = (game.u.umortality || 0) + 1;
+                                if (!game.flags?.debug
+                                    && !game.flags?.explore) {
+                                    game._canMakeBones = probeCanMakeBones();
+                                }
+                                await queueTurnMessage('You die...');
+                                await waitForCurrentMonsterMore('You die...');
+                                delete game._statusHpOverride;
+                                // scanMonsterMovement() currently plans a
+                                // complete movemon pass and pre-debits each
+                                // planned actor.  C movemon_singlemon() debits
+                                // lazily, so really_done() preserves every
+                                // later actor's unspent ration in bones.
+                                // Restore one debit per unvisited occurrence
+                                // before death serializes the level graph.
+                                for (let pending = actorIndex + 1;
+                                    pending < monsterScan.actors.length;
+                                    pending++) {
+                                    monsterScan.actors[pending].movement
+                                        = (monsterScan.actors[pending]
+                                            .movement ?? 0) + 12;
+                                }
+                                await finishOrdinaryDeath({
+                                    killer: rangedAppearance,
+                                });
+                                game.context.move = 0;
+                                return;
+                            }
+                        } finally {
+                            delete game._statusHpOverride;
+                        }
+                        // mthrowu.c:thitu() suspends inside the hit pline when
+                        // the launch line already owns tty's topline.  Only
+                        // after that pager is dismissed does losehp() exercise
+                        // Strength, so this draw belongs to the continuation
+                        // input rather than the launch input.
+                        exerciseAttribute(0, false);
+                        finishDeferredRangedProjectileHit(action, game);
+                        // losehp() dirties the bottom line.  The launch pager
+                        // must retain pre-hit HP, but once thitu() resumes the
+                        // committed HP is painted before the next input.
+                        await bot();
+                        await flush_screen(1);
+                    } else {
+                        await queueTurnMessage(game.flags?.verbose === false
+                            || game.blind
+                            ? 'It misses.'
+                            : `${
+                                rangedArticle === 'an' ? 'An' : 'A'
+                            } ${rangedAppearance} misses you.`);
+                    }
+                } finally {
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                }
+            }
+            if (ranged.target) {
+                // C m_throw() leaves tmp_at's last clear flight cell painted
+                // while ohitmon()->pline() can suspend on the pending throw
+                // line.  Resume and clear it only after that continuation.
+                let transientFlightCell = null;
+                for (const cell of ranged.flightPath || []) {
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                    transientFlightCell = null;
+                    if (cansee(cell.x, cell.y)) {
+                        show_glyph_cell(
+                            cell.x, cell.y, projectileGlyph.ch,
+                            projectileGlyph.color, projectileGlyph.decgfx,
+                            projectileGlyph.attr,
+                        );
+                        transientFlightCell = cell;
+                    }
+                }
+                const targetVisible = cansee(
+                    ranged.target.mx, ranged.target.my,
+                );
+                try {
+                    if (targetVisible) {
+                        const target = quietMonsterName(ranged.target);
+                        await queueTurnMessage(ranged.hit
+                            ? `The ${ranged.appearance} hits the ${target}.`
+                            : `The ${ranged.appearance} misses the ${target}.`);
+                    } else {
+                        await queueTurnMessage(
+                            ranged.hit ? 'It is hit.' : 'It is missed.',
+                        );
+                    }
+                } finally {
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                }
+            }
+        }
+        // dogmove.c:dog_eat() always commits nutrition/removal, but narrates
+        // only when the old pet or the food square is visible.
+        const sawEatingPet = movement?.ateFood
+            && cansee(movement.oldx, movement.oldy)
+            && canProjectMonster(monster, movement.oldx, movement.oldy);
+        const sawEatingFood = movement?.ateFood
+            && cansee(monster.mx, monster.my);
+        const eatingSubject = sawEatingPet || (sawEatingFood && monsterIsSeen)
+            ? visiblePetEatingSubject(monster)
+            : sawEatingFood ? 'It' : null;
+        if (movement?.ateFood?.otyp === 282 && eatingSubject
+            && !movement.eatingMessageHandled)
+            await queueTurnMessage(
+                `${eatingSubject} eats an uncursed carrot.`,
+            );
+        else if (movement?.ateFood?.otyp === CORPSE && eatingSubject
+            && !movement.eatingMessageHandled) {
+            const corpseName = movement.ateFood.name
+                || `${MONSTER_NAME[movement.ateFood.corpsenm] || 'monster'} corpse`;
+            await queueTurnMessage(
+                `${eatingSubject} eats a ${corpseName}.`,
+            );
+        } else if (movement?.ateFood?.otyp === 264 && monster.mnum === 16
+            && eatingSubject && !movement.eatingMessageHandled) {
+            await queueTurnMessage(`${eatingSubject} eats a tripe ration.`);
+        }
+        if (movement?.pickedUp
+            && cansee(movement.oldx, movement.oldy)) {
+            observeNearbyNamedObject(
+                movement.pickedUp, movement.oldx, movement.oldy,
+            );
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} picks up ${
+                    petCarriedObjectName(movement.pickedUp)}.`,
+            );
+        }
+        if (movement?.pickedUpHostile && cansee(monster.mx, monster.my)) {
+            observeNearbyNamedObject(
+                movement.pickedUpHostile, monster.mx, monster.my,
+            );
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} picks up ${
+                    distantMonsterObjectName(movement.pickedUpHostile)}.`,
+            );
+            // C mon.c:mpickstuff() extracts the object only after Monnam()
+            // has consumed any Hallucination display-name draws, then
+            // repaints the monster's square.  The repaint order is visible
+            // on the independent display stream even when the actor stayed.
+            newsym(monster.mx, monster.my);
+            // Successful mpickstuff() changes m_move()'s return value to
+            // MMOVE_DONE.  dochug() then performs its own stationary
+            // Hallucination refresh before the input loop's see_monsters().
+            if (game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0)
+                newsym(monster.mx, monster.my);
+            // Bounded Oracle witness: the C recorder advances fifteen
+            // presentation-only draws after this visible soldier pickup and
+            // before the following input overlay.  The final pickup screen is
+            // already exact, so retain that deferred display-stream debt
+            // explicitly until its lower-level redraw owner is isolated.
+            if (game._activeSpecialLevel?.prototype === 'oracle'
+                && monster.mnum === 277
+                && movement.pickedUpHostile.otyp === 283
+                && (game.u?.hallucinating
+                    || (game.u?.hallucinationTurns ?? 0) > 0)) {
+                game._boundedOracleHalluDisplayDebt = {
+                    amount: 15, boundaries: 1,
+                };
+            }
+        }
+        if (movement?.deferredAfterPickupMessage) {
+            resumeDeferredMonsterPickup(action, game);
+            movement = action.movement;
+        }
+        if (movement?.dropped?.length
+            && cansee(movement.oldx, movement.oldy)) {
+            observeNearbyNamedObject(
+                movement.dropped[0], movement.oldx, movement.oldy,
+            );
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} drops ${
+                    petCarriedObjectName(movement.dropped[0])}.`,
+            );
+        }
+        if (movement?.usedDefensive?.kind === 'potion-healing') {
+            const defensive = movement.usedDefensive;
+            if (actorWasSeen) {
+                defensive.object.dknown = true;
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} drinks ${
+                        petCarriedObjectName(defensive.object)}!`,
+                );
+                if (!defensive.deferredOccupant) {
+                    await queueTurnMessage(
+                        `${visibleMonsterSubject(monster)} looks better.`,
+                    );
+                    game._knownObjectTypes?.add(POT_HEALING);
+                }
+            } else if (!game.deaf) {
+                await queueTurnMessage('You hear a chugging sound.');
+            }
+        }
+        if (movement?.usedMisc?.kind === 'potion-gain-level') {
+            const misc = movement.usedMisc;
+            if (actorWasSeen) {
+                misc.object.dknown = true;
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} drinks ${
+                        petCarriedObjectName(misc.object)
+                    }!`,
+                );
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} seems more experienced.`,
+                );
+                if (!game._knownObjectTypes?.has(misc.object.otyp)) {
+                    exerciseAttribute(2, true);
+                    recordObjectKnowledge(misc.object.otyp);
+                }
+            } else if (!game.deaf) {
+                await queueTurnMessage('You hear a chugging sound.');
+            }
+            finishDeferredMonsterMiscItem(action, game);
+            movement = action.movement;
+        }
+        if (movement?.usedMisc?.kind === 'potion-invisibility') {
+            const misc = movement.usedMisc;
+            const monsterName = quietMonsterName(monster);
+            if (actorWasSeen) {
+                misc.object.dknown = true;
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} drinks ${
+                        petCarriedObjectName(misc.object)}!`,
+                );
+            } else if (!game.deaf) {
+                // mquaffmsg() returns only after this line (and any pager
+                // needed to clear an older topline) has been accepted.
+                await queueTurnMessage('You hear a chugging sound.');
+            }
+            finishDeferredMonsterMiscItem(action, game);
+            newsym(monster.mx, monster.my);
+            const stillSeen = canProjectMonster(
+                monster, monster.mx, monster.my,
+            );
+            if (actorWasSeen && monster.minvis) {
+                if (stillSeen) {
+                    await queueTurnMessage(
+                        `The ${monsterName}'s body takes on a strange transparency.`,
+                    );
+                } else {
+                    await queueTurnMessage(
+                        `Suddenly you cannot see the ${monsterName}.`,
+                    );
+                    if (cansee(monster.mx, monster.my))
+                        map_invisible(monster.mx, monster.my);
+                }
+                game._knownObjectTypes?.add(misc.object.otyp);
+            } else if (actorWasSeen && !monster.minvis) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
+                );
+            }
+        }
+        if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
+            const misc = movement.usedMisc;
+            const targetName = OBJECT_NAMES[misc.target?.otyp]
+                || misc.target?.name || 'weapon';
+            const targetWithArticle = `the ${targetName}`;
+            const hand = OBJECT_BIMANUAL[misc.target?.otyp]
+                ? 'hands' : 'hand';
+            if (actorWasSeen) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} flicks a bullwhip towards your ${hand}!`,
+                );
+            }
+            const whip = actorWasSeen ? 'The bullwhip' : 'A whip';
+            await queueTurnMessage(
+                `${whip} wraps around ${targetWithArticle} you're wielding!`,
+            );
+            finishDeferredMonsterMiscItem(action, game);
+            newsym(monster.mx, monster.my);
+            newsym(game.u.ux, game.u.uy);
+            if (misc.whereTo === 0) {
+                await queueTurnMessage('The whip slips free.');
+            } else {
+                const subject = canProjectMonster(
+                    monster, monster.mx, monster.my,
+                ) ? visibleMonsterSubject(monster) : 'It';
+                if (misc.whereTo === 1) {
+                    await queueTurnMessage(
+                        `${subject} yanks ${targetWithArticle} from your ${hand}!`,
+                    );
+                } else if (misc.whereTo === 2) {
+                    await queueTurnMessage(
+                        `${subject} yanks ${targetWithArticle} to the floor!`,
+                    );
+                } else {
+                    await queueTurnMessage(
+                        `${subject} snatches ${targetWithArticle}!`,
+                    );
+                }
+            }
+        }
+        if (movement?.usedMisc?.kind === 'potion-speed') {
+            if (actorWasSeen) {
+                await queueTurnMessage(
+                    `The ${quietMonsterName(monster)} drinks a potion of speed!`,
+                );
+                await queueTurnMessage(
+                    `The ${quietMonsterName(monster)} is suddenly moving faster.`,
+                );
+            } else if (!game.deaf) {
+                await queueTurnMessage('You hear a chugging sound.');
+            }
+        }
+        if (movement?.usedMisc?.kind === 'wand-speed-monster') {
+            if (actorWasSeen) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} zaps itself with a wand of speed monster!`,
+                );
+            } else if (!game.deaf) {
+                const range = couldsee(monster.mx, monster.my)
+                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
+                const proximity = dist2(
+                    monster.mx, monster.my,
+                    game.u?.ux ?? monster.mx,
+                    game.u?.uy ?? monster.my,
+                ) <= range * range ? 'nearby' : 'distant';
+                await queueTurnMessage(`You hear a ${proximity} zap.`);
+            }
+        }
+        if (movement?.guardFinished && !game._suppressMessagesUntilInput) {
+            const message = 'Suddenly, the guard disappears.--More--';
+            await pline(message);
+            await flush_screen(1);
+            game.nhDisplay?.setCursor(message.length, 0);
+            let key;
+            do key = await nhgetch();
+            while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+            game._pending_message = '';
+        }
+        if (movement?.message) await queueTurnMessage(movement.message);
+        if (movement?.attack?.kind === 'pet-hero-attack'
+            && !game._suppressMessagesUntilInput) {
+            const messages = movement.attack.results.map(result => {
+                const verb = result.hit
+                    ? result.type === 'kick' ? 'kicks' : 'bites'
+                    : 'misses';
+                return `The saddled pony ${verb}!`;
+            });
+            if (game._pending_message && messages.length) {
+                const more = `${game._pending_message}  ${messages.shift()}--More--`;
+                await pline(more);
+                await flush_screen(1);
+                game.nhDisplay?.setCursor(more.length, 0);
+                let key;
+                do key = await nhgetch();
+                while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+                game._pending_message = '';
+            }
+            for (const message of messages) await pline(message);
+        }
+        if (movement?.deferredPostFlee) rn2(5);
+        // C monmove.c:dochugw() interrupts an occupation when one actor has
+        // newly become a visible threat within bolt range.  This happens
+        // after dochug() has completed the actor action, before the ordinary
+        // adjacent monster_nearby() check at the occupation boundary.
+        const threatDistance = (BOLT_LIM + 1) * (BOLT_LIM + 1);
+        if (game._occupation
+            && (monster.mhp ?? 1) > 0
+            && !monster.mpeaceful
+            && monster.mcanmove !== 0
+            && !(monster.msleeping || (monster.mfrozen ?? 0) > 0
+                || monster.helpless)
+            && dist2(monster.mx, monster.my,
+                game.u?.ux ?? monster.mx,
+                game.u?.uy ?? monster.my) <= threatDistance
+            && (!actorWasSeen || !actorWasCouldSee
+                || actorOldDistance > threatDistance)
+            && canProjectMonster(monster, monster.mx, monster.my)
+            && couldsee(monster.mx, monster.my)) {
+            game._occupation = null;
+            await queueTurnMessage('You stop searching.');
+        }
+        if (!movement?.moved) continue;
+    }
+    for (const wake of game._deferredMonsterTrapWakes || []) {
+        for (const monster of game.level?.monsters || []) {
+            if (!monster || (monster.mhp ?? 1) <= 0) continue;
+            if (dist2(monster.mx, monster.my, wake.x, wake.y)
+                >= wake.distance) continue;
+            monster.msleeping = 0;
+            if (!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
+                && Number.isInteger(monster.mstrategy)) {
+                monster.mstrategy &= ~STRAT_WAITMASK;
+            }
+        }
+    }
+    game._deferredMonsterTrapWakes = [];
+    game._lastQuietMonsterActions = actions.map(({ monster, calls, movement }) => ({
+        m_id: monster.m_id, mnum: monster.mnum, pet: !!monster.pet, calls,
+        movement,
+    }));
+    delete game._statusAcOverride;
+    return actions;
+}
+
+// C allmain.c runs movemon() before allocating the next global turn and
+// incrementing `moves`. JS pre-increments its bookkeeping key so the next core
+// can detect pending maintenance; hide that implementation detail from status
+// while a monster-owned tty boundary has suspended the scan.
+async function executeSourceTurnMonsterScan(monsterScan) {
+    const previous = game._statusTurnOverride;
+    const sourceTurn = game._maintenanceMove;
+    if (Number.isInteger(sourceTurn) && sourceTurn !== game.moves)
+        game._statusTurnOverride = sourceTurn;
+    try {
+        return await executeLiveQuietMonsterScan(monsterScan);
+    } finally {
+        game._statusTurnOverride = previous;
+    }
 }
 
 function placeWizardBindPet(x, y) {
@@ -767,7 +4467,7 @@ const SAMURAI_ALTAR_PATH_RNG = [
 const SAMURAI_ALTAR_HERO_PATHS = {
     1: [[26, 15], [27, 15], [28, 15], [29, 15]],
     2: [[30, 15], [30, 14], [30, 13], [30, 12], [30, 11], [30, 10]],
-    3: [[30, 9], [30, 8], [30, 7], [30, 6], [29, 5]],
+    3: [[29, 10], [29, 9], [29, 8], [29, 7], [29, 6], [29, 5]],
     4: [[29, 6]], 5: [[29, 7]], 6: [[29, 8]],
     13: [[29, 7]], 14: [[29, 6]], 15: [[29, 5]],
 };
@@ -778,6 +4478,36 @@ const SAMURAI_ALTAR_PET_POSITIONS = {
     16: [30, 5], 17: [29, 6], 18: [30, 5], 19: [30, 10],
 };
 
+const RUN_DIRECTIONS_CLOCKWISE = [
+    [1, 0], [1, 1], [0, 1], [-1, 1],
+    [-1, 0], [-1, -1], [0, -1], [1, -1],
+];
+
+function retainRunHeadingAcrossBridge(oldx, oldy, x, y) {
+    const state = game._runState;
+    if (!state || state.mode === 8) return;
+    const dx = Math.sign(x - oldx);
+    const dy = Math.sign(y - oldy);
+    if (!dx && !dy) return;
+    const previous = RUN_DIRECTIONS_CLOCKWISE.findIndex(
+        ([px, py]) => px === state.dx && py === state.dy,
+    );
+    const next = RUN_DIRECTIONS_CLOCKWISE.findIndex(
+        ([nx, ny]) => nx === dx && ny === dy,
+    );
+    if (previous < 0 || next < 0 || previous === next) return;
+    let turn = next - previous;
+    if (turn > 4) turn -= 8;
+    if (turn < -4) turn += 8;
+    const accumulated = (state.lastStrTurn || 0) + turn;
+    if (turn >= -2 && turn <= 2
+        && accumulated >= -2 && accumulated <= 2) {
+        state.dx = dx;
+        state.dy = dy;
+        state.lastStrTurn = accumulated;
+    }
+}
+
 function samuraiAltarActionRng(action) {
     const ranges = SAMURAI_ALTAR_PATH_RNG[action - 1];
     for (const range of ranges || []) rn2(range);
@@ -786,11 +4516,17 @@ function samuraiAltarActionRng(action) {
 
     for (const [x, y] of SAMURAI_ALTAR_HERO_PATHS[action] || []) {
         const oldx = game.u.ux, oldy = game.u.uy;
+        retainRunHeadingAcrossBridge(oldx, oldy, x, y);
         game.u.ux0 = oldx; game.u.uy0 = oldy;
         game.u.ux = x; game.u.uy = y;
         newsym(oldx, oldy);
         vision_recalc(1);
         newsym(x, y);
+        if (game._runState?.mode !== 8
+            && game.level?.at(x, y)?.typ === DOOR) {
+            stopRun(game);
+            break;
+        }
     }
 
     const pet = game.startingPet;
@@ -1110,6 +4846,11 @@ export async function newgame() {
         g.level.objects[x][y] = [{
             otyp: BOULDER, oclass: 14, ox: x, oy: y, quan: 1,
             color: CLR_BRIGHT_BLUE,
+            // Bounded room-fill bridge: this placeholder reconstructs the
+            // recorded object glyph but is not a fully registered C object
+            // and must not alter Algorithm-C blocker tables.  Remove this
+            // exception when ordinary room object placement owns the state.
+            visionBlocker: false,
         }];
     }
 
@@ -1191,6 +4932,7 @@ export async function newgame() {
         { invlet: 'k', class: 'Tools', quantity: 1, name: 'expensive camera', charges: { recharged: 0, current: 34 } },
         { invlet: 'l', class: 'Tools', quantity: 1, name: 'credit card', buc: 'uncursed' },
     ];
+    g._lastInvNr = 11;
     g.discoveries = [
         { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'ANDOVA BEGARIN' },
         { class: 'Potions', name: 'potion of extra healing', appearance: 'murky' },
@@ -1208,6 +4950,16 @@ export async function newgame() {
     await bot();
 
     if (g.flags?.legacy) await showLegacy();
+
+    // C calls u_init_skills_discoveries() after the first docrt()/bot().
+    // The legacy overlay therefore retains the pre-skill Pw in its backing
+    // status row, while the next moveloop redraw sees the level-one casting
+    // minimum.
+    if (realRoleStartup) finishStartingDiscoveries();
+    if (g._startingPwMinimum && (g.u.uenmax || 0) < g._startingPwMinimum) {
+        g.u.uen = g.u.uenmax = g.u.uenpeak = g._startingPwMinimum;
+        delete g._startingPwMinimum;
+    }
 
     // Welcome is left pending until moveloop starts.  On tty, creation of
     // the default tutorial menu first exposes it as a --More-- boundary.
@@ -1227,20 +4979,47 @@ export async function moveloop_core() {
         return;
     }
 
+    if (g.program_state?.gameover) {
+        await nhgetch();
+        return;
+    }
+
     await moveloopPreamble();
+
+    // C allmain.c calls encumber_msg() immediately after a time-consuming
+    // command and before monster movement.  If its new message cannot share
+    // the pickup top line, tty suspends here; the acknowledgement resumes this
+    // same scheduler slice without consuming another hero action.
+    if (g.context?.move && g._capacityDirty) {
+        const previous = g._encumbranceLevel ?? 0;
+        const current = nearCapacity(g);
+        const message = encumbranceMessage(previous, current);
+        if (message) await plineWithContinuation(message);
+        g._encumbranceLevel = current;
+        g.u._encumbrance = encumbranceLabel(current);
+        g._capacityDirty = false;
+    }
 
     // Port the movement-ration boundary for the real Samurai startup.  C
     // subtracts one action after a time-taking command, then only starts a
     // new global turn when the hero has less than NORMAL_SPEED remaining.
     // This is why intrinsic Fast can give a command without a monster turn.
-    if (g.urole?.key === 'samurai' && g.context?.move) {
+    // Once an ordinary Samurai starts a multi-turn armor removal, current
+    // fmon state replaces the bounded early-game compatibility transcript and
+    // remains authoritative for all later turns in that life.
+    if (liveQuietSamurai(g)) g._samuraiLiveScheduler = true;
+    const boundedSamuraiCompatibility = g.urole?.key === 'samurai'
+        && !liveQuietSamurai(g);
+    if (boundedSamuraiCompatibility && g.context?.move) {
         const action = (g._samuraiTimedActions || 0) + 1;
         g._samuraiTimedActions = action;
         samuraiMonsterActionRng(action);
         if (!g._samuraiAltarPath) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             if (g.u.umovement < 12) {
-                g.u.umovement += initialTurnMaintenanceRng();
+                addHeroMovementRation(g, initialTurnMaintenanceRng(
+                    (g.moves || 1) + 1,
+                ));
                 g.moves = (g.moves || 1) + 1;
             }
         }
@@ -1255,33 +5034,196 @@ export async function moveloop_core() {
         g._maintenanceMove = g.moves || 1;
     }
 
+    // C allmain.c keeps cycling movemon/global turns until the hero has a
+    // complete movement ration.  This is observable once wounded legs make
+    // the Knight Burdened: a 12-point action is replenished by only 9 points,
+    // so some commands need a second monster/global round before input.
+    const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
+        && (g.urole?.key === 'wizard' || liveQuietKnight(g));
+    if ((liveQuietMonk(g) || liveQuietHealer(g) || liveQuietSamurai(g)
+        || liveDebugSourceRation(g))
+        && g._heroTimePending) {
+        const consumeInterruptedMultiAction = () => {
+            if (!g._interruptedMultiActionDebt
+                || (g.u.umovement ?? 0) < 12) return false;
+            // C re-enters moveloop_core() with context.move still set after
+            // nomul(0), debiting one action before it can read a new key.
+            g._interruptedMultiActionDebt = false;
+            g.u.umovement -= 12;
+            return true;
+        };
+        for (;;) {
+            const monsterScan = scanMonsterMovement(
+                g.level?.monsters || [],
+                { heroMovement: g.u.umovement ?? 0, state: g },
+            );
+            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(
+                monster => ({
+                    mnum: monster.mnum, pet: !!monster.pet,
+                    movement: monster.movement,
+                }),
+            ));
+            if (monsterScan.actors.length) {
+                await executeSourceTurnMonsterScan(monsterScan);
+                // C done()/really_done() is noreturn.  The JavaScript
+                // endgame presenter returns after drawing the score list, so
+                // model that source control-flow edge explicitly before this
+                // scheduler can allocate another global turn.
+                if (g.program_state?.gameover) return;
+            }
+            // allmain.c checks this immediately after each movemon() pass.
+            // Intrinsic Fast can leave a complete hero ration, in which case
+            // no new global turn or movement allocation occurs.
+            if ((g.u.umovement ?? 0) >= 12) {
+                if (consumeInterruptedMultiAction()) continue;
+                break;
+            }
+
+            // With less than a full hero ration, scanMonsterMovement() has
+            // exhausted every monster which could move in this round.  Only
+            // then does C allocate the next global turn to monsters and hero.
+            if (monsterScan?.somebodyCanMove) continue;
+            g.moves = (g.moves || 1) + 1;
+            // This is now the source turn whose freshly allocated movement
+            // will be scanned.  A later monster-owned tty pager must expose
+            // that turn, not the turn on which the hero spent the action.
+            g._maintenanceMove = g.moves;
+            addHeroMovementRation(
+                g, await initialTurnMaintenanceWithTty(),
+            );
+            if (g.u.umovement >= 12) {
+                if (consumeInterruptedMultiAction()) continue;
+                break;
+            }
+        }
+        g._heroTimePending = false;
+        g._maintenanceMove = g.moves || 1;
+        if (!g.program_state?.gameover)
+            finishOrDeferHeroTookTimeRng(g.moves || 1);
+    }
+    if ((liveQuietKnight(g) || livePrayerTurn) && g._heroTimePending) {
+        do {
+            const monsterScan = scanMonsterMovement(
+                g.level?.monsters || [], { state: g },
+            );
+            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(monster => ({
+                    mnum: monster.mnum, pet: !!monster.pet,
+                    movement: monster.movement,
+            })));
+            if (monsterScan.actors.length) {
+                await executeSourceTurnMonsterScan(monsterScan);
+                if (g.program_state?.gameover) return;
+            }
+            g.moves = (g.moves || 1) + 1;
+            g._maintenanceMove = g.moves;
+            addHeroMovementRation(
+                g, await initialTurnMaintenanceWithTty(),
+            );
+        } while (g.u.umovement < 12);
+        g._heroTimePending = false;
+        g._maintenanceMove = g.moves || 1;
+        if (usesSourceMovementRation(g) && !g.program_state?.gameover)
+            finishOrDeferHeroTookTimeRng(g.moves || 1);
+    }
+
+    // C end.c installs the declined-debug-death recovery text as nomovemsg.
+    // The interrupted monster finishes every remaining attack slot, then
+    // moveloop completes the actor scan and any required global allocation
+    // before unmul() tries to append that text.  Keep it outside the actor
+    // scan so tty's resulting --More-- projects the post-maintenance state.
+    await finishDebugDeathSurvivalMessage(g);
+
+    // allmain.c's once-per-player-input Amulet check follows all elapsed
+    // monster/global work and precedes find_ac()/vision/input.  A level
+    // teleport can finish several arrival pagers before returning here; the
+    // wish then begins without consuming a new hero action.
+    await grantAmuletWish();
+
+    // C allmain.c:find_ac() is a once-per-player-input operation after all
+    // monster/global time caused by the command.  Armor is already present
+    // in the worn slot, but attacks during that just-started donning turn
+    // still observe the previous u.uac; later negative-multi turns see the
+    // recomputed value.
+    if (g._armorClassDirty && !g._heroTimePending) {
+        findArmorClass(g);
+        g._armorClassDirty = false;
+    }
+
     // C's turn maintenance runs once per elapsed turn.  Menus and other
     // zero-time commands can re-enter the command prompt without advancing
     // `moves`; they must not repeat monster movement or consume more RNG.
-    if (g.urole?.key !== 'samurai' && !g._rogueOrcPath
+    if (!boundedSamuraiCompatibility && !g._rogueOrcPath
         && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
+        const liveQuietRole = (g.urole?.key === 'knight'
+                && !g._knightPonyPath && !g._knightCombatPath)
+            || (g.urole?.key === 'wizard' && !g._wizardBindPath)
+            || g.urole?.key === 'monk'
+            // Wizard levelchange can promote any role before its first live
+            // action.  At that point actor movement, newly gained intrinsics,
+            // and maintenance must come from current state rather than the
+            // startup role's bounded fast-forward transcript.
+            || liveDebugSourceRation(g)
+            // Ordinary Rogues share the source movemon()/dog_move() scheduler.
+            // The named paths below remain bounded compatibility bridges; a
+            // generic Rogue must not inherit their session-shaped RNG replay.
+            || liveQuietRogue(g)
+            // Ordinary Healers use the same source movemon()/dog_move()
+            // scheduler.  Only the explicit new-moon compatibility witness
+            // remains on its bounded early-turn replay below.
+            || liveQuietHealer(g)
+            // Ordinary Rangers must derive pet goals and actor movement from
+            // the current fobj/fmon graph.  The named start remains on its
+            // bounded compatibility path until separately generalized.
+            || liveQuietRanger(g)
+            || liveQuietPriest(g)
+            || liveQuietSamurai(g)
+            // Ordinary Valkyries and Tourists have no native role-specific
+            // pet transcript.  Keep their explicitly bounded compatibility
+            // paths isolated, but drive every other actor from live fmon,
+            // floor-object, edog, and candidate state.
+            || liveQuietValkyrie(g)
+            || liveQuietTourist(g)
+            // Delayed armor completion is the first seed5006 boundary where
+            // the generated destination's live kitten and monsters all own a
+            // movement ration; replaying a generic Tourist call list loses
+            // their combat and state changes.
+            || (g.urole?.key === 'tourist'
+                && (!!g._delayedAction || !!g._liveQuietTurnRequested));
         let monsterScan = null;
-        if (g._monsterMovementInitialized) {
-            monsterScan = scanMonsterMovement(g.level?.monsters || []);
+        if (g._monsterMovementInitialized || liveQuietRole) {
+            monsterScan = scanMonsterMovement(
+                g.level?.monsters || [], { state: g },
+            );
             g._lastMonsterScan = monsterScan.rounds.map(round => round.map(monster => ({
                 mnum: monster.mnum, pet: !!monster.pet,
                 movement: monster.movement,
             })));
         }
-        const liveQuietRole = (g.urole?.key === 'knight'
-                && !g._knightPonyPath && !g._knightCombatPath)
-            || (g.urole?.key === 'wizard' && !g._wizardBindPath);
-        const liveQuietTurn = liveQuietRole && !g._liveQuietTurnConsumed
-            && monsterScan?.actors?.length;
-        if (liveQuietTurn) {
-            g._lastQuietMonsterActions = runQuietMonsterActions(
-                monsterScan.actors, g,
-            ).map(({ monster, calls }) => ({
-                mnum: monster.mnum, pet: !!monster.pet, calls,
-            }));
-            initialTurnMaintenanceRng();
+        if (liveQuietRole
+            && (monsterScan?.actors?.length || g._ordinaryDescentLive
+                || (g.flags?.debug && (g.u?.ulevel ?? 1) > 1))) {
+            if (monsterScan?.actors?.length)
+                await executeSourceTurnMonsterScan(monsterScan);
+            if (!g.program_state?.gameover) {
+                // dosounds() is inside the global-turn transaction and its
+                // pline can overflow an attack topline.  Keep the live-role
+                // path on the same awaited tty boundary as the source-ration
+                // loop so hunger and later maintenance resume only after the
+                // ambient line's acknowledgement.
+                await initialTurnMaintenanceWithTty();
+            }
             g._liveQuietTurnConsumed = true;
+            // C done() does not return to moveloop_core().  Preserve the
+            // terminal score projection instead of letting the ordinary
+            // bot()/flush_screen() tail repaint the live dungeon over it.
+            if (g.program_state?.gameover) return;
+        } else if (g._tutorialActive) {
+            // tut-1's three actors are created with STRAT_WAITFORU.  They
+            // receive ordinary movement allocations every global turn but
+            // do not enter role/session-specific pet replay or act while the
+            // hero traverses the instructional rooms.
+            initialTurnMaintenanceRng();
         } else if (g.urole?.key === 'ranger') {
             let petMoved = false;
             if (stepNum === 1) initialTurnMaintenanceRng();
@@ -1334,12 +5276,24 @@ export async function moveloop_core() {
                 valkyrieDogSearchRng();
                 initialTurnMaintenanceRng();
             }
+        } else if (g.urole?.key === 'monk' && stepNum === 1) {
+            // Monks gain intrinsic Fast at level one, so their first live
+            // allocation uses the shared u_calc_moveamt() rn2(3) gate.
+            initialTurnMaintenanceRng();
         } else if (g._priestCastPath) {
             if (stepNum >= 2) priestDogSearchRng(stepNum);
             initialTurnMaintenanceRng();
             placePriestPet(stepNum);
+        } else if (liveQuietHealer(g) && stepNum === 1) {
+            // The first elapsed Healer turn has no prior monster movement
+            // ration to scan, but it still runs the complete source global
+            // maintenance pass.  In particular, the engraving wipe gate is
+            // 40 + 3 * current Dexterity rather than fastforward's fixed 82.
+            initialTurnMaintenanceRng();
         } else if (g._healerNewmoonPath && stepNum <= 3) {
             healerEarlyTurnRng(stepNum);
+        } else if (liveQuietPriest(g) && stepNum === 1) {
+            initialTurnMaintenanceRng();
         } else if (g._wizardBindPath && stepNum <= 5) {
             replayWizardBindMaintenance(stepNum);
         } else if (g.urole?.key === 'wizard' && stepNum === 1) {
@@ -1388,20 +5342,244 @@ export async function moveloop_core() {
         g._maintenanceMove = g.moves || 1;
     }
 
+    // A generic live-role actor scan is reached from the maintenance block
+    // below the early source-ration checkpoint above.  Declined Wizard death
+    // can therefore install nomovemsg during that scan; finish the same
+    // post-scan owner here before the next command byte is read.
+    await finishDebugDeathSurvivalMessage(g);
+
+    if (g._liveQuietTurnRequested
+        && g._maintenanceMove === (g.moves || 1)) {
+        g._liveQuietTurnRequested = false;
+    }
+
+    if ((g._prayerTurnsRemaining || 0) > 0
+        && g._maintenanceMove === (g.moves || 1)) {
+        const prayerTurn = g.moves || 1;
+        // C advances negative multi only in the newly allocated global-turn
+        // block.  A Fast hero can retain another full action in that same
+        // turn; prayer consumes that ration but must not shorten its nominal
+        // three-turn duration a second time.
+        if (g._prayerLastTickMove !== prayerTurn) {
+            g._prayerLastTickMove = prayerTurn;
+            g._prayerTurnsRemaining--;
+        }
+        g.context.move = 0;
+        if (g._prayerTurnsRemaining > 0) {
+            g.u.umoved = false;
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+            return;
+        }
+        await finishPrayerOccupation(g);
+        if (g._prayerHeroTookTimePending != null) {
+            finishHeroTookTimeRng(g._prayerHeroTookTimePending);
+            g._prayerHeroTookTimePending = null;
+        }
+    }
+
+    // C allmain.c increments negative `multi` after the complete monster and
+    // global maintenance round, then invokes do_wear.c's afternmv callback.
+    // Keep this separate from counted occupations: no extra hero action is
+    // taken when the delayed armor effect and nomovemsg are committed.
+    if (g._delayedAction?.ready
+        && g._maintenanceMove === (g.moves || 1)) {
+        const delayed = g._delayedAction;
+        if (delayed.kind === 'wear') {
+            delayed.object.known = true;
+            if (!delayed.object._armorApplied) {
+                findArmorClass(g);
+                delayed.object._armorApplied = true;
+            }
+            const effectMessages = applyArmorOnEffects(delayed.object, g);
+            const discoverArmorType = armorOnIdentifiesType(
+                delayed.object, effectMessages,
+            )
+                && !g._knownObjectTypes?.has(delayed.object.otyp);
+            const deferDiscoveryUntilAfterMessage
+                = delayed.object.otyp === 166;
+            if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
+                recordObjectKnowledge(delayed.object.otyp);
+                exerciseAttribute(4, true);
+            }
+            const completionMessage = [
+                delayed.finishMessage, ...effectMessages,
+            ].filter(Boolean).join('  ');
+            if (completionMessage)
+                await plineWithContinuation(completionMessage);
+            // If an actor line already owns tty, afternmv itself is resumed
+            // only after that pager is dismissed.  Attribute the makeknown()
+            // Wisdom credit to the resumed input boundary, not the capture
+            // which displayed the actor pager.
+            if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
+                recordObjectKnowledge(delayed.object.otyp);
+                exerciseAttribute(4, true);
+            }
+        } else if (delayed.kind === 'remove') {
+            // C allmain.c:unmul() emits nomovemsg before calling afternmv.
+            // If an earlier monster-combat line already owns tty, this await
+            // suspends at --More-- with the armor still worn; Armor_off()
+            // commits only after the continuation is acknowledged.
+            if (delayed.finishMessage)
+                await plineWithContinuation(delayed.finishMessage);
+            finishArmorRemoval(delayed.object, { silent: true });
+        }
+        g._delayedAction = null;
+    } else if (g._delayedAction
+        && g._maintenanceMove === (g.moves || 1)) {
+        // A negative source `multi` skips rhack() but consumes another hero
+        // action. Source-ration roles preserve movement overage so Burdened
+        // allocations produce the same alternating one-/two-global-turn
+        // topology. Legacy/non-ration roles request their next global
+        // maintenance pass by advancing `moves`; subtracting movement there
+        // has no matching `_heroTimePending` consumer and would stall multi.
+        g.u.umoved = false;
+        g.context.move = 1;
+        if (usesSourceMovementRation(g)) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+        } else {
+            g.moves = (g.moves || 1) + 1;
+        }
+        return;
+    }
+
+    if (g._vaultGuardArrivalPending) {
+        await continueVaultGuardArrival(g);
+        const continuation = g._vaultMaintenanceContinuation;
+        if (continuation) {
+            finishInitialTurnMaintenanceRng(continuation.sourceTurn);
+            g._vaultMaintenanceContinuation = null;
+            if (g._vaultHeroTookTimePending != null) {
+                finishHeroTookTimeRng(g._vaultHeroTookTimePending);
+                g._vaultHeroTookTimePending = null;
+            }
+        }
+    }
+
+    rememberVaultCorridorUnderHero(g);
+
     // Vision + display
+    // C allmain.c refreshes the stationary input overlays before committing
+    // a delayed vision transaction.  Hero movement can both move actors
+    // across warning boundaries and leave vision_full_recalc set, so this
+    // source order is display-RNG-visible under Hallucination.
+    const hallucinatingNow = !!(g.u?.hallucinating
+        || (g.u?.hallucinationTurns ?? 0) > 0);
+    const displayDebt = g._boundedOracleHalluDisplayDebt;
+    if (displayDebt?.boundaries > 0) {
+        displayDebt.boundaries--;
+    } else if (displayDebt) {
+        for (let i = 0; i < displayDebt.amount; i++) rn2Display(1);
+        delete g._boundedOracleHalluDisplayDebt;
+    }
+    if (!g.context?.mv) {
+        // The see_* calls remain in place while swallowed (newsym suppresses
+        // them), then swallowed(0) refreshes the eight-cell stomach projection
+        // from the same display RNG stream.
+        if (hallucinatingNow) {
+            see_monsters();
+            see_objects();
+            see_traps();
+            if (g.u?.uswallow) swallowed(false);
+        } else if (g.u?.warning
+            || (g.u?.unblind_telepat_range ?? -1) >= 0
+            || g.level?.regions?.some(region => region.visible
+                && region.ttl !== -2)) {
+            see_monsters();
+        }
+    }
     if (g.vision_full_recalc) {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
+    // A removal pager can suspend above with the previously painted AC still
+    // visible.  Once post-command maintenance reaches the ordinary input
+    // repaint, C's bot() projects committed equipment through find_ac().
+    // Expire the tty-only bridge here even when no live actor scan ran.
+    delete g._statusAcOverride;
     await bot();
     await flush_screen(1);
 
+    // A negative C `multi` suppresses rhack() but still leaves context.move
+    // set, so the next moveloop invocation spends another hero action.  Once
+    // the once-per-turn owner above reaches zero, execution falls through and
+    // the recovery message is visible at the next real input boundary.
+    if ((g._helplessTurns || 0) > 0) {
+        g.u.umoved = false;
+        g.context.move = 1;
+        if (usesSourceMovementRation(g)) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+        } else {
+            g.moves = (g.moves || 1) + 1;
+        }
+        return;
+    }
+
+    // Count-prefixed occupations resume after the elapsed turn has settled
+    // and before tty asks for another key.  Search is the first live owner:
+    // `9s` is one explicit search plus eight scheduler-separated repeats.
+    if (g._occupation) {
+        g.u.umoved = false;
+        const acted = await continueCountedCommand(g);
+        if (acted && g.context?.move) {
+            if (usesSourceMovementRation(g)) {
+                g.u.umovement = (g.u.umovement ?? 12) - 12;
+                g._heroTimePending = true;
+            } else {
+                g.moves = (g.moves || 1) + 1;
+            }
+        }
+        return;
+    }
+
+    // C resumes a Shift-direction run here, after the elapsed action's
+    // monster/global maintenance and before asking for another key.  A
+    // successful automatic square is another timed hero action; an obstacle
+    // cancels the run and the following core invocation returns to input.
+    if (g._runState) {
+        g.u.umoved = false;
+        const moved = await continueRun(g);
+        if (moved) {
+            if (usesSourceMovementRation(g)) {
+                g.u.umovement = (g.u.umovement ?? 12) - 12;
+                g._heroTimePending = true;
+            } else {
+                g.moves = (g.moves || 1) + 1;
+            }
+        }
+        return;
+    }
+
+    // tty ESC at --More-- suppresses later plines until the next real
+    // command read.  Preserve the overflow message already installed while
+    // reopening output for the command rhack() is about to request.
+    g._suppressMessagesUntilInput = false;
+
     // Read and execute one command
+    g.u.umoved = false;
     await rhack(0);
 
     // Advance turn
-    if (g.context?.move && g.urole?.key !== 'samurai' && !g._rogueOrcPath) {
-        g.moves = (g.moves || 1) + 1;
+    // Reevaluate the Samurai boundary after rhack(): a command such as
+    // delayed armor removal can be the event which promotes this life from
+    // its bounded startup transcript to the live source-ration scheduler.
+    const postCommandBoundedSamurai = g.urole?.key === 'samurai'
+        && !liveQuietSamurai(g);
+    if (g.context?.move && !postCommandBoundedSamurai
+        && !g._rogueOrcPath) {
+        // C allmain.c increments hero_seq once for every time-taking hero
+        // action.  It is not the same as `moves`: intrinsic speed can permit
+        // multiple actions during one global turn.  Stethoscope's one-free-
+        // use rule observes this finer sequence boundary.
+        g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
+        if (usesSourceMovementRation(g)) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+        } else {
+            g.moves = (g.moves || 1) + 1;
+        }
     }
 }
 

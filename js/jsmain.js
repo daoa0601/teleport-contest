@@ -155,8 +155,10 @@ function hasCharacterCompletion(role, race, gender, alignment) {
 function serializeCapture(term) {
     if (!Array.isArray(term?.grid)) return term?.serialize?.() || '';
 
-    const colorToFg = color => color === 8 || color < 0 || color > 15
-        ? 39 : color < 8 ? 30 + color : 90 + color - 8;
+    const colorToFg = color => color === 16 || color === 0 ? 90
+        : color === 7 || color === 8
+            || color < 0 || color > 15
+            ? 39 : color < 8 ? 30 + color : 90 + color - 8;
     const transition = (fg, attr, nextFg, nextAttr) => {
         if (fg === nextFg && attr === nextAttr) return '';
         const codes = [];
@@ -191,11 +193,15 @@ function serializeCapture(term) {
         }
 
         let firstCol = firstGlyph;
-        if (game._preserveLeadingStyledBlanks) {
-            const styled = cells.findIndex((cell, col) =>
-                col < firstGlyph && cell.ch === ' ' && (cell.attr & 5));
-            if (styled >= 0) firstCol = styled;
-        }
+        // Inverse-video and underlined blanks paint pixels and therefore
+        // participate in tty's row bounds just like glyphs.  This is a
+        // terminal invariant, not a fixture/menu mode; dropping a leading
+        // styled blank changes the decoded 80x24 cell grid.
+        const leadingStyleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
+        const styled = cells.findIndex((cell, col) =>
+            col < firstGlyph && cell.ch === ' '
+            && (cell.attr & leadingStyleMask));
+        if (styled >= 0) firstCol = styled;
         let lastCol = -1;
         for (let col = cells.length - 1; col >= 0; col--) {
             if (cells[col].ch !== ' ') {
@@ -212,22 +218,24 @@ function serializeCapture(term) {
             const cell = cells[col];
             const visibleBlank = cell.ch === ' ' && !!(cell.attr & 5);
             if (cell.ch === ' ' && !visibleBlank) {
+                const blankFg = colorToFg(cell.color);
+                const blankAttr = cell.attr | 0;
                 let end = col + 1;
                 while (end <= lastCol && cells[end].ch === ' '
-                    && !(cells[end].attr & 5)) end++;
-                const nextCell = end <= lastCol ? cells[end] : null;
-                const preserveStyle = !dec && attr !== 0 && nextCell
-                    && colorToFg(nextCell.color) === fg
-                    && (nextCell.attr | 0) === attr;
+                    && !(cells[end].attr & 5)
+                    && colorToFg(cells[end].color) === blankFg
+                    && (cells[end].attr | 0) === blankAttr) end++;
                 if (dec) {
                     line += '\x0f';
                     dec = false;
                 }
-                if (!preserveStyle) {
-                    line += transition(fg, attr, 39, 0);
-                    fg = 39;
-                    attr = 0;
-                }
+                // The tty changes foreground before advancing over a blank
+                // run.  Runs of at most four are emitted literally (so their
+                // color survives screen decoding); longer runs use CSI C
+                // and therefore leave untouched/default cells behind.
+                line += transition(fg, attr, blankFg, blankAttr);
+                fg = blankFg;
+                attr = blankAttr;
                 const count = end - col;
                 line += count > 4 ? `\x1b[${count}C` : ' '.repeat(count);
                 col = end;
@@ -327,6 +335,10 @@ export class NethackGame {
         g.replayMoves = this._moves;
         g.nethackrc = this._nethackrc;
         g.storage = this._storage;
+        // Engine code calls the same environment-neutral hook for transient
+        // frames that NetHack emits through nh_delay_output().  The runner
+        // owns capture bookkeeping; gameplay modules only paint and yield.
+        g.animationFrame = () => this.animationFrame();
 
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
@@ -352,7 +364,9 @@ export class NethackGame {
         g.displayName = playerName.charAt(0).toUpperCase() + playerName.slice(1);
         g.flags = {
             verbose: true,
-            pickup: true,
+            // NetHack 5.0 starts this tty profile with autopickup off unless
+            // the rc file or an in-game toggle explicitly enables it.
+            pickup: false,
             legacy: true,
             tutorial: true,
             ...opts.flags,
@@ -422,7 +436,13 @@ export class NethackGame {
         const display = game.nhDisplay;
         if (preserveBackground) {
             for (let row = 0; row < lines.length; row++) {
-                for (let col = left; col < display.cols; col++)
+                // tty_display_nhwindow() clears WIN_MESSAGE before a corner
+                // menu but preserves the base/map underlay west of the menu
+                // on subsequent rows.
+                // process_menu_window() clears through the cell immediately
+                // west of its text origin (the corner-window boundary).
+                const firstCol = row === 0 ? 0 : Math.max(0, left - 1);
+                for (let col = firstCol; col < display.cols; col++)
                     display.setCell(col, row, ' ', NO_COLOR, 0);
             }
         } else {
@@ -433,13 +453,24 @@ export class NethackGame {
             if (!line) continue;
             const text = typeof line === 'string' ? line : line.text;
             const attr = typeof line === 'string' ? 0 : line.attr;
-            display.putstr(left, row, text, NO_COLOR, attr);
+            // tty character-selection headings indent with an ordinary blank
+            // and begin inverse video on the following cell.  Keep that
+            // semantic split in the grid so universal styled-blank capture
+            // does not turn the margin into part of the heading.
+            if (attr && text.startsWith(' ')) {
+                display.putstr(left, row, ' ', NO_COLOR, 0);
+                display.putstr(left + 1, row, text.slice(1), NO_COLOR, attr);
+            } else {
+                display.putstr(left, row, text, NO_COLOR, attr);
+            }
         }
         display.setCursor(left + cursorOffset, cursorRow);
     }
 
     async _selectCharacter(initial) {
         const display = game.nhDisplay;
+        let selectedName = game.plname;
+        let manualInitial = initial;
         const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
         display.clearRow(0);
         display.putstr(0, 0, question, NO_COLOR);
@@ -480,24 +511,48 @@ export class NethackGame {
             }
 
             // 'a' means randomize and start immediately.  'y' uses the same
-            // choices but presents tty's confirmation window first.
+            // choices but enters the shared confirmation transition.  A
+            // rejected automatic tuple returns to a completely unresolved
+            // manual picker; it is not an ordinary command after startup.
             if (auto !== 'a') {
-                const roleName = gender.value === 1 && role.name.f
-                    ? role.name.f : role.name.m;
-                const identity = `${game.plname} the ${alignment.name} ${gender.name} ${race.adj} ${roleName}`;
-                const confirmLines = Array(9).fill('');
-                confirmLines[0] = { text: 'Is this ok? [ynaq]', attr: 1 };
-                confirmLines[2] = identity;
-                confirmLines[4] = 'y * Yes; start game';
-                confirmLines[5] = 'n - No; choose role again';
-                confirmLines[6] = 'a - Not yet; choose another name';
-                confirmLines[7] = 'q - Quit';
-                confirmLines[8] = '(end)';
-                const left = 80 - Math.max(39, identity.length + 2);
-                this._drawCharacterMenu(confirmLines, left, 8, 6, true);
-                await nhgetch();
+                for (;;) {
+                    const roleName = gender.value === 1 && role.name.f
+                        ? role.name.f : role.name.m;
+                    const identity = `${selectedName} the ${alignment.name} ${gender.name} ${race.adj} ${roleName}`;
+                    const confirmLines = Array(9).fill('');
+                    confirmLines[0] = { text: 'Is this ok? [ynaq]', attr: 1 };
+                    confirmLines[2] = identity;
+                    confirmLines[4] = 'y * Yes; start game';
+                    confirmLines[5] = 'n - No; choose role again';
+                    confirmLines[6] = 'a - Not yet; choose another name';
+                    confirmLines[7] = 'q - Quit';
+                    confirmLines[8] = '(end)';
+                    const left = 80 - Math.max(39, identity.length + 2);
+                    this._drawCharacterMenu(
+                        confirmLines, left, 8, 6, true,
+                    );
+                    const code = await nhgetch();
+                    const key = String.fromCharCode(code).toLowerCase();
+                    if (key === 'a') {
+                        selectedName = await this._readPlayerName(10, false);
+                        game.plname = selectedName;
+                        continue;
+                    }
+                    if (key === 'n') {
+                        manualInitial = {
+                            role: null,
+                            race: null,
+                            gender: null,
+                            alignment: null,
+                        };
+                        break;
+                    }
+                    if (key === 'y' || code === 10 || code === 13 || code === 32)
+                        return { role, race, gender, alignment, name: selectedName };
+                }
+            } else {
+                return { role, race, gender, alignment, name: selectedName };
             }
-            return { role, race, gender, alignment };
         }
 
         const filteredRoles = new Set();
@@ -506,30 +561,103 @@ export class NethackGame {
             const entry = CHARACTER_ROLE_MENU.find(candidate => candidate[0] === key);
             return entry && roles.find(candidate => candidate.key === entry[1]);
         };
-        const availableRaces = role => races.filter(race =>
+        const allSelectableRoles = () => CHARACTER_ROLE_MENU
+            .map(([, key]) => roles.find(candidate => candidate.key === key))
+            .filter(candidate => candidate && !filteredRoles.has(candidate.key));
+        const hasCompletion = (role, race, gender, alignment) => {
+            const candidates = role ? [role] : allSelectableRoles();
+            const candidateRaces = race ? [race]
+                : races.filter(candidate => !filteredRaces.has(candidate.name));
+            return candidates.some(candidateRole => candidateRaces.some(candidateRace =>
+                genders.some(candidateGender => (gender ? candidateGender === gender : true)
+                    && aligns.some(candidateAlignment =>
+                        (alignment ? candidateAlignment === alignment : true)
+                        && validCharacterChoice(
+                            candidateRole, candidateRace,
+                            candidateGender, candidateAlignment,
+                        )))));
+        };
+        const availableRaces = (role, gender, alignment) => races.filter(race =>
             !filteredRaces.has(race.name)
-            && hasCharacterCompletion(role, race, null, null));
-        const availableRoles = () => CHARACTER_ROLE_MENU
+            && hasCompletion(role, race, gender, alignment));
+        const availableGenders = (role, race, alignment) => genders.filter(gender =>
+            hasCompletion(role, race, gender, alignment));
+        const availableAlignments = (role, race, gender) => aligns.filter(alignment =>
+            hasCompletion(role, race, gender, alignment));
+        const availableRoles = (race, gender, alignment) => CHARACTER_ROLE_MENU
             .filter(([, key]) => !filteredRoles.has(key))
             .map(entry => [entry, roleByKey(entry[0])])
-            .filter(([, role]) => availableRaces(role).length);
+            .filter(([, role]) => hasCompletion(role, race, gender, alignment));
 
-        const drawRoleMenu = candidates => {
-            const compact = filteredRoles.size > 0 || filteredRaces.size > 0;
+        const facetSummary = (role, race, gender, alignment) => [
+            role ? role.name.m : '<role>',
+            race ? race.name : '<race>',
+            gender ? gender.name : '<gender>',
+            alignment ? alignment.name : '<alignment>',
+        ].join(' ');
+        const roleDescription = (entry, gender) => {
+            if (!gender) return entry[2];
+            if (entry[1] === 'caveman')
+                return gender.name === 'female' ? 'a Cavewoman' : 'a Caveman';
+            if (entry[1] === 'priest')
+                return gender.name === 'female' ? 'a Priestess' : 'a Priest';
+            return entry[2];
+        };
+        const routeLabel = (selected, facet) =>
+            `Pick ${selected ? 'another ' : ''}${facet} first`;
+
+        const forcedGenderOwner = role => {
+            const roleGenders = role && ROLE_SELECTION_RULES[role.key]?.genders;
+            return roleGenders?.length === 1
+                ? { owner: 'role', name: roleGenders[0] }
+                : null;
+        };
+
+        const forcedGenderRow = (role, gender) => {
+            const forced = forcedGenderOwner(role);
+            return forced && gender?.name === forced.name
+                ? `    ${forced.owner} forces ${forced.name}`
+                : `" - ${routeLabel(gender, 'gender')}`;
+        };
+
+        const forcedAlignmentOwner = (role, race) => {
+            const roleAlignments = role && ROLE_SELECTION_RULES[role.key]?.aligns;
+            if (roleAlignments?.length === 1)
+                return { owner: 'role', name: roleAlignments[0] };
+            const raceAlignments = race && RACE_SELECTION_RULES[race.name]?.aligns;
+            if (raceAlignments?.length === 1)
+                return { owner: 'race', name: raceAlignments[0] };
+            return null;
+        };
+
+        const forcedAlignmentRow = (role, race, alignment) => {
+            const forced = forcedAlignmentOwner(role, race);
+            return forced && alignment?.name === forced.name
+                ? `    ${forced.owner} forces ${forced.name}`
+                : `[ - ${routeLabel(alignment, 'alignment')}`;
+        };
+
+        const drawRoleMenu = (candidates, race, gender, alignment) => {
+            const compact = filteredRoles.size > 0 || filteredRaces.size > 0
+                || !!race || !!gender || !!alignment;
             const left = compact ? 41 : 0;
-            const lines = Array(compact ? 14 : 24).fill('');
+            const lines = Array(candidates.length + 11 + Number(compact)).fill('');
             const prefix = compact ? '' : ' ';
             lines[0] = { text: `${prefix}Pick a role or profession`, attr: 1 };
-            lines[2] = `${prefix}<role> <race> <gender> <alignment>`;
+            lines[2] = `${prefix}${facetSummary(null, race, gender, alignment)}`;
             let row = 4;
-            for (const [[key, , description]] of candidates)
-                lines[row++] = `${prefix}${key} - ${description}`;
+            for (const [entry] of candidates)
+                lines[row++] = `${prefix}${entry[0]} - ${roleDescription(entry, gender)}`;
             lines[row++] = `${prefix}* * Random`;
             if (compact) row++;
-            lines[row++] = `${prefix}/ - Pick race first`;
-            lines[row++] = `${prefix}" - Pick gender first`;
-            lines[row++] = `${prefix}[ - Pick alignment first`;
-            lines[row++] = `${prefix}~ - ${compact ? 'Reset' : 'Set'} role/race/&c filtering`;
+            lines[row++] = `${prefix}/ - ${routeLabel(race, 'race')}`;
+            lines[row++] = `${prefix}" - ${routeLabel(gender, 'gender')}`;
+            const forced = forcedAlignmentOwner(null, race);
+            lines[row++] = forced && alignment?.name === forced.name
+                ? `${prefix}    ${forced.owner} forces ${forced.name}`
+                : `${prefix}[ - ${routeLabel(alignment, 'alignment')}`;
+            lines[row++] = `${prefix}~ - ${filteredRoles.size || filteredRaces.size
+                ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = `${prefix}q - Quit`;
             lines[row] = `${prefix}(end)`;
             this._drawCharacterMenu(lines, left, row, 6 + Number(!compact));
@@ -567,10 +695,10 @@ export class NethackGame {
             }
         };
 
-        const drawRaceMenu = (role, candidates, alignment, forcedBy) => {
+        const drawRaceMenu = (role, candidates, gender, alignment) => {
             const lines = Array(candidates.length + 12).fill('');
             lines[0] = { text: 'Pick a race or species', attr: 1 };
-            lines[2] = `${role.name.m} <race> <gender> ${alignment?.name || '<alignment>'}`;
+            lines[2] = facetSummary(role, null, gender, alignment);
             let row = 4;
             for (const race of candidates) {
                 const key = CHARACTER_RACE_MENU.find(entry => entry[2] === race.name)?.[0];
@@ -578,28 +706,27 @@ export class NethackGame {
             }
             lines[row++] = '* * Random';
             row++;
-            lines[row++] = '? - Pick another role first';
-            lines[row++] = '" - Pick gender first';
-            lines[row++] = alignment
-                ? `    ${forcedBy} forces ${alignment.name}`
-                : '[ - Pick alignment first';
+            lines[row++] = `? - ${routeLabel(role, 'role')}`;
+            lines[row++] = forcedGenderRow(role, gender);
+            lines[row++] = forcedAlignmentRow(role, null, alignment);
             lines[row++] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = 'q - Quit';
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
         };
 
-        const drawGenderMenu = (role, race, alignment, forcedBy) => {
+        const drawGenderMenu = (role, race, alignment) => {
             const lines = Array(14).fill('');
             lines[0] = { text: 'Pick a gender or sex', attr: 1 };
-            lines[2] = `${role.name.m} ${race.name} <gender> ${alignment?.name || '<alignment>'}`;
+            lines[2] = facetSummary(role, race, null, alignment);
             lines[4] = 'm - male';
             lines[5] = 'f - female';
             lines[6] = '* * Random';
             lines[8] = '? - Pick another role first';
             lines[9] = '/ - Pick another race first';
-            if (alignment) lines[10] = `    ${forcedBy} forces ${alignment.name}`;
-            else lines[10] = '[ - Pick alignment first';
+            lines[8] = `? - ${routeLabel(role, 'role')}`;
+            lines[9] = `/ - ${routeLabel(race, 'race')}`;
+            lines[10] = forcedAlignmentRow(role, race, alignment);
             lines[11] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[12] = 'q - Quit';
             lines[13] = '(end)';
@@ -609,34 +736,61 @@ export class NethackGame {
         const drawAlignmentMenu = (role, race, gender, candidates) => {
             const lines = Array(candidates.length + 12).fill('');
             lines[0] = { text: 'Pick an alignment or creed', attr: 1 };
-            lines[2] = `${role.name.m} ${race.name} ${gender.name} <alignment>`;
+            lines[2] = facetSummary(role, race, gender, null);
             let row = 4;
             const keys = { lawful: 'l', neutral: 'n', chaotic: 'c' };
             for (const alignment of candidates)
                 lines[row++] = `${keys[alignment.name]} - ${alignment.name}`;
             lines[row++] = '* * Random';
             row++;
-            lines[row++] = '? - Pick another role first';
-            lines[row++] = '/ - Pick another race first';
-            lines[row++] = '" - Pick another gender first';
+            lines[row++] = `? - ${routeLabel(role, 'role')}`;
+            lines[row++] = `/ - ${routeLabel(race, 'race')}`;
+            lines[row++] = forcedGenderRow(role, gender);
             lines[row++] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = 'q - Quit';
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
         };
 
-        let selectedName = game.plname;
         selection: for (;;) {
-            let role = initial.role;
-            let race = initial.race;
-            let gender = initial.gender;
-            let alignment = initial.alignment;
-            let alignmentForcedBy = null;
+            let role = manualInitial.role;
+            let race = manualInitial.race;
+            let gender = manualInitial.gender;
+            let alignment = manualInitial.alignment;
+            let nextFacet = 'role';
 
-            if (!role) {
-                for (;;) {
-                    const candidates = availableRoles();
-                    drawRoleMenu(candidates);
+            // role.c:plsel_startmenu() calls rigid_role_checks() immediately
+            // before constructing every facet menu.  A rigid picker still
+            // consumes rn2(1) for its sole candidate; facets skipped without
+            // constructing a menu do not cross this boundary.
+            const applyPreMenuRigidChecks = () => {
+                if (!role) return;
+                if (!race) {
+                    const candidates = availableRaces(role, gender, alignment);
+                    if (candidates.length === 1)
+                        race = candidates[rn2(candidates.length)];
+                }
+                if (!alignment) {
+                    const candidates = availableAlignments(role, race, gender);
+                    if (candidates.length === 1)
+                        alignment = candidates[rn2(candidates.length)];
+                }
+                if (!gender) {
+                    const candidates = availableGenders(role, race, alignment);
+                    if (candidates.length === 1)
+                        gender = candidates[rn2(candidates.length)];
+                }
+            };
+
+            facetSelection: for (;;) {
+                if (nextFacet === 'role') {
+                    if (role) {
+                        nextFacet = 'race';
+                        continue;
+                    }
+                    const candidates = availableRoles(race, gender, alignment);
+                    applyPreMenuRigidChecks();
+                    drawRoleMenu(candidates, race, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
                     if (key === '~') {
                         if (filteredRoles.size || filteredRaces.size) {
@@ -645,77 +799,167 @@ export class NethackGame {
                         } else await editFilters();
                         continue;
                     }
-                    if (key === '*') role = candidates[rn2(candidates.length)]?.[1];
-                    else role = roleByKey(key);
-                    if (role && candidates.some(([, candidate]) => candidate === role)) break;
-                }
-            }
-
-            if (!alignment) {
-                const roleAlignments = aligns.filter(candidate =>
-                    ROLE_SELECTION_RULES[role.key]?.aligns.includes(candidate.name)
-                    && availableRaces(role).some(candidateRace =>
-                        validCharacterChoice(role, candidateRace, null, candidate)));
-                if (roleAlignments.length === 1) {
-                    alignment = roleAlignments[rn2(1)];
-                    alignmentForcedBy = 'role';
-                }
-            }
-
-            const raceCandidates = availableRaces(role);
-            if (!race || !raceCandidates.includes(race)) {
-                if (raceCandidates.length === 1) race = raceCandidates[0];
-                else {
-                    drawRaceMenu(
-                        role, raceCandidates, alignment, alignmentForcedBy,
-                    );
-                    const key = String.fromCharCode(await nhgetch()).toLowerCase();
-                    if (key === '*') race = raceCandidates[rn2(raceCandidates.length)];
-                    else {
-                        const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key);
-                        race = raceCandidates.find(candidate => candidate.name === entry?.[2]);
+                    if (key === '/') {
+                        role = null;
+                        race = null;
+                        nextFacet = 'race';
+                        continue;
                     }
-                    if (!race) continue selection;
+                    if (key === '"') {
+                        role = null;
+                        gender = null;
+                        nextFacet = 'gender';
+                        continue;
+                    }
+                    if (key === '[') {
+                        role = null;
+                        alignment = null;
+                        nextFacet = 'alignment';
+                        continue;
+                    }
+                    const chosen = key === '*'
+                        ? candidates[rn2(candidates.length)]?.[1]
+                        : roleByKey(key);
+                    if (!chosen || !candidates.some(([, candidate]) => candidate === chosen))
+                        continue;
+                    role = chosen;
+                    nextFacet = 'race';
+                    continue;
                 }
-            }
 
-            let alignmentCandidates = aligns.filter(candidate =>
-                validCharacterChoice(role, race, gender, candidate));
-            if (!alignment && alignmentCandidates.length === 1) {
-                alignment = alignmentCandidates[rn2(1)];
-                alignmentForcedBy = 'race';
-            }
+                if (nextFacet === 'race') {
+                    if (race && hasCompletion(role, race, gender, alignment)) {
+                        nextFacet = role ? 'gender' : 'role';
+                        continue;
+                    }
+                    race = null;
+                    let candidates = availableRaces(role, gender, alignment);
+                    if (!candidates.length) candidates = availableRaces(role, null, null);
+                    if (candidates.length === 1) {
+                        race = candidates[0];
+                        nextFacet = role ? 'gender' : 'role';
+                        continue;
+                    }
+                    applyPreMenuRigidChecks();
+                    drawRaceMenu(role, candidates, gender, alignment);
+                    const key = String.fromCharCode(await nhgetch());
+                    if (key === '?') {
+                        role = null;
+                        race = null;
+                        nextFacet = 'role';
+                        continue;
+                    }
+                    if (key === '"') {
+                        gender = null;
+                        race = null;
+                        nextFacet = 'gender';
+                        continue;
+                    }
+                    if (key === '[') {
+                        alignment = null;
+                        race = null;
+                        nextFacet = 'alignment';
+                        continue;
+                    }
+                    if (key === '~') {
+                        if (filteredRoles.size || filteredRaces.size) {
+                            filteredRoles.clear();
+                            filteredRaces.clear();
+                        } else await editFilters();
+                        continue;
+                    }
+                    if (key === '*') race = candidates[rn2(candidates.length)];
+                    else {
+                        const entry = CHARACTER_RACE_MENU.find(candidate =>
+                            candidate[0] === key.toLowerCase());
+                        race = candidates.find(candidate => candidate.name === entry?.[2]);
+                    }
+                    if (!race) continue;
+                    nextFacet = role ? 'gender' : 'role';
+                    continue;
+                }
 
-            const genderCandidates = genders.filter(candidate =>
-                validCharacterChoice(role, race, candidate, alignment));
-            if (!gender || !genderCandidates.includes(gender)) {
-                if (genderCandidates.length === 1) gender = genderCandidates[0];
-                else {
-                    drawGenderMenu(
-                        role, race, alignment, alignmentForcedBy,
-                    );
+                if (nextFacet === 'gender') {
+                    if (gender && hasCompletion(role, race, gender, alignment)) {
+                        nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
+                        continue;
+                    }
+                    gender = null;
+                    let candidates = availableGenders(role, race, alignment);
+                    if (!candidates.length) candidates = availableGenders(role, race, null);
+                    if (candidates.length === 1) {
+                        gender = candidates[0];
+                        nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
+                        continue;
+                    }
+                    applyPreMenuRigidChecks();
+                    drawGenderMenu(role, race, alignment);
                     const key = String.fromCharCode(await nhgetch()).toLowerCase();
-                    if (key === '*') gender = genderCandidates[rn2(genderCandidates.length)];
-                    else gender = genderCandidates.find(candidate =>
-                        candidate.name[0] === key);
-                    if (!gender) continue selection;
+                    if (key === '?') {
+                        role = null;
+                        gender = null;
+                        nextFacet = 'role';
+                        continue;
+                    }
+                    if (key === '/') {
+                        race = null;
+                        gender = null;
+                        nextFacet = 'race';
+                        continue;
+                    }
+                    if (key === '[') {
+                        alignment = null;
+                        gender = null;
+                        nextFacet = 'alignment';
+                        continue;
+                    }
+                    if (key === '*') gender = candidates[rn2(candidates.length)];
+                    else gender = candidates.find(candidate => candidate.name[0] === key);
+                    if (!gender) continue;
+                    nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
+                    continue;
                 }
-            }
 
-            alignmentCandidates = aligns.filter(candidate =>
-                validCharacterChoice(role, race, gender, candidate));
-            if (!alignment) {
-                if (alignmentCandidates.length === 1)
-                    alignment = alignmentCandidates[rn2(1)];
-                else {
-                    drawAlignmentMenu(role, race, gender, alignmentCandidates);
-                    const key = String.fromCharCode(await nhgetch()).toLowerCase();
-                    if (key === '*')
-                        alignment = alignmentCandidates[rn2(alignmentCandidates.length)];
-                    else alignment = alignmentCandidates.find(candidate =>
-                        candidate.name[0] === key);
-                    if (!alignment) continue selection;
+                if (alignment && hasCompletion(role, race, gender, alignment)) {
+                    nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
+                    if (!nextFacet) break facetSelection;
+                    continue;
                 }
+                alignment = null;
+                let candidates = availableAlignments(role, race, gender);
+                if (!candidates.length) candidates = availableAlignments(role, race, null);
+                if (candidates.length === 1) {
+                    alignment = candidates[0];
+                    nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
+                    if (!nextFacet) break facetSelection;
+                    continue;
+                }
+                applyPreMenuRigidChecks();
+                drawAlignmentMenu(role, race, gender, candidates);
+                const key = String.fromCharCode(await nhgetch()).toLowerCase();
+                if (key === '?') {
+                    role = null;
+                    alignment = null;
+                    nextFacet = 'role';
+                    continue;
+                }
+                if (key === '/') {
+                    race = null;
+                    alignment = null;
+                    nextFacet = 'race';
+                    continue;
+                }
+                if (key === '"') {
+                    gender = null;
+                    alignment = null;
+                    nextFacet = 'gender';
+                    continue;
+                }
+                if (key === '*') alignment = candidates[rn2(candidates.length)];
+                else alignment = candidates.find(candidate => candidate.name[0] === key);
+                if (!alignment) continue;
+                nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
+                if (!nextFacet) break facetSelection;
             }
 
             let preserveConfirmationBackground = false;
@@ -787,7 +1031,6 @@ export class NethackGame {
         const nhGame = this;
         game._preNhgetchHook = async () => {
             const keyIdx = nhGame._nhgetchCount++;
-
             if (game._wizardBindPath && [20, 25, 35, 36].includes(keyIdx))
                 replayWizardBindBoundary(keyIdx);
             if (game._wizardPolyPath)

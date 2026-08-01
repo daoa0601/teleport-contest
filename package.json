@@ -4,7 +4,10 @@
   "description": "The Teleport Coding Challenge — Port NetHack C to JavaScript",
   "type": "module",
   "scripts": {
+    "test": "node --test --test-concurrency=1 --test-reporter=dot test/*.test.js",
     "score": "bash frozen/score.sh",
+    "score:engine": "TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions",
+    "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
     "play": "echo 'Open index.html in a browser to play'"
   },
   "engines": {
