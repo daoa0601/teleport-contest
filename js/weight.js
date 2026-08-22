@@ -53,13 +53,22 @@ function condensedStrength(value) {
 }
 
 export function inventoryWeight(state) {
-    return (state.inventory || []).reduce((total, object) => {
+    const inventory = state.inventory || [];
+    const objectWeightTotal = inventory.reduce((total, object) => {
         // NetHack's only coin denomination weighs one unit per 100 coins,
         // rounded after combining the entire inventory stack.
         if (object.oclass === 12)
             return total + Math.trunc((quantity(object) + 50) / 100);
         return total + objectWeight(object);
     }, 0);
+    // The JS port keeps purse gold in `_goldCount` rather than a COIN_CLASS
+    // inventory object.  It still contributes the same rounded stack weight
+    // to source inv_weight(); avoid double counting if a restored state does
+    // contain an explicit coin object.
+    const hasCoinObject = inventory.some(object => object.oclass === 12);
+    const purseWeight = hasCoinObject ? 0
+        : Math.trunc(((state._goldCount ?? 0) + 50) / 100);
+    return objectWeightTotal + purseWeight;
 }
 
 export function weightCapacity(state) {

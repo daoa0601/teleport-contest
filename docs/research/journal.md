@@ -85074,3 +85074,46 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:17 EEST, journal block 2844] {#polyself #break-armor #gelatinous-cube #no-hands #shield #gloves #weapon #dropx #encumbrance #gold-weight #coin-weight #oldcap #topline-continuation #pager #native-witness #root-cause #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and native witness:** every source `dropx()` ends with
+`encumber_msg()`, so no-hands accessory removal can publish several load
+transitions before final `polymon()` cleanup.  Seed11 Healer wishes/wears +2
+small shield, retains starting gloves/scalpel and becomes a gelatinous cube.
+Input66 consumes `rn2(2)=1,rn2(19)=7,rn2(500)=287,d(6,8)=24` and exposes the
+form/glove/weapon pager at HP24/24, HD6, AC5, Stressed and Blind.  Inputs67 and
+68 successively page `You rebalance your load.  Movement is difficult.` and
+`Your movements are only slowed slightly by your load.`.  Input69 publishes
+`You can no longer hold your shield!`, drops type150 and projects AC8.  All 75
+states are exact; the recorder took **0.07 seconds** at **52,936,704 bytes
+maximum RSS**.
+
+**Earliest mismatch and root cause:** the initial source-shaped per-drop logic
+showed Burdened rather than native Stressed at input66.  The scalpel, gloves and
+shield object weights were already exact.  The missing 15 units were the
+Healer's 1,540 zorkmids: C represents gold as a COIN_CLASS inventory stack and
+rounds `(quan+50)/100`, while JS stores it in `_goldCount` outside inventory.
+Adding purse weight to shared `inventoryWeight()` when no explicit coin object
+exists restores the native boundary without a shield- or session-specific
+capacity override.
+
+**Implementation and falsifications:** a source-style capacity cursor begins
+at the pre-polymorph band and advances after each selected weapon, glove and
+shield drop.  Each real transition uses ordinary topline continuation; the
+next message naturally forces its predecessor through tty.  This falsifies a
+single final encumbrance check, shield prose as the pager owner and a bounded
+capacity transcript as acceptable repair.  The earlier no-shield
+gelatinous-cube session remains exact.
+
+**Measured acceptance and next blocker:** the fixture-disabled focused
+polymorph gate passes **11/11** in **0.36 seconds**, the preceding twenty
+erosion controls remain exact and the one owned managed family passes
+**149/149** in **2.70 seconds**.  Every process exited before the next began.
+Section830 and the ledger now include purse weight plus immediate `dropx()`
+backpressure through the shield.  Next select boots on the same no-hands form,
+then headless eyewear separately.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

@@ -332,6 +332,7 @@ export async function polyselfControlledMonster(mnum) {
     const shirt = game.uarmu || game.u?.uarmu;
     const helmet = game.uarmh || game.u?.uarmh;
     const gloves = game.uarmg || game.u?.uarmg;
+    const shield = game.uarms || game.u?.uarms;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -347,6 +348,15 @@ export async function polyselfControlledMonster(mnum) {
     game._encumbranceLevel = transientCapacity;
     game.u._encumbrance = encumbranceLabel(transientCapacity);
     let sequentialEquipmentMessages = false;
+    let sourceCapacity = previousCapacity;
+    const publishDropCapacityChange = async () => {
+        const nextCapacity = nearCapacity(game);
+        const message = encumbranceMessage(sourceCapacity, nextCapacity);
+        sourceCapacity = nextCapacity;
+        game._encumbranceLevel = nextCapacity;
+        game.u._encumbrance = encumbranceLabel(nextCapacity);
+        if (message) await plineWithContinuation(message);
+    };
 
     if (breaksArmor && !suit && !cloak && !shirt
         && noHands && weapon && !gloves) {
@@ -426,8 +436,19 @@ export async function polyselfControlledMonster(mnum) {
         await plineWithContinuation(
             `You drop your gloves${weapon ? ' and weapon' : ''}!`,
         );
-        if (weapon) dropCarriedObject(weapon, ['uwep']);
+        if (weapon) {
+            dropCarriedObject(weapon, ['uwep']);
+            await publishDropCapacityChange();
+        }
         dropCarriedObject(gloves, ['uarmg']);
+        await publishDropCapacityChange();
+    }
+    if (noHands && shield) {
+        await plineWithContinuation(
+            'You can no longer hold your shield!',
+        );
+        dropCarriedObject(shield, ['uarms']);
+        await publishDropCapacityChange();
     }
 
     findArmorClass(game);
@@ -439,7 +460,7 @@ export async function polyselfControlledMonster(mnum) {
     game.u._encumbrance = encumbranceLabel(currentCapacity);
 
     const capacityMessage = encumbranceMessage(
-        previousCapacity, currentCapacity,
+        sourceCapacity, currentCapacity,
     );
     let capacityMessagePaged = false;
     if (capacityMessage && canBreathe) {

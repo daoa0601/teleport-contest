@@ -29850,8 +29850,11 @@ flowchart TD
     Pierce --> Hands
     HelmDrop --> Hands
     Hands -->|"yes"| GloveLine["drop gloves and weapon line; drop both"]
-    Hands -->|"no"| EquipDone["find_ac; newsym; encumber"]
-    GloveLine --> EquipDone
+    Hands -->|"no"| Shield{"no hands plus worn shield?"}
+    GloveLine --> Shield
+    Shield -->|"yes"| ShieldLine["cannot hold shield line; drop shield"]
+    Shield -->|"no"| EquipDone["find_ac; newsym; final encumber"]
+    ShieldLine --> EquipDone
     EquipDone --> Live["committed monster equipment and presentation state"]
     Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
     Contact --> Death{"matching completelyrottable/rustable form?"}
@@ -29935,6 +29938,23 @@ states are exact from input3.  The earlier weapon-only `You find you must drop
 your tool!` path remains valid when there are no gloves, as selected by the
 existing red dragon.  Shield, additional helmet, boot and eyewear removals
 remain later branches of the same source transaction.
+
+The shield successor proves that `dropx()` owns immediate load feedback, not
+just final polymorph cleanup.  The paired Healer wishes/wears +2 small shield
+before becoming a gelatinous cube.  Purse gold is stored separately in JS but
+native `inv_weight()` includes its rounded coin weight; 1,540 zorkmids add 15
+weight units and keep the form Stressed after the 5-weight scalpel drops.
+Dropping the weapon therefore queues `You rebalance your load.  Movement is
+difficult.`; dropping the gloves changes Stressed to Burdened and queues the
+lighter-load line; attempting the shield line successively forces both through
+tty.  Input69 finally publishes `You can no longer hold your shield!`, drops
+the shield and projects AC eight.  All 75 states are exact from input3.
+
+The port now folds separately stored purse gold into the ordinary inventory-
+weight calculation when no explicit coin object exists.  A per-drop capacity
+cursor mirrors source `go.oldcap`, so these messages are derived from state
+transitions rather than hardcoded to the shield recipe.  Boots and eyewear
+remain independent successors.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the

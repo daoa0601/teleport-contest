@@ -12244,3 +12244,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   The fixture-disabled polymorph gate passes 10/10 in 0.32 seconds, the twenty
   erosion controls stay exact and the owned managed family passes 149/149 in
   2.75 seconds.  Shield, boot and eyewear branches remain open.
+- Seed11 extends the gelatinous-cube no-hands witness with wished +2 small
+  shield.  Native input66 shows the form/glove/weapon pager at Stressed/AC5;
+  input67 shows `You rebalance your load.  Movement is difficult.--More--` at
+  Burdened; input68 shows `Your movements are only slowed slightly by your
+  load.--More--`; input69 finally says `You can no longer hold your shield!`,
+  drops it and projects AC8.  All 75 states are exact from input3.
+
+  Root cause was broader than shield policy: JS kept purse gold outside
+  inventory and omitted its rounded coin weight.  Native's 1,540 gold adds 15
+  weight, preserving Stressed after the scalpel drop.  Shared weight now counts
+  `_goldCount` unless an explicit coin object exists; each selected `dropx()`
+  advances a source-style capacity cursor and queues its actual transition.
+  The fixture-disabled polymorph gate passes 11/11 in 0.36 seconds, the twenty
+  erosion controls remain exact and the owned managed family passes 149/149 in
+  2.70 seconds.  Boots and eyewear remain open.
