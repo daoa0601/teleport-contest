@@ -1697,6 +1697,15 @@ function finishInitialTurnMaintenanceAfterConfusion({
         }
     }
 
+    if (!prayerTimeoutFreeze
+        && (game.u?.halfPhysicalDamageTurns ?? 0) > 0) {
+        game.u.halfPhysicalDamageTurns--;
+        if (game.u.halfPhysicalDamageTurns === 0) {
+            game.u.halfPhysicalDamage
+                = !!game.u.halfPhysicalDamageFromArtifact;
+        }
+    }
+
     if (!prayerTimeoutFreeze && (game.u?.deafTurns ?? 0) > 0) {
         game.u.deafTurns--;
         if (game.u.deafTurns === 0) game.deaf = false;

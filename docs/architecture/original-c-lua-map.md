@@ -30668,3 +30668,33 @@ at `rn2(25)=11`.  All 122 states are exact and the later contact tail ends at
 HP89.  Half-physical rounding and fatal/rehumanization outcomes remain
 separate controls; half-spell and elemental resistances deliberately do not
 participate in this source effect.
+
+## 845. Timed half-physical damage joins wizard properties, contact, and geyser
+
+```mermaid
+flowchart TD
+    Menu["wizcmds.c:wiz_intrinsic page 3 local o"] --> Timed["HALF_PHDAM intrinsic timeout += 30"]
+    Timed --> Tick["allmain timeout owner decrements on elapsed global turns"]
+    Timed --> Contact["mhitu.c:hitmu ordinary physical contact"]
+    Contact --> AC["negative-AC reduction first"]
+    AC --> ContactHalf["ceil positive damage / 2"]
+    ContactHalf --> ContactHP["mdamageu"]
+    Timed --> Geyser["mcastu.c:mcast_geyser fresh d(8,6)"]
+    Geyser --> GeyserHalf["ceil geyser damage / 2"]
+    GeyserHalf --> GeyserHP["mdamageu"]
+    Lua["Lua owns no property, contact, or geyser phase"] -.-> Menu
+```
+
+Seed47 adds the real timed property before the already-exact high-cleric
+constructor.  Inputs75 and76 show page-three row `o` changing from unselected
+to selected; input77 publishes `Timeout for half physical damage set to 30.`
+The property does not consume RNG or elapsed game time during menu/genesis.
+
+At input122, the ordinary 2d8 kick still rolls seven but changes HP185 to181,
+rounding physical contact upward to four after the usual knockback/AC phase.
+Input123 preserves the discarded cleric pre-roll `d(14,8)=60`.  Input124 then
+rolls the same geyser `d(8,6)=30`, applies fifteen, reaches HP166 and resumes at
+the same `rn2(25)=11`.  Later mace/kick contact remains exact and the full
+session ends HP136 with 27 timed turns.  All 141 states are exact.  The carried
+Orb-of-Fate extrinsic, negative-AC composition, expiry fallback and fatal or
+polymorphed contact remain separate controls.

@@ -86418,3 +86418,41 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:46 EEST, journal block 2877] {#high-cleric #geyser #half-physical #wizintrinsic #timeout #page-local-selector #contact-damage #negative-ac-order #rounding #orb-of-fate #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Contract and carrier choice:** half-physical evidence must come from a real
+property source and prove both ordinary contact and geyser, not a test-only
+hero flag or one halved endpoint.  The carried Orb of Fate remains coupled to
+the previously recorded random-artifact-count gap.  The independent
+`#wizintrinsic` route exposes `half physical damage` immediately after the
+already-proven half-spell row, so page-three local `o` supplies a clean timed
+carrier without artifact-generation RNG.
+
+**Property and contact boundaries:** native inputs75/76 show row `o` changing
+from `-` to `+`; input77 publishes `Timeout for half physical damage set to
+30.` with zero RNG.  The former JS menu listed the property but neither stored
+nor reported it, making input77 the earliest divergence.  Adding the timed
+property/expiry owner and applying it in shared `mhitu.c:hitmu()` order—after
+negative-AC reduction, rounding positive damage upward—makes input122's 2d8=7
+kick reduce HP185 to181 rather than178.
+
+**Geyser and lifetime evidence:** input123 keeps the same discarded
+`d(14,8)=60`; half spell policy does not enter.  Input124 rolls fresh
+`d(8,6)=30`, applies physical fifteen, reaches HP166 and resumes at unchanged
+`rn2(25)=11`.  Later mace/kick damage remains exact, ending HP136 with 27 timed
+turns.  Section845 maps the single property into wizard menu, global timeout,
+ordinary contact and geyser owners; Lua owns no phase.
+
+**Measured acceptance and next blocker:** all **141 native states** are exact.
+The recorder took **0.09 seconds** at **54,820,864 bytes maximum RSS** and the
+exact JS replay took **0.24 seconds** at **124,993,536 bytes max RSS**.  Timed
+half-physical, ordinary geyser and twelve neighboring cleric witnesses pass
+**14/14** fixture-disabled in **0.50 seconds** at **147,570,688 bytes max
+RSS**; all processes exited.  The Orb extrinsic, negative-AC composition,
+timeout expiry fallback and fatal/polymorphed physical outcomes remain open.
+Next compare the remaining curse/lightning/insect controls by source breadth.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

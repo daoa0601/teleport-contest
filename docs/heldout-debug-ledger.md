@@ -12613,3 +12613,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   final-HP assertion and was corrected to that native endpoint; the current
   fixture-disabled cleric gate passes 13/13 in 0.48 seconds at 148,996,096
   bytes maximum RSS.  Half-physical and fatal outcomes remain open controls.
+- Seed47 plus page-three `#wizintrinsic` local `o` closes timed
+  Half_physical_damage across both ordinary high-cleric contact and geyser.
+  Input77 installs/reports 30 turns without RNG.  Input122 keeps kick 2d8=7
+  but rounds damage to four (HP185 to181); input123 leaves discarded
+  `d(14,8)=60` unchanged; input124 rounds fresh geyser 8d6=30 to fifteen
+  (HP181 to166) before the same `rn2(25)=11` continuation.  Later contact is
+  exact, ending HP136 with 27 turns.  All 141 states replay exactly and the
+  fixture-disabled cleric gate passes 14/14 in 0.50 seconds at 147,570,688
+  bytes maximum RSS.  The Orb-of-Fate extrinsic, negative AC, timeout expiry
+  and fatal/polymorphed physical damage remain separate controls.

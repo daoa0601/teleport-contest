@@ -9822,6 +9822,63 @@ test('seed0047 high-cleric geyser replaces spell pre-roll with physical 8d6',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0047 half-physical timeout halves high-cleric contact and geyser',
+    async () => {
+        const result = await runSegment({
+            seed: 47,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n  o\n '
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 141);
+        assert.equal(decodedRow(result.getScreens()[75], 14),
+            ' o - half physical damage');
+        assert.equal(decodedRow(result.getScreens()[76], 14),
+            ' o + half physical damage');
+        assertRngSliceExact(result.getRngSlices()[77], [],
+            'seed0047 half-physical timeout feedback RNG');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'Timeout for half physical damage set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(25)=18',
+            'rn2(13)=0', 'rn2(5)=2', 'rn2(5)=3',
+            'rn2(250)=148',
+        ], 'seed0047 half-physical kick and geyser selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'The priestess of Poseidon kicks!--More--');
+        assert.equal(decodedRow(result.getScreens()[122], 23),
+            'Dlvl:1 $:1088 HP:181(185) Pw:286(286) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'd(14,8)=60',
+        ], 'seed0047 half-physical discarded cast pre-roll RNG');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1088 HP:181(185) Pw:286(286) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'd(8,6)=30', 'rn2(25)=11',
+        ], 'seed0047 half-physical geyser and resumed selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'A sudden geyser slams into you from nowhere!--More--');
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1088 HP:166(185) Pw:286(286) AC:8 Xp:30');
+
+        assert.equal(game.u.halfPhysicalDamage, true);
+        assert.equal(game.u.halfPhysicalDamageTurns, 27);
+        assert.equal(game.u.uhp, 136);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

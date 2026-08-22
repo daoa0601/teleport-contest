@@ -1996,10 +1996,19 @@ function monsterAttackThreshold(monster, state, rollOne, calls) {
 // by rnd(-uac), with a floor of one.  This is not the AC_VALUE to-hit draw.
 function reduceHeroContactDamage(damage, state, rollOne, calls) {
     const armorClass = state?.u?.uac ?? 10;
-    if (damage <= 0 || armorClass >= 0) return damage;
-    const reduction = rollOne(-armorClass);
-    calls.push(`rnd(${-armorClass})`);
-    return Math.max(1, damage - reduction);
+    let appliedDamage = damage;
+    if (appliedDamage > 0 && armorClass < 0) {
+        const reduction = rollOne(-armorClass);
+        calls.push(`rnd(${-armorClass})`);
+        appliedDamage = Math.max(1, appliedDamage - reduction);
+    }
+    // mhitu.c:hitmu() applies Half_physical_damage only after negative-AC
+    // reduction and rounds odd positive damage upward.
+    if (appliedDamage > 0 && (state?.u?.halfPhysicalDamage
+        || state?.u?.half_physical_damage)) {
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+    }
+    return appliedDamage;
 }
 
 function applyHeroContactDamage(state, damage) {
