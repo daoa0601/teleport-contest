@@ -30638,3 +30638,33 @@ starting a new turn.  The complete 122-state replay is exact.  Magicbane,
 Antimagic shielding/count scaling, half-spell scaling, blessed-object
 unblessing, intelligent-artifact resistance and a steed saddle remain separate
 controls; the selected carrier contains none of them.
+
+## 844. Geyser probes usefulness twice and replaces spell damage with physical 8d6
+
+```mermaid
+flowchart TD
+    Pick["choose_monster_spell walks the cleric table"] --> First["geyser usefulness: rn2(5) inside table walk"]
+    First --> Retry["castmu retry condition: one more rn2(5)"]
+    Retry --> Fumble["single rn2(level*10) fumble check"]
+    Fumble --> Cast["cast line; level-scaled 14d8 pre-roll"]
+    Cast --> Message["mcast_geyser: sudden-geyser pline"]
+    Message --> Replace["discard 14d8; roll fresh d(8,6)"]
+    Replace --> Half["apply Half_physical_damage only"]
+    Half --> HP["mdamageu; then resume remaining actor transaction"]
+    Lua["Lua owns no selector or geyser effect"] -.-> Pick
+```
+
+The source retry loop does not recheck usefulness after its `do/while`
+condition.  Seed47 exposed the old port's third geyser `rn2(5)`: native
+input103 has selection/retry values `2,3` and then `rn2(250)=148`, whereas the
+extra JS probe shifted fumble to 206.  Modeling C's 40-attempt loop as one
+post-selection condition removes the third call without changing pure
+uselessness predicates for the other spells.
+
+Input104 publishes the cast pager and consumes only `d(14,8)=60`.  That value
+is not geyser damage.  On input105, `mcast_geyser()` publishes its line, rolls
+fresh physical `d(8,6)=30`, reduces HP178 to148, and returns to the live actor
+at `rn2(25)=11`.  All 122 states are exact and the later contact tail ends at
+HP89.  Half-physical rounding and fatal/rehumanization outcomes remain
+separate controls; half-spell and elemental resistances deliberately do not
+participate in this source effect.

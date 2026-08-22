@@ -350,6 +350,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
         }
     } else if (spell.key === 'curse-items') {
         effectMessage = 'You feel as if you need some help.';
+    } else if (spell.key === 'geyser') {
+        effectMessage = 'A sudden geyser slams into you from nowhere!';
     } else if (spell.key === 'fire-pillar') {
         effectMessage = 'A pillar of fire strikes all around you!';
     } else if (spell.key === 'lightning') {
@@ -5890,6 +5892,11 @@ function basicMonsterAttack(
             kind: 'hero-spell', threshold, attackType, damageType,
             attackIndex, cast: false,
         }, monster, attackIndex);
+        // C castmu() starts cnt at 40.  choose_monster_spell() already tests
+        // usefulness while walking the spell table; the do/while condition
+        // tests the returned spell once more, but there is no third probe
+        // after the loop.  Stateful usefulness checks such as geyser's
+        // rn2(5) make that exact call count observable.
         let attempts = 39;
         while (attempts-- > 0
             && monsterSpellUseless(monster, spell, state, random, calls)) {
@@ -5897,7 +5904,7 @@ function basicMonsterAttack(
                 monster, damageType, state, random, calls,
             );
         }
-        if (monsterSpellUseless(monster, spell, state, random, calls)) {
+        if (attempts < 0) {
             return retainHeroAttackContinuation({
                 kind: 'hero-spell', threshold, attackType, damageType,
                 attackIndex, spell: spell.key, cast: false,
@@ -7556,6 +7563,11 @@ export function resumeDeferredHeroSpell(action, state) {
     }
     if (attack.spell === 'curse-items') {
         attack.deferredCurseItems = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
+    if (attack.spell === 'geyser') {
+        attack.deferredGeyserSpell = true;
         attack.appliedDamage = 0;
         return attack;
     }

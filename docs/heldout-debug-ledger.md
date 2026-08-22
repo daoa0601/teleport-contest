@@ -12601,3 +12601,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   startup drift, seed19 for an input101 monster-potion naming divergence, and
   seeds20--23 for covered effects.  Magicbane, Antimagic, half-spell scaling,
   blessed items, intelligent artifacts, steed saddles and geyser remain open.
+- Seed47 closes the selected ordinary high-cleric geyser through 122 exact
+  states.  Seeds26--46 produced covered spells, item-use detours or failed
+  level-13 casts; a level-13 draw alone was rejected as effect evidence.  The
+  clean carrier first exposed an extra third JS `rn2(5)` usefulness probe.
+  Source performs one probe inside `choose_monster_spell()` and one in the
+  `castmu()` retry condition, then fumbles with `rn2(250)=148`.  Input104's
+  `d(14,8)=60` is discarded; input105 publishes the geyser, rolls physical
+  `d(8,6)=30`, applies HP178 to148 and resumes at `rn2(25)=11`.  The later
+  exact contact tail ends HP89.  The initial 12/13 gate failure was a false
+  final-HP assertion and was corrected to that native endpoint; the current
+  fixture-disabled cleric gate passes 13/13 in 0.48 seconds at 148,996,096
+  bytes maximum RSS.  Half-physical and fatal outcomes remain open controls.

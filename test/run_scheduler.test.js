@@ -9777,6 +9777,51 @@ test('seed0025 high-cleric curse-items preserves aura and inventory order',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0047 high-cleric geyser replaces spell pre-roll with physical 8d6',
+    async () => {
+        const result = await runSegment({
+            seed: 47,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(25)=18',
+            'rn2(13)=0', 'rn2(5)=2', 'rn2(5)=3',
+            'rn2(250)=148',
+        ], 'seed0047 geyser selector retries and fumble RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The priestess of Poseidon kicks!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[104], [
+            'd(14,8)=60',
+        ], 'seed0047 discarded cast pre-roll after pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'The priestess of Poseidon casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[104], 23),
+            'Dlvl:1 $:1088 HP:178(185) Pw:286(286) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[105], [
+            'd(8,6)=30', 'rn2(25)=11',
+        ], 'seed0047 geyser physical damage and resumed selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'A sudden geyser slams into you from nowhere!--More--');
+        assert.equal(decodedRow(result.getScreens()[105], 23),
+            'Dlvl:1 $:1088 HP:148(185) Pw:286(286) AC:8 Xp:30');
+
+        assert.equal(game.u.uhp, 89);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

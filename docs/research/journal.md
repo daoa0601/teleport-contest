@@ -86376,3 +86376,45 @@ high-cleric effect.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:40 EEST, journal block 2876] {#high-cleric #geyser #seed47 #spell-uselessness #retry-loop #physical-damage #half-physical #discarded-preroll #selector-search #false-acceptance #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Search portfolio and accepted carrier:** seeds26--46 produced covered
+confusion, paralyze, fire, lightning, insects or curse-items, plus earlier
+monster potion/wand detours.  Several later slices contained `rn2(25)=13`, but
+only in cooldown or failed-cast transactions; they were rejected because no
+geyser line or effect followed.  Seed47 is the first successful carrier:
+input105 visibly publishes the geyser and rolls its concrete damage.  This
+falsifies using the selector value alone as effect evidence.
+
+**Earliest selector divergence:** before the effect, native input103 consumes
+`rn2(25)=18,rn2(13)=0,rn2(5)=2,rn2(5)=3,rn2(250)=148`.  JS consumed a third
+`rn2(5)=3` and shifted fumble to206.  `choose_monster_spell()` already probes
+spell usefulness while walking the table; C `castmu()` probes the chosen spell
+once more in its `do/while` condition, then proceeds without a third check.
+Replacing the post-loop probe with the actual 40-attempt exhaustion condition
+makes the prefix exact and preserves the pure predicates used by other cleric
+spells.
+
+**Effect ownership and damage replacement:** input104 publishes the cast line
+and rolls level-scaled `d(14,8)=60`; `mcast_geyser()` discards that value.
+Input105 publishes `A sudden geyser slams into you from nowhere!`, rolls fresh
+physical `d(8,6)=30`, applies only Half_physical_damage policy, changes HP178
+to148, and resumes the live actor at `rn2(25)=11`.  The later native contact
+tail ends at HP89.  Section844 maps selector, retry, tty, replacement-damage
+and HP ownership; Lua owns none of them.
+
+**Acceptance correction and measured result:** the first focused gate passed
+every RNG/screen assertion but failed 12/13 because the new test incorrectly
+claimed final HP148, confusing the input105 checkpoint with the full-session
+endpoint.  This was test slop, not a production mismatch; the exact comparator
+already showed the later tail.  Correcting the assertion to native HP89 yields
+all **122 states exact** and **13/13** fixture-disabled cleric witnesses in
+**0.48 seconds** at **148,996,096 bytes maximum RSS**.  The native recorder
+took **0.07 seconds** at **54,460,416 bytes max RSS** and the exact JS replay
+took **0.22 seconds** at **125,173,760 bytes max RSS**; all processes exited.
+Half-physical rounding and fatal/rehumanization outcomes remain separate.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

@@ -2621,6 +2621,22 @@ async function resolveDeferredHeroCurseItems(action, heroAttack) {
     heroAttack.deferredCurseItems = false;
 }
 
+// C mcastu.c:mcast_geyser() discards castmu()'s level-scaled spell pre-roll
+// and rolls a fresh physical 8d6.  Half physical damage applies; half spell
+// damage and elemental resistances do not.
+function resolveDeferredHeroGeyser(action, heroAttack) {
+    if (!heroAttack?.deferredGeyserSpell) return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const appliedDamage = game.u?.halfPhysicalDamage
+        || game.u?.half_physical_damage
+        ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
+    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
+    heroAttack.appliedDamage = appliedDamage;
+    heroAttack.heroDied = game.u.uhp <= 0;
+    heroAttack.deferredGeyserSpell = false;
+}
+
 // C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
 // transaction crosses tty after the evaporation line; the vapor effect
 // resumes only after that pager is acknowledged.  Install ordinary
@@ -3458,6 +3474,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             await resolveDeferredHeroCurseItems(
                                 action, heroAttack,
                             );
+                        if (heroAttack.deferredGeyserSpell)
+                            resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.toggledBlindness)
                             vision_recalc(0);
