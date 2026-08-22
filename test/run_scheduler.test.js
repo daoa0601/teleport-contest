@@ -26,7 +26,7 @@ import {
     WORTHLESS_PIECE_OF_RED_GLASS,
     QUARTERSTAFF, RIN_CONFLICT,
     SPE_BOOK_OF_THE_DEAD, SPE_POLYMORPH, TWO_HANDED_SWORD,
-    WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_STRIKING,
+    WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import {
@@ -9577,6 +9577,71 @@ test('seed0012 forced Wizard weakness drains strength after its pager',
         assert.equal(game.u.acurr.a[0], 3);
         assert.equal(game.u.uhp, 56);
         assert.equal(game.u.uhpmax, 100);
+    });
+
+test('seed0017 Wizard rejects its old square and defers a speed wand',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 111),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 112);
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=0',
+            'rn2(8)=3', 'rn2(7)=1', 'rn2(6)=4', 'rn2(5)=4',
+            'rn2(4)=3', 'rn2(3)=2', 'rn2(2)=0',
+            'rn2(16)=12', 'rn2(15)=11', 'rn2(14)=10', 'rn2(13)=11',
+            'rn2(12)=10', 'rn2(11)=4', 'rn2(10)=0', 'rn2(9)=8',
+            'rn2(8)=0', 'rn2(7)=2', 'rn2(6)=4', 'rn2(5)=4',
+            'rn2(4)=2', 'rn2(3)=2', 'rn2(2)=0',
+            'rn2(24)=2', 'rn2(23)=17', 'rn2(22)=3', 'rn2(21)=7',
+            'rn2(20)=1', 'rn2(19)=7', 'rn2(18)=13', 'rn2(17)=10',
+            'rn2(16)=10', 'rn2(15)=0', 'rn2(14)=10', 'rn2(13)=2',
+            'rn2(12)=3', 'rn2(11)=1', 'rn2(10)=1', 'rn2(9)=5',
+            'rn2(8)=1', 'rn2(7)=2', 'rn2(6)=5', 'rn2(5)=0',
+            'rn2(4)=1', 'rn2(3)=2', 'rn2(2)=0',
+            'rn2(5)=2',
+        ], 'seed0017 Wizard harass relocation RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor vanishes and reappears next to you.--More--');
+        assert.equal(decodedRow(result.getScreens()[106], 14),
+            '                                    x~~~@~');
+        assert.equal(decodedRow(result.getScreens()[106], 15),
+            '                                    x~~F@x');
+
+        assertRngSliceExact(result.getRngSlices()[107], [],
+            'seed0017 Wizard speed-wand use line RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'The Wizard of Yendor zaps himself with an iridium wand!--More--');
+        assertRngSliceExact(result.getRngSlices()[108], [
+            'rn2(19)=7', 'rn2(5)=3', 'rnd(20)=19', 'rn2(5)=1',
+            'rn2(5)=3', 'rn2(12)=8', 'rn2(12)=2', 'rn2(12)=8',
+            'rn2(12)=3', 'rn2(70)=36', 'rn2(20)=2', 'rn2(70)=34',
+        ], 'seed0017 Wizard speed discovery and actor tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'The Wizard of Yendor is suddenly moving faster.  The lichen misses!');
+
+        const wizard = game.level.monsters.find(monster => monster.iswiz);
+        assert.ok(wizard);
+        assert.equal(wizard.mspeed, MFAST);
+        assert.equal(wizard.permspeed, MFAST);
+        const speedWand = wizard.minvent.find(object =>
+            object.otyp === WAN_SPEED_MONSTER);
+        assert.ok(speedWand);
+        assert.equal(speedWand.spe, 3);
+        assert.equal(speedWand.dknown, true);
+        assert.equal(game._knownObjectTypes.has(WAN_SPEED_MONSTER), true);
     });
 
 test('seed0011 high-cleric fire pillar burns armor and selected inventory',

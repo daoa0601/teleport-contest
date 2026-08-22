@@ -12765,3 +12765,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   exact fixture-disabled replay ends HP56/100 and the two selected Wizard
   controls pass 2/2.  Antimagic, half-spell, sustain ability, polymorphic and
   lethal weakness remain open alongside haste and higher Wizard effects.
+- Seed17 closes the Wizard's visible harass relocation and carried speed-wand
+  lifecycle through input111.  Native rejects the first shuffled candidate
+  because it is the Wizard's own still-occupied square, relocates from
+  `(40,13)` to `(41,14)`, and gives visible-vanish prose precedence over stale
+  `STRAT_APPEARMSG`.  Input107 publishes only the unknown iridium-wand zap;
+  input108 installs permanent fast speed, spends the wand charge, discovers
+  its type via `rn2(19)=7`, then resumes the lichen/global tail.  The bounded
+  fixture-disabled regression passes, as does the existing seed0030
+  shopkeeper speed-wand control.  Input112's summon-monsters effect is the
+  next earliest divergence; unseen and alternate-speed branches remain open.

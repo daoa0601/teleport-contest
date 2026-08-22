@@ -2301,12 +2301,10 @@ function monsterRelocationMessage(monster, relocation, actorWasSeen) {
     const suffix = distance <= 2 ? ' next to you'
         : distance <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
     const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
-    if (relocation.appearMessage) {
-        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
-        return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${
-            suffix
-        }!`;
-    }
+    // teleport.c:rloc_to_core() gives a visible old location precedence over
+    // STRAT_APPEARMSG.  Seeing the actor vanish clears that one-shot bit, so
+    // an already-visible Wizard reports a relocation rather than a fresh
+    // arrival even when genesis left STRAT_APPEARMSG set.
     if (actorWasSeen && nowSeen) {
         return `${visibleMonsterSubject(monster)} vanishes and reappears${
             suffix
@@ -2314,6 +2312,12 @@ function monsterRelocationMessage(monster, relocation, actorWasSeen) {
     }
     if (actorWasSeen)
         return `${visibleMonsterSubject(monster)} vanishes!`;
+    if (relocation.appearMessage) {
+        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
+        return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${
+            suffix
+        }!`;
+    }
     if (nowSeen) {
         return `${visibleMonsterSubject(monster)} ${
             blind ? 'arrives' : 'appears'
@@ -4751,21 +4755,38 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             }
         }
         if (movement?.usedMisc?.kind === 'potion-speed') {
+            const misc = movement.usedMisc;
             if (actorWasSeen) {
+                misc.object.dknown = true;
                 await queueTurnMessage(
-                    `The ${quietMonsterName(monster)} drinks a potion of speed!`,
-                );
-                await queueTurnMessage(
-                    `The ${quietMonsterName(monster)} is suddenly moving faster.`,
+                    `${visibleMonsterSubject(monster)} drinks ${
+                        petCarriedObjectName(misc.object)
+                    }!`,
                 );
             } else if (!game.deaf) {
                 await queueTurnMessage('You hear a chugging sound.');
             }
+            finishDeferredMonsterMiscItem(action, game);
+            if (actorWasSeen && misc.speedChanged) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} is suddenly moving ${
+                        misc.speedMuch ? 'much ' : ''
+                    }faster.`,
+                );
+                exerciseAttribute(4, true);
+                recordObjectKnowledge(misc.object.otyp);
+            }
         }
         if (movement?.usedMisc?.kind === 'wand-speed-monster') {
+            const misc = movement.usedMisc;
             if (actorWasSeen) {
+                misc.object.dknown = true;
+                const reflexive = monster.female ? 'herself'
+                    : monster.genderless ? 'itself' : 'himself';
                 await queueTurnMessage(
-                    `${visibleMonsterSubject(monster)} zaps itself with a wand of speed monster!`,
+                    `${visibleMonsterSubject(monster)} zaps ${reflexive} with ${
+                        petCarriedObjectName(misc.object)
+                    }!`,
                 );
             } else if (!game.deaf) {
                 const range = couldsee(monster.mx, monster.my)
@@ -4776,6 +4797,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game.u?.uy ?? monster.my,
                 ) <= range * range ? 'nearby' : 'distant';
                 await queueTurnMessage(`You hear a ${proximity} zap.`);
+                misc.object.dknown = false;
+            }
+            finishDeferredMonsterMiscItem(action, game);
+            if (actorWasSeen && misc.speedChanged) {
+                await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} is suddenly moving ${
+                        misc.speedMuch ? 'much ' : ''
+                    }faster.`,
+                );
+                exerciseAttribute(4, true);
+                recordObjectKnowledge(misc.object.otyp);
             }
         }
         if (movement?.guardFinished && !game._suppressMessagesUntilInput) {

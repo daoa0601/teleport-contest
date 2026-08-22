@@ -87026,3 +87026,54 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-23 00:21 EEST, journal block 2894] {#wizard-of-yendor #covetous #harass #mnexto #goodpos #strat-appearmsg #speed-wand #mon-adjust-speed #learnwand #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** seed17's forced Wizard prefix is exact
+through input105.  Input106 spends the native harass gate and all three ring
+shuffles, but JS originally retained the Wizard at `(40,13)` and reported `A
+Wizard ... suddenly appears`; native relocates to `(41,14)` and reports `The
+Wizard ... vanishes and reappears next to you.`  RNG and hero status already
+matched, isolating destination validation and relocation presentation.
+
+**Prediction and source evidence:** `mnexto()->enexto_core()->goodpos()` runs
+while the Wizard still occupies his old square, so the first shuffled
+candidate `(40,13)` must fail.  `rloc_to_core()` sees both endpoints, sets its
+teleport-message branch and suppresses the stale `STRAT_APPEARMSG` arrival.
+After acknowledgement, `mzapwand()` must publish the visible iridium-wand line
+before charge/state mutation; `mon_adjust_speed()` then publishes a second
+line before `learnwand()` exercises Wisdom and resumes later actors.
+
+**Implementation and measured effect:** covetous destination selection now
+rejects the actor's old occupied square, and relocation prose prioritizes a
+visible old endpoint.  Speed wands and potions now return a deferred misc-item
+effect: allmain publishes the use line, commits charge/inventory and permanent
+speed, publishes visible speed feedback, then records discovery with Wisdom
+exercise.  Seed17 is exact through **112 screens (inputs0--111)**.  Input107
+has zero RNG; input108 begins `rn2(19)=7` and matches its complete twelve-call
+tail.  The Wizard is permanently fast, the wand has three charges and its
+type is known.
+
+**Falsification, decision and next blocker:** exact placement after rejecting
+only the old square falsifies shuffle order, scary-square retry and general
+terrain legality.  The empty input107 slice falsifies immediate charge/speed
+mutation; the input108 Wisdom draw proves discovery belongs after the effect
+line.  Section861 maps the two tty boundaries; Lua owns none.  Input112 is now
+the earliest divergence: adjacent AD_SPEL summon-monsters is selected and
+pre-rolled exactly, but its constructor is not connected to the hero-attack
+continuation.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---
+
+### [2026-08-23 00:22 EEST, journal block 2895] {#wizard-of-yendor #speed-wand #shopkeeper #focused-gate #fixture-disabled #regression #green #process-safety}
+
+**Regression result:** the fixture-disabled seed17 covetous/speed prefix and
+the existing seed0030 shopkeeper speed-wand control pass **2/2** in **1.08
+seconds** at **203,849,728 bytes maximum RSS**.  This confirms that deferring
+the shared wand effect preserves the older non-Wizard owner as well as the new
+two-pager Wizard path.  The single managed process exited; no full corpus,
+hidden judge, push or publication ran.  Input112 summon-monsters remains the
+next earliest seed17 divergence.
+
+---

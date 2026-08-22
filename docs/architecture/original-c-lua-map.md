@@ -31152,3 +31152,38 @@ JavaScript continuation now keeps that effect after the tty boundary and
 preserves the polymorph-sensitive HP/max-HP ownership shape.  Antimagic,
 half-spell scaling, polymorphic rehumanization, sustain ability, exceptional
 Strength encoding and lethal weakness remain separate controls.
+
+## 861. Covetous relocation and self-speed preserve two tty boundaries
+
+```mermaid
+flowchart TD
+    Harass["Wizard STRAT_NONE harass gate rn2(5)=0"] --> Shuffle["mnexto collects and shuffles three hero rings"]
+    Shuffle --> OldSquare["goodpos rejects Wizard's still-occupied old square"]
+    OldSquare --> Relocate["move to next legal adjacent coordinate"]
+    Relocate --> Vanish["visible old and new positions: vanishes and reappears"]
+    Vanish --> Resume["acknowledgement resumes same dochug actor"]
+    Resume --> SelectWand["find_misc selects carried speed-monster wand"]
+    SelectWand --> ZapLine["mzapwand publishes appearance and spends charge"]
+    ZapLine --> Speed["mon_adjust_speed installs permanent fast state"]
+    Speed --> SpeedLine["publish moving-faster line"]
+    SpeedLine --> Learn["learnwand discovers type and exercises Wisdom"]
+    Learn --> LaterActors["resume later actors and global maintenance"]
+    Lua["Lua owns no relocation, inventory, speed, or tty phase"] -.-> Harass
+```
+
+Seed17 is exact through input111.  At input106 the first shuffled adjacent
+candidate is the Wizard's current `(40,13)` square.  C `goodpos()` still sees
+that occupied location and rejects it; JavaScript's expulsion-derived
+predicate had exempted the moving actor and selected a no-op.  Rejecting the
+old square selects native `(41,14)`.  Because the old and new positions are
+both visible, `rloc_to_core()` also clears the lingering `STRAT_APPEARMSG` and
+uses relocation prose rather than a fresh-arrival line.
+
+Input107 then contains only `The Wizard of Yendor zaps himself with an iridium
+wand!`: charge and speed state are deferred behind that tty line.  Input108
+publishes `is suddenly moving faster`, discovers the wand through Wisdom
+exercise `rn2(19)=7`, and only then resumes the lichen and maintenance tail.
+The Wizard ends permanently fast and the wand drops to three charges.  The
+next independent boundary is input112's successful summon-monsters spell;
+other covetous targets, unseen relocation, speed potions, slow-to-normal speed
+and immobile message suppression remain separate controls.

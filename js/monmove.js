@@ -1059,23 +1059,12 @@ function useMonsterMiscItem(monster, state, random, calls) {
         };
     }
 
-    const { object, index } = selected;
+    const { object } = selected;
     const wand = object.otyp === WAN_SPEED_MONSTER;
-    if (wand) {
-        object.spe--;
-        object.dknown = false;
-    } else if ((object.quan ?? 1) > 1) {
-        object.quan--;
-    } else {
-        inventory.splice(index, 1);
-    }
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
-    monster.mspeed = monster.permspeed;
     return {
         ...selected,
         kind: wand ? 'wand-speed-monster' : 'potion-speed',
+        deferredEffect: true,
     };
 }
 
@@ -1134,6 +1123,26 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
         // retains its own future witness rather than being guessed here.
         monster.m_lev = Math.min(49, (monster.m_lev ?? 0) + 1);
         misc.increase = increase;
+        misc.effectApplied = true;
+        return misc;
+    }
+
+    if (misc.kind === 'wand-speed-monster'
+        || misc.kind === 'potion-speed') {
+        const oldSpeed = monster.mspeed ?? 0;
+        if (misc.kind === 'wand-speed-monster') {
+            misc.object.spe--;
+        } else {
+            removeMonsterInventoryObject(monster, misc.object);
+        }
+        monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
+        monster.mspeed = monster.permspeed;
+        misc.oldSpeed = oldSpeed;
+        misc.speedChanged = monster.mspeed !== oldSpeed
+            && naturalMonsterSpeed(monster) !== 0
+            && monster.mcanmove !== 0 && !monster.msleeping
+            && !(monster.mfrozen ?? 0);
+        misc.speedMuch = monster.mspeed + oldSpeed === MFAST + MSLOW;
         misc.effectApplied = true;
         return misc;
     }
@@ -6949,7 +6958,11 @@ function covetousTeleportDestination(monster, state, random, calls) {
             3, random, calls,
         );
         const destination = candidates.find(({ x, y }) =>
-            expulsionDestinationOk(monster, state, x, y)
+            // teleport.c:enexto_core()->goodpos() sees the relocating actor
+            // still occupying its old square, so that shuffled candidate is
+            // rejected just like any other MON_AT location.
+            (x !== monster.mx || y !== monster.my)
+            && expulsionDestinationOk(monster, state, x, y)
             && (!checkScary || !scareScrollAffects(
                 monster, state, x, y,
             )));
