@@ -84152,3 +84152,63 @@ AD_RUST/AD_CORR suppression.  No corpus, hidden judge, stage, commit, push or
 publication ran.
 
 ---
+
+### [2026-08-22 15:02 EEST, journal block 2825] {#projectile #rust #corrosion #cancellation #stethoscope #tty-wrap #selector-correction #native-witness #bounded-prefix #focused-regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and paired search:** source AD_RUST and AD_CORR both return on
+`mcan` before grease/material/protection/erosion.  A cancelled rust monster and
+black pudding must therefore leave a surviving iron orcish arrow completely
+uneroded, with floor resistance immediately after mulch.  The validated
+cancellation-wand/stethoscope setup makes `mcan` transcript-visible before the
+shot.
+
+**Owned selector and false zero:** one combined process was retained and
+polled for **277.12 seconds** at **159,186,944 bytes maximum RSS**.  It found
+six rust carriers but zero black-pudding carriers.  A concrete seed116 trace
+falsified the apparent family gap: black-pudding status reaches column 80 and
+shows `cancell`, while the selector required the untruncated word `cancelled`.
+A corrected black-pudding-only pass found six candidates in **1.50 seconds**
+at **137,674,752 bytes maximum RSS**.  Seed205 is the clean rust suppression
+prefix; seed2 is the clean complete AD_CORR replay.
+
+**Native status red and repair:** the first native recordings revealed that
+both long status lines wrap after the comma and place
+`cancelled.--More--` on row two at cursor `(18,1)`.  JavaScript retained `In
+what direction?`, truncated status to row one and allowed throw keys to leak
+through.  The normal stethoscope path now clears its getdir prompt and uses
+`plineWithContinuation()`; recipes include one explicit acknowledgement.
+Corrected native recordings contain 140 rust states in **0.06 seconds** at
+**54,427,648 bytes maximum RSS** and 141 black-pudding states in **0.06
+seconds** at the same maximum RSS.
+
+**Complete AD_CORR suppression:** seed2 input131 exactly owns Wisdom
+`rn2(19)=7`, immediate range `rn2(8)=3`, level-nine resistance
+`rn2(103)=83` and the scheduler tail.  Input134 proves the wrapped cancelled
+status.  Input138 hits for eight, survives mulch, then floor resistance 44
+appears with no AD_CORR work or prose.  The live target remains `mcan=1` at
+27/35 HP; fired and inventory orcish arrows stay rust/corrosion zero.  All 141
+states replay exactly from input3 onward in **0.17 seconds** at **123,666,432
+bytes maximum RSS**.
+
+**Bounded AD_RUST suppression and residual:** seed205 input130 exactly owns
+range/resistance and scheduler work; input133 proves wrapped cancelled status.
+Input137's first seven calls are exact through hit, damage, exercise, mulch and
+floor resistance 79, its complete screen/cursor match native, and fired plus
+inventory arrows remain rust/corrosion zero beneath a live cancelled target.
+The later same-input monster attack is separately non-exact: native continues
+`rnd(20)=14, d(0,0)=0, rn2(3)=0, rn2(6)=0, rnd(21)=21`, while JavaScript jumps
+to `rnd(21)=1`.  This is a hero-contact/passive-tail gap after projectile
+suppression, so the rust regression asserts the exact seven-call prefix and
+durable state rather than claiming a complete replay.
+
+**Measured acceptance and next blocker:** the cancellation pair passes **2/2**
+in **0.24 seconds** at **129,466,368 bytes maximum RSS**.  The one owned
+managed projectile/priest/wish process passes **124/124** in **2.39 seconds**
+at **333,840,384 bytes maximum RSS**.  Every runner exits and registries are
+empty.  Sections 320, 774 and 826 plus the ledger now map all three passive
+cancellation outcomes.  Next repair the seed205 cancelled rust-monster touch
+at native `d(0,0)` and its passive-tail draws, then promote the bounded rust
+replay to complete exactness.  No corpus, hidden judge, stage, commit, push or
+publication ran.
+
+---

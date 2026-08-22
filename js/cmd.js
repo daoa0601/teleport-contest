@@ -13747,6 +13747,9 @@ async function useStethoscope(item) {
     const direction = String.fromCharCode(
         await promptKey('In what direction? '),
     ).toLowerCase();
+    // getdir() clears its direction query before use_stethoscope() publishes
+    // either an empty-square response or the potentially wrapping status.
+    game._pending_message = '';
     if (!isMovementKey(direction) && direction !== '.') {
         game.context.move = 0;
         return;
@@ -13781,7 +13784,7 @@ async function useStethoscope(item) {
     } else if (!monster) {
         await pline('You hear nothing special.');
     } else {
-        await pline(monsterStatusLine(monster));
+        await plineWithContinuation(monsterStatusLine(monster));
     }
 
     game.context.move = usedTime ? 1 : 0;

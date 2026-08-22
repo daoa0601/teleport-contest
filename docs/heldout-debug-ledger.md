@@ -11896,3 +11896,27 @@ attempt: **402 calls**, not a direct two-pass retry.
   seconds at 131,481,600 bytes maximum RSS; the managed family passes 122/122
   in 2.35 seconds at 332,562,432 bytes maximum RSS.  Cancelled AD_RUST and
   AD_CORR suppression are the next paired controls.
+- Seed205 and seed2 close the passive-side cancelled AD_RUST/AD_CORR pair, with
+  a bounded rust-contact residual kept explicit.  The first combined selector
+  ran as one retained process for 277.12 seconds at 159,186,944 bytes maximum
+  RSS and found six rust carriers but zero black-pudding carriers.  That zero
+  was a selector bug: the 80-column black-pudding status truncates `cancelled`
+  to `cancell`.  A corrected black-pudding-only pass found six candidates in
+  1.50 seconds at 137,674,752 bytes maximum RSS.
+
+  Native status then exposed a real tty issue: long monster status wraps to
+  row two and opens `--More--`, while JavaScript retained the direction prompt
+  and truncated the status.  Clearing `getdir()` state, using the resumable
+  status publisher and adding one explicit acknowledgement repairs it.  The
+  corrected 141-state black-pudding replay is exact from input3 onward: floor
+  resistance 44 follows mulch with no AD_CORR mutation/prose, and both orcish
+  arrows remain uncorroded beneath a live `mcan=1` target.
+
+  Rust input137 is exact through its seven-call projectile/floor prefix and
+  has exact screen/cursor plus unrusted fired/inventory identities.  Its later
+  same-input hero-contact tail remains non-exact at native `d(0,0)=0`; the test
+  is intentionally prefix-bounded rather than called a complete replay.  The
+  cancellation pair passes 2/2 in 0.24 seconds at 129,466,368 bytes maximum
+  RSS, and the managed family passes 124/124 in 2.39 seconds at 333,840,384
+  bytes maximum RSS.  The cancelled rust-monster touch is the next earliest
+  source gap.

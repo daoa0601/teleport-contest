@@ -88,6 +88,11 @@ function decodedTopline(encoded) {
     return decodeScreen(encoded)[0].map(cell => cell.ch).join('').trimEnd();
 }
 
+function decodedRow(encoded, row) {
+    return decodeScreen(encoded)[row]
+        .map(cell => cell.ch).join('').trimEnd();
+}
+
 const SEED0361_BLACK_UNICORN_GENESIS_RNG = [
     'rn2(8)=1', 'rn2(7)=2', 'rn2(6)=2', 'rn2(5)=0',
     'rn2(4)=2', 'rn2(3)=2', 'rn2(2)=1',
@@ -5962,6 +5967,207 @@ test('seed0116 cancellation wand leaves acid passive active for orcish arrow',
         }, {
             enchantment: 5,
             chargesKnown: false,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0205 cancelled rust monster suppresses orcish-arrow rust passive',
+    async () => {
+        const result = await runSegment({
+            seed: 205,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful rust monster\n'
+                + 'zhuaiu tgu  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 140);
+        assertRngSliceExact(result.getRngSlices()[130], [
+            'rn2(19)=12', 'rn2(8)=7', 'rn2(108)=57',
+            'rn2(4)=3', 'rn2(3)=1', 'rn2(3)=2', 'rn2(3)=1',
+            'rn2(3)=1', 'rn2(5)=0', 'rn2(5)=1', 'rn2(12)=6',
+            'rn2(12)=7', 'rn2(70)=21', 'rn2(300)=230',
+            'rn2(20)=6', 'rn2(73)=12',
+        ], 'seed0205 cancelled rust-monster wand and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[130]), '');
+        assert.deepEqual(result.getCursors()[130], [20, 16, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[133], [],
+            'seed0205 cancelled rust-monster status RNG');
+        assert.equal(decodedRow(result.getScreens()[133], 0),
+            'Status of the rust monster (neutral, medium):  Level 4  HP 9(9)  AC 2,');
+        assert.equal(decodedRow(result.getScreens()[133], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[133], [18, 1, 1]);
+
+        assert.deepEqual(result.getRngSlices()[137].slice(0, 7), [
+            'rnd(2)=1', 'rnd(2)=1', 'rnd(20)=2', 'rnd(5)=2',
+            'rn2(19)=12', 'rn2(4)=2', 'rn2(100)=79',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[137]),
+            'The orcish arrow hits the rust monster.  The rust monster touches you!--More--');
+        assert.deepEqual(result.getCursors()[137], [78, 0, 1]);
+
+        const rustMonster = game.level.monsters.find(monster =>
+            monster.mnum === 212);
+        assert.ok(rustMonster);
+        assert.deepEqual({
+            x: rustMonster.mx,
+            y: rustMonster.my,
+            hp: rustMonster.mhp,
+            hpmax: rustMonster.mhpmax,
+            peaceful: rustMonster.mpeaceful,
+            cancelled: rustMonster.mcan ?? 0,
+        }, {
+            x: 22,
+            y: 14,
+            hp: 5,
+            hpmax: 9,
+            peaceful: 0,
+            cancelled: 1,
+        });
+
+        const floorArrows = (game.level.objects?.[22]?.[14] || [])
+            .filter(object => object.otyp === ORCISH_ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            rust: floorArrows[0].oeroded ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            rust: 0,
+            corrosion: 0,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ORCISH_ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            rust: inventorySibling.oeroded ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            rust: 0,
+            corrosion: 0,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0002 cancelled black pudding suppresses orcish-arrow corrosion',
+    async () => {
+        const result = await runSegment({
+            seed: 2,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful black pudding\n'
+                + 'zhhaih tgh  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 141);
+        assertRngSliceExact(result.getRngSlices()[131], [
+            'rn2(19)=7', 'rn2(8)=3', 'rn2(103)=83',
+            'rn2(4)=0', 'rn2(5)=2', 'rn2(5)=2', 'rn2(12)=6',
+            'rn2(12)=5', 'rn2(12)=0', 'rn2(70)=51',
+            'rn2(400)=308', 'rn2(300)=50', 'rn2(20)=14',
+            'rn2(67)=12',
+        ], 'seed0002 cancelled black-pudding wand and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[131]), '');
+        assert.deepEqual(result.getCursors()[131], [47, 17, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[134], [],
+            'seed0002 cancelled black-pudding status RNG');
+        assert.equal(decodedRow(result.getScreens()[134], 0),
+            'Status of the black pudding (neutral, large):  Level 9  HP 35(35)  AC 6,');
+        assert.equal(decodedRow(result.getScreens()[134], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[134], [18, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[138], [
+            'rnd(2)=1', 'rnd(2)=2', 'rnd(20)=4', 'rnd(6)=6',
+            'rn2(19)=6', 'rn2(4)=1', 'rn2(100)=44',
+            'rn2(4)=2', 'rn2(3)=1', 'rn2(3)=1', 'rn2(5)=3',
+            'rn2(5)=3', 'rn2(5)=4', 'rn2(32)=21', 'rn2(5)=0',
+            'rn2(12)=6', 'rn2(12)=7', 'rn2(12)=2', 'rn2(70)=3',
+            'rn2(400)=54', 'rn2(300)=193', 'rn2(20)=8',
+            'rn2(67)=18',
+        ], 'seed0002 cancelled black-pudding projectile and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[138]),
+            'The orcish arrow hits the black pudding!');
+        assert.deepEqual(result.getCursors()[138], [47, 17, 1]);
+
+        const pudding = game.level.monsters.find(monster =>
+            monster.mnum === 209);
+        assert.ok(pudding);
+        assert.deepEqual({
+            x: pudding.mx,
+            y: pudding.my,
+            hp: pudding.mhp,
+            hpmax: pudding.mhpmax,
+            peaceful: pudding.mpeaceful,
+            cancelled: pudding.mcan ?? 0,
+        }, {
+            x: 47,
+            y: 16,
+            hp: 27,
+            hpmax: 35,
+            peaceful: 0,
+            cancelled: 1,
+        });
+
+        const floorArrows = (game.level.objects?.[47]?.[16] || [])
+            .filter(object => object.otyp === ORCISH_ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            rust: floorArrows[0].oeroded ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            rust: 0,
+            corrosion: 0,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ORCISH_ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            rust: inventorySibling.oeroded ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            rust: 0,
+            corrosion: 0,
         });
         assert.equal(game.context.move, 0);
     });

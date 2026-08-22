@@ -10504,6 +10504,14 @@ the adjacent first-monster path only; multi-cell object/trap cancellation,
 resistance success, up/down effects and full `bhit()` continuation remain
 separate boundaries.
 
+Long ordinary status lines add a tty boundary that the short acid-blob line
+does not exercise.  Rust-monster and black-pudding status clear the preceding
+`getdir()` prompt, wrap after the terminal-width comma, render
+`cancelled.--More--` on row two, and suspend at cursor `(18,1)` until an
+explicit acknowledgement.  The normal stethoscope owner therefore uses the
+same continuation path as mimic status rather than truncating to row one or
+letting the next command key dismiss a stale direction prompt.
+
 ## 321. Monster-vs-monster action ownership precedes movement sampling
 
 ```mermaid
@@ -27046,6 +27054,22 @@ uncorroded.  All 136 native states are exact from input3 onward.  This
 distinguishes AD_ACID from AD_RUST/AD_CORR, whose `passive_obj()` branches stop
 on cancellation.
 
+The opposite cancellation arms are now selected too.  Native black-pudding
+seed2 is exact through all 141 states from input3 onward: its status proves
+`mcan=1`, input138 hits with an iron orcish arrow, and AD_CORR returns before
+grease/material/proof/erosion work.  Floor resistance 44 immediately follows
+mulch, the hit line has no corrosion suffix, and both fired and inventory
+identities stay at secondary erosion zero.
+
+Rust-monster seed205 proves the same AD_RUST suppression through its earliest
+post-mulch boundary.  Input137's first seven calls are exact through floor
+resistance 79, its full screen/cursor match, and both identities remain primary
+erosion zero under a live cancelled target.  The later same-input rust-monster
+touch diverges in the separate hero-contact owner (`d(0,0)` and passive-tail
+calls), so this witness is explicitly prefix-bounded rather than mislabeled a
+complete replay.  Together the three cancelled targets map AD_ACID continues,
+AD_RUST stops, and AD_CORR stops.
+
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
 ```mermaid
@@ -29457,9 +29481,9 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-122/122 after the paired rust/corrosion material, protection, degree, AD_CORR
-grease, and complete AD_ACID grease/material/protection/degree/cancellation
-rows.
+124/124 after the paired rust/corrosion material, protection, degree,
+cancellation and AD_CORR grease, plus complete AD_ACID
+grease/material/protection/degree/cancellation rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
