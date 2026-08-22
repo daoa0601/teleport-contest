@@ -85520,3 +85520,48 @@ rewrite, hidden judge, push or publication ran; unrelated dirty test files
 remain untouched.
 
 ---
+
+### [2026-08-22 19:38 EEST, journal block 2855] {#energy-vortex #engulf #ad-dren #ad-elec #energy-drain #low-energy-scaling #swallow-timer #expulsion #electric-touch #inventory-destruction #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Compound contract:** energy vortex is the only natural AD_DREN carrier and
+its attack table is two consecutive engulf slots: AD_ELEC 1d6 then AD_DREN
+2d6.  Initial engulf must suspend before duration/effects; getmattk scales the
+drain against current/max Pw, each gulpmu call ages the swallow timer, and
+expulsion cooldown later converts electric engulf to touch while the drain
+slot produces a zero-RNG miss.  Flattening any of those phases loses pager or
+RNG ownership.
+
+**Native witness:** seed11 Healer generates a hostile energy vortex.  Input37
+rolls `rnd(20)=14,d(1,6)=3` and pages the urgent engulf line.  Input38 consumes
+`rnd(10)=1,rn2(2)=0,d(1,3)=1,rn2(4)=3`: low-energy scaling converts 2d6→1d3,
+Pw5→4, and the second timer decrement produces `You feel your magical energy
+drain away.  You get expelled!--More--`.  A later retained engulf reaches
+input55 `d(1,6)=5,rn2(2)=0,d(1,3)=3,rn2(4)=3,rnd(3)=2`; drain throttling makes
+Pw3→1 before another expulsion.  All 70 states are exact from input3; the
+recorder took **0.07 seconds** at **53,182,464 bytes maximum RSS**.
+
+**Adjacent electric owner and corrections:** after expulsion, mspec cooldown
+turns slot0 into AT_TUCH/AD_ELEC.  Natural electric now rolls damage, resumes
+verbose magic-negation after hitmsg, publishes zap/resistance prose, applies
+the level-versus-`rn2(20)`/class `rn2(5)` inventory gate, then shared knockback.
+The cooldown AD_DREN slot is retained as a zero-RNG miss, whose pline forces
+the older touch/zap line through tty.  Implementation audit also found that
+initial engulf results lacked their current attack index and that internally
+completed slot1 was being replayed after expulsion; both continuation markers
+are now exact.  Input63 proves the successful electric inventory gate.
+
+**Falsified hypotheses and measured evidence:** input38's `d(1,3)` is not an
+ad hoc drain die; it is source getmattk low-Pw scaling.  Input55's `rnd(3)` is
+drain_en throttling, not relocation.  The complete engine witness passes
+**1/1** in **0.21 seconds**.  The existing ice-vortex engulf-resume unit and
+adjacent grid-bug electric unit each pass **1/1**, proving the shared changes
+did not replace their owners.  Every process exited before the next began.
+
+**Next blocker:** sections832 and the ledger now map the selected low-energy
+drain/electric/expulsion graph.  Next pair cancelled energy vortex with a
+high-Pw level-30 scaling witness (3d9 if the thresholds are met), or choose the
+cheaper one that first falsifies another implemented assumption.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

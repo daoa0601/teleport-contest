@@ -12397,3 +12397,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   cancellation were repaired before accepting fallback.  Natural AD_ENCH
   passes 3/3 in 0.23 seconds; twenty prior controls remain exact and the
   managed family passes 149/149 in 2.73 seconds.
+- Seed11 Healer closes energy-vortex AD_DREN across initial and already-
+  swallowed slots.  Input38 owns `rnd(10)=1,rn2(2)=0,d(1,3)=1,rn2(4)=3`,
+  lowers Pw5→4 and combines the drain/expulsion line behind `--More--`.
+  Input55 owns `d(1,6)=5,rn2(2)=0,d(1,3)=3,rn2(4)=3,rnd(3)=2`, throttles
+  Pw3→1 and expels again.  All 70 states are exact from input3.
+
+  The same session required shared AT_TUCH/AD_ELEC after expulsion cooldown:
+  hitmsg, magic negation, zap prose, level-gated inventory probe and knockback
+  precede the zero-RNG AD_DREN cooldown miss which forces tty.  Input63 selects
+  the successful `rn2(20)`/`rn2(5)` destruction probes.  The engine witness,
+  existing ice-vortex engulf unit and adjacent grid-bug electric unit each pass
+  1/1.  No broad managed gate was substituted for those focused owners.

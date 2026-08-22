@@ -30142,3 +30142,44 @@ guarding before its intrinsic minimum.  Early right-hand attempts were not
 accepted: their fallback sequence selected none, eyewear, and the empty left
 slot; changing to the left hand consumed no RNG and let the existing slot-two
 draw select the real object.
+
+## 832. Energy-vortex engulf composes electric and energy-drain slots
+
+```mermaid
+sequenceDiagram
+    participant Actor as energy vortex mattacku
+    participant Engulf as gulpmu AD_ELEC slot 0
+    participant Drain as gulpmu AD_DREN slot 1
+    participant Tty as tty continuation
+    participant Expel as expels / mnexto
+    Actor->>Engulf: hit die and d(1,6), urgent engulf line
+    Engulf-->>Tty: The energy vortex engulfs you --More--
+    Tty->>Engulf: acknowledge; rnd(duration), rn2(2) electric gate
+    Engulf->>Drain: low-energy scaling 2d6 to 1d3
+    Drain->>Drain: d(1,3), nonzero rn2(4), drain_en(Pw)
+    Drain->>Tty: magical energy drain message
+    alt second slot expires swallow timer
+        Tty->>Expel: You get expelled; redraw pager; cooldown and relocation
+    end
+    Expel-->>Actor: mspec_used converts later electric engulf to touch
+    Actor->>Tty: touch hit plus You get zapped
+    Actor->>Tty: cooldown AD_DREN engulf miss forces prior line through More
+```
+
+AD_DREN has one natural carrier, energy vortex, and engulf makes the preceding
+electric slot inseparable.  Low-energy `getmattk()` scaling uses level at least
+six: the starting Healer's 2d6 becomes 1d3.  On initial input38, duration
+`rnd(10)=1`, electric gate `rn2(2)=0`, drain `d(1,3)=1` and nonzero
+`rn2(4)=3` lower Pw5→4; the second timer decrement triggers expulsion.  A later
+engulf retains the hero, and input55 processes both already-swallowed slots:
+electric `d(1,6)=5,rn2(2)=0`, drain `d(1,3)=3,rn2(4)=3`, then `rnd(3)=2`
+throttles loss so Pw3→1 before expulsion.  All 70 states are exact from input3.
+
+The same session closes adjacent electric contact ownership.  Expulsion
+cooldown turns slot0 into AT_TUCH/AD_ELEC; damage, verbose magic negation,
+`You get zapped!`, level-versus-`rn2(20)` inventory destruction and knockback
+precede a zero-RNG cooldown miss from slot1 which can force the touch line
+through tty.  Input63 additionally selects the successful inventory gate and
+its `rn2(5)` class probe.  Monster and initial engulf electric paths remain
+separate, while the existing ice-vortex unit proves the shared engulf resume
+still preserves cold ordering.

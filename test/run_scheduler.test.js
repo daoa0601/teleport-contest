@@ -8488,6 +8488,75 @@ test('seed0011 natural disenchanter falls back to worn protection ring',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 energy vortex drains Pw across engulf and expulsion',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizgenesis\nenergy vortex\n'
+                + 'm.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 70);
+        assertRngSliceExact(result.getRngSlices()[37], [
+            'rn2(5)=4', 'rnd(20)=14', 'd(1,6)=3',
+        ], 'seed0011 energy-vortex initial engulf RNG');
+        assert.equal(decodedTopline(result.getScreens()[37]),
+            'The energy vortex engulfs you!--More--');
+        assert.deepEqual(result.getCursors()[37], [38, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[38], [
+            'rnd(10)=1', 'rn2(2)=0', 'd(1,3)=1', 'rn2(4)=3',
+        ], 'seed0011 initial low-energy drain and expulsion RNG');
+        assert.equal(decodedTopline(result.getScreens()[38]),
+            'You feel your magical energy drain away.  You get expelled!--More--');
+        assert.equal(decodedRow(result.getScreens()[38], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:4(5) AC:8 Xp:1');
+        assert.deepEqual(result.getCursors()[38], [67, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[43], [
+            'rn2(5)=1', 'rnd(20)=7', 'd(1,6)=1', 'rn2(10)=7',
+            'rn2(20)=12', 'rn2(3)=2', 'rn2(6)=2',
+        ], 'seed0011 energy-vortex electric touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[43]),
+            'The energy vortex touches you!  You get zapped!--More--');
+        assert.equal(decodedRow(result.getScreens()[43], 23),
+            'Dlvl:1 $:1540 HP:12(13) Pw:4(5) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[55], [
+            'rn2(5)=3', 'd(1,6)=5', 'rn2(2)=0',
+            'd(1,3)=3', 'rn2(4)=3', 'rnd(3)=2',
+        ], 'seed0011 swallowed double-slot energy drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[55]),
+            'You feel your magical energy drain away.  You get expelled!--More--');
+        assert.equal(decodedRow(result.getScreens()[55], 23),
+            'Dlvl:1 $:1540 HP:8(13) Pw:1(5) AC:8 Xp:1');
+        assert.deepEqual(result.getCursors()[55], [67, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[63], [
+            'rn2(20)=3', 'rn2(5)=3', 'rn2(3)=0', 'rn2(6)=0',
+            'rn2(12)=4', 'rn2(12)=6', 'rn2(12)=9', 'rn2(70)=19',
+            'rn2(100)=12', 'rn2(400)=121', 'rn2(20)=15', 'rn2(70)=40',
+        ], 'seed0011 electric inventory and hit tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[63]),
+            'You get zapped!  The energy vortex misses!');
+        assert.equal(decodedRow(result.getScreens()[63], 23),
+            'Dlvl:1 $:1540 HP:5(13) Pw:1(5) AC:8 Xp:1');
+
+        assert.equal(game.u.uen, 1);
+        assert.equal(game.u.uenmax, 5);
+        assert.equal(game.u.uhp, 5);
+        assert.equal(game.u.uswallow, 0);
+        assert.equal(game.u.ustuck, null);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -152,6 +152,7 @@ const M3_WANTSCAND = 0x0008;
 const M3_WANTSARTI = 0x0010;
 const S_DEMON = 56;
 const PM_FOG_CLOUD = 106;
+const PM_ENERGY_VORTEX = 109;
 const PM_TENGU = 55;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
@@ -215,6 +216,7 @@ const AD_ELEC = 6;
 const AD_DRST = 7;
 const AD_ACID = 8;
 const AD_BLND = 11;
+const AD_DREN = 16;
 const AD_LEGS = 17;
 const AD_STON = 18;
 const AD_SITM = 21;
@@ -5640,7 +5642,9 @@ function nextHeroAttackIndex(monster, attackIndex) {
         // attack table but owns castmu() instead of a to-hit roll.  Weapon,
         // gaze, engulfing, and ranged slots retain separate future owners.
         if ((attackType >= 1 && attackType <= 7)
-            || attackType === AT_MAGC) return index;
+            || attackType === AT_MAGC
+            || (monster?.mnum === PM_ENERGY_VORTEX
+                && attackType === AT_ENGL)) return index;
     }
     return null;
 }
@@ -5926,6 +5930,15 @@ function basicMonsterAttack(
             nextAttackIndex, threshold, null, deferVisibleContact,
         );
     }
+    if (attackType === AT_ENGL && damageType === AD_DREN
+        && monster?.mnum === PM_ENERGY_VORTEX
+        && monster.mspec_used && !alreadyEngulfing) {
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', threshold, hit: false, roll: null,
+            attackType, damageType, attackIndex,
+            effect: 'engulf-cooldown-miss',
+        }, monster, attackIndex);
+    }
     // An AT_WEAP slot gets a last close-range wield attempt even when the
     // actor reached mattacku() with weapon_check=NO_WEAPON_WANTED.  A legal
     // replacement consumes the action; failure is zero-RNG and leaves the
@@ -6120,6 +6133,16 @@ function basicMonsterAttack(
             attackType, damageType, effect: 'cold-natural',
             deferredColdNegation: true,
         }, monster, attackIndex);
+    } else if (hit && !alreadyEngulfing && attackType !== AT_ENGL
+        && damageType === AD_ELEC
+        && dice > 0 && sides > 0) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'electric-natural',
+            deferredElectricNegation: true,
+        }, monster, attackIndex);
     } else if (alreadyEngulfing && dice > 0 && sides > 0) {
         // A monster already holding the hero re-enters mattacku() (and thus
         // AC_VALUE) but gulpmu() bypasses the attack die.  Each engulf tick
@@ -6137,14 +6160,37 @@ function basicMonsterAttack(
                 effectMessage = 'You are freezing to death!';
                 applyHeroContactDamage(state, damage);
             }
+        } else if (damageType === AD_ELEC && !monster?.mcan
+            && recordRandom(random, calls, 2) !== 0) {
+            if (state.u.shockResistance || state.u.shock_resistance) {
+                damage = 0;
+                effectMessage = 'You seem unhurt.';
+            } else {
+                effectMessage = 'The air around you crackles with electricity.';
+                applyHeroContactDamage(state, damage);
+            }
         } else {
             damage = 0;
         }
-        return retainHeroAttackContinuation({
+        let deferredExpulsion = (state.u.uswldtim ?? 0) === 0;
+        if (monster?.mnum === PM_ENERGY_VORTEX && attackIndex === 0) {
+            const drain = resolveEnergyVortexDrainSlot(
+                monster, state, calls, random, rollOne, rollDice,
+            );
+            if (drain.message) {
+                effectMessage = [effectMessage, drain.message]
+                    .filter(Boolean).join('  ');
+            }
+            deferredExpulsion = drain.deferredExpulsion;
+        }
+        const engulfTick = retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit: true, damage,
             attackType, damageType, effect: 'engulf-tick', effectMessage,
-            deferredExpulsion: (state.u.uswldtim ?? 0) === 0,
+            deferredExpulsion,
         }, monster, attackIndex);
+        if (monster?.mnum === PM_ENERGY_VORTEX && attackIndex === 0)
+            delete engulfTick.nextAttackIndex;
+        return engulfTick;
     } else if (hit && attackType === AT_ENGL && dice > 0 && sides > 0) {
         // mhitu.c:gulpmu() rolls base engulf damage, moves the attacker onto
         // the hero, and prints its urgent engulf line before setting
@@ -6159,7 +6205,7 @@ function basicMonsterAttack(
         state.u.ustuck = monster;
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType, damageType, effect: 'engulf',
+            attackType, damageType, attackIndex, effect: 'engulf',
             deferredEngulf: true, engulfOldX, engulfOldY,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_SITM) {
@@ -6409,12 +6455,66 @@ export function resumeDeferredHeroWeaponSwing(
     return resumed;
 }
 
+function energyDrainDice(state, dice = 2, sides = 6) {
+    const level = Math.max(state.u?.ulevel ?? 1, 6);
+    if ((state.u?.uen ?? 0) <= 5 * level && dice > 1) {
+        dice--;
+        if ((state.u?.uenmax ?? 0) <= 2 * level && sides > 3)
+            sides -= 3;
+    } else if ((state.u?.uen ?? 0) > 12 * level) {
+        dice++;
+        if ((state.u?.uenmax ?? 0) > 20 * level) sides += 3;
+    }
+    return { dice, sides };
+}
+
+function applyHeroEnergyDrain(state, amount, rollOne, calls) {
+    const hero = state.u;
+    if ((hero.uenmax ?? 0) < 1) {
+        hero.uen = hero.uenmax = 0;
+        return 'You feel momentarily lethargic.';
+    }
+    if (amount > ((hero.uen ?? 0) + (hero.uenmax ?? 0)) / 3) {
+        const originalAmount = amount;
+        amount = rollOne(originalAmount);
+        calls.push(`rnd(${originalAmount})`);
+    }
+    const punctuation = amount > (hero.uen ?? 0) ? '!' : '.';
+    hero.uen = (hero.uen ?? 0) - amount;
+    if (hero.uen < 0) {
+        const deficit = -hero.uen;
+        const maximumLoss = rollOne(deficit);
+        calls.push(`rnd(${deficit})`);
+        hero.uenmax = Math.max(0, (hero.uenmax ?? 0) - maximumLoss);
+        hero.uen = 0;
+    } else if (hero.uen > (hero.uenmax ?? 0)) {
+        hero.uen = hero.uenmax;
+    }
+    return `You feel your magical energy drain away${punctuation}`;
+}
+
+function resolveEnergyVortexDrainSlot(
+    monster, state, calls, random = rn2, rollOne = rnd, rollDice = d,
+) {
+    if ((state.u?.uswldtim ?? 0) > 0) state.u.uswldtim--;
+    const adjusted = energyDrainDice(state);
+    const amount = rollDice(adjusted.dice, adjusted.sides);
+    calls.push(`d(${adjusted.dice},${adjusted.sides})`);
+    let message = null;
+    if (!monster?.mcan && recordRandom(random, calls, 4) !== 0)
+        message = applyHeroEnergyDrain(state, amount, rollOne, calls);
+    return {
+        message,
+        deferredExpulsion: (state.u?.uswldtim ?? 0) === 0,
+    };
+}
+
 // Resume gulpmu() after the urgent initial engulf line has been dismissed.
 // The first public owner is an ice vortex: it establishes swallowed state,
 // rolls the duration, applies the first cold-effect gate, and leaves message
 // projection to allmain's tty transaction.
 export function resumeDeferredHeroEngulf(
-    action, state, random = rn2, rollOne = rnd,
+    action, state, random = rn2, rollOne = rnd, rollDice = d,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredEngulf) return null;
@@ -6450,8 +6550,29 @@ export function resumeDeferredHeroEngulf(
             );
             message = 'You are freezing to death!';
         }
+    } else if (attack.damageType === AD_ELEC && !monster?.mcan
+        && recordRandom(random, calls, 2) !== 0) {
+        if (state.u.shockResistance || state.u.shock_resistance) {
+            attack.appliedDamage = 0;
+            message = 'You seem unhurt.';
+        } else {
+            attack.appliedDamage = attack.damage;
+            applyHeroContactDamage(state, attack.appliedDamage);
+            message = 'The air around you crackles with electricity.';
+        }
     } else {
         attack.appliedDamage = 0;
+    }
+    if (monster?.mnum === PM_ENERGY_VORTEX && attack.attackIndex === 0) {
+        const drain = resolveEnergyVortexDrainSlot(
+            monster, state, calls, random, rollOne, rollDice,
+        );
+        if (drain.message)
+            message = [message, drain.message].filter(Boolean).join('  ');
+        attack.deferredExpulsion = drain.deferredExpulsion;
+        // Slot 1 was completed inside the swallowed transaction above; do
+        // not expose it again through the ordinary continuation walker.
+        delete attack.nextAttackIndex;
     }
     attack.deferredEngulf = false;
     attack.engulfResolved = true;
@@ -6475,6 +6596,32 @@ export function resumeDeferredHeroColdSpecial(
     attack.deferredColdInventory = !attack.negated;
     attack.deferredPostHit = true;
     attack.deferredColdNegation = false;
+    return action;
+}
+
+// Resume mhitm_ad_elec() after hitmsg().  The zap line is independently
+// suspendable; its inventory-destruction gate and common hit tail follow it.
+export function resumeDeferredHeroElectricSpecial(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredElectricNegation) return action;
+    const armorProtection = state?.u?._magicNegation ?? 0;
+    attack.negated = !!action.monster?.mcan
+        || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+    if (attack.negated) {
+        attack.damage = 0;
+        attack.electricEffectMessage = 'You avoid harm.';
+    } else if (state.u.shockResistance || state.u.shock_resistance) {
+        attack.damage = 0;
+        attack.electricEffectMessage
+            = "You get zapped!  The zap doesn't shock you!";
+    } else {
+        attack.electricEffectMessage = 'You get zapped!';
+    }
+    attack.deferredElectricInventory = !attack.negated;
+    attack.deferredPostHit = true;
+    attack.deferredElectricNegation = false;
     return action;
 }
 
@@ -6714,6 +6861,14 @@ export function resumeDeferredHeroContact(
         if (attackerLevel > destructionGate)
             recordRandom(random, calls, 5);
         attack.deferredColdInventory = false;
+    }
+    if (attack.deferredElectricInventory) {
+        const destructionGate = recordRandom(random, calls, 20);
+        const attackerLevel = action.monster?.m_lev
+            ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+        if (attackerLevel > destructionGate)
+            recordRandom(random, calls, 5);
+        attack.deferredElectricInventory = false;
     }
     recordRandom(random, calls, 3);
     recordRandom(random, calls, 6);
