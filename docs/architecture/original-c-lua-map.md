@@ -29980,9 +29980,20 @@ input52 page the pending Burdened notice.  Input53 then combines `Your blindfold
 falls off!` with `You still cannot see.`: clearing `ublindf` runs blindness
 feedback before type233 is dropped, but the eyeless form keeps Blind active.
 All 60 states are exact from input3.  The message derives singular/plural
-`fall` grammar from the simple eyewear name; towel and lenses remain useful
-identity siblings, while sight-restoring headless combinations are impossible
-for this eyeless form.
+`fall` grammar from the simple eyewear name; towel remains an identity sibling,
+while sight-restoring headless combinations are impossible for this eyeless
+form.
+
+Lenses select the plural, non-blinding sibling from wish through destruction.
+Wishing type232 must render `a pair of lenses`; `P` installs it in `ublindf`
+and publishes `You are now wearing a pair of lenses.` without changing vision.
+The same headless gelatinous-cube sequence later pages the load notice and
+publishes `Your lenses fall off!` with no `still cannot see` sentence, because
+lenses were never the cause of blindness.  The port now treats lenses as
+accessory eyewear, strips `pair of` for fall grammar, and preserves the source
+Blindf_off exception.  All 57 states are exact from input3.  This closes the
+selected singular blindfold and plural lenses arms without conflating physical
+eyewear removal with blindness causality.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the

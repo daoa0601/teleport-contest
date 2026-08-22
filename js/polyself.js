@@ -10,7 +10,7 @@ import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
-import { OBJECT_MATERIAL } from './object_data.js';
+import { LENSES, OBJECT_MATERIAL } from './object_data.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
@@ -472,7 +472,7 @@ export async function polyselfControlledMonster(mnum) {
         eyewear.worn = false;
         eyewear.wornSlot = null;
         eyewear.owornmask = 0;
-        if (!heroHasEyes(game)) {
+        if (!heroHasEyes(game) && eyewear.otyp !== LENSES) {
             game.blind = true;
             await plineWithContinuation('You still cannot see.');
         }

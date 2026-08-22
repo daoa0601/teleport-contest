@@ -79,7 +79,7 @@ import {
     POT_ACID, POT_WATER,
     WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
     WAN_POLYMORPH,
-    BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
+    LENSES, BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
@@ -9734,6 +9734,7 @@ async function doputon() {
         (object.class === 'Rings' || object.oclass === 4
             || object.class === 'Amulets' || object.oclass === 5
             || object.otyp === RIN_CONFLICT
+            || object.otyp === LENSES
             || object.otyp === BLINDFOLD || object.otyp === TOWEL)
         && object !== game.uright && object !== game.uleft
         && object !== game.uamul);
@@ -9778,7 +9779,7 @@ async function putOnAccessoryObject(object) {
         return;
     }
 
-    if (object.otyp === BLINDFOLD || object.otyp === TOWEL) {
+    if ([LENSES, BLINDFOLD, TOWEL].includes(object.otyp)) {
         if (game.ublindf) {
             await pline('You are already wearing a blindfold.');
             game.context.move = 0;
@@ -9788,6 +9789,12 @@ async function putOnAccessoryObject(object) {
         if (game.u) game.u.ublindf = object;
         object.worn = true;
         object.wornSlot = 'ublindf';
+        if (object.otyp === LENSES) {
+            await pline('You are now wearing a pair of lenses.');
+            game._liveQuietTurnRequested = true;
+            game.context.move = 1;
+            return;
+        }
         // Preserve terrain beneath currently visible actors before blindness
         // clears their glyphs; C's hero memory already owns those cells.
         for (let y = 0; y < ROWNO; y++) {

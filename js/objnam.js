@@ -8,7 +8,8 @@ import {
     artifactByName, artifactExistCount, nameArtifact,
 } from './artifacts.js';
 import {
-    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, OBJECT_BASES,
+    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES,
+    OBJECT_BASES,
     OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, OBJECT_PROB,
     OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
@@ -485,7 +486,7 @@ export function wishedObjectPresentation(otyp) {
     } else if (cls === AMULET_CLASS) {
         name = description ? `${description} amulet` : realName;
     } else if (cls === TOOL_CLASS) {
-        name = description || realName;
+        name = otyp === LENSES ? 'pair of lenses' : description || realName;
     } else if (cls === POTION_CLASS) {
         name = description ? `${description} potion` : `potion of ${realName}`;
     } else if (cls === SCROLL_CLASS) {

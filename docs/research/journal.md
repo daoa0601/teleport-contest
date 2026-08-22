@@ -85197,3 +85197,42 @@ boot-policy branches.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:31 EEST, journal block 2847] {#polyself #break-armor #gelatinous-cube #headless #eyeless #lenses #pair-grammar #ublindf #blindness-causality #wish-presentation #puton #dropx #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Expanded contract:** lenses share the physical `ublindf` slot but not
+blindfold semantics.  Acceptance starts at wish presentation (`pair of
+lenses`), includes non-blinding `P` installation, then requires headless plural
+fall grammar with no `still cannot see` sentence.  Matching only the final
+floor object would miss three independent source owners.
+
+**Native witness:** seed11 debug Healer wishes lenses and input19 consumes
+`rn2(6)=4,rnd(2)=1,rn2(100)=93` before displaying `k - a pair of lenses.`.
+Input21 installs type232, consumes the six-call ordinary turn scheduler and
+publishes `You are now wearing a pair of lenses.` without Blind status.  The
+controlled gelatinous-cube input48 then consumes
+`rn2(2)=0,rn2(19)=8,rn2(500)=48,d(6,8)=21`; inputs48--49 reproduce the
+form/glove and load pagers.  Input50 publishes only `Your lenses fall off!`,
+drops type232 and retains eyeless-form Blind.  All 57 states are exact from
+input3; the recorder took **0.06 seconds** at **52,953,088 bytes maximum RSS**.
+
+**Earliest divergences and decisions:** initial replay first failed at input19
+with ungrammatical `a lenses`; lenses were then absent from the `P` accessory
+set, and the generic headless owner would have appended blindfold-only sight
+feedback.  Type232 now has source pair presentation, installs as non-blinding
+eyewear, strips `pair of` to plural `lenses fall`, and bypasses `still cannot
+see` while leaving form blindness unchanged.  This falsifies `ublindf` as a
+synonym for a physical blindfold and object `name` as sufficient wish grammar.
+
+**Measured acceptance and next blocker:** the complete session is exact; the
+fixture-disabled focused polymorph gate passes **14/14** in **0.37 seconds**,
+the preceding twenty rust/corrosion/decay controls remain exact and the one
+owned managed family passes **149/149** in **2.74 seconds**.  Every process
+exited before the next began.  Section830 and the ledger now close selected
+blindfold and lenses lifecycles.  Next prefer a whirly form with boots to select
+`boots fall away`, then a very-small form for `slide`; towel can remain a
+lower-information eyewear sibling unless another boundary demands it.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

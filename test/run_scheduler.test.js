@@ -8174,6 +8174,65 @@ test('seed0011 headless gelatinous cube drops blindfold after load pager',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 headless gelatinous cube drops worn lenses without blindfold prose',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nlenses\n'
+                + 'Pk #polyself\ngelatinous cube\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 57);
+        assertRngSliceExact(result.getRngSlices()[19], [
+            'rn2(6)=4', 'rnd(2)=1', 'rn2(100)=93',
+        ], 'seed0011 lenses wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[19]),
+            'k - a pair of lenses.');
+        assertRngSliceExact(result.getRngSlices()[21], [
+            'rn2(12)=11', 'rn2(12)=5', 'rn2(70)=36',
+            'rn2(400)=128', 'rn2(20)=10', 'rn2(70)=6',
+        ], 'seed0011 lenses wear and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[21]),
+            'You are now wearing a pair of lenses.');
+        assert.equal(decodedRow(result.getScreens()[21], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[48], [
+            'rn2(2)=0', 'rn2(19)=8', 'rn2(500)=48', 'd(6,8)=21',
+        ], 'seed0011 headless lenses setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[48]),
+            'You turn into a gelatinous cube!  You drop your gloves and weapon!--More--');
+        assert.deepEqual(result.getCursors()[48], [74, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[49]),
+            'Your movements are slowed slightly because of your load.--More--');
+        assert.deepEqual(result.getCursors()[49], [64, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[50]),
+            'Your lenses fall off!');
+        assert.equal(decodedRow(result.getScreens()[50], 23),
+            'Dlvl:1 $:1540 HP:21(21) Pw:5(5) AC:8 HD:6 Burdened Blind');
+        assert.deepEqual(result.getCursors()[50], [65, 6, 1]);
+
+        assert.equal(game.ublindf, null);
+        assert.equal(game.u.ublindf, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 232));
+        assert.ok(floorObjects.some(object => object.otyp === 159));
+        assert.ok(floorObjects.some(object => object.otyp === 39));
+        assert.equal(game.u.umonnum, 8);
+        assert.equal(game.u.mh, 21);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.blind, true);
+        assert.equal(game._blindFromMonsterForm, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

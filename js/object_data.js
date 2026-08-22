@@ -132,6 +132,7 @@ export const OIL_LAMP = 227;
 export const MAGIC_LAMP = 228;
 export const EXPENSIVE_CAMERA = 229;
 export const MIRROR = 230;
+export const LENSES = 232;
 export const BLINDFOLD = 233;
 export const TOWEL = 234;
 export const SADDLE = 235;

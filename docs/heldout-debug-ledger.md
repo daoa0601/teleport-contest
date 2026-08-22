@@ -12286,3 +12286,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   passes 13/13 in 0.35 seconds, the preceding twenty erosion controls remain
   exact and the managed family passes 149/149 in 2.76 seconds.  Towel/lenses
   grammar and the remaining boot wording families remain separate siblings.
+- Seed11 pairs lenses with the headless blindfold witness.  Native input19
+  wishes `k - a pair of lenses.`; input21 installs type232 through `P` and says
+  `You are now wearing a pair of lenses.` without making the human blind.
+  Inputs48--49 retain the gelatinous-cube glove/load pagers, while input50 says
+  only `Your lenses fall off!`: plural grammar strips `pair of`, and
+  Blindf_off suppresses blindfold-only `still cannot see`.  Type232 is dropped
+  and form-derived Blind remains.  All 57 states are exact from input3.
+
+  This block closes shared wish presentation, non-blinding `ublindf` install,
+  plural fall grammar and blindness-causality suppression.  The fixture-
+  disabled focused polymorph gate passes 14/14 in 0.37 seconds, the preceding
+  twenty erosion controls remain exact and the managed family passes 149/149
+  in 2.74 seconds.  Towel and remaining boot-wording arms stay independent.
