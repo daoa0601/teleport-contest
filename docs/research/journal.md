@@ -86224,3 +86224,33 @@ pillar.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:02 EEST, journal block 2872] {#high-cleric #spell-selection #portfolio #zero-time-wish #seed-search #paralyze #blindness #confusion #open-wounds #fire-pillar #negative-result #priority #native-probe #process-safety}
+
+**Selection contract:** the next block must visibly select lightning, insects,
+curse-items or geyser on the already-exact high-cleric constructor.  A changed
+`rn2(25)` value, cast pre-roll or later screen is not sufficient without the
+concrete source effect and a prefix free of unrelated actor divergence.
+
+**Zero-time shift portfolio:** one post-construction rock wish selects the
+already-covered paralyze arm.  Rock plus flint selects blindness first and fire
+pillar later.  Adding an apple again selects paralyze, then another covered
+spell.  All wishes are distinct where needed, avoiding the known duplicate-
+rock pickup merge gap; none produces new-effect evidence.
+
+**Seed portfolio:** the unshifted seed12 high cleric selects open wounds;
+seed13 selects confusion then blindness; seed14 selects confusion then fire
+pillar.  These native recordings are useful counterexamples to assuming that
+level25 automatically exercises the upper table.  No candidate justifies a
+production effect change.
+
+**Decision and next discriminator:** stop manual one-off variation here.
+Retain the exact constructor and build a bounded sequential selector search
+which records only candidates with a concrete target-effect line, then replay
+the selected seed/setup normally.  Keep each recorder process owned and
+serial; do not launch parallel suites or accept a transcript with an earlier
+actor mismatch.  All probes exited in about **0.06–0.07 seconds** near **54 MB
+RSS**.  No code/test change, full corpus, hidden judge, push or publication
+ran; unrelated dirty test files remain untouched.
+
+---
