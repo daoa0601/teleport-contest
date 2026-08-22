@@ -6008,10 +6008,12 @@ test('seed0205 cancelled rust monster suppresses orcish-arrow rust passive',
             'cancelled.--More--');
         assert.deepEqual(result.getCursors()[133], [18, 1, 1]);
 
-        assert.deepEqual(result.getRngSlices()[137].slice(0, 7), [
+        assertRngSliceExact(result.getRngSlices()[137], [
             'rnd(2)=1', 'rnd(2)=1', 'rnd(20)=2', 'rnd(5)=2',
             'rn2(19)=12', 'rn2(4)=2', 'rn2(100)=79',
-        ]);
+            'rn2(5)=0', 'rnd(20)=14', 'd(0,0)=0', 'rn2(3)=0',
+            'rn2(6)=0', 'rnd(21)=21',
+        ], 'seed0205 cancelled rust touch and scheduler RNG');
         assert.equal(decodedTopline(result.getScreens()[137]),
             'The orcish arrow hits the rust monster.  The rust monster touches you!--More--');
         assert.deepEqual(result.getCursors()[137], [78, 0, 1]);

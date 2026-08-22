@@ -11920,3 +11920,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   RSS, and the managed family passes 124/124 in 2.39 seconds at 333,840,384
   bytes maximum RSS.  The cancelled rust-monster touch is the next earliest
   source gap.
+- Correction to the seed205 residual above: the cancelled rust-monster touch is
+  now complete-exact.  Native `mhitm_ad_rust()` still owns declared
+  `d(0,0)=0` and the visible touch line before cancellation returns from armor
+  erosion; shared `rn2(3)=0, rn2(6)=0` knockback gates then precede slot-two
+  `rnd(21)=21`.  JavaScript previously skipped the whole special slot and
+  jumped to `rnd(21)=1`.  Adding the cancelled AD_RUST natural-contact arm
+  restores all 140 states from input3 onward.  The strengthened focused test
+  passes 1/1 in 0.21 seconds at 128,909,312 bytes maximum RSS, and the managed
+  family passes 124/124 in 2.38 seconds at 342,310,912 bytes maximum RSS.

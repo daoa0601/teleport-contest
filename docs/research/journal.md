@@ -84212,3 +84212,39 @@ replay to complete exactness.  No corpus, hidden judge, stage, commit, push or
 publication ran.
 
 ---
+
+### [2026-08-22 15:06 EEST, journal block 2826] {#rust-monster #hero-contact #cancelled #zero-dice #knockback #native-witness #earliest-divergence #implementation #complete-replay #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Earliest source owner:** seed205 input137 was already exact through the
+projectile, cancellation suppression and floor resistance.  Native then
+continued the rust monster's first AT_TUCH/AD_RUST slot with `rnd(20)=14,
+d(0,0)=0`, displayed the touch line, paid shared knockback `rn2(3)=0,
+rn2(6)=0`, and advanced to slot-two `rnd(21)=21`.  JavaScript displayed the
+same touch line but skipped the declared zero-dice special slot and knockback
+gates, assigning the next raw word directly to `rnd(21)=1`.
+
+**Implementation:** cancelled natural AD_RUST now rolls its declared damage
+even when both dimensions are zero, retains the visible contact as a resumable
+post-hit transaction, returns from the erosion effect because `mcan=1`, and
+then rejoins the common knockback owner before the next attack slot.  This
+slice does not claim uncancelled rust erosion of hero armor; that remains an
+independent control requiring a worn-item witness.
+
+**Complete replay and strengthened regression:** the same 140-state native
+recording now replays exactly from input3 onward in **0.18 seconds** at
+**123,404,288 bytes maximum RSS**.  The rust regression has been promoted from
+a seven-call prefix to the complete 13-call input137 slice while retaining the
+wrapped cancelled status, exact screen/cursor, live `mcan=1` target and
+unrusted fired/inventory orcish identities.  It passes **1/1** in **0.21
+seconds** at **128,909,312 bytes maximum RSS**.
+
+**Managed acceptance and next blocker:** the one owned managed
+projectile/priest/wish process remains **124/124** in **2.38 seconds** at
+**342,310,912 bytes maximum RSS**; registries are empty and no runner remains.
+Section 774 and the held-out ledger now correct the earlier bounded conclusion
+without erasing it from history.  Next select an uncancelled rust-monster touch
+against a hero with an eligible worn item, so `erode_armor(ERODE_RUST)` and its
+item-selection/RNG/presentation owner can be mapped.  No corpus, hidden judge,
+stage, commit, push or publication ran.
+
+---

@@ -6189,6 +6189,18 @@ function basicMonsterAttack(
             attackType, damageType, effect: 'stoning-natural',
             deferredStoningEffect: true,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_RUST && monster.mcan) {
+        // uhitm.c:mhitm_ad_rust() still receives hitmu()'s declared 0d0
+        // damage and publishes hitmsg() before cancellation returns from the
+        // erosion effect.  Shared knockback gates follow that visible line;
+        // only then may mattacku() advance to the second rust-touch slot.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'cancelled-rust-natural',
+            oldFormMnum, deferredPostHit: true,
+        }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))
         && damageType === AD_PHYS

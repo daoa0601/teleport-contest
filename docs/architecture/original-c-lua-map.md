@@ -27061,14 +27061,14 @@ grease/material/proof/erosion work.  Floor resistance 44 immediately follows
 mulch, the hit line has no corrosion suffix, and both fired and inventory
 identities stay at secondary erosion zero.
 
-Rust-monster seed205 proves the same AD_RUST suppression through its earliest
-post-mulch boundary.  Input137's first seven calls are exact through floor
-resistance 79, its full screen/cursor match, and both identities remain primary
-erosion zero under a live cancelled target.  The later same-input rust-monster
-touch diverges in the separate hero-contact owner (`d(0,0)` and passive-tail
-calls), so this witness is explicitly prefix-bounded rather than mislabeled a
-complete replay.  Together the three cancelled targets map AD_ACID continues,
-AD_RUST stops, and AD_CORR stops.
+Rust-monster seed205 proves the same AD_RUST suppression through the complete
+140-state replay.  Input137 reaches floor resistance 79 without passive-object
+work; the later cancelled rust touch still owns declared `d(0,0)=0`, publishes
+its contact line, spends shared knockback `rn2(3)=0, rn2(6)=0`, and only then
+advances to slot-two `rnd(21)=21`.  Both projectile identities remain primary
+erosion zero under a live cancelled target.  Together the three cancelled
+targets map AD_ACID continues, AD_RUST stops, and AD_CORR stops, while the
+cancelled monster-to-hero AD_RUST arm remains screen/RNG exact too.
 
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
