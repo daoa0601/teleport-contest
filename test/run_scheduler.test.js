@@ -7897,6 +7897,84 @@ test('seed0011 winged-gargoyle breakarm tears mummy wrapping',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 minotaur horns drop rigid helmet onto stairs',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 helmet\n'
+                + 'Wk #polyself\nminotaur\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 62);
+        assertRngSliceExact(result.getRngSlices()[53], [
+            'rn2(2)=1', 'rn2(19)=7', 'rn2(10)=7',
+            'rn2(500)=164', 'd(15,8)=57',
+        ], 'seed0011 minotaur rigid-helmet RNG');
+        assert.equal(decodedTopline(result.getScreens()[53]),
+            'You turn into a minotaur!  Your helm falls to the stairs!');
+        assert.equal(decodedRow(result.getScreens()[53], 23),
+            'Dlvl:1 $:1540 HP:57(57) Pw:5(5) AC:4 HD:15');
+        assert.deepEqual(result.getCursors()[53], [65, 6, 1]);
+
+        assert.equal(game.uarmh, null);
+        const floorHelmet = (game.level.objects?.[game.u.ux]?.[game.u.uy] || [])
+            .find(object => object.otyp === 97);
+        assert.ok(floorHelmet);
+        assert.equal(floorHelmet.where, 'floor');
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.equal(game.u.umonnum, 177);
+        assert.equal(game.u.mh, 57);
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 minotaur horns pierce and retain flimsy fedora',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 fedora\n'
+                + 'Wk #polyself\nminotaur\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 62);
+        assertRngSliceExact(result.getRngSlices()[53], [
+            'rn2(2)=1', 'rn2(19)=7', 'rn2(10)=7',
+            'rn2(500)=164', 'd(15,8)=57',
+        ], 'seed0011 minotaur flimsy-fedora RNG');
+        assert.equal(decodedTopline(result.getScreens()[53]),
+            'You turn into a minotaur!  Your horns pierce through your fedora.');
+        assert.equal(decodedRow(result.getScreens()[53], 23),
+            'Dlvl:1 $:1540 HP:57(57) Pw:5(5) AC:2 HD:15');
+        assert.deepEqual(result.getCursors()[53], [65, 6, 1]);
+
+        assert.ok(game.uarmh);
+        assert.equal(game.uarmh.otyp, 92);
+        assert.equal(game.uarmh.name, 'fedora');
+        assert.equal(game.inventory.includes(game.uarmh), true);
+        assert.equal(game.uarmh.worn, true);
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.equal(game.u.umonnum, 177);
+        assert.equal(game.u.mh, 57);
+        assert.equal(game.u.uac, 2);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

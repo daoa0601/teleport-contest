@@ -84998,3 +84998,41 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:05 EEST, journal block 2842] {#polyself #break-armor #minotaur #horns #helmet #fedora #flimsy #material #surface #stairs #dropx #retain-worn #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Paired contract:** after suit/cloak/shirt handling, `break_armor()` checks
+`num_horns()`.  Rigid headgear is removed and dropped with live surface prose;
+flimsy headgear (`oc_material <= LEATHER`) is pierced and remains worn.  The
+same species predicate supplies singular or plural horn grammar, so size or
+generic humanoid flags are insufficient.
+
+**Native witnesses:** seed11 debug Healer wishes/wears either +2 helmet or +2
+fedora and uses controlled `#polyself minotaur`.  Both input53 slices consume
+`rn2(2)=1,rn2(19)=7,rn2(10)=7,rn2(500)=164,d(15,8)=57` and install HP57/57,
+HD15.  Rigid iron displays `You turn into a minotaur!  Your helm falls to the
+stairs!`, drops type97 at the starting staircase and projects AC4.  Cloth
+displays `You turn into a minotaur!  Your horns pierce through your fedora.`,
+retains type92 in inventory and the worn head slot, and projects AC2.  Both
+62-state recordings are exact from input3.  They took **0.07 seconds** at
+**52,674,560 bytes** and **0.06 seconds** at **52,723,712 bytes maximum RSS**.
+
+**Earliest divergence and decision:** JavaScript handled only body garments,
+so both headpieces stayed worn and no horn line existed.  The port now maps the
+source horn-count species set, classifies flimsy headgear from object material,
+and derives `stairs` versus `floor` from the live hero cell.  Rigid removal
+reuses the floor-drop transaction; flimsy contact changes no equipment state.
+This falsifies big-form breakarm as body-only and object name as the material
+or surface owner.
+
+**Measured acceptance and next blocker:** both complete sessions are exact,
+the fixture-disabled focused polymorph gate passes **9/9** in **0.35 seconds**,
+the preceding twenty erosion controls remain exact and the one owned managed
+family passes **149/149** in **2.73 seconds**.  Every process exited before the
+next began.  Section830 and the ledger now include horn/headgear ownership.
+Next select one no-hands or very-small glove/shield/helmet transaction, keeping
+weapon coupling and message ordering bounded; boots and eyewear remain
+independent successors.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty test files remain untouched.
+
+---

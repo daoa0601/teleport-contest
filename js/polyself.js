@@ -10,6 +10,7 @@ import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
+import { OBJECT_MATERIAL } from './object_data.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
@@ -18,6 +19,7 @@ import { findArmorClass } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
+import { STAIRS } from './const.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
@@ -42,6 +44,11 @@ const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
 const PM_WINGED_GARGOYLE = 42;
 const PM_MARILITH = 294;
+const LEATHER = 7;
+const HORN_COUNTS = new Map([
+    [291, 2], [177, 2], [309, 2], [302, 2],
+    [101, 1], [102, 1], [103, 1], [124, 1],
+]);
 const GOLEM_HIT_POINTS = new Map([
     [249, 20], [250, 20], [251, 30], [252, 60], [253, 40],
     [254, 50], [255, 40], [256, 70], [257, 100], [258, 80],
@@ -207,6 +214,11 @@ function wrappingAllowed(mnum) {
         && mnum !== PM_WINGED_GARGOYLE && mnum !== PM_MARILITH;
 }
 
+function heroSurfaceName() {
+    const location = game.level?.locations?.[game.u.ux]?.[game.u.uy];
+    return location?.typ === STAIRS ? 'stairs' : 'floor';
+}
+
 function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
@@ -318,6 +330,7 @@ export async function polyselfControlledMonster(mnum) {
     const suit = game.uarm || game.u?.uarm;
     const cloak = game.uarmc || game.u?.uarmc;
     const shirt = game.uarmu || game.u?.uarmu;
+    const helmet = game.uarmh || game.u?.uarmh;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -386,6 +399,24 @@ export async function polyselfControlledMonster(mnum) {
         dropCarriedObject(weapon, ['uwep']);
     } else {
         await pline(formMessage);
+    }
+
+    const hornCount = HORN_COUNTS.get(mnum) || 0;
+    if (hornCount && helmet) {
+        const flimsy = (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
+        if (flimsy) {
+            const horns = hornCount === 1 ? 'horn' : 'horns';
+            const verb = hornCount === 1 ? 'pierces' : 'pierce';
+            await plineWithContinuation(
+                `Your ${horns} ${verb} through your ${helmet.name}.`,
+            );
+        } else {
+            const helmName = helmet.otyp === 97 ? 'helm' : helmet.name;
+            await plineWithContinuation(
+                `Your ${helmName} falls to the ${heroSurfaceName()}!`,
+            );
+            dropCarriedObject(helmet, ['uarmh']);
+        }
     }
 
     findArmorClass(game);

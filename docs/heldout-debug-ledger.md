@@ -12218,3 +12218,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   corrected gate passes 7/7 in 0.31 seconds.  The twenty prior erosion controls
   stay exact and the owned managed family passes 149/149 in 2.73 seconds.
   Remaining accessory drop branches are not inferred from cloak behavior.
+- Seed11 Healer pairs minotaur horns against rigid and flimsy headgear.  Both
+  native input53 slices consume
+  `rn2(2)=1,rn2(19)=7,rn2(10)=7,rn2(500)=164,d(15,8)=57`.  The +2 iron helmet
+  yields `Your helm falls to the stairs!`, is dropped on the starting staircase
+  and leaves form AC4.  The +2 cloth fedora yields `Your horns pierce through
+  your fedora.`, remains worn/inventory-resident and leaves form AC2.  Both
+  complete 62-state sessions are exact from input3.
+
+  The port now maps the source horn-count species set, the material threshold
+  through LEATHER and live surface wording.  The fixture-disabled polymorph
+  gate passes 9/9 in 0.35 seconds, the twenty erosion controls stay exact and
+  the owned managed family passes 149/149 in 2.73 seconds.  Shield, glove, boot
+  and eyewear successors remain open.

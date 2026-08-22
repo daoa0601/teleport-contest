@@ -29842,8 +29842,13 @@ flowchart TD
     WrapKeep --> Shirt
     WrapTear --> Shirt
     Shirt -->|"yes"| ShirtLine["shirt line; destroy shirt after pager resumes"]
-    Shirt -->|"no"| EquipDone["find_ac; newsym; encumber"]
-    ShirtLine --> EquipDone
+    Shirt -->|"no"| Horn{"horned form plus helmet?"}
+    ShirtLine --> Horn
+    Horn -->|"flimsy material"| Pierce["horns pierce; retain worn helmet"]
+    Horn -->|"rigid"| HelmDrop["helm falls to surface; drop helmet"]
+    Horn -->|"none"| EquipDone["find_ac; newsym; encumber"]
+    Pierce --> EquipDone
+    HelmDrop --> EquipDone
     EquipDone --> Live["committed monster equipment and presentation state"]
     Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
     Contact --> Death{"matching completelyrottable/rustable form?"}
@@ -29877,8 +29882,8 @@ Suit and shirt destruction do not create a floor object or call `newsym`;
 generic cloak removal does.  The existing gnome therefore still displays its
 new glyph during the shrink-out pager, while the Tourist suit pager retains
 the old hero glyph.  The existing red-dragon weapon-drop and two-stage
-encumbrance/breath pagers remain exact.  Horn, shield, helmet, glove, boot and
-eyewear branches remain distinct.
+encumbrance/breath pagers remain exact.  Shield, glove, boot and eyewear
+branches remain distinct.
 
 Alchemy smock selects the first cloak-subtype override.  A seed11 Healer wishes
 and wears the shuffled `apron`, then becomes a wood golem.  Source
@@ -29905,6 +29910,16 @@ line through `--More--`; input69 then publishes the egg capability.  All 77
 states are exact.  The eligibility decision uses form flags, size, symbol and
 the two source exceptions, while the capability notice independently uses
 M1_OVIPAROUS plus current sex.
+
+Horned-form headgear now selects both material arms.  Seed11 Healer wears a
+wished +2 helmet and becomes a minotaur.  The rigid iron helm is removed and
+dropped at the hero's starting staircase, so native says `Your helm falls to
+the stairs!` and projects AC four.  The paired +2 fedora is cloth and therefore
+passes source `is_flimsy()` (`oc_material <= LEATHER`): native says `Your horns
+pierce through your fedora.`, retains it worn and projects AC two.  Both
+62-state sessions share the exact form RNG and HP57/57.  Horn count comes from
+the source species set, while the fall destination derives from live terrain;
+neither decision is an item-name-only bridge.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the
