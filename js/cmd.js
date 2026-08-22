@@ -10039,16 +10039,36 @@ async function dotakeoff() {
     }
 
     const previousArmorClass = game.u?.uac ?? 10;
+    const hero = game.u || {};
+    const otherDisplacementSource = (game.inventory || []).some(candidate =>
+        candidate !== object && candidate.worn
+        && candidate.otyp === CLOAK_OF_DISPLACEMENT)
+        || (hero.displacedTurns ?? 0) > 0
+        || !!hero.displacedIntrinsic
+        || !!hero.intrinsicDisplacement;
+    const canNoticeDisplacementChange = (!game.blind
+            && !hero.uswallow
+            && !(game.invisible || hero.invisible || hero.invis))
+        || !!(hero.unblindTelepathy || hero.blindTelepathy
+            || hero.telepathy || hero.detectMonsters
+            || game.detectMonsters);
+    const displacementOffMessage = object.otyp === CLOAK_OF_DISPLACEMENT
+        && !otherDisplacementSource
+        && !(hero.displacementBlocked || hero.displacedBlocked)
+        && canNoticeDisplacementChange
+        ? 'You feel that monsters no longer have difficulty pinpointing your location.'
+        : null;
     const removalMessage = finishArmorRemoval(object);
     if (removalMessage && game.u?.uac !== previousArmorClass)
         game._statusAcOverride = previousArmorClass;
     // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
     // immediate zero-delay armor removal leaves getobj's selector as the
     // physical topline even though the timed state change has committed.
-    if (removalMessage) {
-        game._pending_message = '';
-        await pline(removalMessage);
-    }
+    game._pending_message = '';
+    if (displacementOffMessage)
+        await plineWithContinuation(displacementOffMessage);
+    if (removalMessage)
+        await plineWithContinuation(removalMessage);
     game.context.move = 1;
 }
 

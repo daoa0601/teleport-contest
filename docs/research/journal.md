@@ -84550,3 +84550,66 @@ control and body-slot stop behavior.  No full corpus, public-status rewrite,
 hidden judge, push or publication ran.
 
 ---
+
+### [2026-08-22 16:43 EEST, journal block 2833] {#black-pudding #hero-contact #armor #body-slot #copper #glass #corrosion #cloak-removal #displacement #tty-continuation #fatal-status #fixture-rejection #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** prove worn AD_CORR's COPPER extension beyond rust with bronze
+plate mail, pair it with a non-corrodible body item, and preserve body-slot
+unconditional termination.  Acceptance requires complete native replays from
+setup through fatal recovery; a later corrosion-only prefix cannot hide an
+earlier equipment lifecycle divergence.
+
+**Rejected routes:** the first Ranger setup revealed a real input4 divergence
+while removing the starting cloak, before either test suit existed.  A later
+peaceful-projectile recipe reached the suit but an arrow miss let the pudding
+wander, so it was rejected as a disposition/geometry confound.  The minimized
+accepted route removes the cloak, wishes/wears only the suit, generates the
+source-default hostile black pudding, and rests.  Both material variants then
+share bite 17 and armor slots `2,2,0,4,3,0,0,1` through terminal body slot one.
+
+**Earliest lifecycle repair:** native zero-delay `Cloak_off()` clears the worn
+displacement source, publishes the 77-character property-loss line, and lets
+`off_msg()` force it into a two-row pager.  Input4 and invalid input5 retain AC
+seven with no RNG; input6 acknowledges, publishes `You were wearing...`, pays
+the exact ten-call scheduler and projects AC ten.  JavaScript had skipped the
+property line and scheduled on input4.  The source-shaped two-pline
+continuation restores all 14 states from input3 onward.  Its native recorder
+took **0.07 seconds** at **52,215,808 bytes maximum RSS**.
+
+**Material and status repair:** bronze plate mail is COPPER and corrodes from
+secondary zero→one.  Native input89 combines bite and corrosion behind
+`--More--`, shows HP zero but pre-scan AC two, then recovery projects AC three.
+Crystal plate mail is GLASS and returns verbose `ER_NOTHING`; native input90
+shows the bite pager at HP15, input91 shows the later crystal non-effect pager
+at committed HP0, and body selection does not retry.  The initial JavaScript
+bronze replay exposed eager projected AC three during the fatal pager; moving
+status projection to the completed actor-scan boundary repairs it.  The
+crystal replay then exposed an overbroad stale-HP bridge: an earlier bite pager
+cannot preserve HP15 when a newer armor line is installed after acknowledgement
+and forced only after damage.  Tracking that newer contact line restores HP0.
+
+**Complete evidence:** the 98-state bronze and 99-state crystal native
+recorders each took **0.07 seconds** at **53,739,520 bytes maximum RSS**.  Both
+replay exactly from input3 onward; the ten-control audit completes in **0.85
+seconds** at **141,492,224 bytes maximum RSS**.  The first focused gate was
+red 2/3 only because the new displacement test incorrectly expected row-one
+`--More--` on row zero; splitting the exact row assertions yields **3/3** in
+**0.25 seconds** at **131,350,528 bytes**.
+
+**Adversarial gates and fake-acceptance rejection:** a mixed fixture-on
+fatal-status check returned two green screen traces but one undefined
+`game.u.uhp`; the synthetic coverage-pair fixture never populated the asserted
+state, so that result is rejected rather than called a regression.  With
+`TELEPORT_DISABLE_FIXTURES=1`, the seed5002 fatal-status siblings pass **2/2**
+in **0.31 seconds** at **153,501,696 bytes maximum RSS**.  Armor projection
+passes **5/5** in **0.06 seconds** at **55,984,128 bytes**.  The one owned
+managed family passes **142/142** in **2.73 seconds** at **364,478,464 bytes
+maximum RSS**; every runner exits and the registry is empty.
+
+**Next blocker:** sections827--828 and the ledger now map copper, non-effect
+body stop, doffing and fatal status ownership.  Next select hero acid-resistance
+inventory protection, which source `erode_obj(ERODE_CORRODE)` checks before
+grease, material and proof.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty test files remain untouched.
+
+---

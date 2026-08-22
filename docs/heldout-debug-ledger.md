@@ -12042,3 +12042,31 @@ attempt: **402 calls**, not a direct two-pass retry.
   passes 1/1 in 0.21 seconds at 129,515,520 bytes maximum RSS; the one owned
   managed family passes 140/140 in 2.58 seconds at 364,101,632 bytes and exits
   cleanly.  The worn copper/non-corrodible material boundary is next.
+- Seed11 closes COPPER versus non-corrodible worn-body AD_CORR and repairs two
+  earlier lifecycle boundaries exposed by the setup.  Removing the Ranger's
+  sole displacement cloak was first red at input4: JavaScript skipped native
+  displacement-loss feedback and paid ten scheduler calls immediately, while
+  native held AC seven behind a wrapped two-row pager and reached `off_msg`,
+  scheduler and AC ten only after acknowledgement.  The zero-delay removal
+  transaction now queues property feedback before `off_msg`; its 14-state
+  locator is exact from input3 onward.
+
+  The initial peaceful-projectile bronze recipe was rejected after an arrow
+  miss let the pudding wander.  The minimized source-default hostile setup
+  wears only the test suit.  Bronze and crystal share bite 17 and armor slots
+  `2,2,0,4,3,0,0,1`.  Bronze plate mail corrodes to `oeroded2=1`; its fatal
+  pager retains AC two and recovery projects AC three.  Crystal plate mail is
+  verbose `ER_NOTHING`, stops at body without retry and remains erosion zero,
+  AC one.  Its first replay exposed a stale-HP bridge: an older bite pager must
+  not preserve HP 15 when the newer crystal non-effect line is forced after
+  damage.  Narrowing that bridge makes the line display native HP zero.
+
+  The 98- and 99-state material recordings each replay exactly from input3.
+  Focused material/lifecycle passes 3/3 in 0.25 seconds at 131,350,528 bytes;
+  fixture-disabled fatal-status siblings pass 2/2 in 0.31 seconds at
+  153,501,696 bytes; armor projection passes 5/5 in 0.06 seconds at 55,984,128
+  bytes.  The one owned managed family passes 142/142 in 2.73 seconds at
+  364,478,464 bytes and exits cleanly.  A fixture-on seed5002 state assertion
+  was rejected as fake acceptance because its synthetic result never populated
+  `game.u.uhp`; the same pair is green through the real engine.  Hero
+  acid-resistance inventory protection is the next worn-corrosion control.

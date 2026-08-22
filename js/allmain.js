@@ -99,6 +99,7 @@ import { rehumanizeHero } from './polyself.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
+    projectedArmorClass,
 } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
@@ -3113,6 +3114,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             let heroAttack = movement.attack;
                 let previousHeroAttack = null;
                 let actorContactPagerOwned = false;
+                let actorContactMessageAfterPager = false;
                 while (heroAttack) {
                     if (heroAttack.kind === 'hero-spell') {
                         if (!heroAttack.cast) {
@@ -3312,6 +3314,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         if (corrosionDismissal !== null
                             && corrosionDismissal !== undefined) {
                             actorContactPagerOwned = true;
+                            // The dismissal can belong to the older hitmsg,
+                            // with this armor line installed afterward.  If
+                            // death later forces the newer line through tty,
+                            // its status must show committed HP rather than
+                            // inherit the pre-hit bridge from the old pager.
+                            actorContactMessageAfterPager
+                                = game._pending_message
+                                    === corrosionArmor.message;
                         }
                     }
                     const corrosionFinal = finishDeferredHeroCorrosionArmor(
@@ -3459,7 +3469,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     && !exactZeroFatalHit
                     && (statusSuppressedByHpSaveSentinel
                         || earlierActorPagerInScan
-                        || actorContactPagerOwned)) {
+                        || (actorContactPagerOwned
+                            && !actorContactMessageAfterPager))) {
                     game._statusHpOverride = hpBeforeDeferredHit;
                 }
                 // A monster-only fatal contact can make done_in_by() suspend
@@ -4289,6 +4300,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         movement,
     }));
     delete game._statusAcOverride;
+    // Erosion mutates worn armor during movemon(), but C does not run
+    // find_ac() until the actor scan has finished.  Only after that boundary
+    // may the next ordinary input project the new AC; intervening combat and
+    // death pagers retain the pre-scan status value.
+    if (game._armorClassDirty)
+        game._statusProjectedAc = projectedArmorClass(game);
     return actions;
 }
 

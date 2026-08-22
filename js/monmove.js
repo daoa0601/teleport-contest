@@ -5,7 +5,7 @@
 import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
-import { heroIsDisplaced, projectedArmorClass } from './armor.js';
+import { heroIsDisplaced } from './armor.js';
 import { nextIdent } from './ident.js';
 import {
     map_invisible, newsym, swallowed, unmap_invisible,
@@ -6759,11 +6759,6 @@ function finishDeferredHeroArmorErosion(
         // allmain.c projects the changed ARM_BONUS through find_ac() at the
         // once-per-input boundary after the monster/global transaction.
         state._armorClassDirty = true;
-        // A no-pager erosion line reaches the next nhgetch before the generic
-        // Ranger scheduler returns to its find_ac boundary.  Project only the
-        // status value now; keep combat uac unchanged for later actors in the
-        // same movemon scan.
-        state._statusProjectedAc = projectedArmorClass(state);
     }
     delete attack.deferredArmorErosionFinalize;
     if (pending.continueArmor) attack[pending.deferredField] = true;

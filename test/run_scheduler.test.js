@@ -6760,6 +6760,16 @@ const SEED0011_WORN_CORROSION_RETRY_TAIL_RNG = [
     'rn2(300)=60', 'rn2(20)=16', 'rn2(73)=4',
 ];
 
+const SEED0011_SUIT_FATAL_RECOVERY_RNG = [
+    'rn2(5)=1', 'rn2(24)=20', 'rn2(20)=19', 'rn2(5)=2',
+    'rn2(5)=0', 'rn2(24)=10', 'rn2(5)=3', 'rn2(5)=2',
+    'rn2(8)=7', 'rn2(5)=1', 'rn2(5)=2', 'rn2(20)=7',
+    'rn2(5)=2', 'rn2(5)=0', 'rn2(20)=4', 'rn2(5)=2',
+    'rn2(12)=6', 'rn2(12)=7', 'rn2(12)=7', 'rn2(12)=1',
+    'rn2(12)=5', 'rn2(12)=8', 'rn2(70)=27', 'rn2(400)=44',
+    'rn2(300)=84', 'rn2(20)=5', 'rn2(73)=17',
+];
+
 async function runWornCorrosionSegment({
     seed = 11,
     helmet = 'uncursed +2 helmet',
@@ -6778,6 +6788,22 @@ async function runWornCorrosionSegment({
             + '#wizwish\nstethoscope\n'
             + '#wizgenesis\npeaceful black pudding\n'
             + `ail tglm.${acknowledgements}`,
+        storage: new Map(),
+    });
+}
+
+async function runWornSuitCorrosionSegment(material) {
+    return runSegment({
+        seed: 11,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: `  nTe #wizwish\nuncursed +2 ${material} plate mail\n`
+            + 'Wg     #wizgenesis\nblack pudding\n'
+            + 'm. m. m. m.        ',
         storage: new Map(),
     });
 }
@@ -7047,6 +7073,129 @@ test('seed0011 orcish arrow leaves max-corroded helmet silent and retries',
         assertWornCorrosionHelmet({ corrosion: 3 });
         assert.equal(game.u.uac, 5);
         assert.equal(game.u.uhp, 3);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 Ranger cloak removal defers off-message past displacement pager',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nTe        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 14);
+        assertRngSliceExact(result.getRngSlices()[4], [],
+            'seed0011 displacement-off pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[4]),
+            'You feel that monsters no longer have difficulty pinpointing your location.');
+        assert.equal(decodedRow(result.getScreens()[4], 1), '--More--');
+        assert.equal(decodedRow(result.getScreens()[4], 23),
+            'Dlvl:1 $:0 HP:15(15) Pw:2(2) AC:7 Xp:1');
+        assert.deepEqual(result.getCursors()[4], [8, 1, 1]);
+
+        assert.equal(decodedTopline(result.getScreens()[5]),
+            'You feel that monsters no longer have difficulty pinpointing your location.');
+        assert.equal(decodedRow(result.getScreens()[5], 1), '--More--');
+        assertRngSliceExact(result.getRngSlices()[6], [
+            'rn2(12)=4', 'rn2(12)=0', 'rn2(12)=11', 'rn2(12)=9',
+            'rn2(12)=3', 'rn2(70)=19', 'rn2(400)=352',
+            'rn2(300)=14', 'rn2(20)=15', 'rn2(73)=69',
+        ], 'seed0011 cloak off-message scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[6]),
+            'You were wearing an uncursed +2 cloak of displacement.');
+        assert.equal(decodedRow(result.getScreens()[6], 23),
+            'Dlvl:1 $:0 HP:15(15) Pw:2(2) AC:10 Xp:1');
+        assert.deepEqual(result.getCursors()[6], [70, 5, 1]);
+
+        const cloak = game.inventory.find(object =>
+            object.otyp === CLOAK_OF_DISPLACEMENT);
+        assert.ok(cloak);
+        assert.equal(cloak.worn, false);
+        assert.equal(game.uarmc, null);
+        assert.equal(game.u.uac, 10);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 hostile bite corrodes wished bronze body armor',
+    async () => {
+        const result = await runWornSuitCorrosionSegment('bronze');
+
+        assert.equal(result.getScreens().length, 98);
+        assertRngSliceExact(result.getRngSlices()[89], [
+            'rn2(5)=3', 'rnd(20)=7', 'd(3,8)=17',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=4',
+            'rn2(5)=3', 'rn2(5)=0', 'rn2(5)=0', 'rn2(5)=1',
+            'rn2(3)=2', 'rn2(6)=0',
+        ], 'seed0011 copper body corrosion and knockback RNG');
+        assert.equal(decodedTopline(result.getScreens()[89]),
+            'The black pudding bites!  Your bronze plate mail corrodes!--More--');
+        assert.equal(decodedRow(result.getScreens()[89], 23),
+            'Dlvl:1 $:0 HP:0(15) Pw:2(2) AC:2 Xp:1');
+        assert.deepEqual(result.getCursors()[89], [66, 0, 1]);
+
+        assertRngSliceExact(
+            result.getRngSlices()[92],
+            SEED0011_SUIT_FATAL_RECOVERY_RNG,
+            'seed0011 bronze-suit death recovery RNG',
+        );
+        assert.equal(decodedTopline(result.getScreens()[92]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+        assert.equal(decodedRow(result.getScreens()[92], 23),
+            'Dlvl:1 $:0 HP:15(15) Pw:2(2) AC:3 Xp:1');
+
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'bronze plate mail');
+        assert.equal(game.uarm.oeroded ?? 0, 0);
+        assert.equal(game.uarm.oeroded2 ?? 0, 1);
+        assert.equal(game.uarmc, null);
+        assert.equal(game.u.uac, 3);
+        assert.equal(game.u.uhp, 15);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 hostile bite stops on wished crystal body non-effect',
+    async () => {
+        const result = await runWornSuitCorrosionSegment('crystal');
+
+        assert.equal(result.getScreens().length, 99);
+        assertRngSliceExact(result.getRngSlices()[90], [
+            'rn2(5)=3', 'rnd(20)=7', 'd(3,8)=17',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=4',
+            'rn2(5)=3', 'rn2(5)=0', 'rn2(5)=0', 'rn2(5)=1',
+        ], 'seed0011 crystal body selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[90]),
+            'The black pudding bites!--More--');
+        assert.equal(decodedRow(result.getScreens()[90], 23),
+            'Dlvl:1 $:0 HP:15(15) Pw:2(2) AC:1 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[91], [
+            'rn2(3)=2', 'rn2(6)=0',
+        ], 'seed0011 crystal body stop and knockback RNG');
+        assert.equal(decodedTopline(result.getScreens()[91]),
+            'Your crystal plate mail is not affected by corrosion.--More--');
+        assert.equal(decodedRow(result.getScreens()[91], 23),
+            'Dlvl:1 $:0 HP:0(15) Pw:2(2) AC:1 Xp:1');
+        assert.deepEqual(result.getCursors()[91], [61, 0, 1]);
+
+        assertRngSliceExact(
+            result.getRngSlices()[94],
+            SEED0011_SUIT_FATAL_RECOVERY_RNG,
+            'seed0011 crystal-suit death recovery RNG',
+        );
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'crystal plate mail');
+        assert.equal(game.uarm.oeroded ?? 0, 0);
+        assert.equal(game.uarm.oeroded2 ?? 0, 0);
+        assert.equal(game.uarmc, null);
+        assert.equal(game.u.uac, 1);
+        assert.equal(game.u.uhp, 15);
         assert.equal(game.context.move, 0);
     });
 

@@ -29532,10 +29532,11 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-140/140 after the paired rust/corrosion material, protection, degree,
+142/142 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
-rust/grease/proof/blessing/degree, complete worn-corrosion and cancelled-bite rows.
+rust/grease/proof/blessing/degree, complete worn-corrosion, cancelled-bite and
+worn body-material rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29645,6 +29646,57 @@ All 187 states replay exactly from input3 onward.  This proves cancellation is
 an effect gate, not a damage gate, and closes the natural AD_CORR cancellation
 successor without a production edit.
 
+Seed11 then isolates the worn material predicate at body slot one.  The Ranger
+first removes its displacement cloak through section828's exact zero-delay
+transaction, wears only the wished suit, and generates a source-default
+hostile black pudding.  Both material variants share the same 17-point bite
+and empty-slot path `2,2,0,4,3,0,0,1`; body selection is terminal in both.
+COPPER bronze plate mail corrodes from secondary erosion zero to one, combines
+its corrosion line with the bite, retains AC two through the fatal pager, and
+projects AC three only on debug-death recovery.  GLASS crystal plate mail is
+non-corrodible: the bite pager appears first, the body non-effect line is later
+forced by death with committed HP zero, and no retry follows that body result.
+Its AC stays one and both erosion fields remain zero.
+
+The 98-state bronze and 99-state crystal recordings are exact from input3
+onward.  Together they prove AD_CORR's COPPER extension beyond rust and the
+body-slot unconditional stop, while also selecting message/state/HP/AC timing
+on both the damaged and `ER_NOTHING` arms.  Hero acid-resistance inventory
+protection remains the next pre-grease corrosion control.
+
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level
 geometry and the initial placement cells consumed by the C actor graph.
+
+## 828. Zero-delay cloak removal separates property loss from `off_msg`
+
+```mermaid
+flowchart TD
+    Takeoff["dotakeoff T with one worn cloak"] --> Auto["getobj auto-selects sole candidate"]
+    Auto --> Off["armoroff zero delay calls Cloak_off"]
+    Off --> Unwear["setworn null clears displacement source"]
+    Unwear --> Toggle["toggle_displacement publishes property-loss feedback"]
+    Toggle --> OffMsg["off_msg attempts second pline"]
+    OffMsg --> More["first 77-column line wraps to row-one --More--"]
+    More --> Ack["invalid key retains pager; space acknowledges"]
+    Ack --> Final["off_msg becomes topline; actor/global scheduler runs"]
+    Final --> AC["ordinary status projects AC 7 to 10"]
+    Lua["Lua owns no equipment lifecycle"] -.-> Takeoff
+```
+
+`oc_delay=0` means there is no negative-multi doffing occupation; it does not
+mean all observable removal work is one unsuspendable message.  Native seed11
+input4 clears the displacement property and displays `You feel that monsters
+no longer have difficulty pinpointing your location.` with row-one
+`--More--`, no RNG and the previously painted AC seven.  Input5's invalid `e`
+retains that pager.  Only input6's space acknowledges it, installs
+`You were wearing an uncursed +2 cloak of displacement.`, pays the exact
+ten-call actor/global scheduler and projects AC ten.
+
+JavaScript previously called `finishArmorRemoval()` and scheduled the turn on
+input4, skipping `toggle_displacement()` feedback entirely.  Zero-delay cloak
+removal now computes the source notice condition, clears the worn state, queues
+the displacement line, lets `off_msg` force it through tty, and resumes only
+after acknowledgement.  The 14-state native locator is exact from input3
+onward.  Delayed armor removal remains under its existing negative-multi owner;
+other zero-delay property-bearing accessories require their own witnesses.
