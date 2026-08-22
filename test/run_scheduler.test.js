@@ -9644,6 +9644,63 @@ test('seed0017 Wizard rejects its old square and defers a speed wand',
         assert.equal(game._knownObjectTypes.has(WAN_SPEED_MONSTER), true);
     });
 
+test('seed0017 adjacent Wizard summon shares the nasty constructor',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 117),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 118);
+        const summonSlice = result.getRngSlices()[112];
+        assert.equal(summonSlice.length, 82);
+        assertRngSliceExact(summonSlice.slice(0, 20), [
+            'rn2(5)=4', 'rn2(5)=1', 'rnd(20)=18', 'd(2,12)=7',
+            'rn2(20)=5', 'rn2(3)=1', 'rn2(6)=3', 'rn2(30)=16',
+            'rn2(300)=44', 'd(16,6)=64', 'rn2(10)=1', 'rnd(10)=1',
+            'rn2(44)=31', 'rn2(8)=0', 'rn2(7)=5', 'rn2(6)=0',
+            'rn2(5)=4', 'rn2(4)=3', 'rn2(3)=1', 'rn2(2)=1',
+        ], 'seed0017 summon constructor first twenty RNG');
+        assertRngSliceExact(summonSlice.slice(-16), [
+            'rne(3)=2', 'rn2(2)=0', 'rn2(100)=93', 'rn2(80)=48',
+            'rn2(80)=30', 'rn2(1000)=816', 'rn2(75)=67', 'rn2(50)=4',
+            'rn2(11)=9', 'rn2(3)=2', 'rnd(2)=1', 'rn2(4)=2',
+            'rn2(100)=54', 'rn2(5)=3', 'rn2(100)=27', 'rnd(4)=3',
+        ], 'seed0017 summon constructor last sixteen RNG');
+        assert.equal(decodedTopline(result.getScreens()[112]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell!--More--');
+        assertRngSliceExact(result.getRngSlices()[113], [
+            'rn2(5)=4', 'rn2(12)=11', 'rn2(12)=5', 'rn2(12)=1',
+            'rn2(12)=7', 'rn2(12)=11', 'rn2(70)=5', 'rn2(100)=88',
+            'rn2(20)=7', 'rn2(70)=41',
+        ], 'seed0017 post-summon actor and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            '"Destroy the thief, my pet!"');
+
+        const summoned = game.level.monsters.find(monster =>
+            monster.mnum === 205);
+        assert.ok(summoned);
+        assert.equal(summoned.mx, 40);
+        assert.equal(summoned.my, 13);
+        assert.equal(summoned.mhp, 68);
+        assert.equal(summoned.mhpmax, 68);
+        assert.equal(summoned.msleeping, 0);
+        assert.equal(summoned.mpeaceful, 0);
+        assert.deepEqual(summoned.minvent.map(object => object.otyp), [
+            45, 333,
+        ]);
+    });
+
 test('seed0011 high-cleric fire pillar burns armor and selected inventory',
     async () => {
         const result = await runSegment({

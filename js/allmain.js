@@ -86,6 +86,7 @@ import {
     resumeDeferredHeroAttackAfterWield,
     rollDeferredHeroSpellDamage,
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
+    resolveDeferredHeroSummonMonsters,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     resumeDeferredCovetousRelocation,
@@ -3574,6 +3575,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             await resolveDeferredHeroCurseItems(
                                 action, heroAttack,
                             );
+                        if (heroAttack.deferredSummonMonsters) {
+                            const summoned
+                                = await resolveDeferredHeroSummonMonsters(
+                                    action, game,
+                                );
+                            if (summoned?.message)
+                                await queueTurnMessage(summoned.message);
+                        }
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);

@@ -7666,6 +7666,11 @@ export function resumeDeferredHeroSpell(
         attack.heroDied = !wasPolymorphed && (state.u.uhp ?? 0) < 1;
         return attack;
     }
+    if (attack.spell === 'summon-monsters') {
+        attack.deferredSummonMonsters = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'fire-pillar') {
         attack.deferredFirePillar = true;
         attack.appliedDamage = 0;
@@ -7798,6 +7803,54 @@ function movementSpellSelections(monster, state, random, calls) {
     return null;
 }
 
+async function monsterSummonSpellEffect(monster, state) {
+    let effect = { count: 0, created: [], message: null };
+    const summoned = await summonNastyMonsters(monster);
+    effect = { ...effect, ...summoned };
+    for (const created of effect.created || [])
+        newsym(created.mx, created.my);
+    if (effect.count > 0) {
+        if (monster?.iswiz) {
+            effect.message = `"Destroy the thief, my pet${
+                effect.count === 1 ? '' : 's'
+            }!"`;
+        } else {
+            const one = effect.count === 1;
+            const appearance = one
+                ? 'A monster appears' : 'Monsters appear';
+            const heroX = state?.u?.ux ?? monster?.mux;
+            const heroY = state?.u?.uy ?? monster?.muy;
+            const wrongTarget = monster?.mux !== heroX
+                || monster?.muy !== heroY;
+            const cannotSeeInvisible = !((MONSTER_FLAGS1[
+                monster?.mnum
+            ] ?? 0) & M1_SEE_INVIS);
+            if ((state?.invisible || state?.u?.invisible)
+                && cannotSeeInvisible && wrongTarget) {
+                effect.message = `${appearance} ${
+                    one ? 'at' : 'around'
+                } a spot near you!`;
+            } else if (heroIsDisplaced(state) && wrongTarget) {
+                effect.message = `${appearance} ${
+                    one ? 'by' : 'around'
+                } your displaced image!`;
+            } else {
+                effect.message = `${appearance} from nowhere!`;
+            }
+        }
+    }
+    return effect;
+}
+
+export async function resolveDeferredHeroSummonMonsters(action, state) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredSummonMonsters) return null;
+    const effect = await monsterSummonSpellEffect(action.monster, state);
+    attack.summonedMonsters = effect.created || [];
+    attack.deferredSummonMonsters = false;
+    return effect;
+}
+
 // Resume a successful castmu(FALSE,FALSE) after its casting line has crossed
 // the tty boundary.  The source effect can create actors, so it remains async
 // and only then returns to dochug() for the second distfleeck/phase-four tail.
@@ -7811,41 +7864,7 @@ export async function resumeDeferredMovementSpell(
 
     let effect = { count: 0, created: [], message: null };
     if (spellCast.spell === 'summon-monsters') {
-        const summoned = await summonNastyMonsters(action.monster);
-        effect = { ...effect, ...summoned };
-        for (const monster of effect.created || [])
-            newsym(monster.mx, monster.my);
-        if (effect.count > 0) {
-            if (action.monster?.iswiz) {
-                effect.message = `Destroy the thief, my pet${
-                    effect.count === 1 ? '' : 's'
-                }!`;
-            } else {
-                const one = effect.count === 1;
-                const appearance = one
-                    ? 'A monster appears' : 'Monsters appear';
-                const heroX = state?.u?.ux ?? action.monster?.mux;
-                const heroY = state?.u?.uy ?? action.monster?.muy;
-                const wrongTarget = action.monster?.mux !== heroX
-                    || action.monster?.muy !== heroY;
-                const cannotSeeInvisible = !((MONSTER_FLAGS1[
-                    action.monster?.mnum
-                ] ?? 0) & M1_SEE_INVIS);
-                if ((state?.invisible || state?.u?.invisible)
-                    && cannotSeeInvisible && wrongTarget) {
-                    effect.message = `${appearance} ${
-                        one ? 'at' : 'around'
-                    } a spot near you!`;
-                } else if (heroIsDisplaced(state)
-                    && wrongTarget) {
-                    effect.message = `${appearance} ${
-                        one ? 'by' : 'around'
-                    } your displaced image!`;
-                } else {
-                    effect.message = `${appearance} from nowhere!`;
-                }
-            }
-        }
+        effect = await monsterSummonSpellEffect(action.monster, state);
     } else if (spellCast.spell === 'haste-self') {
         // C mcastu.c:MCAST_HASTE_SELF delegates to
         // worn.c:mon_adjust_speed(+1).  Permanent slow is first cancelled;

@@ -31187,3 +31187,36 @@ The Wizard ends permanently fast and the wand drops to three charges.  The
 next independent boundary is input112's successful summon-monsters spell;
 other covetous targets, unseen relocation, speed potions, slow-to-normal speed
 and immobile message suppression remain separate controls.
+
+## 862. Adjacent Wizard summoning reuses the movement-spell constructor
+
+```mermaid
+flowchart TD
+    Cast["adjacent AD_SPEL selects summon-monsters"] --> PreRoll["castmu retains discarded 16d6 pre-roll"]
+    PreRoll --> Nasty["wizard.c nasty chooses outer count and species"]
+    Nasty --> Place["enexto shuffles caster-centered rings"]
+    Place --> Make["ordinary makemon constructs hostile awake actor and inventory"]
+    Make --> Paint["newsym repaints each created actor"]
+    Paint --> Voice["Wizard verbalize quotes Destroy the thief, my pet!"]
+    Voice --> Resume["same mattacku and global tail resumes after tty"]
+    Movement["far/indirect movement spell path"] --> Shared["monsterSummonSpellEffect"]
+    Cast --> Shared
+    Shared --> Nasty
+    Lua["Lua owns no summon constructor or spell continuation"] -.-> Cast
+```
+
+Seed17 input112 proves the adjacent combat path and the already-supported
+far/indirect path share one constructor.  The **82-call** input begins with
+the claw, spell selection and discarded `d(16,6)=64`, then
+`rn2(10)=1,rnd(10)=1` enters one ordinary nasty creation.  The complete
+constructor produces one hostile awake mnum205 actor at `(40,13)`, HP68/68,
+with object types45 and333 in source inventory order.
+
+The constructor finishes before the cast-line pager suspends.  Input113 then
+publishes source `verbalize()` quotes and resumes the exact ten-call
+actor/global tail; all screens, RNG and cursors remain exact through input117.
+The next divergence is not summoning: at input118 the new ogre's pre-action
+weapon wield should consume its action, while JavaScript incorrectly resumes
+an attack through a marker intended for an in-attack weapon slot.  Demon
+delegation, plural summons, no-success prose, displaced/invisible targets and
+spawned-actor equipment actions remain separate controls.

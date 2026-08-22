@@ -87077,3 +87077,42 @@ hidden judge, push or publication ran.  Input112 summon-monsters remains the
 next earliest seed17 divergence.
 
 ---
+
+### [2026-08-23 00:27 EEST, journal block 2896] {#wizard-of-yendor #summon-monsters #nasty #makemon #shared-constructor #verbalize #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** after block2894, seed17 is exact through
+input111.  Input112 matches claw, spell selection and discarded
+`d(16,6)=64`, then native consumes an 82-call summon constructor while JS
+immediately enters the next actor because adjacent `resumeDeferredHeroSpell()`
+did not connect `summon-monsters` to the constructor already used by the
+far/indirect movement-spell path.
+
+**Prediction and source evidence:** `mcast_summon_mons()->nasty()` is identical
+regardless of the distance path that reached `mcast_spell()`.  It must run
+before the pending cast line becomes a pager, repaint every birth, then use
+`verbalize()` quotation marks.  Native predicts one hostile awake mnum205 at
+`(40,13)`, HP68/68, with inventory types45/333; input113 predicts quoted
+`"Destroy the thief, my pet!"` followed by the exact ten-call actor/global
+tail.
+
+**Implementation and measured effect:** one shared async helper now owns
+`summonNastyMonsters()`, repaints, count-sensitive Wizard speech and the
+non-Wizard invisible/displaced prose for both casting routes.  The adjacent
+continuation sets a named summon marker, awaits that helper after damage
+selection, then publishes the returned effect line.  Seed17 is exact through
+**118 screens (inputs0--117)**; the input112 slice is guarded by length plus
+bounded 20/16-call edges.  The four selected fixture-disabled Wizard controls
+pass **4/4** in **0.64 seconds** at **135,512,064 bytes maximum RSS**; the
+managed process exited.
+
+**Falsification, decision and next blocker:** exact constructor RNG, roster
+and input113 tail falsify species choice, placement, inventory generation and
+later actor selection as summon causes.  Missing quotation marks were an
+independent presentation defect now shared by both paths.  Section862 maps
+the unified owner; Lua owns none.  Input118 is the next earliest divergence:
+the spawned ogre's ready-weapon action should end that actor turn, but JS
+reuses an in-attack wield continuation and attacks immediately.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

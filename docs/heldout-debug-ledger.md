@@ -12775,3 +12775,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled regression passes, as does the existing seed0030
   shopkeeper speed-wand control.  Input112's summon-monsters effect is the
   next earliest divergence; unseen and alternate-speed branches remain open.
+- The same seed17 carrier closes adjacent summon-monsters through input117.
+  The shared nasty constructor owns 82 calls at input112, creates one hostile
+  awake mnum205 actor at `(40,13)` with HP68/68 and inventory types45/333, and
+  leaves source `verbalize()` to publish quoted Wizard speech at input113
+  before the exact ten-call tail.  The four selected Wizard controls pass 4/4
+  fixture-disabled.  Input118 now isolates the summoned ogre's pre-action
+  weapon wield incorrectly resuming an attack; demon/plural/no-success and
+  displaced or invisible summon variants remain open.
