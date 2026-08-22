@@ -4844,7 +4844,7 @@ async function rogueFriday13Command(key, ch) {
     return false;
 }
 
-function wakeMonstersNear(x, y, distance) {
+export function wakeMonstersNear(x, y, distance) {
     for (const monster of game.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
         const dx = (monster.mx ?? 0) - x;

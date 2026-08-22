@@ -9660,11 +9660,11 @@ test('seed0019 Wizard destroy-armor erodes gloves after its pager',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 113),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 114);
+        assert.equal(result.getScreens().length, 127);
         assertRngSliceExact(result.getRngSlices()[106], [
             'rn2(5)=1', 'rn2(5)=2', 'rnd(20)=20', 'd(2,12)=10',
             'rn2(20)=14', 'rn2(3)=0', 'rn2(6)=2', 'rn2(30)=29',
@@ -9688,7 +9688,19 @@ test('seed0019 Wizard destroy-armor erodes gloves after its pager',
         assert.equal(game.uarmg?.otyp, LEATHER_GLOVES);
         assert.equal(game.uarmg?.oeroded, 1);
         assert.equal(game.u.uac, 9);
-        assert.equal(game.u.uhp, 121);
+        assertRngSliceExact(result.getRngSlices()[114], [
+            'rn2(5)=0', 'rn2(5)=1', 'rn2(11)=6', 'rn2(28)=20',
+        ], 'seed0019 Wizard cuss selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            'The Wizard of Yendor points all around, then curses.--More--');
+        assertRngSliceExact(result.getRngSlices()[115], [
+            'rn2(5)=4', 'rn2(16)=10', 'rn2(5)=4',
+            'rn2(12)=2', 'rn2(12)=0', 'rn2(70)=60', 'rn2(100)=78',
+            'rn2(200)=79', 'rn2(20)=7', 'rn2(67)=65',
+        ], 'seed0019 post-cuss actor and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[115]),
+            '"Thou shalt repent of thy cunning, rattlepate!"');
+        assert.equal(game.u.uhp, 104);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

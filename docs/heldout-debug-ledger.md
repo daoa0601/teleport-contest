@@ -11018,6 +11018,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   locator pass after tutorial residue.  Humanoid and special observers,
   growth-family pairs, invisible-observer vision and observer-growl response
   remain open.
+- Seed19 is now exact through all 127 states after adding the post-attack
+  Wizard cuss transaction.  Input114 owns outer/internal rn2(5)=0/1 plus
+  malediction6 and insult20 while the prior points-all-around line pages.
+  Input115 publishes the quoted rattlepate sentence, wakes radius25 and
+  resumes the exact tail.  The replay ends HP104/148 and AC9; the selected
+  Wizard family remains 6/6 fixture-disabled.  Laugh, Amulet, panic, retreat,
+  Deaf and non-Wizard cuss branches remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

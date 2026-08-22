@@ -19,7 +19,7 @@ import {
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
     promptYesNo, performQuestExpulsion, discoverReflectingShield,
-    rhack, stopRun, wornArmorInDestroyOrder,
+    rhack, stopRun, wakeMonstersNear, wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
@@ -2336,6 +2336,59 @@ function covetousRelocationMessage(monster, movement, actorWasSeen) {
     );
 }
 
+const WIZARD_CUSS_INSULTS = [
+    'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
+    'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
+    'footpad', 'imbecile', 'knave', 'maledict', 'miscreant', 'niddering',
+    'poltroon', 'rattlepate', 'reprobate', 'scapegrace', 'varlet', 'villein',
+    'wittol', 'worm', 'wretch',
+];
+const WIZARD_CUSS_MALEDICTIONS = [
+    'Hell shall soon claim thy remains,',
+    'I chortle at thee, thou pathetic',
+    'Prepare to die, thou',
+    'Resistance is useless,',
+    'Surrender or die, thou',
+    'There shall be no mercy, thou',
+    'Thou shalt repent of thy cunning,',
+    'Thou art as a flea to me,',
+    'Thou art doomed,',
+    'Thy fate is sealed,',
+    'Verily, thou shalt be one dead',
+];
+
+function selectWizardCussMessage(action, monster) {
+    const roll = sides => {
+        const value = rn2(sides);
+        action.calls.push('rn2(' + sides + ')');
+        return value;
+    };
+    if (roll(5) === 0)
+        return visibleMonsterSubject(monster) + ' laughs fiendishly.';
+    if (game.u?.uhave?.amulet
+        && roll(WIZARD_CUSS_INSULTS.length) === 0) {
+        return '"Relinquish the amulet, '
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
+    }
+    if ((game.u?.uhp ?? 1) < 5 && roll(2) === 0) {
+        const line = roll(2)
+            ? 'Even now thy life force ebbs, '
+            : 'Savor thy breath, ';
+        const suffix = line.startsWith('Savor')
+            ? ', it be thy last!' : '!';
+        return '"' + line
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)]
+            + suffix + '"';
+    }
+    if ((monster.mhp ?? 1) < 5 && roll(2) === 0)
+        return roll(2) ? '"I shall return."' : '"I\'ll be back."';
+    return '"' + WIZARD_CUSS_MALEDICTIONS[
+        roll(WIZARD_CUSS_MALEDICTIONS.length)
+    ] + ' ' + WIZARD_CUSS_INSULTS[
+        roll(WIZARD_CUSS_INSULTS.length)
+    ] + '!"';
+}
+
 function petCarriedObjectName(object) {
     const objectClass = object?.oclass || objectClassForType(object?.otyp);
     const descriptionHiddenClass = [4, 5, 8, 9, 10, 11, 13]
@@ -4355,6 +4408,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             action.calls.push('rn2(5)');
             if (cussGate === 0)
                 movement.deferredCuss = true;
+        }
+        if (movement?.deferredCuss && monster.iswiz) {
+            movement.deferredCuss = false;
+            if (!game.deaf && !game.u?.deaf) {
+                const cussMessage = selectWizardCussMessage(action, monster);
+                await queueTurnMessage(cussMessage);
+                wakeMonstersNear(monster.mx, monster.my, 25);
+            }
         }
         if (movement?.breathAttack) {
             const breath = movement.breathAttack;

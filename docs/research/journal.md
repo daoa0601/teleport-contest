@@ -87268,3 +87268,40 @@ rewrite, hidden judge, push or publication ran; unrelated dirty test files
 remain untouched.
 
 ---
+
+### [2026-08-23 00:52 EEST, journal block 2901] {#wizard-of-yendor #cuss #malediction #insult #verbalize #wake-nearto #post-attack #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** after destroy-armor, seed19 is exact
+through input113.  Input114 native consumes outer rn2(5)=0, internal
+rn2(5)=1, rn2(11)=6 and rn2(28)=20; JS consumed the first gate but discarded
+its deferred-cuss marker, so later actors accidentally supplied the second
+rn2(5) before diverging.
+
+**Prediction and source evidence:** cuss() first chooses laugh, then tests
+Amulet demand, hero panic and Wizard retreat in order, finally selecting one
+of eleven maledictions and twenty-eight insults.  verbalize() adds quotes.
+Because the prior blocked-spell curse line already occupies tty, the selected
+speech must force its pager at input114, publish at input115, and run
+wake_nearto only after acknowledgement.
+
+**Implementation and measured effect:** the post-attack owner now resolves
+Wizard cussing immediately after its outer gate, records each conditional
+draw, formats the full source tables and defers radius25 waking behind the
+speech line.  Seed19 is exact for all **127 RNG/screen/cursor states**, ending
+HP104/148 and AC9; the strict replay took **0.33 seconds** at **127,008,768
+bytes maximum RSS**.  The six selected fixture-disabled Wizard controls pass
+**6/6** in **0.73 seconds** at **140,640,256 bytes maximum RSS**; all
+processes exited.
+
+**Falsification, decision and next blocker:** the accidentally matching second
+rn2(5) was not evidence of correct cuss handling; the subsequent table draws
+and quoted tty line identify its true owner.  Exact later multi-summon state
+falsifies wake radius and scheduler continuation as residual causes.  Section
+867 maps the boundary; Lua owns none.  Seeds11,12,14,17 and19 are now complete
+exact Wizard carriers.  Next choose between seed15's extra rn2(100)
+prerequisite, seed13's summon placement projection, or a new exact-prefix
+haste/aggravation/clone carrier.  Keep laugh, Amulet, panic, retreat, Deaf and
+non-Wizard cuss paths explicit.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty test files remain untouched.
+
+---

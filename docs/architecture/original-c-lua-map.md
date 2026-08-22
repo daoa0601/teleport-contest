@@ -30603,6 +30603,34 @@ intervening hit/kick permits the next curse to page.  All 122 states are exact.
 Visible-caster prose, snake fallback, failed placement and non-minimum quantity
 remain separate controls.
 
+## 867. Wizard cussing is a post-attack dialogue transaction
+
+~~~mermaid
+flowchart TD
+    Attacks["complete standard mattacku slots"] --> Outer["dochug cuss gate rn2(5)=0"]
+    Outer --> Internal["cuss internal rn2(5) chooses laugh versus speech"]
+    Internal --> Conditions["amulet, hero panic, and Wizard retreat predicates"]
+    Conditions --> Malediction["ordinary path rn2(11) malediction"]
+    Malediction --> Insult["rn2(28) insult"]
+    Insult --> Voice["verbalize publishes quoted sentence"]
+    Voice --> Pager["older curse line forces cuss pager"]
+    Pager --> Wake["after acknowledgement, wake_nearto radius 25"]
+    Wake --> Tail["resume later actors and global maintenance"]
+    Lua["Lua owns no dialogue or wake transaction"] -.-> Outer
+~~~
+
+Seed19 input114 follows a blocked indirect spell line.  Its outer cuss gate is
+rn2(5)=0; internal rn2(5)=1 rejects the laugh, then rn2(11)=6 and rn2(28)=20
+select Thou shalt repent of thy cunning, plus rattlepate.  The older
+points-all-around curse line owns the pager, so input115 publishes the quoted
+speech and only then wakes nearby actors and resumes its exact tail.
+
+The JavaScript owner now contains the complete Wizard dialogue tables and
+branch order, with every selection recorded on the acting monster's slice.
+All 127 seed19 states are exact, ending HP104 and AC9.  Laughing, Amulet
+demand, low-hero-HP panic, low-Wizard-HP retreat, Deaf suppression,
+non-Wizard demons/minions and wake-up presentation remain separate controls.
+
 ## 843. Curse items crosses two tty boundaries before `sit.c:rndcurse`
 
 ```mermaid
