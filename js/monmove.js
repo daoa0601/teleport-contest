@@ -217,6 +217,7 @@ const AD_ELEC = 6;
 const AD_DRST = 7;
 const AD_ACID = 8;
 const AD_BLND = 11;
+const AD_STUN = 12;
 const AD_DRLI = 15;
 const AD_DREN = 16;
 const AD_LEGS = 17;
@@ -302,6 +303,35 @@ const MONSTER_WIZARD_SPELLS = [
     { key: 'clone-wizard', level: 18, flags: MCF_HOSTILE | MCF_INDIRECT },
     { key: 'death-touch', level: 20, flags: MCF_HOSTILE },
 ];
+
+function monsterSpellEffectPreview(spell, damage, state) {
+    const antimagic = !!(state?.u?.antimagic
+        || state?.u?.magicResistance || state?.u?.magic_resistance);
+    let effectDamage = damage;
+    if (antimagic && ['psi-bolt', 'open-wounds'].includes(spell.key))
+        effectDamage = Math.trunc((effectDamage + 1) / 2);
+    let effectMessage = null;
+    if (spell.key === 'psi-bolt') {
+        effectMessage = effectDamage <= 5
+            ? 'You get a slight headache.'
+            : effectDamage <= 10
+                ? 'Your brain is on fire!'
+                : effectDamage <= 20
+                    ? 'Your head suddenly aches painfully!'
+                    : 'Your head suddenly aches very painfully!';
+    } else if (spell.key === 'open-wounds') {
+        effectMessage = effectDamage <= 5
+            ? 'Your skin itches badly for a moment.'
+            : effectDamage <= 10
+                ? 'Wounds appear on your body!'
+                : effectDamage <= 20
+                    ? 'Severe wounds appear on your body!'
+                    : 'Your body is covered with painful wounds!';
+    } else if (spell.key === 'blind-you') {
+        effectMessage = 'Scales cover your eyes!';
+    }
+    return { effectDamage, effectMessage };
+}
 
 // C weapon.c:hwep[], strongest/preferred first.  Object display names are
 // used as the stable bridge until the generated object layer exports the
@@ -5835,12 +5865,31 @@ function basicMonsterAttack(
                 monster, damageType, state, random, calls,
             );
         }
-        if (monsterSpellUseless(monster, spell, state)
-            || monster.mcan || monster.mspec_used
-            || !(monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0)) {
+        if (monsterSpellUseless(monster, spell, state)) {
             return retainHeroAttackContinuation({
                 kind: 'hero-spell', threshold, attackType, damageType,
                 attackIndex, spell: spell.key, cast: false,
+            }, monster, attackIndex);
+        }
+        if (monster.mcan || monster.mspec_used
+            || !(monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0)) {
+            const blind = !!state?.blind
+                || (state?.u?.blindTurns ?? 0) > 0;
+            const canSeeCaster = !blind
+                && couldsee(monster.mx, monster.my)
+                && (!monster.minvis || heroCanSeeInvisible(state));
+            let curseKind = null;
+            if (canSeeCaster) {
+                curseKind = spell.flags & MCF_INDIRECT
+                    ? 'visible-undirected' : 'visible-directed';
+            } else if (!((state?.moves ?? 0) % 4)
+                || recordRandom(random, calls, 4) === 0) {
+                if (!state?.deaf) curseKind = 'audible';
+            }
+            return retainHeroAttackContinuation({
+                kind: 'hero-spell', threshold, attackType, damageType,
+                attackIndex, spell: spell.key, cast: false,
+                blocked: true, curseKind,
             }, monster, attackIndex);
         }
         const monsterLevel = monster.m_lev
@@ -5863,9 +5912,12 @@ function basicMonsterAttack(
         calls.push(`d(${spellDice},${spellSides})`);
         if (state?.u?.halfSpellDamage || state?.u?.half_spell_damage)
             damage = Math.trunc((damage + 1) / 2);
+        const preview = monsterSpellEffectPreview(spell, damage, state);
         return retainHeroAttackContinuation({
             kind: 'hero-spell', threshold, attackType, damageType,
             attackIndex, spell: spell.key, cast: true, damage,
+            effectDamage: preview.effectDamage,
+            spellEffectMessage: preview.effectMessage,
             directed: !(spell.flags & MCF_INDIRECT),
             deferredSpellEffect: true,
         }, monster, attackIndex);
@@ -6294,6 +6346,18 @@ function basicMonsterAttack(
             blindMessage: blindApplicable && !heroWasBlind,
             deferredBlindEffect: true,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_STUN) {
+        // uhitm.c:mhitm_ad_stun().  The kick's declared damage and hitmsg
+        // precede cancellation and the one-in-four stun gate.  A selected
+        // effect adds the full damage to HStun, then halves only the HP
+        // damage before entering the common knockback/contact tail.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'stun-natural',
+            deferredStunGate: true, oldFormMnum,
+        }, monster, attackIndex);
     } else if (hit && damageType === AD_STON) {
         // mhitm_ad_ston() rolls the declared 0d0 before hitmsg().  Its hiss
         // gate belongs after that visible contact line, so keep the remaining
@@ -6662,6 +6726,27 @@ export function resumeDeferredHeroLifeDrain(
         }
     }
     attack.deferredLifeDrainGate = false;
+    attack.deferredPostHit = true;
+    return action;
+}
+
+// Resume mhitm_ad_stun() after hitmsg().  make_stunned() receives the full
+// pre-halving damage; only the ordinary HP tail is reduced on selection.
+export function resumeDeferredHeroStun(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredStunGate) return action;
+    if (!action.monster?.mcan
+        && recordRandom(random, action.calls, 4) === 0) {
+        const oldTurns = state.u?.stunnedTurns ?? 0;
+        state.u.stunnedTurns = oldTurns + Math.max(0, attack.damage ?? 0);
+        state.u.stunned = state.u.stunnedTurns > 0;
+        if (oldTurns === 0) attack.stunMessage = 'You stagger...';
+        attack.damage = Math.trunc((attack.damage ?? 0) / 2);
+        attack.stunSelected = true;
+    }
+    attack.deferredStunGate = false;
     attack.deferredPostHit = true;
     return action;
 }
@@ -7327,13 +7412,24 @@ export function resumeDeferredHeroSpell(action, state) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredSpellEffect) return null;
     attack.deferredSpellEffect = false;
-    if (attack.spell !== 'psi-bolt') {
+    if (attack.spell === 'blind-you') {
+        const turns = state.u?.halfSpellDamage
+            || state.u?.half_spell_damage ? 100 : 200;
+        const wasBlind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+        state.u.blindTurns = turns;
+        state.blind = true;
+        state.vision_full_recalc = 1;
+        attack.toggledBlindness = !wasBlind;
+        attack.appliedDamage = 0;
+        return attack;
+    }
+    if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {
         attack.unimplementedSpellEffect = true;
         return attack;
     }
     const wasPolymorphed = Upolyd(state?.u);
-    applyHeroContactDamage(state, attack.damage ?? 0);
-    attack.appliedDamage = attack.damage ?? 0;
+    applyHeroContactDamage(state, attack.effectDamage ?? attack.damage ?? 0);
+    attack.appliedDamage = attack.effectDamage ?? attack.damage ?? 0;
     attack.rehumanize = wasPolymorphed && (state.u?.mh ?? 0) < 1;
     attack.heroDied = !wasPolymorphed && (state.u?.uhp ?? 0) < 1;
     return attack;

@@ -6139,9 +6139,14 @@ async function wizGenesis() {
         : stateStrippedName;
     const peacefulPattern = /^\s*peaceful\s+/iu;
     const peaceful = peacefulPattern.test(dispositionStrippedName);
-    const monsterName = peaceful
+    const peacefulStrippedName = peaceful
         ? dispositionStrippedName.replace(peacefulPattern, '')
         : dispositionStrippedName;
+    const hostilePattern = /^\s*hostile\s+/iu;
+    const hostile = hostilePattern.test(peacefulStrippedName);
+    const monsterName = hostile
+        ? peacefulStrippedName.replace(hostilePattern, '')
+        : peacefulStrippedName;
     let mnum = monsterTypeByName(monsterName);
     if (mnum < 0) {
         await pline("I've never heard of such monsters.");
@@ -6175,6 +6180,11 @@ async function wizGenesis() {
             monster.mtame = 0;
             monster.pet = false;
             monster.mpeaceful = 1;
+            delete monster.malign;
+        } else if (hostile) {
+            monster.mtame = 0;
+            monster.pet = false;
+            monster.mpeaceful = 0;
             delete monster.malign;
         }
         // create_particular_creation() applies requested sleep after ordinary

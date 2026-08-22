@@ -30296,3 +30296,48 @@ Goodbye line.  The first JS replay instead spent `rn2(10)=3` and lost a level.
 `uarms` identity rather than caching a shield boolean, so removal and armor
 breakage cannot strand the extrinsic.  All 230 states are exact; level30 and
 max HP/Pw remain 141/254.
+
+## 835. Hostile abbot joins contact AD_STUN to resumable cleric magic
+
+```mermaid
+flowchart TD
+    Genesis["create_particular: hostile abbot"] --> Disposition["mpeaceful=0 before projection"]
+    Disposition --> Claw["slot0 claw / AD_PHYS 8d2"]
+    Claw --> Kick["slot1 kick / AD_STUN 3d2"]
+    Kick --> Hitmsg["The abbot kicks"]
+    Hitmsg --> Cancel{"attacker cancelled?"}
+    Cancel -->|"yes"| Tail["common knockback plus full HP damage"]
+    Cancel -->|"no"| Gate{"rn2(4) equals zero?"}
+    Gate -->|"no"| Tail
+    Gate -->|"yes"| Stun["HStun += full damage; You stagger"]
+    Stun --> Half["HP damage becomes floor(damage/2)"]
+    Half --> Tail
+    Tail --> Cleric["slot2 AD_CLRC spell selection"]
+    Cleric --> Cast["cast line; pre-roll spell damage"]
+    Cast --> Effect["effect line may force prior line through More"]
+    Effect --> Apply["open wounds HP or blindness state"]
+    Cleric --> Cooldown["mspec_used: visible or audible cursetxt"]
+    Lua["Lua owns no genesis disposition, contact, spell, or timeout policy"] -.-> Genesis
+```
+
+C debug `create_particular_parse()` accepts an explicit hostile disposition;
+the abbot remains a natural peaceful quest guardian in ordinary creation but
+becomes a source-authentic hostile carrier without an attack or cancellation
+setup.  The port now applies this disposition after `makemon()` and before the
+appearance line, matching tame/peaceful override ownership.
+
+The abbot's slots expose two nested continuations.  Input93 rolls claw 8d2=11,
+kick 3d2=5 with nonzero stun gate, then cleric open-wounds damage12.  Attempting
+`Severe wounds appear on your body!` forces the accumulated hit/kick/cast line
+through `--More--`; input94 installs the effect and reduces HP125→113.  While
+`mspec_used` is active, inputs99/100 prove that `cursetxt()` is itself the
+deferred line after hit and kick.  Inputs111/112 repeat the cast/effect split
+for 200-turn blindness.
+
+Decisive input123 rolls kick damage5 and `rn2(4)=0`; the full five turns enter
+HStun before HP damage is truncated to two.  Global timeout advances it once,
+so the captured state is Blind/Stun with four stun turns and HP36.  Status now
+projects source order Blind, Deaf, Stun, Conf, Hallu, and timeout expiry owns
+`You feel a bit steadier now.`  All 127 bounded states are exact.  Extending
+the same native session reaches the next independent spell gap at input129:
+paralysis is not part of this AD_STUN block.

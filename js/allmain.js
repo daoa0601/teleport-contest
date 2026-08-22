@@ -72,7 +72,7 @@ import {
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroElectricSpecial,
-    resumeDeferredHeroLifeDrain,
+    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
     resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
     resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
@@ -1562,6 +1562,13 @@ function initialTurnMaintenanceRng(
     // timeout.c:nh_timeout() returns before decrementing any property while
     // that prayer-only flag is active.
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
+    if (!prayerTimeoutFreeze && (game.u?.stunnedTurns ?? 0) > 0) {
+        game.u.stunnedTurns--;
+        if (game.u.stunnedTurns === 0) {
+            game.u.stunned = false;
+            appendTurnMessage('You feel a bit steadier now.');
+        }
+    }
     if (!prayerTimeoutFreeze && (game.u?.confusionTurns ?? 0) > 0) {
         game.u.confusionTurns--;
         if (game.u.confusionTurns === 0) {
@@ -3151,6 +3158,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 while (heroAttack) {
                     if (heroAttack.kind === 'hero-spell') {
                         if (!heroAttack.cast) {
+                            let curseMessage = null;
+                            if (heroAttack.curseKind === 'audible') {
+                                curseMessage = 'You hear a mumbled curse.';
+                            } else if (heroAttack.curseKind) {
+                                const caster = visibleMonsterSubject(monster);
+                                curseMessage = heroAttack.curseKind
+                                    === 'visible-undirected'
+                                    ? `${caster} points all around, then curses.`
+                                    : `${caster} points at you, then curses.`;
+                            }
+                            if (curseMessage)
+                                await queueTurnMessage(curseMessage);
                             previousHeroAttack = heroAttack;
                             heroAttack = continueDeferredHeroAttack(
                                 action, game,
@@ -3165,21 +3184,13 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 heroAttack.directed ? ' at you' : ''
                             }!`,
                         );
-                        let effectMessage = null;
-                        if (heroAttack.spell === 'psi-bolt') {
-                            const damage = heroAttack.damage ?? 0;
-                            effectMessage = damage <= 5
-                                ? 'You get a slight headache.'
-                                : damage <= 10
-                                    ? 'Your brain is on fire!'
-                                    : damage <= 20
-                                        ? 'Your head suddenly aches painfully!'
-                                        : 'Your head suddenly aches very painfully!';
-                        }
+                        const effectMessage = heroAttack.spellEffectMessage;
                         const effectDismissal = effectMessage
                             ? await queueTurnMessage(effectMessage)
                             : null;
                         resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.toggledBlindness)
+                            vision_recalc(0);
                         if (heroAttack.rehumanize) {
                             // tty urgent_pline() replaces the effect line
                             // which forced a pager when that pager was
@@ -3335,6 +3346,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     heroAttack.lifeDrainMessage = null;
                     if (lifeDrainDismissal !== null
                         && lifeDrainDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredStunGate)
+                    resumeDeferredHeroStun(action, game);
+                if (heroAttack.stunMessage) {
+                    const stunDismissal = await queueTurnMessage(
+                        heroAttack.stunMessage,
+                    );
+                    heroAttack.stunMessage = null;
+                    if (stunDismissal !== null
+                        && stunDismissal !== undefined) {
                         actorContactPagerOwned = true;
                     }
                 }

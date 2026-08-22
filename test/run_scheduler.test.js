@@ -8936,6 +8936,90 @@ test('seed0011 drain-resistance shield suppresses wraith level loss',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 hostile abbot kick stuns before halved contact damage',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile abbot\n'
+                + 'm.    m.    m.    m.    m.    m.    m.   ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assert.equal(decodedTopline(result.getScreens()[85]),
+            'An abbot appears next to you.');
+
+        assertRngSliceExact(result.getRngSlices()[93], [
+            'rn2(5)=4', 'rnd(20)=3', 'd(8,2)=11',
+            'rn2(3)=0', 'rn2(6)=5', 'rnd(21)=10',
+            'd(3,2)=5', 'rn2(4)=1', 'rn2(3)=0', 'rn2(6)=2',
+            'rn2(7)=1', 'rn2(70)=53', 'd(4,6)=12',
+        ], 'seed0011 abbot hit, kick, and open-wounds prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[93]),
+            'The abbot hits!  The abbot kicks!  The abbot casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[94]),
+            'Severe wounds appear on your body!');
+        assert.equal(decodedRow(result.getScreens()[94], 23),
+            'Dlvl:1 $:1540 HP:113(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[99], [
+            'rn2(5)=0', 'rnd(20)=9', 'd(8,2)=13',
+            'rn2(3)=1', 'rn2(6)=0', 'rnd(21)=15',
+            'd(3,2)=5', 'rn2(4)=3', 'rn2(3)=0', 'rn2(6)=1',
+            'rn2(7)=2',
+        ], 'seed0011 abbot blocked cleric spell prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[99]),
+            'The abbot hits!  The abbot kicks!--More--');
+        assert.equal(decodedTopline(result.getScreens()[100]),
+            'The abbot points at you, then curses.');
+
+        assertRngSliceExact(result.getRngSlices()[111], [
+            'rn2(5)=3', 'rnd(20)=10', 'd(8,2)=11',
+            'rn2(3)=1', 'rn2(6)=5', 'rnd(21)=20',
+            'd(3,2)=3', 'rn2(4)=2', 'rn2(3)=0', 'rn2(6)=5',
+            'rn2(7)=6', 'rn2(70)=61', 'd(4,6)=14',
+        ], 'seed0011 abbot blindness-spell prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[111]),
+            'The abbot hits!  The abbot kicks!  The abbot casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[112]),
+            'Scales cover your eyes!');
+        assert.equal(decodedRow(result.getScreens()[112], 23),
+            'Dlvl:1 $:1540 HP:65(141) Pw:254(254) AC:8 Xp:30 Blind');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(5)=2', 'rnd(20)=17', 'd(8,2)=11',
+            'rn2(3)=2', 'rn2(6)=0', 'rnd(21)=19',
+            'd(3,2)=5', 'rn2(4)=0', 'rn2(3)=2', 'rn2(6)=3',
+            'rn2(7)=3', 'rn2(4)=1', 'rn2(5)=0', 'rn2(20)=13',
+            'rn2(5)=4', 'rn2(12)=1', 'rn2(12)=0', 'rn2(12)=6',
+            'rn2(70)=21', 'rn2(100)=65', 'rn2(400)=68',
+            'rn2(20)=13', 'rn2(70)=35',
+        ], 'seed0011 abbot selected stun kick and tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'It hits!  It kicks!  You stagger...');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1540 HP:36(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+
+        assert.equal(game.u.uhp, 36);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.blindTurns, 197);
+        assert.equal(game.u.stunned, true);
+        assert.equal(game.u.stunnedTurns, 4);
+        const abbot = game.level.monsters.find(monster =>
+            monster.mnum === 374);
+        assert.ok(abbot);
+        assert.equal(abbot.mpeaceful, 0);
+        assert.equal(abbot.mtame, 0);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

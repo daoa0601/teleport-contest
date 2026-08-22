@@ -12479,3 +12479,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   natural/cancelled/resistant/rank witnesses pass fixture-disabled in 0.31
   seconds.  AD_DRLI's selected active controls are closed; next select a
   hostile natural AD_STUN carrier.
+- Seed11 supplies a source-authentic hostile AD_STUN carrier through C debug
+  grammar `hostile abbot`; no damaging anger or cancellation bridge is used.
+  This exposed and repaired the missing hostile genesis modifier plus the
+  abbot's coupled cleric continuations.  Inputs93/94 split open wounds after
+  the hit/kick/cast pager, inputs99/100 split cooldown `cursetxt()`, and
+  inputs111/112 split blindness.  At decisive input123, 3d2=5 and `rn2(4)=0`
+  add five stun turns before halving contact damage to two; timeout leaves four
+  turns and status `Blind Stun`.  All 127 bounded states are exact and the five
+  AD_DRLI/AD_STUN/rank witnesses pass fixture-disabled in 0.34 seconds.  The
+  extended native session first diverges at input129's unported paralyze spell,
+  which remains the next independent block.

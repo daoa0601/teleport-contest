@@ -85803,3 +85803,54 @@ bridges.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:38 EEST, journal block 2862] {#abbot #hostile-genesis #create-particular #hero-contact #ad-stun #kick #stun-timeout #damage-halving #cleric-spell #open-wounds #blindness #cursetxt #tty #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Carrier construction and prediction:** the apparent AD_STUN carrier problem
+was setup grammar, not a need to injure a peaceful guardian.  C
+`create_particular_parse()` accepts `hostile abbot`, then applies disposition
+after `makemon()` and before appearance.  Its 3d2 kick must publish hitmsg,
+skip its effect entirely when cancelled, otherwise spend `rn2(4)`; selection
+adds full damage to HStun before halving only the HP damage.  The following
+cleric slot remains part of the same actor and must retain tty ownership.
+
+**First divergences and portfolio redirects:** JavaScript initially rejected
+the hostile modifier, so only that grammar was added.  Replay then became exact
+through creation but first diverged at input93 by omitting kick `d(3,2)`.
+After adding AD_STUN dice/gate ordering, input93 next exposed a distinct spell
+continuation: JS kept running after `d(4,6)=12`, while C's attempted open-wounds
+line forced the accumulated hit/kick/cast line through `--More--`.  Treating
+that as an AD_STUN RNG defect would have patched the later symptom; the repair
+instead added the exercised open-wounds, blindness and blocked-curse owners.
+
+**Native witness:** input93 owns claw11, kick5, nonzero `rn2(4)=1`, spell
+selection/fumble and open-wounds damage12, then stops at the cast pager with
+HP125.  Input94 publishes `Severe wounds appear on your body!`, applies the
+12 damage and resumes actor/global RNG at HP113.  Inputs99/100 prove visible
+cooldown `cursetxt()` is likewise deferred; inputs111/112 prove blindness
+effect and sight state.  Input123 owns
+`d(3,2)=5,rn2(4)=0,rn2(3)=2,rn2(6)=3`: five full stun turns are installed,
+kick HP damage is two, timeout leaves four, and the final line is
+`It hits!  It kicks!  You stagger...` with `Blind Stun` and HP36.
+
+**Implementation and measured effect:** hostile disposition now joins the
+existing tame/peaceful genesis owner.  AD_STUN defers its gate until after
+hitmsg, installs full-duration state and then halves damage.  Monster spells
+preview the source effect line without committing state, allowing tty to page
+before `resumeDeferredHeroSpell()` applies open-wounds HP or blindness;
+blocked visible/unseen curse policy preserves its conditional `rn2(4)`.
+Stun status and once-per-global-turn expiry are now live.  The shortened
+source-authentic recording is exact for all **127 states**; the recorder took
+**0.07 seconds** at **54,476,800 bytes maximum RSS**.  Five focused
+fixture-disabled witnesses pass **5/5** in **0.34 seconds** at **156,024,832
+bytes max RSS**; all processes exited.
+
+**Falsified hypotheses and next blocker:** the guardian did not require a
+harmful anger recipe; AD_STUN did not own the later spell RNG; and a selected
+stun does not halve duration.  The extended 138-state replay is exact through
+input128 and first diverges at input129 after paralyze spell damage13 because
+that effect is still unported.  Keep paralysis as the next batch.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---
