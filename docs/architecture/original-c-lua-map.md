@@ -27087,6 +27087,27 @@ implemented selector loop also retains source slot retry/body-break structure;
 grease, proof, blessing and terminal armor erosion remain separate unselected
 controls.
 
+Worn-helmet protection now has independent native evidence on all three
+`erode_obj(EF_GREASE)` controls.  Greased seed53 reaches head slot zero twice:
+the first protection line precedes `rn2(2)=1` and retains grease; the second
+line precedes `rn2(2)=0`, clears grease, then publishes the separate carried
+item line `The grease dissolves.`.  The helmet remains unrusted throughout all
+155 exact states.
+
+Actual rustproof seed53 publishes its protection line before learning proof.
+Because protected head armor returns `ER_NOTHING`, `erode_armor()` resumes its
+slot loop only after that pager, walks feet then body, and terminates on the
+verbose leather-cloak non-effect.  The worn helmet becomes `rknown=true` and
+stays rust zero across all 157 exact states.
+
+Blessed seed141 takes the silent `rnl(4)=0` branch at head slot zero, learns no
+proof and continues the loop through gloves to body one.  The cloak's verbose
+non-effect is the only protection prose; the blessed helmet remains rust zero,
+non-proof and proof-unknown through all 146 exact states.  These witnesses
+require armor erosion itself to resume across messages: selection and first
+prose precede grease wear, proof learning or damage mutation, and an
+`ER_NOTHING` head result may re-enter the slot reservoir afterward.
+
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
 ```mermaid
@@ -29498,9 +29519,10 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-125/125 after the paired rust/corrosion material, protection, degree,
+128/128 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
-grease/material/protection/degree/cancellation and worn-helmet rust rows.
+grease/material/protection/degree/cancellation and worn-helmet
+rust/grease/proof/blessing rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`

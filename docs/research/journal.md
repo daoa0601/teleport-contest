@@ -84308,3 +84308,53 @@ blessed resistance—without inferring them from projectile erosion.  No corpus,
 hidden judge, stage, commit, push or publication ran.
 
 ---
+
+### [2026-08-22 15:42 EEST, journal block 2828] {#rust-monster #hero-contact #armor #helmet #grease #rustproof #blessed #proof-learning #tty-continuation #native-witness #implementation #complete-replay #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contracts held on one source graph:** seed53 keeps the same wished/worn +2
+helmet, leather cloak, rust monster, projectile and `m.` rest while changing
+only helmet grease or actual proof.  Grease must publish protection before
+`rn2(2)`, retain on one, wear on zero, and then publish carried-item dissolve
+prose.  Actual proof must publish before learning `rknown`, return
+`ER_NOTHING`, and resume the armor-slot loop.  Blessing must pay `rnl(4)`,
+remain silent on zero, learn no proof, and also continue slot selection.
+
+**Native grease and proof witnesses:** extended seed53 recordings contain 155
+greased states in **0.07 seconds** at **54,427,648 bytes maximum RSS** and 157
+rustproof states in **0.06 seconds** at **54,329,344 bytes**.  Grease input149
+uses `rn2(2)=1` after its protection pager; input151 later uses `rn2(2)=0`,
+and input152 publishes `The grease dissolves.` before the exact tail.  The
+helmet stays rust zero.  Proof input151 publishes its protection line, learns
+the worn identity, then consumes feet/body selections `4,1` and ends on the
+cloak non-effect; the helmet remains unrusted and proof-known.
+
+**Ordering red and implementation:** the first helper consumed grease wear or
+post-proof slot RNG before tty had published protection.  Screens could still
+look locally correct while per-input calls were one message early.  Armor
+erosion is now explicitly two-stage: select and publish first; finalize grease,
+proof or rust state only after acknowledgement.  An `ER_NOTHING` non-body slot
+can then re-enter the same five-way reservoir after its message instead of
+preselecting the next target.  Both complete replays and the original plain
+helmet replay are exact from input3 onward after this repair.
+
+**Blessed candidate correction:** seed53's initial blessed recording is an
+exact but negative `rnl(4)=1` witness which eventually rusts the helmet.  A
+bounded selector required at least one `rnl(4)=0` and final helmet rust zero;
+it found twelve candidates in **31.62 seconds** at **299,991,040 bytes maximum
+RSS**.  Seed141 is cleanest.  Its input141 selects head zero, succeeds with
+`rnl(4)=0`, emits no protection line, then selects gloves/body `3,1` and stops
+on the cloak.  The 146-state native recording completes in **0.07 seconds** at
+**54,362,112 bytes maximum RSS** and replays exactly from input3 onward in
+**0.21 seconds** at **123,994,112 bytes**.  The helmet remains blessed,
+non-proof, proof-unknown and unrusted.
+
+**Measured acceptance and next blocker:** the protection trio passes **3/3**
+in **0.24 seconds** at **132,530,176 bytes maximum RSS**.  The one owned
+managed projectile/priest/wish process passes **128/128** in **2.59 seconds**
+at **347,586,560 bytes maximum RSS**; every runner exits and registries are
+empty.  Section 774, section 826 and the ledger now map worn-armor protection
+and its message-before-state invariant.  Next select worn-helmet rust degree
+one→two, two→three and max-three behavior under `erode_armor()`.  No corpus,
+hidden judge, stage, commit, push or publication ran.
+
+---

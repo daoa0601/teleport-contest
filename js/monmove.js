@@ -6593,11 +6593,10 @@ function heroArmorRustResult(object, verbose, state, random, calls) {
     const objectName = object.name || object.description
         || OBJECT_NAMES[object.otyp] || 'armor';
     if (object.greased) {
-        const wearsOff = recordRandom(random, calls, 2) === 0;
-        if (wearsOff) object.greased = false;
         return {
             result: 'greased',
             message: `Your ${objectName} is protected by the layer of grease!`,
+            finalize: { kind: 'grease', object },
         };
     }
 
@@ -6611,10 +6610,12 @@ function heroArmorRustResult(object, verbose, state, random, calls) {
         };
     }
     if (proof || object.blessed && rnl(4) === 0) {
-        if (proof) object.rknown = true;
         return {
             result: 'nothing',
-            message: `Somehow, your ${objectName} is not affected by the oxidation.`,
+            message: proof
+                ? `Somehow, your ${objectName} is not affected by the oxidation.`
+                : null,
+            finalize: proof ? { kind: 'proof', object } : null,
         };
     }
 
@@ -6626,12 +6627,12 @@ function heroArmorRustResult(object, verbose, state, random, calls) {
                 ? `Your ${objectName} looks completely rusted.` : null,
         };
     }
-    object.oeroded = oldRust + 1;
     const adverb = oldRust + 1 === 3
         ? ' completely' : oldRust ? ' further' : '';
     return {
         result: 'damaged',
         message: `Your ${objectName} rusts${adverb}!`,
+        finalize: { kind: 'damage', object, oldRust },
     };
 }
 
@@ -6645,6 +6646,8 @@ export function resumeDeferredHeroRustArmor(
     if (!attack?.deferredRustArmor) return null;
     const calls = action.calls;
     let message = null;
+    let finalize = null;
+    let continueArmor = false;
 
     for (;;) {
         const slot = recordRandom(random, calls, 5);
@@ -6675,11 +6678,47 @@ export function resumeDeferredHeroRustArmor(
             target, verbose, state, random, calls,
         );
         message = erosion.message;
+        finalize = erosion.finalize;
+        continueArmor = !bodySlot && erosion.result === 'nothing';
+        // A visible ER_NOTHING result (notably actual proof) suspends inside
+        // erode_obj(); erode_armor's retry must not preselect another slot
+        // until that message has crossed tty and proof learning has committed.
+        if (message) break;
         if (bodySlot || erosion.result !== 'nothing') break;
     }
 
     attack.deferredRustArmor = false;
-    attack.deferredPostHit = true;
+    attack.deferredRustArmorFinalize = {
+        ...(finalize || { kind: 'none' }),
+        continueArmor,
+    };
+    return { message };
+}
+
+// Complete erode_obj() only after its first message has crossed tty.  Grease
+// wear and proof learning occur after protection prose; ordinary erosion state
+// likewise commits after the rust line.  A worn-off carried grease layer owns
+// a second independently publishable sentence.
+export function finishDeferredHeroRustArmor(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    const pending = attack?.deferredRustArmorFinalize;
+    if (!pending) return null;
+    let message = null;
+    if (pending.kind === 'grease') {
+        if (recordRandom(random, action.calls, 2) === 0) {
+            pending.object.greased = false;
+            message = 'The grease dissolves.';
+        }
+    } else if (pending.kind === 'proof') {
+        pending.object.rknown = true;
+    } else if (pending.kind === 'damage') {
+        pending.object.oeroded = pending.oldRust + 1;
+    }
+    delete attack.deferredRustArmorFinalize;
+    if (pending.continueArmor) attack.deferredRustArmor = true;
+    else attack.deferredPostHit = true;
     return { message };
 }
 

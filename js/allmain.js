@@ -67,6 +67,7 @@ import { roles } from './roles.js';
 import {
     allocateMonsterMovement, continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
+    finishDeferredHeroRustArmor,
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroRustArmor,
@@ -3278,7 +3279,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         actorContactPagerOwned = true;
                     }
                 }
-                if (heroAttack.deferredRustArmor) {
+                while (heroAttack.deferredRustArmor) {
                     const rustArmor = resumeDeferredHeroRustArmor(action, game);
                     if (rustArmor?.message) {
                         const rustDismissal = await queueTurnMessage(
@@ -3286,6 +3287,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                         if (rustDismissal !== null
                             && rustDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                    const rustFinal = finishDeferredHeroRustArmor(action, game);
+                    if (rustFinal?.message) {
+                        const dissolveDismissal = await queueTurnMessage(
+                            rustFinal.message,
+                        );
+                        if (dissolveDismissal !== null
+                            && dissolveDismissal !== undefined) {
                             actorContactPagerOwned = true;
                         }
                     }

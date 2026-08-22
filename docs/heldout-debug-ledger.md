@@ -11947,3 +11947,24 @@ attempt: **402 calls**, not a direct two-pass retry.
   input3 onward in 0.18 seconds at 123,944,960 bytes maximum RSS.  Focused
   passes 1/1 in 0.21 seconds at 129,466,368 bytes maximum RSS; the managed
   family passes 125/125 in 2.39 seconds at 336,019,456 bytes maximum RSS.
+- Seed53 and seed141 close worn-helmet grease, actual proof and blessed
+  protection.  Greased seed53 first retains grease on `rn2(2)=1`, then a later
+  touch wears it on `rn2(2)=0`; native publishes the protection line before
+  each draw and `The grease dissolves.` afterward.  All 155 states are exact
+  from input3 onward and the helmet stays rust zero.
+
+  Rustproof seed53 publishes protection before proof learning, then resumes
+  `erode_armor()` because head-slot `ER_NOTHING` must continue; feet/body
+  selection ends on the verbose cloak non-effect.  All 157 states are exact,
+  with the helmet proof-known and unrusted.  The first helper version consumed
+  next-slot RNG before the proof pager; splitting selection/prose from property
+  finalization and making the slot loop resumable repairs that ordering.
+
+  Seed53's blessed `rnl(4)=1` is retained only as a negative control.  A
+  bounded final-rust-zero selector found twelve positive candidates in 31.62
+  seconds at 299,991,040 bytes maximum RSS.  Native seed141 uses head
+  `rnl(4)=0` silently, continues through gloves to body one, and leaves the
+  helmet blessed, non-proof, proof-unknown and unrusted; all 146 states are
+  exact.  The protection trio passes 3/3 in 0.24 seconds at 132,530,176 bytes
+  maximum RSS, and the managed family passes 128/128 in 2.59 seconds at
+  347,586,560 bytes maximum RSS.
