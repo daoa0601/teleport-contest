@@ -27108,6 +27108,19 @@ require armor erosion itself to resume across messages: selection and first
 prose precede grease wear, proof learning or damage mutation, and an
 `ER_NOTHING` head result may re-enter the slot reservoir afterward.
 
+The same worn-helmet owner now has native degree-boundary evidence.  Starting
+seed53 at primary erosion one makes the first selected head touch advance the
+helmet to two with `rusts further`; a later selected head touch advances it to
+three with `rusts completely`.  Starting at erosion two reaches three on the
+first head selection, then a later max-three head selection returns silent
+`ER_NOTHING` and resumes the five-way slot loop until the leather cloak owns
+the visible non-effect.  Starting at erosion three independently confirms the
+same silent head retry before the cloak message.  The 153-, 158- and 164-state
+recordings are exact from input3 onward.  The worn helmet ends at erosion three
+in every case, while the separately fired floor arrow remains at erosion one;
+object identity and armor state therefore remain distinct across the shared
+AD_RUST transaction.
+
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
 ```mermaid
@@ -29519,10 +29532,10 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-128/128 after the paired rust/corrosion material, protection, degree,
+131/131 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
-rust/grease/proof/blessing rows.
+rust/grease/proof/blessing/degree rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`

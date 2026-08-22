@@ -6512,6 +6512,151 @@ test('seed0141 orcish arrow leads silent blessed helmet rust protection',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0053 orcish arrow drives rusty helmet through further and complete',
+    async () => {
+        const result = await runSegment({
+            seed: 53,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed rusty +2 helmet\nWh'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful rust monster\n'
+                + 'ail tglm.          ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 153);
+        assertRngSliceExact(result.getRngSlices()[146], [
+            'rn2(5)=0', 'rn2(3)=1', 'rn2(6)=4', 'rnd(21)=12',
+            'd(0,0)=0',
+        ], 'seed0053 rusty helmet further transition RNG');
+        assert.equal(decodedTopline(result.getScreens()[146]),
+            'The rust monster touches you!  Your plumed helmet rusts further!--More--');
+        assert.deepEqual(result.getCursors()[146], [72, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[147], [
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=0',
+        ], 'seed0053 second rusty helmet selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[147]),
+            'The rust monster touches you again!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[148], [
+            'rn2(3)=2', 'rn2(6)=0', 'rn2(12)=10', 'rn2(12)=4',
+            'rn2(12)=4', 'rn2(12)=9', 'rn2(70)=18',
+            'rn2(300)=14', 'rn2(200)=86', 'rn2(20)=0',
+            'rn2(79)=33',
+        ], 'seed0053 helmet complete-rust and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[148]),
+            'Your plumed helmet rusts completely!');
+
+        assert.ok(game.uarmh);
+        assert.deepEqual({
+            type: game.uarmh.otyp,
+            enchantment: game.uarmh.spe,
+            rust: game.uarmh.oeroded ?? 0,
+        }, {
+            type: HELMET,
+            enchantment: 2,
+            rust: 3,
+        });
+        assert.equal(game.uarmc?.oeroded ?? 0, 0);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0053 orcish arrow completes very rusty helmet then retries armor',
+    async () => {
+        const result = await runSegment({
+            seed: 53,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed very rusty +2 helmet\nWh'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful rust monster\n'
+                + 'ail tglm.          ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 158);
+        assertRngSliceExact(result.getRngSlices()[151], [
+            'rn2(5)=0', 'rn2(3)=1', 'rn2(6)=4', 'rnd(21)=12',
+            'd(0,0)=0',
+        ], 'seed0053 very-rusty helmet complete transition RNG');
+        assert.equal(decodedTopline(result.getScreens()[151]),
+            'The rust monster touches you!  Your plumed helmet rusts completely!--More--');
+        assert.deepEqual(result.getCursors()[151], [75, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[152], [
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=0',
+            'rn2(5)=4', 'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=3',
+            'rn2(5)=0', 'rn2(5)=1',
+        ], 'seed0053 max-rust retry to body RNG');
+        assert.equal(decodedTopline(result.getScreens()[152]),
+            'The rust monster touches you again!--More--');
+
+        assert.equal(decodedTopline(result.getScreens()[153]),
+            'Your cloak of displacement is not affected by oxidation.');
+        assert.ok(game.uarmh);
+        assert.equal(game.uarmh.oeroded ?? 0, 3);
+        assert.equal(game.uarmc?.oeroded ?? 0, 0);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0053 orcish arrow leaves max-rust helmet silent and retries cloak',
+    async () => {
+        const result = await runSegment({
+            seed: 53,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed thoroughly rusty +2 helmet\nWh'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful rust monster\n'
+                + 'ail tglm.          ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 164);
+        assertRngSliceExact(result.getRngSlices()[157], [
+            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1',
+        ], 'seed0053 max-rust silent retry RNG');
+        assert.equal(decodedTopline(result.getScreens()[157]),
+            'The rust monster touches you!--More--');
+        assert.deepEqual(result.getCursors()[157], [37, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[158], [
+            'rn2(3)=2', 'rn2(6)=1', 'rnd(21)=8', 'd(0,0)=0',
+        ], 'seed0053 max-rust body stop and second touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[158]),
+            'Your cloak of displacement is not affected by oxidation.--More--');
+
+        assert.ok(game.uarmh);
+        assert.deepEqual({
+            type: game.uarmh.otyp,
+            enchantment: game.uarmh.spe,
+            rust: game.uarmh.oeroded ?? 0,
+        }, {
+            type: HELMET,
+            enchantment: 2,
+            rust: 3,
+        });
+        assert.equal(game.uarmc?.oeroded ?? 0, 0);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

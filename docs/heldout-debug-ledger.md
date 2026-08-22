@@ -11968,3 +11968,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   exact.  The protection trio passes 3/3 in 0.24 seconds at 132,530,176 bytes
   maximum RSS, and the managed family passes 128/128 in 2.59 seconds at
   347,586,560 bytes maximum RSS.
+- Three seed53 variants close worn-helmet primary-rust degree boundaries without
+  a production edit.  A helmet starting at erosion one reaches two with
+  `rusts further`, then three with `rusts completely`; a helmet starting at two
+  reaches three on its first selected head touch.  Subsequent head selection at
+  maximum erosion is silent `ER_NOTHING` and resumes `erode_armor()` until the
+  leather cloak owns the visible oxidation non-effect.  An independent
+  max-three starting variant confirms that retry rather than inferring it from
+  the two-to-three transition.
+
+  The 153-, 158- and 164-state native recordings replay exactly from input3
+  onward in 0.19, 0.17 and 0.17 seconds at 123,535,360, 124,256,256 and
+  123,715,584 bytes maximum RSS.  The three durable degree regressions pass
+  3/3 in 0.26 seconds at 131,301,376 bytes maximum RSS.  The one owned managed
+  family passes 131/131 in 2.45 seconds at 352,878,592 bytes maximum RSS; all
+  runners exited.  Worn-armor AD_CORR is the next adjacent source owner.

@@ -84358,3 +84358,44 @@ one→two, two→three and max-three behavior under `erode_armor()`.  No corpus,
 hidden judge, stage, commit, push or publication ran.
 
 ---
+
+### [2026-08-22 15:49 EEST, journal block 2829] {#rust-monster #hero-contact #armor #helmet #erosion-degree #max-erosion #slot-retry #native-witness #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** the worn-helmet AD_RUST owner needs three distinct degree
+boundaries rather than one generic erosion assertion.  Primary erosion one
+must advance to two with `rusts further`; erosion two must advance to three
+with `rusts completely`; erosion three must remain unchanged, emit no helmet
+erosion prose and return `ER_NOTHING` so the five-way armor selector can retry.
+
+**Native witnesses and earliest ownership:** three seed53 recordings vary only
+the wished helmet's initial primary erosion.  In the one-rust recording,
+input146 selects head zero and advances the helmet to two with the `further`
+line; inputs147-148 select head again and publish `completely` at erosion
+three.  In the very-rusty recording, input151 completes the helmet and input152
+later selects the maxed head, remains silent there and retries through the
+armor reservoir until the cloak's non-effect.  In the max-rust recording,
+input157 selects the already-maxed head, emits only the touch line and retries;
+input158 ends on the cloak.  This localizes the boundary to `erode_obj()` state
+and `erode_armor()` retry ownership, not projectile passive state.
+
+**Evidence and decision:** the 153-, 158- and 164-state native recordings were
+captured in **0.07 seconds** each at **54,378,496**, **54,444,032** and
+**54,198,272 bytes maximum RSS**.  Each replays exactly from input3 onward in
+**0.19**, **0.17** and **0.17 seconds** at **123,535,360**, **124,256,256**
+and **123,715,584 bytes maximum RSS**.  Existing source-shaped implementation
+already satisfies all three boundaries, so no production edit is justified.
+The tests preserve the separate identities: the helmet ends at erosion three,
+the leather cloak stays uneroded, and the fired floor arrow retains its own
+erosion-one passive result.
+
+**Measured effect, falsification and next blocker:** the degree trio passes
+**3/3** in **0.26 seconds** at **131,301,376 bytes maximum RSS**.  The one
+owned managed projectile/priest/wish process passes **131/131** in **2.45
+seconds** at **352,878,592 bytes maximum RSS**; it exited and no duplicate
+runner remains.  This falsifies the need for another degree-specific code
+bridge and closes the max-three retry gap.  Next map monster-to-hero AD_CORR
+with black-pudding contact against eligible worn armor, using the same
+message/state boundary without assuming rust and corrosion share every
+presentation branch.  No corpus, hidden judge, push or publication ran.
+
+---
