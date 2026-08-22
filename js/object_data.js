@@ -94,6 +94,7 @@ export const GAUNTLETS_OF_POWER = 161;
 export const IRON_SHOES = 164;
 export const ELVEN_BOOTS = 169;
 export const WORM_TOOTH = 42;
+export const CRYSKNIFE = 43;
 export const DWARVISH_SHORT_SWORD = 49;
 export const DWARVISH_MATTOCK = 71;
 export const UNICORN_HORN = 261;

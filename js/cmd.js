@@ -54,7 +54,8 @@ import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';
 import {
-    readObjectName, unseenObjectNoun, wishedObjectPresentation,
+    objectStatePrefix, readObjectName, unseenObjectNoun,
+    wishedObjectPresentation,
 } from './objnam.js';
 import {
     artifactById, artifactDamageBonus, artifactToHitBonus,
@@ -5986,7 +5987,10 @@ export async function makeWish({
     // amulets start description-known while rings and potions start unknown.
     if (canObserveWishedObject && item.dknown)
         recordObjectEncounter(item.otyp);
-    const perceivedName = item.dknown ? item.name : unseenObjectNoun(item);
+    const statePrefix = objectStatePrefix(item);
+    const perceivedName = `${statePrefix}${
+        item.dknown ? item.name : unseenObjectNoun(item)
+    }`;
     const individualName = item.oextra?.oname || item.oname;
     const namedObject = individualName
         ? `${perceivedName} named ${individualName}` : perceivedName;
@@ -5994,7 +5998,9 @@ export async function makeWish({
         ? `${item.buc} ${namedObject}` : namedObject;
     const quantity = item.quantity ?? item.quan ?? 1;
     const heldDescription = quantity > 1
-        ? `${quantity} ${item.buc ? `${item.buc} ` : ''}${item.plural}`
+        ? `${quantity} ${item.buc ? `${item.buc} ` : ''}${
+            statePrefix
+        }${item.plural}`
         : `${indefiniteArticle(visibleName)} ${visibleName}`;
     await pline(`${item.invlet} - ${heldDescription}.`);
 
@@ -14390,6 +14396,21 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // remains separately bounded.
     const resolveArrowShot = async (shot) => {
         const thrown = detachArrowUnit();
+        let shotDx = dx;
+        let shotDy = dy;
+        // C dothrow.c:throwit() tests every cursed or greased directed
+        // projectile after splitobj() but before range/path construction.
+        // A nonzero probe is still observable because it shifts to-hit and
+        // every later passive/floor draw.  Zero rerolls the flight direction;
+        // the vertical 0,0 result falls back to the hero square.
+        if ((thrown.cursed || thrown.greased) && (shotDx || shotDy)
+            && rn2(7) === 0) {
+            await plineWithContinuation(
+                `The ${arrowObjectName} misfires!`,
+            );
+            shotDx = rn2(3) - 1;
+            shotDy = rn2(3) - 1;
+        }
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
         let range = Math.max(
             1,
@@ -14403,7 +14424,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         let contact = null;
         let stoppedInWaterWall = false;
         for (let distance = 0; distance < range; distance++) {
-            const nx = x + dx, ny = y + dy;
+            const nx = x + shotDx, ny = y + shotDy;
             const typ = game.level?.at?.(nx, ny)?.typ;
             if (typ === WATER) {
                 // zap.c:bhit() stops thrown objects after advancing into a
@@ -14426,6 +14447,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
                 distantPassingBars = true;
             }
             const passingBars = pointBlankPassingBars || distantPassingBars;
+            if (!shotDx && !shotDy) break;
             if (blocksMove(nx, ny) && !passingBars) break;
             if (typ !== ROOM && typ !== CORR && typ !== DOOR
                 && typ !== SINK && !passingBars) {
@@ -14603,7 +14625,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
 
         rn2(100); // breaktest()->obj_resists() for a floor survivor
         if (arrowFlight.x === game.u.ux && arrowFlight.y === game.u.uy
-            && blocksMove(game.u.ux + dx, game.u.uy + dy)) {
+            && blocksMove(game.u.ux + shotDx, game.u.uy + shotDy)) {
             // bhit() leaves gb.bhitpos on the hero square when the first path
             // cell is blocked.
             landArrowUnit(thrown, game.u.ux, game.u.uy);
@@ -15310,7 +15332,24 @@ async function applyProjectileObjectPassive(monster, object) {
         const material = OBJECT_MATERIAL[object.otyp] ?? 0;
         const flammable = (material > 1 && material <= 8)
             || material === 18;
-        if (!flammable || object.oerodeproof || object.fireproof) return;
+        if (!flammable) return;
+        if (object.oerodeproof || object.fireproof) {
+            // trap.c:erode_obj() treats a proof detached object as visible at
+            // bhitpos, announces protection even without EF_VERBOSE, and
+            // learns the proof bit before returning to floor handoff.
+            object.rknown = true;
+            if (cansee(monster.mx, monster.my)) {
+                const objectName = OBJECT_NAMES[object.otyp]
+                    || object.name || 'object';
+                const quantity = object.quantity ?? object.quan ?? 1;
+                await plineWithContinuation(
+                    `Somehow, the ${objectName} ${
+                        quantity === 1 ? 'is' : 'are'
+                    } not affected by the heat.`,
+                );
+            }
+            return;
+        }
         if (object.blessed && rnl(4) === 0) return;
 
         const oldBurn = object.oeroded ?? 0;
@@ -15333,11 +15372,24 @@ async function applyProjectileObjectPassive(monster, object) {
             if (rn2(2) === 0) object.greased = false;
             return;
         }
-        // The currently routed rust-prone projectile is the iron ARROW.
-        // Other materials and erosion-proof presentation retain distinct
-        // witnesses rather than being inferred from this one.
-        if (object.otyp !== ARROW
-            || object.oerodeproof || object.rustproof) return;
+        // objclass.h:is_rustprone() is a material predicate.  Ordinary and
+        // orcish arrows are both IRON; wooden/silver ammunition must bypass
+        // this branch even when it shares P_BOW launcher classification.
+        if ((OBJECT_MATERIAL[object.otyp] ?? 0) !== 11) return;
+        if (object.oerodeproof || object.rustproof) {
+            object.rknown = true;
+            if (cansee(monster.mx, monster.my)) {
+                const objectName = OBJECT_NAMES[object.otyp]
+                    || object.name || 'object';
+                const quantity = object.quantity ?? object.quan ?? 1;
+                await plineWithContinuation(
+                    `Somehow, the ${objectName} ${
+                        quantity === 1 ? 'is' : 'are'
+                    } not affected by the oxidation.`,
+                );
+            }
+            return;
+        }
         if (object.blessed && rnl(4) === 0) return;
 
         const oldRust = object.oeroded ?? 0;
@@ -15359,8 +15411,22 @@ async function applyProjectileObjectPassive(monster, object) {
             if (rn2(2) === 0) object.greased = false;
             return;
         }
-        if (object.otyp !== ARROW
-            || object.oerodeproof || object.corrodeproof) return;
+        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        if (![11, 13].includes(material)) return;
+        if (object.oerodeproof || object.corrodeproof) {
+            object.rknown = true;
+            if (cansee(monster.mx, monster.my)) {
+                const objectName = OBJECT_NAMES[object.otyp]
+                    || object.name || 'object';
+                const quantity = object.quantity ?? object.quan ?? 1;
+                await plineWithContinuation(
+                    `Somehow, the ${objectName} ${
+                        quantity === 1 ? 'is' : 'are'
+                    } not affected by the corrosion.`,
+                );
+            }
+            return;
+        }
         if (object.blessed && rnl(4) === 0) return;
 
         const oldCorrosion = object.oeroded2 ?? 0;

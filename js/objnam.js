@@ -8,10 +8,11 @@ import {
     artifactByName, artifactExistCount, nameArtifact,
 } from './artifacts.js';
 import {
-    DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, OBJECT_BASES,
+    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, OBJECT_BASES,
     OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, OBJECT_PROB,
-    OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT,
+    OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
+    OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { armorUsesPairGrammar } from './object_grammar.js';
 
@@ -28,6 +29,8 @@ const WAND_CLASS = 11;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const ROCK_CLASS = 14;
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
 
 const CLASS_PRESENTATION = {
     [WEAPON_CLASS]: 'Weapons',
@@ -168,6 +171,10 @@ export function parseWishText(text) {
         buc: null,
         recharged: null,
         charges: null,
+        erodeproof: false,
+        eroded: null,
+        eroded2: null,
+        greased: false,
     };
 
     const chargeMatch = remaining.match(/\s*\((-?\d+):(-?\d+)\)\s*$/);
@@ -177,6 +184,7 @@ export function parseWishText(text) {
         remaining = remaining.slice(0, chargeMatch.index).trim();
     }
 
+    let erosionIntensity = 0;
     for (;;) {
         let match;
         if ((match = remaining.match(/^(?:an?|the)\s+/i))) {
@@ -196,6 +204,31 @@ export function parseWishText(text) {
         } else if ((match = remaining.match(/^uncursed\s+/i))) {
             parsed.buc = 'uncursed';
             remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(
+            /^(?:rustproof|erodeproof|corrodeproof|fixed|fireproof|rotproof|tempered|crackproof)\s+/i,
+        ))) {
+            parsed.erodeproof = true;
+            remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(/^greased\s+/i))) {
+            parsed.greased = true;
+            remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(
+            /^(very|thoroughly)\s+(?=(?:rusty|rusted|burnt|burned|cracked|corroded|rotted)\s+)/i,
+        ))) {
+            erosionIntensity = match[1].toLowerCase() === 'very' ? 1 : 2;
+            remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(
+            /^(?:rusty|rusted|burnt|burned|cracked)\s+/i,
+        ))) {
+            parsed.eroded = 1 + erosionIntensity;
+            erosionIntensity = 0;
+            remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(
+            /^(?:corroded|rotted)\s+/i,
+        ))) {
+            parsed.eroded2 = 1 + erosionIntensity;
+            erosionIntensity = 0;
+            remaining = remaining.slice(match[0].length);
         } else {
             break;
         }
@@ -206,6 +239,67 @@ export function parseWishText(text) {
     if (parsed.name !== requestedName && parsed.count === 1)
         parsed.count = 2;
     return parsed;
+}
+
+// C refs: objnam.c:erosion_matters(), objclass.h:is_damageable(), and
+// mkobj.c:is_flammable()/is_rottable().  Wished proof applies only where the
+// object instance can retain erosion state; an ordinary non-weapon tool does
+// not become proof merely because its material could otherwise decay.
+function erosionMatters(object) {
+    if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]
+        .includes(object.oclass)) return true;
+    return object.oclass === TOOL_CLASS
+        && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
+}
+
+function objectIsDamageable(object) {
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const flammable = (material > 1 && material <= 8) || material === 18;
+    const rottable = (material > 1 && material <= 8) || material === 10;
+    const rustprone = material === 11;
+    const corrodeable = material === 11 || material === 13;
+    const crackable = material === 19 && object.oclass === ARMOR_CLASS;
+    return flammable || rottable || rustprone || corrodeable || crackable;
+}
+
+function objectAcceptsPrimaryErosion(object) {
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const flammable = (material > 1 && material <= 8) || material === 18;
+    const rustprone = material === 11;
+    const crackable = material === 19 && object.oclass === ARMOR_CLASS;
+    return flammable || rustprone || crackable;
+}
+
+function objectAcceptsSecondaryErosion(object) {
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const rottable = (material > 1 && material <= 8) || material === 10;
+    const corrodeable = material === 11 || material === 13;
+    return rottable || corrodeable;
+}
+
+function erosionDegree(level) {
+    return level >= 3 ? 'thoroughly ' : level === 2 ? 'very ' : '';
+}
+
+// C objnam.c:add_erosion_words().  Primary and secondary damage are visible
+// independently of type knowledge, so wish receipt and later inventory prose
+// must retain the per-identity adjectives even when +N remains unknown.
+export function objectStatePrefix(object) {
+    let prefix = object?.greased ? 'greased ' : '';
+    if ((object?.oeroded ?? 0) > 0 && object.otyp !== CRYSKNIFE) {
+        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const adjective = material === 11 ? 'rusty '
+            : material === 19 && object.oclass === ARMOR_CLASS
+                ? 'cracked ' : 'burnt ';
+        prefix += `${erosionDegree(object.oeroded)}${adjective}`;
+    }
+    if ((object?.oeroded2 ?? 0) > 0 && object.otyp !== CRYSKNIFE) {
+        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const adjective = material === 11 || material === 13
+            ? 'corroded ' : 'rotted ';
+        prefix += `${erosionDegree(object.oeroded2)}${adjective}`;
+    }
+    return prefix;
 }
 
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
@@ -303,6 +397,17 @@ export function readObjectName(text, { wizardWish = false } = {}) {
     if (parsed.enchantment !== null) object.spe = parsed.enchantment;
     if (parsed.recharged !== null) object.recharged = parsed.recharged;
     if (parsed.charges !== null) object.spe = parsed.charges;
+    if (parsed.greased) object.greased = true;
+    if (erosionMatters(object)) {
+        if (parsed.eroded !== null && objectAcceptsPrimaryErosion(object))
+            object.oeroded = Math.min(3, parsed.eroded);
+        if (parsed.eroded2 !== null && objectAcceptsSecondaryErosion(object))
+            object.oeroded2 = Math.min(3, parsed.eroded2);
+    }
+    if (parsed.erodeproof && erosionMatters(object)
+        && (objectIsDamageable(object) || object.otyp === CRYSKNIFE)) {
+        object.oerodeproof = true;
+    }
     if (object.otyp === 364) object.spe = 1; // wished scroll of mail
     if (parsed.buc === 'blessed') {
         object.blessed = true;
