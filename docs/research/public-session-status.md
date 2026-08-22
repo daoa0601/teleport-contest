@@ -1,4 +1,894 @@
-# Public session status: movement-ration checkpoint
+# Public session status
+
+## Current publish checkpoint: 43/44 engine-only, 44/44 normal
+
+Measured 2026-08-01 17:22 EEST from checkpoint branch commit `81f84f3`,
+after restoring the shared nearby-wake calls and preventing the generic live
+role scheduler from preempting the tutorial scheduler:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+bash frozen/score.sh
+```
+
+The engine-only result is **43/44 exact** at **47+0.37 ms/turn** (R2 0.824).
+All gameplay RNG streams are exact.  The sole residual is
+`seed0383-wizard-hallucinate`: **16,915/16,915 RNG calls** and **218/219
+screens/cursors**, with input 173 rendering hallucinated `ogre king` where C
+renders `black pudding` after expulsion.  This is a one-screen display-stream
+regression and remains open; it is not hidden-readiness evidence.
+
+The normal fixture-enabled scorer is **44/44 exact** at **35+0.00 ms/turn**.
+It masks that engine-only residual and therefore remains only the public
+compatibility gate.  The two complete gates ran serially as separately owned
+processes and both exited normally; no duplicate or abandoned suite remained.
+`frozen/score.sh`'s generated `js/terminal.js` and `js/storage.js` copies were
+restored from the checkpoint before publication.
+
+Checkpoint `81f84f3` was pushed to `daoa0601/teleport-contest` `main`.  The
+active Score workflow did not enqueue from the push event, so run
+`30703718684` was dispatched manually against the same commit.  It completed
+successfully in 30 seconds and independently reported **44/44**, **100.0% RNG**
+and **77+0.01 ms/turn**.  The official held-out judge remains asynchronous and
+is not represented by this public Actions result.
+
+## Latest engine-only regression gate: 44/44 exact
+
+Measured 2026-07-31 20:49 EEST from the current working tree based on
+`4e04bd9`, after closing the seed0004 bear-trap/capacity lifecycle,
+seed1800 blocked-dart/fobj ownership, and seed5002 raw-fatal-status
+regressions:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **44/44 exact** at **37+0.32 ms/turn** (R² 0.846).  The three
+sessions reopened by the preceding 41/44 corpus are exact again:
+
+| Session | RNG | Screens | Cursors |
+| --- | ---: | ---: | ---: |
+| `seed0004` | 12,084/12,084 | 409/409 | 409/409 |
+| `seed1800` | 2,458/2,458 | 26/26 | 26/26 |
+| `seed5002` | 12,167/12,167 | 410/410 | 410/410 |
+
+The gate ran as one owned process, was retained and polled through normal
+exit, and completed in **12.85 seconds** at **268,255,232 bytes maximum
+RSS**.  The pre- and post-run registries were empty; no duplicate verifier
+was launched or abandoned.
+
+This is a complete public engine-only regression gate, not evidence of
+held-out generalization.  The normal fixture-enabled suite was not run because
+nothing is being published at this checkpoint.  Nothing was staged,
+committed, pushed, submitted, or run against held-out sessions.
+
+## Latest engine-only regression gate: 41/44 exact
+
+Measured 2026-07-31 20:14 EEST from the current working tree based on
+`4e04bd9`, after the seed0014/seed0030 focused closures and the seed0006,
+seed0399, and seed4500 regression repairs:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is a red **41/44 exact** gate at **37+0.31 ms/turn** (R² 0.845).
+Seed0014 is newly exact at **59,178/59,178 RNG calls and 714/714
+screens/cursors**.  Seed0030 is newly exact at **105,529/105,529 RNG calls and
+1,953/1,953 screens/cursors**.  Seed0006, seed0399, and seed4500 retain their
+complete exactness.
+
+Three previously accepted sessions reopened:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0004` | 12,084/12,084 | 384/409 | 408/409 | screen/cursor regression; earliest boundary pending |
+| `seed1800` | 2,386/2,458 | 12/26 | 26/26 | RNG/screen regression; earliest boundary pending |
+| `seed5002` | 12,167/12,167 | 396/410 | 410/410 | screen-only regression; earliest boundary pending |
+
+The gate ran as one owned cell with sequential per-session subprocesses and
+exited normally in **12.83 seconds** at **459,882,496 bytes maximum RSS**.
+Cell2204 was polled to completion, the post-run registry was empty, and no
+duplicate verifier was launched.  The normal fixture-enabled suite was not
+run after this red result.  Nothing was staged, committed, pushed, submitted,
+or run against held-out sessions.
+
+## Latest engine-only regression gate: 42/44 exact
+
+Measured 2026-07-30 17:30 EEST from the current working tree based on
+`4e04bd9`, after closing seed0367's single FAST-provenance screen:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **42/44 exact** at **40+0.26 ms/turn** (R² 0.740), superseding
+the 41/44 checkpoint immediately below.  Seed0367 is exact at
+**50,125/50,125 RNG calls and 324/324 screens/cursors**.  Seed0360 remains
+exact, and every other accepted public session stays green.
+
+The two current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 107/714 | fountain/exploration frontier |
+| `seed0030` | 6,560/105,529 | 52/1,953 | 469/1,953 | multi-role death/restart frontier |
+
+The gate ran as one owned cell with sequential per-session subprocesses and
+exited normally in **11.97 seconds** at **207,126,528 bytes maximum RSS**.
+The yielded cell was polled to completion; no duplicate runner was launched
+and no process survived.  The normal fixture-enabled suite was deliberately
+not run after this red engine-only result.  Nothing was staged, committed,
+pushed, submitted, or run against held-out sessions.
+
+## Latest engine-only regression gate: 41/44 exact
+
+Measured 2026-07-30 17:26 EEST from the current working tree based on
+`4e04bd9`, after closing seed0360 through all 833 states:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **41/44 exact** at **41+0.26 ms/turn** (R² 0.725), superseding
+both the red 21/44 checkpoint below and the older accepted 38/44 baseline.
+Seed0360 is exact at **120,639/120,639 RNG calls and 833/833
+screens/cursors**.  Every other previously accepted public session remains
+exact.
+
+The three current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 107/714 | fountain/exploration frontier |
+| `seed0030` | 6,560/105,529 | 52/1,953 | 469/1,953 | multi-role death/restart frontier |
+| `seed0367` | 50,125/50,125 | 323/324 | 324/324 | one screen-only Priest-tour residual |
+
+The gate ran as one owned cell with sequential per-session subprocesses and
+exited normally in **12.08 seconds** at **206,143,488 bytes maximum RSS**.
+The yielded cell was polled to completion; no duplicate runner was launched
+and no process survived.  The normal fixture-enabled suite was deliberately
+not run after this red engine-only result.  Nothing was staged, committed,
+pushed, submitted, or run against held-out sessions.
+
+## Latest engine-only regression gate: 21/44 exact
+
+Measured 2026-07-30 06:18 EEST from the current working tree based on
+`4e04bd9`, after closing seed0108 with a complete per-input engine-only
+regression:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is a red **21/44** regression gate at **40+0.25 ms/turn**
+(R² 0.795), not a replacement for the accepted **38/44** baseline.
+Seed0108 is exact at **16,958/16,958 RNG calls and 303/303 screens**, but
+eighteen formerly accepted sessions are screen-only red and two formerly
+accepted sessions have reopened RNG divergence.  The three older non-exact
+sessions seed0014, seed0030, and seed0360 remain non-exact.
+
+| Session | RNG | Screens | Current interpretation |
+| --- | ---: | ---: | --- |
+| `seed0002` | 27,158/27,158 | 594/595 | newly reopened; one screen |
+| `seed0004` | 9,859/12,084 | 290/409 | newly reopened RNG and presentation |
+| `seed0007` | 16,373/16,373 | 300/302 | newly reopened; two screens |
+| `seed0014` | 2,970/59,178 | 26/714 | existing fountain/exploration frontier |
+| `seed0015` | 8,563/8,563 | 43/44 | newly reopened; one screen |
+| `seed0016` | 3,656/3,656 | 35/36 | newly reopened; one screen |
+| `seed0017` | 3,465/3,465 | 66/67 | newly reopened; one screen |
+| `seed0030` | 6,550/105,529 | 52/1,953 | existing multi-life frontier |
+| `seed0060` | 3,626/3,626 | 40/41 | newly reopened; one screen |
+| `seed0077` | 3,242/3,242 | 32/33 | newly reopened; one screen |
+| `seed0101` | 2,371/2,371 | 26/27 | newly reopened; one screen |
+| `seed0102` | 4,485/4,485 | 24/25 | newly reopened; one screen |
+| `seed0116` | 12,562/12,562 | 117/127 | newly reopened; screen-only |
+| `seed0360` | 3,103/120,639 | 163/833 | existing world-tour frontier |
+| `seed0361` | 53,865/53,865 | 350/366 | newly reopened; screen-only |
+| `seed0367` | 3,514/50,125 | 192/324 | newly reopened RNG and presentation |
+| `seed0373` | 35,386/35,386 | 111/124 | newly reopened; screen-only |
+| `seed0383` | 16,915/16,915 | 216/219 | newly reopened; screen-only |
+| `seed0501` | 2,238/2,238 | 27/28 | newly reopened; one screen |
+| `seed0700` | 3,230/3,230 | 50/51 | newly reopened; one screen |
+| `seed1150` | 3,137/3,137 | 50/51 | newly reopened; one screen |
+| `seed1500` | 2,768/2,768 | 39/40 | newly reopened; one screen |
+| `seed4500` | 108,275/108,275 | 1,784/1,814 | newly reopened; screen-only |
+
+The gate ran as one owned cell with sequential per-session subprocesses,
+iterative RNG comparison, and a 45-second worker timeout.  It exited zero in
+**11.99 seconds** at **201,195,520 bytes maximum RSS** and left no surviving
+runner.  The normal fixture-enabled suite was deliberately not run after this
+red result.  Nothing was staged, committed, pushed, submitted, or run against
+held-out sessions.
+
+## Current measured engine-only gate: 38/44 exact
+
+Measured 2026-07-29 06:18 EEST from the current working tree based on
+`4e04bd9`, after closing seed4500's remaining Knight goal, attributes, and
+floor-look blocks and repairing the resulting shared tty regressions:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **38/44 exact** at **37+0.23 ms/turn** (R² 0.826).
+Seed4500 is newly exact at **108,275/108,275 RNG calls and 1,814/1,814
+screens/cursors**.  Every session in the accepted 37-session baseline remains
+exact.
+
+The 6 current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 108/714 | fountain/exploration frontier |
+| `seed0030` | 6,550/105,529 | 52/1,953 | 469/1,953 | multi-role death/restart frontier |
+| `seed0108` | 2,795/16,958 | 30/303 | 158/303 | extended-command/object-use frontier |
+| `seed0360` | 3,222/120,639 | 177/833 | 369/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,073/53,865 | 147/366 | 192/366 | Archeologist tour wish/object frontier |
+| `seed0373` | 2,595/35,386 | 58/124 | 88/124 | Barbarian special-level frontier |
+
+The first post-seed4500 audit was a red **34/44** result: seed0006,
+seed0007, and seed0009 had one-column disclosure geometry regressions, while
+seed0399 skipped a same-contact death pager after `WIN_STOP`.  Shared
+38/39-column tty disclosure ownership and the earlier-actor versus
+same-contact death split restore all four without reopening seed4500.
+
+This is public engine-only evidence, not held-out evidence.  The
+fixture-enabled suite has not yet been rerun at this checkpoint.  Nothing was
+staged, committed, pushed, submitted, or run against held-out sessions, so
+the leaderboard cannot reflect this working tree.
+
+## Current measured engine-only gate: 37/44 exact, accepted baseline restored
+
+Measured 2026-07-28 21:40 EEST from the current working tree based on
+`4e04bd9`, after replacing seed1150's duplicate legacy/typed starting-flint
+discovery with one typed source owner and rerunning the complete
+fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **37/44 exact** at **26+0.31 ms/turn** (R² 0.761).  Seed1150
+is restored to exact at **3,137/3,137 RNG calls and 51/51
+screens/cursors**, so there are no exact-session regressions relative to the
+accepted baseline.  Seed4500 remains engine-only exact through input
+**1002**; input **1003** is the next verified frontier.
+
+The 7 current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 108/714 | fountain/exploration frontier |
+| `seed0030` | 6,550/105,529 | 52/1,953 | 396/1,953 | multi-role death/restart frontier |
+| `seed0108` | 2,797/16,958 | 32/303 | 184/303 | extended-command/object-use frontier |
+| `seed0360` | 3,095/120,639 | 164/833 | 345/833 | world-tour frontier |
+| `seed0361` | 3,077/53,865 | 145/366 | 190/366 | tour wish/object frontier |
+| `seed0373` | 2,594/35,386 | 58/124 | 88/124 | Barbarian special-level frontier |
+| `seed4500` | 87,536/108,275 | 1,003/1,814 | 1,287/1,814 | exact through input 1002; input 1003 next |
+
+The explicitly ordered normal public gate subsequently passes **44/44**:
+
+```sh
+node frozen/ps_test_runner.mjs sessions
+```
+
+That compatibility result includes fixtures and is not evidence of
+engine-only generalization.  The engine-only 37/44 measurement remains the
+acceptance witness.  Nothing was staged, committed, pushed, submitted, or
+run against held-out sessions, so the leaderboard cannot reflect this
+working tree.
+
+## Current measured engine-only gate: 36/44 exact, one regression open
+
+Measured 2026-07-28 21:32 EEST from the current working tree based on
+`4e04bd9`, after recovering the six exact sessions reopened by the 31/44
+audit and running the required complete fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **36/44 exact** at **27+0.31 ms/turn** (R² 0.751).  All six
+sessions reopened by the prior audit are exact again:
+`seed0009`, `seed0107`, `seed0367`, `seed0383`, `seed0399`, and `seed0501`.
+However, this remains a red regression result rather than a replacement for
+the accepted **37/44** checkpoint: seed1150 retains complete RNG and cursor
+parity but differs on one decoded screen.  Seed4500 is exact through input
+**1002** engine-only; input **1003** is the next known divergence.
+
+The 8 current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 108/714 | existing fountain/exploration frontier |
+| `seed0030` | 6,550/105,529 | 52/1,953 | 396/1,953 | existing multi-role death/restart frontier |
+| `seed0108` | 2,797/16,958 | 32/303 | 184/303 | existing extended-command/object-use frontier |
+| `seed0360` | 3,095/120,639 | 164/833 | 345/833 | existing world-tour frontier |
+| `seed0361` | 3,077/53,865 | 145/366 | 190/366 | existing tour wish/object frontier |
+| `seed0373` | 2,594/35,386 | 58/124 | 88/124 | existing Barbarian special-level frontier |
+| `seed1150` | 3,137/3,137 | 50/51 | 51/51 | newly reopened; one screen-only mismatch |
+| `seed4500` | 87,536/108,275 | 1,003/1,814 | 1,287/1,814 | exact through input 1002; input 1003 next |
+
+The phase-four range correction recovered both seed0383 and seed0399 in the
+broad run, while the tutorial arrival, extended-command completion,
+move-scoped random-monster alignment, starting-object identity/discovery, and
+waterbody naming corrections recovered the other four.  The next priority is
+the single seed1150 screen before extending seed4500 beyond input 1002 or
+opening another non-exact session.
+
+This is public engine-only evidence, not held-out evidence.  The normal
+fixture-enabled suite has not yet been rerun after this gate.  Nothing was
+staged, committed, pushed, or submitted, so the leaderboard cannot reflect
+this working tree.
+
+## Current engine-only checkpoint: 37/44 exact, ball/chain movement mapped
+
+Measured 2026-07-24 04:26 EEST from the working tree based on `4e04bd9` after
+closing seed4500's punishment movement transaction through input 520 and
+rerunning the complete fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result remains **37/44 exact** at **42+0.16 ms/turn** (R² 0.718), with no
+exact-session regression.  Seed4500's authoritative focused prefix now
+matches every RNG slice, decoded screen, and cursor through input **520**.
+Its full-session positional aggregate is **50,156/108,275 RNG,
+522/1,814 screens, and 825/1,814 cursors**.  The lower downstream cursor
+aggregate is not treated as a regression claim: after the first mismatch,
+later positional matches are not prefix evidence.
+
+The 7 remaining non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 108/714 | fountain/exploration frontier |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart frontier |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,205/120,639 | 177/833 | 373/833 | world-tour frontier |
+| `seed0361` | 3,060/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,594/35,386 | 58/124 | 88/124 | Barbarian special-level frontier |
+| `seed4500` | 50,156/108,275 | 522/1,814 | 825/1,814 | exact through input 520; discoveries pager input 521 next |
+
+`js/ball.js` now owns `drag_ball()` geometry and the two-phase
+`move_bc(before/after)` floor transaction.  `mklev.js` supplies the shared
+identity-preserving `remove_object()`/`place_object()` pair; `cmd.js` brackets
+the hero coordinate and vision commit with those calls.  Dragging both
+objects installs the source two-turn negative-multi delay, whose turn-90
+maintenance exposed and now uses shared `allmain.c:regen_pw()` logic.  The
+attached chain is excluded from `check_here()` counts, while the ball retains
+its source `very heavy iron ball (chained to you)` description.
+
+The focused scheduler suite passes **111/111**.  This is public engine-only
+evidence, not held-out evidence.  The normal fixture-enabled suite was not
+rerun at this checkpoint.  Nothing was staged, committed, pushed, or
+submitted, so the leaderboard still cannot reflect this working tree.
+
+## Current engine-only checkpoint: 37/44 exact, regression set recovered
+
+Measured 2026-07-24 04:02 EEST from the working tree based on `4e04bd9` after
+auditing the five regressions opened by the spellbook checkpoint, repairing
+their shared death-transaction owners, and rerunning the complete
+fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **37/44 exact** at **38+0.19 ms/turn** (R² 0.807).  Seed0002,
+seed0004, seed0006, seed0007, and seed0012 are restored to exact engine-only
+scores.  The seed4500 focused replay is again exact through input 490, and its
+full-session aggregate remains **50,034/108,275 RNG, 493/1,814 screens, and
+1,166/1,814 cursors**.
+
+The 7 remaining non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 111/714 | fountain/exploration frontier |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart frontier |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,205/120,639 | 177/833 | 373/833 | world-tour frontier |
+| `seed0361` | 3,060/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,594/35,386 | 58/124 | 88/124 | Barbarian special-level frontier |
+| `seed4500` | 50,034/108,275 | 493/1,814 | 1,166/1,814 | exact through input 490; identify-scroll input 491 next |
+
+The four RNG regressions shared one source boundary:
+`xkilled()->corpse_chance()`.  Species `G_NOCORPSE` suppresses
+`make_corpse()` but does not suppress the ordinary corpse-probability call.
+Conversely, `bigmonst()` and the other guaranteed corpse classes return before
+that roll.  The seed0006 screen-only regression was independent: the
+water-demon attack message read a stale scalar instead of the dagger stack in
+`minvent`.
+
+This restores the accepted public engine-only baseline; it does not establish
+held-out readiness.  The normal public compatibility suite was not rerun
+after this correction.  Nothing was staged, committed, pushed, or submitted,
+so the public leaderboard still cannot reflect this working tree.
+
+## Current engine-only checkpoint: 32/44 exact, regression audit opened
+
+Measured 2026-07-24 03:51 EEST from the working tree based on `4e04bd9` after
+closing seed4500 inputs 474--490 (wished-spellbook study and failed casting),
+then running the complete fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **32/44 exact** at **37+0.18 ms/turn** (R² 0.795).  The focused
+seed4500 replay is exact through input 490, and the independent
+`seed0501-priest-cast-read-turn` control remains exact at **2,238/2,238 RNG
+and 28/28 screens/cursors**.  However, this corpus result is not accepted as a
+replacement for the prior 37/44 baseline: five formerly exact sessions are
+red and must be recovered before new broad readiness claims.
+
+The 12 non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0002` | 4,696/27,158 | 35/595 | 139/595 | exact-session regression; earliest divergence audit required |
+| `seed0004` | 6,552/12,084 | 192/409 | 245/409 | exact-session regression; earliest divergence audit required |
+| `seed0006` | 6,736/6,736 | 122/123 | 123/123 | one screen-only regression |
+| `seed0007` | 15,665/16,373 | 278/302 | 290/302 | exact-session regression; earliest divergence audit required |
+| `seed0012` | 11,289/13,878 | 210/308 | 237/308 | exact-session regression; earliest divergence audit required |
+| `seed0014` | 2,970/59,178 | 26/714 | 111/714 | existing fountain/exploration frontier |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 395/1,953 | existing multi-role death/restart frontier |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | existing extended-command/object-use frontier |
+| `seed0360` | 3,205/120,639 | 177/833 | 373/833 | existing world-tour frontier |
+| `seed0361` | 3,060/53,865 | 147/366 | 194/366 | existing tour wish/object frontier |
+| `seed0373` | 2,594/35,386 | 58/124 | 88/124 | existing Barbarian special-level frontier |
+| `seed4500` | 50,034/108,275 | 493/1,814 | 1,166/1,814 | advanced exact prefix through input 490; next input 491 |
+
+The regression set is `seed0002`, `seed0004`, `seed0006`, `seed0007`, and
+`seed0012`.  The spellbook block is not yet implicated: the first four do not
+exercise the newly added study transaction, and its separate Priest casting
+control remains exact.  Nevertheless, attribution requires per-step earliest
+divergence measurements rather than subsystem inference.  Recover this set
+before treating the seed4500 frontier advance as an accepted corpus gain.
+These are public engine-only diagnostics, not held-out evidence.  Nothing was
+staged, committed, pushed, or submitted.
+
+## Current engine-only checkpoint: 37/44 exact, seed0383 accepted
+
+Measured 2026-07-22 23:23 EEST from the working tree based on `4e04bd9` after
+closing seed0383, repairing the fatal-line regressions, and restoring bones
+hero-track plus follower-display layering, then running the required full
+fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **37/44 exact** at **40+0.18 ms/turn** (R² 0.764).  Seed0383
+joins the exact set at **16,915/16,915 RNG and 219/219 screens/cursors**.
+Seed5006 is restored at **13,923/13,923 and 249/249**, and every session in
+the preceding 36-session exact set remains exact.
+
+The 7 remaining non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 111/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,175/120,639 | 177/833 | 365/833 | apply/source move-amount frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,595/35,386 | 58/124 | 88/124 | Barbarian special-level generation |
+| `seed4500` | 6,501/108,275 | 4/1,814 | 876/1,814 | Knight startup/coverage breadth |
+
+The next priority is the earliest first-divergence boundary across these seven,
+measured from exact per-step replay rather than aggregate positional matches.
+These are public engine-only diagnostics, not held-out evidence.  The working
+tree has not been staged, committed, pushed, or submitted, so the public
+leaderboard still cannot reflect this checkpoint.
+
+## Current engine-only checkpoint: 36/44 exact, seed5002 accepted
+
+Measured 2026-07-22 18:08 EEST from the working tree based on `4e04bd9` after
+closing seed5002 and repairing cross-actor fatal-status ownership, then
+running the required full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **36/44 exact** at **42+0.15 ms/turn** (R² 0.664).  Seed5002
+joins the exact set at **12,167/12,167 RNG and 410/410 screens/cursors**;
+seed0007 is restored at **16,373/16,373 and 302/302**.  Every previously exact
+session remains exact.
+
+The 8 remaining non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 111/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,122/120,639 | 177/833 | 362/833 | apply/source move-amount frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,595/35,386 | 58/124 | 88/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 2,987/108,275 | 4/1,814 | 538/1,814 | Knight startup/coverage breadth |
+
+The next priority is the earliest remaining shared boundary, seed0383 call
+2,501, with seed0373 call 2,595 as the adjacent C/Lua generation control.
+These are public engine-only diagnostics, not held-out evidence.  The working
+tree has not been staged, committed, pushed, or submitted, so the public
+leaderboard still cannot reflect this checkpoint.
+
+## Current engine-only checkpoint: 35/44 exact, one-session swap under repair
+
+Measured 2026-07-22 18:00 EEST from the working tree based on `4e04bd9` after
+the `find_mac()`, fatal monster-counterattack, empty-`doeat()`, and fatal-status
+transaction work, then running the required full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result remains **35/44 exact**.  `seed5002` is newly exact at
+**12,167/12,167 RNG and 410/410 screens/cursors**, but `seed0007` lost two
+HP-only frames while retaining **16,373/16,373 RNG and 302/302 cursors**.
+The exact-session set therefore swaps `seed5002` in and `seed0007` out; this
+is not yet an accepted net gain.
+
+The 9 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0007` | 16,373/16,373 | 300/302 | 302/302 | fatal-contact status projection only |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,562/105,529 | 48/1,953 | 394/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,122/120,639 | 177/833 | 367/833 | apply/source move-amount frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,595/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 2,987/108,275 | 4/1,814 | 536/1,814 | Knight startup/coverage breadth |
+
+All other historical exact controls remain exact.  The immediate priority is
+to recover `seed0007` from the earliest shared C tty transaction, rerun the
+focused death controls, and repeat this full gate.  These are public
+engine-only diagnostics, not held-out evidence.  Nothing was staged,
+committed, pushed, or submitted.
+
+## Current engine-only checkpoint: 35/44 exact, two frontiers advanced
+
+Measured 2026-07-22 16:54 EEST from the working tree based on `4e04bd9` after
+porting the fire-ray traversal/inventory/death transaction and charged
+starting-ring adjustment, then running the required full fixture-disabled
+gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result remains **35/44 exact** at **45+0.16 ms/turn** (R² 0.67), with
+no exact-session regression.  These sessions are exact:
+
+`seed0002`, `seed0004`, `seed0006`, `seed0007`, `seed0009`, `seed0012`, both
+`seed0013` sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0116`, `seed0200`, `seed0367`, `seed0398`,
+`seed0399`, `seed0501`, `seed0700`, `seed0900`, `seed1150`, `seed1500`,
+`seed1800`, `seed2200`, `seed2600`, `seed5006`, and `seed8000`.
+
+The 9 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,574/105,529 | 48/1,953 | 394/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 3,173/120,639 | 177/833 | 367/833 | apply eligibility, then source move-amount timing |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 2,984/108,275 | 4/1,814 | 536/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 8,749/12,167 | 128/410 | 184/410 | second-game themed-room Lua generation |
+
+The exact-session count is unchanged, but seed0360 advances by 295 RNG calls
+and 150 screens, while seed5002 advances by 2,833 RNG calls and 36 screens
+from the preceding full checkpoint.  Seed5002's first game is now completely
+exact; its next divergence is in second-game `themerms.lua` selection
+filtering.  These are public engine-only diagnostics, not held-out evidence.
+The leaderboard still evaluates pushed commit `4e04bd9`; the working tree has
+not been staged, committed, pushed, or submitted.
+
+## Historical engine-only checkpoint: 35/44 exact
+
+Measured 2026-07-22 16:40 EEST from the working tree based on `4e04bd9` after
+restoring favorable-prayer topline/completion ordering and running the required
+full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **35/44 exact** at **41+0.15 ms/turn** (R² 0.699).  These
+sessions are exact:
+
+`seed0002`, `seed0004`, `seed0006`, `seed0007`, `seed0009`, `seed0012`, both
+`seed0013` sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0116`, `seed0200`, `seed0367`, `seed0398`,
+`seed0399`, `seed0501`, `seed0700`, `seed0900`, `seed1150`, `seed1500`,
+`seed1800`, `seed2200`, `seed2600`, `seed5006`, and `seed8000`.
+
+The 9 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,574/105,529 | 48/1,953 | 394/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 2,984/108,275 | 4/1,814 | 536/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,916/12,167 | 92/410 | 147/410 | beam/zap physics frontier |
+
+Seed0116 is recovered without weakening any of the other 34 exact sessions.
+All historically exact public sessions are now restored; the remaining nine
+are new subsystem/generation coverage rather than known regressions.  Their
+positional match counts are diagnostic only and can shift after an earlier
+branch changes.  No hidden suite, push, or submission has run.
+
+## Historical engine-only checkpoint: 34/44 exact
+
+Measured 2026-07-22 16:36 EEST from the working tree based on `4e04bd9` after
+repairing the scheduler-to-pet source-turn projection and running the required
+full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **34/44 exact** at **39+0.16 ms/turn** (R² 0.789).  These
+sessions are exact:
+
+`seed0002`, `seed0004`, `seed0006`, `seed0007`, `seed0009`, `seed0012`, both
+`seed0013` sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0200`, `seed0367`, `seed0398`, `seed0399`,
+`seed0501`, `seed0700`, `seed0900`, `seed1150`, `seed1500`, `seed1800`,
+`seed2200`, `seed2600`, `seed5006`, and `seed8000`.
+
+The 10 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,574/105,529 | 48/1,953 | 394/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0116` | 12,562/12,562 | 126/127 | 127/127 | exact simulation; one presentation frame remains |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 3,030/108,275 | 4/1,814 | 844/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,916/12,167 | 92/410 | 147/410 | beam/zap physics frontier |
+
+Seed0006 is recovered without weakening any exact session.  The same source-
+turn repair also realigned all remaining seed0116 RNG calls and cursors; its
+sole remaining defect is one deterministic screen frame.  Isolate that frame
+before opening a new broad behavior owner.  No hidden suite, push, or
+submission has run.
+
+## Historical engine-only checkpoint: 33/44 exact
+
+Measured 2026-07-22 16:27 EEST from the working tree based on `4e04bd9` after
+repairing angry-god state projection at the second deity pager and running the
+required full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **33/44 exact** at **41+0.18 ms/turn** (R² 0.798).  These
+sessions are exact:
+
+`seed0002`, `seed0004`, `seed0007`, `seed0009`, `seed0012`, both `seed0013`
+sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0200`, `seed0367`, `seed0398`, `seed0399`,
+`seed0501`, `seed0700`, `seed0900`, `seed1150`, `seed1500`, `seed1800`,
+`seed2200`, `seed2600`, `seed5006`, and `seed8000`.
+
+The 11 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0006` | 2,657/6,736 | 67/123 | 76/123 | formerly exact; live monster divergence, equipment falsified |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,554/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0116` | 5,763/12,562 | 22/127 | 118/127 | formerly exact; candle exception fixed, residual RNG divergence |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 3,030/108,275 | 4/1,814 | 844/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,934/12,167 | 92/410 | 142/410 | beam/zap physics frontier |
+
+Seed5006 is recovered without weakening seed0399.  Only seed0006 and seed0116
+remain regressed from the historical 34-session exact set; both now require
+source-tagged RNG diagnosis rather than a presentation repair.  No hidden
+suite, push, or submission has run.
+
+## Historical engine-only checkpoint: 32/44 exact
+
+Measured 2026-07-22 16:23 EEST from the working tree based on `4e04bd9` after
+recovering the conditional fatal-status projection and compact throw-help
+candidate set, then running the required full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **32/44 exact** at **37+0.16 ms/turn** (R² 0.803).  These
+sessions are exact:
+
+`seed0002`, `seed0004`, `seed0007`, `seed0009`, `seed0012`, both `seed0013`
+sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0200`, `seed0367`, `seed0398`, `seed0399`,
+`seed0501`, `seed0700`, `seed0900`, `seed1150`, `seed1500`, `seed1800`,
+`seed2200`, `seed2600`, and `seed8000`.
+
+The 12 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0006` | 2,657/6,736 | 67/123 | 76/123 | formerly exact; live monster divergence, equipment falsified |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,554/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0116` | 5,763/12,562 | 22/127 | 118/127 | formerly exact; candle exception fixed, residual RNG divergence |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 3,030/108,275 | 4/1,814 | 844/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,934/12,167 | 92/410 | 142/410 | beam/zap physics frontier |
+| `seed5006` | 13,923/13,923 | 246/249 | 249/249 | formerly exact; late Wisdom/death presentation state |
+
+Seed0004 and seed0007 are recovered without weakening seed0399.  Three
+members of the historical 34-session exact set remain regressed: seed0006,
+seed0116, and seed5006.  Recovering those witnesses remains the active
+priority before publishing.  No hidden suite, push, or submission has run.
+
+## Historical engine-only checkpoint: 30/44 exact
+
+Measured 2026-07-22 16:18 EEST from the working tree based on `4e04bd9` after
+class-bounding the generic armor-throw bridge and running the required full
+fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **30/44 exact** at **40+0.18 ms/turn** (R² 0.794).  These
+sessions are exact:
+
+`seed0002`, `seed0009`, `seed0012`, both `seed0013` sessions,
+`seed0015`--`seed0017`, `seed0060`, `seed0077`, `seed0101`--`seed0107`,
+`seed0200`, `seed0367`, `seed0398`, `seed0399`, `seed0501`, `seed0700`,
+`seed0900`, `seed1150`, `seed1500`, `seed1800`, `seed2200`, `seed2600`, and
+`seed8000`.
+
+The 14 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0004` | 12,084/12,084 | 407/409 | 407/409 | formerly exact; tail Coins-menu layout regression |
+| `seed0006` | 2,657/6,736 | 67/123 | 76/123 | formerly exact; live monster divergence, equipment falsified |
+| `seed0007` | 16,373/16,373 | 301/302 | 302/302 | formerly exact; fatal-status projection regression |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,554/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0116` | 5,763/12,562 | 22/127 | 118/127 | formerly exact; candle exception fixed, residual RNG divergence |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed4500` | 3,030/108,275 | 4/1,814 | 844/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,934/12,167 | 92/410 | 142/410 | beam/zap physics frontier |
+| `seed5006` | 13,923/13,923 | 246/249 | 249/249 | late screen-only bones/death presentation |
+
+Seed0101 and seed1800 are recovered without weakening seed0399.  Four members
+of the historical 34-session exact set remain regressed: seed0004, seed0006,
+seed0007, and seed0116.  Recovering those witnesses remains the active
+priority before publishing.  No hidden suite, push, or submission has run.
+
+## Historical negative checkpoint: 28/44 exact
+
+Measured 2026-07-22 16:12 EEST from the working tree based on `4e04bd9` after
+closing seed0399 locally and running the required full fixture-disabled gate:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full result is **28/44 exact** at **-90+1.07 ms/turn** (R² 0.432).  These
+sessions are exact:
+
+`seed0002`, `seed0009`, `seed0012`, both `seed0013` sessions,
+`seed0015`--`seed0017`, `seed0060`, `seed0077`, `seed0102`--`seed0107`,
+`seed0200`, `seed0367`, `seed0398`, `seed0399`, `seed0501`, `seed0700`,
+`seed0900`, `seed1150`, `seed1500`, `seed2200`, `seed2600`, and `seed8000`.
+
+The 16 non-exact sessions and their measured positions are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0004` | 12,084/12,084 | 407/409 | 407/409 | formerly exact; tail presentation regression |
+| `seed0006` | 2,657/6,736 | 67/123 | 76/123 | formerly exact; live monster/equipment divergence |
+| `seed0007` | 16,373/16,373 | 301/302 | 302/302 | formerly exact; fatal-status projection regression |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,554/105,529 | 48/1,953 | 395/1,953 | multi-role death/restart breadth |
+| `seed0101` | 2,371/2,371 | 15/27 | 27/27 | formerly exact; message presentation regression |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extended-command/object-use frontier |
+| `seed0116` | 0/12,562 | 0/127 | 0/127 | formerly exact; runtime error reading index 32 |
+| `seed0360` | 2,878/120,639 | 27/833 | 328/833 | world-tour generation/inventory frontier |
+| `seed0361` | 3,079/53,865 | 147/366 | 194/366 | tour wish/object frontier |
+| `seed0373` | 2,600/35,386 | 58/124 | 89/124 | Barbarian special-level generation |
+| `seed0383` | 2,501/16,915 | 44/219 | 151/219 | hallucination/special-level generation |
+| `seed1800` | 2,458/2,458 | 11/26 | 26/26 | formerly exact; message presentation regression |
+| `seed4500` | 3,410/108,275 | 4/1,814 | 731/1,814 | Knight startup/coverage breadth |
+| `seed5002` | 5,938/12,167 | 92/410 | 144/410 | beam/zap physics frontier |
+| `seed5006` | 13,923/13,923 | 246/249 | 249/249 | late screen-only bones/death presentation |
+
+This is a negative regression checkpoint, not a readiness claim.  Seed0399
+is newly exact, but six sessions from the prior 34/44 exact set regressed.
+Recovering those witnesses is the active priority before advancing another
+frontier or publishing.  No hidden suite, push, or submission has run.
+
+## Historical engine-only checkpoint: 34/44 exact
+
+Measured 2026-07-22 12:39 EEST from the working tree based on `4e04bd9` after
+closing seed0367's complete Priest Quest/world-tour graph, attributes and
+property lifetimes, and the shared monster carrying-capacity correction:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The full fixture-disabled result is **34/44 exact** at
+**37+0.17 ms/turn** (R² 0.777).  These sessions are exact:
+
+`seed0002`, `seed0004`, `seed0006`, `seed0007`, `seed0009`, `seed0012`,
+both `seed0013` sessions, `seed0015`--`seed0017`, `seed0060`, `seed0077`,
+`seed0101`--`seed0107`, `seed0116`, `seed0200`, `seed0398`, `seed0501`,
+`seed0700`, `seed0900`, `seed1150`, `seed1500`, `seed1800`, `seed2200`,
+`seed2600`, `seed0367`, `seed5006`, and `seed8000`.
+
+The 10 non-exact sessions and their current positional measurements are:
+
+| Session | RNG | Screens | Cursors | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0014` | 2,970/59,178 | 26/714 | 140/714 | fountain/exploration scheduler breadth |
+| `seed0030` | 6,558/105,529 | 48/1,953 | 395/1,953 | multi-role death and restart breadth; positional screen regression recorded |
+| `seed0108` | 2,792/16,958 | 28/303 | 182/303 | extcmd now enters object-use handling |
+| `seed0360` | 2,965/120,639 | 43/833 | 367/833 | world-tour initial generation/inventory |
+| `seed0361` | 3,068/53,865 | 147/366 | 194/366 | live scheduler fixed; next wish/object projection |
+| `seed0373` | 2,604/35,386 | 58/124 | 89/124 | barbarian special-level generation |
+| `seed0383` | 2,499/16,915 | 44/219 | 151/219 | levelchange fixed; special-level generation |
+| `seed0399` | 1,208/11,409 | 1/532 | 384/532 | independent early generation audit |
+| `seed4500` | 3,026/108,275 | 4/1,814 | 835/1,814 | independent startup identity/coverage breadth |
+| `seed5002` | 5,945/12,167 | 92/410 | 143/410 | Ctrl-G fixed; next beam/zap physics |
+
+This supersedes the 33/44 checkpoint.  Seed0367 is now exact at
+**50,125/50,125 RNG and 324/324 screens/cursors**; all 33 previously exact
+sessions remain exact.  The capacity correction also preserves seed0004's
+complete **12,084/12,084** stream while retaining seed0367's Minend wand
+acquisition.  The expanded focused serial gate passes **175/175**.
+
+The full corpus confirms one net exact-session gain with no public exactness
+regression.  The subsequent fixture-enabled compatibility suite is **44/44
+green**.  Engine-only public exactness remains the regression gate, not
+evidence of held-out readiness or a prediction of leaderboard points.
+
+## Historical movement-ration checkpoint
 
 Measured 2026-07-19 15:37 EEST from the working tree based on `a783285` with:
 
@@ -9,8 +899,11 @@ TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 Top-level exact-session fixtures are disabled. Some passing paths still use
 older bounded, state-derived bridges; `Exact` therefore means “current
 engine-only regression passes,” not “the corresponding subsystem is complete
-for unseen inputs.” The current result is **25/44 exact**. Fixture-on public
-scoring remains 44/44.
+for unseen inputs.” At this historical checkpoint the result was **25/44
+exact**. It is superseded by the July 19 deep-transition checkpoint recorded in
+the held-out ledger and journal block 46: **18/44** fixture-disabled and
+**37/44** fixture-enabled/hybrid. The table below is retained as a dependency
+snapshot, not relabeled as current evidence.
 
 | Public session | Engine-only result | Current interpretation / next cone |
 | --- | ---: | --- |
