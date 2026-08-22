@@ -83878,3 +83878,216 @@ documentation batch while preserving the three red test files as an explicit
 local repair queue.  A push and Score dispatch remain separate actions.
 
 ---
+
+### [2026-08-22 14:11 EEST, journal block 2820] {#projectile #acid #grease #retained #worn #native-witness #earliest-divergence #implementation #focused-regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and source owner:** `uhitm.c:passive_obj()` handles AD_ACID without
+checking monster cancellation.  Every successful passive pays `rn2(6)`; only
+zero calls `erode_obj(..., ERODE_CORRODE, EF_GREASE)`.  `trap.c:erode_obj()`
+then calls `grease_protect()` before erosion-material, proof, blessing or level
+checks, so a greased detached projectile must pay `rn2(2)`, silently remove
+grease on zero, retain it on nonzero, and never corrode in either outcome.
+Current JavaScript paid `rn2(6)` but returned on `object.greased` without the
+second draw.
+
+**Selector correction and carrier selection:** the first selector returned an
+empty set in **6.82 seconds** at **248,741,888 bytes maximum RSS** because it
+mistakenly inspected the first startup slice containing `rn2(6)=0` instead of
+the hit screen.  A screen-coupled correction exposed candidates, and a tightened
+live-target scan found sixteen through seed1138 in **16.68 seconds** at
+**265,551,872 bytes maximum RSS**.  Seeds237 and343 are the clean one-shot
+pair: both retain a living acid blob, one detached floor +2 arrow and one
+greased inventory sibling.
+
+**Native evidence and earliest divergence:** seed237 records 80 states in
+**0.07 seconds** at **56,164,352 bytes maximum RSS**.  Input77 is exact through
+hit, damage, exercise, mulch and passive `rn2(6)=0`, then native inserts
+`rn2(2)=0`, removes grease only from the detached identity and gives floor
+resistance 11 where pre-fix JavaScript used 52.  Seed343 records 80 states in
+**0.06 seconds** at **53,166,080 bytes maximum RSS**.  Its input77 inserts
+`rn2(2)=1`, retains grease on both identities and gives floor resistance 30
+where pre-fix JavaScript used 33.  Bounded pre-fix replays show only the known
+input2 tutorial glyph and input77's missing call/downstream phase in each
+session; launcher, hit, mulch, target and presentation-owner theories are
+falsified.
+
+**Implementation and adversarial state check:** AD_ACID now keeps its
+unconditional `rn2(6)` gate, then lets a greased detached object own `rn2(2)`
+before the existing ordinary-arrow erosion branch.  Zero clears only the fired
+identity; nonzero changes no state.  In both cases the arrow stays at
+`oeroded2=0`, emits no corrosion prose, reaches the target square, and leaves
+the wished inventory sibling greased.  Both complete post-fix replays are exact
+from input3 onward; the remaining input2 glyph is outside this slice.
+
+**Measured acceptance and next blocker:** the durable pair passes **2/2** in
+**0.21 seconds** at **129,712,128 bytes maximum RSS**.  The one owned managed
+projectile/priest/wish process passes **114/114** in **2.35 seconds** at
+**337,117,184 bytes maximum RSS** and exits normally.  Registries were empty
+before every selector, recorder, replay and verifier; no duplicate or yielded
+runner remains.  Section 774, section 826 and the held-out ledger now map the
+two-stage AD_ACID grease owner.  Next select the AD_ACID iron/wood material
+pair using ORCISH_ARROW and ELVEN_ARROW; do not infer it from AD_CORR.  Proof,
+blessing and corrosion degrees remain separate later rows.  No corpus, hidden
+judge, stage, commit, push or publication ran.
+
+---
+
+### [2026-08-22 14:17 EEST, journal block 2821] {#projectile #acid #material #iron #wood #orcish-arrow #elven-arrow #native-witness #earliest-divergence #implementation #focused-regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Prediction and source boundary:** after AD_ACID's `rn2(6)=0`, native
+`erode_obj()` tests `is_corrodeable()` rather than exact object identity.
+IRON/COPPER must enter secondary corrosion; WOOD must consume the passive gate
+but bypass mutation/prose.  Current JavaScript's exact-ARROW check therefore
+predicted a semantic-only miss for ORCISH_ARROW and correct omission for
+ELVEN_ARROW, with no extra RNG in either material branch.
+
+**Selection and paired control:** seed237 was rejected because removing grease
+removed its pre-flight draw and changed the shot to a miss.  A paired selector
+then found twelve shared one-shot/live-target ORCISH_ARROW/ELVEN_ARROW carriers
+through seed1725 in **25.60 seconds** at **275,726,336 bytes maximum RSS**.
+Seed320 is smallest and cleanest: both arrows hit for raw damage five, survive
+`rn2(4)=3`, pay passive `rn2(6)=0`, land as a single +2 identity, preserve one
+inventory sibling, and leave the acid blob alive at 1/8 HP.
+
+**Native and earliest-divergence evidence:** the 79-state orcish recording
+completes in **0.06 seconds** at **53,379,072 bytes maximum RSS**.  Input76
+appends `The orcish arrow corrodes!`, sets only the detached identity to
+`oeroded2=1`, then spends floor `rn2(100)=36`; pre-fix JavaScript had identical
+RNG but omitted the suffix/state.  The 78-state elven recording completes in
+**0.06 seconds** at **53,248,000 bytes maximum RSS** and is already exact from
+input3 onward: input75 stays uncorroded and silent after the same passive and
+floor draws.  Bounded replays falsify launcher, mulch, passive-gate, floor and
+scheduler theories; only the ORCISH_ARROW material decision diverged.
+
+**Implementation and adversarial pair:** AD_ACID now reads generated
+`OBJECT_MATERIAL` and admits IRON/COPPER after grease, matching
+`is_corrodeable()`.  Post-fix complete replays are exact from input3 onward for
+both variants.  The fired orcish arrow reaches corrosion one while its
+inventory sibling remains zero; fired and inventory elven arrows both remain
+zero.  The paired WOOD negative control prevents the material expansion from
+becoming a generic bow-ammunition corrosion rule.
+
+**Measured acceptance and next blocker:** the material pair passes **2/2** in
+**0.20 seconds** at **129,630,208 bytes maximum RSS**.  The one owned managed
+projectile/priest/wish process passes **116/116** in **2.27 seconds** at
+**329,089,024 bytes maximum RSS** and exits normally.  Registries are empty;
+no duplicate or yielded process remains.  Sections 774/826 and the ledger now
+map AD_ACID material ownership.  Next select ordinary corrodeproof and blessed
+arrows behind `rn2(6)=0`; current JavaScript still mutates them.  Degree rows
+remain separate later witnesses.  No corpus, hidden judge, stage, commit, push
+or publication ran.
+
+---
+
+### [2026-08-22 14:23 EEST, journal block 2822] {#projectile #acid #proof #blessed #proof-learning #native-witness #earliest-divergence #implementation #focused-regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and discriminating predictions:** after AD_ACID's `rn2(6)=0`,
+actual proof must stop without corrosion, publish visible protection and learn
+`rknown` only on the detached identity.  Blessing must instead pay `rnl(4)`;
+zero protects silently and learns no proof.  Current JavaScript skipped both
+controls and corroded either object, so proof predicted a presentation/state
+divergence while blessing predicted an extra native RNG call and shifted tail.
+
+**Owned selector and candidate quality:** one direction-aware process found six
+proof and six blessed candidates in **61.37 seconds** at **153,976,832 bytes
+maximum RSS**.  It yielded once, and the same session was retained and polled
+through normal exit.  Seed320 reuses the clean one-shot material geometry for
+actual proof.  Seed1032 is the stronger blessed carrier because its
+`rnl(4)=3` mulch check is visibly distinct from the predicted later
+`rnl(4)=0` passive-protection check.
+
+**Native proof evidence:** the 85-state seed320 recording completes in **0.07
+seconds** at **53,313,536 bytes maximum RSS**.  Input82 consumes exactly seven
+calls through `rn2(6)=0`, then suspends at `The arrow hits the acid
+blob!--More--`.  Input83 publishes `Somehow, the arrow is not affected by the
+corrosion.`, gives floor resistance 36 and completes the exact tail.  The fired
+floor identity becomes proof-known and remains uncorroded; the proofed inventory
+sibling stays `rknown=false`.  Pre-fix input82/83 were the only non-tutorial
+mismatches.
+
+**Native blessed evidence:** the 71-state seed1032 recording completes in
+**0.06 seconds** at **53,215,232 bytes maximum RSS**.  Input68 uses mulch
+`rnl(4)=3`, passive `rn2(6)=0`, then protection `rnl(4)=0`, floor resistance
+30 and the exact scheduler suffix.  It emits only the hit line; fired and
+inventory identities remain blessed, non-proof, proof-unknown and uncorroded.
+Pre-fix JavaScript omitted the second `rnl(4)`, used 4 for floor resistance and
+corroded the fired identity.
+
+**Implementation and measured acceptance:** AD_ACID now handles visible actual
+proof with per-identity learning and handles blessing with the source `rnl(4)`
+gate after material.  Both complete post-fix replays are exact from input3
+onward.  The durable pair passes **2/2** in **0.21 seconds** at **129,253,376
+bytes maximum RSS**.  The one owned managed projectile/priest/wish process
+passes **118/118** in **2.34 seconds** at **327,368,704 bytes maximum RSS**.
+All runners exit and registries are empty; no duplicate remains.
+
+**Falsified hypotheses and next blocker:** proof is not a silent no-op, blessing
+does not set or teach proof, and the inventory sibling does not inherit the
+fired object's learning.  Sections 774/826 and the ledger now map both control
+arms.  Next select corrosion level one→two and two→three under AD_ACID, then a
+max-three no-op; current complete-corrosion prose is not yet source-shaped.  No
+corpus, hidden judge, stage, commit, push or publication ran.
+
+---
+
+### [2026-08-22 14:32 EEST, journal block 2823] {#projectile #acid #erosion #damage #dmgval #greatest-erosion #further #complete #max #native-witness #earliest-divergence #implementation #regression-correction #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Initial contract and selector:** the planned passive-only ladder required
+secondary corrosion one→two with `further`, two→three with `completely`, and
+max-three silent retention.  One owned intersection selector searched all
+three erosion-sensitive mulch paths and found eight shared carriers in
+**152.10 seconds** at **154,533,888 bytes maximum RSS**.  It yielded while
+running; the same session was polled until normal exit and no retry was
+launched.  Seed605 is smallest: every variant is one-shot, keeps the same raw
+d6=4, +2 enchantment, living 8-HP blob, AD_ACID `rn2(6)=0`, floor resistance 6
+and scheduler tail; mulch alone changes through `rn2(2)=0`, `rn2(3)=0` and
+`rn2(4)=0`.
+
+**Native recordings:** level-one records 72 states in **0.06 seconds** at
+**53,313,536 bytes maximum RSS**, level-two records 77 in **0.06 seconds** at
+**53,575,680 bytes**, and max-three records 83 in **0.06 seconds** at
+**53,329,920 bytes**.  Level one reaches `oeroded2=2` with `corrodes further`;
+level two reaches three with `corrodes completely`; max three remains silent
+and unchanged.  Only the detached identity advances in the first two; every
+inventory sibling retains its wished level.
+
+**Prediction falsified and earlier divergence:** the expected prose-only bug
+was incomplete.  Native level-two and max-three hit clauses use a period where
+pre-fix JavaScript used an exclamation point, before passive prose.  Source
+`weapon.c:dmgval()` explains it: base die plus enchantment subtracts
+`greatest_erosion(projectile)` and clamps to one before launcher skill is
+added.  JavaScript omitted erosion from launched-arrow damage, dealing six in
+all three cases rather than native five, four and three.  The shared blob must
+therefore retain HP **3, 4 and 5**, not 2.  This external punctuation plus the
+source formula falsifies passive presentation as the earliest owner.
+
+**Implementation and complete replay:** launched bow ammunition now applies
+enchantment, subtracts the detached projectile's greatest erosion, clamps the
+object damage and then adds launcher-skill damage.  AD_ACID now uses
+`completely` for the two→three transition.  All three complete native replays
+are exact from input3 onward; their only remaining mismatch is the known input2
+tutorial glyph.  The new durable regressions pin wish grammar, the full action
+RNG, hit/passive prose, cursor, erosion-adjusted target HP, detached floor
+level, inventory sibling level and zero move count.  They pass **3/3** in
+**0.23 seconds** at **129,908,736 bytes maximum RSS**.
+
+**Regression audit and correction:** the first managed expansion was a useful
+red **115/121** at **343,998,464 bytes maximum RSS**.  Exactly six older
+pre-eroded fire/rust/corrosion tests still asserted the former JavaScript HP:
+burnt 31→32, completely burnt 31→34, rusty 17→18, completely rusty 14→16,
+corroded 30→31 and completely corroded 40→42.  Those were stale pseudo-native
+state expectations.  Correcting only target HP preserves every RNG, screen,
+cursor, target identity and fired/inventory erosion assertion.  The resulting
+nine-row degree/damage audit passes **9/9** in **0.30 seconds** at
+**137,609,216 bytes maximum RSS**.
+
+**Measured acceptance and next blocker:** the one owned managed
+projectile/priest/wish process now passes **121/121** in **2.35 seconds** at
+**334,086,144 bytes maximum RSS** and exits normally; registries are empty.
+Sections 764, 774 and 826 plus the ledger now map erosion before passive
+handling.  AD_ACID cancellation remains an unselected source distinction: it
+must still pay `rn2(6)` and erode even when the acid blob is cancelled, unlike
+AD_RUST/AD_CORR.  No corpus, hidden judge, stage, commit, push or publication
+ran.
+
+---

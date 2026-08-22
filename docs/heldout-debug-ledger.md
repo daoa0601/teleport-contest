@@ -11820,3 +11820,61 @@ attempt: **402 calls**, not a direct two-pass retry.
   in 2.26 seconds at 363,216,896 bytes maximum RSS.  AD_ACID grease is the next
   adjacent passive gap; copper projectiles and cancellation remain broader
   AD_CORR gaps.
+- Seed237 and seed343 close both AD_ACID grease outcomes against a live acid
+  blob.  A corrected direction-aware selector found sixteen live-target
+  candidates through seed1138 in 16.68 seconds at 265,551,872 bytes maximum
+  RSS; the initial empty result was a selector bug which inspected startup's
+  first `rn2(6)=0` rather than the hit input.  Native seed237 input77 inserts
+  `rn2(2)=0` after passive `rn2(6)=0`, removes grease only from the detached
+  floor +2 arrow and shifts floor resistance from the pre-fix 52 to 11.
+  Native seed343 inserts `rn2(2)=1`, retains grease on both identities and
+  shifts floor resistance from 33 to 30.  Both fresh 80-state replays are exact
+  from input3 onward after the source-shaped repair.  Focused passes 2/2 in
+  0.21 seconds at 129,712,128 bytes maximum RSS; the one owned managed family
+  passes 114/114 in 2.35 seconds at 337,117,184 bytes maximum RSS.  The next
+  AD_ACID gap is the iron/wood material boundary; proof, blessing and degree
+  controls remain open.
+- Seed320 closes both sides of AD_ACID's material predicate.  A paired selector
+  found twelve shared one-shot/live-target carriers through seed1725 in 25.60
+  seconds at 275,726,336 bytes maximum RSS.  Native ORCISH_ARROW input76 uses
+  `rnd(5)=5`, survives `rn2(4)=3`, pays passive `rn2(6)=0`, reaches
+  `oeroded2=1`, says `The orcish arrow corrodes!`, and gives floor resistance
+  36.  The native ELVEN_ARROW sibling uses `rnd(7)=5` but the same raw stream,
+  target and floor handoff; WOOD remains uncorroded and silent.  Both leave the
+  hostile acid blob at 1/8 HP and their inventory sibling at corrosion zero.
+  The 79- and 78-state native replays are exact from input3 onward after using
+  IRON/COPPER material policy.  Focused passes 2/2 in 0.20 seconds at
+  129,630,208 bytes maximum RSS; the one owned managed family passes 116/116
+  in 2.27 seconds at 329,089,024 bytes maximum RSS.  AD_ACID proof/blessing is
+  next; degree controls remain open.
+- Seed320 and seed1032 close AD_ACID actual-proof versus blessed protection.
+  The one owned selector found six proof and six blessed candidates in 61.37
+  seconds at 153,976,832 bytes maximum RSS; its yielded session was retained
+  and polled through normal exit.  Native proof input82 stops after
+  `rn2(6)=0` at the hit pager; input83 publishes the corrosion-protection line,
+  learns proof only on the fired identity and gives floor resistance 36.  The
+  proofed inventory sibling stays `rknown=false`.  Native blessed input68
+  distinguishes mulch `rnl(4)=3` from passive protection `rnl(4)=0`, gives
+  floor resistance 30 and remains silent/non-proof.  Both complete native
+  replays are exact from input3 onward after the repair.  Focused passes 2/2
+  in 0.21 seconds at 129,253,376 bytes maximum RSS; the one owned managed
+  family passes 118/118 in 2.34 seconds at 327,368,704 bytes maximum RSS.
+  AD_ACID corrosion degrees remain open.
+- Seed605 closes AD_ACID's secondary-corrosion degrees and exposes the earlier
+  launched-ammunition `dmgval()` owner.  One retained selector ran 152.10
+  seconds at 154,533,888 bytes maximum RSS and found eight shared level-one,
+  level-two and max-three carriers; it was polled to normal exit without a
+  duplicate.  All variants hold raw d6=4, +2 enchantment, the live 8-HP target,
+  passive `rn2(6)=0`, floor resistance 6 and actor tail constant.  Native
+  subtracts projectile erosion before launcher skill, leaving target HP 3, 4
+  and 5; level-one reaches erosion two with `corrodes further`, level-two
+  reaches three with `corrodes completely`, and max-three remains silent at
+  three.  The 72-, 77- and 83-state replays are exact from input3 onward after
+  repairing both damage and prose.
+
+  The first expanded managed gate was correctly red at 115/121: six older
+  pre-eroded fire/rust/corrosion tests still asserted the former non-native HP.
+  Source-shaped HP corrections preserve every RNG, screen, cursor and object
+  state check.  The degree trio passes 3/3; the nine-row focused audit passes
+  9/9 in 0.30 seconds at 137,609,216 bytes maximum RSS; the one owned managed
+  family passes 121/121 in 2.35 seconds at 334,086,144 bytes maximum RSS.

@@ -5167,6 +5167,690 @@ test('seed0645 surviving arrow corrodes on the acid blob passive', async () => {
     );
 });
 
+test('seed0237 greased arrow resists acid passive and loses grease',
+    async () => {
+        const result = await runSegment({
+            seed: 237,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed greased +2 arrows\n'
+                + '#wizgenesis\npeaceful acid blob\ntgu  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 80);
+        assertRngSliceExact(result.getRngSlices()[43], [
+            'rn2(56)=48', 'rnd(2)=1', 'rn2(6)=3', 'rn2(11)=2',
+            'rn2(10)=2', 'rn2(10)=2', 'rn2(100)=70',
+            'rn2(100)=2', 'rn2(80)=53', 'rn2(80)=34',
+            'rn2(1000)=30', 'rn2(100)=84',
+        ], 'seed0237 greased-arrow acid wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[43]),
+            'g - 2 greased arrows.');
+        assert.deepEqual(result.getCursors()[43], [68, 5, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[77], [
+            'rnd(2)=1', 'rnd(2)=1', 'rn2(7)=2', 'rnd(20)=6',
+            'rnd(6)=2', 'rn2(19)=2', 'rn2(4)=2', 'rn2(6)=0',
+            'rn2(2)=0', 'rn2(100)=11', 'rn2(4)=0', 'rn2(5)=4',
+            'rn2(5)=4', 'rn2(4)=0', 'rn2(5)=1', 'rn2(5)=1',
+            'rn2(4)=0', 'rn2(5)=1', 'rn2(5)=3', 'rn2(12)=9',
+            'rn2(12)=11', 'rn2(12)=2', 'rn2(12)=4',
+            'rn2(70)=69', 'rn2(20)=1', 'rn2(70)=14',
+        ], 'seed0237 acid grease-wear and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'The arrow hits the acid blob.');
+        assert.deepEqual(result.getCursors()[77], [68, 5, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 70,
+            y: 3,
+            hp: 4,
+            hpmax: 8,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[70]?.[3] || [])
+            .filter(object => object.otyp === ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            greased: floorArrows[0].greased ?? false,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            greased: false,
+            corrosion: 0,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            greased: inventorySibling.greased ?? false,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            greased: true,
+            corrosion: 0,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0343 greased arrow resists acid passive and retains grease',
+    async () => {
+        const result = await runSegment({
+            seed: 343,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed greased +2 arrows\n'
+                + '#wizgenesis\npeaceful acid blob\ntgy  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 80);
+        assertRngSliceExact(result.getRngSlices()[43], [
+            'rn2(56)=14', 'rnd(2)=1', 'rn2(6)=2', 'rn2(11)=10',
+            'rn2(10)=8', 'rn2(10)=9', 'rn2(100)=43',
+            'rn2(100)=40', 'rn2(80)=34', 'rn2(80)=66',
+            'rn2(1000)=755', 'rn2(100)=35',
+        ], 'seed0343 greased-arrow acid wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[43]),
+            'g - 2 greased arrows.');
+        assert.deepEqual(result.getCursors()[43], [61, 6, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[77], [
+            'rnd(2)=1', 'rnd(2)=2', 'rn2(7)=4', 'rnd(20)=3',
+            'rnd(6)=1', 'rn2(19)=6', 'rn2(4)=2', 'rn2(6)=0',
+            'rn2(2)=1', 'rn2(100)=30', 'rn2(4)=0', 'rn2(5)=1',
+            'rn2(5)=0', 'rn2(12)=2', 'rn2(12)=7', 'rn2(70)=2',
+            'rn2(400)=315', 'rn2(200)=137', 'rn2(20)=1',
+            'rn2(73)=41',
+        ], 'seed0343 acid grease-retention and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'The arrow hits the acid blob.');
+        assert.deepEqual(result.getCursors()[77], [61, 6, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 61,
+            y: 4,
+            hp: 5,
+            hpmax: 8,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[61]?.[4] || [])
+            .filter(object => object.otyp === ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            greased: floorArrows[0].greased ?? false,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            greased: true,
+            corrosion: 0,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            greased: inventorySibling.greased ?? false,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            greased: true,
+            corrosion: 0,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0320 iron orcish arrow corrodes on acid-blob passive',
+    async () => {
+        const result = await runSegment({
+            seed: 320,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizgenesis\npeaceful acid blob\ntgj  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 79);
+        assertRngSliceExact(result.getRngSlices()[42], [
+            'rn2(21)=18', 'rnd(2)=2', 'rn2(6)=3', 'rn2(11)=2',
+            'rn2(10)=9', 'rn2(10)=1', 'rn2(100)=7',
+            'rn2(100)=55', 'rn2(80)=43', 'rn2(80)=45',
+            'rn2(1000)=883', 'rn2(100)=90',
+        ], 'seed0320 orcish-arrow acid wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[42]),
+            'g - 2 orcish arrows.');
+        assert.deepEqual(result.getCursors()[42], [42, 10, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[76], [
+            'rnd(2)=1', 'rnd(2)=2', 'rnd(20)=4', 'rnd(5)=5',
+            'rn2(19)=6', 'rn2(4)=3', 'rn2(6)=0', 'rn2(100)=36',
+            'rn2(4)=1', 'rn2(3)=2', 'rn2(3)=1', 'rn2(5)=1',
+            'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=4',
+            'rn2(5)=0', 'rn2(5)=1', 'rn2(12)=10', 'rn2(12)=2',
+            'rn2(70)=64', 'rn2(20)=17', 'rn2(70)=7',
+        ], 'seed0320 orcish-arrow acid material and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[76]),
+            'The orcish arrow hits the acid blob!  The orcish arrow corrodes!');
+        assert.deepEqual(result.getCursors()[76], [42, 10, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 43,
+            y: 10,
+            hp: 1,
+            hpmax: 8,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[43]?.[10] || [])
+            .filter(object => object.otyp === ORCISH_ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 1,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ORCISH_ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0320 wooden elven arrow ignores acid-blob corrosion', async () => {
+    const result = await runSegment({
+        seed: 320,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: '  nx #wizwish\n2 uncursed +2 elven arrows\n'
+            + '#wizgenesis\npeaceful acid blob\ntgj  ',
+        storage: new Map(),
+    });
+
+    assert.equal(result.getScreens().length, 78);
+    assertRngSliceExact(result.getRngSlices()[41], [
+        'rn2(21)=18', 'rnd(2)=2', 'rn2(6)=3', 'rn2(11)=2',
+        'rn2(10)=9', 'rn2(10)=1', 'rn2(100)=7',
+        'rn2(100)=55', 'rn2(80)=43', 'rn2(80)=45',
+        'rn2(1000)=883', 'rn2(100)=90',
+    ], 'seed0320 elven-arrow acid wish RNG');
+    assert.equal(decodedTopline(result.getScreens()[41]),
+        'g - 2 elven arrows.');
+    assert.deepEqual(result.getCursors()[41], [42, 10, 1]);
+
+    assertRngSliceExact(result.getRngSlices()[75], [
+        'rnd(2)=1', 'rnd(2)=2', 'rnd(20)=4', 'rnd(7)=5',
+        'rn2(19)=6', 'rn2(4)=3', 'rn2(6)=0', 'rn2(100)=36',
+        'rn2(4)=1', 'rn2(3)=2', 'rn2(3)=1', 'rn2(5)=1',
+        'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=4',
+        'rn2(5)=0', 'rn2(5)=1', 'rn2(12)=10', 'rn2(12)=2',
+        'rn2(70)=64', 'rn2(20)=17', 'rn2(70)=7',
+    ], 'seed0320 elven-arrow acid material-negative RNG');
+    assert.equal(decodedTopline(result.getScreens()[75]),
+        'The elven arrow hits the acid blob!');
+    assert.deepEqual(result.getCursors()[75], [42, 10, 1]);
+
+    const blob = game.level.monsters.find(monster => monster.mnum === 6);
+    assert.ok(blob);
+    assert.deepEqual({
+        x: blob.mx,
+        y: blob.my,
+        hp: blob.mhp,
+        hpmax: blob.mhpmax,
+        peaceful: blob.mpeaceful,
+        cancelled: blob.mcan ?? 0,
+    }, {
+        x: 43,
+        y: 10,
+        hp: 1,
+        hpmax: 8,
+        peaceful: 0,
+        cancelled: 0,
+    });
+
+    const floorArrows = (game.level.objects?.[43]?.[10] || [])
+        .filter(object => object.otyp === ELVEN_ARROW);
+    assert.equal(floorArrows.length, 1);
+    assert.deepEqual({
+        quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+        enchantment: floorArrows[0].spe ?? 0,
+        corrosion: floorArrows[0].oeroded2 ?? 0,
+        where: floorArrows[0].where,
+    }, {
+        quantity: 1,
+        enchantment: 2,
+        corrosion: 0,
+        where: 'floor',
+    });
+
+    const inventorySibling = game.inventory.find(object =>
+        object.otyp === ELVEN_ARROW && object.invlet === 'g');
+    assert.ok(inventorySibling);
+    assert.deepEqual({
+        quantity: inventorySibling.quantity ?? inventorySibling.quan,
+        enchantment: inventorySibling.spe ?? 0,
+        corrosion: inventorySibling.oeroded2 ?? 0,
+    }, {
+        quantity: 1,
+        enchantment: 2,
+        corrosion: 0,
+    });
+    assert.equal(game.context.move, 0);
+});
+
+test('seed0320 corrodeproof arrow learns proof on acid-blob passive',
+    async () => {
+        const result = await runSegment({
+            seed: 320,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed corrodeproof +2 arrows\n'
+                + '#wizgenesis\npeaceful acid blob\ntgj  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 85);
+        assertRngSliceExact(result.getRngSlices()[48], [
+            'rn2(56)=32', 'rnd(2)=2', 'rn2(6)=3', 'rn2(11)=2',
+            'rn2(10)=9', 'rn2(10)=1', 'rn2(100)=7',
+            'rn2(100)=55', 'rn2(80)=43', 'rn2(80)=45',
+            'rn2(1000)=883', 'rn2(100)=90',
+        ], 'seed0320 corrodeproof-arrow acid wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[48]),
+            'g - 2 arrows.');
+        assert.deepEqual(result.getCursors()[48], [42, 10, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[82], [
+            'rnd(2)=1', 'rnd(2)=2', 'rnd(20)=4', 'rnd(6)=4',
+            'rn2(19)=6', 'rn2(4)=3', 'rn2(6)=0',
+        ], 'seed0320 acid proof hit and passive prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[82]),
+            'The arrow hits the acid blob!--More--');
+        assert.deepEqual(result.getCursors()[82], [37, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[83], [
+            'rn2(100)=36', 'rn2(4)=1', 'rn2(3)=2', 'rn2(3)=1',
+            'rn2(5)=1', 'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=4',
+            'rn2(5)=4', 'rn2(5)=0', 'rn2(5)=1', 'rn2(12)=10',
+            'rn2(12)=2', 'rn2(70)=64', 'rn2(20)=17',
+            'rn2(70)=7',
+        ], 'seed0320 acid proof floor and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[83]),
+            'Somehow, the arrow is not affected by the corrosion.');
+        assert.deepEqual(result.getCursors()[83], [42, 10, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 43,
+            y: 10,
+            hp: 2,
+            hpmax: 8,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[43]?.[10] || [])
+            .filter(object => object.otyp === ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            proof: floorArrows[0].oerodeproof ?? false,
+            proofKnown: floorArrows[0].rknown ?? false,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+            proof: true,
+            proofKnown: true,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+            proof: inventorySibling.oerodeproof ?? false,
+            proofKnown: inventorySibling.rknown ?? false,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+            proof: true,
+            proofKnown: false,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed1032 blessed arrow silently resists acid-blob corrosion',
+    async () => {
+        const result = await runSegment({
+            seed: 1032,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 blessed +2 arrows\n'
+                + '#wizgenesis\npeaceful acid blob\ntgu  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 71);
+        assertRngSliceExact(result.getRngSlices()[34], [
+            'rn2(56)=8', 'rnd(2)=1', 'rn2(6)=4', 'rn2(11)=4',
+            'rn2(10)=2', 'rn2(10)=5', 'rn2(100)=95',
+            'rn2(100)=59', 'rn2(80)=19', 'rn2(80)=35',
+            'rn2(1000)=807', 'rn2(100)=20',
+        ], 'seed1032 blessed-arrow acid wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[34]),
+            'g - 2 arrows.');
+        assert.deepEqual(result.getCursors()[34], [31, 7, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[68], [
+            'rnd(2)=1', 'rnd(2)=1', 'rnd(20)=9', 'rnd(6)=2',
+            'rn2(19)=7', 'rn2(4)=2', 'rnl(4)=3', 'rn2(6)=0',
+            'rnl(4)=0', 'rn2(100)=30', 'rn2(4)=2', 'rn2(3)=0',
+            'rn2(3)=2', 'rn2(3)=2', 'rn2(3)=0', 'rn2(5)=1',
+            'rn2(4)=3', 'rn2(5)=4', 'rn2(5)=0', 'rn2(5)=0',
+            'rn2(12)=3', 'rn2(12)=0', 'rn2(12)=8', 'rn2(70)=18',
+            'rn2(400)=172', 'rn2(200)=197', 'rn2(20)=2',
+            'rn2(73)=50',
+        ], 'seed1032 acid blessed protection and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[68]),
+            'The arrow hits the acid blob.');
+        assert.deepEqual(result.getCursors()[68], [31, 7, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 33,
+            y: 5,
+            hp: 2,
+            hpmax: 6,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[33]?.[5] || [])
+            .filter(object => object.otyp === ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            blessed: floorArrows[0].blessed ?? false,
+            proof: floorArrows[0].oerodeproof ?? false,
+            proofKnown: floorArrows[0].rknown ?? false,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+            blessed: true,
+            proof: false,
+            proofKnown: false,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+            blessed: inventorySibling.blessed ?? false,
+            proof: inventorySibling.oerodeproof ?? false,
+            proofKnown: inventorySibling.rknown ?? false,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+            blessed: true,
+            proof: false,
+            proofKnown: false,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
+for (const degreeCase of [
+    {
+        name: 'seed0605 corroded arrow corrodes further on acid-blob passive',
+        wish: '2 corroded +2 arrows',
+        states: 72,
+        wishIndex: 35,
+        wishTop: 'g - 2 corroded arrows.',
+        actionIndex: 69,
+        mulch: 'rn2(2)=0',
+        actionTop: 'The arrow hits the acid blob!  The arrow corrodes further!',
+        targetHp: 3,
+        before: 1,
+        after: 2,
+    },
+    {
+        name: 'seed0605 very corroded arrow corrodes completely on acid passive',
+        wish: '2 very corroded +2 arrows',
+        states: 77,
+        wishIndex: 40,
+        wishTop: 'g - 2 very corroded arrows.',
+        actionIndex: 74,
+        mulch: 'rn2(3)=0',
+        actionTop: 'The arrow hits the acid blob.  The arrow corrodes completely!',
+        targetHp: 4,
+        before: 2,
+        after: 3,
+    },
+    {
+        name: 'seed0605 completely corroded arrow ignores further acid corrosion',
+        wish: '2 thoroughly corroded +2 arrows',
+        states: 83,
+        wishIndex: 46,
+        wishTop: 'g - 2 thoroughly corroded arrows.',
+        actionIndex: 80,
+        mulch: 'rn2(4)=0',
+        actionTop: 'The arrow hits the acid blob.',
+        targetHp: 5,
+        before: 3,
+        after: 3,
+    },
+]) {
+    test(degreeCase.name, async () => {
+        const result = await runSegment({
+            seed: 605,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: `  nx #wizwish\n${degreeCase.wish}\n`
+                + '#wizgenesis\npeaceful acid blob\ntgh  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, degreeCase.states);
+        assertRngSliceExact(result.getRngSlices()[degreeCase.wishIndex], [
+            'rn2(56)=55', 'rnd(2)=2', 'rn2(6)=5', 'rn2(11)=4',
+            'rn2(10)=8', 'rn2(10)=9', 'rn2(100)=66',
+            'rn2(100)=83', 'rn2(80)=61', 'rn2(80)=48',
+            'rn2(1000)=706', 'rn2(100)=87',
+        ], `${degreeCase.name} wish RNG`);
+        assert.equal(decodedTopline(
+            result.getScreens()[degreeCase.wishIndex]), degreeCase.wishTop);
+        assert.deepEqual(result.getCursors()[degreeCase.wishIndex],
+            [56, 4, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[degreeCase.actionIndex], [
+            'rnd(2)=1', 'rnd(2)=1', 'rnd(20)=6', 'rnd(6)=4',
+            'rn2(19)=13', degreeCase.mulch, 'rn2(6)=0',
+            'rn2(100)=6', 'rn2(4)=2', 'rn2(3)=1', 'rn2(3)=0',
+            'rn2(5)=1', 'rn2(4)=0', 'rn2(5)=3', 'rn2(4)=0',
+            'rn2(5)=3', 'rn2(5)=3', 'rn2(12)=9', 'rn2(12)=9',
+            'rn2(12)=8', 'rn2(12)=7', 'rn2(12)=8', 'rn2(70)=48',
+            'rn2(200)=9', 'rn2(20)=0', 'rn2(70)=61',
+        ], `${degreeCase.name} action and scheduler RNG`);
+        assert.equal(decodedTopline(
+            result.getScreens()[degreeCase.actionIndex]),
+        degreeCase.actionTop);
+        assert.deepEqual(result.getCursors()[degreeCase.actionIndex],
+            [56, 4, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 56,
+            y: 3,
+            hp: degreeCase.targetHp,
+            hpmax: 8,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        const floorArrows = (game.level.objects?.[56]?.[3] || [])
+            .filter(object => object.otyp === ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: degreeCase.after,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: degreeCase.before,
+        });
+        assert.equal(game.context.move, 0);
+    });
+}
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({
@@ -12972,7 +13656,7 @@ test('seed0069 burnt elven arrow smoulders further on fire passive',
         }, {
             x: 60,
             y: 4,
-            hp: 31,
+            hp: 32,
             hpmax: 35,
             peaceful: 0,
             cancelled: 0,
@@ -13067,7 +13751,7 @@ test('seed0069 completely burnt elven arrow ignores further fire passive',
         }, {
             x: 60,
             y: 4,
-            hp: 31,
+            hp: 34,
             hpmax: 35,
             peaceful: 0,
             cancelled: 0,
@@ -13662,7 +14346,7 @@ test('seed0026 rusty arrow rusts further on rust-monster passive',
         }, {
             x: 5,
             y: 17,
-            hp: 17,
+            hp: 18,
             hpmax: 23,
             peaceful: 0,
             cancelled: 0,
@@ -13754,7 +14438,7 @@ test('seed0172 completely rusty arrow ignores further rust passive',
         }, {
             x: 35,
             y: 7,
-            hp: 14,
+            hp: 16,
             hpmax: 17,
             peaceful: 0,
             cancelled: 0,
@@ -14430,7 +15114,7 @@ test('seed0004 corroded arrow corrodes further on black-pudding passive',
         }, {
             x: 54,
             y: 11,
-            hp: 30,
+            hp: 31,
             hpmax: 37,
             peaceful: 0,
             cancelled: 0,
@@ -14522,7 +15206,7 @@ test('seed0123 completely corroded arrow ignores further corrosion',
         }, {
             x: 35,
             y: 18,
-            hp: 40,
+            hp: 42,
             hpmax: 43,
             peaceful: 0,
             cancelled: 0,

@@ -26175,6 +26175,18 @@ all 30 calls, screen, cursor, HP/tame/flee state, inventory decrement, and
 floor identity.  This closes single-projectile hit survival, not the enclosing
 Ranger multishot loop.
 
+Pre-eroded ammunition now adds the missing `dmgval()` term to this graph.
+Native computes base die plus projectile enchantment, subtracts
+`greatest_erosion(projectile)`, clamps that object damage to one, and only then
+adds launcher-skill damage in `hmon_hitmon_dmg_recalc()`.  Seed605 holds the
+raw d6 roll at four and +2 enchantment constant: corrosion levels one, two and
+three deal five, four and three damage, leaving the shared 8-HP acid blob at
+3, 4 and 5 HP respectively.  The level-two and level-three native hit lines
+switch from `!` to `.`, independently exposing the upstream damage owner before
+AD_ACID processes the same object.  The port now subtracts the detached
+projectile's greatest erosion before launcher skill, not the bow's erosion and
+not post-passive state.
+
 ## 765. `throw_obj()` owns a continuation-safe per-projectile volley loop
 
 ```mermaid
@@ -26948,6 +26960,66 @@ greased.  All 84 states are exact from input3 onward.  The pair passes 2/2 and
 the managed projectile/priest/wish family passes 112/112 in one owned process.
 Copper projectile coverage and cancellation remain broader AD_CORR gaps; the
 next adjacent passive gap is AD_ACID grease consumption.
+
+AD_ACID now preserves its distinct two-stage owner.  `passive_obj()` always
+spends `rn2(6)` without consulting monster cancellation; only zero enters
+`erode_obj(..., ERODE_CORRODE, EF_GREASE)`, where grease precedes material,
+proof, blessing and erosion-level checks.  Seed237 input77 selects
+`rn2(6)=0, rn2(2)=0`: only the detached +2 arrow loses grease, remains
+uncorroded, and then pays floor `rn2(100)=11`.  Its inventory sibling remains
+greased.  Seed343 selects `rn2(6)=0, rn2(2)=1`: both identities retain grease,
+the detached arrow remains uncorroded, and floor resistance receives 30.
+Both 80-state native replays are exact from input3 onward after adding the
+missing grease draw.  The focused pair passes 2/2 and the managed family
+passes 114/114.  AD_ACID's iron/wood material boundary is the next selected
+row; proof, blessing and erosion degrees remain separate witnesses.
+
+The AD_ACID material boundary is now selected independently.  Seed320 holds
+the complete setup and raw RNG stream fixed while changing only the wished bow
+ammunition.  IRON ORCISH_ARROW input76 hits for five, survives mulch, pays
+`rn2(6)=0`, increments only the detached identity to `oeroded2=1`, emits
+`The orcish arrow corrodes!`, and pays floor `rn2(100)=36`.  WOOD ELVEN_ARROW
+input75 uses the same raw draws and target geometry but bypasses corrosion and
+prose after the same passive gate.  In both replays the acid blob survives at
+1/8 HP and the inventory sibling stays uncorroded.  The 79- and 78-state native
+replays are exact from input3 onward after replacing the exact-ARROW check with
+native IRON/COPPER material policy.  The pair passes 2/2 and the managed family
+passes 116/116.  AD_ACID proof/blessing is the next control boundary; corrosion
+degrees remain separate later rows.
+
+AD_ACID proof and blessing now have independent evidence.  Seed320's actual
+corrodeproof arrow reaches input82 with a seven-call hit/mulch/passive prefix,
+then tty suspends at `The arrow hits the acid blob!--More--`.  Input83 prints
+`Somehow, the arrow is not affected by the corrosion.`, learns `rknown` only
+on the detached floor identity, spends floor `rn2(100)=36`, and completes the
+actor tail; the inventory sibling stays proof-unknown.  All 85 states are exact
+from input3 onward.
+
+Seed1032 separates the two blessed checks: `rnl(4)=3` fails mulch protection,
+then AD_ACID `rn2(6)=0` reaches `erode_obj()` and a second `rnl(4)=0` protects
+the arrow silently.  Floor resistance receives 30; fired and inventory arrows
+remain blessed, non-proof, proof-unknown and uncorroded.  All 71 states are
+exact from input3 onward.  The protection pair passes 2/2 and the managed
+family passes 118/118.  AD_ACID secondary-corrosion degree transitions are the
+next selected rows.
+
+Seed605 closes AD_ACID's secondary-corrosion ladder and simultaneously audits
+its upstream damage state.  Level-one input69 uses erosion-aware mulch
+`rn2(2)=0`, passive `rn2(6)=0`, advances only the fired identity to level two
+and emits `corrodes further`; the target remains at 3/8 HP.  Level-two input74
+uses `rn2(3)=0`, advances to level three and emits `corrodes completely`; its
+erosion-adjusted damage leaves 4/8 HP.  Max-three input80 uses `rn2(4)=0`, pays
+the passive gate, remains at level three and stays silent; it leaves 5/8 HP.
+All three share floor resistance 6 and the exact actor tail.  Their 72-, 77-
+and 83-state native replays are exact from input3 onward after repairing both
+`dmgval()` erosion subtraction and the complete-corrosion adverb.
+
+The first expanded managed gate correctly reopened six older pre-eroded target
+HP assertions across fire, rust and corrosion.  Those expectations represented
+the former JavaScript damage, not native `dmgval()`; correcting only their HP
+values leaves all RNG, screen, cursor and per-identity erosion checks intact.
+The degree trio passes 3/3, the nine-row erosion/damage audit passes 9/9, and
+the managed family passes 121/121.
 
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
@@ -29360,8 +29432,8 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-112/112 after the paired rust/corrosion material, protection, degree, and
-AD_CORR grease rows.
+121/121 after the paired rust/corrosion material, protection, degree, AD_CORR
+grease, and complete AD_ACID grease/material/protection/degree rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`

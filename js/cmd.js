@@ -14546,8 +14546,17 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
                 const bowSkill = Math.abs(
                     OBJECT_SUBTYPE[game.uwep.otyp] || 0,
                 );
-                damage += (thrown.spe ?? thrown.enchantment ?? 0)
-                    + weaponSkillDamageBonus(game, bowSkill);
+                // weapon.c:dmgval() applies object enchantment and then
+                // subtracts greatest_erosion(), clamping that base damage to
+                // one before hmon_hitmon_dmg_recalc() adds launcher skill.
+                // Erosion belongs to the detached projectile, not the bow.
+                damage += thrown.spe ?? thrown.enchantment ?? 0;
+                damage -= Math.max(
+                    thrown.oeroded ?? 0,
+                    thrown.oeroded2 ?? 0,
+                );
+                damage = Math.max(1, damage);
+                damage += weaponSkillDamageBonus(game, bowSkill);
             }
             damage = Math.max(1, damage);
             monster.mhp = (monster.mhp ?? 1) - damage;
@@ -15459,14 +15468,40 @@ async function applyProjectileObjectPassive(monster, object) {
         return;
     }
     if (passiveDamageType !== AD_ACID || rn2(6) !== 0) return;
-    if (object.greased || object.otyp !== ARROW) return;
+    // AD_ACID differs from AD_CORR only by its unconditional one-in-six
+    // passive gate.  Once that gate succeeds, erode_obj(..., EF_GREASE)
+    // still lets grease_protect() consume rn2(2) before vulnerability or
+    // erosion checks; a detached projectile loses grease silently on zero.
+    if (object.greased) {
+        if (rn2(2) === 0) object.greased = false;
+        return;
+    }
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    if (![11, 13].includes(material)) return;
+    if (object.oerodeproof || object.corrodeproof) {
+        object.rknown = true;
+        if (cansee(monster.mx, monster.my)) {
+            const objectName = OBJECT_NAMES[object.otyp]
+                || object.name || 'object';
+            const quantity = object.quantity ?? object.quan ?? 1;
+            await plineWithContinuation(
+                `Somehow, the ${objectName} ${
+                    quantity === 1 ? 'is' : 'are'
+                } not affected by the corrosion.`,
+            );
+        }
+        return;
+    }
+    if (object.blessed && rnl(4) === 0) return;
 
     const oldCorrosion = object.oeroded2 ?? 0;
     if (oldCorrosion >= 3) return;
     object.oeroded2 = oldCorrosion + 1;
     const objectName = OBJECT_NAMES[object.otyp] || object.name || 'object';
+    const adverb = oldCorrosion + 1 === 3
+        ? ' completely' : oldCorrosion ? ' further' : '';
     await plineWithContinuation(
-        `The ${objectName} corrodes${oldCorrosion ? ' further' : ''}!`,
+        `The ${objectName} corrodes${adverb}!`,
     );
 }
 
