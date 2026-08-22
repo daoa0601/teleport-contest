@@ -85993,3 +85993,51 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 21:11 EEST, journal block 2866] {#abbot #cleric-spell #confuse-you #confusion #make-confused #state-before-prose #timeout #tty #status-order #conf-stun #rock-wish #seed-selection #rejected-carriers #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority #correction}
+
+**Contract and carrier portfolio:** `mcast_confuse_you()` must apply zero HP
+damage, add caster level to HConfusion, then publish state-dependent feedback.
+Seed12 selected paralyze/open wounds and introduced a newt; seed13 produced no
+successful cast; seed14 selected confusion but a grid bug exposed an earlier
+electric tty gap.  Seed11 plus one wished rock advances only core PRNG and
+selects confusion in the already-clean abbot room.  That source-authentic
+constructor was accepted over patching around another actor.
+
+**Initial effect boundary:** input107 consumes claw12, kick4 and
+`rn2(7)=3,rn2(70)=43,d(4,6)=11`, then attempts the explicit feedback line.
+The first implementation deferred both state and prose, so its cast pager
+lacked native `Conf`.  C `make_confused()` commits the seven-turn property
+before `You feel confused!`; only confusion now resumes before effect-message
+projection, while open wounds, blindness and paralyze retain their distinct
+ordering.  Input108 publishes the effect and resumes maintenance with HP125.
+
+**Status correction and expiry boundary:** input125 renders simultaneous
+`Conf Stun`, contradicting block2862/section835's legacy-source assumption
+that Stun precedes Conf.  The living map and renderer now follow the native
+recorder; this entry preserves the correction history.  Input143 then exposes
+another earlier owner: C decrements the last confusion tick, temporarily
+restores one, and `make_confused(0)` attempts recovery.  The full actor line
+pages with Conf still painted; only input144's acknowledgement clears it and
+allows regeneration plus ambient RNG.  JS previously cleared early, appended
+the line synchronously and spent that RNG on input143.
+
+**Implementation and measured acceptance:** timeout maintenance is now phased
+after Stun, after Confusion, and after the existing fumble continuation.
+Each recovery message can suspend, retain its pre-return property state, then
+resume the exact later timeout/maintenance owners.  All **152 native states**
+are exact; the recorder took **0.07 seconds** at **54,493,184 bytes maximum
+RSS**.  Confusion, three paralyze controls, AD_STUN and intrinsic-menu siblings
+pass **6/6** fixture-disabled in **0.30 seconds** at **137,986,048 bytes max
+RSS**; all processes exited.
+
+**Falsifications and next blocker:** confusion is not spell damage, its state
+does not wait for feedback, and recovery does not clear before a pager.
+Section836 and the ledger close the selected first-confusion/expiry path.
+Antimagic, repeat-confusion and hallucinated messages remain explicit controls;
+the next level-seven cleric effect needing a distinct construction is
+`cure-self`, which requires a damaged live caster.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

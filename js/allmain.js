@@ -1569,18 +1569,60 @@ function initialTurnMaintenanceRng(
     // that prayer-only flag is active.
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
     if (!prayerTimeoutFreeze && (game.u?.stunnedTurns ?? 0) > 0) {
-        game.u.stunnedTurns--;
-        if (game.u.stunnedTurns === 0) {
+        const remaining = game.u.stunnedTurns - 1;
+        if (remaining === 0) {
+            if (deferAmbientMessage) {
+                return {
+                    deferredTimeoutMessage: true,
+                    timeoutKind: 'stun',
+                    message: 'You feel a bit steadier now.',
+                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    prayerTimeoutFreeze,
+                };
+            }
+            game.u.stunnedTurns = 0;
             game.u.stunned = false;
             appendTurnMessage('You feel a bit steadier now.');
-        }
+        } else game.u.stunnedTurns = remaining;
     }
+
+    return finishInitialTurnMaintenanceAfterStun({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterStun({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
     if (!prayerTimeoutFreeze && (game.u?.confusionTurns ?? 0) > 0) {
-        game.u.confusionTurns--;
-        if (game.u.confusionTurns === 0) {
+        const remaining = game.u.confusionTurns - 1;
+        if (remaining === 0) {
+            if (deferAmbientMessage) {
+                return {
+                    deferredTimeoutMessage: true,
+                    timeoutKind: 'confusion',
+                    message: 'You feel less confused now.',
+                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    prayerTimeoutFreeze,
+                };
+            }
+            game.u.confusionTurns = 0;
             appendTurnMessage('You feel less confused now.');
-        }
+        } else game.u.confusionTurns = remaining;
     }
+
+    return finishInitialTurnMaintenanceAfterConfusion({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterConfusion({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
 
     if (!prayerTimeoutFreeze && (game.u?.hallucinationTurns ?? 0) > 0) {
         game.u.hallucinationTurns--;
@@ -1691,8 +1733,10 @@ function initialTurnMaintenanceRng(
                 if (deferAmbientMessage) {
                     return {
                         deferredTimeoutMessage: true,
+                        timeoutKind: 'fumbling',
                         message, sourceTurn, moveAmount,
                         deferAmbientMessage, polymorphed,
+                        prayerTimeoutFreeze,
                     };
                 }
                 finishFumblingExpiryAfterMessage({ fumbled: true });
@@ -1711,10 +1755,19 @@ async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
     let phase = initialTurnMaintenanceRng(completedTurn, true);
-    if (phase?.deferredTimeoutMessage) {
+    while (phase?.deferredTimeoutMessage) {
         await queueTurnMessage(phase.message);
-        finishFumblingExpiryAfterMessage({ fumbled: true });
-        phase = finishInitialTurnMaintenanceAfterTimeout(phase);
+        if (phase.timeoutKind === 'stun') {
+            game.u.stunnedTurns = 0;
+            game.u.stunned = false;
+            phase = finishInitialTurnMaintenanceAfterStun(phase);
+        } else if (phase.timeoutKind === 'confusion') {
+            game.u.confusionTurns = 0;
+            phase = finishInitialTurnMaintenanceAfterConfusion(phase);
+        } else {
+            finishFumblingExpiryAfterMessage({ fumbled: true });
+            phase = finishInitialTurnMaintenanceAfterTimeout(phase);
+        }
     }
     let result = phase;
     if (phase?.deferredAmbientMessage) {
@@ -3210,10 +3263,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             }!`,
                         );
                         const effectMessage = heroAttack.spellEffectMessage;
+                        // mcast_confuse_you() commits make_confused() before
+                        // its explicit feedback pline.  If that line forces
+                        // the older cast line through tty, the pager already
+                        // paints Conf; other selected spell effects retain
+                        // their post-message state ordering.
+                        if (heroAttack.spell === 'confuse-you')
+                            resumeDeferredHeroSpell(action, game);
                         const effectDismissal = effectMessage
                             ? await queueTurnMessage(effectMessage)
                             : null;
-                        resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.deferredSpellEffect)
+                            resumeDeferredHeroSpell(action, game);
                         if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.toggledBlindness)
                             vision_recalc(0);

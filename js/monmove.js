@@ -337,6 +337,17 @@ function monsterSpellEffectPreview(spell, damage, state) {
             || heroHasFreeAction(state));
         effectMessage = resisted
             ? 'You stiffen briefly.' : 'You are frozen in place!';
+    } else if (spell.key === 'confuse-you') {
+        if (antimagic) {
+            effectMessage = 'You feel momentarily dizzy.';
+        } else if (state?.u?.hallucinating
+            || (state?.u?.hallucinationTurns ?? 0) > 0) {
+            effectMessage = (state?.u?.confusionTurns ?? 0) > 0
+                ? 'You feel trippier!' : 'You feel trippy!';
+        } else {
+            effectMessage = (state?.u?.confusionTurns ?? 0) > 0
+                ? 'You feel more confused!' : 'You feel confused!';
+        }
     }
     return { effectDamage, effectMessage };
 }
@@ -7449,6 +7460,21 @@ export function resumeDeferredHeroSpell(action, state) {
         attack.paralyzed = true;
         attack.rehumanize = wasPolymorphed && (state.u?.mh ?? 0) < 1;
         attack.heroDied = !wasPolymorphed && (state.u?.uhp ?? 0) < 1;
+        return attack;
+    }
+    if (attack.spell === 'confuse-you') {
+        const antimagic = !!(state.u?.antimagic
+            || state.u?.magicResistance || state.u?.magic_resistance);
+        if (!antimagic) {
+            const monsterLevel = action.monster?.m_lev
+                ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+            let duration = monsterLevel;
+            if (state.u?.halfSpellDamage || state.u?.half_spell_damage)
+                duration = Math.trunc((duration + 1) / 2);
+            state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
+        }
+        attack.appliedDamage = 0;
+        attack.confusedHero = !antimagic;
         return attack;
     }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {

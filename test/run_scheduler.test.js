@@ -9243,6 +9243,79 @@ test('seed0011 half-spell timeout rounds abbot paralysis to six turns',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 rock-shifted abbot confusion commits before prose and expires after pager',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nrock\n'
+                + '#wizgenesis\nhostile abbot\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 152);
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(5)=2', 'rnd(20)=1', 'd(8,2)=12',
+            'rn2(3)=0', 'rn2(6)=1', 'rnd(21)=17',
+            'd(3,2)=4', 'rn2(4)=3', 'rn2(3)=1', 'rn2(6)=0',
+            'rn2(7)=3', 'rn2(70)=43', 'd(4,6)=11',
+        ], 'seed0011 abbot confusion cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'The abbot hits!  The abbot kicks!  The abbot casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[107], 23),
+            'Dlvl:1 $:1540 HP:125(141) Pw:254(254) AC:8 Xp:30 Conf');
+
+        assertRngSliceExact(result.getRngSlices()[108], [
+            'rn2(5)=2', 'rn2(5)=4', 'rn2(12)=5',
+            'rn2(12)=10', 'rn2(12)=1', 'rn2(70)=54',
+            'rn2(100)=70', 'rn2(400)=63', 'rn2(20)=15',
+            'rn2(70)=48',
+        ], 'seed0011 confusion effect and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'You feel confused!');
+        assert.equal(decodedRow(result.getScreens()[108], 23),
+            'Dlvl:1 $:1540 HP:125(141) Pw:254(254) AC:8 Xp:30 Conf');
+
+        assert.equal(decodedTopline(result.getScreens()[125]),
+            'The abbot hits!  The abbot kicks!  You stagger...--More--');
+        assert.equal(decodedRow(result.getScreens()[125], 23),
+            'Dlvl:1 $:1540 HP:80(141) Pw:254(254) AC:8 Xp:30 Conf Stun');
+
+        assertRngSliceExact(result.getRngSlices()[143], [
+            'rn2(5)=2', 'rnd(20)=12', 'd(8,2)=12',
+            'rn2(3)=1', 'rn2(6)=0', 'rnd(21)=16',
+            'd(3,2)=5', 'rn2(4)=0', 'rn2(3)=1', 'rn2(6)=5',
+            'rn2(7)=5', 'rn2(70)=8', 'rn2(5)=2', 'rn2(20)=8',
+            'rn2(5)=1', 'rn2(12)=10', 'rn2(12)=8',
+            'rn2(12)=3', 'rn2(70)=25',
+        ], 'seed0011 confusion-expiry actor prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[143]),
+            'The abbot hits!  The abbot kicks!  The air crackles around the abbot.--More--');
+        assert.equal(decodedRow(result.getScreens()[143], 23),
+            'Dlvl:1 $:1540 HP:38(141) Pw:254(254) AC:8 Xp:30 Conf Stun');
+
+        assertRngSliceExact(result.getRngSlices()[144], [
+            'rn2(100)=1', 'rn2(400)=13', 'rn2(20)=12', 'rn2(70)=18',
+        ], 'seed0011 post-confusion recovery maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[144]),
+            'You feel less confused now.');
+        assert.equal(decodedRow(result.getScreens()[144], 23),
+            'Dlvl:1 $:1540 HP:39(141) Pw:254(254) AC:8 Xp:30 Stun');
+
+        assert.ok(game.inventory.some(object => object.otyp === 474));
+        assert.equal(game.u.uhp, 39);
+        assert.equal(game.u.confusionTurns, 0);
+        assert.equal(game.u.stunned, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

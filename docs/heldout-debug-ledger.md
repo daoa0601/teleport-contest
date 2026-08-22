@@ -12524,3 +12524,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   carried Orb-of-Fate carrier was rejected before property evidence because
   native already tracks two random artifacts (`rn2(3)`) while JS tracks only
   the wished Orb (`rn2(1)`).  Artifact generation and Antimagic remain open.
+- Seed11 plus one harmless wished rock selects a clean hostile-abbot
+  `confuse-you` effect without the seed14 grid-bug interleave.  Input107 commits
+  level-seven confusion before attempting `You feel confused!`, so the cast
+  pager already paints Conf; input108 resumes the effect.  Input125 proves
+  native simultaneous order `Conf Stun`, correcting the earlier map's legacy
+  source-only ordering.  Input143 retains Conf while its recovery pline pages
+  the full actor line; input144 clears it after acknowledgement and only then
+  runs regeneration/ambient RNG.  The timeout pipeline now resumes separately
+  after stun and confusion before reaching fumble.  All 152 states are exact;
+  six abbot/intrinsic siblings pass fixture-disabled in 0.30 seconds.
+  Antimagic, repeat-confusion, hallucinated feedback and cure-self remain open.

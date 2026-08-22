@@ -30337,8 +30337,8 @@ for 200-turn blindness.
 Decisive input123 rolls kick damage5 and `rn2(4)=0`; the full five turns enter
 HStun before HP damage is truncated to two.  Global timeout advances it once,
 so the captured state is Blind/Stun with four stun turns and HP36.  Status now
-projects source order Blind, Deaf, Stun, Conf, Hallu, and timeout expiry owns
-`You feel a bit steadier now.`  All 127 bounded states are exact.  Extending
+projects the recorder-observed simultaneous ordering `Conf Stun`, and timeout
+expiry owns `You feel a bit steadier now.`  All 127 bounded states are exact.  Extending
 the same native session reaches the next independent spell gap at input129:
 paralysis is not part of this AD_STUN block.
 
@@ -30395,3 +30395,37 @@ callback-owned: input152 finishes the interrupted kick, while input153 emits
 the survival nomovemsg and only then spends `rn2(31)=2`.  All 157 states are
 exact, ending with twenty half-spell timeout turns.  A carried-artifact source
 and Antimagic remain separate controls.
+
+## 836. Cleric confusion commits before prose and expires after tty
+
+```mermaid
+flowchart TD
+    Cast["AD_CLRC choose confuse-you; fumble; pre-roll 4d6"] --> Commit["make_confused: add caster level timeout"]
+    Commit --> Feedback["You feel confused / more confused / trippy"]
+    Feedback --> Pager["effect attempt can page older cast line with Conf already painted"]
+    Pager --> Turns["nh_timeout decrements once per global turn"]
+    Turns --> Last{"timeout reaches final tick?"}
+    Last --> Hold["temporarily retain one turn while recovery pline owns tty"]
+    Hold --> Recovery["You feel less confused now"]
+    Recovery --> Clear["after acknowledgement: clear Conf"]
+    Clear --> Maintenance["regeneration, ambient RNG, hunger, exercise"]
+    Lua["Lua owns no spell or timeout phase"] -.-> Cast
+```
+
+Seed11 uses one harmless wished rock to advance the core PRNG while preserving
+the clean level-30 combat area, then creates the same hostile abbot.  Input107
+rolls open contact plus `rn2(7)=3,rn2(70)=43,d(4,6)=11`.  Confusion applies
+zero HP damage, but `make_confused()` adds the level-seven timeout before its
+explicit feedback.  When that feedback forces the cast line through
+`--More--`, the pager already paints `Conf`; input108 shows the effect line and
+resumes maintenance.
+
+Input125 independently proves simultaneous ordering `Conf Stun`.  At expiry,
+input143's full hit/kick/fumble line pages while Conf is still painted:
+source `nh_timeout()` restores a one-tick value before `make_confused(0)` tries
+its recovery pline.  Input144 acknowledges that pager, publishes
+`You feel less confused now.`, clears the property, and only then runs
+regeneration/ambient RNG.  The timeout pipeline is split into resumable
+post-stun and post-confusion phases; a second expiry can suspend before the
+existing fumble phase without skipping later maintenance.  All 152 states are
+exact.  Antimagic, repeat-confusion and hallucinated prose remain separate.
