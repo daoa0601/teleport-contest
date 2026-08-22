@@ -12326,3 +12326,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   then ordinary `pushed`.  The fixture-disabled focused gate passes 16/16 in
   0.38 seconds, the twenty erosion controls remain exact and the managed
   family passes 149/149 in 2.72 seconds.  Slithy and centaur arms remain open.
+- Seed11 Healer wears +2 low boots and becomes a medium, hands-capable
+  salamander.  Native input58 consumes
+  `rn2(2)=1,rn2(19)=13,rn2(10)=7,rn2(500)=417,d(8,8)=35` and displays `You
+  turn into a salamander!  Your boots are pushed off your feet!` with HP35/35,
+  HD8 and AC−3.  Type163 is floor-owned; starting gloves and scalpel remain
+  worn/wielded.  All 67 states are exact from input3.
+
+  The initial focused gate was rejected at 16/17 because the test required a
+  stored `false` blind flag; the live non-blind contract is falsy/absent.
+  Correcting the assertion yields 17/17 in 0.36 seconds.  M1_SLITHY now owns
+  boot eligibility independently of no-hands, size or whirly state; the twenty
+  erosion controls remain exact and the managed family passes 149/149 in 2.85
+  seconds.  Centaur remains the final boot eligibility sibling.

@@ -8230,6 +8230,48 @@ test('seed0011 acid-blob very-small form slides boots off',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 salamander slithy form pushes boots off with hands intact',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 low boots\n'
+                + 'Wk #polyself\nsalamander\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 67);
+        assertRngSliceExact(result.getRngSlices()[58], [
+            'rn2(2)=1', 'rn2(19)=13', 'rn2(10)=7',
+            'rn2(500)=417', 'd(8,8)=35',
+        ], 'seed0011 salamander slithy boot RNG');
+        assert.equal(decodedTopline(result.getScreens()[58]),
+            'You turn into a salamander!  Your boots are pushed off your feet!');
+        assert.equal(decodedRow(result.getScreens()[58], 23),
+            'Dlvl:1 $:1540 HP:35(35) Pw:5(5) AC:-3 HD:8');
+        assert.deepEqual(result.getCursors()[58], [65, 6, 1]);
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.ok(game.uwep);
+        assert.equal(game.uwep.otyp, 39);
+        assert.equal(game.uarmf, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 163));
+        assert.equal(floorObjects.some(object => object.otyp === 159), false);
+        assert.equal(floorObjects.some(object => object.otyp === 39), false);
+        assert.equal(game.u.umonnum, 329);
+        assert.equal(game.u.mh, 35);
+        assert.equal(game.u.uac, -3);
+        assert.equal(!!game.blind, false);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -26,6 +26,7 @@ const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00006000;
 const M1_NOHEAD = 0x00008000;
+const M1_SLITHY = 0x00080000;
 const M1_FLY = 0x00000001;
 const M1_OVIPAROUS = 0x00400000;
 const M1_HUMANOID = 0x00020000;
@@ -345,6 +346,8 @@ export async function polyselfControlledMonster(mnum) {
         || mnum === PM_AIR_ELEMENTAL;
     const noncorporeal = MONSTER_SYMBOL[mnum] === S_GHOST;
     const verySmall = formSize < MZ_SMALL;
+    const slithy = !!(formFlags & M1_SLITHY);
+    const centaur = MONSTER_SYMBOL[mnum] === S_CENTAUR;
     const slipsArmor = whirly || noncorporeal || formSize <= MZ_SMALL;
     const breaksArmor = !slipsArmor && (formSize >= MZ_LARGE
         || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID))
@@ -459,7 +462,7 @@ export async function polyselfControlledMonster(mnum) {
         dropCarriedObject(shield, ['uarms']);
         await publishDropCapacityChange();
     }
-    if ((noHands || verySmall) && boots) {
+    if ((noHands || verySmall || slithy || centaur) && boots) {
         await plineWithContinuation(
             whirly
                 ? 'Your boots fall away!'

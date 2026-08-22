@@ -85315,3 +85315,43 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 18:45 EEST, journal block 2850] {#polyself #break-armor #salamander #slithy #hands #boots #pushed #dropx #native-witness #implementation #complete-replay #regression #fake-acceptance #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and discriminator:** source boot eligibility includes `slithy()`
+independently of no-hands, very-small, whirly and centaur predicates.  A valid
+witness therefore needs hands, size at least small and a non-whirly body; its
+gloves/weapon must remain equipped while boots drop.  Salamander is the compact
+selected form.
+
+**Native witness:** seed11 debug Healer wears wished +2 low boots, keeps the
+starting gloves/scalpel and uses controlled `#polyself salamander`.  Input58
+consumes `rn2(2)=1,rn2(19)=13,rn2(10)=7,rn2(500)=417,d(8,8)=35` and displays
+`You turn into a salamander!  Your boots are pushed off your feet!`.  Type163
+is floor-owned, while type159 remains worn and type39 remains wielded; HP35/35,
+HD8 and AC−3 are exact.  All 67 states replay exactly from input3; the recorder
+took **0.06 seconds** at **52,969,472 bytes maximum RSS**.
+
+**Earliest divergence and decision:** before M1_SLITHY eligibility, replay
+retained the boots and omitted the second sentence; all form RNG and status
+were already exact.  The shared boot predicate now accepts no-hands,
+very-small, slithy or centaur forms.  Since salamander is neither whirly nor
+very small, it reuses ordinary `are pushed` wording.  No species-name bridge is
+present.
+
+**Rejected acceptance and measured effect:** the first focused run was
+**16/17** only because the regression required `game.blind === false`; native
+non-blind state is represented by a falsy/absent flag.  Correcting the test to
+the actual state contract yields **17/17** in **0.36 seconds**.  The preceding
+twenty rust/corrosion/decay controls remain exact and the one owned managed
+family passes **149/149** in **2.85 seconds**.  Every process exited before the
+next began.
+
+**Next blocker:** section830 and the ledger now select no-hands pushed, whirly
+fall, very-small slide and hands-capable slithy eligibility.  Record one
+centaur form to close the final boot predicate and catch any special
+WrappingAllowed/body-policy interaction; then move beyond equipment
+construction.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---
