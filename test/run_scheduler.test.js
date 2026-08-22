@@ -8372,6 +8372,56 @@ test('seed0011 natural disenchanter drains Healer gloves after resistance',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 cancelled natural disenchanter skips item drain',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizgenesis\ndisenchanter\n'
+                + 'zkyacy m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 162);
+        assertRngSliceExact(result.getRngSlices()[120], [],
+            'seed0011 cancelled disenchanter status RNG');
+        assert.equal(decodedRow(result.getScreens()[120], 0),
+            'Status of the disenchanter (chaotic, large):  Level 15  HP 66(66)  AC -10,');
+        assert.equal(decodedRow(result.getScreens()[120], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[120], [18, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(5)=4', 'rnd(20)=17', 'd(4,4)=12',
+            'rn2(3)=0', 'rn2(6)=3', 'rn2(5)=3', 'rn2(5)=1',
+            'rn2(12)=9', 'rn2(12)=6', 'rn2(12)=1',
+            'rn2(70)=27', 'rn2(100)=34', 'rn2(400)=225',
+            'rn2(20)=2', 'rn2(70)=23',
+        ], 'seed0011 cancelled disenchanter hit and tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'The disenchanter hits!');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1540 HP:130(141) Pw:254(254) AC:8 Xp:30');
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.equal(game.uarmg.spe, 1);
+        assert.equal(game.uarmg.enchantment, 1);
+        assert.equal(game.u.uac, 8);
+        const disenchanter = game.level.monsters.find(monster =>
+            monster.mnum === 213);
+        assert.ok(disenchanter);
+        assert.equal(disenchanter.mcan, 1);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

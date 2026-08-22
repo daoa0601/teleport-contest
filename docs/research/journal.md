@@ -85439,3 +85439,39 @@ gap separate.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 19:10 EEST, journal block 2853] {#disenchanter #hero-contact #ad-ench #cancellation #wand-of-cancellation #stethoscope #damage-preserved #rng-omission #native-witness #implementation-correction #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Cancellation contract:** `mhitm_mgc_atk_negated()` returns immediately for a
+cancelled monster before its `rn2(10)` armor-negation draw.  AD_ENCH must still
+publish hitmsg and retain declared 4d4 damage, shared knockback and HP damage,
+but it must not enter `some_armor()`, accessory fallback or `drain_item()`.
+
+**Native witness:** seed11 level-30 Healer wishes a cancellation wand, cancels
+the adjacent disenchanter northwest, and uses the starting stethoscope to
+confirm `cancelled.--More--`.  Input123 consumes
+`rn2(5)=4,rnd(20)=17,d(4,4)=12`, then immediately shared
+`rn2(3)=0,rn2(6)=3` and the actor/global tail.  There is no `rn2(10)`,
+`rn2(4/5)` target selection or `rn2(100)` object resistance.  The hit reduces
+HP, while +1 gloves and AC8 remain unchanged.  All 162 states are exact from
+input3; the recorder took **0.07 seconds** at **54,411,264 bytes maximum RSS**.
+
+**Implementation correction and falsifications:** the first cancelled replay
+still spent `rn2(10)=6,rn2(100)=33` and drained the gloves.  Audit showed that
+the intended `monster.mcan` short circuit had matched the earlier poisonous-
+contact negation block, where it is source-correct, but not the newly added
+AD_ENCH expression.  Applying the change at the uniquely scoped branch removes
+both calls.  This falsifies cancellation as a zero-damage gate and confirms
+that damage/effect ownership split before hitmsg.
+
+**Measured acceptance and next blocker:** the complete 162-state session and
+the original 137-state resistance/drain session are exact; the fixture-disabled
+paired gate passes **2/2** in **0.23 seconds**.  No managed selector was rerun:
+the production change is confined to active cancelled AD_ENCH and the new test
+does not match that family.  Section831 and the ledger now include cancellation.
+Next remove worn armor, equip one positive ring or eyewear target, and select
+the `rn2(5)` accessory fallback without reintroducing displacement.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

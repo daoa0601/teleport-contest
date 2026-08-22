@@ -12368,3 +12368,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   focused family passes 19/19 in 0.39 seconds, twenty prior erosion/form
   controls remain exact and the managed family—including projectile AD_ENCH—
   passes 149/149 in 2.73 seconds.  The displacement movement gap remains open.
+- Seed11 level-30 Healer wishes a cancellation wand, cancels the adjacent
+  disenchanter and confirms wrapped `cancelled.--More--` by stethoscope.
+  Native input123 consumes `rnd(20)=17,d(4,4)=12` then shared
+  `rn2(3)=0,rn2(6)=3`; magic-negation, `some_armor()` and object-resistance
+  draws are absent.  HP damage remains, while +1 gloves and AC8 do not change.
+  All 162 states are exact from input3.
+
+  The first implementation audit found that the intended `monster.mcan`
+  short circuit had landed in the poisonous-contact block but not AD_ENCH;
+  both locations now match source cancellation order.  The paired natural-
+  disenchanter gate passes 2/2 in 0.23 seconds.  No unrelated managed selector
+  was rerun because the new branch and test are outside that family.  No-armor
+  accessory fallback remains the next AD_ENCH control.

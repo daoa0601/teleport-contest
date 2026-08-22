@@ -30113,3 +30113,13 @@ made native `m_move()` stay put and fall through to phase-four attack, while JS
 moved the adjacent actor.  The nondisplaced Healer isolates the effect owner;
 that separate apparent-target/movement gap remains explicitly open rather than
 being disguised by the drain implementation.
+
+Cancellation closes the effect-level short circuit.  A level-30 Healer wishes
+a cancellation wand, cancels the adjacent disenchanter and confirms wrapped
+`cancelled.--More--` status by stethoscope.  Native input123 consumes attack
+selection, `rnd(20)=17`, declared `d(4,4)=12`, then immediately shared
+`rn2(3)=0,rn2(6)=3`; there is no magic-negation `rn2(10)`, target-selection
+draw or drain-resistance `rn2(100)`.  Damage remains physical and the +1 gloves
+stay unchanged at AC8.  All 162 states replay exactly, proving that cancellation
+suppresses only AD_ENCH policy rather than the claw's declared damage or common
+tail.

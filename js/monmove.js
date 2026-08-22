@@ -6319,8 +6319,8 @@ function basicMonsterAttack(
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const armorProtection = state?.u?._magicNegation ?? 0;
-        const negated = recordRandom(random, calls, 10)
-            < 3 * armorProtection;
+        const negated = !!monster.mcan
+            || recordRandom(random, calls, 10) < 3 * armorProtection;
         let drainedObject = null;
         if (!negated) {
             const target = selectHeroDisenchantmentTarget(
