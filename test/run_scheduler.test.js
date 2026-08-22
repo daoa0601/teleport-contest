@@ -9934,6 +9934,62 @@ test('seed0015 timed shock resistance preserves lightning inventory and flash',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0068 lightning defers wand explosion before flash and spell damage',
+    async () => {
+        const result = await runSegment({
+            seed: 68,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        assertRngSliceExact(result.getRngSlices()[104], [
+            'd(14,8)=58',
+        ], 'seed0068 lightning cast pre-roll after pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'The priestess of Athena casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[105], [
+            'd(8,6)=33', 'rn2(5)=1', 'rnd(10)=5', 'rn2(3)=0',
+        ], 'seed0068 lightning wand destruction prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[105], 23),
+            'Dlvl:1 $:1389 HP:148(151) Pw:216(216) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[108], [
+            'rn2(2)=0', 'rnd(100)=99',
+        ], 'seed0068 explosion damage exercise and flash RNG');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'Your wand of sleep breaks apart and explodes!--More--');
+        assert.equal(decodedRow(result.getScreens()[108], 23),
+            'Dlvl:1 $:1389 HP:143(151) Pw:216(216) AC:8 Xp:30');
+
+        assert.deepEqual(result.getRngSlices()[109].slice(0, 10), [
+            'rn2(25)=14', 'rn2(13)=7', 'rn2(13)=3', 'rn2(4)=1',
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=2',
+            'rn2(5)=4', 'rnd(20)=18',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'You are blinded by the flash!  It hits!  It kicks!--More--');
+        assert.equal(decodedRow(result.getScreens()[109], 23),
+            'Dlvl:1 $:1389 HP:81(151) Pw:216(216) AC:8 Xp:30 Blind');
+
+        assert.equal(game.inventory.some(object => object.otyp === 432), false);
+        assert.equal(game.u.uhp, 9);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.blindTurns, 97);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

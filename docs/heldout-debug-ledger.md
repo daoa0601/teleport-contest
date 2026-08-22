@@ -12633,3 +12633,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   26 and the corrected fixture-disabled cleric gate passes 15/15 in 0.53
   seconds at 148,160,512 bytes maximum RSS.  Reflection, wand explosion,
   half-spell lightning, expiry and worn-property fallback remain open.
+- Seed68 closes the selected lightning wand-destruction lifecycle through 122
+  exact states.  Seeds48--67 supplied covered effects; seed60's lightning kept
+  its wand.  Input105 consumes 8d6=33, the stack limit, wand damage5 and
+  `rn2(3)=0`, then suspends before flash.  Input108 publishes the explosion,
+  removes the sleep wand, applies five HP, consumes Strength exercise
+  `rn2(2)=0`, rolls flash99 and suspends again.  Input109 commits blindness
+  plus the original 33 lightning damage before later hit/kick slots.  Final
+  state is HP9, Blind97 and no wand.  The fixture-disabled cleric gate passes
+  16/16 in 0.51 seconds at 147,734,528 bytes maximum RSS.  Shock-resistant
+  explosion feedback, fatal explosion, multiple electrical items and active-
+  wand ownership remain separate controls.

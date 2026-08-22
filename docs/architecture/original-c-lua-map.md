@@ -30726,3 +30726,36 @@ Input123 still publishes the flash, commits Blind and leaves HP165.  The full
 140-state tail is exact, ending HP113, Blind64, the sleep wand present and 26
 timed resistance turns.  Reflection, destroyed-wand explosion, half-spell
 damage, timeout expiry and worn blue-dragon-armor fallback remain separate.
+
+## 847. A destroyed lightning wand suspends before flash and spell HP
+
+```mermaid
+flowchart TD
+    Lightning["mcast_lightning rolls original d(8,6)"] --> Limit["destroy_items AD_ELEC stack limit"]
+    Limit --> Wand["selected wand rolls rnd(10) explosion damage"]
+    Wand --> Gate["per-quantity rn2(3) destruction gate"]
+    Gate --> Explosion["wand explosion pline"]
+    Explosion --> Pager["bolt remains visible until acknowledgement"]
+    Pager --> Remove["useup removes wand"]
+    Remove --> Secondary["losehp explosion damage; exercise Strength"]
+    Secondary --> Flash["flashburn rnd(100) and blindness prose"]
+    Flash --> SpellHP["commit blindness, then original lightning HP"]
+    SpellHP --> Continue["remaining actor transaction"]
+    Lua["Lua owns no inventory or lightning phase"] -.-> Lightning
+```
+
+Seeds48--67 produced covered effects or item detours; seed60 reached lightning
+but retained its wand.  Seed68 is the first destructive carrier with a clean
+prefix.  Input105 rolls `d(8,6)=33,rn2(5)=1,rnd(10)=5,rn2(3)=0`; attempting
+the destruction line behind the bolt pager stops before flash RNG and leaves
+the wand and HP148 intact on that screen.
+
+After the pager is acknowledged, input108 publishes `Your wand of sleep breaks
+apart and explodes!`, removes the wand, applies five HP and consumes Strength
+exercise `rn2(2)=0`, then rolls flash duration99.  Attempting the flash behind
+the explosion creates the second pager, so that screen is HP143 and not yet
+Blind.  Input109 publishes the flash, commits blindness and the original 33
+lightning damage, then resumes later hit/kick slots to HP81.  The complete
+122-state session ends HP9, Blind97 and no sleep wand.  Shock-resistant wand
+explosion feedback, fatal secondary damage, multiple wands/rings and active-
+wand ownership remain separate controls.

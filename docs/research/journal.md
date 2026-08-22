@@ -86493,3 +86493,41 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 22:55 EEST, journal block 2879] {#high-cleric #lightning #destroy-items #wand-explosion #inventory-removal #exercise #flashburn #blindness #tty #selector-search #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Carrier portfolio and acceptance contract:** a successful electrical gate
+must stop before flash, publish the wand explosion, remove the object, apply
+secondary HP/exercise, then resume flash, blindness and original lightning HP.
+A missing wand or matching final HP alone is insufficient.  Serial seeds48--67
+produced covered effects or item-use detours; seed60 selected lightning but
+retained its wand at `rn2(3)=2`.  Seed68 is the first destructive lightning
+carrier and has an exact constructor/selector/cast prefix.
+
+**Pager and mutation boundaries:** input105 consumes
+`d(8,6)=33,rn2(5)=1,rnd(10)=5,rn2(3)=0`.  Native stops before `rnd(100)`
+because the explosion line is attempted behind the pending bolt; the previous
+JS continued immediately into flash RNG.  Input108, after two deliberately
+rejected non-space pager keys, publishes `Your wand of sleep breaks apart and
+explodes!`, removes the wand, changes HP148 to143, consumes Strength exercise
+`rn2(2)=0`, rolls flash99 and suspends again before blindness.
+
+**Final effect ordering:** input109 publishes the flash, commits Blind and the
+original 33 spell HP, then resumes later hit/kick slots on the same actor scan,
+ending that screen HP81.  The complete session ends HP9, Blind97 and without
+the sleep wand.  Section847 maps `mcast_lightning -> destroy_items ->
+maybe_destroy_item -> useup/losehp/exercise -> flashburn -> mdamageu`; Lua owns
+no phase.  Combined shock resistance, fatal secondary damage, multiple
+electrical items and active-wand ownership remain separate controls.
+
+**Measured acceptance and next blocker:** all **122 native states** are exact.
+The recorder took **0.08 seconds** at **54,312,960 bytes maximum RSS** and the
+exact JS replay took **0.23 seconds** at **124,485,632 bytes max RSS**.  Wand
+explosion plus fifteen neighboring cleric witnesses pass **16/16** fixture-
+disabled in **0.51 seconds** at **147,734,528 bytes max RSS**; all processes
+exited.  Next compare reflection and half-spell lightning against the combined
+shock-resistant explosion branch before moving to curse/insect fallbacks.  No
+full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

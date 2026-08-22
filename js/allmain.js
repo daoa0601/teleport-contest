@@ -2560,15 +2560,42 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
             (object.oclass ?? object.class) === 11
             || object.class === 'Wands');
         if (wand) {
-            rnd(10);
+            const explosionDamage = rnd(10);
             action.calls.push('rnd(10)');
             const destroyed = rn2(3) === 0;
             action.calls.push('rn2(3)');
-            // The selected seed15 control keeps the wand.  Preserve a named
-            // pending branch rather than silently deleting an unimplemented
-            // explosion transaction on a different seed.
-            if (destroyed) heroAttack.deferredLightningWandExplosion = wand;
+            if (destroyed) {
+                heroAttack.deferredLightningWandExplosion = wand;
+                heroAttack.lightningWandExplosionDamage = explosionDamage;
+            }
         }
+    }
+
+    const explodingWand = heroAttack.deferredLightningWandExplosion;
+    if (explodingWand) {
+        await queueTurnMessage(
+            `Your ${explodingWand.name
+                || OBJECT_NAMES[explodingWand.otyp]
+                || 'wand'} breaks apart and explodes!`,
+        );
+        const index = game.inventory?.indexOf(explodingWand) ?? -1;
+        if (index >= 0) game.inventory.splice(index, 1);
+        if (!shockResistant) {
+            game.u.uhp = Math.max(
+                0,
+                (game.u.uhp ?? 1)
+                    - (heroAttack.lightningWandExplosionDamage ?? 0),
+            );
+            exerciseAttribute(0, false);
+        } else {
+            // maybe_destroy_item() destroys the wand even when the carrier's
+            // shock resistance prevents its secondary HP damage.  The
+            // selected seed68 owner is unresisted; keep the follow-up prose
+            // named for a combined resistance/destruction carrier.
+            heroAttack.deferredLightningExplosionResistanceMessage = true;
+        }
+        heroAttack.deferredLightningWandExplosion = null;
+        heroAttack.lightningWandExplosionDamage = 0;
     }
 
     const flashDuration = rnd(100);
