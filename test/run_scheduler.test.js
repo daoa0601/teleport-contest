@@ -7617,6 +7617,63 @@ test('seed0011 wished cancellation wand suppresses brown-pudding decay',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 wood-golem polyself rehumanizes on brown-pudding decay',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Wizard,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#polyself\nwood golem\n  '
+                + '#wizgenesis\nbrown pudding\n'
+                + 'm.    m.    m.    m.    m.    m.    '
+                + 'm.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 129);
+        assertRngSliceExact(result.getRngSlices()[24], [
+            'rn2(2)=0', 'rn2(19)=13', 'rn2(500)=95',
+        ], 'seed0011 fixed wood-golem form setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[24]),
+            'You turn into a wood golem!  The clasp on your cloak breaks open!');
+        assert.equal(decodedRow(result.getScreens()[24], 23),
+            'Dlvl:1 $:0 HP:50(50) Pw:7(7) AC:4 HD:7');
+        assert.deepEqual(result.getCursors()[24], [74, 3, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[54], [
+            'rn2(12)=0', 'rn2(12)=8', 'rn2(70)=14',
+            'rn2(300)=170', 'rn2(200)=8', 'rn2(20)=12',
+            'rn2(85)=70', 'rn2(5)=2', 'rnd(20)=17', 'd(0,0)=0',
+            'rn2(3)=1', 'rn2(6)=5', 'rn2(5)=4', 'rn2(5)=3',
+            'rn2(12)=4', 'rn2(12)=4', 'rn2(70)=46',
+            'rn2(300)=213', 'rn2(200)=164', 'rn2(20)=12',
+            'rn2(85)=21',
+        ], 'seed0011 wood-golem complete-rot rehumanization RNG');
+        assert.equal(decodedTopline(result.getScreens()[54]),
+            'The brown pudding bites!  You rot!  You return to human form!');
+        assert.equal(decodedRow(result.getScreens()[54], 23),
+            'Dlvl:1 $:0 HP:12(12) Pw:7(7) AC:10 Xp:1');
+        assert.deepEqual(result.getCursors()[54], [74, 3, 1]);
+
+        assert.equal(game.u.mtimedone, 0);
+        assert.equal(game.u.mh, 0);
+        assert.equal(game.u.mhmax, 0);
+        assert.equal(game.u.umonnum, 343);
+        assert.equal(game.u.uhp, 12);
+        assert.equal(game.u.uac, 10);
+        assert.equal(game.uarmc, null);
+        const floorCloak = (game.level.objects?.[game.u.ux]?.[game.u.uy] || [])
+            .find(object => object.otyp === 148);
+        assert.ok(floorCloak);
+        assert.equal(floorCloak.name, 'cloak of magic resistance');
+        assert.equal(floorCloak.where, 'floor');
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

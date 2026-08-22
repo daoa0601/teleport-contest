@@ -12135,3 +12135,19 @@ attempt: **402 calls**, not a direct two-pass retry.
   135,479,296 bytes; the one owned managed family passes 149/149 in 2.82 seconds
   at 358,727,680 bytes and exits cleanly.  Polymorphed wood/leather-golem hero
   rehumanization is the remaining AD_DCAY branch.
+- Seed11 closes polymorphed `completelyrots()` with a controlled wood-golem
+  Wizard.  Native `#polyself` uses fixed `golemhp()` 50 with no d8 roll, breaks
+  the large form out of its magic-resistance cloak and drops that cloak.  The
+  first JavaScript replay instead added `d(7,8)=29` and omitted the clasp line;
+  the source golem HP table and large/non-humanoid break predicate repair form
+  construction.
+
+  Native input54 then combines `The brown pudding bites!  You rot!  You return
+  to human form!`.  It consumes `d(0,0)`, rehumanizes before shared knockback,
+  inserts no armor-slot draw, restores human HP12/12 and AC10, and leaves the
+  cloak on the floor.  All 129 states replay exactly from input3.  The
+  nineteen-control audit completes in 1.52 seconds at 150,306,816 bytes
+  maximum RSS.  Fixture-disabled controlled-polymorph siblings pass 2/2 in
+  0.26 seconds at 136,642,560 bytes; the one owned managed family remains
+  149/149 in 2.78 seconds at 374,439,936 bytes and exits cleanly.  Iron-golem
+  `completelyrusts()` is the next analogous form branch.

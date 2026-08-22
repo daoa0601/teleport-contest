@@ -84764,3 +84764,47 @@ before armor selection.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 17:28 EEST, journal block 2837] {#brown-pudding #hero-contact #decay #wood-golem #polymorph #golem-hp #break-armor #cloak-drop #rehumanize #zero-dice #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** a wood- or leather-golem hero is `completelyrots()`.  After
+hitmsg and cancellation, AD_DCAY must publish `You rot!`, rehumanize before
+ordinary armor selection and then rejoin shared knockback.  The witness must
+also prove the controlled golem form itself: fixed HP and armor breakage cannot
+be hidden behind a later bite-only assertion.
+
+**Native witness:** seed11 debug Wizard uses controlled `#polyself wood golem`,
+then generates a source-default hostile brown pudding.  Native input24 consumes
+only `rn2(2)=0,rn2(19)=13,rn2(500)=95`, installs fixed HP50, form AC four and
+HD7, and says `You turn into a wood golem!  The clasp on your cloak breaks
+open!`; the cloak is dropped.  Input54 consumes the slow-form scheduler,
+attack `rnd(20)=17`, declared `d(0,0)=0`, then immediately shared
+`rn2(3)=1,rn2(6)=5` with no armor-slot draw.  It displays `The brown pudding
+bites!  You rot!  You return to human form!` and restores HP12/12, AC10 and
+the saved human form.
+
+**Earliest divergences and implementation:** JavaScript's first replay added
+`d(7,8)=29` after otherwise exact form setup because every non-dragon used
+generic level-d8 HP.  Source `golemhp()` supplies fixed values; wood is 50.
+After that repair, JavaScript omitted native `break_armor()` and the clasp line,
+leaving the cloak worn.  The selected large/non-humanoid break predicate now
+drops a generic cloak after its message.  The next divergence was the bite's
+form check: JavaScript entered `erode_armor`, while native rehumanized.
+AD_DCAY now retains a resumable completely-rottable form arm which queues
+`You rot!`, atomically restores the saved body, queues the return line and only
+then enables shared post-hit handling.  Cancellation still bypasses both form
+death and armor.
+
+**Measured acceptance and next blocker:** all 129 states replay exactly from
+input3.  The native recorder took **0.08 seconds** at **54,509,568 bytes
+maximum RSS**; the nineteen-control audit takes **1.52 seconds** at
+**150,306,816 bytes**.  With fixtures disabled, wood-golem decay and the
+existing red-dragon controlled-polymorph sibling pass **2/2** in **0.26
+seconds** at **136,642,560 bytes**.  The one owned managed family remains
+**149/149** in **2.78 seconds** at **374,439,936 bytes maximum RSS**; all
+runners exit and the registry is empty.  Section830 and the ledger map the
+form path.  Next select the analogous `completelyrusts()` iron-golem hero
+branch under AD_RUST.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty test files remain untouched.
+
+---

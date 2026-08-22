@@ -6228,13 +6228,18 @@ function basicMonsterAttack(
         // deliberately disables grease protection.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
+        const completelyRottableForm = Upolyd(state?.u)
+            && [PM_LEATHER_GOLEM, 254].includes(state.u.umonnum);
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
             attackType, damageType,
             effect: monster.mcan
                 ? 'cancelled-decay-natural' : 'decay-natural',
             oldFormMnum,
-            deferredDecayArmor: !monster.mcan,
+            deferredDecayRehumanize: !monster.mcan
+                && completelyRottableForm,
+            deferredDecayArmor: !monster.mcan
+                && !completelyRottableForm,
             deferredPostHit: !!monster.mcan,
         }, monster, attackIndex);
     } else if (hit

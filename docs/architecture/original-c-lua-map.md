@@ -29726,10 +29726,17 @@ confirmed by wrapped stethoscope status.  Repeated bites still consume declared
 leather gloves stay unrotted.  The 154- and 119-state sessions are exact from
 input3 onward.
 
-The remaining AD_DCAY branch is the polymorphed hero whose current form is a
-wood or leather golem: `completelyrots()` emits `You rot!` and rehumanizes
-before ordinary armor selection.  That form transition needs its own native
-witness and is not inferred from worn organic objects.
+The polymorphed completely-rottable branch is now selected independently.
+Seed11 uses controlled `#polyself` to become a wood golem, then takes a
+brown-pudding bite.  Native form construction uses fixed `golemhp()` 50 with
+no HP dice, breaks the magic-resistance cloak clasp and drops the cloak, and
+sets form AC four.  At input54 the bite owns `d(0,0)`, then
+`completelyrots()` publishes `You rot!`, rehumanizes before any armor-slot
+draw, and rejoins shared knockback.  The complete line is `The brown pudding
+bites!  You rot!  You return to human form!`; human HP12/12 and AC10 are
+restored, while the cloak remains on the floor.  All 129 states are exact from
+input3 onward.  Ordinary worn and polymorphed-hero AD_DCAY are therefore both
+closed; the analogous iron-golem `completelyrusts()` branch remains distinct.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level
@@ -29796,3 +29803,37 @@ state and vision rebuild remain before prose; trap, tunneling, pickup,
 concealment and trailing `distfleeck()` resume afterward.  This preserves both
 silent/no-pager behavior and exact backpressure attribution.  Door explosions
 share the structural boundary but retain their own damage/death witnesses.
+
+## 830. Controlled golem form construction precedes erosion-form death
+
+```mermaid
+flowchart TD
+    Cmd["Wizard #polyself wood golem"] --> Form["polymon installs form metadata"]
+    Form --> HP["golemhp wood = 50; no d(7,8)"]
+    HP --> Break{"breakarm large/non-humanoid form"}
+    Break --> Cloak["clasp breaks; Cloak_off; drop cloak on floor"]
+    Cloak --> Live["wood-golem form AC 4, HD 7, HP 50"]
+    Live --> Bite["brown-pudding AD_DCAY hitmsg and d(0,0)"]
+    Bite --> Rot{"completelyrots current form?"}
+    Rot -->|"wood or leather golem"| Notice["You rot!"]
+    Notice --> Human["rehumanize restores saved body, HP, AC, sight, capacity"]
+    Human --> Return["You return to human form!"]
+    Return --> Tail["shared knockback; no erode_armor slot draw"]
+    Rot -->|"ordinary form"| Armor["section827 worn-armor reservoir"]
+    Lua["Lua owns neither form nor erosion policy"] -.-> Cmd
+```
+
+Form construction is part of the authoritative witness.  Before this block,
+JavaScript used generic monster-level d8 HP for every non-dragon form, adding
+`d(7,8)=29` where native used fixed golem HP.  It also omitted `break_armor()`
+for the large wood golem, leaving the cloak worn and suppressing the clasp
+line.  The port now uses the source golem HP table and the source
+large/non-humanoid break predicate for the selected generic-cloak case.
+
+AD_DCAY checks the live form only after hitmsg and cancellation.  The form
+branch is resumable: `You rot!` can page before rehumanization, after which the
+return-to-race and encumbrance messages are ordinary continuations.  In the
+selected short line all three messages combine without a pager, state becomes
+human before knockback, and armor selection is skipped.  Suit destruction,
+shirt shredding, special mummy/alchemy cloaks and other golem species retain
+separate equipment-message witnesses despite sharing fixed HP metadata.

@@ -21,14 +21,21 @@ const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00006000;
 const M1_FLY = 0x00000001;
+const M1_HUMANOID = 0x00020000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
 const M2_STRONG = 0x04000000;
 const MZ_SMALL = 1;
 const MZ_HUMAN = 2;
+const MZ_LARGE = 3;
 const S_DRAGON = 30;
 const MAXULEV = 30;
+const GOLEM_HIT_POINTS = new Map([
+    [249, 20], [250, 20], [251, 30], [252, 60], [253, 40],
+    [254, 50], [255, 40], [256, 70], [257, 100], [258, 80],
+    [259, 120],
+]);
 const OLFACTIONLESS_SYMBOLS = new Set([
     2,  // S_BLOB
     5,  // S_EYE
@@ -237,7 +244,9 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     }
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
-    if (MONSTER_SYMBOL[mnum] === S_DRAGON && monsterLevel > 0)
+    const golemHitPoints = GOLEM_HIT_POINTS.get(mnum);
+    if (golemHitPoints) u.mhmax = golemHitPoints;
+    else if (MONSTER_SYMBOL[mnum] === S_DRAGON && monsterLevel > 0)
         u.mhmax = 4 * monsterLevel + d(monsterLevel, 4);
     else u.mhmax = monsterLevel > 0 ? d(monsterLevel, 8) : rnd(4);
     u.mh = u.mhmax;
@@ -273,14 +282,23 @@ export async function polyselfControlledMonster(mnum) {
         : `You turn into a ${monsterName}!`;
     const cloak = game.uarmc || game.u?.uarmc;
     const weapon = game.uwep || game.u?.uwep;
-    const slipsArmor = (MONSTER_SIZE[mnum] ?? MZ_HUMAN) <= MZ_SMALL;
+    const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
+    const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
+    const slipsArmor = formSize <= MZ_SMALL;
+    const breaksArmor = formSize >= MZ_LARGE
+        || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID));
     const noHands = heroHasNoHands(game);
 
     const currentCapacity = nearCapacity(game);
     game._encumbranceLevel = currentCapacity;
     game.u._encumbrance = encumbranceLabel(currentCapacity);
 
-    if (slipsArmor && cloak) {
+    if (breaksArmor && cloak) {
+        await pline(
+            `${formMessage}  The clasp on your cloak breaks open!`,
+        );
+        dropCarriedObject(cloak, ['uarmc']);
+    } else if (slipsArmor && cloak) {
         await moreUntilDismissed(
             `${formMessage}  You shrink out of your cloak!--More--`,
         );
