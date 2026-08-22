@@ -4,7 +4,8 @@
 import { game } from './gstate.js';
 import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    FUMBLE_BOOTS, RIN_PROTECTION, SHIELD_OF_DRAIN_RESISTANCE,
+    FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
+    SHIELD_OF_DRAIN_RESISTANCE,
     OBJECT_NAMES, OBJECT_SPELL_LEVEL,
 } from './object_data.js';
 import { rnd } from './rng.js';
@@ -58,6 +59,19 @@ export function heroHasDrainResistance(state = game) {
     const shield = state?.uarms || hero.uarms;
     return !!(hero.drainResistance || hero.drain_resistance
         || shield?.otyp === SHIELD_OF_DRAIN_RESISTANCE);
+}
+
+// C youprop.h:Free_action includes the oc_oprop installed by either worn ring.
+// Derive ring ownership from the live slots for the same lifecycle reason as
+// shield-based drain resistance: taking the accessory off must remove the
+// effect without an independently maintained boolean.
+export function heroHasFreeAction(state = game) {
+    const hero = state?.u || {};
+    const left = state?.uleft || hero.uleft;
+    const right = state?.uright || hero.uright;
+    return !!(hero.freeAction || hero.free_action
+        || left?.otyp === RIN_FREE_ACTION
+        || right?.otyp === RIN_FREE_ACTION);
 }
 
 // do_wear.c's *_on() callbacks distinguish the physical worn property from

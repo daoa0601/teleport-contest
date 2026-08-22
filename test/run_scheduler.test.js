@@ -9092,6 +9092,73 @@ test('seed0011 abbot paralysis schedules fatal retry then replaces its debt',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 free-action ring reduces abbot paralysis to one turn',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nTb     #levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nuncursed +2 ring of free action\n'
+                + 'Pkl #wizgenesis\nhostile abbot\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 190);
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'k - a tiger eye ring.');
+        assert.equal(decodedTopline(result.getScreens()[110]),
+            'k - a tiger eye ring (on left hand).');
+
+        assertRngSliceExact(result.getRngSlices()[163], [
+            'rn2(5)=2', 'rnd(20)=1', 'd(8,2)=13',
+            'rn2(3)=0', 'rn2(6)=0', 'rnd(21)=2',
+            'd(3,2)=4', 'rn2(4)=3', 'rn2(3)=0', 'rn2(6)=3',
+            'rn2(7)=3', 'rn2(70)=13', 'rn2(5)=2',
+            'rn2(20)=9', 'rn2(5)=1', 'rn2(12)=2',
+            'rn2(12)=7', 'rn2(12)=8', 'rn2(70)=29',
+            'rn2(100)=30', 'rn2(400)=159', 'rn2(20)=16',
+            'rn2(70)=38',
+        ], 'seed0011 visible abbot spell fumble and tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[163]),
+            'The abbot hits!  The abbot kicks!  The air crackles around the abbot.');
+
+        assertRngSliceExact(result.getRngSlices()[181], [
+            'rn2(5)=3', 'rnd(20)=13', 'd(8,2)=10',
+            'rn2(3)=0', 'rn2(6)=0', 'rnd(21)=10',
+            'd(3,2)=4', 'rn2(4)=2', 'rn2(3)=0', 'rn2(6)=1',
+            'rn2(7)=4', 'rn2(70)=58', 'd(4,6)=12',
+        ], 'seed0011 free-action paralyze cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[181]),
+            'The abbot hits!  The abbot kicks!  The abbot casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[181], 23),
+            'Dlvl:1 $:1540 HP:24(140) Pw:260(260) AC:10 Xp:30 Stun');
+
+        assertRngSliceExact(result.getRngSlices()[182], [
+            'rn2(5)=4', 'rn2(24)=2', 'rn2(5)=3', 'rn2(5)=2',
+            'rn2(20)=10', 'rn2(5)=2', 'rn2(12)=0',
+            'rn2(12)=7', 'rn2(12)=11', 'rn2(70)=44',
+            'rn2(100)=53', 'rn2(400)=200', 'rn2(20)=12',
+            'rn2(70)=46',
+        ], 'seed0011 resisted paralyze and one-turn recovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[182]),
+            'You stiffen briefly.  You can move again.');
+        assert.equal(decodedRow(result.getScreens()[182], 23),
+            'Dlvl:1 $:1540 HP:23(140) Pw:260(260) AC:10 Xp:30 Stun');
+
+        assert.equal(game.uleft?.otyp, 192);
+        assert.equal(game.u.uhp, 23);
+        assert.equal(game.u.uhpmax, 140);
+        assert.equal(game._helplessTurns, 0);
+        assert.equal(game._helplessReason, null);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

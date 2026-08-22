@@ -85902,3 +85902,46 @@ current witness.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:49 EEST, journal block 2864] {#abbot #cleric-spell #paralyze #free-action #ring #accessory-property #uncharged-ring #enchantment-display #spell-fumble #air-crackles #negative-multi #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Resistance contract and carrier:** a worn ring of free action is the
+smallest real source for the resistant `mcast_paralyze()` arm.  C must still
+select the spell, pay the fumble check and pre-roll damage, and publish the
+cast line.  Free_action then changes both paralysis duration and HP damage to
+one; `unmul()` supplies the default recovery message after that one global
+turn.  A stale hero boolean would be insufficient because removing the ring
+must remove the property.
+
+**Setup and prerequisite divergences:** seed11 level-30 Healer removes gloves,
+wishes an uncursed +2 free-action ring, wears it left, then creates a hostile
+abbot.  The first replay diverged at input110 because JS showed `+2 tiger eye
+ring`; native hides the meaningless enchantment for this unidentified,
+uncharged ring.  Shared inventory naming now requires both known state and
+`oc_charged` before showing weapon/armor/ring enchantment, while the already-
+known protection ring and armor siblings retain their bonuses.  Replay then
+reached input163, where a successful `rn2(70)=13` spell fumble needed source
+`The air crackles around the abbot.` rather than silent cast failure.
+
+**Decisive native evidence and implementation:** input181 consumes claw10,
+kick4, `rn2(7)=4,rn2(70)=58,d(4,6)=12`, then stops at the cast pager with HP24.
+Input182 contains only the ordinary maintenance tail after the spell effect;
+the screen is `You stiffen briefly.  You can move again.`, HP23, and no next
+abbot attack.  The paralyze owner now gives nomul its default recovery prose.
+`heroHasFreeAction()` combines intrinsic state with live `uleft`/`uright`
+identity and is used by both monster paralysis and sleeping-potion vapor.
+All **190 native states** are exact; the recorder took **0.08 seconds** at
+**54,444,032 bytes maximum RSS**.
+
+**Measured acceptance, falsifications and next blocker:** resistant and
+unresisted paralyze plus protection-ring and shield presentation siblings pass
+**4/4** fixture-disabled in **0.27 seconds** at **136,069,120 bytes max RSS**;
+all processes exited.  This falsifies skipping the pre-roll under resistance,
+zero-damage free action and displaying every parsed enchantment.  Section835
+and the ledger now close worn Free_action.  Select antimagic only if it adds a
+distinct observable; otherwise use a half-spell-damage carrier to prove the
+rounded duration/damage branch.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

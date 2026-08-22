@@ -30358,3 +30358,21 @@ its kick on input133, maintenance clears that one-turn debt, and input134 emits
 values never enter tty.  The complete 138-state abbot recording is exact.
 Antimagic/free-action and half-spell-damage paralyze controls remain separate
 from this selected unresisted carrier.
+
+A worn free-action ring closes the first resistance arm.  The controlled
+Healer removes gloves, wears type192 on the left hand, and reaches native
+input181 with a paralyze cast.  The ring is an uncharged property carrier, so
+its unidentified tiger-eye presentation deliberately hides the wished +2;
+shared naming now requires a known, actually charged weapon/armor/ring before
+showing enchantment.  Input163 also closes successful-spell fumble prose:
+after `rn2(70)=13`, the visible caster produces
+`The air crackles around the abbot.` and no spell damage.
+
+At inputs181/182, C still pays `d(4,6)=12` and pages on the cast line, but
+Free_action makes `mcast_paralyze()` use one for both negative multi and HP
+damage.  The one allocated global turn immediately reaches `unmul()`'s default
+`You can move again.`, so native combines `You stiffen briefly.` and recovery
+on one line; HP24→23 and no extra abbot action occurs.  `heroHasFreeAction()`
+derives the property from either live ring slot (or existing intrinsic state),
+and the same query protects sleeping-potion vapor.  All 190 states are exact.
+Antimagic and half-spell-damage remain unselected controls.

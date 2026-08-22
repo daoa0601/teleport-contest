@@ -104,7 +104,7 @@ import { rehumanizeHero } from './polyself.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
-    projectedArmorClass,
+    heroHasFreeAction, projectedArmorClass,
 } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
@@ -2432,7 +2432,7 @@ async function resolveErosionFormRehumanization(
 async function resumeOffensivePotionVapor(potion) {
     if (!potion || potion.object?.otyp !== POT_SLEEPING) return;
 
-    if (!game.u?.freeAction && !game.u?.sleepResistance) {
+    if (!heroHasFreeAction(game) && !game.u?.sleepResistance) {
         await queueTurnMessage('You feel rather tired.');
         game._helplessTurns = rnd(5);
         game._helplessReason = 'sleeping off a magical draught';
@@ -3161,7 +3161,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (heroAttack.kind === 'hero-spell') {
                         if (!heroAttack.cast) {
                             let curseMessage = null;
-                            if (heroAttack.curseKind === 'audible') {
+                            if (heroAttack.fumbled && !game.deaf
+                                && canProjectMonster(
+                                    monster, monster.mx, monster.my,
+                                )) {
+                                curseMessage = `The air crackles around the ${
+                                    quietMonsterName(monster)
+                                }.`;
+                            } else if (heroAttack.curseKind === 'audible') {
                                 curseMessage = 'You hear a mumbled curse.';
                             } else if (heroAttack.curseKind) {
                                 const caster = visibleMonsterSubject(monster);

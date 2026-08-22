@@ -155,10 +155,10 @@ export function inventoryItemDescription(item) {
     if (item.poisoned || item.opoisoned) parts.push('poisoned');
     parts.push(...itemErosionWords(item));
     if (item.rustproof) parts.push('rustproof');
-    const visibleEnchantment = Number.isInteger(item.enchantment)
-        ? item.enchantment
-        : item.known && [2, 3, 4].includes(item.oclass)
-            && Number.isInteger(item.spe) ? item.spe : null;
+    const enchantment = Number.isInteger(item.enchantment)
+        ? item.enchantment : Number.isInteger(item.spe) ? item.spe : null;
+    const visibleEnchantment = item.known && OBJECT_CHARGED[item.otyp]
+        && [2, 3, 4].includes(item.oclass) ? enchantment : null;
     if (Number.isInteger(visibleEnchantment)) {
         parts.push(`${visibleEnchantment >= 0 ? '+' : ''}${visibleEnchantment}`);
     }

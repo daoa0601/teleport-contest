@@ -108,6 +108,7 @@ export const RIN_PROTECTION = 178;
 export const RIN_REGENERATION = 179;
 export const RIN_CONFLICT = 186;
 export const RIN_FIRE_RESISTANCE = 189;
+export const RIN_FREE_ACTION = 192;
 export const RIN_SLOW_DIGESTION = 193;
 export const RIN_PROTECTION_FROM_SHAPE_CHANGERS = 200;
 export const AMULET_OF_LIFE_SAVING = 202;

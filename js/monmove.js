@@ -6,7 +6,9 @@ import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
 import { loseExperienceLevel } from './exper.js';
-import { heroHasDrainResistance, heroIsDisplaced } from './armor.js';
+import {
+    heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced,
+} from './armor.js';
 import { nextIdent } from './ident.js';
 import {
     map_invisible, newsym, swallowed, unmap_invisible,
@@ -332,7 +334,7 @@ function monsterSpellEffectPreview(spell, damage, state) {
     } else if (spell.key === 'paralyze') {
         const resisted = !!(state?.u?.antimagic
             || state?.u?.magicResistance || state?.u?.magic_resistance
-            || state?.u?.freeAction || state?.u?.free_action);
+            || heroHasFreeAction(state));
         effectMessage = resisted
             ? 'You stiffen briefly.' : 'You are frozen in place!';
     }
@@ -7432,7 +7434,7 @@ export function resumeDeferredHeroSpell(action, state) {
     if (attack.spell === 'paralyze') {
         const resisted = !!(state.u?.antimagic
             || state.u?.magicResistance || state.u?.magic_resistance
-            || state.u?.freeAction || state.u?.free_action);
+            || heroHasFreeAction(state));
         const monsterLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
         let duration = resisted ? 1 : 4 + monsterLevel;
@@ -7440,7 +7442,7 @@ export function resumeDeferredHeroSpell(action, state) {
             duration = Math.trunc((duration + 1) / 2);
         state._helplessTurns = duration;
         state._helplessReason = 'paralyzed by a monster';
-        state._helplessDoneMessage = '';
+        state._helplessDoneMessage = 'You can move again.';
         const wasPolymorphed = Upolyd(state?.u);
         applyHeroContactDamage(state, duration);
         attack.appliedDamage = duration;

@@ -12502,3 +12502,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   restores both.  Four focused scheduler tests pass fixture-disabled in 0.25
   seconds and three prayer/savelife units pass.  Resistant and half-damage
   paralyze controls remain open.
+- Seed11 closes worn Free_action against the same abbot with a real type192
+  ring on the left hand.  Two earlier source prerequisites were kept at their
+  true owners: unidentified uncharged rings no longer expose a wished +2, and
+  a visible successful-spell fumble emits `The air crackles around the abbot.`
+  at input163.  Inputs181/182 pay the paralyze cast and pre-roll, then the ring
+  selects one damage/one helpless turn, `You stiffen briefly.`, and immediate
+  default recovery with no extra abbot action.  All 190 states are exact.
+  Free action is derived from live accessory slots and is shared with sleeping
+  potion vapor.  The resistant/unresisted plus protection-ring and shield
+  naming siblings pass 4/4 fixture-disabled in 0.27 seconds.  Antimagic and
+  half-spell-damage paralyze controls remain open.
