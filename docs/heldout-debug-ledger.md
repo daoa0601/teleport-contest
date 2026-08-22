@@ -11983,3 +11983,26 @@ attempt: **402 calls**, not a direct two-pass retry.
   3/3 in 0.26 seconds at 131,301,376 bytes maximum RSS.  The one owned managed
   family passes 131/131 in 2.45 seconds at 352,878,592 bytes maximum RSS; all
   runners exited.  Worn-armor AD_CORR is the next adjacent source owner.
+- Seed11 closes monster-to-hero AD_CORR through a real black-pudding bite and
+  worn helmet.  The native input orders attack `rnd(20)=4`, declared
+  `d(3,8)=12`, head-slot `rn2(5)=0`, corrosion prose/state, shared knockback
+  `rn2(3)=2,rn2(6)=5`, and later actor/global work.  The helmet changes only
+  secondary `oeroded2` from zero to one, AC changes from four to five, and the
+  hero survives at 3/15 HP.  All 140 states replay exactly from input3 onward
+  in 0.19 seconds at 123,551,744 bytes maximum RSS.
+
+  The implementation parameterizes the existing resumable armor-erosion owner
+  by rust versus corrosion instead of duplicating its five-way selector.
+  Corrosion retains iron-or-copper vulnerability, secondary erosion state and
+  corrosion wording; the shared message-before-state and retry rules remain
+  intact.  A status-only projected AC preserves old combat `uac` for later
+  actors until once-per-input `find_ac()` commits the new value.  This witness
+  also corrected stale ogre gender-name keys 208/209 to 204/205, which had
+  mislabeled black-pudding contact as an ogre-king bite.
+
+  Focused passes 1/1 in 0.22 seconds at 129,155,072 bytes maximum RSS; the
+  rust/corrosion sibling gate passes 8/8 in 0.31 seconds at 137,740,288 bytes;
+  armor projection passes 5/5 in 0.06 seconds at 55,918,592 bytes.  The one
+  owned managed family passes 132/132 in 2.47 seconds at 348,962,816 bytes
+  maximum RSS and exits cleanly.  Corrosion grease/proof/blessing and degree
+  controls on worn armor remain separate successors.

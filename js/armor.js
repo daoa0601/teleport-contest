@@ -259,7 +259,7 @@ function protectionItemBonus(object, expectedType) {
 
 // Rebuild current AC from authoritative equipment state. The default base is
 // human AC 10; polymorph can supply `formArmorClass` without changing callers.
-export function findArmorClass(state = game) {
+export function projectedArmorClass(state = game) {
     const hero = state.u || (state.u = {});
     let armorClass = Number.isInteger(hero.formArmorClass)
         ? hero.formArmorClass
@@ -267,8 +267,6 @@ export function findArmorClass(state = game) {
 
     for (const slot of ARMOR_SLOTS)
         armorClass -= armorBonus(equippedObject(state, slot));
-
-    hero._magicNegation = magicNegation(state);
 
     armorClass -= protectionItemBonus(
         equippedObject(state, 'uleft'), RIN_PROTECTION,
@@ -283,7 +281,12 @@ export function findArmorClass(state = game) {
         armorClass -= hero.ublessed || 0;
     armorClass -= hero.uspellprot || hero.spellProtection || 0;
 
-    armorClass = Math.max(-AC_MAX, Math.min(AC_MAX, armorClass));
-    hero.uac = armorClass;
-    return armorClass;
+    return Math.max(-AC_MAX, Math.min(AC_MAX, armorClass));
+}
+
+export function findArmorClass(state = game) {
+    const hero = state.u || (state.u = {});
+    hero._magicNegation = magicNegation(state);
+    hero.uac = projectedArmorClass(state);
+    return hero.uac;
 }

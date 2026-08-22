@@ -29532,10 +29532,10 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-131/131 after the paired rust/corrosion material, protection, degree,
+132/132 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
-rust/grease/proof/blessing/degree rows.
+rust/grease/proof/blessing/degree and corrosion-bite rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29543,3 +29543,60 @@ dispatch and lower-Mohs omission.  FLINT's separate hard condition remains an
 explicit selected term; projectile object passives are mapped separately in
 section 774.  Lua owns neither selection nor launcher, gift, accuracy, damage,
 skill, wake, survival, destruction or settlement policy.
+
+## 827. Hero-contact rust and corrosion share armor selection but not state
+
+```mermaid
+flowchart TD
+    Species["monsters.h attack declaration"] --> Rust["rust monster touch: AD_RUST 0d0"]
+    Species --> Corr["black pudding bite: AD_CORR 3d8"]
+    Rust --> Damage["hitmu rolls declared damage"]
+    Corr --> Damage
+    Damage --> Hitmsg["mhitm_ad_rust/corr publishes hitmsg"]
+    Hitmsg --> Cancel{"attacker cancelled?"}
+    Cancel -->|"yes"| Tail["shared knockback then HP damage"]
+    Cancel -->|"no"| Slots["erode_armor five-way slot reservoir"]
+    Slots --> Head["head/shield/gloves/boots retry ER_NOTHING"]
+    Slots --> Body["body stops after cloak/suit/shirt attempt"]
+    Head --> Erode["erode_obj message before state finalization"]
+    Body --> Erode
+    Erode --> RustState["rust: iron, oeroded, oxidation/rust prose"]
+    Erode --> CorrState["corrosion: iron or copper, oeroded2, corrosion prose"]
+    RustState --> AC["find_ac projects greatest erosion after actor/global work"]
+    CorrState --> AC
+    AC --> Tail
+    Lua["Lua level geometry and initial actor placement"] -. "no effect-policy ownership" .-> Species
+```
+
+The shared boundary is `erode_armor()`, not a claim that AD_RUST and AD_CORR
+are interchangeable.  Both damage types use the same random five-way armor
+reservoir and the same grease/proof/blessing control order.  Rust accepts only
+iron material, mutates primary `oeroded`, and speaks about oxidation and
+rusting.  Corrosion accepts iron or copper, mutates secondary `oeroded2`, and
+speaks about corrosion and corroding.  `ARM_BONUS()` subtracts the greater of
+the two erosion degrees, capped by the armor's base contribution.
+
+The attack owners also differ.  A rust-monster touch declares zero damage, so
+its accepted path reaches armor and the common knockback probes without an HP
+change.  A black-pudding bite declares 3d8: `hitmu()` rolls that amount before
+`mhitm_ad_corr()` publishes contact and erodes armor, then shared knockback and
+HP subtraction occur afterward.  A tty pager can split hitmsg, armor prose,
+state mutation and the common tail across inputs, so the port retains one
+resumable armor transaction and parameterizes only vulnerability, state field
+and wording.  Combat `uac` remains stable for later actors in the same
+`movemon()` scan; a status-only projected AC bridges a no-pager erosion line
+until the ordinary once-per-input `find_ac()` boundary commits it.
+
+Seed11 selects the compact corrosion arm.  Native input137 consumes
+`rn2(5)=0`, bite `rnd(20)=4`, `d(3,8)=12`, then head slot `rn2(5)=0`; it
+publishes `The black pudding bites!  Your visored helmet corrodes!`, changes
+only `oeroded2` from zero to one, projects AC 4 to 5, pays shared
+`rn2(3)=2,rn2(6)=5`, and leaves the hero at 3/15 HP.  All 140 states replay
+exactly from input3 onward.  The same witness exposed a stale hard-coded
+gender-name map: indices 208/209 now belong to puddings, while ogre leader and
+tyrant are 204/205.  Correcting those keys restores the black-pudding subject
+without changing generated neutral monster names.
+
+Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
+HP policy in this transaction.  Its relevant contribution ends at level
+geometry and the initial placement cells consumed by the C actor graph.

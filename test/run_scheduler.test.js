@@ -6657,6 +6657,59 @@ test('seed0053 orcish arrow leaves max-rust helmet silent and retries cloak',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 orcish arrow provokes black-pudding bite corrosion',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed +2 helmet\nWh'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful black pudding\n'
+                + 'ail tglm.  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 140);
+        assertRngSliceExact(result.getRngSlices()[137], [
+            'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
+            'rn2(3)=2', 'rn2(6)=5', 'rn2(5)=3', 'rn2(24)=0',
+            'rn2(5)=4', 'rn2(4)=2', 'rn2(3)=1', 'rn2(3)=1',
+            'rn2(5)=1', 'rn2(5)=4', 'rn2(4)=1', 'rn2(5)=1',
+            'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=0',
+            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1', 'rn2(5)=2',
+            'rn2(4)=0', 'rn2(20)=4', 'rn2(5)=2', 'rn2(12)=5',
+            'rn2(12)=1', 'rn2(12)=2', 'rn2(12)=1', 'rn2(12)=8',
+            'rn2(12)=6', 'rn2(70)=52', 'rn2(100)=19',
+            'rn2(400)=97', 'rn2(300)=216', 'rn2(20)=4', 'rn2(73)=30',
+        ], 'seed0011 worn-helmet corrosion bite and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[137]),
+            'The black pudding bites!  Your visored helmet corrodes!');
+        assert.deepEqual(result.getCursors()[137], [70, 5, 1]);
+
+        assert.ok(game.uarmh);
+        assert.deepEqual({
+            type: game.uarmh.otyp,
+            enchantment: game.uarmh.spe,
+            rust: game.uarmh.oeroded ?? 0,
+            corrosion: game.uarmh.oeroded2 ?? 0,
+        }, {
+            type: HELMET,
+            enchantment: 2,
+            rust: 0,
+            corrosion: 1,
+        });
+        assert.equal(game.u.uac, 5);
+        assert.equal(game.u.uhp, 3);
+        assert.equal(game.u.uhpmax, 15);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

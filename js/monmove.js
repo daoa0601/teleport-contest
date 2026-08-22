@@ -5,7 +5,7 @@
 import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
-import { heroIsDisplaced } from './armor.js';
+import { heroIsDisplaced, projectedArmorClass } from './armor.js';
 import { nextIdent } from './ident.js';
 import {
     map_invisible, newsym, swallowed, unmap_invisible,
@@ -6205,6 +6205,22 @@ function basicMonsterAttack(
             deferredRustArmor: !monster.mcan,
             deferredPostHit: !!monster.mcan,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_CORR) {
+        // uhitm.c:mhitm_ad_corr() keeps the bite's declared 3d8 damage, but
+        // hitmsg() and erode_armor(ERODE_CORRODE) both precede the common
+        // knockback and HP-damage tail.  Keep armor erosion resumable across
+        // tty exactly as for rust without conflating primary/secondary state.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType,
+            effect: monster.mcan
+                ? 'cancelled-corrosion-natural' : 'corrosion-natural',
+            oldFormMnum,
+            deferredCorrosionArmor: !monster.mcan,
+            deferredPostHit: !!monster.mcan,
+        }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))
         && damageType === AD_PHYS
@@ -6589,7 +6605,8 @@ function heroWornArmor(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
 }
 
-function heroArmorRustResult(object, verbose, state, random, calls) {
+function heroArmorErosionResult(object, verbose, erosionKind) {
+    const corrosion = erosionKind === 'corrosion';
     const objectName = object.name || object.description
         || OBJECT_NAMES[object.otyp] || 'armor';
     if (object.greased) {
@@ -6600,50 +6617,62 @@ function heroArmorRustResult(object, verbose, state, random, calls) {
         };
     }
 
-    const rustProne = (OBJECT_MATERIAL[object.otyp] ?? 0) === 11;
-    const proof = !!(object.oerodeproof || object.rustproof);
-    if (!rustProne || proof && object.rknown) {
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const vulnerable = corrosion
+        ? material === 11 || material === 13
+        : material === 11;
+    const proof = !!(object.oerodeproof
+        || (corrosion ? object.corrodeproof : object.rustproof));
+    const cause = corrosion ? 'corrosion' : 'oxidation';
+    if (!vulnerable || proof && object.rknown) {
         return {
             result: 'nothing',
             message: verbose
-                ? `Your ${objectName} is not affected by oxidation.` : null,
+                ? `Your ${objectName} is not affected by ${cause}.` : null,
         };
     }
     if (proof || object.blessed && rnl(4) === 0) {
         return {
             result: 'nothing',
             message: proof
-                ? `Somehow, your ${objectName} is not affected by the oxidation.`
+                ? `Somehow, your ${objectName} is not affected by the ${cause}.`
                 : null,
             finalize: proof ? { kind: 'proof', object } : null,
         };
     }
 
-    const oldRust = object.oeroded ?? 0;
-    if (oldRust >= 3) {
+    const field = corrosion ? 'oeroded2' : 'oeroded';
+    const oldErosion = object[field] ?? 0;
+    if (oldErosion >= 3) {
         return {
             result: 'nothing',
             message: verbose
-                ? `Your ${objectName} looks completely rusted.` : null,
+                ? `Your ${objectName} looks completely ${
+                    corrosion ? 'corroded' : 'rusted'
+                }.` : null,
         };
     }
-    const adverb = oldRust + 1 === 3
-        ? ' completely' : oldRust ? ' further' : '';
+    const adverb = oldErosion + 1 === 3
+        ? ' completely' : oldErosion ? ' further' : '';
     return {
         result: 'damaged',
-        message: `Your ${objectName} rusts${adverb}!`,
-        finalize: { kind: 'damage', object, oldRust },
+        message: `Your ${objectName} ${
+            corrosion ? 'corrodes' : 'rusts'
+        }${adverb}!`,
+        finalize: { kind: 'damage', object, field, oldErosion },
     };
 }
 
-// Resume mhitm_ad_rust()->erode_armor() after hitmsg() has crossed any tty
-// boundary.  Head/shield/glove/boot candidates retry on ER_NOTHING; body slot
-// selection stops after its cloak/suit/shirt attempt even when non-rustable.
-export function resumeDeferredHeroRustArmor(
-    action, state, random = rn2,
+// Resume mhitm_ad_{rust,corr}()->erode_armor() after hitmsg() has crossed any
+// tty boundary.  Head/shield/glove/boot candidates retry on ER_NOTHING; body
+// selection stops after its cloak/suit/shirt attempt even when non-vulnerable.
+function resumeDeferredHeroArmorErosion(
+    action, state, erosionKind, random = rn2,
 ) {
     const attack = action?.movement?.attack;
-    if (!attack?.deferredRustArmor) return null;
+    const deferredField = erosionKind === 'corrosion'
+        ? 'deferredCorrosionArmor' : 'deferredRustArmor';
+    if (!attack?.[deferredField]) return null;
     const calls = action.calls;
     let message = null;
     let finalize = null;
@@ -6674,9 +6703,7 @@ export function resumeDeferredHeroRustArmor(
             if (bodySlot) break;
             continue;
         }
-        const erosion = heroArmorRustResult(
-            target, verbose, state, random, calls,
-        );
+        const erosion = heroArmorErosionResult(target, verbose, erosionKind);
         message = erosion.message;
         finalize = erosion.finalize;
         continueArmor = !bodySlot && erosion.result === 'nothing';
@@ -6687,23 +6714,37 @@ export function resumeDeferredHeroRustArmor(
         if (bodySlot || erosion.result !== 'nothing') break;
     }
 
-    attack.deferredRustArmor = false;
-    attack.deferredRustArmorFinalize = {
+    attack[deferredField] = false;
+    attack.deferredArmorErosionFinalize = {
         ...(finalize || { kind: 'none' }),
-        continueArmor,
+        continueArmor, deferredField,
     };
     return { message };
 }
 
+export function resumeDeferredHeroRustArmor(
+    action, state, random = rn2,
+) {
+    return resumeDeferredHeroArmorErosion(action, state, 'rust', random);
+}
+
+export function resumeDeferredHeroCorrosionArmor(
+    action, state, random = rn2,
+) {
+    return resumeDeferredHeroArmorErosion(
+        action, state, 'corrosion', random,
+    );
+}
+
 // Complete erode_obj() only after its first message has crossed tty.  Grease
 // wear and proof learning occur after protection prose; ordinary erosion state
-// likewise commits after the rust line.  A worn-off carried grease layer owns
-// a second independently publishable sentence.
-export function finishDeferredHeroRustArmor(
+// likewise commits after the rust/corrosion line.  A worn-off carried grease
+// layer owns a second independently publishable sentence.
+function finishDeferredHeroArmorErosion(
     action, state, random = rn2,
 ) {
     const attack = action?.movement?.attack;
-    const pending = attack?.deferredRustArmorFinalize;
+    const pending = attack?.deferredArmorErosionFinalize;
     if (!pending) return null;
     let message = null;
     if (pending.kind === 'grease') {
@@ -6714,12 +6755,32 @@ export function finishDeferredHeroRustArmor(
     } else if (pending.kind === 'proof') {
         pending.object.rknown = true;
     } else if (pending.kind === 'damage') {
-        pending.object.oeroded = pending.oldRust + 1;
+        pending.object[pending.field] = pending.oldErosion + 1;
+        // allmain.c projects the changed ARM_BONUS through find_ac() at the
+        // once-per-input boundary after the monster/global transaction.
+        state._armorClassDirty = true;
+        // A no-pager erosion line reaches the next nhgetch before the generic
+        // Ranger scheduler returns to its find_ac boundary.  Project only the
+        // status value now; keep combat uac unchanged for later actors in the
+        // same movemon scan.
+        state._statusProjectedAc = projectedArmorClass(state);
     }
-    delete attack.deferredRustArmorFinalize;
-    if (pending.continueArmor) attack.deferredRustArmor = true;
+    delete attack.deferredArmorErosionFinalize;
+    if (pending.continueArmor) attack[pending.deferredField] = true;
     else attack.deferredPostHit = true;
     return { message };
+}
+
+export function finishDeferredHeroRustArmor(
+    action, state, random = rn2,
+) {
+    return finishDeferredHeroArmorErosion(action, state, random);
+}
+
+export function finishDeferredHeroCorrosionArmor(
+    action, state, random = rn2,
+) {
+    return finishDeferredHeroArmorErosion(action, state, random);
 }
 
 // Resume hitmu() after its concealed-attacker line has crossed tty.  The

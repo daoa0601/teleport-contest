@@ -84399,3 +84399,59 @@ message/state boundary without assuming rust and corrosion share every
 presentation branch.  No corpus, hidden judge, push or publication ran.
 
 ---
+
+### [2026-08-22 16:08 EEST, journal block 2830] {#black-pudding #hero-contact #armor #helmet #corrosion #secondary-erosion #armor-class #monster-name #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and source split:** `monsters.h` gives black pudding a real
+AT_BITE/AD_CORR 3d8 attack in addition to its object passive.  `hitmu()` must
+roll that damage before `mhitm_ad_corr()` publishes contact and calls
+`erode_armor(ERODE_CORRODE)`; the common knockback and HP tail follow armor.
+The selector is shared with rust, but corrosion accepts iron or copper,
+mutates secondary `oeroded2`, uses corrosion prose and can change projected AC.
+
+**Rejected probes and bounded selection:** seed53 first proved the body-slot
+control with armor draws `2,3,1`, cloak non-effect and 12 damage, but never
+selected the helmet.  Five earlier rust carriers and six projectile-passive
+carriers were then rejected when black-pudding placement, a startup actor or
+volley behavior prevented the controlled first bite.  Every native recorder
+ran synchronously and exited in 0.06--0.08 seconds below 57 MB RSS.  A
+setup-only JavaScript selector then found sixteen status/shot/bite carriers in
+**12.97 seconds** at **347,750,400 bytes maximum RSS**; its process exited
+before any native follow-up began.
+
+**Native witness and earliest divergences:** six selected candidates were
+recorded natively.  Seed11 is the compact direct-head carrier: input137 owns
+`rn2(5)=0`, `rnd(20)=4`, `d(3,8)=12`, head `rn2(5)=0`, shared knockback
+`rn2(3)=2,rn2(6)=5` and the exact actor/global suffix.  Native displays
+`The black pudding bites!  Your visored helmet corrodes!`, changes only the
+helmet's secondary erosion zero→one, changes AC four→five and leaves the hero
+at 3/15 HP.  JavaScript's first semantic divergence was the missing AD_CORR
+damage/armor owner.  Once added, the first display divergence exposed stale
+gender-name keys which mapped pudding index209 to `ogre king`; ogre leader and
+tyrant now correctly occupy 204/205.  The next and final divergence was cached
+AC four on the same screen after durable corrosion had already committed.
+
+**Implementation and ordering decision:** rust and corrosion now share one
+resumable armor-selector/finalizer parameterized by vulnerability, primary or
+secondary field and wording.  AD_CORR retains its declared damage and defers
+the armor transaction between hitmsg and the common tail.  Erosion marks the
+once-per-input AC owner dirty.  A pure projected-AC calculation supplies a
+status-only bridge for no-pager erosion while preserving the old combat `uac`
+for later actors in the same `movemon()` scan; ordinary `find_ac()` commits the
+new value after actor/global work.  This avoids duplicating the slot loop or
+changing same-scan hit thresholds.
+
+**Measured acceptance and next blocker:** the 140-state native recording took
+**0.06 seconds** at **54,558,720 bytes maximum RSS** and replays exactly from
+input3 onward in **0.19 seconds** at **123,551,744 bytes**.  The focused
+regression passes **1/1** in **0.22 seconds** at **129,155,072 bytes**; the
+adjacent rust/corrosion gate passes **8/8** in **0.31 seconds** at
+**137,740,288 bytes**; armor projection passes **5/5** in **0.06 seconds** at
+**55,918,592 bytes**.  The one owned managed family passes **132/132** in
+**2.47 seconds** at **348,962,816 bytes maximum RSS** and exits cleanly.
+Section827 and the ledger map the new owner.  Next select worn-armor corrosion
+grease retention/wear, actual proof learning, blessed resistance and degree
+boundaries without inferring them from rust or projectile passives.  No full
+corpus, hidden judge, push or publication ran.
+
+---

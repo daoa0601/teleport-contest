@@ -1350,7 +1350,8 @@ export function _statusLine2() {
         ?? (polymorphed ? u.mh : u.uhp) ?? 0;
     const maximumHp = polymorphed ? u.mhmax : u.uhpmax;
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
-    const displayedAc = game._statusAcOverride ?? u.uac ?? 10;
+    const displayedAc = game._statusAcOverride
+        ?? game._statusProjectedAc ?? u.uac ?? 10;
     const displayedGold = game._statusGoldOverride
         ?? game._goldCount ?? 0;
     let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp || 0}) Pw:${u.uen || 0}(${u.uenmax || 0}) AC:${displayedAc}`;

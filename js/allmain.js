@@ -67,10 +67,10 @@ import { roles } from './roles.js';
 import {
     allocateMonsterMovement, continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
-    finishDeferredHeroRustArmor,
+    finishDeferredHeroCorrosionArmor, finishDeferredHeroRustArmor,
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
-    resumeDeferredHeroRustArmor,
+    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
@@ -3301,6 +3301,32 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                     }
                 }
+                while (heroAttack.deferredCorrosionArmor) {
+                    const corrosionArmor = resumeDeferredHeroCorrosionArmor(
+                        action, game,
+                    );
+                    if (corrosionArmor?.message) {
+                        const corrosionDismissal = await queueTurnMessage(
+                            corrosionArmor.message,
+                        );
+                        if (corrosionDismissal !== null
+                            && corrosionDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                    const corrosionFinal = finishDeferredHeroCorrosionArmor(
+                        action, game,
+                    );
+                    if (corrosionFinal?.message) {
+                        const dissolveDismissal = await queueTurnMessage(
+                            corrosionFinal.message,
+                        );
+                        if (dissolveDismissal !== null
+                            && dissolveDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                }
                 if (heroAttack.deferredLegEffect)
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
@@ -5171,6 +5197,7 @@ export async function moveloop_core() {
     if (g._armorClassDirty && !g._heroTimePending) {
         findArmorClass(g);
         g._armorClassDirty = false;
+        delete g._statusProjectedAc;
     }
 
     // C's turn maintenance runs once per elapsed turn.  Menus and other
