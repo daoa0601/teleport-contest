@@ -6192,8 +6192,11 @@ async function wizGenesis() {
         if (sleeping) monster.msleeping = 1;
         newsym(monster.mx, monster.my);
         if (canSpotMonster(monster)) {
+            const clericInstance = monster.ispriest || monster.isminion
+                ? visiblePriestName(monster) : null;
             const name = MONSTER_NAME[mnum];
-            const subject = `${indefiniteArticle(name)} ${name}`;
+            const subject = clericInstance
+                || `${indefiniteArticle(name)} ${name}`;
             await pline(
                 `${subject[0].toUpperCase()}${subject.slice(1)} appears next to you.`,
             );

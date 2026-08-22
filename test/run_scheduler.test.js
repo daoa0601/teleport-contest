@@ -9382,6 +9382,75 @@ test('seed0011 damaged abbot defers cure-self prose before 3d6 healing',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 forced high cleric reaches fire-pillar effect boundary',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: ('  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ').slice(0, 103),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 104);
+        assert.equal(decodedTopline(result.getScreens()[91]),
+            'Creating human zombie instead; force high cleric? [yn] (n)');
+        assert.deepEqual(result.getRngSlices()[92].slice(46, 56), [
+            'd(25,8)=102', 'rn2(2)=0', 'rn2(3)=0', 'rn2(3)=0',
+            'rnd(2)=1', 'rnd(3)=3', 'rn2(2)=1', 'rn2(75)=70',
+            'rn2(7)=6', 'rnd(2)=2',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[92]),
+            'The renegade priest of Poseidon appears next to you.');
+
+        assertRngSliceExact(result.getRngSlices()[101], [
+            'rn2(5)=3', 'rnd(21)=1', 'd(2,8)=8',
+        ], 'seed0011 high-cleric wield and kick prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[101]),
+            'The renegade priest of Poseidon wields a mace!--More--');
+        assert.equal(decodedRow(result.getScreens()[101], 23),
+            'Dlvl:1 $:1540 HP:141(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[102], [
+            'rn2(3)=1', 'rn2(6)=3', 'rn2(25)=13',
+            'rn2(5)=0', 'rn2(250)=196',
+        ], 'seed0011 high-cleric kick tail and spell-selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[102]),
+            'The renegade priest of Poseidon kicks!--More--');
+        assert.equal(decodedRow(result.getScreens()[102], 23),
+            'Dlvl:1 $:1540 HP:133(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'd(14,8)=64',
+        ], 'seed0011 fire-pillar pre-roll after cast pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The renegade priest of Poseidon casts a spell at you!--More--');
+
+        const cleric = game.level.monsters.find(monster =>
+            monster.mnum === 276);
+        assert.ok(cleric);
+        assert.equal(cleric.isminion, 1);
+        assert.deepEqual(cleric.emin, {
+            min_align: -1,
+            renegade: true,
+        });
+        assert.equal(cleric.mpeaceful, 0);
+        assert.equal(cleric.mhp, 102);
+        assert.equal(cleric.mhpmax, 102);
+        assert.equal(cleric.mw?.otyp, 73);
+        assert.deepEqual(cleric.minvent.map(object => object.otyp), [
+            73, 143, 150, 438, 333,
+        ]);
+        assert.equal(game.u.uhp, 133);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -30457,3 +30457,38 @@ only after that line returns does source `m_cure_self()` spend `d(3,6)=15`
 and cap the caster at 28/28.  The pre-rolled 15 never touches hero HP.  All 145
 states are exact.  Invisible-caster suppression and partial, non-capping heal
 remain separate presentation/state controls.
+
+## 838. Forced high cleric crosses minion birth and wield before fire pillar
+
+```mermaid
+flowchart TD
+    Genesis["create_particular: hostile high cleric"] --> Force["cant_revive prompt; force yes"]
+    Force --> Birth["makemon level25, 25d8 HP"]
+    Birth --> Minion["newemin: rn2(3) alignment; rn2(3) renegade"]
+    Minion --> Gear["priest mace, robe, shield, gold, offensive item"]
+    Gear --> Name["renegade priest of deity instance name"]
+    Name --> Ready["readyCloseMonsterWeapon: wield mace"]
+    Ready --> Slot1["resume mattacku at kick slot1, not weapon slot0"]
+    Slot1 --> Select["rn2(25); geyser rn2(5) uselessness; fire-pillar selection"]
+    Select --> Cast["long cast line owns tty boundary"]
+    Cast --> Roll["after cast acknowledgement: d(14,8)"]
+    Roll --> Effect["next boundary: fire-pillar prose, 8d6, armor/items"]
+    Lua["Lua owns no constructor or attack phase"] -.-> Genesis
+```
+
+Seed11 forces the high-cleric special-type prompt.  Ordinary creation lacks
+MM_EPRI/MM_EMIN, so source installs a roaming minion before inventory: the two
+zero `rn2(3)` calls produce chaotic alignment and renegade state.  Explicit
+hostility is applied only after construction.  The resulting instance is
+`The renegade priest of Poseidon`, owns 102/102 HP, and carries mace, robe,
+small shield, gold and a fire scroll in exact constructor order.
+
+Runtime wielding is part of the same attack-table transaction.  Input101
+publishes the mace wield and already rolls the slot-one 2d8 kick; attempting
+the longer priest kick line pages the wield line before contact damage.
+Input102 completes knockback/damage, considers geyser, spends `rn2(5)=0` to
+reject it, and passes the fire-pillar fumble check.  The cast line itself then
+pages the kick line before damage.  Input103 contains only `d(14,8)=64` and
+retains the cast pager because the pending pillar prose cannot fit.  All 104
+bounded states are exact.  Fire-pillar 8d6, armor erosion, inventory
+destruction and final HP damage remain the next block.

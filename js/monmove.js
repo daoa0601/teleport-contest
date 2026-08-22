@@ -348,6 +348,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
             effectMessage = (state?.u?.confusionTurns ?? 0) > 0
                 ? 'You feel more confused!' : 'You feel confused!';
         }
+    } else if (spell.key === 'fire-pillar') {
+        effectMessage = 'A pillar of fire strikes all around you!';
     }
     return { effectDamage, effectMessage };
 }
@@ -5868,8 +5870,9 @@ function basicMonsterAttack(
     if (attackType === AT_MAGC
         && (damageType === AD_SPEL || damageType === AD_CLRC)) {
         // mhitu.c:mattacku() enters castmu() without a to-hit die.  Spell
-        // choice, fumble, and base damage all precede the effect message
-        // which can finally suspend the actor behind tty --More--.
+        // choice and fumble precede the casting line.  Base spell damage is
+        // rolled only after that line returns from tty; a long actor name can
+        // therefore move d() to the acknowledgement input.
         let spell = chooseMonsterSpell(
             monster, damageType, state, random, calls,
         );
@@ -5879,12 +5882,12 @@ function basicMonsterAttack(
         }, monster, attackIndex);
         let attempts = 39;
         while (attempts-- > 0
-            && monsterSpellUseless(monster, spell, state)) {
+            && monsterSpellUseless(monster, spell, state, random, calls)) {
             spell = chooseMonsterSpell(
                 monster, damageType, state, random, calls,
             );
         }
-        if (monsterSpellUseless(monster, spell, state)) {
+        if (monsterSpellUseless(monster, spell, state, random, calls)) {
             return retainHeroAttackContinuation({
                 kind: 'hero-spell', threshold, attackType, damageType,
                 attackIndex, spell: spell.key, cast: false,
@@ -5927,16 +5930,10 @@ function basicMonsterAttack(
             ? Math.trunc(monsterLevel / 2) + dice
             : Math.trunc(monsterLevel / 2) + 1;
         const spellSides = sides || 6;
-        let damage = rollDice(spellDice, spellSides);
-        calls.push(`d(${spellDice},${spellSides})`);
-        if (state?.u?.halfSpellDamage || state?.u?.half_spell_damage)
-            damage = Math.trunc((damage + 1) / 2);
-        const preview = monsterSpellEffectPreview(spell, damage, state);
         return retainHeroAttackContinuation({
             kind: 'hero-spell', threshold, attackType, damageType,
-            attackIndex, spell: spell.key, cast: true, damage,
-            effectDamage: preview.effectDamage,
-            spellEffectMessage: preview.effectMessage,
+            attackIndex, spell: spell.key, cast: true,
+            spellDice, spellSides, deferredSpellDamage: true,
             directed: !(spell.flags & MCF_INDIRECT),
             deferredSpellEffect: true,
         }, monster, attackIndex);
@@ -7422,6 +7419,46 @@ export function continueDeferredHeroAttack(
     return attack;
 }
 
+// C mattacku() keeps walking its six-slot table after an AT_WEAP slot spends
+// that slot wielding a replacement.  Resume at the following attack index;
+// beginning a fresh sequence would incorrectly swing the new weapon at slot0.
+export function resumeDeferredHeroAttackAfterWield(
+    action, state, random = rn2, rollDice = d, rollOne = rnd,
+) {
+    const movement = action?.movement;
+    const pending = movement?.deferredHeroWield;
+    if (!pending) return null;
+    delete movement.deferredHeroWield;
+    const attack = basicMonsterAttack(
+        action.monster, state, random, rollOne, rollDice, action.calls,
+        pending.attackIndex + 1, pending.threshold, null, true,
+    );
+    movement.attack = attack;
+    return attack;
+}
+
+// Resume castmu() after the casting line.  Damage is pre-rolled before the
+// concrete effect line, but not before a casting line which itself pages.
+export function rollDeferredHeroSpellDamage(
+    action, state, rollDice = d,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredSpellDamage) return attack;
+    let damage = rollDice(attack.spellDice, attack.spellSides);
+    action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    if (state?.u?.halfSpellDamage || state?.u?.half_spell_damage)
+        damage = Math.trunc((damage + 1) / 2);
+    const spell = (attack.damageType === AD_CLRC
+        ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS)
+        .find(candidate => candidate.key === attack.spell);
+    const preview = monsterSpellEffectPreview(spell, damage, state);
+    attack.damage = damage;
+    attack.effectDamage = preview.effectDamage;
+    attack.spellEffectMessage = preview.effectMessage;
+    attack.deferredSpellDamage = false;
+    return attack;
+}
+
 // Resume mcastu.c:mcast_spell() after its effect message has crossed tty.
 // The first concrete owner is PSI_BOLT; applying its pre-rolled damage can
 // kill only the current monster form, in which case allmain projects the
@@ -7506,7 +7543,7 @@ function heroCanSeeInvisible(state) {
         || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 
-function monsterSpellUseless(monster, spell, state) {
+function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if ((spell.flags & MCF_HOSTILE) && monster.mpeaceful) return true;
     if (spell.key === 'cure-self')
         return (monster.mhp ?? 0) >= (monster.mhpmax ?? 0);
@@ -7519,6 +7556,8 @@ function monsterSpellUseless(monster, spell, state) {
             // same spell table without consuming another selection draw.
             || (!!monster.mpeaceful && !heroCanSeeInvisible(state));
     }
+    if (spell.key === 'geyser')
+        return recordRandom(random, calls, 5) === 0;
     if (spell.key === 'clone-wizard') return !monster.iswiz;
     return false;
 }
@@ -7540,7 +7579,9 @@ function chooseMonsterSpell(monster, damageType, state, random, calls) {
     for (let index = list.length - 1; index >= 0; index--) {
         const spell = list[index];
         if (spell.level <= spellValue
-            && !monsterSpellUseless(monster, spell, state)) return spell;
+            && !monsterSpellUseless(
+                monster, spell, state, random, calls,
+            )) return spell;
     }
     return list[0];
 }
@@ -7561,7 +7602,9 @@ function movementSpellSelections(monster, state, random, calls) {
         // spells miss without spending the action; a successful indirect
         // spell bypasses m_move() and owns the whole actor transaction.
         if (!(spell.flags & MCF_INDIRECT)
-            || monsterSpellUseless(monster, spell, state)) continue;
+            || monsterSpellUseless(
+                monster, spell, state, random, calls,
+            )) continue;
         const monsterLevel = monster.m_lev
             ?? MONSTER_LEVEL[monster.mnum] ?? 0;
         if (monster.mcan || monster.mspec_used || !monsterLevel) {
@@ -7884,6 +7927,10 @@ function finishDochugAfterMovement(
                     movement.actionCompleted = true;
                 } else if (phaseFour.attack?.kind === 'monster-wield') {
                     movement.wieldedWeapon = phaseFour.attack.weapon;
+                    movement.deferredHeroWield = {
+                        attackIndex: phaseFour.attack.attackIndex,
+                        threshold: phaseFour.attack.threshold,
+                    };
                 } else {
                     movement.attack = phaseFour.attack;
                 }
@@ -8167,6 +8214,10 @@ export function quietMonsterActionRng(
                 oldx: monster.mx, oldy: monster.my,
                 x: monster.mx, y: monster.my, moved: false,
                 wieldedWeapon,
+                deferredHeroWield: {
+                    attackIndex: 0,
+                    threshold: null,
+                },
             },
         };
     }
@@ -8240,6 +8291,10 @@ export function quietMonsterActionRng(
             movement.actionCompleted = true;
         } else if (phaseFour.attack?.kind === 'monster-wield') {
             movement.wieldedWeapon = phaseFour.attack.weapon;
+            movement.deferredHeroWield = {
+                attackIndex: phaseFour.attack.attackIndex,
+                threshold: phaseFour.attack.threshold,
+            };
         } else {
             movement.attack = phaseFour.attack;
         }

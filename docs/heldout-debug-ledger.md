@@ -12544,3 +12544,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   hero damage.  All 145 states are exact and the six level-seven abbot effect
   siblings pass fixture-disabled in 0.31 seconds.  Invisible-caster feedback
   and a partial non-capping heal remain open.
+- Seed11 opens the higher cleric tier with a forced hostile high cleric and
+  closes its 104-state prefix.  Wizard genesis forces the special type;
+  ordinary birth pays two `rn2(3)` calls for roaming-minion alignment and
+  renegade state before priest gear, yielding `The renegade priest of
+  Poseidon`, HP102 and exact mace/robe/shield/gold/fire-scroll inventory.
+  Input101 wields the mace and continues at kick slot one; input102 finishes
+  the kick, rejects geyser through `rn2(5)=0`, and selects fire pillar.
+  Input103 rolls 14d8 only after the long cast line's pager.  The prefix and
+  six lower cleric witnesses pass 7/7 fixture-disabled in 0.31 seconds.
+  Fire-pillar 8d6, armor/item destruction and final damage remain open.

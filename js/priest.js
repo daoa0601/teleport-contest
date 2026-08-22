@@ -21,6 +21,10 @@ function priestData(priest) {
     return priest?.epri || priest?.mextra?.epri || null;
 }
 
+function minionData(priest) {
+    return priest?.emin || priest?.mextra?.emin || null;
+}
+
 function priestInOwnTemple(priest, roomno, state = game) {
     const epri = priestData(priest);
     if (!priest?.ispriest || !epri || epri.shroom !== roomno
@@ -41,7 +45,8 @@ function hasShrine(priest, state = game) {
 }
 
 export function priestAlignment(priest) {
-    const alignment = priestData(priest)?.shralign ?? A_NONE;
+    const alignment = priestData(priest)?.shralign
+        ?? minionData(priest)?.min_align ?? A_NONE;
     if (alignment === A_NONE) return A_NONE;
     return Math.sign(alignment);
 }
@@ -61,10 +66,13 @@ export function priestIsCoaligned(priest, state = game) {
 export function visiblePriestName(priest, state = game) {
     if (!cansee(priest.mx, priest.my) || priest.minvis || priest.mundetected)
         return 'A nearby voice';
-    const title = `${priest.mnum === 276 ? 'high ' : ''}${
+    const roamingMinion = !!priest.isminion && !priest.ispriest;
+    const title = `${priest.mnum === 276 && !roamingMinion ? 'high ' : ''}${
         priest.female ? 'priestess' : 'priest'
     }`;
-    return `The ${title} of ${priestDeityName(priest, state)}`;
+    const renegade = roamingMinion && minionData(priest)?.renegade
+        ? 'renegade ' : '';
+    return `The ${renegade}${title} of ${priestDeityName(priest, state)}`;
 }
 
 function priestCanSpeak(priest, state = game) {

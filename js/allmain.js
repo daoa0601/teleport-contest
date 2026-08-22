@@ -78,6 +78,8 @@ import {
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
+    resumeDeferredHeroAttackAfterWield,
+    rollDeferredHeroSpellDamage,
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
@@ -1944,8 +1946,12 @@ function monsterAttackMessage(monster, attack, previousAttack = null) {
     const name = actorSpotted && hallucinating ? randomDisplayMonsterName()
         : monster?.isshk ? shopkeeperName(monster)
             : monsterTypeName(monster?.mnum, !!monster?.female);
+    const priestSubject = actorSpotted && !hallucinating
+        && (monster?.ispriest || monster?.isminion)
+        ? visiblePriestName(monster, game) : null;
     const subject = game.blind || !actorSpotted ? 'It'
-        : monster?.isshk && !hallucinating ? name : `The ${name}`;
+        : priestSubject
+            || (monster?.isshk && !hallucinating ? name : `The ${name}`);
     if (monster?.mnum === 116) {
         if (!attack.hit) return `${subject} misses!`;
         return attack.effect === 'electric-avoided'
@@ -2233,7 +2239,7 @@ function visibleMonsterSubject(monster) {
     if (hallucinating) return randomDisplayMonsterSubject();
     return monster?.isshk
         ? shopkeeperName(monster)
-        : monster?.ispriest
+        : monster?.ispriest || monster?.isminion
             ? visiblePriestName(monster, game)
             : `The ${quietMonsterName(monster)}`;
 }
@@ -3135,6 +3141,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     || (game.u?.hallucinationTurns ?? 0) > 0)) {
                 game._boundedOracleHalluPostWieldDisplayDebt = 1;
             }
+            if (movement.deferredHeroWield)
+                resumeDeferredHeroAttackAfterWield(action, game);
         }
         if (movement?.offensiveWand?.kind === 'offensive-wand-striking') {
             const offensive = movement.offensiveWand;
@@ -3262,6 +3270,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 heroAttack.directed ? ' at you' : ''
                             }!`,
                         );
+                        if (heroAttack.deferredSpellDamage)
+                            rollDeferredHeroSpellDamage(action, game);
                         let effectMessage = heroAttack.spellEffectMessage;
                         if (heroAttack.spell === 'cure-self'
                             && canProjectMonster(

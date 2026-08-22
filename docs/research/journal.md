@@ -86108,3 +86108,50 @@ full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 21:39 EEST, journal block 2869] {#high-cleric #forced-genesis #cant-revive #minion #emin #renegade #priest-name #monster-inventory #mace #wield #attack-slot #geyser #spell-uselessness #fire-pillar #cast-damage-split #tty #native-witness #implementation #bounded-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Higher-tier contract and initial frontier:** hostile high cleric is the
+smallest direct level25 AD_CLRC carrier.  `cant_revive()` first offers a human
+zombie substitute, so the recipe explicitly forces the requested type.
+Acceptance cannot begin at fire pillar until ordinary cleric birth, instance
+naming, gear and attack-slot ownership are exact.
+
+**Constructor diagnosis and repair:** native input92 matched placement/gender/
+25d8 HP, then paid `rn2(3)=0,rn2(3)=0` before mace initialization.  JS skipped
+both and shifted the entire priest inventory.  Source creates an `emin` for an
+ordinary aligned/high cleric without MM_EPRI/MM_EMIN, choosing minion alignment
+and renegade state before groups/gear; explicit hostile disposition happens
+later in `create_particular()`.  The port now retains chaotic, renegade minion
+state, exact inventory RNG and `The renegade priest of Poseidon` appearance
+rather than generic `A high cleric`.
+
+**Wield and spell-selection redirects:** the first runtime replay wielded the
+mace but began a fresh slot-zero weapon swing.  Source spends AT_WEAP slot zero
+on wielding and immediately continues its six-slot table at kick slot one.
+The generic ready-close and phase-four wield paths now retain that next-slot
+continuation; the longer priest instance name also makes the kick attempt page
+the wield line at the native boundary.  Input102 next exposed stochastic spell
+usefulness: high-cleric `rn2(25)=13` considers geyser, `rn2(5)=0` rejects it,
+then `rn2(250)=196` selects fire pillar.
+
+**Cast/damage ownership and measured acceptance:** spell damage had been
+pre-rolled before cast prose.  Source instead prints the cast line after the
+fumble check and rolls damage only when that line returns.  The split is now
+explicit: earlier short abbot casts keep d() on their original input, while
+the long priest cast pages input102 and moves `d(14,8)=64` to input103.  The
+pending pillar line then retains that cast pager.  All **104 bounded native
+states** are exact; the recorder took **0.07 seconds** at **53,444,608 bytes
+maximum RSS**.  The high-cleric prefix and six lower effects pass **7/7**
+fixture-disabled in **0.31 seconds** at **137,527,296 bytes max RSS**; all
+processes exited.
+
+**Falsifications and next blocker:** fire pillar cannot be tested atop generic
+high-cleric naming, shifted gear, a fresh weapon attack or early 14d8.  Section
+838 and the ledger close those prefixes.  Input104 is now the authoritative
+frontier: `d(8,6)=20`, fire armor erosion, potion/spellbook destruction across
+multiple pagers, then spell HP damage.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---
