@@ -86890,3 +86890,39 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 23:50 EEST, journal block 2890] {#snake #poison #contact-pager #deferred-continuation #boolean-short-circuit #poison-resistance #knockback #full-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Residual contract and exact boundary:** after fallback completion, native
+and JS remain exact through input171's second snake bite.  That bite has rolled
+physical damage and cancellation but its visible line owns tty, leaving HP40.
+Input172 must consume only poison gate `rn2(8)=0`, append `The snake's bite was
+poisoned!` and retain HP40.  Input173 then publishes poison-resistance
+feedback before knockback, three physical HP and maintenance reach HP37.
+
+**Root cause:** `executeLiveQuietMonsterScan()` used
+`actorContactPagerOwned ||= await resolveDeferredHeroPoison(...)`.  Because the
+contact line had already set the left operand true, JavaScript never called the
+async resolver, then cleared `deferredPoisonEffect` and immediately resumed
+contact.  Earlier poison witnesses entered without an existing pager and hid
+the short circuit.  Awaiting the resolver into a local first, then OR-ing its
+boolean result, preserves side effects regardless of prior pager ownership.
+
+**Complete evidence and mapping:** input172 now has exactly one RNG call and
+the combined bite/poison pager; input173 owns the poison-resistance line and
+the exact 18-call contact/maintenance tail.  The complete **174-state replay
+is exact**, ending HP37.  Section858 maps the nested poison line before shared
+contact HP and identifies the unsafe boolean-control edge; Lua owns no phase.
+This falsifies actor selection, snake attack-table and poison-resistance
+arithmetic as the cause.
+
+**Measured acceptance and next blocker:** the exact JS replay took **0.22
+seconds** at **125,353,984 bytes maximum RSS**.  Snake poison plus the two
+fallback/genocide witnesses and twenty-four neighboring cleric controls pass
+**27/27** fixture-disabled in **0.72 seconds** at **157,630,464 bytes max
+RSS**; all processes exited.  Non-resistant/lethal poison and other async
+resolver short-circuit sites remain open; failed-placement/no-success insect
+prose also remains.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty test files remain untouched.
+
+---

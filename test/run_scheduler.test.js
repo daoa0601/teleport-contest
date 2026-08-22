@@ -9949,6 +9949,61 @@ test('seed0025 genocided ants force visible high-cleric snake fallback',
         assert.equal(game.context.move, 1);
     });
 
+test('seed0025 snake poison continuation runs after an existing contact pager',
+    async () => {
+        const result = await runSegment({
+            seed: 25,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nblessed scroll of genocide\nrl  a\n'
+                + ' '.repeat(10)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 174);
+        assertRngSliceExact(result.getRngSlices()[171], [
+            'rn2(5)=2', 'rn2(8)=0', 'rn2(5)=4', 'rn2(5)=4',
+            'rnd(20)=17', 'd(1,6)=3', 'rn2(10)=5', 'rn2(8)=6',
+            'rn2(3)=1', 'rn2(6)=4', 'rn2(5)=4', 'rnd(20)=1',
+            'd(1,6)=4', 'rn2(10)=0',
+        ], 'seed0025 first bite and deferred second contact RNG');
+        assert.equal(decodedTopline(result.getScreens()[171]),
+            'The priest of Athena points at you, then curses.  The snake bites!--More--');
+        assert.equal(decodedRow(result.getScreens()[171], 23),
+            'Dlvl:1 $:1032 HP:40(137) Pw:273(273) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[172], [
+            'rn2(8)=0',
+        ], 'seed0025 poison gate stops before contact damage RNG');
+        assert.equal(decodedTopline(result.getScreens()[172]),
+            "The snake bites!  The snake's bite was poisoned!--More--");
+        assert.equal(decodedRow(result.getScreens()[172], 23),
+            'Dlvl:1 $:1032 HP:40(137) Pw:273(273) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[173], [
+            'rn2(3)=0', 'rn2(6)=1', 'rn2(12)=8', 'rn2(12)=11',
+            'rn2(12)=7', 'rn2(12)=10', 'rn2(12)=8', 'rn2(12)=2',
+            'rn2(12)=11', 'rn2(12)=6', 'rn2(12)=6', 'rn2(12)=9',
+            'rn2(70)=30', 'rn2(100)=13', 'rn2(400)=260',
+            'rn2(200)=142', 'rn2(20)=12', 'rn2(70)=64',
+        ], 'seed0025 poison resistance, contact tail, and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[173]),
+            "The poison doesn't seem to affect you.");
+        assert.equal(decodedRow(result.getScreens()[173], 23),
+            'Dlvl:1 $:1032 HP:37(137) Pw:273(273) AC:8 Xp:30');
+
+        assert.equal(game.u.poisonResistance, true);
+        assert.equal(game.u.uhp, 37);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0025 high-cleric curse-items preserves aura and inventory order',
     async () => {
         const result = await runSegment({

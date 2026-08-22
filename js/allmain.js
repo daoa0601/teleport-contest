@@ -3857,10 +3857,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         resumeDeferredHeroContact(action, game);
                     }
                     if (heroAttack.deferredPoisonEffect) {
-                        actorContactPagerOwned
-                            ||= await resolveDeferredHeroPoison(
-                            action, monster, heroAttack,
-                        );
+                        const poisonPagerOwned
+                            = await resolveDeferredHeroPoison(
+                                action, monster, heroAttack,
+                            );
+                        actorContactPagerOwned ||= poisonPagerOwned;
                         heroAttack.deferredPoisonEffect = false;
                         resumeDeferredHeroContact(action, game);
                     }

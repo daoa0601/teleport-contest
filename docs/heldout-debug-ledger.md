@@ -12731,3 +12731,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   The fixture-disabled prerequisite/fallback plus existing cleric gate passes
   26/26 in 0.73 seconds at 164,265,984 bytes maximum RSS.  Input172's snake
   combat, failed placement, unseen fallback and no-success prose remain open.
+- The same seed25 session now closes input172's poison/contact continuation and
+  all 174 states.  A pending bite pager made
+  `actorContactPagerOwned ||= await resolveDeferredHeroPoison()` short-circuit
+  the resolver.  Input172 must spend only `rn2(8)=0`, publish the poisoned-bite
+  line and retain HP40; input173 publishes poison-resistance feedback, then
+  runs knockback/damage/maintenance to HP37.  Awaiting the resolver before
+  accumulating its boolean restores source ordering.  The fixture-disabled
+  cleric/poison gate passes 27/27 in 0.72 seconds at 157,630,464 bytes maximum
+  RSS.  Non-resistant/lethal poison and analogous short-circuit sites remain
+  open.

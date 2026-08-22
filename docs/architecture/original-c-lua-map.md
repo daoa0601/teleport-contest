@@ -31053,3 +31053,34 @@ into snakes and later selection resumes at `rn2(25)=10`; HP is129 and ten
 monsters exist.  Acceptance is bounded there because input172 opens an
 independent snake-attack tail gap.  Failed placement, unseen fallback prose,
 no-success census and later snake combat remain separate controls.
+
+## 858. Poison resolution must run even when contact already owns a pager
+
+```mermaid
+flowchart TD
+    Bite["poisonous snake bite rolls physical damage and cancellation"] --> HitLine["visible bite line fills tty and sets pager-owned flag"]
+    HitLine --> Resume["acknowledgement resumes deferred poison check"]
+    Resume --> Gate["rn2(8)=0 selects poison"]
+    Gate --> PoisonLine["publish poisoned-bite line before contact HP"]
+    PoisonLine --> Resistance["publish poison-resistance feedback"]
+    Resistance --> Tail["clear poison effect; run knockback and physical HP"]
+    Tail --> Maintenance["resume remaining actor/global RNG"]
+    Bug["pagerOwned ||= await resolver"] -.->|"short-circuited resolver"| Tail
+    Lua["Lua owns no poison or contact phase"] -.-> Bite
+```
+
+Seed25 remains exact through the first poison/contact sequences.  At input171,
+a second snake's bite line is pending after its damage/cancellation rolls.
+Input172 consumes only `rn2(8)=0`, publishes the bite plus poisoned notice and
+retains HP40.  Input173 publishes `The poison doesn't seem to affect you.`,
+then consumes knockback, applies three physical HP and resumes maintenance to
+HP37.
+
+The JS driver accumulated pager state with
+`actorContactPagerOwned ||= await resolveDeferredHeroPoison(...)`.  When the
+bite already owned a pager, JavaScript short-circuited the awaited side effect,
+cleared the poison marker and applied contact immediately.  Awaiting first and
+OR-ing only the returned boolean preserves both behavior and accounting.  The
+complete 174-state session is exact.  Non-resistant poison outcomes, lethal
+attribute poison and other already-owned-pager effect resolvers remain
+separate controls.
