@@ -25,8 +25,8 @@ import {
     TOUCHSTONE,
     WORTHLESS_PIECE_OF_RED_GLASS,
     QUARTERSTAFF, RIN_CONFLICT,
-    SPE_BOOK_OF_THE_DEAD, SPE_POLYMORPH, TWO_HANDED_SWORD, WAN_COLD, WAN_FIRE,
-    WAN_STRIKING,
+    SPE_BOOK_OF_THE_DEAD, SPE_POLYMORPH, TWO_HANDED_SWORD,
+    WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_STRIKING,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import {
@@ -5850,6 +5850,121 @@ for (const degreeCase of [
         assert.equal(game.context.move, 0);
     });
 }
+
+test('seed0116 cancellation wand leaves acid passive active for orcish arrow',
+    async () => {
+        const result = await runSegment({
+            seed: 116,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful acid blob\n'
+                + 'zhjaijtgj  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 136);
+        assertRngSliceExact(result.getRngSlices()[72], [
+            'rn2(46)=45', 'rnd(2)=2', 'rn2(5)=2', 'rn2(17)=2',
+            'rn2(100)=67',
+        ], 'seed0116 cancellation-wand wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[72]),
+            'h - a runed wand.');
+        assert.deepEqual(result.getCursors()[72], [30, 9, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[127], [
+            'rn2(19)=6', 'rn2(8)=3', 'rn2(111)=54',
+            'rn2(4)=2', 'rn2(3)=2', 'rn2(3)=1', 'rn2(5)=2',
+            'rn2(4)=3', 'rn2(5)=1', 'rn2(5)=1', 'rn2(5)=2',
+            'rn2(5)=1', 'rn2(5)=3', 'rn2(12)=3', 'rn2(12)=5',
+            'rn2(70)=41', 'rn2(400)=357', 'rn2(20)=9',
+            'rn2(70)=47',
+        ], 'seed0116 cancellation wand and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[127]), '');
+        assert.deepEqual(result.getCursors()[127], [30, 9, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[130], [],
+            'seed0116 cancelled status RNG');
+        assert.equal(decodedTopline(result.getScreens()[130]),
+            'Status of the acid blob (neutral, tiny):  Level 1  HP 4(4)  AC 8, cancelled.');
+        assert.deepEqual(result.getCursors()[130], [30, 9, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[133], [
+            'rnd(2)=1', 'rnd(2)=2', 'rnd(20)=10', 'rnd(5)=1',
+            'rn2(19)=8', 'rn2(4)=1', 'rn2(6)=0', 'rn2(100)=77',
+            'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=3', 'rn2(5)=1',
+            'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=1', 'rn2(24)=8',
+            'rn2(5)=2', 'rn2(12)=9', 'rn2(12)=5', 'rn2(70)=5',
+            'rn2(400)=257', 'rn2(20)=14', 'rn2(70)=60',
+        ], 'seed0116 cancelled acid passive and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[133]),
+            'The orcish arrow hits the acid blob.  The orcish arrow corrodes!');
+        assert.deepEqual(result.getCursors()[133], [30, 9, 1]);
+
+        const blob = game.level.monsters.find(monster => monster.mnum === 6);
+        assert.ok(blob);
+        assert.deepEqual({
+            x: blob.mx,
+            y: blob.my,
+            hp: blob.mhp,
+            hpmax: blob.mhpmax,
+            peaceful: blob.mpeaceful,
+            cancelled: blob.mcan ?? 0,
+        }, {
+            x: 31,
+            y: 9,
+            hp: 1,
+            hpmax: 4,
+            peaceful: 0,
+            cancelled: 1,
+        });
+
+        const floorArrows = (game.level.objects?.[31]?.[9] || [])
+            .filter(object => object.otyp === ORCISH_ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            corrosion: floorArrows[0].oeroded2 ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 1,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ORCISH_ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.deepEqual({
+            quantity: inventorySibling.quantity ?? inventorySibling.quan,
+            enchantment: inventorySibling.spe ?? 0,
+            corrosion: inventorySibling.oeroded2 ?? 0,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            corrosion: 0,
+        });
+
+        const cancellationWand = game.inventory.find(object =>
+            object.otyp === WAN_CANCELLATION && object.invlet === 'h');
+        assert.ok(cancellationWand);
+        assert.deepEqual({
+            enchantment: cancellationWand.spe,
+            chargesKnown: cancellationWand.chargesKnown ?? false,
+        }, {
+            enchantment: 5,
+            chargesKnown: false,
+        });
+        assert.equal(game.context.move, 0);
+    });
 
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {

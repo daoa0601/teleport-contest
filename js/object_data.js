@@ -223,6 +223,7 @@ export const WAN_FIRE = 430;
 export const WAN_COLD = 431;
 export const WAN_SLEEP = 432;
 export const WAN_POLYMORPH = 422;
+export const WAN_CANCELLATION = 423;
 export const SPE_BLANK_PAPER = 407;
 export const NOVEL = 408;
 export const SPE_BOOK_OF_THE_DEAD = 409;

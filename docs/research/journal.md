@@ -84091,3 +84091,64 @@ AD_RUST/AD_CORR.  No corpus, hidden judge, stage, commit, push or publication
 ran.
 
 ---
+
+### [2026-08-22 14:47 EEST, journal block 2824] {#projectile #acid #cancellation #wand #stethoscope #status #native-witness #setup-rejection #implementation #focused-regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and setup portfolio:** native AD_ACID lacks the `mcan` guard used
+by AD_RUST and AD_CORR, so a cancelled acid blob must still spend `rn2(6)` and
+corrode a surviving iron projectile.  The target's cancellation must be proven
+independently before contact.  Wizard genesis was rejected because
+`create_particular_parse()` supports disposition/sleep/invisibility/hiding but
+not cancellation.  A real cancellation wand plus a same-turn stethoscope
+status read is the smallest transcript-visible setup.
+
+**Enabling implementation:** the port now exports WAN_CANCELLATION and maps
+the adjacent lateral immediate-wand path: Wisdom exercise, `rn1(8,6)` range,
+ordinary wand resistance, silent `mcan` mutation, and wake/anger before the
+turn scheduler.  The normal adjacent-monster stethoscope branch now publishes
+`monsterStatusLine()`; previously it handled only self, mimics, and empty
+squares.  These changes were provisional until a complete native replay could
+adversarially validate both owners.
+
+**Rejected first carrier:** an ordinary-arrow selector found eight candidates
+in **25.96 seconds** at **245,022,720 bytes maximum RSS**, but its seed116
+native recording immediately exposed an earlier setup mismatch.  Wished +2
+ordinary arrows merged with startup ammunition and native opened `You learn
+more about your items by comparing them.--More--`; the following command keys
+were consumed by that pager, producing 45 mismatches.  The **0.07-second**,
+**54,247,424-byte** recording and bounded replay falsify that carrier rather
+than cancellation behavior.  Non-starting iron ORCISH_ARROW preserves the
+passive material branch without the merge.
+
+**Corrected selection and native evidence:** the orcish-arrow selector found
+eight live cancelled-target candidates through seed1165 in **27.50 seconds**
+at **246,464,512 bytes maximum RSS**.  Seed116 is clean and one-shot.  Its
+136-state native recording completes in **0.07 seconds** at **54,345,728 bytes
+maximum RSS**.  Input127 is silent and exactly consumes Wisdom `rn2(19)=6`,
+immediate range `rn2(8)=3`, acid-blob wand resistance `rn2(111)=54`, then the
+actor/global tail.  Input130 consumes no RNG and displays `Status of the acid
+blob (neutral, tiny):  Level 1  HP 4(4)  AC 8, cancelled.`
+
+**Cancellation-insensitive passive:** input133 hits the same `mcan=1` target,
+survives mulch, still spends AD_ACID `rn2(6)=0`, increments only the detached
+orcish arrow to secondary erosion one, publishes the corrosion line and gives
+floor resistance 77.  The target remains cancelled/hostile at 1/4 HP; the
+inventory sibling stays uncorroded.  The full bounded replay is exact from
+input3 onward in **0.21 seconds** at **123,863,040 bytes maximum RSS**; only
+the known tutorial glyph remains.  This validates the provisional wand,
+stethoscope and passive owners together without an AD_ACID production change.
+
+**Measured acceptance and scope boundary:** the durable regression pins wand
+receipt/charge, complete zap RNG, silent screen/cursor, cancelled status,
+complete projectile action, target state and per-identity floor/inventory
+corrosion.  It passes **1/1** in **0.20 seconds** at **131,481,600 bytes
+maximum RSS**.  The one owned managed family passes **122/122** in **2.35
+seconds** at **332,562,432 bytes maximum RSS**.  All processes exit and
+registries are empty.  Sections 320, 774 and 826 plus the ledger now map this
+boundary.  The cancellation wand claim remains adjacent-first-monster only;
+objects, traps, resistance success, vertical use and longer-ray continuation
+remain open.  Next use this validated setup to select paired cancelled
+AD_RUST/AD_CORR suppression.  No corpus, hidden judge, stage, commit, push or
+publication ran.
+
+---

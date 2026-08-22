@@ -11878,3 +11878,21 @@ attempt: **402 calls**, not a direct two-pass retry.
   state check.  The degree trio passes 3/3; the nine-row focused audit passes
   9/9 in 0.30 seconds at 137,609,216 bytes maximum RSS; the one owned managed
   family passes 121/121 in 2.35 seconds at 334,086,144 bytes maximum RSS.
+- Seed116 closes AD_ACID's cancellation-insensitive branch and adds the
+  adjacent immediate cancellation-wand/status setup needed to prove it.  Wizard
+  genesis cannot create cancelled monsters.  The first ordinary-arrow native
+  attempt was rejected because it merged with startup ammunition and opened an
+  unrelated compare-items pager; switching to non-starting iron ORCISH_ARROW
+  removes that setup divergence.
+
+  The corrected selector found eight live cancelled-target candidates through
+  seed1165 in 27.50 seconds at 246,464,512 bytes maximum RSS.  Native seed116
+  input127 is silent and pays Wisdom `rn2(19)=6`, immediate range `rn2(8)=3`,
+  wand resistance `rn2(111)=54`, then the exact scheduler tail.  Stethoscope
+  input130 independently displays the live `cancelled` condition.  Input133
+  still spends AD_ACID `rn2(6)=0`, corrodes only the detached orcish arrow,
+  gives floor resistance 77 and leaves the cancelled target alive at 1/4 HP.
+  All 136 states are exact from input3 onward.  Focused passes 1/1 in 0.20
+  seconds at 131,481,600 bytes maximum RSS; the managed family passes 122/122
+  in 2.35 seconds at 332,562,432 bytes maximum RSS.  Cancelled AD_RUST and
+  AD_CORR suppression are the next paired controls.

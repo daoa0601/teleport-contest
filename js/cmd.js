@@ -77,7 +77,8 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_ACID, POT_WATER,
-    WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_POLYMORPH,
+    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
+    WAN_POLYMORPH,
     BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
@@ -12960,6 +12961,36 @@ async function zapSleepRay(direction) {
     if (!emittedMessage) game._pending_message = '';
 }
 
+// C refs: zap.c:weffects()->bhit()->bhitm(WAN_CANCELLATION),
+// cancel_monst().  Immediate wands spend their range before walking the ray;
+// cancellation then pays ordinary wand resistance even for a zero-MR target,
+// changes mcan without effect prose, and wakes/angers the target.
+async function zapCancellationRay(direction) {
+    exerciseAttribute(2, true);
+    const dx = DIR_DX[direction] || 0;
+    const dy = DIR_DY[direction] || 0;
+    let x = game.u.ux;
+    let y = game.u.uy;
+    let range = 6 + rn2(8);
+
+    while (range-- > 0) {
+        x += dx;
+        y += dy;
+        if (!rayPositionIsValid(x, y) || !rayPositionIsOpen(x, y)) break;
+        const monster = rayMonsterAt(x, y);
+        if (!monster) continue;
+
+        const defenseLevel = Math.max(1, Math.min(50,
+            monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 1));
+        const resistanceRange = 100 + 12 - defenseLevel;
+        const resisted = rn2(resistanceRange)
+            < (MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0);
+        if (!resisted) monster.mcan = 1;
+        await wakeAttackedMonster(monster);
+        break;
+    }
+}
+
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
 
@@ -13377,6 +13408,13 @@ async function dozap() {
         game.context.move = 1;
         return;
     }
+    if (wand.otyp === WAN_CANCELLATION
+        && DIR_DX[directionChar] !== undefined && directionChar !== '.') {
+        await zapCancellationRay(directionChar);
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
 
     if (!(game._healerNewmoonPath && wand.otyp === WAN_SLEEP
         && String.fromCharCode(direction) === '.')) {
@@ -13742,6 +13780,8 @@ async function useStethoscope(item) {
         await plineWithContinuation(monsterStatusLine(monster));
     } else if (!monster) {
         await pline('You hear nothing special.');
+    } else {
+        await pline(monsterStatusLine(monster));
     }
 
     game.context.move = usedTime ? 1 : 0;

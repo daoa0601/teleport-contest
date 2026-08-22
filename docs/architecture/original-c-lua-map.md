@@ -10489,6 +10489,21 @@ identity through nested inventory actions and consumes direction-help keys in
 one modal transaction.  `hero_seq`, rather than global `moves`, owns whether a
 second stethoscope application costs time.
 
+Seed116 extends the ordinary stethoscope branch beyond the earlier self/mimic
+owners.  After an adjacent cancellation wand hit, the first same-turn
+stethoscope use consumes no RNG or time and publishes the complete native line
+`Status of the acid blob (neutral, tiny):  Level 1  HP 4(4)  AC 8,
+cancelled.`.  The status reads live `mcan` rather than an effect-specific
+message cache, so it independently certifies the preceding silent wand state.
+
+The enabling immediate-wand owner is bounded but source-shaped.  A lateral
+WAN_CANCELLATION pays Wisdom exercise, `rn2(8)` for `rn1(8,6)` range and
+`rn2(111)` for level-one wand resistance, sets `mcan`, and then wakes/angers
+the target without identifying the wand or printing effect prose.  This maps
+the adjacent first-monster path only; multi-cell object/trap cancellation,
+resistance success, up/down effects and full `bhit()` continuation remain
+separate boundaries.
+
 ## 321. Monster-vs-monster action ownership precedes movement sampling
 
 ```mermaid
@@ -27021,6 +27036,16 @@ values leaves all RNG, screen, cursor and per-identity erosion checks intact.
 The degree trio passes 3/3, the nine-row erosion/damage audit passes 9/9, and
 the managed family passes 121/121.
 
+Cancellation is now selected on AD_ACID rather than inferred from the missing
+`mcan` check.  Seed116 first proves the target's live cancelled state through
+the stethoscope.  Later input133 hits that same `mcan=1` acid blob with an iron
+orcish arrow, survives mulch, still spends `rn2(6)=0`, reaches secondary
+erosion one, emits `The orcish arrow corrodes!`, and gives floor resistance
+77.  The cancelled target survives at 1/4 HP and its inventory sibling remains
+uncorroded.  All 136 native states are exact from input3 onward.  This
+distinguishes AD_ACID from AD_RUST/AD_CORR, whose `passive_obj()` branches stop
+on cancellation.
+
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
 ```mermaid
@@ -29432,8 +29457,9 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-121/121 after the paired rust/corrosion material, protection, degree, AD_CORR
-grease, and complete AD_ACID grease/material/protection/degree rows.
+122/122 after the paired rust/corrosion material, protection, degree, AD_CORR
+grease, and complete AD_ACID grease/material/protection/degree/cancellation
+rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
