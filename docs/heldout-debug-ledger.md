@@ -12299,3 +12299,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   disabled focused polymorph gate passes 14/14 in 0.37 seconds, the preceding
   twenty erosion controls remain exact and the managed family passes 149/149
   in 2.74 seconds.  Towel and remaining boot-wording arms stay independent.
+- Seed11 replaces gelatinous cube with fog cloud in the low-boots witness.
+  Native input57 combines the form and glove/weapon line behind `--More--` at
+  HP12/12, HD3, AC5, `Blind Fly`.  Input58 consumes `rn2(3)=1` inside hero
+  `m_everyturn_effect()`, says `Your boots fall away!`, drops type163, projects
+  AC0 and creates a harmless one-cell vapor region with TTL5.  All 66 states
+  are exact from input3.
+
+  Earliest replay first exposed shared status order (`Fly Blind` versus native
+  `Blind Fly`), then the missing hero vapor TTL.  Status ordering is corrected;
+  whirly/noncorporeal sliparm now precedes big-form breakarm; monster and hero
+  fog hooks share the region constructor.  The fixture-disabled focused gate
+  passes 15/15 in 0.38 seconds, the twenty erosion controls remain exact and
+  the managed family passes 149/149 in 2.75 seconds.  Very-small `slide`,
+  slithy and centaur boot arms remain separate.

@@ -1370,9 +1370,9 @@ export function _statusLine2() {
     else if (hunger <= 50) line += ' Weak';
     else if (hunger <= 150) line += ' Hungry';
     if (u._encumbrance) line += ` ${u._encumbrance}`;
+    if (game.blind) line += ' Blind';
     if (polymorphed
         && ((MONSTER_FLAGS1[u.umonnum] ?? 0) & M1_FLY)) line += ' Fly';
-    if (game.blind) line += ' Blind';
     if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
     if ((game._statusDeafOverride ?? game.deaf)) line += ' Deaf';
     if (u.hallucinating || (u.hallucinationTurns ?? 0) > 0)

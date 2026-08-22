@@ -37,6 +37,7 @@ const MZ_SMALL = 1;
 const MZ_HUMAN = 2;
 const MZ_LARGE = 3;
 const MZ_HUGE = 4;
+const S_VORTEX = 22;
 const S_CENTAUR = 29;
 const S_DRAGON = 30;
 const S_GHOST = 54;
@@ -45,6 +46,7 @@ const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
 const PM_WINGED_GARGOYLE = 42;
 const PM_MARILITH = 294;
+const PM_AIR_ELEMENTAL = 154;
 const LEATHER = 7;
 const HORN_COUNTS = new Map([
     [291, 2], [177, 2], [309, 2], [302, 2],
@@ -339,10 +341,13 @@ export async function polyselfControlledMonster(mnum) {
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
-    const slipsArmor = formSize <= MZ_SMALL;
-    const breaksArmor = formSize >= MZ_LARGE
+    const whirly = MONSTER_SYMBOL[mnum] === S_VORTEX
+        || mnum === PM_AIR_ELEMENTAL;
+    const noncorporeal = MONSTER_SYMBOL[mnum] === S_GHOST;
+    const slipsArmor = whirly || noncorporeal || formSize <= MZ_SMALL;
+    const breaksArmor = !slipsArmor && (formSize >= MZ_LARGE
         || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID))
-        || mnum === PM_WINGED_GARGOYLE || mnum === PM_MARILITH;
+        || mnum === PM_WINGED_GARGOYLE || mnum === PM_MARILITH);
     const noHands = heroHasNoHands(game);
     const canBreathe = (MONSTER_ATTACKS[mnum] || [])
         .some(([attackType]) => attackType === 12);
@@ -409,7 +414,7 @@ export async function polyselfControlledMonster(mnum) {
             `${formMessage}  You shrink out of your cloak!--More--`,
         );
         dropCarriedObject(cloak, ['uarmc']);
-    } else if (noHands && weapon) {
+    } else if (noHands && weapon && !gloves) {
         await moreUntilDismissed(
             `${formMessage}  You find you must drop your tool!--More--`,
         );
@@ -455,7 +460,9 @@ export async function polyselfControlledMonster(mnum) {
     }
     if (noHands && boots) {
         await plineWithContinuation(
-            'Your boots are pushed off your feet!',
+            whirly
+                ? 'Your boots fall away!'
+                : 'Your boots are pushed off your feet!',
         );
         dropCarriedObject(boots, ['uarmf']);
         await publishDropCapacityChange();

@@ -1201,6 +1201,18 @@ function visibleRegionAt(state, x, y) {
             cell.x === x && cell.y === y));
 }
 
+function createFogEveryturnRegion(state, x, y, random = rn2) {
+    if (!state?.level || visibleRegionAt(state, x, y)) return null;
+    const region = {
+        kind: 'gas-cloud', visible: true, damage: 0,
+        ttl: 4 + random(3),
+        cells: [{ x, y }],
+    };
+    (state.level.regions ||= []).push(region);
+    if (state.level === game.level) vision_note_blocker_change(x, y);
+    return region;
+}
+
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
 // movement-ration check, so an otherwise stationary fog cloud still leaves a
 // one-cell harmless vapor region.  A size-one create_gas_cloud() owns only the
@@ -1208,15 +1220,20 @@ function visibleRegionAt(state, x, y) {
 function monsterEveryturnEffect(monster, state, random = rn2) {
     if (!state?.level || monster?.mnum !== PM_FOG_CLOUD
         || visibleRegionAt(state, monster.mx, monster.my)) return null;
-    const region = {
-        kind: 'gas-cloud', visible: true, damage: 0,
-        ttl: 4 + random(3),
-        cells: [{ x: monster.mx, y: monster.my }],
-    };
-    (state.level.regions ||= []).push(region);
-    if (state.level === game.level)
-        vision_note_blocker_change(monster.mx, monster.my);
-    return region;
+    return createFogEveryturnRegion(
+        state, monster.mx, monster.my, random,
+    );
+}
+
+// C allmain.c invokes the same species hook for `youmonst` after status
+// projection and before accepting the next command.  The region persists on
+// the level and suppresses another TTL draw while it covers the hero square.
+export function heroEveryturnEffect(state = game, random = rn2) {
+    if ((state.u?.mtimedone ?? 0) <= 0
+        || state.u?.umonnum !== PM_FOG_CLOUD) return null;
+    return createFogEveryturnRegion(
+        state, state.u.ux, state.u.uy, random,
+    );
 }
 
 // C region.c:run_regions() removes an already-expired region, then ages each

@@ -94,7 +94,8 @@ import {
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
     finishDeferredMonsterCounterattackDeath, fumaroles,
-    runLevelRegions, runQuietMonsterActions, scanMonsterMovement,
+    heroEveryturnEffect, runLevelRegions, runQuietMonsterActions,
+    scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
 import { rehumanizeHero } from './polyself.js';
@@ -5640,6 +5641,7 @@ export async function moveloop_core() {
     delete g._statusAcOverride;
     await bot();
     await flush_screen(1);
+    heroEveryturnEffect(g);
 
     // A negative C `multi` suppresses rhack() but still leaves context.move
     // set, so the next moveloop invocation spends another hero action.  Once

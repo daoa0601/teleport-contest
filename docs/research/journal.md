@@ -85236,3 +85236,47 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:37 EEST, journal block 2848] {#polyself #break-armor #sliparm #fog-cloud #whirly #boots #status-order #blind #fly #hero-everyturn #gas-region #ttl #dropx #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Compound contract:** a fog cloud is whirly, so source `sliparm()` must defeat
+big-size `breakarm()` and boot removal must say `fall away`.  After status is
+painted, allmain invokes `m_everyturn_effect(&youmonst)` before the next
+command; a fog-cloud hero without an existing region creates one harmless
+one-cell vapor cloud and spends its TTL draw.  These are independent owners and
+both must align.
+
+**Native witness:** seed11 debug Healer wears wished +2 low boots, retains the
+starting gloves/scalpel and uses controlled `#polyself fog cloud`.  Input57
+consumes `rn2(2)=1,rn2(19)=13,rn2(500)=327,d(3,8)=12` and pages `You turn into
+a fog cloud!  You drop your gloves and weapon!` at HP12/12, HD3, AC5, `Blind
+Fly`.  Input58 publishes `Your boots fall away!`, drops type163, projects AC0
+and consumes `rn2(3)=1 @ create_gas_cloud` for a damage-zero region with TTL5.
+All 66 states are exact from input3; the recorder took **0.06 seconds** at
+**52,920,320 bytes maximum RSS**.
+
+**Earliest divergences and decisions:** the first replay differed before boot
+policy because JS status ordered `Fly Blind`; source condition order is `Blind
+Fly`.  After that correction, input58 lacked only the hero vapor TTL.  The
+existing fog hook covered monsters before their movement-ration gate but not
+`youmonst` at the allmain input boundary.  Monster and hero paths now share one
+persistent region constructor; the hero hook runs after ordinary status
+projection.  Whirly/ghost sliparm is also evaluated before large/non-humanoid
+breakarm, and whirly boot prose uses `fall away`.
+
+**Falsified hypotheses and measured effect:** the input58 call is not boot,
+drop-weight, scheduler tail or a nearby monster; its recorder attribution and
+source phase identify hero `m_everyturn_effect()`.  The fixture-disabled
+focused polymorph gate passes **15/15** in **0.38 seconds**, the preceding
+twenty rust/corrosion/decay controls remain exact and the one owned managed
+family passes **149/149** in **2.75 seconds**.  Every process exited before the
+next began.
+
+**Next blocker:** sections287 and830 plus the ledger now connect whirly
+equipment policy to hero vapor lifecycle.  Next select a very-small form for
+`boots slide off your feet`; keep slithy/centaur wording as separate predicates
+unless the same compact recipe can distinguish them.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

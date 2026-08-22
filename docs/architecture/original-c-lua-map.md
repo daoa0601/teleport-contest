@@ -9334,11 +9334,13 @@ global `run_regions()` boundary.
 ```mermaid
 sequenceDiagram
     participant Scan as "mon.c movemon fmon scan"
+    participant Hero as "allmain.c input boundary"
     participant Effect as "monmove.c m_everyturn_effect"
     participant Region as "region.c create/add gas cloud"
     participant Vision as "vision.c blocker table"
     participant Display as "display.c see_monsters/newsym"
     Scan->>Effect: visit actor before movement-ration gate
+    Hero->>Effect: visit youmonst after status, before next command
     Effect->>Region: fog form has no active region at its square
     Region->>Region: rn1(3,4) TTL and level ownership
     Region->>Vision: block_point for each visible region cell
@@ -9363,6 +9365,16 @@ independent pre-movement owners: `dosearch0()` probes an adjacent unseen trap
 with `rnl(8)`, and `mcalcdistress()` probes the same three full-health
 vampire-derived fog forms with `decide_to_shapeshift()` before ordinary actor
 movement.  Their combined clean prefix is 35,840 calls through capture 263.
+
+The same effect owner now includes the polymorphed hero.  Source allmain calls
+`m_everyturn_effect(&youmonst)` after status projection and before accepting
+the next command.  A fog-cloud hero therefore creates the same one-cell,
+damage-zero region and spends the same `rn1(3,4)` TTL draw; the persistent
+region suppresses another draw while it covers the hero square.  Seed11's
+whirly-boot continuation reaches this boundary on input58 after the equipment
+line, consuming `rn2(3)=1` and retaining TTL five.  JS shares one region
+constructor between monster and hero hooks rather than attributing the draw to
+polymorph or boots.
 
 ## 288. Tower-1 joins Lua placement to unique-monster and container lifetimes
 
@@ -29855,9 +29867,14 @@ flowchart TD
     Shield -->|"yes"| ShieldLine["cannot hold shield line; drop shield"]
     Shield -->|"no"| Boots{"no hands plus worn boots?"}
     ShieldLine --> Boots
-    Boots -->|"yes"| BootLine["boots pushed off feet; drop boots"]
+    Boots -->|"yes"| BootKind{"form body"}
+    BootKind -->|"whirly"| BootFall["boots fall away; drop boots"]
+    BootKind -->|"ordinary no-hands"| BootLine["boots pushed off feet; drop boots"]
+    BootKind -->|"very small"| BootSlide["boots slide off; unselected"]
     Boots -->|"no"| Head{"headless form plus eyewear?"}
     BootLine --> Head
+    BootFall --> Head
+    BootSlide --> Head
     Head -->|"yes"| EyeLine["eyewear falls; blindness feedback; drop eyewear"]
     Head -->|"no"| EquipDone["find_ac; newsym; final encumber"]
     EyeLine --> EquipDone
@@ -29969,8 +29986,19 @@ form/glove line.  The attempted boot line then forces the pending load notice
 through input64 `--More--`; input65 publishes `Your boots are pushed off your
 feet!`, drops type163 and projects AC eight.  HP25/25, HD6, Burdened and Blind
 remain stable through the sequence.  All 72 states are exact from input3.
-Whirly `fall away`, very-small `slide`, slithy and centaur boot wording/policy
-remain separate successors; this block selects only the no-hands pushed arm.
+Very-small `slide`, slithy and centaur boot wording/policy remain separate
+successors; this block selects only the ordinary no-hands pushed arm.
+
+The whirly sibling selects both sliparm precedence and the hero every-turn
+effect.  Seed11 Healer keeps the low-boots/gloves/scalpel setup but becomes a
+fog cloud.  `is_whirly()` makes `sliparm()` win before big-form `breakarm()`;
+the glove/weapon line still pages, while input58 publishes `Your boots fall
+away!` rather than the pushed sentence and projects AC zero.  Native condition
+order is `Blind Fly`, so status projection must place blindness before flight.
+After the equipment continuation finishes, source allmain's hero
+`m_everyturn_effect()` creates a harmless one-cell vapor region and spends
+`rn2(3)=1` for TTL five on that same input.  All 66 states are exact from
+input3.  Very-small `slide`, slithy and centaur paths remain separate.
 
 Headless eyewear closes the final selected accessory in this chain.  Seed11
 Healer puts on a wished blindfold before becoming a gelatinous cube; gloves and
