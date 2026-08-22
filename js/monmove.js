@@ -6873,9 +6873,41 @@ export function resumeDeferredHeroContact(
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate)
-            recordRandom(random, calls, 5);
+        if (attackerLevel > destructionGate) {
+            const scaleRoll = recordRandom(random, calls, 5);
+            const baseDamage = attack.damage ?? 0;
+            const destructionLimit = Math.trunc(baseDamage / 5)
+                + (baseDamage % 5 > scaleRoll ? 1 : 0);
+            if (destructionLimit > 0) {
+                const wand = (state.inventory || []).find(object =>
+                    (object.oclass ?? object.class) === WAND_CLASS
+                    || object.class === 'Wands');
+                if (wand) {
+                    const explosionDamage = rollOne(10);
+                    calls.push('rnd(10)');
+                    if (recordRandom(random, calls, 3) === 0) {
+                        attack.electricDestroyedObject = wand;
+                        attack.electricExplosionDamage = explosionDamage;
+                        attack.electricInventoryMessage
+                            = `Your ${wand.name || OBJECT_NAMES[wand.otyp]
+                                || 'wand'} breaks apart and explodes!`;
+                        attack.electricInventoryMessagePending = true;
+                    }
+                }
+            }
+        }
         attack.deferredElectricInventory = false;
+        if (attack.electricInventoryMessagePending) return action;
+    }
+    if (attack.electricInventoryMessagePending) return action;
+    if (attack.electricDestroyedObject) {
+        const object = attack.electricDestroyedObject;
+        const index = state.inventory?.indexOf(object) ?? -1;
+        if (index >= 0) state.inventory.splice(index, 1);
+        applyHeroContactDamage(state, attack.electricExplosionDamage ?? 0);
+        recordRandom(random, calls, 2); // exercise(A_STR, FALSE)
+        attack.electricDestroyedObject = null;
+        attack.electricExplosionDamage = 0;
     }
     recordRandom(random, calls, 3);
     recordRandom(random, calls, 6);

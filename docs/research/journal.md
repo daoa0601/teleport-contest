@@ -85649,3 +85649,48 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 20:09 EEST, journal block 2858] {#energy-vortex #ad-dren #high-pw #3d9 #gain-energy #electric #destroy-items #wand-of-sleep #explosion #fatal-status #raw-hp #fixture-disabled #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**High-scaling contract:** the exact potion constructor enters energy-vortex
+combat at level1 Pw134/134, satisfying both strict high thresholds.  Native
+must select 3d9 for every reached AD_DREN slot; drain gates, swallow timers and
+current/max Pw changes remain authoritative.  The same complete replay must
+also survive later electric inventory destruction and fatal-status projection.
+
+**Native high-drain evidence:** input118 consumes `d(3,9)=4,rn2(4)=1` and
+lowers Pw134→130.  Input123 processes two already-swallowed actions with
+`d(3,9)=16` and19, ending Pw95 behind an effect pager.  Input129 drains17;
+input135 rolls14 but `rn2(4)=0` suppresses it and expels at Pw78.  None of these
+amounts exceeds one-third of current+max energy, so no throttle `rnd(n)` is
+owned.  All 150 states are exact from input3; the recorder took **0.07 seconds**
+at **54,231,040 bytes maximum RSS**.
+
+**Electric destruction owner:** input136's 5-point touch passes attacker-level
+gate4.  Source damage scaling creates one destroyable-stack slot, then the
+starting wand of sleep owns `rnd(10)=2,rn2(3)=0`.  Its attempted explosion line
+forces the touch/zap pager.  After acknowledgement, the wand is removed,
+2 explosion HP and Strength exercise `rn2(2)=0` precede knockback and 5 touch
+damage; input137 shows HP6.  The low-Pw sibling caught an over-broad first
+implementation: its damage2 spends scale `rn2(5)=3` but 2>3 is false, so its
+limit is zero and no wand probes occur.  The shared `damage/5 + remainder`
+limit now distinguishes both.
+
+**Fatal presentation and rejected evidence:** a later 4-point touch begins at
+HP2.  Raw HP−2 must paint zero when the death message forces `You get zapped!`
+through tty; only raw−1 is the save-completion sentinel.  Tightening that bridge
+makes input143 exact.  A fixture-on seed5002 sibling then reported undefined
+final HP despite exact screens—synthetic playback had not populated engine
+state, so that failure was rejected.  Re-running fixture-disabled makes all
+three fatal-status siblings green.
+
+**Measured acceptance and next blocker:** low, high and cancelled energy-vortex
+engine witnesses pass **3/3** in **0.22 seconds**; fixture-disabled fatal-status
+siblings pass **3/3** in **0.60 seconds**.  All processes exited.  Section833
+and the ledger now close low/cancelled/high AD_DREN plus the selected electric
+wand-destruction/fatal path.  Audit the next unmapped shared contact family,
+starting with natural AD_STUN or AD_DRLI based on the cheapest nondisplaced
+carrier.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

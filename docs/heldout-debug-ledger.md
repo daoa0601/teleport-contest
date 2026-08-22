@@ -12436,3 +12436,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   mark weight dirty and the load state commits before tty await.  Gain-energy,
   healing and gain-level potion siblings pass 3/3.  The resulting Pw134 exceeds
   both level-one high-drain thresholds and is ready for the 3d9 vortex block.
+- Extending that exact setup with energy vortex closes high AD_DREN.  Native
+  input118 consumes `d(3,9)=4,rn2(4)=1` (Pw134→130); input123 drains 16 and 19
+  across two swallowed actions (Pw95); input129 drains 17; input135 rolls 14
+  but gate zero suppresses it and expels at Pw78.  All 150 states are exact.
+
+  The same session closes selected electric item destruction: damage5 creates
+  a one-stack limit, wand of sleep owns `rnd(10)=2,rn2(3)=0`, its deferred
+  explosion line removes it and adds 2 damage/Strength exercise before the
+  5-point touch tail.  Damage2 in the low-Pw sibling spends the limit roll but
+  selects zero stacks.  A later raw HP−2 fatal touch now paints zero; the three
+  energy-vortex variants pass 3/3 and fixture-disabled fatal siblings pass 3/3.
+  A fixture-on seed5002 state failure was rejected because synthetic playback
+  left `game.u.uhp` undefined.

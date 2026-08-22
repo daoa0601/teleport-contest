@@ -30227,3 +30227,20 @@ pending energy sentence through `--More--`, but the new load band is already
 painted.  JS therefore marks every consumed potion as capacity-dirty and
 commits the new encumbrance state before awaiting its message.  All 84 setup
 states are exact from input3; eight potions remain.
+
+Appending an energy vortex proves the high branch rather than merely making it
+eligible.  Initial input118 consumes `d(3,9)=4,rn2(4)=1` and lowers Pw134→130.
+Already-swallowed input123 processes two 3d9 drains, 16 and 19, ending Pw95;
+input129 drains 17 more; input135 rolls 14 but `rn2(4)=0` suppresses the effect
+and expels at Pw78.  All values remain below drain_en's one-third throttle, so
+no extra `rnd(n)` occurs.  The complete 150-state session is exact from input3.
+
+The high carrier also selects electric inventory destruction fully.  A
+5-point touch passes the attacker-level gate, damage scaling gives one eligible
+stack, and the starting wand of sleep owns `rnd(10)=2,rn2(3)=0`.  The attempted
+`Your wand of sleep breaks apart and explodes!` line forces the touch/zap pager;
+after acknowledgement the wand is removed, explosion damage 2 and Strength
+exercise precede knockback plus touch damage 5.  A later 4-point touch kills
+from HP2 with raw HP−2; status must show zero, while raw−1 remains the distinct
+save-completion sentinel.  Existing fixture-disabled fatal siblings confirm
+that narrowed bridge.

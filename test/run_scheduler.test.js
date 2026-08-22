@@ -8626,6 +8626,82 @@ test('seed0011 blessed gain-energy stack builds high-Pw level-one state',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 high-Pw energy vortex selects 3d9 drain scaling',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\n20 blessed potions of gain energy\n'
+                + ' qk qk qk qk qk qk qk qk qk qk qk qk '
+                + '#wizgenesis\nenergy vortex\n'
+                + 'm.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 150);
+        assertRngSliceExact(result.getRngSlices()[118], [
+            'rnd(10)=10', 'rn2(2)=0', 'd(3,9)=4', 'rn2(4)=1',
+            'rn2(12)=0', 'rn2(12)=10', 'rn2(12)=1',
+            'rn2(70)=25', 'rn2(20)=2', 'rn2(70)=65',
+        ], 'seed0011 initial high-Pw 3d9 drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'You feel your magical energy drain away.');
+        assert.equal(decodedRow(result.getScreens()[118], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:130(134) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(5)=3', 'd(1,6)=3', 'rn2(2)=0',
+            'd(3,9)=16', 'rn2(4)=3', 'rn2(5)=3', 'rn2(5)=2',
+            'rn2(5)=2', 'd(1,6)=5', 'rn2(2)=0',
+            'd(3,9)=19', 'rn2(4)=1',
+        ], 'seed0011 swallowed high-Pw double-drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You feel your magical energy drain away.--More--');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:95(134) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[135], [
+            'rn2(5)=0', 'd(1,6)=4', 'rn2(2)=0',
+            'd(3,9)=14', 'rn2(4)=0',
+        ], 'seed0011 high-Pw drain gate-zero expulsion RNG');
+        assert.equal(decodedTopline(result.getScreens()[135]),
+            'You get expelled!--More--');
+        assert.equal(decodedRow(result.getScreens()[135], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:78(134) AC:8 Xp:1');
+
+        assert.equal(decodedTopline(result.getScreens()[136]),
+            'The energy vortex touches you!  You get zapped!--More--');
+        assertRngSliceExact(result.getRngSlices()[137], [
+            'rn2(2)=0', 'rn2(3)=2', 'rn2(6)=2',
+        ], 'seed0011 wand explosion strength and hit-tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[137]),
+            'Your wand of sleep breaks apart and explodes!--More--');
+        assert.equal(decodedRow(result.getScreens()[137], 23),
+            'Dlvl:1 $:1540 HP:6(13) Pw:78(134) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[143], [
+            'rn2(20)=8', 'rn2(3)=0', 'rn2(6)=1',
+        ], 'seed0011 exact-zero fatal electric tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[143]),
+            'You get zapped!--More--');
+        assert.equal(decodedRow(result.getScreens()[143], 23),
+            'Dlvl:1 $:1540 HP:0(13) Pw:78(134) AC:8 Xp:1');
+
+        assert.equal(game.u.ulevel, 1);
+        assert.equal(game.u.uen, 78);
+        assert.equal(game.u.uenmax, 134);
+        assert.equal(game.u.uhp, 13);
+        assert.equal(game.inventory.some(object => object.otyp === 432), false);
+        const potions = game.inventory.find(object => object.otyp === 313);
+        assert.equal(potions?.quantity ?? potions?.quan, 8);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 cancelled energy vortex preserves Pw across engulf slots',
     async () => {
         const result = await runSegment({

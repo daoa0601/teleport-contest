@@ -3438,6 +3438,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
                     resumeDeferredHeroContact(action, game);
+                    if (heroAttack.electricInventoryMessage) {
+                        const electricItemDismissal = await queueTurnMessage(
+                            heroAttack.electricInventoryMessage,
+                        );
+                        heroAttack.electricInventoryMessage = null;
+                        heroAttack.electricInventoryMessagePending = false;
+                        if (electricItemDismissal !== null
+                            && electricItemDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                        resumeDeferredHeroContact(action, game);
+                    }
                     if (heroAttack.deferredPoisonEffect) {
                         actorContactPagerOwned
                             ||= await resolveDeferredHeroPoison(
@@ -3564,6 +3576,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     = !Upolyd(game.u) && rawFatalHpAfterContact === -1;
                 if (projectedFatalContact
                     && !exactZeroFatalHit
+                    && rawFatalHpAfterContact >= -1
                     && (statusSuppressedByHpSaveSentinel
                         || earlierActorPagerInScan
                         || (actorContactPagerOwned
