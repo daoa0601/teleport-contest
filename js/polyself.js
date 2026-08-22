@@ -333,6 +333,7 @@ export async function polyselfControlledMonster(mnum) {
     const helmet = game.uarmh || game.u?.uarmh;
     const gloves = game.uarmg || game.u?.uarmg;
     const shield = game.uarms || game.u?.uarms;
+    const boots = game.uarmf || game.u?.uarmf;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -448,6 +449,13 @@ export async function polyselfControlledMonster(mnum) {
             'You can no longer hold your shield!',
         );
         dropCarriedObject(shield, ['uarms']);
+        await publishDropCapacityChange();
+    }
+    if (noHands && boots) {
+        await plineWithContinuation(
+            'Your boots are pushed off your feet!',
+        );
+        dropCarriedObject(boots, ['uarmf']);
         await publishDropCapacityChange();
     }
 

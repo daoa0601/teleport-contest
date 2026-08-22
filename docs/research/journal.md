@@ -85117,3 +85117,43 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 18:22 EEST, journal block 2845] {#polyself #break-armor #gelatinous-cube #no-hands #boots #low-boots #dropx #encumbrance #oldcap #topline-continuation #pager #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and prediction:** after no-hands glove/shield processing, source
+`break_armor()` removes boots for no-hands, very-small, slithy and centaur
+forms.  The selected ordinary no-hands arm must say `boots are pushed off your
+feet`, drop the worn identity, immediately recheck capacity and retain all
+earlier pager ownership.  A final missing boot with the right AC is not enough
+if the load message lands on the wrong input.
+
+**Native witness:** seed11 debug Healer wishes/wears +2 low boots, retains the
+starting gloves/scalpel and uses controlled `#polyself gelatinous cube`.
+Input63 consumes `rn2(2)=1,rn2(19)=13,rn2(500)=327,d(6,8)=25`, then displays
+`You turn into a gelatinous cube!  You drop your gloves and weapon!--More--`
+at HP25/25, HD6, AC5, Burdened and Blind.  Input64 has no RNG and pages `Your
+movements are slowed slightly because of your load.`.  Input65 publishes `Your
+boots are pushed off your feet!`, drops type163 and projects AC8.  Gloves,
+scalpel and boots are all floor-owned.  All 72 states are exact from input3;
+the recorder took **0.07 seconds** at **53,133,312 bytes maximum RSS**.
+
+**Earliest divergence and decision:** before the boot owner landed, input63
+was already exact but input64 omitted `--More--` and the boots stayed worn at
+AC5.  This falsified a new weight or glove-pager issue: the missing attempted
+boot line was the sole discriminator.  The no-hands branch now publishes the
+source pushed-off sentence, clears/drops the boots and advances the existing
+per-drop capacity cursor.  Whirly `fall away`, very-small `slide`, slithy and
+centaur policies are not inferred from this witness.
+
+**Measured acceptance and next blocker:** the complete session is exact; the
+fixture-disabled focused polymorph gate passes **12/12** in **0.34 seconds**,
+the preceding twenty rust/corrosion/decay controls remain exact and the one
+owned managed family passes **149/149** in **2.73 seconds**.  Every process
+exited before the next began.  Section830 and the ledger now include the
+selected no-hands boot owner.  Next isolate headless eyewear using a worn
+blindfold/towel/lenses identity while keeping boots absent, then select the
+remaining boot wording families separately.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty test files
+remain untouched.
+
+---

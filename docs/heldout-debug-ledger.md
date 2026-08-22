@@ -12259,3 +12259,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   The fixture-disabled polymorph gate passes 11/11 in 0.36 seconds, the twenty
   erosion controls remain exact and the owned managed family passes 149/149 in
   2.70 seconds.  Boots and eyewear remain open.
+- Seed11 adds wished +2 low boots to the gelatinous-cube no-hands witness.
+  Native input63 combines the form and glove/weapon line behind `--More--` at
+  HP25/25, HD6, AC5, Burdened and Blind.  The attempted boot line makes input64
+  page `Your movements are slowed slightly because of your load.`; input65
+  says `Your boots are pushed off your feet!`, drops type163 and projects AC8.
+  Gloves, scalpel and boots are all floor-owned.  All 72 states are exact from
+  input3.
+
+  The port's per-drop capacity cursor already owned the first pager; the only
+  missing boundary was the ordered no-hands boot message/drop/recheck.  The
+  fixture-disabled focused polymorph gate passes 12/12 in 0.34 seconds, the
+  preceding twenty erosion controls remain exact and the managed family passes
+  149/149 in 2.73 seconds.  Whirly, very-small, slithy and centaur boot arms,
+  plus headless eyewear, remain independent.
