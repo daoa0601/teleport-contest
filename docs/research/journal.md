@@ -84507,3 +84507,46 @@ bite to prove that cancellation suppresses armor while retaining declared
 corpus, public-status rewrite, hidden judge, push or publication ran.
 
 ---
+
+### [2026-08-22 16:27 EEST, journal block 2832] {#black-pudding #hero-contact #armor #helmet #corrosion #cancellation #damage #death-recovery #native-witness #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** a cancelled black-pudding attacker must still publish its bite,
+retain declared 3d8 damage, enter shared knockback and apply HP loss, while
+skipping `erode_armor(ERODE_CORRODE)` entirely.  Passive projectile
+cancellation is not sufficient evidence because that owner has no hero HP or
+armor-selection tail.
+
+**Setup correction and witness:** the existing seed2 cancellation-wand recipe
+was extended with a worn +2 helmet and later natural rests.  The helmet wish
+moved native genesis placement from west to north; the first west-directed
+attempt therefore heard nothing, missed every intended interaction and is a
+rejected no-contact control.  Correcting wand, stethoscope and shot directions
+to north produces wrapped status `cancelled.--More--`.  The orcish arrow misses
+but makes the adjacent pudding hostile.  The first rest allocates no pudding
+attack; the second reaches the decisive bite.
+
+**Exact transaction:** native input175 consumes scheduler `rn2(5)=0`, attack
+`rnd(20)=11`, declared `d(3,8)=19`, then shared knockback `rn2(3)=0,rn2(6)=3`.
+There is no armor-slot draw after damage.  The bite pager shows HP 0/15 and AC
+four while the helmet remains primary/secondary erosion zero.  Inputs176--180
+then cross `You die...`, the declined `Die? [yn] (n)` prompt and the exact
+17-call recovery scheduler, restoring HP 15/15 without changing the live
+cancelled pudding or helmet.
+
+**Decision and measured acceptance:** the corrected 187-state native recording
+took **0.07 seconds** at **54,378,496 bytes maximum RSS** and replays exactly
+from input3 onward; the eight-control audit containing it completes in **0.78
+seconds** at **141,590,528 bytes maximum RSS**.  Existing production behavior
+already matches the complete graph, so no code bridge is justified.  The
+durable cancellation regression passes **1/1** in **0.21 seconds** at
+**129,515,520 bytes**.  The one owned managed family passes **140/140** in
+**2.58 seconds** at **364,101,632 bytes maximum RSS**; every runner exits and
+the registry is empty.
+
+**Next blocker:** section827 and the ledger now distinguish cancellation as an
+effect gate rather than a damage gate.  Next select worn copper armor to prove
+AD_CORR's material extension beyond rust, paired with a non-corrodible worn
+control and body-slot stop behavior.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran.
+
+---

@@ -29532,10 +29532,10 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-139/139 after the paired rust/corrosion material, protection, degree,
+140/140 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
-rust/grease/proof/blessing/degree and complete worn-corrosion rows.
+rust/grease/proof/blessing/degree, complete worn-corrosion and cancelled-bite rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29626,8 +29626,24 @@ needed beyond section827's shared erosion owner.
 
 This completes grease retain/wear, actual proof, positive blessing, degree
 one-to-two, degree two-to-three and max-three retry for worn AD_CORR.  Natural
-attacker cancellation and the copper/non-corrodible worn-material boundary
-remain distinct successors.
+attacker cancellation is selected separately below; the copper/non-corrodible
+worn-material boundary remains a distinct successor.
+
+Seed2 selects the cancelled natural-contact arm without borrowing the
+projectile passive.  A wand of cancellation and wrapped stethoscope status
+prove `mcan=1`; the missed orcish arrow makes the adjacent pudding hostile.
+Its first rest supplies no movement ration, while the next rest reaches native
+input175.  That input consumes scheduler `rn2(5)=0`, bite `rnd(20)=11`, full
+`d(3,8)=19`, and shared knockback `rn2(3)=0,rn2(6)=3`.  No armor-slot `rn2(5)`
+occurs after damage: `mhitm_ad_corr()` returns immediately after hitmsg when
+the attacker is cancelled, but `hitmu()` retains the declared damage.
+
+The 19-point bite reduces HP 15→0 while the worn helmet remains secondary
+erosion zero and AC four.  Native then crosses the bite pager, death pager,
+declined debug-death prompt and recovery scheduler before restoring HP 15/15.
+All 187 states replay exactly from input3 onward.  This proves cancellation is
+an effect gate, not a damage gate, and closes the natural AD_CORR cancellation
+successor without a production edit.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level

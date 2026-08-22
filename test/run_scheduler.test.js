@@ -6174,6 +6174,83 @@ test('seed0002 cancelled black pudding suppresses orcish-arrow corrosion',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0002 orcish arrow leads cancelled black-pudding bite damage',
+    async () => {
+        const result = await runSegment({
+            seed: 2,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed +2 helmet\nWh'
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful black pudding\n'
+                + 'zikajk tgk  m. m. m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 187);
+        assertRngSliceExact(result.getRngSlices()[164], [],
+            'seed0002 cancelled worn-corrosion status RNG');
+        assert.equal(decodedRow(result.getScreens()[164], 0),
+            'Status of the black pudding (neutral, large):  Level 9  HP 49(49)  AC 6,');
+        assert.equal(decodedRow(result.getScreens()[164], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[164], [18, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[175], [
+            'rn2(5)=0', 'rnd(20)=11', 'd(3,8)=19',
+            'rn2(3)=0', 'rn2(6)=3',
+        ], 'seed0002 cancelled corrosion bite and knockback RNG');
+        assert.equal(decodedTopline(result.getScreens()[175]),
+            'The black pudding bites!--More--');
+        assert.equal(decodedRow(result.getScreens()[175], 23),
+            'Dlvl:1 $:0 HP:0(15) Pw:2(2) AC:4 Xp:1');
+        assert.deepEqual(result.getCursors()[175], [32, 0, 1]);
+
+        assert.equal(decodedTopline(result.getScreens()[176]),
+            'You die...--More--');
+        assert.equal(decodedTopline(result.getScreens()[179]),
+            'Die? [yn] (n)');
+        assertRngSliceExact(result.getRngSlices()[180], [
+            'rn2(4)=3', 'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=0',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(4)=0', 'rn2(12)=11',
+            'rn2(5)=3', 'rn2(12)=4', 'rn2(12)=1', 'rn2(12)=9',
+            'rn2(70)=36', 'rn2(400)=26', 'rn2(300)=36',
+            'rn2(20)=17', 'rn2(67)=18',
+        ], 'seed0002 declined-death recovery and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[180]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+
+        const pudding = game.level.monsters.find(monster =>
+            monster.mnum === 209);
+        assert.ok(pudding);
+        assert.deepEqual({
+            x: pudding.mx,
+            y: pudding.my,
+            hp: pudding.mhp,
+            hpmax: pudding.mhpmax,
+            peaceful: pudding.mpeaceful,
+            cancelled: pudding.mcan ?? 0,
+        }, {
+            x: 48,
+            y: 15,
+            hp: 49,
+            hpmax: 49,
+            peaceful: 0,
+            cancelled: 1,
+        });
+        assertWornCorrosionHelmet({ corrosion: 0 });
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u.uhp, 15);
+        assert.equal(game.u.uhpmax, 15);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0053 orcish arrow leads rust touches from cloak to worn helmet',
     async () => {
         const result = await runSegment({

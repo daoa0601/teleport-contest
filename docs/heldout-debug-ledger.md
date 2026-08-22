@@ -12027,3 +12027,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   at 139,182,080 bytes; the one owned managed family passes 139/139 in 2.61
   seconds at 349,126,656 bytes and exits cleanly.  Natural cancelled AD_CORR
   and the copper/non-corrodible worn-material boundary remain open.
+- Seed2 closes naturally cancelled monster-to-hero AD_CORR.  Adding the helmet
+  wish moved the pudding north, so the first west-directed recording was a
+  rejected no-contact control.  The corrected north-directed wand/status/shot
+  setup proves a live `mcan=1` pudding; its arrow miss makes the target hostile,
+  the first rest supplies no attack, and the second reaches the bite.
+
+  Native input175 consumes `rn2(5)=0,rnd(20)=11,d(3,8)=19,rn2(3)=0,rn2(6)=3`
+  exactly.  There is no post-damage armor-slot draw, the helmet stays
+  `oeroded2=0`, and AC stays four.  Cancellation suppresses `erode_armor()` but
+  not the already-rolled 3d8 damage: HP reaches zero, then the exact death
+  pager, declined debug-death prompt and recovery restore 15/15 HP.  All 187
+  states replay exactly from input3 onward without a production edit.  Focused
+  passes 1/1 in 0.21 seconds at 129,515,520 bytes maximum RSS; the one owned
+  managed family passes 140/140 in 2.58 seconds at 364,101,632 bytes and exits
+  cleanly.  The worn copper/non-corrodible material boundary is next.
