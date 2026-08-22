@@ -349,6 +349,10 @@ function monsterSpellEffectPreview(spell, damage, state) {
             effectMessage = (state?.u?.confusionTurns ?? 0) > 0
                 ? 'You feel more confused!' : 'You feel confused!';
         }
+    } else if (spell.key === 'weaken-you') {
+        effectMessage = antimagic
+            ? 'You feel momentarily weakened.'
+            : 'You suddenly feel weaker!';
     } else if (spell.key === 'curse-items') {
         effectMessage = 'You feel as if you need some help.';
     } else if (spell.key === 'geyser') {
@@ -7519,7 +7523,9 @@ export function rollDeferredHeroSpellDamage(
 // kill only the current monster form, in which case allmain projects the
 // shared polyself.c:rehumanize() transaction rather than treating the hero as
 // ordinarily dead.
-export function resumeDeferredHeroSpell(action, state) {
+export function resumeDeferredHeroSpell(
+    action, state, random = rn2, rollOne = rnd,
+) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredSpellEffect) return null;
     attack.deferredSpellEffect = false;
@@ -7587,6 +7593,64 @@ export function resumeDeferredHeroSpell(action, state) {
         if (!monster.invis_blkd) monster.minvis = 1;
         attack.monsterDisappeared = true;
         attack.appliedDamage = 0;
+        return attack;
+    }
+    if (attack.spell === 'weaken-you') {
+        const antimagic = !!(state.u?.antimagic
+            || state.u?.magicResistance || state.u?.magic_resistance);
+        attack.appliedDamage = 0;
+        if (antimagic) {
+            attack.weakenedHero = false;
+            return attack;
+        }
+
+        const monsterLevel = action.monster?.m_lev
+            ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+        let lossSides = Math.max(1, monsterLevel - 6);
+        if (state.u?.halfSpellDamage || state.u?.half_spell_damage)
+            lossSides = Math.trunc((lossSides + 1) / 2);
+        let strengthLoss = rollOne(lossSides);
+        action.calls.push(`rnd(${lossSides})`);
+
+        const wasPolymorphed = Upolyd(state.u);
+        const attributes = state.u?.acurr?.a;
+        const currentStrength = attributes?.[0] ?? 3;
+        let reducedStrength = currentStrength - strengthLoss;
+        let frailtyDamage = 0;
+        while (reducedStrength < 3) {
+            reducedStrength++;
+            strengthLoss--;
+            frailtyDamage += 3 + recordRandom(random, action.calls, 4);
+        }
+
+        if (frailtyDamage) {
+            applyHeroContactDamage(state, frailtyDamage);
+            if (wasPolymorphed && (state.u.mh ?? 0) > 0) {
+                state.u.mhmax = Math.max(
+                    1, (state.u.mhmax ?? 1) - frailtyDamage,
+                );
+                state.u.mh = Math.min(state.u.mh, state.u.mhmax);
+            } else if (!wasPolymorphed) {
+                const minimumHp = Math.max(1, state.u.ulevel ?? 1);
+                state.u.uhpmax = Math.max(
+                    minimumHp, (state.u.uhpmax ?? 1) - frailtyDamage,
+                );
+                state.u.uhp = Math.min(state.u.uhp, state.u.uhpmax);
+            }
+        }
+
+        const rehumanize = wasPolymorphed && (state.u.mh ?? 0) < 1;
+        if (attributes && strengthLoss > 0 && !rehumanize) {
+            attributes[0] = reducedStrength;
+            if (!Array.isArray(state.u._exercise))
+                state.u._exercise = Array(6).fill(0);
+            state.u._exercise[0] = 0;
+        }
+        attack.strengthLoss = strengthLoss;
+        attack.frailtyDamage = frailtyDamage;
+        attack.weakenedHero = strengthLoss > 0 || frailtyDamage > 0;
+        attack.rehumanize = rehumanize;
+        attack.heroDied = !wasPolymorphed && (state.u.uhp ?? 0) < 1;
         return attack;
     }
     if (attack.spell === 'fire-pillar') {

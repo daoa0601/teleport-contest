@@ -12756,3 +12756,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   focused wizard plus prior cleric/genocide/snake gate passes 28/28.  Artifact
   theft, cuss speeches, See-invisible prose and higher wizard effects remain
   open.
+- Seed12 closes the first directed Wizard attribute effect through 127 exact
+  states.  Inputs0--117 remain exact, including the earlier shared curse-items
+  spell.  Input118 owns claw19, the theft/contact prefix, weaken selection and
+  discarded `d(16,6)=55`, but no strength RNG.  Input119 publishes the weaken
+  line, rolls `rnd(24)=19`, lowers Strength8 to3 and converts fourteen excess
+  points into59 HP/max-HP damage before resuming the actor/global tail.  The
+  exact fixture-disabled replay ends HP56/100 and the two selected Wizard
+  controls pass 2/2.  Antimagic, half-spell, sustain ability, polymorphic and
+  lethal weakness remain open alongside haste and higher Wizard effects.

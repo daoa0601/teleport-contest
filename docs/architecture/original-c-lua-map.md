@@ -31121,3 +31121,34 @@ the map and skips cuss because the actor is now invisible.  All 127 states are
 exact, ending HP33 with the original Wizard at119/119 HP.  Successful artifact
 theft, zero-gate cuss speeches, See-invisible transparency, haste and higher
 wizard effects remain separate controls.
+
+## 860. Wizard weakening defers attribute loss until after effect prose
+
+```mermaid
+flowchart TD
+    Select["AD_SPEL selects MCAST_WEAKEN_YOU"] --> PreRoll["castmu pre-rolls 16d6, though weaken discards it"]
+    PreRoll --> CastPager["directed cast line crosses tty pager"]
+    CastPager --> EffectLine["publish You suddenly feel weaker!"]
+    EffectLine --> Loss["rnd(m_lev - 6) chooses strength loss"]
+    Loss --> Floor["losestr spends loss down to natural Strength 3"]
+    Floor --> Frailty["each excess point rolls rn1(4,3) HP and max-HP damage"]
+    Frailty --> Attribute["remaining loss updates base Strength and clears exercise"]
+    Attribute --> Tail["resume remaining Wizard attacks, cuss, and global maintenance"]
+    Resist["Antimagic: momentary-weakened prose; no loss RNG"] -.-> EffectLine
+    Lua["Lua owns no spell, attribute, or tty phase"] -.-> Select
+```
+
+Seed12 is exact through all 127 states.  Input118 combines the Wizard's
+2d12=19 claw, theft gate, shared contact probes, weaken selection and discarded
+`d(16,6)=55` behind the cast pager.  No strength-effect RNG belongs to that
+input.  Input119 first publishes `You suddenly feel weaker!`, then rolls
+`rnd(24)=19` from Wizard level30.
+
+The hero enters at Strength8.  `losestr()` commits five points down to the
+natural floor and converts the remaining fourteen points into fourteen
+`rn2(4)+3` frailty rolls totaling59.  HP/max HP move from115/159 to56/100,
+Strength becomes3, and only then does the same actor/global tail resume.  The
+JavaScript continuation now keeps that effect after the tty boundary and
+preserves the polymorph-sensitive HP/max-HP ownership shape.  Antimagic,
+half-spell scaling, polymorphic rehumanization, sustain ability, exceptional
+Strength encoding and lethal weakness remain separate controls.

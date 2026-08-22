@@ -9527,6 +9527,58 @@ test('seed0011 forced Wizard damages, cusses, and disappears after pager',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0012 forced Wizard weakness drains strength after its pager',
+    async () => {
+        const result = await runSegment({
+            seed: 12,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile Wizard of Yendor\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assertRngSliceExact(result.getRngSlices()[118], [
+            'rn2(5)=4', 'rn2(5)=1', 'rnd(20)=19', 'd(2,12)=19',
+            'rn2(20)=1', 'rn2(3)=0', 'rn2(6)=4', 'rn2(30)=6',
+            'rn2(300)=124', 'd(16,6)=55',
+        ], 'seed0012 Wizard weaken cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[118], 22),
+            'Wizard the Chirurgeon          St:8 Dx:9 Co:16 In:10 Wi:14 Ch:18 Neutral');
+        assert.equal(decodedRow(result.getScreens()[118], 23),
+            'Dlvl:1 $:1031 HP:115(159) Pw:250(250) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'rnd(24)=19',
+            'rn2(4)=0', 'rn2(4)=1', 'rn2(4)=3', 'rn2(4)=1',
+            'rn2(4)=2', 'rn2(4)=0', 'rn2(4)=1', 'rn2(4)=1',
+            'rn2(4)=3', 'rn2(4)=0', 'rn2(4)=1', 'rn2(4)=1',
+            'rn2(4)=1', 'rn2(4)=2',
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(32)=14', 'rn2(5)=0',
+            'rn2(5)=3', 'rn2(16)=11', 'rn2(5)=1', 'rn2(5)=4',
+            'rn2(12)=11', 'rn2(5)=2', 'rn2(12)=8', 'rn2(12)=1',
+            'rn2(12)=6', 'rn2(12)=8', 'rn2(70)=11', 'rn2(100)=76',
+            'rn2(400)=101', 'rn2(20)=14', 'rn2(67)=35',
+        ], 'seed0012 Wizard weakness and actor-tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[119]),
+            'You suddenly feel weaker!');
+        assert.equal(decodedRow(result.getScreens()[119], 22),
+            'Wizard the Chirurgeon          St:3 Dx:9 Co:16 In:10 Wi:14 Ch:18 Neutral');
+        assert.equal(decodedRow(result.getScreens()[119], 23),
+            'Dlvl:1 $:1031 HP:56(100) Pw:250(250) AC:8 Xp:30');
+        assert.equal(game.u.acurr.a[0], 3);
+        assert.equal(game.u.uhp, 56);
+        assert.equal(game.u.uhpmax, 100);
+    });
+
 test('seed0011 high-cleric fire pillar burns armor and selected inventory',
     async () => {
         const result = await runSegment({

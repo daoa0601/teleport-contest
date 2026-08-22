@@ -86989,3 +86989,40 @@ full corpus, hidden judge, push or publication ran; unrelated dirty files
 remain untouched.
 
 ---
+
+### [2026-08-23 00:11 EEST, journal block 2893] {#wizard-of-yendor #wizard-spell #weaken-you #losestr #strength #frailty #hpmax #deferred-continuation #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Portfolio and earliest divergence:** serial forced-Wizard recordings for
+seeds12--20 exposed curse-items then weaken-you in seed12, death touch in
+seed14, haste in seeds17/18, and large summon branches in seeds13/16/19.
+Seed12 is the smallest next carrier.  Its native/JS prefix is exact through
+input117, including the earlier shared curse effect.  At input118 JS matched
+the ten native calls through discarded `d(16,6)=55`, then incorrectly entered
+the next turn because weaken-you had no deferred effect owner.
+
+**Prediction and source contract:** `mcast_weaken_you()` publishes its effect
+line before `rnd(m_lev-6)` and `losestr()`.  For level30 and starting Strength8,
+native input119 predicts `rnd(24)=19`, five retained attribute points and
+fourteen `rn1(4,3)` frailty rolls.  Those rolls total59, so HP115/max159 must
+become56/100 while Strength reaches3 before the remaining actor/global tail.
+Antimagic predicts alternate momentary prose and no loss draw.
+
+**Implementation and measured effect:** the Wizard preview now owns both
+weaken messages.  The post-message continuation performs the level-derived
+loss draw, natural Strength floor, excess-loss HP/max-HP conversion, exercise
+reset and polymorph-aware death flags before returning to `mattacku()`.  The
+fixture-disabled comparison is exact for all **127 states**, including every
+RNG slice, screen cell and cursor; it took **0.39 seconds** at **126,959,616
+bytes maximum RSS**.  The two selected Wizard regressions pass **2/2** in
+**0.69 seconds** at **131,842,048 bytes maximum RSS**; all processes exited.
+
+**Decision, falsification and next blocker:** the exact prefix and effect tail
+falsify shared curse-items, spell selection, the pre-rolled 16d6 value and
+later actor choice as causes.  Section860 maps the new C/JS boundary; Lua owns
+none.  Keep seed14 death touch and seeds17/18 haste as separate next blocks;
+also retain antimagic, half-spell, sustain ability, exceptional Strength,
+polymorphic rehumanization and lethal weakness as explicit controls.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---
