@@ -29856,8 +29856,11 @@ flowchart TD
     Shield -->|"no"| Boots{"no hands plus worn boots?"}
     ShieldLine --> Boots
     Boots -->|"yes"| BootLine["boots pushed off feet; drop boots"]
-    Boots -->|"no"| EquipDone["find_ac; newsym; final encumber"]
-    BootLine --> EquipDone
+    Boots -->|"no"| Head{"headless form plus eyewear?"}
+    BootLine --> Head
+    Head -->|"yes"| EyeLine["eyewear falls; blindness feedback; drop eyewear"]
+    Head -->|"no"| EquipDone["find_ac; newsym; final encumber"]
+    EyeLine --> EquipDone
     EquipDone --> Live["committed monster equipment and presentation state"]
     Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
     Contact --> Death{"matching completelyrottable/rustable form?"}
@@ -29892,7 +29895,7 @@ generic cloak removal does.  The existing gnome therefore still displays its
 new glyph during the shrink-out pager, while the Tourist suit pager retains
 the old hero glyph.  The existing red-dragon weapon-drop and two-stage
 encumbrance/breath pagers remain exact.  Additional no-hands helmet and
-eyewear branches remain distinct.
+alternate boot-wording branches remain distinct.
 
 Alchemy smock selects the first cloak-subtype override.  A seed11 Healer wishes
 and wears the shuffled `apron`, then becomes a wood golem.  Source
@@ -29939,8 +29942,8 @@ form/glove pair, so input29 exposes `--More--` with HP20/20, HD6, AC8,
 `Burdened` and `Blind`; input30 then publishes the capacity notice.  All 38
 states are exact from input3.  The earlier weapon-only `You find you must drop
 your tool!` path remains valid when there are no gloves, as selected by the
-existing red dragon.  Shield, additional helmet, boot and eyewear removals
-are later branches of the same source transaction.
+existing red dragon.  Shield, boot and eyewear removals continue in source
+order below; the additional no-hands helmet branch remains unselected.
 
 The shield successor proves that `dropx()` owns immediate load feedback, not
 just final polymorph cleanup.  The paired Healer wishes/wears +2 small shield
@@ -29956,8 +29959,7 @@ the shield and projects AC eight.  All 75 states are exact from input3.
 The port now folds separately stored purse gold into the ordinary inventory-
 weight calculation when no explicit coin object exists.  A per-drop capacity
 cursor mirrors source `go.oldcap`, so these messages are derived from state
-transitions rather than hardcoded to the shield recipe.  Eyewear remains an
-independent successor.
+transitions rather than hardcoded to the shield recipe.
 
 The no-hands low-boots successor closes the next ordered branch without a new
 capacity bridge.  Seed11 Healer wears wished +2 low boots, keeps the starting
@@ -29969,6 +29971,18 @@ feet!`, drops type163 and projects AC eight.  HP25/25, HD6, Burdened and Blind
 remain stable through the sequence.  All 72 states are exact from input3.
 Whirly `fall away`, very-small `slide`, slithy and centaur boot wording/policy
 remain separate successors; this block selects only the no-hands pushed arm.
+
+Headless eyewear closes the final selected accessory in this chain.  Seed11
+Healer puts on a wished blindfold before becoming a gelatinous cube; gloves and
+scalpel remain present so the witness retains the earlier per-drop load pager.
+Input51 pages the form/glove line, and attempting the eyewear sentence makes
+input52 page the pending Burdened notice.  Input53 then combines `Your blindfold
+falls off!` with `You still cannot see.`: clearing `ublindf` runs blindness
+feedback before type233 is dropped, but the eyeless form keeps Blind active.
+All 60 states are exact from input3.  The message derives singular/plural
+`fall` grammar from the simple eyewear name; towel and lenses remain useful
+identity siblings, while sight-restoring headless combinations are impossible
+for this eyeless form.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the

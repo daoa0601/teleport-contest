@@ -12273,3 +12273,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   preceding twenty erosion controls remain exact and the managed family passes
   149/149 in 2.73 seconds.  Whirly, very-small, slithy and centaur boot arms,
   plus headless eyewear, remain independent.
+- Seed11 Healer wears a wished blindfold before the headless, eyeless
+  gelatinous-cube transformation.  Native input51 pages the form/glove/weapon
+  line at HP21/21, HD6, AC8, Burdened and Blind.  The attempted eyewear line
+  makes input52 page the pending capacity notice; input53 combines `Your
+  blindfold falls off!  You still cannot see.`, clears `ublindf` and drops
+  type233 while form blindness remains.  Gloves and scalpel retain their prior
+  floor ownership.  All 60 states are exact from input3.
+
+  The selected owner is message → clear worn eyewear/blindness feedback →
+  floor drop → capacity recheck.  The fixture-disabled focused polymorph gate
+  passes 13/13 in 0.35 seconds, the preceding twenty erosion controls remain
+  exact and the managed family passes 149/149 in 2.76 seconds.  Towel/lenses
+  grammar and the remaining boot wording families remain separate siblings.

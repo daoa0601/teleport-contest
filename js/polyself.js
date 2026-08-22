@@ -25,6 +25,7 @@ const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00006000;
+const M1_NOHEAD = 0x00008000;
 const M1_FLY = 0x00000001;
 const M1_OVIPAROUS = 0x00400000;
 const M1_HUMANOID = 0x00020000;
@@ -334,6 +335,7 @@ export async function polyselfControlledMonster(mnum) {
     const gloves = game.uarmg || game.u?.uarmg;
     const shield = game.uarms || game.u?.uarms;
     const boots = game.uarmf || game.u?.uarmf;
+    const eyewear = game.ublindf || game.u?.ublindf;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -456,6 +458,25 @@ export async function polyselfControlledMonster(mnum) {
             'Your boots are pushed off your feet!',
         );
         dropCarriedObject(boots, ['uarmf']);
+        await publishDropCapacityChange();
+    }
+    if ((formFlags & M1_NOHEAD) && eyewear) {
+        let eyewearName = eyewear.name || 'blindfold';
+        if (eyewearName.startsWith('pair of '))
+            eyewearName = eyewearName.slice('pair of '.length);
+        const fallVerb = eyewearName.endsWith('s') ? 'fall' : 'falls';
+        await plineWithContinuation(
+            `Your ${eyewearName} ${fallVerb} off!`,
+        );
+        clearEquipmentSlot('ublindf', eyewear);
+        eyewear.worn = false;
+        eyewear.wornSlot = null;
+        eyewear.owornmask = 0;
+        if (!heroHasEyes(game)) {
+            game.blind = true;
+            await plineWithContinuation('You still cannot see.');
+        }
+        dropCarriedObject(eyewear, ['ublindf']);
         await publishDropCapacityChange();
     }
 

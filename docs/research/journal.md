@@ -85157,3 +85157,43 @@ rewrite, hidden judge, push or publication ran; unrelated dirty test files
 remain untouched.
 
 ---
+
+### [2026-08-22 18:27 EEST, journal block 2846] {#polyself #break-armor #gelatinous-cube #headless #eyeless #blindfold #ublindf #blindness #dropx #encumbrance #topline-continuation #pager #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and prediction:** after boots, source `break_armor()` removes worn
+eyewear only when the new form has no head.  It publishes the simple object
+name with singular/plural `fall` grammar, clears `ublindf` through
+`Blindf_off(NULL)`, lets blindness feedback run, then drops the object and
+rechecks capacity.  The selected eyeless form must remain Blind after physical
+blindfold removal; a final cleared slot without `You still cannot see.` is not
+acceptance.
+
+**Native witness:** seed11 debug Healer wishes/puts on a blindfold, retains the
+starting gloves/scalpel and uses controlled `#polyself gelatinous cube`.
+Input51 consumes `rn2(2)=0,rn2(19)=8,rn2(500)=48,d(6,8)=21` and pages `You
+turn into a gelatinous cube!  You drop your gloves and weapon!` at HP21/21,
+HD6, AC8, Burdened and Blind.  Input52 has no RNG and pages the pending capacity
+notice.  Input53 combines `Your blindfold falls off!  You still cannot see.`,
+clears both eyewear pointers, drops type233 and retains form-derived blindness.
+All 60 states are exact from input3; the recorder took **0.07 seconds** at
+**52,838,400 bytes maximum RSS**.
+
+**Earliest divergence and implementation:** input51 was already exact, while
+input52 lacked `--More--` because no later eyewear line existed; the blindfold
+also stayed worn.  This falsified glove, capacity and RNG hypotheses.  The
+headless predicate now publishes the eyewear fall line, clears worn metadata,
+queues `You still cannot see.` for an eyeless form, then uses the shared floor
+drop/per-drop capacity owner.  The attempted eyewear line naturally forces the
+older capacity notice rather than receiving an explicit pager bridge.
+
+**Measured acceptance and next blocker:** the complete session is exact; the
+fixture-disabled focused polymorph gate passes **13/13** in **0.35 seconds**,
+the preceding twenty rust/corrosion/decay controls remain exact and the one
+owned managed family passes **149/149** in **2.76 seconds**.  Every process
+exited before the next began.  Section830 and the ledger now include the
+selected headless-eyewear owner.  Next choose either lenses to prove plural
+grammar/appearance or a whirly/very-small boot form to advance the remaining
+boot-policy branches.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty test files remain untouched.
+
+---

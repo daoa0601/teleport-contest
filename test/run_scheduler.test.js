@@ -8123,6 +8123,57 @@ test('seed0011 gelatinous-cube nohands pushes off boots after load pager',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 headless gelatinous cube drops blindfold after load pager',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nblindfold\n'
+                + 'Pk #polyself\ngelatinous cube\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 60);
+        assertRngSliceExact(result.getRngSlices()[51], [
+            'rn2(2)=0', 'rn2(19)=8', 'rn2(500)=48', 'd(6,8)=21',
+        ], 'seed0011 headless blindfold setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[51]),
+            'You turn into a gelatinous cube!  You drop your gloves and weapon!--More--');
+        assert.equal(decodedRow(result.getScreens()[51], 23),
+            'Dlvl:1 $:1540 HP:21(21) Pw:5(5) AC:8 HD:6 Burdened Blind');
+        assert.deepEqual(result.getCursors()[51], [74, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[52], [],
+            'seed0011 headless blindfold capacity RNG');
+        assert.equal(decodedTopline(result.getScreens()[52]),
+            'Your movements are slowed slightly because of your load.--More--');
+        assert.deepEqual(result.getCursors()[52], [64, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[53]),
+            'Your blindfold falls off!  You still cannot see.');
+        assert.equal(decodedRow(result.getScreens()[53], 23),
+            'Dlvl:1 $:1540 HP:21(21) Pw:5(5) AC:8 HD:6 Burdened Blind');
+        assert.deepEqual(result.getCursors()[53], [65, 6, 1]);
+
+        assert.equal(game.ublindf, null);
+        assert.equal(game.u.ublindf, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 233));
+        assert.ok(floorObjects.some(object => object.otyp === 159));
+        assert.ok(floorObjects.some(object => object.otyp === 39));
+        assert.equal(game.u.umonnum, 8);
+        assert.equal(game.u.mh, 21);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.u._encumbrance, 'Burdened');
+        assert.equal(game.blind, true);
+        assert.equal(game._blindFromMonsterForm, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({
