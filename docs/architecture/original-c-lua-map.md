@@ -30244,3 +30244,33 @@ exercise precede knockback plus touch damage 5.  A later 4-point touch kills
 from HP2 with raw HP−2; status must show zero, while raw−1 remains the distinct
 save-completion sentinel.  Existing fixture-disabled fatal siblings confirm
 that narrowed bridge.
+
+## 834. Wraith life drain removes recorded level gains before touch damage
+
+```mermaid
+flowchart TD
+    Touch["wraith AT_TUCH / AD_DRLI 1d6"] --> Damage["d(1,6)"]
+    Damage --> Hitmsg["The wraith touches you"]
+    Hitmsg --> Gate{"rn2(3) equals zero?"}
+    Gate -->|"no"| Tail["shared knockback then 1d6 HP damage"]
+    Gate -->|"yes"| Resist{"drain resistance or magic negation?"}
+    Resist -->|"yes"| Tail
+    Resist -->|"no"| Lose["loseExperienceLevel: exact uhpinc/ueninc"]
+    Lose --> Rank["Goodbye level N; live rank title changes"]
+    Rank --> Tail
+    Tail --> Status["new level/max HP/max Pw/current values"]
+    Lua["Lua owns no touch, gate, level or status policy"] -.-> Touch
+```
+
+Seed11 level-30 Healer supplies both gate outcomes.  Input86 rolls 1d6=4 and
+`rn2(3)=2`, so no level effect occurs and the ordinary touch damage lands.
+Input134 rolls 1d6=4, gate zero and magic-negation 3; `Goodbye level 30.` removes
+the exact level-30 HP/Pw increments before knockback/damage, yielding level29,
+HP113/139 and Pw245/245.  Input146 repeats at level29, and later selected gates
+reach level26.  All 179 states are exact from input3.
+
+The level-loss helper was already source-shaped around `uhpinc`/`ueninc`; the
+missing owners were AD_DRLI dispatch and status rank.  Status now computes
+source `xlev_to_rank()` from live level rather than retaining the startup/high-
+level cached title: level29 Healer is `Physician`, not level30 `Chirurgeon`.
+The existing wizard levelchange stream remains exact.

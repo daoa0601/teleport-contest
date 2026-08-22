@@ -12449,3 +12449,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   energy-vortex variants pass 3/3 and fixture-disabled fatal siblings pass 3/3.
   A fixture-on seed5002 state failure was rejected because synthetic playback
   left `game.u.uhp` undefined.
+- Seed11 level-30 Healer closes hostile wraith AD_DRLI.  Native input86 rolls
+  `d(1,6)=4,rn2(3)=2` and keeps level30; input134 rolls
+  `d(1,6)=4,rn2(3)=0,rn2(10)=3`, publishes `Goodbye level 30.`, removes the
+  exact recorded HP/Pw gains, then applies knockback/touch damage for level29,
+  HP113/139 and Pw245/245.  Input146 repeats at level29; later drains end level26.
+  All 179 states are exact from input3.
+
+  The existing loseExperienceLevel state owner was reused.  Live status rank
+  now follows source xlev_to_rank instead of cached startup rank, changing
+  Chirurgeon→Physician at 30→29.  Wraith and wizard-levelchange focused tests
+  pass 2/2 in 0.26 seconds.  Cancellation and drain-resistance controls remain
+  separate before moving to AD_STUN.

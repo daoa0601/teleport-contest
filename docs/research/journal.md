@@ -85694,3 +85694,39 @@ carrier.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:18 EEST, journal block 2859] {#wraith #hero-contact #ad-drli #life-drain #level-loss #uhpinc #ueninc #rank #xlev-to-rank #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Contract and carrier choice:** active AD_STUN has only peaceful quest abbot,
+while hostile wraith supplies nondisplaced AT_TUCH/AD_DRLI without
+shapechanging.  Level30 Healer prevents level-one drain death and preserves
+recorded per-level HP/Pw arrays.  Acceptance requires both non-trigger and
+selected `rn2(3)` arms plus exact level/rank/max/current state.
+
+**Native selection:** the first eight touches all had nonzero first
+post-damage `rn2(3)` gates, so they were not life-drain evidence.  Extending by
+eight retains HP headroom and reaches input134:
+`rn2(5)=1,rnd(20)=1,d(1,6)=4,rn2(3)=0,rn2(10)=3`, followed by shared
+knockback.  Source publishes `The wraith touches you!  Goodbye level 30.`,
+removes the exact level-30 `uhpinc`/`ueninc`, then applies touch damage, yielding
+level29 HP113/139 Pw245/245.  Input146 repeats `Goodbye level 29.`; later gates
+end level26.  All 179 states are exact; the recorder took **0.08 seconds** at
+**54,640,640 bytes maximum RSS**.
+
+**Implementation and earliest remaining mismatch:** natural AD_DRLI now rolls
+declared damage, resumes its one-in-three gate and magic negation after hitmsg,
+calls the existing `loseExperienceLevel()`, queues Goodbye prose, then enters
+the common hit tail.  The first replay then differed only in title:
+JavaScript retained level30 `Chirurgeon` after the exact level29 state, while
+native uses `Physician`.  Status now applies source xlev_to_rank to the live
+level; no wraith-specific title logic exists.
+
+**Measured acceptance and next blocker:** the complete engine witness and
+existing wizard levelchange/rank stream pass **2/2** in **0.26 seconds**.  All
+processes exited.  Section834 and the ledger map the selected drain.  Pair a
+cancelled wraith with a real drain-resistance carrier if compact; otherwise
+close cancellation first, then move to hostile AD_STUN construction.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

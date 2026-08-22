@@ -72,6 +72,7 @@ import {
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroElectricSpecial,
+    resumeDeferredHeroLifeDrain,
     resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
     resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
@@ -3322,6 +3323,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     heroAttack.electricEffectMessage = null;
                     if (electricDismissal !== null
                         && electricDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredLifeDrainGate)
+                    resumeDeferredHeroLifeDrain(action, game);
+                if (heroAttack.lifeDrainMessage) {
+                    const lifeDrainDismissal = await queueTurnMessage(
+                        heroAttack.lifeDrainMessage,
+                    );
+                    heroAttack.lifeDrainMessage = null;
+                    if (lifeDrainDismissal !== null
+                        && lifeDrainDismissal !== undefined) {
                         actorContactPagerOwned = true;
                     }
                 }

@@ -1307,7 +1307,10 @@ export function _statusLine1() {
     const u = game.u;
     if (!u) return '';
     const name = game.displayName || game.plname || 'Hero';
-    const rank = game.urole?.rank;
+    const level = u.ulevel ?? 1;
+    const rankIndex = level <= 2 ? 0
+        : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
+    const rank = game.urole?.title?.[rankIndex] || game.urole?.rank;
     const monsterTitle = (game.u?.mtimedone ?? 0) > 0
         ? (MONSTER_NAME[game.u?.umonnum] || 'monster')
             .replace(/\b\w/g, letter => letter.toUpperCase())

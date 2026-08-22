@@ -8769,6 +8769,70 @@ test('seed0011 cancelled energy vortex preserves Pw across engulf slots',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 natural wraith touch drains levels after gate selection',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nwraith\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.    '
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 179);
+        assertRngSliceExact(result.getRngSlices()[86], [
+            'rn2(5)=2', 'rnd(20)=16', 'd(1,6)=4',
+            'rn2(3)=2', 'rn2(3)=0', 'rn2(6)=0', 'rn2(5)=4',
+            'rn2(5)=1', 'rn2(12)=0', 'rn2(12)=11', 'rn2(12)=3',
+            'rn2(70)=35', 'rn2(100)=94', 'rn2(400)=123',
+            'rn2(20)=9', 'rn2(70)=6',
+        ], 'seed0011 wraith non-draining touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[86]),
+            'The wraith touches you!');
+        assert.equal(decodedRow(result.getScreens()[86], 23),
+            'Dlvl:1 $:1540 HP:137(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[134], [
+            'rn2(5)=1', 'rnd(20)=1', 'd(1,6)=4', 'rn2(3)=0',
+            'rn2(10)=3', 'rn2(3)=0', 'rn2(6)=3',
+            'rn2(12)=4', 'rn2(12)=9', 'rn2(12)=1', 'rn2(70)=39',
+            'rn2(100)=96', 'rn2(400)=382', 'rn2(20)=11',
+            'rn2(70)=54', 'rn2(31)=14',
+        ], 'seed0011 first wraith level-drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[134]),
+            'The wraith touches you!  Goodbye level 30.');
+        assert.equal(decodedRow(result.getScreens()[134], 22),
+            'Wizard the Physician           St:11 Dx:10 Co:12 In:9 Wi:16 Ch:17 Neutral');
+        assert.equal(decodedRow(result.getScreens()[134], 23),
+            'Dlvl:1 $:1540 HP:113(139) Pw:245(245) AC:8 Xp:29');
+
+        assertRngSliceExact(result.getRngSlices()[146], [
+            'rn2(5)=2', 'rnd(20)=1', 'd(1,6)=1', 'rn2(3)=0',
+            'rn2(10)=6', 'rn2(3)=2', 'rn2(6)=1', 'rn2(5)=2',
+            'rn2(20)=19', 'rn2(5)=4', 'rn2(12)=9', 'rn2(12)=1',
+            'rn2(12)=3', 'rn2(70)=3', 'rn2(100)=64',
+            'rn2(400)=193', 'rn2(20)=0', 'rn2(70)=62',
+        ], 'seed0011 repeated wraith level-drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[146]),
+            'The wraith touches you!  Goodbye level 29.');
+        assert.equal(decodedRow(result.getScreens()[146], 23),
+            'Dlvl:1 $:1540 HP:109(137) Pw:230(230) AC:8 Xp:28');
+
+        assert.equal(game.u.ulevel, 26);
+        assert.equal(game.u.uhp, 89);
+        assert.equal(game.u.uhpmax, 133);
+        assert.equal(game.u.uen, 212);
+        assert.equal(game.u.uenmax, 212);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

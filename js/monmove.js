@@ -5,6 +5,7 @@
 import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
+import { loseExperienceLevel } from './exper.js';
 import { heroIsDisplaced } from './armor.js';
 import { nextIdent } from './ident.js';
 import {
@@ -216,6 +217,7 @@ const AD_ELEC = 6;
 const AD_DRST = 7;
 const AD_ACID = 8;
 const AD_BLND = 11;
+const AD_DRLI = 15;
 const AD_DREN = 16;
 const AD_LEGS = 17;
 const AD_STON = 18;
@@ -6402,6 +6404,14 @@ function basicMonsterAttack(
             drainedObject, drainMessage,
             deferredPostHit: true, oldFormMnum,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_DRLI) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'life-drain-natural',
+            deferredLifeDrainGate: true, oldFormMnum,
+        }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))
         && damageType === AD_PHYS
@@ -6629,6 +6639,31 @@ export function resumeDeferredHeroElectricSpecial(
     attack.deferredElectricInventory = !attack.negated;
     attack.deferredPostHit = true;
     attack.deferredElectricNegation = false;
+    return action;
+}
+
+// Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
+// message precede shared knockback and the touch's ordinary HP damage.
+export function resumeDeferredHeroLifeDrain(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredLifeDrainGate) return action;
+    const selected = recordRandom(random, action.calls, 3) === 0;
+    const drainResistant = !!(state.u?.drainResistance
+        || state.u?.drain_resistance);
+    if (selected && !drainResistant) {
+        const armorProtection = state.u?._magicNegation ?? 0;
+        const negated = !!action.monster?.mcan
+            || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+        if (!negated) {
+            const loss = loseExperienceLevel(state);
+            attack.lifeDrainMessage = `Goodbye level ${loss.oldLevel}.`;
+            attack.lifeDrain = loss;
+        }
+    }
+    attack.deferredLifeDrainGate = false;
+    attack.deferredPostHit = true;
     return action;
 }
 
