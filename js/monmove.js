@@ -348,6 +348,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
             effectMessage = (state?.u?.confusionTurns ?? 0) > 0
                 ? 'You feel more confused!' : 'You feel confused!';
         }
+    } else if (spell.key === 'curse-items') {
+        effectMessage = 'You feel as if you need some help.';
     } else if (spell.key === 'fire-pillar') {
         effectMessage = 'A pillar of fire strikes all around you!';
     } else if (spell.key === 'lightning') {
@@ -7549,6 +7551,11 @@ export function resumeDeferredHeroSpell(action, state) {
     }
     if (attack.spell === 'insects') {
         attack.deferredInsectSpell = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
+    if (attack.spell === 'curse-items') {
+        attack.deferredCurseItems = true;
         attack.appliedDamage = 0;
         return attack;
     }

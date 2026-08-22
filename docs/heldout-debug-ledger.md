@@ -12591,3 +12591,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   line to end with the same curse, preserving the native intervening-hit pager.
   Eleven cleric witnesses pass fixture-disabled in 0.36 seconds.  Visible
   prose, snake fallback, placement failure, curse-items and geyser remain open.
+- Seed25 closes the selected ordinary high-cleric curse-items transaction
+  through 122 exact states.  Native input103 pages after `d(14,8)=70`, input104
+  owns the zero-RNG need-help line, and input105 publishes the malignant aura
+  before `rnd(6)=3` and inventory picks 2, 1 and 7 curse the worn gloves,
+  wielded scalpel and sleep wand.  The same slice then resumes the actor at
+  `rn2(25)=8`.  The fixture-disabled cleric gate passes 12/12 in 0.38 seconds
+  at 142,950,400 bytes maximum RSS.  Seeds18 and24 were rejected for input3
+  startup drift, seed19 for an input101 monster-potion naming divergence, and
+  seeds20--23 for covered effects.  Magicbane, Antimagic, half-spell scaling,
+  blessed items, intelligent artifacts, steed saddles and geyser remain open.

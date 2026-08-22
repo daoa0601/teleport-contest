@@ -9728,6 +9728,55 @@ test('seed0017 high-cleric insects preserve constructors and later curse pager',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0025 high-cleric curse-items preserves aura and inventory order',
+    async () => {
+        const result = await runSegment({
+            seed: 25,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'd(14,8)=70',
+        ], 'seed0025 curse-items pre-roll after cast pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The renegade priest of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[104], [],
+            'seed0025 need-help pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'You feel as if you need some help.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[105], [
+            'rnd(6)=3', 'rnd(11)=2', 'rnd(11)=1',
+            'rnd(11)=7', 'rn2(25)=8',
+        ], 'seed0025 rndcurse inventory order and next selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'You feel a malignant aura surround you.--More--');
+        assert.equal(decodedRow(result.getScreens()[105], 23),
+            'Dlvl:1 $:1032 HP:131(137) Pw:273(273) AC:8 Xp:30');
+
+        assert.equal(game.uarmg?.otyp, 159);
+        assert.equal(game.uarmg?.cursed, true);
+        assert.equal(game.uwep?.otyp, 39);
+        assert.equal(game.uwep?.cursed, true);
+        const sleepWand = game.inventory.find(object => object.otyp === 432);
+        assert.ok(sleepWand);
+        assert.equal(sleepWand.cursed, true);
+        assert.equal(game.inventory.find(object =>
+            object.otyp === 307 && object.blessed)?.blessed, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

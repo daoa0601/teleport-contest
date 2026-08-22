@@ -86335,3 +86335,44 @@ search.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:30 EEST, journal block 2875] {#high-cleric #curse-items #seed25 #rndcurse #inventory-order #beatitude #malignant-aura #tty #selector-search #rejected-carriers #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Carrier portfolio and rejection evidence:** seeds18 and24 reached startup
+terrain/gold divergence at input3, so seed24's native curse-items transcript
+was not accepted.  Seed19 matched until an input101 monster-potion ownership
+gap and selected open wounds; seeds20--23 selected covered paralyze/fire or
+were dominated by earlier potion/blindness behavior.  Seed25 is the first
+curse-items carrier whose JS/native prefix remains exact through constructor,
+wield/kick, selector and cast pager.  This falsifies both “any target-looking
+seed is usable” and “the curse mismatch originates in selection.”
+
+**Earliest boundary and source transaction:** input103 consumes only
+`d(14,8)=70` behind the casting pager.  Native input104 publishes `You feel as
+if you need some help.` with no RNG; input105 publishes `You feel a malignant
+aura surround you.` before entering `sit.c:rndcurse()`.  The previous port
+continued directly into later `rn2(25)` selection at input103.  Adding the two
+deferred prose phases and invoking inventory mutation only after the aura
+acknowledgement moves the earliest boundary to the source owner.
+
+**Inventory evidence and implementation:** the Healer owns eleven non-coin
+entries in source order.  `rnd(6)=3`, then `rnd(11)=2,1,7`, selects the worn
+leather gloves, wielded scalpel and sleep wand; all three ordinary uncursed
+objects become cursed.  The shared object-state layer now also exposes source
+`unbless`, while the selected branch uses `curse`.  The subsequent
+`rn2(25)=8` remains on input105, proving that `rndcurse()` returns into the
+same high-cleric actor transaction after mutation.  Section843 maps the
+`mcastu.c -> sit.c -> mkobj.c` ownership chain; Lua owns no phase.
+
+**Measured acceptance and next blocker:** all **122 seed25 native states** are
+exact.  The native recorder took **0.06 seconds** at **54,034,432 bytes maximum
+RSS**; the exact JS replay took **0.16 seconds** at **123,961,344 bytes maximum
+RSS**.  Curse-items plus eleven neighboring cleric witnesses pass **12/12**
+fixture-disabled in **0.38 seconds** at **142,950,400 bytes max RSS**; all
+processes exited.  Magicbane, Antimagic shield/count scaling, half-spell count
+scaling, blessed-object selection, intelligent-artifact resistance and steed
+saddles remain explicit curse controls.  Geyser is the next distinct
+high-cleric effect.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty test files remain untouched.
+
+---

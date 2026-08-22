@@ -23,3 +23,11 @@ export function uncurseObjectState(object) {
     object.buc = object.blessed ? 'blessed' : 'uncursed';
     return changed;
 }
+
+export function unblessObjectState(object) {
+    if (!object) return false;
+    const changed = !!object.blessed;
+    object.blessed = false;
+    object.buc = object.cursed ? 'cursed' : 'uncursed';
+    return changed;
+}

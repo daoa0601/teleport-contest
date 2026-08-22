@@ -30602,3 +30602,39 @@ only an immediately trailing identical audible curse is suppressed; an
 intervening hit/kick permits the next curse to page.  All 122 states are exact.
 Visible-caster prose, snake fallback, failed placement and non-minimum quantity
 remain separate controls.
+
+## 843. Curse items crosses two tty boundaries before `sit.c:rndcurse`
+
+```mermaid
+flowchart TD
+    Cast["AD_CLRC curse-items selected; cast line; 14d8 pre-roll"] --> Help["mcastu.c: You feel as if you need some help"]
+    Help --> Aura["sit.c:rndcurse: malignant-aura pline"]
+    Aura --> Count["count non-coin inventory; rnd scaled by Antimagic and half-spell"]
+    Count --> Pick["repeat rnd(nobj), walking source inventory order"]
+    Pick --> State{"selected object state"}
+    State -->|"uncursed"| Curse["mkobj.c:curse"]
+    State -->|"blessed"| Unbless["mkobj.c:unbless"]
+    State -->|"already cursed"| Skip["skip without another roll"]
+    Curse --> More{"count remains?"}
+    Unbless --> More
+    Skip --> More
+    More -->|"yes"| Pick
+    More -->|"no"| Continue["return to remaining attack slots and scheduler"]
+    Lua["Lua owns no cleric spell or inventory curse phase"] -.-> Cast
+```
+
+Seed25 is exact through the high-cleric constructor, wield/kick transaction,
+spell selector and cast pager.  Input103 consumes only `d(14,8)=70` while the
+cast line pages.  Input104 publishes `You feel as if you need some help.` with
+zero RNG.  Attempting the aura behind that pending line creates the second tty
+boundary; after acknowledgement, input105 publishes the aura and only then
+consumes `rnd(6)=3`.
+
+The Healer owns eleven non-coin inventory entries in source order.  The three
+`rnd(11)` results 2, 1 and 7 therefore curse the worn leather gloves, wielded
+scalpel and sleep wand.  The following `rn2(25)=8` on the same input proves
+that `rndcurse()` returned to the still-live actor transaction rather than
+starting a new turn.  The complete 122-state replay is exact.  Magicbane,
+Antimagic shielding/count scaling, half-spell scaling, blessed-object
+unblessing, intelligent-artifact resistance and a steed saddle remain separate
+controls; the selected carrier contains none of them.
