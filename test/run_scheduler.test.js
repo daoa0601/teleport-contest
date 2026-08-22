@@ -9657,11 +9657,11 @@ test('seed0017 adjacent Wizard summon shares the nasty constructor',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 117),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 118);
+        assert.equal(result.getScreens().length, 127);
         const summonSlice = result.getRngSlices()[112];
         assert.equal(summonSlice.length, 82);
         assertRngSliceExact(summonSlice.slice(0, 20), [
@@ -9699,6 +9699,16 @@ test('seed0017 adjacent Wizard summon shares the nasty constructor',
         assert.deepEqual(summoned.minvent.map(object => object.otyp), [
             45, 333,
         ]);
+        assertRngSliceExact(result.getRngSlices()[118], [
+            'rn2(5)=3',
+            'rn2(5)=3', 'rn2(5)=3', 'rnd(20)=4', 'd(2,12)=15',
+            'rn2(20)=16', 'rn2(3)=2', 'rn2(6)=5', 'rn2(30)=2',
+        ], 'seed0017 ogre wield and later Wizard attack RNG');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'The ogre king wields a double-headed axe!  The Wizard of Yendor hits!--More--');
+        assert.equal(summoned.mw?.otyp, 45);
+        assert.equal(summoned.mhp, 68);
+        assert.equal(game.u.uhp, 120);
     });
 
 test('seed0011 high-cleric fire pillar burns armor and selected inventory',

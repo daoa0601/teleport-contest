@@ -7501,9 +7501,16 @@ export function resumeDeferredHeroAttackAfterWield(
     const pending = movement?.deferredHeroWield;
     if (!pending) return null;
     delete movement.deferredHeroWield;
+    const attackIndex = nextHeroAttackIndex(
+        action.monster, pending.attackIndex,
+    );
+    if (attackIndex === null) {
+        movement.attack = null;
+        return null;
+    }
     const attack = basicMonsterAttack(
         action.monster, state, random, rollOne, rollDice, action.calls,
-        pending.attackIndex + 1, pending.threshold, null, true,
+        attackIndex, pending.threshold, null, true,
     );
     movement.attack = attack;
     return attack;
@@ -8400,10 +8407,6 @@ export function quietMonsterActionRng(
                 oldx: monster.mx, oldy: monster.my,
                 x: monster.mx, y: monster.my, moved: false,
                 wieldedWeapon,
-                deferredHeroWield: {
-                    attackIndex: 0,
-                    threshold: null,
-                },
             },
         };
     }

@@ -87116,3 +87116,44 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-23 00:33 EEST, journal block 2897] {#wizard-of-yendor #summoned-ogre #weapon-check #no-weapon-wanted #need-weapon #at-weap #attack-table #wield #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and competing explanations:** after summon completion, seed17 first
+diverged at input118 call1.  Native spends `rn2(5)=3` and publishes the ogre's
+weapon wield, then the Wizard owns the remaining eight calls.  JS spent
+`rnd(21)=11,d(3,5)=...` for an immediate ogre attack.  A first attempt simply
+removed the phase-two resume marker; that fixed the ogre but broke the prior
+high-cleric carrier, proving actor speed or a universal wield-ends-turn rule
+was insufficient.
+
+**Source evidence and corrected prediction:** new C monsters are zeroed, so
+`weapon_check` starts `NO_WEAPON_WANTED`; `m_initweap()` adds inventory without
+changing it.  Both actors therefore wield inside slot0 `AT_WEAP`, not dochug
+phase two.  `mattacku()` then advances through real attack definitions: the
+high cleric finds slot1 `AT_KICK`, while the ogre's remaining slots are blank
+and must end.  JavaScript instead inferred `NEED_WEAPON` at birth and its
+wield continuation called raw `attackIndex+1`, turning the first blank slot
+into a synthetic attack.
+
+**Implementation and measured effect:** ordinary births now retain zero
+weapon-check state; later pickup/polymorph/loss owners still set
+`NEED_WEAPON` explicitly.  The `AT_WEAP` continuation asks
+`nextHeroAttackIndex()` for an actionable slot and returns null when none
+exists.  Seed17 is exact for all **127 RNG/screen/cursor states**, ending hero
+HP120 and ogre HP68; the strict replay took **0.38 seconds** at **126,337,024
+bytes maximum RSS**.  Ogre, high-cleric and empty-goblin controls pass **3/3**
+fixture-disabled in **0.97 seconds** at **152,289,280 bytes maximum RSS**; all
+processes exited.
+
+**Falsification, decision and next blocker:** the paired ogre/high-cleric
+result falsifies both immediate attack after every wield and unconditional
+actor termination after every wield.  It also replaces the compatibility
+marker's accidental correctness with source attack-table ownership.  Section
+863 maps the boundary; Lua owns none.  Continue the Wizard portfolio with
+seed14's death-touch branch, retaining resistance, hallucination, polymorph,
+fatal and life-saving outcomes as separate controls.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

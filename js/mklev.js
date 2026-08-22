@@ -34,7 +34,7 @@ import {
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
-    M_AP_FURNITURE, M_AP_OBJECT, NEED_WEAPON,
+    M_AP_FURNITURE, M_AP_OBJECT,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EPRI, MM_NOWAIT, MM_NOTAIL,
     MM_NOCOUNTBIRTH, MM_NOMSG,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
@@ -3212,9 +3212,11 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         minvent: monsterInventory,
         inventory: monsterInventory,
         mstrategy: monsterStrategy,
-        weaponCheck: MONSTER_HAS_WEAPON_ATTACK.has(mndx)
-            && monsterInventory.some(object => object.oclass === WEAPON_CLASS)
-            ? NEED_WEAPON : 0,
+        // makemon() allocates weapon_check as NO_WEAPON_WANTED (zero).
+        // m_initweap() only supplies inventory; the first AT_WEAP slot will
+        // request NEED_HTH_WEAPON if no weapon is currently wielded.  Later
+        // pickup, polymorph, and loss paths explicitly set NEED_WEAPON.
+        weaponCheck: 0,
     };
     if (clericMinion) {
         monster.isminion = 1;

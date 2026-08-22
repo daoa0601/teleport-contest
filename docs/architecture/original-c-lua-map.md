@@ -31220,3 +31220,36 @@ weapon wield should consume its action, while JavaScript incorrectly resumes
 an attack through a marker intended for an in-attack weapon slot.  Demon
 delegation, plural summons, no-success prose, displaced/invisible targets and
 spawned-actor equipment actions remain separate controls.
+
+## 863. Birth weapon state and attack-table continuation are distinct
+
+```mermaid
+flowchart TD
+    Birth["makemon zero-initializes weapon_check"] --> Inventory["m_initweap adds carried weapons without changing the check"]
+    Inventory --> Phase2["dochug phase two requires explicit NEED_WEAPON"]
+    Phase2 --> Skip["new birth skips pre-action wield"]
+    Skip --> Attack["mattacku reaches first AT_WEAP slot"]
+    Attack --> Request["no current weapon sets NEED_HTH_WEAPON"]
+    Request --> Wield["mon_wield_item equips selected weapon and spends this slot"]
+    Wield --> Next["scan for next actionable attack-table slot"]
+    Next --> Kick["high cleric continues at AT_KICK"]
+    Next --> End["single-slot ogre has no next action; actor ends"]
+    Later["pickup, loss, polymorph may explicitly set NEED_WEAPON"] -.-> Phase2
+    Lua["Lua owns no weapon-check or attack-table state"] -.-> Birth
+```
+
+New JavaScript births formerly inferred `NEED_WEAPON` from the presence of a
+weapon attack and carried weapon.  C does not: its zeroed monster allocation
+leaves `weapon_check=NO_WEAPON_WANTED`, while `m_initweap()` only builds
+inventory.  That source distinction determines whether wielding occurs in
+`dochug()` phase two or inside `mattacku()`'s `AT_WEAP` slot.
+
+Seed17 input118 now has exactly nine calls.  The summoned ogre consumes its
+sole weapon slot wielding type45, has no later actionable slot, and ends; the
+Wizard then owns claw15 and its tail.  The existing high-cleric control proves
+the opposite continuation: after its slot0 mace wield, the attack-table scan
+finds slot1 `AT_KICK` and resumes there.  A raw `attackIndex+1` was unsafe
+because an ogre's blank slot1 was incorrectly treated as a 3d5 hit.  All 127
+seed17 states are exact, ending hero HP120 with the summoned ogre uninjured at
+HP68.  Explicit phase-two `NEED_WEAPON`, cursed/welded replacements, ranged
+weapon requests and later pickup-driven switches remain separate controls.

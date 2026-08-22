@@ -12783,3 +12783,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled.  Input118 now isolates the summoned ogre's pre-action
   weapon wield incorrectly resuming an attack; demon/plural/no-success and
   displaced or invisible summon variants remain open.
+- Seed17 is now exact through all 127 states after separating birth weapon
+  state from `AT_WEAP` continuation.  C births leave `weapon_check=0`; carried
+  inventory does not imply phase-two `NEED_WEAPON`.  At input118 the summoned
+  ogre wields type45 in its only attack slot and stops, while the later Wizard
+  owns the remaining eight calls and claw15.  The continuation now asks for
+  the next actionable slot: the existing high cleric still reaches its kick,
+  but blank ogre slot1 cannot become a synthetic 3d5 attack.  The exact replay
+  ends hero HP120 and ogre HP68; the ogre/high-cleric/empty-goblin control gate
+  passes 3/3 fixture-disabled.  Explicit phase-two, welded and ranged weapon
+  state remains open.
