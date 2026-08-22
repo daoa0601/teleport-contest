@@ -84,7 +84,8 @@ import {
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
-    SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_LIGHT,
+    SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_GENOCIDE,
+    SCR_LIGHT,
     SCR_IDENTIFY, SCR_PUNISHMENT, SCR_BLANK_PAPER,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, NOVEL,
     MAGIC_OBJECTS, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -212,7 +213,7 @@ import {
     TRAPDOOR, DART_TRAP, ROLLING_BOULDER_TRAP, MAGIC_TRAP,
     TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
     WEB, ANTI_MAGIC,
-    TT_BEARTRAP, G_GONE, G_NOCORPSE, TAINT_AGE,
+    TT_BEARTRAP, G_GENOD, G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NONAME, MM_NOWAIT,
@@ -11306,6 +11307,10 @@ async function doread() {
         await readIdentifyScroll(book);
         return;
     }
+    if (book?.otyp === SCR_GENOCIDE) {
+        await readGenocideScroll(book);
+        return;
+    }
     await studyBook(book);
 }
 
@@ -11436,6 +11441,69 @@ async function readIdentifyScroll(scroll) {
             `${object.invlet} - ${inventoryItemDescription(object)}.`,
         );
     }
+    game.context.move = 1;
+}
+
+function pluralMonsterName(name) {
+    if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
+    if (/(s|x|z|ch|sh)$/i.test(name)) return `${name}es`;
+    return `${name}s`;
+}
+
+async function readGenocideScroll(scroll) {
+    const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
+    await pline('As you read the scroll, it disappears.');
+    exerciseAttribute(4, true);
+
+    if (!alreadyKnown) {
+        await plineWithContinuation(
+            'You have found a scroll of genocide!',
+        );
+        await moreUntilDismissed(
+            'You have found a scroll of genocide!--More--',
+        );
+    }
+
+    if (!scroll.blessed) {
+        // This block intentionally ports the class-genocide owner required by
+        // the insect fallback.  Ordinary/cursed specific genocide retains an
+        // explicit unsupported boundary rather than borrowing class state.
+        await plineWithContinuation('Nothing happens.');
+        consumeOneInventoryObject(scroll);
+        game.context.move = 1;
+        return;
+    }
+
+    const response = await getLine(
+        'What class of monsters do you want to genocide?',
+        (_ch, key) => key >= 32 && key < 127,
+    );
+    const wanted = String(response || '').trim().toLowerCase();
+    const monsterClass = wanted === 'a' || wanted === 'ant'
+        || wanted === 'ants' ? 1 : null;
+    if (monsterClass == null) {
+        await plineWithContinuation(
+            'That response does not represent any monster.',
+        );
+    } else {
+        if (!Array.isArray(game.mvitals)) game.mvitals = [];
+        const G_GENO = 0x0020;
+        for (let mnum = 0; mnum < MONSTER_SYMBOL.length; mnum++) {
+            if (MONSTER_SYMBOL[mnum] !== monsterClass
+                || !((MONSTER_GENO[mnum] ?? 0) & G_GENO)) continue;
+            const vital = game.mvitals[mnum] || (game.mvitals[mnum] = {});
+            vital.mvflags = (vital.mvflags ?? 0) | G_GENOD | G_NOCORPSE;
+            await plineWithContinuation(
+                `Wiped out all ${pluralMonsterName(MONSTER_NAME[mnum])}.`,
+            );
+        }
+    }
+
+    if (!alreadyKnown) {
+        exerciseAttribute(4, true);
+        recordObjectKnowledge(scroll.otyp);
+    }
+    consumeOneInventoryObject(scroll);
     game.context.move = 1;
 }
 

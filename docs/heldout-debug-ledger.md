@@ -12717,3 +12717,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   fourteen total monsters.  The fixture-disabled cleric gate passes 24/24 in
   0.71 seconds at 164,429,824 bytes maximum RSS.  Snake fallback, failed
   placement and census/no-success prose remain open.
+- Seed17 closes the source-valid ant-class-genocide prerequisite through an
+  exact 104-state prefix.  Blessed scroll read/discovery own two pagers, class
+  `a` sets `G_GENOD|G_NOCORPSE` on all six ant species, wipeout prose spans
+  inputs101--103, and the scroll is learned/consumed before maintenance.  JS
+  now ports this bounded class-genocide route; other genocide modes remain
+  separate.
+- Seed25 closes visible snake fallback through input155.  Ant `mkclass()` is
+  null after genocide; `rnd(12)=6` drives seven inclusive S_SNAKE births.
+  `MM_ANGRY` now skips `peaceMinded()` and its erroneous neutral-snake
+  `rn2(26),rn2(2)`.  The 419-call slice is asserted by length and bounded
+  edges; the exact roster is three snakes, three garter snakes and one cobra.
+  The fixture-disabled prerequisite/fallback plus existing cleric gate passes
+  26/26 in 0.73 seconds at 164,265,984 bytes maximum RSS.  Input172's snake
+  combat, failed placement, unseen fallback and no-success prose remain open.

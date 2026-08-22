@@ -30996,3 +30996,60 @@ HP13 `(46,18)`, HP11 `(45,18)`, HP12 `(42,14)`, HP8 `(43,17)`, HP12
 beetle HP38 `(44,13)`.  All 122 states are exact, ending HP16 with fourteen
 total monsters.  Snake fallback, failed placement and census/no-success prose
 remain separate controls.
+
+## 856. Blessed class genocide supplies real `G_GONE` constructor state
+
+```mermaid
+flowchart TD
+    Wish["wish blessed scroll of genocide"] --> Read["read scroll; disappearance pager"]
+    Read --> Discover["unknown-type discovery pager"]
+    Discover --> Prompt["class prompt: a"]
+    Prompt --> Loop["do_class_genocide walks every S_ANT species"]
+    Loop --> Vitals["set G_GENOD and G_NOCORPSE in mvitals"]
+    Vitals --> Lines["six wipeout lines, paired across tty pagers"]
+    Lines --> Learn["learn scroll type; consume object; elapsed turn"]
+    Learn --> Mkclass["later mkclass(S_ANT) sees G_GONE and returns null"]
+    Lua["Lua owns no genocide or constructor state"] -.-> Wish
+```
+
+There is no wizard mutation command for genocide; `#genocided` is read-only.
+Source-valid reachability therefore uses a blessed genocide scroll.  Seed17
+inputs97/98 preserve disappearance and discovery pagers, input99 opens the
+class prompt, and inputs101--103 publish paired wipeout lines for all six ant
+species.  Input103 learns the scroll via Wisdom `rn2(19)=0`, consumes it and
+resumes maintenance.
+
+The bounded 104-state replay is exact.  `mvitals[0..5]` each hold
+`G_GENOD|G_NOCORPSE` (`0x12`), the scroll type is known and no scroll remains.
+The JavaScript scroll owner currently supports this blessed ant-class route;
+specific/cursed genocide, other class grammar, existing-monster removal,
+self-genocide and conduct/disclosure breadth remain separate.
+
+## 857. Ant genocide redirects insects to angry snakes without attitude RNG
+
+```mermaid
+flowchart TD
+    AntProbe["mkclass(S_ANT) scans genocided class"] --> Null["total weight zero; returns null"]
+    Null --> SnakeClass["mcast_insects fixes let=S_SNAKE"]
+    SnakeClass --> Quantity["rnd(12)=6; inclusive seven iterations"]
+    Quantity --> Placement["all-ring enexto placement"]
+    Placement --> Species["mkclass(S_SNAKE) per iteration"]
+    Species --> Angry["makemon MM_ANGRY skips peace_minded"]
+    Angry --> Births["seven hostile awake snake births"]
+    Births --> Prose["visible caster transforms sticks into snakes"]
+    Lua["Lua owns no fallback or birth phase"] -.-> AntProbe
+```
+
+Seed25 is exact through the completed fallback at input155.  Input154 owns a
+bounded **419-call** constructor slice with `rnd(12)=6`.  Neutral garter snakes
+exposed an earlier hidden bug: JS called `peaceMinded()` despite `MM_ANGRY`,
+spending `rn2(26),rn2(2)` that hostile ants had short-circuited.  Honoring the
+flag removes those calls.  The constructor already returned its chosen class;
+that metadata now selects source's visible stick-transformation prose.
+
+The exact roster is three ordinary snakes, three garter snakes and one cobra
+with all coordinates/HP asserted.  At input155 the priest transforms sticks
+into snakes and later selection resumes at `rn2(25)=10`; HP is129 and ten
+monsters exist.  Acceptance is bounded there because input172 opens an
+independent snake-attack tail gap.  Failed placement, unseen fallback prose,
+no-success census and later snake combat remain separate controls.

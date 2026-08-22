@@ -86825,3 +86825,68 @@ high-cleric cone.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 23:42 EEST, journal block 2888] {#genocide #blessed-scroll #class-genocide #ants #mvitals #g-genod #g-nocorpse #tty #discovery #dependency #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Reachability portfolio and decision:** snake fallback requires
+`mkclass(S_ANT)` to return null from real game state.  `#genocided` is a
+read-only report and NetHack exposes no wizard mutation command.  Extinguishing
+every species through birth limits would add uncontrolled actors.  The clean
+source route is a blessed genocide scroll's `do_class_genocide()`.  JS
+`mkclass()` already honors `mvitals.G_GONE`, but scroll genocide was absent;
+port that dependency rather than inject an insect-only flag.
+
+**Read and pager boundaries:** seed17 wishes the blessed scroll at input95.
+Input97 publishes disappearance and owns Wisdom `rn2(19)=7`; input98 publishes
+the unknown-type discovery behind its own pager; input99 opens the class
+prompt.  The first implementation let the prompt overwrite discovery, and an
+over-correction let discovery overwrite disappearance.  Retaining source's
+first `plineWithContinuation()` and then explicitly waiting on the visible
+discovery restores both boundaries.
+
+**Class mutation and bounded evidence:** class `a` marks all six ant species
+`G_GENOD|G_NOCORPSE`.  Wipeout lines pair at inputs101,102 and103; the final
+input owns scroll learning `rn2(19)=0`, consumption and maintenance.  The
+**104-state prefix is exact**, all six mvflags equal `0x12`, the type is known
+and no scroll remains.  Section856 maps the gameplay prerequisite; Lua owns no
+phase.  Specific/cursed genocide, other classes, existing-monster removal,
+self-genocide and disclosure remain open.
+
+---
+
+### [2026-08-22 23:45 EEST, journal block 2889] {#high-cleric #insects #snake-fallback #genocided-ants #mkclass #mm-angry #peace-minded #garter-snake #inclusive-loop #bounded-assertion #roster #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Selected fallback carrier and first constructor gap:** serial genocided-ant
+setups found unseen snakes at seed18 and visible stick transformations at
+seeds24/25.  Seed25 supplies a clean prefix and seven births.  After genocide,
+`mkclass(S_ANT)` returns null, the spell fixes class S_SNAKE, and
+`rnd(12)=6` enters seven inclusive iterations.  JS initially diverged inside a
+garter-snake birth by spending `rn2(26),rn2(2)`.
+
+**Root cause and prose:** those calls were `peaceMinded()` for a co-aligned
+neutral species.  Source `makemon(...,MM_ANGRY|MM_NOMSG)` skips that helper;
+hostile ant witnesses hid the unconditional JS call by short-circuiting on
+alignment.  Honoring `MM_ANGRY` makes the bounded constructor exact.  The
+constructor already returns `monsterClass`; projecting S_SNAKE changes visible
+feedback from generic insect summoning to `transforms a clump of sticks into
+snakes!` and also supports the unseen heard-snakes wording.
+
+**Bounded acceptance and residual:** input154's **419-call** slice is asserted
+by length plus first20/last16 only.  The exact hostile awake roster is three
+snakes, three garter snakes and one cobra with all coordinates/HP asserted.
+Input155 resumes at `rn2(25)=10`, HP129 and ten monsters.  The source replay is
+exact through this completed effect; input172 later exposes an independent
+snake-attack tail and is outside fallback acceptance.  Sections856--857 map
+genocide state and fallback construction; Lua owns neither.
+
+**Measured regression and next blocker:** the timed native seed25 recording
+took **0.10 seconds** at **54,640,640 bytes maximum RSS**; the bounded JS
+replay remained below the prior **125,927,424-byte** full diagnostic.  The two
+new witnesses plus twenty-four neighboring cleric controls pass **26/26**
+fixture-disabled in **0.73 seconds** at **164,265,984 bytes max RSS**; all
+processes exited.  Failed placement, unseen fallback/no-success prose and the
+later snake combat remain open.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

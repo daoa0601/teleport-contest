@@ -2292,7 +2292,10 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             : isQuestLeaderType ? game.quest_status?.ldrgend === 1
                 : isQuestNemesis ? game.quest_status?.nemgend === 1
                     : !!rn2(2);
-    const peaceful = peaceMinded(mndx);
+    // makemon.c honors MM_ANGRY before consulting peace_minded().  This is
+    // RNG-visible for co-aligned neutral species such as fallback garter
+    // snakes; hostile ant summons happened to short-circuit the same helper.
+    const peaceful = (mmflags & MM_ANGRY) ? false : peaceMinded(mndx);
     let monsterSleeping = initialMonsterSleepState(
         mndx, !!(mmflags & MM_ASLEEP),
     );

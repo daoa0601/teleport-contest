@@ -9814,6 +9814,141 @@ test('seed0040 visible high-cleric insects preserve large quantity and roster',
         assert.equal(game.context.move, 1);
     });
 
+test('seed0017 blessed class genocide removes every ant-class constructor',
+    async () => {
+        const result = await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nblessed scroll of genocide\nrl  a\n  ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 104);
+        assertRngSliceExact(result.getRngSlices()[95], [
+            'rn2(16)=15', 'rnd(2)=1', 'rn2(4)=3', 'rn2(100)=95',
+        ], 'seed0017 blessed genocide-scroll wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[95]),
+            'l - a scroll labeled PRIRUTSENIE.');
+
+        assertRngSliceExact(result.getRngSlices()[97], [
+            'rn2(19)=7',
+        ], 'seed0017 genocide read and Wisdom exercise RNG');
+        assert.equal(decodedTopline(result.getScreens()[97]),
+            'As you read the scroll, it disappears.--More--');
+        assert.equal(decodedTopline(result.getScreens()[98]),
+            'You have found a scroll of genocide!--More--');
+        assert.equal(decodedTopline(result.getScreens()[99]),
+            'What class of monsters do you want to genocide?');
+
+        assert.equal(decodedTopline(result.getScreens()[101]),
+            'Wiped out all giant ants.  Wiped out all killer bees.--More--');
+        assert.equal(decodedTopline(result.getScreens()[102]),
+            'Wiped out all soldier ants.  Wiped out all fire ants.--More--');
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'rn2(19)=0', 'rn2(12)=6', 'rn2(12)=3', 'rn2(12)=10',
+            'rn2(70)=24', 'rn2(20)=2', 'rn2(70)=11',
+        ], 'seed0017 final genocide lines, discovery, and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'Wiped out all giant beetles.  Wiped out all queen bees.');
+
+        assert.deepEqual(Array.from({ length: 6 }, (_, mnum) =>
+            (game.mvitals?.[mnum]?.mvflags ?? 0) & 0x12),
+        [0x12, 0x12, 0x12, 0x12, 0x12, 0x12]);
+        assert.equal(game._knownObjectTypes?.has(331), true);
+        assert.equal(game.inventory.some(object => object.otyp === 331), false);
+        assert.equal(game.u.uhp, 142);
+        assert.equal(game.context.move, 1);
+    });
+
+test('seed0025 genocided ants force visible high-cleric snake fallback',
+    async () => {
+        const moves = ('  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizwish\nblessed scroll of genocide\nrl  a\n'
+            + ' '.repeat(10)
+            + '#wizgenesis\nhostile high cleric\ny '
+            + 'm.    m.    m.    m.        ').slice(0, 155);
+        const result = await runSegment({
+            seed: 25,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 156);
+        const snakeSlice = result.getRngSlices()[154];
+        assert.equal(snakeSlice.length, 419);
+        assert.deepEqual(snakeSlice.slice(0, 20), [
+            'd(14,8)=75', 'rn2(9)=1', 'rn2(9)=6', 'rn2(9)=7',
+            'rn2(9)=6', 'rn2(9)=8', 'rn2(9)=6', 'rnd(12)=6',
+            'rn2(8)=0', 'rn2(7)=1', 'rn2(6)=4', 'rn2(5)=2',
+            'rn2(4)=3', 'rn2(3)=2', 'rn2(2)=1', 'rn2(16)=3',
+            'rn2(15)=11', 'rn2(14)=6', 'rn2(13)=2', 'rn2(12)=9',
+        ]);
+        assert.deepEqual(snakeSlice.slice(-16), [
+            'rn2(7)=1', 'rn2(6)=5', 'rn2(5)=3', 'rn2(4)=3',
+            'rn2(3)=2', 'rn2(2)=0', 'rn2(9)=5', 'rn2(9)=6',
+            'rn2(2)=1', 'rnd(2)=1', 'rnd(2)=1', 'd(1,8)=5',
+            'rn2(2)=0', 'rn2(50)=10', 'rn2(100)=2', 'rn2(100)=40',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[154]),
+            'The priest of Athena casts a spell!--More--');
+        assert.equal(decodedRow(result.getScreens()[154], 23),
+            'Dlvl:1 $:1032 HP:129(137) Pw:273(273) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[155], [
+            'rn2(25)=10',
+        ], 'seed0025 snake-fallback summon and continuation RNG');
+        assert.equal(decodedTopline(result.getScreens()[155]),
+            'The priest of Athena transforms a clump of sticks into snakes!--More--');
+
+        const snakes = game.level.monsters
+            .filter(monster => [214, 215, 216, 217, 218, 219]
+                .includes(monster.mnum))
+            .map(monster => ({
+                mnum: monster.mnum,
+                x: monster.mx,
+                y: monster.my,
+                hp: monster.mhp,
+                hpmax: monster.mhpmax,
+                peaceful: monster.mpeaceful,
+                sleeping: monster.msleeping,
+            }));
+        assert.deepEqual(snakes, [
+            { mnum: 215, x: 41, y: 5, hp: 32, hpmax: 32,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 214, x: 43, y: 5, hp: 8, hpmax: 8,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 215, x: 43, y: 6, hp: 30, hpmax: 30,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 215, x: 42, y: 5, hp: 21, hpmax: 21,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 214, x: 43, y: 4, hp: 7, hpmax: 7,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 219, x: 41, y: 4, hp: 32, hpmax: 32,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 214, x: 40, y: 6, hp: 5, hpmax: 5,
+                peaceful: 0, sleeping: 0 },
+        ]);
+        assert.deepEqual(Array.from({ length: 6 }, (_, mnum) =>
+            (game.mvitals?.[mnum]?.mvflags ?? 0) & 0x12),
+        [0x12, 0x12, 0x12, 0x12, 0x12, 0x12]);
+        assert.equal(game.level.monsters.length, 10);
+        assert.equal(!!game.blind, false);
+        assert.equal(game.u.uhp, 129);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0025 high-cleric curse-items preserves aura and inventory order',
     async () => {
         const result = await runSegment({

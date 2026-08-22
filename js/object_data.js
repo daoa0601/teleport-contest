@@ -206,6 +206,7 @@ export const POT_WATER = 322;
 export const SCR_DESTROY_ARMOR = 324;
 export const SCR_REMOVE_CURSE = 327;
 export const SCR_ENCHANT_WEAPON = 328;
+export const SCR_GENOCIDE = 331;
 export const SCR_LIGHT = 332;
 export const SCR_IDENTIFY = 336;
 export const SCR_MAGIC_MAPPING = 337;

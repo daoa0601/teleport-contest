@@ -2642,9 +2642,18 @@ async function resolveDeferredHeroInsectSpell(action, heroAttack) {
     if (!heroAttack?.deferredInsectSpell) return;
     const result = await summonInsectsForMonster(action.monster);
     for (const monster of result.created || []) newsym(monster.mx, monster.my);
-    const message = game.blind
-        ? 'You hear someone summoning insects.'
-        : `${visibleMonsterSubject(action.monster)} summons insects!`;
+    const snakes = result.monsterClass === 45;
+    const what = snakes ? 'snakes' : 'insects';
+    let message;
+    if (game.blind) {
+        message = `You hear someone summoning ${what}.`;
+    } else if (!(result.created || []).length) {
+        message = `${visibleMonsterSubject(action.monster)} casts at a clump of sticks, but nothing happens.`;
+    } else if (snakes) {
+        message = `${visibleMonsterSubject(action.monster)} transforms a clump of sticks into snakes!`;
+    } else {
+        message = `${visibleMonsterSubject(action.monster)} summons insects!`;
+    }
     await queueTurnMessage(message);
     heroAttack.summonedInsects = result.created || [];
     heroAttack.deferredInsectSpell = false;
