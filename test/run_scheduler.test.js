@@ -8833,6 +8833,64 @@ test('seed0011 natural wraith touch drains levels after gate selection',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 cancelled wraith keeps touch damage but skips level drain',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nwand of cancellation\n'
+                + '#wizgenesis\nwraith\n'
+                + 'zkyacy m.    m.    m.    m.    m.    m.    m.    m.    '
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 216);
+        assertRngSliceExact(result.getRngSlices()[114], [],
+            'seed0011 cancelled wraith status RNG');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            'Status of the wraith (chaotic, medium):  Level 9  HP 47(47)  AC 4, cancelled.');
+
+        assertRngSliceExact(result.getRngSlices()[117], [
+            'rn2(5)=0', 'rnd(20)=15', 'd(1,6)=2',
+            'rn2(3)=1', 'rn2(3)=0', 'rn2(6)=2',
+            'rn2(12)=1', 'rn2(12)=11', 'rn2(12)=10',
+            'rn2(70)=66', 'rn2(100)=33', 'rn2(400)=263',
+            'rn2(20)=11', 'rn2(70)=45',
+        ], 'seed0011 cancelled wraith nonzero drain gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[117]),
+            'The wraith touches you!');
+
+        assertRngSliceExact(result.getRngSlices()[165], [
+            'rn2(5)=4', 'rnd(20)=2', 'd(1,6)=1',
+            'rn2(3)=0', 'rn2(3)=0', 'rn2(6)=5',
+            'rn2(12)=9', 'rn2(12)=3', 'rn2(12)=4',
+            'rn2(70)=13', 'rn2(100)=17', 'rn2(400)=9',
+            'rn2(20)=16', 'rn2(70)=32', 'rn2(31)=25',
+        ], 'seed0011 cancelled wraith zero drain gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[165]),
+            'The wraith touches you!');
+        assert.equal(decodedRow(result.getScreens()[165], 23),
+            'Dlvl:1 $:1540 HP:113(141) Pw:254(254) AC:8 Xp:30');
+
+        assert.equal(game.u.ulevel, 30);
+        assert.equal(game.u.uhp, 91);
+        assert.equal(game.u.uhpmax, 141);
+        assert.equal(game.u.uen, 254);
+        assert.equal(game.u.uenmax, 254);
+        const wraith = game.level.monsters.find(monster =>
+            monster.mnum === 230);
+        assert.ok(wraith);
+        assert.equal(wraith.mcan, 1);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -85730,3 +85730,38 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:24 EEST, journal block 2860] {#wraith #hero-contact #ad-drli #life-drain #cancellation #wand-of-cancellation #stethoscope #damage-preserved #rng-omission #native-witness #complete-replay #no-production-change #regression #architecture #ledger #green #process-safety #priority}
+
+**Control and prediction:** C `mhitm_ad_drli()` publishes hitmsg and spends its
+one-in-three gate before `mhitm_mgc_atk_negated()`.  A cancelled wraith must
+therefore retain declared 1d6 touch damage and the gate draw.  When that draw
+is zero, attacker cancellation must short-circuit before magic-negation
+`rn2(10)`, Goodbye prose and `loseExperienceLevel()`, then resume knockback and
+the ordinary HP-damage tail.
+
+**Native witness:** seed11 level-30 Healer wishes a cancellation wand, cancels
+the adjacent wraith and uses the starting stethoscope to confirm
+`cancelled.`  Input117 consumes `d(1,6)=2,rn2(3)=1` and then the shared tail.
+Input165 is decisive: `d(1,6)=1,rn2(3)=0` reaches effect selection, but no
+`rn2(10)` follows; the next `rn2(3)=0` is knockback.  The screen remains only
+`The wraith touches you!`, and status stays level30 with max HP141 and max
+Pw254.  All 216 states are exact from input3; the recorder took **0.08
+seconds** at **54,853,632 bytes maximum RSS**.
+
+**Decision, measured effect and falsifications:** no production change is
+needed.  The active implementation already places cancellation inside the
+deferred effect owner and leaves damage in the common contact tail.  This
+falsifies both cancellation-before-gate and cancellation-as-zero-damage
+hypotheses.  A new exact regression preserves the status proof, a nonzero gate
+and the zero-gate omission.  Natural/cancelled AD_DRLI plus wizard levelchange
+pass **3/3** in **0.28 seconds** fixture-disabled at **148,209,664 bytes max
+RSS**; all processes exited.
+
+**Next blocker:** section834 and the ledger now close natural and cancelled
+AD_DRLI.  Select a real drain-resistance carrier to separate resistance from
+attacker cancellation; if setup ownership expands, redirect to hostile
+AD_STUN construction first.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty test files remain untouched.
+
+---

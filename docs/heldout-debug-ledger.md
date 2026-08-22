@@ -12461,3 +12461,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   Chirurgeon→Physician at 30→29.  Wraith and wizard-levelchange focused tests
   pass 2/2 in 0.26 seconds.  Cancellation and drain-resistance controls remain
   separate before moving to AD_STUN.
+- Seed11 closes the cancelled-wraith AD_DRLI control without a production
+  change.  A real cancellation wand plus starting stethoscope proves the
+  adjacent wraith is cancelled.  Input117 retains 1d6 touch damage and a
+  nonzero drain gate.  Input165 selects `rn2(3)=0`, then cancellation skips
+  magic-negation `rn2(10)`, Goodbye prose and level loss while the following
+  `rn2(3)` still owns knockback.  All 216 states are exact; level30, HP max141
+  and Pw max254 remain unchanged.  Natural/cancelled/wizard-levelchange
+  fixture-disabled regressions pass 3/3 in 0.28 seconds.  Drain resistance is
+  the remaining AD_DRLI control before hostile AD_STUN construction.

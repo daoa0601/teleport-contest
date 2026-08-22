@@ -30274,3 +30274,14 @@ missing owners were AD_DRLI dispatch and status rank.  Status now computes
 source `xlev_to_rank()` from live level rather than retaining the startup/high-
 level cached title: level29 Healer is `Physician`, not level30 `Chirurgeon`.
 The existing wizard levelchange stream remains exact.
+
+Cancellation sits after the one-in-three life-drain gate, not before attack
+dice or hit prose.  A seed11 level-30 Healer cancels the adjacent wraith and
+confirms its status; input117 pays 1d6 and a nonzero `rn2(3)` before the shared
+tail.  Decisive input165 pays `d(1,6)=1,rn2(3)=0`, then the cancelled-attacker
+short circuit omits magic-negation `rn2(10)`, Goodbye prose and level-state
+mutation.  The next `rn2(3)=0` belongs to knockback, so ordinary touch damage
+still lands.  Level, max HP and max Pw remain 30, 141 and 254 through all 216
+exact states.  This no-production-change control confirms that
+`resumeDeferredHeroLifeDrain()` owns gate-before-cancellation ordering and
+that the common contact tail remains outside AD_DRLI's special effect.
