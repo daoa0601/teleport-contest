@@ -344,6 +344,7 @@ export async function polyselfControlledMonster(mnum) {
     const whirly = MONSTER_SYMBOL[mnum] === S_VORTEX
         || mnum === PM_AIR_ELEMENTAL;
     const noncorporeal = MONSTER_SYMBOL[mnum] === S_GHOST;
+    const verySmall = formSize < MZ_SMALL;
     const slipsArmor = whirly || noncorporeal || formSize <= MZ_SMALL;
     const breaksArmor = !slipsArmor && (formSize >= MZ_LARGE
         || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID))
@@ -458,11 +459,13 @@ export async function polyselfControlledMonster(mnum) {
         dropCarriedObject(shield, ['uarms']);
         await publishDropCapacityChange();
     }
-    if (noHands && boots) {
+    if ((noHands || verySmall) && boots) {
         await plineWithContinuation(
             whirly
                 ? 'Your boots fall away!'
-                : 'Your boots are pushed off your feet!',
+                : verySmall
+                    ? 'Your boots slide off your feet!'
+                    : 'Your boots are pushed off your feet!',
         );
         dropCarriedObject(boots, ['uarmf']);
         await publishDropCapacityChange();

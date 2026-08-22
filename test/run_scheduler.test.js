@@ -8179,6 +8179,57 @@ test('seed0011 fog-cloud whirly form drops boots then creates vapor',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 acid-blob very-small form slides boots off',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 low boots\n'
+                + 'Wk #polyself\nacid blob\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 66);
+        assertRngSliceExact(result.getRngSlices()[57], [
+            'rn2(2)=1', 'rn2(19)=13', 'rn2(500)=327', 'd(1,8)=2',
+        ], 'seed0011 acid-blob boot setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[57]),
+            'You turn into an acid blob!  You drop your gloves and weapon!--More--');
+        assert.equal(decodedRow(result.getScreens()[57], 23),
+            'Dlvl:1 $:1540 HP:2(2) Pw:5(5) AC:5 HD:1 Overloaded Blind');
+        assert.deepEqual(result.getCursors()[57], [69, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[58], [],
+            'seed0011 acid-blob overloaded notice RNG');
+        assert.equal(decodedTopline(result.getScreens()[58]),
+            "You can't even move a handspan with this load!--More--");
+        assert.deepEqual(result.getCursors()[58], [54, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[59]),
+            'Your boots slide off your feet!');
+        assert.equal(decodedRow(result.getScreens()[59], 23),
+            'Dlvl:1 $:1540 HP:2(2) Pw:5(5) AC:8 HD:1 Overloaded Blind');
+        assert.deepEqual(result.getCursors()[59], [65, 6, 1]);
+
+        assert.equal(game.uarmg, null);
+        assert.equal(game.uwep, null);
+        assert.equal(game.uarmf, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 159));
+        assert.ok(floorObjects.some(object => object.otyp === 39));
+        assert.ok(floorObjects.some(object => object.otyp === 163));
+        assert.equal(game.u.umonnum, 6);
+        assert.equal(game.u.mh, 2);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.u._encumbrance, 'Overloaded');
+        assert.equal(game.blind, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

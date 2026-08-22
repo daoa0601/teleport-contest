@@ -12313,3 +12313,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   passes 15/15 in 0.38 seconds, the twenty erosion controls remain exact and
   the managed family passes 149/149 in 2.75 seconds.  Very-small `slide`,
   slithy and centaur boot arms remain separate.
+- Seed11 uses the low-boots/gloves/scalpel Healer setup with a tiny acid blob.
+  Native input57 pages the form/glove/weapon line at HP2/2, HD1, AC5,
+  Overloaded and Blind; input58 pages `You can't even move a handspan with this
+  load!`; input59 says `Your boots slide off your feet!`, drops type163 and
+  projects AC8.  There is no whirly vapor call.  All 66 states are exact from
+  input3.
+
+  The earlier two pagers and capacity state were already exact; only the
+  source `msize < MZ_SMALL` boot verb diverged.  Eligibility now accepts
+  no-hands or very-small forms and orders whirly `fall`, very-small `slide`,
+  then ordinary `pushed`.  The fixture-disabled focused gate passes 16/16 in
+  0.38 seconds, the twenty erosion controls remain exact and the managed
+  family passes 149/149 in 2.72 seconds.  Slithy and centaur arms remain open.

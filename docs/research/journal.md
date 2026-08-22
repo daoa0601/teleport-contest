@@ -85280,3 +85280,38 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 18:41 EEST, journal block 2849] {#polyself #break-armor #sliparm #acid-blob #very-small #boots #slide #overloaded #encumbrance #dropx #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** source boot removal applies to no-hands or very-small forms even
+without whirly/slithy/centaur traits.  Wording precedence is whirly `fall away`,
+then very-small `slide off`, then ordinary `are pushed`.  Acceptance must keep
+the severe capacity pager on its native input before the boot sentence.
+
+**Native witness:** seed11 debug Healer wears wished +2 low boots, retains
+starting gloves/scalpel and uses controlled `#polyself acid blob`.  Input57
+consumes `rn2(2)=1,rn2(19)=13,rn2(500)=327,d(1,8)=2` and pages `You turn into
+an acid blob!  You drop your gloves and weapon!` at HP2/2, HD1, AC5,
+Overloaded and Blind.  Input58 has no RNG and pages `You can't even move a
+handspan with this load!`.  Input59 publishes `Your boots slide off your
+feet!`, drops type163 and projects AC8.  All 66 states are exact from input3;
+the recorder took **0.06 seconds** at **53,002,240 bytes maximum RSS**.
+
+**Earliest divergence and decision:** replay was exact through input58; input59
+differed only as `are pushed` versus `slide`.  That falsified RNG, weight,
+pager and generic sliparm hypotheses.  Boot eligibility now explicitly accepts
+no-hands or `msize < MZ_SMALL`, and message selection orders whirly before
+very-small before ordinary.  No acid-blob identity appears in the policy.
+
+**Measured acceptance and next blocker:** the fixture-disabled focused
+polymorph gate passes **16/16** in **0.38 seconds**, the preceding twenty
+rust/corrosion/decay controls remain exact and the one owned managed family
+passes **149/149** in **2.72 seconds**.  Every process exited before the next
+began.  Section830 and the ledger now close pushed, whirly-fall and very-small-
+slide boot wording.  Next select slithy eligibility with a non-no-hands,
+non-small form if available, then centaur separately; otherwise move from
+equipment construction back to the next combat-effect owner.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

@@ -29870,7 +29870,7 @@ flowchart TD
     Boots -->|"yes"| BootKind{"form body"}
     BootKind -->|"whirly"| BootFall["boots fall away; drop boots"]
     BootKind -->|"ordinary no-hands"| BootLine["boots pushed off feet; drop boots"]
-    BootKind -->|"very small"| BootSlide["boots slide off; unselected"]
+    BootKind -->|"very small"| BootSlide["boots slide off; drop boots"]
     Boots -->|"no"| Head{"headless form plus eyewear?"}
     BootLine --> Head
     BootFall --> Head
@@ -29986,8 +29986,8 @@ form/glove line.  The attempted boot line then forces the pending load notice
 through input64 `--More--`; input65 publishes `Your boots are pushed off your
 feet!`, drops type163 and projects AC eight.  HP25/25, HD6, Burdened and Blind
 remain stable through the sequence.  All 72 states are exact from input3.
-Very-small `slide`, slithy and centaur boot wording/policy remain separate
-successors; this block selects only the ordinary no-hands pushed arm.
+Slithy and centaur boot eligibility remain separate successors; this block
+selects only the ordinary no-hands pushed arm.
 
 The whirly sibling selects both sliparm precedence and the hero every-turn
 effect.  Seed11 Healer keeps the low-boots/gloves/scalpel setup but becomes a
@@ -29998,7 +29998,17 @@ order is `Blind Fly`, so status projection must place blindness before flight.
 After the equipment continuation finishes, source allmain's hero
 `m_everyturn_effect()` creates a harmless one-cell vapor region and spends
 `rn2(3)=1` for TTL five on that same input.  All 66 states are exact from
-input3.  Very-small `slide`, slithy and centaur paths remain separate.
+input3.  Slithy and centaur paths remain separate.
+
+The very-small sibling selects the remaining size-specific verb.  Seed11 uses
+the same low-boots/gloves/scalpel setup and becomes a tiny acid blob.  Its
+capacity collapses to Overloaded, so input57 pages the form/glove line and
+input58 pages `You can't even move a handspan with this load!`.  Input59 then
+publishes `Your boots slide off your feet!`, drops type163 and projects AC
+eight.  HP2/2, HD1, Overloaded and Blind remain stable; no whirly vapor hook
+runs.  All 66 states are exact from input3.  The port derives both eligibility
+and wording from `msize < MZ_SMALL`, leaving slithy and centaur as the two
+remaining boot-policy predicates.
 
 Headless eyewear closes the final selected accessory in this chain.  Seed11
 Healer puts on a wished blindfold before becoming a gelatinous cube; gloves and
