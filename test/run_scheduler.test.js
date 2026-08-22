@@ -9934,6 +9934,62 @@ test('seed0025 combined antimagic half-spell curse uses ordered pagers and rnd2'
         assert.equal(game.context.move, 0);
     });
 
+test('seed0050 curse-items unblesses, recurses, and skips repeated targets',
+    async () => {
+        const result = await runSegment({
+            seed: 50,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'd(14,8)=71',
+        ], 'seed0050 repeated curse cast pre-roll RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The priestess of Poseidon casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'You feel as if you need some help.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[105], [
+            'rnd(6)=6', 'rnd(11)=5', 'rnd(11)=5', 'rnd(11)=5',
+            'rnd(11)=3', 'rnd(11)=2', 'rnd(11)=9',
+            'rn2(25)=23', 'rn2(13)=6', 'rn2(13)=5',
+        ], 'seed0050 repeated and blessed curse selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'You feel a malignant aura surround you.--More--');
+
+        const inventory = game.inventory;
+        assert.deepEqual(inventory.slice(0, 11).map((object, index) => ({
+            position: index + 1,
+            otyp: object.otyp,
+            blessed: !!object.blessed,
+            cursed: !!object.cursed,
+        })), [
+            { position: 1, otyp: 39, blessed: false, cursed: false },
+            { position: 2, otyp: 159, blessed: false, cursed: true },
+            { position: 3, otyp: 237, blessed: false, cursed: true },
+            { position: 4, otyp: 307, blessed: false, cursed: false },
+            { position: 5, otyp: 308, blessed: false, cursed: true },
+            { position: 6, otyp: 308, blessed: true, cursed: false },
+            { position: 7, otyp: 432, blessed: false, cursed: false },
+            { position: 8, otyp: 374, blessed: true, cursed: false },
+            { position: 9, otyp: 391, blessed: false, cursed: false },
+            { position: 10, otyp: 405, blessed: true, cursed: false },
+            { position: 11, otyp: 277, blessed: false, cursed: false },
+        ]);
+        assert.equal(game.u.uhp, 104);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0047 high-cleric geyser replaces spell pre-roll with physical 8d6',
     async () => {
         const result = await runSegment({

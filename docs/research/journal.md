@@ -86754,3 +86754,39 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 23:25 EEST, journal block 2886] {#high-cleric #curse-items #blessed #unbless #repeat-selection #already-cursed #inventory-order #object-state #no-production-change #complete-replay #native-witness #regression #architecture #ledger #green #process-safety #priority}
+
+**Beatitude contract and selected carrier:** a blessed target must become
+uncursed, not cursed; a later selection can then curse it, while another
+selection must skip the already-cursed object without extra RNG or prose.
+Seed50's exact curse-items cast supplies six picks with a repeated blessed
+position and a separately selected blessed book, avoiding new wishes or
+test-only inventory mutation.
+
+**Native sequence and final identities:** input105 consumes
+`rnd(6)=6,rnd(11)=5,5,5,3,2,9` before later selector RNG.  Source position5 is
+a blessed extra-healing potion stack: first pick unblesses, second curses and
+third skips.  Position3 stethoscope and position2 gloves become cursed.
+Position9 is the blessed extra-healing spellbook; one selection unblesses it
+and leaves it uncursed.  Unselected position6 extra healing and books8/10 stay
+blessed, while the sleep wand stays uncursed.
+
+**Decision and mapping:** all **122 native states were already exact**, so no
+production change was justified; the shared `unblessObjectState()` and repeat
+skip are source-shaped.  Final HP is104 and the complete source-order
+beatitude vector is asserted.  Section854 maps blessed->uncursed->cursed->skip
+on one object and the single unbless control; Lua owns no phase.
+
+**Measured acceptance and next blocker:** the recorder took **0.08 seconds**
+at **54,231,040 bytes maximum RSS** and the exact JS replay took **0.23
+seconds** at **125,894,656 bytes max RSS**.  Beatitude controls plus twenty-two
+neighboring cleric witnesses pass **23/23** fixture-disabled in **0.61
+seconds** at **154,992,640 bytes max RSS**; all processes exited.  Intelligent-
+artifact resistance, coin exclusion, saddles and inventory-menu observation
+remain open.  Next move to an insect fallback/visibility control unless an
+artifact carrier has a cleaner prefix.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

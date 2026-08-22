@@ -12700,3 +12700,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   passes 22/22 in 0.65 seconds at 160,251,904 bytes maximum RSS.  Special
   multi-property feedback, armor fallback, blessed/intelligent items and
   saddles remain open.
+- Seed50 closes blessed, repeated and already-cursed `rndcurse()` targets
+  through 122 exact states without a production change.  Input105 uses
+  `rnd(6)=6` and picks 5,5,5,3,2,9.  Position5 transitions blessed to
+  uncursed, then cursed, then skips; position9 is unblessed once and remains
+  uncursed; positions3/2 become cursed.  Final HP is104 with the exact
+  source-order beatitudes asserted.  The fixture-disabled cleric gate passes
+  23/23 in 0.61 seconds at 154,992,640 bytes maximum RSS.  Intelligent
+  artifacts, coins, saddles and beatitude menu presentation remain open.

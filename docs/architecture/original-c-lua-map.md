@@ -30935,3 +30935,32 @@ Input126 publishes the aura, rolls `rnd(2)=1`, selects only inventory position
 All 143 states are exact, ending HP93 with only the gloves cursed and both
 timeouts at27.  Multi-property special feedback, count zero impossibility,
 armor fallback, blessed/intelligent items and saddles remain separate.
+
+## 854. Repeated curse selection traverses blessed, uncursed, then cursed
+
+```mermaid
+flowchart TD
+    Count["ordinary rndcurse count = rnd(6)=6"] --> Pick5a["pick position 5: blessed extra-healing potion"]
+    Pick5a --> Unbless["unbless to uncursed"]
+    Unbless --> Pick5b["pick position 5 again"]
+    Pick5b --> Curse["curse the now-uncursed object"]
+    Curse --> Pick5c["pick position 5 a third time"]
+    Pick5c --> Skip["already cursed: skip without resistance prose/RNG"]
+    Skip --> Others["positions 3 and 2 curse; position 9 unblesses"]
+    Others --> Continue["same actor selector continues"]
+    Lua["Lua owns no beatitude or curse phase"] -.-> Count
+```
+
+Seed50 supplies an exact ordinary curse carrier with
+`rnd(6)=6,rnd(11)=5,5,5,3,2,9`.  Position5's repeated selection proves three
+different transitions on the same extra-healing stack: blessed to uncursed,
+uncursed to cursed, then already-cursed skip.  Position9's blessed extra-
+healing spellbook is selected once and remains uncursed rather than becoming
+cursed; positions3 and2 become cursed normally.
+
+All 122 states are exact without a production change.  Final source-order
+inventory has cursed gloves, stethoscope and position5 extra-healing potion;
+position9's book is unblessed/uncursed, the alternate extra-healing stack and
+other books remain blessed, the wand remains uncursed, and final HP is104.
+Intelligent-artifact resistance, coin exclusion, saddle extension and
+knowledge/menu presentation of the changed beatitudes remain separate.
