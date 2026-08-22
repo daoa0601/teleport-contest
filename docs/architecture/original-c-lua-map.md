@@ -30850,3 +30850,30 @@ the same input.  All 166 states are exact, ending HP105, sighted, AC6, shield
 worn/known and sleep wand present.  Weapon/amulet/armor and silver-dragon
 reflection sources, already-known shield feedback and reflection expiry remain
 separate controls.
+
+## 851. Half-spell curse-items scales only the `rndcurse` count die
+
+```mermaid
+flowchart TD
+    Timed["HALF_SPDAM timed intrinsic"] --> Cast["curse-items cast and discarded 14d8 pre-roll"]
+    Cast --> Help["need-help pline"]
+    Help --> Aura["malignant-aura pline"]
+    Aura --> Divisor["6 / (Antimagic + Half_spell_damage + 1)"]
+    Divisor --> Count["half-spell alone: rnd(3)"]
+    Count --> Picks["repeat rnd(non-coin inventory count)"]
+    Picks --> Mutation["curse or unbless selected source-order objects"]
+    Mutation --> Continue["resume remaining actor transaction"]
+    Lua["Lua owns no curse or property phase"] -.-> Timed
+```
+
+Seed25 adds page-three timed half-spell damage to the exact ordinary
+curse-items carrier.  Inputs122 and123 preserve the cast and need-help pager;
+input124 preserves the malignant aura boundary but changes only `rnd(6)=3` to
+`rnd(3)=3`.  Eleven non-coin entries remain eligible, so picks 2,1,7 still
+curse the leather gloves, scalpel and sleep wand before `rn2(25)=8` resumes.
+
+All 141 states are exact, ending HP100 with those three objects cursed and 27
+half-spell turns.  This composition needed no production change.  Antimagic's
+shield effect and identical divisor3, the combined Antimagic+half-spell
+`rnd(2)` branch, blessed unblessing, intelligent artifacts and saddles remain
+separate controls.

@@ -12673,3 +12673,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   sighted, AC6, shield worn/known and wand present.  The fixture-disabled
   cleric gate passes 19/19 in 0.64 seconds at 154,812,416 bytes maximum RSS.
   Other reflection sources, known-shield feedback and expiry remain open.
+- Seed25 plus timed half-spell damage closes `rndcurse()` count scaling through
+  141 exact states without a production change.  Cast/need-help/aura paging is
+  unchanged; input124 uses `rnd(3)=3` instead of `rnd(6)=3`, then the same
+  eleven-item picks 2,1,7 curse gloves, scalpel and sleep wand before
+  `rn2(25)=8`.  Final state is HP100 with 27 timed turns.  The fixture-disabled
+  cleric gate passes 20/20 in 0.54 seconds at 156,893,184 bytes maximum RSS.
+  Antimagic shielding, combined divisor2, blessed/intelligent objects and
+  saddles remain open.

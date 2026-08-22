@@ -86645,3 +86645,38 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 23:13 EEST, journal block 2883] {#high-cleric #curse-items #half-spell-damage #wizintrinsic #rndcurse #count-scaling #inventory-order #composition #no-production-change #complete-replay #native-witness #regression #architecture #ledger #green #process-safety #priority}
+
+**Scaling contract and carrier:** half-spell damage must change only
+`rndcurse()`'s selection-count die, not cast/need-help/aura paging, eligible
+inventory count, source ordering or same-actor continuation.  Seed25 plus the
+already-proven page-three local `n` property isolates that branch without
+adding objects or constructor RNG.
+
+**Native evidence:** inputs122/123 preserve `d(14,8)=70`, cast prose and the
+zero-RNG need-help line.  Input124 publishes the malignant aura and changes
+ordinary `rnd(6)=3` to `rnd(3)=3`, following source integer divisor
+`6 / (0 Antimagic + 1 Half_spell_damage + 1)`.  The same eleven non-coin
+objects remain eligible; picks 2,1,7 curse the worn gloves, wielded scalpel and
+sleep wand before unchanged `rn2(25)=8` resumes on that input.
+
+**Decision and mapping:** the full **141-state replay was already exact**, so
+no production change was justified.  Final state is HP100, the same three
+objects cursed and 27 timed turns.  Section851 maps the property, integer
+divisor, count, source-order picks and mutations; Lua owns no phase.  This
+falsifies scaling inventory count, halving selections after the roll or moving
+mutation before the aura acknowledgement.
+
+**Measured acceptance and next blocker:** the recorder took **0.07 seconds**
+at **54,345,728 bytes maximum RSS** and the exact JS replay took **0.20
+seconds** at **124,993,536 bytes max RSS**.  Half-spell curse-items plus
+nineteen neighboring cleric witnesses pass **20/20** fixture-disabled in
+**0.54 seconds** at **156,893,184 bytes max RSS**; all processes exited.
+Antimagic shielding/identical divisor3, combined divisor2, blessed/intelligent
+objects and saddles remain open.  Next select between Antimagic and an insect
+constructor fallback by source breadth.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty test files
+remain untouched.
+
+---

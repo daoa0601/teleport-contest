@@ -9777,6 +9777,58 @@ test('seed0025 high-cleric curse-items preserves aura and inventory order',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0025 half-spell curse-items scales count without changing order',
+    async () => {
+        const result = await runSegment({
+            seed: 25,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n  n\n '
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 141);
+        assert.equal(decodedRow(result.getScreens()[75], 13),
+            ' n - half spell damage');
+        assert.equal(decodedRow(result.getScreens()[76], 13),
+            ' n + half spell damage');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'Timeout for half spell damage set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'd(14,8)=70',
+        ], 'seed0025 half-spell curse-items cast pre-roll RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'The renegade priest of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[123], [],
+            'seed0025 half-spell need-help pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You feel as if you need some help.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rnd(3)=3', 'rnd(11)=2', 'rnd(11)=1',
+            'rnd(11)=7', 'rn2(25)=8',
+        ], 'seed0025 half-spell scaled rndcurse and continuation RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'You feel a malignant aura surround you.--More--');
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1032 HP:131(137) Pw:273(273) AC:8 Xp:30');
+
+        assert.deepEqual(game.inventory.filter(object => object.cursed)
+            .map(object => object.otyp), [39, 159, 432]);
+        assert.equal(game.u.halfSpellDamageTurns, 27);
+        assert.equal(game.u.uhp, 100);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0047 high-cleric geyser replaces spell pre-roll with physical 8d6',
     async () => {
         const result = await runSegment({
