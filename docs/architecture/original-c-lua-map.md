@@ -30539,3 +30539,33 @@ JS's former HP71.  Inputs115-117 retain the kick, two blocked spell selections,
 renegade-priest curse prose and delayed burned-glove AC8→9 refresh.  The full
 122-state session is exact; the next cleric block should select a different
 higher-level effect rather than extend fire-pillar-specific code.
+
+## 841. High-cleric lightning delays blindness and damage behind flash prose
+
+```mermaid
+flowchart TD
+    Cast["lightning selected; cast line; d(14,8) pre-roll"] --> Bolt["A bolt of lightning strikes down at you"]
+    Bolt --> Damage["d(8,6), reflection/shock/half-spell checks"]
+    Damage --> Items["destroy_items AD_ELEC limit; wand damage and rn2(3)"]
+    Items --> Flash["rnd(100); You are blinded by the flash"]
+    Flash --> Pager["flash attempt pages bolt line while hero is still sighted"]
+    Pager --> Commit["after acknowledgement: set blindness, apply lightning HP"]
+    Commit --> Maintenance["timeout decrement, regeneration, later actor turns"]
+    Lua["Lua owns no lightning effect"] -.-> Cast
+```
+
+Seed15 supplies the selected no-reflection/no-shock-resistance carrier.  The
+long priestess cast line pages before `d(14,8)=56`; input104 then rolls
+8d6=26, pays the fire-style destruction limit, checks the retained sleep wand
+with `rnd(10)=4,rn2(3)=1`, and rolls flash duration67.  Attempting flash prose
+pages the bolt line with HP165 and no Blind status.  Input105 publishes
+`You are blinded by the flash!`, installs blindness, applies 26 HP and resumes
+maintenance at HP139/171.
+
+The same session also proves selector state after blindness: blind-you becomes
+useless and falls back to paralyze.  Following debug savelife, two identical
+audible blocked-spell curses reach `Norep`; suppressing the second keeps
+maintenance on input117 and leaves input118's survival message clean.  All 122
+states are exact, ending HP113, Blind64, mortality1 and the sleep wand intact.
+Reflection, shock resistance, wand destruction and half-spell lightning remain
+separate controls.

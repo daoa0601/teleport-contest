@@ -12572,3 +12572,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   Nine cleric witnesses pass fixture-disabled in 0.35 seconds.  The next
   higher-cleric target is a distinct effect such as lightning, insects,
   curse-items or geyser, not another fire-pillar bridge.
+- Seed15 closes the selected high-cleric lightning branch through all 122
+  states.  Input104 owns 8d6=26, the electrical stack limit, retained sleep-
+  wand `rnd(10)=4,rn2(3)=1` and flash duration67 before the bolt pager.
+  Input105 publishes blindness, then applies the property and 26 HP.  Later
+  blind-you selection correctly falls back to paralyze; after debug savelife,
+  duplicate audible `mumbled curse` prose is suppressed so maintenance stays
+  on input117 and survival remains alone on input118.  Ten cleric witnesses
+  pass fixture-disabled in 0.34 seconds.  Reflection, shock resistance, wand
+  destruction, half damage, insects, curse-items and geyser remain open.

@@ -86254,3 +86254,44 @@ RSS**.  No code/test change, full corpus, hidden judge, push or publication
 ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:09 EEST, journal block 2873] {#high-cleric #lightning #seed15 #selector-search #multi-segment-rejection #shock #wand #flashburn #blindness #state-after-prose #spell-uselessness #norep #mumbled-curse #debug-death #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Search correction and selected carrier:** the planned eight-segment recorder
+manifest was rejected operationally: segment1 exited, then segment2's recorder
+died after one marker because the driver shares run state across segments.
+No process survived and no aggregate output was accepted.  Returning to one
+owned template/process per seed, seed15 immediately selected concrete
+lightning with no earlier mismatch; it supersedes the covered-only shifts and
+seeds in block2872.
+
+**Native lightning contract:** input103 rolls `d(14,8)=56` after the cast
+pager.  Input104 publishes the bolt and consumes
+`d(8,6)=26,rn2(5)=1,rnd(10)=4,rn2(3)=1,rnd(100)=67`: the sleep wand survives,
+and flashburn attempts its line while the hero remains sighted and HP165.
+Input105 publishes `You are blinded by the flash!`, then commits 67-turn
+blindness, 26 HP and maintenance, ending HP139 with Blind painted.  Matching
+only bolt damage would miss both state/prose ordering and wand RNG.
+
+**Implementation and later-session corrections:** lightning now has an
+explicit deferred effect owner for damage, electrical inventory probe,
+flash line, blindness and final HP.  The selected non-destruction wand branch
+is named; explosion remains open.  Later, native treats blind-you as useless
+under flash blindness and selects paralyze instead.  After its fatal retry and
+debug savelife, two blocked blind spell slots derive identical audible curses;
+C `Norep` suppresses the second.  Deduplicating that line keeps the full
+maintenance tail on input117 and leaves input118's survival message alone.
+
+**Measured acceptance and next blocker:** all **122 seed15 native states** are
+exact; the recorder took **0.07 seconds** at **54,149,120 bytes maximum RSS**.
+Lightning, complete fire/high-cleric, cure, confusion, three paralyze controls
+and AD_STUN pass **10/10** fixture-disabled in **0.34 seconds** at
+**141,361,152 bytes max RSS**; all processes exited.  Section841 and the ledger
+close the selected ordinary lightning path.  Reflection, shock resistance,
+wand destruction, half-spell damage, insects, curse-items and geyser remain
+separate.  Continue the one-process selector search for a concrete new effect;
+do not reuse the broken multi-segment driver.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty test files
+remain untouched.
+
+---

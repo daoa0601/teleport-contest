@@ -9576,6 +9576,81 @@ test('seed0011 high-cleric mace bonus closes the complete fire session',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0015 high-cleric lightning preserves flash and recovery ordering',
+    async () => {
+        const result = await runSegment({
+            seed: 15,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'd(14,8)=56',
+        ], 'seed0015 lightning pre-roll after cast pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The priestess of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[104], [
+            'd(8,6)=26', 'rn2(5)=1', 'rnd(10)=4',
+            'rn2(3)=1', 'rnd(100)=67',
+        ], 'seed0015 lightning damage, wand, and flash RNG');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[104], 23),
+            'Dlvl:1 $:1316 HP:165(171) Pw:283(283) AC:8 Xp:30');
+
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'You are blinded by the flash!');
+        assert.equal(decodedRow(result.getScreens()[105], 23),
+            'Dlvl:1 $:1316 HP:139(171) Pw:283(283) AC:8 Xp:30 Blind');
+
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            'It hits!  It kicks!  Something casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            'You are frozen in place!  You hear a mumbled curse.  It hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[114], 23),
+            'Dlvl:1 $:1316 HP:0(171) Pw:283(283) AC:8 Xp:30 Blind');
+
+        assertRngSliceExact(result.getRngSlices()[117], [
+            'rnd(21)=14', 'd(2,8)=7', 'rn2(3)=2', 'rn2(6)=1',
+            'rn2(25)=17', 'rn2(13)=4', 'rn2(13)=7',
+            'rn2(25)=1', 'rn2(5)=2', 'rn2(20)=4',
+            'rn2(5)=0', 'rn2(12)=11', 'rn2(12)=9',
+            'rn2(12)=7', 'rn2(12)=1', 'rn2(12)=6',
+            'rn2(12)=2', 'rn2(12)=9', 'rn2(12)=1',
+            'rn2(12)=0', 'rn2(12)=5', 'rn2(70)=33',
+            'rn2(100)=84', 'rn2(20)=15', 'rn2(67)=13',
+        ], 'seed0015 recovery kick, deduplicated curses, and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[117]),
+            "OK, so you don't die.  It kicks!  You hear a mumbled curse.--More--");
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'You survived that attempt on your life.');
+
+        assert.equal(game.u.uhp, 113);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.blindTurns, 64);
+        assert.equal(game.inventory.some(object => object.otyp === 432), true);
+        const cleric = game.level.monsters.find(monster =>
+            monster.mnum === 276);
+        assert.ok(cleric);
+        assert.equal(cleric.female, true);
+        assert.deepEqual(cleric.emin, {
+            min_align: -1,
+            renegade: false,
+        });
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -350,6 +350,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
         }
     } else if (spell.key === 'fire-pillar') {
         effectMessage = 'A pillar of fire strikes all around you!';
+    } else if (spell.key === 'lightning') {
+        effectMessage = 'A bolt of lightning strikes down at you from above!';
     }
     return { effectDamage, effectMessage };
 }
@@ -7540,6 +7542,11 @@ export function resumeDeferredHeroSpell(action, state) {
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'lightning') {
+        attack.deferredLightningSpell = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {
         attack.unimplementedSpellEffect = true;
         return attack;
@@ -7561,6 +7568,8 @@ function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if ((spell.flags & MCF_HOSTILE) && monster.mpeaceful) return true;
     if (spell.key === 'cure-self')
         return (monster.mhp ?? 0) >= (monster.mhpmax ?? 0);
+    if (spell.key === 'blind-you')
+        return !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
     if (spell.key === 'haste-self')
         return monster.permspeed === MFAST || monster.mspeed === MFAST;
     if (spell.key === 'disappear') {

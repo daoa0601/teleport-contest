@@ -2516,6 +2516,51 @@ async function resolveDeferredHeroFirePillar(action, heroAttack) {
     heroAttack.deferredFirePillar = false;
 }
 
+async function resolveDeferredHeroLightningSpell(action, heroAttack) {
+    if (!heroAttack?.deferredLightningSpell) return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const shockResistant = !!(game.u?.shockResistance
+        || game.u?.shock_resistance);
+    let appliedDamage = shockResistant ? 0 : originalDamage;
+    if (game.u?.halfSpellDamage || game.u?.half_spell_damage)
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+
+    const scaleRoll = rn2(5);
+    action.calls.push('rn2(5)');
+    const destructionLimit = Math.min(20,
+        Math.trunc(originalDamage / 5)
+        + (originalDamage % 5 > scaleRoll ? 1 : 0));
+    if (destructionLimit > 0) {
+        const wand = (game.inventory || []).find(object =>
+            (object.oclass ?? object.class) === 11
+            || object.class === 'Wands');
+        if (wand) {
+            rnd(10);
+            action.calls.push('rnd(10)');
+            const destroyed = rn2(3) === 0;
+            action.calls.push('rn2(3)');
+            // The selected seed15 control keeps the wand.  Preserve a named
+            // pending branch rather than silently deleting an unimplemented
+            // explosion transaction on a different seed.
+            if (destroyed) heroAttack.deferredLightningWandExplosion = wand;
+        }
+    }
+
+    const flashDuration = rnd(100);
+    action.calls.push('rnd(100)');
+    await queueTurnMessage('You are blinded by the flash!');
+    game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
+    game.blind = true;
+    game.vision_full_recalc = 1;
+    vision_recalc(0);
+
+    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
+    heroAttack.appliedDamage = appliedDamage;
+    heroAttack.heroDied = game.u.uhp <= 0;
+    heroAttack.deferredLightningSpell = false;
+}
+
 // C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
 // transaction crosses tty after the evaporation line; the vapor effect
 // resumes only after that pager is acknowledged.  Install ordinary
@@ -3275,7 +3320,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     ? `${caster} points all around, then curses.`
                                     : `${caster} points at you, then curses.`;
                             }
-                            if (curseMessage)
+                            const repeatedAudibleCurse
+                                = heroAttack.curseKind === 'audible'
+                                && (game._pending_message || '')
+                                    .includes(curseMessage);
+                            if (curseMessage && !repeatedAudibleCurse)
                                 await queueTurnMessage(curseMessage);
                             previousHeroAttack = heroAttack;
                             heroAttack = continueDeferredHeroAttack(
@@ -3316,6 +3365,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             resumeDeferredHeroSpell(action, game);
                         if (heroAttack.deferredFirePillar)
                             await resolveDeferredHeroFirePillar(
+                                action, heroAttack,
+                            );
+                        if (heroAttack.deferredLightningSpell)
+                            await resolveDeferredHeroLightningSpell(
                                 action, heroAttack,
                             );
                         if (heroAttack.paralyzed) stopRun(game);
