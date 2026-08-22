@@ -7730,6 +7730,14 @@ function heroCanSeeInvisible(state) {
         || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 
+function monsterSpellHasAggravatables(caster, state) {
+    return !!state?.level?.monsters?.some(monster =>
+        monster !== caster && !monster.dead && (monster.mhp ?? 1) > 0
+        && (((monster.mstrategy ?? 0) & STRAT_WAITFORU)
+            || monster.msleeping || monster.mcanmove === 0
+            || (monster.mfrozen ?? 0) > 0));
+}
+
 function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if ((spell.flags & MCF_HOSTILE) && monster.mpeaceful) return true;
     if (spell.key === 'cure-self')
@@ -7748,6 +7756,10 @@ function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if (spell.key === 'geyser')
         return recordRandom(random, calls, 5) === 0;
     if (spell.key === 'clone-wizard') return !monster.iswiz;
+    if (spell.key === 'aggravation'
+        && !monsterSpellHasAggravatables(monster, state)) {
+        return recordRandom(random, calls, 100) !== 0;
+    }
     return false;
 }
 

@@ -87305,3 +87305,39 @@ non-Wizard cuss paths explicit.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-23 00:55 EEST, journal block 2902] {#wizard-of-yendor #aggravation #spell-usefulness #has-aggravatables #retry #curse-items #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** refreshed seed15 is exact through
+input106 call7.  Native spell value rn2(30)=14 then spends rn2(100)=22 before
+fumble rn2(300)=144 and d(16,6)=61; JS skipped the hundred-sided draw, treated
+aggravation as usable and shifted every subsequent decision.
+
+**Prediction and source evidence:** spell_would_be_useless() calls
+has_aggravatables() for aggravation.  No live seed15 actor is WAITFORU,
+sleeping, frozen or immobile, so source performs its deliberate one-percent
+caster-error draw.  Nonzero22 rejects the candidate and forces another spell
+selection; this predicts the existing curse-items pager and aura without
+implementing the aggravation effect.
+
+**Implementation and measured effect:** the wizard-spell predicate now scans
+live actor wait/helpless state and records rn2(100) only for an empty
+aggravatable set.  Seed15 is exact for all **127 RNG/screen/cursor states**,
+ending HP125/171 and AC8; the strict replay took **0.18 seconds** at
+**129,990,656 bytes maximum RSS**.  The seven selected fixture-disabled Wizard
+controls pass **7/7** in **0.31 seconds** at **139,608,064 bytes maximum RSS**;
+all processes exited.
+
+**Falsification, decision and next blocker:** the extra draw belongs to a
+rejected spell candidate, not fumble scaling, cooldown, curse-items or ambient
+generation.  Exact later relocation and repeated curse spell falsify those
+downstream owners.  Section868 maps the usefulness boundary; Lua owns none.
+Seed15 joins the complete exact carriers without claiming aggravation effect
+support.  Next avoid seed18/20 startup drift and choose seed13's placement
+projection or seed16's spawned misc-item path only after verifying their
+earliest actor ownership.  Tower partitioning, aggravatable actors,
+one-percent acceptance and actual aggravation remain explicit controls.  No
+full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

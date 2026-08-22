@@ -9703,6 +9703,39 @@ test('seed0019 Wizard destroy-armor erodes gloves after its pager',
         assert.equal(game.u.uhp, 104);
     });
 
+test('seed0015 rejects useless aggravation before choosing curse-items',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 15,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=4', 'rn2(5)=4', 'rnd(20)=8', 'd(2,12)=20',
+            'rn2(20)=7', 'rn2(3)=1', 'rn2(6)=4', 'rn2(30)=14',
+            'rn2(100)=22', 'rn2(300)=144', 'd(16,6)=61',
+        ], 'seed0015 aggravation rejection and curse cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'You feel as if you need some help.--More--');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'You feel a malignant aura surround you.');
+        assert.equal(game.u.uhp, 125);
+        assert.equal(game.u.uhpmax, 171);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

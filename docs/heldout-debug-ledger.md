@@ -11018,13 +11018,6 @@ attempt: **402 calls**, not a direct two-pass retry.
   locator pass after tutorial residue.  Humanoid and special observers,
   growth-family pairs, invisible-observer vision and observer-growl response
   remain open.
-- Seed19 is now exact through all 127 states after adding the post-attack
-  Wizard cuss transaction.  Input114 owns outer/internal rn2(5)=0/1 plus
-  malediction6 and insult20 while the prior points-all-around line pages.
-  Input115 publishes the quoted rattlepate sentence, wakes radius25 and
-  resumes the exact tail.  The replay ends HP104/148 and AC9; the selected
-  Wizard family remains 6/6 fixture-disabled.  Laugh, Amulet, panic, retreat,
-  Deaf and non-Wizard cuss branches remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both
@@ -12823,3 +12816,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   family passes 6/6 fixture-disabled.  Input114's zero-gate cuss speech is the
   next divergence; Antimagic, no-effect, multi-hit and destruction variants
   remain open.
+- Seed19 is now exact through all 127 states after adding the post-attack
+  Wizard cuss transaction.  Input114 owns outer/internal rn2(5)=0/1 plus
+  malediction6 and insult20 while the prior points-all-around line pages.
+  Input115 publishes the quoted rattlepate sentence, wakes radius25 and
+  resumes the exact tail.  The replay ends HP104/148 and AC9; the selected
+  Wizard family remains 6/6 fixture-disabled.  Laugh, Amulet, panic, retreat,
+  Deaf and non-Wizard cuss branches remain open.
+- Seed15 is exact through all 127 states after porting aggravation usefulness,
+  not aggravation itself.  Spell value14 finds no WAITFORU, sleeping, frozen
+  or immobile actor; rn2(100)=22 rejects the candidate before retry fumble144
+  and curse-items d(16,6)=61.  The exact replay ends HP125/171 and AC8; the
+  selected Wizard gate rises to 7/7 fixture-disabled.  Tower partitioning,
+  real aggravatable actors, the one-percent no-target acceptance and the
+  aggravation effect remain open.
