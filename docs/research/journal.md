@@ -84248,3 +84248,63 @@ item-selection/RNG/presentation owner can be mapped.  No corpus, hidden judge,
 stage, commit, push or publication ran.
 
 ---
+
+### [2026-08-22 15:28 EEST, journal block 2827] {#rust-monster #hero-contact #armor #helmet #cloak #erode-armor #tty-continuation #selector-rejection #native-witness #implementation #complete-replay #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and controlled equipment:** a Ranger wishes +2 iron helmet `h`,
+finishes donning it in the wear-selection input, and retains only the starting
+leather displacement cloak as another occupied armor slot.  A stethoscope
+proves the adjacent rust monster is peaceful and uncancelled before an orcish
+arrow makes it hostile.  An explicit `m.` rest then gives monster-to-hero
+AD_RUST its own turn, separate from projectile passive ownership.
+
+**Rejected selectors:** the first strict 8,192-seed search omitted the wrapped
+peaceful-status acknowledgement, so shot keys were consumed by `--More--`; it
+returned empty in **171.69 seconds** at **383,401,984 bytes maximum RSS**.
+After adding the acknowledgement, a second strict search still returned empty
+in **177.22 seconds** at **403,849,216 bytes** because it required projectile
+hit and later touch prose on the same topline.  Both processes were retained
+and polled to normal exit with no duplicate.  Removing only that invalid
+same-input predicate found twelve one-shot hit/survival carriers in **2.70
+seconds** at **181,501,952 bytes maximum RSS**.
+
+**Native selection rather than shifted inference:** native seed38 disproved the
+assumption that one eligible metal slot guarantees erosion: feet four retried,
+then body one selected the leather cloak; `erode_armor()` stops that body branch
+even after non-rustable `ER_NOTHING` and publishes verbose non-effect prose.
+Four additional native recordings were used to select source behavior rather
+than JavaScript's shifted next word.  Seed53 contains the complete desired
+graph and records 141 states in **0.06 seconds** at **54,296,576 bytes maximum
+RSS**.
+
+**Native transaction:** input136 rolls scheduler `rn2(4)=0`, attack
+`rnd(20)=16`, declared `d(0,0)=0`, then armor slots `rn2(5)=4,1` and suspends
+at the first touch.  Input137 publishes `Your cloak of displacement is not
+affected by oxidation.`, pays knockback `rn2(3)=0, rn2(6)=5`, starts slot two
+with `rnd(21)=4,d(0,0)=0`, and later inputs repeat the cloak path.  Input140
+selects head `rn2(5)=0`, commits primary erosion one and displays `The rust
+monster touches you!  Your plumed helmet rusts!--More--` before shared
+knockback and the next slot.
+
+**Implementation:** natural uncancelled AD_RUST now defers `erode_armor()`
+after hitmsg and before knockback.  The resumable owner reproduces the five-way
+slot reservoir, retries empty/non-effective head/shield/glove/boot slots,
+preserves body-slot unconditional termination, and returns exact selected
+rust/non-effect messages.  The fired orcish arrow remains a separately rusted
+floor identity; its inventory sibling and the leather cloak stay unrusted.
+Grease, proof, blessing and terminal armor erosion are implemented only as
+source-shaped neighboring paths and are not accepted without their own native
+witnesses.
+
+**Measured acceptance and next blocker:** all 141 states replay exactly from
+input3 onward in **0.18 seconds** at **123,944,960 bytes maximum RSS**.  The
+durable multi-input regression passes **1/1** in **0.21 seconds** at
+**129,466,368 bytes maximum RSS**.  The one owned managed
+projectile/priest/wish process passes **125/125** in **2.39 seconds** at
+**336,019,456 bytes maximum RSS**; registries are empty.  Section 774, section
+826 and the ledger now map worn-armor rust ownership.  Next select the armor
+protection siblings—grease wear/retention, actual rustproof learning, and
+blessed resistance—without inferring them from projectile erosion.  No corpus,
+hidden judge, stage, commit, push or publication ran.
+
+---

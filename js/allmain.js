@@ -69,6 +69,7 @@ import {
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
+    resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
@@ -3275,6 +3276,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (coldDismissal !== null
                         && coldDismissal !== undefined) {
                         actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredRustArmor) {
+                    const rustArmor = resumeDeferredHeroRustArmor(action, game);
+                    if (rustArmor?.message) {
+                        const rustDismissal = await queueTurnMessage(
+                            rustArmor.message,
+                        );
+                        if (rustDismissal !== null
+                            && rustDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
                     }
                 }
                 if (heroAttack.deferredLegEffect)

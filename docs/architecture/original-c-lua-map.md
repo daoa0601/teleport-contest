@@ -27070,6 +27070,23 @@ erosion zero under a live cancelled target.  Together the three cancelled
 targets map AD_ACID continues, AD_RUST stops, and AD_CORR stops, while the
 cancelled monster-to-hero AD_RUST arm remains screen/RNG exact too.
 
+Uncancelled monster-to-hero AD_RUST now crosses into the worn-armor owner.
+Seed53 equips a +2 iron helmet while retaining the non-rustable leather cloak,
+then uses an explicit `m.` rest after the projectile turn.  The first two
+successful touch slots each roll declared `d(0,0)=0`; `erode_armor()` walks
+empty armor slots until body selection one, where the cloak terminates the
+search and emits `Your cloak of displacement is not affected by oxidation.`
+with `EF_VERBOSE`.  A later touch selects head slot zero directly and changes
+the same worn helmet to primary erosion one with `Your plumed helmet rusts!`.
+
+Every erosion message is a resumable owner between hitmsg() and shared
+knockback `rn2(3), rn2(6)`.  The selected path preserves the separately rusted
+floor orcish arrow, unrusted inventory sibling, untouched cloak and live
+hostile target.  All 141 native states are exact from input3 onward.  The
+implemented selector loop also retains source slot retry/body-break structure;
+grease, proof, blessing and terminal armor erosion remain separate unselected
+controls.
+
 ## 775. Ordinary traps are transparent to `bhit`; webs own interception
 
 ```mermaid
@@ -29481,9 +29498,9 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-124/124 after the paired rust/corrosion material, protection, degree,
+125/125 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
-grease/material/protection/degree/cancellation rows.
+grease/material/protection/degree/cancellation and worn-helmet rust rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`

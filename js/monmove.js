@@ -6189,17 +6189,21 @@ function basicMonsterAttack(
             attackType, damageType, effect: 'stoning-natural',
             deferredStoningEffect: true,
         }, monster, attackIndex);
-    } else if (hit && damageType === AD_RUST && monster.mcan) {
+    } else if (hit && damageType === AD_RUST) {
         // uhitm.c:mhitm_ad_rust() still receives hitmu()'s declared 0d0
-        // damage and publishes hitmsg() before cancellation returns from the
-        // erosion effect.  Shared knockback gates follow that visible line;
-        // only then may mattacku() advance to the second rust-touch slot.
+        // damage and publishes hitmsg() before cancellation or erode_armor().
+        // Armor erosion is a separately resumable message owner; shared
+        // knockback gates follow it before mattacku() advances attack slots.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType, damageType, effect: 'cancelled-rust-natural',
-            oldFormMnum, deferredPostHit: true,
+            attackType, damageType,
+            effect: monster.mcan
+                ? 'cancelled-rust-natural' : 'rust-natural',
+            oldFormMnum,
+            deferredRustArmor: !monster.mcan,
+            deferredPostHit: !!monster.mcan,
         }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))
@@ -6579,6 +6583,104 @@ export function resumeDeferredHeroContact(
     }
     attack.deferredPostHit = false;
     return action;
+}
+
+function heroWornArmor(state, slot) {
+    return state?.[slot] || state?.u?.[slot] || null;
+}
+
+function heroArmorRustResult(object, verbose, state, random, calls) {
+    const objectName = object.name || object.description
+        || OBJECT_NAMES[object.otyp] || 'armor';
+    if (object.greased) {
+        const wearsOff = recordRandom(random, calls, 2) === 0;
+        if (wearsOff) object.greased = false;
+        return {
+            result: 'greased',
+            message: `Your ${objectName} is protected by the layer of grease!`,
+        };
+    }
+
+    const rustProne = (OBJECT_MATERIAL[object.otyp] ?? 0) === 11;
+    const proof = !!(object.oerodeproof || object.rustproof);
+    if (!rustProne || proof && object.rknown) {
+        return {
+            result: 'nothing',
+            message: verbose
+                ? `Your ${objectName} is not affected by oxidation.` : null,
+        };
+    }
+    if (proof || object.blessed && rnl(4) === 0) {
+        if (proof) object.rknown = true;
+        return {
+            result: 'nothing',
+            message: `Somehow, your ${objectName} is not affected by the oxidation.`,
+        };
+    }
+
+    const oldRust = object.oeroded ?? 0;
+    if (oldRust >= 3) {
+        return {
+            result: 'nothing',
+            message: verbose
+                ? `Your ${objectName} looks completely rusted.` : null,
+        };
+    }
+    object.oeroded = oldRust + 1;
+    const adverb = oldRust + 1 === 3
+        ? ' completely' : oldRust ? ' further' : '';
+    return {
+        result: 'damaged',
+        message: `Your ${objectName} rusts${adverb}!`,
+    };
+}
+
+// Resume mhitm_ad_rust()->erode_armor() after hitmsg() has crossed any tty
+// boundary.  Head/shield/glove/boot candidates retry on ER_NOTHING; body slot
+// selection stops after its cloak/suit/shirt attempt even when non-rustable.
+export function resumeDeferredHeroRustArmor(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredRustArmor) return null;
+    const calls = action.calls;
+    let message = null;
+
+    for (;;) {
+        const slot = recordRandom(random, calls, 5);
+        let target = null;
+        let verbose = false;
+        let bodySlot = false;
+        if (slot === 0) {
+            target = heroWornArmor(state, 'uarmh');
+        } else if (slot === 1) {
+            bodySlot = true;
+            verbose = true;
+            target = heroWornArmor(state, 'uarmc')
+                || heroWornArmor(state, 'uarm')
+                || heroWornArmor(state, 'uarmu');
+        } else if (slot === 2) {
+            target = heroWornArmor(state, 'uarms');
+        } else if (slot === 3) {
+            target = heroWornArmor(state, 'uarmg');
+        } else {
+            target = heroWornArmor(state, 'uarmf');
+        }
+
+        if (!target) {
+            if (bodySlot) break;
+            continue;
+        }
+        const erosion = heroArmorRustResult(
+            target, verbose, state, random, calls,
+        );
+        message = erosion.message;
+        if (bodySlot || erosion.result !== 'nothing') break;
+    }
+
+    attack.deferredRustArmor = false;
+    attack.deferredPostHit = true;
+    return { message };
 }
 
 // Resume hitmu() after its concealed-attacker line has crossed tty.  The

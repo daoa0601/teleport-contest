@@ -11929,3 +11929,21 @@ attempt: **402 calls**, not a direct two-pass retry.
   restores all 140 states from input3 onward.  The strengthened focused test
   passes 1/1 in 0.21 seconds at 128,909,312 bytes maximum RSS, and the managed
   family passes 124/124 in 2.38 seconds at 342,310,912 bytes maximum RSS.
+- Seed53 closes uncancelled monster-to-hero AD_RUST through both verbose
+  non-effect and actual helmet erosion.  Two initial 8,192-seed selectors were
+  correctly rejected: the first omitted the stethoscope acknowledgement and
+  ran 171.69 seconds at 383,401,984 bytes maximum RSS; the second incorrectly
+  required projectile and touch prose on the same topline and ran 177.22
+  seconds at 403,849,216 bytes.  A relaxed hit/survival selector found twelve
+  carriers in 2.70 seconds at 181,501,952 bytes maximum RSS.  Native—not
+  shifted JavaScript RNG—then selected seed53.
+
+  The 141-state native replay shows two body-slot selections ending on the
+  leather cloak with `not affected by oxidation`, followed by a later head-slot
+  zero which rusts the worn +2 plumed helmet.  Each slot is between declared
+  `d(0,0)`, visible touch and shared knockback gates.  The port now resumes
+  `erode_armor()` across its message pagers, retries empty non-body slots and
+  preserves the body branch's unconditional stop.  All states are exact from
+  input3 onward in 0.18 seconds at 123,944,960 bytes maximum RSS.  Focused
+  passes 1/1 in 0.21 seconds at 129,466,368 bytes maximum RSS; the managed
+  family passes 125/125 in 2.39 seconds at 336,019,456 bytes maximum RSS.

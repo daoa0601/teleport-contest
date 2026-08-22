@@ -18,7 +18,7 @@ import {
     CORPSE, CREAM_PIE,
     DAGGER, DART,
     FOOD_RATION,
-    CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, LONG_SWORD,
+    CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET, LONG_SWORD,
     DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, OIL_LAMP,
     POT_GAIN_LEVEL, RING_MAIL, ROCK, RUBY, SLING,
     SPEAR,
@@ -6172,6 +6172,145 @@ test('seed0002 cancelled black pudding suppresses orcish-arrow corrosion',
             corrosion: 0,
         });
         assert.equal(game.context.move, 0);
+    });
+
+test('seed0053 orcish arrow leads rust touches from cloak to worn helmet',
+    async () => {
+        const result = await runSegment({
+            seed: 53,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+                + '#wizwish\nuncursed +2 helmet\nWh'
+                + '#wizwish\nstethoscope\n'
+                + '#wizgenesis\npeaceful rust monster\n'
+                + 'ail tglm.    ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 141);
+        assertRngSliceExact(result.getRngSlices()[70], [
+            'rn2(11)=9', 'rnd(2)=1', 'rn2(10)=5', 'rn2(11)=5',
+            'rn2(10)=2', 'rn2(10)=9', 'rn2(100)=58',
+            'rn2(80)=27', 'rn2(80)=48', 'rn2(1000)=40',
+            'rn2(100)=81',
+        ], 'seed0053 helmet wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[70]),
+            'h - a plumed helmet.');
+        assert.deepEqual(result.getCursors()[70], [50, 3, 1]);
+        assert.equal(decodedTopline(result.getScreens()[72]),
+            'You finish your dressing maneuver.');
+
+        assertRngSliceExact(result.getRngSlices()[130], [],
+            'seed0053 uncancelled rust status RNG');
+        assert.equal(decodedRow(result.getScreens()[130], 0),
+            'Status of the rust monster (neutral, medium):  Level 4  HP 20(20)  AC 2,');
+        assert.equal(decodedRow(result.getScreens()[130], 1),
+            'peaceful.--More--');
+        assert.deepEqual(result.getCursors()[130], [17, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[136], [
+            'rn2(4)=0', 'rn2(5)=4', 'rnd(20)=16', 'd(0,0)=0',
+            'rn2(5)=1',
+        ], 'seed0053 first rust-touch and body-slot RNG');
+        assert.equal(decodedTopline(result.getScreens()[136]),
+            'The rust monster touches you!--More--');
+        assert.deepEqual(result.getCursors()[136], [37, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[137], [
+            'rn2(3)=0', 'rn2(6)=5', 'rnd(21)=4', 'd(0,0)=0',
+        ], 'seed0053 first rust post-hit and second-touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[137]),
+            'Your cloak of displacement is not affected by oxidation.--More--');
+        assert.deepEqual(result.getCursors()[137], [64, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[138], [
+            'rn2(5)=3', 'rn2(5)=1',
+        ], 'seed0053 second rust armor-slot RNG');
+        assert.equal(decodedTopline(result.getScreens()[138]),
+            'The rust monster touches you again!--More--');
+        assert.deepEqual(result.getCursors()[138], [43, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[139], [
+            'rn2(3)=1', 'rn2(6)=0', 'rn2(5)=4', 'rn2(16)=11',
+            'rn2(5)=1', 'rn2(5)=4', 'rn2(12)=8', 'rn2(5)=4',
+            'rn2(5)=1', 'rn2(20)=10', 'rn2(5)=2', 'rn2(5)=0',
+            'rnd(20)=11', 'd(0,0)=0',
+        ], 'seed0053 second post-hit and third-touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[139]),
+            'Your cloak of displacement is not affected by oxidation.--More--');
+        assert.deepEqual(result.getCursors()[139], [64, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[140], [
+            'rn2(5)=0', 'rn2(3)=1', 'rn2(6)=4', 'rnd(21)=12',
+            'd(0,0)=0',
+        ], 'seed0053 helmet-rust and fourth-touch RNG');
+        assert.equal(decodedTopline(result.getScreens()[140]),
+            'The rust monster touches you!  Your plumed helmet rusts!--More--');
+        assert.deepEqual(result.getCursors()[140], [64, 0, 1]);
+
+        const rustMonster = game.level.monsters.find(monster =>
+            monster.mnum === 212);
+        assert.ok(rustMonster);
+        assert.deepEqual({
+            x: rustMonster.mx,
+            y: rustMonster.my,
+            hp: rustMonster.mhp,
+            hpmax: rustMonster.mhpmax,
+            peaceful: rustMonster.mpeaceful,
+            cancelled: rustMonster.mcan ?? 0,
+        }, {
+            x: 52,
+            y: 2,
+            hp: 15,
+            hpmax: 20,
+            peaceful: 0,
+            cancelled: 0,
+        });
+
+        assert.ok(game.uarmh);
+        assert.deepEqual({
+            type: game.uarmh.otyp,
+            letter: game.uarmh.invlet,
+            enchantment: game.uarmh.spe,
+            rust: game.uarmh.oeroded ?? 0,
+            proof: game.uarmh.oerodeproof ?? false,
+            proofKnown: game.uarmh.rknown ?? false,
+        }, {
+            type: HELMET,
+            letter: 'h',
+            enchantment: 2,
+            rust: 1,
+            proof: false,
+            proofKnown: false,
+        });
+        assert.equal(game.uarmc?.otyp, CLOAK_OF_DISPLACEMENT);
+        assert.equal(game.uarmc?.oeroded ?? 0, 0);
+
+        const floorArrows = (game.level.objects?.[52]?.[2] || [])
+            .filter(object => object.otyp === ORCISH_ARROW);
+        assert.equal(floorArrows.length, 1);
+        assert.deepEqual({
+            quantity: floorArrows[0].quantity ?? floorArrows[0].quan,
+            enchantment: floorArrows[0].spe ?? 0,
+            rust: floorArrows[0].oeroded ?? 0,
+            where: floorArrows[0].where,
+        }, {
+            quantity: 1,
+            enchantment: 2,
+            rust: 1,
+            where: 'floor',
+        });
+
+        const inventorySibling = game.inventory.find(object =>
+            object.otyp === ORCISH_ARROW && object.invlet === 'g');
+        assert.ok(inventorySibling);
+        assert.equal(inventorySibling.oeroded ?? 0, 0);
+        assert.equal(game.context.move, 1);
     });
 
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
