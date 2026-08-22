@@ -9451,6 +9451,82 @@ test('seed0011 forced high cleric reaches fire-pillar effect boundary',
         assert.equal(game.context.move, 1);
     });
 
+test('seed0011 forced Wizard damages, cusses, and disappears after pager',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile Wizard of Yendor\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assert.equal(decodedTopline(result.getScreens()[96]),
+            'Creating doppelganger instead; force Wizard of Yendor? [yn] (n)');
+        assert.equal(decodedTopline(result.getScreens()[97]),
+            'The Wizard of Yendor appears next to you.');
+        assert.deepEqual(result.getRngSlices()[97].slice(-12), [
+            'rn2(3)=1', 'rn2(2)=0', 'rnd(2)=1', 'd(30,8)=119',
+            'rn2(50)=19', 'rn2(11)=10', 'rn2(3)=0', 'rnd(2)=2',
+            'rn2(5)=4', 'rn2(17)=14', 'rn2(100)=86', 'rn2(100)=65',
+        ]);
+
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=3', 'rn2(5)=2', 'rnd(20)=18', 'd(2,12)=17',
+            'rn2(20)=2', 'rn2(3)=1', 'rn2(6)=4', 'rn2(30)=0',
+            'rn2(300)=263', 'd(16,6)=66',
+        ], 'seed0011 Wizard amulet-claw and psi-bolt cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[106], 23),
+            'Dlvl:1 $:1540 HP:124(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(5)=3', 'rn2(12)=0', 'rn2(12)=1', 'rn2(12)=1',
+            'rn2(70)=41', 'rn2(100)=23', 'rn2(400)=84',
+            'rn2(20)=6', 'rn2(70)=50',
+        ], 'seed0011 Wizard post-psi cuss gate and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'Your head suddenly aches very painfully!');
+        assert.equal(decodedRow(result.getScreens()[107], 23),
+            'Dlvl:1 $:1540 HP:59(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[118], [
+            'rn2(5)=1', 'rn2(5)=3', 'rnd(20)=19', 'd(2,12)=18',
+            'rn2(20)=19', 'rn2(3)=0', 'rn2(6)=3', 'rn2(30)=4',
+            'rn2(300)=96', 'd(16,6)=56',
+        ], 'seed0011 Wizard disappear cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell!--More--');
+        assert.equal(decodedRow(result.getScreens()[118], 23),
+            'Dlvl:1 $:1540 HP:33(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'rn2(12)=0', 'rn2(12)=4', 'rn2(12)=6', 'rn2(70)=21',
+            'rn2(100)=99', 'rn2(400)=12', 'rn2(20)=1', 'rn2(70)=5',
+        ], 'seed0011 Wizard invisibility and no-cuss maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[119]),
+            'The Wizard of Yendor suddenly disappears!');
+
+        const wizard = game.level.monsters.find(monster => monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.iswiz, true);
+        assert.equal(wizard.mpeaceful, 0);
+        assert.equal(wizard.mhp, 119);
+        assert.equal(wizard.mhpmax, 119);
+        assert.equal(wizard.minvis, 1);
+        assert.equal(wizard.perminvis, 1);
+        assert.equal(game.u.uhp, 33);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 high-cleric fire pillar burns armor and selected inventory',
     async () => {
         const result = await runSegment({

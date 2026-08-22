@@ -6072,12 +6072,13 @@ const MONSTER_NAME_ALIASES = new Map([
     // shares name_to_mon() ownership rather than patching Wizard genesis.
     ['human werejackal', 262],
 ]);
-const WIZGENESIS_HUMAN_ZOMBIE_SUBSTITUTIONS = new Set([
-    123, // Angel
-    271, // shopkeeper
-    272, // guard
-    275, // aligned cleric
-    276, // high cleric
+const WIZGENESIS_SUBSTITUTIONS = new Map([
+    [123, 'human zombie'], // Angel
+    [271, 'human zombie'], // shopkeeper
+    [272, 'human zombie'], // guard
+    [275, 'human zombie'], // aligned cleric
+    [276, 'human zombie'], // high cleric
+    [285, 'doppelganger'], // Wizard of Yendor
 ]);
 
 function monsterTypeByName(value) {
@@ -6160,12 +6161,13 @@ async function wizGenesis() {
     // both types across a modal prompt and only starts makemon() after the
     // answer.  The affirmative branch forces the requested actor; default/no
     // constructs the disoriented human-zombie substitute.
-    if (WIZGENESIS_HUMAN_ZOMBIE_SUBSTITUTIONS.has(mnum)) {
+    if (WIZGENESIS_SUBSTITUTIONS.has(mnum)) {
         const requestedName = MONSTER_NAME[mnum];
+        const substituteName = WIZGENESIS_SUBSTITUTIONS.get(mnum);
         const force = await promptYesNo(
-            `Creating human zombie instead; force ${requestedName}? [yn] (n) `,
+            `Creating ${substituteName} instead; force ${requestedName}? [yn] (n) `,
         );
-        if (force !== 'y') mnum = monsterTypeByName('human zombie');
+        if (force !== 'y') mnum = monsterTypeByName(substituteName);
     }
 
     const monster = await makemonNear(
@@ -6197,6 +6199,7 @@ async function wizGenesis() {
                 ? visiblePriestName(monster) : null;
             const name = MONSTER_NAME[mnum];
             const subject = clericInstance
+                || (mnum === 285 ? `The ${name}` : null)
                 || `${indefiniteArticle(name)} ${name}`;
             await pline(
                 `${subject[0].toUpperCase()}${subject.slice(1)} appears next to you.`,

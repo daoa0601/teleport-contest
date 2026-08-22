@@ -86951,3 +86951,41 @@ corpus, hidden judge, push or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 00:04 EEST, journal block 2892] {#wizard-of-yendor #wizard-spell #ad-spel #ad-samu #psi-bolt #disappear #cuss #wizgenesis #substitution #invisibility #arch-lich #rejected-carrier #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Carrier portfolio and prerequisite rejection:** a hostile arch-lich supplies
+high-level AD_SPEL but first touches with cold.  Its input103 diverges inside
+frozen-potion destruction before wizard-spell evidence, so that route is
+rejected.  The Wizard of Yendor supplies AD_SAMU plus AD_SPEL without cold.
+Native input96 asks `Creating doppelganger instead; force Wizard of Yendor?`;
+JS formerly skipped the prompt and began constructor RNG early.
+
+**Constructor and claw prerequisites:** the special substitution table now
+stores the source replacement type, and Wizard projection uses its unique
+`The` title.  Input106 then proves AD_SAMU retains declared 2d12=17 physical
+damage, spends theft gate `rn2(20)=2` even with nothing valuable, runs shared
+knockback and selects psi-bolt with `d(16,6)=66`.  Successful theft remains a
+named branch rather than suppressing the nonzero gate.
+
+**Psi/cuss and disappear boundaries:** input107 publishes psi damage to HP59,
+then source `dochug()` spends vile-monster cuss gate `rn2(5)=3` before global
+maintenance.  Missing it shifted the next ambient actor into a spurious second
+Wizard.  Input118 later combines claw18 and disappear pre-roll56 behind the
+cast pager.  Input119 publishes `The Wizard of Yendor suddenly disappears!`,
+sets permanent invisibility/map state, and naturally skips cuss because
+`minvis` is live.
+
+**Measured acceptance and next blocker:** all **127 native states are exact**,
+ending HP33 with the original hostile Wizard at119/119 HP and permanently
+invisible.  The recorder took **0.19 seconds** at **54,902,784 bytes maximum
+RSS**; the exact JS replay took **0.47 seconds** at **125,534,208 bytes max
+RSS**.  The Wizard plus twenty-seven cleric/genocide/snake controls pass
+**28/28** fixture-disabled in **1.83 seconds** at **165,658,624 bytes max
+RSS**; all processes exited.  Section859 maps genesis, AD_SAMU, psi, cuss and
+disappear; Lua owns no phase.  Artifact theft, zero cuss speeches,
+See-invisible transparency, haste and higher wizard effects remain open.  No
+full corpus, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---

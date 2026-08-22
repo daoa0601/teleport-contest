@@ -12747,3 +12747,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   blocked-spell path.  Seeds24/25/39/40 provide visible controls only.  No
   implementation or fallback claim is based on those contaminated unseen
   transcripts; failed-placement/no-success visibility remains open.
+- Seed11 opens the monster wizard-spell cone through 127 exact states.  An
+  arch-lich carrier was rejected behind earlier cold inventory destruction.
+  Wizard genesis now uses its doppelganger force prompt and unique title.
+  Input106 combines AD_SAMU 2d12=17, theft gate2, contact and psi-bolt 16d6=66;
+  input107 owns psi HP plus post-attack cuss gate3.  Input118 selects disappear;
+  input119 publishes it, installs permanent invisibility and skips cuss.  The
+  focused wizard plus prior cleric/genocide/snake gate passes 28/28.  Artifact
+  theft, cuss speeches, See-invisible prose and higher wizard effects remain
+  open.

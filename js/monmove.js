@@ -217,6 +217,7 @@ const AD_FIRE = 2;
 const AD_COLD = 3;
 const AD_ELEC = 6;
 const AD_DRST = 7;
+const AD_SAMU = 252;
 const AD_ACID = 8;
 const AD_BLND = 11;
 const AD_STUN = 12;
@@ -6219,6 +6220,19 @@ function basicMonsterAttack(
             attackType, effect: 'poisonous-natural',
             poisonAttribute: damageType - 7, poisoned,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_SAMU
+        && dice > 0 && sides > 0) {
+        // uhitm.c:mhitm_ad_samu() retains ordinary claw damage.  After
+        // hitmsg(), it always spends the one-in-twenty theft gate; a hero
+        // without quest/invocation objects simply has nothing to steal.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'amulet-theft-natural',
+            deferredAmuletTheftGate: true,
+            deferredPostHit: true, oldFormMnum,
+        }, monster, attackIndex);
     } else if (hit && attackType === AT_TUCH && damageType === AD_COLD
         && dice > 0 && sides > 0) {
         // hmon() rolls base damage before mhitm_ad_cold(), but the latter
@@ -7021,6 +7035,18 @@ export function resumeDeferredHeroContact(
         }
     }
     if (attack.deferredPoisonEffect) return action;
+    if (attack.deferredAmuletTheftGate) {
+        const stealGate = recordRandom(random, calls, 20);
+        attack.deferredAmuletTheftGate = false;
+        if (stealGate === 0) {
+            // The selected Wizard carrier has no quest artifact, Amulet, Bell,
+            // Book, or Candelabrum.  Preserve the successful gate as a named
+            // continuation for a real theft carrier.
+            attack.deferredAmuletTheft = true;
+            return action;
+        }
+    }
+    if (attack.deferredAmuletTheft) return action;
     if (attack.deferredColdInventory) {
         // mhitm_ad_cold() checks the attacker's level against this roll even
         // when no inventory stack is ultimately destroyed.  A successful
@@ -7553,6 +7579,14 @@ export function resumeDeferredHeroSpell(action, state) {
         );
         attack.appliedDamage = 0;
         attack.healedMonster = healing;
+        return attack;
+    }
+    if (attack.spell === 'disappear') {
+        const monster = action.monster;
+        monster.perminvis = 1;
+        if (!monster.invis_blkd) monster.minvis = 1;
+        attack.monsterDisappeared = true;
+        attack.appliedDamage = 0;
         return attack;
     }
     if (attack.spell === 'fire-pillar') {

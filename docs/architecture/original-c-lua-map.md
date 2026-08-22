@@ -31084,3 +31084,40 @@ OR-ing only the returned boolean preserves both behavior and accounting.  The
 complete 174-state session is exact.  Non-resistant poison outcomes, lethal
 attribute poison and other already-owned-pager effect resolvers remain
 separate controls.
+
+## 859. Wizard attacks compose AD_SAMU, psi-bolt, cuss, and disappear
+
+```mermaid
+flowchart TD
+    Genesis["create particular Wizard"] --> Substitute["doppelganger substitution prompt; force yes"]
+    Substitute --> Unique["The Wizard of Yendor title and unique constructor"]
+    Unique --> Claw["AT_CLAW AD_SAMU rolls 2d12"]
+    Claw --> Theft["post-hit rn2(20) theft gate"]
+    Theft --> Contact["shared knockback and physical HP"]
+    Contact --> Spell["AD_SPEL selection, fumble, 16d6 pre-roll"]
+    Spell --> Psi["psi-bolt prose then HP"]
+    Psi --> Cuss["post-attack MS_CUSS rn2(5) gate"]
+    Cuss --> Later["later claw plus disappear selection"]
+    Later --> Vanish["disappear prose, permanent invisibility, map update"]
+    Vanish --> SkipCuss["minvis skips later cuss gate"]
+    Lua["Lua owns no constructor or wizard spell phase"] -.-> Genesis
+```
+
+The arch-lich candidate was rejected at input103 because its preceding cold
+touch enters an unported frozen-potion `destroy_items()` transaction.  Seed11's
+forced Wizard avoids that prerequisite.  Native input96 substitutes a
+doppelganger unless forced; input97 constructs and titles `The Wizard of
+Yendor`.
+
+Input106 combines 2d12=17 `AD_SAMU`, nonzero theft gate2, knockback, wizard
+spell selection and `d(16,6)=66` behind the cast pager.  Input107 publishes
+psi-bolt HP to59, then owns post-attack cuss gate `rn2(5)=3` before maintenance.
+Missing that non-message call formerly shifted ambient generation into a fake
+second Wizard.
+
+Input118 later combines 2d12=18 and disappear pre-roll `d(16,6)=56`.  Input119
+publishes the Wizard's disappearance, installs `minvis=perminvis=1`, updates
+the map and skips cuss because the actor is now invisible.  All 127 states are
+exact, ending HP33 with the original Wizard at119/119 HP.  Successful artifact
+theft, zero-gate cuss speeches, See-invisible transparency, haste and higher
+wizard effects remain separate controls.

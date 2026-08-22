@@ -121,7 +121,7 @@ import { dist2, dungeonDepth } from './hacklib.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
@@ -3528,6 +3528,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 visibleMonsterSubject(monster)
                             } looks better.`;
                         }
+                        if (heroAttack.spell === 'disappear'
+                            && canProjectMonster(
+                                monster, monster.mx, monster.my,
+                            )) {
+                            const seesInvisible = !!(game.u?.seeInvisible
+                                || game.u?.see_invisible
+                                || (game.u?.seeInvisibleTurns ?? 0) > 0);
+                            effectMessage = `${
+                                visibleMonsterSubject(monster)
+                            } suddenly ${
+                                seesInvisible
+                                    ? 'becomes transparent' : 'disappears'
+                            }!`;
+                        }
                         // mcast_confuse_you() commits make_confused() before
                         // its explicit feedback pline.  If that line forces
                         // the older cast line through tty, the pager already
@@ -3561,6 +3575,15 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.toggledBlindness)
                             vision_recalc(0);
+                        if (heroAttack.monsterDisappeared) {
+                            newsym(monster.mx, monster.my);
+                            if (cansee(monster.mx, monster.my)
+                                && !canProjectMonster(
+                                    monster, monster.mx, monster.my,
+                                )) {
+                                map_invisible(monster.mx, monster.my);
+                            }
+                        }
                         if (heroAttack.rehumanize) {
                             // tty urgent_pline() replaces the effect line
                             // which forced a pager when that pager was
@@ -4186,6 +4209,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 resumeDeferredMonsterCounterWield(action, game);
             }
+        }
+        // monmove.c:dochug() performs the vile-monster emotional attack only
+        // after the complete standard attack set.  Even a nonzero result is
+        // RNG-visible before ambient/global maintenance.
+        if (movement?.attack && MONSTER_SOUND[monster.mnum] === 34
+            && !monster.mpeaceful
+            && couldsee(monster.mx, monster.my) && !monster.minvis) {
+            const cussGate = rn2(5);
+            action.calls.push('rn2(5)');
+            if (cussGate === 0)
+                movement.deferredCuss = true;
         }
         if (movement?.breathAttack) {
             const breath = movement.breathAttack;
