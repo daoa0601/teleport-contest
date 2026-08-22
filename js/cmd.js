@@ -8384,9 +8384,18 @@ async function wizIntrinsic() {
         return;
     }
     if (timeoutMessages.length) {
-        await moreUntilDismissed(
-            `${timeoutMessages.join('  ')}--More--`,
-        );
+        // wiz_intrinsic() walks select_menu() results in global property
+        // order and calls pline() once per selection.  A later timeout line
+        // can therefore suspend behind the prior one; batching them into one
+        // message loses both ordering and a tty input boundary.
+        timeoutMessages.sort((left, right) => {
+            const propertyIndex = message =>
+                WIZARD_INTRINSIC_PROPERTIES.findIndex(name =>
+                    message.startsWith(`Timeout for ${name} `));
+            return propertyIndex(left) - propertyIndex(right);
+        });
+        for (const message of timeoutMessages)
+            await moreUntilDismissed(`${message}--More--`);
     }
     // destroy_nhwindow() removes both the intrinsic menu and the extended
     // command editor which launched it.  Properties such as BLINDED dispatch

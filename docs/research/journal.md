@@ -86715,3 +86715,42 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 23:22 EEST, journal block 2885] {#high-cleric #curse-items #antimagic #half-spell-damage #wizintrinsic #multi-select #property-order #timeout #pager #rndcurse #divisor2 #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Combined contract and first recipe correction:** both properties must be
+selected in one menu, publish independent timeout lines in global property
+order, age independently and produce `rnd(2)` in `rndcurse()`.  The first
+recipe used page-two `q`, page-three `n`, then only one acknowledgement.
+Native input78 published magic resistance and input79 published half spell;
+the following genesis keys were rejected behind the second pager.  Adding the
+second space yields the valid 143-state carrier.
+
+**Menu lifecycle diagnosis and implementation:** JS previously installed both
+properties but batched their feedback into one combined topline in handler
+order, making input78 the earliest mismatch.  Source `wiz_intrinsic()` iterates
+selected items in global property order and calls `pline()` separately.
+Sorting the supported timeout messages by `WIZARD_INTRINSIC_PROPERTIES` and
+awaiting each line restores magic-first/half-second pager ownership and is not
+specific to curse-items.
+
+**Curse evidence:** inputs124/125 preserve cast and need-help paging.  Input126
+publishes the aura, computes integer divisor `6 / (1 + 1 + 1)`, rolls
+`rnd(2)=1`, selects only source inventory position2 with `rnd(11)=2`, curses
+the leather gloves and resumes at changed `rn2(25)=12`.  The complete session
+ends HP93 with only the gloves cursed and both timeouts27.  Section853 maps
+multi-page selection, ordered timeout pagers, divisor2 and the changed actor
+continuation; Lua owns no phase.
+
+**Measured acceptance and next blocker:** all **143 native states** are exact.
+The corrected recorder took **0.09 seconds** at **55,164,928 bytes maximum
+RSS** and the exact JS replay took **0.24 seconds** at **125,222,912 bytes max
+RSS**.  Combined curse protection plus twenty-one neighboring cleric witnesses
+pass **22/22** fixture-disabled in **0.65 seconds** at **160,251,904 bytes max
+RSS**; all processes exited.  Special multi-property feedback, gray-armor
+fallback, blessed/intelligent objects and saddles remain open.  Next move to
+the insect constructor fallbacks or a real blessed curse target.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

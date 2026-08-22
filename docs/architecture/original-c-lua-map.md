@@ -30905,3 +30905,33 @@ HP100 with both Antimagic projections active and 27 timed turns.  Combined
 Antimagic+half-spell divisor2, gray-dragon-armor expiry fallback, persistent
 shield-animation witnesses, blessed/intelligent objects and saddles remain
 separate controls.
+
+## 853. Combined curse protections require ordered pagers before `rnd(2)`
+
+```mermaid
+flowchart TD
+    Page2["select page 2 q: magic resistance"] --> Page3["advance; select page 3 n: half spell damage"]
+    Page3 --> Order["wiz_intrinsic iterates global property order"]
+    Order --> MagicLine["magic-resistance timeout pline and pager"]
+    MagicLine --> HalfLine["half-spell timeout pline and pager"]
+    HalfLine --> Curse["later curse-items cast, help, and aura"]
+    Curse --> Divisor["6 / (1 + 1 + 1) = rnd(2)"]
+    Divisor --> OnePick["rnd(2)=1; one rnd(11) selection"]
+    OnePick --> Mutation["only source position 2 is cursed"]
+    Mutation --> Continue["changed later selector stream resumes"]
+    Lua["Lua owns no menu or curse phase"] -.-> Page2
+```
+
+The first combined recipe supplied only one space after menu confirmation.
+Native input78 published the magic-resistance timeout and input79 the
+half-spell timeout; the following genesis keys were correctly rejected until a
+second acknowledgement.  The JavaScript menu formerly batched both messages
+into one line.  Sorting supported timeout feedback by global property order
+and awaiting each pager restores the general source lifecycle.
+
+With both properties active, inputs124/125 preserve cast and help paging.
+Input126 publishes the aura, rolls `rnd(2)=1`, selects only inventory position
+2 via `rnd(11)=2`, curses the leather gloves and resumes at `rn2(25)=12`.
+All 143 states are exact, ending HP93 with only the gloves cursed and both
+timeouts at27.  Multi-property special feedback, count zero impossibility,
+armor fallback, blessed/intelligent items and saddles remain separate.

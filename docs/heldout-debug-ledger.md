@@ -12690,3 +12690,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   seconds at 157,712,384 bytes maximum RSS.  Combined divisor2, armor fallback,
   persistent shield presentation, blessed/intelligent items and saddles remain
   open.
+- Seed25 with both timed Antimagic and half-spell damage closes the combined
+  divisor2 branch through 143 exact states.  The first recipe omitted the
+  second timeout acknowledgement; native publishes magic resistance at input78
+  and half-spell at input79.  JS formerly batched them; it now emits supported
+  timeout messages sequentially in global property order.  Input126 uses
+  `rnd(2)=1,rnd(11)=2`, curses only the gloves and resumes at `rn2(25)=12`.
+  Final state is HP93 with both timeouts27.  The fixture-disabled cleric gate
+  passes 22/22 in 0.65 seconds at 160,251,904 bytes maximum RSS.  Special
+  multi-property feedback, armor fallback, blessed/intelligent items and
+  saddles remain open.
