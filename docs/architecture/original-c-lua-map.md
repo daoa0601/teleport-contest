@@ -31253,3 +31253,36 @@ because an ogre's blank slot1 was incorrectly treated as a 3d5 hit.  All 127
 seed17 states are exact, ending hero HP120 with the summoned ogre uninjured at
 HP68.  Explicit phase-two `NEED_WEAPON`, cursed/welded replacements, ranged
 weapon requests and later pickup-driven switches remain separate controls.
+
+## 864. Death touch separates cast damage from max-HP drain
+
+~~~mermaid
+flowchart TD
+    Select["AD_SPEL selects MCAST_DEATH_TOUCH"] --> PreRoll["castmu pre-rolls and discards 16d6"]
+    PreRoll --> CastPager["directed cast line crosses tty"]
+    CastPager --> Warning["publish caster-pronoun touch-of-death warning"]
+    Warning --> Form["check nonliving or demon hero form"]
+    Form --> Resist["check Antimagic and rn2(m_lev) > 12"]
+    Resist --> Hallu["hallucination uses out-of-body prose only"]
+    Resist --> DrainLine["ordinary success publishes You feel drained..."]
+    DrainLine --> Roll["50 + d(8,6); drain=floor(damage/2)"]
+    Roll --> MaxHP["reduce max HP with level floor and clamp current HP"]
+    MaxHP --> Adjust["adjuhploss removes damage already paid by clamp"]
+    Adjust --> HP["apply remaining damage, then resume actor/global tail"]
+    Lua["Lua owns no spell, HP, or tty phase"] -.-> Select
+~~~
+
+Seed14 is exact through input118.  Input106's claw11, selection and discarded
+d(16,6)=65 precede the cast pager.  Input107 publishes the male Wizard
+warning, rolls success rn2(30)=26, publishes You feel drained..., then rolls
+d(8,6)=29.  Damage79 yields drain39: max HP144 becomes105; clamping current
+HP133 to105 pre-pays28 damage, so adjuhploss() applies51 more and reaches HP54.
+Later same-turn regeneration rn2(100)=32 raises the captured status to HP55.
+
+The JavaScript continuation now names every source decision explicitly and
+retains polymorph/fatal markers, but this carrier accepts only the ordinary
+living, non-resistant, non-hallucinating, nonfatal branch.  Nonliving and
+demon immunity, Antimagic, failed success gate, hallucination, polymorphic
+rehumanization, Unchanging, fatal damage and life saving remain separate
+controls.  The next seed14 divergence is the later grid-bug electric-contact
+pager between inputs119 and120.

@@ -9579,6 +9579,52 @@ test('seed0012 forced Wizard weakness drains strength after its pager',
         assert.equal(game.u.uhpmax, 100);
     });
 
+test('seed0014 Wizard death touch drains maximum HP after its effect line',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 14,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 118),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 119);
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=1', 'rn2(5)=2', 'rnd(20)=12', 'd(2,12)=11',
+            'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=20',
+            'rn2(300)=84', 'd(16,6)=65',
+        ], 'seed0014 death-touch cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[106], 23),
+            'Dlvl:1 $:1172 HP:133(144) Pw:288(288) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(30)=26', 'd(8,6)=29',
+            'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=2', 'rn2(5)=0',
+            'rn2(5)=2', 'rn2(5)=4', 'rn2(5)=0', 'rn2(5)=0',
+            'rn2(5)=3',
+            'rn2(12)=7', 'rn2(12)=2', 'rn2(12)=2', 'rn2(12)=10',
+            'rn2(12)=10', 'rn2(12)=0', 'rn2(12)=11',
+            'rn2(70)=57', 'rn2(100)=32', 'rn2(200)=94',
+            'rn2(20)=18', 'rn2(64)=42',
+        ], 'seed0014 death-touch drain and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            "Oh no, he's using the touch of death!  You feel drained...");
+        assert.equal(decodedRow(result.getScreens()[107], 23),
+            'Dlvl:1 $:1172 HP:55(105) Pw:288(288) AC:8 Xp:30');
+        assert.equal(game.u.uhp, 35);
+        assert.equal(game.u.uhpmax, 105);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

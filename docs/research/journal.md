@@ -87157,3 +87157,40 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-23 00:39 EEST, journal block 2898] {#wizard-of-yendor #death-touch #hpmax #adjuhploss #regen #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** after the prior Wizard prerequisites,
+seed14 is exact through input105.  Input106 matches claw11, spell selection
+and discarded d(16,6)=65, then JS enters later actors because death-touch had
+no effect line or continuation.  Native stops on the cast pager and owns the
+actual effect in input107.
+
+**Prediction and discriminating arithmetic:** source publishes the caster
+warning before testing rn2(m_lev)>12, then publishes You feel drained...
+before d(8,6).  Native rn2(30)=26,d(8,6)=29 gives damage79 and drain39.
+Reducing max HP144 to105 clamps current HP133 by28; adjuhploss() therefore
+applies51, reaching54.  The later maintenance rn2(100)=32 succeeds against
+level30 plus Constitution14 and predicts the captured HP55.  This separates
+the apparent 78-point status change from a guessed off-by-one damage formula.
+
+**Implementation and measured effect:** death touch now owns its pronoun-aware
+warning, form/immunity gate, Antimagic/success roll, hallucination branch,
+drain line, fresh 8d6, max-HP floor, clamp-aware pending damage and
+polymorph/fatal markers.  Seed14's RNG, screens and cursors are exact through
+**input118**, ending that bounded prefix at HP35/105.  The five selected
+fixture-disabled Wizard controls pass **5/5** in **0.89 seconds** at
+**137,510,912 bytes maximum RSS**; the managed process exited.
+
+**Falsification, decision and next blocker:** the observed later regeneration
+falsifies a 78-damage touch and explains the one-point status difference from
+the raw drain calculation.  Exact continuation through the later curse and
+disappear selections falsifies actor scheduling and spell cooldown as residual
+causes.  Section864 maps the branch; Lua owns none.  The next seed14 mismatch
+is input119's grid-bug bite pager consuming input120's electric-contact tail
+too early.  Keep nonliving/demon, Antimagic, failed gate, hallucination,
+polymorph, Unchanging, fatality and life saving as separate death-touch
+controls.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

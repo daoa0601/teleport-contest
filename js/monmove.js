@@ -7678,6 +7678,11 @@ export function resumeDeferredHeroSpell(
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'death-touch') {
+        attack.deferredDeathTouch = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'fire-pillar') {
         attack.deferredFirePillar = true;
         attack.appliedDamage = 0;

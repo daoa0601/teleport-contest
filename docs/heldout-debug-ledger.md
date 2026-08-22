@@ -12793,3 +12793,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   ends hero HP120 and ogre HP68; the ogre/high-cleric/empty-goblin control gate
   passes 3/3 fixture-disabled.  Explicit phase-two, welded and ranged weapon
   state remains open.
+- Seed14 closes ordinary nonfatal death touch through input118.  Input106
+  retains the discarded d(16,6)=65 behind the cast pager.  Input107 rolls
+  rn2(30)=26,d(8,6)=29; damage79 drains39 max HP, clamps HP as max144 falls
+  to105, applies adjusted damage51, then same-turn regeneration reaches the
+  captured HP55.  The selected Wizard family passes 5/5 fixture-disabled.
+  The next divergence is the later input119/120 grid-bug electric pager;
+  immunity, Antimagic, failed gate, hallucination, polymorph, fatality and
+  life-saving death-touch branches remain open.

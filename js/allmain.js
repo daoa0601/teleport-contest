@@ -122,7 +122,7 @@ import { dist2, dungeonDepth } from './hacklib.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
@@ -2664,6 +2664,73 @@ async function resolveDeferredHeroInsectSpell(action, heroAttack) {
     heroAttack.deferredInsectSpell = false;
 }
 
+async function resolveDeferredHeroDeathTouch(action, heroAttack) {
+    if (!heroAttack?.deferredDeathTouch) return;
+    const u = game.u || {};
+    const monsterLevel = action.monster?.m_lev
+        ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+    const polymorphed = Upolyd(u);
+    const form = polymorphed ? u.umonnum : null;
+    const nonliving = Number.isInteger(form)
+        && monsterIsNonliving(form);
+    const demon = Number.isInteger(form)
+        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
+    if (nonliving || demon) {
+        await queueTurnMessage('You seem no deader than before.');
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+
+    const antimagic = !!(u.antimagic
+        || u.magicResistance || u.magic_resistance);
+    let succeeds = false;
+    if (!antimagic) {
+        const sides = Math.max(1, monsterLevel);
+        const successRoll = rn2(sides);
+        action.calls.push('rn2(' + sides + ')');
+        succeeds = successRoll > 12;
+    }
+    if (!succeeds) {
+        await queueTurnMessage("Lucky for you, it didn't work!");
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+    if (u.hallucinating || (u.hallucinationTurns ?? 0) > 0) {
+        await queueTurnMessage('You have an out of body experience.');
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+
+    await queueTurnMessage('You feel drained...');
+    const rolledDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const damage = 50 + rolledDamage;
+    const drain = Math.trunc(damage / 2);
+    if (polymorphed) {
+        u.mh = 0;
+        heroAttack.rehumanize = true;
+        heroAttack.appliedDamage = damage;
+    } else if (drain >= (u.uhpmax ?? 1)) {
+        u.uhp = 0;
+        heroAttack.appliedDamage = damage;
+        heroAttack.heroDied = true;
+    } else {
+        const oldHp = u.uhp ?? 1;
+        const minimumHp = Math.max(u.ulevel ?? 1, 3);
+        u.uhpmax = Math.max(minimumHp, (u.uhpmax ?? 1) - drain);
+        u.uhp = Math.min(u.uhp ?? 1, u.uhpmax);
+        const adjustedDamage = Math.max(
+            1, damage - (oldHp - u.uhp),
+        );
+        u.uhp = Math.max(0, u.uhp - adjustedDamage);
+        heroAttack.appliedDamage = adjustedDamage;
+        heroAttack.heroDied = u.uhp < 1;
+    }
+    heroAttack.deathTouchDamage = damage;
+    heroAttack.deathTouchDrain = drain;
+    heroAttack.deferredDeathTouch = false;
+}
+
 // C mcastu.c:MCAST_CURSE_ITEMS delegates to sit.c:rndcurse().  The aura pline
 // precedes every inventory-selection roll, so the tty driver must publish it
 // before mutating object beatitude.  This selected ordinary branch has no
@@ -3533,6 +3600,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 visibleMonsterSubject(monster)
                             } looks better.`;
                         }
+                        if (heroAttack.spell === 'death-touch') {
+                            const pronoun = monster.female ? 'she'
+                                : monster.genderless ? 'it' : 'he';
+                            effectMessage = 'Oh no, ' + pronoun
+                                + "'s using the touch of death!";
+                        }
                         if (heroAttack.spell === 'disappear'
                             && canProjectMonster(
                                 monster, monster.mx, monster.my,
@@ -3583,6 +3656,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             if (summoned?.message)
                                 await queueTurnMessage(summoned.message);
                         }
+                        if (heroAttack.deferredDeathTouch)
+                            await resolveDeferredHeroDeathTouch(
+                                action, heroAttack,
+                            );
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);
