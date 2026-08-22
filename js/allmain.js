@@ -2589,10 +2589,11 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
             exerciseAttribute(0, false);
         } else {
             // maybe_destroy_item() destroys the wand even when the carrier's
-            // shock resistance prevents its secondary HP damage.  The
-            // selected seed68 owner is unresisted; keep the follow-up prose
-            // named for a combined resistance/destruction carrier.
-            heroAttack.deferredLightningExplosionResistanceMessage = true;
+            // shock resistance prevents its secondary HP damage.  This line
+            // can fit beside the explosion, but the following flash cannot;
+            // preserving both queue attempts keeps flash RNG/state behind the
+            // combined pager.
+            await queueTurnMessage("You aren't hurt!");
         }
         heroAttack.deferredLightningWandExplosion = null;
         heroAttack.lightningWandExplosionDamage = 0;

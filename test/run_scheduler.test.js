@@ -9990,6 +9990,62 @@ test('seed0068 lightning defers wand explosion before flash and spell damage',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0068 shock-resistant wand explosion preserves feedback and flash',
+    async () => {
+        const result = await runSegment({
+            seed: 68,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n m\n '
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 140);
+        assert.equal(decodedTopline(result.getScreens()[76]),
+            'Timeout for shock resistance set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'd(8,6)=33', 'rn2(5)=1', 'rnd(10)=5', 'rn2(3)=0',
+        ], 'seed0068 resisted wand destruction prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1389 HP:148(151) Pw:216(216) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[126], [
+            'rnd(100)=97',
+        ], 'seed0068 resisted explosion skips Strength and rolls flash RNG');
+        assert.equal(decodedTopline(result.getScreens()[126]),
+            "Your wand of sleep breaks apart and explodes!  You aren't hurt!--More--");
+        assert.equal(decodedRow(result.getScreens()[126], 23),
+            'Dlvl:1 $:1389 HP:148(151) Pw:216(216) AC:8 Xp:30');
+
+        assert.deepEqual(result.getRngSlices()[127].slice(0, 10), [
+            'rn2(25)=23', 'rn2(13)=11', 'rn2(13)=7', 'rn2(4)=0',
+            'rn2(5)=2', 'rn2(5)=1', 'rn2(5)=0', 'rn2(5)=4',
+            'rn2(5)=2', 'rnd(20)=5',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[127]),
+            'You are blinded by the flash!  You hear a mumbled curse.  It hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[127], 23),
+            'Dlvl:1 $:1389 HP:119(151) Pw:216(216) AC:8 Xp:30 Blind');
+
+        assert.equal(game.inventory.some(object => object.otyp === 432), false);
+        assert.equal(game.u.uhp, 74);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.blindTurns, 95);
+        assert.equal(game.u.shockResistanceTurns, 27);
+        assert.equal(game.u._exercise, undefined);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

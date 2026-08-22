@@ -30759,3 +30759,33 @@ lightning damage, then resumes later hit/kick slots to HP81.  The complete
 122-state session ends HP9, Blind97 and no sleep wand.  Shock-resistant wand
 explosion feedback, fatal secondary damage, multiple wands/rings and active-
 wand ownership remain separate controls.
+
+## 848. Shock-resistant wand destruction keeps removal and adds feedback
+
+```mermaid
+flowchart TD
+    Gate["wand rn2(3) selects destruction"] --> Explosion["publish explosion line"]
+    Explosion --> Remove["useup removes wand regardless of resistance"]
+    Remove --> Resist{"Shock_resistance xresist?"}
+    Resist -->|"yes"| Feedback["You aren't hurt; no HP and no Strength exercise"]
+    Resist -->|"no"| Damage["losehp wand damage; exercise Strength"]
+    Feedback --> Flash["roll flash duration behind combined pager"]
+    Damage --> Flash
+    Flash --> Blind["commit blindness"]
+    Blind --> Spell["shock resistance also zeroes original lightning HP"]
+    Spell --> Continue["remaining physical actor slots still apply"]
+    Lua["Lua owns no destruction/resistance phase"] -.-> Gate
+```
+
+Seed68 adds timed shock resistance before the exact destructive lightning
+carrier.  Input123 retains `d(8,6)=33,rn2(5)=1,rnd(10)=5,rn2(3)=0` and the
+bolt pager.  Input126 publishes the explosion and `You aren't hurt!` on one
+topline, removes the wand, spends no Strength `rn2(2)`, rolls flash97 and stays
+HP148.  The combined line, rather than the explosion alone, owns the pager.
+
+Input127 publishes the flash, commits blindness and applies zero lightning HP;
+later mace contact on the same input lowers HP to119.  The 140-state session
+ends HP74, Blind95, no sleep wand and 27 resistance turns.  This composes
+`maybe_destroy_item()`'s xresist branch with `mcast_lightning()` without
+skipping mutation or flash.  Reflection, half-spell lightning, fatal item
+damage, multiple electrical items and timeout expiry remain separate controls.

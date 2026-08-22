@@ -86531,3 +86531,40 @@ full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:58 EEST, journal block 2880] {#high-cleric #lightning #shock-resistance #wand-explosion #xresist #inventory-removal #exercise #flashburn #blindness #composition #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Composition contract:** combining shock resistance with successful wand
+destruction must not become a broad “ignore lightning” shortcut.  Source still
+publishes the explosion, removes the wand and runs flash; `xresist` suppresses
+only secondary item HP/exercise, while `mcast_lightning()` separately
+suppresses original spell HP.  Seed68 plus page-two timed shock resistance is
+a real native carrier for this interaction.
+
+**Explosion and feedback boundary:** input123 retains
+`d(8,6)=33,rn2(5)=1,rnd(10)=5,rn2(3)=0` behind the bolt pager.  Input126
+publishes `Your wand of sleep breaks apart and explodes!  You aren't hurt!`
+on one topline.  It removes the wand, spends no `rn2(2)` Strength exercise,
+rolls `rnd(100)=97`, remains HP148 and defers flash behind that combined line.
+The former JS omitted the feedback and therefore diverged only in the input126
+screen after ordinary explosion support landed.
+
+**Flash, spell and tail evidence:** input127 publishes the flash, commits
+Blind, applies zero lightning HP and resumes later physical contact to HP119.
+The full tail ends HP74, Blind95, no wand and 27 timed resistance turns.
+Section848 maps `maybe_destroy_item()` xresist beside the independent
+`mcast_lightning()` resistance branch; Lua owns neither.  This falsifies
+retaining a resisted wand, exercising Strength without HP loss, or skipping
+flash when both damage sources are resisted.
+
+**Measured acceptance and next blocker:** all **140 native states** are exact.
+The recorder took **0.09 seconds** at **54,837,248 bytes maximum RSS** and the
+exact JS replay took **0.23 seconds** at **125,009,920 bytes max RSS**.  The
+combined branch plus sixteen neighboring cleric witnesses pass **17/17**
+fixture-disabled in **0.57 seconds** at **155,729,920 bytes max RSS**; all
+processes exited.  Reflection and half-spell lightning remain the next
+defensive controls; fatal item damage, multiple electrical items and timeout
+expiry remain separate.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty test files remain untouched.
+
+---

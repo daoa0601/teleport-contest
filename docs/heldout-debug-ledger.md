@@ -12644,3 +12644,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   16/16 in 0.51 seconds at 147,734,528 bytes maximum RSS.  Shock-resistant
   explosion feedback, fatal explosion, multiple electrical items and active-
   wand ownership remain separate controls.
+- Seed68 plus timed shock resistance closes the combined destructive-wand
+  xresist branch through 140 exact states.  Input123 keeps the same lightning
+  and destruction RNG.  Input126 publishes `Your wand of sleep breaks apart
+  and explodes!  You aren't hurt!`, removes the wand, skips secondary HP and
+  Strength exercise, rolls flash97 and remains HP148.  Input127 commits Blind,
+  applies zero spell HP and then resumes physical contact to HP119.  Final
+  state is HP74, Blind95, no wand and 27 resistance turns.  The fixture-
+  disabled cleric gate passes 17/17 in 0.57 seconds at 155,729,920 bytes
+  maximum RSS.  Reflection, half-spell lightning, fatal item damage, multiple
+  electrical items and timeout expiry remain open.
