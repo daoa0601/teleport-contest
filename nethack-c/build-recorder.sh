@@ -109,12 +109,23 @@ case "$OS" in
         # Upstream NetHack doesn't ship a macOS minimal hints file; use ours.
         cp "$SCRIPT_DIR/macosx-minimal" sys/unix/hints/macosx-minimal
         sed -i.bak "s|__NETHACK_PREFIX__|$INSTALL_PREFIX|g" sys/unix/hints/macosx-minimal
+        # The stock Unix sysconf names Linux paths.  NetHack validates them
+        # at startup even when the recorder doesn't use gdb panic tracing.
+        sed -i.bak \
+            -e 's|^GDBPATH=|#GDBPATH=|' \
+            -e 's|^GREPPATH=.*|GREPPATH=/usr/bin/grep|' \
+            -e 's|^PANICTRACE_GDB=.*|PANICTRACE_GDB=0|' \
+            sys/unix/sysconf
         ;;
     Linux)
         # Upstream ships linux-minimal; just point its PREFIX at our install dir.
         sed -i.bak "s|^\(PREFIX=\).*|\1$INSTALL_PREFIX|" sys/unix/hints/linux-minimal
         ;;
 esac
+# This binary is an isolated local oracle, not an installed multi-user game.
+# Permit its debug-mode recipes regardless of the workstation login name so
+# deterministic Ctrl-V and other wizard-command recordings are reproducible.
+sed -i.bak 's|^WIZARDS=.*|WIZARDS=*|' sys/unix/sysconf
 sh sys/unix/setup.sh "$HINTS_FILE"
 
 # --- Step 4: fetch + build Lua (NetHack 5.0 dependency) ---

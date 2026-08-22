@@ -17,6 +17,31 @@ Update `docs/research/public-session-status.md` after each full engine-only
 corpus run. Update `docs/architecture/original-c-lua-map.md` whenever the
 understood ownership or call boundary changes.
 
+## Test process safety
+
+Run at most one full Contest suite or corpus at a time. Before starting one,
+inspect the live process/session registry and confirm that no matching
+`npm test`, `node --test`, or `ps_test_runner.mjs sessions` process tree is
+already running. A yielded command is still running; never launch a duplicate
+command as a retry.
+
+When a test command yields a session or cell identifier, retain ownership of
+it and poll it until it exits. If the verification is abandoned, interrupted,
+or superseded, explicitly terminate that exact session and its child process
+tree, then confirm that the processes are gone. Do not treat partial output or
+a yielded command as a completed test result.
+
+Prefer focused witnesses while iterating. Reserve a full corpus for an
+explicit evidence gate, run it as one managed process, and stop to investigate
+sustained abnormal memory growth rather than starting another verifier.
+
+Do not diagnose large RNG transcripts with one `assert.deepEqual()` over the
+complete flattened log. Node's assertion formatter can retain and render the
+entire mismatch; a 33,000-call failure has already reached 10.3 GB RSS.
+Compare per-input slices, stop at the first differing call, and print only a
+small bounded neighborhood plus the two slice lengths. Treat any existing
+whole-log assertion as an unsafe acceptance check until it is converted.
+
 ## Evidence gates
 
 Fixture-on scoring is a public-regression gate, not evidence of

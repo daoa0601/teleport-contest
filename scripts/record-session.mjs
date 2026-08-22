@@ -555,6 +555,12 @@ async function recordSegment({
             resolveDone(0);
             return;
         }
+        if ((code ?? 0) !== 0) {
+            rejectDone(new Error(
+                `recorder exited with code ${code} after `
+                + `${steps.length}/${expectedSteps} input markers`));
+            return;
+        }
         // For death sessions the game can terminate before all keys are
         // consumed (the death itself fires nh_terminate); record whatever
         // steps we got and let the caller compare against the canonical
@@ -563,6 +569,8 @@ async function recordSegment({
     });
 
     await done;
+    if (steps.length === 0)
+        throw new Error('recorder exited without producing an input marker');
     return steps.slice(0, expectedSteps);
 }
 
