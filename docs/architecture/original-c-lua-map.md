@@ -30123,3 +30123,22 @@ draw or drain-resistance `rn2(100)`.  Damage remains physical and the +1 gloves
 stay unchanged at AC8.  All 162 states replay exactly, proving that cancellation
 suppresses only AD_ENCH policy rather than the claw's declared damage or common
 tail.
+
+No-armor accessory fallback is selected with a protection ring.  The Healer
+first removes the only worn armor, then wishes +2 protection and wears it on
+the left hand.  Ring_on discovers the observable charged ring, owns one Wisdom
+exercise draw, projects AC10→8 and grants extrinsic Protection, which raises
+magic cancellation to one independently of `spe`.  Native `rn2(10)=0` at
+input167 therefore suppresses the effect before fallback.  At input215,
+`rn2(10)=9` passes negation, `rn2(5)=2` selects `uleft`, and
+`rn2(100)=79` drains +2→+1.  The combined line is `The disenchanter hits!  Your
+ring of protection seems less effective.`; AC becomes nine while magic
+cancellation remains one.  All 224 states are exact from input3.
+
+This witness also closes its prerequisites: known charged rings render their
+enchantment, left-hand prinv says `(on left hand)`, and shared
+`magic_negation()` adds one for a protection ring or two for an amulet of
+guarding before its intrinsic minimum.  Early right-hand attempts were not
+accepted: their fallback sequence selected none, eyewear, and the empty left
+slot; changing to the left hand consumed no RNG and let the existing slot-two
+draw select the real object.

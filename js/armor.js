@@ -247,10 +247,26 @@ function equippedObject(state, slot) {
 // The strongest worn armor contribution owns magical-cancellation checks;
 // armor class by itself cannot stand in for it.
 export function magicNegation(state = game) {
-    return Math.max(0, ...ARMOR_SLOTS.map(slot => {
+    let cancellation = Math.max(0, ...ARMOR_SLOTS.map(slot => {
         const armor = equippedObject(state, slot);
         return armor ? (OBJECT_SPELL_LEVEL[armor.otyp] || 0) : 0;
     }));
+    const protectionRing = [
+        equippedObject(state, 'uleft'), equippedObject(state, 'uright'),
+    ].some(object => object?.otyp === RIN_PROTECTION);
+    const guardingAmulet
+        = equippedObject(state, 'uamul')?.otyp === AMULET_OF_GUARDING;
+    if (guardingAmulet) cancellation += 2;
+    else if (protectionRing) cancellation += 1;
+    else if (cancellation < 1) {
+        const hero = state.u || {};
+        if (((hero.intrinsicProtection || hero.protectionIntrinsic)
+                && (hero.ublessed ?? 0) > 0)
+            || (hero.uspellprot ?? hero.spellProtection ?? 0) > 0) {
+            cancellation = 1;
+        }
+    }
+    return Math.min(3, cancellation);
 }
 
 function protectionItemBonus(object, expectedType) {

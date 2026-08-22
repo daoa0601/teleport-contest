@@ -73,7 +73,7 @@ import {
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
     STATUE,
-    RIN_REGENERATION, RIN_CONFLICT,
+    RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_ACID, POT_WATER,
@@ -9863,12 +9863,24 @@ async function putOnAccessoryObject(object) {
         hand = game.uright ? 'left' : 'right';
     }
 
-    game[hand === 'right' ? 'uright' : 'uleft'] = object;
+    const ringSlot = hand === 'right' ? 'uright' : 'uleft';
+    game[ringSlot] = object;
+    if (game.u) game.u[ringSlot] = object;
     object.worn = true;
     object.wornSlot = `${hand}-ring`;
     if (object.otyp === RIN_REGENERATION && game.u) {
         game.u.regeneration = true;
         game.u.regenerationExtrinsic = true;
+    }
+    if (object.otyp === RIN_PROTECTION) {
+        const enchantment = object.spe ?? object.enchantment ?? 0;
+        if (enchantment !== 0
+            && !game._knownObjectTypes?.has(object.otyp)) {
+            recordObjectKnowledge(object.otyp);
+            exerciseAttribute(4, true);
+        }
+        object.known = true;
+        findArmorClass(game);
     }
     // Ring_on() uses the same prinv path as amulets after setworn().
     await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);

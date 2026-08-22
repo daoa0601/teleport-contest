@@ -8422,6 +8422,72 @@ test('seed0011 cancelled natural disenchanter skips item drain',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 natural disenchanter falls back to worn protection ring',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  nTb     #levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nuncursed +2 ring of protection\n'
+                + 'Pkl #wizgenesis\ndisenchanter\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    '
+                + 'm.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 224);
+        assert.equal(decodedTopline(result.getScreens()[4]),
+            'You finish taking off your gloves.');
+        assert.equal(decodedRow(result.getScreens()[4], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:10 Xp:1');
+        assertRngSliceExact(result.getRngSlices()[109], [
+            'rn2(19)=2', 'rn2(5)=3', 'rn2(5)=2',
+            'rn2(12)=8', 'rn2(12)=5', 'rn2(70)=36',
+            'rn2(400)=49', 'rn2(20)=19', 'rn2(70)=43',
+        ], 'seed0011 protection-ring wear and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'k - a +2 ring of protection (on left hand).');
+        assert.equal(decodedRow(result.getScreens()[109], 23),
+            'Dlvl:1 $:1540 HP:140(140) Pw:260(260) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[167], [
+            'rn2(5)=4', 'rnd(20)=2', 'd(4,4)=5', 'rn2(10)=0',
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(12)=7', 'rn2(12)=10',
+            'rn2(12)=8', 'rn2(70)=7', 'rn2(100)=33',
+            'rn2(400)=388', 'rn2(20)=7', 'rn2(19)=18', 'rn2(70)=1',
+        ], 'seed0011 protection-ring magic-negation suppression RNG');
+        assert.equal(decodedTopline(result.getScreens()[167]),
+            'The disenchanter hits!');
+        assert.equal(decodedRow(result.getScreens()[167], 23),
+            'Dlvl:1 $:1540 HP:100(140) Pw:260(260) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[215], [
+            'rn2(5)=2', 'rnd(20)=19', 'd(4,4)=10', 'rn2(10)=9',
+            'rn2(5)=2', 'rn2(100)=79', 'rn2(3)=0', 'rn2(6)=5',
+            'rn2(12)=3', 'rn2(12)=11', 'rn2(12)=6', 'rn2(70)=42',
+            'rn2(100)=83', 'rn2(400)=265', 'rn2(20)=14', 'rn2(70)=47',
+        ], 'seed0011 protection-ring fallback drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[215]),
+            'The disenchanter hits!  Your ring of protection seems less effective.');
+        assert.equal(decodedRow(result.getScreens()[215], 23),
+            'Dlvl:1 $:1540 HP:23(140) Pw:260(260) AC:9 Xp:30');
+        assert.deepEqual(result.getCursors()[215], [64, 7, 1]);
+
+        assert.equal(game.uarmg, null);
+        assert.ok(game.uleft);
+        assert.equal(game.uleft.otyp, 178);
+        assert.equal(game.uleft.spe, 1);
+        assert.equal(game.uleft.enchantment, 1);
+        assert.equal(game.u._magicNegation, 1);
+        assert.equal(game.u.uac, 9);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

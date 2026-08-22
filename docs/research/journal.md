@@ -85475,3 +85475,48 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 19:21 EEST, journal block 2854] {#disenchanter #hero-contact #ad-ench #accessory-fallback #ring-of-protection #ring-on #wisdom #magic-cancellation #left-hand #inventory-grammar #drain-item #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Accessory-fallback contract:** when `some_armor()` returns null, active
+AD_ENCH spends `rn2(5)` over none/right/left/amulet/eyewear.  The selected
+object must be genuinely worn and positive; ring setup must already have
+source discovery, AC and magic-cancellation state.  A fallback draw naming an
+empty slot is not coverage.
+
+**Carrier selection and rejected routes:** seed11 Healer removes the only worn
+armor, wishes +2 ring of protection and initially wears it right.  Repeated
+native attacks produced fallback 0,0,0,4, two magic-negation suppressions,
+then 0,4,0,3,2; no right-slot 1 appeared before HP became tight.  Changing the
+ring to the left consumes no RNG, so the existing input215 slot-two draw
+selects the actual object.  This was accepted in preference to seed search or
+relabeling empty-slot outcomes.
+
+**Setup prerequisites:** input109 first exposed missing Ring_on behavior.
+Source discovers observable +2 protection (`rn2(19)=2` Wisdom exercise),
+renders `k - a +2 ring of protection (on left hand).` and projects AC10→8.
+The port now learns protection rings, displays known charged-ring `spe`, stores
+both left/right hero pointers and formats the left-hand suffix.  Shared
+`magic_negation()` now includes extrinsic protection: a ring adds one, guarding
+amulet two, capped at three, before the intrinsic minimum.  Native input167
+then correctly lets `rn2(10)=0` suppress fallback.
+
+**Accepted drain witness:** input215 consumes
+`rn2(5)=2,rnd(20)=19,d(4,4)=10,rn2(10)=9,rn2(5)=2,rn2(100)=79`, then common
+knockback and the global tail.  The line combines `The disenchanter hits!  Your
+ring of protection seems less effective.`; the worn ring changes +2→+1,
+AC8→9, and magic cancellation remains one.  All 224 states are exact from
+input3; the recorder took **0.08 seconds** at **54,673,408 bytes maximum RSS**.
+
+**Measured acceptance and next blocker:** natural AD_ENCH passes **3/3** in
+**0.23 seconds**; the preceding twenty erosion/form controls remain exact and
+the one owned managed family passes **149/149** in **2.73 seconds**.  Every
+process exited before the next began.  Section831 and the ledger now cover
+armor resistance/drain, cancellation and no-armor accessory fallback.  Next
+audit the following unmapped shared contact owner—prefer AD_DREN energy drain
+or another branch with a compact nondisplaced native carrier—while retaining
+the separate Ranger displacement movement gap.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty test files
+remain untouched.
+
+---

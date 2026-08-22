@@ -157,7 +157,7 @@ export function inventoryItemDescription(item) {
     if (item.rustproof) parts.push('rustproof');
     const visibleEnchantment = Number.isInteger(item.enchantment)
         ? item.enchantment
-        : item.known && [2, 3].includes(item.oclass)
+        : item.known && [2, 3, 4].includes(item.oclass)
             && Number.isInteger(item.spe) ? item.spe : null;
     if (Number.isInteger(visibleEnchantment)) {
         parts.push(`${visibleEnchantment >= 0 ? '+' : ''}${visibleEnchantment}`);
@@ -211,6 +211,8 @@ export function inventoryItemDescription(item) {
             ? ' (in quiver pouch)' : ' (at the ready)';
     if (item === game.uright || item === game.u?.uright)
         description += ' (on right hand)';
+    else if (item === game.uleft || item === game.u?.uleft)
+        description += ' (on left hand)';
     else if (item.worn) description += ' (being worn)';
     return description;
 }

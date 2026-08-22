@@ -12381,3 +12381,19 @@ attempt: **402 calls**, not a direct two-pass retry.
   disenchanter gate passes 2/2 in 0.23 seconds.  No unrelated managed selector
   was rerun because the new branch and test are outside that family.  No-armor
   accessory fallback remains the next AD_ENCH control.
+- Seed11 Healer removes the starting gloves, wishes +2 ring of protection and
+  wears it left before generating the level-30 hostile disenchanter.  Input109
+  owns the observable-ring Wisdom exercise and displays `k - a +2 ring of
+  protection (on left hand).` at AC8.  Input167 proves ring-supplied magic
+  cancellation: `rn2(10)=0` suppresses fallback.  Input215 pays
+  `rn2(10)=9,rn2(5)=2,rn2(100)=79`, selects `uleft`, drains +2→+1 and combines
+  `Your ring of protection seems less effective.` with the hit; AC becomes 9
+  while MC stays one.  All 224 states are exact from input3.
+
+  Right-hand runs were rejected because their fallback values selected none,
+  eyewear or the empty left slot; switching hand consumes no RNG and uses the
+  existing slot-two draw.  Shared ring discovery, charged-ring enchantment
+  display, left-hand suffix, AC projection and protection-derived magic
+  cancellation were repaired before accepting fallback.  Natural AD_ENCH
+  passes 3/3 in 0.23 seconds; twenty prior controls remain exact and the
+  managed family passes 149/149 in 2.73 seconds.

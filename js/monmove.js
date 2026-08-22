@@ -6331,9 +6331,19 @@ function basicMonsterAttack(
         }
         const quantity = drainedObject?.quantity
             ?? drainedObject?.quan ?? 1;
+        const drainTypeKnown = drainedObject
+            && (drainedObject.typeKnown
+                || state?._knownObjectTypes?.has(drainedObject.otyp));
+        const drainObjectClass = drainedObject?.oclass
+            ?? drainedObject?.class;
+        const drainObjectName = drainTypeKnown && drainObjectClass === RING_CLASS
+            ? `ring of ${OBJECT_NAMES[drainedObject.otyp]}`
+            : drainedObject?.name || OBJECT_NAMES[drainedObject?.otyp]
+                || 'item';
         const drainMessage = drainedObject
-            ? `Your ${drainedObject.name || OBJECT_NAMES[drainedObject.otyp]
-                || 'item'} ${quantity === 1 ? 'seems' : 'seem'} less effective.`
+            ? `Your ${drainObjectName} ${
+                quantity === 1 ? 'seems' : 'seem'
+            } less effective.`
             : null;
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
