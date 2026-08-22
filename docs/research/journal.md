@@ -87341,3 +87341,28 @@ full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-23 01:02 EEST, journal block 2903] {#wizard-of-yendor #summon-monsters #seed13 #warning #enexto #goodpos #negative-result #diagnosis #ledger #process-safety #priority}
+
+**Witness and bounded observation:** after the shared summon and weapon-state
+repairs, seed13 input106 has exact RNG, topline, cursor and status.  Its only
+screen difference is JS warning3 at screen (43,18) where native is blank.
+The JS actor at map (44,17) is a hostile level13 umber hulk, one of ten
+summoned nasties.
+
+**Discriminator:** the cell is a dark corridor behind a closed door at
+(45,17).  Current JS reports cansee=false, couldsee=false and
+canProjectMonster=false for that actor, while Warning legitimately explains
+the rendered numeral.  Native has no missing glyph elsewhere.  Therefore this
+is not a direct-visibility or stale-newsym defect; source either did not create
+that actor or rejected that placement before construction.
+
+**Decision and next test:** reject seed13 as an acceptance carrier and do not
+hide the warning glyph.  Compare the sixth direct nasty placement against
+enexto's GP_CHECKSCARY first pass and unrestricted retry, then verify source
+constructor count/census before changing goodpos or warning.  Seed16's
+post-summon invisibility-potion actor remains an independent alternative.
+No code/test change, full corpus, hidden judge, push or publication ran; the
+recorder/replay processes exited and unrelated dirty files remain untouched.
+
+---

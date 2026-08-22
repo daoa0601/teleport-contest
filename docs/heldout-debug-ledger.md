@@ -12830,3 +12830,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   selected Wizard gate rises to 7/7 fixture-disabled.  Tower partitioning,
   real aggravatable actors, the one-percent no-target acceptance and the
   aggravation effect remain open.
+- Seed13 remains a rejected summon carrier after the shared constructor
+  repairs.  Input106 RNG, topline, cursor and status are exact, but JS shows
+  one extra warning3 at screen (43,18) for a hostile umber hulk stored at
+  map (44,17).  That cell is a dark corridor behind the closed door at
+  (45,17); live JS reports cansee=false, couldsee=false and
+  canProjectMonster=false, proving the glyph is a warning rather than direct
+  sight.  Native leaves the cell blank, with no compensating missing glyph.
+  Do not accept or patch presentation: determine why JS has that extra actor
+  or why source enexto rejects its placement, including GP_CHECKSCARY retry
+  and constructor count, before changing warning/newsym.
