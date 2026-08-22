@@ -12116,3 +12116,22 @@ attempt: **402 calls**, not a direct two-pass retry.
   family passes 147/147 in 2.77 seconds at 371,884,032 bytes and exits cleanly.
   Rotproof learning and naturally cancelled AD_DCAY are the next paired
   controls.
+- Seed11 closes actual rotproof learning and naturally cancelled AD_DCAY.
+  Wished rotproof leather gloves publish the decay-protection line, learn
+  `rknown`, return `ER_NOTHING` and retry to the body-slot cloth cloak, which
+  rots.  The proofed gloves remain secondary zero while the cloak later reaches
+  rot degree three.  All 154 states replay exactly from input3.
+
+  A Healer wishes a cancellation wand, cancels the northwest source-default
+  hostile brown pudding and confirms `cancelled.--More--` by stethoscope.
+  Inputs68 and98 each retain `d(0,0)` plus shared knockback but contain no
+  armor-slot draws; blessed leather gloves remain unrotted.  All 119 states are
+  exact.  The first two focused reruns were rejected harness evidence because a
+  refactored rest-cycle helper appended four extra spaces; generating `n−1`
+  ordinary cycles plus one exact final cycle restores native lengths.
+
+  The eighteen-control audit completes in 1.48 seconds at 153,272,320 bytes
+  maximum RSS.  Focused ordinary decay passes 5/5 in 0.29 seconds at
+  135,479,296 bytes; the one owned managed family passes 149/149 in 2.82 seconds
+  at 358,727,680 bytes and exits cleanly.  Polymorphed wood/leather-golem hero
+  rehumanization is the remaining AD_DCAY branch.

@@ -84718,3 +84718,49 @@ zero-dice contact.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 17:18 EEST, journal block 2836] {#brown-pudding #hero-contact #armor #decay #rotproof #proof-learning #cancellation #zero-dice #selector-retry #native-witness #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contracts:** actual rotproof must publish protection before learning
+`rknown`, return `ER_NOTHING` and resume non-body armor selection.  A cancelled
+brown pudding must still own hitmsg, declared `d(0,0)` and shared knockback but
+must not enter `erode_armor()`.  Silent blessed/max/material outcomes from the
+previous block are not substitutes for either identity.
+
+**Rotproof witness:** seed11 Ranger wishes/wears rotproof +2 leather gloves and
+generates a hostile brown pudding.  Native input85 ends at the bite pager after
+glove selection.  Input86 publishes `Somehow, your pair of padded gloves is
+not affected by the decay.` and then owns body slot one.  Input87 shows the
+cloth cloak rotting and the resumed door/global tail.  The gloves become
+proof-known but stay `oeroded2=0`; the cloak later reaches secondary three.
+The 154-state recorder took **0.08 seconds** at **54,411,264 bytes maximum
+RSS** and replays exactly from input3 onward.
+
+**Cancellation witness:** a Healer wishes a cancellation wand; native genesis
+places the source-default hostile brown pudding northwest.  Wield-free wand
+direction `y` sets `mcan=1`, and the existing stethoscope confirms wrapped
+`cancelled.--More--`.  Inputs68 and98 each consume attack scheduling,
+`rnd(20)`, declared `d(0,0)` and shared `rn2(3),rn2(6)` with no intervening
+armor-slot draws.  The blessed starting gloves remain unrotted.  All 119
+states are exact from input3; the recorder took **0.07 seconds** at
+**53,837,824 bytes maximum RSS**.  Existing production behavior already
+satisfied both controls, so no additional code bridge is justified.
+
+**Harness correction and measured acceptance:** the first focused run was 4/5
+and the second 2/5 because refactoring repeated each rest cycle with four
+spaces and then appended eight more, lengthening every Ranger recipe by four
+inputs.  This was rejected as harness evidence.  Generating `n−1` ordinary
+cycles plus one exact final cycle restores native lengths.  The eighteen-
+control replay audit completes in **1.48 seconds** at **153,272,320 bytes
+maximum RSS**.  Focused ordinary decay passes **5/5** in **0.29 seconds** at
+**135,479,296 bytes**.  The one owned managed family passes **149/149** in
+**2.82 seconds** at **358,727,680 bytes maximum RSS**; every runner exits and
+the registry is empty.
+
+**Next blocker:** section827 and the ledger now close ordinary worn AD_DCAY.
+Next select the `completelyrots()` hero-form branch by letting a brown pudding
+bite a polymorphed wood or leather golem, proving `You rot!` and rehumanization
+before armor selection.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty test files remain untouched.
+
+---

@@ -29532,11 +29532,12 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-147/147 after the paired rust/corrosion material, protection, degree,
+149/149 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
 rust/grease/proof/blessing/degree, complete worn-corrosion, cancelled-bite and
-worn body-material, acid inventory-resistance and natural decay rows.
+worn body-material, acid inventory-resistance and complete ordinary natural
+decay rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29713,8 +29714,22 @@ without mutation.  Wished greased leather gloves rot through all three degrees
 without any `rn2(2)` wear draw and retain grease at max rot; the starting
 cloth displacement cloak also rots through secondary degree three.  The
 130-, 179- and 177-state native recordings are exact from input3 onward.
-Rotproof learning and attacker cancellation remain separate AD_DCAY
-successors.
+
+Actual rotproof and cancellation close the ordinary AD_DCAY successors.
+Rotproof seed11 publishes `Somehow, your pair of padded gloves is not affected
+by the decay.` before learning `rknown`; the non-body `ER_NOTHING` result then
+selects body and rots the cloth displacement cloak.  The proofed gloves remain
+secondary zero while the cloak later reaches degree three.  A Healer's wished
+cancellation wand sets the adjacent brown pudding to `mcan=1`, independently
+confirmed by wrapped stethoscope status.  Repeated bites still consume declared
+`d(0,0)` and shared knockback but insert no armor-slot draws; the starting
+leather gloves stay unrotted.  The 154- and 119-state sessions are exact from
+input3 onward.
+
+The remaining AD_DCAY branch is the polymorphed hero whose current form is a
+wood or leather golem: `completelyrots()` emits `You rot!` and rehumanizes
+before ordinary armor selection.  That form transition needs its own native
+witness and is not inferred from worn organic objects.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level

@@ -6842,10 +6842,15 @@ async function runHealerGloveDecaySegment() {
     });
 }
 
-async function runRangerDecaySegment({ wish, removeCloak = false }) {
+async function runRangerDecaySegment({
+    wish, removeCloak = false, restCount = 16,
+}) {
     const setup = removeCloak
         ? `  nTe #wizwish\n${wish}\nWg     `
         : `  n#wizwish\n${wish}\nWg `;
+    const rests = restCount > 0
+        ? 'm.    '.repeat(restCount - 1) + 'm.        '
+        : '';
     return runSegment({
         seed: 11,
         datetime: '20000110090000',
@@ -6855,8 +6860,7 @@ async function runRangerDecaySegment({ wish, removeCloak = false }) {
             + 'OPTIONS=suppress_alert:3.4.3\n'
             + 'OPTIONS=symset:DECgraphics\n',
         moves: setup + '#wizgenesis\nbrown pudding\n'
-            + 'm.    m.    m.    m.    m.    m.    m.    m.    '
-            + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            + rests,
         storage: new Map(),
     });
 }
@@ -7511,6 +7515,105 @@ test('seed0011 brown pudding rots wished greased gloves without wear draw',
         assert.ok(game.uarmc);
         assert.equal(game.uarmc.oeroded2 ?? 0, 3);
         assert.equal(game.u.uac, 6);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 brown pudding learns wished rotproof gloves then retries',
+    async () => {
+        const result = await runRangerDecaySegment({
+            wish: 'uncursed rotproof +2 leather gloves',
+            restCount: 12,
+        });
+
+        assert.equal(result.getScreens().length, 154);
+        assertRngSliceExact(result.getRngSlices()[85], [
+            'rn2(5)=1', 'rnd(20)=1', 'd(0,0)=0', 'rn2(5)=4',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=3',
+        ], 'seed0011 rotproof glove contact RNG');
+        assert.equal(decodedTopline(result.getScreens()[85]),
+            'The brown pudding bites!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[86], [
+            'rn2(5)=1',
+        ], 'seed0011 post-proof body selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[86]),
+            'Somehow, your pair of padded gloves is not affected by the decay.--More--');
+        assert.deepEqual(result.getCursors()[86], [73, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[87], [
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(5)=4', 'rn2(32)=17',
+            'rn2(5)=2', 'rn2(4)=2', 'rn2(5)=0', 'rn2(5)=2',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=1', 'rn2(4)=0',
+            'rn2(20)=15', 'rn2(5)=3', 'rn2(12)=7', 'rn2(12)=1',
+            'rn2(12)=0', 'rn2(12)=4', 'rn2(12)=4', 'rn2(12)=1',
+            'rn2(70)=10', 'rn2(400)=10', 'rn2(300)=6',
+            'rn2(20)=7', 'rn2(73)=23',
+        ], 'seed0011 rotproof retry, door, and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[87]),
+            'Your cloak of displacement rots!  You hear a door open.');
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.oerodeproof, true);
+        assert.equal(game.uarmg.rknown, true);
+        assert.equal(game.uarmg.oeroded2 ?? 0, 0);
+        assert.ok(game.uarmc);
+        assert.equal(game.uarmc.oeroded2 ?? 0, 3);
+        assert.equal(game.u.uac, 5);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 wished cancellation wand suppresses brown-pudding decay',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nwand of cancellation\n'
+                + '#wizgenesis\nbrown pudding\n'
+                + 'zkyacy m.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 119);
+        assertRngSliceExact(result.getRngSlices()[65], [],
+            'seed0011 cancelled brown-pudding status RNG');
+        assert.equal(decodedRow(result.getScreens()[65], 0),
+            'Status of the brown pudding (neutral, medium):  Level 4  HP 26(26)  AC 8,');
+        assert.equal(decodedRow(result.getScreens()[65], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[65], [18, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[68], [
+            'rn2(5)=3', 'rnd(20)=15', 'd(0,0)=0',
+            'rn2(3)=0', 'rn2(6)=0', 'rn2(5)=0', 'rn2(5)=0',
+            'rn2(12)=5', 'rn2(12)=11', 'rn2(12)=2', 'rn2(70)=58',
+            'rn2(400)=105', 'rn2(20)=18', 'rn2(70)=15',
+        ], 'seed0011 first cancelled decay bite RNG');
+        assert.equal(decodedTopline(result.getScreens()[68]),
+            'The brown pudding bites!');
+
+        assertRngSliceExact(result.getRngSlices()[98], [
+            'rn2(5)=2', 'rnd(20)=19', 'd(0,0)=0',
+            'rn2(3)=2', 'rn2(6)=1', 'rn2(5)=2', 'rn2(20)=15',
+            'rn2(5)=2', 'rn2(12)=3', 'rn2(12)=5', 'rn2(12)=6',
+            'rn2(70)=30', 'rn2(400)=247', 'rn2(20)=12', 'rn2(70)=6',
+        ], 'seed0011 repeated cancelled decay bite RNG');
+        assert.equal(decodedTopline(result.getScreens()[98]),
+            'The brown pudding bites!');
+
+        const pudding = game.level.monsters.find(monster =>
+            monster.mnum === 207);
+        assert.ok(pudding);
+        assert.equal(pudding.mcan, 1);
+        assert.equal(pudding.mpeaceful, 0);
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.oeroded2 ?? 0, 0);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.u.uhp, 13);
         assert.equal(game.context.move, 0);
     });
 
