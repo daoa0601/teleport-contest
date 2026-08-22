@@ -30569,3 +30569,36 @@ maintenance on input117 and leaves input118's survival message clean.  All 122
 states are exact, ending HP113, Blind64, mortality1 and the sleep wand intact.
 Reflection, shock resistance, wand destruction and half-spell lightning remain
 separate controls.
+
+## 842. Insects delegates all placement and birth RNG to mklev
+
+```mermaid
+flowchart TD
+    Select["AD_CLRC insects selected; 14d8 pre-roll"] --> Class["initial mkclass(S_ANT); fallback S_SNAKE"]
+    Class --> Count["rnd(level/2), minimum 3; loop count inclusive"]
+    Count --> Coords["for each actor: collect/shuffle 8,16,24-cell rings"]
+    Coords --> Species["mkclass chosen class after enexto"]
+    Species --> Birth["ordinary makemon MM_ANGRY|MM_NOMSG"]
+    Birth --> More{"more count iterations?"}
+    More -->|"yes"| Coords
+    More -->|"no"| Observe["compare visible census and caster visibility"]
+    Observe --> Prose["blind selected hero: You hear someone summoning insects"]
+    Lua["Lua owns no spell, placement, or birth phase"] -.-> Select
+```
+
+Seed17 selects blindness first, then insects while the high cleric is unseen.
+The undirected spell therefore suppresses generic cast prose.  Input113 rolls
+14d8=75, selects ant class, rolls quantity1 which clamps to three, and executes
+four inclusive summon iterations.  Each iteration collects all three enexto
+rings before testing positions; stopping after radius one was the first port
+mismatch.  Private `mkclass()` and `makemon()` remain inside `mklev.js`, exposed
+only through the insect composition.
+
+The four exact hostile births are soldier ant `(41,14)` HP19, giant ant
+`(41,12)` HP15, killer bee `(42,13)` HP2, and giant ant `(39,13)` HP18.
+The 252-call input113 slice is guarded by length plus bounded prefix/suffix,
+avoiding an unsafe whole-log assertion.  Later curse paging refines Norep:
+only an immediately trailing identical audible curse is suppressed; an
+intervening hit/kick permits the next curse to page.  All 122 states are exact.
+Visible-caster prose, snake fallback, failed placement and non-minimum quantity
+remain separate controls.

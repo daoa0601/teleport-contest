@@ -9651,6 +9651,83 @@ test('seed0015 high-cleric lightning preserves flash and recovery ordering',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0017 high-cleric insects preserve constructors and later curse pager',
+    async () => {
+        const result = await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        const insectSlice = result.getRngSlices()[113];
+        assert.equal(insectSlice.length, 252);
+        assert.deepEqual(insectSlice.slice(0, 22), [
+            'rn2(5)=3', 'rnd(20)=12', 'd(4,10)=31', 'rnd(6)=3',
+            'rn2(3)=0', 'rn2(6)=5', 'rnd(21)=10', 'd(2,8)=5',
+            'rn2(3)=0', 'rn2(6)=4', 'rn2(25)=8', 'rn2(250)=41',
+            'd(14,8)=75', 'rn2(9)=7', 'rn2(9)=4', 'rn2(2)=0',
+            'rn2(9)=4', 'rn2(9)=1', 'rn2(9)=1', 'rn2(2)=1',
+            'rnd(13)=1', 'rnd(12)=1',
+        ]);
+        assert.deepEqual(insectSlice.slice(-12), [
+            'rn2(9)=2', 'rn2(2)=1', 'rnd(4)=2', 'rnd(2)=2',
+            'd(3,8)=18', 'rn2(2)=0', 'rn2(50)=41',
+            'rn2(100)=81', 'rn2(100)=51', 'rn2(25)=23',
+            'rn2(13)=12', 'rn2(13)=8',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            'It hits!  It kicks!  You hear someone summoning insects.--More--');
+        assert.equal(decodedRow(result.getScreens()[113], 23),
+            'Dlvl:1 $:1893 HP:50(142) Pw:247(247) AC:8 Xp:30 Blind');
+
+        assertRngSliceExact(result.getRngSlices()[114], [
+            'rn2(5)=2', 'rn2(5)=4', 'rn2(5)=4',
+            'rnd(20)=8', 'd(4,10)=24', 'rnd(6)=3',
+            'rn2(3)=2', 'rn2(6)=5', 'rnd(21)=16', 'd(2,8)=8',
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(25)=14',
+            'rn2(13)=9', 'rn2(13)=1',
+        ], 'seed0017 insect-turn prefix and later curse pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            'You hear a mumbled curse.  It hits!  It kicks!--More--');
+        assert.equal(decodedTopline(result.getScreens()[115]),
+            'You hear a mumbled curse.');
+
+        const insects = game.level.monsters
+            .filter(monster => [0, 1, 2, 3, 4, 5].includes(monster.mnum))
+            .map(monster => ({
+                mnum: monster.mnum,
+                x: monster.mx,
+                y: monster.my,
+                hp: monster.mhp,
+                hpmax: monster.mhpmax,
+                peaceful: monster.mpeaceful,
+                sleeping: monster.msleeping,
+            }));
+        assert.deepEqual(insects, [
+            { mnum: 3, x: 41, y: 14, hp: 19, hpmax: 19,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 41, y: 12, hp: 15, hpmax: 15,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 1, x: 42, y: 13, hp: 2, hpmax: 2,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 39, y: 13, hp: 18, hpmax: 18,
+                peaceful: 0, sleeping: 0 },
+        ]);
+        assert.equal(game.u.uhp, 12);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.blindTurns, 197);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

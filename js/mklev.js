@@ -3297,6 +3297,61 @@ export async function makemonNear(mnum, centerX, centerY, flags = 0) {
     return null;
 }
 
+// C mcastu.c:mcast_insects().  enexto() tests positions using the caster's
+// species before mkclass() chooses each summoned insect.  Keep both private
+// constructor owners in this module so the spell layer receives only actors.
+export async function summonInsectsForMonster(summoner) {
+    const created = [];
+    let insect = mkclass(1, 0); // S_ANT
+    const monsterClass = insect == null ? 45 : 1; // fallback S_SNAKE
+    let quantity = (summoner.m_lev ?? 0) < 2
+        ? 1 : rnd(Math.trunc((summoner.m_lev ?? 0) / 2));
+    if (quantity < 3) quantity = 3;
+
+    for (let count = 0; count <= quantity; count++) {
+        const centerX = summoner.mux ?? game.u?.ux ?? summoner.mx;
+        const centerY = summoner.muy ?? game.u?.uy ?? summoner.my;
+        const candidates = [];
+        for (let radius = 1; radius <= 3; radius++) {
+            const ring = [];
+            const lowx = centerX - radius, highx = centerX + radius;
+            const lowy = centerY - radius, highy = centerY + radius;
+            for (let y = Math.max(lowy, 0);
+                y <= Math.min(highy, ROWNO - 1); y++) {
+                for (let x = Math.max(lowx, 1);
+                    x <= Math.min(highx, COLNO - 1); x++) {
+                    if (x !== lowx && x !== highx
+                        && y !== lowy && y !== highy) continue;
+                    ring.push({ x, y });
+                }
+            }
+            for (let index = 0, remaining = ring.length;
+                remaining > 1; index++, remaining--) {
+                const pick = rn2(remaining);
+                if (pick) {
+                    [ring[index], ring[index + pick]]
+                        = [ring[index + pick], ring[index]];
+                }
+            }
+            candidates.push(...ring);
+        }
+        const position = candidates.find(({ x, y }) =>
+            monsterGoodPosition(summoner.mnum, x, y));
+        if (!position) return { created, monsterClass };
+        insect = mkclass(monsterClass, 0);
+        if (insect == null) continue;
+        const monster = await makemon(
+            insect, position.x, position.y, MM_ANGRY | MM_NOMSG, false,
+        );
+        if (!monster) continue;
+        monster.msleeping = 0;
+        monster.mpeaceful = 0;
+        monster.mtame = 0;
+        created.push(monster);
+    }
+    return { created, monsterClass };
+}
+
 // C refs: wizard.c:nasty()/pick_nasty() and mcastu.c:mcast_summon_mons().
 // A monster-cast summon deliberately chooses an explicit high-difficulty
 // species, asks enexto() for a square around the caster's apparent hero

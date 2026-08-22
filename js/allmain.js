@@ -12,7 +12,7 @@ import {
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
     randomDefensiveMonsterItem, randomMiscMonsterItem,
     randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
-    u_on_upstairs, place_lregion,
+    summonInsectsForMonster, u_on_upstairs, place_lregion,
 } from './mklev.js';
 import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
@@ -2561,6 +2561,18 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
     heroAttack.deferredLightningSpell = false;
 }
 
+async function resolveDeferredHeroInsectSpell(action, heroAttack) {
+    if (!heroAttack?.deferredInsectSpell) return;
+    const result = await summonInsectsForMonster(action.monster);
+    for (const monster of result.created || []) newsym(monster.mx, monster.my);
+    const message = game.blind
+        ? 'You hear someone summoning insects.'
+        : `${visibleMonsterSubject(action.monster)} summons insects!`;
+    await queueTurnMessage(message);
+    heroAttack.summonedInsects = result.created || [];
+    heroAttack.deferredInsectSpell = false;
+}
+
 // C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
 // transaction crosses tty after the evaporation line; the vapor effect
 // resumes only after that pager is acknowledged.  Install ordinary
@@ -3201,6 +3213,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 `${visibleMonsterSubject(monster)} wields ${
                     distantMonsterObjectName(movement.wieldedWeapon)}!`,
             );
+            if (movement.wieldedWeapon.cursed) {
+                const subject = visibleMonsterSubject(monster);
+                const lowerSubject = `${subject[0].toLowerCase()}${
+                    subject.slice(1)
+                }`;
+                const possessive = /s$/iu.test(lowerSubject)
+                    ? `${lowerSubject}'` : `${lowerSubject}'s`;
+                const weaponName = OBJECT_NAMES[
+                    movement.wieldedWeapon.otyp
+                ] || movement.wieldedWeapon.name || 'weapon';
+                await queueTurnMessage(
+                    `The ${weaponName} welds itself to ${possessive} hand!`,
+                );
+            }
             if (game._activeSpecialLevel?.prototype === 'oracle'
                 && monster.mnum === 277
                 && (game.u?.hallucinating
@@ -3323,7 +3349,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             const repeatedAudibleCurse
                                 = heroAttack.curseKind === 'audible'
                                 && (game._pending_message || '')
-                                    .includes(curseMessage);
+                                    .endsWith(curseMessage);
                             if (curseMessage && !repeatedAudibleCurse)
                                 await queueTurnMessage(curseMessage);
                             previousHeroAttack = heroAttack;
@@ -3335,11 +3361,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         const caster = canProjectMonster(
                             monster, monster.mx, monster.my,
                         ) ? visibleMonsterSubject(monster) : 'Something';
-                        await queueTurnMessage(
-                            `${caster} casts a spell${
-                                heroAttack.directed ? ' at you' : ''
-                            }!`,
+                        const casterVisible = canProjectMonster(
+                            monster, monster.mx, monster.my,
                         );
+                        if (casterVisible || heroAttack.directed) {
+                            await queueTurnMessage(
+                                `${caster} casts a spell${
+                                    heroAttack.directed ? ' at you' : ''
+                                }!`,
+                            );
+                        }
                         if (heroAttack.deferredSpellDamage)
                             rollDeferredHeroSpellDamage(action, game);
                         let effectMessage = heroAttack.spellEffectMessage;
@@ -3369,6 +3400,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             );
                         if (heroAttack.deferredLightningSpell)
                             await resolveDeferredHeroLightningSpell(
+                                action, heroAttack,
+                            );
+                        if (heroAttack.deferredInsectSpell)
+                            await resolveDeferredHeroInsectSpell(
                                 action, heroAttack,
                             );
                         if (heroAttack.paralyzed) stopRun(game);

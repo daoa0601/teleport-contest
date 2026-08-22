@@ -7547,6 +7547,11 @@ export function resumeDeferredHeroSpell(action, state) {
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'insects') {
+        attack.deferredInsectSpell = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {
         attack.unimplementedSpellEffect = true;
         return attack;

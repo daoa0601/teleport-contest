@@ -12581,3 +12581,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   on input117 and survival remains alone on input118.  Ten cleric witnesses
   pass fixture-disabled in 0.34 seconds.  Reflection, shock resistance, wand
   destruction, half damage, insects, curse-items and geyser remain open.
+- Seed17 closes high-cleric insects through 122 exact states.  The unseen
+  undirected cast omits generic cast prose; input113 selects ants, clamps
+  quantity1 to three, performs four inclusive summon iterations, and for each
+  collects/shuffles all 8/16/24-cell rings before private mkclass/makemon.
+  Final hostile roster is soldier ant HP19, giant ant HP15, killer bee HP2,
+  giant ant HP18 at exact coordinates.  The 252-call slice is asserted only by
+  length and bounded edges.  Later audible curse dedup now requires the prior
+  line to end with the same curse, preserving the native intervening-hit pager.
+  Eleven cleric witnesses pass fixture-disabled in 0.36 seconds.  Visible
+  prose, snake fallback, placement failure, curse-items and geyser remain open.

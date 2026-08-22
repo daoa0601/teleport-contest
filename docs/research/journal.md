@@ -86295,3 +86295,43 @@ rewrite, hidden judge, push or publication ran; unrelated dirty test files
 remain untouched.
 
 ---
+
+### [2026-08-22 22:18 EEST, journal block 2874] {#high-cleric #insects #seed17 #mkclass #enexto #collect-coords #makemon #ants #summoning #blind #undirected-spell #norep #bounded-assertion #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Selected effect and prerequisite:** continuing the serial search, seed16
+selected covered confusion; seed17 selected concrete insects at input113 after
+an earlier blindness cast.  Its cursed generated mace first required a source
+weld line between wield and kick.  That line pages before slot-one RNG; after
+adding it, the replay became exact through the insect effect.
+
+**Constructor composition and first correction:** input113 owns the preceding
+hit/kick, spell selection/fumble and `d(14,8)=75`, then mcast_insects.  Initial
+mkclass selects ant class and `rnd(12)=1` clamps quantity to three; the loop is
+inclusive, creating four monsters.  The first implementation shuffled radius
+one and stopped when it found a position.  Recorder callsites prove source
+`collect_coords()` always shuffles 8-, 16-, and 24-cell rings before goodpos.
+Collecting all rings makes the complete 252-call slice exact while leaving
+species/HP/inventory creation in private mklev owners.
+
+**Visibility, roster and Norep:** the hero is blind and insects is undirected,
+so source omits generic `Something casts a spell` and ends with
+`You hear someone summoning insects.`  The exact hostile roster is soldier ant
+HP19 at `(41,14)`, giant ant HP15 at `(41,12)`, killer bee HP2 at `(42,13)`,
+and giant ant HP18 at `(39,13)`.  A later pager showed that audible-curse
+deduplication must compare the trailing clause, not any earlier occurrence:
+an intervening hit/kick permits another identical curse.  Replacing `includes`
+with `endsWith` preserves both seed15 and seed17.
+
+**Measured acceptance and next blocker:** all **122 seed17 native states** are
+exact; the recorder took **0.07 seconds** at **54,280,192 bytes maximum RSS**.
+The 252-call effect uses length and bounded prefix/suffix assertions, complying
+with the safe large-transcript rule.  Insects, lightning, complete fire/high-
+cleric, all lower spells and AD_STUN pass **11/11** fixture-disabled in **0.36
+seconds** at **141,574,144 bytes max RSS**; all processes exited.  Section842
+and the ledger close the selected blind-caster/minimum-quantity ant path.
+Visible-caster prose, snake fallback, failed placement, larger quantity,
+curse-items and geyser remain separate.  Continue the one-process selector
+search.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---
