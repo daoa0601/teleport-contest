@@ -12095,3 +12095,24 @@ attempt: **402 calls**, not a direct two-pass retry.
   bytes.  The one owned managed family passes 145/145 in 2.72 seconds at
   368,246,784 bytes and exits cleanly.  Natural AD_DCAY worn-armor decay is
   the next adjacent erosion owner.
+- Seed11 closes natural brown-pudding AD_DCAY through organic, non-rottable,
+  blessed/max and greased controls.  A Healer's blessed leather gloves first
+  take silent `rnl(4)=0` protection, then rot through secondary degrees one,
+  two and three with `rots`, `rots further` and `rots completely`.  Max-three
+  protection followed by empty body slot exposed a shared stale-retry flag;
+  resetting selection-local result state restores body termination.
+
+  Wished bronze plate mail is non-rottable and body-terminal, publishing
+  `not affected by decay`.  Wished greased leather gloves prove ERODE_ROT
+  ignores grease: no `rn2(2)` occurs, grease remains present, and both gloves
+  and the starting cloth cloak reach secondary degree three.  That session
+  exposed a later general boundary: an unseen door-open pline must suspend
+  before the door actor's trailing `distfleeck`.  Resuming post-door work after
+  acknowledgement moves `rn2(5)=4` from input84 to native input85.
+
+  The 130-, 179- and 177-state recordings all replay exactly from input3 in a
+  1.32-second sixteen-control audit at 146,472,960 bytes maximum RSS.  Focused
+  decay passes 3/3 in 0.30 seconds at 134,873,088 bytes; the one owned managed
+  family passes 147/147 in 2.77 seconds at 371,884,032 bytes and exits cleanly.
+  Rotproof learning and naturally cancelled AD_DCAY are the next paired
+  controls.

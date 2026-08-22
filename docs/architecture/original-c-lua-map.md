@@ -29532,11 +29532,11 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-145/145 after the paired rust/corrosion material, protection, degree,
+147/147 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
 rust/grease/proof/blessing/degree, complete worn-corrosion, cancelled-bite and
-worn body-material and acid inventory-resistance rows.
+worn body-material, acid inventory-resistance and natural decay rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29545,14 +29545,16 @@ explicit selected term; projectile object passives are mapped separately in
 section 774.  Lua owns neither selection nor launcher, gift, accuracy, damage,
 skill, wake, survival, destruction or settlement policy.
 
-## 827. Hero-contact rust and corrosion share armor selection but not state
+## 827. Hero-contact erosion shares armor selection but not state
 
 ```mermaid
 flowchart TD
     Species["monsters.h attack declaration"] --> Rust["rust monster touch: AD_RUST 0d0"]
     Species --> Corr["black pudding bite: AD_CORR 3d8"]
+    Species --> Decay["brown pudding bite: AD_DCAY 0d0"]
     Rust --> Damage["hitmu rolls declared damage"]
     Corr --> Damage
+    Decay --> Damage
     Damage --> Hitmsg["mhitm_ad_rust/corr publishes hitmsg"]
     Hitmsg --> Cancel{"attacker cancelled?"}
     Cancel -->|"yes"| Tail["shared knockback then HP damage"]
@@ -29571,19 +29573,23 @@ flowchart TD
     Grease --> Tail
     Guard -->|"damage"| RustState["rust: iron, oeroded, oxidation/rust prose"]
     Guard -->|"damage"| CorrState["corrosion: iron or copper, oeroded2, corrosion prose"]
+    Guard -->|"damage"| RotState["rot: organic or dragon hide, oeroded2, decay prose"]
     RustState --> AC["find_ac projects greatest erosion after actor/global work"]
     CorrState --> AC
+    RotState --> AC
     AC --> Tail
     Lua["Lua level geometry and initial actor placement"] -. "no effect-policy ownership" .-> Species
 ```
 
-The shared boundary is `erode_armor()`, not a claim that AD_RUST and AD_CORR
-are interchangeable.  Both damage types use the same random five-way armor
-reservoir and the same grease/proof/blessing control order.  Rust accepts only
-iron material, mutates primary `oeroded`, and speaks about oxidation and
+The shared boundary is `erode_armor()`, not a claim that AD_RUST, AD_CORR and
+AD_DCAY are interchangeable.  All three use the same random five-way armor
+reservoir plus proof/blessing order; rot alone disables grease.  Rust accepts
+only iron material, mutates primary `oeroded`, and speaks about oxidation and
 rusting.  Corrosion accepts iron or copper, mutates secondary `oeroded2`, and
-speaks about corrosion and corroding.  `ARM_BONUS()` subtracts the greater of
-the two erosion degrees, capped by the armor's base contribution.
+speaks about corrosion and corroding.  Rot accepts organic material and dragon
+hide, also mutates `oeroded2`, and speaks about decay and rotting.
+`ARM_BONUS()` subtracts the greater erosion field, capped by the armor's base
+contribution.
 
 The attack owners also differ.  A rust-monster touch declares zero damage, so
 its accepted path reaches armor and the common knockback probes without an HP
@@ -29691,6 +29697,25 @@ Intrinsic acid resistance deliberately does not satisfy this gate: source
 accessory, wielded, carried artifact or artifact-weapon masks.  The port checks
 the recorded equipment property source rather than the aggregate hero boolean.
 
+Natural AD_DCAY is the third selected mode of the same reservoir.  Brown
+pudding declares a zero-dice bite, checks cancellation after hitmsg and calls
+`erode_armor(ERODE_ROT)`.  Rot uses secondary `oeroded2`, accepts non-liquid
+materials through WOOD plus DRAGON_HIDE, speaks about decay/rotting, and
+disables grease protection.  Seed11's blessed Healer gloves select a silent
+`rnl(4)=0` protection before later `rnl(4)=3` damage, then advance through
+`rots`, `rots further`, `rots completely` and max-three retry.  An empty body
+slot reached after max protection terminates rather than carrying a stale
+non-body retry flag.
+
+The material and grease controls are independent.  Wished bronze plate mail
+is non-rottable and body-terminal, so it publishes `not affected by decay`
+without mutation.  Wished greased leather gloves rot through all three degrees
+without any `rn2(2)` wear draw and retain grease at max rot; the starting
+cloth displacement cloak also rots through secondary degree three.  The
+130-, 179- and 177-state native recordings are exact from input3 onward.
+Rotproof learning and attacker cancellation remain separate AD_DCAY
+successors.
+
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level
 geometry and the initial placement cells consumed by the C actor graph.
@@ -29727,3 +29752,32 @@ the displacement line, lets `off_msg` force it through tty, and resumes only
 after acknowledgement.  The 14-state native locator is exact from input3
 onward.  Delayed armor removal remains under its existing negative-multi owner;
 other zero-delay property-bearing accessories require their own witnesses.
+
+## 829. Door feedback precedes the trailing `dochug` continuation
+
+```mermaid
+flowchart TD
+    Move["m_move enters closed-door square"] --> Door["postmov changes door to open"]
+    Door --> Repaint["UnblockDoor rebuilds vision and repaints"]
+    Repaint --> Message["visible or audible door-open pline"]
+    Message --> Pager{"older topline forces --More--?"}
+    Pager -->|"yes"| Ack["acknowledgement input"]
+    Pager -->|"no"| Tail
+    Ack --> Tail["trap, tunnel, pickup, concealment, trailing distfleeck"]
+    Tail --> Phase4["remaining dochug attack/offensive policy"]
+    Lua["Lua supplies door geometry only"] -.-> Move
+```
+
+Native seed11 exposes this boundary because the combined brown-pudding/greased-
+glove rot line already owns tty.  A later unseen actor opens a door.  Input84
+ends after that actor's movement selection with `rn2(20)=11` and displays the
+rot line behind `--More--`; the door actor's trailing `distfleeck rn2(5)=4`
+belongs to input85 after acknowledgement, alongside the door-open line and
+global tail.  JavaScript previously completed `dochug()` before presenting the
+door message, moving that one call into input84.
+
+Ordinary door changes now return a resumable post-door transaction.  The door
+state and vision rebuild remain before prose; trap, tunneling, pickup,
+concealment and trailing `distfleeck()` resume afterward.  This preserves both
+silent/no-pager behavior and exact backpressure attribution.  Door explosions
+share the structural boundary but retain their own damage/death witnesses.

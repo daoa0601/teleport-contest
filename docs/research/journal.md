@@ -84668,3 +84668,53 @@ return behavior.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 17:09 EEST, journal block 2835] {#brown-pudding #hero-contact #armor #decay #rot #organic #dragon-hide #grease-bypass #blessed #max-erosion #body-stop #door #postmov #tty-continuation #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and source:** brown pudding declares AT_BITE/AD_DCAY 0d0.
+`mhitm_ad_dcay()` publishes hitmsg, checks cancellation and calls
+`erode_armor(ERODE_ROT)`.  Rot uses secondary `oeroded2`, accepts non-liquid
+materials through WOOD plus DRAGON_HIDE, uses decay/rot prose, preserves the
+shared proof/blessing order and explicitly disables grease.  Acceptance needs
+organic damage, non-rottable body stop and a real greased target.
+
+**Organic ladder:** seed11 Healer starts with blessed leather gloves.  Its
+130-state native session records zero-dice bites, a silent `rnl(4)=0`
+protection, later `rnl(4)=3` damage, then `rots`, `rots further` and `rots
+completely`.  At max rot another blessed success returns `ER_NOTHING`; the
+following empty body slot must terminate.  Initial JavaScript lacked AD_DCAY
+entirely.  After adding the third parameterized erosion mode, replay was exact
+through complete rot but red at input109 because `continueArmor=true` leaked
+from the prior glove result into empty body selection.  Resetting message,
+finalizer and continue state per reservoir iteration closes all 130 states.
+
+**Material and grease controls:** the Ranger removes its cloak, wears only
+wished bronze plate mail and reaches verbose body-terminal `not affected by
+decay` with no mutation.  A second Ranger keeps its cloth cloak and wears
+wished greased leather gloves.  Native rots the gloves through all three
+degrees without any grease draw or dissolve prose; grease remains set.  Later
+body selections rot the displacement cloak through degree three.  The 130-,
+179- and 177-state recorders took **0.07**, **0.08** and **0.07 seconds** at
+**54,263,808**, **54,509,568** and **54,804,480 bytes maximum RSS**.
+
+**Door-boundary correction:** the greased session's first rot line fills tty.
+An unseen actor then opens a door.  Native input84 stops after that actor's
+movement `rn2(20)=11`; input85 acknowledges the rot pager, publishes
+`You hear a door open.`, then consumes trailing `distfleeck rn2(5)=4` and the
+global tail.  JavaScript completed `dochug()` before presenting the door line,
+placing that call one input early.  Door state/vision now commit before prose,
+while trap, tunnel, pickup, concealment and the trailing `dochug` tail resume
+after the message.  All three complete sessions are exact from input3; the
+sixteen-control audit takes **1.32 seconds** at **146,472,960 bytes maximum
+RSS**.
+
+**Measured acceptance and next blocker:** focused decay passes **3/3** in
+**0.30 seconds** at **134,873,088 bytes maximum RSS**.  The one owned managed
+family passes **147/147** in **2.77 seconds** at **371,884,032 bytes maximum
+RSS**; every runner exits and the registry is empty.  Sections827 and 829 plus
+the ledger now map rot and door backpressure.  Next select actual rotproof
+learning and naturally cancelled AD_DCAY, holding the same organic target and
+zero-dice contact.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty test files remain untouched.
+
+---

@@ -67,10 +67,12 @@ import { roles } from './roles.js';
 import {
     allocateMonsterMovement, continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
-    finishDeferredHeroCorrosionArmor, finishDeferredHeroRustArmor,
+    finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
+    finishDeferredHeroRustArmor,
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
-    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroRustArmor,
+    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
+    resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
@@ -83,7 +85,7 @@ import {
     resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
-    resumeDeferredMonsterPickup,
+    resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     resumeDeferredMonsterRollingBoulder,
     resumeDeferredMonsterStrikingWand,
     finishDeferredMonsterStrikingWandHit,
@@ -2839,6 +2841,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             ? 'You see a door open.'
                             : game.deaf ? null : 'You hear a door open.';
                 if (message) await queueTurnMessage(message);
+                if (movement.deferredAfterDoorMessage) {
+                    resumeDeferredMonsterDoor(action, game);
+                    movement = action.movement;
+                }
             }
         }
         if (deferredReluctantMove) {
@@ -3333,6 +3339,32 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                         if (dissolveDismissal !== null
                             && dissolveDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                }
+                while (heroAttack.deferredDecayArmor) {
+                    const decayArmor = resumeDeferredHeroDecayArmor(
+                        action, game,
+                    );
+                    if (decayArmor?.message) {
+                        const decayDismissal = await queueTurnMessage(
+                            decayArmor.message,
+                        );
+                        if (decayDismissal !== null
+                            && decayDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                    const decayFinal = finishDeferredHeroDecayArmor(
+                        action, game,
+                    );
+                    if (decayFinal?.message) {
+                        const decayFinalDismissal = await queueTurnMessage(
+                            decayFinal.message,
+                        );
+                        if (decayFinalDismissal !== null
+                            && decayFinalDismissal !== undefined) {
                             actorContactPagerOwned = true;
                         }
                     }

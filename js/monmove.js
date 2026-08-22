@@ -171,6 +171,7 @@ const PM_WATCH_CAPTAIN = 283;
 const G_UNIQ = 0x1000;
 const S_GOLEM = 55;
 const AD_RUST = 24;
+const AD_DCAY = 34;
 const AD_CORR = 42;
 const POT_SPEED = 302;
 const LOW_BOOTS = 163;
@@ -6221,6 +6222,21 @@ function basicMonsterAttack(
             deferredCorrosionArmor: !monster.mcan,
             deferredPostHit: !!monster.mcan,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_DCAY) {
+        // uhitm.c:mhitm_ad_dcay() follows the same hitmsg/cancellation/armor
+        // continuation shape as rust, but erodes secondary rot state and
+        // deliberately disables grease protection.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType,
+            effect: monster.mcan
+                ? 'cancelled-decay-natural' : 'decay-natural',
+            oldFormMnum,
+            deferredDecayArmor: !monster.mcan,
+            deferredPostHit: !!monster.mcan,
+        }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))
         && damageType === AD_PHYS
@@ -6618,6 +6634,7 @@ function heroArmorErosionResult(
     object, verbose, erosionKind, state, random, calls,
 ) {
     const corrosion = erosionKind === 'corrosion';
+    const rot = erosionKind === 'rot';
     const objectName = object.name || object.description
         || OBJECT_NAMES[object.otyp] || 'armor';
     // trap.c:erode_obj(ERODE_CORRODE) asks inventory_resistance_check()
@@ -6628,7 +6645,7 @@ function heroArmorErosionResult(
         && recordRandom(random, calls, 100) < 99) {
         return { result: 'nothing', message: null };
     }
-    if (object.greased) {
+    if (!rot && object.greased) {
         return {
             result: 'greased',
             message: `Your ${objectName} is protected by the layer of grease!`,
@@ -6637,12 +6654,14 @@ function heroArmorErosionResult(
     }
 
     const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    const vulnerable = corrosion
-        ? material === 11 || material === 13
-        : material === 11;
+    const vulnerable = rot
+        ? (material <= 8 && material !== 1) || material === 10
+        : corrosion ? material === 11 || material === 13
+            : material === 11;
     const proof = !!(object.oerodeproof
-        || (corrosion ? object.corrodeproof : object.rustproof));
-    const cause = corrosion ? 'corrosion' : 'oxidation';
+        || (rot ? object.rotproof
+            : corrosion ? object.corrodeproof : object.rustproof));
+    const cause = rot ? 'decay' : corrosion ? 'corrosion' : 'oxidation';
     if (!vulnerable || proof && object.rknown) {
         return {
             result: 'nothing',
@@ -6660,14 +6679,14 @@ function heroArmorErosionResult(
         };
     }
 
-    const field = corrosion ? 'oeroded2' : 'oeroded';
+    const field = corrosion || rot ? 'oeroded2' : 'oeroded';
     const oldErosion = object[field] ?? 0;
     if (oldErosion >= 3) {
         return {
             result: 'nothing',
             message: verbose
                 ? `Your ${objectName} looks completely ${
-                    corrosion ? 'corroded' : 'rusted'
+                    rot ? 'rotten' : corrosion ? 'corroded' : 'rusted'
                 }.` : null,
         };
     }
@@ -6676,13 +6695,14 @@ function heroArmorErosionResult(
     return {
         result: 'damaged',
         message: `Your ${objectName} ${
-            corrosion ? 'corrodes' : 'rusts'
+            rot ? 'rots' : corrosion ? 'corrodes' : 'rusts'
         }${adverb}!`,
         finalize: { kind: 'damage', object, field, oldErosion },
     };
 }
 
-// Resume mhitm_ad_{rust,corr}()->erode_armor() after hitmsg() has crossed any
+// Resume mhitm_ad_{rust,corr,dcay}()->erode_armor() after hitmsg() has crossed
+// any
 // tty boundary.  Head/shield/glove/boot candidates retry on ER_NOTHING; body
 // selection stops after its cloak/suit/shirt attempt even when non-vulnerable.
 function resumeDeferredHeroArmorErosion(
@@ -6690,7 +6710,9 @@ function resumeDeferredHeroArmorErosion(
 ) {
     const attack = action?.movement?.attack;
     const deferredField = erosionKind === 'corrosion'
-        ? 'deferredCorrosionArmor' : 'deferredRustArmor';
+        ? 'deferredCorrosionArmor'
+        : erosionKind === 'rot' ? 'deferredDecayArmor'
+            : 'deferredRustArmor';
     if (!attack?.[deferredField]) return null;
     const calls = action.calls;
     let message = null;
@@ -6698,6 +6720,9 @@ function resumeDeferredHeroArmorErosion(
     let continueArmor = false;
 
     for (;;) {
+        message = null;
+        finalize = null;
+        continueArmor = false;
         const slot = recordRandom(random, calls, 5);
         let target = null;
         let verbose = false;
@@ -6757,6 +6782,12 @@ export function resumeDeferredHeroCorrosionArmor(
     );
 }
 
+export function resumeDeferredHeroDecayArmor(
+    action, state, random = rn2,
+) {
+    return resumeDeferredHeroArmorErosion(action, state, 'rot', random);
+}
+
 // Complete erode_obj() only after its first message has crossed tty.  Grease
 // wear and proof learning occur after protection prose; ordinary erosion state
 // likewise commits after the rust/corrosion line.  A worn-off carried grease
@@ -6794,6 +6825,12 @@ export function finishDeferredHeroRustArmor(
 }
 
 export function finishDeferredHeroCorrosionArmor(
+    action, state, random = rn2,
+) {
+    return finishDeferredHeroArmorErosion(action, state, random);
+}
+
+export function finishDeferredHeroDecayArmor(
     action, state, random = rn2,
 ) {
     return finishDeferredHeroArmorErosion(action, state, random);
@@ -7443,6 +7480,15 @@ function completeMovedMonsterAction(
     revealMonsterAfterLeavingHidingPlace(monster, movement, state);
     if (!movement.swallowedHold)
         handleMonsterDoor(monster, state, movement, rollOne, calls);
+    if (!movement.doorMessagePresented
+        && (movement.openedDoor || movement.doorExplosion)) {
+        // C postmov() publishes UnblockDoor/mb_trapped feedback before trap,
+        // tunneling, pickup, concealment, and dochug()'s trailing
+        // distfleeck().  A full older topline can therefore split this exact
+        // actor after the door state change but before any of those tails.
+        movement.deferredAfterDoorMessage = true;
+        return movement;
+    }
     // dog_move() reports MMOVE_MOVED even when candidate selection leaves
     // a pet on its original square, so postmov() still rechecks a trap there.
     if (!movement.swallowedHold
@@ -7485,6 +7531,20 @@ function completeMovedMonsterAction(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
     return movement;
+}
+
+export function resumeDeferredMonsterDoor(
+    action, state, random = rn2, rollDice = d, rollOne = rnd,
+) {
+    const movement = action?.movement;
+    if (!movement?.deferredAfterDoorMessage) return action;
+    delete movement.deferredAfterDoorMessage;
+    movement.doorMessagePresented = true;
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        action.calls,
+    );
+    return action;
 }
 
 // Resume m_move() immediately after mpickstuff() has crossed its optional

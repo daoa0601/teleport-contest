@@ -6826,6 +6826,41 @@ async function runAcidInventoryProtectionSegment(color, seed = 11) {
     });
 }
 
+async function runHealerGloveDecaySegment() {
+    return runSegment({
+        seed: 11,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: '  n#wizgenesis\nbrown pudding\n'
+            + 'm.    m.    m.    m.    m.    m.    m.    m.    '
+            + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+        storage: new Map(),
+    });
+}
+
+async function runRangerDecaySegment({ wish, removeCloak = false }) {
+    const setup = removeCloak
+        ? `  nTe #wizwish\n${wish}\nWg     `
+        : `  n#wizwish\n${wish}\nWg `;
+    return runSegment({
+        seed: 11,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: setup + '#wizgenesis\nbrown pudding\n'
+            + 'm.    m.    m.    m.    m.    m.    m.    m.    '
+            + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+        storage: new Map(),
+    });
+}
+
 function assertWornCorrosionHelmet({
     blessed = false,
     greased = false,
@@ -7336,6 +7371,146 @@ test('seed0011 wished gray mail omits acid inventory protection',
         );
         assert.equal(game.u.uac, -6);
         assert.equal(game.u.uhp, 4);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 brown pudding drives blessed leather-glove rot ladder',
+    async () => {
+        const result = await runHealerGloveDecaySegment();
+
+        assert.equal(result.getScreens().length, 130);
+        assertRngSliceExact(result.getRngSlices()[61], [
+            'rn2(5)=4', 'rnd(20)=4', 'd(0,0)=0', 'rn2(5)=1',
+            'rn2(3)=1', 'rn2(6)=4', 'rn2(5)=0', 'rn2(20)=5',
+            'rn2(5)=1', 'rn2(12)=9', 'rn2(12)=1', 'rn2(12)=11',
+            'rn2(70)=66', 'rn2(400)=56', 'rn2(20)=10', 'rn2(70)=38',
+        ], 'seed0011 decay body-empty stop and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[61]),
+            'The brown pudding bites!');
+
+        assertRngSliceExact(result.getRngSlices()[91], [
+            'rn2(5)=3', 'rnd(20)=18', 'd(0,0)=0', 'rn2(5)=2',
+            'rn2(5)=4', 'rn2(5)=0', 'rn2(5)=2', 'rn2(5)=3',
+            'rnl(4)=0', 'rn2(5)=0', 'rn2(5)=3', 'rnl(4)=3',
+            'rn2(3)=1', 'rn2(6)=3', 'rn2(12)=1', 'rn2(12)=3',
+            'rn2(12)=10', 'rn2(70)=24', 'rn2(400)=32',
+            'rn2(20)=3', 'rn2(70)=33',
+        ], 'seed0011 blessed decay protection then glove rot RNG');
+        assert.equal(decodedTopline(result.getScreens()[91]),
+            'The brown pudding bites!  Your pair of leather gloves rots!');
+        assert.equal(decodedRow(result.getScreens()[91], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:9 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[97], [
+            'rn2(5)=0', 'rnd(20)=7', 'd(0,0)=0', 'rn2(5)=0',
+            'rn2(5)=3', 'rnl(4)=1', 'rn2(3)=1', 'rn2(6)=1',
+            'rn2(12)=0', 'rn2(12)=1', 'rn2(12)=1', 'rn2(70)=41',
+            'rn2(400)=123', 'rn2(20)=4', 'rn2(70)=6',
+        ], 'seed0011 glove rot-further RNG');
+        assert.equal(decodedTopline(result.getScreens()[97]),
+            'The brown pudding bites!  Your pair of leather gloves rots further!');
+
+        assertRngSliceExact(result.getRngSlices()[103], [
+            'rn2(5)=0', 'rnd(20)=19', 'd(0,0)=0', 'rn2(5)=0',
+            'rn2(5)=3', 'rnl(4)=2', 'rn2(3)=0', 'rn2(6)=1',
+            'rn2(5)=3', 'rn2(20)=13', 'rn2(5)=0', 'rn2(12)=0',
+            'rn2(12)=1', 'rn2(12)=8', 'rn2(70)=39', 'rn2(400)=18',
+            'rn2(20)=19', 'rn2(70)=51',
+        ], 'seed0011 glove complete-rot RNG');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'The brown pudding bites!  Your pair of leather gloves rots completely!');
+
+        assertRngSliceExact(result.getRngSlices()[109], [
+            'rn2(5)=2', 'rnd(20)=10', 'd(0,0)=0', 'rn2(5)=4',
+            'rn2(5)=2', 'rn2(5)=3', 'rnl(4)=0', 'rn2(5)=1',
+            'rn2(3)=1', 'rn2(6)=2', 'rn2(12)=11', 'rn2(12)=5',
+            'rn2(12)=11', 'rn2(70)=4', 'rn2(400)=133',
+            'rn2(20)=14', 'rn2(70)=46',
+        ], 'seed0011 max-rot protection then empty-body stop RNG');
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'The brown pudding bites!');
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.name, 'pair of leather gloves');
+        assert.equal(game.uarmg.blessed, true);
+        assert.equal(game.uarmg.oeroded ?? 0, 0);
+        assert.equal(game.uarmg.oeroded2 ?? 0, 3);
+        assert.equal(game.u.uac, 9);
+        assert.equal(game.u.uhp, 13);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 brown pudding stops on wished bronze decay non-effect',
+    async () => {
+        const result = await runRangerDecaySegment({
+            wish: 'uncursed +2 bronze plate mail',
+            removeCloak: true,
+        });
+
+        assert.equal(result.getScreens().length, 179);
+        assertRngSliceExact(result.getRngSlices()[86], [
+            'rn2(5)=3', 'rnd(20)=12', 'd(0,0)=0',
+            'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=0',
+            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1',
+        ], 'seed0011 bronze body decay selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[86]),
+            'The brown pudding bites!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[87], [
+            'rn2(3)=0', 'rn2(6)=0', 'rn2(5)=4', 'rn2(16)=8',
+            'rn2(12)=5', 'rn2(5)=1', 'rn2(5)=0', 'rn2(8)=1',
+            'rn2(5)=1', 'rn2(5)=4', 'rn2(20)=12', 'rn2(5)=4',
+            'rn2(12)=9', 'rn2(12)=0', 'rn2(12)=4', 'rn2(12)=11',
+            'rn2(12)=0', 'rn2(12)=3', 'rn2(70)=52',
+            'rn2(400)=365', 'rn2(300)=88', 'rn2(20)=4', 'rn2(73)=69',
+        ], 'seed0011 bronze decay non-effect and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[87]),
+            'Your bronze plate mail is not affected by decay.');
+
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'bronze plate mail');
+        assert.equal(game.uarm.oeroded2 ?? 0, 0);
+        assert.equal(game.u.uac, 2);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 brown pudding rots wished greased gloves without wear draw',
+    async () => {
+        const result = await runRangerDecaySegment({
+            wish: 'uncursed greased +2 leather gloves',
+        });
+
+        assert.equal(result.getScreens().length, 177);
+        assertRngSliceExact(result.getRngSlices()[84], [
+            'rn2(5)=1', 'rnd(20)=1', 'd(0,0)=0', 'rn2(5)=4',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=3',
+            'rn2(3)=2', 'rn2(6)=5', 'rn2(5)=1', 'rn2(32)=22',
+            'rn2(5)=2', 'rn2(4)=1', 'rn2(5)=1', 'rn2(5)=0',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=0', 'rn2(20)=11',
+        ], 'seed0011 greased-glove rot and pre-door RNG');
+        assert.equal(decodedTopline(result.getScreens()[84]),
+            'The brown pudding bites!  Your pair of padded gloves rots!--More--');
+        assert.deepEqual(result.getCursors()[84], [66, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[85], [
+            'rn2(5)=4', 'rn2(12)=3', 'rn2(12)=3', 'rn2(12)=7',
+            'rn2(12)=1', 'rn2(12)=0', 'rn2(12)=4', 'rn2(70)=40',
+            'rn2(400)=149', 'rn2(300)=70', 'rn2(20)=10', 'rn2(73)=31',
+        ], 'seed0011 post-door continuation and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[85]),
+            'You hear a door open.');
+        assert.equal(decodedTopline(result.getScreens()[96]),
+            'The brown pudding bites!  Your pair of padded gloves rots further!');
+        assert.equal(decodedTopline(result.getScreens()[102]),
+            'The brown pudding bites!  Your pair of padded gloves rots completely!');
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.name, 'pair of padded gloves');
+        assert.equal(game.uarmg.greased, true);
+        assert.equal(game.uarmg.oeroded2 ?? 0, 3);
+        assert.ok(game.uarmc);
+        assert.equal(game.uarmc.oeroded2 ?? 0, 3);
+        assert.equal(game.u.uac, 6);
         assert.equal(game.context.move, 0);
     });
 
