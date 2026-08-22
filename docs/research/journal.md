@@ -84908,3 +84908,42 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 17:53 EEST, journal block 2840] {#polyself #break-armor #wood-golem #healer #alchemy-smock #apron #cloak-subtype #object-appearance #dropx #native-witness #implementation #complete-replay #regression #fake-acceptance #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and witness:** large-form `break_armor()` treats alchemy smock as a
+cloak drop with subtype-specific prose.  Seed11 debug Healer wishes and wears
+an alchemy smock, represented by shuffled appearance `apron`, then becomes a
+wood golem.  Native input62 consumes
+`rn2(2)=1,rn2(19)=7,rn2(500)=287`, publishes `You turn into a wood golem!  The
+knot on your apron is pulled apart!`, drops the apron, retains the starting
+gloves and projects form AC two.  The 71-state recorder took **0.06 seconds**
+at **53,051,392 bytes maximum RSS**.
+
+**Earliest divergence and decision:** JavaScript already matched RNG, status,
+cursor, equipment removal and floor ownership; it differed at the first word
+of the cloak effect because every large-form cloak used the generic clasp
+line.  Object type144 now selects the source knot/apron sentence and reuses the
+same ordered continuation and `dropCarriedObject()` path.  Mummy wrapping is
+not folded into this change: its adaptive predicate and destructive tear path
+remain independent.
+
+**Rejected acceptance and correction:** the first focused gate was **4/5**
+because the new test asserted that the floor object's `name` had become
+`alchemy smock`.  That would counterfeit identification state; native retains
+the shuffled `apron` appearance.  The corrected witness anchors type144,
+appearance `apron`, floor ownership and the cleared worn slot.  This is a test
+expectation correction, not an engine change.
+
+**Measured effect and next blocker:** all 71 smock states and the preceding
+twenty rust/corrosion/decay controls are exact from input3.  The corrected
+fixture-disabled controlled-polymorph gate passes **5/5** in **0.29 seconds**;
+the one owned managed family passes **149/149** in **2.69 seconds**.  Every
+process exited before the next began.  Section830 and the ledger now split
+generic cloak clasp from alchemy-smock knot ownership.  Next select mummy
+wrapping's adaptive-versus-tear behavior, or move to the horn/accessory graph
+if that requires a smaller independent native recipe.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

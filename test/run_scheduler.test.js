@@ -7779,6 +7779,44 @@ test('seed0011 wood-golem breakarm destroys worn suit and shirt',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 wood-golem breakarm pulls apart worn alchemy smock',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 alchemy smock\n'
+                + 'Wk #polyself\nwood golem\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 71);
+        assertRngSliceExact(result.getRngSlices()[62], [
+            'rn2(2)=1', 'rn2(19)=7', 'rn2(500)=287',
+        ], 'seed0011 alchemy-smock breakarm RNG');
+        assert.equal(decodedTopline(result.getScreens()[62]),
+            'You turn into a wood golem!  The knot on your apron is pulled apart!');
+        assert.equal(decodedRow(result.getScreens()[62], 23),
+            'Dlvl:1 $:1540 HP:50(50) Pw:5(5) AC:2 HD:7');
+        assert.deepEqual(result.getCursors()[62], [65, 6, 1]);
+
+        assert.equal(game.uarmc, null);
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        const floorSmock = (game.level.objects?.[game.u.ux]?.[game.u.uy] || [])
+            .find(object => object.otyp === 144);
+        assert.ok(floorSmock);
+        assert.equal(floorSmock.name, 'apron');
+        assert.equal(floorSmock.where, 'floor');
+        assert.equal(game.u.mh, 50);
+        assert.equal(game.u.uac, 2);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

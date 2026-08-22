@@ -29830,9 +29830,14 @@ flowchart TD
     Suit -->|"yes"| SuitLine["break out line; Armor_gone; destroy suit"]
     Suit -->|"no"| Cloak{"worn cloak?"}
     SuitLine --> Cloak
-    Cloak -->|"yes"| CloakLine["clasp line; Cloak_off; drop cloak on floor"]
+    Cloak -->|"yes"| CloakType{"cloak subtype"}
     Cloak -->|"no"| Shirt{"worn shirt?"}
+    CloakType -->|"generic"| CloakLine["clasp line; Cloak_off; drop cloak"]
+    CloakType -->|"alchemy smock"| SmockLine["apron knot line; Cloak_off; drop smock"]
+    CloakType -->|"mummy wrapping"| Wrapping["adaptive or tear apart; unselected"]
     CloakLine --> Shirt
+    SmockLine --> Shirt
+    Wrapping --> Shirt
     Shirt -->|"yes"| ShirtLine["shirt line; destroy shirt after pager resumes"]
     Shirt -->|"no"| EquipDone["find_ac; newsym; encumber"]
     ShirtLine --> EquipDone
@@ -29869,16 +29874,26 @@ Suit and shirt destruction do not create a floor object or call `newsym`;
 generic cloak removal does.  The existing gnome therefore still displays its
 new glyph during the shrink-out pager, while the Tourist suit pager retains
 the old hero glyph.  The existing red-dragon weapon-drop and two-stage
-encumbrance/breath pagers remain exact.  Special mummy wrapping, alchemy-smock,
-horn, shield, helmet, glove, boot and eyewear branches remain distinct.
+encumbrance/breath pagers remain exact.  Special mummy wrapping, horn, shield,
+helmet, glove, boot and eyewear branches remain distinct.
+
+Alchemy smock selects the first cloak-subtype override.  A seed11 Healer wishes
+and wears the shuffled `apron`, then becomes a wood golem.  Source
+`break_armor()` identifies object type 144 after the generic wrapping check and
+publishes `The knot on your apron is pulled apart!`; it clears the worn slot
+and drops the same unidentified object on the floor.  The generic port instead
+said that a cloak clasp broke.  The subtype line now changes only message
+policy: drop ownership, AC projection and object identity remain shared.  All
+71 states are exact from input3; the final floor object is anchored by type and
+appearance rather than incorrectly promoted to the known name `alchemy smock`.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the
 return-to-race and encumbrance messages are ordinary continuations.  In the
 selected short line all three messages combine without a pager, state becomes
 human before knockback, and armor selection is skipped.  Suit destruction,
-special mummy/alchemy cloaks and other golem species retain separate
-equipment-message witnesses despite sharing fixed HP metadata.
+special mummy wrapping and other golem species retain separate equipment-
+message witnesses despite sharing fixed HP metadata.
 
 AD_RUST reaches the same rehumanization owner with a different form predicate
 and effect line.  Iron-golem setup additionally proves three earlier

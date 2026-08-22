@@ -34,6 +34,7 @@ const MZ_HUMAN = 2;
 const MZ_LARGE = 3;
 const S_DRAGON = 30;
 const MAXULEV = 30;
+const ALCHEMY_SMOCK = 144;
 const GOLEM_HIT_POINTS = new Map([
     [249, 20], [250, 20], [251, 30], [252, 60], [253, 40],
     [254, 50], [255, 40], [256, 70], [257, 100], [258, 80],
@@ -334,7 +335,9 @@ export async function polyselfControlledMonster(mnum) {
         }
         if (cloak) {
             await plineWithContinuation(
-                'The clasp on your cloak breaks open!',
+                cloak.otyp === ALCHEMY_SMOCK
+                    ? 'The knot on your apron is pulled apart!'
+                    : 'The clasp on your cloak breaks open!',
             );
             dropCarriedObject(cloak, ['uarmc']);
         }

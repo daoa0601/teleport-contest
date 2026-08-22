@@ -12188,3 +12188,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   twenty prior rust/corrosion/decay controls and the four controlled-polymorph
   witnesses are exact; the owned managed family remains 149/149 in 2.73
   seconds.  Special cloak and accessory-removal successors remain open.
+- Seed11 Healer selects the alchemy-smock subtype of large-form cloak removal.
+  Wished object type144 remains appearance `apron`; controlled wood-golem
+  input62 consumes `rn2(2)=1,rn2(19)=7,rn2(500)=287` and displays `You turn
+  into a wood golem!  The knot on your apron is pulled apart!`.  The apron is
+  dropped on the hero square, the starting gloves remain worn and form AC is
+  two.  All 71 states are exact from input3.
+
+  The port's generic clasp line was the only engine divergence.  Type-aware
+  message selection retains the shared cloak drop/AC path.  The first focused
+  assertion was rejected at 4/5 because it expected the canonical name
+  `alchemy smock` on the unidentified floor object; type144 plus appearance
+  `apron` is the native state.  The corrected fixture-disabled polymorph gate
+  passes 5/5 in 0.29 seconds, the preceding twenty erosion controls stay exact
+  and the owned managed family passes 149/149 in 2.69 seconds.  Adaptive and
+  destroyed mummy-wrapping branches remain separate.
