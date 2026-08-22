@@ -87231,3 +87231,40 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-23 00:48 EEST, journal block 2900] {#wizard-of-yendor #destroy-armor #erosion #leather-gloves #armor-class #shared-helper #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** refreshed seed19 is exact through
+input105.  Input106 matches claw10, selection and discarded d(16,6)=59, then
+native spends rn2(4)=0,rn2(1)=0 while JS enters later actors because
+destroy-armor had no effect continuation.  Native retains AC8 on the cast
+pager and first shows the eroded glove and AC9 at input107.
+
+**Prediction and source evidence:** mcast_destroy_armor() delegates to
+destroy_arm(), which rolls its hit count before checking the worn snapshot,
+selects from seven slots in fixed order, and delegates material wording and
+mutation to erode_obj().  The effect line is emitted before erosion commits.
+With only leather gloves worn, one hit must select index0, publish smouldering,
+then increment primary erosion and recompute AC only after pager
+acknowledgement.
+
+**Implementation and measured effect:** the existing scroll owner now exports
+its worn-order, material, message and removal helpers.  A named async monster
+continuation owns Antimagic, hit/target draws, sequential effect lines,
+post-line mutation, destruction stop and AC recomputation.  Seed19 is exact
+through **input113**, with gloves oeroded1, AC9 and HP121.  The six selected
+fixture-disabled Wizard controls pass **6/6** in **0.61 seconds** at
+**136,232,960 bytes maximum RSS**; the managed process exited.
+
+**Falsification, decision and next blocker:** the unchanged input106 status
+and changed input107 status falsify immediate erosion at spell selection.
+The exact tail falsifies armor-class recomputation and later actor scheduling
+as remaining causes.  Section866 maps shared erosion versus spell ownership;
+Lua owns none.  Input114 is the next earliest divergence: cuss gate zero
+requires speech-table RNG and quoted Wizard malediction before later actors.
+Keep Antimagic, no armor, non-damageable/proof, multi-hit, destruction,
+billing and occupation-stop branches separate.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty test files
+remain untouched.
+
+---

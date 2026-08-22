@@ -31316,3 +31316,36 @@ AD_ELEC owner; the compact synchronous path remains only for callers which
 explicitly do not defer visible contact.  All 127 seed14 states are exact.
 Shock resistance, magic cancellation, inventory destruction, exploding
 wands, invisible contact and lethal electricity remain separate controls.
+
+## 866. Monster destroy-armor shares erosion semantics but owns spell paging
+
+~~~mermaid
+flowchart TD
+    Select["AD_SPEL selects MCAST_DESTRY_ARMR"] --> Cast["discarded 16d6 and cast pager"]
+    Cast --> Resist["Antimagic chooses force-field branch"]
+    Resist --> Hits["ordinary branch rolls rn2(4)+1 hits"]
+    Hits --> Snapshot["snapshot seven worn armor slots in source order"]
+    Snapshot --> Target["each hit rolls rn2(armor_count)"]
+    Target --> Kind["shared material-to-erosion classifier"]
+    Kind --> Line["publish smoulder, rust, crack, rot, or corrode line"]
+    Line --> Commit["after tty acknowledgement, increment erosion or destroy"]
+    Commit --> AC["recompute worn armor class"]
+    AC --> Tail["resume mattacku and global tail"]
+    Scroll["destroy-armor scroll owner"] --> Shared["shared target naming and erosion helpers"]
+    Select --> Shared
+    Lua["Lua owns no spell, erosion, or tty phase"] -.-> Select
+~~~
+
+Seed19 input106 matches the Wizard claw, destroy-armor selection and discarded
+d(16,6)=59, then rolls rn2(4)=0 for one hit and rn2(1)=0 for the sole worn
+target.  The leather-glove smoulder line forces the cast pager before state
+mutation.  Input107 increments oeroded from0 to1, recomputes AC8 to9, and
+resumes the exact actor/global tail.
+
+The monster spell reuses the material classification, naming and removal
+helpers already used by scroll destruction, but retains its own casting,
+Antimagic and skin-itches decisions.  Seed19 is exact through input113.  The
+next mismatch is input114's successful Wizard cuss speech, not erosion.
+Antimagic shielding, no armor, non-erodeable/proof armor, multiple hits,
+repeated targets, complete destruction, shop billing and occupation stopping
+remain separate controls.

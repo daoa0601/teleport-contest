@@ -7683,6 +7683,11 @@ export function resumeDeferredHeroSpell(
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'destroy-armor') {
+        attack.deferredDestroyArmor = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'fire-pillar') {
         attack.deferredFirePillar = true;
         attack.appliedDamage = 0;

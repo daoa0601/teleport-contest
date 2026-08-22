@@ -12808,3 +12808,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   one HP and resumes maintenance to HP34.  The selected Wizard family remains
   5/5 fixture-disabled.  Resistance, cancellation, inventory explosion,
   unseen and lethal electric branches remain open.
+- Seed19 closes the first monster destroy-armor branch through input113.
+  Input106 rolls rn2(4)=0,rn2(1)=0 after the exact cast prefix; input107
+  publishes glove smouldering, commits oeroded1 and changes AC8 to9 before the
+  actor/global tail.  Shared scroll-erosion helpers now supply material,
+  naming and worn removal without sharing spell paging.  The selected Wizard
+  family passes 6/6 fixture-disabled.  Input114's zero-gate cuss speech is the
+  next divergence; Antimagic, no-effect, multi-hit and destruction variants
+  remain open.

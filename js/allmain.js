@@ -17,8 +17,9 @@ import {
 import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
+    destroyWornArmor, objectErosionKind, objectErosionMessage,
     promptYesNo, performQuestExpulsion, discoverReflectingShield,
-    rhack, stopRun,
+    rhack, stopRun, wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
@@ -2733,6 +2734,44 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack) {
     heroAttack.deferredDeathTouch = false;
 }
 
+async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
+    if (!heroAttack?.deferredDestroyArmor) return;
+    const antimagic = !!(game.u?.antimagic
+        || game.u?.magicResistance || game.u?.magic_resistance);
+    if (antimagic) {
+        await queueTurnMessage('A field of force surrounds you!');
+        heroAttack.deferredDestroyArmor = false;
+        return;
+    }
+
+    const armors = wornArmorInDestroyOrder();
+    const hitRoll = rn2(4);
+    action.calls.push('rn2(4)');
+    const hits = hitRoll + 1;
+    const changed = [];
+    for (let hit = 0; hit < hits && armors.length; hit++) {
+        const index = rn2(armors.length);
+        action.calls.push('rn2(' + armors.length + ')');
+        const armor = armors[index];
+        const kind = objectErosionKind(armor);
+        if (!kind || armor.oerodeproof) continue;
+        const message = objectErosionMessage(armor, kind);
+        await queueTurnMessage(message);
+        if ((armor[kind.field] || 0) >= 3) {
+            destroyWornArmor(armor);
+            changed.push({ armor, destroyed: true });
+            break;
+        }
+        armor[kind.field] = (armor[kind.field] || 0) + 1;
+        changed.push({ armor, destroyed: false });
+    }
+    if (!changed.length)
+        await queueTurnMessage('Your skin itches.');
+    findArmorClass(game);
+    heroAttack.destroyedArmor = changed;
+    heroAttack.deferredDestroyArmor = false;
+}
+
 // C mcastu.c:MCAST_CURSE_ITEMS delegates to sit.c:rndcurse().  The aura pline
 // precedes every inventory-selection roll, so the tty driver must publish it
 // before mutating object beatitude.  This selected ordinary branch has no
@@ -3660,6 +3699,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                         if (heroAttack.deferredDeathTouch)
                             await resolveDeferredHeroDeathTouch(
+                                action, heroAttack,
+                            );
+                        if (heroAttack.deferredDestroyArmor)
+                            await resolveDeferredHeroDestroyArmor(
                                 action, heroAttack,
                             );
                         if (heroAttack.deferredGeyserSpell)

@@ -18,7 +18,8 @@ import {
     CORPSE, CREAM_PIE,
     DAGGER, DART,
     FOOD_RATION,
-    CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET, LONG_SWORD,
+    CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET,
+    LEATHER_GLOVES, LONG_SWORD,
     DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, OIL_LAMP,
     POT_GAIN_LEVEL, RING_MAIL, ROCK, RUBY, SLING,
     SPEAR,
@@ -9644,6 +9645,50 @@ test('seed0014 Wizard death touch drains maximum HP after its effect line',
             'Dlvl:1 $:1172 HP:34(105) Pw:288(288) AC:8 Xp:30');
         assert.equal(game.u.uhp, 34);
         assert.equal(game.u.uhpmax, 105);
+    });
+
+test('seed0019 Wizard destroy-armor erodes gloves after its pager',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 19,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 113),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 114);
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=1', 'rn2(5)=2', 'rnd(20)=20', 'd(2,12)=10',
+            'rn2(20)=14', 'rn2(3)=0', 'rn2(6)=2', 'rn2(30)=29',
+            'rn2(20)=10', 'rn2(20)=8', 'rn2(300)=134', 'd(16,6)=59',
+            'rn2(4)=0', 'rn2(1)=0',
+        ], 'seed0019 destroy-armor selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[106], 23),
+            'Dlvl:1 $:1774 HP:138(148) Pw:294(294) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=2',
+            'rn2(12)=9', 'rn2(12)=10', 'rn2(70)=7', 'rn2(100)=44',
+            'rn2(200)=20', 'rn2(20)=12', 'rn2(67)=17',
+        ], 'seed0019 armor mutation and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'Your pair of leather gloves smoulders!');
+        assert.equal(decodedRow(result.getScreens()[107], 23),
+            'Dlvl:1 $:1774 HP:138(148) Pw:294(294) AC:9 Xp:30');
+        assert.equal(game.uarmg?.otyp, LEATHER_GLOVES);
+        assert.equal(game.uarmg?.oeroded, 1);
+        assert.equal(game.u.uac, 9);
+        assert.equal(game.u.uhp, 121);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

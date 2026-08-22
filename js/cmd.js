@@ -11610,13 +11610,13 @@ async function readEnchantWeaponScroll(scroll) {
     game.context.move = 1;
 }
 
-function wornArmorInDestroyOrder() {
+export function wornArmorInDestroyOrder() {
     return ['uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu']
         .map(slot => game[slot] || game.u?.[slot])
         .filter(Boolean);
 }
 
-function objectErosionKind(object) {
+export function objectErosionKind(object) {
     const material = OBJECT_MATERIAL[object.otyp];
     if ((material <= 8 && material !== 1) || material === 18)
         return { field: 'oeroded', action: 'smoulder' };
@@ -11631,7 +11631,7 @@ function objectErosionKind(object) {
     return null;
 }
 
-function objectErosionMessage(object, kind) {
+export function objectErosionMessage(object, kind) {
     const erosion = object[kind.field] || 0;
     const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
     const verb = kind.action === 'smoulder' ? 'smoulders'
@@ -11644,7 +11644,7 @@ function objectErosionMessage(object, kind) {
     return `Your ${name} ${verb}${adverb}!`;
 }
 
-function destroyWornArmor(armor) {
+export function destroyWornArmor(armor) {
     for (const slot of [
         'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
     ]) {
