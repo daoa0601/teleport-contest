@@ -8557,6 +8557,73 @@ test('seed0011 energy vortex drains Pw across engulf and expulsion',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 cancelled energy vortex preserves Pw across engulf slots',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nwand of cancellation\n'
+                + '#wizgenesis\nenergy vortex\n'
+                + 'zkyacy m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 107);
+        assert.equal(decodedRow(result.getScreens()[65], 0),
+            'Status of the energy vortex (neutral, huge):  Level 5  HP 33(33)  AC 2,');
+        assert.equal(decodedRow(result.getScreens()[65], 1),
+            'cancelled.--More--');
+        assert.deepEqual(result.getCursors()[65], [18, 1, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[68], [
+            'rn2(5)=4', 'rnd(20)=20', 'd(1,6)=1',
+        ], 'seed0011 cancelled energy-vortex initial engulf RNG');
+        assert.equal(decodedTopline(result.getScreens()[68]),
+            'The energy vortex engulfs you!--More--');
+        assertRngSliceExact(result.getRngSlices()[69], [
+            'rnd(10)=1', 'd(1,3)=2',
+        ], 'seed0011 cancelled drain omission and expulsion RNG');
+        assert.equal(decodedTopline(result.getScreens()[69]),
+            'You get expelled!--More--');
+        assert.equal(decodedRow(result.getScreens()[69], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[74], [
+            'rn2(5)=4', 'rnd(20)=5', 'd(1,6)=6',
+            'rn2(3)=0', 'rn2(6)=4', 'rn2(5)=0',
+            'rnd(20)=8', 'd(1,6)=3',
+        ], 'seed0011 cancelled electric touches and cooldown miss RNG');
+        assert.equal(decodedTopline(result.getScreens()[74]),
+            'The energy vortex touches you!  The energy vortex misses!--More--');
+        assert.equal(decodedRow(result.getScreens()[74], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:8 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[86], [
+            'rn2(5)=0', 'd(1,6)=5', 'd(1,3)=2',
+            'rn2(5)=4', 'd(1,6)=1',
+        ], 'seed0011 slot-zero timer expiry before drain slot RNG');
+        assert.equal(decodedTopline(result.getScreens()[86]),
+            'You get expelled!--More--');
+        assert.equal(decodedTopline(result.getScreens()[87]),
+            'The energy vortex misses!');
+
+        assert.equal(game.u.uen, 5);
+        assert.equal(game.u.uenmax, 5);
+        assert.equal(game.u.uhp, 13);
+        const vortex = game.level.monsters.find(monster =>
+            monster.mnum === 109);
+        assert.ok(vortex);
+        assert.equal(vortex.mcan, 1);
+        assert.equal(game.u.uswallow, 1);
+        assert.equal(game.u.ustuck, vortex);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

@@ -12409,3 +12409,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   the successful `rn2(20)`/`rn2(5)` destruction probes.  The engine witness,
   existing ice-vortex engulf unit and adjacent grid-bug electric unit each pass
   1/1.  No broad managed gate was substituted for those focused owners.
+- Seed11 Healer cancels an adjacent energy vortex and confirms wrapped status.
+  Native input69 consumes only `rnd(10)=1,d(1,3)=2` after the initial engulf:
+  electric/drain gates and Pw prose are absent, but timer expiry still expels.
+  Cancelled touch-electric slots retain damage dice/knockback without verbose
+  `avoid harm`.  At input86, slot0 expires the timer before slot1 can roll;
+  input87 resumes the cooldown AD_DREN miss after expulsion.  Pw/HP stay 5/5
+  and 13/13 across all 107 exact states.
+
+  The first focused assertion falsely expected the session to finish expelled;
+  its final moves begin another engulf, so the accepted state is
+  `uswallow=1,ustuck=vortex`.  Corrected energy-vortex tests pass 2/2 in 0.22
+  seconds and the ice-vortex resume unit passes 1/1.  High-Pw scaling remains
+  the next AD_DREN control.

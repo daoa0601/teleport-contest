@@ -6173,7 +6173,9 @@ function basicMonsterAttack(
             damage = 0;
         }
         let deferredExpulsion = (state.u.uswldtim ?? 0) === 0;
-        if (monster?.mnum === PM_ENERGY_VORTEX && attackIndex === 0) {
+        let completedEnergyDrainSlot = false;
+        if (monster?.mnum === PM_ENERGY_VORTEX && attackIndex === 0
+            && !deferredExpulsion) {
             const drain = resolveEnergyVortexDrainSlot(
                 monster, state, calls, random, rollOne, rollDice,
             );
@@ -6182,13 +6184,14 @@ function basicMonsterAttack(
                     .filter(Boolean).join('  ');
             }
             deferredExpulsion = drain.deferredExpulsion;
+            completedEnergyDrainSlot = true;
         }
         const engulfTick = retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit: true, damage,
             attackType, damageType, effect: 'engulf-tick', effectMessage,
             deferredExpulsion,
         }, monster, attackIndex);
-        if (monster?.mnum === PM_ENERGY_VORTEX && attackIndex === 0)
+        if (completedEnergyDrainSlot)
             delete engulfTick.nextAttackIndex;
         return engulfTick;
     } else if (hit && attackType === AT_ENGL && dice > 0 && sides > 0) {
@@ -6607,9 +6610,13 @@ export function resumeDeferredHeroElectricSpecial(
     const attack = action?.movement?.attack;
     if (!attack?.deferredElectricNegation) return action;
     const armorProtection = state?.u?._magicNegation ?? 0;
-    attack.negated = !!action.monster?.mcan
+    const cancelled = !!action.monster?.mcan;
+    attack.negated = cancelled
         || recordRandom(random, action.calls, 10) < 3 * armorProtection;
-    if (attack.negated) {
+    if (cancelled) {
+        attack.damage = 0;
+        attack.electricEffectMessage = null;
+    } else if (attack.negated) {
         attack.damage = 0;
         attack.electricEffectMessage = 'You avoid harm.';
     } else if (state.u.shockResistance || state.u.shock_resistance) {

@@ -30183,3 +30183,14 @@ through tty.  Input63 additionally selects the successful inventory gate and
 its `rn2(5)` class probe.  Monster and initial engulf electric paths remain
 separate, while the existing ice-vortex unit proves the shared engulf resume
 still preserves cold ordering.
+
+Cancellation removes effect gates but not slot dice or timer ownership.  The
+Healer cancels an adjacent energy vortex and confirms wrapped status.  Initial
+input69 consumes `rnd(10)=1,d(1,3)=2` with no electric `rn2(2)`, drain
+`rn2(4)` or Pw message; timer expiry still publishes `You get expelled!` and
+Pw stays 5/5.  Cancelled electric touches likewise omit magic-negation and zap
+prose while retaining 1d6, knockback and later actions.  At input86, an
+already-swallowed action processes slot0/slot1 dice, then the next fast action's
+slot0 decrements the remaining timer to zero: expulsion happens before another
+AD_DREN die.  After the pager, cooldown slot1 resumes as `The energy vortex
+misses!`.  All 107 states are exact from input3.

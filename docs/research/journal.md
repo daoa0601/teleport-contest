@@ -85565,3 +85565,44 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 19:47 EEST, journal block 2856] {#energy-vortex #engulf #ad-dren #ad-elec #cancellation #timer-expiry #slot-order #silent-negation #expulsion #native-witness #implementation-correction #complete-replay #fake-acceptance #regression #architecture #ledger #green #process-safety #priority}
+
+**Cancellation contract:** cancelled energy vortex still rolls each reached
+engulf slot's adjusted dice and ages the swallow timer.  It must omit electric
+`rn2(2)`, drain `rn2(4)`, Pw mutation/prose, and verbose armor-negation output.
+If slot0 expires the timer, expulsion occurs before slot1; the unprocessed
+cooldown slot can resume as a miss only after expulsion's pager/relocation.
+
+**Native witness:** seed11 Healer wishes cancellation, cancels the adjacent
+energy vortex and confirms `cancelled.--More--` by stethoscope.  Input69 owns
+`rnd(10)=1,d(1,3)=2` after the initial engulf, with no effect gates, and shows
+only `You get expelled!--More--`; HP13 and Pw5 remain.  Cancelled touch-electric
+slots later keep 1d6/knockback but emit no `You avoid harm.`.  Input86 owns
+`rn2(5)=0,d(1,6)=5,d(1,3)=2,rn2(5)=4,d(1,6)=1`: the last slot0 decrements the
+timer to zero, so no following 1d3 occurs.  Input87 resumes `The energy vortex
+misses!` after expulsion.  All 107 states are exact; the recorder took **0.07
+seconds** at **53,542,912 bytes maximum RSS**.
+
+**Implementation corrections and falsifications:** cancelled electric contact
+initially used verbose `You avoid harm.`, forcing tty too early; source's mcan
+short circuit is silent.  Later, the already-swallowed composer always ran
+slot1 even after slot0 expired the timer; guarding on the post-slot0 timer and
+retaining an unprocessed continuation restores native order.  This falsifies
+cancellation as a dice gate and expulsion as an end-of-action-only event.
+
+**Rejected acceptance and measured evidence:** the first durable test expected
+the recipe to end expelled.  Its final inputs begin another cancelled engulf,
+so native-equivalent state is still swallowed with `ustuck=vortex`; the test
+now asserts that real terminal state.  The paired energy-vortex gate passes
+**2/2** in **0.22 seconds** and the ice-vortex resume unit remains **1/1**.
+Every process exited before the next began.
+
+**Next blocker:** section832 and the ledger now include cancelled slot/timer
+semantics.  Construct a high-Pw carrier that actually satisfies
+`uen > 12*max(level,6)` and `uenmax > 20*max(level,6)` so native selects 3d9;
+do not treat ordinary level-30 Pw as high because its level raises both
+thresholds.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---
