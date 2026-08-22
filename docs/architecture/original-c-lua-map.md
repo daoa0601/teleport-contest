@@ -29872,7 +29872,7 @@ flowchart TD
     BootKind -->|"ordinary no-hands"| BootLine["boots pushed off feet; drop boots"]
     BootKind -->|"very small"| BootSlide["boots slide off; drop boots"]
     BootKind -->|"slithy"| BootLine
-    BootKind -->|"centaur"| BootCentaur["boots pushed off; unselected"]
+    BootKind -->|"centaur"| BootCentaur["boots pushed off; drop boots"]
     Boots -->|"no"| Head{"headless form plus eyewear?"}
     BootLine --> Head
     BootFall --> Head
@@ -29989,8 +29989,8 @@ form/glove line.  The attempted boot line then forces the pending load notice
 through input64 `--More--`; input65 publishes `Your boots are pushed off your
 feet!`, drops type163 and projects AC eight.  HP25/25, HD6, Burdened and Blind
 remain stable through the sequence.  All 72 states are exact from input3.
-Slithy and centaur boot eligibility remain separate successors; this block
-selects only the ordinary no-hands pushed arm.
+Slithy and centaur boot eligibility are selected independently below; this
+block selects only the ordinary no-hands pushed arm.
 
 The whirly sibling selects both sliparm precedence and the hero every-turn
 effect.  Seed11 Healer keeps the low-boots/gloves/scalpel setup but becomes a
@@ -30001,7 +30001,7 @@ order is `Blind Fly`, so status projection must place blindness before flight.
 After the equipment continuation finishes, source allmain's hero
 `m_everyturn_effect()` creates a harmless one-cell vapor region and spends
 `rn2(3)=1` for TTL five on that same input.  All 66 states are exact from
-input3.  Centaur remains a separate eligibility witness.
+input3.  Centaur is selected separately below.
 
 The very-small sibling selects the remaining size-specific verb.  Seed11 uses
 the same low-boots/gloves/scalpel setup and becomes a tiny acid blob.  Its
@@ -30010,8 +30010,7 @@ input58 pages `You can't even move a handspan with this load!`.  Input59 then
 publishes `Your boots slide off your feet!`, drops type163 and projects AC
 eight.  HP2/2, HD1, Overloaded and Blind remain stable; no whirly vapor hook
 runs.  All 66 states are exact from input3.  The port derives both eligibility
-and wording from `msize < MZ_SMALL`; slithy is selected below and centaur
-remains the last boot-policy predicate.
+and wording from `msize < MZ_SMALL`; slithy and centaur are selected below.
 
 Slithy eligibility is selected without borrowing no-hands or size.  Seed11
 Healer keeps both starting gloves and wielded scalpel, wears +2 low boots and
@@ -30020,8 +30019,17 @@ displays `You turn into a salamander!  Your boots are pushed off your feet!`
 without a pager; type163 is dropped, while gloves and scalpel remain equipped.
 HP35/35, HD8 and AC−3 are exact through all 67 states.  This proves
 M1_SLITHY independently; the same ordinary pushed wording is shared with
-no-hands forms because the form is neither whirly nor very small.  Centaur is
-the only remaining boot-eligibility predicate.
+no-hands forms because the form is neither whirly nor very small.
+
+Centaur closes the final source boot predicate.  Seed11 Healer keeps the same
+hands-capable equipment state, wears +2 low boots and becomes a large plains
+centaur.  Input62 consumes the complete form RNG and displays `You turn into a
+plains centaur!  Your boots are pushed off your feet!`; type163 drops while
+gloves and scalpel remain equipped, and HP19/19, HD4 and AC2 are exact.  All 71
+states replay exactly without a production edit because the body-class
+predicate landed with the slithy block.  Boot eligibility is now covered by
+no-hands, whirly, very-small, slithy and S_CENTAUR witnesses, with each wording
+family independently pinned.
 
 Headless eyewear closes the final selected accessory in this chain.  Seed11
 Healer puts on a wished blindfold before becoming a gelatinous cube; gloves and

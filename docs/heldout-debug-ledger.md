@@ -12339,3 +12339,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   boot eligibility independently of no-hands, size or whirly state; the twenty
   erosion controls remain exact and the managed family passes 149/149 in 2.85
   seconds.  Centaur remains the final boot eligibility sibling.
+- Seed11 Healer wears +2 low boots and becomes a hands-capable large plains
+  centaur.  Native input62 consumes
+  `rn2(2)=1,rn2(19)=13,rn2(10)=7,rn2(500)=417,d(4,8)=19` and displays `You
+  turn into a plains centaur!  Your boots are pushed off your feet!` with
+  HP19/19, HD4 and AC2.  Type163 drops while starting gloves/scalpel remain
+  worn/wielded.  All 71 states are exact from input3.
+
+  No production change was needed: the S_CENTAUR predicate landed with the
+  slithy block.  The new durable witness takes the fixture-disabled focused
+  family to 18/18 in 0.38 seconds.  The last 149/149 managed result already
+  covers the identical production state; rerunning it for a non-matching test
+  and documentation-only batch was intentionally skipped.  Boot eligibility
+  is now closed across no-hands, whirly, very-small, slithy and centaur arms.

@@ -85355,3 +85355,40 @@ construction.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:48 EEST, journal block 2851] {#polyself #break-armor #plains-centaur #centaur #hands #boots #pushed #dropx #native-witness #complete-replay #regression #no-production-change #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Final boot contract:** source removes boots when the form is no-hands,
+very-small, slithy or S_CENTAUR; whirly is already included through no-hands/
+sliparm but owns distinct prose.  A centaur witness must retain hands-coupled
+equipment and drop only boots, proving the body-class exception rather than
+large size or slithy flags.
+
+**Native witness:** seed11 debug Healer wears wished +2 low boots, keeps the
+starting gloves/scalpel and uses controlled `#polyself plains centaur`.
+Input62 consumes
+`rn2(2)=1,rn2(19)=13,rn2(10)=7,rn2(500)=417,d(4,8)=19`, then displays `You
+turn into a plains centaur!  Your boots are pushed off your feet!`.  Type163
+is floor-owned while types159/39 remain worn/wielded; HP19/19, HD4 and AC2 are
+exact.  All 71 states replay exactly from input3; the recorder took **0.06
+seconds** at **53,067,776 bytes maximum RSS**.
+
+**Decision and evidence:** production was already exact because S_CENTAUR was
+added beside M1_SLITHY in block2850.  The completed 71-state replay and durable
+test close the branch; adding another bridge would be unjustified.  The
+fixture-disabled focused polymorph family passes **18/18** in **0.38 seconds**.
+The last **149/149** managed gate used this identical production code; it was
+not rerun after adding a test whose name does not match that selector and
+documentation-only changes.  This avoids verification slop while preserving
+the evidence boundary.
+
+**Next blocker:** section830 and the ledger now close selected large-form
+garments, cloak subtypes, horned headgear, no-hands gloves/weapon/shield,
+complete boot eligibility/wording, and headless blindfold/lenses.  Return to
+source combat-effect ownership rather than extending lower-information towel
+or duplicate footwear identities; first re-read the mapped adjacent open
+successors and select the earliest shared C divergence.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

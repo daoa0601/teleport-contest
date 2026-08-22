@@ -8272,6 +8272,48 @@ test('seed0011 salamander slithy form pushes boots off with hands intact',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 plains-centaur body pushes boots off with hands intact',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 low boots\n'
+                + 'Wk #polyself\nplains centaur\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 71);
+        assertRngSliceExact(result.getRngSlices()[62], [
+            'rn2(2)=1', 'rn2(19)=13', 'rn2(10)=7',
+            'rn2(500)=417', 'd(4,8)=19',
+        ], 'seed0011 plains-centaur boot RNG');
+        assert.equal(decodedTopline(result.getScreens()[62]),
+            'You turn into a plains centaur!  Your boots are pushed off your feet!');
+        assert.equal(decodedRow(result.getScreens()[62], 23),
+            'Dlvl:1 $:1540 HP:19(19) Pw:5(5) AC:2 HD:4');
+        assert.deepEqual(result.getCursors()[62], [65, 6, 1]);
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.ok(game.uwep);
+        assert.equal(game.uwep.otyp, 39);
+        assert.equal(game.uarmf, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 163));
+        assert.equal(floorObjects.some(object => object.otyp === 159), false);
+        assert.equal(floorObjects.some(object => object.otyp === 39), false);
+        assert.equal(game.u.umonnum, 130);
+        assert.equal(game.u.mh, 19);
+        assert.equal(game.u.uac, 2);
+        assert.equal(!!game.blind, false);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({
