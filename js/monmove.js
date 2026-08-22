@@ -24,7 +24,8 @@ import {
     CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT,
     ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK,
     ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES,
-    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
+    OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
+    OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE,
     OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
@@ -218,6 +219,7 @@ const AD_LEGS = 17;
 const AD_STON = 18;
 const AD_SITM = 21;
 const AD_SEDU = 22;
+const AD_ENCH = 41;
 const AD_CLRC = 240;
 const AD_SPEL = 241;
 const PRACTICAL_OBJECT_CLASSES = new Set([
@@ -5692,6 +5694,51 @@ function selectHeroItemForTheft(state, random, calls) {
     return { object: null, total, ticket: initialTicket };
 }
 
+// C do_wear.c:some_armor().  Torso priority is deterministic; each later
+// occupied slot gets an independent one-in-four replacement opportunity.
+function selectHeroDisenchantmentTarget(state, random, calls) {
+    let object = state?.uarmc || state?.uarm || state?.uarmu || null;
+    for (const candidate of [
+        state?.uarmh, state?.uarmg, state?.uarmf, state?.uarms,
+    ]) {
+        if (candidate
+            && (!object || recordRandom(random, calls, 4) === 0)) {
+            object = candidate;
+        }
+    }
+    if (object) return object;
+    const fallback = recordRandom(random, calls, 5);
+    return [
+        null,
+        state?.uright || state?.u?.uright,
+        state?.uleft || state?.u?.uleft,
+        state?.uamul || state?.u?.uamul,
+        state?.ublindf || state?.u?.ublindf,
+    ][fallback] || null;
+}
+
+function drainHeroItemByDisenchanter(object, random, calls) {
+    if (!object) return false;
+    const enchantment = Number.isInteger(object.spe)
+        ? object.spe : Number.isInteger(object.enchantment)
+            ? object.enchantment : 0;
+    const objectClass = object.oclass ?? object.class;
+    const chargeable = !!OBJECT_CHARGED[object.otyp]
+        || objectClass === WEAPON_CLASS || objectClass === ARMOR_CLASS
+        || object.class === 'Weapons' || object.class === 'Armor';
+    if (!chargeable || enchantment <= 0) return false;
+    if ([AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
+        CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING].includes(object.otyp)) {
+        return false;
+    }
+    const artifact = !!(object.oartifact || object.artifact);
+    if (recordRandom(random, calls, 100) < (artifact ? 90 : 10))
+        return false;
+    object.spe = enchantment - 1;
+    object.enchantment = object.spe;
+    return true;
+}
+
 // C teleport.c:rloc().  The ordinary random phase consumes complete x/y
 // pairs and accepts the first rloc_pos_ok()-shaped destination.  Theft and
 // dochug()'s fleeing-teleporter branch share this physical owner.  The
@@ -6038,8 +6085,8 @@ function basicMonsterAttack(
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const armorProtection = state?.u?._magicNegation ?? 0;
-        const negated = recordRandom(random, calls, 10)
-            < 3 * armorProtection;
+        const negated = !!monster.mcan
+            || recordRandom(random, calls, 10) < 3 * armorProtection;
         if (deferVisibleContact) {
             return retainHeroAttackContinuation({
                 kind: 'hero-attack', roll, threshold, hit, damage,
@@ -6263,6 +6310,38 @@ function basicMonsterAttack(
             deferredDecayArmor: !monster.mcan
                 && !completelyRottableForm,
             deferredPostHit: !!monster.mcan,
+        }, monster, attackIndex);
+    } else if (hit && damageType === AD_ENCH) {
+        // uhitm.c:mhitm_ad_ench().  Base damage and magic negation precede
+        // hitmsg(); some_armor(), drain resistance, and the state mutation
+        // precede the optional "less effective" pline which can force the
+        // earlier hit line through tty.
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        const armorProtection = state?.u?._magicNegation ?? 0;
+        const negated = recordRandom(random, calls, 10)
+            < 3 * armorProtection;
+        let drainedObject = null;
+        if (!negated) {
+            const target = selectHeroDisenchantmentTarget(
+                state, random, calls,
+            );
+            if (drainHeroItemByDisenchanter(target, random, calls))
+                drainedObject = target;
+        }
+        const quantity = drainedObject?.quantity
+            ?? drainedObject?.quan ?? 1;
+        const drainMessage = drainedObject
+            ? `Your ${drainedObject.name || OBJECT_NAMES[drainedObject.otyp]
+                || 'item'} ${quantity === 1 ? 'seems' : 'seem'} less effective.`
+            : null;
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType,
+            effect: negated
+                ? 'cancelled-enchantment-natural' : 'enchantment-natural',
+            drainedObject, drainMessage,
+            deferredPostHit: true, oldFormMnum,
         }, monster, attackIndex);
     } else if (hit
         && (attackType !== AT_WEAP || !monsterWieldedWeapon(monster))

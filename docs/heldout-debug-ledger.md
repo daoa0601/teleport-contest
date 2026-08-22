@@ -12352,3 +12352,19 @@ attempt: **402 calls**, not a direct two-pass retry.
   covers the identical production state; rerunning it for a non-matching test
   and documentation-only batch was intentionally skipped.  Boot eligibility
   is now closed across no-hands, whirly, very-small, slithy and centaur arms.
+- Seed11 level-30 Healer isolates natural monster-to-hero AD_ENCH with the
+  starting +1 leather gloves.  Input92 rolls `d(4,4)=13`, magic-negation 3 and
+  `rn2(100)=9`; ordinary object resistance succeeds, so the hit has no drain
+  line and AC stays 8.  Input98 rolls `d(4,4)=10`, negation 3 and resistance
+  44; the gloves become +0 before the hit pager.  Input99 says `Your pair of
+  leather gloves seems less effective.`, resumes knockback/damage and projects
+  AC9.  All 137 states are exact from input3.
+
+  Active AD_ENCH now owns generic torso/later-slot `some_armor()`, accessory
+  fallback, magic cancellation, positive enchantment/charge gating, ordinary
+  versus artifact resistance, mutation and deferred effect prose.  The first
+  level-30 Ranger carrier was rejected because displacement exposed an earlier
+  `m_move()` stay/attack versus JS-move gap at input94.  The fixture-disabled
+  focused family passes 19/19 in 0.39 seconds, twenty prior erosion/form
+  controls remain exact and the managed family—including projectile AD_ENCH—
+  passes 149/149 in 2.73 seconds.  The displacement movement gap remains open.

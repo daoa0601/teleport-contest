@@ -8314,6 +8314,64 @@ test('seed0011 plains-centaur body pushes boots off with hands intact',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 natural disenchanter drains Healer gloves after resistance',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\ndisenchanter\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 137);
+        assertRngSliceExact(result.getRngSlices()[92], [
+            'rn2(5)=1', 'rnd(20)=9', 'd(4,4)=13',
+            'rn2(10)=3', 'rn2(100)=9', 'rn2(3)=0', 'rn2(6)=2',
+            'rn2(12)=1', 'rn2(12)=11', 'rn2(12)=10',
+            'rn2(70)=66', 'rn2(100)=33', 'rn2(400)=263',
+            'rn2(20)=11', 'rn2(70)=45',
+        ], 'seed0011 natural disenchanter resisted drain RNG');
+        assert.equal(decodedTopline(result.getScreens()[92]),
+            'The disenchanter hits!');
+        assert.equal(decodedRow(result.getScreens()[92], 23),
+            'Dlvl:1 $:1540 HP:129(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[98], [
+            'rn2(5)=3', 'rnd(20)=18', 'd(4,4)=10',
+            'rn2(10)=3', 'rn2(100)=44',
+        ], 'seed0011 natural disenchanter successful drain prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[98]),
+            'The disenchanter hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[98], 23),
+            'Dlvl:1 $:1540 HP:129(141) Pw:254(254) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[98], [30, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[99], [
+            'rn2(3)=0', 'rn2(6)=5', 'rn2(12)=3', 'rn2(12)=4',
+            'rn2(12)=9', 'rn2(70)=23', 'rn2(100)=79',
+            'rn2(400)=234', 'rn2(20)=4', 'rn2(70)=32',
+        ], 'seed0011 natural disenchanter resumed hit tail RNG');
+        assert.equal(decodedTopline(result.getScreens()[99]),
+            'Your pair of leather gloves seems less effective.');
+        assert.equal(decodedRow(result.getScreens()[99], 23),
+            'Dlvl:1 $:1540 HP:119(141) Pw:254(254) AC:9 Xp:30');
+        assert.deepEqual(result.getCursors()[99], [65, 6, 1]);
+
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.equal(game.uarmg.spe, 0);
+        assert.equal(game.uarmg.enchantment, 0);
+        assert.equal(game.u.uac, 9);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

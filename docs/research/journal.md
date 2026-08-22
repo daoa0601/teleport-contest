@@ -85392,3 +85392,50 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 19:04 EEST, journal block 2852] {#disenchanter #hero-contact #ad-ench #armor-selection #object-resistance #magic-cancellation #drain-item #gloves #pager #displacement #rejected-selector #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and source order:** active disenchanter AT_CLAW/AD_ENCH rolls 4d4,
+tests attacker cancellation/magic negation, publishes hitmsg, selects torso or
+one-in-four later armor slots (then ring/amulet/eyewear fallback when empty),
+and calls `drain_item()`.  Only positive charge/enchantment is eligible;
+ordinary objects resist below 10, artifacts below 90.  Successful mutation
+precedes the optional `seems less effective` pline, while knockback and HP
+damage follow it.
+
+**Rejected carriers:** the first recipe omitted the forty acknowledgements
+needed by `#levelchange`; genesis text was consumed by level-up pagers and no
+disenchanter existed.  After that harness fix, the level-30 Ranger still failed
+before AD_ENCH at input94: native displacement made `m_move()` stay put and
+fall through to attack, while JS moved the adjacent disenchanter.  That trace
+is an independent apparent-target/movement gap, not evidence about drain
+policy.  It remains open rather than being patched in this block.
+
+**Accepted native witness:** seed11 level-30 Healer has one worn +1 armor
+identity, the starting leather gloves.  Input92 consumes the attack/damage,
+`rn2(10)=3` magic-negation and `rn2(100)=9`; resistance succeeds, the hit deals
+damage and gloves remain +1/AC8.  Input98 consumes `d(4,4)=10`, negation 3 and
+resistance 44; gloves mutate to +0 before `The disenchanter hits!--More--`
+shows stale AC8.  Input99 installs `Your pair of leather gloves seems less
+effective.`, consumes shared `rn2(3)=0,rn2(6)=5`, applies damage and projects
+AC9.  All 137 states are exact from input3; the recorder took **0.07 seconds**
+at **54,116,352 bytes maximum RSS**.
+
+**Implementation and falsifications:** natural AD_ENCH now owns declared
+damage, cancellation/magic negation, source `some_armor()` ordering, accessory
+fallback, chargeability/positive-`spe`, invocation protection, ordinary/
+artifact resistance, mutation and resumable effect prose.  The exact resistant
+and draining inputs falsify an unconditional drain, a post-damage mutation and
+a synthetic pager.  AC is recomputed only after the effect line resumes.
+
+**Measured acceptance and next blocker:** fixture-disabled focused combat/
+polymorph passes **19/19** in **0.39 seconds**; the preceding twenty erosion/
+form controls remain exact; the one owned managed family, including both
+projectile AD_ENCH resistance outcomes, passes **149/149** in **2.73 seconds**.
+Every process exited before the next began.  Section831 and the ledger map the
+active path.  Next select naturally cancelled AD_ENCH and the no-armor
+accessory fallback as paired controls; keep the Ranger displacement movement
+gap separate.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

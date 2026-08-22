@@ -30069,3 +30069,47 @@ from AT_BREA rather than the dragon symbol, and AC projection after the cloak
 drop but before the transform pager.  The selected rust touch displays
 `The rust monster touches you!  You rust!  You return to human form!--More--`,
 restores the Wizard to HP12/12 and AC10, and leaves the cloak on the floor.
+
+## 831. Active disenchantment mutates equipment between hit and tail
+
+```mermaid
+flowchart TD
+    Species["disenchanter claw: AT_CLAW / AD_ENCH 4d4"] --> Hit["to-hit then d(4,4)"]
+    Hit --> Negate{"cancelled or magic-negation rn2(10)?"}
+    Negate -->|"yes"| HitmsgN["hitmsg; effect suppressed"]
+    Negate -->|"no"| HitmsgD["hitmsg"]
+    HitmsgN --> Tail["shared knockback and HP damage"]
+    HitmsgD --> Armor["some_armor: torso priority, later slots one-in-four"]
+    Armor -->|"none"| Accessory["rn2(5): rings, amulet, eyewear or none"]
+    Armor --> Drain{"positive charge/enchantment?"}
+    Accessory --> Drain
+    Drain -->|"ordinary rn2(100) below 10"| Tail
+    Drain -->|"drains"| Mutate["spe decrements before second pline"]
+    Mutate --> Effect["Your object seems less effective"]
+    Effect --> Pager{"older hit line needs More?"}
+    Pager --> Tail
+    Tail --> AC["find_ac projects changed worn enchantment"]
+    Lua["Lua owns no contact, target, drain or tty policy"] -.-> Species
+```
+
+Active AD_ENCH is distinct from the already mapped projectile passive.  Source
+rolls declared damage and magic cancellation before `hitmsg()`, then performs
+`some_armor()`/accessory fallback and `drain_item()`.  A successful mutation is
+therefore live before the optional effect sentence; that later pline can force
+the pending hit line through tty while the old AC is still painted.  Shared
+knockback and HP damage resume only after acknowledgement, and ordinary status
+projection then observes the lower enchantment.
+
+Seed11 Healer supplies both resistance outcomes with one +1 glove identity.
+At input92, `rn2(100)=9` satisfies ordinary object resistance: the hit deals
+damage but no effect sentence appears and the gloves remain +1/AC8.  At input98,
+`rn2(100)=44` decrements the gloves before `The disenchanter hits!--More--` is
+shown with AC8.  Input99 installs `Your pair of leather gloves seems less
+effective.`, resumes knockback/damage and projects +0 gloves/AC9.  All 137
+states are exact from input3.
+
+The initial level-30 Ranger carrier was rejected before AD_ENCH: displacement
+made native `m_move()` stay put and fall through to phase-four attack, while JS
+moved the adjacent actor.  The nondisplaced Healer isolates the effect owner;
+that separate apparent-target/movement gap remains explicitly open rather than
+being disguised by the drain implementation.

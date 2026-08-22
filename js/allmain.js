@@ -3410,6 +3410,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                     }
                 }
+                if (heroAttack.drainMessage) {
+                    const drainDismissal = await queueTurnMessage(
+                        heroAttack.drainMessage,
+                    );
+                    heroAttack.drainMessage = null;
+                    if (drainDismissal !== null
+                        && drainDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                    findArmorClass(game);
+                }
                 if (heroAttack.deferredLegEffect)
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
