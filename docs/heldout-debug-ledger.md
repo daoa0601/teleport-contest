@@ -12535,3 +12535,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   after stun and confusion before reaching fumble.  All 152 states are exact;
   six abbot/intrinsic siblings pass fixture-disabled in 0.30 seconds.
   Antimagic, repeat-confusion, hallucinated feedback and cure-self remain open.
+- Seed11 closes cure-self with a genuinely damaged live caster.  One westward
+  scalpel hit reduces the hostile abbot; zero-time rock plus flint wishes select
+  `rn2(7)=1` without adding actors.  The duplicate-rock route was rejected
+  because JS merged pickup prose before cure evidence.  Input118 retains the
+  undirected cast and 4d6 pre-roll; input119 publishes `The abbot looks
+  better.` before `d(3,6)=15` heals/caps it at 28/28.  The pre-roll deals no
+  hero damage.  All 145 states are exact and the six level-seven abbot effect
+  siblings pass fixture-disabled in 0.31 seconds.  Invisible-caster feedback
+  and a partial non-capping heal remain open.

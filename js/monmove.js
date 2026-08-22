@@ -7477,6 +7477,18 @@ export function resumeDeferredHeroSpell(action, state) {
         attack.confusedHero = !antimagic;
         return attack;
     }
+    if (attack.spell === 'cure-self') {
+        const healing = d(3, 6);
+        action.calls.push('d(3,6)');
+        const monster = action.monster;
+        monster.mhp = Math.min(
+            monster.mhpmax ?? monster.mhp ?? healing,
+            (monster.mhp ?? 0) + healing,
+        );
+        attack.appliedDamage = 0;
+        attack.healedMonster = healing;
+        return attack;
+    }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {
         attack.unimplementedSpellEffect = true;
         return attack;

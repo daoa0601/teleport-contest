@@ -3262,7 +3262,15 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 heroAttack.directed ? ' at you' : ''
                             }!`,
                         );
-                        const effectMessage = heroAttack.spellEffectMessage;
+                        let effectMessage = heroAttack.spellEffectMessage;
+                        if (heroAttack.spell === 'cure-self'
+                            && canProjectMonster(
+                                monster, monster.mx, monster.my,
+                            )) {
+                            effectMessage = `${
+                                visibleMonsterSubject(monster)
+                            } looks better.`;
+                        }
                         // mcast_confuse_you() commits make_confused() before
                         // its explicit feedback pline.  If that line forces
                         // the older cast line through tty, the pager already

@@ -86068,3 +86068,43 @@ separate 3d6 heal.  All recorder probes exited near **0.07 seconds** and about
 Unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 21:23 EEST, journal block 2868] {#abbot #cleric-spell #cure-self #damaged-caster #hero-melee #zero-time-wish #rock #flint #merge-rejection #undirected-cast #monster-heal #tty #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Accepted constructor and rejected prerequisite:** continuing block2867, one
+post-hit rock wish selected spell value zero and a pre-genesis rock selected
+value three.  Two post-hit rock wishes finally selected value one, but JS
+displayed merged `2 rocks` where native's second pickup prose remained
+singular.  That merge gap precedes cure-self and was rejected.  Replacing only
+the second object with flint preserves the same successful spell selection,
+keeps both wishes zero-time and gives exact distinct pickup lines.
+
+**Decisive native evidence:** input86's westward scalpel contact visibly hits
+and leaves the 28-HP hostile abbot damaged.  Input118 then consumes
+`rn2(5)=1,rnd(20)=7,d(8,2)=14`, kick4, `rn2(7)=1,rn2(70)=65,d(4,6)=15`.
+Because cure-self is indirect, source publishes `The abbot casts a spell!`
+without “at you”; the attempted heal line forces the accumulated actor prose
+through `--More--`.  Input119 publishes `The abbot looks better.`, then spends
+`d(3,6)=15` and caps the caster at 28/28 before maintenance.  Hero HP changes
+only through the abbot's physical slots, not the spell pre-roll.
+
+**Implementation and measured acceptance:** visible cure prose is derived from
+the live caster and queued before `resumeDeferredHeroSpell()` performs the
+monster-state heal.  The resolver records the separate 3d6 call, clamps at
+`mhpmax`, applies zero hero damage and returns to the ordinary attack tail.
+All **145 native states** are exact; the recorder took **0.06 seconds** at
+**54,378,496 bytes maximum RSS**.  Cure-self, confusion, three paralyze arms
+and AD_STUN pass **6/6** fixture-disabled in **0.31 seconds** at **137,936,896
+bytes max RSS**; all processes exited.
+
+**Falsifications and next blocker:** cure-self is not a directed hero spell,
+does not use its 4d6 pre-roll as healing or damage, and does not heal before
+visible prose.  Section837 and the ledger close the selected capped-heal path.
+The abbot now covers every useful level-seven cleric effect; higher cleric
+entries require a higher-level carrier, while invisible-caster suppression and
+partial non-capping cure remain narrower controls.  Next inventory the cheapest
+higher-level cleric or return to another unmapped natural-contact family.  No
+full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

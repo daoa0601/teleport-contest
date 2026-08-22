@@ -9316,6 +9316,72 @@ test('seed0011 rock-shifted abbot confusion commits before prose and expires aft
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 damaged abbot defers cure-self prose before 3d6 healing',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile abbot\n'
+                + 'h#wizwish\nrock\n#wizwish\nflint\n '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 145);
+        assertRngSliceExact(result.getRngSlices()[86], [
+            'rn2(20)=6', 'rn2(19)=14', 'rnd(20)=8', 'rn2(19)=6',
+            'rnd(3)=3', 'rn2(3)=2', 'rn2(6)=4', 'rn2(25)=14',
+            'rn2(3)=0', 'rn2(12)=10', 'rn2(12)=7', 'rn2(12)=3',
+            'rn2(70)=20', 'rn2(400)=296', 'rn2(20)=10',
+            'rn2(70)=54',
+        ], 'seed0011 caster-damaging scalpel hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[86]),
+            'You hit the abbot.');
+        assert.equal(decodedTopline(result.getScreens()[100]),
+            'k - a rock.');
+        assert.equal(decodedTopline(result.getScreens()[115]),
+            'l - a gray stone.');
+
+        assertRngSliceExact(result.getRngSlices()[118], [
+            'rn2(5)=1', 'rnd(20)=7', 'd(8,2)=14',
+            'rn2(3)=0', 'rn2(6)=1', 'rnd(21)=21',
+            'd(3,2)=4', 'rn2(4)=1', 'rn2(3)=1', 'rn2(6)=0',
+            'rn2(7)=1', 'rn2(70)=65', 'd(4,6)=15',
+        ], 'seed0011 cure-self cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'The abbot hits!  The abbot kicks!  The abbot casts a spell!--More--');
+        assert.equal(decodedRow(result.getScreens()[118], 23),
+            'Dlvl:1 $:1540 HP:123(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'd(3,6)=15', 'rn2(5)=3', 'rn2(5)=3',
+            'rn2(12)=7', 'rn2(12)=6', 'rn2(12)=5',
+            'rn2(70)=23', 'rn2(100)=33', 'rn2(400)=204',
+            'rn2(20)=3', 'rn2(70)=16',
+        ], 'seed0011 deferred cure heal and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[119]),
+            'The abbot looks better.');
+        assert.equal(decodedRow(result.getScreens()[119], 23),
+            'Dlvl:1 $:1540 HP:124(141) Pw:254(254) AC:8 Xp:30');
+
+        const abbot = game.level.monsters.find(monster =>
+            monster.mnum === 374);
+        assert.ok(abbot);
+        assert.equal(abbot.mpeaceful, 0);
+        assert.equal(abbot.mhp, 28);
+        assert.equal(abbot.mhpmax, 28);
+        assert.ok(game.inventory.some(object => object.otyp === 474));
+        assert.ok(game.inventory.some(object => object.otyp === 473));
+        assert.equal(game.u.uhp, 83);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

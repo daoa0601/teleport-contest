@@ -30429,3 +30429,31 @@ regeneration/ambient RNG.  The timeout pipeline is split into resumable
 post-stun and post-confusion phases; a second expiry can suspend before the
 existing fumble phase without skipping later maintenance.  All 152 states are
 exact.  Antimagic, repeat-confusion and hallucinated prose remain separate.
+
+## 837. Cure-self is a damaged-caster transaction, not hero spell damage
+
+```mermaid
+flowchart TD
+    Damage["hero scalpel hit leaves hostile abbot below mhpmax"] --> Select["AD_CLRC rn2(7)=1 selects cure-self"]
+    Select --> Cast["undirected: The abbot casts a spell"]
+    Cast --> Preroll["castmu still pre-rolls 4d6"]
+    Preroll --> Feedback["visible caster: The abbot looks better"]
+    Feedback --> Pager["feedback can page older hit/kick/cast line"]
+    Pager --> Heal["after acknowledgement: d(3,6), cap at mhpmax"]
+    Heal --> Tail["actor/global maintenance; zero hero spell damage"]
+    Lua["Lua owns no spell or monster-heal policy"] -.-> Select
+```
+
+The accepted seed11 constructor damages the west-adjacent abbot once, then
+uses zero-time rock and flint wishes to shift the pending spell stream without
+changing caster HP or adding actors.  A second identical rock was rejected:
+native pickup prose remains singular while JS projects the merged stack.  The
+distinct flint avoids importing that merge-presentation gap.
+
+Input86 proves the scalpel hit; the live abbot remains hostile and damaged.
+Input118 then consumes `rn2(7)=1,rn2(70)=65,d(4,6)=15` and publishes the
+undirected cast behind `--More--`.  Input119 shows `The abbot looks better.`;
+only after that line returns does source `m_cure_self()` spend `d(3,6)=15`
+and cap the caster at 28/28.  The pre-rolled 15 never touches hero HP.  All 145
+states are exact.  Invisible-caster suppression and partial, non-capping heal
+remain separate presentation/state controls.
