@@ -85854,3 +85854,51 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:45 EEST, journal block 2863] {#abbot #cleric-spell #paralyze #negative-multi #helpless-scheduler #damage-replacement #fatal-claw #debug-death #savelife #nomovemsg #tty #regression-correction #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Contract and competing mechanisms:** native input129 is not an AD_STUN tail
+or ordinary spell-damage application.  C pre-rolls 4d6=13 before the casting
+line, but `mcast_paralyze()` replaces it with `4 + m_lev`, uses that value for
+both negative multi and HP damage, and sets no recovery prose.  Competing
+explanations predicted raw damage13, duration-only paralysis, or a passive
+status timeout; each disagrees with the source and the next fatal action.
+
+**Decisive native sequence:** input129 consumes claw12, kick4 with selected
+stun, then `rn2(7)=4,rn2(70)=21,d(4,6)=13`, stopping at
+`Something casts a spell at you!--More--` with HP22.  Input130 acknowledges
+the cast, publishes `You are frozen in place!`, applies paralyze damage11 and
+installs eleven helpless turns.  The source movement-ration loop advances the
+same input through maintenance and another abbot action; its next claw12
+reaches HP0 and forces `It hits!--More--`.  Inputs131/132 own the death pager
+and debug `Die?` prompt.
+
+**Second earliest divergence and correction:** implementing duration/damage
+made the replay exact through input133, including refusal, HP107 restoration
+and the interrupted kick.  JavaScript then continued allocating abbot turns on
+input134 because `restoreHeroAfterDeath()` left the old paralysis counter.
+C `savelife()` instead assigns `multi=-1`, replacing any earlier negative
+multi.  The shared restore owner now installs exactly one silent helpless turn;
+maintenance clears it after the interrupted actor finishes, and input134 is
+the zero-RNG `You survived that attempt on your life.` boundary.
+
+**Adversarial regression and measured effect:** two older debug-death siblings
+then showed four spaces between `OK, so you don't die.` and the survival line.
+Their synchronous maintenance path had appended the deliberately empty
+helpless nomovemsg as a real message.  Rejecting empty recovery messages at the
+shared queue/append boundary restores their original source spacing without
+weakening the one-turn state fix.  All **138 native states** are exact; the
+source recording took **0.07 seconds** at **54,165,504 bytes maximum RSS**.
+The abbot stun/paralyze and two fatal-decline scheduler witnesses pass **4/4**
+fixture-disabled in **0.25 seconds** at **134,201,344 bytes max RSS**; three
+prayer/savelife units pass **3/3**.  All processes exited.
+
+**Falsified hypotheses and next blocker:** paralysis does not apply the
+pre-rolled 13, does not merely immobilize, and does not survive debug
+`savelife()`.  Section835 and the ledger now close this unresisted path.
+Select either a real free-action/antimagic carrier or half-spell-damage control
+before generalizing another cleric spell; do not claim those arms from the
+current witness.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

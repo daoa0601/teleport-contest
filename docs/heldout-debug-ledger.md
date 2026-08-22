@@ -12490,3 +12490,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   AD_DRLI/AD_STUN/rank witnesses pass fixture-disabled in 0.34 seconds.  The
   extended native session first diverges at input129's unported paralyze spell,
   which remains the next independent block.
+- The same seed11 abbot session now closes unresisted cleric paralysis and its
+  debug-savelife interlock.  Native input129 pre-rolls 4d6=13 and pages on the
+  cast line; input130 replaces that with duration/damage11, installs negative
+  multi, then immediately schedules a fatal 12-point claw.  After the death
+  refusal, C `savelife()` overwrites the old paralysis with `multi=-1` rather
+  than preserving it.  Input133 finishes the interrupted kick and input134
+  emits the zero-RNG survival message.  The complete 138-state replay is exact.
+  Two older fatal-decline witnesses initially exposed four-space prose because
+  an empty recovery message entered synchronous tty; skipping empty nomovemsg
+  restores both.  Four focused scheduler tests pass fixture-disabled in 0.25
+  seconds and three prayer/savelife units pass.  Resistant and half-damage
+  paralyze controls remain open.

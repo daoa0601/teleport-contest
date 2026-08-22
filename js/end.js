@@ -172,6 +172,14 @@ export function restoreHeroAfterDeath() {
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;
     game.context.move = 0;
+    // end.c:savelife() replaces any earlier negative multi (including a
+    // monster paralysis spell) with exactly -1.  The interrupted actor can
+    // finish its remaining attack slots, but no older helpless interval may
+    // allocate another autonomous monster turn afterward.  Its visible
+    // nomovemsg is projected by allmain's debug-death continuation.
+    game._helplessTurns = 1;
+    game._helplessReason = 'attempting to cheat Death';
+    game._helplessDoneMessage = '';
     rebasePrayerAfterLifeSaving(game);
     return game.u.uhp;
 }

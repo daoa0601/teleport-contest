@@ -1201,9 +1201,11 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
             // async moveloop owner.  Queue recovery there so an occupied
             // topline can page before unmul's message replaces it, as tty
             // pline() does in C.
-            if (usesQueuedHelplessRecovery(game))
-                game._queuedHelplessRecoveryMessage = doneMessage;
-            else appendTurnMessage(doneMessage);
+            if (doneMessage) {
+                if (usesQueuedHelplessRecovery(game))
+                    game._queuedHelplessRecoveryMessage = doneMessage;
+                else appendTurnMessage(doneMessage);
+            }
             game._helplessReason = null;
             game._helplessDoneMessage = null;
         }
@@ -3189,6 +3191,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             ? await queueTurnMessage(effectMessage)
                             : null;
                         resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.toggledBlindness)
                             vision_recalc(0);
                         if (heroAttack.rehumanize) {

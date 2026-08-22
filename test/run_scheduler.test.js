@@ -9020,6 +9020,78 @@ test('seed0011 hostile abbot kick stuns before halved contact damage',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 abbot paralysis schedules fatal retry then replaces its debt',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile abbot\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 138);
+        assertRngSliceExact(result.getRngSlices()[129], [
+            'rn2(5)=0', 'rnd(20)=17', 'd(8,2)=12',
+            'rn2(3)=1', 'rn2(6)=1', 'rnd(21)=21',
+            'd(3,2)=4', 'rn2(4)=0', 'rn2(3)=2', 'rn2(6)=4',
+            'rn2(7)=4', 'rn2(70)=21', 'd(4,6)=13',
+        ], 'seed0011 abbot paralyze cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[129]),
+            'It hits!  It kicks!  Something casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[129], 23),
+            'Dlvl:1 $:1540 HP:22(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+
+        assertRngSliceExact(result.getRngSlices()[130], [
+            'rn2(5)=3', 'rn2(20)=8', 'rn2(5)=2',
+            'rn2(12)=3', 'rn2(12)=8', 'rn2(12)=0',
+            'rn2(70)=40', 'rn2(100)=27', 'rn2(400)=88',
+            'rn2(20)=6', 'rn2(70)=51', 'rn2(5)=2',
+            'rnd(20)=10', 'd(8,2)=12', 'rn2(3)=0', 'rn2(6)=2',
+        ], 'seed0011 paralyze resume and helpless fatal claw RNG');
+        assert.equal(decodedTopline(result.getScreens()[130]),
+            'You are frozen in place!  It hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[130], 23),
+            'Dlvl:1 $:1540 HP:0(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+        assert.equal(decodedTopline(result.getScreens()[131]),
+            'You die...--More--');
+        assert.equal(decodedTopline(result.getScreens()[132]),
+            'Die? [yn] (n)');
+
+        assertRngSliceExact(result.getRngSlices()[133], [
+            'rnd(21)=15', 'd(3,2)=3', 'rn2(4)=2',
+            'rn2(3)=2', 'rn2(6)=0', 'rn2(7)=1', 'rn2(4)=3',
+            'rn2(5)=4', 'rn2(20)=13', 'rn2(5)=0',
+            'rn2(12)=4', 'rn2(12)=2', 'rn2(12)=9',
+            'rn2(70)=24', 'rn2(100)=92', 'rn2(400)=331',
+            'rn2(20)=4', 'rn2(19)=17', 'rn2(2)=1', 'rn2(70)=34',
+        ], 'seed0011 declined-death kick and one-turn survival debt RNG');
+        assert.equal(decodedTopline(result.getScreens()[133]),
+            "OK, so you don't die.  It kicks!--More--");
+        assert.equal(decodedRow(result.getScreens()[133], 23),
+            'Dlvl:1 $:1540 HP:107(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+        assertRngSliceExact(result.getRngSlices()[134], [],
+            'seed0011 survival nomovemsg RNG');
+        assert.equal(decodedTopline(result.getScreens()[134]),
+            'You survived that attempt on your life.');
+
+        assert.equal(game.u.uhp, 107);
+        assert.equal(game.u.uhpmax, 141);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game.blind, true);
+        assert.equal(game.u.stunned, true);
+        assert.equal(game._helplessTurns, 0);
+        assert.equal(game._helplessReason, null);
+        assert.equal(game._debugDeathSurvivedMessagePending, false);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

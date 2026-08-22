@@ -30341,3 +30341,20 @@ projects source order Blind, Deaf, Stun, Conf, Hallu, and timeout expiry owns
 `You feel a bit steadier now.`  All 127 bounded states are exact.  Extending
 the same native session reaches the next independent spell gap at input129:
 paralysis is not part of this AD_STUN block.
+
+The input129 extension closes that spell boundary.  `castmu()` still pre-rolls
+4d6=13 before its casting line, but `mcast_paralyze()` deliberately replaces
+that amount with duration and HP damage `4 + monster level`: eleven for the
+level-seven abbot.  Input129 stops at the combined hit/kick/cast pager with
+HP22.  Input130 publishes `You are frozen in place!`, installs eleven turns of
+negative multi, applies eleven damage, then the source movement-ration loop
+immediately allocates the abbot another action; its 8d2 claw12 reaches HP0.
+
+Debug death refusal crosses one more ownership boundary.  `end.c:savelife()`
+restores HP107 and replaces the remaining paralysis with exactly `multi=-1`;
+it does not resume the old helpless duration.  The interrupted abbot finishes
+its kick on input133, maintenance clears that one-turn debt, and input134 emits
+`You survived that attempt on your life.` with zero RNG.  Empty nomovemsg
+values never enter tty.  The complete 138-state abbot recording is exact.
+Antimagic/free-action and half-spell-damage paralyze controls remain separate
+from this selected unresisted carrier.

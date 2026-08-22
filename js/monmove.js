@@ -329,6 +329,12 @@ function monsterSpellEffectPreview(spell, damage, state) {
                     : 'Your body is covered with painful wounds!';
     } else if (spell.key === 'blind-you') {
         effectMessage = 'Scales cover your eyes!';
+    } else if (spell.key === 'paralyze') {
+        const resisted = !!(state?.u?.antimagic
+            || state?.u?.magicResistance || state?.u?.magic_resistance
+            || state?.u?.freeAction || state?.u?.free_action);
+        effectMessage = resisted
+            ? 'You stiffen briefly.' : 'You are frozen in place!';
     }
     return { effectDamage, effectMessage };
 }
@@ -7421,6 +7427,26 @@ export function resumeDeferredHeroSpell(action, state) {
         state.vision_full_recalc = 1;
         attack.toggledBlindness = !wasBlind;
         attack.appliedDamage = 0;
+        return attack;
+    }
+    if (attack.spell === 'paralyze') {
+        const resisted = !!(state.u?.antimagic
+            || state.u?.magicResistance || state.u?.magic_resistance
+            || state.u?.freeAction || state.u?.free_action);
+        const monsterLevel = action.monster?.m_lev
+            ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+        let duration = resisted ? 1 : 4 + monsterLevel;
+        if (state.u?.halfSpellDamage || state.u?.half_spell_damage)
+            duration = Math.trunc((duration + 1) / 2);
+        state._helplessTurns = duration;
+        state._helplessReason = 'paralyzed by a monster';
+        state._helplessDoneMessage = '';
+        const wasPolymorphed = Upolyd(state?.u);
+        applyHeroContactDamage(state, duration);
+        attack.appliedDamage = duration;
+        attack.paralyzed = true;
+        attack.rehumanize = wasPolymorphed && (state.u?.mh ?? 0) < 1;
+        attack.heroDied = !wasPolymorphed && (state.u?.uhp ?? 0) < 1;
         return attack;
     }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {
