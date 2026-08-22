@@ -86680,3 +86680,38 @@ rewrite, hidden judge, push or publication ran; unrelated dirty test files
 remain untouched.
 
 ---
+
+### [2026-08-22 23:16 EEST, journal block 2884] {#high-cleric #curse-items #antimagic #magic-resistance #wizintrinsic #timeout #shieldeff #rndcurse #count-scaling #inventory-order #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Antimagic contract and distinction:** Antimagic and half-spell damage produce
+the same divisor3 when each is active alone, but they are not interchangeable.
+Antimagic has a separate timed property source and source `rndcurse()` calls
+`shieldeff()` before the aura.  Seed25 plus `#wizintrinsic` page-two local `q`
+isolates that property without changing inventory or selector RNG.
+
+**Native presentation and scaling:** inputs74/75 toggle magic resistance;
+input76 reports `Timeout for magic resistance set to 30.` with zero RNG.
+Source shield animation leaves no retained input-boundary pixels in this
+carrier, so no display bridge is justified.  Inputs121/122 preserve cast and
+need-help paging.  Input123 publishes the aura, uses `rnd(3)=3`, picks the same
+eleven-item positions 2,1,7 and resumes with `rn2(25)=8`.
+
+**Implementation and evidence:** the wizard-property owner now installs both
+JS Antimagic projections, ages a 30-turn timeout and falls back to live armor
+sources at expiry.  The existing curse reducer already used either projection
+for its integer divisor.  All **140 native states** are exact, ending HP100,
+gloves/scalpel/wand cursed and 27 turns.  Section852 maps the timed property,
+transient shield, count scale and mutations; Lua owns no phase.
+
+**Measured acceptance and next blocker:** the recorder took **0.07 seconds**
+at **54,362,112 bytes maximum RSS** and the exact JS replay took **0.20
+seconds** at **124,567,552 bytes max RSS**.  Antimagic curse-items plus twenty
+neighboring cleric witnesses pass **21/21** fixture-disabled in **0.51
+seconds** at **157,712,384 bytes max RSS**; all processes exited.  Combined
+Antimagic+half-spell divisor2, gray-dragon-armor fallback, persistent shield
+presentation, blessed/intelligent objects and saddles remain open.  Next
+choose the combined divisor or insect fallback by source breadth.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

@@ -8213,6 +8213,7 @@ function wizardIntrinsicTimeout(name) {
         'monster detection': 'monsterDetectionTurns',
         'see invisible': 'seeInvisibleTurns',
         invisible: 'invisibleTurns',
+        'magic resistance': 'magicResistanceTurns',
         'shock resistance': 'shockResistanceTurns',
         fumbling: 'fumblingTurns',
         'half spell damage': 'halfSpellDamageTurns',
@@ -8299,6 +8300,17 @@ async function wizIntrinsic() {
         game.u.shockResistance = true;
         timeoutMessages.push(
             `Timeout for shock resistance ${
+                oldTimeout ? 'increased by' : 'set to'
+            } 30.`,
+        );
+    }
+    if (selections.includes('magic resistance')) {
+        const oldTimeout = game.u.magicResistanceTurns ?? 0;
+        game.u.magicResistanceTurns = oldTimeout + 30;
+        game.u.magicResistance = true;
+        game.u.antimagic = true;
+        timeoutMessages.push(
+            `Timeout for magic resistance ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
         );

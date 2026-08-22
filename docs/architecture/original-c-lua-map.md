@@ -30877,3 +30877,31 @@ half-spell turns.  This composition needed no production change.  Antimagic's
 shield effect and identical divisor3, the combined Antimagic+half-spell
 `rnd(2)` branch, blessed unblessing, intelligent artifacts and saddles remain
 separate controls.
+
+## 852. Timed Antimagic shares curse scaling but owns transient shielding
+
+```mermaid
+flowchart TD
+    Menu["wizcmds.c:wiz_intrinsic page 2 local q"] --> Timed["ANTIMAGIC timeout += 30"]
+    Timed --> Cast["curse-items cast and need-help line"]
+    Cast --> Shield["rndcurse calls shieldeff at hero position"]
+    Shield --> Transient["shield animation is cleared before retained input screen"]
+    Transient --> Aura["malignant-aura line"]
+    Aura --> Count["6 / (1 Antimagic + 0 Half_spell + 1) = rnd(3)"]
+    Count --> Picks["source-order non-coin selections and mutations"]
+    Picks --> Continue["same actor and timeout lifecycle"]
+    Lua["Lua owns no property, shield, or curse phase"] -.-> Menu
+```
+
+Seed25 selects page-two local `q`; inputs74/75 toggle magic resistance and
+input76 reports a 30-turn timeout.  `shieldeff()` is executed by source before
+the aura but leaves no persistent input-boundary cells in this carrier, so no
+screen-specific animation bridge is needed.
+
+Inputs121/122 preserve cast and need-help paging.  Input123 publishes the aura
+and uses `rnd(3)=3`, then the same eleven-item picks 2,1,7 curse gloves,
+scalpel and sleep wand before `rn2(25)=8`.  All 140 states are exact, ending
+HP100 with both Antimagic projections active and 27 timed turns.  Combined
+Antimagic+half-spell divisor2, gray-dragon-armor expiry fallback, persistent
+shield-animation witnesses, blessed/intelligent objects and saddles remain
+separate controls.

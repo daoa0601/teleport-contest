@@ -12681,3 +12681,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   cleric gate passes 20/20 in 0.54 seconds at 156,893,184 bytes maximum RSS.
   Antimagic shielding, combined divisor2, blessed/intelligent objects and
   saddles remain open.
+- Seed25 plus timed Antimagic closes the page-two magic-resistance property and
+  curse scaling through 140 exact states.  Input76 installs/reports 30 turns;
+  source `shieldeff()` leaves no retained screen cells in this carrier.
+  Input123 uses `rnd(3)=3`, then picks 2,1,7 curse gloves, scalpel and wand
+  before `rn2(25)=8`.  Final state is HP100 with both JS Antimagic projections
+  active and 27 turns.  The fixture-disabled cleric gate passes 21/21 in 0.51
+  seconds at 157,712,384 bytes maximum RSS.  Combined divisor2, armor fallback,
+  persistent shield presentation, blessed/intelligent items and saddles remain
+  open.

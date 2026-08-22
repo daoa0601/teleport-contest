@@ -1717,6 +1717,20 @@ function finishInitialTurnMaintenanceAfterConfusion({
         }
     }
 
+    if (!prayerTimeoutFreeze
+        && (game.u?.magicResistanceTurns ?? 0) > 0) {
+        game.u.magicResistanceTurns--;
+        if (game.u.magicResistanceTurns === 0) {
+            const remains = !!(
+                game.u.antimagicFromArmor
+                || game.u.magicResistanceFromArmor
+                || game.u.intrinsicMagicResistance
+            );
+            game.u.magicResistance = remains;
+            game.u.antimagic = remains;
+        }
+    }
+
     if (!prayerTimeoutFreeze && (game.u?.deafTurns ?? 0) > 0) {
         game.u.deafTurns--;
         if (game.u.deafTurns === 0) game.deaf = false;
