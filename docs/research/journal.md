@@ -87194,3 +87194,40 @@ controls.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-23 00:43 EEST, journal block 2899] {#grid-bug #electricity #ad-elec #contact-pager #deferred-continuation #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Witness and earliest divergence:** after death touch, seed14 is exact through
+input118.  Native input119 combines Wizard disappearance with the grid-bug
+bite, consumes rnd(20)=6,d(1,1)=1,rn2(10)=0 and stops at the pager with HP35.
+JS's grid-bug-special branch also consumed input120's destruction, knockback,
+damage and maintenance calls in input119.
+
+**Prediction and source evidence:** mhitm_ad_elec() calls hitmsg(), then tests
+magic cancellation, then publishes the independently suspendable zap line.
+The bite fits beside the Wizard line, so rn2(10) belongs before suspension;
+the zap does not fit, so rn2(20), shared rn2(3)/rn2(6) and HP subtraction
+belong after acknowledgement.  A generic deferred AD_ELEC implementation
+already represented this order for other monsters; only the grid-bug
+shortcut bypassed it and pre-composed zap prose into hitmsg.
+
+**Implementation and measured effect:** live visible grid-bug contact now
+falls through to the shared electric continuation, and its initial attack
+message remains bite-only until that continuation selects feedback.  The
+synchronous grid-bug path is retained only for explicit non-deferred callers.
+Seed14 is exact for all **127 RNG/screen/cursor states**, ending HP34/105; the
+strict replay took **0.47 seconds** at **126,713,856 bytes maximum RSS**.  The
+five selected fixture-disabled Wizard controls pass **5/5** in **0.86
+seconds** at **137,428,992 bytes maximum RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** moving only rn2(10) back to
+input119 and all later calls to input120 falsifies actor selection, Wizard
+disappearance and grid-bug damage arithmetic as causes.  Section865 maps the
+nested contact boundary; Lua owns none.  Seed14 now joins seeds11,12 and17 as
+a complete exact Wizard carrier.  Return to the remaining Wizard portfolio,
+preferring the smallest exact-prefix haste, aggravation, destroy-armor or
+clone branch before broader death-touch controls.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

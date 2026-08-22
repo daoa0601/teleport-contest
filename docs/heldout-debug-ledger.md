@@ -12801,3 +12801,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   The next divergence is the later input119/120 grid-bug electric pager;
   immunity, Antimagic, failed gate, hallucination, polymorph, fatality and
   life-saving death-touch branches remain open.
+- Seed14 is now exact through all 127 states after routing live grid-bug
+  contact through the shared deferred AD_ELEC owner.  Input119 publishes the
+  Wizard disappearance plus bite pager and stops after rn2(10)=0 at HP35.
+  Input120 publishes the zap, owns destruction and knockback probes, applies
+  one HP and resumes maintenance to HP34.  The selected Wizard family remains
+  5/5 fixture-disabled.  Resistance, cancellation, inventory explosion,
+  unseen and lethal electric branches remain open.

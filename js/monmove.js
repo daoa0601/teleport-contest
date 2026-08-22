@@ -6179,7 +6179,7 @@ function basicMonsterAttack(
             kind: 'hero-attack', roll, threshold, hit, damage,
             attackType, damageType, effect: 'physical-weapon', passive,
         }, monster, attackIndex);
-    } else if (hit && monster.mnum === 116) {
+    } else if (hit && monster.mnum === 116 && !deferVisibleContact) {
         // PM_GRID_BUG: AT_BITE AD_ELEC 1d1.  The electric special checks
         // magic cancellation, optionally checks inventory destruction, then
         // the shared post-hit knockback path consumes its distance/chance

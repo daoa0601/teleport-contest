@@ -31286,3 +31286,33 @@ demon immunity, Antimagic, failed success gate, hallucination, polymorphic
 rehumanization, Unchanging, fatal damage and life saving remain separate
 controls.  The next seed14 divergence is the later grid-bug electric-contact
 pager between inputs119 and120.
+
+## 865. Grid-bug electricity suspends between effect selection and hit tail
+
+~~~mermaid
+flowchart TD
+    Bite["grid bug rolls bite hit and d(1,1)"] --> HitLine["publish bite line only"]
+    HitLine --> Gate["mhitm_ad_elec checks cancellation rn2(10)"]
+    Gate --> Zap["publish You get zapped!"]
+    Zap --> Pager["zap line overflows prior Wizard-plus-bite topline"]
+    Pager --> Inventory["acknowledgement resumes rn2(20) destruction gate"]
+    Inventory --> Knockback["shared rn2(3), rn2(6) knockback probes"]
+    Knockback --> Damage["apply one electric-contact HP"]
+    Damage --> Tail["resume remaining actors and global maintenance"]
+    Legacy["non-deferred/unit path may resolve synchronously"] -.-> Gate
+    Lua["Lua owns no contact, electricity, or tty phase"] -.-> Bite
+~~~
+
+Seed14 input119 begins with the Wizard's disappear continuation, then the grid
+bug rolls rnd(20)=6,d(1,1)=1.  The bite line still fits beside the Wizard's
+line, so source spends rn2(10)=0 before the zap pline forces a pager.  HP
+remains35.  Input120 publishes the zap, spends rn2(20)=8 plus shared
+knockback probes rn2(3)=2,rn2(6)=3, applies one HP, and resumes the exact
+maintenance tail to HP34.
+
+The old grid-bug-specific fast path combined bite and zap and committed the
+whole contact before tty.  Live visible contact now uses the general deferred
+AD_ELEC owner; the compact synchronous path remains only for callers which
+explicitly do not defer visible contact.  All 127 seed14 states are exact.
+Shock resistance, magic cancellation, inventory destruction, exploding
+wands, invisible contact and lethal electricity remain separate controls.

@@ -9592,11 +9592,11 @@ test('seed0014 Wizard death touch drains maximum HP after its effect line',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 118),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 119);
+        assert.equal(result.getScreens().length, 127);
         assertRngSliceExact(result.getRngSlices()[106], [
             'rn2(5)=1', 'rn2(5)=2', 'rnd(20)=12', 'd(2,12)=11',
             'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=20',
@@ -9621,7 +9621,28 @@ test('seed0014 Wizard death touch drains maximum HP after its effect line',
             "Oh no, he's using the touch of death!  You feel drained...");
         assert.equal(decodedRow(result.getScreens()[107], 23),
             'Dlvl:1 $:1172 HP:55(105) Pw:288(288) AC:8 Xp:30');
-        assert.equal(game.u.uhp, 35);
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'rn2(5)=2', 'rn2(32)=29', 'rn2(5)=2', 'rn2(5)=3',
+            'rn2(8)=1', 'rn2(5)=0', 'rn2(5)=3', 'rn2(16)=4',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(8)=6', 'rn2(5)=1',
+            'rn2(5)=3', 'rnd(20)=6', 'd(1,1)=1', 'rn2(10)=0',
+        ], 'seed0014 disappear and grid-bug electric gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[119]),
+            'The Wizard of Yendor suddenly disappears!  The grid bug bites!--More--');
+        assert.equal(decodedRow(result.getScreens()[119], 23),
+            'Dlvl:1 $:1172 HP:35(105) Pw:288(288) AC:8 Xp:30');
+        assertRngSliceExact(result.getRngSlices()[120], [
+            'rn2(20)=8', 'rn2(3)=2', 'rn2(6)=3',
+            'rn2(12)=7', 'rn2(12)=4', 'rn2(12)=5', 'rn2(12)=10',
+            'rn2(12)=6', 'rn2(12)=3', 'rn2(12)=4',
+            'rn2(70)=1', 'rn2(100)=77', 'rn2(200)=114',
+            'rn2(20)=1', 'rn2(64)=23',
+        ], 'seed0014 grid-bug zap tail and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[120]),
+            'You get zapped!');
+        assert.equal(decodedRow(result.getScreens()[120], 23),
+            'Dlvl:1 $:1172 HP:34(105) Pw:288(288) AC:8 Xp:30');
+        assert.equal(game.u.uhp, 34);
         assert.equal(game.u.uhpmax, 105);
     });
 

@@ -1995,6 +1995,8 @@ function monsterAttackMessage(monster, attack, previousAttack = null) {
             || (monster?.isshk && !hallucinating ? name : `The ${name}`);
     if (monster?.mnum === 116) {
         if (!attack.hit) return `${subject} misses!`;
+        if (attack.effect === 'electric-natural')
+            return `${subject} bites!`;
         return attack.effect === 'electric-avoided'
             ? `${subject} bites!  You avoid harm.`
             : `${subject} bites!  You get zapped!`;
