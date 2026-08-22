@@ -86155,3 +86155,44 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 21:51 EEST, journal block 2870] {#high-cleric #fire-pillar #fire #burnarmor #gloves #blessed #destroy-items #reservoir #potionbreathe #healing #extra-healing #spellbook #quantity #plural #hp-order #tty #native-witness #implementation #bounded-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Effect contract and reuse decision:** fire pillar must keep its 14d8 cast
+pre-roll separate from concrete 8d6 fire damage, then run burnarmor,
+destroy_items, ignite/floor effects and only finally apply remaining spell HP.
+Later matching HP is insufficient because each armor/item pline can suspend.
+The port already had source-shaped burnarmor and fire-inventory helpers from
+trap/ray work, so the implementation composes those owners instead of adding a
+high-cleric-specific inventory table.
+
+**First exact phase:** after input103's cast pager, input104 consumes
+`d(8,6)=20,rn2(5)=3,rnl(4)=1` and burns blessed starting gloves.  It then
+computes stack limit/reservoir selection and rolls the first healing-potion
+damage/count before that potion's attempted line forces the combined
+`A pillar...  Your gloves smoulder!` pager.  Glove erosion is committed, but
+HP133 and painted AC8 remain at the source boundary.  The composed helpers
+made this entire slice exact immediately.
+
+**Item corrections and remaining pagers:** input105 initially treated the
+healing stack as quantity one and omitted potionbreathe.  Starting inventory's
+authoritative count is `quan`; using it produces native plural prose and four
+count rolls.  Healing vapor restores one HP and exercises Constitution before
+five explosion damage, ending HP129.  Input108 repeats with +2 extra-healing
+vapor before six damage, then selects stone-to-flesh.  Scrolls/books also deal
+their fixed one HP and exercise Strength; extending the existing transaction
+beyond potions makes input109 exact before later maintenance RNG.
+
+**Measured acceptance and next blocker:** all **114 bounded native states**
+are exact; the recorder took **0.07 seconds** at **54,018,048 bytes maximum
+RSS**.  Final selected state is HP104, gloves erosion1, healing×1,
+extra-healing×2, and no stone-to-flesh book; AC remains painted/stored as 8
+until the later ordinary refresh.  Fire pillar plus seven cleric siblings pass
+**8/8** fixture-disabled in **0.32 seconds** at **138,838,016 bytes max RSS**;
+all processes exited.  The complete native replay next diverges at input114:
+the later mace hit leaves JS HP71 versus native70.  Keep that weapon-damage
+point outside fire-pillar acceptance.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

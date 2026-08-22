@@ -12861,7 +12861,15 @@ function fireDestroyable(item) {
 }
 
 function removeDestroyedQuantity(item, count) {
-    for (let i = 0; i < count; i++) consumeOneInventoryObject(item);
+    const quantity = item.quan ?? item.quantity ?? 1;
+    const remaining = quantity - count;
+    if (remaining > 0) {
+        item.quan = remaining;
+        item.quantity = remaining;
+        return;
+    }
+    const index = game.inventory.indexOf(item);
+    if (index >= 0) game.inventory.splice(index, 1);
 }
 
 function fireDestructionMessage(item, count, quantity) {
@@ -12870,7 +12878,9 @@ function fireDestructionMessage(item, count, quantity) {
         : one ? 'One of your '
             : count < quantity ? 'Some of your '
                 : quantity === 2 ? 'Both of your ' : 'All of your ';
-    const name = item.name || OBJECT_NAMES[item.otyp] || 'item';
+    let name = item.name || OBJECT_NAMES[item.otyp] || 'item';
+    if (!one && /^potion of /u.test(name))
+        name = name.replace(/^potion/u, 'potions');
     if (item.oclass === 8) {
         const verb = item.otyp === POT_OIL
             ? one ? 'ignites and explodes' : 'ignite and explode'
@@ -12883,7 +12893,7 @@ function fireDestructionMessage(item, count, quantity) {
 
 async function maybeDestroyFireItem(item) {
     const quantity = Math.max(0,
-        (item.quantity ?? item.quan ?? 1) - (item.in_use ? 1 : 0));
+        (item.quan ?? item.quantity ?? 1) - (item.in_use ? 1 : 0));
     const damage = item.oclass === 8 ? rnd(6) : 1;
     let destroyed = 0;
     for (let i = 0; i < quantity; i++) {
@@ -12894,6 +12904,25 @@ async function maybeDestroyFireItem(item) {
     await plineWithContinuation(
         fireDestructionMessage(item, destroyed, quantity),
     );
+    if ([POT_HEALING, POT_EXTRA_HEALING].includes(item.otyp)) {
+        const healing = item.otyp === POT_EXTRA_HEALING ? 2 : 1;
+        game.u.uhp = Math.min(
+            game.u.uhpmax ?? game.u.uhp,
+            (game.u.uhp ?? 0) + healing,
+        );
+        if (item.otyp === POT_EXTRA_HEALING && !item.cursed) {
+            game.u.blindTurns = 0;
+            game.blind = !!(game.ublindf || game.u?.ublindf);
+            game.u.deafTurns = 0;
+            game.deaf = false;
+        } else if (item.otyp === POT_HEALING && item.blessed) {
+            game.u.blindTurns = 0;
+            game.blind = !!(game.ublindf || game.u?.ublindf);
+            game.u.deafTurns = 0;
+            game.deaf = false;
+        }
+        exerciseAttribute(2, true);
+    }
     if (item.otyp === POT_INVISIBILITY) {
         // potionbreathe(): vapor effects are emitted before useup() and the
         // exploding-potion damage/exercise which follow it.
@@ -12902,14 +12931,14 @@ async function maybeDestroyFireItem(item) {
         );
     }
     removeDestroyedQuantity(item, destroyed);
-    if (item.oclass === 8) {
+    if (damage > 0) {
         game.u.uhp = Math.max(0, (game.u.uhp || 0) - damage);
         exerciseAttribute(0, false);
     }
     return damage;
 }
 
-async function destroyFireInventory(sourceDamage) {
+export async function destroyFireInventory(sourceDamage) {
     let limit = Math.trunc(sourceDamage / 5);
     if (sourceDamage % 5 > rn2(5)) limit++;
     limit = Math.max(0, Math.min(20, limit));

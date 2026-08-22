@@ -16,7 +16,8 @@ import {
 } from './mklev.js';
 import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
-    finishArmorRemoval, grantAmuletWish, promptYesNo, performQuestExpulsion,
+    destroyFireInventory, finishArmorRemoval, grantAmuletWish,
+    promptYesNo, performQuestExpulsion,
     rhack, stopRun,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
@@ -98,6 +99,7 @@ import {
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
     finishDeferredMonsterCounterattackDeath, fumaroles,
+    burnHeroArmorByFire,
     heroEveryturnEffect, runLevelRegions, runQuietMonsterActions,
     scanMonsterMovement,
     updateMonsterDistress,
@@ -2495,6 +2497,25 @@ async function resolveErosionFormRehumanization(
     return pagerOwned;
 }
 
+async function resolveDeferredHeroFirePillar(action, heroAttack) {
+    if (!heroAttack?.deferredFirePillar) return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const fireResistant = !!(game.u?.fireResistance
+        || game.u?.fire_resistance);
+    let appliedDamage = fireResistant ? 0 : originalDamage;
+    if (game.u?.halfSpellDamage || game.u?.half_spell_damage)
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+
+    await burnHeroArmorByFire(game, queueTurnMessage, action.calls, rn2);
+    await destroyFireInventory(originalDamage);
+
+    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
+    heroAttack.appliedDamage = appliedDamage;
+    heroAttack.heroDied = game.u.uhp <= 0;
+    heroAttack.deferredFirePillar = false;
+}
+
 // C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
 // transaction crosses tty after the evaporation line; the vapor effect
 // resumes only after that pager is acknowledged.  Install ordinary
@@ -3293,6 +3314,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             : null;
                         if (heroAttack.deferredSpellEffect)
                             resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.deferredFirePillar)
+                            await resolveDeferredHeroFirePillar(
+                                action, heroAttack,
+                            );
                         if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.toggledBlindness)
                             vision_recalc(0);

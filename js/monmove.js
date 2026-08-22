@@ -4385,6 +4385,12 @@ async function burnArmorByFire(
     }
 }
 
+export async function burnHeroArmorByFire(
+    state, emitMessage, calls, random = rn2,
+) {
+    return burnArmorByFire(state.u, state, emitMessage, calls, random);
+}
+
 function rayArmorClass(target, state) {
     return target === state.u
         ? state.u?.uac ?? 10
@@ -7524,6 +7530,11 @@ export function resumeDeferredHeroSpell(action, state) {
         );
         attack.appliedDamage = 0;
         attack.healedMonster = healing;
+        return attack;
+    }
+    if (attack.spell === 'fire-pillar') {
+        attack.deferredFirePillar = true;
+        attack.appliedDamage = 0;
         return attack;
     }
     if (!['psi-bolt', 'open-wounds'].includes(attack.spell)) {

@@ -9451,6 +9451,70 @@ test('seed0011 forced high cleric reaches fire-pillar effect boundary',
         assert.equal(game.context.move, 1);
     });
 
+test('seed0011 high-cleric fire pillar burns armor and selected inventory',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 114);
+        assertRngSliceExact(result.getRngSlices()[104], [
+            'd(8,6)=20', 'rn2(5)=3', 'rnl(4)=1',
+            'rn2(5)=1', 'rn2(4)=3', 'rnd(6)=5',
+            'rn2(3)=0', 'rn2(3)=0', 'rn2(3)=1', 'rn2(3)=0',
+        ], 'seed0011 fire-pillar armor and first-potion prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[104]),
+            'A pillar of fire strikes all around you!  Your gloves smoulder!--More--');
+        assert.equal(decodedRow(result.getScreens()[104], 23),
+            'Dlvl:1 $:1540 HP:133(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[105], [
+            'rn2(19)=4', 'rn2(2)=0', 'rnd(6)=6',
+            'rn2(3)=0', 'rn2(3)=0', 'rn2(3)=1', 'rn2(3)=2',
+        ], 'seed0011 healing vapor and extra-healing selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[105]),
+            'Some of your potions of healing boil and explode!--More--');
+        assert.equal(decodedRow(result.getScreens()[105], 23),
+            'Dlvl:1 $:1540 HP:129(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[108], [
+            'rn2(19)=0', 'rn2(2)=1', 'rn2(3)=2', 'rn2(3)=0',
+        ], 'seed0011 extra-healing vapor and spellbook selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'Some of your potions of extra healing boil and explode!--More--');
+        assert.equal(decodedRow(result.getScreens()[108], 23),
+            'Dlvl:1 $:1540 HP:125(141) Pw:254(254) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[109], [
+            'rn2(2)=1', 'rn2(25)=19', 'rn2(13)=11', 'rn2(13)=3',
+        ], 'seed0011 burning-book damage and post-pillar maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'Your spellbook of stone to flesh catches fire and burns!--More--');
+        assert.equal(decodedRow(result.getScreens()[109], 23),
+            'Dlvl:1 $:1540 HP:104(141) Pw:254(254) AC:8 Xp:30');
+
+        assert.equal(game.uarmg?.otyp, 159);
+        assert.equal(game.uarmg?.oeroded, 1);
+        assert.equal(game.inventory.find(object => object.otyp === 307)?.quan,
+            1);
+        assert.equal(game.inventory.find(object => object.otyp === 308)?.quan,
+            2);
+        assert.equal(game.inventory.some(object => object.otyp === 405), false);
+        assert.equal(game.u.uhp, 104);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

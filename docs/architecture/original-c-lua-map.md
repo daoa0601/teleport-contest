@@ -30492,3 +30492,38 @@ pages the kick line before damage.  Input103 contains only `d(14,8)=64` and
 retains the cast pager because the pending pillar prose cannot fit.  All 104
 bounded states are exact.  Fire-pillar 8d6, armor erosion, inventory
 destruction and final HP damage remain the next block.
+
+## 839. Fire pillar composes armor erosion and deferred inventory destruction
+
+```mermaid
+flowchart TD
+    Effect["A pillar of fire strikes all around you"] --> Damage["d(8,6), preserve original and applied damage"]
+    Damage --> Armor["burnarmor slot retry; blessed/proof checks; erosion prose"]
+    Armor --> Limit["destroy_items limit = damage/5 plus remainder rn2(5)"]
+    Limit --> Reservoir["walk exposed potion/scroll/book stacks; bounded reservoir"]
+    Reservoir --> Item["per selected item: damage/count rolls, then destruction prose"]
+    Item --> Pager["prose may page prior pillar/armor/item line"]
+    Pager --> Vapor["after acknowledgement: potionbreathe, consume quantity, item HP/exercise"]
+    Vapor --> More{"selected items remain?"}
+    More -->|"yes"| Item
+    More -->|"no"| Base["apply pillar HP damage after every item returns"]
+    Base --> Maintenance["later input refreshes burned-armor AC"]
+    Lua["Lua owns no fire effect"] -.-> Effect
+```
+
+Input104 acknowledges the cast, rolls 8d6=20, selects blessed starting gloves,
+passes `rnl(4)=1`, and burns them once.  The first healing-potion destruction
+decision is made before its attempted prose pages the combined pillar/glove
+line; HP is still 133 and AC remains painted as 8.  Input105 resumes three
+destroyed healing potions: vapor heals one and exercises Constitution before
+five explosion damage, leaving HP129, then the next potion line pages.
+
+Input108 similarly applies extra-healing vapor (+2) before six damage and
+selects stone-to-flesh for destruction.  Input109 resumes the book line,
+applies its one burning-book damage plus Strength exercise, and completes the
+20-point pillar damage before maintenance, ending HP104.  Shared fire-item
+code now treats `quan` as authoritative, pluralizes stacks, applies healing
+vapors, and damages for scrolls/books as well as potions.  The final selected
+inventory is healing×1, extra-healing×2, no stone-to-flesh; gloves have primary
+erosion one.  All 114 bounded states are exact.  Input114's later mace contact
+is the next independent frontier: JS damage is one point low.

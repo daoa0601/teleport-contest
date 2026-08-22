@@ -12554,3 +12554,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   Input103 rolls 14d8 only after the long cast line's pager.  The prefix and
   six lower cleric witnesses pass 7/7 fixture-disabled in 0.31 seconds.
   Fire-pillar 8d6, armor/item destruction and final damage remain open.
+- The same high-cleric session closes fire pillar through 114 exact states.
+  Input104 owns 8d6=20, blessed-glove burn, bounded stack selection and the
+  first potion decision before the pillar/glove pager.  Input105 applies
+  healing vapor before explosion damage; input108 does the same for extra
+  healing and selects the book; input109 burns stone-to-flesh, applies book
+  damage/exercise and only then the 20 pillar HP.  Final HP104, glove erosion1,
+  healing quantity1, extra-healing quantity2 and absent stone-to-flesh are
+  exact.  Shared fire destruction now honors `quan`, plural stacks, potion
+  vapor and non-potion damage.  Eight cleric witnesses pass fixture-disabled
+  in 0.32 seconds.  The later high-cleric mace hit is one point low at input114
+  and remains separate.
