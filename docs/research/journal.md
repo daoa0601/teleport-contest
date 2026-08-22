@@ -86790,3 +86790,38 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 23:29 EEST, journal block 2887] {#high-cleric #insects #seed40 #visible-caster #large-quantity #inclusive-loop #mkclass #makemon #bounded-assertion #roster #no-production-change #complete-replay #native-witness #regression #architecture #ledger #green #process-safety #priority}
+
+**Control contract and safe evidence:** the visible branch must publish both
+the undirected cast and named summon lines, while a non-minimum quantity must
+scale every placement/class/birth owner.  The complete summon slice is too
+large for a whole-log assertion under the repository OOM rule.  Acceptance is
+the exact whole-session comparator plus slice length/bounded edges and an
+exact final roster.
+
+**Selected carrier and constructor:** seed40 remains sighted when the
+priestess of Hermes selects insects.  Input115 publishes the visible cast and
+owns **690 RNG calls**; `rnd(12)=11` drives source's inclusive `i=0..quan`
+loop, producing twelve iterations.  The regression asserts only the first20
+and last16 calls.  Input116 publishes `The priestess of Hermes summons
+insects!` and resumes at `rn2(25)=22,rn2(13)=1,rn2(13)=6`.
+
+**Roster and decision:** the exact hostile awake census is nine giant ants,
+two soldier ants and one giant beetle with all twelve coordinates/HP asserted.
+The full **122-state replay was already exact**, so no production change was
+justified.  Final state is HP16, sighted, fourteen total monsters and
+`context.move=1`.  Section855 maps visible prose, quantity, inclusive loop,
+all-ring placement and ordinary births; Lua owns no phase.
+
+**Measured acceptance and next blocker:** the original recorder took **0.08
+seconds** at **54,018,048 bytes maximum RSS** and the exact JS replay took
+**0.24 seconds** at **124,207,104 bytes max RSS**.  Large visible insects plus
+twenty-three neighboring cleric witnesses pass **24/24** fixture-disabled in
+**0.71 seconds** at **164,429,824 bytes max RSS**; all processes exited.  Snake
+fallback, failed placement and census/no-success prose remain open.  Next seek
+a source-valid snake fallback or placement-failure carrier before leaving the
+high-cleric cone.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

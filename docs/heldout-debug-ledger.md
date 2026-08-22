@@ -12708,3 +12708,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   source-order beatitudes asserted.  The fixture-disabled cleric gate passes
   23/23 in 0.61 seconds at 154,992,640 bytes maximum RSS.  Intelligent
   artifacts, coins, saddles and beatitude menu presentation remain open.
+- Seed40 closes visible-caster, non-minimum insects through 122 exact states.
+  Input115's 690-call slice is asserted by length plus bounded 20/16-call
+  edges; `rnd(12)=11` drives twelve inclusive summon iterations.  Input116
+  publishes the visible priestess summon line and resumes at the exact later
+  selector.  The hostile awake roster is nine giant ants, two soldier ants
+  and one giant beetle at exact coordinates/HP; final state is HP16 with
+  fourteen total monsters.  The fixture-disabled cleric gate passes 24/24 in
+  0.71 seconds at 164,429,824 bytes maximum RSS.  Snake fallback, failed
+  placement and census/no-success prose remain open.

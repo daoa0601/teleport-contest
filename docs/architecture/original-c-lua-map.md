@@ -30964,3 +30964,35 @@ position9's book is unblessed/uncursed, the alternate extra-healing stack and
 other books remain blessed, the wand remains uncursed, and final HP is104.
 Intelligent-artifact resistance, coin exclusion, saddle extension and
 knowledge/menu presentation of the changed beatitudes remain separate.
+
+## 855. Visible insects scales the inclusive constructor to twelve births
+
+```mermaid
+flowchart TD
+    Visible["caster visible; directed flag false"] --> Cast["publish visible undirected cast line"]
+    Cast --> PreRoll["d(14,8) pre-roll"]
+    PreRoll --> Class["mkclass ant and class-selection RNG"]
+    Class --> Quantity["rnd(level/2)=rnd(12)=11"]
+    Quantity --> Loop["inclusive i=0..11: twelve iterations"]
+    Loop --> Rings["each iteration shuffles radius 1,2,3 rings"]
+    Rings --> Birth["mkclass plus ordinary angry makemon"]
+    Birth --> Loop
+    Loop --> Summon["visible caster summons insects line"]
+    Summon --> Continue["later selector and actor tail"]
+    Lua["Lua owns no visibility or constructor phase"] -.-> Visible
+```
+
+Seed40 reaches insects while the priestess of Hermes remains visible.  Input115
+publishes the undirected cast line and owns a **690-call** slice beginning
+`d(14,8)=57` and ending after the twelfth ordinary ant-class birth.  The slice
+is guarded only by length and bounded 20/16-call edges.  `rnd(12)=11` is not a
+count of eleven: the source loop is inclusive and creates twelve monsters.
+
+Input116 publishes `The priestess of Hermes summons insects!` and resumes at
+`rn2(25)=22,rn2(13)=1,rn2(13)=6`.  The exact hostile, awake roster is nine
+giant ants—HP6 `(46,15)`, HP12 `(45,16)`, HP17 `(43,14)`, HP14 `(45,17)`,
+HP13 `(46,18)`, HP11 `(45,18)`, HP12 `(42,14)`, HP8 `(43,17)`, HP12
+`(47,16)`—two soldier ants, HP11 `(43,13)` and HP14 `(46,17)`, plus one giant
+beetle HP38 `(44,13)`.  All 122 states are exact, ending HP16 with fourteen
+total monsters.  Snake fallback, failed placement and census/no-success prose
+remain separate controls.

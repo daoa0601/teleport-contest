@@ -9728,6 +9728,92 @@ test('seed0017 high-cleric insects preserve constructors and later curse pager',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0040 visible high-cleric insects preserve large quantity and roster',
+    async () => {
+        const result = await runSegment({
+            seed: 40,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 122);
+        const insectSlice = result.getRngSlices()[115];
+        assert.equal(insectSlice.length, 690);
+        assert.deepEqual(insectSlice.slice(0, 20), [
+            'd(14,8)=57', 'rn2(9)=3', 'rn2(9)=5', 'rn2(2)=1',
+            'rnd(4)=1', 'rnd(12)=11', 'rn2(8)=5', 'rn2(7)=6',
+            'rn2(6)=5', 'rn2(5)=1', 'rn2(4)=2', 'rn2(3)=1',
+            'rn2(2)=0', 'rn2(16)=13', 'rn2(15)=10', 'rn2(14)=12',
+            'rn2(13)=2', 'rn2(12)=8', 'rn2(11)=9', 'rn2(10)=5',
+        ]);
+        assert.deepEqual(insectSlice.slice(-16), [
+            'rn2(7)=1', 'rn2(6)=5', 'rn2(5)=0', 'rn2(4)=1',
+            'rn2(3)=2', 'rn2(2)=0', 'rn2(9)=1', 'rn2(9)=2',
+            'rn2(2)=1', 'rnd(4)=2', 'rnd(2)=2', 'd(3,8)=12',
+            'rn2(2)=0', 'rn2(50)=21', 'rn2(100)=95', 'rn2(100)=92',
+        ]);
+        assert.equal(decodedTopline(result.getScreens()[115]),
+            'The priestess of Hermes casts a spell!--More--');
+        assert.equal(decodedRow(result.getScreens()[115], 23),
+            'Dlvl:1 $:1571 HP:42(181) Pw:262(262) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[116], [
+            'rn2(25)=22', 'rn2(13)=1', 'rn2(13)=6',
+        ], 'seed0040 visible summon and later selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[116]),
+            'The priestess of Hermes summons insects!--More--');
+
+        const insects = game.level.monsters
+            .filter(monster => [0, 1, 2, 3, 4, 5].includes(monster.mnum))
+            .map(monster => ({
+                mnum: monster.mnum,
+                x: monster.mx,
+                y: monster.my,
+                hp: monster.mhp,
+                hpmax: monster.mhpmax,
+                peaceful: monster.mpeaceful,
+                sleeping: monster.msleeping,
+            }));
+        assert.deepEqual(insects, [
+            { mnum: 0, x: 46, y: 15, hp: 6, hpmax: 6,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 45, y: 16, hp: 12, hpmax: 12,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 43, y: 14, hp: 17, hpmax: 17,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 2, x: 43, y: 13, hp: 11, hpmax: 11,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 45, y: 17, hp: 14, hpmax: 14,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 4, x: 44, y: 13, hp: 38, hpmax: 38,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 46, y: 18, hp: 13, hpmax: 13,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 2, x: 46, y: 17, hp: 14, hpmax: 14,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 45, y: 18, hp: 11, hpmax: 11,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 42, y: 14, hp: 12, hpmax: 12,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 43, y: 17, hp: 8, hpmax: 8,
+                peaceful: 0, sleeping: 0 },
+            { mnum: 0, x: 47, y: 16, hp: 12, hpmax: 12,
+                peaceful: 0, sleeping: 0 },
+        ]);
+        assert.equal(game.level.monsters.length, 14);
+        assert.equal(!!game.blind, false);
+        assert.equal(game.u.uhp, 16);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0025 high-cleric curse-items preserves aura and inventory order',
     async () => {
         const result = await runSegment({
