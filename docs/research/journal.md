@@ -84613,3 +84613,58 @@ grease, material and proof.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 16:55 EEST, journal block 2834] {#black-pudding #hero-contact #armor #acid-resistance #inventory-protection #equipment-provenance #probability #yellow-dragon-mail #gray-dragon-mail #corrosion #selector-rejection #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and source:** `erode_obj(ERODE_CORRODE)` calls
+`inventory_resistance_check(AD_ACID)` before grease, vulnerability, proof,
+blessing or erosion degree.  `u_adtyp_resistance_obj()` returns 99 only for an
+equipped resistance source (`W_ARMOR|W_ACCESSORY|W_WEP|W_ART`); aggregate
+intrinsic acid resistance must not qualify.  Acceptance requires native
+success, no-source and one-percent-failure arms.
+
+**Controlled pair:** a Healer starts with only leather gloves worn, then wears
+an iron helmet plus yellow or gray dragon scale mail and generates a
+source-default hostile black pudding.  Yellow mail records worn acid-resistance
+provenance.  Native seed11 input151 selects gloves/body and pays success draws
+33, 56 and 23 before any material check; input169 directly selects the yellow
+suit and pays 68.  All return silent `ER_NOTHING`; suit and helmet remain
+secondary zero.  Gray mail has the same occupied slots but no acid source, so
+no inventory-protection draw occurs and body selection publishes `Your gray
+dragon scale mail is not affected by corrosion.`
+
+**Earliest divergence and implementation:** JavaScript matched yellow through
+`rn2(5)=3,rnd(6)=4,rnd(20)=14,d(3,8)=9` and glove slot three, then omitted
+native `rn2(100)=33` and selected another slot.  Gray was already complete
+exact.  The erosion helper now checks recorded equipment provenance and pays
+`rn2(100)<99` before grease/material/proof.  It does not use the aggregate
+`acidResistance` boolean, preserving the intrinsic-resistance exclusion.  The
+190-state yellow and 188-state gray recorders took **0.07 seconds** at
+**54,476,800** and **54,558,720 bytes maximum RSS**.
+
+**Failure selection and falsifications:** the first bounded selector accepted
+seed1 because a later global-maintenance `rn2(100)=99` shared the attack input;
+that is rejected evidence.  Tightening the predicate to require the 99
+immediately after an armor-slot draw and before knockback found seed3's glove
+failure, which correctly fell through to non-corrodible leather but remained
+silent.  Requiring head slot zero plus durable helmet corrosion found seed57
+in **1.05 seconds** at **207,519,744 bytes maximum RSS**.  Native input121
+contains earlier helmet successes 76, 22, 6 and 50, then
+`rn2(5)=0,rn2(100)=99`; the failure falls through to iron, displays
+`Your etched helmet corrodes!`, sets `oeroded2=1` and projects AC −6→−5.  Its
+190-state recorder took **0.08 seconds** at **54,771,712 bytes maximum RSS**.
+
+**Measured acceptance and next blocker:** all three sessions replay exactly
+from input3; the thirteen-control audit completes in **1.09 seconds** at
+**152,240,128 bytes maximum RSS**.  Focused passes **3/3** in **0.26 seconds**
+at **134,217,728 bytes**.  Fixture-disabled dragon-mail lifecycle passes
+**1/1** in **0.22 seconds** at **140,361,728 bytes**; armor projection passes
+**5/5** in **0.06 seconds** at **55,656,448 bytes**.  The one owned managed
+family passes **145/145** in **2.72 seconds** at **368,246,784 bytes maximum
+RSS**; all runners exit and the registry is empty.  Section827 and the ledger
+now map the complete 99% gate.  Next select natural AD_DCAY from a brown
+pudding against worn organic armor, including cancellation and body/non-body
+return behavior.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

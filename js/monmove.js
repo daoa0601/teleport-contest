@@ -6605,10 +6605,29 @@ function heroWornArmor(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
 }
 
-function heroArmorErosionResult(object, verbose, erosionKind) {
+function heroHasAcidProtectedInventory(state) {
+    const hero = state?.u || {};
+    const source = hero._propertySources?.acidResistance;
+    return !!(hero.acidResistanceFromArmor
+        || hero.acid_resistance_from_armor
+        || ['worn', 'wielded', 'accessory', 'artifact']
+            .includes(source?.kind));
+}
+
+function heroArmorErosionResult(
+    object, verbose, erosionKind, state, random, calls,
+) {
     const corrosion = erosionKind === 'corrosion';
     const objectName = object.name || object.description
         || OBJECT_NAMES[object.otyp] || 'armor';
+    // trap.c:erode_obj(ERODE_CORRODE) asks inventory_resistance_check()
+    // before grease, material, proof, blessing, or erosion degree.  Only an
+    // equipped resistance source qualifies; an intrinsic hero resistance
+    // does not protect carried objects.  The source probability is 99%.
+    if (corrosion && heroHasAcidProtectedInventory(state)
+        && recordRandom(random, calls, 100) < 99) {
+        return { result: 'nothing', message: null };
+    }
     if (object.greased) {
         return {
             result: 'greased',
@@ -6703,7 +6722,9 @@ function resumeDeferredHeroArmorErosion(
             if (bodySlot) break;
             continue;
         }
-        const erosion = heroArmorErosionResult(target, verbose, erosionKind);
+        const erosion = heroArmorErosionResult(
+            target, verbose, erosionKind, state, random, calls,
+        );
         message = erosion.message;
         finalize = erosion.finalize;
         continueArmor = !bodySlot && erosion.result === 'nothing';

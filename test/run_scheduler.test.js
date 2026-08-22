@@ -6808,6 +6808,24 @@ async function runWornSuitCorrosionSegment(material) {
     });
 }
 
+async function runAcidInventoryProtectionSegment(color, seed = 11) {
+    return runSegment({
+        seed,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: `  n#wizwish\nuncursed +2 ${color} dragon scale mail\n`
+            + 'Wk     #wizwish\nuncursed +2 helmet\n'
+            + 'Wl #wizgenesis\nblack pudding\n'
+            + 'm.    m.    m.    m.    m.    m.    '
+            + 'm.    m.    m.    m.    m.    m.        ',
+        storage: new Map(),
+    });
+}
+
 function assertWornCorrosionHelmet({
     blessed = false,
     greased = false,
@@ -7196,6 +7214,128 @@ test('seed0011 hostile bite stops on wished crystal body non-effect',
         assert.equal(game.uarmc, null);
         assert.equal(game.u.uac, 1);
         assert.equal(game.u.uhp, 15);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 wished yellow mail protects worn inventory from corrosion',
+    async () => {
+        const result = await runAcidInventoryProtectionSegment('yellow');
+
+        assert.equal(result.getScreens().length, 190);
+        assertRngSliceExact(result.getRngSlices()[151], [
+            'rn2(5)=2', 'rnd(6)=4', 'rnd(20)=14', 'd(3,8)=9',
+            'rn2(5)=3', 'rn2(100)=33', 'rn2(5)=4', 'rn2(5)=3',
+            'rn2(100)=56', 'rn2(5)=4', 'rn2(5)=4', 'rn2(5)=1',
+            'rn2(100)=23', 'rn2(3)=0', 'rn2(6)=4', 'rnd(6)=5',
+            'rn2(12)=6', 'rn2(12)=10', 'rn2(12)=6', 'rn2(70)=8',
+            'rn2(100)=72', 'rn2(400)=291', 'rn2(20)=13',
+            'rn2(70)=43',
+        ], 'seed0011 equipped acid-resistance inventory gates RNG');
+        assert.equal(decodedTopline(result.getScreens()[151]),
+            'The black pudding bites!');
+        assert.equal(decodedRow(result.getScreens()[151], 23),
+            'Dlvl:1 $:1540 HP:9(13) Pw:5(5) AC:-6 Xp:1');
+        assert.deepEqual(result.getCursors()[151], [65, 6, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[169], [
+            'rn2(5)=3', 'rnd(6)=2', 'rnd(20)=6', 'd(3,8)=18',
+            'rn2(5)=1', 'rn2(100)=68', 'rn2(3)=2', 'rn2(6)=1',
+            'rnd(6)=5',
+        ], 'seed0011 acid-resistant body self-protection RNG');
+        assert.equal(decodedTopline(result.getScreens()[169]),
+            'The black pudding bites!--More--');
+
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'yellow dragon scale mail');
+        assert.equal(game.uarm.oeroded ?? 0, 0);
+        assert.equal(game.uarm.oeroded2 ?? 0, 0);
+        assert.ok(game.uarmh);
+        assert.equal(game.uarmh.oeroded2 ?? 0, 0);
+        assert.equal(game.u.acidResistance, true);
+        assert.equal(game.u.acidResistanceFromArmor, true);
+        assert.deepEqual(game.u._propertySources?.acidResistance, {
+            kind: 'worn',
+            otyp: game.uarm.otyp,
+            slot: 'uarm',
+        });
+        assert.equal(game.u.uac, -6);
+        assert.equal(game.u.uhp, 13);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0057 wished yellow mail protection can fail at one percent',
+    async () => {
+        const result = await runAcidInventoryProtectionSegment('yellow', 57);
+
+        assert.equal(result.getScreens().length, 190);
+        assertRngSliceExact(result.getRngSlices()[121], [
+            'rn2(5)=0', 'rnd(6)=4', 'rnd(20)=4', 'd(3,8)=15',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(100)=76', 'rn2(5)=2',
+            'rn2(5)=4', 'rn2(5)=4', 'rn2(5)=0', 'rn2(100)=22',
+            'rn2(5)=0', 'rn2(100)=6', 'rn2(5)=0', 'rn2(100)=50',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(100)=99',
+            'rn2(3)=0', 'rn2(6)=4', 'rnd(6)=3', 'rn2(5)=2',
+            'rn2(24)=7', 'rn2(20)=8', 'rn2(5)=0', 'rn2(5)=2',
+            'rn2(12)=7', 'rn2(8)=4', 'rn2(5)=1', 'rn2(12)=10',
+            'rn2(12)=3', 'rn2(12)=3', 'rn2(12)=3', 'rn2(12)=4',
+            'rn2(70)=58', 'rn2(100)=73', 'rn2(400)=204',
+            'rn2(200)=166', 'rn2(20)=5', 'rn2(67)=38',
+        ], 'seed0057 one-percent acid inventory-protection failure RNG');
+        assert.equal(decodedTopline(result.getScreens()[121]),
+            'The black pudding bites!  Your etched helmet corrodes!');
+        assert.equal(decodedRow(result.getScreens()[121], 23),
+            'Dlvl:1 $:1087 HP:1(13) Pw:5(5) AC:-5 Xp:1');
+        assert.deepEqual(result.getCursors()[121], [36, 4, 1]);
+
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'yellow dragon scale mail');
+        assert.equal(game.uarm.oeroded2 ?? 0, 0);
+        assert.ok(game.uarmh);
+        assert.equal(game.uarmh.oeroded2 ?? 0, 1);
+        assert.equal(game.u.acidResistanceFromArmor, true);
+        assert.equal(game.u.uac, -5);
+        assert.equal(game.u.uhp, 1);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 wished gray mail omits acid inventory protection',
+    async () => {
+        const result = await runAcidInventoryProtectionSegment('gray');
+
+        assert.equal(result.getScreens().length, 188);
+        assertRngSliceExact(result.getRngSlices()[149], [
+            'rn2(5)=2', 'rnd(6)=4', 'rnd(20)=14', 'd(3,8)=9',
+            'rn2(5)=3', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=3',
+            'rn2(5)=1',
+        ], 'seed0011 no acid inventory-resistance gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[149]),
+            'The black pudding bites!--More--');
+        assert.equal(decodedRow(result.getScreens()[149], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:5(5) AC:-6 Xp:1');
+
+        assertRngSliceExact(result.getRngSlices()[150], [
+            'rn2(3)=1', 'rn2(6)=1', 'rnd(6)=4', 'rn2(12)=7',
+            'rn2(12)=0', 'rn2(12)=10', 'rn2(70)=50',
+            'rn2(100)=38', 'rn2(400)=30', 'rn2(20)=18', 'rn2(70)=8',
+        ], 'seed0011 gray body non-effect and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[150]),
+            'Your gray dragon scale mail is not affected by corrosion.');
+        assert.equal(decodedRow(result.getScreens()[150], 23),
+            'Dlvl:1 $:1540 HP:8(13) Pw:5(5) AC:-6 Xp:1');
+        assert.deepEqual(result.getCursors()[150], [65, 6, 1]);
+
+        assert.ok(game.uarm);
+        assert.equal(game.uarm.name, 'gray dragon scale mail');
+        assert.equal(game.uarm.oeroded2 ?? 0, 0);
+        assert.ok(game.uarmh);
+        assert.equal(game.uarmh.oeroded2 ?? 0, 0);
+        assert.equal(!!game.u.acidResistanceFromArmor, false);
+        assert.notEqual(
+            game.u._propertySources?.acidResistance?.kind,
+            'worn',
+        );
+        assert.equal(game.u.uac, -6);
+        assert.equal(game.u.uhp, 4);
         assert.equal(game.context.move, 0);
     });
 

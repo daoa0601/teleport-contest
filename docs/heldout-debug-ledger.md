@@ -12070,3 +12070,28 @@ attempt: **402 calls**, not a direct two-pass retry.
   was rejected as fake acceptance because its synthetic result never populated
   `game.u.uhp`; the same pair is green through the real engine.  Hero
   acid-resistance inventory protection is the next worn-corrosion control.
+- Seed11 and seed57 close equipped acid-resistance protection inside worn
+  `erode_obj(ERODE_CORRODE)`.  Yellow dragon scale mail supplies a real worn
+  property source.  Seed11 pays success draws 33 and 56 on leather gloves, 23
+  and 68 on the yellow suit, all before grease/material/proof; every result is
+  silent `ER_NOTHING`, and suit/helmet remain uncorroded.  Gray dragon mail
+  supplies no acid property, inserts no such draw and reaches the ordinary
+  verbose body non-effect.
+
+  The first failure selector falsely accepted seed1's later global
+  `rn2(100)=99`; it was rejected.  Requiring the 99 immediately after head-slot
+  zero and before knockback found seed57.  Native input121 has several earlier
+  successful helmet protections, then `rn2(100)=99` falls through to iron and
+  displays `Your etched helmet corrodes!`; secondary erosion becomes one and
+  AC changes −6→−5.  This proves the source probability is 99%, not absolute.
+  Aggregate intrinsic resistance is intentionally insufficient; the port
+  checks equipment provenance.
+
+  The 190-state yellow-success, 188-state gray and 190-state yellow-failure
+  sessions all replay exactly from input3 in a 1.09-second audit at 152,240,128
+  bytes maximum RSS.  Focused passes 3/3 in 0.26 seconds at 134,217,728 bytes;
+  fixture-disabled dragon-mail lifecycle passes 1/1 in 0.22 seconds at
+  140,361,728 bytes; armor projection passes 5/5 in 0.06 seconds at 55,656,448
+  bytes.  The one owned managed family passes 145/145 in 2.72 seconds at
+  368,246,784 bytes and exits cleanly.  Natural AD_DCAY worn-armor decay is
+  the next adjacent erosion owner.

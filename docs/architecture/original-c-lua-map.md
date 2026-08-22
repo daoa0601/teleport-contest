@@ -29532,11 +29532,11 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-142/142 after the paired rust/corrosion material, protection, degree,
+145/145 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
 rust/grease/proof/blessing/degree, complete worn-corrosion, cancelled-bite and
-worn body-material rows.
+worn body-material and acid inventory-resistance rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29561,7 +29561,9 @@ flowchart TD
     Slots --> Body["body stops after cloak/suit/shirt attempt"]
     Head --> Erode["erode_obj message before state finalization"]
     Body --> Erode
-    Erode --> Guard{"grease, proof, blessing, material, or max degree?"}
+    Erode --> AcidGate{"corrosion plus equipped acid-resistance source?"}
+    AcidGate -->|"rn2(100) below 99"| Retry
+    AcidGate -->|"no source, roll 99, or rust"| Guard{"grease, proof, blessing, material, or max degree?"}
     Guard -->|"grease"| Grease["protection prose; rn2(2); optional dissolve prose"]
     Guard -->|"ER_NOTHING"| Retry{"selected body slot?"}
     Retry -->|"no"| Slots
@@ -29661,8 +29663,33 @@ Its AC stays one and both erosion fields remain zero.
 The 98-state bronze and 99-state crystal recordings are exact from input3
 onward.  Together they prove AD_CORR's COPPER extension beyond rust and the
 body-slot unconditional stop, while also selecting message/state/HP/AC timing
-on both the damaged and `ER_NOTHING` arms.  Hero acid-resistance inventory
-protection remains the next pre-grease corrosion control.
+on both the damaged and `ER_NOTHING` arms.  The next paragraphs close the
+pre-grease acid-resistance control.
+
+Equipped acid resistance now closes that pre-grease control, including both
+probability outcomes.  A Healer wears an iron helmet plus yellow dragon scale
+mail; the suit's `acidResistanceFromArmor` provenance corresponds to source
+`W_ARMOR`.  Seed11 input151 selects leather gloves twice and body once.  Each
+carried target pays `rn2(100)` before grease or material—33, 56 and 23—and
+returns silent `ER_NOTHING`; input169 directly selects the yellow suit, pays
+68 and silently protects itself.  Neither suit nor helmet corrodes.  The gray
+dragon-mail sibling has identical equipment slots but no acid property: no
+inventory-protection draw occurs, and body selection publishes the ordinary
+gray-mail non-effect.
+
+The 99% gate is not treated as absolute.  Seed57 input121 first protects
+several head selections, then head slot zero pays `rn2(100)=99`.  That failure
+falls through to the iron material predicate, corrodes the etched helmet,
+changes secondary erosion zero→one and projects AC −6→−5.  The initial selector
+candidate seed1 was rejected because its 99 belonged to later global
+maintenance; the accepted predicate requires the value immediately after an
+armor-slot `rn2(5)` and before knockback.  All three 188--190-state sessions
+are exact from input3 onward.
+
+Intrinsic acid resistance deliberately does not satisfy this gate: source
+`u_adtyp_resistance_obj()` requires resistance provenance from worn,
+accessory, wielded, carried artifact or artifact-weapon masks.  The port checks
+the recorded equipment property source rather than the aggregate hero boolean.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level
