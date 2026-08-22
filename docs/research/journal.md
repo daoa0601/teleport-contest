@@ -85765,3 +85765,41 @@ AD_STUN construction first.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 20:27 EEST, journal block 2861] {#wraith #hero-contact #ad-drli #life-drain #drain-resistance #shield #worn-property #setworn #earliest-divergence #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Carrier and prediction:** object type151, shield of drain resistance, has
+`oc_oprop=DRAIN_RES`; C `setworn()` installs that extrinsic as soon as it
+occupies `uarms`.  A selected AD_DRLI `rn2(3)=0` must therefore exit before
+magic negation, omit `rn2(10)` and level loss, but retain the ordinary 1d6 HP
+damage and common knockback tail.  Deriving this source from the worn slot is
+safer than a mutable one-off hero flag because removal or breakage changes the
+authoritative object pointer.
+
+**Native witness and earliest divergence:** seed11 level-30 Healer wishes and
+wears an uncursed +2 shield of drain resistance, reaching AC5 before creating
+the hostile wraith.  Native input179 consumes
+`rn2(5)=1,rnd(20)=1,d(1,6)=4,rn2(3)=0`, then immediately the knockback
+`rn2(3)=2`; there is no `rn2(10)` and no Goodbye line.  The first JS replay
+matched through input178, then inserted `rn2(10)=3` and lost level30 because
+it recognized black-dragon armor state but not the shield's primary property.
+The recorder captured all 230 states in **0.08 seconds** at **54,919,168 bytes
+maximum RSS**.
+
+**Implementation, evidence and falsifications:** export the shield's source
+object identity and add `heroHasDrainResistance()`, which combines existing
+intrinsic/property state with the actual `uarms` object.  The deferred wraith
+gate now queries that source-shaped helper.  This falsifies magic cancellation
+as the shield's owner and avoids inventing a shield-specific timing callback;
+the property exists at `setworn()`.  The complete 230-state replay is exact.
+Natural, cancelled, resistant and wizard-levelchange regressions pass **4/4**
+fixture-disabled in **0.31 seconds** at **155,156,480 bytes max RSS**; all
+processes exited.
+
+**Next blocker:** section834 and the ledger now close the selected active,
+cancelled and worn-resistant AD_DRLI arms.  Move to hostile natural AD_STUN
+construction and preserve its source ordering rather than extending wraith
+bridges.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

@@ -4,7 +4,8 @@
 import { game } from './gstate.js';
 import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    FUMBLE_BOOTS, RIN_PROTECTION, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
+    FUMBLE_BOOTS, RIN_PROTECTION, SHIELD_OF_DRAIN_RESISTANCE,
+    OBJECT_NAMES, OBJECT_SPELL_LEVEL,
 } from './object_data.js';
 import { rnd } from './rng.js';
 
@@ -46,6 +47,17 @@ export function heroIsDisplaced(state = game) {
         || !!state?.displaced
         || !!state?.u?.displaced
         || (state?.u?.displacedTurns ?? 0) > 0;
+}
+
+// C youprop.h:Drain_resistance includes both intrinsic sources and the
+// extrinsic property installed by setworn().  Derive the zero-delay shield
+// source from the authoritative worn slot so removal, polymorph breakage, and
+// fixture restoration cannot leave a stale boolean behind.
+export function heroHasDrainResistance(state = game) {
+    const hero = state?.u || {};
+    const shield = state?.uarms || hero.uarms;
+    return !!(hero.drainResistance || hero.drain_resistance
+        || shield?.otyp === SHIELD_OF_DRAIN_RESISTANCE);
 }
 
 // do_wear.c's *_on() callbacks distinguish the physical worn property from

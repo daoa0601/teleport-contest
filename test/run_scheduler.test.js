@@ -8891,6 +8891,51 @@ test('seed0011 cancelled wraith keeps touch damage but skips level drain',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 drain-resistance shield suppresses wraith level loss',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nuncursed +2 shield of drain resistance\n'
+                + 'Wk #wizgenesis\nwraith\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.    '
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 230);
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'You are now wearing a wooden shield.');
+        assert.equal(decodedRow(result.getScreens()[109], 23),
+            'Dlvl:1 $:1540 HP:141(141) Pw:254(254) AC:5 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[179], [
+            'rn2(5)=1', 'rnd(20)=1', 'd(1,6)=4',
+            'rn2(3)=0', 'rn2(3)=2', 'rn2(6)=3',
+            'rn2(12)=3', 'rn2(12)=4', 'rn2(12)=9',
+            'rn2(70)=17', 'rn2(100)=9', 'rn2(400)=196',
+            'rn2(20)=2', 'rn2(70)=61', 'rn2(31)=14',
+        ], 'seed0011 drain-resistant wraith zero gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[179]),
+            'The wraith touches you!');
+        assert.equal(decodedRow(result.getScreens()[179], 23),
+            'Dlvl:1 $:1540 HP:120(141) Pw:254(254) AC:5 Xp:30');
+
+        assert.equal(game.u.ulevel, 30);
+        assert.equal(game.u.uhp, 96);
+        assert.equal(game.u.uhpmax, 141);
+        assert.equal(game.u.uen, 254);
+        assert.equal(game.u.uenmax, 254);
+        assert.equal(game.uarms?.otyp, 151);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

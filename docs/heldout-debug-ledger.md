@@ -12470,3 +12470,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   and Pw max254 remain unchanged.  Natural/cancelled/wizard-levelchange
   fixture-disabled regressions pass 3/3 in 0.28 seconds.  Drain resistance is
   the remaining AD_DRLI control before hostile AD_STUN construction.
+- Seed11 closes worn drain resistance for AD_DRLI with a real +2 shield of
+  drain resistance.  The first JS replay diverged at native input179 after
+  `d(1,6)=4,rn2(3)=0`: JS incorrectly spent `rn2(10)=3` and lost a level,
+  while C's worn `DRAIN_RES` source skipped directly to knockback/touch damage.
+  Resistance is now derived from the authoritative `uarms` object identity,
+  avoiding stale state after removal.  All 230 states are exact; the four
+  natural/cancelled/resistant/rank witnesses pass fixture-disabled in 0.31
+  seconds.  AD_DRLI's selected active controls are closed; next select a
+  hostile natural AD_STUN carrier.

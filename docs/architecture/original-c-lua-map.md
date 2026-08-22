@@ -30285,3 +30285,14 @@ still lands.  Level, max HP and max Pw remain 30, 141 and 254 through all 216
 exact states.  This no-production-change control confirms that
 `resumeDeferredHeroLifeDrain()` owns gate-before-cancellation ordering and
 that the common contact tail remains outside AD_DRLI's special effect.
+
+Worn drain resistance is a separate pre-negation exit.  A wished +2 shield of
+drain resistance occupies `uarms`; C `setworn()` makes its `DRAIN_RES` object
+property effective immediately.  Native input179 rolls
+`d(1,6)=4,rn2(3)=0`, then omits `rn2(10)` because the shield supplies
+`Drain_resistance`; knockback and four touch damage continue at AC5 with no
+Goodbye line.  The first JS replay instead spent `rn2(10)=3` and lost a level.
+`heroHasDrainResistance()` now combines intrinsic state with authoritative
+`uarms` identity rather than caching a shield boolean, so removal and armor
+breakage cannot strand the extrinsic.  All 230 states are exact; level30 and
+max HP/Pw remain 141/254.

@@ -6,7 +6,7 @@ import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
 import { loseExperienceLevel } from './exper.js';
-import { heroIsDisplaced } from './armor.js';
+import { heroHasDrainResistance, heroIsDisplaced } from './armor.js';
 import { nextIdent } from './ident.js';
 import {
     map_invisible, newsym, swallowed, unmap_invisible,
@@ -6650,8 +6650,7 @@ export function resumeDeferredHeroLifeDrain(
     const attack = action?.movement?.attack;
     if (!attack?.deferredLifeDrainGate) return action;
     const selected = recordRandom(random, action.calls, 3) === 0;
-    const drainResistant = !!(state.u?.drainResistance
-        || state.u?.drain_resistance);
+    const drainResistant = heroHasDrainResistance(state);
     if (selected && !drainResistant) {
         const armorProtection = state.u?._magicNegation ?? 0;
         const negated = !!action.monster?.mcan

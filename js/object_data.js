@@ -84,6 +84,7 @@ export const ROBE = 143;
 export const ORCISH_CLOAK = 140;
 export const DWARVISH_CLOAK = 141;
 export const SMALL_SHIELD = 150;
+export const SHIELD_OF_DRAIN_RESISTANCE = 151;
 export const ELVEN_SHIELD = 153;
 export const URUK_HAI_SHIELD = 154;
 export const ORCISH_SHIELD = 155;
