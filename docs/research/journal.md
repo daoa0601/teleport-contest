@@ -86926,3 +86926,28 @@ prose also remains.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 23:53 EEST, journal block 2891] {#high-cleric #insects #snake-fallback #unseen-caster #carrier-search #negative-result #startup-drift #blocked-spell #priority #native-probe #process-safety}
+
+**Unseen-fallback contract:** acceptance requires a heard-snakes effect whose
+startup, genocide, constructor and earlier actor prefix are exact.  The
+implemented `monsterClass` projection already has unseen wording, but source
+inspection or a contaminated transcript cannot prove its tty/census branch.
+
+**Serial search evidence:** seed18 reaches `You hear someone summoning
+snakes.` but JS/native diverge at input3 in startup terrain/gold.  Seed34
+reaches the same branch but first diverges at input153's blocked-spell/cooldown
+RNG.  Seeds19--52 otherwise produced covered spells, no successful fallback,
+or visible stick transformations (notably24/25/39/40).  Every recorder ran
+serially and exited; no candidate satisfies the prefix contract.
+
+**Decision and next discriminator:** leave unseen fallback and failed-
+placement/no-success census open.  Do not inject blindness, force census, or
+ignore an earlier mismatch.  The high-cleric selected effects and strongest
+defensive/constructor controls now have native coverage; move the next source-
+first block to the monster wizard-spell table, beginning with a forced hostile
+caster and the earliest unimplemented effect.  No code/test change, full
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---

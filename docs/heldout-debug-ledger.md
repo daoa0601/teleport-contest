@@ -12741,3 +12741,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   cleric/poison gate passes 27/27 in 0.72 seconds at 157,630,464 bytes maximum
   RSS.  Non-resistant/lethal poison and analogous short-circuit sites remain
   open.
+- Unseen snake fallback remains unaccepted after a serial genocided-ant search
+  through seed52.  Seed18 reaches heard snakes but has startup terrain/gold
+  drift at input3; seed34 reaches heard snakes but diverges first at input153's
+  blocked-spell path.  Seeds24/25/39/40 provide visible controls only.  No
+  implementation or fallback claim is based on those contaminated unseen
+  transcripts; failed-placement/no-success visibility remains open.
