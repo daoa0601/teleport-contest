@@ -331,6 +331,7 @@ export async function polyselfControlledMonster(mnum) {
     const cloak = game.uarmc || game.u?.uarmc;
     const shirt = game.uarmu || game.u?.uarmu;
     const helmet = game.uarmh || game.u?.uarmh;
+    const gloves = game.uarmg || game.u?.uarmg;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -345,8 +346,10 @@ export async function polyselfControlledMonster(mnum) {
     const transientCapacity = nearCapacity(game);
     game._encumbranceLevel = transientCapacity;
     game.u._encumbrance = encumbranceLabel(transientCapacity);
+    let sequentialEquipmentMessages = false;
 
-    if (breaksArmor && !suit && !cloak && !shirt && noHands && weapon) {
+    if (breaksArmor && !suit && !cloak && !shirt
+        && noHands && weapon && !gloves) {
         // With no garment prose, the later encumbrance line is what forces
         // tty to expose the combined form/drop-weapon pager.  Preserve the
         // pre-find_ac status while projecting the new glyph through dropx.
@@ -360,6 +363,7 @@ export async function polyselfControlledMonster(mnum) {
         // Sequential continuation calls preserve the exact point at which a
         // later garment line forces tty to page the already-pending prose.
         await plineWithContinuation(formMessage);
+        sequentialEquipmentMessages = true;
         if (suit) {
             await plineWithContinuation('You break out of your armor!');
             destroyCarriedObject(suit, ['uarm']);
@@ -418,6 +422,13 @@ export async function polyselfControlledMonster(mnum) {
             dropCarriedObject(helmet, ['uarmh']);
         }
     }
+    if (noHands && gloves) {
+        await plineWithContinuation(
+            `You drop your gloves${weapon ? ' and weapon' : ''}!`,
+        );
+        if (weapon) dropCarriedObject(weapon, ['uwep']);
+        dropCarriedObject(gloves, ['uarmg']);
+    }
 
     findArmorClass(game);
     game.vision_full_recalc = 1;
@@ -435,7 +446,9 @@ export async function polyselfControlledMonster(mnum) {
         await moreUntilDismissed(`${capacityMessage}--More--`);
         capacityMessagePaged = true;
     } else if (capacityMessage) {
-        await pline(capacityMessage);
+        if (sequentialEquipmentMessages)
+            await plineWithContinuation(capacityMessage);
+        else await pline(capacityMessage);
     }
     if (canBreathe && game.flags?.verbose !== false) {
         const breathMessage

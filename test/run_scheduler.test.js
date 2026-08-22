@@ -7975,6 +7975,49 @@ test('seed0011 minotaur horns pierce and retain flimsy fedora',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 gelatinous-cube nohands drops gloves with weapon',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#polyself\ngelatinous cube\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 38);
+        assertRngSliceExact(result.getRngSlices()[29], [
+            'rn2(2)=0', 'rn2(19)=9', 'rn2(500)=193', 'd(6,8)=20',
+        ], 'seed0011 gelatinous-cube nohands RNG');
+        assert.equal(decodedTopline(result.getScreens()[29]),
+            'You turn into a gelatinous cube!  You drop your gloves and weapon!--More--');
+        assert.equal(decodedRow(result.getScreens()[29], 23),
+            'Dlvl:1 $:1540 HP:20(20) Pw:5(5) AC:8 HD:6 Burdened Blind');
+        assert.deepEqual(result.getCursors()[29], [74, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[30], [],
+            'seed0011 gelatinous-cube capacity notice RNG');
+        assert.equal(decodedTopline(result.getScreens()[30]),
+            'Your movements are slowed slightly because of your load.');
+        assert.deepEqual(result.getCursors()[30], [65, 6, 1]);
+
+        assert.equal(game.uarmg, null);
+        assert.equal(game.uwep, null);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.ok(floorObjects.some(object => object.otyp === 159));
+        assert.ok(floorObjects.some(object => object.otyp === 39));
+        assert.equal(game.u.umonnum, 8);
+        assert.equal(game.u.mh, 20);
+        assert.equal(game.u.uac, 8);
+        assert.equal(game.u._encumbrance, 'Burdened');
+        assert.equal(game.blind, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

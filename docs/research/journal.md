@@ -85036,3 +85036,41 @@ independent successors.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 18:09 EEST, journal block 2843] {#polyself #break-armor #gelatinous-cube #no-hands #gloves #weapon #scalpel #dropx #encumbrance #blind #topline-continuation #pager #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and prediction:** inside `break_armor()`, a no-hands or very-small
+form with worn gloves publishes one glove line, invokes `drop_weapon(0)` from
+that branch, clears the glove slot and drops the gloves.  The later standalone
+`drop_weapon(1)` is therefore empty.  This must remain distinct from the
+weapon-only message used when no gloves are worn.
+
+**Native witness:** seed11 debug Healer starts with worn +1 leather gloves and
+wielded scalpel, then uses controlled `#polyself gelatinous cube`.  Input29
+consumes `rn2(2)=0,rn2(19)=9,rn2(500)=193,d(6,8)=20` and displays `You turn
+into a gelatinous cube!  You drop your gloves and weapon!--More--`.  Both
+objects are already floor-owned; status shows HP20/20, HD6, AC8, `Burdened`
+and eyeless-form `Blind`.  Input30 has no RNG and publishes `Your movements are
+slowed slightly because of your load.`  All 38 states are exact from input3;
+the recorder took **0.06 seconds** at **52,084,736 bytes maximum RSS**.
+
+**Earliest divergence and implementation:** JavaScript's no-garment large form
+entered the red-dragon weapon-only shortcut, said `You find you must drop your
+tool!` and retained the gloves.  Glove presence now diverts to the source
+sequential equipment transaction: form and glove lines compose, weapon and
+gloves drop together, then final encumbrance prose forces their pending line
+through tty.  The no-glove red-dragon path remains separate and exact.  This
+falsifies `cantwield` as a weapon-only transaction and confirms glove ownership
+precedes later shield/helmet/boot processing.
+
+**Measured acceptance and next blocker:** the complete session is exact; the
+fixture-disabled focused polymorph gate passes **10/10** in **0.32 seconds**,
+the preceding twenty erosion controls remain exact and the one owned managed
+family passes **149/149** in **2.75 seconds**.  Every process exited before the
+next began.  Section830 and the ledger now include no-hands glove/weapon
+coupling.  Next add one shield or boot to the same controlled form and observe
+whether the extra line creates a new pager before selecting eyewear.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

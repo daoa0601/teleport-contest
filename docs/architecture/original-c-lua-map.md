@@ -29846,9 +29846,12 @@ flowchart TD
     ShirtLine --> Horn
     Horn -->|"flimsy material"| Pierce["horns pierce; retain worn helmet"]
     Horn -->|"rigid"| HelmDrop["helm falls to surface; drop helmet"]
-    Horn -->|"none"| EquipDone["find_ac; newsym; encumber"]
-    Pierce --> EquipDone
-    HelmDrop --> EquipDone
+    Horn -->|"none"| Hands{"no hands plus worn gloves?"}
+    Pierce --> Hands
+    HelmDrop --> Hands
+    Hands -->|"yes"| GloveLine["drop gloves and weapon line; drop both"]
+    Hands -->|"no"| EquipDone["find_ac; newsym; encumber"]
+    GloveLine --> EquipDone
     EquipDone --> Live["committed monster equipment and presentation state"]
     Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
     Contact --> Death{"matching completelyrottable/rustable form?"}
@@ -29920,6 +29923,18 @@ pierce through your fedora.`, retains it worn and projects AC two.  Both
 62-state sessions share the exact form RNG and HP57/57.  Horn count comes from
 the source species set, while the fall destination derives from live terrain;
 neither decision is an item-name-only bridge.
+
+The first no-hands accessory successor couples gloves and weapon ownership.
+Seed11 Healer becomes a gelatinous cube while wearing the starting leather
+gloves and wielding the scalpel.  Source publishes `You drop your gloves and
+weapon!`, calls the weapon drop from inside the glove branch, clears the glove
+slot and drops both objects.  The later encumbrance line cannot fit the pending
+form/glove pair, so input29 exposes `--More--` with HP20/20, HD6, AC8,
+`Burdened` and `Blind`; input30 then publishes the capacity notice.  All 38
+states are exact from input3.  The earlier weapon-only `You find you must drop
+your tool!` path remains valid when there are no gloves, as selected by the
+existing red dragon.  Shield, additional helmet, boot and eyewear removals
+remain later branches of the same source transaction.
 
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the

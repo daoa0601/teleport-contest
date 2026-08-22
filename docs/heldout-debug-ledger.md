@@ -12231,3 +12231,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   gate passes 9/9 in 0.35 seconds, the twenty erosion controls stay exact and
   the owned managed family passes 149/149 in 2.73 seconds.  Shield, glove, boot
   and eyewear successors remain open.
+- Seed11 Healer selects no-hands glove/weapon coupling by becoming a gelatinous
+  cube with the starting leather gloves and wielded scalpel.  Native input29
+  consumes `rn2(2)=0,rn2(19)=9,rn2(500)=193,d(6,8)=20` and displays `You turn
+  into a gelatinous cube!  You drop your gloves and weapon!--More--` with
+  HP20/20, HD6, AC8, `Burdened` and `Blind`.  Both objects are on the floor;
+  input30 publishes the capacity notice.  All 38 states are exact from input3.
+
+  The port previously entered its weapon-only red-dragon shortcut, retained
+  the gloves and said `find you must drop your tool`.  Glove presence now owns
+  the coupled line and both drops; later capacity prose supplies the pager.
+  The fixture-disabled polymorph gate passes 10/10 in 0.32 seconds, the twenty
+  erosion controls stay exact and the owned managed family passes 149/149 in
+  2.75 seconds.  Shield, boot and eyewear branches remain open.
