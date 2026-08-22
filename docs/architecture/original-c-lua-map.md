@@ -29834,10 +29834,13 @@ flowchart TD
     Cloak -->|"no"| Shirt{"worn shirt?"}
     CloakType -->|"generic"| CloakLine["clasp line; Cloak_off; drop cloak"]
     CloakType -->|"alchemy smock"| SmockLine["apron knot line; Cloak_off; drop smock"]
-    CloakType -->|"mummy wrapping"| Wrapping["adaptive or tear apart; unselected"]
+    CloakType -->|"mummy wrapping"| WrapAllowed{"WrappingAllowed form?"}
+    WrapAllowed -->|"yes"| WrapKeep["retain worn wrapping; no message"]
+    WrapAllowed -->|"no"| WrapTear["wrapping tears; destroy after pager"]
     CloakLine --> Shirt
     SmockLine --> Shirt
-    Wrapping --> Shirt
+    WrapKeep --> Shirt
+    WrapTear --> Shirt
     Shirt -->|"yes"| ShirtLine["shirt line; destroy shirt after pager resumes"]
     Shirt -->|"no"| EquipDone["find_ac; newsym; encumber"]
     ShirtLine --> EquipDone
@@ -29874,8 +29877,8 @@ Suit and shirt destruction do not create a floor object or call `newsym`;
 generic cloak removal does.  The existing gnome therefore still displays its
 new glyph during the shrink-out pager, while the Tourist suit pager retains
 the old hero glyph.  The existing red-dragon weapon-drop and two-stage
-encumbrance/breath pagers remain exact.  Special mummy wrapping, horn, shield,
-helmet, glove, boot and eyewear branches remain distinct.
+encumbrance/breath pagers remain exact.  Horn, shield, helmet, glove, boot and
+eyewear branches remain distinct.
 
 Alchemy smock selects the first cloak-subtype override.  A seed11 Healer wishes
 and wears the shuffled `apron`, then becomes a wood golem.  Source
@@ -29887,13 +29890,29 @@ policy: drop ownership, AC projection and object identity remain shared.  All
 71 states are exact from input3; the final floor object is anchored by type and
 appearance rather than incorrectly promoted to the known name `alchemy smock`.
 
+Mummy wrapping selects both sides of its source eligibility predicate.  A
+wood golem is humanoid, size large and neither noncorporeal nor a named
+exception; `WrappingAllowed()` therefore retains the +2 wrapping without a
+cloak line.  Input63 displays only `You turn into a wood golem!`, keeps the
+wrapping worn and projects AC zero.  All 72 states are exact.
+
+Winged gargoyle is a medium humanoid but is explicitly excluded by both
+`WrappingAllowed()` and ordinary suit compatibility.  It therefore enters
+`breakarm()` despite its size, publishes `Your wrapping tears apart!` after
+the form line and destroys the wrapping rather than dropping it.  Because the
+female form is oviparous, the later `#sit` notice forces the combined form/tear
+line through `--More--`; input69 then publishes the egg capability.  All 77
+states are exact.  The eligibility decision uses form flags, size, symbol and
+the two source exceptions, while the capability notice independently uses
+M1_OVIPAROUS plus current sex.
+
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the
 return-to-race and encumbrance messages are ordinary continuations.  In the
 selected short line all three messages combine without a pager, state becomes
-human before knockback, and armor selection is skipped.  Suit destruction,
-special mummy wrapping and other golem species retain separate equipment-
-message witnesses despite sharing fixed HP metadata.
+human before knockback, and armor selection is skipped.  Other golem species
+and accessory-removal successors retain separate equipment-message witnesses
+despite sharing fixed HP metadata.
 
 AD_RUST reaches the same rehumanization owner with a different form predicate
 and effect line.  Iron-golem setup additionally proves three earlier

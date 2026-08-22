@@ -24,6 +24,7 @@ const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00006000;
 const M1_FLY = 0x00000001;
+const M1_OVIPAROUS = 0x00400000;
 const M1_HUMANOID = 0x00020000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
@@ -32,9 +33,15 @@ const M2_STRONG = 0x04000000;
 const MZ_SMALL = 1;
 const MZ_HUMAN = 2;
 const MZ_LARGE = 3;
+const MZ_HUGE = 4;
+const S_CENTAUR = 29;
 const S_DRAGON = 30;
+const S_GHOST = 54;
 const MAXULEV = 30;
+const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
+const PM_WINGED_GARGOYLE = 42;
+const PM_MARILITH = 294;
 const GOLEM_HIT_POINTS = new Map([
     [249, 20], [250, 20], [251, 30], [252, 60], [253, 40],
     [254, 50], [255, 40], [256, 70], [257, 100], [258, 80],
@@ -190,6 +197,16 @@ function destroyCarriedObject(object, slots = []) {
     object.where = 'gone';
 }
 
+function wrappingAllowed(mnum) {
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    const size = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
+    const symbol = MONSTER_SYMBOL[mnum];
+    return !!(flags & M1_HUMANOID)
+        && size >= MZ_SMALL && size <= MZ_HUGE
+        && symbol !== S_GHOST && symbol !== S_CENTAUR
+        && mnum !== PM_WINGED_GARGOYLE && mnum !== PM_MARILITH;
+}
+
 function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
@@ -306,7 +323,8 @@ export async function polyselfControlledMonster(mnum) {
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
     const slipsArmor = formSize <= MZ_SMALL;
     const breaksArmor = formSize >= MZ_LARGE
-        || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID));
+        || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID))
+        || mnum === PM_WINGED_GARGOYLE || mnum === PM_MARILITH;
     const noHands = heroHasNoHands(game);
     const canBreathe = (MONSTER_ATTACKS[mnum] || [])
         .some(([attackType]) => attackType === 12);
@@ -334,12 +352,20 @@ export async function polyselfControlledMonster(mnum) {
             destroyCarriedObject(suit, ['uarm']);
         }
         if (cloak) {
-            await plineWithContinuation(
-                cloak.otyp === ALCHEMY_SMOCK
-                    ? 'The knot on your apron is pulled apart!'
-                    : 'The clasp on your cloak breaks open!',
-            );
-            dropCarriedObject(cloak, ['uarmc']);
+            if (cloak.otyp === MUMMY_WRAPPING && wrappingAllowed(mnum)) {
+                // The source wrapping spans eligible humanoid forms and stays
+                // worn even though their ordinary armor must break.
+            } else if (cloak.otyp === MUMMY_WRAPPING) {
+                await plineWithContinuation('Your wrapping tears apart!');
+                destroyCarriedObject(cloak, ['uarmc']);
+            } else {
+                await plineWithContinuation(
+                    cloak.otyp === ALCHEMY_SMOCK
+                        ? 'The knot on your apron is pulled apart!'
+                        : 'The clasp on your cloak breaks open!',
+                );
+                dropCarriedObject(cloak, ['uarmc']);
+            }
         }
         if (shirt) {
             await plineWithContinuation('Your shirt rips to shreds!');
@@ -385,6 +411,13 @@ export async function polyselfControlledMonster(mnum) {
             = 'Use the command #monster to use your breath weapon.';
         if (capacityMessagePaged) await pline(breathMessage);
         else await plineWithContinuation(breathMessage);
+    }
+    const laysEggs = !!(formFlags & M1_OVIPAROUS);
+    const aquaticEel = ['giant eel', 'electric eel'].includes(monsterName);
+    if (laysEggs && game.flags?.female && !aquaticEel) {
+        await plineWithContinuation(
+            'Use the command #sit to lay an egg.',
+        );
     }
     return { transformed: true, mnum };
 }

@@ -7817,6 +7817,86 @@ test('seed0011 wood-golem breakarm pulls apart worn alchemy smock',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 wood-golem breakarm keeps adaptive mummy wrapping',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 mummy wrapping\n'
+                + 'Wk #polyself\nwood golem\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 72);
+        assertRngSliceExact(result.getRngSlices()[63], [
+            'rn2(2)=1', 'rn2(19)=7', 'rn2(500)=287',
+        ], 'seed0011 adaptive mummy-wrapping RNG');
+        assert.equal(decodedTopline(result.getScreens()[63]),
+            'You turn into a wood golem!');
+        assert.equal(decodedRow(result.getScreens()[63], 23),
+            'Dlvl:1 $:1540 HP:50(50) Pw:5(5) AC:0 HD:7');
+        assert.deepEqual(result.getCursors()[63], [65, 6, 1]);
+
+        assert.ok(game.uarmc);
+        assert.equal(game.uarmc.otyp, 138);
+        assert.equal(game.uarmc.name, 'mummy wrapping');
+        assert.equal(game.inventory.includes(game.uarmc), true);
+        assert.equal(game.uarmc.worn, true);
+        assert.equal(game.u.mh, 50);
+        assert.equal(game.u.uac, 0);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 winged-gargoyle breakarm tears mummy wrapping',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 mummy wrapping\n'
+                + 'Wk #polyself\nwinged gargoyle\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 77);
+        assertRngSliceExact(result.getRngSlices()[68], [
+            'rn2(2)=1', 'rn2(19)=7', 'rn2(10)=7',
+            'rn2(500)=164', 'd(9,8)=31',
+        ], 'seed0011 winged-gargoyle wrapping tear RNG');
+        assert.equal(decodedTopline(result.getScreens()[68]),
+            'You turn into a winged gargoyle!  Your wrapping tears apart!--More--');
+        assert.equal(decodedRow(result.getScreens()[68], 23),
+            'Dlvl:1 $:1540 HP:31(31) Pw:5(5) AC:-4 HD:9 Fly');
+        assert.deepEqual(result.getCursors()[68], [68, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[69], [],
+            'seed0011 winged-gargoyle egg notice RNG');
+        assert.equal(decodedTopline(result.getScreens()[69]),
+            'Use the command #sit to lay an egg.');
+        assert.deepEqual(result.getCursors()[69], [65, 6, 1]);
+
+        assert.equal(game.uarmc, null);
+        assert.equal(game.inventory.some(object => object.otyp === 138), false);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.equal(floorObjects.some(object => object.otyp === 138), false);
+        assert.ok(game.uarmg);
+        assert.equal(game.uarmg.otyp, 159);
+        assert.equal(game.u.umonnum, 42);
+        assert.equal(game.u.mh, 31);
+        assert.equal(game.u.uac, -4);
+        assert.equal(game.u.flying, true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

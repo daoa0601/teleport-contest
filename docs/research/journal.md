@@ -84947,3 +84947,54 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 17:58 EEST, journal block 2841] {#polyself #break-armor #wood-golem #winged-gargoyle #mummy-wrapping #wrapping-allowed #special-breakarm #object-destruction #oviparous #egg-notice #topline-continuation #native-witness #implementation #complete-replay #regression #fake-acceptance #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Paired contract:** `break_armor()` exempts mummy wrapping when
+`WrappingAllowed()` accepts the new form; otherwise the wrapping uses its own
+tear line and `useup()` rather than cloak `dropx()`.  Eligibility requires a
+humanoid form from small through huge, excludes ghosts and centaurs, and names
+winged gargoyle and marilith as explicit failures.  This is independent from
+the later verbose monster-capability graph.
+
+**Adaptive native witness:** seed11 Healer wears wished +2 mummy wrapping and
+becomes a wood golem.  Input63 consumes
+`rn2(2)=1,rn2(19)=7,rn2(500)=287`, displays only `You turn into a wood golem!`,
+retains type138 in the live worn cloak slot and projects HP50/50, HD7 and AC0.
+All 72 states are exact from input3.  The recorder took **0.06 seconds** at
+**53,002,240 bytes maximum RSS**.
+
+**Destructive native witness:** the paired Healer instead becomes a winged
+gargoyle, which is a source exception to both ordinary suit compatibility and
+wrapping adaptation.  Input68 consumes
+`rn2(2)=1,rn2(19)=7,rn2(10)=7,rn2(500)=164,d(9,8)=31`, displays `You turn into
+a winged gargoyle!  Your wrapping tears apart!--More--`, destroys type138 and
+projects HP31/31, HD9, AC−4 and flight.  The female form's M1_OVIPAROUS flag
+then owns input69 `Use the command #sit to lay an egg.`  All 77 states are
+exact; the recorder took **0.06 seconds** at **52,985,856 bytes maximum RSS**.
+
+**Implementation and falsifications:** the former generic cloak branch dropped
+the wrapping for wood golem and did not classify medium winged gargoyle as
+`breakarm()`.  A source-shaped predicate now separates retain from tear, adds
+the two named breakarm exceptions, and publishes the egg notice from form flags
+plus current sex.  This falsifies size alone as breakarm policy, generic cloak
+drop as wrapping policy and breath attacks as the complete verbose capability
+table.
+
+**Rejected acceptance and measured effect:** the first focused run was **6/7**
+because the adaptive test expected a literal `where: inventory` field.  The
+object model represents that state through membership in `game.inventory` and
+the worn slot; the corrected witness uses those actual contracts.  The
+fixture-disabled focused gate then passes **7/7** in **0.31 seconds**, the
+preceding twenty erosion controls remain exact and the one owned managed family
+passes **149/149** in **2.73 seconds**.  Every process exited before the next
+began.
+
+**Next blocker:** section830 and the ledger now close generic cloak, alchemy
+smock, adaptive wrapping and destructive wrapping.  Next choose one compact
+horn/glove/shield/helmet/boot/eyewear witness and preserve its sequential pager
+and floor-object ownership rather than broad-porting all accessories at once.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

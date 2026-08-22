@@ -12203,3 +12203,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   passes 5/5 in 0.29 seconds, the preceding twenty erosion controls stay exact
   and the owned managed family passes 149/149 in 2.69 seconds.  Adaptive and
   destroyed mummy-wrapping branches remain separate.
+- Seed11 pairs both mummy-wrapping branches.  A wood golem satisfies the source
+  humanoid/size/symbol/exception predicate: input63 says only `You turn into a
+  wood golem!`, keeps type138 worn and projects AC0.  A winged gargoyle is an
+  explicit `breakarm()` and `WrappingAllowed()` exception: input68 combines
+  `You turn into a winged gargoyle!  Your wrapping tears apart!--More--`,
+  destroys type138 and projects HP31/31, HD9, AC−4 and flight.  Input69 then
+  publishes the female oviparous form's `#sit` egg notice.  The complete 72-
+  and 77-state sessions are exact from input3.
+
+  The first focused gate was rejected at 6/7 because its adaptive assertion
+  expected a synthetic `where: inventory` field.  Live inventory membership,
+  the worn slot and object identity are the actual storage contract; the
+  corrected gate passes 7/7 in 0.31 seconds.  The twenty prior erosion controls
+  stay exact and the owned managed family passes 149/149 in 2.73 seconds.
+  Remaining accessory drop branches are not inferred from cloak behavior.
