@@ -12663,3 +12663,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   disabled cleric gate passes 18/18 in 0.57 seconds at 150,650,880 bytes
   maximum RSS.  Reflection, combined half-spell wand destruction, expiry and
   artifact extrinsics remain open.
+- Seed32 closes worn-shield lightning reflection through 166 exact states.
+  A timed `#wizintrinsic` reflecting probe was rejected because source
+  `ureflects()` ignores HReflecting.  The real shield wish assigned letter `l`;
+  seed15 shifted to confusion after `Wl`, and a serial seeds16--32 search found
+  the clean carrier.  Input149 publishes the bolt with zero RNG.  Input152
+  publishes the bounce, discovers the shield via `rn2(19)=0`, then rolls
+  reflected 8d6=35 and returns before inventory/flash.  Final state is HP105,
+  sighted, AC6, shield worn/known and wand present.  The fixture-disabled
+  cleric gate passes 19/19 in 0.64 seconds at 154,812,416 bytes maximum RSS.
+  Other reflection sources, known-shield feedback and expiry remain open.

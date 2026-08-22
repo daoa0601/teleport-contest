@@ -17,7 +17,7 @@ import {
 import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
-    promptYesNo, performQuestExpulsion,
+    promptYesNo, performQuestExpulsion, discoverReflectingShield,
     rhack, stopRun,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
@@ -50,7 +50,7 @@ import {
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
     OBJECT_MATERIAL, POT_HEALING, POT_SLEEPING, TALLOW_CANDLE,
-    TWO_HANDED_SWORD, WAX_CANDLE,
+    TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import {
     BOLT_LIM, COLNO, ROWNO, DOOR, HOLE, SPIKED_PIT,
@@ -2542,6 +2542,17 @@ async function resolveDeferredHeroFirePillar(action, heroAttack) {
 
 async function resolveDeferredHeroLightningSpell(action, heroAttack) {
     if (!heroAttack?.deferredLightningSpell) return;
+    const reflectedByShield = game.uarms?.otyp === SHIELD_OF_REFLECTION;
+    if (reflectedByShield) {
+        await queueTurnMessage('It bounces off your shield.');
+        discoverReflectingShield();
+        d(8, 6);
+        action.calls.push('d(8,6)');
+        heroAttack.appliedDamage = 0;
+        heroAttack.reflectedLightning = true;
+        heroAttack.deferredLightningSpell = false;
+        return;
+    }
     const originalDamage = d(8, 6);
     action.calls.push('d(8,6)');
     const shockResistant = !!(game.u?.shockResistance

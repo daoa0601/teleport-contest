@@ -12819,7 +12819,7 @@ function heroReflectsSleepRay() {
         || game.uarms?.otyp === SHIELD_OF_REFLECTION);
 }
 
-function discoverReflectingShield() {
+export function discoverReflectingShield() {
     const shield = game.uarms;
     if (!shield || shield.otyp !== SHIELD_OF_REFLECTION) return;
     if (!game._knownObjectTypes) game._knownObjectTypes = new Set();

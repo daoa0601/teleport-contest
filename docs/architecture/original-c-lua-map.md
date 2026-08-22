@@ -30817,3 +30817,36 @@ the fatal/savelife tail still ends HP113, Blind64, the wand present and 26
 half-spell turns.  This is an exact composition closure with no production
 change.  Reflection, combined half-spell plus destroyed wand, timeout expiry
 and artifact extrinsics remain separate controls.
+
+## 850. Lightning reflection is equipment-owned and returns before items/flash
+
+```mermaid
+flowchart TD
+    Property["Reflecting property exists"] --> Ureflects["muse.c:ureflects"]
+    Ureflects --> Intrinsic{"HReflecting timed only?"}
+    Intrinsic -->|"yes"| NoReflect["ignored by ureflects"]
+    Ureflects --> Equipment{"EReflecting shield/weapon/amulet/armor or silver-dragon form?"}
+    Equipment -->|"shield"| Bolt["publish lightning bolt"]
+    Bolt --> Bounce["publish bounce-off-shield line"]
+    Bounce --> Discover["discover shield; exercise Wisdom"]
+    Discover --> Die["roll fresh d(8,6), set damage zero"]
+    Die --> Return["return before destroy_items, terrain, and flashburn"]
+    Lua["Lua owns no reflection or lightning phase"] -.-> Ureflects
+```
+
+The rejected debug-property probe selected page-three `v` and reported a
+30-turn reflecting timeout, but native lightning remained ordinary because
+`ureflects()` does not consult `HReflecting`.  A real wished shield assigned
+inventory letter `l`; correcting an initial `Wk` mistake to `Wl` wore it, but
+the wish/wear RNG shifted seed15 to confusion.  A serial identical-setup search
+selected clean reflected lightning at seed32.
+
+Input148 consumes only cast pre-roll `d(14,8)=45`.  Input149 publishes the
+bolt with zero RNG because attempting the bounce behind it opens a pager.
+Input152 publishes `It bounces off your shield.`, discovers the new type via
+Wisdom `rn2(19)=0`, then rolls lightning `d(8,6)=35`, sets damage zero and
+returns before any limit, wand or flash call.  The later selector continues on
+the same input.  All 166 states are exact, ending HP105, sighted, AC6, shield
+worn/known and sleep wand present.  Weapon/amulet/armor and silver-dragon
+reflection sources, already-known shield feedback and reflection expiry remain
+separate controls.

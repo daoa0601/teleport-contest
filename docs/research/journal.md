@@ -86603,3 +86603,45 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 23:09 EEST, journal block 2882] {#high-cleric #lightning #reflection #shield-of-reflection #ureflects #extrinsic #wizintrinsic #rejected-carrier #wish #wear #discovery #exercise #selector-search #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Reflection contract and independent routes:** reflection must publish the
+bolt and bounce, discover its equipment source, roll fresh 8d6, set damage
+zero and return before electrical inventory or flash.  Two property routes
+were kept independent.  Page-three `#wizintrinsic` local `v` sets and reports
+timed HReflecting, but native lightning does not reflect: source
+`ureflects()` checks EReflecting equipment masks and silver-dragon form, not
+the intrinsic.  That carrier was rejected rather than forcing the general
+hero boolean into the spell.
+
+**Equipment carrier search:** a real uncursed +0 shield wish assigned letter
+`l`; the first `Wk` attempt was correctly rejected as silly.  `Wl` wore it and
+projected AC6, but wish/wear RNG shifted seed15 to confusion.  Serial seeds16--
+31 with the identical setup produced covered effects; seed32 selected clean
+lightning with an exact constructor/equipment prefix.  This separates carrier
+reachability from reflection behavior.
+
+**Pager, discovery and return boundary:** input148 consumes cast pre-roll
+`d(14,8)=45`.  Input149 publishes the bolt with zero RNG because the bounce
+attempt suspends behind it.  Input152 publishes `It bounces off your shield.`,
+discovers the new shield through Wisdom `rn2(19)=0`, then rolls reflected
+`d(8,6)=35` and returns before the stack limit, wand and flash.  Later selector
+RNG resumes on that input; the 166-state tail ends HP105, sighted, AC6, shield
+worn/known and wand present.  Section850 maps the `ureflects()` source quirk
+and equipment ownership; Lua owns no phase.
+
+**Measured acceptance and next blocker:** all **166 native states** are exact.
+The recorder took **0.08 seconds** at **54,657,024 bytes maximum RSS** and the
+exact JS replay took **0.23 seconds** at **125,452,288 bytes max RSS**.  The
+first focused gate's only failure was a test assertion expecting literal
+`false` for untouched `game.blind`; normalizing `!!game.blind` preserves the
+native sighted contract.  Reflection plus eighteen neighboring cleric
+witnesses pass **19/19** fixture-disabled in **0.64 seconds** at **154,812,416
+bytes max RSS**; all processes exited.  Other equipment/form reflection
+sources, already-known feedback and expiry remain open.  Next move to the
+remaining curse/insect controls.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

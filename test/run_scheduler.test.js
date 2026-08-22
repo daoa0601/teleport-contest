@@ -9988,6 +9988,61 @@ test('seed0015 half-spell lightning preserves original inventory damage basis',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0032 reflecting shield returns lightning before inventory and flash',
+    async () => {
+        const result = await runSegment({
+            seed: 32,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizwish\nuncursed +0 shield of reflection\nWl'
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 166);
+        assert.equal(decodedTopline(result.getScreens()[101]),
+            'l - a polished silver shield.');
+        assert.equal(decodedTopline(result.getScreens()[103]),
+            'You are now wearing a polished silver shield.');
+        assert.equal(decodedRow(result.getScreens()[103], 23),
+            'Dlvl:1 $:1303 HP:149(149) Pw:230(230) AC:6 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[148], [
+            'd(14,8)=45',
+        ], 'seed0032 reflected lightning cast pre-roll RNG');
+        assert.equal(decodedTopline(result.getScreens()[148]),
+            'The priest of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[149], [],
+            'seed0032 bolt pager stops before reflection RNG');
+        assert.equal(decodedTopline(result.getScreens()[149]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[149], 23),
+            'Dlvl:1 $:1303 HP:138(149) Pw:230(230) AC:6 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[152], [
+            'rn2(19)=0', 'd(8,6)=35',
+            'rn2(25)=20', 'rn2(13)=2', 'rn2(13)=12',
+        ], 'seed0032 shield discovery, reflected damage die, and selector RNG');
+        assert.equal(decodedTopline(result.getScreens()[152]),
+            'It bounces off your shield.--More--');
+        assert.equal(decodedRow(result.getScreens()[152], 23),
+            'Dlvl:1 $:1303 HP:138(149) Pw:230(230) AC:6 Xp:30');
+
+        assert.equal(game.uarms?.otyp, 158);
+        assert.equal(game._knownObjectTypes?.has(158), true);
+        assert.equal(game.inventory.some(object => object.otyp === 432), true);
+        assert.equal(!!game.blind, false);
+        assert.equal(game.u.uhp, 105);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0068 lightning defers wand explosion before flash and spell damage',
     async () => {
         const result = await runSegment({
