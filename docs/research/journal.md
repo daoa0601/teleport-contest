@@ -86568,3 +86568,38 @@ expiry remain separate.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 23:02 EEST, journal block 2881] {#high-cleric #lightning #half-spell-damage #wizintrinsic #original-damage #applied-damage #destroy-items #flashburn #composition #no-production-change #complete-replay #native-witness #regression #architecture #ledger #green #process-safety #priority}
+
+**Composition contract and carrier:** half-spell damage must not halve the
+value passed to electrical inventory destruction.  Source halves the
+level-scaled cast pre-roll before `mcast_spell()`, but lightning discards it,
+rolls fresh 8d6, passes the original to `destroy_items()` and halves only
+applied spell HP.  Seed15 plus page-three local `n` supplies the already-proven
+timed property on the exact non-destructive lightning carrier.
+
+**Native evidence:** input122 retains `d(14,8)=56` behind the cast pager.
+Input123 retains `d(8,6)=26,rn2(5)=1,rnd(10)=4,rn2(3)=1,rnd(100)=67`, proving
+that item selection/survival and flash use original26; the bolt screen remains
+HP165.  Input124 publishes the flash, commits Blind and rounded applied HP13,
+reaching HP152 rather than ordinary139.  The later death refusal remains
+exact and ends HP113, Blind64, mortality1, the wand present and 26 timed turns.
+
+**Decision and mapping:** the full **141-state replay was already exact**, so
+no production change was justified.  The new bounded regression closes the
+composition that source inspection alone could not prove.  Section849 maps
+the discarded/rounded pre-roll, original inventory basis and rounded applied
+HP; Lua owns no phase.  This falsifies using thirteen as `destroy_items()`'s
+scale or skipping flash under half spell damage.
+
+**Measured acceptance and next blocker:** the recorder took **0.09 seconds**
+at **54,902,784 bytes maximum RSS** and the exact JS replay took **0.24
+seconds** at **126,959,616 bytes max RSS**.  Half-spell lightning plus seventeen
+neighboring cleric witnesses pass **18/18** fixture-disabled in **0.57
+seconds** at **150,650,880 bytes max RSS**; all processes exited.  Reflection
+and combined half-spell wand destruction remain lightning controls; timeout
+expiry and artifact extrinsics remain separate.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

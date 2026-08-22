@@ -30789,3 +30789,31 @@ ends HP74, Blind95, no sleep wand and 27 resistance turns.  This composes
 `maybe_destroy_item()`'s xresist branch with `mcast_lightning()` without
 skipping mutation or flash.  Reflection, half-spell lightning, fatal item
 damage, multiple electrical items and timeout expiry remain separate controls.
+
+## 849. Half-spell lightning separates original item damage from applied HP
+
+```mermaid
+flowchart TD
+    Timed["HALF_SPDAM timed intrinsic"] --> Cast["castmu rolls level-scaled 14d8"]
+    Cast --> CastHalf["cast pre-roll is rounded but later discarded"]
+    CastHalf --> Lightning["mcast_lightning rolls fresh original d(8,6)"]
+    Lightning --> Applied["applied spell HP = ceil original / 2"]
+    Lightning --> Items["destroy_items receives unhalved original damage"]
+    Items --> Flash["wand gate and flashburn remain unchanged"]
+    Flash --> Commit["blindness, then rounded spell HP"]
+    Commit --> Continue["remaining actor and timeout lifecycle"]
+    Lua["Lua owns no half-spell or lightning phase"] -.-> Timed
+```
+
+Seed15 adds page-three timed half-spell damage to the exact non-destructive
+lightning carrier.  Input122 retains `d(14,8)=56` behind the cast pager; its
+rounded preview is discarded by `mcast_lightning()`.  Input123 rolls fresh
+`d(8,6)=26` and still uses 26 for `rn2(5)=1,rnd(10)=4,rn2(3)=1` wand
+selection/survival plus flash67.  The bolt screen remains pre-effect HP165.
+
+Input124 publishes the flash, commits blindness and only thirteen spell HP,
+ending HP152 rather than the ordinary carrier's139.  All 141 states are exact;
+the fatal/savelife tail still ends HP113, Blind64, the wand present and 26
+half-spell turns.  This is an exact composition closure with no production
+change.  Reflection, combined half-spell plus destroyed wand, timeout expiry
+and artifact extrinsics remain separate controls.

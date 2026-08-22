@@ -9934,6 +9934,60 @@ test('seed0015 timed shock resistance preserves lightning inventory and flash',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0015 half-spell lightning preserves original inventory damage basis',
+    async () => {
+        const result = await runSegment({
+            seed: 15,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n  n\n '
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 141);
+        assert.equal(decodedRow(result.getScreens()[75], 13),
+            ' n - half spell damage');
+        assert.equal(decodedRow(result.getScreens()[76], 13),
+            ' n + half spell damage');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'Timeout for half spell damage set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'd(14,8)=56',
+        ], 'seed0015 half-spell lightning cast pre-roll RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'The priestess of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'd(8,6)=26', 'rn2(5)=1', 'rnd(10)=4',
+            'rn2(3)=1', 'rnd(100)=67',
+        ], 'seed0015 half-spell original inventory and flash RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1316 HP:165(171) Pw:283(283) AC:8 Xp:30');
+
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'You are blinded by the flash!');
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1316 HP:152(171) Pw:283(283) AC:8 Xp:30 Blind');
+
+        assert.equal(game.u.halfSpellDamage, true);
+        assert.equal(game.u.halfSpellDamageTurns, 26);
+        assert.equal(game.u.uhp, 113);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game.u.blindTurns, 64);
+        assert.equal(game.inventory.some(object => object.otyp === 432), true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0068 lightning defers wand explosion before flash and spell damage',
     async () => {
         const result = await runSegment({

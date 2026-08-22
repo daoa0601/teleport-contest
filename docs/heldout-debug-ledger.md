@@ -12654,3 +12654,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   disabled cleric gate passes 17/17 in 0.57 seconds at 155,729,920 bytes
   maximum RSS.  Reflection, half-spell lightning, fatal item damage, multiple
   electrical items and timeout expiry remain open.
+- Seed15 plus timed half-spell damage closes lightning's original-versus-
+  applied damage composition through 141 exact states without a production
+  change.  Input122 keeps discarded 14d8=56.  Input123 rolls original 8d6=26
+  and still bases the stack/wand/flash RNG on 26.  Input124 commits Blind and
+  rounded spell HP13, reaching HP152 instead of139.  The exact fatal/savelife
+  tail ends HP113, Blind64, the wand present and 26 timed turns.  The fixture-
+  disabled cleric gate passes 18/18 in 0.57 seconds at 150,650,880 bytes
+  maximum RSS.  Reflection, combined half-spell wand destruction, expiry and
+  artifact extrinsics remain open.
