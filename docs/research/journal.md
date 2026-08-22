@@ -86196,3 +86196,31 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 21:55 EEST, journal block 2871] {#high-cleric #mace #weapon-damage #dmgval #small-defender #fixed-bonus #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Residual contract and source diagnosis:** after complete fire-pillar parity,
+the full replay first differed at input114 only in HP: native70 versus JS71.
+Input111 already matched `rnd(20)=19,d(4,10)=25,rnd(6)=5`; mace enchantment is
++3.  `weapon.c:dmgval()` has an additional fixed +1 for mace against non-big
+defenders, so this is weapon arithmetic rather than delayed pillar damage,
+armor AC or priest Strength.
+
+**Implementation and complete evidence:** add the source mace constant beside
+the existing weapon die before enchantment/erosion.  Input114 now applies 34
+damage after the swing pager and continues at kick slot one.  Inputs115-117
+retain exact kick damage, dual blocked-spell selection, renegade-priest curse
+prose and once-per-input AC refresh from burned gloves.  The complete **122
+native states** are exact; the original recorder took **0.07 seconds** at
+**54,165,504 bytes maximum RSS**.
+
+**Measured acceptance and next blocker:** full high-cleric, fire prefix/effect,
+cure, confusion, three paralyze controls and AD_STUN pass **9/9**
+fixture-disabled in **0.35 seconds** at **140,640,256 bytes max RSS**; all
+processes exited.  Sections838-840 and the ledger now close this carrier.
+Select a different high-level cleric spell—lightning, insects, curse-items or
+geyser—using a deterministic setup; do not infer those effects from fire
+pillar.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty test files remain untouched.
+
+---

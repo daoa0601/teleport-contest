@@ -30527,3 +30527,15 @@ vapors, and damages for scrolls/books as well as potions.  The final selected
 inventory is healing×1, extra-healing×2, no stone-to-flesh; gloves have primary
 erosion one.  All 114 bounded states are exact.  Input114's later mace contact
 is the next independent frontier: JS damage is one point low.
+
+## 840. High-cleric mace adds its non-big defender constant after the die
+
+For a human defender, source `weapon.c:dmgval()` computes mace damage as
+`rnd(6) + 1 + spe`; the fixed one is not encoded in the object table's 1d6
+field.  Input111 therefore combines high-cleric 4d10=25, mace d6=5, the fixed
+one and +3 enchantment for 34 total.  After the swing pager, input114 applies
+that damage and continues at the 2d8 kick, reaching native HP70 rather than
+JS's former HP71.  Inputs115-117 retain the kick, two blocked spell selections,
+renegade-priest curse prose and delayed burned-glove AC8→9 refresh.  The full
+122-state session is exact; the next cleric block should select a different
+higher-level effect rather than extend fire-pillar-specific code.

@@ -6114,6 +6114,9 @@ function basicMonsterAttack(
         );
         let weaponDamage = weaponSides ? rollOne(weaponSides) : 0;
         if (weaponSides) calls.push(`rnd(${weaponSides})`);
+        // weapon.c:dmgval(): a mace has a fixed +1 against non-big
+        // defenders in addition to its encoded 1d6 base die.
+        if (contactWeapon.otyp === 73) weaponDamage++;
         weaponDamage += contactWeapon.spe
             ?? contactWeapon.enchantment ?? 0;
         weaponDamage = Math.max(

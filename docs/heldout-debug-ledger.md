@@ -12565,3 +12565,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   vapor and non-potion damage.  Eight cleric witnesses pass fixture-disabled
   in 0.32 seconds.  The later high-cleric mace hit is one point low at input114
   and remains separate.
+- The high-cleric carrier is now exact through all 122 states.  Source mace
+  damage against the human hero is d6 plus a fixed one plus enchantment; adding
+  that non-table constant changes input114 HP71→70.  The following kick,
+  blocked spell/curse sequence and burned-glove AC refresh to 9 remain exact.
+  Nine cleric witnesses pass fixture-disabled in 0.35 seconds.  The next
+  higher-cleric target is a distinct effect such as lightning, insects,
+  curse-items or geyser, not another fire-pillar bridge.
