@@ -86041,3 +86041,30 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 21:18 EEST, journal block 2867] {#abbot #cleric-spell #cure-self #carrier-search #damaged-caster #hero-melee #direction #tty-acknowledgement #confusion #rejected-candidates #native-probe #priority #process-safety}
+
+**Required construction:** cure-self is filtered as useless while the abbot is
+at full HP, so the witness must damage a live hostile caster and then select
+spell value one before another effect changes adjacency or command semantics.
+The native genesis square is west `(64,6)`, not northwest; initial `y` moved the
+hero and was rejected.  `h` correctly hits the abbot and leaves it alive.
+
+**Probe results and falsifications:** one hit advances the first spell selector
+to `rn2(7)=0`, which can only choose open wounds.  Two hits leave about 23/28
+HP and select `rn2(7)=2`, producing confusion.  A naive third consecutive `h`
+was first consumed as an invalid key by the second hit's pager; after inserting
+the required Space, the later `h` reached an already-confused hero and
+`confdir()` redirected it instead of damaging the caster.  This falsifies both
+the northwest assumption and “add one more hit” as a stable cure constructor.
+
+**Decision and next discriminator:** make no production change and do not call
+the confusion cast cure-self evidence.  Preserve the clean west-adjacent
+carrier, but shift RNG before genesis/first hit with a harmless established
+object action or change seed while requiring: visible hero hit, live reduced
+abbot HP, `rn2(7)=1`, undirected `casts a spell!`, `looks better` prose and the
+separate 3d6 heal.  All recorder probes exited near **0.07 seconds** and about
+**54 MB RSS**; no test runner, corpus, hidden judge, push or publication ran.
+Unrelated dirty test files remain untouched.
+
+---
