@@ -5158,9 +5158,9 @@ export async function moveloop_core() {
         const previous = g._encumbranceLevel ?? 0;
         const current = nearCapacity(g);
         const message = encumbranceMessage(previous, current);
-        if (message) await plineWithContinuation(message);
         g._encumbranceLevel = current;
         g.u._encumbrance = encumbranceLabel(current);
+        if (message) await plineWithContinuation(message);
         g._capacityDirty = false;
     }
 

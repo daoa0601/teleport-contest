@@ -8557,6 +8557,75 @@ test('seed0011 energy vortex drains Pw across engulf and expulsion',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 blessed gain-energy stack builds high-Pw level-one state',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\n20 blessed potions of gain energy\n'
+                + ' qk qk qk qk qk qk qk qk qk qk qk qk ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 84);
+        assertRngSliceExact(result.getRngSlices()[46], [
+            'rn2(41)=35', 'rnd(2)=1', 'rn2(4)=1',
+        ], 'seed0011 gain-energy stack wish RNG');
+        assert.equal(decodedTopline(result.getScreens()[46]),
+            'k - 20 dark potions.--More--');
+        assert.deepEqual(result.getCursors()[46], [28, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[49], [
+            'd(3,6)=10', 'rn2(19)=8', 'rn2(19)=6',
+            'rn2(12)=8', 'rn2(12)=11', 'rn2(70)=48',
+            'rn2(400)=226', 'rn2(20)=13', 'rn2(70)=69',
+            'rn2(12)=3', 'rn2(12)=8', 'rn2(70)=50',
+            'rn2(400)=202', 'rn2(20)=6', 'rn2(70)=25',
+        ], 'seed0011 first gain-energy effect/discovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[49]),
+            'Magical energies course through your body.');
+        assert.equal(decodedRow(result.getScreens()[49], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:15(15) AC:8 Xp:1 Burdened');
+
+        assertRngSliceExact(result.getRngSlices()[67], [
+            'd(3,6)=9', 'rn2(19)=18',
+        ], 'seed0011 gain-energy load-threshold prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[67]),
+            'Magical energies course through your body.--More--');
+        assert.equal(decodedRow(result.getScreens()[67], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:83(83) AC:8 Xp:1');
+        assert.deepEqual(result.getCursors()[67], [50, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[68], [
+            'rn2(12)=9', 'rn2(12)=5', 'rn2(70)=45',
+            'rn2(400)=170', 'rn2(20)=13', 'rn2(19)=3', 'rn2(70)=48',
+        ], 'seed0011 post-quaff unencumbered continuation RNG');
+        assert.equal(decodedTopline(result.getScreens()[68]),
+            'Your movements are now unencumbered.');
+
+        assertRngSliceExact(result.getRngSlices()[82], [
+            'd(3,6)=11', 'rn2(19)=17', 'rn2(5)=0', 'rn2(20)=14',
+            'rn2(5)=3', 'rn2(12)=1', 'rn2(12)=0', 'rn2(70)=66',
+            'rn2(400)=165', 'rn2(20)=3', 'rn2(70)=16',
+        ], 'seed0011 twelfth gain-energy effect RNG');
+        assert.equal(decodedRow(result.getScreens()[82], 23),
+            'Dlvl:1 $:1540 HP:13(13) Pw:134(134) AC:8 Xp:1');
+
+        const potions = game.inventory.find(object => object.otyp === 313);
+        assert.ok(potions);
+        assert.equal(potions.quantity ?? potions.quan, 8);
+        assert.equal(game.u.ulevel, 1);
+        assert.equal(game.u.uen, 134);
+        assert.equal(game.u.uenmax, 134);
+        assert.equal(game.u._encumbrance, '');
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 cancelled energy vortex preserves Pw across engulf slots',
     async () => {
         const result = await runSegment({

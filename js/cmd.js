@@ -76,7 +76,7 @@ import {
     RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
-    POT_ACID, POT_WATER,
+    POT_ACID, POT_GAIN_ENERGY, POT_WATER,
     WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
     WAN_POLYMORPH,
     LENSES, BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
@@ -2037,6 +2037,25 @@ async function doquaff() {
                 recordObjectKnowledge(potion.otyp);
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
+    } else if (potion.otyp === POT_GAIN_ENERGY) {
+            await pline('Magical energies course through your body.');
+            let amount = d(potion.blessed ? 3 : potion.cursed ? 1 : 2, 6);
+            if (potion.cursed) amount = -amount;
+            game.u.uenmax = (game.u.uenmax ?? 0) + amount;
+            if (game.u.uenmax > (game.u.uenpeak ?? 0))
+                game.u.uenpeak = game.u.uenmax;
+            else if (game.u.uenmax <= 0) game.u.uenmax = 0;
+            game.u.uen = (game.u.uen ?? 0) + 3 * amount;
+            if (game.u.uen > game.u.uenmax) game.u.uen = game.u.uenmax;
+            else if (game.u.uen <= 0) game.u.uen = 0;
+            exerciseAttribute(4, true);
+            if (potion.dknown !== false
+                && !game._knownObjectTypes?.has(potion.otyp)) {
+                exerciseAttribute(4, true);
+                recordObjectKnowledge(potion.otyp);
+                game.u.urexp = (game.u.urexp || 0) + 10;
+            }
+            recordObjectEncounter(potion.otyp);
     } else if (potion.otyp === POT_HEALING) {
             await pline('You feel better.');
             const bucSign = potion.blessed ? 1 : potion.cursed ? -1 : 0;
@@ -2161,6 +2180,7 @@ async function doquaff() {
             await callUnknownPotion(potion);
     }
     consumeOneInventoryObject(potion);
+    game._capacityDirty = true;
     game._liveQuietTurnRequested = true;
     game.context.move = 1;
 }

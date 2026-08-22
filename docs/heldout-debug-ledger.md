@@ -12422,3 +12422,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   `uswallow=1,ustuck=vortex`.  Corrected energy-vortex tests pass 2/2 in 0.22
   seconds and the ice-vortex resume unit passes 1/1.  High-Pw scaling remains
   the next AD_DREN control.
+- Seed11 constructs high Pw through source effects rather than state injection.
+  Level30→1 cycling was rejected because native restores Pw5/5.  One debug wish
+  yields a real stack of twenty blessed gain-energy potions; twelve quaffs own
+  3d6 growth, per-effect Wisdom exercise, first-use discovery and stack
+  consumption, ending level1 at Pw134/134 with quantity eight.  All 84 setup
+  states are exact from input3.
+
+  The first repeated-quaff recipe stopped after seven because effect prose
+  opened `--More--`; explicit acknowledgements fixed the harness.  That seventh
+  potion also selected a real Burdened→Unencumbered boundary: the energy line
+  pages with the new status, then capacity prose resumes.  Consumed potions now
+  mark weight dirty and the load state commits before tty await.  Gain-energy,
+  healing and gain-level potion siblings pass 3/3.  The resulting Pw134 exceeds
+  both level-one high-drain thresholds and is ready for the 3d9 vortex block.

@@ -193,6 +193,7 @@ export const POT_SLEEPING = 314;
 export const POT_OIL = 321;
 export const WAN_DEATH = 433;
 export const POT_EXTRA_HEALING = 308;
+export const POT_GAIN_ENERGY = 313;
 export const POT_GAIN_LEVEL = 309;
 export const POT_OBJECT_DETECTION = 312;
 export const POT_BOOZE = 317;

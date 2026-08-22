@@ -85606,3 +85606,46 @@ thresholds.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 19:59 EEST, journal block 2857] {#gain-energy #potion #high-pw #state-construction #stack-wish #quaff #wisdom #discovery #encumbrance #capacity-dirty #pager #falsified-route #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Construction contract:** high AD_DREN requires level-one
+`uen > 12*6=72` and `uenmax > 20*6=120`.  The state must be produced by source
+commands/effects, with exact RNG, inventory quantity, messages and load state;
+direct field injection or a high-level state that raises the thresholds is not
+evidence.
+
+**Falsified routes and harness correction:** native level30→1 cycling restores
+HP13/Pw5, so accumulated level energy cannot be reused.  Native does accept one
+wish for twenty blessed gain-energy potions.  The first twelve-quaff recipe
+consumed only seven: repeated energy prose opened `--More--` and later `qk`
+keys were invalid pager input.  Interspersing explicit spaces makes early ones
+zero-time unknown commands and later ones acknowledgements, guaranteeing all
+twelve effects execute.
+
+**Native witness:** the stack wish ends `k - 20 dark potions.--More--`.  Every
+blessed quaff rolls 3d6, increases max Pw by that amount and current Pw by three
+times it capped to max, then exercises Wisdom; input49 adds a second Wisdom
+draw for first discovery.  Twelve effects end level1 at Pw134/134 with eight
+potions remaining.  All 84 states are exact from input3; the recorder took
+**0.06 seconds** at **53,198,848 bytes maximum RSS**.
+
+**Weight/pager boundary and implementation:** the seventh effect reaches
+Pw83 and consumes enough stack weight to change Burdened→Unencumbered.  Native
+input67 pages the pending energy sentence with the new status, and input68
+publishes `Your movements are now unencumbered.`.  JavaScript originally ran
+global RNG on input67 because potion consumption did not mark capacity dirty;
+after marking it, the pager still showed stale Burdened because load state was
+committed after awaiting the capacity pline.  Marking every consumed potion
+and committing the new band before tty await restores source order.
+
+**Measured acceptance and next blocker:** the gain-energy setup passes **1/1**
+and neighboring gain-level/healing potion owners make the focused gate **3/3**
+in **0.38 seconds**.  Section833 and the ledger map the source constructor.
+Extend this exact 84-state recipe with hostile energy vortex, require native
+3d9 drain dice, and verify drain_en's high-amount throttling/current-max effect
+before accepting high-Pw AD_DREN.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

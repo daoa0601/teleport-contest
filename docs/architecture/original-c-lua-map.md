@@ -30194,3 +30194,36 @@ already-swallowed action processes slot0/slot1 dice, then the next fast action's
 slot0 decrements the remaining timer to zero: expulsion happens before another
 AD_DREN die.  After the pager, cooldown slot1 resumes as `The energy vortex
 misses!`.  All 107 states are exact from input3.
+
+## 833. High-Pw construction is a real potion and weight transaction
+
+```mermaid
+flowchart TD
+    Wish["Wizard wish: 20 blessed gain-energy potions"] --> Stack["one type313 stack, quantity 20"]
+    Stack --> Quaff["q selects one stack member"]
+    Quaff --> Dice["blessed d(3,6)"]
+    Dice --> Max["uenmax += n; uen += 3n capped to max"]
+    Max --> Wisdom["exercise Wisdom; first potion also discovers type"]
+    Wisdom --> Consume["quantity decrements; mark capacity dirty"]
+    Consume --> More{"load band changed or later prose needs tty?"}
+    More -->|"no"| Quaff
+    More -->|"Burdened to Unencumbered"| Pager["energy line --More--; capacity line resumes"]
+    Pager --> Quaff
+    Quaff --> Final["after twelve: level 1, Pw134/134, quantity 8"]
+    Final --> Threshold["134 > 72 and 134 > 120: AD_DREN high branch eligible"]
+```
+
+Debug level cycling is not a valid constructor: raising the Healer to 30 and
+lowering to 1 restores HP13/Pw5 exactly.  Native instead accepts one debug wish
+for twenty blessed gain-energy potions.  Each real quaff publishes `Magical
+energies course through your body.`, rolls 3d6, increases maximum energy by the
+roll and current energy by three times that roll capped to the new maximum,
+then exercises Wisdom.  Only the first potion adds discovery exercise.
+
+Twelve quaffs end at level1 Pw134/134, genuinely exceeding getmattk's high
+thresholds 12×6=72 and 20×6=120.  Stack weight is observable: after the seventh
+potion, Burdened becomes Unencumbered.  The later capacity pline forces the
+pending energy sentence through `--More--`, but the new load band is already
+painted.  JS therefore marks every consumed potion as capacity-dirty and
+commits the new encumbrance state before awaiting its message.  All 84 setup
+states are exact from input3; eight potions remain.
