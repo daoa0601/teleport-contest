@@ -12513,3 +12513,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   potion vapor.  The resistant/unresisted plus protection-ring and shield
   naming siblings pass 4/4 fixture-disabled in 0.27 seconds.  Antimagic and
   half-spell-damage paralyze controls remain open.
+- Seed11 closes the half-spell rounding branch through C's timed
+  `#wizintrinsic` property.  Page-three local `n` is proven by the selected
+  menu row and input77 timeout line.  Input148 retains the paralyze pre-roll;
+  input149 rounds level-seven duration/damage 11 to six and schedules exactly
+  the native autonomous attack sequence through fatal damage.  After debug
+  savelife, the Seer `rn2(31)=2` is deferred from input152 until input153's
+  survival callback.  All 157 states are exact and six intrinsic/death/
+  resistance siblings pass fixture-disabled in 0.32 seconds.  The preferred
+  carried Orb-of-Fate carrier was rejected before property evidence because
+  native already tracks two random artifacts (`rn2(3)`) while JS tracks only
+  the wished Orb (`rn2(1)`).  Artifact generation and Antimagic remain open.

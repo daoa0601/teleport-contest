@@ -85945,3 +85945,51 @@ hidden judge, push or publication ran; unrelated dirty test files remain
 untouched.
 
 ---
+
+### [2026-08-22 21:03 EEST, journal block 2865] {#abbot #cleric-spell #paralyze #half-spell-damage #wizintrinsic #menu-pagination #rounding #negative-multi #autonomous-turns #debug-death #savelife #seer #callback-order #orb-of-fate #artifact-count #rejected-carrier #native-witness #implementation #complete-replay #regression #architecture #ledger #green #process-safety #priority}
+
+**Target contract and independent routes:** half spell damage must preserve the
+spell selection, fumble check, 4d6 pre-roll and cast pager, then round both
+paralyze duration and HP damage upward from eleven to six.  Two source routes
+were kept independent: a real carried artifact property and C's debug timed
+intrinsic.  Acceptance requires exact autonomous-turn count, not just a hero
+boolean or the final message.
+
+**Rejected real-carrier route:** Valkyrie can wizard-wish the carried Orb of
+Fate, whose `SPFX_HSPDAM` is source-valid.  Both level-first and Orb-first
+recipes diverge before property use: native has two pre-existing random
+artifacts, so wishing the Orb pays anti-abuse `rn2(3)`; JS's existence set
+contains only the Orb and pays `rn2(1)`.  Extending that route would conflate
+artifact generation, carried half-physical damage and half-spell damage.  It
+is recorded as a separate gap rather than bridged or called resistant proof.
+
+**Selector correction and accepted native witness:** the first timed recipe
+used page-three `p`, which visibly selects HP regeneration.  Native menu
+inspection identifies page-three local `n` as half spell damage.  The corrected
+input77 publishes `Timeout for half spell damage set to 30.--More--`.  Input148
+then consumes the same claw/kick/paralyze prefix and `d(4,6)=13`, stopping at
+the cast pager with HP28.  Input149 applies rounded duration/damage six and
+automatically schedules the exact intervening abbot attacks through fatal HP0.
+
+**Implementation and second callback correction:** `#wizintrinsic` now stores
+the 30-turn property, reports it, decrements it once per global turn and clears
+it silently on expiry.  Replay became exact through the death refusal, then JS
+spent Seer `rn2(31)=2` on input152 while native spends it on input153.  As with
+prayer and vault continuations, the once-per-hero-took-time tail must remain
+behind the pending savelife nomovemsg.  Deferring it until
+`finishDebugDeathSurvivalMessage()` makes the complete **157-state** replay
+exact; twenty half-spell turns remain.  The recorder took **0.07 seconds** at
+**54,312,960 bytes maximum RSS**.
+
+**Measured acceptance, falsifications and next blocker:** half-spell,
+free-action, unresisted paralyze, intrinsic-menu and two older death siblings
+pass **6/6** fixture-disabled in **0.32 seconds** at **140,460,032 bytes max
+RSS**; all processes exited.  This falsifies floor rounding to five, applying
+the 4d6 pre-roll as damage, and Seer ownership before nomovemsg.  Section835
+and the ledger now close the timed half-spell branch but explicitly leave
+carried artifact generation/properties and Antimagic open.  Move to the next
+unmapped contact/spell owner rather than merging the Orb gap into paralyze.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty test files remain untouched.
+
+---

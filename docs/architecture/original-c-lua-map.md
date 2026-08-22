@@ -30376,3 +30376,22 @@ on one line; HP24→23 and no extra abbot action occurs.  `heroHasFreeAction()`
 derives the property from either live ring slot (or existing intrinsic state),
 and the same query protects sleeping-potion vapor.  All 190 states are exact.
 Antimagic and half-spell-damage remain unselected controls.
+
+Timed half-spell damage closes the rounding arm without importing unresolved
+artifact generation.  The initially preferred real carrier, a Valkyrie's
+carried Orb of Fate, was rejected as a compact witness: before its property is
+queried, native startup already tracks two random artifacts and the wished Orb
+makes `nartifact_exist()==3`, while JS tracks only the Orb and pays `rn2(1)`
+instead of native `rn2(3)`.  That is an independent artifact-generation gap.
+
+C `#wizintrinsic` provides a source-authentic timed property instead.  Page
+three local key `n` selects half spell damage and input77 publishes its 30-turn
+timeout.  Input148 still owns `d(4,6)=13` and the cast pager.  On input149,
+`mcast_paralyze()` rounds `(4 + level7 + 1) / 2` to six, using six for both HP
+damage and negative multi; the scheduler consequently fits two more abbot
+actions before the fatal claw instead of the unresisted path's first immediate
+retry.  Debug savelife again replaces that debt.  The Seer reschedule is also
+callback-owned: input152 finishes the interrupted kick, while input153 emits
+the survival nomovemsg and only then spends `rn2(31)=2`.  All 157 states are
+exact, ending with twenty half-spell timeout turns.  A carried-artifact source
+and Antimagic remain separate controls.

@@ -1162,6 +1162,10 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
+    if (game._debugDeathSurvivedMessagePending) {
+        game._debugDeathHeroTookTimePending = sourceTurn;
+        return;
+    }
     // The final negative-multi prayer action invokes prayer_done() before
     // moveloop reaches this once-per-hero-took-time tail.  prayer_done's
     // completion pline can suspend at tty, so the Seer reschedule belongs to
@@ -1632,6 +1636,14 @@ function initialTurnMaintenanceRng(
                 appendTurnMessage(game.u.fast
                     ? 'You feel yourself slow down a bit.'
                     : 'You feel yourself slow down.');
+        }
+    }
+
+    if (!prayerTimeoutFreeze
+        && (game.u?.halfSpellDamageTurns ?? 0) > 0) {
+        game.u.halfSpellDamageTurns--;
+        if (game.u.halfSpellDamageTurns === 0) {
+            game.u.halfSpellDamage = !!game.u.halfSpellDamageFromArtifact;
         }
     }
 
@@ -2455,6 +2467,10 @@ async function finishDebugDeathSurvivalMessage(g = game) {
         || g.program_state?.gameover) return;
     g._debugDeathSurvivedMessagePending = false;
     await queueTurnMessage('You survived that attempt on your life.');
+    if (g._debugDeathHeroTookTimePending != null) {
+        finishHeroTookTimeRng(g._debugDeathHeroTookTimePending);
+        g._debugDeathHeroTookTimePending = null;
+    }
 }
 
 async function waitForMonsterMore(message) {

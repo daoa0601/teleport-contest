@@ -8211,6 +8211,7 @@ function wizardIntrinsicTimeout(name) {
         'see invisible': 'seeInvisibleTurns',
         invisible: 'invisibleTurns',
         fumbling: 'fumblingTurns',
+        'half spell damage': 'halfSpellDamageTurns',
     }[name];
     return field ? Math.max(0, game.u?.[field] ?? 0) : 0;
 }
@@ -8263,6 +8264,16 @@ async function wizIntrinsic() {
         game.u.veryFast = true;
         timeoutMessages.push(
             `Timeout for very fast ${
+                oldTimeout ? 'increased by' : 'set to'
+            } 30.`,
+        );
+    }
+    if (selections.includes('half spell damage')) {
+        const oldTimeout = game.u.halfSpellDamageTurns ?? 0;
+        game.u.halfSpellDamageTurns = oldTimeout + 30;
+        game.u.halfSpellDamage = true;
+        timeoutMessages.push(
+            `Timeout for half spell damage ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
         );

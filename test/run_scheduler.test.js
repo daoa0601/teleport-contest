@@ -9159,6 +9159,90 @@ test('seed0011 free-action ring reduces abbot paralysis to one turn',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 half-spell timeout rounds abbot paralysis to six turns',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n  n\n '
+                + '#wizgenesis\nhostile abbot\n'
+                + 'm.    m.    m.    m.    m.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 157);
+        assert.equal(decodedRow(result.getScreens()[75], 13),
+            ' n - half spell damage');
+        assert.equal(decodedRow(result.getScreens()[76], 13),
+            ' n + half spell damage');
+        assertRngSliceExact(result.getRngSlices()[77], [],
+            'seed0011 half-spell timeout feedback RNG');
+        assert.equal(decodedTopline(result.getScreens()[77]),
+            'Timeout for half spell damage set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[148], [
+            'rn2(5)=0', 'rnd(20)=17', 'd(8,2)=12',
+            'rn2(3)=1', 'rn2(6)=1', 'rnd(21)=21',
+            'd(3,2)=4', 'rn2(4)=0', 'rn2(3)=2', 'rn2(6)=4',
+            'rn2(7)=4', 'rn2(70)=21', 'd(4,6)=13',
+        ], 'seed0011 half-spell paralyze cast prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[148]),
+            'It hits!  It kicks!  Something casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[148], 23),
+            'Dlvl:1 $:1540 HP:28(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+
+        assertRngSliceExact(result.getRngSlices()[149], [
+            'rn2(5)=3', 'rn2(20)=8', 'rn2(5)=2',
+            'rn2(12)=3', 'rn2(12)=8', 'rn2(12)=0',
+            'rn2(70)=40', 'rn2(100)=27', 'rn2(400)=88',
+            'rn2(20)=6', 'rn2(70)=51', 'rn2(5)=2',
+            'rnd(20)=10', 'd(8,2)=12', 'rn2(3)=0', 'rn2(6)=2',
+            'rnd(21)=15', 'd(3,2)=3', 'rn2(4)=2',
+            'rn2(3)=2', 'rn2(6)=0', 'rn2(7)=1', 'rn2(4)=3',
+            'rn2(5)=4', 'rn2(20)=13', 'rn2(5)=0',
+            'rn2(12)=4', 'rn2(12)=2', 'rn2(12)=9',
+            'rn2(70)=24', 'rn2(100)=92', 'rn2(400)=331',
+            'rn2(20)=4', 'rn2(19)=17', 'rn2(2)=1',
+            'rn2(70)=34', 'rn2(5)=3', 'rnd(20)=9',
+            'd(8,2)=12', 'rn2(3)=0', 'rn2(6)=4',
+        ], 'seed0011 six-turn paralysis and autonomous fatal attacks RNG');
+        assert.equal(decodedTopline(result.getScreens()[149]),
+            'You are frozen in place!  It hits!  It kicks!  It hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[149], 23),
+            'Dlvl:1 $:1540 HP:0(141) Pw:254(254) AC:8 Xp:30 Blind Stun');
+
+        assert.equal(decodedTopline(result.getScreens()[151]),
+            'Die? [yn] (n)');
+        assertRngSliceExact(result.getRngSlices()[152], [
+            'rnd(21)=2', 'd(3,2)=5', 'rn2(4)=0',
+            'rn2(3)=2', 'rn2(6)=5', 'rn2(7)=0', 'rn2(4)=3',
+            'rn2(12)=11', 'rn2(12)=3', 'rn2(12)=11',
+            'rn2(70)=40', 'rn2(100)=72', 'rn2(400)=83',
+            'rn2(20)=5', 'rn2(70)=4',
+        ], 'seed0011 half-spell debug survival prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[152]),
+            "OK, so you don't die.  It kicks!--More--");
+        assertRngSliceExact(result.getRngSlices()[153], [
+            'rn2(31)=2',
+        ], 'seed0011 survival-postponed Seer RNG');
+        assert.equal(decodedTopline(result.getScreens()[153]),
+            'You survived that attempt on your life.');
+
+        assert.equal(game.u.uhp, 108);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game.u.halfSpellDamage, true);
+        assert.equal(game.u.halfSpellDamageTurns, 20);
+        assert.equal(game._helplessTurns, 0);
+        assert.equal(game.seer_turn, 28);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({
