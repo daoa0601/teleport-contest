@@ -12623,3 +12623,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled cleric gate passes 14/14 in 0.50 seconds at 147,570,688
   bytes maximum RSS.  The Orb-of-Fate extrinsic, negative AC, timeout expiry
   and fatal/polymorphed physical damage remain separate controls.
+- Seed15 plus page-two `#wizintrinsic` local `m` closes timed shock resistance
+  through all 140 states.  Input76 installs/reports 30 turns.  Input122 keeps
+  lightning 8d6=26, the electrical stack/wand survival calls and flash67, but
+  leaves HP165; input123 still publishes the flash and commits Blind.  The
+  sleep wand survives and the later attack/death tail remains exact, ending
+  HP113, Blind64 and 26 timed turns.  An initial 14/15 gate assertion assumed
+  27 turns by copying the shorter geyser carrier; the exact native endpoint is
+  26 and the corrected fixture-disabled cleric gate passes 15/15 in 0.53
+  seconds at 148,160,512 bytes maximum RSS.  Reflection, wand explosion,
+  half-spell lightning, expiry and worn-property fallback remain open.

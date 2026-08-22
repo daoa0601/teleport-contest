@@ -30698,3 +30698,31 @@ the same `rn2(25)=11`.  Later mace/kick contact remains exact and the full
 session ends HP136 with 27 timed turns.  All 141 states are exact.  The carried
 Orb-of-Fate extrinsic, negative-AC composition, expiry fallback and fatal or
 polymorphed contact remain separate controls.
+
+## 846. Shock resistance zeroes lightning HP but preserves items and flash
+
+```mermaid
+flowchart TD
+    Menu["wizcmds.c:wiz_intrinsic page 2 local m"] --> Timed["SHOCK_RES timeout += 30"]
+    Timed --> Bolt["mcast_lightning publishes bolt"]
+    Bolt --> Damage["roll original d(8,6)"]
+    Damage --> Resist["Shock_resistance sets applied HP damage to zero"]
+    Resist --> Items["destroy_items AD_ELEC still uses original damage"]
+    Items --> Flash["flashburn rnd(100) still runs"]
+    Flash --> Blind["blindness commits after flash prose"]
+    Blind --> Continue["remaining actor and timeout lifecycle continue"]
+    Lua["Lua owns no property or lightning phase"] -.-> Menu
+```
+
+Seed15 selects page-two local `m`; inputs74/75 show shock resistance changing
+from unselected to selected and input76 reports a 30-turn timeout.  The later
+high-cleric constructor and spell selection retain the ordinary lightning RNG.
+Input121 still owns discarded `d(14,8)=56` behind the cast pager.
+
+Input122 rolls lightning `d(8,6)=26`, retains the electrical selection and
+sleep-wand survival calls `rn2(5)=1,rnd(10)=4,rn2(3)=1`, and rolls flash
+duration67.  Shock resistance alone leaves HP165 instead of applying 26.
+Input123 still publishes the flash, commits Blind and leaves HP165.  The full
+140-state tail is exact, ending HP113, Blind64, the sleep wand present and 26
+timed resistance turns.  Reflection, destroyed-wand explosion, half-spell
+damage, timeout expiry and worn blue-dragon-armor fallback remain separate.

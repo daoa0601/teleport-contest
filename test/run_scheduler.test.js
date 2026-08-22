@@ -9879,6 +9879,61 @@ test('seed0047 half-physical timeout halves high-cleric contact and geyser',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0015 timed shock resistance preserves lightning inventory and flash',
+    async () => {
+        const result = await runSegment({
+            seed: 15,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#levelchange\n30\n' + ' '.repeat(40)
+                + '#wizintrinsic\n m\n '
+                + '#wizgenesis\nhostile high cleric\ny '
+                + 'm.    m.    m.    m.        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 140);
+        assert.equal(decodedRow(result.getScreens()[74], 13),
+            ' m - shock resistance');
+        assert.equal(decodedRow(result.getScreens()[75], 13),
+            ' m + shock resistance');
+        assertRngSliceExact(result.getRngSlices()[76], [],
+            'seed0015 shock-resistance timeout feedback RNG');
+        assert.equal(decodedTopline(result.getScreens()[76]),
+            'Timeout for shock resistance set to 30.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[121], [
+            'd(14,8)=56',
+        ], 'seed0015 shock-resistant lightning cast pre-roll RNG');
+        assert.equal(decodedTopline(result.getScreens()[121]),
+            'The priestess of Poseidon casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'd(8,6)=26', 'rn2(5)=1', 'rnd(10)=4',
+            'rn2(3)=1', 'rnd(100)=67',
+        ], 'seed0015 resisted lightning inventory and flash RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'A bolt of lightning strikes down at you from above!--More--');
+        assert.equal(decodedRow(result.getScreens()[122], 23),
+            'Dlvl:1 $:1316 HP:165(171) Pw:283(283) AC:8 Xp:30');
+
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You are blinded by the flash!');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1316 HP:165(171) Pw:283(283) AC:8 Xp:30 Blind');
+
+        assert.equal(game.u.shockResistance, true);
+        assert.equal(game.u.shockResistanceTurns, 26);
+        assert.equal(game.u.uhp, 113);
+        assert.equal(game.u.blindTurns, 64);
+        assert.equal(game.inventory.some(object => object.otyp === 432), true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0011 headless gelatinous cube drops blindfold after load pager',
     async () => {
         const result = await runSegment({

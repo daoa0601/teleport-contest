@@ -1706,6 +1706,17 @@ function finishInitialTurnMaintenanceAfterConfusion({
         }
     }
 
+    if (!prayerTimeoutFreeze
+        && (game.u?.shockResistanceTurns ?? 0) > 0) {
+        game.u.shockResistanceTurns--;
+        if (game.u.shockResistanceTurns === 0) {
+            game.u.shockResistance = !!(
+                game.u.shockResistanceFromArmor
+                || game.u.intrinsicShockResistance
+            );
+        }
+    }
+
     if (!prayerTimeoutFreeze && (game.u?.deafTurns ?? 0) > 0) {
         game.u.deafTurns--;
         if (game.u.deafTurns === 0) game.deaf = false;

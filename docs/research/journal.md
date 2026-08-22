@@ -86456,3 +86456,40 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 22:50 EEST, journal block 2878] {#high-cleric #lightning #shock-resistance #wizintrinsic #timeout #page-local-selector #destroy-items #wand #flashburn #blindness #false-acceptance #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Control contract and carrier:** resistance must zero only lightning HP
+damage.  It must not skip 8d6, electrical inventory selection, wand survival,
+flash duration, blindness, remaining actor actions or timeout aging.  Seed15's
+already-exact lightning setup gains source-valid timed shock resistance from
+`#wizintrinsic` page-two local `m`, avoiding a wished armor or test-only flag.
+
+**Property and effect evidence:** inputs74/75 show the row changing from `-`
+to `+`; input76 reports `Timeout for shock resistance set to 30.` without RNG.
+Input121 retains cast pre-roll `d(14,8)=56`.  Input122 retains
+`d(8,6)=26,rn2(5)=1,rnd(10)=4,rn2(3)=1,rnd(100)=67`, leaves the sleep wand
+intact and keeps HP165.  Input123 publishes `You are blinded by the flash!`,
+commits Blind and still leaves HP165.  This proves source's damage-zero branch
+continues through `destroy_items()` and `flashburn()`.
+
+**Lifetime and acceptance correction:** the exact tail preserves later
+physical attacks and debug savelife, ending HP113, Blind64 and 26 timed shock
+turns.  The first focused gate passed every native RNG/screen assertion but
+failed 14/15 because the test copied the half-physical carrier's 27-turn
+endpoint.  This session owns one additional elapsed autonomous turn; correcting
+the assertion to native 26 removes that test slop.  Section846 maps the timed
+property through lightning damage, inventory and blindness; Lua owns no phase.
+
+**Measured acceptance and next blocker:** all **140 native states** are exact.
+The recorder took **0.08 seconds** at **55,132,160 bytes maximum RSS** and the
+exact JS replay took **0.22 seconds** at **125,960,192 bytes max RSS**.  Shock
+resistance plus fourteen neighboring cleric witnesses pass **15/15**
+fixture-disabled in **0.53 seconds** at **148,160,512 bytes max RSS**; all
+processes exited.  Reflection, wand explosion, half-spell lightning, timeout
+expiry and worn blue-dragon-armor fallback remain open.  Next compare those
+against curse/insect controls by source breadth.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

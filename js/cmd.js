@@ -8213,6 +8213,7 @@ function wizardIntrinsicTimeout(name) {
         'monster detection': 'monsterDetectionTurns',
         'see invisible': 'seeInvisibleTurns',
         invisible: 'invisibleTurns',
+        'shock resistance': 'shockResistanceTurns',
         fumbling: 'fumblingTurns',
         'half spell damage': 'halfSpellDamageTurns',
         'half physical damage': 'halfPhysicalDamageTurns',
@@ -8288,6 +8289,16 @@ async function wizIntrinsic() {
         game.u.halfPhysicalDamage = true;
         timeoutMessages.push(
             `Timeout for half physical damage ${
+                oldTimeout ? 'increased by' : 'set to'
+            } 30.`,
+        );
+    }
+    if (selections.includes('shock resistance')) {
+        const oldTimeout = game.u.shockResistanceTurns ?? 0;
+        game.u.shockResistanceTurns = oldTimeout + 30;
+        game.u.shockResistance = true;
+        timeoutMessages.push(
+            `Timeout for shock resistance ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
         );
