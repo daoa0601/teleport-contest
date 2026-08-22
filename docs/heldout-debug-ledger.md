@@ -12169,3 +12169,22 @@ attempt: **402 calls**, not a direct two-pass retry.
   disabled, the iron, wood and existing red-dragon polymorph witnesses pass
   3/3 in 0.26 seconds; the one owned managed family remains 149/149 in 2.74
   seconds.  Other special break/slip-armor form branches remain unselected.
+- Seed11 selects `break_armor()` suit destruction and shirt shredding with a
+  Tourist wearing wished +2 plate mail over the starting Hawaiian shirt before
+  controlled wood-golem polymorph.  Native input63 combines `You turn into a
+  wood golem!  You break out of your armor!--More--` with HP50/50, HD7, stale
+  AC1, transient `Burdened` and the old `@` glyph.  Input64 publishes `Your
+  shirt rips to shreds!`, projects the golem glyph, AC4 and no encumbrance.
+  Neither garment remains in inventory or appears on the floor.
+
+  The initial port retained both garments and replaced the form prose with an
+  encumbrance line.  Sequential `plineWithContinuation()` ownership now lets
+  the attempted shirt line force the earlier form/suit pair through tty before
+  shirt destruction.  Removing the premature common `newsym()` exposed two
+  rejected regressions: gnome sliparm needs its new glyph during the cloak
+  pager, and red-dragon no-hands weapon drop needs the older AC through its
+  later capacity pager.  Keeping repaint ownership on the actual drop paths
+  restores both existing native sequences.  The new 72-state session, the
+  twenty prior rust/corrosion/decay controls and the four controlled-polymorph
+  witnesses are exact; the owned managed family remains 149/149 in 2.73
+  seconds.  Special cloak and accessory-removal successors remain open.

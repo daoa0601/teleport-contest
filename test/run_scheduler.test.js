@@ -7733,6 +7733,52 @@ test('seed0011 iron-golem polyself rehumanizes on rust-monster touch',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0011 wood-golem breakarm destroys worn suit and shirt',
+    async () => {
+        const result = await runSegment({
+            seed: 11,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Tourist,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: '  n#wizwish\nuncursed +2 plate mail\n'
+                + 'Wn     #polyself\nwood golem\n        ',
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 72);
+        assertRngSliceExact(result.getRngSlices()[63], [
+            'rn2(2)=1', 'rn2(19)=3', 'rn2(500)=488',
+        ], 'seed0011 suit-and-shirt breakarm setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[63]),
+            'You turn into a wood golem!  You break out of your armor!--More--');
+        assert.equal(decodedRow(result.getScreens()[63], 23),
+            'Dlvl:1 $:198 HP:50(50) Pw:2(2) AC:1 HD:7 Burdened');
+        assert.deepEqual(result.getCursors()[63], [65, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[64], [],
+            'seed0011 shirt destruction continuation RNG');
+        assert.equal(decodedTopline(result.getScreens()[64]),
+            'Your shirt rips to shreds!');
+        assert.equal(decodedRow(result.getScreens()[64], 23),
+            'Dlvl:1 $:198 HP:50(50) Pw:2(2) AC:4 HD:7');
+        assert.deepEqual(result.getCursors()[64], [70, 5, 1]);
+
+        assert.equal(game.uarm, null);
+        assert.equal(game.uarmu, null);
+        assert.equal(game.inventory.some(object => object.otyp === 121), false);
+        assert.equal(game.inventory.some(object => object.otyp === 136), false);
+        const floorObjects = game.level.objects?.[game.u.ux]?.[game.u.uy] || [];
+        assert.equal(floorObjects.some(object => object.otyp === 121), false);
+        assert.equal(floorObjects.some(object => object.otyp === 136), false);
+        assert.equal(game.u.mh, 50);
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u._encumbrance, '');
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0154 surviving startup arrow rusts on rust-monster passive',
     async () => {
         const result = await runSegment({

@@ -84858,3 +84858,53 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 test files remain untouched.
 
 ---
+
+### [2026-08-22 17:49 EEST, journal block 2839] {#polyself #break-armor #wood-golem #tourist #plate-mail #hawaiian-shirt #object-destruction #useup #dropx #topline-continuation #pager #stale-ac #encumbrance #map-glyph #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and prediction:** source `polymon()` publishes the accepted form,
+then `break_armor()` handles suit, cloak and shirt in that order.  A large form
+destroys a worn suit and shirt with `useup()` rather than dropping them.  Each
+line is an ordinary sequential `pline`; a later garment can force an earlier
+pending pair through tty before `find_ac()`, `newsym()` and final
+`encumber_msg()` finish the transaction.
+
+**Native witness:** seed11 debug Tourist wishes and wears +2 plate mail over
+the starting Hawaiian shirt, then uses controlled `#polyself wood golem`.
+Input63 consumes `rn2(2)=1,rn2(19)=3,rn2(500)=488` and displays `You turn into
+a wood golem!  You break out of your armor!--More--`.  Monster HP50/50 and HD7
+are live, while the cached suit AC1, transient `Burdened` label and old `@`
+glyph remain painted.  Input64 has no RNG, displays `Your shirt rips to
+shreds!`, projects AC4 and clears encumbrance.  Neither object remains in
+inventory or on the floor.  The 72-state recorder took **0.07 seconds** at
+**53,460,992 bytes maximum RSS**.
+
+**Earliest divergence and decision:** JavaScript kept both garments, projected
+AC−5 and replaced the transformation with `Your movements are slowed slightly
+because of your load.`  Controlled large-form construction now publishes form,
+suit, cloak and shirt as ordered topline continuations.  Suit and shirt use a
+distinct destroy operation; cloak remains a floor drop.  Capacity is sampled
+transiently for a pager, then recomputed after equipment finishes.  The common
+premature `newsym()` was removed so destruction alone does not repaint before
+the suit pager.
+
+**Adversarial regressions and falsifications:** the first repaint correction
+made the existing gnome input78 show `@` instead of native `G`; that falsified
+a universal post-break repaint rule.  Its cloak `dropx()` path owns the early
+`newsym`.  The next focused run reached red-dragon input109 and proved that a
+large no-hands form with no garments still needs the combined form/tool pager,
+pre-`find_ac` status and later capacity pager before the breath notice.  Both
+corrections are source-boundary-specific rather than form-name exceptions.
+
+**Measured acceptance and next blocker:** all 72 new states, twenty prior
+rust/corrosion/decay controls and the existing gnome, iron, wood and red-dragon
+controlled-polymorph witnesses are exact from input3.  The fixture-disabled
+focused gate passes **4/4** in **0.27 seconds**; the one owned managed family
+passes **149/149** in **2.73 seconds**.  Every process exited before the next
+began.  Section830 and the ledger now distinguish destructive `useup()` from
+floor-dropping `dropx()`.  Next select a special cloak or the remaining
+horn/glove/shield/helmet/boot/eyewear continuations rather than assuming the
+generic garment path covers them.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty test files remain
+untouched.
+
+---

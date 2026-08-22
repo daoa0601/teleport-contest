@@ -10,7 +10,9 @@ import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
-import { flush_screen, newsym, pline } from './display.js';
+import {
+    flush_screen, newsym, pline, plineWithContinuation,
+} from './display.js';
 import { place_object } from './mklev.js';
 import { findArmorClass } from './armor.js';
 import {
@@ -176,6 +178,17 @@ function dropCarriedObject(object, slots = []) {
     newsym(game.u.ux, game.u.uy);
 }
 
+function destroyCarriedObject(object, slots = []) {
+    if (!object) return;
+    const index = game.inventory?.indexOf(object) ?? -1;
+    if (index >= 0) game.inventory.splice(index, 1);
+    for (const slot of slots) clearEquipmentSlot(slot, object);
+    object.worn = false;
+    object.wornSlot = null;
+    object.owornmask = 0;
+    object.where = 'gone';
+}
+
 function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
@@ -264,7 +277,9 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
         game._blindFromMonsterForm = true;
         game.blind = true;
     }
-    newsym(u.ux, u.uy);
+    // polymon() does not repaint the accepted form until break_armor() has
+    // completed.  A garment pager can therefore still expose the old hero
+    // glyph even though monster HP and status metadata are already live.
     return { previousMnum, wasPolymorphed };
 }
 
@@ -282,7 +297,9 @@ export async function polyselfControlledMonster(mnum) {
     const formMessage = wasPolymorphed && previousMnum === mnum
         ? `You feel like a new ${monsterName}!`
         : `You turn into ${article} ${monsterName}!`;
+    const suit = game.uarm || game.u?.uarm;
     const cloak = game.uarmc || game.u?.uarmc;
+    const shirt = game.uarmu || game.u?.uarmu;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -292,24 +309,43 @@ export async function polyselfControlledMonster(mnum) {
     const noHands = heroHasNoHands(game);
     const canBreathe = (MONSTER_ATTACKS[mnum] || [])
         .some(([attackType]) => attackType === 12);
-    let armorClassProjected = false;
 
-    const currentCapacity = nearCapacity(game);
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
+    const transientCapacity = nearCapacity(game);
+    game._encumbranceLevel = transientCapacity;
+    game.u._encumbrance = encumbranceLabel(transientCapacity);
 
-    if (breaksArmor && cloak) {
-        const breakMessage = formMessage
-            + '  The clasp on your cloak breaks open!';
-        dropCarriedObject(cloak, ['uarmc']);
-        // C polymon() commits the broken-cloak equipment state and the new
-        // form's base AC before tty yields at this pager.
-        findArmorClass(game);
-        armorClassProjected = true;
-        if (canBreathe)
-            await moreUntilDismissed(breakMessage + '--More--');
-        else await pline(breakMessage);
+    if (breaksArmor && !suit && !cloak && !shirt && noHands && weapon) {
+        // With no garment prose, the later encumbrance line is what forces
+        // tty to expose the combined form/drop-weapon pager.  Preserve the
+        // pre-find_ac status while projecting the new glyph through dropx.
+        newsym(game.u.ux, game.u.uy);
+        await moreUntilDismissed(
+            `${formMessage}  You find you must drop your tool!--More--`,
+        );
+        dropCarriedObject(weapon, ['uwep']);
+    } else if (breaksArmor) {
+        // C polymon() publishes the accepted form before break_armor().
+        // Sequential continuation calls preserve the exact point at which a
+        // later garment line forces tty to page the already-pending prose.
+        await plineWithContinuation(formMessage);
+        if (suit) {
+            await plineWithContinuation('You break out of your armor!');
+            destroyCarriedObject(suit, ['uarm']);
+        }
+        if (cloak) {
+            await plineWithContinuation(
+                'The clasp on your cloak breaks open!',
+            );
+            dropCarriedObject(cloak, ['uarmc']);
+        }
+        if (shirt) {
+            await plineWithContinuation('Your shirt rips to shreds!');
+            destroyCarriedObject(shirt, ['uarmu']);
+        }
     } else if (slipsArmor && cloak) {
+        // Native reaches this pager only after dropx()/newsym has projected
+        // the small form, while its pre-removal AC is still painted.
+        newsym(game.u.ux, game.u.uy);
         await moreUntilDismissed(
             `${formMessage}  You shrink out of your cloak!--More--`,
         );
@@ -323,20 +359,29 @@ export async function polyselfControlledMonster(mnum) {
         await pline(formMessage);
     }
 
-    if (!armorClassProjected) findArmorClass(game);
+    findArmorClass(game);
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
+
+    const currentCapacity = nearCapacity(game);
+    game._encumbranceLevel = currentCapacity;
+    game.u._encumbrance = encumbranceLabel(currentCapacity);
 
     const capacityMessage = encumbranceMessage(
         previousCapacity, currentCapacity,
     );
+    let capacityMessagePaged = false;
     if (capacityMessage && canBreathe) {
         await moreUntilDismissed(`${capacityMessage}--More--`);
+        capacityMessagePaged = true;
     } else if (capacityMessage) {
         await pline(capacityMessage);
     }
     if (canBreathe && game.flags?.verbose !== false) {
-        await pline('Use the command #monster to use your breath weapon.');
+        const breathMessage
+            = 'Use the command #monster to use your breath weapon.';
+        if (capacityMessagePaged) await pline(breathMessage);
+        else await plineWithContinuation(breathMessage);
     }
     return { transformed: true, mnum };
 }

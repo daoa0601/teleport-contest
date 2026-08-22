@@ -29826,8 +29826,17 @@ flowchart TD
     Kind -->|"iron"| Iron["golemhp = 120; AC 3; HD 18; AT_BREA"]
     Wood --> Break{"breakarm large/non-humanoid form"}
     Iron --> Break
-    Break --> Cloak["clasp breaks; Cloak_off; drop cloak on floor"]
-    Cloak --> Live["commit form AC before any transform pager"]
+    Break --> Suit{"worn suit?"}
+    Suit -->|"yes"| SuitLine["break out line; Armor_gone; destroy suit"]
+    Suit -->|"no"| Cloak{"worn cloak?"}
+    SuitLine --> Cloak
+    Cloak -->|"yes"| CloakLine["clasp line; Cloak_off; drop cloak on floor"]
+    Cloak -->|"no"| Shirt{"worn shirt?"}
+    CloakLine --> Shirt
+    Shirt -->|"yes"| ShirtLine["shirt line; destroy shirt after pager resumes"]
+    Shirt -->|"no"| EquipDone["find_ac; newsym; encumber"]
+    ShirtLine --> EquipDone
+    EquipDone --> Live["committed monster equipment and presentation state"]
     Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
     Contact --> Death{"matching completelyrottable/rustable form?"}
     Death -->|"yes"| Notice["You rot! or You rust!"]
@@ -29845,13 +29854,31 @@ for the large wood golem, leaving the cloak worn and suppressing the clasp
 line.  The port now uses the source golem HP table and the source
 large/non-humanoid break predicate for the selected generic-cloak case.
 
+The suit-and-shirt successor is selected separately.  A seed11 Tourist wears
+wished +2 plate mail over the starting Hawaiian shirt, then becomes a wood
+golem.  Native sequentially publishes the form line and `You break out of your
+armor!`; attempting the later shirt line forces that pending pair through
+`--More--`.  At the pager, HP50/HD7 and transient `Burdened` are live, but AC1
+and the old `@` map glyph are still painted.  After acknowledgement, `Your
+shirt rips to shreds!` becomes the topline, both garments are absent rather
+than dropped, the golem glyph is projected, AC becomes four and encumbrance
+clears.  All 72 states are exact from input3 onward.
+
+This also distinguishes `useup()` from `dropx()` at the repaint boundary.
+Suit and shirt destruction do not create a floor object or call `newsym`;
+generic cloak removal does.  The existing gnome therefore still displays its
+new glyph during the shrink-out pager, while the Tourist suit pager retains
+the old hero glyph.  The existing red-dragon weapon-drop and two-stage
+encumbrance/breath pagers remain exact.  Special mummy wrapping, alchemy-smock,
+horn, shield, helmet, glove, boot and eyewear branches remain distinct.
+
 AD_DCAY checks the live form only after hitmsg and cancellation.  The form
 branch is resumable: `You rot!` can page before rehumanization, after which the
 return-to-race and encumbrance messages are ordinary continuations.  In the
 selected short line all three messages combine without a pager, state becomes
 human before knockback, and armor selection is skipped.  Suit destruction,
-shirt shredding, special mummy/alchemy cloaks and other golem species retain
-separate equipment-message witnesses despite sharing fixed HP metadata.
+special mummy/alchemy cloaks and other golem species retain separate
+equipment-message witnesses despite sharing fixed HP metadata.
 
 AD_RUST reaches the same rehumanization owner with a different form predicate
 and effect line.  Iron-golem setup additionally proves three earlier
