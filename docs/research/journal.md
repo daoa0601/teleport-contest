@@ -84808,3 +84808,53 @@ branch under AD_RUST.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty test files remain untouched.
 
 ---
+
+### [2026-08-22 17:37 EEST, journal block 2838] {#rust-monster #hero-contact #rust #iron-golem #polymorph #golem-hp #break-armor #cloak-drop #breath #attack-metadata #article #ac-timing #rehumanize #zero-dice #native-witness #implementation #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract and prediction:** `mhitm_ad_rust()` checks cancellation and then
+`completelyrusts()` before `erode_armor()`.  An iron-golem hero must say `You
+rust!`, rehumanize, skip the armor reservoir and rejoin the shared post-hit
+tail.  The controlled form is part of the witness: native should use fixed
+`golemhp()`, source break-armor ordering and attack-table capabilities before
+the first monster contact.
+
+**Native witness:** seed11 debug Wizard uses controlled `#polyself iron golem`,
+then generates a source-default hostile rust monster.  Input24 consumes
+`rn2(2)=0,rn2(19)=13,rn2(10)=5,rn2(500)=200`, installs HP120/120, HD18 and AC3,
+drops the magic-resistance cloak and displays `You turn into an iron golem!
+The clasp on your cloak breaks open!--More--`.  Input25 has no RNG and
+publishes `Use the command #monster to use your breath weapon.`  Input53's
+first touch consumes zero-dice damage, publishes `You rust!`, restores the
+human at HP12/12 and AC10 with no armor-slot draw, then the second touch
+continues against that human body.  Its combined line ends `You return to
+human form!--More--`.  The 104-state recorder took **0.07 seconds** at
+**53,968,896 bytes maximum RSS**.
+
+**Earliest divergences and decisions:** the first form replay said `a iron
+golem`, omitted the breath notice and left AC9 visible during the clasp pager.
+These were not rust-effect failures.  Article selection now follows the form
+name; verbose monster capability derives from AT_BREA in `MONSTER_ATTACKS`
+rather than the dragon glyph; cloak removal and `findArmorClass()` commit
+before yielding the break pager.  AD_RUST retains a resumable iron-form death
+marker and shares the existing erosion-form rehumanization continuation with
+AD_DCAY, parameterized only by `You rust!` versus `You rot!`.
+The continuation is invoked unconditionally before its pager result is merged;
+an earlier hit-message pager must not short-circuit the state transition.
+
+**Evidence, falsifications and measured effect:** all 104 iron states and the
+preceding nineteen rust/corrosion/decay controls are exact from input3.  This
+falsifies a dragon-only breath predicate, post-pager AC ownership and ordinary
+worn-armor selection for a completely rustable form.  With fixtures disabled,
+iron, wood and red-dragon controlled-polymorph witnesses pass **3/3** in
+**0.26 seconds**.  The one owned managed family remains **149/149** in **2.74
+seconds**; each runner exits before the next begins and the registry is empty.
+
+**Next blocker:** sections827 and830 plus the ledger now close ordinary worn
+AD_RUST/AD_DCAY and their selected form-death analogues.  Next map and select
+the remaining source break/slip-armor ownership branches before broadening
+combat effects, beginning with a form whose suit, shirt or special cloak
+handling differs from the generic cloak-only witness.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+test files remain untouched.
+
+---

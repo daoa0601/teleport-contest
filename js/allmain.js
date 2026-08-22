@@ -2388,6 +2388,30 @@ async function queueTurnMessage(message) {
     return plineWithContinuation(message);
 }
 
+async function resolveErosionFormRehumanization(
+    heroAttack, effectMessage,
+) {
+    let pagerOwned = false;
+    const effectDismissal = await queueTurnMessage(effectMessage);
+    if (effectDismissal !== null && effectDismissal !== undefined)
+        pagerOwned = true;
+
+    const rehumanized = rehumanizeHero(game);
+    if (rehumanized.regainedSight) vision_recalc(0);
+    let returnMessage = 'You return to '
+        + rehumanized.race + ' form!';
+    if (rehumanized.regainedSight)
+        returnMessage += '  You can see again.';
+    const returnDismissal = await queueTurnMessage(returnMessage);
+    if (returnDismissal !== null && returnDismissal !== undefined)
+        pagerOwned = true;
+    if (rehumanized.encumbranceMessage)
+        await queueTurnMessage(rehumanized.encumbranceMessage);
+
+    heroAttack.deferredPostHit = true;
+    return pagerOwned;
+}
+
 // C ref: potion.c:potionbreathe(POT_SLEEPING).  A thrown potion's impact
 // transaction crosses tty after the evaporation line; the vapor effect
 // resumes only after that pager is acknowledged.  Install ordinary
@@ -3287,6 +3311,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         actorContactPagerOwned = true;
                     }
                 }
+                if (heroAttack.deferredRustRehumanize) {
+                    const rustFormPagerOwned
+                        = await resolveErosionFormRehumanization(
+                            heroAttack, 'You rust!',
+                        );
+                    actorContactPagerOwned ||= rustFormPagerOwned;
+                    heroAttack.deferredRustRehumanize = false;
+                }
                 while (heroAttack.deferredRustArmor) {
                     const rustArmor = resumeDeferredHeroRustArmor(action, game);
                     if (rustArmor?.message) {
@@ -3344,31 +3376,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.deferredDecayRehumanize) {
-                    const rotDismissal = await queueTurnMessage('You rot!');
-                    if (rotDismissal !== null
-                        && rotDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
-                    const rehumanized = rehumanizeHero(game);
-                    if (rehumanized.regainedSight) vision_recalc(0);
-                    let returnMessage = 'You return to '
-                        + rehumanized.race + ' form!';
-                    if (rehumanized.regainedSight)
-                        returnMessage += '  You can see again.';
-                    const returnDismissal = await queueTurnMessage(
-                        returnMessage,
-                    );
-                    if (returnDismissal !== null
-                        && returnDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
-                    if (rehumanized.encumbranceMessage) {
-                        await queueTurnMessage(
-                            rehumanized.encumbranceMessage,
+                    const decayFormPagerOwned
+                        = await resolveErosionFormRehumanization(
+                            heroAttack, 'You rot!',
                         );
-                    }
+                    actorContactPagerOwned ||= decayFormPagerOwned;
                     heroAttack.deferredDecayRehumanize = false;
-                    heroAttack.deferredPostHit = true;
                 }
                 while (heroAttack.deferredDecayArmor) {
                     const decayArmor = resumeDeferredHeroDecayArmor(

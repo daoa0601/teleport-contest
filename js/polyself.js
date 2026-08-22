@@ -6,8 +6,9 @@ import { nhgetch } from './input.js';
 import { d, rnd, rn2 } from './rng.js';
 import { newExperienceThreshold } from './exper.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
+    MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
+    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
 import { flush_screen, newsym, pline } from './display.js';
 import { place_object } from './mklev.js';
@@ -277,9 +278,10 @@ export async function polyselfControlledMonster(mnum) {
     beginMonsterForm(mnum, { sexChangeAllowed: true });
 
     const monsterName = MONSTER_NAME[mnum] || 'monster';
+    const article = /^[aeiou]/i.test(monsterName) ? 'an' : 'a';
     const formMessage = wasPolymorphed && previousMnum === mnum
         ? `You feel like a new ${monsterName}!`
-        : `You turn into a ${monsterName}!`;
+        : `You turn into ${article} ${monsterName}!`;
     const cloak = game.uarmc || game.u?.uarmc;
     const weapon = game.uwep || game.u?.uwep;
     const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
@@ -288,16 +290,25 @@ export async function polyselfControlledMonster(mnum) {
     const breaksArmor = formSize >= MZ_LARGE
         || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID));
     const noHands = heroHasNoHands(game);
+    const canBreathe = (MONSTER_ATTACKS[mnum] || [])
+        .some(([attackType]) => attackType === 12);
+    let armorClassProjected = false;
 
     const currentCapacity = nearCapacity(game);
     game._encumbranceLevel = currentCapacity;
     game.u._encumbrance = encumbranceLabel(currentCapacity);
 
     if (breaksArmor && cloak) {
-        await pline(
-            `${formMessage}  The clasp on your cloak breaks open!`,
-        );
+        const breakMessage = formMessage
+            + '  The clasp on your cloak breaks open!';
         dropCarriedObject(cloak, ['uarmc']);
+        // C polymon() commits the broken-cloak equipment state and the new
+        // form's base AC before tty yields at this pager.
+        findArmorClass(game);
+        armorClassProjected = true;
+        if (canBreathe)
+            await moreUntilDismissed(breakMessage + '--More--');
+        else await pline(breakMessage);
     } else if (slipsArmor && cloak) {
         await moreUntilDismissed(
             `${formMessage}  You shrink out of your cloak!--More--`,
@@ -312,15 +323,13 @@ export async function polyselfControlledMonster(mnum) {
         await pline(formMessage);
     }
 
-    findArmorClass(game);
+    if (!armorClassProjected) findArmorClass(game);
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
 
     const capacityMessage = encumbranceMessage(
         previousCapacity, currentCapacity,
     );
-    const canBreathe = MONSTER_SYMBOL[mnum] === S_DRAGON
-        && (MONSTER_LEVEL[mnum] ?? 0) > 0;
     if (capacityMessage && canBreathe) {
         await moreUntilDismissed(`${capacityMessage}--More--`);
     } else if (capacityMessage) {

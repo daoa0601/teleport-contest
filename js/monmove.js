@@ -6197,13 +6197,18 @@ function basicMonsterAttack(
         // knockback gates follow it before mattacku() advances attack slots.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
+        const completelyRustableForm = Upolyd(state?.u)
+            && state.u.umonnum === 259;
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
             attackType, damageType,
             effect: monster.mcan
                 ? 'cancelled-rust-natural' : 'rust-natural',
             oldFormMnum,
-            deferredRustArmor: !monster.mcan,
+            deferredRustRehumanize: !monster.mcan
+                && completelyRustableForm,
+            deferredRustArmor: !monster.mcan
+                && !completelyRustableForm,
             deferredPostHit: !!monster.mcan,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_CORR) {

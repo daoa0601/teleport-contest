@@ -12151,3 +12151,21 @@ attempt: **402 calls**, not a direct two-pass retry.
   0.26 seconds at 136,642,560 bytes; the one owned managed family remains
   149/149 in 2.78 seconds at 374,439,936 bytes and exits cleanly.  Iron-golem
   `completelyrusts()` is the next analogous form branch.
+- Seed11 closes polymorphed `completelyrusts()` with a controlled iron-golem
+  Wizard.  Native form setup consumes the fixed-form sequence ending in
+  `rn2(500)=200`, installs HP120/120, HD18 and AC3, breaks and drops the magic-
+  resistance cloak, and pages the clasp line before publishing the form's
+  breath-weapon notice.  The first replay exposed three shared construction
+  gaps: the article was `a`, breath capability was incorrectly restricted to
+  dragon glyphs, and AC was projected only after the pager.  Attack-table
+  capability lookup plus pre-pager equipment/AC commit restores native input24
+  and input25.
+
+  Native input53 combines `The rust monster touches you!  You rust!  You
+  return to human form!--More--`.  The first zero-dice touch rehumanizes before
+  armor selection, after which the second touch continues against the human
+  body in the same actor turn.  All 104 states are exact from input3, while the
+  preceding nineteen rust/corrosion/decay controls remain exact.  With fixtures
+  disabled, the iron, wood and existing red-dragon polymorph witnesses pass
+  3/3 in 0.26 seconds; the one owned managed family remains 149/149 in 2.74
+  seconds.  Other special break/slip-armor form branches remain unselected.

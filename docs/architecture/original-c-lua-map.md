@@ -29736,7 +29736,19 @@ draw, and rejoins shared knockback.  The complete line is `The brown pudding
 bites!  You rot!  You return to human form!`; human HP12/12 and AC10 are
 restored, while the cloak remains on the floor.  All 129 states are exact from
 input3 onward.  Ordinary worn and polymorphed-hero AD_DCAY are therefore both
-closed; the analogous iron-golem `completelyrusts()` branch remains distinct.
+closed.
+
+The analogous polymorphed `completelyrusts()` branch is now selected too.
+Seed11 becomes an iron golem, whose source form construction has fixed HP120,
+HD18 and base AC three.  Because the attack table gives this form an AT_BREA
+attack, the clasp-break line owns a pager and the following input publishes
+the verbose `#monster` breath notice; that capability is derived from attacks,
+not the monster glyph.  The cloak is removed and form AC recomputed before
+the pager becomes observable.  At input53, a rust-monster touch owns declared
+`d(0,0)`, publishes `You rust!`, rehumanizes before armor selection and then
+lets the second touch continue against the restored human body.  No armor-slot
+draw occurs for the fatal form touch.  All 104 states replay exactly from
+input3 onward, closing ordinary worn and polymorphed-hero AD_RUST separately.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level
@@ -29808,18 +29820,21 @@ share the structural boundary but retain their own damage/death witnesses.
 
 ```mermaid
 flowchart TD
-    Cmd["Wizard #polyself wood golem"] --> Form["polymon installs form metadata"]
-    Form --> HP["golemhp wood = 50; no d(7,8)"]
-    HP --> Break{"breakarm large/non-humanoid form"}
+    Cmd["Wizard #polyself wood or iron golem"] --> Form["polymon installs form metadata"]
+    Form --> Kind{"selected golem"}
+    Kind -->|"wood"| Wood["golemhp = 50; AC 4; HD 7"]
+    Kind -->|"iron"| Iron["golemhp = 120; AC 3; HD 18; AT_BREA"]
+    Wood --> Break{"breakarm large/non-humanoid form"}
+    Iron --> Break
     Break --> Cloak["clasp breaks; Cloak_off; drop cloak on floor"]
-    Cloak --> Live["wood-golem form AC 4, HD 7, HP 50"]
-    Live --> Bite["brown-pudding AD_DCAY hitmsg and d(0,0)"]
-    Bite --> Rot{"completelyrots current form?"}
-    Rot -->|"wood or leather golem"| Notice["You rot!"]
+    Cloak --> Live["commit form AC before any transform pager"]
+    Live --> Contact{"brown AD_DCAY or rust AD_RUST contact"}
+    Contact --> Death{"matching completelyrottable/rustable form?"}
+    Death -->|"yes"| Notice["You rot! or You rust!"]
     Notice --> Human["rehumanize restores saved body, HP, AC, sight, capacity"]
     Human --> Return["You return to human form!"]
     Return --> Tail["shared knockback; no erode_armor slot draw"]
-    Rot -->|"ordinary form"| Armor["section827 worn-armor reservoir"]
+    Death -->|"no"| Armor["section827 worn-armor reservoir"]
     Lua["Lua owns neither form nor erosion policy"] -.-> Cmd
 ```
 
@@ -29837,3 +29852,11 @@ selected short line all three messages combine without a pager, state becomes
 human before knockback, and armor selection is skipped.  Suit destruction,
 shirt shredding, special mummy/alchemy cloaks and other golem species retain
 separate equipment-message witnesses despite sharing fixed HP metadata.
+
+AD_RUST reaches the same rehumanization owner with a different form predicate
+and effect line.  Iron-golem setup additionally proves three earlier
+boundaries: indefinite-article selection (`an iron golem`), capability lookup
+from AT_BREA rather than the dragon symbol, and AC projection after the cloak
+drop but before the transform pager.  The selected rust touch displays
+`The rust monster touches you!  You rust!  You return to human form!--More--`,
+restores the Wizard to HP12/12 and AC10, and leaves the cloak on the floor.
