@@ -12006,3 +12006,24 @@ attempt: **402 calls**, not a direct two-pass retry.
   owned managed family passes 132/132 in 2.47 seconds at 348,962,816 bytes
   maximum RSS and exits cleanly.  Corrosion grease/proof/blessing and degree
   controls on worn armor remain separate successors.
+- Seed3, seed11 and seed745 close the worn-armor AD_CORR protection and degree
+  siblings without a production edit.  Greased seed11 retains on `rn2(2)=1`;
+  greased seed3 wears on `rn2(2)=0`, with protection prose before the draw and
+  a separate `The grease dissolves.` sentence afterward.  Actual corrodeproof
+  seed11 learns `rknown` after its protection line, returns `ER_NOTHING`, and
+  retries to the body-slot cloak.  Seed11's blessed `rnl(4)=1` remains a
+  negative corrosion control.  A JavaScript-only seed360 positive was rejected
+  when native C placed a newt east; native seed3 was also negative at
+  `rnl(4)=2`.  Seed745 supplies the real positive `rnl(4)=0`, stays silent and
+  proof-unknown, then retries to the cloak.
+
+  Seed11's secondary degree variants advance one→two with `corrodes further`,
+  two→three with `corrodes completely`, and leave max-three silent before the
+  exact `2,2,3,0,4,1` retry-to-body sequence.  Their final AC is five because
+  the helmet's one base armor point caps the greatest-erosion penalty.  The
+  seven 145-, 154-, 154-, 155-, 159-, 160- and 166-state recordings all replay
+  exactly from input3 onward in one 0.68-second audit at 137,248,768 bytes
+  maximum RSS.  The durable worn-corrosion family passes 8/8 in 0.35 seconds
+  at 139,182,080 bytes; the one owned managed family passes 139/139 in 2.61
+  seconds at 349,126,656 bytes and exits cleanly.  Natural cancelled AD_CORR
+  and the copper/non-corrodible worn-material boundary remain open.

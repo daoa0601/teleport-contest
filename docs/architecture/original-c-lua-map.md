@@ -29532,10 +29532,10 @@ The combined disposition/knowledge/transport/sling sibling gate now passes
 blessed-control and pre-eroded-further expansion, the managed
 projectile/priest/wish family passes 98/98 after the complete-burn, paired
 AD_RUST grease, pre-flight misfire and rustproof rows; the current total is
-132/132 after the paired rust/corrosion material, protection, degree,
+139/139 after the paired rust/corrosion material, protection, degree,
 cancellation and AD_CORR grease, plus complete AD_ACID
 grease/material/protection/degree/cancellation and worn-helmet
-rust/grease/proof/blessing/degree and corrosion-bite rows.
+rust/grease/proof/blessing/degree and complete worn-corrosion rows.
 
 This section now selects launched real-gem **miss**, **hit with destruction**
 and **hit with hard-gem survival** arms, including non-RUBY `oc_tough`
@@ -29560,8 +29560,14 @@ flowchart TD
     Slots --> Body["body stops after cloak/suit/shirt attempt"]
     Head --> Erode["erode_obj message before state finalization"]
     Body --> Erode
-    Erode --> RustState["rust: iron, oeroded, oxidation/rust prose"]
-    Erode --> CorrState["corrosion: iron or copper, oeroded2, corrosion prose"]
+    Erode --> Guard{"grease, proof, blessing, material, or max degree?"}
+    Guard -->|"grease"| Grease["protection prose; rn2(2); optional dissolve prose"]
+    Guard -->|"ER_NOTHING"| Retry{"selected body slot?"}
+    Retry -->|"no"| Slots
+    Retry -->|"yes"| Tail
+    Grease --> Tail
+    Guard -->|"damage"| RustState["rust: iron, oeroded, oxidation/rust prose"]
+    Guard -->|"damage"| CorrState["corrosion: iron or copper, oeroded2, corrosion prose"]
     RustState --> AC["find_ac projects greatest erosion after actor/global work"]
     CorrState --> AC
     AC --> Tail
@@ -29596,6 +29602,32 @@ exactly from input3 onward.  The same witness exposed a stale hard-coded
 gender-name map: indices 208/209 now belong to puddings, while ogre leader and
 tyrant are 204/205.  Correcting those keys restores the black-pudding subject
 without changing generated neutral monster names.
+
+Worn-corrosion controls now select every neighboring return shape.  Greased
+seed11 publishes protection, then `rn2(2)=1` retains grease and terminates the
+armor transaction.  Greased seed3 reaches the same head target after three
+empty retries, publishes protection before `rn2(2)=0`, then publishes
+`The grease dissolves.` as a separate tty sentence before knockback.  Actual
+corrodeproof seed11 publishes its proof line, learns `rknown`, returns
+`ER_NOTHING`, retries the non-body selector and terminates only when body slot
+one reaches the leather cloak.  Seed745 is the positive blessed control:
+head-slot `rnl(4)=0` is silent and proof-unknown, then shield/body selection
+ends on the cloak's verbose non-effect.  Seed11's `rnl(4)=1` corrosion remains
+the negative control rather than being promoted to a protection witness.
+
+Secondary degree state is equally explicit.  A helmet beginning at
+`oeroded2=1` reaches two with `corrodes further`; one beginning at two reaches
+three with `corrodes completely`.  A max-three helmet returns silent
+`ER_NOTHING` at head, retries `2,2,3,0,4,1`, and stops on the cloak.  Corrosion
+two and three both project AC five because a helmet's one-point base armor
+contribution caps the erosion penalty.  The seven 145--166-state recordings
+all replay exactly from input3 onward; no additional production bridge is
+needed beyond section827's shared erosion owner.
+
+This completes grease retain/wear, actual proof, positive blessing, degree
+one-to-two, degree two-to-three and max-three retry for worn AD_CORR.  Natural
+attacker cancellation and the copper/non-corrodible worn-material boundary
+remain distinct successors.
 
 Lua owns no selection, vulnerability, damage, message, state, AC, knockback or
 HP policy in this transaction.  Its relevant contribution ends at level

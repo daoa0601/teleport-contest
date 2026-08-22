@@ -84455,3 +84455,55 @@ boundaries without inferring them from rust or projectile passives.  No full
 corpus, hidden judge, push or publication ran.
 
 ---
+
+### [2026-08-22 16:21 EEST, journal block 2831] {#black-pudding #hero-contact #armor #helmet #corrosion #grease #corrodeproof #blessed #secondary-erosion #max-erosion #selector-rejection #native-witness #complete-replay #regression #managed-family #architecture #ledger #green #process-safety #priority}
+
+**Contract:** close worn AD_CORR grease retention and wear, actual proof
+learning, positive blessed protection, secondary erosion one→two and two→three,
+and max-three retry.  Projectile corrosion and worn rust are only sibling
+controls; neither can substitute for a native black-pudding bite.  Protection
+must precede grease wear/proof learning, blessing must be silent only on
+`rnl(4)=0`, and a maxed non-body target must retry the armor reservoir.
+
+**Protection evidence:** seed11 selects head zero directly after its 12-point
+bite.  Grease protection crosses the hit pager before `rn2(2)=1`, retains the
+layer and reaches the shared tail.  Actual corrodeproof protection learns
+`rknown`, returns `ER_NOTHING`, consumes retry slots `2,2,3,0,4,1` and stops on
+the leather cloak.  Seed3 reaches head after empty slots `2,2,3`; its grease
+line precedes `rn2(2)=0`, and the next input publishes `The grease dissolves.`
+before knockback.  Those recorders took **0.08**, **0.06** and **0.07 seconds**
+at **54,427,648**, **54,476,800** and **54,263,808 bytes maximum RSS**.
+
+**Blessed selection and falsifications:** seed11 is a valid negative
+`rnl(4)=1` witness and corrodes, so it was not relabeled as protection.  A
+bounded JavaScript candidate search found seed360 in **4.40 seconds** at
+**271,548,416 bytes maximum RSS**, but native C falsified it by placing a newt
+east; the shot never reached the pudding.  Native seed3 was independently
+negative at `rnl(4)=2`.  Nine more native candidates ran synchronously in
+0.06--0.07 seconds below 56 MB each.  Seed745 is the positive carrier: after
+two feet retries it selects head zero, pays silent `rnl(4)=0`, remains
+proof-unknown and uncorroded, then reaches shield/body and the cloak line.  Its
+145-state recorder took **0.06 seconds** at **54,345,728 bytes maximum RSS**.
+
+**Degree evidence and decision:** corroded seed11 advances `oeroded2` one→two
+with `corrodes further`; very-corroded advances two→three with `corrodes
+completely`; max-three is silent at head and retries `2,2,3,0,4,1` to the
+cloak.  Their 155-, 160- and 166-state recorders took **0.06**, **0.07** and
+**0.07 seconds** at **54,673,408**, **54,591,488** and **54,706,176 bytes
+maximum RSS**.  Final AC is five for all degree cases because the one-point
+helmet base caps the greatest-erosion penalty.  All seven controls replay
+exactly from input3 onward in a combined **0.68 seconds** at **137,248,768
+bytes maximum RSS**.  This falsifies the need for another code bridge: the
+shared resumable erosion owner already preserves every selected branch.
+
+**Measured acceptance and next blocker:** the durable worn-corrosion family
+passes **8/8** in **0.35 seconds** at **139,182,080 bytes maximum RSS**.  The
+one owned managed projectile/priest/wish process passes **139/139** in **2.61
+seconds** at **349,126,656 bytes maximum RSS**; all runners exited and the
+registry is empty.  Section827, section826 and the ledger now map the complete
+worn-corrosion control block.  Next select a naturally cancelled black-pudding
+bite to prove that cancellation suppresses armor while retaining declared
+3d8 damage, then map copper versus non-corrodible worn material.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran.
+
+---

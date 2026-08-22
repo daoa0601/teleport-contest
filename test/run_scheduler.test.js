@@ -6657,56 +6657,319 @@ test('seed0053 orcish arrow leaves max-rust helmet silent and retries cloak',
         assert.equal(game.context.move, 0);
     });
 
+const SEED0011_WORN_CORROSION_DIRECT_RNG = [
+    'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
+    'rn2(3)=2', 'rn2(6)=5', 'rn2(5)=3', 'rn2(24)=0',
+    'rn2(5)=4', 'rn2(4)=2', 'rn2(3)=1', 'rn2(3)=1',
+    'rn2(5)=1', 'rn2(5)=4', 'rn2(4)=1', 'rn2(5)=1',
+    'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=0',
+    'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1', 'rn2(5)=2',
+    'rn2(4)=0', 'rn2(20)=4', 'rn2(5)=2', 'rn2(12)=5',
+    'rn2(12)=1', 'rn2(12)=2', 'rn2(12)=1', 'rn2(12)=8',
+    'rn2(12)=6', 'rn2(70)=52', 'rn2(100)=19',
+    'rn2(400)=97', 'rn2(300)=216', 'rn2(20)=4', 'rn2(73)=30',
+];
+
+const SEED0011_WORN_CORROSION_RETRY_TAIL_RNG = [
+    'rn2(3)=1', 'rn2(6)=1', 'rn2(5)=1', 'rn2(24)=23',
+    'rn2(5)=3', 'rn2(4)=3', 'rn2(3)=2', 'rn2(3)=1',
+    'rn2(5)=4', 'rn2(4)=0', 'rn2(5)=0', 'rn2(4)=2',
+    'rn2(5)=1', 'rn2(5)=2', 'rn2(5)=0', 'rn2(5)=4',
+    'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=1', 'rn2(5)=0',
+    'rn2(5)=2', 'rn2(5)=1', 'rn2(5)=4', 'rn2(4)=0',
+    'rn2(20)=19', 'rn2(5)=2', 'rn2(12)=0', 'rn2(12)=4',
+    'rn2(12)=11', 'rn2(12)=0', 'rn2(12)=3', 'rn2(12)=0',
+    'rn2(70)=15', 'rn2(100)=88', 'rn2(400)=144',
+    'rn2(300)=60', 'rn2(20)=16', 'rn2(73)=4',
+];
+
+async function runWornCorrosionSegment({
+    seed = 11,
+    helmet = 'uncursed +2 helmet',
+    acknowledgements = '        ',
+} = {}) {
+    return runSegment({
+        seed,
+        datetime: '20000110090000',
+        nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
+            + 'OPTIONS=!autopickup\n'
+            + 'OPTIONS=pettype:none\n'
+            + 'OPTIONS=suppress_alert:3.4.3\n'
+            + 'OPTIONS=symset:DECgraphics\n',
+        moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
+            + `#wizwish\n${helmet}\nWh`
+            + '#wizwish\nstethoscope\n'
+            + '#wizgenesis\npeaceful black pudding\n'
+            + `ail tglm.${acknowledgements}`,
+        storage: new Map(),
+    });
+}
+
+function assertWornCorrosionHelmet({
+    blessed = false,
+    greased = false,
+    proof = false,
+    proofKnown = false,
+    corrosion,
+}) {
+    assert.ok(game.uarmh);
+    assert.deepEqual({
+        type: game.uarmh.otyp,
+        enchantment: game.uarmh.spe,
+        blessed: !!game.uarmh.blessed,
+        greased: !!game.uarmh.greased,
+        proof: !!game.uarmh.oerodeproof,
+        proofKnown: !!game.uarmh.rknown,
+        rust: game.uarmh.oeroded ?? 0,
+        corrosion: game.uarmh.oeroded2 ?? 0,
+    }, {
+        type: HELMET,
+        enchantment: 2,
+        blessed,
+        greased,
+        proof,
+        proofKnown,
+        rust: 0,
+        corrosion,
+    });
+}
+
 test('seed0011 orcish arrow provokes black-pudding bite corrosion',
     async () => {
-        const result = await runSegment({
-            seed: 11,
-            datetime: '20000110090000',
-            nethackrc: 'OPTIONS=name:ricky,role:Ranger,race:human,gender:female,align:chaotic,playmode:debug\n'
-                + 'OPTIONS=!autopickup\n'
-                + 'OPTIONS=pettype:none\n'
-                + 'OPTIONS=suppress_alert:3.4.3\n'
-                + 'OPTIONS=symset:DECgraphics\n',
-            moves: '  nx #wizwish\n2 uncursed +2 orcish arrows\n'
-                + '#wizwish\nuncursed +2 helmet\nWh'
-                + '#wizwish\nstethoscope\n'
-                + '#wizgenesis\npeaceful black pudding\n'
-                + 'ail tglm.  ',
-            storage: new Map(),
+        const result = await runWornCorrosionSegment({
+            acknowledgements: '  ',
         });
 
         assert.equal(result.getScreens().length, 140);
-        assertRngSliceExact(result.getRngSlices()[137], [
-            'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
-            'rn2(3)=2', 'rn2(6)=5', 'rn2(5)=3', 'rn2(24)=0',
-            'rn2(5)=4', 'rn2(4)=2', 'rn2(3)=1', 'rn2(3)=1',
-            'rn2(5)=1', 'rn2(5)=4', 'rn2(4)=1', 'rn2(5)=1',
-            'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=0',
-            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1', 'rn2(5)=2',
-            'rn2(4)=0', 'rn2(20)=4', 'rn2(5)=2', 'rn2(12)=5',
-            'rn2(12)=1', 'rn2(12)=2', 'rn2(12)=1', 'rn2(12)=8',
-            'rn2(12)=6', 'rn2(70)=52', 'rn2(100)=19',
-            'rn2(400)=97', 'rn2(300)=216', 'rn2(20)=4', 'rn2(73)=30',
-        ], 'seed0011 worn-helmet corrosion bite and scheduler RNG');
+        assertRngSliceExact(
+            result.getRngSlices()[137],
+            SEED0011_WORN_CORROSION_DIRECT_RNG,
+            'seed0011 worn-helmet corrosion bite and scheduler RNG',
+        );
         assert.equal(decodedTopline(result.getScreens()[137]),
             'The black pudding bites!  Your visored helmet corrodes!');
         assert.deepEqual(result.getCursors()[137], [70, 5, 1]);
 
-        assert.ok(game.uarmh);
-        assert.deepEqual({
-            type: game.uarmh.otyp,
-            enchantment: game.uarmh.spe,
-            rust: game.uarmh.oeroded ?? 0,
-            corrosion: game.uarmh.oeroded2 ?? 0,
-        }, {
-            type: HELMET,
-            enchantment: 2,
-            rust: 0,
-            corrosion: 1,
-        });
+        assertWornCorrosionHelmet({ corrosion: 1 });
         assert.equal(game.u.uac, 5);
         assert.equal(game.u.uhp, 3);
         assert.equal(game.u.uhpmax, 15);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 orcish arrow leads greased helmet corrosion retention',
+    async () => {
+        const result = await runWornCorrosionSegment({
+            helmet: 'uncursed greased +2 helmet',
+        });
+
+        assert.equal(result.getScreens().length, 154);
+        assertRngSliceExact(result.getRngSlices()[145], [
+            'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
+        ], 'seed0011 greased helmet corrosion contact RNG');
+        assert.equal(decodedTopline(result.getScreens()[145]),
+            'The black pudding bites!--More--');
+        assert.deepEqual(result.getCursors()[145], [32, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[146], [
+            'rn2(2)=1', 'rn2(3)=2', 'rn2(6)=0', 'rn2(5)=0',
+            'rn2(24)=7', 'rn2(5)=1', 'rn2(4)=3', 'rn2(3)=1',
+            'rn2(3)=2', 'rn2(3)=2', 'rn2(3)=0', 'rn2(5)=1',
+            'rn2(4)=2', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=0',
+            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1', 'rn2(5)=2',
+            'rn2(4)=0', 'rn2(5)=4', 'rn2(20)=12', 'rn2(5)=3',
+            'rn2(12)=1', 'rn2(12)=2', 'rn2(12)=1', 'rn2(12)=8',
+            'rn2(12)=6', 'rn2(12)=8', 'rn2(70)=39',
+            'rn2(100)=97', 'rn2(400)=316', 'rn2(300)=4',
+            'rn2(20)=15', 'rn2(73)=45',
+        ], 'seed0011 grease retention and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[146]),
+            'Your visored helmet is protected by the layer of grease!');
+        assert.deepEqual(result.getCursors()[146], [70, 5, 1]);
+
+        assertWornCorrosionHelmet({ greased: true, corrosion: 0 });
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u.uhp, 3);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0003 orcish arrow leads greased helmet corrosion wear',
+    async () => {
+        const result = await runWornCorrosionSegment({
+            seed: 3,
+            helmet: 'uncursed greased +2 helmet',
+        });
+
+        assert.equal(result.getScreens().length, 154);
+        assertRngSliceExact(result.getRngSlices()[145], [
+            'rn2(5)=1', 'rnd(20)=7', 'd(3,8)=11',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=0',
+        ], 'seed0003 greased helmet corrosion contact RNG');
+        assert.equal(decodedTopline(result.getScreens()[145]),
+            'The black pudding bites!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[146], [
+            'rn2(2)=0',
+        ], 'seed0003 grease wear RNG');
+        assert.equal(decodedTopline(result.getScreens()[146]),
+            'Your crested helmet is protected by the layer of grease!--More--');
+        assert.deepEqual(result.getCursors()[146], [64, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[147], [
+            'rn2(3)=0', 'rn2(6)=0', 'rn2(5)=0', 'rn2(12)=2',
+            'rn2(5)=0', 'rn2(5)=2', 'rn2(32)=28', 'rn2(5)=4',
+            'rn2(12)=1', 'rn2(12)=2', 'rn2(12)=8', 'rn2(70)=40',
+            'rn2(100)=46', 'rn2(20)=15', 'rn2(76)=64',
+        ], 'seed0003 grease dissolution and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[147]),
+            'The grease dissolves.');
+        assert.deepEqual(result.getCursors()[147], [30, 4, 1]);
+
+        assertWornCorrosionHelmet({ corrosion: 0 });
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u.uhp, 4);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0011 orcish arrow leads corrodeproof helmet learning and retry',
+    async () => {
+        const result = await runWornCorrosionSegment({
+            helmet: 'uncursed corrodeproof +2 helmet',
+        });
+
+        assert.equal(result.getScreens().length, 159);
+        assertRngSliceExact(result.getRngSlices()[150], [
+            'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
+        ], 'seed0011 corrodeproof helmet contact RNG');
+        assert.equal(decodedTopline(result.getScreens()[150]),
+            'The black pudding bites!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[151], [
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=3',
+            'rn2(5)=0', 'rn2(5)=4', 'rn2(5)=1',
+        ], 'seed0011 corrodeproof learning and body retry RNG');
+        assert.equal(decodedTopline(result.getScreens()[151]),
+            'Somehow, your visored helmet is not affected by the corrosion.--More--');
+        assert.deepEqual(result.getCursors()[151], [70, 0, 1]);
+
+        assertRngSliceExact(
+            result.getRngSlices()[152],
+            SEED0011_WORN_CORROSION_RETRY_TAIL_RNG,
+            'seed0011 corrodeproof retry tail and scheduler RNG',
+        );
+        assert.equal(decodedTopline(result.getScreens()[152]),
+            'Your cloak of displacement is not affected by corrosion.');
+        assertWornCorrosionHelmet({
+            proof: true,
+            proofKnown: true,
+            corrosion: 0,
+        });
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u.uhp, 3);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0745 orcish arrow leads silent blessed corrosion protection',
+    async () => {
+        const result = await runWornCorrosionSegment({
+            seed: 745,
+            helmet: 'blessed +2 helmet',
+        });
+
+        assert.equal(result.getScreens().length, 145);
+        assertRngSliceExact(result.getRngSlices()[136], [
+            'rn2(4)=2', 'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=1',
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(4)=0', 'rn2(5)=0',
+            'rnd(20)=11', 'd(3,8)=12', 'rn2(5)=4', 'rn2(5)=4',
+            'rn2(5)=0', 'rnl(4)=0', 'rn2(5)=2', 'rn2(5)=1',
+        ], 'seed0745 blessed corrosion protection RNG');
+        assert.equal(decodedTopline(result.getScreens()[136]),
+            'The black pudding bites!--More--');
+        assert.deepEqual(result.getCursors()[136], [32, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[137], [
+            'rn2(3)=2', 'rn2(6)=5', 'rn2(5)=2', 'rn2(12)=1',
+            'rn2(5)=0', 'rn2(12)=2', 'rn2(12)=10', 'rn2(12)=7',
+            'rn2(12)=11', 'rn2(70)=56', 'rn2(100)=61',
+            'rn2(400)=21', 'rn2(20)=1', 'rn2(76)=46',
+        ], 'seed0745 blessed corrosion body stop and scheduler RNG');
+        assert.equal(decodedTopline(result.getScreens()[137]),
+            'Your cloak of displacement is not affected by corrosion.');
+        assert.deepEqual(result.getCursors()[137], [50, 16, 1]);
+
+        assertWornCorrosionHelmet({ blessed: true, corrosion: 0 });
+        assert.equal(game.u.uac, 4);
+        assert.equal(game.u.uhp, 3);
+        assert.equal(game.context.move, 0);
+    });
+
+for (const scenario of [
+    {
+        name: 'seed0011 orcish arrow corrodes worn helmet further',
+        helmet: 'uncursed corroded +2 helmet',
+        index: 146,
+        screens: 155,
+        topline: 'The black pudding bites!  Your visored helmet corrodes further!',
+        corrosion: 2,
+    },
+    {
+        name: 'seed0011 orcish arrow corrodes worn helmet completely',
+        helmet: 'uncursed very corroded +2 helmet',
+        index: 151,
+        screens: 160,
+        topline: 'The black pudding bites!  Your visored helmet corrodes completely!',
+        corrosion: 3,
+    },
+]) {
+    test(scenario.name, async () => {
+        const result = await runWornCorrosionSegment({
+            helmet: scenario.helmet,
+        });
+
+        assert.equal(result.getScreens().length, scenario.screens);
+        assertRngSliceExact(
+            result.getRngSlices()[scenario.index],
+            SEED0011_WORN_CORROSION_DIRECT_RNG,
+            `${scenario.name} RNG`,
+        );
+        assert.equal(
+            decodedTopline(result.getScreens()[scenario.index]),
+            scenario.topline,
+        );
+        assert.deepEqual(result.getCursors()[scenario.index], [70, 5, 1]);
+        assertWornCorrosionHelmet({ corrosion: scenario.corrosion });
+        assert.equal(game.u.uac, 5);
+        assert.equal(game.u.uhp, 3);
+        assert.equal(game.context.move, 0);
+    });
+}
+
+test('seed0011 orcish arrow leaves max-corroded helmet silent and retries',
+    async () => {
+        const result = await runWornCorrosionSegment({
+            helmet: 'uncursed thoroughly corroded +2 helmet',
+        });
+
+        assert.equal(result.getScreens().length, 166);
+        assertRngSliceExact(result.getRngSlices()[157], [
+            'rn2(5)=0', 'rnd(20)=4', 'd(3,8)=12', 'rn2(5)=0',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=0',
+            'rn2(5)=4', 'rn2(5)=1',
+        ], 'seed0011 max-corrosion silent retry RNG');
+        assert.equal(decodedTopline(result.getScreens()[157]),
+            'The black pudding bites!--More--');
+        assert.deepEqual(result.getCursors()[157], [32, 0, 1]);
+
+        assertRngSliceExact(
+            result.getRngSlices()[158],
+            SEED0011_WORN_CORROSION_RETRY_TAIL_RNG,
+            'seed0011 max-corrosion retry tail and scheduler RNG',
+        );
+        assert.equal(decodedTopline(result.getScreens()[158]),
+            'Your cloak of displacement is not affected by corrosion.');
+        assertWornCorrosionHelmet({ corrosion: 3 });
+        assert.equal(game.u.uac, 5);
+        assert.equal(game.u.uhp, 3);
         assert.equal(game.context.move, 0);
     });
 
