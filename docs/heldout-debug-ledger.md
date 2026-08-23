@@ -12930,3 +12930,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   and paints D while underlying Wizard count stays2.  The paired durable
   tests pass 2/2 fixture-disabled.  Real-Amulet suppression, shapechanger
   protection, other appearances, theft/disclosure and clone death remain open.
+- Controlled seed97 sets timed Antimagic before the same stun selection and is
+  exact through all 145 states.  Input131 owns no duration dice: momentary
+  disorientation installs stun1, same-turn maintenance clears it and appends
+  the recovery line.  Final state has magic-resistance timeout26 but no Stun,
+  HP112/137.  Ordinary/resistant stun tests pass 2/2; the selected Wizard gate
+  rises to 14/14 fixture-disabled.  Free Action, repeated resistant stun,
+  shield presentation and delayed recovery remain open.

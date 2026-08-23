@@ -87780,3 +87780,33 @@ corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:15 EEST, journal block 2916] {#seed97 #antimagic #stun-you #resistance #one-turn #timeout-recovery #paired-control #complete-replay #native-witness #regression #architecture #ledger #process-safety #priority}
+
+**Controlled branch contract:** the ordinary seed97 stun carrier is held
+constant while #wizintrinsic installs thirty turns of magic resistance before
+Wizard creation.  Spell selection remains identical, so the only intended
+branch change is Antimagic inside mcast_stun_you.
+
+**Native ordering and state:** input131 publishes You feel momentarily
+disoriented and contains no d(6,4).  make_stunned(1) becomes live, post-attack
+and global maintenance run, then the same input ages stun to zero and appends
+You feel a bit steadier now.  The captured status therefore has no Stun even
+though the effect was not skipped.
+
+**Measured evidence:** all **145 RNG/screen/cursor states** are exact.  Final
+state retains Antimagic and magicResistance with timeout26, Stunned=false,
+stunnedTurns0 and HP112/137.  Strict replay took **0.32 seconds** at
+**125,616,128 bytes maximum RSS**.  The paired ordinary/resistant stun tests
+pass **2/2**; fourteen selected fixture-disabled Wizard controls pass
+**14/14** in **0.73 seconds** at **149,323,776 bytes maximum RSS**.  All
+processes exited.
+
+**Decision and next blocker:** this closes Antimagic stun without claiming
+Free Action or repeated-stun behavior.  Section881 maps the same-turn timeout
+edge.  Next choose MM_EMIN or another resistance branch with distinct durable
+state, preserving shield presentation and occupied-tty recovery as open
+controls.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

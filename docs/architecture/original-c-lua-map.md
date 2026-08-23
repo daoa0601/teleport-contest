@@ -31796,3 +31796,31 @@ same constructor without conflating item or disguise selection.  Real-Amulet
 suppression, Protection from Shape Changers, the other ten appearances,
 object beatitude/merge, theft of the fake, disclosure and clone death remain
 separate controls.
+
+## 881. Antimagic stun installs one turn then recovers in maintenance
+
+~~~mermaid
+flowchart TD
+    Setup["timed Antimagic set to30"] --> Cast["same seed97 stun selection"]
+    Cast --> CastPager["cast line and discarded 16d6"]
+    CastPager --> Shield["Antimagic resistance branch"]
+    Shield --> Prose["publish momentarily disoriented"]
+    Prose --> One["make_stunned(1), no duration dice"]
+    One --> Cuss["post-attack cuss gate"]
+    Cuss --> Timeout["same global maintenance decrements stun1 to0"]
+    Timeout --> Recover["append feel a bit steadier now"]
+    Recover --> State["captured status has no Stun"]
+    Lua["Lua owns no resistance or timeout phase"] -.-> Setup
+~~~
+
+A controlled seed97 recipe sets timed magic resistance before creating the
+Wizard.  It preserves the ordinary stun selection and cast RNG.  Input131 has
+no d(6,4): it publishes momentary disorientation, installs one stun turn, then
+the same global maintenance clears it and appends the recovery line.
+
+All 145 states are exact.  Final state keeps Antimagic/magic resistance active
+with26 turns remaining, but Stunned=false and timeout0; HP is112/137.  Paired
+with ordinary seed97, this distinguishes resistance from Dexterity duration.
+Free Action without Antimagic, already-stunned resistance, shield-effect
+display, combined half-spell, delayed recovery under occupied tty and timeout
+expiry with other statuses remain separate controls.

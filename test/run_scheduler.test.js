@@ -10101,6 +10101,50 @@ test('seed0097 stun-you rolls Dexterity duration after effect prose',
         assert.equal(game.u.uhpmax, 137);
     });
 
+test('seed0097 Antimagic stun lasts one turn and recovers immediately',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizintrinsic\n q\n '
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 97,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 145);
+        assertRngSliceExact(result.getRngSlices()[130], [
+            'rn2(5)=3', 'rn2(5)=1', 'rnd(20)=6', 'd(2,12)=19',
+            'rn2(20)=19', 'rn2(3)=1', 'rn2(6)=0', 'rn2(30)=3',
+            'rn2(300)=259', 'd(16,6)=57',
+        ], 'seed0097 Antimagic stun cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[130]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assertRngSliceExact(result.getRngSlices()[131], [
+            'rn2(5)=2', 'rn2(5)=1', 'rn2(32)=18', 'rn2(5)=0',
+            'rn2(12)=9', 'rn2(12)=10', 'rn2(12)=0', 'rn2(12)=8',
+            'rn2(70)=68', 'rn2(100)=32', 'rn2(20)=6',
+            'rn2(64)=1', 'rn2(31)=29',
+        ], 'seed0097 resistant stun and recovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[131]),
+            'You feel momentarily disoriented.  You feel a bit steadier now.');
+        assert.equal(decodedRow(result.getScreens()[131], 23),
+            'Dlvl:1 $:1524 HP:119(137) Pw:298(298) AC:8 Xp:30');
+        assert.equal(game.u.antimagic, true);
+        assert.equal(game.u.magicResistance, true);
+        assert.equal(game.u.magicResistanceTurns, 26);
+        assert.equal(game.u.stunned, false);
+        assert.equal(game.u.stunnedTurns, 0);
+        assert.equal(game.u.uhp, 112);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
