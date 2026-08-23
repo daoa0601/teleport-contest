@@ -32057,3 +32057,50 @@ This does not authorize mappearance for callers which request
 telepathic/sensed disguises, unseen pronouns, priests, shopkeepers, assigned
 names, saddles, quickmimic pets, other disguise types, or disguise removal.
 Lua contributes only surrounding level geometry.
+
+## 888. Explicitly aligned special monsters enter makemon with MM_EMIN
+
+~~~mermaid
+flowchart TD
+    LuaDesc["Pri-loca.lua aligned cleric align=noalign peaceful=0"] --> SpLev["sp_lev.c create_monster sees explicit sp_amask"]
+    SpLev --> Roamer["priest.c mk_roamer"]
+    Roamer --> Call["makemon with MM_ADJACENTOK plus MM_EMIN plus MM_NOMSG"]
+    Call --> Skip["aligned-cleric constructor skips ordinary minion rn2(3),rn2(3)"]
+    Skip --> Emin["caller installs isminion and emin A_NONE non-renegade"]
+    Emin --> Traps["roamer learns all traps"]
+    Traps --> Malign["set_malign maps hostile A_NONE to malign 20"]
+    Shrine["temple shrine construction"] --> Epri["priestini uses MM_EPRI and installs epri"]
+    Epri --> Pair["peaceful resident cleric"]
+    Malign --> Pairing["hostile roamer cleric at same shrine"]
+    LuaDesc -.->|"descriptor chooses frontend, not constructor RNG"| Pairing
+~~~
+
+Pri-loca provides a paired control within one source construction step.  The
+shrine resident and explicit hostile roamer are both aligned clerics, but the
+resident is constructed through `priestini(MM_EPRI)` and owns `epri` shrine
+state, while the Lua monster descriptor's explicit `align="noalign"` routes
+through `mk_roamer(MM_EMIN)` and owns `emin` state.  Neither is an ordinary
+unflagged aligned-cleric birth, so neither may consume the compatibility
+alignment and renegade rn2(3) draws.
+
+The JavaScript frontend previously called generic `specialMonsterAt()` with
+zero flags, then manually changed the result into a minion.  At seed367 input
+203 this inserted exactly two calls after the roamer's d(14,8)=61/gender draw
+and shifted the remaining construction.  `specialMonsterAt()` now accepts and
+forwards source constructor flags; Pri-loca and the sibling Sanctum noalign
+caller pass MM_EMIN before the constructor.  The caller then installs
+`emin={min_align:A_NONE,renegade:false}`, all-traps knowledge and shared
+`set_malign()` state.
+
+The source-recorded Pri-loca step now matches all 11,734 RNG calls and its
+screen/cursor through arrival.  Durable state contains a peaceful MM_EPRI
+resident with shrine position and inventory, plus a hostile MM_EMIN roamer
+with no `epri`, `malign=20`, every trap known and its exact six-item inventory.
+The old `maligntyp=-1` value was not source state; it leaked from the erroneous
+ordinary-constructor path and is now explicitly absent.
+
+This closes the A_NONE special-level roamer control, not other alignments,
+renegade combinations, Angel/demon minions, prayer or monster summons,
+multi-target placement, resident displacement, replacement/growth, migration,
+or a direct Sanctum replay.  Lua decides that the descriptor has explicit
+alignment; C owns MM_EMIN allocation, inventory, attitude and malign state.

@@ -88053,3 +88053,56 @@ speculation.  No full corpus, public-status rewrite, hidden judge, push, or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:57 EEST, journal block 2923] {#seed0367 #priest-locate #input203 #mm-emin #mm-epri #mk-roamer #aligned-cleric #noalign #set-malign #test-slop #bounded-assertion #first-divergence #native-witness #implementation #regression #architecture #ledger #process-safety #priority #correction}
+
+**Correction, unsafe witness and earliest divergence:** Pri-loca was described
+as closed, but a fixture-disabled focused run was red.  Its whole 11,734-call
+`assert.deepEqual()` emitted a huge diff and obscured the edge.  A bounded
+per-input locator finds **input203 call1296**: after aligned-cleric
+`d(14,8)=61,rn2(2)=1`, JavaScript inserts `rn2(3)=0,rn2(3)=0`; native proceeds
+directly to the next `rnd(2)=2`.  Actual/expected slice lengths were
+11,735/11,734.  The failed process exited at **160,399,360 bytes maximum RSS**;
+the bounded locator took **0.30 seconds** at **135,184,384 bytes maximum RSS**.
+
+**Source contract and prediction:** Pri-loca.lua's explicit
+`align="noalign"` descriptor makes `sp_lev.c:create_monster()` call
+`mk_roamer()`.  That caller invokes `makemon()` with MM_EMIN, then installs
+`isminion`, A_NONE `emin`, all-traps knowledge, hostile disposition and
+`set_malign()`.  The shrine resident independently enters through MM_EPRI.
+The JavaScript level frontend instead passed zero flags and only painted emin
+after construction, so the generic unflagged cleric compatibility branch
+consumed the two calls.  Forwarding MM_EMIN before construction should remove
+exactly those calls; hostile A_NONE must then get `malign=20`, not retain the
+fake `maligntyp=-1` leaked by the old branch.
+
+**Implementation and measured effect:** commit `5efd82a` adds an mmflags
+parameter to `specialMonsterAt()`, passes MM_EMIN from Pri-loca and its
+Sanctum sibling, and routes caller-installed minion state through shared
+`setMonsterMalign()`.  It also replaces the unsafe Priest whole-RNG equality
+checks with bounded first-call assertions.  Input203 now matches all **11,734
+RNG calls**; inputs203--205 also match decoded screens and cursors.  Durable
+state contains two aligned clerics: the peaceful MM_EPRI resident has epri
+shrine position (41,12), all-traps knowledge and inventory
+400/382/73/143/150/438; the hostile MM_EMIN roamer has no epri,
+emin A_NONE/non-renegade, malign20, all-traps knowledge and inventory
+73/430/143/150/438/315.  The focused Pri-loca test passes **1/1** in **0.38
+seconds** at **147,243,008 bytes maximum RSS**.  Three Priest controls plus
+the seventeen Wizard controls pass **20/20** in **0.78 seconds** at
+**183,992,320 bytes maximum RSS**.  Every process exited.
+
+**Falsification, decision and next blocker:** the call neighborhood falsifies
+late inventory, room geometry and arrival as root causes; the manual emin
+state falsifies assuming post-construction painting is equivalent to a source
+constructor flag.  The first failed durable assertions also exposed fake
+`maligntyp` and pre-fix inventory expectations, which were corrected only
+after the full native RNG slice aligned.  Section888 extends section879 with
+the explicit MM_EMIN half of the paired boundary.  Keep non-A_NONE alignments,
+renegades, Angels/demons, prayer and monster summons, multiple roamers,
+replacement/growth, migration and a direct Sanctum measurement open.  Next
+return to an independently reachable death-touch resistance/hallucination
+branch or another unmapped source carrier.  No full corpus, public-status
+rewrite, hidden judge, push, or publication ran; unrelated dirty files remain
+untouched.
+
+---

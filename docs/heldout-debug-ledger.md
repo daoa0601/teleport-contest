@@ -12997,3 +12997,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   true-name callers, hallucination, sensing, priests/shopkeepers, named or
   saddled disguises, other M_AP_MONSTER actors, and disguise removal remain
   open.  Resume with MM_EMIN or another source-valid resistance branch.
+- Correction to the earlier MM_EMIN-open note and to Pri-loca's apparent
+  acceptance: the fixture-disabled test was red, but its 11,734-call whole-log
+  deepEqual emitted an enormous diff instead of the first edge.  A bounded
+  locator finds input203 call1296, immediately after the explicit aligned
+  cleric's d(14,8)=61 and gender draw: JS inserts ordinary rn2(3),rn2(3)
+  alignment/renegade calls because the special-level frontend did not pass
+  MM_EMIN into makemon.  Passing the flag removes both calls and restores all
+  11,734 RNG calls plus screens/cursors through input205.  Durable state now
+  separates the peaceful MM_EPRI resident from the hostile A_NONE MM_EMIN
+  roamer, including emin, all-traps knowledge, malign20 and inventory.  The
+  unsafe assertions were converted to bounded first-difference checks.
+  Pri-loca passes 1/1 and the combined Priest/Wizard gate passes 20/20
+  fixture-disabled.  Other alignments, renegades, Angels/demons, prayer
+  summons, multiple roamers, replacement, migration, and Sanctum measurement
+  remain open.
