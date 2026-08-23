@@ -1413,9 +1413,23 @@ function finishInitialTurnMaintenanceAfterTimeout({
     const activeHpMax = polymorphed ? 'mhmax' : 'uhpmax';
     if (!game.u?.invulnerable
         && (game.u?.[activeHp] ?? 0) < (game.u?.[activeHpMax] ?? 0)) {
-        const constitution = game.u?.acurr?.a?.[2] || 0;
-        const shouldHeal = (game.u.ulevel + constitution) > rn2(100)
-            || game.u.regeneration;
+        let shouldHeal;
+        if (polymorphed) {
+            // allmain.c:regen_hp() does not use the human level/Constitution
+            // rn2(100) check for monster-form HP.  Ordinary forms recover one
+            // point only from Regeneration or on the deterministic 20-turn
+            // cadence while movement encumbrance permits it.  The dry-eel
+            // damage branch remains separate from this non-eel carrier.
+            const nonEel = MONSTER_SYMBOL[game.u.umonnum] !== 57;
+            const encumbranceOk = nearCapacity(game) < MOD_ENCUMBER
+                || !game.u?.umoved;
+            shouldHeal = nonEel && (game.u.regeneration
+                || (encumbranceOk && sourceTurn % 20 === 0));
+        } else {
+            const constitution = game.u?.acurr?.a?.[2] || 0;
+            shouldHeal = (game.u.ulevel + constitution) > rn2(100)
+                || game.u.regeneration;
+        }
         if (shouldHeal) {
             game.u[activeHp] = Math.min(
                 game.u[activeHpMax], game.u[activeHp] + 1,

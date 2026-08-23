@@ -9741,6 +9741,68 @@ test('seed0023 failed death-touch gate preserves maximum HP',
         assert.equal(game.u.uhp, 66);
     });
 
+test('seed0002 nonliving wood golem ignores Wizard death touch',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#polyself\nwood golem\n  '
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 2,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            // Stop on the native death-touch effect pager.  The following
+            // contact has an independent knockback/passive-form gap.
+            moves: fullMoves.slice(0, 124),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 125);
+        assertRngSliceExact(result.getRngSlices()[80], [
+            'rn2(2)=0', 'rn2(19)=4', 'rn2(500)=397',
+        ], 'seed0002 wood-golem setup RNG');
+        assert.equal(decodedTopline(result.getScreens()[80]),
+            'You turn into a wood golem!');
+        assert.equal(decodedRow(result.getScreens()[80], 23),
+            'Dlvl:1 $:1765 HP:50(50) Pw:271(271) AC:2 HD:7');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(12)=10', 'rn2(12)=9', 'rn2(12)=10', 'rn2(12)=10',
+            'rn2(70)=32', 'rn2(400)=203', 'rn2(20)=2', 'rn2(67)=21',
+            'rn2(5)=2', 'rn2(5)=1', 'rn2(25)=0', 'rnd(20)=18',
+            'd(2,12)=17', 'rn2(20)=8', 'rn2(3)=1', 'rn2(6)=1',
+            'rn2(3)=1', 'rn2(30)=20', 'rn2(300)=125', 'd(16,6)=59',
+        ], 'seed0002 nonliving death-touch cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(25)=24',
+            'rn2(5)=1', 'rn2(5)=2', 'rn2(25)=8', 'rn2(5)=3',
+            'rn2(12)=11', 'rn2(12)=8', 'rn2(12)=11', 'rn2(12)=6',
+            'rn2(70)=50', 'rn2(400)=268', 'rn2(20)=18', 'rn2(67)=21',
+            'rn2(5)=2', 'rn2(5)=2', 'rn2(25)=5',
+            'rnd(20)=3', 'd(2,12)=17',
+        ], 'seed0002 nonliving death-touch immunity RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            "Oh no, he's using the touch of death!  You seem no deader than before.--More--");
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1765 HP:33(50) Pw:271(271) AC:2 HD:7');
+        assert.deepEqual(result.getCursors()[124], [78, 0, 1]);
+
+        assert.equal(game.u.umonnum, 254);
+        assert.equal(game.u.mtimedone, 895);
+        assert.equal(game.u.mh, 33);
+        assert.equal(game.u.mhmax, 50);
+        assert.equal(game.u.uhp, 149);
+        assert.equal(game.u.uhpmax, 149);
+        assert.equal(game.context.move, 1);
+    });
+
 test('seed0015 rejects useless aggravation before choosing curse-items',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
