@@ -33262,3 +33262,38 @@ monster pickup, adjacent ray-wand suppression and battle-axe small-target
 damage.  It does not close other searches_for_item classes, petrifying/acidic
 corpse pickup, observed reflection, other supplemental weapons, aggravate
 mutation, input548 gas-cloud state, or animation.  Lua owns geometry only.
+
+## 915. Stateful everyturn hooks execute at live movemon round boundaries
+
+~~~mermaid
+flowchart TD
+    Plan["scanMonsterMovement allocates actor rations and round membership"] --> First["first-round m_everyturn effects observe initial state"]
+    First --> Round1["execute first-round actors one at a time"]
+    Round1 --> FogMove["fog91 moves26,9 to25,9"]
+    FogMove --> Boundary["cross live second movemon round boundary"]
+    Boundary --> Current["iterate current live fmon order"]
+    Current --> FogVisit["fog91 revisited at25,9, movement0"]
+    FogVisit --> Uncovered["visible_region_at is false at new square"]
+    Uncovered --> Create["create one-cell harmless cloud; rn2 3 equals0; ttl4"]
+    Create --> Active["second-round active actors resume"]
+    Lua["Lua contributes level and region-cell geometry only"] -.-> Uncovered
+    Lua -.->|"no ownership"| Plan
+    Lua -.->|"no ownership"| Boundary
+~~~
+
+Source `movemon_singlemon()` runs `m_everyturn_effect()` before checking whether
+an actor has a full movement ration.  It also revisits every live fmon identity
+on each repeated `movemon()` pass.  Preplanning actor membership is safe, but
+pre-executing stateful hooks for later rounds is not: movement, death and region
+coverage can change during the preceding round.
+
+JavaScript now retains first-round planning effects, suppresses later-round
+effect speculation, and runs those hooks against current live state when the
+async actor executor crosses each planned round boundary.  The input548 witness
+keeps old region (26,9) ttl20 and creates new region (25,9) ttl4 after fog91 has
+moved and exhausted its ration.  Hero ends HP44/169, `udg_cnt=89`.
+
+This section closes later-round everyturn timing for the reached fog-cloud
+move.  It does not close input572's later gas-region lifecycle edge, arbitrary
+state changes invalidating preplanned actor membership, hezrou/steam postmove
+clouds, aggravate mutation, or animation.  Lua owns geometry only.

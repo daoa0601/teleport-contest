@@ -90156,3 +90156,54 @@ exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 23:18 EEST, journal block 2989] {#seed52 #fog-cloud #gas-region #m-everyturn-effect #movemon-round #preplanning #native-trace #earliest-divergence #architecture #priority}
+
+**Post-pickup/combat frontier:** seed52 is exact through input547.  Input548
+matches through call19, then native owns `rn2(3)=0 @ create_gas_cloud` before
+the next actor's distfleeck.  JavaScript instead consumes that next rn2(5).
+
+**Bounded trace and root cause:** cumulative calls7445--7467 show fog91 first
+visited at call7448 on (26,9), movement12, covered by its old harmless region.
+It moves to (25,9).  A second `movemon_singlemon` pass revisits fog91 at
+call7465 with movement0 and uncovered; `m_everyturn_effect()` still runs before
+the movement-ration gate and creates the new one-cell region.  JavaScript
+preplans every scheduler round before executing any actor, so its second effect
+check observes stale (26,9) and is suppressed.
+
+**Prediction and decision:** preserve first-round planning, but defer everyturn
+effects for later planned rounds until execution crosses the actual round
+boundary.  At that point iterate current live fmon order, so moved positions,
+deaths and region coverage are visible before active actors resume.  Fog91
+should create region (25,9) with ttl4 from rn2(3)=0 even though it lacks another
+movement ration.  The temporary trace was removed and the canonical six-patch
+recorder rebuilt.  No focused regression, corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 23:28 EEST, journal block 2990] {#seed52 #fog-cloud #gas-region #m-everyturn-effect #movemon-round #live-boundary #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `5467dd8` limits stateful
+everyturn hooks in the planner to round one, exports a current-state fmon-order
+effect pass, and runs later passes when the async executor crosses the actual
+round boundary.  The 549-state regression compares input548's complete 22-call
+slice, screen/cursor and durable fog/region state.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input571.  Fog91 ends (25,9), movement0.  Old harmless region (26,9)
+remains ttl20; the second-pass `rn2(3)=0` creates new region (25,9), ttl4.
+Input548 ends hero HP44/169 and `udg_cnt=89`.  Full replay advances to
+**8,025/9,928 RNG calls, 554/793 screens and 610/793 cursors** in **0.34
+seconds** at **133,988,352 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **8/8**
+in **0.64 seconds** at **216,137,728 bytes maximum RSS**.  Expanded controls
+pass **56/56** in **1.65 seconds** at **335,396,864 bytes maximum RSS**.
+Section915 and the ledger map planner versus live-round ownership.  Input572
+region lifecycle, outcome3 actor mutation, outcome4 and animation remain open.
+Every process exited; the fog trace was removed and the canonical recorder
+rebuilt.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

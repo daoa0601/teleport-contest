@@ -13304,3 +13304,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   udg89 with inventory[45,429,438,293,329].  Parity advances through input547;
   input548 gas-cloud state and aggravate mutation remain open.  Focused/
   expanded gates pass 7/7 and55/55.
+- Seed52 input548 closes stateful hooks across repeated movemon rounds.  A
+  bounded native trace shows fog91 checked at (26,9), movement12, covered; it
+  moves to (25,9), then a second source pass revisits it with movement0 and no
+  covering region.  JavaScript now runs later-round everyturn effects at the
+  live execution boundary instead of speculating them before first-round
+  movement.  The old cloud remains (26,9)/ttl20 and a new (25,9)/ttl4 cloud
+  owns rn2(3)=0.  Parity advances through input571; input572's later region
+  lifecycle and aggravate mutation remain open.  Focused/expanded gates pass
+  8/8 and56/56.
