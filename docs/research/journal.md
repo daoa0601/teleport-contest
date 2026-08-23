@@ -92186,3 +92186,58 @@ inputs256/257/269.  Inventory and extend the shared monster projectile owner
 there before considering replay-only seed0060/0106.
 
 ---
+
+### [2026-08-23 23:54 EEST, journal block 3071] {#seed0002 #input256 #input257 #monster-projectile #pet-target #m-throw #ohitmon #tty-continuation #source-diagnosis #prediction}
+
+**Frame split:** input256's first three runmode movement frames already match.
+Its remaining two frames paint a crude dagger on successive pre-pet flight
+squares under the pending goblin-throw line; the second stays painted while
+that line pages.  Input257 resumes `ohitmon()`, queues the little-dog hit line,
+paints/delays the target square once, then clears before pet movement and floor
+settlement expose the ordinary boundary.
+
+**Source owner:** the existing `ranged.target` branch already preserves the
+last flight glyph across the target-message continuation, but unlike
+`ranged.heroTarget` it emits no per-path or final-target delays.  This is live
+shared `m_throw -> ohitmon -> final tmp_at`, not a session replay.
+
+**Prediction and guard:** capture each flight cell with dirty-map cursor,
+retain the last through the launch pager, transition to the target square only
+after the hit/miss line returns, capture once, then clear in `finally`.  Inputs
+256/257 should add3 exact frames without altering the five already exact
+movement frames or the pet's post-impact boundary.  Keep hero-target lethal,
+nonlethal, potion and food projectile controls green.
+
+---
+
+### [2026-08-23 23:58 EEST, journal block 3072] {#seed0002 #pet-target #monster-projectile #ohitmon #invisible-flight #cursor-correction #implementation #engine-only #44-of-44 #animation-complete #architecture #process-safety}
+
+**Implementation:** commit `4da7af2` adds per-path and final-target delay
+capture to the existing `ranged.target` continuation.  It preserves the last
+flight glyph through the launch pager, installs hit/miss prose, paints the
+target only after that continuation returns, captures once, and clears in
+`finally` before later target/floor state becomes visible.
+
+**Cursor correction beyond scorer evidence:** the focused session scorer
+reported128/128 because supplemental scoring compares frame screens only.  The
+durable cursor witness first failed input256: dirty-map inference selected
+unrelated x32 instead of visible bhitpos x26.  Direct bhitpos fixed visible
+flight/impact, but input269 then showed that invisible flight must retain the
+prior hero cursor and invisible impact must use the hit-line topline cursor.
+Those visibility-conditioned rules make all full frames and cursors exact.
+
+**Evidence and acceptance:** inputs256/257/269 now match **12/12** frame
+screens/cursors, including three existing movement frames, visible and invisible
+dagger paths, launch paging and target impact.  Hero-target lethal/nonlethal and
+sleep-ray controls remain green.  Seed0002 closes at27,158 RNG,595 boundaries
+and **128/128 animation**.  One managed corpus passes **44/44** at **35+0.31
+ms/turn** (R²0.832) in **12.05 seconds** at **272,220,160 bytes maximum RSS**;
+total animation reaches **1,293/1,483**.
+
+**Next priority:** the largest remaining generic partial is seed0014 at891/995;
+seed4500 is heterogeneous22/37 and seed0007's53/58 are replay-state mismatches.
+Before another implementation block, classify seed0014's104 by owner and keep
+replay-only seed0060/0106 out of generic readiness claims.  No normal corpus,
+push, workflow, hidden judge, or publication ran.
+
+---

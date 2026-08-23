@@ -34459,3 +34459,42 @@ horizontal sleep traversal with two hero reflections.  Other directions,
 monster reflection/resistance, misses, fatal/helpless effects, alternate
 reflection sources, and visibility cases remain controls.  Lua contributes
 none.
+
+## 948. Pet-target projectiles retain flight through `ohitmon()` continuation
+
+~~~mermaid
+flowchart TD
+    Throw["monster launches projectile toward intervening pet"] --> Step["m_throw advances path cell"]
+    Step --> Seen{"flight cell visible?"}
+    Seen -->|"yes"| Paint["paint glyph, use bhitpos cursor, delay"]
+    Seen -->|"no"| Silent["delay with prior terminal cursor"]
+    Paint --> Next{"target reached?"}
+    Silent --> Next
+    Next -->|"no"| Step
+    Next -->|"yes"| Pager["last visible flight glyph survives launch pager"]
+    Pager --> Result["ohitmon queues hit or miss prose"]
+    Result --> TargetSeen{"target square visible?"}
+    TargetSeen -->|"yes"| Impact["paint target, bhitpos cursor, delay"]
+    TargetSeen -->|"no"| Hidden["no glyph; hit-line topline cursor, delay"]
+    Impact --> Clear["DISP_END clears transient before target/floor state"]
+    Hidden --> Clear
+    Lua["Lua owns no projectile or target continuation"] -.-> Throw
+~~~
+
+`ohitmon()` is inside the same `m_throw()` stack as flight.  If its result line
+must page behind the launch line, the final pre-target glyph remains physical
+until acknowledgement.  Only after result prose returns does C paint/delay the
+target coordinate and end the temporary display.
+
+Cursor ownership differs by visibility and cannot be inferred from frame cells
+alone.  A visible path or target uses direct `bhitpos`; an invisible path emits
+the delay while retaining the prior terminal cursor; an invisible result frame
+uses the hit/miss topline cursor because no target glyph is painted.  The
+supplemental scorer does not include these cursors, so the durable full-frame
+test is the acceptance witness.
+
+Seed0002 inputs256/257/269 pin **12/12** frames and complete the session at
+128/128 animation while preserving595/595 input boundaries.  This closes the
+represented surviving pet-target dagger hit.  Target death, misses, multiple
+volleys, invisible launchers, other projectile classes, floor destruction and
+shop interactions remain controls.  Lua contributes none.

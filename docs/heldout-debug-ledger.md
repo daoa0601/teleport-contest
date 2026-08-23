@@ -13556,3 +13556,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   managed corpus remains44/44 with1,285/1,483 frames.  Its remaining8 frames
   are isolated to pet-target projectile/cadence state; other ray visibility,
   target and reflection variants remain open.
+- Commit4da7af2 completes live pet-target projectile delay across `ohitmon()`
+  continuation.  Visible flight/impact use direct bhitpos cursors; invisible
+  flight retains the prior cursor and invisible impact uses result-prose cursor.
+  Seed0002 closes128/128 animation and the managed corpus remains44/44 with
+  1,293/1,483 frames.  The full cursor witness corrected two errors hidden by
+  the scorer's screen-only supplemental animation metric.
