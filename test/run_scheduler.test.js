@@ -11944,6 +11944,55 @@ test('seed0014 delayed armor keeps prompt and old AC through first cadence',
         }
     });
 
+test('seed0014 selected travel spans first step and automatic run cadence',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0014-dequa-fountain-explore.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 667),
+            storage: new Map(),
+        });
+        for (const step of [595, 649, 651, 653, 655, 666]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0014 travel input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0014 travel input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0014 travel input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                assertScreenExact(
+                    actualFrames[frame].screen,
+                    nativeFrames[frame].screen,
+                    `seed0014 travel input${step} frame${frame}`,
+                );
+                assert.deepEqual(
+                    actualFrames[frame].cursor,
+                    nativeFrames[frame].cursor,
+                    `seed0014 travel input${step} cursor${frame}`,
+                );
+            }
+        }
+    });
+
 test('seed0116 digging beam delays visible and invisible path cells',
     async () => {
         const session = JSON.parse(fs.readFileSync(

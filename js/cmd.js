@@ -9747,6 +9747,7 @@ async function dotravel() {
         && game.u.uy + direction.dy === state.targetY;
     if (finalStep) game._travelTarget = null;
     const moved = await domove(direction.dx, direction.dy);
+    if (moved) await captureRunmodeDelay(game, !!game._runState);
     game.context.travel1 = false;
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
