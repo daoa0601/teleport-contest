@@ -13028,3 +13028,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   Priest/Wizard gate pass 3/3 and 23/23 fixture-disabled.  Hallucinated clone
   construction/announcement, Warning activation, Antimagic accepted effects,
   prior-known items, fatal drain, life saving, and Unchanging remain open.
+- Seed90 is now exact through all 143 states after porting Hallucinated clone
+  creation wear snapshots.  Native display logging plus bounded stack traces
+  identify input135's complete transaction: by-hero makemon newsym; eight
+  unconditional `m_dowear_type()` name snapshots for amulet/shirt/cloak/helm/
+  shield/gloves/boots/suit; final makemon newsym; randomized Amonnam
+  announcement (`loan shark`); post-fake/post-wizapp clonewiz newsym; then cuss
+  naming.  JS previously consumed only the initial/final clone glyphs and cuss
+  name, while hardcoding the announcement.  A shared source-slot enumerator
+  now advances only the otherwise-unused Hallucination names; actual armor
+  mutation was deliberately left unchanged.  The clone remains a true iswiz
+  actor at HP133/133, mappearance117, inventory333/305/212.  The focused test,
+  creation-armor unit and combined fixture-disabled portfolio pass 1/1, 1/1
+  and 23/23.  Ordinary forced-genesis snapshot/announcement wiring, monster
+  amulet wear, non-humanoid slot combinations, Warning activation and other
+  Hallucinated constructor messages remain open.

@@ -32164,3 +32164,57 @@ objects, Antimagic effects which survive usefulness, Warning-bearing
 activation, Hallucinated Wizard construction, clone announcement/disguise,
 non-Hallucinated fatal drain, life saving, or Unchanging.  Lua supplies only
 the surrounding level geometry.
+
+## 890. Monster creation snapshots its name once per wear slot
+
+~~~mermaid
+flowchart TD
+    Clone["clonewiz calls makemon Wizard at hero square"] --> ByYou["makemon byyou newsym and set_apparxy"]
+    ByYou --> Inventory["m_initinv creates defensive and miscellaneous items"]
+    Inventory --> Wear["m_dowear creation pass"]
+    Wear --> Amul["m_dowear_type W_AMUL snapshots mon_nam"]
+    Amul --> Shirt["W_ARMU when body can wear suit"]
+    Shirt --> Cloak["W_ARMC when suit or wrapping body eligible"]
+    Cloak --> Helm["W_ARMH"]
+    Helm --> Shield["W_ARMS unless wielding bimanual weapon"]
+    Shield --> Gloves["W_ARMG"]
+    Gloves --> Boots["W_ARMF unless slithy or centaur"]
+    Boots --> Suit["W_ARM normal or racial-exception visit"]
+    Suit --> FinalMap["makemon final newsym"]
+    FinalMap --> Announce["Amonnam visible creation announcement"]
+    Announce --> CloneState["clonewiz installs fake Amulet and wizapp disguise"]
+    CloneState --> DisguiseMap["clonewiz post-disguise newsym"]
+    DisguiseMap --> Cuss["later Wizard cuss owns a fresh display name"]
+    Lua["Lua owns no constructor wear, naming, clone, or display policy"] -.-> Clone
+~~~
+
+`m_dowear_type()` copies the monster's name before it knows whether the slot
+has any usable object.  During ordinary play those unused snapshots are
+presentation-inert.  Under Hallucination each `mon_nam()` invokes
+`rndmonnam()`, so an empty slot still advances the independent display RNG.
+The outer `m_dowear()` body policy determines how many calls exist; a humanoid
+Wizard with no bimanual weapon visits all eight slots in the order above.
+
+Seed90 input135 makes every phase observable.  Native display call76 is
+`makemon()`'s by-hero initial glyph.  Calls77--96 are eight name snapshots,
+including real-monster rejection/gender draws and bogus-name file draws.
+Call97 is the final makemon glyph.  Calls98--100 make the visible subject
+`The loan shark`; call101 is the separate `clonewiz()` repaint after fake-
+Amulet and appearance state; calls102--103 belong to cuss.  Core RNG remains
+the exact 65-call clone constructor/actor tail and is independent of this
+presentation stream.
+
+JavaScript now derives the creation snapshot slots from body, wrapping,
+weapon and locomotion properties, consumes one display-random monster name
+per source visit, performs the final creation projection, and formats the
+announcement from a fresh Hallucinated subject.  Actual armor selection keeps
+its pre-existing owner; an adversarial review rejected changing unwitnessed
+wrapping/equipment behavior merely to reuse the slot list.
+
+The complete 143-state seed90 replay is exact from input3 onward.  Final state
+retains two real Wizards; the clone is iswiz, HP133/133,
+M_AP_MONSTER/mappearance117, and carries teleportation scroll333,
+invisibility potion305 and fake Amulet212.  Ordinary forced-genesis wiring,
+monster amulet equipment, alternate body/weapon slot counts, prior invisibility,
+Warning-bearing activation, other Hallucinated constructors and suppressed
+true-name callers remain separate controls.  Lua supplies only level geometry.

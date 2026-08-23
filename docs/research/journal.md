@@ -88177,3 +88177,63 @@ effect.  No full corpus, public-status rewrite, hidden judge, push, or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 14:52 EEST, journal block 2925] {#seed90 #input135 #hallucination #clone-wizard #makemon #m-dowear #m-dowear-type #name-snapshot #display-rng #loan-shark #fake-amulet #wizapp #native-stack-trace #implementation #complete-replay #regression #architecture #ledger #process-safety #priority}
+
+**Contract and competing mechanisms:** seed90 was exact through input134;
+input135 had identical 65-call core RNG and clone state but native displayed
+`Double Trouble...  The loan shark suddenly appears next to you!` at cursor71
+while JavaScript hardcoded the true Wizard at cursor77.  A noun-only fix was
+not acceptable because native consumed 28 display calls and JavaScript only
+four.  Live families were: one missing randomized announcement, a shifted
+glyph phase, source constructor name side effects, or a fixed compatibility
+debt.  The authoritative contract required exact core RNG, decoded screens,
+cursors, display-call ownership and durable clone identity.
+
+**Native display trace:** the recorder's optional display log first bounded
+input135 to calls76--103.  Temporary environment-gated native stack tracing
+then identified every owner: call76 is `makemon()->newsym()` for the by-hero
+placement; calls77--96 are eight `m_dowear_type()->x_monnam()` transactions;
+call97 is makemon's final newsym; calls98--100 are makemon's Amonnam
+announcement; call101 is `clonewiz()`'s post-disguise newsym; calls102--103
+are cuss naming.  The wear offsets correspond exactly to amulet, shirt,
+cloak, helm, shield, gloves, boots and suit.  Diagnostic edits were removed
+and the isolated recorder was rebuilt clean before production work.
+
+**Source contract and implementation:** `m_dowear_type()` snapshots
+`mon_nam()` before scanning a slot, even during creation and even when no item
+can be worn.  Hallucination turns each otherwise-unused snapshot into one
+`rndmonnam()` transaction.  Commit `335fd9a` adds a shared creation-snapshot
+slot enumerator to `monworn.js`; clone construction consumes those names after
+its initial projection, performs makemon's final projection, then uses a fresh
+Hallucinated subject for the announcement.  Fake-Amulet and wizapp state remain
+after that line, with their existing separate repaint.  An attempted reuse of
+the slot list for actual armor mutation was rejected during adversarial review
+and removed; unwitnessed wrapping/equipment behavior is unchanged.
+
+**Measured effect and durable evidence:** seed90 now matches all **143 native
+RNG/screen/cursor states from input3 onward**.  Strict replay took **0.27
+seconds** at **123,944,960 bytes maximum RSS**.  Input135 has the complete
+65-call core slice, loan-shark announcement, HP96/138 status and cursor71.
+Final state has HP95/138 and Hallucination26; two underlying Wizards remain.
+The clone is iswiz, HP133/133, M_AP_MONSTER/mappearance117, located adjacent
+to the original, and carries object types333/305/212.  The permanent complete
+seed90 test passes **1/1** in **0.26 seconds** at **131,203,072 bytes maximum
+RSS**; the existing dwarf creation-armor unit passes **1/1**; the selected
+fixture-disabled Priest/Wizard portfolio passes **23/23** in **0.72 seconds**
+at **187,187,200 bytes maximum RSS**.  Every recorder, comparator and test
+process exited.
+
+**Falsification, map and next blocker:** exact core/durable state falsifies
+clone construction and disguise as the cause; the bounded stacks falsify both
+a single missing subject call and an unexplained display debt.  Section890
+maps creation wear/name ownership; Lua owns none.  The seed90 carrier is now
+complete.  The nearest shared successor is the previously rejected forced
+Wizard genesis under active Hallucination, which uses the same makemon wear
+snapshots but a different caller/announcement wrapper.  Warning activation,
+monster amulet wear, alternate body/weapon slot counts, other Hallucinated
+constructors and suppressed true names remain open.  No full corpus,
+public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
+files remain untouched.
+
+---
