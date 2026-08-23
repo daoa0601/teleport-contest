@@ -11033,6 +11033,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   unconsumed.  The exact replay ends HP127/155 and AC8; the selected Wizard
   gate remains 9/9 fixture-disabled.  Migration, completed naming, unseen
   use and noncursed growth remain open.
+- Serial seeds21--32 produced a clean clone carrier at seed32; the haste
+  candidate seed25 remains blocked behind spawned-monster combat.  Seed32 is
+  exact through all 127 states.  Input120 constructs a second real Wizard at
+  (10,4), HP139/139, rejects a fake Amulet with rn2(2)=0 and selects human
+  disguise with rn2(12)=0.  M_AP_MONSTER projection now paints the clone as a
+  white @ without changing iswiz identity; context count is2.  The selected
+  Wizard gate rises to 10/10 fixture-disabled.  Other disguises, fake Amulet,
+  shapechanger protection and clone lifecycle remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

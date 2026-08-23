@@ -87507,3 +87507,40 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 12:30 EEST, journal block 2908] {#seed32 #wizard-of-yendor #clone-wizard #double-trouble #makemon #fake-amulet #mappearance #m-ap-monster #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Carrier search and contract:** serial native seeds21--32 found actual
+haste-self at seed25 and clone-wizard at seeds31/32.  Seed25 first diverges at
+input113 in unrelated spawned-monster combat.  Seed32 is exact through
+input119's clone selection and discarded d(16,6)=50, so it is the accepted
+next carrier.
+
+**Source lifecycle:** mcast_clone_wiz first publishes Double Trouble, then
+clonewiz calls makemon(Wizard, hero, MM_NOWAIT).  The constructor announces
+the real Wizard before clonewiz forces final attitude, probes a fake Amulet,
+chooses one of twelve wizapp forms and repaints.  These are two tty-aware
+phases; folding the disguise into constructor identity would lose both unique
+Wizard state and announcement semantics.
+
+**Implementation and measured effect:** the deferred spell now queues Double
+Trouble, constructs and announces a second Wizard, then finalizes hostility,
+fake-Amulet gate and mappearance before repainting.  display.js now projects
+M_AP_MONSTER through the apparent species glyph.  Seed32 is exact for all
+**127 RNG/screen/cursor states**.  The clone is at (10,4), HP139/139,
+hostile, iswiz=true, human-disguised, with no fake Amulet; context wizard count
+is2.  The strict replay took **0.31 seconds** at **126,795,776 bytes maximum
+RSS**.  Ten selected fixture-disabled Wizard controls pass **10/10** in
+**0.56 seconds** at **145,178,624 bytes maximum RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** exact constructor RNG and real
+Wizard count falsify a synthetic-human implementation.  The sole pre-fix cell
+color mismatch isolated the missing M_AP_MONSTER projection rather than
+clone state.  Section873 maps the boundary; Lua owns none.  Return to
+seed25's earliest spawned-monster physical/contact gaps before claiming the
+later haste-self spell, or record another exact-prefix haste carrier.
+Fake-Amulet, alternate disguises, shapechanger protection and clone lifecycle
+remain explicit.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---

@@ -24,7 +24,8 @@ import {
     BELL_OF_OPENING, BULLWHIP,
     BLINDING_VENOM, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION,
     CLOAK_OF_MAGIC_RESISTANCE,
-    CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT,
+    CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG,
+    FAKE_AMULET_OF_YENDOR, FLINT,
     ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK,
     ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES,
     OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
@@ -38,8 +39,8 @@ import {
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from './object_data.js';
 import {
-    mkcorpstat, mksobj, place_object, shapechangeMonster, summonNastyMonsters,
-    stack_object, undeadToCorpse, monsterGoodPosition,
+    makemonNear, mkcorpstat, mksobj, place_object, shapechangeMonster,
+    summonNastyMonsters, stack_object, undeadToCorpse, monsterGoodPosition,
 } from './mklev.js';
 import { getTrack } from './track.js';
 import {
@@ -78,7 +79,7 @@ import {
     G_GONE, G_NOCORPSE,
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
     NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED,
-    NOTONL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
+    MM_NOWAIT, NOTONL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
     UNLOCKDOOR, VIBRATING_SQUARE,
     WATER, W_ACCESSORY, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMOR,
@@ -7767,6 +7768,11 @@ export function resumeDeferredHeroSpell(
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'clone-wizard') {
+        attack.deferredCloneWizard = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'destroy-armor') {
         attack.deferredDestroyArmor = true;
         attack.appliedDamage = 0;
@@ -7968,6 +7974,63 @@ export async function resolveDeferredHeroSummonMonsters(action, state) {
     attack.summonedMonsters = effect.created || [];
     attack.deferredSummonMonsters = false;
     return effect;
+}
+
+const WIZARD_CLONE_APPEARANCE_NAMES = [
+    'human', 'water demon', 'vampire', 'red dragon', 'troll', 'umber hulk',
+    'xorn', 'xan', 'cockatrice', 'floating eye', 'guardian naga', 'trapper',
+];
+
+export async function beginDeferredHeroCloneWizard(action, state) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredCloneWizard || attack.cloneWizard) return null;
+    const clone = await makemonNear(
+        285, state.u?.ux ?? 0, state.u?.uy ?? 0, MM_NOWAIT,
+    );
+    if (!clone) {
+        attack.deferredCloneWizard = false;
+        return null;
+    }
+    attack.cloneWizard = clone;
+    newsym(clone.mx, clone.my);
+    return {
+        clone,
+        message: 'The Wizard of Yendor suddenly appears next to you!',
+    };
+}
+
+export function finishDeferredHeroCloneWizard(action, state, random = rn2) {
+    const attack = action?.movement?.attack;
+    const clone = attack?.cloneWizard;
+    if (!attack?.deferredCloneWizard || !clone) return null;
+    clone.msleeping = 0;
+    clone.mtame = 0;
+    clone.mpeaceful = 0;
+    if (!state.u?.uhave?.amulet
+        && recordRandom(random, action.calls, 2) !== 0) {
+        const fake = mksobj(FAKE_AMULET_OF_YENDOR, true, false);
+        const inventory = clone.minvent || clone.inventory || [];
+        inventory.push(fake);
+        clone.minvent = inventory;
+        clone.inventory = inventory;
+        clone.hasInventory = true;
+    }
+    const protectedFromShapechangers = !!(
+        state.u?.protectionFromShapeChangers
+        || state.u?.protection_from_shape_changers
+    );
+    if (!protectedFromShapechangers) {
+        const appearanceIndex = recordRandom(
+            random, action.calls, WIZARD_CLONE_APPEARANCE_NAMES.length,
+        );
+        clone.m_ap_type = M_AP_MONSTER;
+        clone.mappearance = MONSTER_NAME.indexOf(
+            WIZARD_CLONE_APPEARANCE_NAMES[appearanceIndex],
+        );
+    }
+    newsym(clone.mx, clone.my);
+    attack.deferredCloneWizard = false;
+    return clone;
 }
 
 // Resume a successful castmu(FALSE,FALSE) after its casting line has crossed

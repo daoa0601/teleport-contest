@@ -6,7 +6,7 @@ import {
     ALTAR, AM_LAWFUL, AM_SHRINE, BEAR_TRAP, BRCORNER, CORR, DART_TRAP, DOOR,
     D_BROKEN, D_CLOSED,
     D_ISOPEN, D_NODOOR, FIRE_TRAP, HWALL, IRONBARS, LADDER, LAVAWALL,
-    MAGIC_PORTAL,
+    MAGIC_PORTAL, M_AP_MONSTER,
     MORGUE, POOL, ROOM, SDOOR, SHOPBASE, SINK, SLP_GAS_TRAP, SQKY_BOARD, STONE,
     STRAT_WAITFORU, TEMPLE, TRCORNER,
     WATER, WEB, W_NONDIGGABLE, W_NONPASSWALL, ZOO,
@@ -9850,6 +9850,69 @@ test('seed0016 smoky invisibility potion probes occupant before quaffing',
         assert.ok(gainLevelPotion);
         assert.equal(gainLevelPotion.cursed, true);
         assert.equal(game.u.uhp, 127);
+    });
+
+test('seed0032 clone-Wizard constructs and projects a human disguise',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 32,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'rn2(20)=19', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=27',
+            'rn2(20)=8', 'rn2(20)=18', 'rn2(300)=117', 'd(16,6)=50',
+        ], 'seed0032 clone-Wizard cast RNG');
+        const cloneSlice = result.getRngSlices()[120];
+        assert.equal(cloneSlice.length, 58);
+        assertRngSliceExact(cloneSlice.slice(0, 18), [
+            'rn2(8)=4', 'rn2(7)=2', 'rn2(6)=0', 'rn2(5)=3',
+            'rn2(4)=3', 'rn2(3)=0', 'rn2(2)=0',
+            'rn2(16)=1', 'rn2(15)=12', 'rn2(14)=7', 'rn2(13)=10',
+            'rn2(12)=6', 'rn2(11)=6', 'rn2(10)=8', 'rn2(9)=2',
+            'rn2(8)=3', 'rn2(7)=5', 'rn2(6)=2',
+        ], 'seed0032 clone constructor first eighteen RNG');
+        assertRngSliceExact(cloneSlice.slice(-16), [
+            'rn2(4)=1', 'rn2(3)=1', 'rn2(2)=1',
+            'rnd(2)=2', 'd(30,8)=139', 'rn2(50)=33', 'rn2(100)=96',
+            'rn2(100)=46', 'rn2(2)=0', 'rn2(12)=0',
+            'rn2(5)=1', 'rn2(5)=3', 'rn2(5)=3', 'rn2(5)=0',
+            'rnd(20)=3', 'd(1,2)=1',
+        ], 'seed0032 clone constructor last sixteen RNG');
+        assert.equal(decodedTopline(result.getScreens()[120]),
+            'Double Trouble...  The Wizard of Yendor suddenly appears next to you!--More--');
+        assert.equal(decodedRow(result.getScreens()[120], 5),
+            '    x~~~~@@x');
+        assert.equal(
+            decodeScreen(result.getScreens()[120])[5][9].color,
+            15,
+        );
+        assert.equal(decodedRow(result.getScreens()[120], 23),
+            'Dlvl:1 $:1303 HP:114(142) Pw:230(230) AC:8 Xp:30');
+
+        const wizards = game.level.monsters.filter(monster => monster.iswiz);
+        assert.equal(wizards.length, 2);
+        assert.equal(game.context.no_of_wizards, 2);
+        const clone = wizards.find(monster => monster.mhpmax === 139);
+        assert.ok(clone);
+        assert.equal(clone.mx, 10);
+        assert.equal(clone.my, 4);
+        assert.equal(clone.mpeaceful, 0);
+        assert.equal(clone.m_ap_type, M_AP_MONSTER);
+        assert.equal(clone.mappearance, 260);
+        assert.deepEqual(clone.minvent, []);
+        assert.equal(game.u.uhp, 114);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

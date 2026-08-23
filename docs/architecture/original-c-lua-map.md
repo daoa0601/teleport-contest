@@ -31534,3 +31534,38 @@ ending HP127/155, AC8, inside the unfinished call editor with the cursed
 potion retained.  Successful upward migration, cursed guards/shopkeepers/
 priests, completed naming and consumption, unseen use, noncursed growth,
 genocided growth target and shop billing remain separate controls.
+
+## 873. Clone Wizard splits announcement, constructor, and disguise repaint
+
+~~~mermaid
+sequenceDiagram
+    participant Cast as mcast_clone_wiz
+    participant TTY as tty message owner
+    participant Make as makemon / makemonNear
+    participant Clone as clonewiz finalizer
+    participant Map as newsym
+    Cast->>TTY: Double Trouble...
+    Cast->>Make: create Wizard at hero with MM_NOWAIT
+    Make->>Map: project real Wizard birth
+    Make->>TTY: Wizard suddenly appears next to you
+    TTY-->>Cast: combined line may page
+    Cast->>Clone: force hostile/awake, fake-Amulet gate
+    Clone->>Clone: rn2(12) chooses wizapp disguise
+    Clone->>Map: repaint M_AP_MONSTER appearance
+    Map-->>TTY: human-colored @ overlays real Wizard state
+~~~
+
+Seed32 is exact through all 127 states.  Input119 selects clone-wizard and
+retains the discarded d(16,6)=50 behind the cast pager.  Input120 owns the
+three-ring placement, 30d8=139 clone HP, ordinary inventory reservoirs,
+fake-Amulet gate rn2(2)=0, and human disguise rn2(12)=0.  It then resumes the
+same actor/global transaction.
+
+The clone is a second real Wizard: iswiz=true, hostile, context count2, HP
+139/139 at (10,4).  It has no fake Amulet on this gate and stores
+M_AP_MONSTER/human as mappearance.  display.js now projects monster
+appearances before the underlying species glyph, yielding source's white @
+instead of Wizard magenta while preserving real identity and behavior.
+Nonzero fake-Amulet creation, other twelve disguises, Protection from Shape
+Changers, failed placement, clone death/resurrection, multiple-clone
+uselessness and hallucinated disguise projection remain separate controls.

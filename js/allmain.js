@@ -71,7 +71,8 @@ import {
 } from './u_init.js';
 import { roles } from './roles.js';
 import {
-    allocateMonsterMovement, continueDeferredHeroAttack,
+    allocateMonsterMovement, beginDeferredHeroCloneWizard,
+    continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
     finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
     finishDeferredHeroRustArmor,
@@ -91,6 +92,7 @@ import {
     resolveDeferredHeroSummonMonsters,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
+    finishDeferredHeroCloneWizard,
     resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport,
     resumeDeferredMovementSpell,
@@ -3751,6 +3753,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 );
                             if (summoned?.message)
                                 await queueTurnMessage(summoned.message);
+                        }
+                        if (heroAttack.deferredCloneWizard) {
+                            await queueTurnMessage('Double Trouble...');
+                            const clone
+                                = await beginDeferredHeroCloneWizard(
+                                    action, game,
+                                );
+                            if (clone?.message)
+                                await queueTurnMessage(clone.message);
+                            finishDeferredHeroCloneWizard(action, game);
                         }
                         if (heroAttack.deferredDeathTouch)
                             await resolveDeferredHeroDeathTouch(

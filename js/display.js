@@ -14,7 +14,7 @@ import {
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
-    WEB, VIBRATING_SQUARE, M_AP_OBJECT, def_warnsyms,
+    WEB, VIBRATING_SQUARE, M_AP_MONSTER, M_AP_OBJECT, def_warnsyms,
     In_endgame, Is_rogue_level,
 } from './const.js';
 import {
@@ -983,6 +983,15 @@ export function newsym(x, y) {
             const glyph = apparentObjectGlyph(monster);
             show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx,
                 objectGlyphAttr(glyph));
+            return;
+        }
+        if (!hallucinationActive()
+            && monster.m_ap_type === M_AP_MONSTER
+            && Number.isInteger(monster.mappearance)) {
+            const glyph = displayMonsterGlyph(monster.mappearance);
+            show_glyph_cell(x, y, glyph.ch, glyph.color, false,
+                (monster.pet || (monster.mtame ?? 0) > 0)
+                    && game.flags?.hilite_pet ? 1 : 0);
             return;
         }
         if (hallucinationActive()) {
