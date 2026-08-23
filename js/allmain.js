@@ -1341,7 +1341,8 @@ function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     // helplessness so fast heroes and multi-round movement rations retain the
     // same boundary.
     if ((game._helplessTurns || 0) > 0) {
-        game._helplessRunmodeDelayPending = sourceTurn;
+        if (!game._deathSurvivedMessagePending)
+            game._helplessRunmodeDelayPending = sourceTurn;
         game._helplessTurns--;
         if (game._helplessTurns === 0) {
             const doneMessage = game._helplessDoneMessage
