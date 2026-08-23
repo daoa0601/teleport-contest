@@ -9373,7 +9373,7 @@ export function resumeDeferredMonsterBearTrap(
 // optional kill lines.  ohitmon() has already consumed hit/damage RNG and
 // reduced HP; fatal detach/corpse work precedes launch_obj() continuing the
 // free in-flight boulder to its opposite endpoint.
-export function resumeDeferredMonsterRollingBoulder(
+export function resumeDeferredMonsterRollingBoulderDeath(
     action, state, random = rn2,
 ) {
     const movement = action?.movement;
@@ -9389,6 +9389,15 @@ export function resumeDeferredMonsterRollingBoulder(
         );
         event.death = { corpseCreated: !!corpse, corpse };
     }
+    return action;
+}
+
+// launch_obj() keeps rolling after ohitmon() returns.  Endpoint placement is
+// later than death/corpse resolution and every remaining per-cell delay.
+export function finishDeferredMonsterRollingBoulderPlacement(action, state) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (event?.kind !== 'rolling-boulder' || !event.released) return action;
     if (event.deferredPlacement) {
         event.deferredPlacement = false;
         event.boulder = placeAndStackTrapMissile(
@@ -9398,6 +9407,13 @@ export function resumeDeferredMonsterRollingBoulder(
             vision_note_blocker_change(event.endpoint.x, event.endpoint.y);
     }
     return action;
+}
+
+export function resumeDeferredMonsterRollingBoulder(
+    action, state, random = rn2,
+) {
+    resumeDeferredMonsterRollingBoulderDeath(action, state, random);
+    return finishDeferredMonsterRollingBoulderPlacement(action, state);
 }
 
 // Resume dog_move() after dog_invent() has committed and tty has had the

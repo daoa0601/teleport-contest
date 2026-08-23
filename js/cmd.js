@@ -11220,16 +11220,22 @@ function boulderAt(x, y) {
         ?.find(object => object.otyp === BOULDER) ?? null;
 }
 
-async function animateRollingBoulderCell(boulder, glyph, x, y, previous) {
+export async function animateRollingBoulderCell(
+    boulder, glyph, x, y, previous,
+) {
     if (previous) newsym(previous.x, previous.y);
     if (!cansee(x, y)) return null;
 
     show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
     // ROLL uses delaycnt=2.  C's tmp_at cursor sits immediately after the
-    // transient glyph rather than returning to the hero between delays.
+    // last dirty map cell.  That is the new projectile cell while rolling
+    // right, but the just-cleared previous cell while rolling left.
+    const frameCursor = previous
+        ? lastDirtyMapCursor() ?? [x, y + 1]
+        : [x, y + 1];
     for (let delay = 0; delay < 2; delay++) {
         await flush_screen(1);
-        game.nhDisplay?.setCursor(x, y + 1);
+        game.nhDisplay?.setCursor(...frameCursor);
         await game.animationFrame?.();
     }
     return { x, y };

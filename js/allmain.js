@@ -16,6 +16,7 @@ import {
     u_on_upstairs, place_lregion,
 } from './mklev.js';
 import {
+    animateRollingBoulderCell,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
@@ -113,7 +114,8 @@ import {
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
-    resumeDeferredMonsterRollingBoulder,
+    finishDeferredMonsterRollingBoulderPlacement,
+    resumeDeferredMonsterRollingBoulderDeath,
     resumeDeferredMonsterMagicMissileWand,
     resolveMonsterMagicMissileContact,
     finishMonsterMagicMissileDeath,
@@ -3908,15 +3910,23 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 newsym(event.launch.x, event.launch.y);
                 const dx = Math.sign(event.endpoint.x - event.launch.x);
                 const dy = Math.sign(event.endpoint.y - event.launch.y);
-                event.transient = {
-                    x: movement.x - dx,
-                    y: movement.y - dy,
-                };
                 const glyph = transientObjectGlyph(event.boulder);
-                show_glyph_cell(
-                    event.transient.x, event.transient.y,
-                    glyph.ch, glyph.color, glyph.decgfx, glyph.attr,
+                let flightX = event.launch.x;
+                let flightY = event.launch.y;
+                const preTargetSteps = Math.max(
+                    Math.abs(movement.x - flightX),
+                    Math.abs(movement.y - flightY),
                 );
+                event.transient = null;
+                for (let step = 0; step < preTargetSteps; step++) {
+                    event.transient = await animateRollingBoulderCell(
+                        event.boulder, glyph,
+                        flightX, flightY, event.transient,
+                    );
+                    flightX += dx;
+                    flightY += dy;
+                }
+                event.flight = { x: flightX, y: flightY, dx, dy, glyph };
             }
             if (event.released && event.hit) {
                 await queueTurnMessage(
@@ -3933,9 +3943,29 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 );
             }
             if (event.released) {
-                resumeDeferredMonsterRollingBoulder(action, game);
+                // ohitmon() finishes death/corpse work before launch_obj()
+                // resumes its two-delay traversal from the target cell.
+                resumeDeferredMonsterRollingBoulderDeath(action, game);
                 movement = action.movement;
-                newsym(event.transient.x, event.transient.y);
+                const { dx, dy, glyph } = event.flight;
+                let flightX = event.flight.x;
+                let flightY = event.flight.y;
+                const postTargetSteps = Math.max(
+                    Math.abs(event.endpoint.x - flightX),
+                    Math.abs(event.endpoint.y - flightY),
+                );
+                for (let step = 0; step < postTargetSteps; step++) {
+                    event.transient = await animateRollingBoulderCell(
+                        event.boulder, glyph,
+                        flightX, flightY, event.transient,
+                    );
+                    flightX += dx;
+                    flightY += dy;
+                }
+                finishDeferredMonsterRollingBoulderPlacement(action, game);
+                movement = action.movement;
+                if (event.transient)
+                    newsym(event.transient.x, event.transient.y);
                 newsym(event.endpoint.x, event.endpoint.y);
             }
         }
