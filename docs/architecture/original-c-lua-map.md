@@ -31501,3 +31501,36 @@ is retained as a named unimplemented branch rather than approximated.
 Seed16 is exact through input114 call3.  Fire resistance, magic cancellation,
 paper/straw rehumanization, successful inventory destruction, slime removal,
 passive retaliation and lethal fire remain separate controls.
+
+## 872. Cursed monster gain-level defers consumption behind call-name editor
+
+~~~mermaid
+flowchart TD
+    Scan["find_misc scans minvent newest-first"] --> Eligible["gain-level usable when uncursed or actor is not guard/shop/priest"]
+    Eligible --> Precheck["shared potion occupant precheck"]
+    Precheck --> Drink["mquaffmsg publishes orange-potion line"]
+    Drink --> Cursed["cursed branch tests Can_rise_up"]
+    Cursed --> Blocked["level1 cannot rise; publish looks uneasy"]
+    Blocked --> Trycall["unknown potion invokes trycall/docall"]
+    Trycall --> Pager["call prompt forces uneasy-line pager"]
+    Pager --> Editor["Call an orange potion line editor"]
+    Editor --> Return["only completed editor returns to m_useup"]
+    Return --> Consume["consume potion and end actor"]
+    Lua["Lua owns no item selection, migration, or editor phase"] -.-> Scan
+~~~
+
+Seed16's horned devil carries a cursed gain-level potion.  Unlike guards,
+shopkeepers, and priests, an ordinary demon selects that cursed item.
+Input114 publishes its drink beside the pending fire line.  Since dungeon
+level1 cannot rise further, input115 publishes The horned devil looks uneasy
+and pages before docall.  Input116 opens Call an orange potion; the recorded
+tail types m. but never submits, so source never reaches m_useup and the
+potion remains in minvent.
+
+The port now follows the complete selection predicate, gives cursed gain-level
+its no-growth finalizer, and routes visible unknown potions through the shared
+line editor with an explicit prior pager.  All 127 seed16 states are exact,
+ending HP127/155, AC8, inside the unfinished call editor with the cursed
+potion retained.  Successful upward migration, cursed guards/shopkeepers/
+priests, completed naming and consumption, unseen use, noncursed growth,
+genocided growth target and shop billing remain separate controls.

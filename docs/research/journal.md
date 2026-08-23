@@ -87469,3 +87469,41 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:22 EEST, journal block 2907] {#seed16 #horned-devil #potion-gain-level #cursed #can-rise-up #trycall #getlin #incomplete-editor #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after fire contact, seed16 is exact
+through input114 call3.  Native call4 is rn2(5)=1 for the horned devil, then
+the actor drinks an orange potion.  JS ignored its carried gain-level potion
+because selection was restricted to noncursed priest items and attacked
+instead.
+
+**Prediction and source evidence:** find_misc accepts gain level when the item
+is uncursed or when a cursed carrier is not a guard, shopkeeper, or priest.
+The cursed use path calls mquaffmsg(), then either migrates upward or reports
+looks uneasy.  At level1 Can_rise_up fails; visible unknown potion state then
+enters trycall/docall before m_useup.  The session's remaining keys never
+submit that editor, predicting retained potion state.
+
+**Implementation and measured effect:** gain-level selection now mirrors the
+full carrier predicate.  The cursed finalizer consumes without growth only
+after the shared line editor returns; visible no-rise prose is explicitly
+paged before that editor.  Seed16 is exact for all **127 RNG/screen/cursor
+states**, ending HP127/155 and AC8 with the cursed potion still in horned-devil
+inventory and the call editor unfinished.  The strict replay took **0.29
+seconds** at **125,878,272 bytes maximum RSS**.  Nine selected
+fixture-disabled Wizard controls pass **9/9** in **0.54 seconds** at
+**145,293,312 bytes maximum RSS**; all processes exited.
+
+**Adversarial result and next blocker:** the seed0361 gain-level control stays
+red before its potion pager at input150; it does not validate this branch and
+remains separately logged.  Exact seed16 proves the cursed no-rise/editor
+owner only.  Section872 maps the lifecycle; Lua owns none.  Seeds11 through19
+now provide seven complete exact forced-Wizard sessions plus two bounded
+subsystem witnesses.  Next refresh the remaining startup-drifted seeds18/20
+or record new exact-prefix haste/aggravation/clone carriers rather than
+claiming those branches from the completed sessions.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---

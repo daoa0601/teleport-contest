@@ -11025,6 +11025,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   to a horned devil choosing an orange gain-level potion, which JS currently
   ignores.  The selected Wizard gate remains 9/9 fixture-disabled; resisted,
   destructive and lethal fire branches remain open.
+- Seed16 is now exact through all 127 states after porting cursed gain-level
+  selection and the no-rise call editor.  The horned devil qualifies because
+  it is not a guard, shopkeeper, or priest.  Input114 publishes the orange
+  potion, input115 pages looks uneasy, and input116 opens the call editor.
+  The recorded m. is never submitted, so the potion remains carried and
+  unconsumed.  The exact replay ends HP127/155 and AC8; the selected Wizard
+  gate remains 9/9 fixture-disabled.  Migration, completed naming, unseen
+  use and noncursed growth remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

@@ -9800,11 +9800,11 @@ test('seed0016 smoky invisibility potion probes occupant before quaffing',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 113),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 114);
+        assert.equal(result.getScreens().length, 127);
         assertRngSliceExact(result.getRngSlices()[112], [
             'rn2(5)=3', 'rn2(13)=8',
         ], 'seed0016 invisibility-potion occupant precheck RNG');
@@ -9827,6 +9827,29 @@ test('seed0016 smoky invisibility potion probes occupant before quaffing',
         assert.equal(elvenking.minvent.some(object =>
             object.otyp === POT_INVISIBILITY), false);
         assert.equal(game._knownObjectTypes.has(POT_INVISIBILITY), true);
+        assertRngSliceExact(result.getRngSlices()[114], [
+            'rn2(20)=12', 'rn2(3)=0', 'rn2(6)=4', 'rn2(5)=1',
+        ], 'seed0016 fire tail and gain-level selection RNG');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            "You're on fire!  The horned devil drinks an orange potion!--More--");
+        assert.equal(decodedRow(result.getScreens()[114], 23),
+            'Dlvl:1 $:1668 HP:127(155) Pw:282(282) AC:8 Xp:30');
+        assertRngSliceExact(result.getRngSlices()[115], [],
+            'seed0016 cursed gain-level no-rise line RNG');
+        assert.equal(decodedTopline(result.getScreens()[115]),
+            'The horned devil looks uneasy.--More--');
+        assert.equal(decodedTopline(result.getScreens()[116]),
+            'Call an orange potion:');
+        assert.equal(decodedTopline(result.getScreens()[118]),
+            'Call an orange potion: m.');
+        const hornedDevil = game.level.monsters.find(monster =>
+            monster.mnum === 291);
+        assert.ok(hornedDevil);
+        const gainLevelPotion = hornedDevil.minvent.find(object =>
+            object.otyp === POT_GAIN_LEVEL);
+        assert.ok(gainLevelPotion);
+        assert.equal(gainLevelPotion.cursed, true);
+        assert.equal(game.u.uhp, 127);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

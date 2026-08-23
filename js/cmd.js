@@ -5855,7 +5855,7 @@ async function gainLevelAbilities(oldLevel, newLevel) {
     }
 }
 
-async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
+export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
     { suppressStatus = false } = {}) {
     let value = '';
     const finish = result => {

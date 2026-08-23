@@ -1012,8 +1012,10 @@ function useMonsterMiscItem(monster, state, random, calls) {
         // potion, but rejects a cursed one so the resident cannot leave the
         // shrine level.  The visible seed0361 resident is the bounded first
         // owner; growth remains deferred across both mquaffmsg() toplines.
-        if (monster.ispriest && object.otyp === POT_GAIN_LEVEL
-            && !object.cursed) {
+        if (object.otyp === POT_GAIN_LEVEL
+            && (!object.cursed
+                || (!monster.isgd && !monster.isshk
+                    && !monster.ispriest))) {
             selected = {
                 kind: 'potion-gain-level', object, index,
                 deferredEffect: true,
@@ -1146,6 +1148,11 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
 
     if (misc.kind === 'potion-gain-level') {
         removeMonsterInventoryObject(monster, misc.object);
+        if (misc.object.cursed) {
+            misc.cursedGainLevel = true;
+            misc.effectApplied = true;
+            return misc;
+        }
         const increase = rnd(8);
         action.calls?.push('rnd(8)');
         monster.mhpmax = (monster.mhpmax ?? monster.mhp ?? 1) + increase;

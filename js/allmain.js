@@ -18,7 +18,7 @@ import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
-    promptYesNo, performQuestExpulsion, discoverReflectingShield,
+    getLine, promptYesNo, performQuestExpulsion, discoverReflectingShield,
     rhack, stopRun, wakeMonstersNear, wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
@@ -135,7 +135,8 @@ import {
     rememberVaultCorridorUnderHero,
 } from './vault.js';
 import {
-    objectClassForType, recordObjectEncounter, recordObjectKnowledge,
+    objectClassForType, recordObjectCall, recordObjectEncounter,
+    recordObjectKnowledge,
 } from './object_knowledge.js';
 import { automaticSearch } from './detect.js';
 import { finishPrayerOccupation } from './pray.js';
@@ -4878,12 +4879,36 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         petCarriedObjectName(misc.object)
                     }!`,
                 );
-                await queueTurnMessage(
-                    `${visibleMonsterSubject(monster)} seems more experienced.`,
-                );
-                if (!game._knownObjectTypes?.has(misc.object.otyp)) {
-                    exerciseAttribute(2, true);
-                    recordObjectKnowledge(misc.object.otyp);
+                if (misc.object.cursed) {
+                    await queueTurnMessage(
+                        `${visibleMonsterSubject(monster)} looks uneasy.`,
+                    );
+                    if (!game._knownObjectTypes?.has(misc.object.otyp)
+                        && !game._objectCallNames?.[misc.object.otyp]) {
+                        await waitForCurrentMonsterMore();
+                        const appearance = game.objectDescriptions?.[
+                            misc.object.otyp
+                        ] || 'strange';
+                        const description = appearance + ' potion';
+                        const article = /^[aeiou]/i.test(description)
+                            ? 'an' : 'a';
+                        const callName = await getLine(
+                            'Call ' + article + ' ' + description + ':',
+                            (_ch, key) => key >= 32 && key < 127,
+                        );
+                        if (callName?.trim())
+                            recordObjectCall(
+                                misc.object.otyp, callName.trim(),
+                            );
+                    }
+                } else {
+                    await queueTurnMessage(
+                        `${visibleMonsterSubject(monster)} seems more experienced.`,
+                    );
+                    if (!game._knownObjectTypes?.has(misc.object.otyp)) {
+                        exerciseAttribute(2, true);
+                        recordObjectKnowledge(misc.object.otyp);
+                    }
                 }
             } else if (!game.deaf) {
                 await queueTurnMessage('You hear a chugging sound.');
