@@ -4588,12 +4588,15 @@ function finishRayKilledMonster(monster, state, random, calls) {
     const leavesCorpse = rayMonsterLeavesCorpse(
         monster, state, random, calls,
     );
-    if (leavesCorpse
-        && !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)) {
+    const corpseForm = undeadToCorpse(monster.mnum);
+    const convertedUndeadCorpse = corpseForm !== monster.mnum;
+    if (leavesCorpse && (convertedUndeadCorpse
+        || !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE))) {
         const corpse = mksobj(CORPSE, true, false);
-        const corpseForm = undeadToCorpse(monster.mnum);
         corpse.corpsenm = corpseForm;
         corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
+        if (convertedUndeadCorpse)
+            corpse.age = Math.max(1, state?.moves ?? 1) - 51;
         placeThrownObject(state, corpse, x, y);
     }
     if (state === game) newsym(x, y);
@@ -9177,6 +9180,47 @@ export function resumeDeferredMonsterMagicMissileWand(
     offensive.object.spe = Math.max(0, (offensive.object.spe ?? 1) - 1);
     offensive.range = 7 + recordRandom(random, action.calls, 7);
     return offensive;
+}
+
+export function resolveMonsterMagicMissileContact(
+    action, target, state, random = rn2, rollOne = rnd, rollDice = d,
+) {
+    const hit = fireRayHits(
+        target, state, random, rollOne, action.calls,
+    );
+    let damage = 0;
+    if (hit) {
+        damage = rollDice(2, 6);
+        action.calls.push('d(2,6)');
+        target.mhp = Math.max(0, (target.mhp ?? 1) - damage);
+    }
+    return { target, hit, damage, killed: hit && target.mhp <= 0 };
+}
+
+export function finishMonsterMagicMissileDeath(
+    action, target, state, random = rn2,
+) {
+    finishRayKilledMonster(target, state, random, action.calls);
+    return target;
+}
+
+export function beginHeroMagicMissileContact(
+    action, state, random = rn2, rollOne = rnd,
+) {
+    return fireRayHits(
+        state.u, state, random, rollOne, action.calls,
+    );
+}
+
+export function finishHeroMagicMissileDamage(
+    action, state, rollDice = d,
+) {
+    let damage = rollDice(2, 6);
+    action.calls.push('d(2,6)');
+    if (state?.u?.halfSpellDamage || state?.u?.half_spell_damage)
+        damage = Math.trunc((damage + 1) / 2);
+    state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
+    return damage;
 }
 
 // Resume muse.c:mbhitm() after "The wand hits you!" has crossed any tty

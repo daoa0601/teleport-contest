@@ -113,6 +113,10 @@ import {
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     resumeDeferredMonsterRollingBoulder,
     resumeDeferredMonsterMagicMissileWand,
+    resolveMonsterMagicMissileContact,
+    finishMonsterMagicMissileDeath,
+    beginHeroMagicMissileContact,
+    finishHeroMagicMissileDamage,
     resumeDeferredMonsterStrikingWand,
     finishDeferredMonsterStrikingWandHit,
     relocateMonsterAfterTheft,
@@ -3298,13 +3302,13 @@ function monsterBeamTargetAt(x, y, source) {
         || null;
 }
 
-// C muse.c:use_offensive()->buzz_force_miss()->dobuzz(), first-wand-use
-// branch.  The beam stays painted while tty pages each collision message;
-// later actors cannot run until this async source transaction has completed.
-async function resolveFirstMonsterMagicMissileBeam(action) {
+// C muse.c:use_offensive()->buzz()/buzz_force_miss()->dobuzz().  The beam
+// stays painted while tty pages each collision message; later actors cannot
+// run until this async source transaction has completed.
+async function resolveMonsterMagicMissileBeam(action) {
     const offensive = action?.movement?.offensiveWand;
-    if (offensive?.kind !== 'offensive-wand-magic-missile'
-        || !offensive.firstShotForcedMiss) return offensive || null;
+    if (offensive?.kind !== 'offensive-wand-magic-missile')
+        return offensive || null;
 
     let x = action.monster.mx;
     let y = action.monster.my;
@@ -3338,14 +3342,68 @@ async function resolveFirstMonsterMagicMissileBeam(action) {
                 paintBeamCell(x, y);
             }
             const target = monsterBeamTargetAt(x, y, action.monster);
-            if (target && cansee(x, y)) {
-                await queueTurnMessage(
-                    `The magic missile misses the ${
-                        quietMonsterName(target)
-                    }.`,
-                );
+            if (target) {
+                if (offensive.firstShotForcedMiss) {
+                    if (cansee(x, y)) {
+                        await queueTurnMessage(
+                            `The magic missile misses the ${
+                                quietMonsterName(target)
+                            }.`,
+                        );
+                    }
+                } else {
+                    const contact = resolveMonsterMagicMissileContact(
+                        action, target, game,
+                    );
+                    (offensive.contacts ||= []).push(contact);
+                    if (contact.hit) {
+                        range -= 2;
+                        if (contact.killed) {
+                            await queueTurnMessage(
+                                `The ${quietMonsterName(
+                                    target,
+                                )} is destroyed by the magic missile!`,
+                            );
+                            finishMonsterMagicMissileDeath(
+                                action, target, game,
+                            );
+                        } else if (cansee(x, y)) {
+                            await queueTurnMessage(
+                                `The magic missile hits the ${
+                                    quietMonsterName(target)
+                                }.`,
+                            );
+                        }
+                    } else if (cansee(x, y)) {
+                        await queueTurnMessage(
+                            `The magic missile misses the ${
+                                quietMonsterName(target)
+                            }.`,
+                        );
+                    }
+                }
             } else if (x === game.u?.ux && y === game.u?.uy && range >= 0) {
-                await queueTurnMessage('The magic missile whizzes by you!');
+                if (offensive.firstShotForcedMiss) {
+                    await queueTurnMessage(
+                        'The magic missile whizzes by you!',
+                    );
+                } else {
+                    const hit = beginHeroMagicMissileContact(action, game);
+                    (offensive.contacts ||= []).push({ hero: true, hit });
+                    if (hit) {
+                        range -= 2;
+                        await queueTurnMessage('The magic missile hits you!');
+                        const damage = finishHeroMagicMissileDamage(
+                            action, game,
+                        );
+                        offensive.contacts.at(-1).damage = damage;
+                        exerciseAttribute(0, false);
+                    } else {
+                        await queueTurnMessage(
+                            'The magic missile whizzes by you!',
+                        );
+                    }
+                }
             }
         }
 
@@ -3356,7 +3414,7 @@ async function resolveFirstMonsterMagicMissileBeam(action) {
                 && cansee(previousX, previousY)) {
                 await queueTurnMessage('The magic missile bounces!');
             }
-            // This reached first-shot carrier is cardinal.  Native dobuzz()
+            // The reached carriers are cardinal.  Native dobuzz()
             // reverses a cardinal beam without a bounce-direction RNG draw.
             dx = -dx;
             dy = -dy;
@@ -3905,7 +3963,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 recordObjectKnowledge(offensive.object.otyp);
             }
             resumeDeferredMonsterMagicMissileWand(action, game);
-            await resolveFirstMonsterMagicMissileBeam(action);
+            await resolveMonsterMagicMissileBeam(action);
             monster.mwandexp = true;
             earlierActorMessageInScan = true;
             movement = action.movement;

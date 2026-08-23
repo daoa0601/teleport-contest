@@ -10798,6 +10798,88 @@ test('seed0052 first magic-missile wand shot stays forced-miss',
         assert.equal(game.u.udg_cnt, 5);
     });
 
+test('seed0052 experienced magic missile kills zombie before hero hit',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 516),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 517);
+        assertRngSliceExact(result.getRngSlices()[512], [
+            'rn2(5)=3', 'rn2(32)=2', 'rn2(5)=1',
+            'rn2(5)=4', 'rn2(8)=1', 'rn2(5)=1',
+            'rn2(5)=0', 'rn2(32)=14', 'rn2(5)=4',
+            'rn2(7)=4', 'rn2(20)=0', 'rnd(10)=1',
+            'd(2,6)=7',
+        ], 'seed0052 experienced monster hit RNG');
+        const corpseAndReturn = result.getRngSlices()[513];
+        assert.equal(corpseAndReturn.length, 224);
+        assertRngSliceExact(corpseAndReturn.slice(0, 2), [
+            'rn2(3)=0', 'rnd(2)=1',
+        ], 'seed0052 corpse gate and identity RNG');
+        assertRngSliceExact(corpseAndReturn.slice(-8), [
+            'rn2(344)=322', 'rn2(2)=1', 'rn2(1000)=618',
+            'rn2(4)=3', 'rne(4)=1', 'rn2(2)=1',
+            'rnz(10)=16', 'rn2(20)=2',
+        ], 'seed0052 corpse timeout and return-hit RNG');
+        assertRngSliceExact(result.getRngSlices()[516], [
+            'd(2,6)=7', 'rn2(2)=1', 'rn2(5)=4',
+            'rn2(12)=10', 'rn2(16)=7', 'rn2(20)=19',
+            'rn2(5)=3', 'rn2(12)=2', 'rn2(12)=3',
+            'rn2(12)=10', 'rn2(12)=11', 'rn2(12)=0',
+            'rn2(12)=2', 'rn2(12)=9', 'rn2(12)=10',
+            'rn2(25)=15', 'rn2(100)=66', 'rn2(400)=67',
+            'rn2(20)=0', 'rn2(67)=12',
+        ], 'seed0052 hero hit and resumed maintenance RNG');
+
+        const pageChecks = [
+            [512, 'The ogre king zaps a wand of magic missile!--More--',
+                'x@qqqqqO~~', [51, 0, 1]],
+            [513, 'The gnome zombie is destroyed by the magic missile!--More--',
+                'xq%qqqqO~~', [59, 0, 1]],
+            [516, 'The magic missile hits you!',
+                'x@%~~%~O~~', [4, 9, 1]],
+        ];
+        for (const [step, topline, mapSlice, cursor] of pageChecks) {
+            assert.equal(decodedTopline(result.getScreens()[step]), topline);
+            assert.equal(
+                decodedRow(result.getScreens()[step], 9).slice(3, 13),
+                mapSlice,
+            );
+            assert.deepEqual(result.getCursors()[step], cursor);
+        }
+        assert.equal(decodedRow(result.getScreens()[516], 23),
+            'Dlvl:1 $:1965 HP:123(169) Pw:264(264) AC:8 Xp:30');
+
+        assert.equal(game.level.monsters.some(monster =>
+            monster.m_id === 81), false);
+        const gnomeCorpse = (game.level.objects?.[6]?.[8] || [])[0];
+        assert.equal(gnomeCorpse.otyp, 265);
+        assert.equal(gnomeCorpse.corpsenm, 165);
+        assert.equal(gnomeCorpse.age, 73);
+        assert.equal(gnomeCorpse.rotAt, 380);
+        const ogre = game.level.monsters.find(monster =>
+            monster.m_id === 86);
+        assert.ok(ogre);
+        const wand = ogre.minvent.find(object => object.otyp === 429);
+        assert.ok(wand);
+        assert.equal(wand.spe, 4);
+        assert.equal(wand.dknown, true);
+        assert.equal(ogre.mwandexp, true);
+        assert.equal(game.u.uhp, 123);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.u.udg_cnt, 4);
+        assert.equal(game._vanquishedCounts.get(240)?.count, 1);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
