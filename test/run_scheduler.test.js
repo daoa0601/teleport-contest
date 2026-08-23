@@ -9736,6 +9736,57 @@ test('seed0015 rejects useless aggravation before choosing curse-items',
         assert.equal(game.u.uhpmax, 171);
     });
 
+test('seed0013 summon projects birth attitude before forcing hostility',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 13,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        const summonSlice = result.getRngSlices()[106];
+        assert.equal(summonSlice.length, 555);
+        assertRngSliceExact(summonSlice.slice(0, 20), [
+            'rn2(5)=2', 'rn2(5)=1', 'rnd(20)=10', 'd(2,12)=11',
+            'rn2(20)=16', 'rn2(3)=0', 'rn2(6)=2', 'rn2(30)=16',
+            'rn2(300)=49', 'd(16,6)=54', 'rn2(10)=7', 'rnd(10)=9',
+            'rn2(44)=28', 'rn2(8)=1', 'rn2(7)=5', 'rn2(6)=2',
+            'rn2(5)=4', 'rn2(4)=0', 'rn2(3)=0', 'rn2(2)=0',
+        ], 'seed0013 summon constructor first twenty RNG');
+        assertRngSliceExact(summonSlice.slice(-16), [
+            'rn2(6)=2', 'rnd(862)=349', 'rnd(2)=2', 'rn2(2)=0',
+            'rnd(862)=30', 'rnd(2)=1', 'rn2(2)=1', 'rn2(50)=11',
+            'rn2(11)=6', 'rn2(3)=0', 'rnd(2)=2', 'rn2(5)=0',
+            'rn2(17)=1', 'rn2(100)=67', 'rn2(100)=80', 'rnd(4)=4',
+        ], 'seed0013 summon constructor last sixteen RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell!--More--');
+        assert.equal(decodedRow(result.getScreens()[106], 18),
+            '                                          3 +@xD~~~~~x');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            '"Destroy the thief, my pets!"--More--');
+        assert.equal(decodedRow(result.getScreens()[107], 18),
+            '                                          3 +@xD~~~~~x');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            '"Hell shall soon claim thy remains, worm!"');
+        assert.equal(decodedRow(result.getScreens()[108], 18),
+            '                                          33+@xD~~~~~x');
+        assert.equal(game.level.monsters.filter(monster => !monster.dead).length,
+            12);
+        assert.equal(game.u.uhp, 33);
+        assert.equal(game.u.uhpmax, 163);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

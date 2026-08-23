@@ -3434,6 +3434,10 @@ export async function summonNastyMonsters(summoner) {
                 continue;
             }
 
+            // C makemon() calls newsym() before nasty() overrides attitude.
+            // Preserve that birth-time projection state for the spell owner;
+            // the actor becomes hostile below without an immediate repaint.
+            monster._nastyBirthPeaceful = monster.mpeaceful;
             monster.msleeping = 0;
             monster.mpeaceful = 0;
             monster.mtame = 0;

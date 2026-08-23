@@ -87366,3 +87366,40 @@ No code/test change, full corpus, hidden judge, push or publication ran; the
 recorder/replay processes exited and unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:06 EEST, journal block 2904] {#wizard-of-yendor #summon-monsters #seed13 #warning #birth-attitude #makemon #nasty #newsym #correction #complete-replay #native-witness #implementation #regression #architecture #ledger #green #process-safety #priority}
+
+**Correction to block2903:** native #wizdetect after the summon pagers reveals
+the disputed second warning at the same cell by input108.  Source therefore
+did create the umber hulk; constructor count, enexto placement and warning
+eligibility were not the gap.  Block2903's rejected-placement conclusion is
+falsified.
+
+**Decisive source lifecycle:** makemon() calls newsym() before returning.
+nasty() only afterward clears msleeping, mpeaceful and mtame and updates
+alignment; it does not repaint.  The hidden actor is initially peaceful at
+the constructor screen, so Warning does not project through the closed door.
+JS instead forced hostility in summonNastyMonsters(), returned the actors, and
+then repainted them, exposing warning3 at inputs106/107.  The later ordinary
+monster refresh correctly exposes it in both engines.
+
+**Implementation and measured effect:** each nasty preserves its birth
+peacefulness until the shared spell owner performs the constructor-time
+newsym, then immediately restores final hostile state and removes the
+temporary field.  Seed13 is exact for all **127 RNG/screen/cursor states**,
+ending HP33/163 with twelve live monsters.  Its 555-call summon slice is
+asserted only by length plus bounded 20/16-call edges.  The strict replay took
+**0.21 seconds** at **126,189,568 bytes maximum RSS**; eight selected
+fixture-disabled Wizard controls pass **8/8** in **0.37 seconds** at
+**141,115,392 bytes maximum RSS**.  All recorder and test processes exited.
+
+**Falsification, decision and next blocker:** the delayed native warning
+falsifies census, placement, GP_CHECKSCARY and warning-threshold explanations.
+The fix changes no final actor state and preserves exact seed17/19 controls.
+Section869 maps the lifecycle; Lua owns none.  Move next to seed16's first
+post-summon actor boundary, where an Elvenking drinks invisibility and the
+current mismatch begins at its potion-presentation draw.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---

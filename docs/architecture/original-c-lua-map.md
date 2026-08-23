@@ -31406,3 +31406,35 @@ states are exact, ending HP125/171 and AC8.  Wizard's Tower partitioning,
 WAITFORU, sleep, frozen/immobile waking, the one-percent accepted no-target
 spell, actual aggravation prose/effect and non-Wizard casters remain separate
 controls.
+
+## 869. Nasty births project original attitude before hostility override
+
+~~~mermaid
+flowchart TD
+    Make["makemon selects species, HP, inventory, and initial attitude"] --> Paint["makemon newsym uses initial peaceful state"]
+    Paint --> Hidden["unseen peaceful actor produces no Warning glyph"]
+    Hidden --> Return["makemon returns actor"]
+    Return --> Force["nasty clears sleeping, peaceful, and tame"]
+    Force --> Align["set_malign updates hostile alignment state"]
+    Align --> NoPaint["no immediate source repaint"]
+    NoPaint --> Pager["summon and cuss tty boundaries retain birth projection"]
+    Pager --> Refresh["later see_monsters/newsym refresh"]
+    Refresh --> Warning["hostile unseen actor now produces Warning glyph"]
+    Lua["Lua owns no birth attitude or display timing"] -.-> Make
+~~~
+
+Seed13 creates ten nasties.  The disputed level13 umber hulk at map (44,17)
+exists in both engines behind the closed door at (45,17).  A native
+#wizdetect diagnostic proves its warning appears by input108; it is not a
+missing actor or failed enexto placement.
+
+The timing comes from makemon.c: makemon() calls newsym() before nasty()
+forces the returned actor hostile.  Source does not repaint after that
+override.  JavaScript previously forced hostility inside summonNastyMonsters()
+and then repainted every created actor, exposing warning3 at inputs106/107 two
+tty boundaries early.  The constructor now retains birth peacefulness solely
+for that projection, restores hostile state immediately, and deletes the
+temporary bridge.  Input108's ordinary refresh reveals the warning naturally.
+All 127 seed13 states are exact.  Initially hostile births, peaceful final
+summons, tame/hilite projection, invisible sensing, non-warning heroes and
+non-nasty constructors remain separate controls.

@@ -12840,3 +12840,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   Do not accept or patch presentation: determine why JS has that extra actor
   or why source enexto rejects its placement, including GP_CHECKSCARY retry
   and constructor count, before changing warning/newsym.
+- Correction to the prior seed13 rejection: a native #wizdetect diagnostic
+  shows the second warning at the disputed cell by input108, so source did
+  create the same umber hulk.  The difference was lifecycle timing:
+  makemon() paints the actor while it retains its initial peaceful attitude;
+  nasty() then forces hostility without repainting.  JS repainted only after
+  forcing hostility and exposed warning3 at inputs106/107.  Birth-attitude
+  projection now closes all 127 states, ending HP33/163 with twelve live
+  monsters.  The selected Wizard gate rises to 8/8 fixture-disabled.
