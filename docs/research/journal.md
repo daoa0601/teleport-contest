@@ -92137,3 +92137,52 @@ more frames.  Re-inventory seed4500's remaining15 and seed0002's remaining65 by
 owner before choosing the next generic block.
 
 ---
+
+### [2026-08-23 23:49 EEST, journal block 3069] {#seed0002 #sleep-ray #reflection #dobuzz #shieldeff #animation #source-diagnosis #priority #prediction}
+
+**Residual owner inventory:** seed0002's65 unmatched frames split into57 live
+sleep-ray/reflection frames and8 pet-target projectile/cadence frames.  The
+sleep group is inputs460(11),538(2),552(23),563(21).  Seed4500's remaining15
+are heterogeneous jump, spit, prayer and movement states rather than one
+larger owner.
+
+**Source transaction:** sleep ray uses the same per-loop tmp_at/delay boundary
+as the newly closed fire ray.  On hero reflection, `dobuzz()` paints/delays the
+hero cell, queues hit and `ureflects()` prose, reverses direction, then invokes
+the shared21-frame `shieldeff()` before continuing traversal.  JavaScript owns
+all ray physics/prose but emits neither traversal nor reflection shield frames.
+
+**Prediction and guard:** extract the fire-ray capture into a shared ray-step
+helper, call it from sleep traversal before collision/bounce work, and call
+`shieldeff()` after reflection prose.  The four groups should become57/57
+screen/cursor exact without changing their pager attribution.  Preserve fire,
+striking-shield and monster-magic-missile controls independently; do not fold
+the pet-target projectile residue into this block.
+
+---
+
+### [2026-08-23 23:51 EEST, journal block 3070] {#seed0002 #sleep-ray #reflection #shieldeff #shared-ray-step #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Implementation:** commit `3b50cf8` extracts the fire-ray frame boundary into
+`captureRayTraversalFrame()`, uses it in sleep traversal before collision and
+bounce handling, and invokes shared `shieldeff()` after hero-reflection prose.
+New map dirt takes the beam cursor; unchanged return cells retain the pending
+topline cursor exactly as fire does.
+
+**Evidence:** seed0002 inputs460,538,552 and563 match all **57/57** frame
+screens/cursors across ordinary blue traversal, reflected return paths, and two
+21-frame shield cycles.  The existing two-bounce/reflection boundary test stays
+exact; fire, striking-shield and seed52 beam/survival controls also pass.  The
+session reaches **120/128 animation**,27,158 RNG and595 boundaries.
+
+**Acceptance:** one managed engine-only corpus passes **44/44** at **35+0.31
+ms/turn** (R²0.827) in **11.84 seconds** at **269,746,176 bytes maximum RSS**.
+Supplemental animation reaches **1,285/1,483** with no incidental count changes.
+No normal corpus, push, workflow, hidden judge, or publication ran.
+
+**Boundary and next priority:** the sleep owner is live and generic; seed0002's
+remaining8 frames are pet-target thrown-dagger continuation/cadence groups at
+inputs256/257/269.  Inventory and extend the shared monster projectile owner
+there before considering replay-only seed0060/0106.
+
+---

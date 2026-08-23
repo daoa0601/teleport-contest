@@ -34424,3 +34424,38 @@ same owner advances seed4500 by six frames.  This closes the reached lateral
 beam toward a level edge; vertical digging, pits, shops, nondiggable terrain,
 cavern/maze policy, messages, and other directions remain controls.  Lua
 contributes only the original level geometry.
+
+## 947. Sleep rays compose shared traversal with reflection shielding
+
+~~~mermaid
+flowchart TD
+    Step["dobuzz advances and paints blue sleep-ray cell"] --> Delay["shared ray-step flush and delay"]
+    Delay --> Hit{"cell hits hero?"}
+    Hit -->|"no"| Bounce{"obstacle or continued path?"}
+    Bounce --> Step
+    Hit -->|"yes"| HitLine["queue sleep-ray hit prose"]
+    HitLine --> Reflect{"hero reflecting?"}
+    Reflect -->|"yes"| ReflectLine["queue reflects-from-source prose"]
+    ReflectLine --> Shield["shared shieldeff 21-frame cycle"]
+    Shield --> Reverse["reverse ray direction and continue"]
+    Reverse --> Step
+    Reflect -->|"no"| Effect["apply sleep effect"]
+    Lua["Lua owns no ray, reflection, or shield timing"] -.-> Step
+~~~
+
+The ray cell is captured before contact handling.  Reflection prose is queued
+before `shieldeff()`, so its 21 frames observe the reflected-message topline;
+only afterward does the reversed ray resume.  This composes two shared display
+owners without merging their lifecycle boundaries.
+
+JavaScript now uses one `captureRayTraversalFrame()` for fire and sleep.  It
+selects a dirty beam-cell cursor when traversal changes the map and otherwise
+retains the pending bounce/reflection topline cursor.  `shieldeff()` is invoked
+after the sleep reflection line and before direction reversal.
+
+Seed0002 inputs460/538/552/563 pin **57/57** frames, advancing the session to
+120/128 animation while preserving595/595 boundaries.  This closes represented
+horizontal sleep traversal with two hero reflections.  Other directions,
+monster reflection/resistance, misses, fatal/helpless effects, alternate
+reflection sources, and visibility cases remain controls.  Lua contributes
+none.

@@ -13550,3 +13550,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   seed4500 advances to22/37.  The managed corpus remains44/44 with1,228/1,483
   frames.  Vertical, pit, shop, nondiggable, maze/cavern and message branches
   remain open.
+- Commit3b50cf8 composes shared ray-step capture with shared shieldeff for live
+  sleep-ray reflection.  Seed0002 closes57/57 frames across ordinary traversal,
+  two reflected paths and two shield cycles, reaching120/128 animation.  The
+  managed corpus remains44/44 with1,285/1,483 frames.  Its remaining8 frames
+  are isolated to pet-target projectile/cadence state; other ray visibility,
+  target and reflection variants remain open.
