@@ -10486,6 +10486,50 @@ test('seed0084 curse intervention preserves ambient inventory owners',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0013 teleport trap rloc can retain the monster square',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkk   '
+            + 'm. '.repeat(175);
+        const result = await runSegment({
+            seed: 13,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 272),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 273);
+        assertRngSliceExact(result.getRngSlices()[272], [
+            'rn2(5)=0', 'rn2(32)=13',
+            'rnd(79)=62', 'rn2(21)=11',
+            'rnd(79)=34', 'rn2(21)=18',
+            'rn2(5)=2', 'rn2(3)=0',
+            'rn2(1)=0', 'rn2(2)=1', 'rn2(3)=0',
+            'rn2(4)=1', 'rn2(5)=4', 'rn2(5)=2',
+            'rn2(5)=2', 'rn2(8)=3', 'rn2(5)=1',
+            'rn2(12)=6', 'rn2(12)=2', 'rn2(12)=3',
+            'rn2(25)=10', 'rn2(100)=15', 'rn2(300)=255',
+            'rn2(20)=5', 'rn2(67)=39',
+        ], 'seed0013 teleport-trap self-square rloc RNG');
+        assert.equal(decodedTopline(result.getScreens()[272]), '');
+        assert.deepEqual(result.getCursors()[272], [45, 19, 1]);
+
+        const lich = game.level.monsters.find(monster =>
+            monster.m_id === 76);
+        assert.ok(lich);
+        assert.equal(lich.mnum, 183);
+        assert.deepEqual([lich.mx, lich.my], [34, 18]);
+        assert.equal(lich.mtrapseen & (1 << 14), 1 << 14);
+        const trap = game.level.traps.find(candidate =>
+            candidate.tx === 34 && candidate.ty === 18);
+        assert.ok(trap);
+        assert.equal(trap.ttyp, 15);
+        assert.equal(game.u.udg_cnt, 106);
+        assert.equal(game.u.uhp, 147);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

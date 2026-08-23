@@ -73,7 +73,7 @@ import {
     IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE,
     IS_WALL,
     IRONBARS, LAVAPOOL, LAVAWALL,
-    MAGIC_PORTAL, OPENDOOR,
+    MAGIC_PORTAL, OPENDOOR, TELEP_TRAP,
     ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, MAX_CARR_CAP,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
     M_AP_OBJECT, RUST_TRAP,
@@ -5154,6 +5154,29 @@ function triggerMonsterTrap(
         movement.actionCompleted = true;
         return event;
     }
+    if (trap.ttyp === TELEP_TRAP) {
+        // trap.c:mintrap()->trapeffect_telep_trap().  Ordinary monster
+        // teleport traps keep the actor on-level, then postmov() continues
+        // with the relocated coordinates and trailing distfleeck.
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        const trapSquare = { x: monster.mx, y: monster.my };
+        const relocation = randomMonsterRelocation(
+            monster, state, calls, random, rollOne,
+        );
+        if (!relocation) return null;
+        movement.x = relocation.x;
+        movement.y = relocation.y;
+        movement.moved = movement.oldx !== movement.x
+            || movement.oldy !== movement.y;
+        const event = {
+            kind: 'teleport-trap', trap, trapSquare, relocation,
+            damage: 0, killed: false,
+        };
+        movement.trap = event;
+        movement.actionCompleted = true;
+        return event;
+    }
     if (trap.ttyp === RUST_TRAP) {
         const visible = !state?.blind && !(state?.u?.blindTurns > 0)
             && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
@@ -5945,7 +5968,8 @@ export function randomMonsterRelocation(
         calls.push(`rnd(${COLNO - 1})`);
         const y = random(ROWNO);
         calls.push(`rn2(${ROWNO})`);
-        if (!monsterGoodPosition(monster.mnum, x, y)
+        const selfSquare = x === monster.mx && y === monster.my;
+        if ((!selfSquare && !monsterGoodPosition(monster.mnum, x, y))
             || scareScrollAffects(monster, state, x, y)) continue;
         destination = { x, y };
         break;
@@ -8651,6 +8675,7 @@ function completeMovedMonsterAction(
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
     if (movement.actorLeftLevel || movement.actorDied) return movement;
+    if (movement.actionCompleted) return movement;
     if (!movement.swallowedHold)
         monsterTunnelAfterMove(
             monster, movement, state, random, rollOne, calls,
