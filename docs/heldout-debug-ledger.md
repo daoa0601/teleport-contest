@@ -13443,3 +13443,26 @@ attempt: **402 calls**, not a direct two-pass retry.
   and storage copies were restored, no verifier remains, and no push/hidden
   judge/publication ran.  Public exactness is restored; broader supplemental
   animation and unmapped held-out branches remain open port work.
+- Commit49c5366 closes seed0361's three hero-target dagger delay frames.
+  Native `m_throw()` delays on every path step even when the cell is invisible,
+  then performs one final delay at the hero only after the collision handler
+  returns.  Dirty-map cursor ownership follows the last changed tty projection.
+  Input234 is exact at3/3 animation screens/cursors and the complete session
+  rises from6/10 to9/10 animation without changing exact RNG or boundary
+  screens.  Lethal and pager-blocked projectile returns were left as explicit
+  adversarial controls rather than inferred closed.
+- Commitf240c68 maps delayed-action `runmode_delay_output()` cadence and makes
+  seed0361 input140's retained armor prompt exact, bringing that session to
+  10/10 animation.  The first managed engine-only gate after this block was a
+  red42/44: seed0030 lost ten screens and seed0108 one, with exact RNG/cursors.
+  A capture-local topline restoration did not repair them, falsifying the
+  initial theory that delayed-action row retention was the regression owner.
+- Commit e3bf601 closes the stronger projectile controls.  C retains tmp_at's
+  last pre-hero flight glyph throughout `thitu()` launch, hit and death pagers;
+  only a returning transaction paints the final hero-cell delay, while fatal
+  `done()` never does.  Seed0108 input30 and seed0030 segment6 inputs240--246
+  are pinned alongside seed0361's impact frames.  The managed engine-only gate
+  returns to44/44 at34+0.31 ms/turn with seed0361 additionally10/10 animation.
+  The normal overlay suite was not rerun, and no push/workflow/hidden judge ran.
+  Remaining work is the other public supplemental frame groups and native
+  branches absent from both public and custom carriers.

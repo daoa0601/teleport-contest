@@ -33962,3 +33962,77 @@ so neither dknown nor discovery credit is established there.  Seed0399 is exact
 at11,409 RNG calls and532 screens/cursors.  This section closes represented
 speed-potion discovery credit; other monster-used object types retain their
 own effect and observation branches.  Lua owns none.
+
+## 935. Hero-target projectiles retain flight state across `thitu()` pagers
+
+~~~mermaid
+flowchart TD
+    Shoot["monshoot selects launcher and missile"] --> Throw["m_throw starts tmp_at object glyph"]
+    Throw --> Flight["each clear path cell: tmp_at plus nh_delay_output"]
+    Flight --> Last["retain last pre-hero flight cell"]
+    Last --> Hit["hero collision enters thitu"]
+    Hit --> Pager{"launch, hit, or death pline pages?"}
+    Pager -->|"yes"| Retain["pager snapshots still show last flight cell and hero"]
+    Retain --> Hit
+    Pager -->|"transaction returns"| Impact["tmp_at hero cell plus final delay"]
+    Impact --> End["DISP_END restores map glyph"]
+    Pager -->|"fatal done does not return"| Death["death UI retains last flight cell"]
+    Lua["Lua owns no projectile or tty timing"] -.-> Throw
+~~~
+
+`m_throw()` advances `gb.bhitpos` onto the hero before calling `thitu()`, but
+it does not call the final `tmp_at(gb.bhitpos)` until the hit transaction
+returns.  Therefore the temporary display remains at the last path square
+while `thitu()` can block in launch, hit, and death pagers.  A fatal `done()`
+path never reaches the final hero-cell delay.
+
+JavaScript now captures every path delay, including invisible path steps, but
+keeps the last visible flight glyph live until the result-message continuation
+finishes.  Only a returning catch/hit/miss path moves that glyph onto the hero
+for the final impact frame and then restores the underlying map.  The cursor
+comes from the last map cell whose tty projection is dirty, not necessarily
+from the projectile's current coordinate.
+
+Seed0361 input234 pins two path delays plus the final miss-impact frame at
+**3/3** full screens/cursors.  Seed0108 input30 pins a launch pager with the
+dagger still one square beyond the hero, while seed0030 segment6 inputs240--246
+pin an arrow on the last flight square through lethal hit/death pagers.  This
+closes the represented hero-target object flight; potion splashes, tethered
+return weapons, monster targets, and other projectile classes retain their
+own owners.  Lua contributes none.
+
+## 936. Delayed actions reuse runmode cadence without mutating the live tty
+
+~~~mermaid
+flowchart TD
+    Action["multi-turn armor action remains active"] --> Loop["moveloop sees multi below zero"]
+    Loop --> Cadence{"runmode_delay_output cadence"}
+    Cadence -->|"tport"| None["no frame"]
+    Cadence -->|"leap and moves mod 7 is nonzero"| None
+    Cadence -->|"leap boundary or walk/run"| One["curs_on_u plus one delay"]
+    Cadence -->|"crawl"| Five["curs_on_u plus five delays"]
+    One --> Snapshot["capture physical prompt and hero cursor"]
+    Five --> Snapshot
+    Snapshot --> Restore["restore logical post-flush row for future inputs"]
+    Lua["Lua owns no runmode or tty cadence"] -.-> Cadence
+~~~
+
+C calls `runmode_delay_output()` for negative `multi` inside `moveloop()`.
+Teleport mode suppresses output; ordinary leap mode emits every seventh turn;
+walk/run emits once per step; crawl emits five delays.  The delay snapshots the
+physical tty at that instant.  A silent delayed action can therefore retain an
+older prompt in the animation frame even though the logical message owner has
+already advanced.
+
+JavaScript shares one cadence helper between death-survival and ordinary
+delayed actions.  For the latter it saves the physical top row, flushes the
+logical map/status, restores the physical row only while animation frames are
+captured, and then restores the logical post-flush row in a `finally` block.
+This separation is necessary: animation history observes terminal cells, but
+future input boundaries must observe current tty state.
+
+Seed0361 input140 pins the delayed-wear frame and its retained armor prompt;
+the complete session now matches all **10/10** supplemental animation frames.
+This closes the reached default-runmode delayed armor cadence.  Nondefault
+runmode carriers, other negative-multi occupations, and broader supplemental
+animation totals remain open.  Lua contributes none.
