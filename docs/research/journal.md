@@ -91233,3 +91233,100 @@ routes.  The post-gate registry is empty; no normal corpus, hidden judge, push
 or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:35 EEST, journal block 3033] {#seed4500 #input577 #wizintrinsic #tty #topline #docrt #earliest-divergence #source-diagnosis #prediction}
+
+**Earliest divergence:** seed4500 is exact through the intrinsic selection
+commit.  Native input577 shows one combined pager,
+`Timeout for invulnerable set to 30.  Timeout for very fast set to 30.--More--`,
+cursor77.  JavaScript forces an immediate pager after the first line, cursor43;
+the displaced input then prevents native movement maintenance at input579.
+
+**Source owner:** C `wiz_intrinsic()` iterates selected properties in global
+property order and calls ordinary `pline()` for each.  Tty composes two short
+lines when they fit; an overflowing later line pages the earlier one.
+`docrt()` after the loop forces the remaining topline.  JavaScript already
+sorts globally but calls `moreUntilDismissed()` for every message, turning
+every selection into an unconditional pager.
+
+**Prediction:** submit each generic timeout through `plineWithContinuation()`
+and force the final pending line once before docrt teardown.  Invulnerable plus
+very-fast should share input577; the existing magic-resistance plus half-spell
+pair remains two pagers because it overflows.  Pin inputs573--581 including
+movement RNG; do not special-case the selected properties.
+
+---
+
+### [2026-08-23 21:38 EEST, journal block 3034] {#seed4500 #wizintrinsic #tty #topline #docrt #correction #implementation #bounded-regression #process-safety}
+
+**Correction and implementation:** ordinary timeout composition initially
+produced `# wizintrinsic  Timeout...` because the extended-command editor was
+still the logical pending topline after menu return.  The red regression caught
+this at input577 before acceptance.  C destroys the intrinsic/menu windows
+before iterating selections, so commit `eb9f828` clears the command underlay,
+submits generic timeout lines through `plineWithContinuation()`, and forces the
+one final pending line before docrt.
+
+**Evidence:** seed4500 inputs573--581 are exact and the focused test passes
+**1/1** in **0.47 seconds** at **175,554,560 bytes maximum RSS**.  Five
+single-line, overflowing two-line, page-local and hallucinated intrinsic
+controls pass **5/5** in **0.58 seconds** at **180,092,928 bytes maximum RSS**.
+The complete session becomes RNG/cursor exact at108,275/108,275 and1,814/1,814,
+with two independent screen residues.  Section930 maps the transaction.
+
+---
+
+### [2026-08-23 21:42 EEST, journal block 3035] {#seed4500 #input751 #takeoff #getobj #silent #retained-topline #correction #implementation #bounded-regression}
+
+**Silent-takeoff screen:** input751 should retain
+`What do you want to take off? [cdef or ?*]` while the zero-delay removal,
+AC4 status and elapsed turn commit.  With `!verbose`, C `off_msg()` emits
+nothing, so getobj's selector remains physically visible.  JavaScript's
+comment documented this but then cleared `_pending_message` unconditionally.
+
+**Implementation and correction:** the first edit placed the new local in
+`dorub()` rather than `dotakeoff()`; the focused test failed with a
+ReferenceError and no acceptance claim was made.  Commit `dc77c66` retains the
+trimmed selector only for a silent, multi-item immediate takeoff.  The exact
+input749--754 regression passes **1/1** in **0.50 seconds** at **179,306,496
+bytes maximum RSS**.  Section931 maps logical versus physical topline state.
+
+---
+
+### [2026-08-23 21:46 EEST, journal block 3036] {#seed4500 #input1438 #polyself #break-armor #newsym #screen-only #implementation #complete-replay #bounded-regression #architecture}
+
+**Final cell and owner:** input1438 had exact RNG/status/cursor but displayed
+the old hero `@` where native displayed brown-mold `F`.  C queues the form and
+armor prose, drops the suit in `break_armor()`, calls `newsym()` for the new
+form, and only then lets the capacity line force the first pager.  JavaScript
+forced that pager before `dropCarriedObject()`, even though the drop helper
+already owns the necessary newsym.
+
+**Implementation and evidence:** commit `852238b` moves the suit drop to the
+near side of the form/armor pager while leaving find_ac/status timing in place.
+Inputs1435--1441 pass **1/1** in **0.76 seconds** at **204,587,008 bytes
+maximum RSS**; controlled and whirly polymorph controls pass **3/3** in **0.80
+seconds** at **212,025,344 bytes maximum RSS**.  Seed4500 becomes strict
+**PASS** at108,275/108,275 RNG and1,814/1,814 screens/cursors in **1.03
+seconds** at **267,354,112 bytes maximum RSS**.  Section932 maps the order.
+
+---
+
+### [2026-08-23 21:47 EEST, journal block 3037] {#public-corpus #engine-only #42-of-44 #regression-recovery #seed0030 #seed0399 #priority #process-safety}
+
+**Recovered full gate:** one managed engine-only corpus completes **42/44
+exact** at **40+0.34 ms/turn** (R²0.844) in **13.60 seconds** at
+**266,616,832 bytes maximum RSS**.  Seed4500 is newly exact and no accepted
+session regressed.  The normal fixture-on corpus was not run.
+
+**Remaining two:** seed0030 stays29,810/105,529 RNG,1,911/1,953 screens and
+1,945/1,953 cursors; its next exact edge is segment2/input47 call10, native
+`rn2(20)=8 @ m_move`.  Seed0399 remains10,224/11,409 RNG and117/532 screens,
+first red at input117's missing actor block and `C` glyph.
+
+**Priority:** continue seed0030's smaller single-move branch while retaining
+seed0399 as an independent actor-admission route.  The post-gate registry is
+empty.  No normal corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---

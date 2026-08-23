@@ -33805,3 +33805,91 @@ Seed0361 input354 pins a known spe0 pick-axe in the alternate slot as
 366 screens/cursors are exact afterward.  This section closes known inventory
 enchantment display for the represented weapon-tool set.  It does not claim
 unknown-spe disclosure or every non-inventory naming path.  Lua owns none.
+
+## 930. Wizard intrinsic feedback uses ordinary tty composition
+
+~~~mermaid
+sequenceDiagram
+    participant Menu as select_menu PICK_ANY
+    participant Cmd as wiz_intrinsic
+    participant TTY as pline update_topl
+    participant Map as docrt
+
+    Menu-->>Cmd: selected properties in menu order
+    Cmd->>Cmd: destroy menu and command editor
+    Cmd->>Cmd: sort by global property order
+    Cmd->>TTY: pline first timeout
+    Cmd->>TTY: pline second timeout
+    alt combined text fits
+        TTY->>TTY: retain one composed topline
+    else second line overflows
+        TTY-->>Cmd: page first line, then install second
+    end
+    Cmd->>Map: docrt
+    Map-->>Cmd: force final pending topline once
+~~~
+
+The intrinsic command does not own one pager per property.  It owns one
+ordinary `pline()` per selected property after the menu/editor windows are
+destroyed.  Tty decides whether adjacent lines compose or page based on their
+combined width, and final `docrt()` forces the remaining line.  Clearing the
+editor before feedback is essential; otherwise `# wizintrinsic` itself enters
+the composition budget.
+
+Seed4500 input577 pins short invulnerable and very-fast feedback as one
+77-column pager.  The longer magic-resistance plus half-spell control remains
+two pagers because the second line overflows.  This section closes generic
+timeout feedback composition and final docrt forcing for the represented
+properties.  Special make_blinded/deaf/hallucinated owners remain separate;
+Lua owns none.
+
+## 931. Silent immediate takeoff retains getobj's physical selector
+
+~~~mermaid
+flowchart TD
+    Prompt["getobj paints What do you want to take off"] --> Select["select zero-delay worn item"]
+    Select --> Commit["Armor_off commits slot and AC"]
+    Verbose{"flags.verbose?"} -->|"yes"| OffMsg["off_msg replaces selector"]
+    Verbose -->|"no"| Silent["no new pline"]
+    Silent --> Physical["retain selector cells through elapsed turn"]
+    Physical --> Next["next top-level command clears retained line"]
+    Lua["Lua has no inventory or tty ownership"] -.-> Prompt
+~~~
+
+Logical prompt ownership ends when getobj returns an item, but tty cells do not
+clear themselves.  For an immediate takeoff under `!verbose`, `off_msg()` is
+suppressed and no later message replaces the selector.  JavaScript now stores
+that exact prompt as a retained physical topline only for the silent multi-item
+path; the next real command clears it normally.
+
+Seed4500 input751 pins the selector with hero cursor, committed AC4 and elapsed
+turn118; input752 is blank.  This section closes silent zero-delay takeoff
+retention, not delayed armor occupations, cursed feedback or single-item paths.
+Lua owns none.
+
+## 932. Random polymorph paints the new form before armor backpressure
+
+~~~mermaid
+flowchart TD
+    Form["polymon accepts brown mold and queues form prose"] --> Armor["break_armor queues armor-falls prose"]
+    Armor --> Drop["drop suit to floor and clear worn slot"]
+    Drop --> Paint["newsym hero square as monster form F"]
+    Paint --> Capacity["encumber_msg queues overloaded line"]
+    Capacity --> Pager["overflow pages form plus armor with F and old AC"]
+    Pager --> Load["next pager shows load line"]
+    Load --> AC["find_ac later projects armor removal"]
+    Lua["Lua contributes level geometry only"] -.-> Paint
+~~~
+
+C's form message is queued before `u.umonnum` changes, but it is not flushed
+until after `break_armor()`, `drop_weapon()`, and `newsym()`.  A capacity line
+then forces the pending form/armor prose.  The resulting pager intentionally
+combines new monster glyph and HD/Blind state with the pre-find_ac armor row.
+
+JavaScript formerly forced the pager before dropping the suit; moving the
+existing `dropCarriedObject()`/newsym owner to the near side fixes only that
+map cell.  Seed4500 input1438 now shows brown-mold `F`, and the complete session
+is exact across108,275 RNG calls and1,814 screens/cursors.  This section closes
+the reached random small-form armor pager; controlled transformations and
+other break/slip combinations retain their own witnessed ordering.  Lua owns
+no polymorph transaction logic.

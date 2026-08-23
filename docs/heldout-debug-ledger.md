@@ -13417,3 +13417,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   custom seed52/seed211 carriers remain strict complete.  Remaining sessions
   are seed0030, seed0399 and seed4500; the latter's missing second intrinsic
   timeout line is the next bounded target.
+- Seed4500 is fully recovered by three presentation commits.  eb9f828 destroys
+  the intrinsic/editor underlay, composes short generic timeout plines, and
+  lets docrt force the final line; dc77c66 retains getobj's physical selector
+  for silent immediate takeoff; 852238b drops armor/newsym before random
+  polymorph backpressure exposes the form pager.  The session is exact at
+  108,275 RNG calls and1,814 screens/cursors.  The managed public gate rises to
+  42/44 with no new regression.  Seed0030's segment2/input47 m_move branch and
+  seed0399's input117 actor block are the only remaining public engine debts;
+  supplemental animation coverage remains separate.

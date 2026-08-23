@@ -1,5 +1,31 @@
 # Public session status
 
+## Current working-tree engine-only gate: 42/44 exact
+
+Measured 2026-08-23 21:47 EEST from commit `852238b`, after closing
+seed4500's intrinsic, silent-takeoff, and random-polymorph presentation blocks:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **42/44 exact** at **40+0.34 ms/turn** (R² 0.844).  The one
+owned process completed in **13.60 seconds** at **266,616,832 bytes maximum
+RSS** and left no matching process.  Seed4500 is newly exact at
+**108,275/108,275 RNG and 1,814/1,814 screens/cursors**; no accepted session
+regressed.
+
+The two remaining non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current earliest interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0030` | 29,810/105,529 | 1,911/1,953 | 1,945/1,953 | segment2/input47 missing `rn2(20) @ m_move` |
+| `seed0399` | 10,224/11,409 | 117/532 | 454/532 | input117 missing opening actor block and `C` glyph |
+
+Seed0030's bounded m_move branch is the next recovery target.  The normal
+fixture-enabled corpus remains deferred while engine-only is red.  Nothing was
+pushed, submitted, or run against the official held-out judge.
+
 ## Current working-tree engine-only gate: 41/44 exact
 
 Measured 2026-08-23 21:30 EEST from commit `b4042ac`, after restoring
