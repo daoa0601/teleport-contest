@@ -13653,3 +13653,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   managed engine-only corpus remains44/44 at1,429/1,483 in13.97 seconds and
   274,956,288 bytes maximum RSS.  No normal scorer, push, workflow or hidden
   judge ran.
+- Commit6bb6b5b splits Caveman volley RNG around real projectile presentation,
+  derives the live flint range/path, and routes both shots through shared hero
+  flight.  The renderer now retains its last visible glyph and cursor across
+  invisible tail cells.  Seed1150 closes6/6 animation and seed0004's visible
+  carrot control remains exact.  The managed engine-only corpus stays44/44 at
+  1,435/1,483 in12.29 seconds and530,907,136 bytes maximum RSS.  The remaining
+  48 frames are confined to compatibility/replay carriers; no normal scorer,
+  push, workflow or hidden judge ran.

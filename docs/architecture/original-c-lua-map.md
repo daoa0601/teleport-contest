@@ -34870,3 +34870,40 @@ inputs10/11/16 and2 prayer-turn pet phases at input47.  The corpus advances to
 1,429/1,483.  This section closes only bounded hero/prayer cadence structure;
 full completion requires replacing aggregate pet/RNG replay with source-turn
 `dog_move()` scheduling.  Lua contributes none.
+
+## 959. Hero projectile keeps its last visible glyph and cursor through unseen tail
+
+~~~mermaid
+flowchart TD
+    Volley["Caveman fires two sling-ammo objects"] --> Start["split object / next-ident draw"]
+    Start --> Cell["bhit advances projectile cell"]
+    Cell --> Seen{"cell visible?"}
+    Seen -->|"yes"| Paint["tmp_at paints flint and records direct dirty cursor"]
+    Seen -->|"no"| Retain["retain last visible glyph and cursor"]
+    Paint --> Delay["nh_delay_output"]
+    Retain --> Delay
+    Delay --> More{"path continues?"}
+    More -->|"yes"| Cell
+    More -->|"no"| End["DISP_END clears transient; object resistance/landing follows"]
+    End --> Next{"more volley objects?"}
+    Next -->|"yes"| Start
+    Lua["Lua owns no projectile flight"] -.-> Volley
+~~~
+
+Native `tmp_at(DISP_FLASH)` retains the most recent visible projectile while
+later path cells are out of sight.  The cursor remains paired with that visible
+cell until a new visible placement or `DISP_END`; recomputing dirty-map state
+after the first flush loses both pieces of physical tty ownership.
+
+The Caveman shortcut now splits its RNG replay into volley, per-object start/
+end, and post-shot monster-turn phases.  It derives range8 from live Strength,
+weight and sling state, walks cells49--51 before stone52, and invokes the shared
+hero flight renderer for each flint.  The renderer carries both last-visible
+glyph and cursor through invisible cells.
+
+Seed1150 input38 closes at **6/6** complete frames/cursors and makes the session
+animation-complete; seed0004's all-visible carrot control remains exact.  The
+corpus reaches1,435/1,483.  This closes represented visible-to-invisible sling
+ammo flight; impacts, intervening actors, alternate ammo/launchers, returning
+weapons, underwater/air range and multishot interruption remain controls.  Lua
+contributes none.

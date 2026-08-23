@@ -93003,3 +93003,78 @@ screens locally.  No normal corpus, push, workflow, hidden judge or publication
 ran.
 
 ---
+
+### [2026-08-24 01:12 EEST, journal block 3104] {#seed1150 #caveman #sling #flint #hero-projectile #visible-to-invisible #source-diagnosis #prediction}
+
+**Owner selection after replay audit:** the two seed0013 sessions are identical
+bounded Rogue run replays; seed0106's darts are likewise behind its passive
+Priest compatibility path.  Seed1150 is smaller and exposes a reusable hero
+projectile boundary: two sling-fired flint stones, three delayed cells each.
+Its shortcut currently replays the complete shot+monster RNG transaction and
+prints only the final launch line.
+
+**Source geometry:** Strength15 gives urange7; flint weight10 subtracts zero,
+and matched sling ammo adds one, for nominal range8.  The east path reaches
+open cells49/50/51 and stops before stone52.  Only cell49 is visible.  Native
+`tmp_at` retains its gray `*` through the two later invisible delays, producing
+three identical frames per shot with cursor(49,15) and pre-turn T23 status.
+
+**Implementation prediction and guard:** split the bounded RNG helper into
+volley, per-object start/end and post-shot monster-turn phases.  Between each
+object's next-ident and object-resistance draws, call the generic hero flight
+renderer on the source-derived path.  Change that renderer to keep its last
+visible transient across invisible cells, clearing only on a new visible cell
+or DISP_END.  Seed1150 should close6/6 without moving game.moves/pet state into
+the frames.  Food-projectile all-visible controls must stay exact; do not emit
+six cloned frame literals.
+
+---
+
+### [2026-08-24 01:15 EEST, journal block 3105] {#seed1150 #caveman #sling #flint #hero-projectile #cursor-audit #implementation #bounded-acceptance}
+
+**Implementation:** the Caveman replay is split into volley, per-object
+next-ident/resistance, and post-shot monster-turn phases.  The shortcut now
+derives range8 from live Strength/weight/launcher state, walks open terrain to
+the stone boundary, and invokes the generic flight renderer for each of two
+flints before monster time and T24 state commit.
+
+**Generic renderer correction:** visible-to-invisible traversal now retains the
+last visible glyph instead of clearing it on an invisible cell.  The focused
+scorer closed6/6 screens immediately, but full cursors exposed that invisible
+tail frames also retain the visible cell's cursor.  `captureThrownObjectFlight`
+now carries both glyph and cursor until a new visible cell or final cleanup.
+
+**Bounded acceptance:** seed1150 input38 is **6/6** on exact count, screens and
+cursors, with3,137 RNG calls and51 boundaries unchanged.  The all-visible
+seed0004 carrot flight remains exact.  The source-derived Caveman shortcut is
+still bounded for monster/pet RNG, but its projectile presentation now uses a
+shared renderer rather than cloned frames.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected total is1,435/1,483 with seed1150 animation-complete; inspect
+any cross-session projectile movement separately.
+
+---
+
+### [2026-08-24 01:16 EEST, journal block 3106] {#seed1150 #caveman #sling #hero-projectile #animation-complete #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `6bb6b5b` owns source-phased Caveman shot RNG,
+range/path derivation, shared visible-to-invisible flight, and the exact six-
+frame regression.  Seed1150 is now **6/6 animation-complete**; the all-visible
+food projectile control remains exact.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**36+0.32 ms/turn** (R²0.829) in **12.29 seconds** at **530,907,136 bytes
+maximum RSS**.  Animation advances exactly six slots to **1,435/1,483**, with
+no other session count changes.  The verifier exited and no matching live
+process remains.  RSS is elevated versus the preceding run but bounded under
+one owned process and recorded explicitly.
+
+**Next inventory:**48 frames remain: seed0017 pet-phase replay13; both
+seed0013 Rogue-run replays20; seed0106 Priest-passive dart replay6; seed0007
+Rogue replay-state5; seed0060 Rogue-Orc replay4.  Every residual now crosses a
+named compatibility bridge.  The next architectural choice is which bridge to
+replace with live source-turn scheduling, not which animation hook to add.  No
+normal corpus, push, workflow, hidden judge or publication ran.
+
+---

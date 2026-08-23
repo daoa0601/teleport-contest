@@ -1,24 +1,25 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,429/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,435/1,483 animation frames
 
-Measured 2026-08-24 01:04 EEST from commit `c95f254`, after exposing the
-bounded Samurai run/prayer cadence slots:
+Measured 2026-08-24 01:14 EEST from commit `6bb6b5b`, after routing the bounded
+Caveman sling volley through shared hero-projectile flight:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **40+0.35 ms/turn** (R² 0.827).
-One owned process completed in **13.97 seconds** at **274,956,288 bytes maximum
+The engine-only gate is **44/44 exact** at **36+0.32 ms/turn** (R² 0.829).
+One owned process completed in **12.29 seconds** at **530,907,136 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,429/1,483** exact frames.  Sixteen sessions
+Supplemental animation is now **1,435/1,483** exact frames.  Seventeen sessions
 are complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
 **49/49**, seed0014 **995/995**, seed0002 **128/128**, seed0016 **4/4**,
 seed0030 **40/40**,
 seed0104 **2/2**,
 seed0108 **4/4**, seed0116 **8/8**, seed0360 **12/12**, seed0361 **10/10**,
-seed0383 **1/1**, seed0900 **3/3**, seed4500 **37/37**, and seed5002 **8/8**.
+seed0383 **1/1**, seed0900 **3/3**, seed1150 **6/6**, seed4500 **37/37**, and
+seed5002 **8/8**.
 Seed0900 remains a
 bounded replay carrier, not a generalized Tourist actor/occupation
 implementation.  Seed0014 is no longer partial; the largest remaining reached
@@ -29,10 +30,10 @@ native-to-JavaScript frame counts and cursors; this matters because the
 supplemental scorer neither compares cursors nor penalizes extra contestant
 frames.
 
-The remaining **54** native frames are fully accounted for: seed0017 has13,
-the two seed0013 sessions have10 each, seed0106 and seed1150 have6 each,
-seed0007 has5, and seed0060 has4.  This inventory is the next prioritization
-boundary; seed4500 is no longer a residual carrier.
+The remaining **48** native frames are fully accounted for: seed0017 has13,
+the two seed0013 sessions have10 each, seed0106 has6, seed0007 has5, and
+seed0060 has4.  This inventory is the next prioritization boundary; seed1150
+and seed4500 are no longer residual carriers.
 
 Seed0017's33 frame slots and cursors now all exist, but13 screens still differ
 only in interleaved pet state inside its aggregate compatibility replay.  It is
