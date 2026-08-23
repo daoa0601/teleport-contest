@@ -11993,6 +11993,54 @@ test('seed0014 selected travel spans first step and automatic run cadence',
         }
     });
 
+test('seed4500 cobra venom spans two flight cells and final miss impact',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed4500-knight-coverage.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 275),
+            storage: new Map(),
+        });
+        const step = 274;
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed4500 cobra venom RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            'seed4500 cobra venom screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            'seed4500 cobra venom cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[step];
+        const nativeFrames = session.steps[step].animation_frames;
+        assert.equal(actualFrames.length, nativeFrames.length);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed4500 cobra venom frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed4500 cobra venom cursor${frame}`,
+            );
+        }
+    });
+
 test('seed4500 unseen projectile retains the physical prayer prompt in flight',
     async () => {
         const session = JSON.parse(fs.readFileSync(

@@ -5167,33 +5167,78 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (game._runState) stopRun(game);
 
                 if (spit.heroTarget) {
-                    const terse = spit.heroWasBlind
-                        || game.flags?.verbose === false;
-                    if (!spit.hit) {
-                        if (terse) {
-                            await queueTurnMessage('It misses.');
-                        } else if (spit.hitThreshold <= spit.hitRoll - 2) {
-                            await queueTurnMessage(
-                                `A ${spit.appearance} misses you.`,
+                    const venomGlyph = transientObjectGlyph(spit.venom);
+                    let transientFlightCell = null;
+                    const captureVenomCell = async cell => {
+                        if (transientFlightCell)
+                            newsym(
+                                transientFlightCell.x,
+                                transientFlightCell.y,
                             );
+                        transientFlightCell = null;
+                        const flightVisible = cansee(cell.x, cell.y);
+                        if (flightVisible) {
+                            show_glyph_cell(
+                                cell.x, cell.y,
+                                venomGlyph.ch, venomGlyph.color,
+                                venomGlyph.decgfx, venomGlyph.attr,
+                            );
+                            transientFlightCell = cell;
+                        }
+                        const frameCursor = flightVisible
+                            ? [cell.x, cell.y + 1]
+                            : lastDirtyMapCursor();
+                        await flush_screen(1);
+                        if (frameCursor)
+                            game.nhDisplay?.setCursor(...frameCursor);
+                        await game.animationFrame?.();
+                    };
+                    try {
+                        for (const cell of spit.flightPath || [])
+                            await captureVenomCell(cell);
+
+                        const terse = spit.heroWasBlind
+                            || game.flags?.verbose === false;
+                        if (!spit.hit) {
+                            if (terse) {
+                                await queueTurnMessage('It misses.');
+                            } else if (spit.hitThreshold
+                                <= spit.hitRoll - 2) {
+                                await queueTurnMessage(
+                                    `A ${spit.appearance} misses you.`,
+                                );
+                            } else {
+                                await queueTurnMessage(
+                                    `You are almost hit by a ${
+                                        spit.appearance}.`,
+                                );
+                            }
                         } else {
-                            await queueTurnMessage(
-                                `You are almost hit by a ${spit.appearance}.`,
-                            );
+                            await queueTurnMessage(terse
+                                ? 'You are hit.'
+                                : `You are hit by a ${spit.appearance}.`);
+                            if (spit.resisted) {
+                                await queueTurnMessage(
+                                    "It doesn't seem to hurt you.",
+                                );
+                            } else if (spit.venom?.otyp === ACID_VENOM) {
+                                await queueTurnMessage('It burns!');
+                            }
+                            if (spit.blindIncrement) {
+                                await queueTurnMessage(
+                                    'The venom blinds you.',
+                                );
+                            }
                         }
-                    } else {
-                        await queueTurnMessage(terse
-                            ? 'You are hit.'
-                            : `You are hit by a ${spit.appearance}.`);
-                        if (spit.resisted) {
-                            await queueTurnMessage(
-                                "It doesn't seem to hurt you.",
+                        await captureVenomCell({
+                            x: game.u.ux, y: game.u.uy,
+                        });
+                    } finally {
+                        if (transientFlightCell) {
+                            newsym(
+                                transientFlightCell.x,
+                                transientFlightCell.y,
                             );
-                        } else if (spit.venom?.otyp === ACID_VENOM) {
-                            await queueTurnMessage('It burns!');
-                        }
-                        if (spit.blindIncrement) {
-                            await queueTurnMessage('The venom blinds you.');
                         }
                     }
                 }
