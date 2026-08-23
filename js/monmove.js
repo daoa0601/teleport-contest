@@ -3616,10 +3616,29 @@ function moveHostile(
                     deferredAfterRestrictedTenguTeleport: true,
                 });
             } else {
-                // Preserve the source boundary without claiming an approximate
-                // relocation.  No current exact-session witness reaches this
-                // unrestricted success path.
-                monster.tenguTeleportPending = true;
+                const randomRelocation = (monster.mhp ?? 0) < 7
+                    || !!monster.mpeaceful
+                    || recordRandom(random, calls, 2) !== 0;
+                if (randomRelocation) {
+                    const relocation = randomMonsterRelocation(
+                        monster, state, calls, random, rollOne,
+                    );
+                    return finishMovement(relocation || {
+                        oldx, oldy, x: oldx, y: oldy, moved: false,
+                        tenguTeleportFailed: true,
+                    });
+                }
+                const relocation = relocateMonsterNextToHero(
+                    monster, state, calls, random,
+                );
+                return finishMovement(relocation ? {
+                    ...relocation,
+                    deferredTenguRelocation: true,
+                    tenguRelocation: { appearMessage: false },
+                } : {
+                    oldx, oldy, x: oldx, y: oldy, moved: false,
+                    tenguTeleportFailed: true,
+                });
             }
         }
     }
@@ -5935,6 +5954,31 @@ export function randomMonsterRelocation(
         oldx, oldy,
         x: destination.x, y: destination.y,
         moved: oldx !== destination.x || oldy !== destination.y,
+    };
+}
+
+// C mon.c:mnexto()->teleport.c:enexto().  All three rings are collected and
+// shuffled before goodpos() selects a destination; the relocating monster's
+// old square remains occupied during that selection and is rejected.
+function relocateMonsterNextToHero(
+    monster, state, calls, random = rn2,
+) {
+    if (!monster) return null;
+    const oldx = monster.mx, oldy = monster.my;
+    const candidates = collectNearbyCoords(
+        state.u?.ux ?? oldx, state.u?.uy ?? oldy, 3, random, calls,
+    );
+    const destination = candidates.find(({ x, y }) =>
+        (x !== oldx || y !== oldy)
+        && expulsionDestinationOk(monster, state, x, y));
+    if (!destination) return null;
+    monster.mx = destination.x;
+    monster.my = destination.y;
+    monster.mtrack = [];
+    return {
+        oldx, oldy,
+        x: monster.mx, y: monster.my,
+        moved: oldx !== monster.mx || oldy !== monster.my,
     };
 }
 

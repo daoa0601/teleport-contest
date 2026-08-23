@@ -192,6 +192,14 @@ function conductState(state = game) {
     return state.u.uconduct;
 }
 
+// xkilled() breaks killer conduct before its credited kill pline can suspend
+// on an older tty message.  Vanquished/mvitals bookkeeping happens later,
+// after mondead(), so keep this mutation independently callable.
+export function recordHeroKillConduct(state = game) {
+    const conduct = conductState(state);
+    conduct.killer = (conduct.killer || 0) + 1;
+}
+
 // C xkilled()/monkilled() both update mvitals[].died; only hero kills break
 // killer conduct.  Weapon-hit conduct is owned earlier by hitum(), for every
 // effective wielded hit whether or not that hit kills.
@@ -207,8 +215,7 @@ export function recordVanquished(monster, name, {
     prior.count++;
     state._vanquishedCounts.set(mnum, prior);
     if (byHero) {
-        const conduct = conductState(state);
-        conduct.killer = (conduct.killer || 0) + 1;
+        recordHeroKillConduct(state);
         void weaponHit;
     }
 }

@@ -10076,7 +10076,7 @@ test('seed0001 death ray removes Wizard and starts demigod countdown',
             monster.mnum === 285), false);
         assert.equal(game.context.no_of_wizards, 0);
         assert.equal(game.u.uevent.udemigod, true);
-        assert.equal(game.u.udg_cnt, 99);
+        assert.equal(game.u.udg_cnt, 98);
         assert.equal(game._vanquishedCounts.get(285).count, 1);
         assert.equal(game._vanquishedCounts.get(285).difficulty, 34);
         const deathSquare = game.level.objects?.[13]?.[7] || [];
@@ -10144,7 +10144,7 @@ test('seed0001 second Wizard death ray preserves demigod countdown',
             monster.mnum === 285), false);
         assert.equal(game.context.no_of_wizards, 0);
         assert.equal(game.u.uevent.udemigod, true);
-        assert.equal(game.u.udg_cnt, 99);
+        assert.equal(game.u.udg_cnt, 97);
         assert.equal(game._vanquishedCounts.get(285).count, 2);
         const secondDeathSquare = game.level.objects?.[14]?.[6] || [];
         assert.deepEqual(secondDeathSquare.map(object => object.otyp), [
@@ -10155,6 +10155,110 @@ test('seed0001 second Wizard death ray preserves demigod countdown',
         assert.equal(game.u.uhp, 111);
         assert.equal(game.u.uhpmax, 152);
         assert.equal(game.u.umortality, 2);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0005 intervention and tengu teleports preserve scheduler order',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkl   ' + '.'.repeat(80);
+        const result = await runSegment({
+            seed: 5,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 207);
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(19)=8', 'rn2(7)=5',
+            'rn2(20)=2', 'rnd(8)=8',
+            'rn2(20)=15', 'rnd(8)=2',
+        ], 'seed0005 pending pre-kill death-ray RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'The death ray misses the Wizard of Yendor.  The death ray bounces!--More--');
+        assert.deepEqual(result.getCursors()[123], [74, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rn2(250)=19', 'rn2(6)=0',
+            'rnd(100)=86', 'rnd(1000)=362', 'rnd(2)=2',
+            'rn2(4)=1', 'rn2(3)=2', 'rn2(20)=11',
+        ], 'seed0005 deferred xkilled and hero-hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'You kill the Wizard of Yendor!  The death ray hits you!--More--');
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1109 HP:210(210) Pw:270(270) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[124], [63, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[126]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+
+        const nymphBirth = result.getRngSlices()[156];
+        assert.equal(nymphBirth.length, 239);
+        assertRngSliceExact(nymphBirth.slice(-12), [
+            'rn2(344)=56', 'rnd(2)=2', 'd(4,8)=10', 'rn2(5)=1',
+            'rn2(2)=1', 'rn2(2)=1', 'rn2(50)=15', 'rn2(100)=52',
+            'rn2(100)=8', 'rn2(100)=93', 'rn2(20)=19', 'rn2(73)=58',
+        ], 'seed0005 ambient nymph inventory suffix RNG');
+
+        const intervention = result.getRngSlices()[194];
+        assert.equal(intervention.length, 24);
+        assertRngSliceExact(intervention.slice(-12), [
+            'rn2(12)=3', 'rn2(12)=8', 'rn2(12)=9', 'rn2(12)=5',
+            'rn2(12)=0', 'rn2(25)=23', 'rn2(100)=34', 'rn2(20)=17',
+            'rn2(19)=7', 'rn2(73)=70', 'rn2(6)=1', 'rn2(200)=115',
+        ], 'seed0005 demigod intervention suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[194]),
+            'You feel vaguely nervous.');
+        assert.equal(decodedRow(result.getScreens()[194], 23),
+            'Dlvl:1 $:1109 HP:159(210) Pw:270(270) AC:8 Xp:30');
+
+        const randomRelocation = result.getRngSlices()[195];
+        assert.equal(randomRelocation.length, 40);
+        assertRngSliceExact(randomRelocation.slice(0, 12), [
+            'rn2(5)=2', 'rn2(5)=0', 'rn2(2)=1',
+            'rnd(79)=65', 'rn2(21)=20', 'rnd(79)=13', 'rn2(21)=5',
+            'rnd(79)=75', 'rn2(21)=6', 'rnd(79)=73', 'rn2(21)=18',
+            'rnd(79)=20',
+        ], 'seed0005 tengu rloc prefix RNG');
+
+        const adjacentRelocation = result.getRngSlices()[196];
+        assert.equal(adjacentRelocation.length, 63);
+        assertRngSliceExact(adjacentRelocation.slice(0, 12), [
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(2)=0',
+            'rn2(8)=7', 'rn2(7)=5', 'rn2(6)=3', 'rn2(5)=3',
+            'rn2(4)=1', 'rn2(3)=0', 'rn2(2)=1',
+            'rn2(16)=4', 'rn2(15)=13',
+        ], 'seed0005 tengu mnexto prefix RNG');
+        assertRngSliceExact(adjacentRelocation.slice(-12), [
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(5)=4',
+            'rn2(12)=3', 'rn2(12)=6', 'rn2(12)=9',
+            'rn2(12)=5', 'rn2(12)=3', 'rn2(25)=20',
+            'rn2(100)=51', 'rn2(20)=13', 'rn2(73)=1',
+        ], 'seed0005 tengu mnexto suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[196]),
+            'The tengu appears next to you!');
+        assert.deepEqual(result.getCursors()[196], [68, 16, 1]);
+        assert.equal(decodedTopline(result.getScreens()[197]),
+            "Are you waiting to get hit?  Use 'm' prefix to force a no-op (to rest).");
+
+        assert.equal(game.u.uevent.udemigod, true);
+        assert.equal(game.u.udg_cnt, 163);
+        assert.equal(game.context.no_of_wizards, 0);
+        assert.equal(game._vanquishedCounts.get(285).count, 1);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game.u.uhp, 159);
+        assert.equal(game.u.uhpmax, 210);
+        const nymph = game.level.monsters.find(monster =>
+            monster.mnum === 69);
+        assert.ok(nymph);
+        assert.deepEqual(nymph.minvent, []);
+        const tengu = game.level.monsters.find(monster =>
+            monster.mnum === 55);
+        assert.ok(tengu);
+        assert.deepEqual([tengu.mx, tengu.my], [70, 16]);
+        assert.deepEqual(tengu.minvent.map(object => object.otyp), [333]);
         assert.equal(game.context.move, 0);
     });
 
@@ -10208,7 +10312,7 @@ test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
             monster.mnum === 285), false);
         assert.equal(game.context.no_of_wizards, 0);
         assert.equal(game.u.uevent.udemigod, true);
-        assert.equal(game.u.udg_cnt, 126);
+        assert.equal(game.u.udg_cnt, 125);
         assert.equal(game._vanquishedCounts.get(285).count, 1);
         assert.equal(game.u.uhp, 132);
         assert.equal(game.u.uhpmax, 132);

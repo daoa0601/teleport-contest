@@ -147,7 +147,8 @@ import {
 } from './ball.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving,
-    finishOrdinaryDeath, finishOrdinaryQuit, recordVanquished,
+    finishOrdinaryDeath, finishOrdinaryQuit,
+    recordHeroKillConduct, recordVanquished,
     restoreHeroAfterDeath,
 } from './end.js';
 import {
@@ -16334,6 +16335,22 @@ export async function finishHeroMonsterKill(monster, x, y, {
     );
     const monsterName = nameMonster();
 
+    // xkilled() breaks killer conduct and publishes the credited line before
+    // mondead() can detach the actor.  If an older topline owns tty, this
+    // await must suspend before Wizard bookkeeping, inventory release,
+    // corpse policy, experience, or vanquished counts change.
+    recordHeroKillConduct();
+    if (showKillMessage) {
+        const deathVerb = monsterIsNonliving(monster.mnum)
+            ? 'destroy' : 'kill';
+        const deathTarget = deathWasSpotted
+            ? `the ${monster.mtame ? 'poor ' : ''}${monsterName}`
+            : 'it';
+        await plineWithContinuation(
+            `You ${deathVerb} ${deathTarget}!`,
+        );
+    }
+
     // mon.c:m_detach() calls wizdeadorgone() before relobj() releases the
     // inventory and before xkilled() reaches treasure/corpse policy.  The
     // first true Wizard removal starts the demigod intervention countdown;
@@ -16410,9 +16427,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
-    recordVanquished(monster, monsterName, {
-        byHero: true, weaponHit,
-    });
+    recordVanquished(monster, monsterName, { weaponHit });
     const corpseForm = undeadToCorpse(monster.mnum);
     const convertedUndeadCorpse = corpseForm !== monster.mnum;
     // mon.c:make_corpse() handles zombies, mummies, and vampires before its
@@ -16439,16 +16454,6 @@ export async function finishHeroMonsterKill(monster, x, y, {
         killCount,
         amphibious: !!game.u?.amphibious,
     });
-    if (showKillMessage) {
-        const deathVerb = monsterIsNonliving(monster.mnum)
-            ? 'destroy' : 'kill';
-        const deathTarget = deathWasSpotted
-            ? `the ${monster.mtame ? 'poor ' : ''}${monsterName}`
-            : 'it';
-        await plineWithContinuation(
-            `You ${deathVerb} ${deathTarget}!`,
-        );
-    }
     if ((game.u?.ulevel ?? 1) < 30
         && (game.u?.uexp ?? 0)
             >= newExperienceThreshold(game.u?.ulevel ?? 1)) {

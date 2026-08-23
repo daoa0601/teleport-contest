@@ -50,7 +50,8 @@ import {
     LUCERN_HAMMER,
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_MATERIAL, POT_HEALING, POT_SLEEPING, TALLOW_CANDLE,
+    OBJECT_MATERIAL, MIRROR, POT_HEALING, POT_OBJECT_DETECTION,
+    POT_SLEEPING, TALLOW_CANDLE,
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import {
@@ -915,6 +916,13 @@ function initializeRandomMonsterInventory(monster) {
             addObject(randomOffensiveMonsterItem(monster.mnum));
     }
 
+    // makemon.c:m_initinv(), S_NYMPH.  These independent class gates are
+    // evaluated even when neither item is granted.
+    if (MONSTER_SYMBOL[monster?.mnum] === 14) {
+        if (!rn2(2)) addObject(MIRROR);
+        if (!rn2(2)) addObject(POT_OBJECT_DETECTION);
+    }
+
     // makemon.c:m_initinv(), S_GNOME.  Ambient births are outside mklev, so
     // the candle probe uses the ordinary one-in-sixty branch.
     if (MONSTER_SYMBOL[monster?.mnum] === 33 && !rn2(60)) {
@@ -1212,6 +1220,23 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
 // monster generation, ambient feature sounds, hunger, and engraving wear.
 function finishInitialTurnMaintenanceRng(sourceTurn) {
     if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
+    // allmain.c's demigod intervention clock advances after engraving wear
+    // and before environmental level motion.  Only the reached outcomes 0/1
+    // share the plain nervous line; preserve other outcome identities for
+    // their own source-valid effect carriers rather than substituting prose.
+    if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
+        if ((game.u.udg_cnt ?? 0) > 0) game.u.udg_cnt--;
+        if ((game.u.udg_cnt ?? 0) === 0) {
+            const intervention = rn2(6);
+            if (intervention <= 1) {
+                appendTurnMessage('You feel vaguely nervous.');
+                delete game._unresolvedDemigodIntervention;
+            } else {
+                game._unresolvedDemigodIntervention = intervention;
+            }
+            game.u.udg_cnt = 50 + rn2(200);
+        }
+    }
     // allmain.c's environmental owner runs after engraving wear. Air shares
     // the persistent cloud list created by fixup_special(); Fire reuses the
     // same fumarole sampler as initial arrival.
@@ -3212,6 +3237,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         const didSeeOpenedDoor = !!(movement?.openedDoor
             && cansee(monster.mx, monster.my));
         actions.push(action);
+        if (movement?.deferredTenguRelocation) {
+            newsym(movement.oldx, movement.oldy);
+            newsym(movement.x, movement.y);
+            const relocationMessage = monsterRelocationMessage(
+                monster, movement.tenguRelocation, actorWasSeen,
+            );
+            if (relocationMessage)
+                await queueTurnMessage(relocationMessage);
+            continue;
+        }
         if (movement?.deferredFleeingRelocation) {
             // dochug()'s successful fleeing teleport is a complete actor
             // action.  rloc_to_core() repaints and emits its visibility line
