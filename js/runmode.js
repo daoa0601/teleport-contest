@@ -17,7 +17,10 @@ export function runmodeDelayFrameCount(
 
 export async function captureRunmodeDelay(
     g = game, enabled = false, sourceTurn = g.moves || 0,
-    { preservePhysicalTopline = false } = {},
+    {
+        preservePhysicalTopline = false,
+        retainedTopline: suppliedRetainedTopline = null,
+    } = {},
 ) {
     const runmodeDelayFrames = runmodeDelayFrameCount(
         g, enabled, sourceTurn,
@@ -34,7 +37,8 @@ export async function captureRunmodeDelay(
         }
     };
     const retainedTopline = preservePhysicalTopline && !g._pending_message
-        ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+        ? (suppliedRetainedTopline
+            || g.nhDisplay?.grid?.[0])?.map(cell => ({ ...cell }))
         : null;
     await flush_screen(1);
     const logicalTopline = retainedTopline

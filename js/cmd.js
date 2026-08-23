@@ -10363,8 +10363,9 @@ async function putOnArmorObject(object) {
     // not run find_ac() until the command's monster/global time has passed.
     // Mark that once-per-input boundary; identification and Armor_on()
     // extrinsics remain later afternmv effects.
-    game._armorClassDirty = true;
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
+    game._armorClassDirty = true;
+    if (delay > 0) game._armorClassDirtyAfterDelayedFrame = true;
     if (delay > 0) {
         game._delayedAction = {
             kind: 'wear', object,

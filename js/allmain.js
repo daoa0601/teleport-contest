@@ -2062,10 +2062,31 @@ async function initialTurnMaintenanceWithTty(
         { preservePhysicalTopline: true },
     );
     await drainQueuedHelplessRecoveryMessage();
+    const delayedAction = game._delayedAction;
+    if (delayedAction) {
+        if (game._pending_message) {
+            delete delayedAction._runmodeRetainedTopline;
+        } else if (!delayedAction._runmodeRetainedTopline) {
+            delayedAction._runmodeRetainedTopline
+                = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
+        }
+    }
     await captureRunmodeDelay(
-        game, !!game._delayedAction, completedTurn,
-        { preservePhysicalTopline: true },
+        game, !!delayedAction, completedTurn,
+        {
+            preservePhysicalTopline: true,
+            retainedTopline: delayedAction?._runmodeRetainedTopline,
+        },
     );
+    // Native find_ac() follows the elapsed-turn loop.  setworn() is already
+    // live for effects, but the first donning cadence frame still shows the
+    // prior AC; the next automatic core observes the recomputed value.
+    if (game._armorClassDirtyAfterDelayedFrame) {
+        findArmorClass(game);
+        game._armorClassDirty = false;
+        delete game._armorClassDirtyAfterDelayedFrame;
+        delete game._statusProjectedAc;
+    }
     return result;
 }
 
@@ -5891,7 +5912,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
     // find_ac() until the actor scan has finished.  Only after that boundary
     // may the next ordinary input project the new AC; intervening combat and
     // death pagers retain the pre-scan status value.
-    if (game._armorClassDirty)
+    if (game._armorClassDirty
+        && !game._armorClassDirtyAfterDelayedFrame)
         game._statusProjectedAc = projectedArmorClass(game);
     return actions;
 }
@@ -6805,7 +6827,8 @@ export async function moveloop_core() {
     // in the worn slot, but attacks during that just-started donning turn
     // still observe the previous u.uac; later negative-multi turns see the
     // recomputed value.
-    if (g._armorClassDirty && !g._heroTimePending) {
+    if (g._armorClassDirty && !g._heroTimePending
+        && !g._armorClassDirtyAfterDelayedFrame) {
         findArmorClass(g);
         g._armorClassDirty = false;
         delete g._statusProjectedAc;
