@@ -11576,6 +11576,46 @@ test('seed0361 delayed wear runmode frame retains its physical prompt',
         assert.deepEqual(actualFrame.cursor, nativeFrame.cursor);
     });
 
+test('seed0383 delayed wear runmode frame prefers newly queued turn prose',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0383-wizard-hallucinate.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 143),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[142],
+            session.steps[142].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0383 delayed wear input142 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[142],
+            session.steps[142].screen,
+            'seed0383 delayed wear input142 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[142],
+            session.steps[142].cursor,
+            'seed0383 delayed wear input142 cursor',
+        );
+        const [actualFrame] = result.getAnimationFramesByStep()[142];
+        const [nativeFrame] = session.steps[142].animation_frames;
+        assert.ok(actualFrame);
+        assertScreenExact(
+            actualFrame.screen, nativeFrame.screen,
+            'seed0383 delayed wear animation frame',
+        );
+        assert.deepEqual(actualFrame.cursor, nativeFrame.cursor);
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

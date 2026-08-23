@@ -3184,7 +3184,7 @@ async function captureRunmodeDelay(
                 );
             }
         };
-        const retainedTopline = preservePhysicalTopline
+        const retainedTopline = preservePhysicalTopline && !g._pending_message
             ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
             : null;
         await flush_screen(1);
