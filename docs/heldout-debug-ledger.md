@@ -13175,3 +13175,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   shield/sleep control and expanded fixture-disabled gates pass 9/9 and42/42.
   Monster/weapon/armor/form reflection, deeper precedence, remaining range and
   animation frames remain open.
+- Seed1's 180-state repeat-Wizard carrier confirms the existing no-reroll
+  branch.  After the first death establishes demigod countdown99, a second
+  true Wizard is created with inventory[329,309] and killed by the same wand.
+  Input167 has no rn2(250): `wizdeadorgone()` decrements count1 to0 but keeps
+  udg_cnt99 because udemigod is already true.  Final vanquish count is2,
+  objects329/309 are released with no corpse, hero mortality is2 and HP111/152.
+  All 2,454 RNG calls, all cursors, and all screens from input3 through input179
+  match; input2 alone is red.  No production repair was needed; the durable
+  control and focused/expanded fixture-disabled gates pass 10/10 and43/43.
+  Simultaneous/clone/resurrected Wizard counts, intervention and animation
+  frames remain open.

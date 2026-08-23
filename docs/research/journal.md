@@ -88959,3 +88959,60 @@ replay and test process exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:57 EEST, journal block 2944] {#seed1 #repeat-wizard #death-wand #wizdeadorgone #demigod #countdown #no-reroll #native-acceptance #complete-replay #control #process-safety #priority}
+
+**Source-valid repeat-death carrier:** seed1 first kills the empty-inventory
+Wizard, declines debug death and retains demigod countdown99.  A second forced
+Wizard is then created natively at (14,6) with HP122 and inventory[329,309];
+the same remaining-charge death wand fires east.  Input167 kills the second
+Wizard, bounces and rolls the later hero hit.
+
+**Decisive source/state evidence:** native input167 is
+`rn2(19)=2,rn2(7)=4,rn2(20)=7,rnd(8)=3,rn2(6)=5,rn2(3)=1,rn2(20)=16`.
+There is deliberately no second rn2(250).  `wizdeadorgone()` always decrements
+the live Wizard count but only initializes `udemigod/udg_cnt` when udemigod is
+still false.  Current JavaScript already has that exact conditional, so the
+second death preserves countdown99 while still running generic no-extra-drop,
+no-corpse, vanquish/experience and ray continuation.
+
+**Measured acceptance and decision:** the single native recorder exited in
+**0.07 seconds** at **54,378,496 bytes maximum RSS**.  The complete replay
+matches **2454/2454 RNG calls, 179/180 scorer screens and 180/180 cursors** in
+**0.26 seconds** at **128,516,096 bytes**; input2 is the sole screen miss and
+inputs3--179 match native RNG, decoded screens and cursors.  No production
+change is justified.  Add a durable regression for count0, unchanged
+countdown99, two vanquished Wizard deaths, released inventory/no-corpse and the
+second survival boundary.  Resurrection/intervention and a live simultaneous
+multi-Wizard count remain open.  Every process exited; no full corpus, hidden
+judge, push or publication ran, and unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 17:03 EEST, journal block 2945] {#seed1 #repeat-wizard #death-wand #wizdeadorgone #demigod #countdown #no-reroll #durable-control #regression #architecture #ledger #process-safety}
+
+**Durable control and commit:** commit `b24d1b6` adds the complete repeat-
+Wizard regression without changing production code.  It asserts second native
+genesis, the exact seven-call death slice with no rn2(250), kill/bounce and
+hero-hit pagers, HP0/refusal, nine-call survival tail, count0, unchanged
+udg_cnt99, vanquish count2, released inventory[329,309], no corpse, mortality2
+and HP111/152.
+
+**Measured regression:** the focused shared death/reflection portfolio passes
+**10/10** fixture-disabled in **0.69 seconds** at **240,517,120 bytes maximum
+RSS**.  The expanded portfolio passes **43/43** in **1.13 seconds** at
+**303,300,608 bytes maximum RSS**.  Both were single owned runners and exited.
+Together with block2944's complete **2454/2454 RNG, 179/180 screen and 180/180
+cursor** native replay, this closes the sequential no-reroll contract without
+using a narrower compatibility bridge.
+
+**Map and next blocker:** section902 and the ledger separate repeated live-count
+mutation from one-time demigod initialization; Lua owns only placement/geometry.
+Simultaneous multiple Wizards, clone removal, resurrection/intervention,
+migration/escape, accepted hero death and animation frames remain open.  The
+closest source-valid successor is Wizard resurrection/intervention or a
+controlled non-Wizard special detach owner.  Every recorder, replay and test
+process exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

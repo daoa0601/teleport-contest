@@ -32734,3 +32734,43 @@ armor, silver-dragon or intrinsic compatibility sources, multiple-source
 precedence beyond shield/amulet, blind prose, repeated reflection, monster
 reflection, rays with remaining range after reversal, or the twenty-five
 supplemental native animation-frame groups.  Lua owns none of the property.
+
+## 902. Later Wizard deaths decrement count without rerolling intervention
+
+~~~mermaid
+flowchart TD
+    First["first Wizard death"] --> Init["count to zero; set udemigod; udg_cnt99"]
+    Init --> SecondBirth["forced second true Wizard creation"]
+    SecondBirth --> CountOne["no_of_wizards returns to one"]
+    CountOne --> SecondRay["same death wand kills second Wizard"]
+    SecondRay --> Detach["m_detach calls wizdeadorgone"]
+    Detach --> Decrement["no_of_wizards one to zero"]
+    Decrement --> Existing{"udemigod already true?"}
+    Existing -->|"yes"| NoRoll["do not consume rn2 250; preserve udg_cnt99"]
+    NoRoll --> Release["release objects329 and309"]
+    Release --> Generic["no-extra-drop rn2 6; no-corpse rn2 3"]
+    Generic --> Vanquish["Wizard vanquish count becomes two"]
+    Vanquish --> Rebound["ray bounces, hits hero, debug refusal records mortality two"]
+    Lua["Lua contributes only second-Wizard placement and rebound geometry"] -.-> SecondBirth
+    Lua -.->|"no ownership"| Existing
+~~~
+
+Seed1 carries the first accepted Wizard-death state directly into a second
+native constructor and kill.  The second Wizard has HP122 and inventory
+[329,309].  Input167's seven-call slice has ray/hit, no-extra-drop,
+no-corpse and hero-hit calls, but no rn2(250).  `wizdeadorgone()` still
+decrements the live count; it simply skips countdown initialization because
+`u.uevent.udemigod` is already true.
+
+Final state keeps `udg_cnt=99`, has `no_of_wizards=0`, records two Wizard
+vanquishes, drops objects329/309 at (14,6), creates no second corpse and ends
+at HP111/152 after the second debug refusal.  This proves that Wizard removal
+bookkeeping is not a one-shot function as a whole: count mutation repeats,
+while demigod initialization does not.
+
+This section closes one sequential second-Wizard death and preserved countdown.
+It does not close simultaneous multiple-Wizard counts, clone versus true-Wizard
+removal, resurrected Wizard identity/state, `intervene()` countdown expiry,
+Wizard migration/escape, multiple corpse/drop combinations, accepted hero
+death, or the twelve supplemental native animation-frame groups.  Lua owns no
+countdown or detach state.
