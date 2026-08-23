@@ -34311,3 +34311,37 @@ session at40/40 animation while preserving1,953/1,953 input boundaries.  This
 closes visible striking-wand resistance with sparkle enabled.  Invisible
 targets, disabled sparkle, spell resistance, explosion-mask shield overlays,
 and alternate symbol sets remain separate controls.  Lua contributes none.
+
+## 944. Negative multi captures runmode before increment and recovery prose
+
+~~~mermaid
+flowchart TD
+    Cause["sleep, paralysis, vomiting, or other nomul below zero"] --> Turn["complete monster/global turn"]
+    Turn --> Active{"multi below zero at turn entry?"}
+    Active -->|"yes"| Cadence["runmode_delay_output at source turn"]
+    Cadence --> Increment["increment multi toward zero"]
+    Increment --> Done{"multi reaches zero?"}
+    Done -->|"no"| Turn
+    Done -->|"yes"| Recovery["unmul queues recovery prose"]
+    Recovery --> Input["resume ordinary command/input ownership"]
+    Lua["Lua owns no helpless state or tty cadence"] -.-> Cause
+~~~
+
+C checks and delays before `++multi` and before `unmul()`.  The final helpless
+turn therefore still has a cadence opportunity even though the counter becomes
+zero immediately afterward; any recovery message belongs to the far side of
+that frame.  This is distinct from positive-multi movement and occupation
+branches, but it reuses the same runmode selection rules.
+
+JavaScript records the completed source turn before decrementing
+`_helplessTurns`, then `initialTurnMaintenanceWithTty()` captures that pending
+delay before it drains queued recovery prose.  Physical topline retention is
+still conditional: newly queued turn prose wins, while a silent turn can retain
+the physical line.
+
+Seed0016 supplies a bounded self-sleep carrier at source moves7/14/21/28 and
+closes at **4/4** animation.  Its RNG and dog turns remain token replay debt,
+but the shared owner independently advances seed0014 by58 frames, seed0002 by4,
+and seed4500 by3 while preserving44/44 boundaries.  This closes represented
+default-leap negative-multi cadence, not every helpless cause, nondefault
+runmode, recovery pager, or pet-state transition.  Lua contributes none.

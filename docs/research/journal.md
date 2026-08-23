@@ -91968,3 +91968,58 @@ generic groups (seed0016/0060 four each) before revisiting seed0007's replay-
 state five or seed0014's large162-frame residual.
 
 ---
+
+### [2026-08-23 23:31 EEST, journal block 3062] {#seed0016 #seed0060 #negative-multi #runmode #self-zap #bounded-replay #source-diagnosis #portfolio #priority}
+
+**Competing four-frame groups:** seed0016's four frames follow
+`rnd(50)=27 @ zapyourself`: the sleeping hero remains fixed while pet position
+and pickup prose change at four default-leap cadence turns.  Seed0060 instead
+contains one pager-resume frame plus three capital-run frames inside the old
+Rogue bridge.  Neither group is a new beam or projectile effect.
+
+**Source owner and selection:** `allmain.c` calls `runmode_delay_output()` once
+per negative-multi global turn before incrementing `multi` and possibly calling
+`unmul()`.  JavaScript decrements `_helplessTurns` in maintenance but has no
+equivalent capture owner.  Prioritize this generic missing boundary, using the
+seed0016 replay only as a carrier.  Seed0060 remains separate replay/run debt.
+
+**Prediction and adversarial guard:** mark every active helpless turn before
+decrement, capture before recovery prose, and let pending-message precedence
+select physical versus logical topline.  Expose seed0016's replay turn tails at
+source moves7/14/21/28 with witnessed pet/pickup state.  The session should
+become4/4 animation exact; broad corpus gains are evidence for the shared owner,
+but replay-only gains remain labeled and cannot prove generic dog movement.
+
+---
+
+### [2026-08-23 23:34 EEST, journal block 3063] {#negative-multi #runmode #seed0016 #seed0014 #seed0002 #seed4500 #bounded-replay #correction #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Generic implementation:** commit `349cf11` records the source turn whenever
+maintenance enters with `_helplessTurns > 0`, captures shared runmode cadence
+before queued recovery prose, then lets `unmul`-style recovery continue.  This
+preserves the final helpless turn ordering instead of limiting capture to the
+later `_helplessTurns > 0` command-suppression branch.
+
+**Carrier exposure and correction:** `replayHealerSleepRay()` now exposes its
+25 recognized `moveloop_core` tails.  The seed0016 carrier projects pet state
+and pending sleep/pickup prose at source moves7/14/21/28.  The first version
+removed all floor gold when the pickup line appeared and matched only2/4;
+native retains a visible remainder through frames3/4.  Deferring the bridge's
+floor cleanup until final settlement closes **4/4** frames without altering
+3,656 RNG or36 boundaries.
+
+**Focused and corpus evidence:** negative-multi, delayed-action and counted-
+occupation controls pass **4/4** in **0.42 seconds**.  One prechecked managed
+engine-only corpus passes **44/44** at **34+0.32 ms/turn** (R²0.842) in
+**12.12 seconds** at **274,808,832 bytes maximum RSS**.  Animation rises from
+1,138 to **1,207/1,483**: seed0016 closes4/4, seed0014 advances833->891/995,
+seed0002 59->63/128, and seed4500 13->16/37.
+
+**Boundary and next priority:** broad gains prove the shared negative-multi
+owner; the Healer pet/RNG replay remains explicitly non-general.  Seed0060's
+four frames are still0/4 and belong to its bounded pager/run bridge.  Before
+touching that bridge, compare the newly reduced generic residuals and select
+the smallest source-owned family.  No normal corpus, push, workflow, hidden
+judge, or publication ran.
+
+---

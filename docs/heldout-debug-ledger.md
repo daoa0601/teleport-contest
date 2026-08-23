@@ -13529,3 +13529,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   group closes21/21 and the full session becomes40/40 animation.  The managed
   corpus remains44/44 with1,138/1,483 frames.  Invisible, sparkle-disabled,
   spell, explosion-overlay and alternate-symset shield controls remain open.
+- Commit349cf11 connects negative-multi turns to shared runmode cadence before
+  counter increment and recovery prose.  Seed0016's bounded self-sleep replay
+  exposes moves7/14/21/28 and closes4/4 after deferring premature gold cleanup.
+  Broad independent gains validate the common owner: seed0014 reaches891/995,
+  seed0002 63/128 and seed4500 16/37.  The managed corpus remains44/44 with
+  1,207/1,483 frames.  Healer RNG/pet motion remains explicit replay debt.
