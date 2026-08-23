@@ -10926,6 +10926,63 @@ test('seed0052 bounced magic missile can hit its source ogre',
         assert.equal(game.u.udg_cnt, 1);
     });
 
+test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 546),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 547);
+        assertRngSliceExact(result.getRngSlices()[545], [
+            'rn2(5)=2', 'rn2(5)=4', 'rn2(5)=2',
+            'rn2(28)=10', 'rn2(5)=2', 'rn2(5)=1',
+            'rn2(24)=13', 'rn2(28)=4', 'rn2(32)=19',
+            'rn2(20)=16', 'rn2(5)=3', 'rn2(5)=0',
+            'rnd(20)=20', 'rn2(5)=4',
+        ], 'seed0052 useful-scroll pickup RNG');
+        assertRngSliceExact(result.getRngSlices()[546], [
+            'rnd(20)=8', 'd(3,5)=10', 'rnd(8)=5', 'rnd(4)=3',
+            'rn2(3)=0', 'rn2(6)=3', 'rn2(12)=7',
+            'rn2(12)=0', 'rn2(12)=8', 'rn2(12)=0',
+            'rn2(12)=9', 'rn2(12)=5', 'rn2(12)=5',
+            'rn2(12)=6', 'rn2(25)=5', 'rn2(100)=21',
+            'rn2(400)=192', 'rn2(20)=2', 'rn2(67)=47',
+        ], 'seed0052 adjacent battle-axe RNG');
+        assert.equal(decodedTopline(result.getScreens()[545]),
+            'The ogre king picks up a scroll labeled FNORD.  The newt misses!--More--');
+        assert.equal(decodedRow(result.getScreens()[545], 23),
+            'Dlvl:1 $:1965 HP:73(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[545], [72, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[546]),
+            'The ogre king swings his double-headed axe.  The ogre king hits!');
+        assert.equal(decodedRow(result.getScreens()[546], 23),
+            'Dlvl:1 $:1965 HP:56(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[546], [4, 9, 1]);
+
+        const ogre = game.level.monsters.find(monster =>
+            monster.m_id === 86);
+        assert.ok(ogre);
+        assert.deepEqual([ogre.mx, ogre.my], [6, 8]);
+        assert.equal(ogre.mw?.otyp, 45);
+        assert.deepEqual(ogre.minvent.map(object => object.otyp), [
+            45, 429, 438, 293, 329,
+        ]);
+        assert.equal(ogre.minvent.find(object => object.otyp === 429).spe, 1);
+        assert.equal((game.level.objects?.[6]?.[8] || [])[0].corpsenm, 165);
+        assert.equal((game.level.objects?.[6]?.[8] || [])[1].corpsenm, 285);
+        assert.equal(game.u.uhp, 56);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.u.udg_cnt, 89);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

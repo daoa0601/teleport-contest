@@ -113,6 +113,7 @@ const M1_SLITHY = 0x00080000;
 const M1_UNSOLID = 0x00100000;
 const M1_SEE_INVIS = 0x01000000;
 const M1_TPORT = 0x02000000;
+const M1_ACID = 0x08000000;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
@@ -264,6 +265,12 @@ const MONSTER_SEARCH_CONTAINERS = new Set([
     217, // sack
     218, // oilskin sack
     219, // bag of holding
+]);
+const MONSTER_SEARCH_SCROLLS = new Set([
+    329, // create monster
+    333, // teleportation
+    339, // fire
+    340, // earth
 ]);
 
 // C monmove.c:can_hide_under_obj().  Floor piles are stored as source-ordered
@@ -797,6 +804,7 @@ function monsterWantsFloorObject(monster, object) {
     // mechanic pursuing healing and elves preferring a nearer unlocked sack.
     if (!(flags1 & (M1_MINDLESS | M1_ANIMAL))
         && (MONSTER_SEARCH_POTIONS.has(object.otyp)
+            || MONSTER_SEARCH_SCROLLS.has(object.otyp)
             || (MONSTER_SEARCH_CONTAINERS.has(object.otyp)
                 && !object.olocked && !object.locked
                 && !(object.otyp === 219 && object.cursed)))) {
@@ -889,6 +897,15 @@ export function monsterCanCarryObject(monster, object) {
     return monsterCarryAmount(monster, object) > 0;
 }
 
+function monsterRejectsOrdinaryCorpsePickup(monster, object) {
+    if (object?.otyp !== CORPSE
+        || MONSTER_SYMBOL[monster?.mnum] === S_NYMPH) return false;
+    const corpsenm = object.corpsenm;
+    const touchPetrifies = corpsenm === 9 || corpsenm === 10;
+    const acidic = !!((MONSTER_FLAGS1[corpsenm] ?? 0) & M1_ACID);
+    return !touchPetrifies && corpsenm !== PM_LIZARD && !acidic;
+}
+
 // C mon.c:mpickstuff() and monmove.c:postmov().  An interested monster takes
 // one eligible floor stack after moving, transfers it from the level's fobj
 // chain into minvent, and defers gear selection until a later action.
@@ -901,6 +918,7 @@ function pickUpMonsterFloorObject(monster, state) {
     if (!Array.isArray(pile) || !pile.length) return null;
     const index = pile.findIndex(object => !specialFloorPrize(object)
         && monsterWantsFloorObject(monster, object)
+        && !monsterRejectsOrdinaryCorpsePickup(monster, object)
         && monsterCanCarryObject(monster, object));
     if (index < 0) return null;
 
@@ -4044,16 +4062,19 @@ function maybeBeginOffensiveWand(
         return { probed: true, action: null };
     }
 
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const wand = inventory.find(object =>
-        [WAN_MAGIC_MISSILE, WAN_STRIKING].includes(object?.otyp)
-        && (object.spe ?? 0) > 0);
-    if (!wand) return { probed: true, action: null };
-
     const heroX = state?.u?.ux;
     const heroY = state?.u?.uy;
     const targetX = Number.isFinite(monster?.mux) ? monster.mux : heroX;
     const targetY = Number.isFinite(monster?.muy) ? monster.muy : heroY;
+    const reflectionSkip = distmin(
+        monster.mx, monster.my, targetX, targetY,
+    ) <= 1 || !!monster?.seenReflection;
+    const inventory = monster?.minvent || monster?.inventory || [];
+    const wand = inventory.find(object =>
+        (object?.otyp === WAN_STRIKING
+            || object?.otyp === WAN_MAGIC_MISSILE && !reflectionSkip)
+        && (object.spe ?? 0) > 0);
+    if (!wand) return { probed: true, action: null };
 
     return {
         probed: true,
@@ -6315,6 +6336,13 @@ function basicMonsterAttack(
         );
         let weaponDamage = weaponSides ? rollOne(weaponSides) : 0;
         if (weaponSides) calls.push(`rnd(${weaponSides})`);
+        // weapon.c:dmgval(), non-big defender supplement.  A battle-axe
+        // keeps its encoded 1d8 die, then adds a separate 1d4 before
+        // enchantment and erosion adjustments.
+        if (contactWeapon.otyp === BATTLE_AXE) {
+            weaponDamage += rollOne(4);
+            calls.push('rnd(4)');
+        }
         // weapon.c:dmgval(): a mace has a fixed +1 against non-big
         // defenders in addition to its encoded 1d6 base die.
         if (contactWeapon.otyp === 73) weaponDamage++;
