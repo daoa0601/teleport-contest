@@ -11536,6 +11536,55 @@ test('lethal hero projectile retains its last flight cell through death pagers',
         }
     });
 
+test('seed0108 dagger flight keeps pre-hit flight and post-hit impact status',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0108-wizard-extcmd-wishlist.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 32),
+            storage: new Map(),
+        });
+        for (const step of [30, 31]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0108 dagger flight input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0108 dagger flight input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0108 dagger flight input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                assertScreenExact(
+                    actualFrames[frame].screen,
+                    nativeFrames[frame].screen,
+                    `seed0108 dagger input${step} frame${frame}`,
+                );
+                assert.deepEqual(
+                    actualFrames[frame].cursor,
+                    nativeFrames[frame].cursor,
+                    `seed0108 dagger input${step} cursor${frame}`,
+                );
+            }
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

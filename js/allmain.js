@@ -5232,12 +5232,23 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 : {
                     ch: ranged.flightGlyph || ')',
                     color: NO_COLOR, decgfx: false, attr: 0,
-                };
+            };
             if (ranged.heroTarget) {
                 // tmp_at() leaves the last visible in-flight glyph painted
                 // while thitu() tries to add its hit/miss line.  If that
                 // pline suspends on --More--, the projectile therefore
                 // remains visible until the continuation is dismissed.
+                if (ranged.hit)
+                    game._statusHpOverride = ranged.preHitHp;
+                // A visible first tmp_at cell settles the actor/map changes
+                // which preceded the throw before tty positions the flight
+                // cursor.  An invisible first step emits only a delay and
+                // deliberately retains the earlier dirty-map cursor.
+                const firstFlightCell = ranged.flightPath?.[0];
+                if (firstFlightCell
+                    && cansee(firstFlightCell.x, firstFlightCell.y)) {
+                    await flush_screen(1);
+                }
                 let transientFlightCell = null;
                 for (const cell of ranged.flightPath || []) {
                     if (transientFlightCell)
@@ -5292,7 +5303,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // downstream of the hit pline.  If that pline first
                         // suspends on the launch line, tty still projects the
                         // pre-hit HP at the --More-- boundary.
-                        game._statusHpOverride = ranged.preHitHp;
                         const impactSuffix = (ranged.damage ?? 0) > 4
                             ? '!' : '.';
                         try {
@@ -5338,6 +5348,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 game.context.move = 0;
                                 return;
                             }
+                            delete game._statusHpOverride;
                             await captureImpactFrame();
                         } finally {
                             delete game._statusHpOverride;
@@ -5364,6 +5375,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         await captureImpactFrame();
                     }
                 } finally {
+                    delete game._statusHpOverride;
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
