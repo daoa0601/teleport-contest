@@ -10089,6 +10089,75 @@ test('seed0001 death ray removes Wizard and starts demigod countdown',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0001 second Wizard death ray preserves demigod countdown',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkj   '
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + 'zkl' + ' '.repeat(12);
+        const result = await runSegment({
+            seed: 1,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 180);
+        assert.equal(decodedTopline(result.getScreens()[164]),
+            'The Wizard of Yendor appears next to you.');
+        assert.equal(decodedRow(result.getScreens()[164], 23),
+            'Dlvl:1 $:1836 HP:110(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[164], [12, 7, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[167], [
+            'rn2(19)=2', 'rn2(7)=4', 'rn2(20)=7', 'rnd(8)=3',
+            'rn2(6)=5', 'rn2(3)=1', 'rn2(20)=16',
+        ], 'seed0001 second Wizard death-ray no-reroll RNG');
+        assert.equal(decodedTopline(result.getScreens()[167]),
+            'You kill the Wizard of Yendor!  The death ray bounces!--More--');
+        assert.equal(decodedRow(result.getScreens()[167], 23),
+            'Dlvl:1 $:1836 HP:110(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[167], [62, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[168], [],
+            'seed0001 second Wizard post-death hero hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[168]),
+            'The death ray hits you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[169]),
+            'Die? [yn] (n)');
+        assert.equal(decodedRow(result.getScreens()[169], 23),
+            'Dlvl:1 $:1836 HP:0(152) Pw:241(241) AC:8 Xp:30');
+
+        assertRngSliceExact(result.getRngSlices()[170], [
+            'rn2(5)=1', 'rn2(5)=4', 'rn2(12)=3',
+            'rn2(25)=19', 'rn2(100)=16', 'rn2(400)=369',
+            'rn2(300)=66', 'rn2(20)=14', 'rn2(64)=8',
+        ], 'seed0001 second Wizard survival RNG');
+        assert.equal(decodedTopline(result.getScreens()[170]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+        assert.equal(decodedRow(result.getScreens()[170], 23),
+            'Dlvl:1 $:1836 HP:111(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[170], [12, 7, 1]);
+
+        assert.equal(game.level.monsters.some(monster =>
+            monster.mnum === 285), false);
+        assert.equal(game.context.no_of_wizards, 0);
+        assert.equal(game.u.uevent.udemigod, true);
+        assert.equal(game.u.udg_cnt, 99);
+        assert.equal(game._vanquishedCounts.get(285).count, 2);
+        const secondDeathSquare = game.level.objects?.[14]?.[6] || [];
+        assert.deepEqual(secondDeathSquare.map(object => object.otyp), [
+            329, 309,
+        ]);
+        assert.equal(secondDeathSquare.some(object =>
+            object.otyp === CORPSE), false);
+        assert.equal(game.u.uhp, 111);
+        assert.equal(game.u.uhpmax, 152);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
