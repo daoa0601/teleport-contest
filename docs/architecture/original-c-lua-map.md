@@ -34345,3 +34345,47 @@ but the shared owner independently advances seed0014 by58 frames, seed0002 by4,
 and seed4500 by3 while preserving44/44 boundaries.  This closes represented
 default-leap negative-multi cadence, not every helpless cause, nondefault
 runmode, recovery pager, or pet-state transition.  Lua contributes none.
+
+Death survival is an explicit ownership exception, not a cadence exception.
+Its resumable death transaction already schedules the same source turn through
+`_deathSurvivalRunmodeDelayPending`; the generic helpless marker must defer or
+it emits a duplicate frame.  Seed52 input615 is the independent control which
+keeps that lifecycle boundary separate.
+
+## 945. Fire-ray traversal delays before bounce and hit handling
+
+~~~mermaid
+flowchart TD
+    Zap["hero zaps wand of fire"] --> Step["dobuzz advances one ray square"]
+    Step --> Paint["tmp_at paints or revisits orange beam cell"]
+    Paint --> Cursor{"pending map cell dirty?"}
+    Cursor -->|"yes"| MapCursor["use beam-cell cursor"]
+    Cursor -->|"no"| TopCursor["retain pending bounce topline cursor"]
+    MapCursor --> Delay["flush and delay frame"]
+    TopCursor --> Delay
+    Delay --> Collision{"hero, monster, or obstacle?"}
+    Collision -->|"wall"| Bounce["queue bounce prose and reverse direction"]
+    Bounce --> Step
+    Collision -->|"hero"| Hit["queue hit prose after hero-cell frame"]
+    Collision -->|"clear"| Step
+    Hit --> Pager["bounce plus hit line may page before damage"]
+    Lua["Lua owns no ray traversal or tty delay"] -.-> Zap
+~~~
+
+`dobuzz()` delays immediately after each temporary beam placement, before the
+same loop iteration can report a collision or bounce.  Outbound cells are new
+map dirt and move the cursor along the ray.  On the return path, an accumulated
+beam cell may already match the physical terminal; if bounce prose is pending,
+that topline owns the cursor until a later cell—such as the hero—becomes dirty.
+
+JavaScript's fire-ray owner now captures at that boundary.  It does not commit
+damage in the frame: the returning hero cell is visible at old HP, then the hit
+line composes with bounce prose and can suspend the command before `zhitu()`
+continues.
+
+Seed5002 input88 pins four outbound, three unchanged return, and one hero-cell
+frame at **8/8**, completing the session's supplemental channel while keeping
+410/410 input boundaries.  This closes the reached horizontal fire ray with a
+single wall bounce.  Other directions, reflections, monsters, armor/inventory
+continuations, fatal return rays, and other ray types remain separate controls.
+Lua contributes none.

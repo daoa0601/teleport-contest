@@ -92023,3 +92023,68 @@ the smallest source-owned family.  No normal corpus, push, workflow, hidden
 judge, or publication ran.
 
 ---
+
+### [2026-08-23 23:38 EEST, journal block 3064] {#seed5002 #input88 #fire-ray #dobuzz #bounce #animation #source-diagnosis #priority #prediction}
+
+**Residual comparison:** seed0060's4 and seed0106's6 frames remain bounded
+role-replay paths; seed0116's7 are a live digging beam; seed5002's8 are a live
+fire ray.  Choose seed5002 because its generic `zapFireRay()` already owns the
+complete traversal, bounce, hit and pager state and only lacks delay capture.
+
+**Native frame sequence:** input88 paints four outbound orange horizontal beam
+cells, queues `The bolt of fire bounces!`, then emits three unchanged return-
+path delays whose cursor remains at topline column25.  The eighth delay paints
+the returning beam over the hero with the hero-map cursor.  Only afterward does
+the hit line combine with bounce prose and force the input boundary at old HP.
+
+**Prediction and guard:** capture immediately after each painted/revisited ray
+step and before collision/bounce handling.  Prefer a dirty map cursor; if none,
+flush pending prose and use its topline end.  Input88 should become8/8 full
+frame/cursor exact without moving hit damage or the bounce+hit pager.  This is
+the first direct fire-ray carrier; preserve sleep, death, and monster magic-
+missile owners as independent controls.
+
+---
+
+### [2026-08-23 23:39 EEST, journal block 3065] {#negative-multi #death-survival #seed52 #duplicate-frame #correction #adversarial-control}
+
+**Post-corpus adversarial failure:** the public44-session corpus was green
+after commit `349cf11`, but the independent seed52 control reported two frames
+at input615 where native has one.  Death survival already carries its own
+source-positioned `_deathSurvivalRunmodeDelayPending`; the new generic helpless
+owner saw the same negative-multi turn and duplicated it.
+
+**Correction:** commit `abae07b` suppresses only the generic helpless marker
+while `_deathSurvivedMessagePending` owns the transaction.  The dedicated death-
+survival capture remains unchanged.  Seed52 returns to exact40/40 animation;
+seed0016 remains4/4 and the paired delayed-action/projectile controls stay
+green.  This falsifies the assumption that every `_helplessTurns` carrier can
+be admitted without checking a stronger existing lifecycle owner.
+
+---
+
+### [2026-08-23 23:40 EEST, journal block 3066] {#seed5002 #input88 #fire-ray #dobuzz #bounce #implementation #engine-only #44-of-44 #animation-complete #architecture #process-safety}
+
+**Implementation:** commit `cae89c6` captures each `zapFireRay()` loop step
+immediately after tmp_at painting/revisit and before collision or bounce work.
+Dirty map cells own their coordinate cursor; unchanged return cells flush and
+retain the pending bounce topline cursor.  The hero-overwriting return frame is
+therefore captured before the hit line forces the command pager.
+
+**Evidence:** seed5002 input88 matches all **8/8** frames/cursors: four outbound
+orange beam cells, three unchanged bounce-return delays, and the final hero
+cell.  RNG remains12,167/12,167 and both session segments retain410/410
+screens/cursors.  Fire-ray, negative-multi, seed52 beam/survival and monster-
+projectile controls pass **4/4** in **0.50 seconds**.
+
+**Acceptance:** one managed engine-only corpus passes **44/44** at **34+0.31
+ms/turn** (R²0.830) in **11.86 seconds** at **276,791,296 bytes maximum RSS**.
+Supplemental animation reaches **1,215/1,483**, with seed5002 newly complete.
+No other session count changes.  No normal corpus, push, workflow, hidden
+judge, or publication ran.
+
+**Next blocker:** seed0116's seven live digging-beam frames are the next small
+generic display owner.  Seed0060 and seed0106 remain bounded role bridges, and
+seed0007 remains state-mismatched replay output rather than missing delays.
+
+---

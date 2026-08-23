@@ -13535,3 +13535,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   Broad independent gains validate the common owner: seed0014 reaches891/995,
   seed0002 63/128 and seed4500 16/37.  The managed corpus remains44/44 with
   1,207/1,483 frames.  Healer RNG/pet motion remains explicit replay debt.
+- Correction commit abae07b excludes death survival from the generic helpless
+  marker because its dedicated pending owner already captures that same turn.
+  Seed52 input615 exposed the duplicate2-for-1 frame; the correction restores
+  seed52 to40/40 while preserving seed0016 and the public corpus.
+- Commitcae89c6 captures live fire-ray traversal before collision/bounce work.
+  Seed5002 closes8/8 across four outbound cells, three unchanged bounce-return
+  delays with topline cursor, and one hero-overwriting return cell.  The managed
+  corpus remains44/44 with1,215/1,483 frames.  Other ray directions, targets,
+  reflections, fatal/armor continuations and ray types remain unclaimed.
