@@ -32447,3 +32447,57 @@ nonliving names, ordinary combat or environmental fatality, replacement
 amulets, genocide after attempted revival, pet wary state, nonvisible `Maybe
 not`, reflection/guarding, inventory drop or real monster death.  Lua
 contributes none of the lifecycle.
+
+## 896. Directional death rays resume through shared pre-detach life saving
+
+~~~mermaid
+flowchart TD
+    Zap["hero zaps directional wand of death"] --> Effect["weffects exercises Wisdom"]
+    Effect --> Buzz["dobuzz owns range and live beam"]
+    Buzz --> Cell["advance one level cell"]
+    Cell --> Terrain{"Lua-derived terrain is ray-open?"}
+    Terrain -->|"yes; monster"| Hit["zap_hit uses find_mac and AC_VALUE"]
+    Hit -->|"fatal susceptible target"| Zhitm["zhitm sets damage past current HP"]
+    Zhitm --> Xkill["xkilled publishes credited kill"]
+    Xkill --> Shared["mondead calls shared lifesaved_monster before detach"]
+    Shared --> Amulet{"worn W_AMUL type202?"}
+    Amulet -->|"yes"| Pages["But wait, glow, better, crumble tty pages"]
+    Pages --> Restore["consume amulet; I_SPECIAL; restore movement and HP"]
+    Restore --> Resume["return to the same dobuzz transaction"]
+    Terrain -->|"wall"| Bounce["paint obstacle cell and publish bounce"]
+    Resume --> Cell
+    Bounce --> Return["reverse ray direction"]
+    Return --> Miss["return-path zap_hit misses revived Wizard"]
+    Miss --> Hero["next zap_hit reaches hero"]
+    Hero --> Urgent["done must page accumulated ray prose before death mutation"]
+    Lua["Lua owns level geometry loaded into the JS level"] -.-> Terrain
+    Lua -.->|"no ownership"| Hit
+    Lua -.->|"no ownership"| Shared
+~~~
+
+Seed592 is the first ordinary fatal owner routed through the same revival
+lifecycle as section895.  At input123, the command spends Wisdom
+`rn2(19)=13`, range `rn2(7)=4`, hit `rn2(20)=17`, and negative-AC
+`rnd(8)=1`; the beam is already painted when `xkilled()` and life saving open
+the first pager.  The shared JavaScript `mondeath.js` owner now consumes the
+worn amulet, learns type202, schedules I_SPECIAL and restores the Wizard to
+HP118/118 without detaching or recording a vanquish.
+
+After the third acknowledgement, `dobuzz()` resumes rather than starting a
+new command.  It paints the north wall, publishes bounce, consumes
+`rn2(20)=7,rnd(8)=4` for the return-path Wizard miss before tty can make room
+for that line, then input127 consumes only hero `rn2(20)=1`.  This ordering is
+why the input126 screen still shows crumble plus bounce while already owning
+the miss RNG, and why input127 combines the miss with the hero-hit pager.
+All recorded RNG calls and all decoded screens/cursors from input3 through
+input127 match the native carrier; input2 retains the separately known
+tutorial-startup cell difference.
+
+This section closes one visible, adjacent, susceptible Wizard ray fatality and
+its life-saving continuation.  It does not close death-ray reflection,
+nonliving/demon/vampire/magic-resistant targets, Death's strengthening path,
+unseen or named-monster prose, real monster detachment/corpse/experience,
+post-hero-hit life saving or debug death confirmation.  The native recording
+also contains four supplemental beam animation-frame groups which are not yet
+reproduced by JavaScript.  Lua contributes the collision geometry only; C/JS
+own hit policy, death interception, tty continuation and actor state.

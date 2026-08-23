@@ -88467,3 +88467,91 @@ corpus, public-status rewrite, hidden judge, push, or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 15:49 EEST, journal block 2931] {#seed592 #death-wand #dobuzz #zap-hit #xkilled #mlifesaver #native-witness #earliest-divergence #rejected-carriers #process-safety #priority}
+
+**Carrier portfolio and witness:** six serial forced-Wizard recordings reused
+the rare W_AMUL constructor carriers from block2930, then wished for a wand of
+death and fired along the adjacent Wizard's direction.  Seeds133,203,533 and
+970 produced no concrete death-ray target-effect line and were rejected.
+Seed470 visibly missed the northeast Wizard and bounced, so it cannot witness
+revival.  Seed592 is the discriminating carrier: input123 fires north, kills
+the worn-amulet Wizard, pages through life saving, bounces from the wall,
+misses the revived Wizard on the return path, and then hits the hero.
+
+**Earliest divergence and source boundary:** native input123 owns
+`exercise(A_WIS,TRUE)` as `rn2(19)=13`, `dobuzz()` range `rn2(7)=4`,
+`zap_hit()` `rn2(20)=17`, and negative-AC projection `rnd(8)=1` before the
+credited kill/`But wait` pager.  Current JavaScript has no directional
+WAN_DEATH owner, emits a blank topline, and enters the scheduler with six
+unrelated calls.  The pre-edit complete replay therefore matches **2975/2983
+RNG calls, 122/128 screens and 123/128 cursors**; input123 is the first shared
+gameplay boundary.  C `dobuzz()` owns beam/range/hit/bounce continuation,
+`zhitm(ZT_DEATH)` makes a susceptible monster fatal, and
+`xkilled()->mondead()->lifesaved_monster()` owns the pre-detach revival.
+
+**Prediction, decision and falsification:** route directional WAN_DEATH
+through a bounded resumable ray owner and extract the already-proven revival
+transaction so both `#wizkill` and ordinary `xkilled` callers use one state
+lifecycle.  The prediction is that input123 will move from scheduler RNG to
+the four native ray calls; inputs124--125 will retain the glow/better pages;
+input126 will consume the return-path negative-AC miss before tty pages on the
+existing crumble/bounce line; input127 will consume only the hero hit roll.
+The six-seed portfolio falsifies treating any worn-amulet constructor as a
+fatality witness, and seed470 specifically falsifies reusing the smallest
+inventory carrier without proving ray contact.
+
+**Measured process state and next blocker:** the targeted pre-edit replay
+exited synchronously in **0.27 seconds** at **129,941,504 bytes maximum RSS**.
+All six recorders, the comparator and direct bounded replay exited; no
+`npm test`, `node --test` or session runner remains alive.  The next blocker
+is exact beam/pager continuation plus separating debug getpos cursor retention
+from ordinary ray presentation.  No production edit, focused test, family
+gate, corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 15:59 EEST, journal block 2932] {#seed592 #death-wand #dobuzz #zap-hit #xkilled #mondeath-module #mlifesaver #tty #bounce #native-acceptance #implementation #regression #architecture #ledger #process-safety #complete-replay}
+
+**Implementation and ownership:** commit `0f64b51` extracts the proven worn
+monster life-saving transaction from `cmd.js` into shared `mondeath.js`.
+`#wizkill` still supplies its credited kill pager and explicitly requests the
+retained getpos cursor.  Directional WAN_DEATH now owns Wisdom exercise, range,
+black DEC beam cells, monster/hero `zap_hit()` rolls, wall bounce and tty
+continuation; a susceptible fatal target delegates only the pre-detach
+amulet/HP transaction to the shared owner.  Ordinary rays therefore do not
+inherit the debug cursor override.
+
+**Measured effect and exact native witness:** seed592 input123 moves from six
+unrelated scheduler calls to native `rn2(19)=13,rn2(7)=4,rn2(20)=17,rnd(8)=1`
+and the fatality pager.  Inputs124--125 retain the exact glow/better pages and
+Wisdom `rn2(19)=15`.  Input126 owns `rn2(20)=7,rnd(8)=4` before tty publishes
+crumble plus bounce; input127 owns only hero `rn2(20)=1` and combines the
+return-path miss/hit pager.  The targeted runner now matches **2983/2983 RNG
+calls, 127/128 scorer screens and 128/128 cursors** in **0.23 seconds** at
+**130,367,488 bytes maximum RSS**.  A bounded cell locator proves the only
+screen miss is the known input2 tutorial cell; every RNG, decoded screen and
+cursor from input3 through input127 is exact.  The four supplemental native
+animation-frame groups remain unmatched and are not claimed.
+
+**Durable state and regression:** the revived Wizard remains on-level,
+mobile, HP118/118, inventory[329], `misc_worn_check=I_SPECIAL`; type202 is
+known, Wizard count remains1 and no vanquished entry exists.  The constructor,
+debug-kill and ordinary-ray life-saving trio passes **3/3** fixture-disabled
+in **0.26 seconds** at **134,627,328 bytes maximum RSS**.  The expanded
+Wizard/death-touch/ray/cleric portfolio passes **34/34** fixture-disabled in
+**0.76 seconds** at **175,538,176 bytes maximum RSS**.
+
+**Map, falsification and next blocker:** section896 maps Lua geometry into C/
+JS `dobuzz` collision while keeping hit, death, tty and revival ownership out
+of Lua; the ledger records the same bounded acceptance.  Exact return-path RNG
+falsifies terminating the ray after life saving, and the exact ordinary
+cursor falsifies reusing the debug getpos override.  Resistant/reflected
+targets, Death strengthening, unseen/named prose, real no-amulet detach/corpse/
+experience, supplemental beam animation, and post-hero-hit death/life-saving
+remain open.  Every replay and test runner exited and the process registry is
+clean.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

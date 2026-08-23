@@ -13107,3 +13107,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   wizkill, no-target/cancel variants, unseen/tame/nonliving monsters, ordinary
   lethal attacks, replacement amulets, genocide failure and non-Wizard death
   messages remain open.
+- Seed592 routes the first ordinary fatal monster owner through the shared
+  pre-detach revival transaction.  A wished directional death ray spends the
+  exact Wisdom/range/hit/negative-AC calls, kills the adjacent worn-amulet
+  Wizard, pages through glow/restoration, then resumes the same beam to bounce,
+  miss the revived Wizard and hit the hero.  All 2,983 native RNG calls and
+  all RNG/screens/cursors from input3 through input127 match; the only scorer
+  screen miss is the pre-existing input2 tutorial cell.  Final Wizard state is
+  HP118/118, inventory[329], I_SPECIAL, mobile, not vanquished, with type202
+  known.  The permanent three-witness life-saving gate passes 3/3 and the
+  expanded fixture-disabled Wizard/cleric controls pass 34/34.  Supplemental
+  beam animation frames, resistant/reflected targets, ordinary no-amulet
+  detachment, and post-hero-hit death/life-saving continuation remain open.
