@@ -3175,24 +3175,36 @@ async function captureRunmodeDelay(
         g, enabled, sourceTurn,
     );
     if (runmodeDelayFrames) {
-        const retainedTopline = preservePhysicalTopline
-            ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
-            : null;
-        await flush_screen(1);
-        if (retainedTopline) {
-            for (let col = 0; col < retainedTopline.length; col++) {
-                const cell = retainedTopline[col];
+        const restoreTopline = topline => {
+            if (!topline) return;
+            for (let col = 0; col < topline.length; col++) {
+                const cell = topline[col];
                 g.nhDisplay?.setCell(
                     col, 0, cell.ch, cell.color, cell.attr,
                 );
             }
-        }
+        };
+        const retainedTopline = preservePhysicalTopline
+            ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+            : null;
+        await flush_screen(1);
+        const logicalTopline = retainedTopline
+            ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+            : null;
+        restoreTopline(retainedTopline);
         g.nhDisplay?.setCursor(
             (g.u?.ux ?? 1) - 1,
             (g.u?.uy ?? 0) + 1,
         );
-        for (let frame = 0; frame < runmodeDelayFrames; frame++)
-            await g.animationFrame?.();
+        try {
+            for (let frame = 0; frame < runmodeDelayFrames; frame++)
+                await g.animationFrame?.();
+        } finally {
+            // The physical prompt belongs only to the animation snapshot.
+            // Leave the live tty grid in the logical post-flush state so a
+            // later input boundary cannot inherit stale prompt text.
+            restoreTopline(logicalTopline);
+        }
     }
 }
 
@@ -5326,20 +5338,25 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         game.nhDisplay?.setCursor(...frameCursor);
                     await game.animationFrame?.();
                 }
-                if (transientFlightCell)
-                    newsym(transientFlightCell.x, transientFlightCell.y);
-                transientFlightCell = null;
                 const impactCell = { x: game.u.ux, y: game.u.uy };
-                if (cansee(impactCell.x, impactCell.y)) {
-                    show_glyph_cell(
-                        impactCell.x, impactCell.y, projectileGlyph.ch,
-                        projectileGlyph.color, projectileGlyph.decgfx,
-                        projectileGlyph.attr,
-                    );
-                    transientFlightCell = impactCell;
-                }
-                const impactCursor = lastDirtyMapCursor();
                 const captureImpactFrame = async () => {
+                    // tmp_at() keeps the last flight cell through any pager
+                    // raised while thitu() installs its result message.  Move
+                    // the temporary glyph onto the hero only after that
+                    // continuation resumes, immediately before the impact
+                    // delay frame.
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                    transientFlightCell = null;
+                    if (cansee(impactCell.x, impactCell.y)) {
+                        show_glyph_cell(
+                            impactCell.x, impactCell.y, projectileGlyph.ch,
+                            projectileGlyph.color, projectileGlyph.decgfx,
+                            projectileGlyph.attr,
+                        );
+                        transientFlightCell = impactCell;
+                    }
+                    const impactCursor = lastDirtyMapCursor();
                     await flush_screen(1);
                     if (impactCursor)
                         game.nhDisplay?.setCursor(...impactCursor);
@@ -5366,7 +5383,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     : `You are hit by ${rangedArticle} ${
                                         rangedAppearance}${impactSuffix}`,
                             );
-                            await captureImpactFrame();
                             if ((game.u?.uhp ?? 1) < 1) {
                                 // losehp() calls urgent_pline("You die...")
                                 // before thitu() can exercise Strength or
@@ -5403,6 +5419,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 game.context.move = 0;
                                 return;
                             }
+                            await captureImpactFrame();
                         } finally {
                             delete game._statusHpOverride;
                         }

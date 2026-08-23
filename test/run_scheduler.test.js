@@ -11490,6 +11490,52 @@ test('seed0361 dagger flight preserves invisible and impact delays',
         }
     });
 
+test('lethal hero projectile retains its last flight cell through death pagers',
+    async () => {
+        const file = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0030-ten-diverse-deaths.session.json',
+                import.meta.url),
+            'utf8',
+        ));
+        const storage = new Map();
+        for (let index = 0; index < 6; index++) {
+            const prior = file.segments[index];
+            await runSegment({
+                seed: prior.seed,
+                datetime: prior.datetime,
+                nethackrc: prior.nethackrc,
+                moves: prior.moves,
+                storage,
+            });
+        }
+        const session = file.segments[6];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 247),
+            storage,
+        });
+        for (let step = 240; step <= 246; step++) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0030 lethal projectile input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0030 lethal projectile input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0030 lethal projectile input${step} cursor`,
+            );
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(
