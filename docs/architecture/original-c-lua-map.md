@@ -32501,3 +32501,47 @@ post-hero-hit life saving or debug death confirmation.  The native recording
 also contains four supplemental beam animation-frame groups which are not yet
 reproduced by JavaScript.  Lua contributes the collision geometry only; C/JS
 own hit policy, death interception, tty continuation and actor state.
+
+## 897. Wizard-mode refusal returns through savelife before ray discovery
+
+~~~mermaid
+flowchart TD
+    HeroHit["dobuzz return path hits hero"] --> RayPage["accumulated miss plus hit tty pager"]
+    RayPage --> Zhitu["zhitu death branch calls done DIED"]
+    Zhitu --> Zero["force HP zero and increment mortality"]
+    Zero --> HeroAmulet{"hero LifeSaved property?"}
+    HeroAmulet -->|"no in seed592"| Debug{"wizard or explore mode?"}
+    Debug -->|"yes"| Prompt["paranoid Die prompt defaults to no"]
+    Prompt -->|"Space"| Restore["shared restoreHeroAfterDeath mirrors savelife"]
+    Restore --> Hp["HP min max, 50 plus 10 times floor Con over 2 equals 130"]
+    Hp --> Multi["replace helpless state with one turn; queue nomovemsg"]
+    Multi --> Resume["return to dobuzz and clear beam"]
+    Resume --> Learn["learnwand identifies WAN_DEATH and exercises Wisdom"]
+    Learn --> Turn["ordinary monster and global maintenance"]
+    Turn --> Unmul["unmul appends survival nomovemsg to OK line"]
+    Lua["Lua owns no hero death, property, prompt, scheduler, or discovery state"] -.-> Zero
+    Lua -.-> Restore
+    Lua -.-> Learn
+~~~
+
+Seed592 input127 stops while the ray line is still physically displayed and
+the status still reports HP170.  Acknowledging it lets `done(DIED)` commit HP0
+before input128's `Die? [yn] (n)` prompt.  Space selects the default no branch;
+`savelife()` restores HP to 130 from Constitution16, sets one negative-multi
+turn and installs `You survived that attempt on your life.` as `nomovemsg`.
+There is no intervening `You die` pager on this wizard-mode path.
+
+The death ray then returns normally through `dobuzz()`, removes every beam
+cell, and reaches `learnwand()`.  Input129 consequently begins with the Wisdom
+`rn2(19)=3`, then consumes the seven ordinary maintenance calls before
+`unmul()` appends the survival message to `OK, so you don't die.`.  Inputs130
+and131 remain independent southeast-move and unknown-space commands.  All RNG,
+decoded screens and cursors from input3 through input131 match native; the
+only scorer screen miss remains the independent input2 tutorial cell.
+
+This section closes wizard-mode refusal after one hero-origin reflected death
+ray.  It does not close answering yes, non-debug `really_done()`, hero amulet
+life saving, polymorphed/Unchanging repair, hunger or fatal-timeout cleanup,
+accepted-death bones/disclosure, repeated ray contact after recovery, or the
+five supplemental native animation-frame groups.  Lua owns none of this
+lifecycle.

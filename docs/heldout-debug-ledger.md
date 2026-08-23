@@ -13119,3 +13119,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   expanded fixture-disabled Wizard/cleric controls pass 34/34.  Supplemental
   beam animation frames, resistant/reflected targets, ordinary no-amulet
   detachment, and post-hero-hit death/life-saving continuation remain open.
+- Extending seed592 to 132 states closes the wizard-mode refusal after the
+  rebound hits the hero.  Input128 commits HP0 and opens `Die? [yn] (n)`
+  directly, disproving the provisional extra `You die` pager.  Space declines;
+  shared `restoreHeroAfterDeath()` restores HP130/170, replaces helpless state
+  with one turn, returns through beam cleanup, identifies WAN_DEATH with
+  Wisdom rn2(19)=3, runs the exact seven-call maintenance tail, and appends the
+  delayed survival nomovemsg.  All 2,991 RNG calls, every cursor, and all
+  screens from input3 through input131 match; only the independent input2
+  tutorial cell is red.  Focused and expanded fixture-disabled gates pass
+  3/3 and 34/34.  Answer-yes/non-debug death, hero-amulet life saving,
+  polymorphed recovery and supplemental animation frames remain open.

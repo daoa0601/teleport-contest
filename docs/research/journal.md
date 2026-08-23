@@ -88555,3 +88555,91 @@ clean.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:04 EEST, journal block 2933] {#seed592 #death-wand #hero-death #done #wizard-mode #die-prompt #savelife #nomovemsg #learnwand #native-witness #correction #earliest-divergence #process-safety #priority}
+
+**Extended native witness and correction:** the seed592 recipe was extended
+four inputs past the hero-hit pager and recorded as 132 states.  Input128
+falsifies the provisional implementation recorded as open in block2932:
+after Space dismisses the accumulated miss/hit line, native commits displayed
+HP0 and goes directly to `Die? [yn] (n)` at cursor14.  It does **not** emit a
+second `You die` pager.  Input129's Space takes the default no answer and
+publishes `OK, so you don't die.  You survived that attempt on your life.`
+with HP130/170.
+
+**Source ownership and prediction:** `zhitu(ZT_DEATH)->done(DIED)` forces HP0,
+increments mortality, and lets wizard-mode `paranoid_query()` intercept
+`really_done()`.  Declining calls `savelife()`: HP becomes
+`min(uhpmax,50+10*floor(Con/2))`, context is replaced with one helpless turn,
+and `nomovemsg` is emitted only after the elapsed-turn scheduler.  Returning
+through `dobuzz()` clears the beam; `learnwand()` then owns
+`exercise(A_WIS,TRUE)=rn2(19)=3` before the seven ordinary maintenance calls.
+The existing shared `restoreHeroAfterDeath()` and allmain nomovemsg owner
+already model this transaction for monster-contact deaths, so the ray must
+delegate to them instead of inventing another death pager.
+
+**Measured process state and next blocker:** the one recorder produced all
+132 states synchronously in **0.07 seconds** at **54,493,184 bytes maximum
+RSS**.  No test or replay ran, and the native process exited.  The next blocker
+is matching inputs128--129 while preserving the already-exact monster revival,
+beam cleanup and later scheduler.  Real accepted death, non-debug play,
+hero amulet life saving and post-survival repeated beam contact remain open.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 16:07 EEST, journal block 2934] {#seed592 #death-wand #hero-death #savelife #fallthrough #tty #earliest-divergence #bounded-replay #process-safety #priority}
+
+**Post-edit replay and earliest divergence:** the extended carrier now matches
+all **2991/2991 RNG calls** and inputs123--128 exactly.  Input129 has the same
+wand-discovery and seven scheduler calls as native, but JavaScript publishes
+`OK, so you don't die.  The death ray whizzes by you!--More--` instead of the
+native survival nomovemsg.  The same-RNG mismatch localizes the defect to the
+hero collision branch: after completing the hit/survival arm it falls through
+to the separate miss prose rather than treating hit and miss as exclusive.
+
+**Decision and prediction:** make the whizzing clause the `else` of
+`rayHitsHero()`.  No RNG or state logic should change.  The ray will then
+finish, clear its beam, let allmain append the queued survival message to the
+existing `OK` line, and leave inputs130--131 available to their native
+movement/unknown-command owners.  The bounded replay exited in **0.23
+seconds** at **129,531,904 bytes maximum RSS**; its process exited cleanly.
+No focused test, family gate, corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 16:10 EEST, journal block 2935] {#seed592 #death-wand #hero-death #done #wizard-mode #savelife #nomovemsg #learnwand #native-acceptance #implementation #complete-replay #regression #architecture #ledger #process-safety}
+
+**Implementation and measured effect:** commit `0424271` replaces the
+provisional post-hit death pager with source `done(DIED)` ordering.  The ray
+now commits HP0/mortality before the wizard prompt, delegates default-no repair
+to shared `restoreHeroAfterDeath()`, queues allmain's existing survival
+nomovemsg, finishes and clears the beam, and exercises Wisdom only when the
+newly observed WAN_DEATH becomes known.  Monster life-saving discovery was
+also corrected to exercise the Wisdom slot rather than Constitution; both
+existing carriers retain their exact call values.
+
+**Complete native acceptance:** the 132-state replay now matches **2991/2991
+RNG calls, 131/132 scorer screens and 132/132 cursors** in **0.24 seconds** at
+**130,220,032 bytes maximum RSS**.  The only screen miss is the established
+input2 tutorial cell.  Inputs3--131 match native RNG, decoded screens and
+cursors exactly: input128 is HP0 plus `Die?`, input129 is HP130 plus combined
+OK/survival prose and the exact eight-call discovery/maintenance slice, and
+inputs130--131 return to ordinary command ownership.  Five supplemental
+native animation-frame groups remain unmatched and are not acceptance.
+
+**Regression, map and next blocker:** the permanent seed592 regression now
+asserts the prompt, HP/status transition, survival scheduler, beam cleanup,
+wand discovery, subsequent move and next unknown command.  The life-saving/
+death-ray trio passes **3/3** fixture-disabled in **0.27 seconds** at
+**133,939,200 bytes maximum RSS**; the expanded portfolio passes **34/34** in
+**0.67 seconds** at **172,982,272 bytes maximum RSS**.  Section897 and the
+ledger record the C/JS done-savelife-learnwand graph; Lua owns none.  Answer-
+yes/non-debug death, hero-amulet life saving, polymorphed repair, repeated
+post-recovery contact and animation frames remain open.  Every recorder,
+replay and test runner exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
