@@ -11443,6 +11443,53 @@ test('known monster speed potion skips duplicate discovery credit', async () => 
     assert.equal(game._knownObjectTypes.has(302), true);
 });
 
+test('seed0361 dagger flight preserves invisible and impact delays',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0361-archeologist-tour.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 235),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[234],
+            session.steps[234].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0361 dagger animation input234 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[234],
+            session.steps[234].screen,
+            'seed0361 dagger animation input234 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[234],
+            session.steps[234].cursor,
+            'seed0361 dagger animation input234 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[234];
+        const nativeFrames = session.steps[234].animation_frames;
+        assert.equal(actualFrames.length, 3);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0361 dagger animation frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0361 dagger animation cursor${frame}`,
+            );
+        }
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

@@ -45,7 +45,9 @@ import {
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
-import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
+import {
+    NO_COLOR, CLR_GRAY, CLR_WHITE, CLR_BRIGHT_BLUE, DEC_TO_UNICODE,
+} from './terminal.js';
 import {
     ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOULDER, BOW, CLUB, CORPSE, CROSSBOW,
     CROSSBOW_BOLT, CRYSTAL_BALL, DAGGER, DART,
@@ -3339,6 +3341,37 @@ function monsterBeamTargetAt(x, y) {
         || null;
 }
 
+function lastDirtyMapCursor() {
+    const grid = game.nhDisplay?.grid;
+    if (!grid) return null;
+    let cursor = null;
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = game.level?.at(x, y);
+            const rawColor = loc?.disp_color ?? NO_COLOR;
+            const omittedBlank = loc?.disp_ch === ' '
+                && !((loc.disp_attr ?? 0) & 5)
+                && (rawColor === NO_COLOR || rawColor === CLR_GRAY);
+            const desiredCh = loc?.disp_ch && !omittedBlank
+                ? loc.disp_decgfx
+                    ? DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch
+                    : loc.disp_ch
+                : ' ';
+            const desiredColor = loc?.disp_ch && !omittedBlank
+                ? rawColor : CLR_GRAY;
+            const desiredAttr = loc?.disp_ch && !omittedBlank
+                ? loc.disp_attr ?? 0 : 0;
+            const actual = grid[y + 1]?.[x - 1];
+            if (!actual || actual.ch !== desiredCh
+                || actual.color !== desiredColor
+                || actual.attr !== desiredAttr) {
+                cursor = [x, y + 1];
+            }
+        }
+    }
+    return cursor;
+}
+
 // C muse.c:use_offensive()->buzz()/buzz_force_miss()->dobuzz().  The beam
 // stays painted while tty pages each collision message; later actors cannot
 // run until this async source transaction has completed.
@@ -5259,12 +5292,37 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                         transientFlightCell = cell;
                     }
+                    const frameCursor = lastDirtyMapCursor();
+                    await flush_screen(1);
+                    if (frameCursor)
+                        game.nhDisplay?.setCursor(...frameCursor);
+                    await game.animationFrame?.();
                 }
+                if (transientFlightCell)
+                    newsym(transientFlightCell.x, transientFlightCell.y);
+                transientFlightCell = null;
+                const impactCell = { x: game.u.ux, y: game.u.uy };
+                if (cansee(impactCell.x, impactCell.y)) {
+                    show_glyph_cell(
+                        impactCell.x, impactCell.y, projectileGlyph.ch,
+                        projectileGlyph.color, projectileGlyph.decgfx,
+                        projectileGlyph.attr,
+                    );
+                    transientFlightCell = impactCell;
+                }
+                const impactCursor = lastDirtyMapCursor();
+                const captureImpactFrame = async () => {
+                    await flush_screen(1);
+                    if (impactCursor)
+                        game.nhDisplay?.setCursor(...impactCursor);
+                    await game.animationFrame?.();
+                };
                 try {
                     if (ranged.caught) {
                         await queueTurnMessage(
                             `You catch the ${ranged.appearance}!`,
                         );
+                        await captureImpactFrame();
                     } else if (ranged.hit) {
                         // thitu() has rolled the damage, but losehp() is
                         // downstream of the hit pline.  If that pline first
@@ -5280,6 +5338,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     : `You are hit by ${rangedArticle} ${
                                         rangedAppearance}${impactSuffix}`,
                             );
+                            await captureImpactFrame();
                             if ((game.u?.uhp ?? 1) < 1) {
                                 // losehp() calls urgent_pline("You die...")
                                 // before thitu() can exercise Strength or
@@ -5338,6 +5397,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             : `${
                                 rangedArticle === 'an' ? 'An' : 'A'
                             } ${rangedAppearance} misses you.`);
+                        await captureImpactFrame();
                     }
                 } finally {
                     if (transientFlightCell)
