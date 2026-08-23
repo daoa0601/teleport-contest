@@ -87717,3 +87717,37 @@ explicit.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:04 EEST, journal block 2914] {#seed0361 #temple #priestini #mm-epri #mm-emin #cleric-minion #constructor-flags #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Correction to the apparent potion regression:** the hardcoded focused test
+failed at input150, but a fresh native recording locates the first mismatch at
+input43 call888 during level18 construction.  Native goes from aligned-cleric
+d(15,8)=69 directly to next_ident; JS inserted two rn2(3) draws.  The later
+unicorn wandering and blank throw screen were downstream geometry symptoms.
+
+**Source contract:** priestini passes MM_EPRI, so epri owns alignment/shrine
+state.  Explicit minion callers pass MM_EMIN.  Only an ordinary aligned/high
+cleric with neither flag becomes the roaming-minion compatibility case that
+draws alignment and renegade state.  The code comment stated this boundary
+but the condition did not enforce it.
+
+**Implementation and measured effect:** clericMinion construction now requires
+neither MM_EPRI nor MM_EMIN.  The fresh seed0361 locator is exact for all
+**154 RNG/screen/cursor states**, including ROCK hit, nested gasp/drink pagers,
+Wisdom discovery, rnd(8) growth and final durable state.  Strict replay took
+**0.37 seconds** at **129,138,688 bytes maximum RSS**.  The named focused test
+passes **1/1**; thirteen selected fixture-disabled Wizard controls pass
+**13/13** in **0.64 seconds** at **147,226,624 bytes maximum RSS**.  All
+processes exited.
+
+**Falsification, decision and next blocker:** live gain-level appearance is
+purple-red, so the new milky/smoky precheck never ran in this control.  The
+failure was neither potion precheck nor movement AI; it was constructor flag
+ownership forty-three inputs earlier.  Section879 maps the boundary; Lua is a
+sibling temple frontend only.  Resume branch-control work from exact current
+state, retaining MM_EMIN, ordinary renegade and priest-growth variants.  No
+full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---

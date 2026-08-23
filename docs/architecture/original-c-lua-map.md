@@ -31731,3 +31731,34 @@ The final session retains fourteen turns after later timeout aging and ends
 HP99/137, AC8.  Antimagic, Free Action, repeated stun, Dexterity12 boundary,
 half-spell duration, timeout expiry, polymorphic attributes and cuss-free
 ordering remain separate controls.
+
+## 879. Temple priest flags bypass ordinary cleric-minion attitude draws
+
+~~~mermaid
+flowchart TD
+    Temple["mktemple / priestini"] --> Call["makemon aligned cleric with MM_EPRI"]
+    Special["explicit minion construction"] --> Emin["makemon with MM_EMIN"]
+    Ordinary["ordinary aligned/high cleric birth"] --> NoFlags["neither flag"]
+    Call --> Epri["priestini owns epri alignment and shrine state"]
+    Emin --> Minion["caller owns emin state"]
+    NoFlags --> Draws["rn2(3) alignment and rn2(3) renegade"]
+    Draws --> OrdinaryState["build roaming-minion attitude"]
+    Epri --> Inventory["continue directly to m_initweap"]
+    Minion --> Inventory
+    OrdinaryState --> Inventory
+    Lua["Lua temple directives are sibling construction frontend only"] -.-> Call
+~~~
+
+The re-recorded 154-state seed0361 gain-level control first diverged at input43
+call888 during level18 temple construction, far before the unicorn throw or
+potion.  Native priestini creates the resident with MM_EPRI and proceeds from
+newmonhp directly to inventory.  JavaScript inserted ordinary-cleric
+alignment/renegade rn2(3),rn2(3) draws despite its own source comment.
+
+The constructor now builds clericMinion only when neither MM_EPRI nor MM_EMIN
+is present.  That restores level construction, unicorn geometry, ROCK contact,
+priest gasp, gain-level pager, growth and durable state across all 154 exact
+states.  Ordinary roaming aligned/high clerics remain covered by their
+separate forced carriers.  MM_EMIN details, renegade combinations, priest
+replacement/growth, temple ownership and cross-level migration remain
+separate controls.

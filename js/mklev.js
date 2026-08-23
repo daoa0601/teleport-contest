@@ -35,7 +35,8 @@ import {
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
     M_AP_FURNITURE, M_AP_OBJECT,
-    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EPRI, MM_NOWAIT, MM_NOTAIL,
+    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
+    MM_NOWAIT, MM_NOTAIL,
     MM_NOCOUNTBIRTH, MM_NOMSG,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
@@ -2369,7 +2370,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // create_particular() applies an explicit hostile disposition only after
     // this constructor returns, so both alignment/renegade draws remain live.
     let clericMinion = null;
-    if ([PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)) {
+    if ([PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
+        && !(mmflags & (MM_EPRI | MM_EMIN))) {
         const minAlign = rn2(3) - 1;
         const renegade = !!(mmflags & MM_ANGRY) || rn2(3) === 0;
         const minionPeaceful = minAlign === (game.u?.ualign?.type ?? 0)

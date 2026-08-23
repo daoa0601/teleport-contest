@@ -12915,3 +12915,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   live.  Final state is HP99/137, AC8 and fourteen stun turns.  The selected
   Wizard gate rises to 13/13 fixture-disabled.  Antimagic, Free Action,
   repeated stun, Dexterity12, half-spell and expiry remain open.
+- Re-recording the red seed0361 gain-level control localized its true first
+  divergence to input43 call888 in temple generation, not input150 or potion
+  use.  Native MM_EPRI skips ordinary cleric-minion rn2(3),rn2(3); JS applied
+  them unconditionally and shifted level geometry.  Requiring neither MM_EPRI
+  nor MM_EMIN restores all 154 states, including unicorn position, priest
+  gasp and gain-level growth.  The focused control passes 1/1 and the selected
+  Wizard gate remains 13/13 fixture-disabled.  MM_EMIN and ordinary renegade
+  combinations remain open.
