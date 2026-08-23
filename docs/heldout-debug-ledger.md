@@ -13645,3 +13645,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   maximum RSS.  The remaining71 frames are now confined to seed0017, both
   seed0013 sessions, seed0106, seed1150, seed0007 and seed0060.  No normal
   scorer, push, workflow or hidden judge ran.
+- Commitc95f254 exposes every hero/prayer cadence slot inside the bounded
+  seed0017 altar bridge without adding recorded screens or per-frame pet
+  coordinates.  All33 frame counts/cursors now match, while screens improve
+  from3/33 to20/33.  The remaining13 are explicitly pet phases collapsed by
+  aggregate RNG/action replay, so seed0017 is not animation-complete.  The
+  managed engine-only corpus remains44/44 at1,429/1,483 in13.97 seconds and
+  274,956,288 bytes maximum RSS.  No normal scorer, push, workflow or hidden
+  judge ran.

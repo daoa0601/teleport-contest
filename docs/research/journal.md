@@ -92922,3 +92922,84 @@ generic prayer cadence before editing.  No normal corpus, push, workflow,
 hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 01:00 EEST, journal block 3101] {#seed0017 #samurai #runmode-walk #bounded-bridge #prayer #portfolio #source-diagnosis #prediction}
+
+**Residual split:** seed0017's30 misses are5 movement slots at input10,11 at
+input11,11 at input16, and three prayer slots at input47.  The movement frames
+are `runmode:walk` pairs at each run position.  Existing JavaScript frames pin
+the generic owners at the first and/or final cells; the bounded
+`samuraiAltarActionRng()` bridge moves all intermediate cells without capture.
+The prayer shortcut aggregates three source turns and jumps directly to its
+combined completion pager, bypassing the live prayer counter added in
+section955.
+
+**Movement topology:** bounded action1 starts after the generic initial-run
+post frame: it needs one pre frame on the first cell, two frames on each later
+nonfinal cell, and none on the final doorway where run stops.  Actions2/3 each
+have generic first and final frames already; the bridge needs one additional
+first/final frame and two per intermediate cell.  These counts predict exactly
+5+10+10 missing movement frames.
+
+**Prayer topology and scope guard:** the Samurai shortcut should expose its
+already correct `You begin praying to Amaterasu Omikami.` physical state once
+per each of its three aggregated turns before the combined completion pager.
+This is a bounded carrier enhancement, not evidence that its hard-coded RNG
+arrays or actor paths are generalized.  Make the bridge async and use shared
+runmode capture; do not add recorded screen literals, alter RNG arrays, or
+route this replay through the already-live generic prayer state without first
+porting its actor scheduler.
+
+---
+
+### [2026-08-24 01:04 EEST, journal block 3102] {#seed0017 #samurai #bounded-bridge #runmode-walk #prayer #pet-phase #implementation #partial-evidence}
+
+**Implemented structural slice:** the bounded altar bridge is now async and
+uses shared `captureRunmodeDelay()` for the skipped automatic pre/post pairs.
+Its movement topology adds5/10/10 slots at inputs10/11/16.  The bounded prayer
+shortcut paints its begin line and captures three turn slots before the
+combined completion pager.  RNG arrays, hero paths and final pet positions are
+unchanged.
+
+**Evidence and exact residual:** all **33/33** native frame slots now exist and
+all33 cursors match.  Screens improve from3/33 to **20/33**, not33/33.  The
+thirteen remaining mismatches are precisely pet-state phases:3 at input10,5 at
+input11,3 at input16 and2 at input47.  The aggregate bridge applies one final
+pet coordinate per action, whereas native `dog_move()` runs between hero
+post/pre frames and between prayer turns.
+
+**Decision against fake acceptance:** do not add per-frame pet coordinates or
+recorded screen projections.  The new regression pins33 frame counts/cursors
+and the honest20-screen frontier so a scorer-only report cannot call this
+carrier complete.  Closing the final13 requires replacing the altar's
+aggregate pet/RNG replay with source-turn actor scheduling.  The independent
+seed0017 prayer-command boundary remains exact.
+
+**Next gate and priority:** commit this partial structural block and run one
+managed engine-only corpus; expected total is1,429/1,483.  Then prioritize a
+generic remaining owner (seed0013/0106/1150) before deciding whether to replace
+the larger Samurai replay transaction in one architectural cut.
+
+---
+
+### [2026-08-24 01:06 EEST, journal block 3103] {#seed0017 #bounded-bridge #pet-phase #engine-only #44-of-44 #portfolio #architecture #process-safety}
+
+**Committed partial acceptance:** commit `c95f254` owns the bounded hero/prayer
+cadence structure and an explicit regression for33 slot/cursor matches versus
+20 screen matches.  It does not claim pet-phase or live Samurai completion.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**40+0.35 ms/turn** (R²0.827) in **13.97 seconds** at **274,956,288 bytes
+maximum RSS**.  Animation advances17 slots to **1,429/1,483**; seed0017 reaches
+**20/33** and no other session count changes.  The verifier exited and no
+matching live process remains.
+
+**Next priority:**54 frames remain: seed0017 pet phases13; both seed0013
+sessions10+10; seed0106 and seed1150 six each; seed0007 five; seed0060 four.
+Investigate the two seed0013 sessions together because identical totals and
+calendar/save variants suggest one shared animation owner.  Keep the Samurai
+pet replay replacement as an architectural block rather than filling its
+screens locally.  No normal corpus, push, workflow, hidden judge or publication
+ran.
+
+---

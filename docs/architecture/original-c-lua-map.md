@@ -34840,3 +34840,33 @@ Seed4500 becomes **37/37 animation-complete** and the corpus reaches
 closes represented clear-floor dragging in leap mode; traps, messages,
 alternate runmodes, blocked drag, carried ball and special destination effects
 remain controls.  Lua contributes none.
+
+## 958. Bounded Samurai cadence is exposed; pet source turns remain replay debt
+
+~~~mermaid
+flowchart TD
+    Generic["generic startRun/continueRun supplies outer first/final frames"] --> Bridge["bounded altar action owns skipped hero path"]
+    Bridge --> PrePost["shared runmode walk captures missing pre/post slots"]
+    PrePost --> PetGap["aggregate pet position applied only after whole action"]
+    NativePet["native dog_move runs between hero post/pre frames"] --> PetGap
+    Prayer["bounded three-turn prayer RNG shortcut"] --> PrayerFrames["three shared cadence slots with begin topline"]
+    PrayerFrames --> PrayerPetGap["pet still applied after aggregate prayer action"]
+    Lua["Lua owns no run, prayer, or pet scheduling"] -.-> Bridge
+~~~
+
+The public altar carrier predates the live Samurai scheduler.  Its hard-coded
+RNG arrays and hero/pet endpoints collapse multiple monster/global turns into
+one action.  Generic run code still supplies the outer first/final frames; the
+bridge can faithfully expose the skipped hero `runmode:walk` slots, but it
+cannot reconstruct native pet phases from one final coordinate.
+
+JavaScript now makes this bridge async and uses shared runmode cadence for its
+hero path.  The bounded prayer shortcut similarly exposes three begin-prayer
+turn slots.  No recorded frame screens or per-frame pet coordinates were added.
+
+Seed0017 now has **33/33 frame counts and cursors**, with screens improving from
+3/33 to20/33.  The remaining13 mismatches are3/5/3 pet phases across movement
+inputs10/11/16 and2 prayer-turn pet phases at input47.  The corpus advances to
+1,429/1,483.  This section closes only bounded hero/prayer cadence structure;
+full completion requires replacing aggregate pet/RNG replay with source-turn
+`dog_move()` scheduling.  Lua contributes none.
