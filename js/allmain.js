@@ -5341,6 +5341,24 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 // remains visible until the continuation is dismissed.
                 if (ranged.hit)
                     game._statusHpOverride = ranged.preHitHp;
+                // A getpos/yn prompt can remain physically painted even
+                // though it is no longer a logical pending message.  Native
+                // tmp_at delays retain that row until thitu installs its
+                // result; an unseen launcher supplies no launch line first.
+                const physicalTopline = game.nhDisplay?.grid?.[0]
+                    ?.map(cell => ({ ...cell }));
+                const retainedFlightTopline = !game._pending_message
+                    && physicalTopline?.some(cell => cell.ch !== ' ')
+                    ? physicalTopline : null;
+                const restoreFlightTopline = () => {
+                    if (!retainedFlightTopline || game._pending_message) return;
+                    for (let col = 0; col < retainedFlightTopline.length; col++) {
+                        const cell = retainedFlightTopline[col];
+                        game.nhDisplay?.setCell(
+                            col, 0, cell.ch, cell.color, cell.attr,
+                        );
+                    }
+                };
                 // A visible first tmp_at cell settles the actor/map changes
                 // which preceded the throw before tty positions the flight
                 // cursor.  An invisible first step emits only a delay and
@@ -5366,6 +5384,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                     const frameCursor = lastDirtyMapCursor();
                     await flush_screen(1);
+                    restoreFlightTopline();
                     if (frameCursor)
                         game.nhDisplay?.setCursor(...frameCursor);
                     await game.animationFrame?.();
