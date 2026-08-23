@@ -92438,3 +92438,85 @@ at input125 before the deeper travel alignment.  No normal corpus, push,
 workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:21 EEST, journal block 3081] {#seed0014 #input125 #input470 #armor-donning #find-ac #runmode #retained-prompt #source-diagnosis #prediction}
+
+**Earliest divergence and paired witness:** input125 has one native/JavaScript
+delay frame with exact prompt/cursor, but native still projects pre-donning
+AC6 while JavaScript already shows AC9.  Input470 has two frames: native keeps
+the wear prompt across both, shows old AC14 then new AC17; JavaScript shows
+AC17 immediately and loses the prompt on its second frame.  Both final
+`You finish your dressing maneuver.` boundaries are already exact.
+
+**Source owner:** `do_wear.c` installs the armor slot with `setworn()` and
+starts negative `multi`, but `allmain.c` runs `runmode_delay_output()` inside
+the elapsed-turn loop before its later once-per-core `find_ac()`.  Therefore
+the first delayed frame sees old `u.uac`; the next negative-multi core sees the
+recomputed value.  The physical getobj prompt remains on tty across those
+automatic cores until the completion line replaces it.
+
+**JavaScript gap and prediction:** `_armorClassDirty` is currently consumed
+before the first delayed maintenance frame, and `captureRunmodeDelay()` restores
+its logical blank topline after each snapshot without carrying the original
+prompt into a second delayed core.  Defer the first `findArmorClass()` until
+after the first delayed cadence opportunity, and let the delayed-action owner
+retain a bounded physical topline across its automatic cores.  Inputs125/470
+should close at1/1 and2/2 full frames/cursors without changing their exact
+boundaries.  Delayed removal and seed0360/0053 armor controls are adversarial
+checks; do not use screen fixtures or a session-specific AC override.
+
+---
+
+### [2026-08-24 00:23 EEST, journal block 3082] {#seed0014 #input125 #input470 #armor-donning #projected-ac #retained-prompt #implementation #bounded-acceptance}
+
+**Implementation:** delayed donning now marks its first elapsed cadence as the
+pre-`find_ac()` phase.  The shared runmode capture can receive the delayed
+action's saved physical topline, which persists only while no newer pending
+message owns tty.  After the first cadence opportunity, `findArmorClass()`
+commits the new AC for later negative-multi cores.  Immediate armor and erosion
+owners retain their existing projection path.
+
+**Failed intermediate and correction:** the first slice preserved input470's
+second prompt and improved seed0014 by one frame, but both first frames still
+showed new AC.  `executeLiveQuietMonsterScan()` was setting
+`_statusProjectedAc` from the worn slot even though live `u.uac` had correctly
+remained old.  Suppressing that projection only during the marked first
+donning phase closes the actual native boundary without a display-only numeric
+override.
+
+**Bounded evidence:** input125 is1/1 and input470 is2/2 on complete frame
+screens/cursors, with exact RNG and completion boundaries; focused seed0014
+reaches **906/995**.  Six adversarial tests pass: the new pair, seed0361 prompt
+retention, seed0383 newer-prose precedence, dragon-mail negative multi,
+seed0360 armor discovery/displacement, and seed0053 helmet/corrosion wear.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected corpus animation is1,308/1,483 with seed0014 at906/995 and
+44/44 RNG/boundary exactness; treat any other count change as evidence to
+inspect, not a bonus to accept silently.
+
+---
+
+### [2026-08-24 00:24 EEST, journal block 3083] {#seed0014 #input125 #input470 #armor-donning #engine-only #44-of-44 #animation #architecture #process-safety}
+
+**Committed acceptance:** commit `b486bfe` owns the first delayed-donning AC
+phase, bounded selector retention, newer-message invalidation, the projection
+guard, and exact input125/470 regression.  Both inputs close at3/3 complete
+frames/cursors with exact RNG and completion boundaries; all six focused
+armor/runmode controls pass.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**35+0.31 ms/turn** (R²0.819) in **12.01 seconds** at **270,974,976 bytes
+maximum RSS**.  Seed0014 advances from903 to **906/995** and the corpus from
+1,305 to **1,308/1,483**, with no other animation-count changes.  The verifier
+exited and no matching live process remains.
+
+**Boundary and next priority:** all four non-travel seed0014 owner groups from
+the residual inventory—cold ray, rolling boulder, helmet and boots—are now
+closed.  The remaining89 misses are dominated by inputs595/649/651/653/655/666
+travel/getpos groups whose existing frames are broadly state-misaligned.  Start
+at input595's first native/JavaScript frame divergence and map getpos selection,
+automatic travel steps and cursor ownership separately.  No normal corpus,
+push, workflow, hidden judge or publication ran.
+
+---

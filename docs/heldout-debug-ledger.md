@@ -13587,3 +13587,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   seed0014 inputs are13/13 full frames/cursors.  The managed engine-only corpus
   stays44/44 and rises to1,305/1,483 animation with seed0014 at903/995.  No
   normal scorer, push, workflow or hidden judge ran.
+- Commit b486bfe aligns delayed armor with native's pre/post-`find_ac()`
+  cadence.  The first donning delay retains the getobj selector and old AC;
+  later automatic cores retain that selector but project recomputed AC unless
+  newer prose has taken tty ownership.  A first prompt-only improvement exposed
+  the monster-scan `_statusProjectedAc` shortcut as the remaining premature
+  state owner.  Seed0014 inputs125/470 close at1/1 and2/2 full frames/cursors;
+  six delayed-wear, removal, armor-effect and corrosion controls pass.  The
+  managed engine-only corpus remains44/44 and advances to1,308/1,483, with
+  seed0014 at906/995 and no incidental count changes.  Normal scoring and
+  publication remain deferred.

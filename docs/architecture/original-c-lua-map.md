@@ -34581,3 +34581,44 @@ vertical/diagonal launchers, intervening actors, landmines, doors, bars,
 boulder chains and endpoint hazards remain controls.  Lua supplies launcher
 coordinates and terrain but owns no projectile cadence, tty continuation,
 death transaction or cursor timing.
+
+## 951. Delayed armor exposes pre- and post-`find_ac()` cadence phases
+
+~~~mermaid
+flowchart TD
+    Select["getobj selects delayed armor"] --> Wear["setworn installs slot and starts negative multi"]
+    Wear --> Actors["monster/global elapsed-turn work"]
+    Actors --> Delay1["runmode delay with old uac and retained selector"]
+    Delay1 --> Find["once-per-core find_ac recomputes uac"]
+    Find --> More{"negative multi remains?"}
+    More -->|"yes"| Actors2["next automatic elapsed-turn core"]
+    Actors2 --> Delay2["runmode delay with new uac and same selector"]
+    More -->|"no"| After["unmul invokes Armor_on callback"]
+    Delay2 --> After
+    After --> Finish["completion/effect prose replaces selector"]
+    NewMessage["newer actor/effect prose"] --> Own["discard saved selector; newer tty owner wins"]
+    Lua["Lua owns no equipment or tty timing"] -.-> Select
+~~~
+
+Native `do_wear.c` calls `setworn()` before `nomul()`, so extrinsic worn-state
+effects are live during donning.  However, `allmain.c` performs each negative
+multi `runmode_delay_output()` inside elapsed-turn work and calls `find_ac()`
+only after that loop.  The first cadence frame therefore retains old `u.uac`;
+a later automatic core sees the recomputed value.  The physical getobj selector
+can survive both frames even though it is no longer a logical pending message.
+
+JavaScript now marks that first donning phase separately from ordinary armor
+erosion projection.  The delayed action may retain a bounded physical topline
+across automatic cores, but discards it as soon as newer pending prose takes
+tty ownership.  `findArmorClass()` runs after the first cadence opportunity;
+the monster-scan `_statusProjectedAc` shortcut is suppressed only for that
+phase, so erosion and immediate armor updates keep their established boundary.
+
+Seed0014 input125 is exact at **1/1** and input470 at **2/2** complete
+frames/cursors: old AC6/14 appears first, new AC17 appears on the second boots
+frame, and the selector persists until the dressing-complete line.  The corpus
+advances to1,308/1,483 while six armor/runmode controls remain green.  This
+closes represented delayed helmet/boots donning under quiet actor work;
+interruptions, theft during donning, cursed replacements, armor destruction,
+new-message paging, nondefault runmodes and every delayed removal variant
+remain controls.  Lua contributes none.
