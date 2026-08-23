@@ -8783,7 +8783,14 @@ function completeMovedMonsterAction(
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
     if (movement.actorLeftLevel || movement.actorDied) return movement;
-    if (movement.actionCompleted) return movement;
+    if (movement.actionCompleted) {
+        // dochug() recomputes distfleeck() for every non-died m_move status,
+        // including MMOVE_DONE, before its switch suppresses phase four.
+        finishDochugAfterMovement(
+            monster, movement, state, random, rollOne, rollDice, calls,
+        );
+        return movement;
+    }
     if (!movement.swallowedHold)
         monsterTunnelAfterMove(
             monster, movement, state, random, rollOne, calls,

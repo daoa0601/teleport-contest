@@ -11207,6 +11207,57 @@ test('inactive-only monster scans retain ordered everyturn visits', async () => 
     }
 });
 
+test('MMOVE_DONE actors retain their trailing distfleeck', async () => {
+    const witnesses = [
+        ['seed0030-ten-diverse-deaths.session.json', 2, 38, 35],
+        ['seed0360-wizard-world-tour.session.json', 0, 676, 673],
+        ['seed0361-archeologist-tour.session.json', 0, 239, 236],
+    ];
+    for (const [filename, segmentIndex, end, start] of witnesses) {
+        const file = JSON.parse(fs.readFileSync(
+            new URL(`../sessions/${filename}`, import.meta.url),
+            'utf8',
+        ));
+        const storage = new Map();
+        for (let index = 0; index < segmentIndex; index++) {
+            const prior = file.segments[index];
+            await runSegment({
+                seed: prior.seed,
+                datetime: prior.datetime,
+                nethackrc: prior.nethackrc,
+                moves: prior.moves,
+                storage,
+            });
+        }
+        const session = file.segments[segmentIndex];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, end),
+            storage,
+        });
+        for (let step = start; step <= end; step++) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `${filename} MMOVE_DONE input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `${filename} MMOVE_DONE input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `${filename} MMOVE_DONE input${step} cursor`,
+            );
+        }
+    }
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
