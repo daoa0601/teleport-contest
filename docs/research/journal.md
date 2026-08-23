@@ -89990,3 +89990,50 @@ open.  Every process exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 22:25 EEST, journal block 2982] {#seed52 #magic-missile #source-hit #bounce-return #m-at #occupancy #earliest-divergence #source-order #priority}
+
+**Post-external-contact frontier:** seed52 is exact through input536.  Input537
+first resumes the prior hero line, applies `d(2,6)=9` plus exercise, then the
+returning beam reaches its firing ogre's square.  Native `m_at()` returns the
+source actor; `zap_hit rn2(20)=12` and `d(2,6)=8` produce a nonfatal
+`The magic missile hits the ogre king!` line.  JavaScript's beam lookup excludes
+the source unconditionally, then advances directly to later actors.
+
+**Prediction and decision:** source exclusion belongs only to selecting the
+initial projectile origin, not to occupancy checks after a bounce.  The loop
+already starts one cell beyond the actor, so allow the source in ordinary
+`m_at()` target lookup.  The returned beam should damage ogre86 from42 to34,
+queue the source-hit line behind the pending hero line, then let later actor
+RNG run until the newt message forces that combined topline into --More--.
+Forward beams remain unable to self-hit because they never inspect the origin
+cell.  No focused regression, corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 22:34 EEST, journal block 2983] {#seed52 #magic-missile #source-hit #bounce-return #m-at #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `f83063c` removes the
+traversal-time source exclusion and preserves native nonfatal monster-hit
+punctuation.  The 538-state regression compares only input537's 12-call slice,
+pager/map/status/cursor and durable hero/ogre/wand state.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input544.  Input537 resumes hero d(2,6)=9/exercise, then owns source
+`rn2(20)=12`, d(2,6)=8 and the combined hero/ogre hit pager.  Hero ends
+HP74/169, mortality2 and `udg_cnt=1`; ogre86 is (7,8), HP34/42, wand429 spe1,
+experienced.  Input540 now reaches exact native `rn2(6)=3 @ intervene` and
+reset41, but aggravate mutation is not yet claimed.  Full replay advances to
+**7,472/9,928 RNG calls, 544/793 screens and 602/793 cursors** in **0.30
+seconds** at **133,922,816 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **6/6**
+in **0.57 seconds** at **203,472,896 bytes maximum RSS**.  Expanded controls
+pass **54/54** in **1.48 seconds** at **345,440,256 bytes maximum RSS**.
+Section913 and the ledger map source re-admission.  Input545 pickup selection,
+outcome3 actor mutation, outcome4 and animation remain open.  Every process
+exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

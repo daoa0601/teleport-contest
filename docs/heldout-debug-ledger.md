@@ -13287,3 +13287,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   HP123/169 and udg4.  Later hero-only experienced shots reuse the same owner,
   so engine parity advances through input536.  Input537's return beam hitting
   the source ogre remains open.  Focused/expanded gates pass 5/5 and53/53.
+- Seed52 input537 closes returned-beam source occupancy.  A bounce uses ordinary
+  `m_at()` and can hit its firing ogre; unconditional source exclusion was
+  wrong because traversal already begins beyond the origin.  Native applies
+  hero d(2,6)=9, then source `rn2(20)=12`/d(2,6)=8 and publishes the combined
+  hero/ogre hit pager.  Ogre86 ends HP34/42 at (7,8), wand spe1; hero is
+  HP74/169 with udg1.  Parity advances through input544 and reaches exact
+  outcome3 selection at540, but aggravate state is not yet accepted.  Input545
+  floor-pickup policy is next.  Focused/expanded gates pass 6/6 and54/54.

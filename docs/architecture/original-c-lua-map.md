@@ -33185,3 +33185,39 @@ zombie corpse construction, and nonfatal hero damage.  It does not close a
 return beam hitting its source, nonfatal monster damage prose, hero fatality,
 reflection/resistance, diagonal bounces, outcome3, or animation.  Lua owns
 geometry only.
+
+## 913. Bounced beams re-admit their firing monster as an ordinary target
+
+~~~mermaid
+flowchart TD
+    Fire["seed52 experienced ogre fires left from7,8"] --> Hero["outbound/return hero contact owns d 2,6 equals9"]
+    Hero --> Bounce["cardinal wall reverses beam"]
+    Bounce --> Origin["return path reaches7,8"]
+    Origin --> Occupancy["m_at returns firing ogre86"]
+    Occupancy --> Hit["zap_hit rn2 20 equals12"]
+    Hit --> Damage["d 2,6 equals8; ogre42 to34"]
+    Damage --> Line["source-hit line queues behind hero-hit line"]
+    Line --> Later["later newt prose forces combined --More--"]
+    Later --> Intervention["input540 exact selector rn2 6 equals3"]
+    Lua["Lua contributes wall and occupancy geometry only"] -.-> Bounce
+    Lua -.-> Origin
+    Lua -.->|"no ownership"| Hit
+~~~
+
+Projectile origin exclusion and beam occupancy are different phases.  A beam
+starts one cell beyond its source, so no special exclusion is needed during
+traversal; after a bounce, ordinary `m_at()` can find the firing actor at its
+unchanged square.  Keeping the source out of every target lookup incorrectly
+made reflected monster beams intangible to their owner.
+
+Input537 resumes the previous hero-hit damage/exercise, then damages ogre86 by
+eight.  The nonfatal monster-hit line joins the pending hero line and later
+actor prose supplies the actual tty pressure.  Final bounded state is hero
+HP74/169, mortality2, `udg_cnt=1`, ogre at (7,8), HP34/42, wand429 spe1 and
+`mwandexp=1`.  Exact replay proceeds through input544, including native
+outcome3 selection/reset at input540.
+
+This section closes cardinal return-path source occupancy and nonfatal source
+damage prose.  It does not yet establish aggravate's actor-state mutation,
+floor pickup selection at input545, fatal source hits, reflection/resistance,
+diagonal bounce, or animation.  Lua owns only geometry.
