@@ -89708,3 +89708,103 @@ open.  Every process exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 20:45 EEST, journal block 2971] {#seed12 #cave-spider #known-trap #webmaker #mintrap #engine-only #fixture-contamination #native-trace #earliest-divergence #correction #process-safety #priority}
+
+**Correction to block2970:** 395 is the first aggregate screen mismatch, not the
+first RNG mismatch.  A replay which did not explicitly disable fixtures first
+reported input380 and is discarded.  The strict engine-only comparison finds
+the earliest source edge at input377 call9; all earlier input3--376 RNG,
+decoded screens and cursors are exact.
+
+**Bounded trace and source diagnosis:** input377 starts at cumulative native
+call5857.  A call-gated active-actor trace proves cave spider id78 owns calls
+5865--5868, including `rn2(4)=1 @ mintrap`.  The actor has learned the WEB
+type.  Native `mintrap()` runs the known-trap three-in-four avoidance probe
+before `trapeffect_web()` discovers that the actor is a webmaker.  JavaScript's
+WEB branch returns for mnum94/96 before testing trap knowledge, deleting this
+probe and shifting every later actor.
+
+**Prediction and decision:** move the webmaker no-effect return after the
+known-trap avoidance gate.  Input377 should regain the exact 41-call native
+slice, keep spider id78 mobile, and preserve the later Newt bite without a
+combat patch.  The temporary trace was removed and the canonical six-patch
+recorder rebuilt.  No focused regression, corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 20:51 EEST, journal block 2972] {#seed12 #cave-spider #webmaker #trap-knowledge #mons-see-trap #persistent-state #prediction-refinement #earliest-divergence #process-safety #priority}
+
+**Refinement to block2971:** moving webmaker immunity after only the known-trap
+avoidance gate does not change input377 because id78 lacks the WEB knowledge bit
+in JavaScript.  The web itself is present at (21,3), created by id76 at input371
+with `rn2(1000)=7` and `d(4,4)=10`; geometry and creation are not the defect.
+
+**Complete source owner:** on an unknown trap, `mintrap()` first skips the
+already-seen probe, then runs `mon_learns_traps()` and `mons_see_trap()` before
+calling `trapeffect_selector()`.  Only inside `trapeffect_web()` does webmaker
+immunity return.  JavaScript returns for mnum94/96 before both knowledge
+operations.  Move the immunity check after self/observer knowledge projection
+as well as after the already-seen gate.  The first crossing should persist the
+WEB bit; the later input377 crossing should then own `rn2(4)=1` and avoid the
+effect before species immunity is relevant.
+
+**Decision:** complete the shared mintrap ordering, assert both the input377
+slice and durable id78 knowledge state, then relocalize engine-only.  No focused
+regression, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 20:56 EEST, journal block 2973] {#seed12 #cave-spider #webmaker #m-harmless-trap #mfndpos #candidate-admission #trap-knowledge #prediction-refinement #earliest-divergence #process-safety #priority}
+
+**Second prerequisite exposed:** after restoring WEB knowledge projection, id78
+correctly carries bit17 before input377, but JavaScript now rejects the known
+web square during `mfndpos()` and moves to (20,5).  Native admits (21,3), then
+owns the known-trap probe.  The new `rn2(1000)` at JavaScript call9 is the
+consequence of choosing a different empty square, not a trap-effect error.
+
+**Source owner and prediction:** native `m_harmless_trap(WEB)` returns true for
+amorphous, webmaker, whirly and unsolid species.  JavaScript's harmless-trap
+classifier omitted WEB entirely, so its candidate pass treats a learned web as
+harmful even for its creator species.  Port the complete class predicate using
+M1_AMORPHOUS, webmaker [94,96], S_VORTEX/air-elemental and M1_UNSOLID.  With
+both knowledge and harmless admission exact, id78 should select (21,3), consume
+`rn2(4)=1`, and preserve source actor ordering.
+
+**Decision:** keep both fixes in one mintrap/mfndpos block and bind them with
+the input377 state witness.  No focused regression, corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 21:05 EEST, journal block 2974] {#seed12 #cave-spider #webmaker #known-trap #m-harmless-trap #mintrap #native-session #engine-only #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `67b28b6` restores the two
+source owners: unknown WEB knowledge projects before effect immunity, and the
+complete harmless-WEB class remains admissible during `mfndpos()`.  The
+378-state regression compares input377's complete 41-call slice plus screen,
+cursor, web and durable spider knowledge state; no flattened transcript
+assertion is used.
+
+**Witness and measured effect:** native/JavaScript are exact from input3
+through input377.  Cave spider id78 moves from (21,4) onto known web (21,3),
+consumes `rn2(4)=1`, remains untrapped with bit17 set, and the later Newt bite
+leaves hero HP133/159 with `udg_cnt=118`.  Strict engine-only replay of the
+complete 793-state carrier now reaches **13,287/13,287 RNG calls, 792/793
+screens and 793/793 cursors** in **0.37 seconds** at **175,849,472 bytes maximum
+RSS**.  The only screen residual is independent input2; native animation stays
+0/4.  Input731 selects nervous outcome1, so this explicitly does not establish
+outcome4.
+
+**Controls and map:** focused fixture-disabled controls pass **4/4** in **0.37
+seconds** at **139,345,920 bytes maximum RSS**.  Expanded controls pass **50/50**
+in **1.38 seconds** at **330,170,368 bytes maximum RSS**.  Section909 and the
+ledger map WEB knowledge, harmless candidate admission and later mintrap
+avoidance.  Ordinary harmful WEB branches, outcome4, tutorial projection and
+animation remain open.  Every process exited.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---

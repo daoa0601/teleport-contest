@@ -33023,6 +33023,47 @@ HP141/159 with `udg_cnt=138`.
 
 This section closes cave-spider web immunity and the resulting bounded Newt
 miss at input317.  It does not close web creation success, ordinary-monster
-trapping/escape, web destruction, hero/pet interaction, the later seed12 edge
-at input395, intervention outcome4, or the native animation-frame groups.  Lua
-owns only physical web and level geometry.
+trapping/escape, web destruction, hero/pet interaction, intervention outcome4,
+or the native animation-frame groups.  Its later seed12 state edge is corrected
+and closed by section909.  Lua owns only physical web and level geometry.
+
+## 909. Known webmakers retain harmless admission before trap avoidance
+
+~~~mermaid
+flowchart TD
+    Create["seed12 id76 creates WEB at21,3 on input371"] --> Learn["earlier WEB contact or observation projects type bit17"]
+    Learn --> Candidate["input377 id78 mfndpos evaluates known WEB square"]
+    Candidate --> Harmless["m_harmless_trap WEB admits amorphous, webmaker, whirly or unsolid"]
+    Harmless --> Move["id78 moves21,4 to21,3"]
+    Move --> Known["mintrap already_seen consumes rn2 4 equals1"]
+    Known --> Avoid["three-in-four avoidance returns before effect"]
+    Avoid --> Tail["postmov and later Newt bite retain native ordering"]
+    Unknown["unknown WEB crossing"] --> Project["mon_learns_traps plus mons_see_trap"]
+    Project --> Effect["trapeffect_web tests species immunity"]
+    Effect --> Learn
+    Lua["Lua contributes WEB and level geometry only"] -.-> Create
+    Lua -.->|"no ownership"| Harmless
+    Lua -.->|"no ownership"| Known
+~~~
+
+The WEB contract spans two source owners.  `mfndpos()` uses
+`m_harmless_trap()` to keep a known harmless square in the destination set;
+for WEB that class is amorphous, cave/giant webmaker, vortex/air-elemental
+whirly, or unsolid.  After movement, `mintrap()` still runs ordinary learned-
+trap avoidance.  On an unknown web it projects self and observer knowledge
+before `trapeffect_web()` applies species immunity.
+
+Seed12 exposes both missing boundaries.  Web id18 at (21,3) exists correctly,
+but a premature webmaker return suppressed type knowledge; after learning was
+restored, the incomplete harmless classifier rejected the square entirely.
+With both owners exact, cave spider id78 enters (21,3), remains untrapped with
+bit17 set, and input377 owns the complete 41-call native slice through Newt's
+two-damage bite.  Hero state is HP133/159 with `udg_cnt=118`.
+
+The resulting 793-state carrier is engine-exact for all 13,287 RNG calls and
+all 793 cursors.  Screens are 792/793 because the independent input2 tutorial
+cell remains red; four native animation groups remain unported.  Input731
+selects the already-mapped nervous intervention outcome1, not nasty outcome4.
+This section does not close ordinary harmful WEB trapping/escape, blind or
+mindless observer knowledge, web deletion/disclosure, outcome4, tutorial
+projection, or animation.  Lua owns physical WEB/terrain geometry only.

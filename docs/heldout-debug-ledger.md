@@ -13251,3 +13251,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   Focused/expanded fixture-disabled gates pass 3/3 and49/49.  The full rejected
   seed12 session still diverges later at input395, so this is not outcome4
   evidence; web-success/escape variants and animation remain open.
+- Correction and closure for the same seed12 carrier: strict engine-only
+  comparison finds the next RNG edge at input377, not the aggregate first-red
+  screen395.  Native WEB ordering has two prerequisites: unknown crossings
+  project trap knowledge before webmaker immunity, and `m_harmless_trap(WEB)`
+  keeps known webs admissible to amorphous/webmaker/whirly/unsolid species.
+  Cave spider id78 therefore enters (21,3), owns `rn2(4)=1`, remains untrapped
+  with bit17 set, and preserves the 41-call slice through the Newt bite.  The
+  complete 793-state engine replay now matches 13,287/13,287 RNG and 793/793
+  cursors; screens are 792/793 solely from input2, with 0/4 animation groups.
+  Input731 selects already-mapped nervous outcome1, so nasty outcome4 remains
+  unclaimed.  Focused/expanded gates pass 4/4 and50/50.
