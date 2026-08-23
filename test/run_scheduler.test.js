@@ -11846,6 +11846,55 @@ test('seed0116 digging beam delays visible and invisible path cells',
         }
     });
 
+test('seed0002 sleep ray composes traversal and reflection shield frames',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0002-healer-reflection-drummer.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 564),
+            storage: new Map(),
+        });
+        for (const step of [460, 538, 552, 563]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0002 sleep ray input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0002 sleep ray input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0002 sleep ray input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                assertScreenExact(
+                    actualFrames[frame].screen,
+                    nativeFrames[frame].screen,
+                    `seed0002 sleep input${step} frame${frame}`,
+                );
+                assert.deepEqual(
+                    actualFrames[frame].cursor,
+                    nativeFrames[frame].cursor,
+                    `seed0002 sleep input${step} cursor${frame}`,
+                );
+            }
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

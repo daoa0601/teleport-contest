@@ -15,7 +15,7 @@ import {
     monsterHasWarningProjection,
     see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName,
     randomDisplayMonsterSubject, see_monsters, see_objects, see_traps,
-    transientObjectGlyph, lastDirtyMapCursor,
+    transientObjectGlyph, lastDirtyMapCursor, shieldeff,
     map_background, map_object, map_engraving, map_trap, map_invisible,
     unmap_invisible,
 } from './display.js';
@@ -13072,6 +13072,18 @@ function rayMonsterAt(x, y) {
         && monster.mx === x && monster.my === y) || null;
 }
 
+async function captureRayTraversalFrame() {
+    const frameCursor = lastDirtyMapCursor();
+    const messageCursor = game._pending_message
+        ? [game._pending_message.length, 0] : null;
+    await flush_screen(1);
+    if (frameCursor)
+        game.nhDisplay?.setCursor(...frameCursor);
+    else if (messageCursor)
+        game.nhDisplay?.setCursor(...messageCursor);
+    await game.animationFrame?.();
+}
+
 // C ref: zap.c:zap_hit().  Negative AC invokes AC_VALUE only after the
 // ordinary non-zero hit roll; preserving that order matters to the PRNG log.
 function rayHitsMonster(monster) {
@@ -13339,6 +13351,7 @@ async function zapSleepRay(direction) {
                         && cansee(previousX, previousY)))) {
                 paintBeamCell(x, y, dx, dy);
             }
+            await captureRayTraversalFrame();
             const monster = rayMonsterAt(x, y);
             if (monster) {
                 if (rayHitsMonster(monster)) {
@@ -13375,6 +13388,7 @@ async function zapSleepRay(direction) {
                             `But it reflects from your ${
                                 source?.noun || 'shield'}!`,
                         );
+                        await shieldeff(game.u.ux, game.u.uy);
                         if (source) discoverHeroReflectionSource(source);
                         dx = -dx;
                         dy = -dy;
@@ -13875,20 +13889,9 @@ async function zapFireRay(direction) {
                 paintBeamCell(x, y, dx, dy);
             }
 
-            // zap.c:dobuzz() delays immediately after tmp_at paints (or
-            // revisits) this ray square, before hit or bounce handling can
-            // add another message.  A returning ray often revisits an
-            // identical beam cell: with no map dirt, tty keeps the pending
-            // bounce topline cursor instead.
-            const frameCursor = lastDirtyMapCursor();
-            const messageCursor = game._pending_message
-                ? [game._pending_message.length, 0] : null;
-            await flush_screen(1);
-            if (frameCursor)
-                game.nhDisplay?.setCursor(...frameCursor);
-            else if (messageCursor)
-                game.nhDisplay?.setCursor(...messageCursor);
-            await game.animationFrame?.();
+            // Delay before hit or bounce handling; unchanged return cells
+            // keep the pending topline cursor through the shared helper.
+            await captureRayTraversalFrame();
 
             if (x === game.u.ux && y === game.u.uy && range >= 0
                 && rayHitsHero()) {
