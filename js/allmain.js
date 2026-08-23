@@ -5630,7 +5630,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
                 );
-                if (misc.object.dknown) {
+                if (misc.object.dknown
+                    && !game._knownObjectTypes?.has(misc.object.otyp)) {
                     exerciseAttribute(4, true);
                     recordObjectKnowledge(misc.object.otyp);
                 }

@@ -11409,6 +11409,40 @@ test('random polymorph repaints the form before its armor pager', async () => {
     assert.equal(decodeScreen(result.getScreens()[1438])[10][25].ch, 'F');
 });
 
+test('known monster speed potion skips duplicate discovery credit', async () => {
+    const session = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed0399-wizard-hallu-actions.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+    const result = await runSegment({
+        seed: session.seed,
+        datetime: session.datetime,
+        nethackrc: session.nethackrc,
+        moves: session.moves.slice(0, 121),
+        storage: new Map(),
+    });
+    for (let step = 113; step <= 120; step++) {
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed0399 known speed potion input${step} RNG`,
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            `seed0399 known speed potion input${step} screen`,
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            `seed0399 known speed potion input${step} cursor`,
+        );
+    }
+    assert.equal(game._knownObjectTypes.has(302), true);
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
