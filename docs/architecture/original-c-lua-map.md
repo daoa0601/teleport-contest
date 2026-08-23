@@ -32104,3 +32104,63 @@ renegade combinations, Angel/demon minions, prayer or monster summons,
 multi-target placement, resident displacement, replacement/growth, migration,
 or a direct Sanctum replay.  Lua decides that the descriptor has explicit
 alignment; C owns MM_EMIN allocation, inventory, attitude and malign state.
+
+## 889. Hallucination gates item observation before death-touch branching
+
+~~~mermaid
+flowchart TD
+    Quaff["muse.c mquaffmsg visible monster item"] --> Observe{"observe_object while Hallucinating?"}
+    Observe -->|"yes, newly seen"| Unknown["leave dknown false; doname says a potion"]
+    Observe -->|"no"| Known["mark shuffled description known"]
+    Unknown --> Speed["mon_adjust_speed with source object"]
+    Known --> Speed
+    Speed --> Learn{"learnwand sees dknown?"}
+    Learn -->|"no"| NoDiscover["no makeknown and no Wisdom discovery draw"]
+    Learn -->|"yes"| Discover["discover speed item type"]
+    Select["choose_monster_spell selects death touch"] --> Useful1{"Hallucination or Antimagic: rn2(2) in table scan"}
+    Useful1 -->|"0"| Lower["reject and continue down spell table"]
+    Useful1 -->|"1"| Useful2{"castmu retry check: second rn2(2)"}
+    Useful2 -->|"0"| Retry["retry spell selection"]
+    Useful2 -->|"1"| Cast["fumble gate and discarded cast d(16,6)"]
+    Cast --> Pronoun["pronoun_gender PRONOUN_HALLU: rn2(4)"]
+    Pronoun --> Warning["publish touch-of-death warning"]
+    Warning --> Success{"rn2(Wizard level) greater than 12?"}
+    Success -->|"no"| Lucky["Lucky for you; no touch damage"]
+    Success -->|"yes and Hallucinating"| OOB["out-of-body line; skip fresh d(8,6)"]
+    Success -->|"yes and ordinary"| Drain["touch_of_death fresh 8d6 and HP/max-HP graph"]
+    Lua["Lua owns no item knowledge, spell, pronoun, or HP policy"] -.-> Quaff
+    Lua -.-> Select
+~~~
+
+The warning-free controlled setup creates the hostile Wizard before enabling
+Hallucination and holds the Healer at level14, below the role's level15
+Warning intrinsic.  This keeps Hallucinated constructor naming and warning-
+glyph activation outside the carrier while preserving a level30 Wizard and
+all gameplay spell policy.
+
+Seed14 first exposes monster-item knowledge.  Native `mquaffmsg()` calls
+`observe_object()`, but a newly seen speed potion remains `dknown=false` under
+Hallucination, so its line is `The wire shark drinks a potion`, not `murky
+potion`.  `mon_adjust_speed()` later calls `learnwand(obj)`; because that same
+object is still description-unknown, source neither discovers potion type nor
+spends the Wisdom exercise draw.  The Wizard becomes permanently fast while
+the speed-potion type remains unknown.  The later death candidate consumes
+Hallucination usefulness rn2(2)=0 and falls through to clone without casting
+death touch.
+
+The usefulness predicate is deliberately evaluated twice when death touch is
+accepted: once while `choose_monster_spell()` scans its table and once in
+`castmu()`'s retry loop.  Seeds21 and90 both record rn2(2)=1 twice.  After the
+ordinary fumble gate and discarded `d(16,6)`, `mhe()` calls
+`pronoun_gender(PRONOUN_HALLU)`; both controlled casts record rn2(4)=1 and say
+`she's`.  Seed21 then gets effect gate rn2(30)=0 and the Lucky line.  Seed90
+gets rn2(30)=14, enters the Hallucination branch, publishes `You have an out
+of body experience`, and consumes no fresh d(8,6); HP132/138 is unchanged.
+
+Seed21 matches all 143 captured native states from input3 onward.  Seed90 is
+exact through input134; its next input is the separate Hallucinated clone
+announcement graph.  This section does not close prior-known potion/wand
+objects, Antimagic effects which survive usefulness, Warning-bearing
+activation, Hallucinated Wizard construction, clone announcement/disguise,
+non-Hallucinated fatal drain, life saving, or Unchanging.  Lua supplies only
+the surrounding level geometry.

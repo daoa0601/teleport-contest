@@ -88106,3 +88106,74 @@ rewrite, hidden judge, push, or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 14:33 EEST, journal block 2924] {#seed14 #seed21 #seed90 #hallucination #monster-potion #observe-object #dknown #speed-potion #learnwand #death-touch #spell-uselessness #pronoun-gender #out-of-body #native-witness #implementation #bounded-replay #regression #architecture #ledger #process-safety #priority #rejected-carrier}
+
+**Portfolio and rejected carriers:** enabling Hallucination before forced
+Wizard genesis was rejected when native input114 entered a 26-display-call
+constructor/announcement graph before spell policy.  Creating the Wizard
+first but retaining a level30 Healer was also rejected: the role's level15
+Warning intrinsic makes native activation spend four display draws where the
+current port spends three, so the acknowledgement repaint diverges before
+combat.  No experimental constructor/clone naming change was retained.  A
+level14 Healer keeps the same source role/startup and level30 Wizard while
+removing Warning; this warning-free carrier is exact through the first real
+gameplay mismatch.
+
+**Earliest item-knowledge boundaries:** warning-free seed14 first diverged at
+input123 prose: JavaScript forced `dknown` and exposed `murky potion`, while
+native `mquaffmsg()->observe_object()` leaves a newly seen object unknown
+under Hallucination and says `drinks a potion`.  After that repair, input124
+showed an extra JavaScript `rn2(19)=6`: source `mon_adjust_speed()->learnwand`
+cannot discover the speed potion while dknown is false.  Shared monster item
+observation now preserves prior knowledge but does not create new dknown under
+Hallucination, and speed potion/wand discovery is conditional on that state.
+Seed14 input124 has no Wisdom draw, leaves potion type302 unknown, and retains
+the Wizard at permanent MFAST.
+
+**Spell selection, false positive and source ordering:** seed14 input128 then
+localized the missing death-touch usefulness call.  Source rejects death
+touch under Hallucination or Antimagic when rn2(2)=0.  The accepted case owns
+this predicate twice: once in `choose_monster_spell()` and again in
+`castmu()`'s retry loop.  A first JavaScript search falsely selected seed21 as
+out-of-body because the port also omitted `pronoun_gender(PRONOUN_HALLU)`;
+native input122 adds rn2(4)=1 after discarded d(16,6), says `she's`, and shifts
+the effect gate to rn2(30)=0.  After porting both usefulness probes and random
+pronoun ownership, seed21 is exact for all **143 captured states from input3
+onward**, ending the effect with `Lucky for you, it didn't work!` and HP88/93
+unchanged by death touch.  Strict replay took **0.29 seconds** at
+**126,337,024 bytes maximum RSS**.
+
+**Successful Hallucination branch:** a corrected serial seed1--240 search
+found seed90 as the clean early complement.  Input122 owns both rn2(2)=1
+usefulness probes, fumble rn2(300)=68, discarded d(16,6)=59 and pronoun
+rn2(4)=1.  Input123 publishes `Oh no, she's using the touch of death!` and
+records success rn2(30)=14.  Input124 publishes `You have an out of body
+experience` with no fresh d(8,6), HP/max-HP mutation or form change; state
+remains HP132/138 and Hallucination29.  Native RNG, decoded screens and cursors
+are exact from input3 through **input134**; the next input is an independent
+Hallucinated clone announcement mismatch (`loan shark` native versus true
+Wizard name).  The bounded comparator took **0.30 seconds** at **125,779,968
+bytes maximum RSS**.
+
+**Implementation, regression and next blocker:** commit `43160bf` ports
+Hallucination-aware monster item observation, knowledge-gated speed discovery,
+both death-touch usefulness probes and Hallucinated pronoun RNG.  The three
+focused permanent controls pass **3/3** in **0.33 seconds** at **134,004,736
+bytes maximum RSS**.  After the final shared potion/wand observation helper,
+the combined seventeen prior Wizard controls, three new Hallucination
+controls, and three Priest controls pass **23/23** fixture-disabled in **0.80
+seconds** at **176,881,664 bytes maximum RSS**.  Every recorder, selector,
+comparator and test process exited.
+
+Section889 maps item knowledge and death-touch policy without conflating the
+discarded cast d(16,6) with touch-of-death d(8,6); Lua owns neither.  Keep
+prior-known items, Antimagic accepted effects, Warning activation,
+Hallucinated Wizard genesis, the clone construction/announcement graph,
+ordinary fatal drain, life saving and Unchanging open.  The closest exact
+successor is seed90 input135's clone announcement/display transaction; select
+it only as a presentation block, not as evidence against the now-closed death
+effect.  No full corpus, public-status rewrite, hidden judge, push, or
+publication ran; unrelated dirty files remain untouched.
+
+---

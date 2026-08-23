@@ -13012,3 +13012,19 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled.  Other alignments, renegades, Angels/demons, prayer
   summons, multiple roamers, replacement, migration, and Sanctum measurement
   remain open.
+- A three-seed warning-free Hallucination portfolio closes potion observation
+  and death-touch branching.  Two tempting carriers were rejected first:
+  activating Hallucination before Wizard genesis enters a 26-call constructor
+  presentation graph, while a level30 Healer's Warning intrinsic adds a
+  separate activation display draw.  At level14, seed14 proves a newly seen
+  speed potion stays generic (`drinks a potion`), `learnwand()` skips Wisdom/
+  type discovery while dknown is false, and death touch is rejected by the
+  first Hallucination rn2(2)=0 usefulness probe.  Seed21 proves both repeated
+  usefulness probes can pass, Hallucinated `pronoun_gender` owns rn2(4)=1,
+  and the effect can still fail at rn2(30)=0; its complete 143-state replay is
+  exact.  Seed90 has the same two one-gates and pronoun, then rn2(30)=14 and
+  `You have an out of body experience` with no fresh 8d6 or HP/max-HP change;
+  parity is exact through input134.  The three focused tests and combined
+  Priest/Wizard gate pass 3/3 and 23/23 fixture-disabled.  Hallucinated clone
+  construction/announcement, Warning activation, Antimagic accepted effects,
+  prior-known items, fatal drain, life saving, and Unchanging remain open.
