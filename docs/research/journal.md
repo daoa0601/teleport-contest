@@ -91652,3 +91652,54 @@ the smallest residual by first mismatching frame before selecting the next
 block.  No normal corpus, push, workflow, hidden judge, or publication ran.
 
 ---
+
+### [2026-08-23 22:52 EEST, journal block 3051] {#seed0012 #occupation #counted-search #runmode #animation #source-diagnosis #prediction #bounded-witness}
+
+**Residual inventory:** seed0012's unmatched3/49 frames are exactly the three
+count-prefixed search groups at inputs226,228 and252.  Each native frame is a
+quiet map/status snapshot with the cursor on the hero; there is no transient
+beam, projectile, or combat glyph.  All46 capital-run frames already match.
+
+**Source owner:** `allmain.c:moveloop_core()` has a separate occupation branch.
+After `(*go.occupation)()` and possible interruption, it calls
+`runmode_delay_output()` before returning.  A counted `9s` remains positive
+`multi` across its scheduler-separated repeats, so default leap cadence emits
+one frame when the shared move counter reaches a multiple of seven.  JavaScript
+resumes `_occupation` but returns without calling the new shared owner.
+
+**Prediction and guard:** call `captureRunmodeDelay()` after each continued
+occupation only while positive-multi state remains effective.  Seed0012 should
+become49/49 animation exact without changing any RNG/boundary channel.  Use the
+existing delayed-action and movement controls to guard against treating the
+occupation branch as physical-topline retention or a movement pre/post pair.
+
+---
+
+### [2026-08-23 22:54 EEST, journal block 3052] {#seed0012 #seed0004 #seed0007 #seed4500 #occupation #counted-search #runmode #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Implementation and bounded witness:** commit `c9bc319` calls the shared
+runmode capture after each continued counted search/wait while its positive
+multi remains active.  It deliberately excludes unrelated lock, food, wipe,
+and force occupations whose port representations do not imply positive C
+`multi`.  Seed0012 inputs226,228 and252 match their full frame screens/cursors,
+RNG slices and ordinary boundaries; five paired runmode controls pass **5/5**
+in **0.47 seconds**.
+
+**Focused effect:** seed0012 closes from46/49 to **49/49**.  The same owner
+advances seed0004 from39/47 to42/47 and seed0007 from51/58 to53/58 while all
+three sessions remain strict public PASS.  This cross-session effect rejects a
+Monk/vault-specific delay hypothesis.
+
+**Acceptance:** one prechecked managed engine-only corpus passes **44/44** at
+**35+0.32 ms/turn** (R²0.825) in **12.32 seconds** at **269,402,112 bytes
+maximum RSS**.  Supplemental animation reaches **1,087/1,483**: seed0012 is
+newly complete, seed0002 advances to59/128, seed0004 to42/47, seed0007 to53/58,
+and seed4500 to13/37.  All public RNG, boundary screens and cursors remain
+exact.  No normal corpus, push, workflow, hidden judge, or publication ran.
+
+**Next blocker:** the smallest partial sessions now have five residual frames
+(seed0004 and seed0007), while seed0900 has a separate untouched3/3 group.
+Inventory those exact frames before choosing between another runmode sibling
+and a new animation class.
+
+---

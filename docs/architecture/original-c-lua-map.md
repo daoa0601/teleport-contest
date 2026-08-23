@@ -34088,3 +34088,40 @@ Seed0360 independently closes at **12/12**, and the full corpus improves from
 This closes ordinary represented leap-run cadence.  Nondefault runmode
 carriers, animation classes outside runmode, and removal of historical replay
 bridges remain separate architecture work.  Lua contributes geometry only.
+
+## 938. Counted occupations call runmode cadence after each callback
+
+~~~mermaid
+flowchart TD
+    Prefix["numeric prefix plus search or wait"] --> First["rhack performs first timed command"]
+    First --> Multi["positive multi and occupation remain"]
+    Multi --> Turn["monster/global turn settles"]
+    Turn --> Callback["moveloop invokes occupation callback"]
+    Callback --> Stop{"callback ends or threat interrupts?"}
+    Stop -->|"yes"| Clear["clear occupation or multi"]
+    Stop -->|"no"| Active["positive multi remains"]
+    Active --> Delay["runmode_delay_output once after callback"]
+    Delay --> Turn
+    Clear --> DelayCheck["cadence disabled; no frame"]
+    Lua["Lua owns no occupation or tty cadence"] -.-> Callback
+~~~
+
+The occupation branch is separate from automatic movement.  It calls the
+occupation function, applies interruption, then invokes
+`runmode_delay_output()` exactly once before returning.  There is no paired
+pre/post call because no `domove()` occurs.  A default-leap counted search can
+therefore produce one quiet hero-cursor frame when its repeated turn lands on
+`moves % 7 == 0`.
+
+JavaScript now calls `captureRunmodeDelay()` after resumed counted search and
+wait callbacks only while their positive-multi representation remains active.
+Lock-picking, force-locking, eating, wiping, and other `_occupation` values do
+not automatically qualify: their state models do not by themselves prove that
+C `multi` is nonzero.
+
+Seed0012's three counted-search frames close its animation channel at
+**49/49**.  Seed0004 and seed0007 advance through the same owner, and seed4500
+gains ten additional frames.  The full public corpus remains44/44 at input
+boundaries and reaches1,087/1,483 supplemental frames.  Counted commands with
+nondefault runmode, interruption at the cadence edge, and other occupation
+classes remain open controls.  Lua contributes none.

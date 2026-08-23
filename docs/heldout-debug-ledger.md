@@ -13482,3 +13482,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   screens and cursors while animation jumps from14/1,483 to1,068/1,483.  Large
   partial gains in seed0014,0002,0007,0012 and0004 confirm a shared owner, but
   the remaining415 frames are explicitly not classified as one residual.
+- Commitc9bc319 connects counted search/wait occupations to the same cadence
+  after each callback, matching C allmain's separate occupation branch without
+  inventing movement pre/post pairs.  Seed0012 closes at49/49 animation;
+  seed0004 reaches42/47, seed0007 53/58, seed0002 59/128 and seed4500 13/37.
+  The managed corpus remains44/44 and reaches1,087/1,483 frames.  Only counted
+  positive-multi representations are admitted; unrelated `_occupation` keys
+  remain excluded until their C multi state has its own witness.
