@@ -1192,8 +1192,8 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
-    if (game._debugDeathSurvivedMessagePending) {
-        game._debugDeathHeroTookTimePending = sourceTurn;
+    if (game._deathSurvivedMessagePending) {
+        game._deathSurvivalHeroTookTimePending = sourceTurn;
         return;
     }
     // The final negative-multi prayer action invokes prayer_done() before
@@ -2956,15 +2956,15 @@ async function resumeOffensivePotionVapor(potion) {
     }
 }
 
-async function finishDebugDeathSurvivalMessage(g = game) {
-    if (!g._debugDeathSurvivedMessagePending
+async function finishDeathSurvivalMessage(g = game) {
+    if (!g._deathSurvivedMessagePending
         || g._heroTimePending
         || g.program_state?.gameover) return;
-    g._debugDeathSurvivedMessagePending = false;
+    g._deathSurvivedMessagePending = false;
     await queueTurnMessage('You survived that attempt on your life.');
-    if (g._debugDeathHeroTookTimePending != null) {
-        finishHeroTookTimeRng(g._debugDeathHeroTookTimePending);
-        g._debugDeathHeroTookTimePending = null;
+    if (g._deathSurvivalHeroTookTimePending != null) {
+        finishHeroTookTimeRng(g._deathSurvivalHeroTookTimePending);
+        g._deathSurvivalHeroTookTimePending = null;
     }
 }
 
@@ -4429,7 +4429,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // only after the interrupted movemon() scan finishes;
                         // if combat has appended to this recovery line, the
                         // attempted third pline is what forces tty --More--.
-                        game._debugDeathSurvivedMessagePending = true;
+                        game._deathSurvivedMessagePending = true;
                         previousHeroAttack = heroAttack;
                         heroAttack = continueDeferredHeroAttack(action, game);
                         if (heroAttack) continue;
@@ -6132,7 +6132,7 @@ export async function moveloop_core() {
     // moveloop completes the actor scan and any required global allocation
     // before unmul() tries to append that text.  Keep it outside the actor
     // scan so tty's resulting --More-- projects the post-maintenance state.
-    await finishDebugDeathSurvivalMessage(g);
+    await finishDeathSurvivalMessage(g);
 
     // allmain.c's once-per-player-input Amulet check follows all elapsed
     // monster/global work and precedes find_ac()/vision/input.  A level
@@ -6348,7 +6348,7 @@ export async function moveloop_core() {
     // below the early source-ration checkpoint above.  Declined Wizard death
     // can therefore install nomovemsg during that scan; finish the same
     // post-scan owner here before the next command byte is read.
-    await finishDebugDeathSurvivalMessage(g);
+    await finishDeathSurvivalMessage(g);
 
     if (g._liveQuietTurnRequested
         && g._maintenanceMove === (g.moves || 1)) {

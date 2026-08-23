@@ -82,7 +82,7 @@ import {
     LENSES, BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
+    AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
     SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_GENOCIDE,
     SCR_LIGHT,
@@ -145,6 +145,7 @@ import {
     finishBallAndChainMove, finishBallAndChainTeleport,
 } from './ball.js';
 import {
+    beginHeroLifeSaving, completeHeroLifeSaving,
     finishOrdinaryDeath, finishOrdinaryQuit, recordVanquished,
     restoreHeroAfterDeath,
 } from './end.js';
@@ -6280,7 +6281,7 @@ async function wizKill() {
     if (amulet) {
         const name = MONSTER_NAME[monster.mnum] || 'monster';
         await lifeSaveMonster(monster, amulet, {
-            firstPage: `You kill the ${name}!  But wait...--More--`,
+            creditedKill: `You kill the ${name}!`,
             retainCursor: true,
         });
     } else {
@@ -13289,7 +13290,7 @@ async function zapSleepRay(direction) {
 // tty can suspend the credited kill, revival, bounce, and return-path miss
 // while the same beam and command transaction remain live.
 async function zapDeathRay(direction) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(4, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -13342,8 +13343,7 @@ async function zapDeathRay(direction) {
                         const amulet = wornMonsterLifeSaver(monster);
                         if (amulet) {
                             await lifeSaveMonster(monster, amulet, {
-                                firstPage:
-                                    `You kill the ${name}!  But wait...--More--`,
+                                creditedKill: `You kill the ${name}!`,
                             });
                         } else {
                             await finishHeroMonsterKill(
@@ -13363,27 +13363,52 @@ async function zapDeathRay(direction) {
                 if (rayHitsHero()) {
                     range -= 2;
                     await plineWithContinuation('The death ray hits you!');
-                    // done() is urgent output.  Before it can mutate hero
-                    // death state, tty pages the accumulated ray prose; an
-                    // exhausted replay legitimately ends at this boundary.
                     const pending = game._pending_message;
-                    if (pending)
-                        await moreUntilDismissed(`${pending}--More--`);
-                    game.u.uhp = 0;
-                    game.u.umortality = (game.u.umortality || 0) + 1;
-                    if (game.flags?.debug || game.flags?.explore) {
+                    const heroLifeSaver = game.uamul || game.u?.uamul;
+                    const heroLifeSaving = heroLifeSaver?.otyp
+                        === AMULET_OF_LIFE_SAVING;
+                    if (heroLifeSaving) {
+                        // done() commits fatal state before its life-saving
+                        // output.  The short "But wait" clause is allowed to
+                        // join the already-pending ray line even when that
+                        // combined line immediately owns tty's pager.
+                        game.u.uhp = 0;
+                        const lifeSaving = beginHeroLifeSaving();
+                        const opening = `${pending}  But wait...`;
+                        await moreUntilDismissed(`${opening}--More--`);
+                        await pline('Your medallion begins to glow!');
+                        await plineWithContinuation(
+                            'You feel much better!',
+                        );
+                        await plineWithContinuation(
+                            'The medallion crumbles to dust!',
+                        );
+                        completeHeroLifeSaving(lifeSaving);
+                        game._deathSurvivedMessagePending = true;
+                    } else {
+                        // Without an amulet, tty pages the accumulated ray
+                        // prose before done() commits HP zero and opens the
+                        // wizard/explore survival query.
+                        if (pending)
+                            await moreUntilDismissed(`${pending}--More--`);
+                        game.u.uhp = 0;
+                    }
+
+                    if (!heroLifeSaving
+                        && (game.flags?.debug || game.flags?.explore)) {
+                        game.u.umortality = (game.u.umortality || 0) + 1;
                         const die = String.fromCharCode(
                             await promptKey('Die? [yn] (n) '),
                         ).toLowerCase();
                         if (die !== 'y') {
                             restoreHeroAfterDeath();
                             await pline("OK, so you don't die.");
-                            game._debugDeathSurvivedMessagePending = true;
+                            game._deathSurvivedMessagePending = true;
                         } else {
                             await finishDeathWithBones();
                             return;
                         }
-                    } else {
+                    } else if (!heroLifeSaving) {
                         await finishDeathWithBones();
                         return;
                     }
@@ -13807,7 +13832,7 @@ async function dozap() {
         const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
         await zapDeathRay(directionChar);
         if (wand.dknown) {
-            if (wasUnknown) exerciseAttribute(2, true);
+            if (wasUnknown) exerciseAttribute(4, true);
             recordObjectKnowledge(wand.otyp);
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;

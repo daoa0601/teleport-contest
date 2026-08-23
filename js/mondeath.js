@@ -3,11 +3,12 @@
 
 import { W_AMUL } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { flush_screen, pline } from './display.js';
+import { flush_screen, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { MONSTER_NAME } from './monster_data.js';
+import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 
 async function lifeSavingPage(message) {
@@ -24,20 +25,23 @@ async function lifeSavingPage(message) {
 // without wearing it must never intercept monster death.
 export function wornMonsterLifeSaver(monster) {
     return (monster?.minvent || monster?.inventory || []).find(object =>
-        object.otyp === 202 && ((object.owornmask ?? 0) & W_AMUL));
+        object.otyp === AMULET_OF_LIFE_SAVING
+        && ((object.owornmask ?? 0) & W_AMUL));
 }
 
 // Run the source pre-detach revival transaction.  The fatal caller owns the
 // credited kill phrase and supplies it as the first pager; this owner consumes
 // the amulet and restores the actor before mondead() could detach it.
 export async function lifeSaveMonster(
-    monster, amulet, { firstPage, retainCursor = false } = {},
+    monster, amulet, { creditedKill, retainCursor = false } = {},
 ) {
     const name = MONSTER_NAME[monster.mnum] || 'monster';
     const subject = `The ${name}`;
-    await lifeSavingPage(firstPage || 'But wait...--More--');
+    if (creditedKill) await plineWithContinuation(creditedKill);
+    await plineWithContinuation('But wait...');
+    await lifeSavingPage(`${game._pending_message}--More--`);
 
-    exerciseAttribute(2, true);
+    exerciseAttribute(4, true);
     recordObjectKnowledge(amulet.otyp);
     await lifeSavingPage(
         `${subject}'s medallion begins to glow!--More--`,

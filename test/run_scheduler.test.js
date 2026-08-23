@@ -9090,7 +9090,7 @@ test('seed0011 abbot paralysis schedules fatal retry then replaces its debt',
         assert.equal(game.u.stunned, true);
         assert.equal(game._helplessTurns, 0);
         assert.equal(game._helplessReason, null);
-        assert.equal(game._debugDeathSurvivedMessagePending, false);
+        assert.equal(game._deathSurvivedMessagePending, false);
         assert.equal(game.context.move, 0);
     });
 
@@ -10130,7 +10130,116 @@ test('seed0592 death ray revives Wizard then survives its rebound',
         assert.equal(game.u.umortality, 1);
         assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
         assert.equal(game._helplessTurns, 0);
-        assert.equal(game._debugDeathSurvivedMessagePending, false);
+        assert.equal(game._deathSurvivedMessagePending, false);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0592 death ray consumes monster and hero life-saving amulets',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\namulet of life saving\nPk'
+            + '#wizwish\nwand of death\nzlk' + ' '.repeat(12);
+        const result = await runSegment({
+            seed: 592,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 169);
+        assertRngSliceExact(result.getRngSlices()[156], [
+            'rn2(19)=0', 'rn2(7)=1',
+            'rn2(20)=5', 'rnd(8)=3',
+            'rn2(20)=7', 'rnd(8)=3',
+        ], 'seed0592 double-life-saving opening ray RNG');
+        assert.equal(decodedTopline(result.getScreens()[156]),
+            'The death ray misses the Wizard of Yendor.  The death ray bounces!--More--');
+        assert.deepEqual(result.getCursors()[156], [74, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[157], [],
+            'seed0592 return-path credited kill pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[157]),
+            'You kill the Wizard of Yendor!  But wait...--More--');
+        assert.deepEqual(result.getCursors()[157], [51, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[158], [
+            'rn2(19)=4',
+        ], 'seed0592 return-path monster life-saving discovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[158]),
+            "The Wizard of Yendor's medallion begins to glow!--More--");
+        assert.equal(decodedTopline(result.getScreens()[159]),
+            'The Wizard of Yendor looks much better!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[160], [
+            'rn2(20)=1',
+        ], 'seed0592 fatal rebound hero hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[160]),
+            'The medallion crumbles to dust!  The death ray hits you!  But wait...--More--');
+        assert.equal(decodedRow(result.getScreens()[160], 23),
+            'Dlvl:1 $:1662 HP:0(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[160], [77, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[161], [],
+            'seed0592 hero life-saving glow pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[161]),
+            'Your medallion begins to glow!  You feel much better!--More--');
+        assert.equal(decodedRow(result.getScreens()[161], 23),
+            'Dlvl:1 $:1662 HP:0(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[161], [61, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[162], [
+            'rn2(19)=8', 'rn2(5)=2', 'rn2(5)=1',
+            'rnd(20)=9', 'd(2,12)=15',
+            'rn2(20)=9', 'rn2(3)=0', 'rn2(6)=4',
+            'rn2(30)=14', 'rn2(100)=32', 'rn2(300)=234',
+        ], 'seed0592 post-life-saving Wizard attack RNG');
+        assert.equal(decodedTopline(result.getScreens()[162]),
+            'The medallion crumbles to dust!  The Wizard of Yendor hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[162], 23),
+            'Dlvl:1 $:1662 HP:105(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[162], [67, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[163], [
+            'd(16,6)=60',
+        ], 'seed0592 post-life-saving Wizard spell RNG');
+        assert.equal(decodedTopline(result.getScreens()[163]),
+            'The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[164]),
+            'You feel as if you need some help.--More--');
+
+        assertRngSliceExact(result.getRngSlices()[165], [
+            'rnd(6)=3', 'rnd(11)=8', 'rnd(11)=8', 'rnd(11)=10',
+            'rn2(5)=3', 'rn2(5)=2', 'rn2(5)=1',
+            'rn2(12)=1', 'rn2(12)=8', 'rn2(12)=7',
+            'rn2(70)=45', 'rn2(100)=43', 'rn2(20)=7', 'rn2(64)=47',
+        ], 'seed0592 post-life-saving curse and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[165]),
+            'You feel a malignant aura surround you.--More--');
+        assert.equal(decodedTopline(result.getScreens()[166]),
+            'You survived that attempt on your life.');
+        assert.equal(decodedRow(result.getScreens()[166], 23),
+            'Dlvl:1 $:1662 HP:106(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[166], [38, 19, 1]);
+
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.mhp, 118);
+        assert.equal(wizard.mhpmax, 118);
+        assert.deepEqual(wizard.minvent.map(object => object.otyp), [329]);
+        assert.equal(wizard.misc_worn_check, I_SPECIAL);
+        assert.equal(game.u.uhp, 106);
+        assert.equal(game.u.uhpmax, 170);
+        assert.equal(game.u.acurr.a[2], 15);
+        assert.equal(game.uamul || game.u?.uamul || null, null);
+        assert.equal(game.inventory.some(object =>
+            object.otyp === AMULET_OF_LIFE_SAVING), false);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game._lifeSavedCount, 1);
+        assert.equal(game._knownObjectTypes.has(AMULET_OF_LIFE_SAVING), true);
+        assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
+        assert.equal(game._deathSurvivedMessagePending, false);
+        assert.equal(game.context.no_of_wizards, 1);
         assert.equal(game.context.move, 0);
     });
 

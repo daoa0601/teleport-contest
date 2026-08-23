@@ -159,6 +159,9 @@ export function completeHeroLifeSaving(transaction) {
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;
     game.context.move = 0;
+    game._helplessTurns = 1;
+    game._helplessReason = 'attempting to cheat Death';
+    game._helplessDoneMessage = '';
     rebasePrayerAfterLifeSaving(game);
     game._lifeSavedCount = (game._lifeSavedCount || 0) + 1;
     return true;
