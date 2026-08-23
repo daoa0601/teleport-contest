@@ -33221,3 +33221,44 @@ This section closes cardinal return-path source occupancy and nonfatal source
 damage prose.  It does not yet establish aggravate's actor-state mutation,
 floor pickup selection at input545, fatal source hits, reflection/resistance,
 diagonal bounce, or animation.  Lua owns only geometry.
+
+## 914. Pickup interest and adjacent offense are layered source policies
+
+~~~mermaid
+flowchart TD
+    Pile["seed52 input545 pile: gnome corpse, Wizard corpse, scroll329, potion305"] --> Broad["mon_would_take_item sees practical/useful classes"]
+    Broad --> Corpse1["mpickstuff skips ordinary gnome corpse"]
+    Corpse1 --> Corpse2["skip ordinary Wizard corpse"]
+    Corpse2 --> Useful["searches_for_item recognizes SCR_CREATE_MONSTER329"]
+    Useful --> Pickup["ogre takes one scroll stack; pickup consumes action"]
+    Pickup --> Adjacent["next phase four: ogre is monnear hero"]
+    Adjacent --> ReflectSkip["reflection_skip suppresses ray wand429"]
+    ReflectSkip --> Weapon["fall through to wielded battle-axe45"]
+    Weapon --> Base["AT_WEAP d 3,5 equals10"]
+    Base --> Dmgval["dmgval rnd 8 equals5 plus small-target rnd 4 equals3"]
+    Dmgval --> Hit["knockback tail and maintenance"]
+    Lua["Lua contributes pile and adjacency geometry only"] -.-> Pile
+    Lua -.-> Adjacent
+    Lua -.->|"no ownership"| Corpse1
+    Lua -.->|"no ownership"| ReflectSkip
+~~~
+
+`mon_would_take_item()` is only the first pickup gate.  Even a collector which
+likes FOOD_CLASS must pass `mpickstuff()`'s ordinary-corpse exclusion; only
+petrifying, lizard and acidic corpses pass for a non-nymph.  Separately,
+`searches_for_item()` gives intelligent actors a source-defined useful-scroll
+set independent of M2_MAGIC.  These layers make scroll329 the first eligible
+stack without altering the physical pile order.
+
+Once adjacent, `find_offensive()` applies `reflection_skip=monnear()` to ray
+wands but not striking/non-reflectable offense.  The ogre therefore retains
+magic-missile wand429 at spe1 and attacks with its already-wielded battle-axe.
+Against the small hero the axe owns both its encoded 1d8 and supplemental 1d4
+after the AT_WEAP base damage.  Input546 ends hero HP56/169, `udg_cnt=89`, ogre
+at (6,8), HP34/42, inventory[45,429,438,293,329].
+
+This section closes reached ordinary-corpse rejection, useful scroll-create-
+monster pickup, adjacent ray-wand suppression and battle-axe small-target
+damage.  It does not close other searches_for_item classes, petrifying/acidic
+corpse pickup, observed reflection, other supplemental weapons, aggravate
+mutation, input548 gas-cloud state, or animation.  Lua owns geometry only.

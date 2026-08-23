@@ -13295,3 +13295,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   HP74/169 with udg1.  Parity advances through input544 and reaches exact
   outcome3 selection at540, but aggravate state is not yet accepted.  Input545
   floor-pickup policy is next.  Focused/expanded gates pass 6/6 and54/54.
+- Seed52 inputs545--546 close the reached pickup/adjacent-offense policy.  Ogre
+  collectors must still skip ordinary non-nymph corpses; the independent
+  searches_for_item set recognizes scroll329, so ogre86 skips two corpses and
+  picks up the FNORD scroll.  Adjacent monnear reflection-skip then suppresses
+  the remaining ray-wand charge and falls through to battle-axe45.  Its damage
+  is base d(3,5), rnd(8), plus small-target rnd(4), ending hero HP56/169 and
+  udg89 with inventory[45,429,438,293,329].  Parity advances through input547;
+  input548 gas-cloud state and aggravate mutation remain open.  Focused/
+  expanded gates pass 7/7 and55/55.

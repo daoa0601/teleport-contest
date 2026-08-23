@@ -90037,3 +90037,122 @@ exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 22:43 EEST, journal block 2984] {#seed52 #ogre-tyrant #mpickstuff #corpse #searches-for-item #floor-pile #earliest-divergence #source-state #priority}
+
+**Post-source-hit frontier:** RNG, cursor and decoded screen remain exact
+through input544.  Input545 consumes the same 14-call action in both engines,
+but native says `The ogre king picks up a scroll labeled FNORD` while
+JavaScript says `picks up a corpse`.  The floor pile begins with the new gnome
+corpse, an older Wizard corpse, scroll329 and potion305.
+
+**Source diagnosis and prediction:** `mon_would_take_item()` can classify
+FOOD_CLASS as practical for a collector, but `mpickstuff()` then has a stricter
+corpse gate.  Every non-nymph skips an ordinary corpse unless it petrifies on
+touch, is a lizard, or is acidic.  JavaScript applies only the broad practical-
+class predicate, so ogre86 takes the head gnome corpse.  Add the post-interest
+corpse gate using cockatrice/chickatrice, PM_LIZARD and M1_ACID.  The scan
+should skip both ordinary corpses and select the first source-useful scroll329
+without changing RNG or movement.
+
+**Decision:** correct shared one-stack `mpickstuff()` selection, assert pile
+and carried-object identity at input545, then relocalize before interpreting
+downstream aggravate state.  No focused regression, corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 22:48 EEST, journal block 2985] {#seed52 #ogre-tyrant #searches-for-item #scroll-create-monster #pickup-policy #prediction-refinement #source-state #priority}
+
+**Refinement to block2984:** the corpse gate correctly skips both head corpses,
+but JavaScript then selects no object and lets ogre86 spend its last magic-
+missile charge.  Native selects scroll329.  The remaining gap is not pile order
+or carrying capacity; it is the independent useful-item classifier.
+
+**Complete reached owner:** `searches_for_item()` lets every sighted,
+non-animal, non-mindless actor seek `SCR_TELEPORTATION`, `SCR_CREATE_MONSTER`,
+`SCR_EARTH` and `SCR_FIRE`, independent of species M2_MAGIC.  JavaScript's
+class-independent set currently includes survival potions and containers only.
+Add the four source scroll identities, retaining the ordinary-corpse exclusion
+as `mpickstuff()`'s later gate.  Ogre86 should then select head-eligible
+scroll329, publish the native pickup line, preserve wand spe1 and consume no
+extra RNG.
+
+**Decision:** bind both two-layer predicates in the same input545 regression;
+leave the remaining wand-use branch and other searches_for_item classes for
+their own witnesses.  No focused regression, corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 22:54 EEST, journal block 2986] {#seed52 #ogre-tyrant #find-offensive #reflection-skip #monnear #magic-missile #melee #earliest-divergence #priority}
+
+**Post-pickup frontier:** input545 now matches the source scroll329 pickup and
+pager with no additional RNG.  Input546 should resume with the adjacent ogre's
+wielded battle-axe attack: native owns `rnd(20)=8`, `d(3,5)=10`, artifact/armor
+side rolls, then maintenance.  JavaScript instead owns magic-missile range/hit
+and publishes another zap pager.
+
+**Source diagnosis and prediction:** `find_offensive()` sets
+`reflection_skip` when the monster has observed reflection or `monnear()` is
+true.  That gate excludes ray wands, including WAN_MAGIC_MISSILE, while still
+allowing WAN_STRIKING and other non-reflectable offense.  JavaScript's combined
+wand selector applies magic-resistance memory but not adjacency/reflection.
+Filter magic-missile selection when the retained apparent hero coordinate is
+adjacent; with no striking wand, phase four should fall through to the already-
+wielded battle-axe and recover native input546.
+
+**Decision:** port the reached adjacency half of reflection_skip and leave
+observed-reflection memory plus other ray types open.  No focused regression,
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 22:59 EEST, journal block 2987] {#seed52 #ogre-tyrant #battle-axe #dmgval #small-target #melee #prediction-refinement #source-order #priority}
+
+**Reflection-skip result:** filtering adjacent ray wands correctly reaches the
+battle-axe attack and exact visible prose at input546.  JavaScript matches
+`rnd(20)=8`, base `d(3,5)=10` and weapon `rnd(8)=5`, then starts knockback.
+Native owns one additional `rnd(4)=3 @ dmgval`, shifting the remaining turn.
+
+**Source refinement and prediction:** for a non-big defender, battle-axe is in
+dmgval's supplemental small-target list: its ordinary 1d8 weapon die is
+followed by +rnd(4), before enchantment/erosion and knockback.  Add the reached
+battle-axe supplement inside the existing physical AT_WEAP owner.  Input546
+should then regain the complete 19-call slice and leave the hero damage/prose
+path otherwise unchanged.
+
+**Decision:** keep adjacency reflection-skip and the weapon's reached damage
+shape in one input546 combat regression.  Other supplemental weapon tables and
+observed reflection remain open.  No focused regression, corpus, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 23:09 EEST, journal block 2988] {#seed52 #ogre-tyrant #mpickstuff #searches-for-item #corpse #scroll-create-monster #reflection-skip #battle-axe #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `428af1d` adds the
+post-interest ordinary-corpse gate, the reached four-scroll useful-item set,
+adjacent ray-wand reflection-skip, and battle-axe's supplemental small-target
+1d4.  The 547-state regression compares only input545's 14-call movement and
+input546's 19-call melee slice plus two screens/cursors and durable pile,
+inventory, wand, weapon and hero state.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input547.  Ogre86 skips gnome/Wizard corpses, picks scroll329, retains
+wand429 spe1, then attacks adjacent with wielded battle-axe45.  Final state is
+ogre (6,8), HP34/42, inventory[45,429,438,293,329], hero HP56/169, mortality2
+and `udg_cnt=89`; the two corpses remain at the pile head.  Full replay advances
+to **7,527/9,928 RNG calls, 545/793 screens and 597/793 cursors** in **0.34
+seconds** at **133,464,064 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **7/7**
+in **0.62 seconds** at **206,061,568 bytes maximum RSS**.  Expanded controls
+pass **55/55** in **1.60 seconds** at **347,865,088 bytes maximum RSS**.
+Section914 and the ledger map both layered policies.  Input548 gas-cloud state,
+outcome3 actor mutation, outcome4 and animation remain open.  Every process
+exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
