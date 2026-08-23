@@ -13348,3 +13348,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   commit6f11bc0 fixes that nonzero arm and the identical window then completes.
   A new native-valid recipe or selection strategy is required before any nasty
   branch claim.
+- Outcome4 is now closed by native seed211.  Direct slice selection found
+  input524 and native confirms `rn2(6)=4 @ intervene`.  A resumable null-
+  summoner nasty transaction creates mnums58/42/291/42/121/10/175/175/155/120,
+  preserves each constructor pager, suppresses the duplicate storm line,
+  distinguishes adjacent/close-by prose, and resets udg204 only after the final
+  zruty.  Post-nasty prerequisites close cockatrice rn2(3)=0/rn2(10)=5 audible
+  non-petrification, demon blessed-to-cursed mongets for potion309, and the
+  uneasy pink-potion call prompt.  Shared getLine now wraps at width79 and caps
+  values at80.  Final carrier score is10,399/10,399 RNG,792/793 screens(input2),
+  793/793 cursors and0/4 animation.  Focused/expanded gates pass5/5 and61/61.

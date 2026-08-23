@@ -90476,3 +90476,211 @@ or recorder remains.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-24 01:18 EEST, journal block 3002] {#outcome4 #selector #direct-branch #seed211 #input524 #native-validation-required #process-safety #priority}
+
+**Redesigned bounded selector:** endpoint `_unresolvedDemigodIntervention`
+missed transient branch state.  A single engine-only scan of seeds1--256 instead
+searched every input slice for the direct unresolved-outcome signature
+`rn2(6)=4` immediately followed by `rn2(200)`.  It finds seed211 input524
+call31; the bounded neighborhood ends maintenance calls, then outcome4 and
+reset9.
+
+**Evidence boundary and decision:** this remains a JavaScript nominee because
+the unimplemented branch resets before native `nasty()` would run.  Record the
+identical 792-input forced-noop recipe natively and require
+`rn2(6)=4 @ intervene`; if native selects another outcome, reject the carrier.
+If validated, localize the earliest strict engine-only divergence before the
+branch and port prerequisites in order.  The selector exited in **12.04
+seconds** at **406,929,408 bytes maximum RSS**.  No recorder, corpus, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 01:26 EEST, journal block 3003] {#seed211 #intervention #outcome4 #nasty #native-witness #tty #constructor-callback #earliest-divergence #priority}
+
+**Native validation and exact prefix:** seed211 is a valid carrier.  Input524
+owns `rn2(6)=4 @ intervene`, then native `nasty(NULL)` begins with rn2(10)=9,
+rnd(10)=8 and pick_nasty index16.  Strict engine-only full-cell comparison is
+exact through input523; input524 first diverges at call32 because JavaScript
+resets immediately while native constructs and pages an ochre jelly.
+
+**Source continuation:** null-summoner nasty uses neutral alignment/difficulty0,
+targets the hero square, and allows ordinary `makemon()` arrival prose.  The
+constructor message is a tty boundary before nasty clears sleeping/attitude,
+sets mspec_used=rnd(4), and chooses the next candidate.  Native pages ochre
+jelly at524, winged gargoyle at525 and horned devil at528, proving that all
+births cannot be constructed atomically before presentation.
+
+**Prediction and decision:** extend shared `summonNastyMonsters()` with an
+awaited per-created callback after constructor/birth projection and before
+hostile/mspec override.  Outcome4 becomes a pending maintenance continuation;
+the callback emits `A/An <monster> suddenly appears next to you!`, and reset/
+environment/Seer resume only after nasty completes.  Re-localize after the
+first three pages before accepting the full branch.  Native recording ran once
+in **0.41 seconds** at **64,192,512 bytes maximum RSS**; pre-edit replay is
+**9,695/10,399 RNG, 523/793 screens and 529/793 cursors** in **0.40 seconds** at
+**135,331,840 bytes maximum RSS**.  No corpus, hidden judge, push or publication
+ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 01:36 EEST, journal block 3004] {#seed211 #nasty #duplicate-message #storm-giant #tty #constructor-order #earliest-divergence #prediction-refinement #priority}
+
+**Post-callback replay:** async nasty creation is exact through input539 and
+constructs the same first seven direct actors.  Input540 native owns144 calls
+while JavaScript owns90.  The first90 calls construct storm giant #2; native
+then owns its rnd(4), pick_nasty13 and fire-elemental constructor before the
+storm page blocks.
+
+**Source/message diagnosis:** storm giant #1's arrival line is already pending
+from input537.  When storm giant #2 is constructed, native suppresses the exact
+duplicate arrival prose and continues.  Fire elemental has a different line;
+submitting it forces the single pending storm line into --More--.  JavaScript
+queues the duplicate storm line as a new message and suspends one constructor
+too early, shifting input attribution without changing the eventual actor set.
+
+**Prediction and decision:** in the outcome4 birth callback, skip only an exact
+arrival message already equal to `_pending_message`; retain all distinct names
+and normal tty awaits.  Input540 should include both the second storm and fire
+constructors, input543 should resume with fire's postprocess and zruty creation,
+and reset154 should return to native input546.  Other duplicate pline classes
+remain outside this reached rule.  No corpus, hidden judge, push or publication
+ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 01:43 EEST, journal block 3005] {#seed211 #nasty #fire-elemental #arrival-prose #placement-distance #screen #earliest-divergence #priority}
+
+**Post-duplicate replay:** input540 RNG and storm page become exact.  Input543
+matches all53 native RNG calls and cursor phase except the arrival text: native
+`A fire elemental suddenly appears close by!`, JavaScript `...next to you!`.
+The fire elemental's final constructor position is distance2 from the hero;
+earlier jelly/gargoyle/devil/couatl/cockatrice/storm actors are adjacent.
+
+**Prediction and decision:** derive the null-summoner makemon arrival suffix
+from final Chebyshev distance: adjacent is `next to you`, otherwise `close by`.
+This is presentation-only and must not alter constructor, attitude or nasty
+RNG.  Re-localize the reset boundary afterward.  No corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 01:51 EEST, journal block 3006] {#seed211 #cockatrice #stoning-touch #hiss #petrification-gate #post-nasty #earliest-divergence #priority}
+
+**Post-nasty/reset replay:** arrival distance wording closes input543, and the
+complete nasty transaction/reset is exact through input557.  Input558 native
+cockatrice touch owns `rn2(3)=0 @ mhitm_ad_ston`, then `rn2(10)=5`, shared
+knockback, and later winged-gargoyle combat.  JavaScript owns the first rn2(3)
+but jumps directly to knockback, shifting every later call and message.
+
+**Source owner and prediction:** the selected hiss branch publishes
+`You hear the cockatrice's hissing!`; only `!rn2(10)` or new moon proceeds to
+`do_stone_u()`.  Reached value5 rejects petrification with no state mutation.
+Complete the deferred stoning-special owner as rn2(3), hiss message state,
+rn2(10), then existing knockback.  Queue the hiss alongside the touch line in
+allmain.  Actual petrification, cancelled cough, hallucinated kiss, deaf grimace
+and new-moon override remain explicit successors.
+
+**Decision:** add a bounded non-petrifying hiss regression after relocalization,
+then continue the same native outcome4 carrier.  No corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 02:00 EEST, journal block 3007] {#seed211 #horned-devil #mongets #demon #gain-level-potion #blessed-to-cursed #prompt #earliest-divergence #priority}
+
+**Post-hiss replay:** cockatrice hiss restores complete session RNG parity at
+10,399/10,399.  Input567 then diverges without native RNG: native horned devil
+`looks uneasy`, pages, and inputs570+ enter `Call a pink potion:`.  JavaScript
+says `seems more experienced`, consumes growth/combat RNG, and skips the prompt.
+
+**Source diagnosis and prediction:** the horned devil's mksobj transaction
+creates a blessed POT_GAIN_LEVEL.  Native `mongets()` has an S_DEMON policy:
+blessed objects are cursed before entering minvent.  JavaScript's mklev/nasty
+and ambient mongets-shaped helpers insert the raw blessed object.  Apply the
+shared demon conversion (`blessed=false`, `cursed=true`) immediately after
+mksobj.  Existing cursed gain-level handling should then publish uneasy,
+consume no growth RNG, call the unidentified pink potion, and retain native
+input attribution.
+
+**Decision:** repair both constructor frontends, assert horned potion state and
+the interactive call prompt, then relocalize.  Lawful-minion and other mongets
+postprocessing remain separate unless reached.  No corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 02:10 EEST, journal block 3008] {#seed211 #getline #tty #cursor-wrap #safe-margin #potion-call #earliest-divergence #priority}
+
+**Post-demon replay:** cursed gain-level state restores all10,399 native RNG
+calls.  Inputs567--629 match uneasy/pager/call-prompt cells and cursors.  At
+input630 the cells remain identical but native cursor wraps to (1,1) while
+JavaScript reports (80,0); later characters remain missing from row1.
+
+**Source/terminal diagnosis:** tty getlin avoids the auto-margin column.  It
+uses a 79-column writable width: after combined prompt/value length79 the cursor
+is (79,0); the next character wraps before writing to row1 column0 and leaves
+cursor (1,1).  JavaScript stores one pending topline, lets x exceed79, and
+clears only row0 when the editor finishes.
+
+**Prediction and decision:** render the complete editor buffer in 79-column
+chunks across owned message rows, clear all previously owned rows on redraw/
+finish, and compute cursor as `row=floor((len-1)/79)`,
+`x=((len-1)%79)+1`.  Preserve short-prompt behavior and status suppression.
+The long forced-noop potion name should then match cells/cursors through792.
+No corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-24 02:18 EEST, journal block 3009] {#seed211 #getline #tty #input-limit #potion-call #cursor #earliest-divergence #prediction-refinement #priority}
+
+**Post-wrap replay:** 79-column rendering restores prompt cells/cursors through
+input650.  At input651 native remains cursor(21,1) with unchanged rows, while
+JavaScript appends the space and advances to(22,1); later m/dot keys continue
+extending only JavaScript.
+
+**Source boundary and prediction:** the prompt accepted exactly80 value
+characters from inputs571--650.  tty_getlin then ignores further printable
+characters until newline, Escape or backspace changes editor state.  This limit
+is on the value, independent of the19-character prompt and safe-margin wrap.
+Cap ordinary accepted insertion at value length80 while retaining backspace and
+termination handling.  The prompt should freeze identically through input792.
+
+**Decision:** add the reached input limit to shared getLine and assert both the
+first wrap and saturation boundary.  No corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 02:31 EEST, journal block 3010] {#seed211 #intervention #outcome4 #nasty #cockatrice #demon-mongets #getline #complete-replay #engine-only #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and complete outcome4 acceptance:** commit `dc4deac` makes
+outcome4 a deferred maintenance continuation, adds awaited per-birth nasty
+callbacks, exact duplicate/distance prose, demon blessed-to-cursed mongets,
+the reached cockatrice hiss/petrification rejection, and shared tty getLine
+wrap/saturation.  Two durable tests bound the 138/144-call constructor inputs
+by length plus small prefixes/suffixes, compare the final two-call reset, actor
+roster, selected pages, seven-call hiss slice, cursed potion and prompt cursor/
+row boundaries.  No flattened transcript assertion is used.
+
+**Complete engine-only evidence:** native/JavaScript match **10,399/10,399 RNG
+calls, 792/793 scorer screens and 793/793 cursors** in **0.35 seconds** at
+**134,397,952 bytes maximum RSS**.  Full decoded-cell comparison confirms every
+gameplay screen input3--792 is exact; input2 is the sole screen miss.  Native
+animation remains **0/4**.  Final nasty ids/mnums are exact, unresolved outcome
+state is cleared, and the delayed reset leaves `udg_cnt=204` at input546.
+
+**Controls and audit:** focused outcome3/outcome4/death controls pass **5/5**
+in **0.53 seconds** at **217,825,280 bytes maximum RSS**.  Expanded fixture-
+disabled controls pass **61/61** in **1.96 seconds** at **365,101,056 bytes
+maximum RSS**.  One pre-replay syntax check caught a duplicate NO_COLOR import;
+no session work ran in that failed attempt, and the existing import was reused
+before verification.  Sections920--922 and the ledger close the C/JavaScript/
+Lua ownership chain.  Intervention outcomes0--5 are now represented by native
+carriers; input2 tutorial and native animation remain independent open channels.
+Every process exited.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---

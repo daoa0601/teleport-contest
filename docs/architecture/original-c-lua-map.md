@@ -33425,3 +33425,103 @@ This section closes reached gas-region versus distant-monster precedence and
 the complete outcome3 carrier's engine core.  It does not close every sensed/
 warning/adjacent region variant, non-gas region glyphs, input2 tutorial,
 outcome4 nasty, or animation.  Lua owns only coordinates.
+
+## 920. Outcome4 keeps null-summoner nasty live across each birth pager
+
+~~~mermaid
+flowchart TD
+    Clock["seed211 input524 udg reaches0"] --> Select["intervene rn2 6 equals4"]
+    Select --> Pending["store maintenance continuation; do not reset"]
+    Pending --> Gate["nasty null rn2 10 equals9"]
+    Gate --> Outer["rnd 10 equals8 outer iterations"]
+    Outer --> Pick["pick_nasty from 44-entry table"]
+    Pick --> Construct["makemon near occupied hero square"]
+    Construct --> Project["birth attitude/map projection"]
+    Project --> Arrival["await A or An monster appears next-to or close-by"]
+    Arrival --> Override["clear sleep/peace/tame; rnd 4 mspec"]
+    Override --> Pick
+    Duplicate["second consecutive storm giant"] --> Suppress["suppress exact pending duplicate line"]
+    Suppress --> Pick
+    Pick --> Duplicate
+    Override --> Count["ten direct actors complete"]
+    Count --> Reset["only after final zruty line: rn2 200 equals154; udg204"]
+    Reset --> Tail["resume environment and Seer same source turn"]
+    Lua["Lua contributes hero room and placement geometry only"] -.-> Construct
+    Lua -.->|"no ownership"| Select
+    Lua -.->|"no ownership"| Override
+~~~
+
+Endpoint unresolved state was an inadequate selector.  Direct per-input branch
+capture found seed211, and native confirms `rn2(6)=4 @ intervene`.  The
+null-summoner path is neutral/difficulty0 harassment: it targets the hero and
+uses ordinary visible makemon feedback.  Each completed constructor can suspend
+before hostile/mspec override and the next pick, so countdown reset cannot be
+performed in the synchronous selector.
+
+The async callback preserves constructor/presentation order and handles two
+observable message rules: final placement distance chooses `next to you` versus
+`close by`, and an exact already-pending duplicate storm-giant arrival is
+suppressed so fire-elemental construction remains in input540.  The ten direct
+mnums are [58,42,291,42,121,10,175,175,155,120], with ids
+[117,119,120,131,133,134,136,143,156,158].
+
+This section closes non-Astral outcome4 selection, ten-actor nasty construction,
+visible tty suspension, duplicate prose, hostility/mspec postprocessing and
+delayed reset.  It does not close Hell msummon, genocided fallback, Astral
+selection, other placement failures, input2 tutorial, or animation.  Lua owns
+only geometry.
+
+## 921. Post-nasty combat exposes stoning and demon mongets policies
+
+~~~mermaid
+flowchart TD
+    Cockatrice["input558 cockatrice touch"] --> HissGate["rn2 3 equals0"]
+    HissGate --> Hiss["You hear the cockatrice's hissing"]
+    Hiss --> StoneGate["rn2 10 equals5 rejects petrification"]
+    StoneGate --> Knockback["shared rn2 3 and rn2 6 tail"]
+    DemonBirth["horned devil constructor mksobj creates blessed pink gain-level"] --> DemonPolicy["S_DEMON mongets converts blessing to curse"]
+    DemonPolicy --> Drink["input564 drinks pink potion"]
+    Drink --> Uneasy["cursed non-rising branch: looks uneasy"]
+    Uneasy --> Call["unidentified appearance opens Call a pink potion editor"]
+    Lua["Lua contributes no combat or object-state ownership"] -.-> Cockatrice
+    Lua -.->|"no ownership"| DemonPolicy
+~~~
+
+The existing stoning continuation covered only the non-hiss branch.  The reached
+hiss branch now owns its second petrification gate before ordinary knockback;
+value5 leaves the hero unstoned.  Separately, both constructor frontends now
+apply `mongets()`'s demon rule: a raw blessed object becomes cursed before
+minvent insertion.  Horned devil120 therefore retains a cursed, unblessed
+POT_GAIN_LEVEL309 instead of gaining a level.
+
+This section closes the non-petrifying audible hiss and cursed demon gain-level
+uneasy/call-prompt path.  It does not close selected petrification, new moon,
+cancelled/deaf/hallucinated hiss variants, cursed upward migration, other demon
+objects, lawful-minion policy, or animation.  Lua has no ownership.
+
+## 922. Tty get-line wraps at 79 columns and caps values at 80 characters
+
+~~~mermaid
+flowchart TD
+    Prompt["Call a pink potion plus value buffer"] --> Short["combined length through79 stays row0; cursor79"]
+    Short --> Wrap["next character wraps before writing to row1 col0"]
+    Wrap --> Cursor["combined length80 gives cursor1,1"]
+    Cursor --> Chunks["render complete buffer in 79-column message rows"]
+    Chunks --> Limit["after80 value characters, printable input is ignored"]
+    Limit --> Frozen["cursor remains21,1 and cells freeze through input792"]
+    Finish["newline/Escape clears every owned message row"] --> Prompt
+    Lua["Lua contributes no tty ownership"] -.-> Prompt
+~~~
+
+The editor's safe margin is 79 writable columns even though the terminal has80
+cells.  Its input cap is separately80 value characters and excludes the prompt.
+The shared renderer now owns all wrapped rows, clears its prior footprint on
+redraw/finish, and computes cursor position from the full buffer.  Seed211
+matches native from the first wrap at input630 through saturation at650 and the
+unchanged prompt endpoint792.
+
+This section closes reached multirow getlin rendering and saturation, completing
+the seed211 engine core: 10,399 RNG calls, all gameplay screens3--792 and all793
+cursors.  Scorer screen792/793 is input2; native animation remains0/4.  It does
+not close editing beyond backspace/termination, other window types, tutorial or
+animation.  Lua has no ownership.
