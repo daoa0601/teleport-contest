@@ -10880,6 +10880,52 @@ test('seed0052 experienced magic missile kills zombie before hero hit',
         assert.equal(game._vanquishedCounts.get(240)?.count, 1);
     });
 
+test('seed0052 bounced magic missile can hit its source ogre',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 537),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 538);
+        assertRngSliceExact(result.getRngSlices()[537], [
+            'd(2,6)=9', 'rn2(2)=1', 'rn2(20)=12',
+            'd(2,6)=8', 'rn2(5)=3', 'rn2(20)=11',
+            'rn2(16)=14', 'rn2(8)=5', 'rn2(5)=1',
+            'rn2(5)=4', 'rnd(20)=13', 'd(1,2)=2',
+        ], 'seed0052 returned source-hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[537]),
+            'The magic missile hits you!  The magic missile hits the ogre king!--More--');
+        assert.equal(
+            decodedRow(result.getScreens()[537], 9).slice(3, 13),
+            'x@%O~~~!~~',
+        );
+        assert.equal(decodedRow(result.getScreens()[537], 23),
+            'Dlvl:1 $:1965 HP:74(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[537], [74, 0, 1]);
+
+        const ogre = game.level.monsters.find(monster =>
+            monster.m_id === 86);
+        assert.ok(ogre);
+        assert.deepEqual([ogre.mx, ogre.my], [7, 8]);
+        assert.equal(ogre.mhp, 34);
+        assert.equal(ogre.mhpmax, 42);
+        const wand = ogre.minvent.find(object => object.otyp === 429);
+        assert.ok(wand);
+        assert.equal(wand.spe, 1);
+        assert.equal(ogre.mwandexp, true);
+        assert.equal(game.u.uhp, 74);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.u.udg_cnt, 1);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

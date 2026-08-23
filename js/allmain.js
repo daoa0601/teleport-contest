@@ -3296,9 +3296,9 @@ function monsterBeamPositionIsOpen(x, y) {
     return !!location && ZAP_POS(location.typ) && !closedDoor;
 }
 
-function monsterBeamTargetAt(x, y, source) {
-    return game.level?.monsters?.find(monster => monster !== source
-        && (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)
+function monsterBeamTargetAt(x, y) {
+    return game.level?.monsters?.find(monster =>
+        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)
         || null;
 }
 
@@ -3341,7 +3341,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                         && cansee(previousX, previousY)))) {
                 paintBeamCell(x, y);
             }
-            const target = monsterBeamTargetAt(x, y, action.monster);
+            const target = monsterBeamTargetAt(x, y);
             if (target) {
                 if (offensive.firstShotForcedMiss) {
                     if (cansee(x, y)) {
@@ -3371,7 +3371,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                             await queueTurnMessage(
                                 `The magic missile hits the ${
                                     quietMonsterName(target)
-                                }.`,
+                                }!`,
                             );
                         }
                     } else if (cansee(x, y)) {
