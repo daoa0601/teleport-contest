@@ -7120,6 +7120,10 @@ export async function moveloop_core() {
         // turn; prayer consumes that ration but must not shorten its nominal
         // three-turn duration a second time.
         if (g._prayerLastTickMove !== prayerTurn) {
+            await captureRunmodeDelay(
+                g, true, prayerTurn,
+                { preservePhysicalTopline: true },
+            );
             g._prayerLastTickMove = prayerTurn;
             g._prayerTurnsRemaining--;
         }

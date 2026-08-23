@@ -12089,6 +12089,53 @@ test('seed4500 unseen projectile retains the physical prayer prompt in flight',
         }
     });
 
+test('seed4500 prayer cadence precedes forced and ambient completion pagers',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed4500-knight-coverage.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 1137),
+            storage: new Map(),
+        });
+        for (const step of [852, 1136]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed4500 prayer cadence input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed4500 prayer cadence input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed4500 prayer cadence input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            assertScreenExact(
+                actualFrames[0].screen,
+                nativeFrames[0].screen,
+                `seed4500 prayer cadence input${step} frame0`,
+            );
+            assert.deepEqual(
+                actualFrames[0].cursor,
+                nativeFrames[0].cursor,
+                `seed4500 prayer cadence input${step} cursor0`,
+            );
+        }
+    });
+
 test('seed0116 digging beam delays visible and invisible path cells',
     async () => {
         const session = JSON.parse(fs.readFileSync(
