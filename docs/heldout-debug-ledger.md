@@ -13433,3 +13433,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   managed public gate reaches43/44 with seed0399 input117 as the sole remaining
   public engine regression.  Its missing opening actor block and `C` glyph are
   the next source-first target; normal scoring and publication remain deferred.
+- Commit0dc1776 closes the final public engine regression.  Seed0399's resumed
+  werewolf speed-potion path was charging Wisdom exercise even though
+  POT_SPEED was already globally known; one false rn2(19) shifted every later
+  actor and Hallucination display projection.  Discovery credit now requires
+  both dknown and a previously unknown type.  Seed0399 becomes exact at11,409
+  RNG calls and532 screens/cursors.  The managed engine-only corpus and the
+  subsequently run normal frozen-overlay gate both pass44/44.  Frozen terminal
+  and storage copies were restored, no verifier remains, and no push/hidden
+  judge/publication ran.  Public exactness is restored; broader supplemental
+  animation and unmapped held-out branches remain open port work.

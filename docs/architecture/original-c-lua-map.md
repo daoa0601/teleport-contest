@@ -33929,3 +33929,36 @@ the entire ten-segment session:105,529 RNG calls and1,953 screens/cursors.
 This section closes represented underfoot monster pickup and silent/visible
 continuation ordering.  It does not close every `mon_would_take_item` class or
 the remaining seed0399 actor block.  Lua owns geometry only.
+
+## 934. Monster potion observation credits only a new type discovery
+
+~~~mermaid
+flowchart TD
+    Use["visible monster drinks speed potion"] --> Observe{"can object be observed now?"}
+    Observe -->|"no, for example Hallucination"| Prose["publish perceived drink/effect only"]
+    Observe -->|"yes"| DKnown["object appearance is dknown"]
+    DKnown --> Known{"type already in global discoveries?"}
+    Known -->|"yes"| NoCredit["no exercise and no duplicate discovery"]
+    Known -->|"no"| Credit["exercise Wisdom and record type"]
+    NoCredit --> Resume["resume remaining movemon actors"]
+    Credit --> Resume
+    Lua["Lua contributes no object-knowledge ownership"] -.-> Observe
+~~~
+
+Object observation, individual `dknown`, and global type discovery are separate
+states.  A visible use can establish the first two, but `makeknown()` awards
+credit only when the type was not already known.  Calling the record helper on
+an existing set member is a no-op and must not be preceded by a Wisdom exercise
+draw.
+
+Seed0399 enters the resumed werewolf speed-potion continuation with POT_SPEED
+already in `_knownObjectTypes`.  JavaScript formerly consumed `rn2(19)` anyway,
+shifting the remaining movemon scan and every Hallucination display projection.
+Gating the credit restores input117's native opening `distfleeck`, actor
+movement and `C` glyph without any scheduler or display exception.
+
+The independent seed14 control remains globally unknown while Hallucinating,
+so neither dknown nor discovery credit is established there.  Seed0399 is exact
+at11,409 RNG calls and532 screens/cursors.  This section closes represented
+speed-potion discovery credit; other monster-used object types retain their
+own effect and observation branches.  Lua owns none.

@@ -91396,3 +91396,72 @@ until engine-only is44/44.  The post-gate registry is empty; no hidden judge,
 push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:59 EEST, journal block 3041] {#seed0399 #input117 #potion-speed #makeknown #wisdom #hallucination #earliest-divergence #source-diagnosis #prediction}
+
+**Earliest-call correction:** input117's missing native actor block is
+preceded on JavaScript by `rn2(19)=5`, which is not native movement.  It is the
+Wisdom exercise in the resumed werewolf speed-potion continuation.  The exact
+pre-use state already contains POT_SPEED302 in `_knownObjectTypes`; the carried
+potion is also dknown/known.
+
+**Source owner:** C's discovery credit occurs only when `makeknown()` learns a
+new type.  JavaScript's potion-speed branch checks `object.dknown` but not
+whether the type is already globally known, so it exercises Wisdom on a
+no-op `recordObjectKnowledge()`.  The false call shifts every remaining actor,
+hallucinated display draw and allocation in the resumed scan.
+
+**Prediction:** require both dknown and previously unknown type before exercise
+and record.  Input117 should begin with native `rn2(5)=2 @ distfleeck`, restore
+the moving hallucinated glyph at(53,7), and either close the session or expose
+the next true source gap.  Do not patch actor admission or display glyphs.
+
+---
+
+### [2026-08-23 22:01 EEST, journal block 3042] {#seed0399 #input117 #potion-speed #makeknown #wisdom #implementation #complete-replay #bounded-regression #heldout-control #architecture #process-safety}
+
+**Implementation:** commit `0dc1776` gates speed-potion Wisdom credit on both
+visible object knowledge and a previously unknown global type.  A no-op
+`recordObjectKnowledge()` no longer consumes exercise RNG.  Unknown potion
+observation remains unchanged.
+
+**Evidence:** seed0399 inputs113--120 pass **1/1** in **0.28 seconds** at
+**140,328,960 bytes maximum RSS**.  The known/unknown Hallucinated speed-potion
+pair passes **2/2** in **0.29 seconds** at **142,409,728 bytes maximum RSS**.
+The complete seed0399 session becomes strict **PASS** at11,409/11,409 RNG and
+532/532 screens/cursors in **0.39 seconds** at **142,589,952 bytes maximum
+RSS**.  Custom seed52/seed211 remain strict2/2 with40/40 plus4/4 animation in
+**0.67 seconds** at **137,084,928 bytes maximum RSS**.
+
+**Boundary:** section934 maps observation, existing type knowledge and credit
+as separate states.  The actor block and hallucinated `C` glyph were downstream
+of one false exercise call and required no actor/display patch.  Every process
+exited; no hidden judge, push or publication ran.
+
+---
+
+### [2026-08-23 22:05 EEST, journal block 3043] {#public-corpus #engine-only #fixture-on #44-of-44 #complete-recovery #overlay-restore #process-safety}
+
+**Final engine-only gate:** one managed
+`TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions` process
+passes **44/44** at **34+0.30 ms/turn** (R²0.841) in **11.73 seconds** at
+**265,519,104 bytes maximum RSS**.  Every public session is exact in RNG,
+screens and cursors.  This restores and re-proves the complete public engine
+baseline after the earlier36/44 regression.
+
+**Normal compatibility gate:** only after the engine gate exited, one
+`bash frozen/score.sh` process passes **44/44** at **29+-0.00 ms/turn** in
+**8.26 seconds** at **203,554,816 bytes maximum RSS**.  Its generated
+`js/terminal.js` and `js/storage.js` overlays were the only modified frozen
+copies and were restored explicitly from clean HEAD; `js/isaac64.js` was
+already identical.
+
+**Evidence boundary and next work:** these gates prove public compatibility,
+not official held-out generalization.  Custom seed52 outcome3 and seed211
+outcome4 remain independently exact across all793 screens/cursors and their
+native animation groups.  Other public supplemental animation totals and
+unmapped C/Lua branches remain active port work.  The post-gate process
+registry is empty.  No push, workflow dispatch, hidden judge or publication
+ran; unrelated dirty files remain untouched.
+
+---

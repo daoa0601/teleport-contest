@@ -1,5 +1,32 @@
 # Public session status
 
+## Current working-tree verified checkpoint: 44/44 engine-only and normal
+
+Measured 2026-08-23 22:05 EEST from commit `0dc1776`, after removing duplicate
+monster speed-potion discovery credit:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+bash frozen/score.sh
+```
+
+The engine-only gate is **44/44 exact** at **34+0.30 ms/turn** (R² 0.841).
+One owned process completed in **11.73 seconds** at **265,519,104 bytes maximum
+RSS**.  All public RNG, screen, and cursor channels are exact.
+
+The normal frozen-overlay compatibility gate subsequently passes **44/44** at
+**29+-0.00 ms/turn**, completing in **8.26 seconds** at **203,554,816 bytes
+maximum RSS**.  It ran only after the engine process exited.  The generated
+`js/terminal.js` and `js/storage.js` overlays were restored from their verified
+clean `HEAD` versions; `js/isaac64.js` was already identical.  No scorer or
+test process remains.
+
+This is the current local working-tree checkpoint, not a published commit or
+official held-out result.  Nothing was pushed, no GitHub workflow was
+dispatched, and the official hidden judge was not invoked.  Custom seed52 and
+seed211 carriers remain separately exact at793/793 screens/cursors with40/40
+and4/4 native animation frames.
+
 ## Current working-tree engine-only gate: 43/44 exact
 
 Measured 2026-08-23 21:54 EEST from commit `b0d723f`, after completing
