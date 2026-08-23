@@ -11293,6 +11293,42 @@ test('known weapon tools expose enchantment in inventory', async () => {
         '                   e - a +0 pick-axe (alternate weapon; not wielded)');
 });
 
+test('short wizintrinsic feedback composes before docrt pager', async () => {
+    const session = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed4500-knight-coverage.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+    const result = await runSegment({
+        seed: session.seed,
+        datetime: session.datetime,
+        nethackrc: session.nethackrc,
+        moves: session.moves.slice(0, 582),
+        storage: new Map(),
+    });
+    for (let step = 573; step <= 581; step++) {
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed4500 wizintrinsic input${step} RNG`,
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            `seed4500 wizintrinsic input${step} screen`,
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            `seed4500 wizintrinsic input${step} cursor`,
+        );
+    }
+    assert.equal(decodedTopline(result.getScreens()[577]),
+        'Timeout for invulnerable set to 30.  '
+        + 'Timeout for very fast set to 30.--More--');
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

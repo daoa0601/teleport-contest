@@ -8368,6 +8368,11 @@ async function wizIntrinsic() {
         await docrt();
         return;
     }
+    // select_menu() returns only after destroy_nhwindow() has removed both
+    // the intrinsic window and its extended-command editor.  Timeout plines
+    // therefore begin from an empty topline, not "# wizintrinsic".
+    game._pending_message = '';
+    game._retained_message = '';
     const timeoutMessages = [];
     if (selections.includes('invulnerable')) {
         const oldTimeout = game.u.invulnerableTurns ?? 0;
@@ -8499,9 +8504,9 @@ async function wizIntrinsic() {
     }
     if (timeoutMessages.length) {
         // wiz_intrinsic() walks select_menu() results in global property
-        // order and calls pline() once per selection.  A later timeout line
-        // can therefore suspend behind the prior one; batching them into one
-        // message loses both ordering and a tty input boundary.
+        // order and calls pline() once per selection.  Short lines compose on
+        // tty's topline; an overflowing later line pages the earlier one.
+        // The final docrt() then forces whichever line remains.
         timeoutMessages.sort((left, right) => {
             const propertyIndex = message =>
                 WIZARD_INTRINSIC_PROPERTIES.findIndex(name =>
@@ -8509,7 +8514,8 @@ async function wizIntrinsic() {
             return propertyIndex(left) - propertyIndex(right);
         });
         for (const message of timeoutMessages)
-            await moreUntilDismissed(`${message}--More--`);
+            await plineWithContinuation(message);
+        await flushPendingTopline();
     }
     // destroy_nhwindow() removes both the intrinsic menu and the extended
     // command editor which launched it.  Properties such as BLINDED dispatch
