@@ -34208,3 +34208,38 @@ carrot flights at **5/5** full frame screens/cursors.  The session closes at
 the reached horizontal food projectile only; arrow/gem range, vertical flight,
 returning weapons, breakage, and other thrown classes retain their own source
 branches.  Lua contributes none.
+
+## 941. Gas-spore death paints a two-delay noxious explosion before `Boom!`
+
+~~~mermaid
+flowchart TD
+    Kill["hero kills gas spore and queues kill line"] --> Corpse["corpse_chance rolls contained AT_BOOM damage"]
+    Corpse --> Blast["mon_explodes rolls independent blast damage"]
+    Blast --> Dead["mondead removes source from actor map"]
+    Dead --> Mask["explode paints visible green 3x3 noxious mask"]
+    Mask --> Cursor["curs_on_u flushes with hero cursor"]
+    Cursor --> Delay1["nh_delay_output frame 1"]
+    Delay1 --> Delay2["nh_delay_output frame 2"]
+    Delay2 --> Clear["DISP_END restores all mask cells"]
+    Clear --> Boom["queue Boom and resolve monster, floor, then hero effects"]
+    Lua["Lua owns no explosion or effect timing"] -.-> Blast
+~~~
+
+Gas-spore death pays two independent damage rolls before display: the first in
+`corpse_chance()` for the contained/engulfer case, the second in
+`mon_explodes()` for the actual blast.  Once visible, `explode()` paints its
+column-first mask, but the final terminal is the familiar `/ - \\`, `| |`,
+`\\ - /` layout.  Noxious color is green; DEC graphics provide the horizontal
+and vertical edge glyphs.  With no shield effect, C emits exactly two identical
+delay frames.
+
+JavaScript inserts this mask into the existing physical explosion owner before
+its `Boom!` continuation.  It captures with the cursor on the hero and clears
+every in-bounds cell in `finally`, so later effect messages and the combined
+kill/Boom pager see the restored map.
+
+Seed0030 segment9/input260 pins both frames and advances the full session to
+**16/40** animation while preserving1,953/1,953 boundaries.  This section
+closes the reached visible noxious/no-shield explosion only.  Other colors,
+shield sparkle, clipped masks, invisible blasts, elemental inventory damage,
+and fatal hero effects remain separate owners.  Lua contributes none.

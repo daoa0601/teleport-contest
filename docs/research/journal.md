@@ -91829,3 +91829,52 @@ than treating the new14/40 as complete projectile coverage; keep seed0007's
 five replay-state mismatches separate.
 
 ---
+
+### [2026-08-23 23:14 EEST, journal block 3057] {#seed0030 #segment9 #input260 #gas-spore #explosion #animation #source-diagnosis #prediction #priority}
+
+**Remaining-owner inventory:** seed0030's26 unmatched frames split into three
+sleeping-potion frames in segment0,21 long-wand frames in segment3, and two
+gas-spore explosion frames in segment9.  The segment6 monster-arrow groups are
+fully exact13/13; segment8's delayed-action frame is also exact.
+
+**Selected source owner:** segment9/input260 kills a gas spore and rolls its
+independent 4d6 blast through `mon.c:corpse_chance -> mon_explodes ->
+explode.c:explode`.  C paints the noxious 3x3 `/ - \\ | | \\ - /` mask,
+positions the cursor on the hero, emits two identical delays, then clears the
+mask before queuing `Boom!`.  JavaScript already owns damage/messages but skips
+the visual transaction entirely.
+
+**Prediction and guard:** add the represented noxious physical-explosion mask
+ahead of `Boom!`, capture two frames, and restore every cell through `newsym()`
+before effect resolution.  Segment9 input260 should become2/2 full frame
+screen/cursor exact without changing the combined kill/Boom pager or any RNG.
+Do not fold the segment3 long-wand21 or potion3 frames into this block.
+
+---
+
+### [2026-08-23 23:16 EEST, journal block 3058] {#seed0030 #segment9 #gas-spore #explode #noxious-mask #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Implementation:** commit `928a3ae` adds the visible noxious physical-
+explosion display to the existing generic gas-spore effect owner.  It paints
+the source 3x3 mask in green with DEC top/bottom/vertical glyphs, flushes with
+the cursor on the hero, captures two identical delays, and restores all valid
+mask cells in `finally` before `Boom!` and damage processing.
+
+**Evidence:** the complete ten-segment seed0030 replay remains exact at
+105,529 RNG and1,953 boundary screens/cursors while animation advances from
+14/40 to **16/40**.  A durable segment9/input260 witness verifies both full
+frame screens/cursors plus the combined kill/Boom boundary.  Gas-spore,
+monster-dagger and carrot controls pass **3/3** in **0.96 seconds**.
+
+**Acceptance and boundary:** one managed engine-only corpus passes **44/44**
+at **34+0.31 ms/turn** (R²0.827) in **11.82 seconds** at **269,631,488 bytes
+maximum RSS**.  Supplemental animation reaches **1,114/1,483**.  This closes
+the represented visible noxious blast with no shield effect; elemental,
+magical, shield-sparkle, clipped, invisible, and larger effect policies remain
+open.  No normal corpus, push, workflow, hidden judge, or publication ran.
+
+**Next blocker:** seed0030 now has the sleeping-potion3 and long-wand21 groups
+only.  Take the sleeping-potion flight/helpless group next unless a smaller
+generic untouched session yields a stronger source owner.
+
+---

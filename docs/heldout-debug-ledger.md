@@ -13510,3 +13510,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   invisible delays retain it.  Seed0108 closes at4/4, seed0030 rises to14/40,
   and the managed corpus remains44/44 with1,112/1,483 frames.  An unconditional
   preflush was rejected by seed0361's invisible-frame cursor control.
+- Commit928a3ae adds the visible noxious/no-shield gas-spore explosion owner:
+  paint the green3x3 mask, capture two identical hero-cursor delays, clear it,
+  then queue Boom and apply effects.  Seed0030 segment9 closes2/2 frames and
+  the full session reaches16/40; the managed corpus remains44/44 with
+  1,114/1,483 frames.  Other explosion colors, sparkle shields, clipping and
+  invisible/fatal effect variants remain unclaimed.
