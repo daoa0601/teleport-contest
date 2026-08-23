@@ -92667,3 +92667,54 @@ owner from ordinary projectile flight before implementing it.  No normal
 corpus, push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:39 EEST, journal block 3090] {#seed4500 #input274 #spitmm #venom #m-throw #thitu #cursor-audit #implementation #bounded-acceptance}
+
+**Source diagnosis:** the spit planner already produced the exact two-cell
+`flightPath`, venom object and final miss outcome.  The presentation branch
+queued launch/result prose but never entered native `m_throw()`'s repeated
+`tmp_at -> nh_delay_output` boundary or its mandatory final target-cell delay.
+This falsifies path planning and RNG/state ownership as the input274 blocker.
+
+**Implementation:** hero-target spit now paints/captures each planned venom
+cell, queues thitu's hit/miss/effect prose, captures the final hero cell, and
+restores the underlying map in `finally`.  The focused scorer rose seed4500
+from27/37 to30/37 immediately, but the full cursor witness rejected dirty-map
+inference on visible cells: native `bhitpos` uses the direct projectile
+coordinate.  Visible venom now uses that direct cursor; invisible cells retain
+the earlier dirty cursor policy.
+
+**Bounded acceptance:** input274 is **3/3** on exact frame count, screens and
+cursors, with its complete RNG slice and boundary exact.  Seven focused tests
+pass: the new cobra miss, blinding-venom planner order, ordinary invisible,
+nonlethal, potion and fatal projectile controls, plus input842's retained
+physical prompt.  Acid/blinding hits, resistance, blindness-time projection,
+intervening monster targets and invisible final cells remain explicit controls.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected total is1,405/1,483 with seed4500 at30/37 and no unrelated
+count changes.
+
+---
+
+### [2026-08-24 00:40 EEST, journal block 3091] {#seed4500 #input274 #spitmm #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `f1c1999` owns spit flight/impact presentation
+and the exact input274 regression.  The carrier closes3/3 full frames/cursors;
+all seven focused spit/projectile controls pass.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**41+0.35 ms/turn** (R²0.818) in **13.80 seconds** at **275,333,120 bytes
+maximum RSS**.  Animation advances exactly three slots to **1,405/1,483** and
+seed4500 reaches **30/37**, with no other count changes.  The verifier exited
+and no matching live process remains.  Registry PIDs97957/88986/22722 are stale
+historical entries, not live processes.
+
+**Next blocker:** seed4500's seven residual frames are inputs852/1136 prayer/
+ambient cadence and single frames211/222/233/581/1211.  Compare852/1136 against
+the already correct forced-prayer state machine before changing generic
+runmode; their toplines differ, so one blanket prayer-frame hook remains an
+unproved hypothesis.  No normal corpus, push, workflow, hidden judge or
+publication ran.
+
+---

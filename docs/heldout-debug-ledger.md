@@ -13614,3 +13614,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   engine-only corpus stays44/44 and reaches1,402/1,483 in14.03 seconds at
   450,002,944 bytes maximum RSS.  No normal scorer, push, workflow or hidden
   judge ran; input274's spit projectile and prayer/cadence groups remain open.
+- Commitf1c1999 restores `spitmm -> m_throw -> thitu` animation ownership.
+  The existing planner already had the exact venom path and RNG; presentation
+  now captures two visible cells, resolves miss prose, captures the final hero
+  cell and restores the map.  A screen-only pass exposed wrong cursors, so
+  visible venom uses direct bhitpos while invisible cells retain dirty-map
+  ownership.  Seed4500 input274 closes3/3 and the session reaches30/37.  The
+  managed engine-only corpus remains44/44 at1,405/1,483 in13.80 seconds and
+  275,333,120 bytes maximum RSS.  No normal scorer, push, workflow or hidden
+  judge ran.

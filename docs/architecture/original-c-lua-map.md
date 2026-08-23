@@ -34698,3 +34698,43 @@ This closes represented unseen ordinary projectile flight over a retained
 debug-prayer prompt; other prompts, wrapped rows, escape suppression, spit/
 venom paths, pet targets and result-less destruction remain controls.  Lua
 contributes none.
+
+## 954. `spitmm()` reuses `m_throw()` traversal and final-target delay
+
+~~~mermaid
+flowchart TD
+    Plan["spitmm creates acid/blinding venom and passes launch gate"] --> Line{"spitter visible?"}
+    Line -->|"yes"| Launch["queue monster spits venom line"]
+    Line -->|"no"| Silent["no launch prose"]
+    Launch --> Flight["m_throw advances to intermediate cell"]
+    Silent --> Flight
+    Flight --> Paint["tmp_at paints venom glyph"]
+    Paint --> Delay["nh_delay_output with direct visible bhitpos cursor"]
+    Delay --> More{"more intermediate cells?"}
+    More -->|"yes"| Flight
+    More -->|"no"| Thitu["thitu resolves hit/miss and effect prose"]
+    Thitu --> Final["tmp_at target cell and mandatory final delay"]
+    Final --> Clear["DISP_END restores hero/map projection"]
+    Lua["Lua owns no spit, projectile, or tty timing"] -.-> Plan
+~~~
+
+Native `spitmm()` differs from ordinary weapon selection but hands its venom
+object to the same `m_throw()` flight engine.  Each intermediate square is
+painted and delayed; after `thitu()` returns, `m_throw()` paints and delays the
+final target square even on a miss.  A visible projectile cell owns direct
+`bhitpos` cursor positioning.  Only an invisible cell retains earlier terminal
+dirt.
+
+JavaScript already planned the correct venom object, two-cell path, miss and
+destruction RNG.  The presentation owner now traverses those cells, queues
+thitu result/effect prose, captures the final hero cell, and restores in
+`finally`.  This keeps flight observation separate from the transient object's
+already-committed destruction state.
+
+Seed4500 input274 closes at **3/3** complete frames/cursors and advances the
+session to30/37; the corpus reaches1,405/1,483.  Blinding-venom planning plus
+ordinary invisible, nonlethal, potion, fatal and retained-topline projectile
+controls remain green.  This closes the represented visible cobra miss;
+acid/blinding hits, resistance, blindness-time projection, intervening monster
+targets, invisible final cells and pet spit remain controls.  Lua contributes
+none.
