@@ -31973,3 +31973,49 @@ Input127 is a later ownership boundary rather than part of theft.  Its next
 before `passiveum()`, while JavaScript leaves `mtimedone` live long enough to
 consume an extra passive rn2(3).  Lua supplies only the level in which this
 actor transaction runs.
+
+## 886. Fatal monster-form contact rehumanizes before passive dispatch
+
+~~~mermaid
+flowchart TD
+    Resume["resume retained natural hit after tty"] --> Knock["mhitm_knockback chance and direction"]
+    Knock --> Reduce["negative AC and half-physical reduction"]
+    Reduce --> Damage["mdamageu applies damage to active monster HP"]
+    Damage --> Fatal{"monster-form HP below one?"}
+    Fatal -->|"yes"| State["rehumanize/polyman restores human body atomically"]
+    State --> Line["async display owner queues return-to-form line"]
+    Fatal -->|"no"| Passive["passiveum receives old form"]
+    Line --> Passive
+    Passive --> Early{"passive family acts after rehumanization?"}
+    Early -->|"acid, stoning, enchantment"| Old["old-form effect can still apply"]
+    Early -->|"ordinary and no longer Upolyd"| Skip["return without shared rn2(3)"]
+    Early -->|"still Upolyd"| Gate["rn2(3) gates remaining passive families"]
+    Old --> Next["next monster attack slot"]
+    Skip --> Next
+    Gate --> Next
+    Lua["Lua owns no body, contact, passive, or tty state"] -.-> Resume
+~~~
+
+Seed2 input126 has already rolled the next Wizard claw's 18 damage while the
+cuss line owns tty.  Input127 acknowledges the pager, spends AD_SAMU
+rn2(20)=11 and knockback rn2(3)=0/rn2(6)=1, then enters `mdamageu()` with
+wood-golem HP16.  Native does not leave a zero-HP form pending: it immediately
+runs `rehumanize()`, restoring human HP149/149, AC8, attributes, body metadata,
+vision/encumbrance state, and the ordinary Healer form before `passiveum()`.
+
+The passive dispatcher deliberately retains the old monster form pointer.
+It can therefore roll and apply acid, stoning, or enchantment responses even
+after rehumanization, but ordinary passives reach the `!Upolyd` return before
+their shared rn2(3).  For the wood golem this means no passive call at all;
+the actor continues directly to clone-spell selection rn2(30)=19 and fumble
+rn2(300)=268.  State mutation is synchronous in the contact owner, while the
+return-to-human message is queued by the async actor driver so tty ordering
+remains intact.
+
+The controlled replay matches native RNG, decoded screens, and cursors from
+input3 through input134.  Acid/stoning/enchantment passives after body loss,
+regained-sight prose, encumbrance follow-up, Unchanging, fatal human HP, life
+saving, and death remain independent controls.  The next mismatch at input135
+has identical RNG and actor state but different visible naming: C calls the
+M_AP_MONSTER clone `red dragon`; JavaScript calls it `Wizard of Yendor`.
+Lua contributes none of this transaction.

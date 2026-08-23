@@ -87962,3 +87962,50 @@ claiming later spell parity.  No full corpus, public-status rewrite, hidden
 judge, push, or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:45 EEST, journal block 2921] {#seed2 #input127 #wood-golem #fatal-form-hp #mdamageu #rehumanize #passiveum #tty-order #first-divergence #native-witness #implementation #bounded-replay #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after the empty theft repair, seed2 is
+exact through input126.  Input127 native owns
+`rn2(20)=11,rn2(3)=0,rn2(6)=1,rn2(30)=19,rn2(300)=268`; JavaScript inserted
+`rn2(3)=1` before spell selection.  The preceding input retained 18 claw
+damage against wood-golem HP16, so the differing call is passive dispatch
+after lethal monster-form damage, not theft, knockback, or spell choice.
+
+**Source contract and prediction:** `mhitu.c:hitmu()` calls `mdamageu()` before
+`passiveum(olduasmon,...)`.  `mdamageu()` rehumanizes immediately when active
+monster HP falls below one.  `passiveum()` still receives the old form for the
+acid/stoning/enchantment families which can act after rehumanization, but its
+ordinary families return on `!Upolyd` before shared rn2(3).  Atomically
+restoring the body before passive selection while leaving the return line to
+the async tty owner should remove exactly one call and preserve later spell
+selection.
+
+**Implementation and measured effect:** commit `9e0571d` makes retained
+contact damage call the shared `rehumanizeHero()` transaction before
+`applyHeroPassiveAfterContact()`, then passes its presentation result to the
+actor driver.  Input127 now restores Healer form334, HP149/149, AC8,
+mtimedone0 and form HP0/0, publishes `The Wizard of Yendor hits!  You return
+to human form!`, skips passive rn2(3), and reaches the exact clone-spell
+selection/fumble.  The native comparator matches every RNG slice, decoded
+screen, and cursor from **input3 through input134**; strict replay took **0.37
+seconds** at **124,928,000 bytes maximum RSS**.  The permanent focused test
+passes **1/1** in **0.34 seconds** at **131,465,216 bytes maximum RSS**;
+seventeen selected fixture-disabled Wizard controls pass **17/17** in **0.66
+seconds** at **150,667,264 bytes maximum RSS**.  Every process exited.
+
+**Falsification, decision and next blocker:** identical pre-mismatch theft,
+knockback, damage, and status falsify those owners; short-circuit placement in
+native `passiveum()` falsifies consuming the form gate before body restoration.
+Section886 maps atomic body state separately from async message projection;
+Lua owns neither.  Retain post-rehumanization acid/stoning/enchantment,
+regained sight, encumbrance, Unchanging, human death, and life saving as open.
+Input135 is now the first mismatch and has **identical twelve-call RNG**:
+native says `The red dragon hits!  The red dragon casts a spell at you!`,
+cursor66; JavaScript says `The Wizard of Yendor...`, cursor78.  The actor is
+the M_AP_MONSTER clone created at input130, so map visible naming versus true
+identity before touching combat or spell policy.  No full corpus,
+public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
+files remain untouched.
+
+---

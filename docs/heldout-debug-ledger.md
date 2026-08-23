@@ -12975,3 +12975,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   special-item removal/theft/relocation and quest-nemesis fake selection
   remain open.  Input127 is now the first mismatch: JS spends passive rn2(3)
   after fatal form damage where C rehumanizes before `passiveum()`.
+- Seed2 input127 now rehumanizes atomically inside the retained contact tail
+  before passive handling.  Native rn2(20)=11,rn2(3)=0,rn2(6)=1 exhausts
+  wood-golem HP16 with retained 18 damage, restores human HP149/149 and AC8,
+  skips the Upolyd-only passive rn2(3), then selects the clone spell with
+  rn2(30)=19/rn2(300)=268.  JS now preserves old-form passive ownership while
+  projecting `You return to human form!` from the async driver.  Exact parity
+  advances through input134; focused/selected fixture-disabled gates pass
+  1/1 and 17/17.  Acid/stoning/enchantment passives after rehumanization,
+  sight/encumbrance follow-ups, Unchanging, human death, and life saving remain
+  open.  Input135 is the next mismatch with identical RNG: native names the
+  disguised clone `red dragon`, while JS exposes `Wizard of Yendor`.
