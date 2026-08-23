@@ -213,6 +213,7 @@ const AT_SPIT = 10;
 const AT_BREA = 12;
 const AT_BOOM = 14;
 const AT_GAZE = 15;
+const AT_HUGS = 7;
 const AD_PHYS = 0;
 const AD_FIRE = 2;
 const AD_COLD = 3;
@@ -223,6 +224,8 @@ const AD_ACID = 8;
 const AD_BLND = 11;
 const AD_STUN = 12;
 const AD_DRLI = 15;
+const AD_WRAP = 18;
+const AD_STCK = 19;
 const AD_DREN = 16;
 const AD_LEGS = 17;
 const AD_STON = 18;
@@ -6307,6 +6310,17 @@ function basicMonsterAttack(
             deferredAmuletTheftGate: true,
             deferredPostHit: true, oldFormMnum,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_STCK) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        const armorProtection = state?.u?._magicNegation ?? 0;
+        const negated = !!monster.mcan
+            || recordRandom(random, calls, 10) < 3 * armorProtection;
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'sticking-natural', negated,
+            deferredStickingAfterHit: true, oldFormMnum,
+        }, monster, attackIndex);
     } else if (hit && !alreadyEngulfing && attackType !== AT_ENGL
         && damageType === AD_FIRE
         && dice > 0 && sides > 0) {
@@ -7460,6 +7474,31 @@ export function finishDeferredHeroDecayArmor(
     action, state, random = rn2,
 ) {
     return finishDeferredHeroArmorErosion(action, state, random);
+}
+
+function heroFormSticks(state) {
+    if (!Upolyd(state?.u) || !Number.isInteger(state.u.umonnum))
+        return false;
+    return (MONSTER_ATTACKS[state.u.umonnum] || []).some(
+        ([attackType, damageType]) =>
+            damageType === AD_STCK
+            || (damageType === AD_WRAP && attackType !== AT_ENGL)
+            || attackType === AT_HUGS,
+    );
+}
+
+export function resumeDeferredHeroSticking(action, state) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredStickingAfterHit) return action;
+    if (!attack.negated && !state.u?.ustuck && !heroFormSticks(state)) {
+        state.u.ustuck = action.monster;
+        attack.stuckHero = true;
+        if (action.monster?.mnum === 293)
+            attack.stickingMessage = 'The barbs stick to you!';
+    }
+    attack.deferredStickingAfterHit = false;
+    attack.deferredPostHit = true;
+    return action;
 }
 
 // Resume hitmu() after its concealed-attacker line has crossed tty.  The

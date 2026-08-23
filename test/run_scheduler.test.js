@@ -9998,10 +9998,10 @@ test('seed0017 controlled sleeper makes aggravation useful and wakes',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 146),
+            moves: fullMoves,
             storage: new Map(),
         });
-        assert.equal(result.getScreens().length, 147);
+        assert.equal(result.getScreens().length, 155);
         assertRngSliceExact(result.getRngSlices()[135], [
             'rn2(20)=19', 'rn2(3)=2', 'rn2(6)=1',
             'rn2(30)=13', 'rn2(300)=236', 'd(16,6)=52',
@@ -10022,6 +10022,28 @@ test('seed0017 controlled sleeper makes aggravation useful and wakes',
             monster.mnum === 158 && monster.mx === 40 && monster.my === 13);
         assert.ok(sleeperAfter);
         assert.equal(sleeperAfter.msleeping, 0);
+        const stickingSlice = result.getRngSlices()[147];
+        assert.equal(stickingSlice.length, 60);
+        assertRngSliceExact(stickingSlice.slice(-5), [
+            'rn2(5)=2', 'rn2(5)=1', 'rnd(20)=7',
+            'd(0,0)=0', 'rn2(10)=1',
+        ], 'controlled clone tail and lichen sticking prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[147]),
+            'Double Trouble...  The Wizard of Yendor suddenly appears next to you!--More--');
+        assertRngSliceExact(result.getRngSlices()[148], [
+            'rn2(3)=1', 'rn2(6)=3', 'rn2(5)=2', 'rn2(20)=0',
+            'rn2(5)=2', 'rn2(12)=10', 'rn2(12)=8', 'rn2(12)=5',
+            'rn2(12)=9', 'rn2(12)=8', 'rn2(12)=0', 'rn2(70)=58',
+            'rn2(100)=6', 'rn2(20)=4', 'rn2(70)=68',
+        ], 'controlled lichen sticking tail and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[148]),
+            'The lichen touches you!');
+        assert.equal(decodedRow(result.getScreens()[148], 23),
+            'Dlvl:1 $:1893 HP:114(142) Pw:247(247) AC:8 Xp:30');
+        assert.equal(game.u.ustuck?.mnum, 158);
+        assert.equal(game.u.ustuck?.mx, 40);
+        assert.equal(game.u.ustuck?.my, 14);
+        assert.equal(game.u.uhp, 114);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

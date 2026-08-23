@@ -87646,3 +87646,39 @@ No full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:53 EEST, journal block 2912] {#controlled-carrier #seed17 #lichen #ad-stck #zero-dice #magic-cancellation #ustuck #contact-pager #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after aggravation, the controlled session
+is exact through input147's clone constructor and lichen to-hit.  Native then
+owns d(0,0)=0 and rn2(10)=1 before hitmsg; JS treated the zero-dice attack as
+effectless and entered later actors.
+
+**Source ordering:** mhitm_ad_stck is unusual among natural specials:
+mhitm_mgc_atk_negated runs before hitmsg.  State mutation is later: only after
+the hit line returns does a non-negated attacker become u.ustuck, provided the
+hero is not already stuck and the hero form does not itself stick.  The
+pending clone announcement forces that hit line across a pager.
+
+**Implementation and measured effect:** AD_STCK now records d(0,0) and
+cancellation synchronously, then returns a named post-hit continuation.
+After tty, the resolver tests sticky hero forms, commits u.ustuck and passes
+zero damage through common knockback.  The controlled session is exact for
+all **155 RNG/screen/cursor states**, ending HP114/142 with the lichen at
+(40,14) as u.ustuck and two Wizards live.  The 60-call input147 is asserted
+only by length and its final five calls.  Strict replay took **0.29 seconds**
+at **126,091,264 bytes maximum RSS**.  Twelve selected fixture-disabled
+Wizard controls pass **12/12** in **0.62 seconds** at **146,374,656 bytes
+maximum RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** zero declared damage does not
+mean zero RNG or state.  Exact placement of cancellation before the pager
+falsifies a generic post-message special owner.  Section877 maps the split;
+Lua owns none.  The controlled aggravation carrier is now complete.  Continue
+with a remaining Wizard table control or return to the explicitly red
+seed0361 pre-potion boundary before broad corpus verification.  Keep negation,
+sticky forms, wrap/hugs, barbed prose and release explicit.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---

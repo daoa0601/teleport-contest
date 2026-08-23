@@ -12902,3 +12902,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   The selected Wizard gate rises to 12/12 fixture-disabled.  Input147's
   zero-dice natural contact is separate; Tower partitioning, immobile
   unfreeze, wait strategy and no-target acceptance remain open.
+- The controlled aggravation session is now exact through all 155 states
+  after adding zero-dice AD_STCK.  Input147's bounded 60-call slice ends
+  rnd(20)=7,d(0,0)=0,rn2(10)=1 before the clone announcement pager.  Input148
+  publishes the lichen touch, commits u.ustuck, runs knockback and leaves HP
+  unchanged apart from maintenance regeneration to114/142.  The selected
+  Wizard gate remains 12/12 fixture-disabled.  Negation, sticky forms, wrap/
+  hugs, barbed devil and release branches remain open.

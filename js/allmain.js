@@ -81,6 +81,7 @@ import {
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
     resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
+    resumeDeferredHeroSticking,
     resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
     resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
@@ -3901,6 +3902,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
                 const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
+                if (heroAttack.deferredStickingAfterHit)
+                    resumeDeferredHeroSticking(action, game);
+                if (heroAttack.stickingMessage) {
+                    const stickingDismissal = await queueTurnMessage(
+                        heroAttack.stickingMessage,
+                    );
+                    heroAttack.stickingMessage = null;
+                    if (stickingDismissal !== null
+                        && stickingDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
                 if (heroAttack.deferredItemTheft) {
                     const theftPager = await resolveDeferredHeroItemTheft(
                         action, monster, heroAttack,

@@ -31667,3 +31667,34 @@ a separate zero-dice natural contact and cancellation probe.  Wizard-Tower
 partitioning, WAIT/APPEAR strategy, immobile unfreeze success/failure,
 multiple sleepers, unique meditation and no-target one-percent acceptance
 remain separate controls.
+
+## 877. Zero-dice sticking contact owns cancellation before hitmsg
+
+~~~mermaid
+sequenceDiagram
+    participant Attack as lichen AT_TUCH/AD_STCK
+    participant Cancel as mhitm_mgc_atk_negated
+    participant TTY as hitmsg
+    participant State as u.ustuck
+    participant Tail as hitmu tail
+    Attack->>Attack: d(0,0)=0 remains recorder-visible
+    Attack->>Cancel: rn2(10) before hitmsg
+    Cancel-->>Attack: not negated
+    Attack->>TTY: The lichen touches you
+    TTY-->>Attack: older clone line forces pager
+    Attack->>State: after acknowledgement, set attacker as u.ustuck
+    State->>Tail: rn2(3), rn2(6), zero HP damage
+~~~
+
+The controlled aggravation carrier later clones the Wizard, then the awakened
+lichen touches the hero.  Input147 owns the clone constructor followed by
+lichen rnd(20)=7,d(0,0)=0,rn2(10)=1.  The clone announcement holds the pager,
+so the touch line and state commit cross into input148.
+
+JavaScript now preserves cancellation-before-hitmsg while deferring actual
+sticking until the hit line returns.  Human form does not itself stick, so the
+lichen becomes u.ustuck; zero damage still retains common knockback probes.
+All 155 controlled states are exact, ending HP114/142 with the lichen at
+(40,14) as the stuck actor and two real Wizards live.  Negated sticking,
+sticky hero forms, AD_WRAP/AT_HUGS forms, barbed-devil prose, existing stuck
+state, displacement and release/expulsion remain separate controls.
