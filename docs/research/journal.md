@@ -92354,3 +92354,87 @@ exact seed0361 rolling-boulder transaction before changing that owner.  No
 normal corpus, push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:15 EEST, journal block 3078] {#seed0014 #input560 #input561 #rolling-boulder #launch-obj #ohitmon #continuation #source-diagnosis #prediction}
+
+**Witness and frame split:** input560 has ten native frames and two JavaScript
+frames; the first two runmode/stumble frames are already exact.  Native then
+captures four visible pre-target boulder cells twice each under the combined
+`You stumble.  Click!  The gnome lord triggers something.` topline.  The hit
+line forces that topline's `--More--` boundary.  Input561 resumes with the hit
+and kill lines installed, captures the target cell twice, then clears the
+transient and exposes the killed monster's floor drop.  JavaScript currently
+emits only that final boundary frame and no launch frames.
+
+**Independent control and source owner:** seed0361 input206 proves the existing
+hero-triggered `animateRollingBoulderCell()` cadence: `launch_obj(ROLL)` uses
+two `nh_delay_output()` calls per visible cell.  Monster-triggered traps share
+native `launch_obj()` but use a separate JavaScript presentation in
+`allmain.js`; that branch paints only the last pre-target cell and never calls
+the animation helper.  Native `ohitmon()` commits hit/death before the rolling
+loop resumes from the target cell; final endpoint placement is later still.
+
+**Prediction and architectural guard:** share the two-delay cell helper with
+the monster branch, traverse launch-to-target before the hit pager, resume
+death/corpse state after the kill line, traverse target-to-endpoint, then place
+the boulder.  Inputs560/561 should add **10** exact frames and reach20/20 across
+both steps without altering their exact RNG/boundaries or seed0361's6/6 hero
+control.  Do not patch recorded frames or collapse death and endpoint placement
+into one pre-animation mutation.
+
+---
+
+### [2026-08-24 00:17 EEST, journal block 3079] {#seed0014 #input560 #input561 #rolling-boulder #dirty-cursor #implementation #bounded-acceptance #correction}
+
+**Implementation slice:** monster-triggered rolling boulders now reuse the
+two-delay cell helper.  The owner traverses launch-to-target before the hit
+pager, separates fatal `ohitmon()` death/corpse completion from endpoint
+placement, traverses target-to-endpoint afterward, and only then settles the
+boulder.  The helper now selects the last dirty map cell after clearing a
+previous visible projectile cell; its first visible cell still uses the direct
+projectile coordinate.
+
+**Cursor adversary:** the first screen-only attempt reached seed0014
+**903/995**, but full cursors showed every later left-moving cell one column
+too far left.  Native retains the cleared previous higher-x cell as cursor
+owner.  An unconditional `lastDirtyMapCursor()` then broke seed0361's first
+right-moving pair by selecting unrelated unflushed map dirt, so dirty
+inference is restricted to calls with a real previous transient.  Seed0014's
+13/13 frames and seed0361's6/6 frames/cursors now pass together.
+
+**Correction to block3078's measured prediction:** the code adds ten physical
+delay frames, but the supplemental matched count should rise by **11**, not10.
+Input561 already had a final post-transaction animation frame at positional
+slot0; inserting the two native target delays shifts that existing frame into
+native slot2, where it becomes exact.  This is positional realignment, not an
+eleventh emitted frame or an incidental subsystem gain.
+
+**Next gate:** commit the code/test batch, then run one managed fixture-disabled
+corpus.  Expected seed0014 is903/995 and corpus1,305/1,483 with44/44 public
+RNG/boundaries; no normal overlay or publication is required for this slice.
+
+---
+
+### [2026-08-24 00:18 EEST, journal block 3080] {#seed0014 #input560 #input561 #rolling-boulder #engine-only #44-of-44 #animation #architecture #process-safety}
+
+**Committed acceptance:** commit `e7ffc5c` owns the shared rolling-boulder cell
+cadence, monster pre/post-target traversal, split death/corpse and endpoint
+lifecycles, direction-sensitive cursor selection, and the exact two-input
+regression.  Seed0014 inputs560/561 pass13/13 complete frames/cursors and their
+RNG/boundaries; seed0361's hero-triggered input206 remains6/6.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**35+0.31 ms/turn** (R²0.825) in **11.96 seconds** at **279,199,744 bytes
+maximum RSS**.  Seed0014 advances from892 to **903/995** and the corpus from
+1,294 to **1,305/1,483** animation frames, exactly the predicted positional
+effect.  No other session count changes.  The owned verifier exited and the
+post-run process table has no matching scorer or test process.
+
+**Boundary and next priority:** cold-ray and rolling-boulder ownership are now
+separated from seed0014's remaining92 misses.  Inputs125/470 remain delayed
+wear state; inputs595/649/651/653/655/666 remain heterogeneous travel/getpos
+groups with broad positional mismatch.  Start with the earliest wear prompt
+at input125 before the deeper travel alignment.  No normal corpus, push,
+workflow, hidden judge or publication ran.
+
+---

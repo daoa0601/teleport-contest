@@ -1,18 +1,18 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,294/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,305/1,483 animation frames
 
-Measured 2026-08-24 00:09 EEST from commit `f57e8f0`, after restoring the
-visible cold-ray collision delay:
+Measured 2026-08-24 00:18 EEST from commit `e7ffc5c`, after completing the
+monster-triggered rolling-boulder transaction:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **36+0.31 ms/turn** (R² 0.817).
-One owned process completed in **11.99 seconds** at **271,777,792 bytes maximum
+The engine-only gate is **44/44 exact** at **35+0.31 ms/turn** (R² 0.825).
+One owned process completed in **11.96 seconds** at **279,199,744 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,294/1,483** exact frames.  Fourteen sessions
+Supplemental animation is now **1,305/1,483** exact frames.  Fourteen sessions
 are complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
 **49/49**, seed0002 **128/128**, seed0016 **4/4**, seed0030 **40/40**,
 seed0104 **2/2**,
@@ -20,11 +20,12 @@ seed0108 **4/4**, seed0116 **8/8**, seed0360 **12/12**, seed0361 **10/10**,
 seed0383 **1/1**, seed0900 **3/3**, and seed5002 **8/8**.  Seed0900 remains a
 bounded replay carrier, not a generalized Tourist actor/occupation
 implementation.  Major partial carriers are seed0014
-**892/995**, seed0007 **53/58**, and
+**903/995**, seed0007 **53/58**, and
 seed4500 **22/37**.  These counts are supplemental and do not alter the contest
-pass result.  The input306 regression additionally proves an exact one-native
-to one-JavaScript frame count; this matters because the supplemental scorer
-does not penalize extra contestant frames.
+pass result.  The input306 cold-ray and inputs560/561 rolling-boulder
+regressions additionally prove exact native-to-JavaScript frame counts and
+cursors; this matters because the supplemental scorer neither compares
+cursors nor penalizes extra contestant frames.
 
 The normal frozen-overlay gate was not rerun after this animation-only block;
 its latest completed result remains the **44/44** commit-`0dc1776` checkpoint

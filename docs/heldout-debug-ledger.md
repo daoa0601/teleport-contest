@@ -13577,3 +13577,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   44/44 and advances to1,294/1,483 animation; seed0014 reaches892/995.  Normal
   scoring and publication remain deferred; rolling-boulder inputs560/561 are
   the next generic owner probe.
+- Commit e7ffc5c completes monster-triggered `launch_obj(ROLL)` presentation
+  across seed0014 inputs560/561.  Four pre-target cells delay twice before the
+  hit line forces the trigger pager; the continuation resolves kill/corpse,
+  delays twice on the target, then restores and places the endpoint boulder.
+  A screen-only pass concealed left-moving cursor errors, so the shared helper
+  now uses the previous/current dirty-map boundary only when a previous visible
+  transient exists; seed0361's right-moving6/6 carrier remains exact.  The two
+  seed0014 inputs are13/13 full frames/cursors.  The managed engine-only corpus
+  stays44/44 and rises to1,305/1,483 animation with seed0014 at903/995.  No
+  normal scorer, push, workflow or hidden judge ran.

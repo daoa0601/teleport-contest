@@ -34537,3 +34537,47 @@ retaining59,178/59,178 RNG and714/714 boundaries.  The full corpus advances to
 killing a monster; resistance/reflection, misses, invisible targets, other
 directions, hero hits, armor/inventory side effects and alternate ray sources
 remain controls.  Lua contributes only the physical level geometry.
+
+## 950. Monster rolling-boulder traps span tty, `ohitmon()`, and endpoint ownership
+
+~~~mermaid
+flowchart TD
+    Trigger["monster enters rolling-boulder trap"] --> Line["queue click/trigger line"]
+    Line --> Extract["launch_obj extracts source boulder"]
+    Extract --> Pre["two visible delays per launch-to-target cell"]
+    Pre --> Hit["ohitmon queues hit line"]
+    Hit --> Pager["older trigger topline owns More boundary"]
+    Pager --> Kill["resume hit and optional kill line"]
+    Kill --> Death["detach monster and create corpse/drop"]
+    Death --> Post["two visible delays per target-to-endpoint cell"]
+    Post --> Settle["place boulder at endpoint and restore map"]
+    Cursor{"previous visible transient exists?"} -->|"yes"| Dirty["last dirty old/new map cell owns cursor"]
+    Cursor -->|"no"| Direct["current projectile coordinate owns cursor"]
+    Lua["Lua owns trap/launcher geometry only"] -.-> Trigger
+~~~
+
+Hero- and monster-triggered rolling-boulder traps share native
+`trap.c:launch_obj(ROLL)`: every visible cell receives two
+`nh_delay_output()` calls.  The monster route adds `ohitmon()` inside the
+flight.  Its hit line can force an older trigger topline through tty; after the
+acknowledgement, death/corpse state completes before the rolling loop resumes
+from the target cell.  Endpoint placement is later than both operations.
+
+JavaScript now shares `animateRollingBoulderCell()` across the command and
+monster-scheduler routes, and splits deferred monster death from deferred
+endpoint placement.  Cursor ownership is direction-sensitive: after a
+left-moving projectile clears its previous higher-x cell, that cleared cell is
+the last dirty projection; a first visible cell has no such predecessor and
+uses its direct coordinate.  Restricting dirty inference to a real previous
+transient avoids selecting unrelated unflushed map dirt.
+
+Seed0014 inputs560/561 are exact at **13/13** full frames/cursors, including
+four pre-target cell pairs, the pager split, the two target-cell frames and
+the final restored floor projection.  Seed0361 input206 remains exact at
+**6/6** as the opposite-direction hero control.  The corpus advances to
+1,305/1,483 without boundary changes.  This closes the represented visible
+monster-triggered hit/kill path; misses, nonfatal hits, unseen triggers,
+vertical/diagonal launchers, intervening actors, landmines, doors, bars,
+boulder chains and endpoint hazards remain controls.  Lua supplies launcher
+coordinates and terrain but owns no projectile cadence, tty continuation,
+death transaction or cursor timing.
