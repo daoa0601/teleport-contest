@@ -90773,3 +90773,97 @@ corpus, hidden judge, push or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 20:25 EEST, journal block 3015] {#seed52 #animation #magic-missile #monster-beam #tmp-at #nh-delay-output #cursor #bounded-regression #portfolio}
+
+**First travel-delay result:** capturing immediately after every visible
+monster-beam paint preserves the focused seed52 engine screens/RNG and produces
+the native animation count at every input through537.  Counts are exact at
+123(2),125(1),491(6),492(1),495(2),498(1),512(5),513(1),516(1),
+518(5),519(2),527(3),528(2),533(2),534(2),537(2).  All38 emitted
+frame images are cell-exact.
+
+**Earliest remaining divergence:** frame cursors differ at input125 and at
+message/status-owned frames495.1,498.0,513.0,519.1,528.1,534.1 and537.0.
+Travel cursors are otherwise exact.  Inputs615 and777 each still lack one
+native delayed-survival frame, leaving38/40 frames emitted.
+
+**Decision and falsified hypothesis:** one paint hook is sufficient for every
+reached frame image and count before the survival delays; separate bounce or
+contact frame captures would duplicate native frames and are rejected.  Split
+the post-paint cursor owner between beam travel, tty message, status refresh and
+resumed hero death-ray cases, then attach the two missing frames to their
+shared delayed-survival boundary.  No corpus, hidden judge, push or publication
+ran; all bounded replay/test processes exited and unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 20:35 EEST, journal block 3016] {#seed52 #animation #death-survival #runmode-delay #savelife #unmul #source-diagnosis #priority}
+
+**Final two-frame diagnosis:** inputs615 and777 are not invisible or
+message-only beam frames.  Their RNG slices contain ordinary post-death monster
+and global maintenance with no zap call.  Native `end.c:savelife()` sets
+`multi=-1`, installs `nomovemsg`, calls `curs_on_u()` and returns to the
+monster scan.  `allmain.c` then calls `runmode_delay_output()` once for that
+negative-multi turn immediately before `unmul()` appends "You survived that
+attempt on your life."
+
+**Prediction:** monster-movement debug-death recovery needs one flushed frame
+at the hero cursor immediately before the deferred survival suffix.  This
+should add exactly the native frame at615 (`OK, so you don't die.`) and777
+(`OK, so you don't die.  The newt bites!`) without adding a second frame to
+the hero-command death-ray recovery at125.  No corpus, hidden judge, push or
+publication ran; the source inspection and bounded replays left no process
+running.
+
+---
+
+### [2026-08-23 20:41 EEST, journal block 3017] {#seed52 #animation #death-survival #runmode-delay #run-leap #correction #falsified-hypothesis #bounded-regression}
+
+**Correction to block3016:** an unconditional monster-death recovery capture
+emitted47 frames against native40.  The seven false frames appeared at inputs
+510,561,588,648,684,714 and750; only615 and777 were valid.  This falsifies
+the prediction that every `multi=-1` turn reaches `nh_delay_output()`.
+
+**Earliest source gate and evidence:** C `runmode_delay_output()` applies
+default `RUN_LEAP` cadence after testing negative multi: it delays only when
+`moves % 7 == 0`.  The nine monster-death recovery calls reached JavaScript
+moves124,134,141,147,152,156,160,165 and168.  Only147 and168 are divisible
+by7, exactly selecting native inputs615 and777.  Teleport mode emits none,
+walk emits one per eligible turn, and crawl repeats the same delay five times.
+
+**Decision:** consume the pending savelife delay at every survival boundary but
+emit according to the source runmode cadence.  Keep hero-command death-ray
+recovery independent.  The next gate is complete native animation comparison,
+then a bounded durable regression and official carrier scorer.  No corpus,
+hidden judge, push or publication ran; every diagnostic process exited.
+
+---
+
+### [2026-08-23 20:41 EEST, journal block 3018] {#seed52 #animation #magic-missile #death-ray #death-survival #complete-replay #engine-only #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and complete animation acceptance:** commit `5cb78fc`
+captures C `dobuzz()` delays for visible monster magic-missile cells, models
+tty's last dirty-output cursor owner, corrects the shared death-ray cursor by
+the same rule, and captures source-gated post-savelife runmode delays.  The
+durable seed52 regression checks the exact nonempty input set, every frame
+count, topline, beam-row slice and raw cursor without a whole-log assertion.
+
+**Native evidence:** direct bounded comparison matches **40/40 full decoded
+frame screens and 40/40 frame cursors**.  The official strict carrier scorer
+reports **9,928/9,928 RNG, 792/793 screens, 793/793 input cursors and 40/40
+animation frames** in **0.37 seconds** at **134,742,016 bytes maximum RSS**;
+input2 tutorial remains the sole screen miss.  Focused seed52 animation plus
+seed211 death-ray control passes **2/2** in **0.39 seconds** at **141,787,136
+bytes maximum RSS**.  All seed52 plus seed211 outcome4/hiss controls pass
+**12/12** in **0.97 seconds** at **254,132,224 bytes maximum RSS**.
+
+**Ownership and remaining work:** architecture section924 and the held-out
+ledger close the reached death-ray, monster magic-missile and debug-survival
+delay groups.  This does not claim sleep/fire/cold rays, projectile/explosion
+animations, nondefault runmode carriers or input2 tutorial.  Every verifier
+exited; no full corpus, public-status rewrite, hidden judge, push or publication
+ran, and unrelated dirty files remain untouched.
+
+---

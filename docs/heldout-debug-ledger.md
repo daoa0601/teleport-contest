@@ -13359,3 +13359,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   values at80.  Final carrier score is10,399/10,399 RNG,792/793 screens(input2),
   793/793 cursors and4/4 animation after commit1b129c4 adds exact death-ray
   tmp_at frames/cursors.  Focused/expanded gates pass5/5 and61/61.
+- Seed52 animation is closed by commit5cb78fc.  `dobuzz()` now captures every
+  visible monster magic-missile delay; cursor ownership follows tty's last
+  dirty output, distinguishing a new beam cell from unchanged bounced-return
+  q, corpse/floor redraw, HP-field refresh and topline prose.  The shared
+  death-ray cursor uses the same model and retains seed211's4/4 control.
+  Monster-turn debug survival separately carries `savelife()`'s `multi=-1`
+  into source `runmode_delay_output()` cadence: default leap emits only at
+  moves147 and168, giving the native frames at inputs615 and777.  Direct
+  comparison is40/40 full decoded frame screens and40/40 cursors.  Official
+  strict seed52 score remains9,928/9,928 RNG,792/793 screens(input2),793/793
+  input cursors and improves from0/40 to40/40 animation.  The bounded durable
+  regression plus seed211 control pass2/2; all seed52 and outcome4/hiss
+  controls pass12/12.  Other ray/projectile/explosion groups, nondefault
+  runmode carriers and input2 tutorial remain open.

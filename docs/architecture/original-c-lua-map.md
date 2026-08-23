@@ -33546,9 +33546,10 @@ flowchart TD
 
 The death-ray loop already owned exact transient cell/message state but omitted
 the supplemental `nh_delay_output()` boundary.  Each visible paint now flushes
-and invokes the environment-neutral animation hook.  Cursor projection uses
-terminal rather than level coordinates: frames0--2 retain hero column
-`u.ux-1`; a beam over the hero advances to level x.
+and invokes the environment-neutral animation hook.  Section924 refines the
+initial hero-coordinate cursor model into tty's general last-dirty-output rule;
+that rule produces the same seed211 cursors while also covering death, status,
+message and bounced-return writes.
 
 Seed211 input123 now matches all four decoded transient screens and raw frame
 cursors: (7,8),(7,8),(7,8),(8,8).  The complete carrier is exact at
@@ -33556,3 +33557,52 @@ cursors: (7,8),(7,8),(7,8),(8,8).  The complete carrier is exact at
 animation frames.  This section closes the reached hero death-ray animation
 group.  It does not close sleep/fire/cold rays, monster-origin beams, other
 tmp_at effects, or input2 tutorial.  Lua owns only geometry.
+
+## 924. Beam delay cursors follow the last dirty tty output
+
+~~~mermaid
+flowchart TD
+    Buzz["C dobuzz visits visible ray position"] --> Tmp["tmp_at updates transient beam glyph"]
+    Tmp --> Delay["nh_delay_output captures flushed tty state"]
+    Dirty{"Did beam glyph actually change?"} -->|"yes"| BeamCursor["map output leaves cursor after beam glyph"]
+    Dirty -->|"no, bounced return"| Other["retain later dirty owner"]
+    Kill["monster death newsym dirties corpse or floor cell"] --> MapOrder["later map coordinate can own cursor"]
+    Damage["hero damage dirties HP value"] --> Status["unchanged return glyph leaves cursor at HP field"]
+    Prose["bounce or hit prose dirties topline"] --> Message["unchanged return glyph leaves cursor at message end"]
+    MapOrder --> Other
+    Status --> Other
+    Message --> Other
+    Save["monster-turn savelife sets multi=-1 and nomovemsg"] --> Cadence{"runmode cadence"}
+    Cadence -->|"teleport"| None["no delay"]
+    Cadence -->|"default leap and moves mod7=0"| One["one hero-cursor frame"]
+    Cadence -->|"walk"| One
+    Cadence -->|"crawl"| Five["five identical frames"]
+    Lua["Lua owns level geometry only"] -.-> Buzz
+    Lua -.->|"no tty ownership"| Dirty
+    Lua -.->|"no scheduler ownership"| Cadence
+~~~
+
+`tmp_at(DISP_BEAM)` stores every visited coordinate, but `show_glyph()` only
+causes tty output when the displayed glyph changes.  On a first traversal the
+beam cell is therefore the last map write and its post-glyph cursor wins.  On a
+cardinal bounce the same bright-blue q can already occupy the return cell; the
+unchanged glyph emits no tty write, exposing the most recent dirty owner
+instead.  Seed52 observes topline cursors after bounce prose, the corpse cell
+after gnome-zombie death, and the HP field after a second hero contact.  The
+same model corrects seed52's final hero death-ray cell while preserving the
+four seed211 frames from section923.
+
+The two animation-only frames at seed52 inputs615 and777 belong to a separate
+allmain owner.  Monster-turn `savelife()` leaves `multi=-1`; the negative-multi
+loop invokes `runmode_delay_output()` before `unmul()` publishes the deferred
+survival suffix.  Default `RUN_LEAP` admits only moves147 and168 because they
+are divisible by7.  That yields one hero-cursor frame containing the current
+`OK, so you don't die.` line, with the newt bite already appended at input777.
+
+The complete seed52 carrier now matches all40 native animation frames and raw
+frame cursors while retaining exact 9,928-call RNG and every gameplay screen
+from input3 through792.  This section closes the reached horizontal death-ray,
+monster magic-missile, dirty-output cursor and default-runmode survival-delay
+boundaries.  It does not close other ray types, nondefault runmode witnesses,
+projectile/explosion animations or input2 tutorial.  Lua supplies geometry but
+no beam rendering, tty flushing or runmode scheduling.
