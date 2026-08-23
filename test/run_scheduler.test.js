@@ -9741,7 +9741,7 @@ test('seed0023 failed death-touch gate preserves maximum HP',
         assert.equal(game.u.uhp, 66);
     });
 
-test('seed0002 wood golem ignores death touch and resumes empty theft gate',
+test('seed0002 wood golem survives death touch then rehumanizes on claw',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
             + '#polyself\nwood golem\n  '
@@ -9755,13 +9755,13 @@ test('seed0002 wood golem ignores death touch and resumes empty theft gate',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            // Stop after the following Wizard hit resumes through a
-            // successful-but-empty stealamulet() gate and passive-form probe.
-            moves: fullMoves.slice(0, 125),
+            // Stop when the following claw exhausts form HP, rehumanizes,
+            // skips the Upolyd-only passive gate, and selects the next spell.
+            moves: fullMoves.slice(0, 127),
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 126);
+        assert.equal(result.getScreens().length, 128);
         assertRngSliceExact(result.getRngSlices()[80], [
             'rn2(2)=0', 'rn2(19)=4', 'rn2(500)=397',
         ], 'seed0002 wood-golem setup RNG');
@@ -9804,12 +9804,23 @@ test('seed0002 wood golem ignores death touch and resumes empty theft gate',
             'Dlvl:1 $:1765 HP:16(50) Pw:271(271) AC:2 HD:7');
         assert.deepEqual(result.getCursors()[125], [34, 0, 1]);
 
-        assert.equal(game.u.umonnum, 254);
-        assert.equal(game.u.mtimedone, 895);
-        assert.equal(game.u.mh, 16);
-        assert.equal(game.u.mhmax, 50);
+        assertRngSliceExact(result.getRngSlices()[127], [
+            'rn2(20)=11', 'rn2(3)=0', 'rn2(6)=1',
+            'rn2(30)=19', 'rn2(300)=268',
+        ], 'seed0002 fatal form-contact rehumanization RNG');
+        assert.equal(decodedTopline(result.getScreens()[127]),
+            'The Wizard of Yendor hits!  You return to human form!--More--');
+        assert.equal(decodedRow(result.getScreens()[127], 23),
+            'Dlvl:1 $:1765 HP:149(149) Pw:271(271) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[127], [61, 0, 1]);
+
+        assert.equal(game.u.umonnum, 334);
+        assert.equal(game.u.mtimedone, 0);
+        assert.equal(game.u.mh, 0);
+        assert.equal(game.u.mhmax, 0);
         assert.equal(game.u.uhp, 149);
         assert.equal(game.u.uhpmax, 149);
+        assert.equal(game.u.uac, 8);
         assert.equal(game.context.move, 1);
     });
 

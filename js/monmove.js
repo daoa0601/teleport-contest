@@ -43,6 +43,7 @@ import {
     summonNastyMonsters, stack_object, undeadToCorpse, monsterGoodPosition,
 } from './mklev.js';
 import { getTrack } from './track.js';
+import { rehumanizeHero } from './polyself.js';
 import {
     clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
@@ -7258,7 +7259,15 @@ export function resumeDeferredHeroContact(
     attack.appliedDamage = reduceHeroContactDamage(
         attack.damage, state, rollOne, calls,
     );
+    const wasPolymorphed = Upolyd(state?.u);
     applyHeroContactDamage(state, attack.appliedDamage);
+    if (wasPolymorphed && (state.u?.mh ?? 0) < 1) {
+        // mhitu.c:mdamageu() rehumanizes atomically before passiveum() sees
+        // the old form.  Retain the returned presentation transaction for
+        // the async actor driver, but make the body change live now so
+        // passiveum's Upolyd-only gate does not consume rn2(3).
+        attack.contactRehumanized = rehumanizeHero(state);
+    }
     if (attack.appliedDamage > 0) {
         attack.passive = applyHeroPassiveAfterContact(
             action.monster, state, random, d, calls,

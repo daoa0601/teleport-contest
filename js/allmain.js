@@ -4151,6 +4151,27 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         resumeDeferredHeroContact(action, game);
                     }
                 }
+                if (heroAttack.contactRehumanized?.changed) {
+                    const rehumanized = heroAttack.contactRehumanized;
+                    if (rehumanized.regainedSight) vision_recalc(0);
+                    let returnMessage
+                        = `You return to ${rehumanized.race} form!`;
+                    if (rehumanized.regainedSight)
+                        returnMessage += '  You can see again.';
+                    const returnDismissal = await queueTurnMessage(
+                        returnMessage,
+                    );
+                    if (returnDismissal !== null
+                        && returnDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                    if (rehumanized.encumbranceMessage) {
+                        await queueTurnMessage(
+                            rehumanized.encumbranceMessage,
+                        );
+                    }
+                    heroAttack.contactRehumanized = null;
+                }
                 if (heroAttack.deferredBlindEffect) {
                     const toggledBlindness = resumeDeferredHeroBlindness(
                         action, game,
