@@ -1950,7 +1950,13 @@ export function mfndpos(monster, state, flags = monAllowFlags(monster, state)) {
                 && (!lavaOk || !(flags & ALLOW_WALL))) continue;
             if (!(poolOk || IS_POOL(loc.typ) === wantPool)
                 || !(lavaOk || !IS_LAVA(loc.typ))) continue;
+            const engulfingHero = !!(state?.u?.uswallow
+                && state.u.ustuck === monster);
+            const slipsUnderDoor = !engulfingHero
+                && (!!(speciesFlags & M1_AMORPHOUS)
+                    || monsterCanFogWithEmptyInventory(monster));
             if (IS_DOOR(loc.typ)
+                && !slipsUnderDoor
                 && ((loc.doormask & D_CLOSED) && !(flags & OPENDOOR)
                     || (loc.doormask & D_LOCKED) && !(flags & UNLOCKDOOR))
                 && !throughDoor) {

@@ -21,7 +21,8 @@ import {
     FAKE_AMULET_OF_YENDOR, FOOD_RATION,
     CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET,
     LEATHER_GLOVES, LONG_SWORD,
-    DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, OIL_LAMP,
+    DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, MUMMY_WRAPPING,
+    OIL_LAMP,
     POT_GAIN_LEVEL, POT_INVISIBILITY, RING_MAIL, ROCK, RUBY, SLING,
     SPEAR,
     TOUCHSTONE,
@@ -10259,6 +10260,117 @@ test('seed0005 intervention and tengu teleports preserve scheduler order',
         assert.ok(tengu);
         assert.deepEqual([tengu.mx, tengu.my], [70, 16]);
         assert.deepEqual(tengu.minvent.map(object => object.otyp), [333]);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0084 curse intervention preserves ambient inventory owners',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkj   '
+            + '.'.repeat(191) + ' '.repeat(5);
+        const result = await runSegment({
+            seed: 84,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 323);
+        const leprechaunBirth = result.getRngSlices()[216];
+        assert.equal(leprechaunBirth.length, 276);
+        assertRngSliceExact(leprechaunBirth.slice(-16), [
+            'rn2(326)=268', 'rn2(331)=147', 'rn2(336)=282',
+            'rn2(341)=26', 'rn2(343)=298', 'rn2(344)=4',
+            'rnd(2)=1', 'd(7,8)=43', 'rn2(2)=1',
+            'd(1,30)=14', 'rnd(2)=2', 'rn2(50)=28',
+            'rn2(100)=69', 'rn2(100)=48', 'rn2(20)=8', 'rn2(64)=56',
+        ], 'seed0084 leprechaun gold-construction suffix RNG');
+
+        const amorphousMovement = result.getRngSlices()[229];
+        assert.equal(amorphousMovement.length, 56);
+        assertRngSliceExact(amorphousMovement.slice(10, 23), [
+            'rn2(5)=4', 'rn2(10)=6',
+            'rn2(1)=0', 'rn2(2)=1', 'rn2(3)=1',
+            'rn2(4)=3', 'rn2(5)=0', 'rn2(5)=4',
+            'rn2(5)=2', 'rn2(12)=6', 'rn2(8)=1',
+            'rn2(5)=0', 'rn2(5)=0',
+        ], 'seed0084 amorphous closed-door candidate RNG');
+
+        const mummyBirth = result.getRngSlices()[243];
+        assert.equal(mummyBirth.length, 289);
+        assertRngSliceExact(mummyBirth.slice(-16), [
+            'rn2(2)=1', 'rn2(7)=2', 'rnd(2)=1',
+            'rn2(10)=0', 'rn2(10)=3', 'rn2(10)=2',
+            'rn2(100)=99', 'rn2(80)=62', 'rn2(80)=15',
+            'rn2(1000)=783', 'rn2(50)=6', 'rn2(100)=5',
+            'rn2(5)=1', 'rn2(100)=22', 'rn2(20)=12', 'rn2(64)=10',
+        ], 'seed0084 mummy-wrapping suffix RNG');
+
+        const centaurBirth = result.getRngSlices()[298];
+        assert.equal(centaurBirth.length, 305);
+        assertRngSliceExact(centaurBirth.slice(278), [
+            'rn2(2)=1', 'rnd(2)=2', 'rn2(11)=2',
+            'rn2(10)=3', 'rn2(10)=5', 'rn2(100)=24',
+            'rn2(80)=65', 'rn2(80)=29', 'rn2(1000)=774',
+            'rnd(2)=2', 'rn2(6)=3', 'rn2(11)=4',
+            'rn2(10)=1', 'rn2(10)=5', 'rn2(100)=89',
+            'rn2(100)=67', 'rn2(80)=32', 'rn2(80)=77',
+            'rn2(1000)=757', 'rn2(12)=6', 'rn2(75)=24',
+            'rn2(50)=21', 'rn2(100)=48', 'rn2(5)=2',
+            'rn2(100)=5', 'rn2(20)=11', 'rn2(64)=54',
+        ], 'seed0084 centaur weapon-stack suffix RNG');
+
+        const curseOpening = result.getRngSlices()[317];
+        assert.equal(curseOpening.length, 59);
+        assertRngSliceExact(curseOpening.slice(-16), [
+            'rn2(12)=11', 'rn2(12)=10', 'rn2(12)=5',
+            'rn2(12)=7', 'rn2(12)=7', 'rn2(12)=7',
+            'rn2(12)=4', 'rn2(12)=5', 'rn2(12)=6',
+            'rn2(12)=0', 'rn2(12)=3', 'rn2(12)=0',
+            'rn2(25)=15', 'rn2(20)=2', 'rn2(64)=5', 'rn2(6)=2',
+        ], 'seed0084 intervention black-glow opening RNG');
+        assert.equal(decodedTopline(result.getScreens()[317]),
+            'You notice a black glow surrounding you.--More--');
+        assert.deepEqual(result.getCursors()[317], [48, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[318], [
+            'rnd(6)=6',
+            'rnd(11)=8', 'rnd(11)=7', 'rnd(11)=11',
+            'rnd(11)=8', 'rnd(11)=11', 'rnd(11)=10',
+            'rn2(200)=102', 'rn2(31)=17',
+        ], 'seed0084 intervention rndcurse/reset RNG');
+        assert.equal(decodedTopline(result.getScreens()[318]),
+            'You feel a malignant aura surround you.');
+        assert.equal(decodedRow(result.getScreens()[318], 23),
+            'Dlvl:1 $:1176 HP:139(139) Pw:271(271) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[318], [9, 7, 1]);
+        assert.equal(decodedTopline(result.getScreens()[319]),
+            "Unknown command ' '.");
+
+        const leprechaun = game.level.monsters.find(monster =>
+            monster.mnum === 63);
+        assert.ok(leprechaun);
+        assert.equal(leprechaun.minvent[0].otyp, 438);
+        assert.equal(leprechaun.minvent[0].quan, 14);
+        const mummy = game.level.monsters.find(monster =>
+            monster.mnum === 190);
+        assert.ok(mummy);
+        assert.equal(mummy.minvent[0].otyp, MUMMY_WRAPPING);
+        const centaur = game.level.monsters.find(monster =>
+            monster.mnum === 132);
+        assert.ok(centaur);
+        assert.deepEqual(centaur.minvent.map(object => object.otyp), [88, 23]);
+        assert.equal(centaur.minvent[1].quan, 9);
+        assert.deepEqual(game.inventory.filter(object => object.cursed)
+            .map(object => object.otyp), [391, 277, WAN_DEATH]);
+        assert.equal(game.u.udg_cnt, 152);
+        assert.equal(game.u.umortality || 0, 0);
+        assert.equal(game.u.uhp, 139);
+        assert.equal(game.context.no_of_wizards, 0);
+        assert.equal(game._vanquishedCounts.get(285).count, 1);
+        assert.equal(game._unresolvedDemigodIntervention, undefined);
         assert.equal(game.context.move, 0);
     });
 

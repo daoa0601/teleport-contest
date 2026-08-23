@@ -81,6 +81,7 @@ export const CLOAK_OF_DISPLACEMENT = 149;
 export const CLOAK_OF_MAGIC_RESISTANCE = 148;
 export const CLOAK_OF_PROTECTION = 146;
 export const ROBE = 143;
+export const MUMMY_WRAPPING = 138;
 export const ORCISH_CLOAK = 140;
 export const DWARVISH_CLOAK = 141;
 export const SMALL_SHIELD = 150;

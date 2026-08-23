@@ -50,7 +50,8 @@ import {
     LUCERN_HAMMER,
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_MATERIAL, MIRROR, POT_HEALING, POT_OBJECT_DETECTION,
+    OBJECT_MATERIAL, MIRROR, MUMMY_WRAPPING,
+    POT_HEALING, POT_OBJECT_DETECTION,
     POT_SLEEPING, TALLOW_CANDLE,
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
@@ -847,6 +848,13 @@ function initializeRandomMonsterInventory(monster) {
         inventory.push(object);
         return object;
     };
+    const initThrow = (otyp, quantityRange) => {
+        const object = addObject(otyp);
+        object.quan = 3 + rn2(quantityRange);
+        object.quantity = object.quan;
+        object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
+        return object;
+    };
     if (monster?.mnum >= 59 && monster.mnum <= 61) {
         // makemon.c:m_initweap(), S_KOBOLD.  Ambient births use the same
         // dart-stack constructor and offensive reservoir as mklev births.
@@ -870,6 +878,18 @@ function initializeRandomMonsterInventory(monster) {
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
             addObject(randomOffensiveMonsterItem(monster.mnum));
+    } else if (MONSTER_SYMBOL[monster?.mnum] === 29
+        && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+        // makemon.c:m_initweap(), S_CENTAUR.  Forest centaurs use bows;
+        // plains and mountain centaurs use crossbows.
+        if (rn2(2)) {
+            const forest = monster.mnum === 131;
+            addObject(forest ? BOW : CROSSBOW);
+            initThrow(forest ? ARROW : CROSSBOW_BOLT, 12);
+        }
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll)
+            addObject(randomOffensiveMonsterItem(monster.mnum));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 33
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), default armament.  Gnomes have no
@@ -878,12 +898,6 @@ function initializeRandomMonsterInventory(monster) {
         const bias = ((monsterFlags2 & M2_LORD) ? 1 : 0)
             + ((monsterFlags2 & M2_PRINCE) ? 2 : 0)
             + ((monsterFlags2 & M2_NASTY) ? 1 : 0);
-        const initThrow = (otyp, quantityRange) => {
-            const object = addObject(otyp);
-            object.quan = 3 + rn2(quantityRange);
-            object.quantity = object.quan;
-            object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
-        };
         switch (rnd(14 - 2 * bias)) {
         case 1:
             if (monsterFlags2 & M2_STRONG) addObject(BATTLE_AXE);
@@ -914,6 +928,21 @@ function initializeRandomMonsterInventory(monster) {
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
             addObject(randomOffensiveMonsterItem(monster.mnum));
+    }
+
+    // makemon.c:m_initinv(), S_MUMMY.  A nonzero gate grants the class's
+    // ordinary wrapping before the shared defensive/misc reservoirs.
+    if (MONSTER_SYMBOL[monster?.mnum] === 39 && rn2(7))
+        addObject(MUMMY_WRAPPING);
+
+    // makemon.c:m_initinv(), S_LEPRECHAUN.  Its guaranteed gold stack makes
+    // the shared greedy-species gate below skip without another rn2(5).
+    if (MONSTER_SYMBOL[monster?.mnum] === 12) {
+        const amount = d(level_difficulty(), 30);
+        const gold = addObject(GOLD_PIECE);
+        gold.quan = amount;
+        gold.quantity = amount;
+        gold.owt = Math.max(1, Math.trunc((amount + 50) / 100));
     }
 
     // makemon.c:m_initinv(), S_NYMPH.  These independent class gates are
@@ -1215,28 +1244,7 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
     finishHeroTookTimeRng(sourceTurn);
 }
 
-// State-derived subset of the once-per-turn maintenance in allmain.c.
-// This covers the first quiet turn: monster movement allotments, random
-// monster generation, ambient feature sounds, hunger, and engraving wear.
-function finishInitialTurnMaintenanceRng(sourceTurn) {
-    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
-    // allmain.c's demigod intervention clock advances after engraving wear
-    // and before environmental level motion.  Only the reached outcomes 0/1
-    // share the plain nervous line; preserve other outcome identities for
-    // their own source-valid effect carriers rather than substituting prose.
-    if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
-        if ((game.u.udg_cnt ?? 0) > 0) game.u.udg_cnt--;
-        if ((game.u.udg_cnt ?? 0) === 0) {
-            const intervention = rn2(6);
-            if (intervention <= 1) {
-                appendTurnMessage('You feel vaguely nervous.');
-                delete game._unresolvedDemigodIntervention;
-            } else {
-                game._unresolvedDemigodIntervention = intervention;
-            }
-            game.u.udg_cnt = 50 + rn2(200);
-        }
-    }
+function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     // allmain.c's environmental owner runs after engraving wear. Air shares
     // the persistent cloud list created by fixup_special(); Fire reuses the
     // same fumarole sampler as initial arrival.
@@ -1269,6 +1277,37 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
             game._helplessDoneMessage = null;
         }
     }
+}
+
+// State-derived subset of the once-per-turn maintenance in allmain.c.
+// This covers the first quiet turn: monster movement allotments, random
+// monster generation, ambient feature sounds, hunger, and engraving wear.
+function finishInitialTurnMaintenanceRng(sourceTurn) {
+    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
+    // allmain.c's demigod intervention clock advances after engraving wear
+    // and before environmental level motion.  Nervous outcomes 0/1 are
+    // synchronous; outcome2's black-glow pline can suspend before rndcurse,
+    // reset, environment, and once-per-action scheduling.
+    if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
+        if ((game.u.udg_cnt ?? 0) > 0) game.u.udg_cnt--;
+        if ((game.u.udg_cnt ?? 0) === 0) {
+            const intervention = rn2(6);
+            if (intervention <= 1) {
+                appendTurnMessage('You feel vaguely nervous.');
+                delete game._unresolvedDemigodIntervention;
+            } else if (intervention === 2) {
+                appendTurnMessage('You notice a black glow surrounding you.');
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else {
+                game._unresolvedDemigodIntervention = intervention;
+            }
+            game.u.udg_cnt = 50 + rn2(200);
+        }
+    }
+    finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
 }
 
 function periodicExercise(index, improving) {
@@ -1876,6 +1915,21 @@ async function initialTurnMaintenanceWithTty(
     if (phase?.deferredAmbientMessage) {
         await queueTurnMessage(phase.message);
         result = finishInitialTurnMaintenanceAfterAmbient(phase);
+    }
+    if (game._pendingDemigodIntervention) {
+        const intervention = game._pendingDemigodIntervention;
+        game._pendingDemigodIntervention = null;
+        await waitForCurrentMonsterMore();
+        if (intervention.kind === 2) {
+            const action = { calls: [] };
+            const heroAttack = { deferredCurseItems: true };
+            await resolveDeferredHeroCurseItems(action, heroAttack);
+            delete game._unresolvedDemigodIntervention;
+        }
+        game.u.udg_cnt = 50 + rn2(200);
+        finishInitialTurnMaintenanceAfterIntervention(
+            intervention.sourceTurn,
+        );
     }
     await drainQueuedHelplessRecoveryMessage();
     return result;
