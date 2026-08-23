@@ -34162,3 +34162,39 @@ carrier for tty-continuation and cadence ordering, not evidence that unseen
 Tourist pets or counted searches generalize.  Replacing `SEARCH_TO_MORE` and
 `SEARCH_AFTER_MORE` with ordinary actor/occupation scheduling remains the
 architecture completion condition.  Lua contributes none.
+
+## 940. Hero-thrown food uses transient flight before floor or pet handling
+
+~~~mermaid
+flowchart TD
+    Select["dothrow selects one carrot and direction"] --> Init["throwit initializes tmp_at object glyph"]
+    Init --> Step["bhit advances to next path square"]
+    Step --> Paint["paint visible transient glyph"]
+    Paint --> Dirty["derive cursor from last dirty map projection"]
+    Dirty --> Delay["flush and nh_delay_output animation frame"]
+    Delay --> More{"range or contact remains?"}
+    More -->|"yes"| Clear["newsym prior transient"]
+    Clear --> Step
+    More -->|"no"| End["DISP_END restores underlying map"]
+    End --> Break["drop_throw breaktest and floor settlement"]
+    Break --> Pet["later monster turn may move pet onto and eat food"]
+    Lua["Lua owns no throw, transient display, or pet consumption"] -.-> Select
+~~~
+
+The temporary projectile and the landed object are different display states.
+Each `bhit()` path square receives a delay before `DISP_END`; only afterward
+does `drop_throw()` test survival and place/merge the object.  Pet movement and
+eating belong to the later monster turn, so they cannot replace flight frames.
+
+Cursor ownership is terminal-relative.  `display.js:lastDirtyMapCursor()`
+compares every pending map projection with the physical terminal grid in C's
+row-major order.  When a transient glyph already equals an underlying floor
+object, that square is not dirty and the cursor remains on the earlier cleared
+flight square.  Monster and hero projectiles now share this rule.
+
+Seed0004 inputs338/354/358 pin one-, two-, and occupied-destination two-step
+carrot flights at **5/5** full frame screens/cursors.  The session closes at
+47/47 animation while preserving409/409 input boundaries.  This section closes
+the reached horizontal food projectile only; arrow/gem range, vertical flight,
+returning weapons, breakage, and other thrown classes retain their own source
+branches.  Lua contributes none.

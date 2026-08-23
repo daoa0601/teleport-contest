@@ -91737,3 +91737,58 @@ seed0004 and seed0007 over extending another untouched replay-only carrier.
 Classify their first missing frames before editing.
 
 ---
+
+### [2026-08-23 23:04 EEST, journal block 3054] {#seed0004 #seed0007 #projectile #dothrow #carrot #pet-replay #animation #source-diagnosis #priority #prediction}
+
+**Residual split:** seed0004's five missing frames are hero-thrown carrot
+flight: one cell at input338, two cells at354, and two cells at358.  The last
+input's destination already contains a carrot, so native's second `tmp_at()`
+does not dirty that cell and retains the prior flight cursor.  Seed0007's five
+residuals are not missing frames; occupation cadence already emits them, but
+its historical pet replay projects the wrong intermediate animal/time state.
+
+**Source owner and decision:** prioritize seed0004's generic
+`dothrow.c:throwit -> bhit -> tmp_at/nh_delay_output -> DISP_END` path.  Move
+the terminal-grid-versus-map dirty-cursor calculation out of monster-specific
+allmain code into the display boundary, then reuse it for the reached hero food
+projectile.  Keep seed0007 as separately labeled replay debt.
+
+**Prediction and controls:** render each visible carrot flight square, emit a
+delay for every path step, clear the prior transient cell before advancing,
+and clear the final transient before floor settlement/pet movement.  Inputs338,
+354 and358 should become5/5 frame exact; input358 frame2 must keep the frame1
+cursor because the destination glyph is already identical.  Boundary RNG,
+screens and cursors must remain exact, and monster-dagger projectile controls
+must not regress.
+
+---
+
+### [2026-08-23 23:07 EEST, journal block 3055] {#seed0004 #dothrow #carrot #tmp-at #dirty-cursor #projectile #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Implementation:** commit `344342d` moves `lastDirtyMapCursor()` from
+monster-specific allmain code into `display.js`, preserving the same pending-
+map versus physical-grid rule for all transient owners.  The reached CARROT
+branch now constructs its two-cell path, paints/flushes/captures every square,
+clears the prior transient on advance, clears the final transient before
+settlement, and keeps breaktest after flight as in C.
+
+**Bounded evidence:** seed0004 inputs338,354 and358 match all **5/5** new frame
+screens/cursors plus their RNG and ordinary boundaries.  The already-occupied
+destination at input358 frame2 leaves no new dirty cell, so the cursor correctly
+remains at frame1's square.  The carrot witness and lethal/nonlethal monster-
+projectile controls pass **3/3** in **0.87 seconds**.  Seed0004 closes at
+**47/47 animation**,12,084/12,084 RNG and409/409 screens/cursors.
+
+**Acceptance and boundary:** one managed engine-only corpus passes **44/44**
+at **34+0.31 ms/turn** (R²0.841) in **11.93 seconds** at **276,086,784 bytes
+maximum RSS**.  Supplemental animation reaches **1,095/1,483**; no other
+session count changes.  This closes the represented hero-thrown food flight,
+not arrows, gems, returning weapons, vertical throws, or arbitrary food range.
+No normal corpus, push, workflow, hidden judge, or publication ran.
+
+**Next blocker:** seed0007 remains53/58 with existing but state-mismatched
+occupation frames; because that path is replay-backed, inventory the next
+smallest generic projectile/animation group in parallel with deciding whether
+to expose its replay turn states or replace the replay itself.
+
+---

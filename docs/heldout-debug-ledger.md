@@ -13496,3 +13496,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   session closes at3/3 animation and the managed corpus remains44/44 with
   1,090/1,483 frames.  `SEARCH_AFTER_MORE` is still explicit replay debt; this
   carrier is not counted as generalized Tourist dog/search behavior.
+- Commit344342d closes the reached hero-thrown food flight.  Dirty transient
+  cursor ownership moved into `display.js` and is now shared by monster and
+  hero projectiles.  Seed0004's one/two-square carrot paths match5/5 new frames,
+  including an occupied destination whose unchanged `%` glyph retains the
+  prior dirty cursor.  Seed0004 becomes47/47 animation and the managed corpus
+  remains44/44 with1,095/1,483 frames.  This does not claim arrow, gem, return,
+  vertical, or arbitrary food projectile coverage.
