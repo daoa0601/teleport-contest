@@ -768,10 +768,14 @@ export async function polyselfRandomOrdinary() {
     game.u._encumbrance = encumbranceLabel(game._encumbranceLevel);
 
     if (slipsArmor && suit) {
+        // C break_armor() drops the suit and newsym() projects the accepted
+        // form before encumber_msg() forces the pending form/armor prose.
+        // Keep the pre-removal AC/status until find_ac() below, but paint the
+        // monster glyph on the first pager rather than the old hero glyph.
+        dropCarriedObject(suit, ['uarm']);
         await moreUntilDismissed(
             `You turn into a ${monsterName}!  Your armor falls around you!--More--`,
         );
-        dropCarriedObject(suit, ['uarm']);
         await moreUntilDismissed(
             "You can't even move a handspan with this load!--More--",
         );

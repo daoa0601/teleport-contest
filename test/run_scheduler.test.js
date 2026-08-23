@@ -11365,6 +11365,40 @@ test('silent takeoff retains its getobj selector through the elapsed turn',
             'What do you want to take off? [cdef or ?*]');
     });
 
+test('random polymorph repaints the form before its armor pager', async () => {
+    const session = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed4500-knight-coverage.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+    const result = await runSegment({
+        seed: session.seed,
+        datetime: session.datetime,
+        nethackrc: session.nethackrc,
+        moves: session.moves.slice(0, 1442),
+        storage: new Map(),
+    });
+    for (let step = 1435; step <= 1441; step++) {
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed4500 random polymorph input${step} RNG`,
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            `seed4500 random polymorph input${step} screen`,
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            `seed4500 random polymorph input${step} cursor`,
+        );
+    }
+    assert.equal(decodeScreen(result.getScreens()[1438])[10][25].ch, 'F');
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
