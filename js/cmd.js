@@ -3508,7 +3508,7 @@ function arriveWithHero(follower) {
 // forces a fresh Wizard when no live one remains.  makemonNear() owns
 // makemon(byyou)'s three shuffled rings; arrival prose remains an ordinary
 // tty continuation so the prior materialization line is acknowledged first.
-async function resurrectWizard() {
+export async function resurrectWizard() {
     const existing = game.level?.monsters?.find(monster =>
         !monster.dead && monster.iswiz);
     if (existing) return existing;

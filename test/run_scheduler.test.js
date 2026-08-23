@@ -10159,6 +10159,118 @@ test('seed0001 second Wizard death ray preserves demigod countdown',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0001 forced-noop intervention resurrects the Wizard',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkj   '
+            + '.'.repeat(98) + ' '.repeat(5)
+            + 'm.'.repeat(20) + ' '.repeat(10);
+        const result = await runSegment({
+            seed: 1,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 280);
+        const elfBirth = result.getRngSlices()[159];
+        assert.equal(elfBirth.length, 283);
+        assertRngSliceExact(elfBirth.slice(228, 260), [
+            'rn2(2)=0', 'rn2(2)=1', 'rnd(2)=2',
+            'rn2(10)=1', 'rn2(11)=3', 'rn2(10)=9', 'rn2(10)=4',
+            'rn2(100)=74', 'rn2(80)=35', 'rn2(80)=73',
+            'rn2(1000)=583', 'rn2(2)=1', 'rnd(2)=1',
+            'rn2(11)=6', 'rn2(10)=9', 'rn2(10)=0',
+            'rn2(2)=1', 'rn2(100)=32', 'rn2(80)=18',
+            'rn2(80)=53', 'rn2(1000)=620', 'rn2(3)=2',
+            'rn2(2)=1', 'rnd(2)=1', 'rn2(11)=0',
+            'rn2(3)=1', 'rne(3)=1', 'rn2(2)=0',
+            'rn2(100)=41', 'rn2(80)=48', 'rn2(80)=60',
+            'rn2(1000)=743',
+        ], 'seed0001 ambient Grey-elf equipment RNG');
+
+        const groupBirth = result.getRngSlices()[203];
+        assert.equal(groupBirth.length, 383);
+        assertRngSliceExact(groupBirth.slice(280, 288), [
+            'rn2(8)=1', 'rn2(7)=4', 'rn2(6)=1', 'rn2(5)=1',
+            'rn2(4)=0', 'rn2(3)=2', 'rn2(2)=0', 'rn2(16)=3',
+        ], 'seed0001 second small-group member position RNG');
+        assertRngSliceExact(groupBirth.slice(-20), [
+            'rn2(7)=2', 'rn2(6)=0', 'rn2(5)=0', 'rn2(4)=1',
+            'rn2(3)=2', 'rn2(2)=1', 'rnd(2)=2', 'd(10,8)=42',
+            'rn2(2)=0', 'rn2(50)=24', 'rn2(100)=25',
+            'rn2(100)=17', 'rn2(50)=28', 'rn2(100)=58',
+            'rn2(100)=24', 'rn2(100)=55', 'rn2(400)=373',
+            'rn2(300)=212', 'rn2(20)=13', 'rn2(64)=4',
+        ], 'seed0001 second small-group member suffix RNG');
+
+        assert.equal(decodedTopline(result.getScreens()[214]),
+            "Are you waiting to get hit?  Use 'm' prefix to force a no-op (to rest).");
+        assertRngSliceExact(result.getRngSlices()[251], [
+            'rn2(5)=0', 'rnd(20)=7', 'd(2,6)=8',
+            'rn2(3)=1', 'rn2(6)=5', 'rn2(5)=3',
+            'rnd(20)=14', 'd(2,6)=8', 'rn2(3)=1', 'rn2(6)=4',
+        ], 'seed0001 pre-resurrection fatal Warg RNG');
+        assert.equal(decodedTopline(result.getScreens()[251]),
+            'The warg bites!  The warg bites!--More--');
+        assert.equal(decodedTopline(result.getScreens()[270]),
+            'You die...--More--');
+        assert.equal(decodedTopline(result.getScreens()[271]),
+            'Die? [yn] (n)');
+
+        const resurrection = result.getRngSlices()[272];
+        assert.equal(resurrection.length, 82);
+        assertRngSliceExact(resurrection.slice(27, 35), [
+            'rn2(6)=5',
+            'rn2(8)=4', 'rn2(7)=4', 'rn2(6)=3',
+            'rn2(5)=2', 'rn2(4)=3', 'rn2(3)=2', 'rn2(2)=1',
+        ], 'seed0001 intervention/resurrection opening RNG');
+        assertRngSliceExact(resurrection.slice(-20), [
+            'rn2(12)=10', 'rn2(11)=9', 'rn2(10)=8',
+            'rn2(9)=4', 'rn2(8)=4', 'rn2(7)=2',
+            'rn2(6)=2', 'rn2(5)=1', 'rn2(4)=2',
+            'rn2(3)=1', 'rn2(2)=1', 'rnd(2)=2',
+            'd(31,8)=141', 'rn2(50)=1', 'rn2(11)=8',
+            'rn2(3)=2', 'rnd(2)=2', 'rn2(4)=1',
+            'rn2(100)=38', 'rn2(100)=65',
+        ], 'seed0001 resurrected Wizard constructor suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[272]),
+            "OK, so you don't die.  The warg bites!--More--");
+        assert.equal(decodedRow(result.getScreens()[272], 23),
+            'Dlvl:1 $:1836 HP:102(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[272], [46, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[273]),
+            'The Wizard of Yendor suddenly appears next to you!--More--');
+        assert.deepEqual(result.getCursors()[273], [58, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[274], [
+            'rn2(200)=39',
+        ], 'seed0001 post-resurrection countdown reset RNG');
+        assert.equal(decodedTopline(result.getScreens()[274]),
+            'A voice booms out...  "So thou thought thou couldst kill me, fool."--More--');
+        assert.deepEqual(result.getCursors()[274], [75, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[275]),
+            'You survived that attempt on your life.');
+
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.mrevived, 1);
+        assert.equal(wizard.mhp, 141);
+        assert.equal(wizard.mhpmax, 141);
+        assert.deepEqual([wizard.mx, wizard.my], [14, 6]);
+        assert.deepEqual(wizard.minvent.map(object => object.otyp), [329]);
+        assert.equal(wizard.mpeaceful, 0);
+        assert.equal(game.context.no_of_wizards, 1);
+        assert.equal(game._vanquishedCounts.get(285).count, 1);
+        assert.equal(game.u.uevent.udemigod, true);
+        assert.equal(game.u.udg_cnt, 89);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.u.uhp, 102);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0005 intervention and tengu teleports preserve scheduler order',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

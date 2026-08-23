@@ -19,7 +19,8 @@ import {
     destroyFireInventory, finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
     getLine, promptYesNo, performQuestExpulsion, discoverReflectingShield,
-    rhack, stopRun, wakeMonstersNear, wornArmorInDestroyOrder,
+    resurrectWizard, rhack, stopRun, wakeMonstersNear,
+    wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
@@ -46,11 +47,15 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
     ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOULDER, BOW, CORPSE, CROSSBOW,
-    CROSSBOW_BOLT, DAGGER, DART, FOOD_RATION, GOLD_PIECE, LONG_SWORD,
+    CROSSBOW_BOLT, CRYSTAL_BALL, DAGGER, DART,
+    ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK,
+    ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD,
+    ELVEN_SHORT_SWORD, ELVEN_SPEAR,
+    FOOD_RATION, GOLD_PIECE, LONG_SWORD,
     LUCERN_HAMMER,
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_MATERIAL, MIRROR, MUMMY_WRAPPING,
+    OBJECT_MATERIAL, MIRROR, MUMMY_WRAPPING, PICK_AXE,
     POT_HEALING, POT_OBJECT_DETECTION,
     POT_SLEEPING, TALLOW_CANDLE,
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
@@ -878,6 +883,40 @@ function initializeRandomMonsterInventory(monster) {
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
             addObject(randomOffensiveMonsterItem(monster.mnum));
+    } else if (monster.mnum >= 264 && monster.mnum <= 269) {
+        // makemon.c:m_initweap(), is_elf().  Clothing probes precede the
+        // mutually exclusive primary loadout; ambient Elven Monarchs retain
+        // their two post-loadout utility probes.
+        if (rn2(2))
+            addObject(rn2(2) ? ELVEN_MITHRIL_COAT : ELVEN_CLOAK);
+        if (rn2(2)) addObject(ELVEN_LEATHER_HELM);
+        else if (!rn2(4)) addObject(ELVEN_BOOTS);
+        if (rn2(2)) addObject(ELVEN_DAGGER);
+        switch (rn2(3)) {
+        case 0:
+            if (!rn2(4)) addObject(ELVEN_SHIELD);
+            if (rn2(3)) addObject(ELVEN_SHORT_SWORD);
+            addObject(ELVEN_BOW);
+            initThrow(ELVEN_ARROW, 12);
+            break;
+        case 1:
+            addObject(ELVEN_BROADSWORD);
+            if (rn2(2)) addObject(ELVEN_SHIELD);
+            break;
+        case 2:
+            if (rn2(2)) {
+                addObject(ELVEN_SPEAR);
+                addObject(ELVEN_SHIELD);
+            }
+            break;
+        }
+        if (monster.mnum === 269) {
+            if (rn2(3)) addObject(PICK_AXE);
+            if (!rn2(50)) addObject(CRYSTAL_BALL);
+        }
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll)
+            addObject(randomOffensiveMonsterItem(monster.mnum));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 29
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), S_CENTAUR.  Forest centaurs use bows;
@@ -1010,17 +1049,35 @@ function generateRandomMonster() {
         return shaped;
     }
     const group = [];
-    if ((MONSTER_GENO[mnum] & 0x0080) && rn2(2)) {
-        let count = Math.trunc(rnd(3) / ((game.u?.ulevel ?? 1) < 3 ? 4 : 2));
+    const geno = MONSTER_GENO[mnum] || 0;
+    let groupMaximum = 0;
+    if ((geno & 0x0080) && rn2(2)) { // G_SGROUP
+        groupMaximum = 3;
+    } else if (geno & 0x0040) { // G_LGROUP
+        groupMaximum = rn2(3) ? 10 : 3;
+    }
+    if (groupMaximum) {
+        const heroLevel = game.u?.ulevel ?? 1;
+        const divisor = heroLevel < 3 ? 4 : heroLevel < 5 ? 2 : 1;
+        let count = Math.trunc(rnd(groupMaximum) / divisor);
         if (!count) count = 1;
+        let groupCenter = { x: primary.mx, y: primary.my };
         while (count-- > 0) {
-            // enexto_core() shuffles all three rings before testing them.
-            const groupSpot = collectNearbyCoords(primary.mx, primary.my, 3)
+            // m_initgrp() performs a first peace_minded() check before it
+            // attempts placement; makemon() owns a second check for actors
+            // which are actually constructed, then group policy forces them
+            // hostile.  Each enexto is centered on the previous group member.
+            if (peaceMinded(mnum)) continue;
+            const groupSpot = collectNearbyCoords(
+                groupCenter.x, groupCenter.y, 3,
+            )
                 .find(({ x, y }) => randomMonsterGoodPos(x, y, mnum));
             if (!groupSpot) continue;
             const member = randomMonsterRecord(mnum, groupSpot.x, groupSpot.y);
+            member.mpeaceful = 0;
             initializeRandomMonsterInventory(member);
             group.push(member);
+            groupCenter = { x: member.mx, y: member.my };
         }
     }
     initializeRandomMonsterInventory(primary);
@@ -1297,6 +1354,11 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
                 delete game._unresolvedDemigodIntervention;
             } else if (intervention === 2) {
                 appendTurnMessage('You notice a black glow surrounding you.');
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else if (intervention === 5) {
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
@@ -1919,11 +1981,14 @@ async function initialTurnMaintenanceWithTty(
     if (game._pendingDemigodIntervention) {
         const intervention = game._pendingDemigodIntervention;
         game._pendingDemigodIntervention = null;
-        await waitForCurrentMonsterMore();
         if (intervention.kind === 2) {
+            await waitForCurrentMonsterMore();
             const action = { calls: [] };
             const heroAttack = { deferredCurseItems: true };
             await resolveDeferredHeroCurseItems(action, heroAttack);
+            delete game._unresolvedDemigodIntervention;
+        } else if (intervention.kind === 5) {
+            await resurrectWizard();
             delete game._unresolvedDemigodIntervention;
         }
         game.u.udg_cnt = 50 + rn2(200);
