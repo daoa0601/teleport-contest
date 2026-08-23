@@ -87612,3 +87612,37 @@ visible trap presentation explicit.  No full corpus, public-status rewrite,
 hidden judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:45 EEST, journal block 2911] {#controlled-carrier #seed17 #wizard-of-yendor #aggravation #sleeping-lichen #wake #strategy #bounded-prefix #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Carrier portfolio:** scanning natural forced-Wizard recordings through
+seed150 found aggravation only at seed38, whose startup map/gold already
+diverge.  A second portfolio uses a source-valid controlled recipe:
+#wizgenesis sleeping lichen, then hostile Wizard, with neither command spending
+a turn.  Seeds1--50 found five effects; seed17 has an exact prefix.
+
+**Contract and persistent witness:** immediately before input135, lichen
+(40,13) is still asleep.  Input135 selects aggravation and discards
+d(16,6)=52 behind the cast pager.  Source publishes awareness, then
+aggravate() clears WAITFORU/APPEARMSG and sleep for same-region actors and
+only rolls rn2(5) for an immobile actor.  The selected sleeper is mobile, so
+input136 owns no effect RNG and the same lichen becomes awake.
+
+**Implementation and measured effect:** the deferred aggravation effect scans
+live actors, clears wait/appearance strategy and sleep, and records unfreeze
+draws only when mcanmove is zero.  The before/after regression proves the
+sleep transition rather than relying on prose.  Replay is exact through
+**input146**.  Twelve selected fixture-disabled Wizard controls pass **12/12**
+in **0.70 seconds** at **146,046,976 bytes maximum RSS**.  All controlled and
+natural serial recorders plus tests exited; no yielded process remains.
+
+**Falsification, decision and next blocker:** seed38's later line is not
+accepted evidence, and no-target usefulness alone does not prove aggravate().
+The controlled sleeper establishes actual state mutation.  Section876 maps
+the effect; Lua owns none.  Input147 next lacks d(0,0)=0 and rn2(10)=1 from a
+separate natural contact.  Keep Tower partitioning, immobile unfreeze,
+strategy bits, multiple sleepers and one-percent no-target casting explicit.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---

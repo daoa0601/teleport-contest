@@ -91,6 +91,7 @@ import {
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
     resolveDeferredHeroSummonMonsters,
     resolveDeferredHeroHasteSelf,
+    resolveDeferredHeroAggravation,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     finishDeferredHeroCloneWizard,
@@ -3772,6 +3773,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             if (haste?.message)
                                 await queueTurnMessage(haste.message);
                         }
+                        if (heroAttack.deferredAggravation)
+                            resolveDeferredHeroAggravation(action, game);
                         if (heroAttack.deferredDeathTouch)
                             await resolveDeferredHeroDeathTouch(
                                 action, heroAttack,

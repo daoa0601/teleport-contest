@@ -9968,6 +9968,62 @@ test('seed0073 adjacent haste-self shares permanent speed adjustment',
         assert.equal(game.u.uhp, 100);
     });
 
+test('seed0017 controlled sleeper makes aggravation useful and wakes',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nsleeping lichen\n'
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 135),
+            storage: new Map(),
+        });
+        const sleepingBefore = game.level.monsters.find(monster =>
+            monster.mnum === 158 && monster.mx === 40 && monster.my === 13);
+        assert.ok(sleepingBefore);
+        assert.equal(sleepingBefore.msleeping, 1);
+
+        const result = await runSegment({
+            seed: 17,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 146),
+            storage: new Map(),
+        });
+        assert.equal(result.getScreens().length, 147);
+        assertRngSliceExact(result.getRngSlices()[135], [
+            'rn2(20)=19', 'rn2(3)=2', 'rn2(6)=1',
+            'rn2(30)=13', 'rn2(300)=236', 'd(16,6)=52',
+        ], 'controlled aggravation cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[135]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell!--More--');
+        assertRngSliceExact(result.getRngSlices()[136], [
+            'rn2(5)=4', 'rn2(5)=2', 'rn2(5)=2',
+            'rn2(12)=7', 'rn2(12)=6', 'rn2(12)=10', 'rn2(12)=9',
+            'rn2(12)=4', 'rn2(70)=51', 'rn2(100)=49',
+            'rn2(20)=13', 'rn2(70)=56',
+        ], 'controlled aggravation effect and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[136]),
+            'You feel that monsters are aware of your presence.');
+        assert.equal(decodedRow(result.getScreens()[136], 23),
+            'Dlvl:1 $:1893 HP:133(142) Pw:247(247) AC:8 Xp:30');
+        const sleeperAfter = game.level.monsters.find(monster =>
+            monster.mnum === 158 && monster.mx === 40 && monster.my === 13);
+        assert.ok(sleeperAfter);
+        assert.equal(sleeperAfter.msleeping, 0);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

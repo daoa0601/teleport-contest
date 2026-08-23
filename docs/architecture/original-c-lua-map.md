@@ -31635,3 +31635,35 @@ remains permanently fast.  Visible gush prose, all armor/weapon targets,
 water_damage erosion/proof/grease, lit-item extinguishing, completely-rusting
 forms, gremlin splitting, mounts and known-trap avoidance remain separate
 controls.
+
+## 876. Aggravation effect wakes concrete same-region actor state
+
+~~~mermaid
+flowchart TD
+    Useful["has_aggravatables sees sleeping lichen"] --> Select["AD_SPEL keeps aggravation candidate"]
+    Select --> Cast["discarded 16d6 and cast pager"]
+    Cast --> Message["publish monsters-aware prose"]
+    Message --> Scan["aggravate scans live actors"]
+    Scan --> Region["retain only same Wizard-Tower partition"]
+    Region --> Strategy["clear WAITFORU and APPEARMSG"]
+    Strategy --> Sleep["clear msleeping"]
+    Sleep --> Immobile{"mcanmove is zero?"}
+    Immobile -->|"yes"| Chance["rn2(5) chance to clear frozen and restore movement"]
+    Immobile -->|"no"| Tail["resume actor/global tail"]
+    Chance --> Tail
+    Lua["Lua owns no spell or wake state"] -.-> Scan
+~~~
+
+Natural forced-Wizard seeds through150 yielded only one aggravation effect,
+seed38, behind startup drift.  A source-valid controlled recipe creates a
+sleeping lichen without spending a turn, then creates the hostile Wizard.
+Seed17 preserves that sleeper at (40,13) through input135.
+
+Input135 selects aggravation and discards d(16,6)=52 behind the cast pager.
+Input136 publishes the awareness line, clears the lichen's sleeping state,
+and resumes the exact twelve-call tail with no effect RNG because the sleeper
+is already mobile.  Replay is exact through input146.  Input147's next gap is
+a separate zero-dice natural contact and cancellation probe.  Wizard-Tower
+partitioning, WAIT/APPEAR strategy, immobile unfreeze success/failure,
+multiple sleepers, unique meditation and no-target one-percent acceptance
+remain separate controls.

@@ -11018,44 +11018,6 @@ attempt: **402 calls**, not a direct two-pass retry.
   locator pass after tutorial residue.  Humanoid and special observers,
   growth-family pairs, invisible-observer vision and observer-growl response
   remain open.
-- Seed16 closes natural fire contact through input114 call3.  Input113 now
-  owns d(3,6)=12 and cancellation rn2(10)=9 before the fire line pages.
-  Input114 resumes with inventory gate rn2(20)=12, knockback rn2(3)=0 and
-  rn2(6)=4, then applies 12 HP to reach127.  The next call rn2(5)=1 belongs
-  to a horned devil choosing an orange gain-level potion, which JS currently
-  ignores.  The selected Wizard gate remains 9/9 fixture-disabled; resisted,
-  destructive and lethal fire branches remain open.
-- Seed16 is now exact through all 127 states after porting cursed gain-level
-  selection and the no-rise call editor.  The horned devil qualifies because
-  it is not a guard, shopkeeper, or priest.  Input114 publishes the orange
-  potion, input115 pages looks uneasy, and input116 opens the call editor.
-  The recorded m. is never submitted, so the potion remains carried and
-  unconsumed.  The exact replay ends HP127/155 and AC8; the selected Wizard
-  gate remains 9/9 fixture-disabled.  Migration, completed naming, unseen
-  use and noncursed growth remain open.
-- Serial seeds21--32 produced a clean clone carrier at seed32; the haste
-  candidate seed25 remains blocked behind spawned-monster combat.  Seed32 is
-  exact through all 127 states.  Input120 constructs a second real Wizard at
-  (10,4), HP139/139, rejects a fake Amulet with rn2(2)=0 and selects human
-  disguise with rn2(12)=0.  M_AP_MONSTER projection now paints the clone as a
-  white @ without changing iswiz identity; context count is2.  The selected
-  Wizard gate rises to 10/10 fixture-disabled.  Other disguises, fake Amulet,
-  shapechanger protection and clone lifecycle remain open.
-- A serial seed21--100 search separates real haste-self from potion/wand
-  speed.  Seed73 is exact through input118: input106 selects haste and
-  discards d(16,6)=45; input107 sets Wizard permspeed/mspeed to MFAST,
-  publishes the faster line and resumes exact maintenance.  The selected
-  Wizard gate rises to 11/11 fixture-disabled.  Input119 later misses a
-  rust-trap rn2(5) before mcalcmove, so the carrier is bounded rather than
-  called complete.  Slow cancellation, already-fast, equipment and invisible
-  message controls remain open.
-- Seed73 is now exact through all 127 states after adding the silent monster
-  rust-trap default branch.  Input119 places rn2(5)=3 between m_move and the
-  next distfleeck; there is no carried lit item, torso armor, iron-golem death
-  or gremlin split.  The replay ends HP100/160 and AC8 with the Wizard still
-  MFAST.  The selected Wizard gate remains 11/11 fixture-disabled.  Visible,
-  targeted, erosive, extinguishing and species-special rust branches remain
-  open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both
@@ -12894,3 +12856,49 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled.  The next gap is the fire-elemental hit's missing d(3,6)
   and cancellation tail; triggered occupants and alternate potion visibility
   remain open.
+- Seed16 closes natural fire contact through input114 call3.  Input113 now
+  owns d(3,6)=12 and cancellation rn2(10)=9 before the fire line pages.
+  Input114 resumes with inventory gate rn2(20)=12, knockback rn2(3)=0 and
+  rn2(6)=4, then applies 12 HP to reach127.  The next call rn2(5)=1 belongs
+  to a horned devil choosing an orange gain-level potion, which JS currently
+  ignores.  The selected Wizard gate remains 9/9 fixture-disabled; resisted,
+  destructive and lethal fire branches remain open.
+- Seed16 is now exact through all 127 states after porting cursed gain-level
+  selection and the no-rise call editor.  The horned devil qualifies because
+  it is not a guard, shopkeeper, or priest.  Input114 publishes the orange
+  potion, input115 pages looks uneasy, and input116 opens the call editor.
+  The recorded m. is never submitted, so the potion remains carried and
+  unconsumed.  The exact replay ends HP127/155 and AC8; the selected Wizard
+  gate remains 9/9 fixture-disabled.  Migration, completed naming, unseen
+  use and noncursed growth remain open.
+- Serial seeds21--32 produced a clean clone carrier at seed32; the haste
+  candidate seed25 remains blocked behind spawned-monster combat.  Seed32 is
+  exact through all 127 states.  Input120 constructs a second real Wizard at
+  (10,4), HP139/139, rejects a fake Amulet with rn2(2)=0 and selects human
+  disguise with rn2(12)=0.  M_AP_MONSTER projection now paints the clone as a
+  white @ without changing iswiz identity; context count is2.  The selected
+  Wizard gate rises to 10/10 fixture-disabled.  Other disguises, fake Amulet,
+  shapechanger protection and clone lifecycle remain open.
+- A serial seed21--100 search separates real haste-self from potion/wand
+  speed.  Seed73 is exact through input118: input106 selects haste and
+  discards d(16,6)=45; input107 sets Wizard permspeed/mspeed to MFAST,
+  publishes the faster line and resumes exact maintenance.  The selected
+  Wizard gate rises to 11/11 fixture-disabled.  Input119 later misses a
+  rust-trap rn2(5) before mcalcmove, so the carrier is bounded rather than
+  called complete.  Slow cancellation, already-fast, equipment and invisible
+  message controls remain open.
+- Seed73 is now exact through all 127 states after adding the silent monster
+  rust-trap default branch.  Input119 places rn2(5)=3 between m_move and the
+  next distfleeck; there is no carried lit item, torso armor, iron-golem death
+  or gremlin split.  The replay ends HP100/160 and AC8 with the Wizard still
+  MFAST.  The selected Wizard gate remains 11/11 fixture-disabled.  Visible,
+  targeted, erosive, extinguishing and species-special rust branches remain
+  open.
+- No clean natural aggravation-effect carrier appeared through forced-Wizard
+  seed150; seed38 has startup drift.  A controlled source recipe creates a
+  sleeping lichen, then the hostile Wizard without spending a turn.  Seed17
+  is exact through input146: the lichen is asleep at (40,13) before input135,
+  input136 publishes awareness and clears sleep, then resumes the exact tail.
+  The selected Wizard gate rises to 12/12 fixture-disabled.  Input147's
+  zero-dice natural contact is separate; Tower partitioning, immobile
+  unfreeze, wait strategy and no-target acceptance remain open.

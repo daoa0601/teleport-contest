@@ -354,6 +354,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
         effectMessage = antimagic
             ? 'You feel momentarily weakened.'
             : 'You suddenly feel weaker!';
+    } else if (spell.key === 'aggravation') {
+        effectMessage = 'You feel that monsters are aware of your presence.';
     } else if (spell.key === 'curse-items') {
         effectMessage = 'You feel as if you need some help.';
     } else if (spell.key === 'geyser') {
@@ -7800,6 +7802,11 @@ export function resumeDeferredHeroSpell(
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'aggravation') {
+        attack.deferredAggravation = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'destroy-armor') {
         attack.deferredDestroyArmor = true;
         attack.appliedDamage = 0;
@@ -8091,6 +8098,35 @@ export function resolveDeferredHeroHasteSelf(action, state) {
     attack.hasteSelf = effect;
     attack.deferredHasteSelf = false;
     return effect;
+}
+
+export function resolveDeferredHeroAggravation(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredAggravation) return null;
+    const affected = [];
+    for (const monster of state.level?.monsters || []) {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
+        const wasSleeping = !!monster.msleeping;
+        const wasWaiting = !!((monster.mstrategy ?? 0)
+            & (STRAT_WAITFORU | STRAT_APPEARMSG));
+        monster.mstrategy = (monster.mstrategy ?? 0)
+            & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
+        monster.msleeping = 0;
+        let unfroze = false;
+        if (monster.mcanmove === 0
+            && recordRandom(random, action.calls, 5) === 0) {
+            monster.mfrozen = 0;
+            monster.mcanmove = 1;
+            unfroze = true;
+        }
+        if (wasSleeping || wasWaiting || unfroze)
+            affected.push(monster);
+    }
+    attack.aggravatedMonsters = affected;
+    attack.deferredAggravation = false;
+    return affected;
 }
 
 // Resume a successful castmu(FALSE,FALSE) after its casting line has crossed
