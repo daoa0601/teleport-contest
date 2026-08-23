@@ -11018,6 +11018,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   locator pass after tutorial residue.  Humanoid and special observers,
   growth-family pairs, invisible-observer vision and observer-growl response
   remain open.
+- Seed16 closes natural fire contact through input114 call3.  Input113 now
+  owns d(3,6)=12 and cancellation rn2(10)=9 before the fire line pages.
+  Input114 resumes with inventory gate rn2(20)=12, knockback rn2(3)=0 and
+  rn2(6)=4, then applies 12 HP to reach127.  The next call rn2(5)=1 belongs
+  to a horned devil choosing an orange gain-level potion, which JS currently
+  ignores.  The selected Wizard gate remains 9/9 fixture-disabled; resisted,
+  destructive and lethal fire branches remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

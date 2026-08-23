@@ -87437,3 +87437,35 @@ Lua owns none.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:17 EEST, journal block 2906] {#seed16 #fire-elemental #ad-fire #contact-pager #magic-cancellation #inventory-destruction #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after potion discovery, seed16 matches
+input113 through fire-elemental to-hit rnd(20)=5.  Native next owns d(3,6)=12
+and rn2(10)=9 before the combined invisibility/hit pager; JS skipped both and
+entered the following actor.
+
+**Prediction and source evidence:** mhitm_ad_fire() receives pre-rolled damage,
+publishes hitmsg(), checks magic cancellation, then publishes the independently
+suspendable fire line.  Only after acknowledgement does it test attacker
+level against rn2(20), run shared knockback and apply HP.  The selected
+attacker level does not exceed12, so no inventory subcalls belong here.
+
+**Implementation and measured effect:** natural AD_FIRE now returns a named
+deferred attack after d(3,6), resolves cancellation and fire/resistance prose,
+then lets the shared contact tail own inventory gate, knockback and HP.
+Seed16 is exact through **input114 call3**, reaching HP127 before the next
+actor.  The focused seed16 regression asserts the complete nine-call input113.
+Nine selected fixture-disabled Wizard controls pass **9/9** in **0.55
+seconds** at **142,852,096 bytes maximum RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** exact phase movement falsifies
+the next-actor scheduler and potion continuation as causes of the missing
+fire draws.  Section871 maps the owner; Lua owns none.  Input114's next
+rn2(5)=1 belongs to a horned devil using an orange gain-level potion; JS
+attacks instead.  Keep resistance, cancellation, paper/straw, successful
+inventory destruction, slime, passive and lethal fire controls explicit.
+No full corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---

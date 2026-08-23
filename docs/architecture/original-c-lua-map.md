@@ -31471,3 +31471,33 @@ independent gap is the fire-elemental hit at call7, where source rolls
 d(3,6)=12 and electric/fire cancellation before the pager tail.  Triggered
 ghost/djinni occupants, cursed invisibility, unseen quaffing, See Invisible,
 speed/gain-level appearances and potion stacks remain separate controls.
+
+## 871. Natural fire contact defers effect prose before inventory and HP
+
+~~~mermaid
+flowchart TD
+    Hit["fire elemental claw hits"] --> Damage["roll declared d(3,6)"]
+    Damage --> HitLine["publish visible hit line"]
+    HitLine --> Cancel["mhitm_mgc_atk_negated rn2(10)"]
+    Cancel --> FireLine["publish You're on fire!"]
+    FireLine --> Pager["fire line overflows prior invisibility feedback"]
+    Pager --> Inventory["acknowledgement resumes level-vs-rn2(20) gate"]
+    Inventory --> Knockback["shared rn2(3), rn2(6) probes"]
+    Knockback --> HP["apply retained 12 HP"]
+    HP --> Later["resume horned-devil actor"]
+    Resist["Fire resistance adds a second line and zeros HP"] -.-> FireLine
+    Lua["Lua owns no contact, fire, or tty phase"] -.-> Hit
+~~~
+
+Seed16 input113 combines the Elvenking invisibility line with a fire-elemental
+hit.  Source owns rnd(20)=5,d(3,6)=12,rn2(10)=9 before the fire line forces
+the pager.  Input114 resumes with rn2(20)=12, then rn2(3)=0,rn2(6)=4 and
+applies 12 HP, reaching127 before the next actor's rn2(5)=1.
+
+The JavaScript natural-contact dispatcher now gives AD_FIRE the same explicit
+phase split as cold and electricity.  The selected inventory gate fails
+strictly because attacker level is not greater than12; successful destruction
+is retained as a named unimplemented branch rather than approximated.
+Seed16 is exact through input114 call3.  Fire resistance, magic cancellation,
+paper/straw rehumanization, successful inventory destruction, slime removal,
+passive retaliation and lethal fire remain separate controls.

@@ -9810,10 +9810,11 @@ test('seed0016 smoky invisibility potion probes occupant before quaffing',
         ], 'seed0016 invisibility-potion occupant precheck RNG');
         assert.equal(decodedTopline(result.getScreens()[112]),
             'The Elvenking drinks a smoky potion!--More--');
-        assertRngSliceExact(result.getRngSlices()[113].slice(0, 7), [
+        assertRngSliceExact(result.getRngSlices()[113], [
             'rn2(19)=5', 'rn2(5)=1', 'rn2(5)=2', 'rn2(5)=1',
             'rn2(5)=3', 'rn2(5)=3', 'rnd(20)=5',
-        ], 'seed0016 invisibility discovery and actor prefix RNG');
+            'd(3,6)=12', 'rn2(10)=9',
+        ], 'seed0016 invisibility and fire-effect selection RNG');
         assert.equal(decodedTopline(result.getScreens()[113]),
             'Suddenly you cannot see the Elvenking.  The fire elemental hits!--More--');
         assert.equal(decodedRow(result.getScreens()[113], 23),

@@ -6275,6 +6275,16 @@ function basicMonsterAttack(
             deferredAmuletTheftGate: true,
             deferredPostHit: true, oldFormMnum,
         }, monster, attackIndex);
+    } else if (hit && !alreadyEngulfing && attackType !== AT_ENGL
+        && damageType === AD_FIRE
+        && dice > 0 && sides > 0) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'fire-natural',
+            deferredFireNegation: true,
+        }, monster, attackIndex);
     } else if (hit && attackType === AT_TUCH && damageType === AD_COLD
         && dice > 0 && sides > 0) {
         // hmon() rolls base damage before mhitm_ad_cold(), but the latter
@@ -6777,6 +6787,36 @@ export function resumeDeferredHeroColdSpecial(
     return action;
 }
 
+// Resume mhitm_ad_fire() after hitmsg().  The fire line is independently
+// suspendable; inventory destruction, knockback, and HP follow it.
+export function resumeDeferredHeroFireSpecial(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredFireNegation) return action;
+    const armorProtection = state?.u?._magicNegation ?? 0;
+    const cancelled = !!action.monster?.mcan;
+    attack.negated = cancelled
+        || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+    if (cancelled) {
+        attack.damage = 0;
+        attack.fireEffectMessage = null;
+    } else if (attack.negated) {
+        attack.damage = 0;
+        attack.fireEffectMessage = 'You avoid harm.';
+    } else {
+        attack.fireEffectMessage = "You're on fire!";
+        if (state.u.fireResistance || state.u.fire_resistance) {
+            attack.damage = 0;
+            attack.fireResistanceMessage = "The fire doesn't feel hot!";
+        }
+    }
+    attack.deferredFireInventory = !attack.negated;
+    attack.deferredPostHit = true;
+    attack.deferredFireNegation = false;
+    return action;
+}
+
 // Resume mhitm_ad_elec() after hitmsg().  The zap line is independently
 // suspendable; its inventory-destruction gate and common hit tail follow it.
 export function resumeDeferredHeroElectricSpecial(
@@ -7104,6 +7144,14 @@ export function resumeDeferredHeroContact(
         if (attackerLevel > destructionGate)
             recordRandom(random, calls, 5);
         attack.deferredColdInventory = false;
+    }
+    if (attack.deferredFireInventory) {
+        const destructionGate = recordRandom(random, calls, 20);
+        const attackerLevel = action.monster?.m_lev
+            ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+        if (attackerLevel > destructionGate)
+            attack.unimplementedFireInventory = true;
+        attack.deferredFireInventory = false;
     }
     if (attack.deferredElectricInventory) {
         const destructionGate = recordRandom(random, calls, 20);
