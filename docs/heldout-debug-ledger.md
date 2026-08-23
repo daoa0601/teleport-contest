@@ -12951,3 +12951,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   Ordinary/Antimagic/Free-Action stun routes pass 3/3; the selected Wizard
   gate rises to 16/16 fixture-disabled.  Alternate ring/property interactions
   remain open.
+- A first seed2 wood-golem carrier was rejected because native polymorph
+  expired at input139 before death touch drained the restored human at
+  input142.  Moving controlled polyself immediately before Wizard creation
+  keeps the form live and exposes the real earliest divergence at input124
+  call12: JS used the human level/Constitution rn2(100) regeneration probe for
+  damaged monster-form HP, while C's non-eel `regen_hp()` uses a deterministic
+  twenty-turn/Regeneration rule.  The source split removes that extra call;
+  inputs3--124 then match native RNG, screens, and cursors, ending at `You seem
+  no deader than before` with wood-golem HP33/50 and untouched human HP149/149.
+  The permanent branch test passes 1/1 and the selected Wizard gate rises to
+  17/17 fixture-disabled.  Input125's missing knockback/passive-form calls,
+  dry-eel loss, Sleepy regeneration, burdened cadence, demon immunity,
+  hallucination, fatality, life saving, and Unchanging remain open.

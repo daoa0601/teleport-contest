@@ -31878,3 +31878,51 @@ Paired with ordinary and Antimagic seed97, this closes three distinct stun
 routes.  Right-hand wear, cursed ring, ring removal before effect, simultaneous
 Antimagic, already-stunned Free Action, property discovery and destruction/
 theft remain separate controls.
+
+## 884. Monster-form HP regeneration precedes nonliving death immunity
+
+~~~mermaid
+flowchart TD
+    Turn["allmain.c global-turn allocation"] --> Timeout["nh_timeout ages polymorph duration"]
+    Timeout --> Upolyd{"Upolyd with damaged form HP?"}
+    Upolyd -->|"no"| Human["human regen: level plus Constitution versus rn2(100)"]
+    Upolyd -->|"yes"| Eel{"dry non-breathless eel?"}
+    Eel -->|"yes"| Dry["separate probabilistic HP-loss branch"]
+    Eel -->|"no"| Source{"Regeneration or Sleepy while asleep?"}
+    Source -->|"yes"| Heal["heal exactly one form HP"]
+    Source -->|"no"| Cadence{"encumbrance permits and moves mod 20 is zero?"}
+    Cadence -->|"yes"| Heal
+    Cadence -->|"no"| Quiet["no HP RNG and no heal"]
+    Quiet --> Cast["Wizard death-touch effect resumes later"]
+    Heal --> Cast
+    Cast --> Nonliving{"current form nonliving or demon?"}
+    Nonliving -->|"yes"| Immune["publish seem no deader; skip success gate and 8d6"]
+    Nonliving -->|"no"| Living["resistance, success, hallucination, and drain graph"]
+    Lua["Lua supplies level geometry only"] -.-> Turn
+~~~
+
+Native seed2 separates two source owners which a living-body carrier cannot
+distinguish.  Controlled `#polyself` at input80 creates a wood golem with
+HP50/50 and a long fixed-duration form.  After the Wizard damages it to33/50,
+input124 reaches global maintenance before the next actor action.  C's
+`regen_hp()` sees an ordinary non-eel polymorph off the twenty-turn cadence,
+so it consumes no health RNG and leaves HP33.  JavaScript previously entered
+the human `(level + Constitution) > rn2(100)` path merely because active HP
+was below maximum; that inserted the exact first divergent call between
+`maybe_generate_rnd_mon()` and fountain `dosounds()`.
+
+With human and monster-form regeneration split at the `Upolyd` boundary,
+inputs3--124 match native per-input RNG, decoded screens, and cursors.  The
+same input then lets the Wizard attack, and input124's suspended effect line
+proves the independent death-touch branch: wood golems satisfy `nonliving()`,
+so C prints `You seem no deader than before` without `rn2(30)`, `d(8,6)`, or
+any form/human HP mutation.  The captured state remains wood golem HP33/50,
+human HP149/149, and an active polymorph duration.
+
+This section does not close the dry-eel loss branch, Sleepy-asleep healing,
+Regeneration equipment/intrinsics, burdened twenty-turn cadence, demon forms,
+or later death-touch outcomes.  Input125 also begins a distinct contact gap:
+native owns knockback `rn2(3)`, direction `rn2(6)`, and passive-form `rn2(3)`
+after the next hit while JavaScript skips them.  Lua owns none of regeneration,
+monster-form classification, spell usefulness, effect RNG, HP mutation, or
+message backpressure.

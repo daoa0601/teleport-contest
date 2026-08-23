@@ -87866,3 +87866,54 @@ durable source-state target.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:37 EEST, journal block 2919] {#seed2 #polyself #wood-golem #regen-hp #nonliving #death-touch #first-divergence #native-witness #implementation #bounded-replay #regression #architecture #ledger #process-safety #priority}
+
+**Portfolio, rejected carrier and earliest divergence:** a first seed2 recipe
+polymorphed before forty setup turns.  Native duration expired at input139 and
+death touch drained the restored human at input142, so the JavaScript-only
+`no deader` outcome was rejected.  Moving `#polyself wood golem` immediately
+before Wizard construction keeps the native form live through death touch.
+The new carrier was already exact through input123, but input124 call12 showed
+JavaScript inserting `rn2(100)=68` after `rn2(70)=50`; native proceeds directly
+to fountain `rn2(400)=268`.
+
+**Source contract and prediction:** the extra draw belongs to
+`allmain.c:regen_hp()`, not random-monster generation, ambient sounds, or the
+death spell.  Human HP recovery compares level plus Constitution with
+`rn2(100)`.  A damaged non-eel monster form instead heals one point only from
+Regeneration/Sleepy-asleep or on a deterministic twenty-turn cadence when
+encumbrance permits.  Off cadence it consumes no HP RNG.  Removing the human
+probe at the `Upolyd` boundary should align input124 and leave wood-golem HP
+33/50 before nonliving death-touch immunity skips both its success gate and
+fresh 8d6.
+
+**Implementation, witness and measured effect:** commit `4438487` splits
+ordinary non-eel polymorph regeneration from human recovery while preserving
+the human branch.  Controlled input80 has `rn2(2)=0,rn2(19)=4,rn2(500)=397`
+and installs wood-golem HP50/50.  Input123 damages the form to33/50 and pages
+the death cast.  Input124 now has no regeneration `rn2(100)`, no death-touch
+`rn2(30)` or `d(8,6)`, and publishes `You seem no deader than before` while
+retaining form HP33/50, hidden human HP149/149, and polymorph duration895.
+All parity-sensitive states **input3 through input124** match native RNG,
+decoded screens, and cursors.  Strict bounded replay took **0.31 seconds** at
+**124,370,944 bytes maximum RSS**.  The permanent focused test passes **1/1**
+at **131,366,912 bytes maximum RSS**; seventeen selected fixture-disabled
+Wizard controls pass **17/17** in **0.68 seconds** at **151,584,768 bytes
+maximum RSS**.  Every recorder, comparator, and test process exited.
+
+**Falsification, decision and next blocker:** native source labels and the
+damaged form status falsify the ambient-feature and random-generation
+hypotheses; the early recipe falsifies assuming polymorph remained live from
+JavaScript state alone.  Section884 maps the regeneration/body/effect owners;
+Lua owns only level geometry.  This block closes ordinary non-eel off-cadence
+regeneration plus wood-golem death immunity, not dry-eel loss, Sleepy,
+Regeneration, burdened/twenty-turn healing, demon immunity, hallucination,
+fatality, life saving, or Unchanging.  The first next mismatch is input125
+call1: native consumes knockback `rn2(3)=1`, direction `rn2(6)=2`, and
+passive-form `rn2(3)=0` after a Wizard hit while JavaScript skips them.  Treat
+that contact transaction as the next independent source block.  No full
+corpus, public-status rewrite, hidden judge, push, or publication ran;
+unrelated dirty files remain untouched.
+
+---
