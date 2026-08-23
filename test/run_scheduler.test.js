@@ -10677,6 +10677,53 @@ test('seed0012 known webmaker preserves harmless-web admission',
         assert.equal(game.u.udg_cnt, 118);
     });
 
+test('seed0052 ambient ogre tyrant receives ranked armament',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 386),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 387);
+        const birth = result.getRngSlices()[386];
+        assert.equal(birth.length, 289);
+        assertRngSliceExact(birth.slice(-26), [
+            'rnd(2)=1', 'd(13,8)=42', 'rn2(2)=0',
+            'rn2(3)=0', 'rnd(2)=1', 'rn2(11)=6',
+            'rn2(10)=2', 'rn2(10)=4', 'rn2(100)=11',
+            'rn2(80)=73', 'rn2(80)=37', 'rn2(1000)=556',
+            'rn2(75)=7', 'rn2(35)=18', 'rn2(13)=7',
+            'rnd(2)=2', 'rn2(5)=2', 'rn2(17)=15',
+            'rn2(50)=16', 'rn2(100)=68', 'rn2(5)=1',
+            'rn2(100)=57', 'rn2(100)=87', 'rn2(400)=199',
+            'rn2(20)=18', 'rn2(67)=49',
+        ], 'seed0052 ogre armament suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[386]),
+            'The gnome zombie hits!  The newt bites!');
+        assert.equal(decodedRow(result.getScreens()[386], 23),
+            'Dlvl:1 $:1965 HP:60(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[386], [4, 9, 1]);
+
+        const ogre = game.level.monsters.find(monster =>
+            monster.m_id === 86);
+        assert.ok(ogre);
+        assert.equal(ogre.mnum, 205);
+        assert.deepEqual([ogre.mx, ogre.my], [51, 3]);
+        assert.equal(ogre.mhp, 42);
+        assert.equal(ogre.mhpmax, 42);
+        assert.deepEqual(ogre.minvent.map(object => object.otyp), [45, 429]);
+        assert.equal(ogre.minvent[1].spe, 6);
+        assert.equal(game.u.uhp, 60);
+        assert.equal(game.u.udg_cnt, 40);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

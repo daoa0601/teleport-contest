@@ -917,6 +917,17 @@ function initializeRandomMonsterInventory(monster) {
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
             addObject(randomOffensiveMonsterItem(monster.mnum));
+    } else if (MONSTER_SYMBOL[monster?.mnum] === 41
+        && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+        // makemon.c:m_initweap(), S_OGRE.  Ranked ogres receive a better
+        // chance for a battle-axe; every class member then reaches the
+        // shared level-versus-rn2(75) offensive-item reservoir.
+        const range = monster.mnum === 205 ? 3
+            : monster.mnum === 204 ? 6 : 12;
+        addObject(!rn2(range) ? BATTLE_AXE : CLUB);
+        const offensiveRoll = rn2(75);
+        if ((monster.m_lev ?? 0) > offensiveRoll)
+            addObject(randomOffensiveMonsterItem(monster.mnum));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 29
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), S_CENTAUR.  Forest centaurs use bows;
