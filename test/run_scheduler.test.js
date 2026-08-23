@@ -11119,6 +11119,55 @@ test('seed0052 inactive fog hook stays between active actors',
         assert.equal(game.u.udg_cnt, 82);
     });
 
+test('seed0052 visible gas region obscures distant fog actor',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 762),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 763);
+        assertRngSliceExact(result.getRngSlices()[762], [
+            'rn2(3)=2', 'rn2(6)=3', 'rn2(5)=3',
+            'rn2(3)=2', 'rn2(8)=0', 'rn2(5)=3',
+            'rn2(5)=4', 'rn2(10)=2', 'rn2(1)=0',
+            'rn2(2)=0', 'rn2(3)=0', 'rn2(4)=0',
+            'rn2(5)=0', 'rn2(5)=0', 'rn2(3)=0',
+            'rn2(12)=0', 'rn2(12)=4', 'rn2(12)=4',
+            'rn2(12)=4', 'rn2(12)=5', 'rn2(12)=5',
+            'rn2(12)=2', 'rn2(12)=5', 'rn2(12)=11',
+            'rn2(12)=1', 'rn2(25)=21', 'rn2(100)=73',
+            'rn2(400)=56', 'rn2(20)=10', 'rn2(67)=35',
+        ], 'seed0052 gas-region projection RNG');
+        const before = decodeScreen(result.getScreens()[761])[11][17];
+        const after = decodeScreen(result.getScreens()[762])[11][17];
+        assert.equal(before.ch, 'v');
+        assert.equal(after.ch, '#');
+        assert.equal(after.color, 8);
+        assert.equal(decodedTopline(result.getScreens()[762]),
+            'The newt bites!');
+        assert.equal(decodedRow(result.getScreens()[762], 23),
+            'Dlvl:1 $:1965 HP:29(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[762], [4, 9, 1]);
+
+        const fog = game.level.monsters.find(monster =>
+            monster.m_id === 91);
+        assert.ok(fog);
+        assert.deepEqual([fog.mx, fog.my], [18, 10]);
+        const covering = game.level.regions.find(region =>
+            region.cells.some(cell => cell.x === 18 && cell.y === 10));
+        assert.ok(covering);
+        assert.equal(covering.ttl, 8);
+        assert.equal(covering.visible, true);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

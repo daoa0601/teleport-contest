@@ -14,7 +14,8 @@ import {
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
-    WEB, VIBRATING_SQUARE, M_AP_MONSTER, M_AP_OBJECT, def_warnsyms,
+    WEB, VIBRATING_SQUARE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
+    def_warnsyms,
     In_endgame, Is_rogue_level,
 } from './const.js';
 import {
@@ -940,6 +941,33 @@ export function unmap_invisible(x, y, show = true) {
 }
 
 // ── newsym ──
+function visibleMapRegionAt(x, y) {
+    return (game.level?.regions || []).find(region => region.visible
+        && region.ttl !== -2 && region.cells?.some(cell =>
+            cell.x === x && cell.y === y)) || null;
+}
+
+function monsterOverridesMapRegion(monster, x, y) {
+    if (!monster) return false;
+    if (game.u?.detectMonsters || game.detectMonsters
+        || warningProjection(monster)) return true;
+
+    const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
+    const telepathy = !!(game.u?.blindTelepathy || game.u?.telepathy);
+    if (blind && telepathy) return true;
+
+    const range = Math.max(game.u?.xray_range ?? -1, 1);
+    const dx = x - (game.u?.ux ?? x);
+    const dy = y - (game.u?.uy ?? y);
+    const seesInvisible = !!(game.u?.seeInvisible
+        || game.u?.see_invisible);
+    const ordinaryVisible = !blind && !monster.mundetected
+        && monster.m_ap_type !== M_AP_FURNITURE
+        && monster.m_ap_type !== M_AP_OBJECT
+        && (!monster.minvis || seesInvisible);
+    return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
+}
+
 export function newsym(x, y) {
     const loc = game.level?.at(x, y);
     if (!loc) return;
@@ -957,6 +985,16 @@ export function newsym(x, y) {
     // C reveals the map symbol before living and object overlays are chosen.
     if (physicallyVisible && engraving) engraving.erevealed = true;
 
+    const monster = monsterAtMapCell(x, y);
+    const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
+    if (region && !monsterOverridesMapRegion(monster, x, y)) {
+        // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
+        // overlays ordinary distant monsters but not sensed/warned or
+        // adjacent otherwise-visible actors.
+        show_glyph_cell(x, y, '#', NO_COLOR, false);
+        return;
+    }
+
     if (game.u?.ux === x && game.u?.uy === y) {
         // C maps the nonliving layer into memory before optionally drawing
         // the hero.  When canspotself() is false, that layer is also the live
@@ -972,7 +1010,6 @@ export function newsym(x, y) {
         return;
     }
 
-    const monster = monsterAtMapCell(x, y);
     if (monster && canProjectMonster(monster, x, y)) {
         // A visible actor overlays rather than replaces the remembered layer.
         if (physicallyVisible) mapNonlivingLocation(x, y, false);
