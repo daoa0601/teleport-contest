@@ -5770,6 +5770,10 @@ async function executeSourceTurnMonsterScan(monsterScan) {
     }
 }
 
+function monsterScanHasVisits(monsterScan) {
+    return !!monsterScan?.visits?.some(visits => visits.length);
+}
+
 function placeWizardBindPet(x, y) {
     const pet = game.startingPet;
     if (!pet) return;
@@ -6578,7 +6582,7 @@ export async function moveloop_core() {
                     movement: monster.movement,
                 }),
             ));
-            if (monsterScan.actors.length) {
+            if (monsterScanHasVisits(monsterScan)) {
                 await executeSourceTurnMonsterScan(monsterScan);
                 // C done()/really_done() is noreturn.  The JavaScript
                 // endgame presenter returns after drawing the score list, so
@@ -6625,7 +6629,7 @@ export async function moveloop_core() {
                     mnum: monster.mnum, pet: !!monster.pet,
                     movement: monster.movement,
             })));
-            if (monsterScan.actors.length) {
+            if (monsterScanHasVisits(monsterScan)) {
                 await executeSourceTurnMonsterScan(monsterScan);
                 if (g.program_state?.gameover) return;
             }
@@ -6715,6 +6719,16 @@ export async function moveloop_core() {
                 mnum: monster.mnum, pet: !!monster.pet,
                 movement: monster.movement,
             })));
+        }
+        const hasMonsterVisits = monsterScanHasVisits(monsterScan);
+        // bca6ac9 moved stateful first-round effects out of speculative
+        // planning so active actors could interleave them in live fmon order.
+        // A scan with no full-ration actor still visits every identity in C;
+        // run only that inactive tail here without promoting the scan into a
+        // live-role maintenance transaction or executing any actor action.
+        if (!g._tutorialActive
+            && !monsterScan?.actors?.length && hasMonsterVisits) {
+            await executeSourceTurnMonsterScan(monsterScan);
         }
         if (liveQuietRole && !g._tutorialActive
             && (monsterScan?.actors?.length || g._ordinaryDescentLive

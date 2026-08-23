@@ -11168,6 +11168,45 @@ test('seed0052 visible gas region obscures distant fog actor',
         assert.equal(covering.visible, true);
     });
 
+test('inactive-only monster scans retain ordered everyturn visits', async () => {
+    const witnesses = [
+        ['seed0360-wizard-world-tour.session.json', 170, 168],
+        ['seed0367-priest-quest-tour.session.json', 264, 262],
+        ['seed0383-wizard-hallucinate.session.json', 136, 134],
+    ];
+    for (const [filename, end, start] of witnesses) {
+        const session = JSON.parse(fs.readFileSync(
+            new URL(`../sessions/${filename}`, import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, end),
+            storage: new Map(),
+        });
+        for (let step = start; step <= end; step++) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `${filename} everyturn input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `${filename} everyturn input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `${filename} everyturn input${step} cursor`,
+            );
+        }
+    }
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
