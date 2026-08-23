@@ -32993,3 +32993,36 @@ constructor owner structurally.  It does not provide a native zero-branch
 witness, container weight/timeout/disclosure behavior, genetic-engineer control,
 later seed12 Newt combat, the rejected nasty-intervention claim, or the four
 native animation-frame groups.  Lua owns placement only.
+
+## 908. Webmaker immunity preserves movement before later combat
+
+~~~mermaid
+flowchart TD
+    Earlier["seed12 cave spider id75 creates or enters a web"] --> Detect["mintrap reaches WEB"]
+    Detect --> Species["webmaker tests cave spider94 or giant spider96"]
+    Species --> Immune["trapeffect_web returns without setting mtrapped"]
+    Immune --> Turn["input317 spider remains mobile"]
+    Turn --> Spin["maybe_spin_web consumes rn2 1000 equals657"]
+    Spin --> Post["spider completes postmov"]
+    Post --> Newt["Newt owns rnd 20 equals18 and misses"]
+    Lua["Lua contributes web and level geometry only"] -.-> Earlier
+    Lua -.->|"no ownership"| Species
+    Lua -.->|"no ownership"| Newt
+~~~
+
+Native `webmaker(ptr)` includes both cave spider mnum94 and giant spider
+mnum96.  JavaScript had admitted only the latter through `trapeffect_web()`,
+so the cave spider acquired `mtrapped=1` on an earlier web turn and input317
+incorrectly entered trap release with `rn2(40)`.
+
+The corrected predicate leaves cave spider id75 untrapped at (21,7).  Input317
+then reproduces the complete 38-call native slice: the spider consumes
+`rn2(1000)=657` in `maybe_spin_web`, finishes its postmove tail, and Newt id23
+consumes `rnd(20)=18` for `The newt just misses!`.  Final prefix state is hero
+HP141/159 with `udg_cnt=138`.
+
+This section closes cave-spider web immunity and the resulting bounded Newt
+miss at input317.  It does not close web creation success, ordinary-monster
+trapping/escape, web destruction, hero/pet interaction, the later seed12 edge
+at input395, intervention outcome4, or the native animation-frame groups.  Lua
+owns only physical web and level geometry.

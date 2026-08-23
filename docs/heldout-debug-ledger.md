@@ -13242,3 +13242,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   still lacks a native success witness.  Focused/expanded fixture-disabled
   gates pass 15/15 and48/48.  Box success/disclosure, genetic engineer, later
   Newt combat, outcome4 and animation remain open.
+- Seed12 input317 closes the source-state predecessor of its Newt combat.
+  Native `webmaker()` covers cave spider94 as well as giant spider96; excluding
+  only96 trapped cave spider id75 on its own web and replaced the later
+  `maybe_spin_web rn2(1000)=657` with a trap-release draw.  With both species
+  immune, the spider remains untrapped at (21,7), the exact 38-call input317
+  slice ends in Newt id23's `rnd(20)=18` miss, hero HP141/159 and udg138.
+  Focused/expanded fixture-disabled gates pass 3/3 and49/49.  The full rejected
+  seed12 session still diverges later at input395, so this is not outcome4
+  evidence; web-success/escape variants and animation remain open.

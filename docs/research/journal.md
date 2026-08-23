@@ -89662,3 +89662,49 @@ corpus, public-status rewrite, hidden judge, push or publication ran; unrelated
 dirty files remain untouched.
 
 ---
+
+### [2026-08-23 20:27 EEST, journal block 2969] {#seed12 #cave-spider #webmaker #web-trap #mtrapped #newt #earliest-divergence #source-state #process-safety #priority}
+
+**Post-quantum replay and causal state:** seed12 advances to input317.  Native
+and JavaScript match the first16 calls, then native cave spider id75 owns
+`maybe_spin_web rn2(1000)=657` and postmov.  JavaScript instead owns trap-release
+`rn2(40)=17`, later making the Newt bite where native misses.
+
+**Source diagnosis and prediction:** `webmaker(ptr)` is true for both cave
+spider mnum94 and giant spider mnum96.  `trapeffect_web()` returns immediately
+for either.  JavaScript exempts only mnum96, so the cave spider becomes
+`mtrapped=1` on its own web in an earlier turn.  Expand the predicate to
+[94,96].  The spider should remain mobile/untrapped, input317 should regain the
+web-spin/postmov calls, and the native Newt `rnd(20)=18` miss should follow
+without a Newt-specific patch.
+
+**Decision:** fix the webmaker state owner and relocalize the full rejected
+seed12 session.  Outcome4 remains unclaimed.  No focused regression, corpus,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 20:32 EEST, journal block 2970] {#seed12 #cave-spider #webmaker #web-trap #newt #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and acceptance:** commit `07f6593` expands WEB immunity from
+giant spider96 to the complete native webmaker set [94,96].  The 318-state
+regression compares input317's complete 38-call RNG slice plus screen, cursor
+and durable actor state; it does not claim the remaining seed12 session.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input317 RNG, decoded screens and cursors.  Cave spider id75/mnum94 is
+untrapped at (21,7), owns `maybe_spin_web rn2(1000)=657`, and finishes postmov
+before Newt id23 owns `rnd(20)=18` and misses.  Prefix state is hero HP141/159
+and `udg_cnt=138`.  The complete replay moves the earliest edge to input395 but
+remains red at **6,910/13,287 RNG calls, 395/793 screens and 765/793 cursors**;
+native outcome1 therefore remains rejected as outcome4 evidence.
+
+**Controls and remaining blocker:** the bounded focused controls pass **3/3**
+fixture-disabled in **0.36 seconds** at **135,987,200 bytes maximum RSS**.
+Expanded controls pass **49/49** in **1.33 seconds** at **330,268,672 bytes
+maximum RSS**.  Section908 and the ledger map the webmaker state predecessor;
+web creation/escape variants, seed12 input395, outcomes3--4 and animation remain
+open.  Every process exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
