@@ -88327,3 +88327,48 @@ corpus, public-status rewrite, hidden judge, push, or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 15:13 EEST, journal block 2928] {#seed14 #input113 #input114 #hallucination #warning #wiz-intrinsic #docrt #vision-recalc #display-warning #display-rng #native-stack-trace #implementation #complete-replay #regression #architecture #ledger #process-safety #priority}
+
+**Witness and mechanism families:** the post-genesis level30 Healer carrier
+remained exact through input113's cosmic pager but input114 repainted the
+adjacent Wizard as JS L/color1 versus native D/color14.  Core RNG, cursor,
+status and monster state were exact.  Candidate mechanisms were activation
+repaint order, Warning projection, display-stream initialization, and the
+acknowledgement redraw.  Native display logging showed four activation calls
+where JavaScript had three: two rn2(383) monster glyphs, one rn2(463) object
+glyph and rn2(5)=1.
+
+**Decisive native trace and source contract:** temporary native stacks limited
+to those four calls identified the first three under
+`make_hallucinated()->see_monsters/see_objects`; the rn2(5) came from
+`wiz_intrinsic()->docrt()->vision_recalc(0)->newsym()->display_warning`.
+Source docrt first disables vision, restores memory, then rebuilds sight and
+only afterward overlays monsters.  The level30 Healer's Warning intrinsic
+makes the Wizard square enter a transient Hallucinated warning projection
+during that rebuild.  The level14 control has no Warning and therefore no
+call.  Diagnostic native code was removed and the recorder rebuilt clean.
+
+**Implementation correction and measured effect:** the first patch attempt
+accidentally changed the no-selection menu branch and correctly had no effect;
+it was restored before acceptance.  Commit `42000a4` changes only the
+Hallucination completion branch from lightweight `docrt()` to existing
+source-shaped `docrtRecalc()`.  The carrier now matches all **143 native
+RNG/screen/cursor states from input3 onward** in **0.26 seconds** at
+**124,600,320 bytes maximum RSS**.  Input114 has the exact D/color14 cell and
+cursor11,3; later pit-fiend/wire-shark/clone names remain phase-exact.  Final
+state is HP117/144, Hallucination27, Warning active and two Wizards with
+inventories307/212.
+
+**Regression, map and next blocker:** the Warning-bearing and prior
+warning-free activation tests pass **2/2** in **0.26 seconds** at
+**132,530,176 bytes maximum RSS**.  The expanded fixture-disabled Priest/
+Wizard portfolio passes **25/25** in **0.72 seconds** at **186,646,528 bytes
+maximum RSS**.  Every process exited.  Section893 separates the initial
+Hallucination repaint from final docrt vision ownership; Lua owns neither.
+Keep warning without Hallucination, Warn_of_mon/type warning, multiple actors,
+thresholds, invisible/detected warning, alternate docrt callers and monster
+amulet wear open.  No full corpus, public-status rewrite, hidden judge, push,
+or publication ran; unrelated dirty files remain untouched.
+
+---

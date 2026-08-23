@@ -32306,3 +32306,49 @@ layout.  It does not establish all `conditions[]` fields, abbreviated labels,
 ranking under width pressure, hilite grouping, Ride position, Busy/held/
 trapped variants, or other windowports.  Lua contributes none of status state
 or formatting.
+
+## 893. Hallucination activation docrt projects Warning before monsters
+
+~~~mermaid
+flowchart TD
+    Wiz["#wizintrinsic selects Hallucination"] --> Make["make_hallucinated installs timeout"]
+    Make --> First["see_monsters then see_objects then see_traps"]
+    First --> Cosmic["cosmic pager"]
+    Cosmic --> Docrt["wiz_intrinsic final docrt"]
+    Docrt --> Off["vision_recalc mode 2 shuts sight down"]
+    Off --> Memory["clear screen and restore remembered glyphs"]
+    Memory --> On["vision_recalc mode 0 rebuilds sight"]
+    On --> Warn["newly processed Wizard square enters display_warning"]
+    Warn --> HalluWarn["Hallucination rn2(WARNCOUNT-1) chooses transient warning"]
+    HalluWarn --> Monsters["see_monsters overlays randomized monster glyphs"]
+    Monsters --> Status["inventory/status redraw remains caller-owned"]
+    Light["lightweight docrt with existing visibility"] -.->|"skips warning transition"| Warn
+    Lua["Lua owns no property, vision, warning, or redraw policy"] -.-> Wiz
+~~~
+
+Hallucination activation has two distinct presentation passes.  The first is
+inside `make_hallucinated()` and repaints monsters, objects and traps before
+the cosmic line.  The second is the explicit `docrt()` at the end of
+`wiz_intrinsic()`.  Source docrt shuts vision down, restores memory, then
+rebuilds vision before its final monster overlay.  During that rebuild a
+high-level hostile Wizard is temporarily represented through the hero's
+Warning property; Hallucination makes `display_warning()` consume rn2(5).
+
+The level30 Healer is the discriminating control because Warning becomes
+intrinsic at level15.  Native activation input113 consumes two random monster
+glyphs, one random object glyph and warning rn2(5)=1.  The cosmic screen still
+matches the warning-free carrier.  On acknowledgement, the warning draw has
+advanced the display stream so the Wizard cell becomes native D/color14.  A
+level14 Healer lacks Warning and correctly has no corresponding call.
+
+JavaScript's ordinary `docrt()` assumes sight is already live; that is valid
+for several modal redraw callers but not this source `wiz_intrinsic()` path.
+Routing Hallucination activation through `docrtRecalc()` restores the
+shutdown/memory/rebuild/overlay phases without changing core RNG or warning
+state.  The complete 143-state carrier is exact, ending HP117/144,
+Hallucination27, Warning active and two true Wizards.
+
+This section does not close warning without Hallucination, Warn_of_mon versus
+general Warning, multiple warning actors, warnlevel thresholds, invisible or
+detected actors, other docrt callers, swallowed/underwater redraws, or status
+hilites.  Lua contributes only level geometry.

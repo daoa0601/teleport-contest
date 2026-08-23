@@ -13069,3 +13069,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   portfolios pass 4/4 and 24/24.  Other condition combinations, abbreviated
   fields, width pressure, hilites, Ride placement, Warning activation and
   monster amulet wear remain open.
+- The level30 Healer Warning activation carrier is now exact through all 143
+  states.  Native display logging and bounded stacks show the missing
+  rn2(5)=1 is not part of make_hallucinated's initial monster/object/trap pass:
+  it is `wiz_intrinsic()->docrt()->vision_recalc(0)->newsym()->display_warning`
+  after the cosmic pager, before the normal monster overlay.  JS used a light
+  docrt which never shut vision down, so it skipped that transient warning
+  projection and shifted the acknowledgement glyph from native D to L.
+  Routing only this caller through existing source-shaped `docrtRecalc()`
+  restores the warning draw, input114 D/color14, later names and full durable
+  state.  The activation pair and expanded fixture-disabled portfolio pass
+  2/2 and 25/25.  Warning without Hallucination, type/class warning, multiple
+  warning actors, warning-level thresholds, alternate docrt callers and
+  monster amulet wear remain open.
