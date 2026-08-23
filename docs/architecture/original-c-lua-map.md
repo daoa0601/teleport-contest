@@ -31926,3 +31926,50 @@ native owns knockback `rn2(3)`, direction `rn2(6)`, and passive-form `rn2(3)`
 after the next hit while JavaScript skips them.  Lua owns none of regeneration,
 monster-form classification, spell usefulness, effect RNG, HP mutation, or
 message backpressure.
+
+## 885. A successful Wizard theft gate can still have no target
+
+~~~mermaid
+flowchart TD
+    Claw["Wizard AD_SAMU claw rolls physical damage"] --> Hit["hitmsg publishes Wizard hits"]
+    Hit --> Pager["tty acknowledgement resumes same hit"]
+    Pager --> Gate["rn2(20) theft gate"]
+    Gate -->|"nonzero"| Knock["shared mhitm_knockback gates"]
+    Gate -->|"zero"| Quest{"any quest artifact in inventory?"}
+    Quest -->|"multiple"| Pick["rnd(count) chooses target"]
+    Quest -->|"one"| Theft["worn removal, steal, optional relocation"]
+    Quest -->|"none"| Special{"Amulet, Bell, Book, or Candelabrum carried?"}
+    Special -->|"yes"| Theft
+    Special -->|"no"| Return["stealamulet returns without state or RNG"]
+    Return --> Knock
+    Pick --> Theft
+    Knock --> Damage["AC reduction and active-form HP damage"]
+    Damage --> Passive["passiveum using old hero form"]
+    Passive --> Next["next monster attack slot"]
+    Lua["Lua owns no inventory or contact transaction"] -.-> Claw
+~~~
+
+Seed2 input124 has already rolled the Wizard's 2d12 claw damage while the
+death-immunity line owns the tty.  Input125 acknowledges that pager and enters
+`mhitm_ad_samu()`: native rn2(20)=0 succeeds, but `stealamulet()` scans an
+inventory with no quest artifact or invocation target and returns immediately.
+The source stack does not become deferred merely because the probability gate
+succeeded.  It continues into knockback rn2(3)=1/rn2(6)=2, applies the retained
+17 damage to wood-golem HP33->16, spends passive-form rn2(3)=0, and selects the
+Wizard's next spell with rn2(30)=16.
+
+JavaScript previously converted every zero theft gate into
+`deferredAmuletTheft`, even when no target existed and even though no resolver
+owned that state.  Deferral is now conditional on a concrete special-item
+candidate.  The native carrier is exact from input3 through input126, including
+input125's HP16/50 status and following cuss transaction.  A real target still
+stops at the named continuation; worn dependency removal, multiple quest
+artifacts, non-Wizard fake Amulet/Bell eligibility, billing, knowledge loss,
+inventory merge, encumbrance feedback, and relocation require their own
+carriers.
+
+Input127 is a later ownership boundary rather than part of theft.  Its next
+17-damage claw exhausts monster-form HP; C rehumanizes inside `mdamageu()`
+before `passiveum()`, while JavaScript leaves `mtimedone` live long enough to
+consume an extra passive rn2(3).  Lua supplies only the level in which this
+actor transaction runs.

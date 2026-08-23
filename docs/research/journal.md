@@ -87917,3 +87917,48 @@ corpus, public-status rewrite, hidden judge, push, or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:41 EEST, journal block 2920] {#seed2 #input125 #wizard-of-yendor #ad-samu #stealamulet #no-target #knockback #passiveum #first-divergence #native-witness #implementation #bounded-replay #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after the regeneration repair, seed2 is
+exact through input124's nonliving death-immunity pager.  Input125 native owns
+`rn2(20)=0,rn2(3)=1,rn2(6)=2,rn2(3)=0,rn2(30)=16`; JavaScript stopped after
+the first call and jumped to shifted spell selection because a successful
+AD_SAMU theft gate installed `deferredAmuletTheft` despite there being no
+special object to steal.
+
+**Source contract and prediction:** `uhitm.c:mhitm_ad_samu()` calls
+`stealamulet()` on a zero one-in-twenty gate.  `steal.c:stealamulet()` first
+scans every quest artifact, then checks the real Amulet, Bell of Opening, Book
+of the Dead, and Candelabrum in precedence order.  With no candidate it simply
+returns.  Therefore this carrier must resume the already-rolled claw through
+knockback, form HP damage, old-form passive handling, and the next attack slot;
+only a concrete target can own the unresolved removal/theft continuation.
+
+**Implementation and measured effect:** commit `05edfd1` conditions theft
+deferral on a concrete quest/invocation inventory object.  Input125 now spends
+the exact knockback and wood-golem passive calls, applies retained 17 damage
+from HP33 to16, retains human HP149/149, and reaches next-slot rn2(30)=16.
+Input126's following cuss/maintenance transaction is also exact.  The bounded
+native comparator now matches every RNG slice, decoded screen, and cursor from
+**input3 through input126**; its first mismatch moved to input127 call3.
+Strict replay took **0.35 seconds** at **124,190,720 bytes maximum RSS**.  The
+permanent focused test passes **1/1** in **0.30 seconds** at **131,514,368
+bytes maximum RSS**; seventeen selected fixture-disabled Wizard controls pass
+**17/17** in **0.67 seconds** at **152,420,352 bytes maximum RSS**.  Every test
+and comparator process exited.
+
+**Falsification, decision and next blocker:** the native zero gate plus absent
+inventory falsifies both treating gate success as proof of a target and
+attributing the missing calls to generic contact policy.  Section885 maps the
+target-scan return into the shared contact tail; Lua owns none of it.  Actual
+quest/invocation target selection, worn dependencies, theft prose, billing,
+inventory transfer, relocation, and quest-nemesis fake items remain open.
+Input127 now isolates the next block: native spends knockback but no passive
+rn2(3), because 17 damage exhausts wood-golem HP and `mdamageu()` rehumanizes
+before `passiveum()`; JavaScript clamps monster HP to zero yet still considers
+the old form active and consumes rn2(3)=1.  Repair fatal form transition before
+claiming later spell parity.  No full corpus, public-status rewrite, hidden
+judge, push, or publication ran; unrelated dirty files remain untouched.
+
+---

@@ -12964,3 +12964,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   17/17 fixture-disabled.  Input125's missing knockback/passive-form calls,
   dry-eel loss, Sleepy regeneration, burdened cadence, demon immunity,
   hallucination, fatality, life saving, and Unchanging remain open.
+- Seed2 input125 closes the successful-but-empty Wizard `stealamulet()` gate.
+  Native consumes rn2(20)=0, finds no quest artifact, real Amulet, Bell, Book,
+  or Candelabrum, returns without a theft transaction, then continues with
+  knockback rn2(3)=1/rn2(6)=2, wood-golem passive rn2(3)=0, and next-slot
+  spell selection rn2(30)=16.  JS previously created a permanent deferred
+  theft merely because the gate succeeded.  Target-aware deferral restores
+  exact RNG/screens/cursors through input126 and leaves form HP16/50.  The
+  focused and selected fixture-disabled gates pass 1/1 and 17/17.  Actual
+  special-item removal/theft/relocation and quest-nemesis fake selection
+  remain open.  Input127 is now the first mismatch: JS spends passive rn2(3)
+  after fatal form damage where C rehumanizes before `passiveum()`.
