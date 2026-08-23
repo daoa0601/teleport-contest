@@ -11799,6 +11799,53 @@ test('seed5002 fire ray delays outbound, bounce, and returning beam cells',
         }
     });
 
+test('seed0116 digging beam delays visible and invisible path cells',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0116-wizard-wear-shop.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 81),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[80],
+            session.steps[80].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0116 digging beam input80 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[80],
+            session.steps[80].screen,
+            'seed0116 digging beam input80 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[80],
+            session.steps[80].cursor,
+            'seed0116 digging beam input80 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[80];
+        const nativeFrames = session.steps[80].animation_frames;
+        assert.equal(actualFrames.length, 7);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0116 digging beam frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0116 digging beam cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

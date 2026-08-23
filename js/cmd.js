@@ -13004,17 +13004,28 @@ async function finishDeathWithBones() {
     game.program_state.gameover = true;
 }
 
-function zapDig(direction) {
+async function zapDig(direction) {
     exerciseAttribute(2, true); // weffects(): exercise(A_WIS, TRUE)
     const dx = DIR_DX[direction] || 0;
     const dy = DIR_DY[direction] || 0;
     let x = game.u.ux + dx;
     let y = game.u.uy + dy;
     let depth = 8 + rn2(18); // rn1(18, 8)
+    const traversedCells = [];
+    let lastBeamCursor = null;
 
     while (--depth >= 0 && x >= 1 && x < COLNO && y >= 0 && y < ROWNO) {
         const loc = game.level?.at(x, y);
         if (!loc) break;
+        traversedCells.push({ x, y });
+        if (cansee(x, y))
+            show_glyph_cell(x, y, '*', CLR_WHITE, false);
+        const frameCursor = lastDirtyMapCursor();
+        await flush_screen(1);
+        if (frameCursor) lastBeamCursor = frameCursor;
+        if (lastBeamCursor)
+            game.nhDisplay?.setCursor(...lastBeamCursor);
+        await game.animationFrame?.();
         if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
             || loc.typ === SDOOR) {
             loc.typ = DOOR;
@@ -13030,10 +13041,10 @@ function zapDig(direction) {
             loc.flags = 0;
             depth -= 1;
         }
-        newsym(x, y);
         x += dx;
         y += dy;
     }
+    for (const cell of traversedCells) newsym(cell.x, cell.y);
     vision_reset();
     vision_recalc(1);
     exerciseAttribute(2, true); // learnwand(): discovery exercise
@@ -13972,7 +13983,7 @@ async function dozap() {
     game._pending_message = '';
     const directionChar = String.fromCharCode(direction);
     if (wand.otyp === WAN_DIGGING && DIR_DX[directionChar] !== undefined) {
-        zapDig(directionChar);
+        await zapDig(directionChar);
         wand.known = true;
         wand.typeKnown = true;
         recordObjectKnowledge(wand.otyp);
