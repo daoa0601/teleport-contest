@@ -13466,3 +13466,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   The normal overlay suite was not rerun, and no push/workflow/hidden judge ran.
   Remaining work is the other public supplemental frame groups and native
   branches absent from both public and custom carriers.
+- Commit1563ae4 adds the opposite delayed-action topline control.  Seed0361
+  enters `runmode_delay_output()` with no pending prose and must retain its
+  physical armor selector; seed0383 input142 has two freezing lines pending and
+  must flush those over the physical ice-vortex pager.  Physical retention is
+  now conditional on an empty pending-message owner.  Seed0383 becomes1/1
+  animation exact and the managed engine-only corpus stays44/44; seed0361
+  remains10/10.  One seed0030 frame also matches incidentally, but its other39
+  are explicitly unclaimed.  Seed0104's two frames are the next bounded group.

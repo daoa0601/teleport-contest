@@ -1,20 +1,23 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, seed0361 animation exact
+## Current working-tree checkpoint: 44/44 engine-only, two animation carriers exact
 
-Measured 2026-08-23 22:34 EEST from commit `e3bf601`, after mapping delayed
-runmode output and hero-target projectile delays:
+Measured 2026-08-23 22:40 EEST from commit `1563ae4`, after distinguishing
+physical and newly queued toplines during delayed runmode output:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **34+0.31 ms/turn** (R² 0.842).
-One owned process completed in **11.85 seconds** at **350,519,296 bytes maximum
+The engine-only gate is **44/44 exact** at **35+0.30 ms/turn** (R² 0.851).
+One owned process completed in **11.82 seconds** at **267,157,504 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
 Seed0361's supplemental animation channel is now independently exact at
 **10/10**: one delayed-wear runmode frame, six rolling-boulder frames, and
-three monster-dagger flight/impact frames.
+three monster-dagger flight/impact frames.  Seed0383 is independently exact at
+**1/1**, a delayed-wear frame containing newly queued freezing prose.  The
+same discriminator incidentally matches one of seed0030's 40 frames; its other
+39 remain open and are not claimed by this block.
 
 The normal frozen-overlay gate was not rerun after this animation-only block;
 its latest completed result remains the **44/44** commit-`0dc1776` checkpoint

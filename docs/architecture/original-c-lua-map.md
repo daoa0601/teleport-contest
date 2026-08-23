@@ -34011,9 +34011,12 @@ flowchart TD
     Cadence -->|"leap and moves mod 7 is nonzero"| None
     Cadence -->|"leap boundary or walk/run"| One["curs_on_u plus one delay"]
     Cadence -->|"crawl"| Five["curs_on_u plus five delays"]
-    One --> Snapshot["capture physical prompt and hero cursor"]
-    Five --> Snapshot
-    Snapshot --> Restore["restore logical post-flush row for future inputs"]
+    One --> Pending{"new logical message pending?"}
+    Five --> Pending
+    Pending -->|"no"| Physical["capture retained physical prompt"]
+    Pending -->|"yes"| Logical["flush and capture newer logical prose"]
+    Physical --> Restore["restore logical post-flush row for future inputs"]
+    Logical --> Restore
     Lua["Lua owns no runmode or tty cadence"] -.-> Cadence
 ~~~
 
@@ -34025,14 +34028,19 @@ older prompt in the animation frame even though the logical message owner has
 already advanced.
 
 JavaScript shares one cadence helper between death-survival and ordinary
-delayed actions.  For the latter it saves the physical top row, flushes the
-logical map/status, restores the physical row only while animation frames are
-captured, and then restores the logical post-flush row in a `finally` block.
-This separation is necessary: animation history observes terminal cells, but
-future input boundaries must observe current tty state.
+delayed actions.  When no new logical message is pending, it saves the physical
+top row, flushes the logical map/status, restores the physical row only while
+animation frames are captured, and then restores the logical post-flush row in
+a `finally` block.  A newly queued message takes precedence instead: ordinary
+flush installs that prose and the frame observes it.  This separation is
+necessary because animation history observes terminal cells, future input
+boundaries observe current tty state, and neither always wins over newer prose.
 
 Seed0361 input140 pins the delayed-wear frame and its retained armor prompt;
 the complete session now matches all **10/10** supplemental animation frames.
+Seed0383 input142 supplies the opposite control: two queued freezing lines
+replace the physical ice-vortex pager before its single delay, making that
+session **1/1** animation exact without changing any of its219 boundaries.
 This closes the reached default-runmode delayed armor cadence.  Nondefault
 runmode carriers, other negative-multi occupations, and broader supplemental
 animation totals remain open.  Lua contributes none.

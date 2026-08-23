@@ -90525,106 +90525,6 @@ ran; unrelated dirty files remain untouched.
 
 ---
 
-### [2026-08-23 22:12 EEST, journal block 3044] {#seed0361 #input234 #projectile #tmp-at #animation #c-source #implementation #bounded-regression #architecture}
-
-**Witness and earliest divergence:** seed0361 had six exact rolling-boulder
-frames but omitted all three input234 monster-dagger delays.  Native records
-one delay on an invisible path step, one on the last visible pre-hero square,
-and one final impact delay after `A dagger misses you.`.  Boundary RNG, screen,
-and cursor channels were already exact.
-
-**Source decision and implementation:** `mthrowu.c:m_throw()` calls
-`tmp_at()`/`nh_delay_output()` on every flight step and once more at
-`gb.bhitpos` after the hero collision returns.  Commit `49c5366` captures every
-path delay, paints the returning impact frame, and derives its cursor from the
-last dirty map projection rather than blindly using the projectile coordinate.
-Ordinary semantic spaces were added to that dirty-cell comparison.
-
-**Measured effect and falsified routes:** the bounded input234 witness becomes
-**3/3 exact animation screens/cursors** with exact boundary RNG/screen/cursor;
-seed0361 rises from **6/10 to 9/10** animation frames.  Visibility-gating delay
-calls and always placing the cursor at the current projectile were both
-falsified.  The remaining frame is delayed armor at input140.  Section935 maps
-the projectile boundary; lethal and pending-pager paths remain adversarial
-controls rather than assumed consequences.
-
----
-
-### [2026-08-23 22:18 EEST, journal block 3045] {#seed0361 #input140 #runmode #multi #armor #animation #physical-topline #implementation #bounded-regression #architecture}
-
-**Witness and producer:** seed0361 input140 contains one native delayed-wear
-frame with the old armor selector still physically visible, the map/status
-flushed, and the cursor on the hero.  `allmain.c:moveloop()` calls
-`runmode_delay_output()` while `multi < 0`; `hack.c` supplies teleport/leap/
-walk/crawl cadence and `curs_on_u()` ownership.
-
-**Prediction and implementation:** share the existing survival cadence with
-ordinary delayed actions, preserving the physical top row only for the
-animation snapshot.  Commit `f240c68` introduces the shared cadence and first
-captures the input140 frame.  The focused wear and projectile witnesses pass,
-seed0361 becomes **10/10** animation exact, and seed52's beam/survival controls
-remain green.  Section936 maps the C owner and explicitly assigns no part of
-the cadence to Lua.
-
-**Next gate:** because the capture temporarily rebuilds tty state, run the
-complete engine-only corpus before accepting the change; a frame-only exact
-result is not evidence that later input boundaries remain unchanged.
-
----
-
-### [2026-08-23 22:21 EEST, journal block 3046] {#public-corpus #engine-only #42-of-44 #animation-regression #seed0030 #seed0108 #negative-evidence #process-safety #falsified-hypothesis}
-
-**Red full gate:** one managed engine-only corpus completes **42/44 exact** at
-**34+0.31 ms/turn** in **11.79 seconds** at **271,777,792 bytes maximum RSS**.
-Seed0030 is exact at105,529 RNG calls and1,953 cursors but only1,943/1,953
-screens; seed0108 is exact at16,958 RNG and303 cursors but only302/303 screens.
-Every other public session stays exact and seed0361 remains10/10 animation.
-
-**Earliest divergence and falsification:** both failures are screen-only
-projectile cells at pending launch pagers.  A first capture-local restoration
-of the delayed-action topline preserved the seed0361 frame but left the two
-public replays red, falsifying the hypothesis that runmode capture had leaked a
-stale row.  Bounded decoded-cell comparison instead shows JavaScript moving
-the missile onto the hero while native retains the last pre-hero flight cell.
-
-**Decision:** do not run the normal corpus or claim acceptance.  Read the
-native `m_throw -> thitu -> losehp/done -> final tmp_at` transaction and test
-the pager boundary directly.  The owned scorer exited and no duplicate was
-started.
-
----
-
-### [2026-08-23 22:34 EEST, journal block 3047] {#seed0030 #seed0108 #seed0361 #projectile #thitu #death-pager #implementation #engine-only #44-of-44 #bounded-regression #architecture #process-safety}
-
-**Source correction:** `m_throw()` advances logical `gb.bhitpos` to the hero
-before entering `thitu()`, but the displayed `tmp_at` glyph remains on the last
-flight square until that entire transaction returns.  Launch, hit, and death
-pagers therefore retain the pre-hero projectile.  Only a returning path paints
-the hero for the final delay; a fatal `done()` path never reaches it.
-
-**Implementation and adversarial witnesses:** commit `e3bf601` transitions to
-the impact glyph only after result-message continuation and skips that
-transition for lethal hits.  It also restores delayed-action physical toplines
-only during frame capture, leaving the live tty in its logical post-flush
-state.  Seed0108 input30, seed0030 segment6 inputs240--246, seed0361's three
-dagger frames, and its delayed-wear frame pass **4/4 focused tests** in **0.79
-seconds**.  The intermediate nonlethal correction recovered seed0108 but left
-seed0030 at1,947/1,953 screens, correctly exposing death as a stronger control.
-
-**Acceptance and measured effect:** one subsequently prechecked, managed
-engine-only corpus passes **44/44** at **34+0.31 ms/turn** (R²0.842) in **11.85
-seconds** at **350,519,296 bytes maximum RSS**.  All public RNG, boundary-screen
-and cursor channels are exact; seed0361 is additionally **10/10 animation
-exact**.  The normal overlay suite was not rerun after this animation block.
-No push, workflow, hidden judge, or publication ran; no verifier remains.
-
-**Next blocker:** public boundary parity is preserved, but most supplemental
-animation totals remain zero or partial.  Continue from the next native frame
-group and update the C/Lua ownership map per completed block rather than
-inferring held-out readiness from44 public sessions.
-
----
-
 ### [2026-08-24 01:36 EEST, journal block 3004] {#seed211 #nasty #duplicate-message #storm-giant #tty #constructor-order #earliest-divergence #prediction-refinement #priority}
 
 **Post-callback replay:** async nasty creation is exact through input539 and
@@ -91563,5 +91463,152 @@ native animation groups.  Other public supplemental animation totals and
 unmapped C/Lua branches remain active port work.  The post-gate process
 registry is empty.  No push, workflow dispatch, hidden judge or publication
 ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 22:12 EEST, journal block 3044] {#seed0361 #input234 #projectile #tmp-at #animation #c-source #implementation #bounded-regression #architecture}
+
+**Witness and earliest divergence:** seed0361 had six exact rolling-boulder
+frames but omitted all three input234 monster-dagger delays.  Native records
+one delay on an invisible path step, one on the last visible pre-hero square,
+and one final impact delay after `A dagger misses you.`.  Boundary RNG, screen,
+and cursor channels were already exact.
+
+**Source decision and implementation:** `mthrowu.c:m_throw()` calls
+`tmp_at()`/`nh_delay_output()` on every flight step and once more at
+`gb.bhitpos` after the hero collision returns.  Commit `49c5366` captures every
+path delay, paints the returning impact frame, and derives its cursor from the
+last dirty map projection rather than blindly using the projectile coordinate.
+Ordinary semantic spaces were added to that dirty-cell comparison.
+
+**Measured effect and falsified routes:** the bounded input234 witness becomes
+**3/3 exact animation screens/cursors** with exact boundary RNG/screen/cursor;
+seed0361 rises from **6/10 to 9/10** animation frames.  Visibility-gating delay
+calls and always placing the cursor at the current projectile were both
+falsified.  The remaining frame is delayed armor at input140.  Section935 maps
+the projectile boundary; lethal and pending-pager paths remain adversarial
+controls rather than assumed consequences.
+
+---
+
+### [2026-08-23 22:18 EEST, journal block 3045] {#seed0361 #input140 #runmode #multi #armor #animation #physical-topline #implementation #bounded-regression #architecture}
+
+**Witness and producer:** seed0361 input140 contains one native delayed-wear
+frame with the old armor selector still physically visible, the map/status
+flushed, and the cursor on the hero.  `allmain.c:moveloop()` calls
+`runmode_delay_output()` while `multi < 0`; `hack.c` supplies teleport/leap/
+walk/crawl cadence and `curs_on_u()` ownership.
+
+**Prediction and implementation:** share the existing survival cadence with
+ordinary delayed actions, preserving the physical top row only for the
+animation snapshot.  Commit `f240c68` introduces the shared cadence and first
+captures the input140 frame.  The focused wear and projectile witnesses pass,
+seed0361 becomes **10/10** animation exact, and seed52's beam/survival controls
+remain green.  Section936 maps the C owner and explicitly assigns no part of
+the cadence to Lua.
+
+**Next gate:** because the capture temporarily rebuilds tty state, run the
+complete engine-only corpus before accepting the change; a frame-only exact
+result is not evidence that later input boundaries remain unchanged.
+
+---
+
+### [2026-08-23 22:21 EEST, journal block 3046] {#public-corpus #engine-only #42-of-44 #animation-regression #seed0030 #seed0108 #negative-evidence #process-safety #falsified-hypothesis}
+
+**Red full gate:** one managed engine-only corpus completes **42/44 exact** at
+**34+0.31 ms/turn** in **11.79 seconds** at **271,777,792 bytes maximum RSS**.
+Seed0030 is exact at105,529 RNG calls and1,953 cursors but only1,943/1,953
+screens; seed0108 is exact at16,958 RNG and303 cursors but only302/303 screens.
+Every other public session stays exact and seed0361 remains10/10 animation.
+
+**Earliest divergence and falsification:** both failures are screen-only
+projectile cells at pending launch pagers.  A first capture-local restoration
+of the delayed-action topline preserved the seed0361 frame but left the two
+public replays red, falsifying the hypothesis that runmode capture had leaked a
+stale row.  Bounded decoded-cell comparison instead shows JavaScript moving
+the missile onto the hero while native retains the last pre-hero flight cell.
+
+**Decision:** do not run the normal corpus or claim acceptance.  Read the
+native `m_throw -> thitu -> losehp/done -> final tmp_at` transaction and test
+the pager boundary directly.  The owned scorer exited and no duplicate was
+started.
+
+---
+
+### [2026-08-23 22:34 EEST, journal block 3047] {#seed0030 #seed0108 #seed0361 #projectile #thitu #death-pager #implementation #engine-only #44-of-44 #bounded-regression #architecture #process-safety}
+
+**Source correction:** `m_throw()` advances logical `gb.bhitpos` to the hero
+before entering `thitu()`, but the displayed `tmp_at` glyph remains on the last
+flight square until that entire transaction returns.  Launch, hit, and death
+pagers therefore retain the pre-hero projectile.  Only a returning path paints
+the hero for the final delay; a fatal `done()` path never reaches it.
+
+**Implementation and adversarial witnesses:** commit `e3bf601` transitions to
+the impact glyph only after result-message continuation and skips that
+transition for lethal hits.  It also restores delayed-action physical toplines
+only during frame capture, leaving the live tty in its logical post-flush
+state.  Seed0108 input30, seed0030 segment6 inputs240--246, seed0361's three
+dagger frames, and its delayed-wear frame pass **4/4 focused tests** in **0.79
+seconds**.  The intermediate nonlethal correction recovered seed0108 but left
+seed0030 at1,947/1,953 screens, correctly exposing death as a stronger control.
+
+**Acceptance and measured effect:** one subsequently prechecked, managed
+engine-only corpus passes **44/44** at **34+0.31 ms/turn** (R²0.842) in **11.85
+seconds** at **350,519,296 bytes maximum RSS**.  All public RNG, boundary-screen
+and cursor channels are exact; seed0361 is additionally **10/10 animation
+exact**.  The normal overlay suite was not rerun after this animation block.
+No push, workflow, hidden judge, or publication ran; no verifier remains.
+
+**Next blocker:** public boundary parity is preserved, but most supplemental
+animation totals remain zero or partial.  Continue from the next native frame
+group and update the C/Lua ownership map per completed block rather than
+inferring held-out readiness from44 public sessions.
+
+---
+
+### [2026-08-23 22:37 EEST, journal block 3048] {#priority #supplemental-animation #seed0383 #bounded-witness #source-first}
+
+**Priority change:** choose seed0383's single native animation frame as the
+next bounded block.  It is the smallest still-unmatched public frame group
+(**0/1**) and therefore provides a narrow ownership witness before the larger
+seed0002, seed0014, or seed4500 inventories.
+
+**Prediction and stop rule:** identify the exact input, transient cell, cursor,
+and native delay producer before editing.  Accept only full frame-screen/cursor
+equality plus unchanged boundary RNG/screen/cursor for the enclosing input.
+If the frame belongs to a shared beam/projectile/runmode owner already mapped,
+extend that owner; otherwise map a new C boundary.  Do not infer a generic
+animation abstraction from the frame count alone.
+
+---
+
+### [2026-08-23 22:40 EEST, journal block 3049] {#seed0383 #input142 #runmode #pending-message #physical-topline #implementation #bounded-regression #engine-only #44-of-44 #architecture #process-safety}
+
+**Competing witnesses:** at seed0361 input140 the runmode capture enters with
+no logical pending message, physical `What do you want to wear?` cells, and a
+blank logical post-flush row.  At seed0383 input142 it enters with
+`You are freezing to death!  You are freezing to death!` pending, the old ice-
+vortex pager physically present, and the freezing line as its post-flush row.
+Native chooses the physical row in the first case and the newer logical row in
+the second.
+
+**Decision and implementation:** unconditional physical-row retention is
+falsified.  Commit `1563ae4` retains it only when `_pending_message` is empty;
+otherwise the ordinary flush owns the animation topline.  The paired opposite
+runmode witnesses plus projectile controls pass **4/4** in **0.81 seconds**.
+Seed0383 is exact at16,915 RNG,219 boundary screens/cursors and **1/1 animation**
+in **0.18 seconds**.  Section936 now records the discriminator.
+
+**Acceptance and measured effect:** one managed engine-only corpus passes
+**44/44** at **35+0.30 ms/turn** (R²0.851) in **11.82 seconds** at
+**267,157,504 bytes maximum RSS**.  Seed0361 remains10/10 animation; seed0383
+is newly1/1; the same state distinction incidentally matches one seed0030 frame
+without claiming its remaining39.  No normal corpus, hidden judge, push, or
+publication ran, and the scorer exited.
+
+**Next blocker:** inventory seed0104's two unmatched frames as the next
+smallest independent group.  Preserve the paired delayed-action controls while
+determining whether those frames belong to mount movement, combat impact, or a
+different C delay owner.
 
 ---
