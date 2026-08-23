@@ -10088,6 +10088,65 @@ test('seed0001 death ray removes Wizard and starts demigod countdown',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkl' + ' '.repeat(12);
+        const result = await runSegment({
+            seed: 31,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 136);
+        const fatalSlice = result.getRngSlices()[123];
+        assert.equal(fatalSlice.length, 450);
+        assertRngSliceExact(fatalSlice.slice(0, 12), [
+            'rn2(19)=14', 'rn2(7)=2', 'rn2(20)=19', 'rnd(8)=1',
+            'rn2(250)=76', 'rn2(6)=2', 'rn2(3)=0',
+            'rnd(2)=2', 'rn2(3)=0', 'rn2(5)=3',
+            'rn2(7)=5', 'rn2(8)=3',
+        ], 'seed0031 fatal death-ray/corpse prefix RNG');
+        assertRngSliceExact(fatalSlice.slice(-12), [
+            'rn2(1000)=178', 'rn2(4)=2', 'rne(4)=1',
+            'rn2(2)=1', 'rnz(10)=11', 'rn2(19)=13',
+            'rn2(12)=3', 'rn2(25)=9', 'rn2(400)=183',
+            'rn2(20)=11', 'rn2(73)=24', 'rn2(31)=10',
+        ], 'seed0031 corpse/door/discovery suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You kill the Wizard of Yendor!  The door absorbs your bolt!');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1007 HP:132(132) Pw:297(297) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[123], [10, 8, 1]);
+        assertRngSliceExact(result.getRngSlices()[124], [],
+            'seed0031 absorbed-ray next command RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            "Unknown command ' '.");
+        assert.deepEqual(result.getCursors()[124], [10, 8, 1]);
+
+        const deathSquare = game.level.objects?.[12]?.[7] || [];
+        assert.deepEqual(deathSquare.map(object => object.otyp), [
+            CORPSE, 333,
+        ]);
+        assert.equal(deathSquare[0].corpsenm, 285);
+        assert.equal(deathSquare[0].name, 'Wizard of Yendor corpse');
+        assert.equal(deathSquare[0].quan, 1);
+        assert.equal(game.level.monsters.some(monster =>
+            monster.mnum === 285), false);
+        assert.equal(game.context.no_of_wizards, 0);
+        assert.equal(game.u.uevent.udemigod, true);
+        assert.equal(game.u.udg_cnt, 126);
+        assert.equal(game._vanquishedCounts.get(285).count, 1);
+        assert.equal(game.u.uhp, 132);
+        assert.equal(game.u.uhpmax, 132);
+        assert.equal(game.u.umortality || 0, 0);
+        assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0592 death ray revives Wizard then survives its rebound',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

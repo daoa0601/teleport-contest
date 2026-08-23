@@ -13319,6 +13319,7 @@ async function zapDeathRay(direction) {
         y += dy;
         const valid = rayPositionIsValid(x, y);
         const location = valid ? game.level?.at(x, y) : null;
+        let absorbedByClosedDoor = false;
 
         if (valid && location?.typ !== STONE) {
             if (cansee(x, y)
@@ -13328,7 +13329,18 @@ async function zapDeathRay(direction) {
                 paintBeamCell(x, y, dx, dy);
             }
 
-            const monster = rayMonsterAt(x, y);
+            // zap_over_floor() runs before dobuzz() tests the obstacle.  A
+            // regular closed door absorbs a wand/spell death ray; only death
+            // breath disintegrates it.  Its -1000 range adjustment prevents
+            // the generic closed-door bounce below.
+            absorbedByClosedDoor = closedRayDoor(location);
+            if (absorbedByClosedDoor) {
+                range -= 1000;
+                await plineWithContinuation('The door absorbs your bolt!');
+            }
+
+            const monster = absorbedByClosedDoor
+                ? null : rayMonsterAt(x, y);
             if (monster) {
                 if (rayHitsMonster(monster)) {
                     const name = MONSTER_NAME[monster.mnum] || 'monster';
@@ -13359,7 +13371,8 @@ async function zapDeathRay(direction) {
                         `The death ray misses the ${name}.`,
                     );
                 }
-            } else if (x === game.u.ux && y === game.u.uy && range >= 0) {
+            } else if (!absorbedByClosedDoor
+                && x === game.u.ux && y === game.u.uy && range >= 0) {
                 if (rayHitsHero()) {
                     range -= 2;
                     await plineWithContinuation('The death ray hits you!');
@@ -13421,6 +13434,7 @@ async function zapDeathRay(direction) {
         }
 
         if (!rayPositionIsOpen(x, y)) {
+            if (absorbedByClosedDoor) break;
             range--;
             if (range > 0 && rayPositionIsValid(previousX, previousY)
                 && cansee(previousX, previousY)) {
