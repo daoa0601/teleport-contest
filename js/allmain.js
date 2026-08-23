@@ -3180,6 +3180,23 @@ async function finishDeathSurvivalMessage(g = game) {
     if (!g._deathSurvivedMessagePending
         || g._heroTimePending
         || g.program_state?.gameover) return;
+    const runmodeDelayPending = !!g._deathSurvivalRunmodeDelayPending;
+    delete g._deathSurvivalRunmodeDelayPending;
+    const runmode = String(g.flags?.runmode || 'run').toLowerCase();
+    const runmodeDelayFrames = !runmodeDelayPending
+        || runmode === 'teleport' || runmode === 'tport'
+        || ((runmode === 'run' || runmode === 'leap')
+            && (g.moves || 0) % 7 !== 0)
+        ? 0 : runmode === 'crawl' ? 5 : 1;
+    if (runmodeDelayFrames) {
+        await flush_screen(1);
+        g.nhDisplay?.setCursor(
+            (g.u?.ux ?? 1) - 1,
+            (g.u?.uy ?? 0) + 1,
+        );
+        for (let frame = 0; frame < runmodeDelayFrames; frame++)
+            await g.animationFrame?.();
+    }
     g._deathSurvivedMessagePending = false;
     await queueTurnMessage('You survived that attempt on your life.');
     if (g._deathSurvivalHeroTookTimePending != null) {
@@ -3360,6 +3377,8 @@ async function resolveMonsterMagicMissileBeam(action) {
     let dy = offensive.rayDy;
     let range = offensive.range;
     const beamCells = new Map();
+    let pendingMapFlushCursor = null;
+    let pendingStatusFlushCursor = null;
 
     const paintBeamCell = (beamX, beamY) => {
         beamCells.set(`${beamX},${beamY}`, { x: beamX, y: beamY });
@@ -3383,7 +3402,44 @@ async function resolveMonsterMagicMissileBeam(action) {
                 && (monsterBeamPositionIsOpen(x, y)
                     || (monsterBeamPositionIsValid(previousX, previousY)
                         && cansee(previousX, previousY)))) {
+                const beamGlyph = dy === 0 ? 'q' : dx === 0 ? 'x'
+                    : dx === dy ? '\\' : '/';
+                const beamDecgfx = dx === 0 || dy === 0;
+                const beamLocation = game.level?.at(x, y);
+                const beamCellChanges = beamLocation?.disp_ch !== beamGlyph
+                    || beamLocation?.disp_color !== CLR_BRIGHT_BLUE
+                    || !!beamLocation?.disp_decgfx !== beamDecgfx;
                 paintBeamCell(x, y);
+                await flush_screen(1);
+                const visibleMessage = game._pending_message
+                    || game._retained_message || '';
+                let animationCursor = [x, y + 1];
+                if (beamCellChanges && pendingMapFlushCursor
+                    && (pendingMapFlushCursor[1] > animationCursor[1]
+                        || (pendingMapFlushCursor[1] === animationCursor[1]
+                            && pendingMapFlushCursor[0]
+                                > animationCursor[0]))) {
+                    animationCursor = pendingMapFlushCursor;
+                } else if (!beamCellChanges) {
+                    if (pendingStatusFlushCursor) {
+                        animationCursor = pendingStatusFlushCursor;
+                    } else if (pendingMapFlushCursor) {
+                        animationCursor = pendingMapFlushCursor;
+                    } else if (visibleMessage) {
+                        animationCursor = [visibleMessage.length, 0];
+                    } else if (game.nhDisplay) {
+                        animationCursor = [
+                            game.nhDisplay.cursorCol,
+                            game.nhDisplay.cursorRow,
+                        ];
+                    }
+                }
+                game.nhDisplay?.setCursor(
+                    animationCursor[0], animationCursor[1],
+                );
+                await game.animationFrame?.();
+                pendingMapFlushCursor = null;
+                pendingStatusFlushCursor = null;
             }
             const target = monsterBeamTargetAt(x, y);
             if (target) {
@@ -3403,6 +3459,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                     if (contact.hit) {
                         range -= 2;
                         if (contact.killed) {
+                            const deathCursor = [target.mx, target.my + 1];
                             await queueTurnMessage(
                                 `The ${quietMonsterName(
                                     target,
@@ -3411,6 +3468,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                             finishMonsterMagicMissileDeath(
                                 action, target, game,
                             );
+                            pendingMapFlushCursor = deathCursor;
                         } else if (cansee(x, y)) {
                             await queueTurnMessage(
                                 `The magic missile hits the ${
@@ -3441,6 +3499,13 @@ async function resolveMonsterMagicMissileBeam(action) {
                             action, game,
                         );
                         offensive.contacts.at(-1).damage = damage;
+                        const status = _statusLine2();
+                        const hpField = status.indexOf('HP:');
+                        const hpValueEnd = status.indexOf('(', hpField);
+                        pendingStatusFlushCursor = [
+                            hpValueEnd >= 0 ? hpValueEnd : status.length,
+                            23,
+                        ];
                         exerciseAttribute(0, false);
                     } else {
                         await queueTurnMessage(
@@ -4898,6 +4963,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // if combat has appended to this recovery line, the
                         // attempted third pline is what forces tty --More--.
                         game._deathSurvivedMessagePending = true;
+                        game._deathSurvivalRunmodeDelayPending = true;
                         previousHeroAttack = heroAttack;
                         heroAttack = continueDeferredHeroAttack(action, game);
                         if (heroAttack) continue;

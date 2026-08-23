@@ -13337,6 +13337,7 @@ async function zapDeathRay(direction) {
     let y = game.u.uy;
     let range = 7 + rn2(7);
     const beamCells = new Map();
+    let pendingMapFlushCursor = null;
 
     const paintBeamCell = (beamX, beamY, beamDx, beamDy) => {
         beamCells.set(`${beamX},${beamY}`, { x: beamX, y: beamY });
@@ -13366,14 +13367,30 @@ async function zapDeathRay(direction) {
                 && (rayPositionIsOpen(x, y)
                     || (rayPositionIsValid(previousX, previousY)
                         && cansee(previousX, previousY)))) {
+                const beamGlyph = dy === 0 ? 'q' : dx === 0 ? 'x'
+                    : dx === dy ? '\\' : '/';
+                const beamDecgfx = dx === 0 || dy === 0;
+                const beamLocation = game.level?.at(x, y);
+                const beamCellChanges = beamLocation?.disp_ch !== beamGlyph
+                    || beamLocation?.disp_color !== NO_COLOR
+                    || !!beamLocation?.disp_decgfx !== beamDecgfx;
                 paintBeamCell(x, y, dx, dy);
                 await flush_screen(1);
+                let animationCursor = [x, y + 1];
+                if (beamCellChanges && pendingMapFlushCursor
+                    && (pendingMapFlushCursor[1] > animationCursor[1]
+                        || (pendingMapFlushCursor[1] === animationCursor[1]
+                            && pendingMapFlushCursor[0]
+                                > animationCursor[0]))) {
+                    animationCursor = pendingMapFlushCursor;
+                } else if (!beamCellChanges && pendingMapFlushCursor) {
+                    animationCursor = pendingMapFlushCursor;
+                }
                 game.nhDisplay?.setCursor(
-                    x === game.u?.ux && y === game.u?.uy
-                        ? x : (game.u?.ux ?? x) - 1,
-                    (game.u?.uy ?? y) + 1,
+                    animationCursor[0], animationCursor[1],
                 );
                 await game.animationFrame?.();
+                pendingMapFlushCursor = null;
             }
 
             // zap_over_floor() runs before dobuzz() tests the obstacle.  A
@@ -13398,6 +13415,7 @@ async function zapDeathRay(direction) {
                             );
                         }
                     } else {
+                        const deathCursor = [monster.mx, monster.my + 1];
                         monster.mhp = 0;
                         const amulet = wornMonsterLifeSaver(monster);
                         if (amulet) {
@@ -13410,6 +13428,7 @@ async function zapDeathRay(direction) {
                                 { showKillMessage: true, weaponHit: false },
                             );
                         }
+                        pendingMapFlushCursor = deathCursor;
                     }
                     range -= 2;
                 } else if (cansee(x, y)) {

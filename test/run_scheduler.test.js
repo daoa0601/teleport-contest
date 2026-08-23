@@ -11168,6 +11168,116 @@ test('seed0052 visible gas region obscures distant fog actor',
         assert.equal(covering.visible, true);
     });
 
+test('seed0052 beam and survival animation groups stay exact', async () => {
+    const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+        + '#wizgenesis\nhostile Wizard of Yendor\ny'
+        + '#wizwish\nwand of death\nzkh   '
+        + 'm. '.repeat(222);
+    const result = await runSegment({
+        seed: 52,
+        datetime: '20000110090000',
+        nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+        moves: fullMoves,
+        storage: new Map(),
+    });
+
+    const iridium = 'The ogre king zaps an iridium wand!';
+    const wand = 'The ogre king zaps a wand of magic missile!';
+    const whizzes = 'The magic missile whizzes by you!';
+    const whizzesBounce = `${whizzes}  The magic missile bounces!`;
+    const hits = 'The magic missile hits you!';
+    const hitsBounce = `${hits}  The magic missile bounces!`;
+    const expected = new Map([
+        [123, [
+            [4, 9, '', 'q@@~~%~!~~'],
+            [5, 9, 'The death ray bounces!', 'qq@~~%~!~~'],
+        ]],
+        [125, [[6, 9, "OK, so you don't die.", 'qqq~~%~!~~']]],
+        [491, [
+            [11, 9, iridium, 'x@Z~~%~qO~'],
+            [10, 9, iridium, 'x@Z~~%qqO~'],
+            [9, 9, iridium, 'x@Z~~qqqO~'],
+            [8, 9, iridium, 'x@Z~qqqqO~'],
+            [7, 9, iridium, 'x@ZqqqqqO~'],
+            [6, 9, iridium, 'x@qqqqqqO~'],
+        ]],
+        [492, [[5, 9,
+            'The magic missile misses the gnome zombie.',
+            'xqqqqqqqO~']]],
+        [495, [
+            [4, 9, whizzes, 'qqqqqqqqO~'],
+            [61, 0, whizzesBounce, 'qqqqqqqqO~'],
+        ]],
+        [498, [[33, 0, whizzes, 'qqqqqqqqO~']]],
+        [512, [
+            [10, 9, wand, 'x@Z~~%qO~~'],
+            [9, 9, wand, 'x@Z~~qqO~~'],
+            [8, 9, wand, 'x@Z~qqqO~~'],
+            [7, 9, wand, 'x@ZqqqqO~~'],
+            [6, 9, wand, 'x@qqqqqO~~'],
+        ]],
+        [513, [[6, 9,
+            'The gnome zombie is destroyed by the magic missile!',
+            'xq%qqqqO~~']]],
+        [516, [[4, 9, hits, 'qq%qqqqO~~']]],
+        [518, [
+            [9, 9, wand, 'x@%~~qO!~~'],
+            [8, 9, wand, 'x@%~qqO!~~'],
+            [7, 9, wand, 'x@%qqqO!~~'],
+            [6, 9, wand, 'x@qqqqO!~~'],
+            [5, 9, wand, 'xqqqqqO!~~'],
+        ]],
+        [519, [
+            [4, 9, hits, 'qqqqqqO!~~'],
+            [55, 0, hitsBounce, 'qqqqqqO!~~'],
+        ]],
+        [527, [
+            [7, 9, wand, 'x@%qO~~!~~'],
+            [6, 9, wand, 'x@qqO~~!~~'],
+            [5, 9, wand, 'xqqqO~~!~~'],
+        ]],
+        [528, [
+            [4, 9, hits, 'qqqqO~~!~~'],
+            [55, 0, hitsBounce, 'qqqqO~~!~~'],
+        ]],
+        [533, [
+            [6, 9, wand, 'x@qO~~~!~~'],
+            [5, 9, wand, 'xqqO~~~!~~'],
+        ]],
+        [534, [
+            [4, 9, hits, 'qqqO~~~!~~'],
+            [55, 0, hitsBounce, 'qqqO~~~!~~'],
+        ]],
+        [537, [
+            [19, 23, hits, 'qqqO~~~!~~'],
+            [7, 9, hits, 'qqqq~~~!~~'],
+        ]],
+        [615, [[4, 9, "OK, so you don't die.", 'x@O~~~~!~~']]],
+        [777, [[4, 9,
+            "OK, so you don't die.  The newt bites!",
+            'x@O~~~~!~~']]],
+    ]);
+
+    const framesByStep = result.getAnimationFramesByStep();
+    assert.deepEqual(
+        framesByStep.flatMap((frames, step) =>
+            frames.length ? [step] : []),
+        [...expected.keys()],
+    );
+    for (const [step, signatures] of expected) {
+        const actual = framesByStep[step];
+        assert.equal(actual.length, signatures.length,
+            `animation count at input ${step}`);
+        assert.deepEqual(actual.map(frame => ({
+            cursor: frame.cursor,
+            topline: decodedTopline(frame.screen),
+            map: decodedRow(frame.screen, 9).slice(3, 13),
+        })), signatures.map(([x, y, topline, map]) => ({
+            cursor: [x, y, 1], topline, map,
+        })), `animation signatures at input ${step}`);
+    }
+});
+
 test('seed0211 outcome4 nasty preserves constructor pager order',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
