@@ -10046,6 +10046,48 @@ test('seed0017 controlled sleeper makes aggravation useful and wakes',
         assert.equal(game.u.uhp, 114);
     });
 
+test('seed0097 stun-you rolls Dexterity duration after effect prose',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 97,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assertRngSliceExact(result.getRngSlices()[112], [
+            'rn2(5)=3', 'rn2(5)=1', 'rnd(20)=6', 'd(2,12)=19',
+            'rn2(20)=19', 'rn2(3)=1', 'rn2(6)=0', 'rn2(30)=3',
+            'rn2(300)=259', 'd(16,6)=57',
+        ], 'seed0097 stun-you cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[112]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assertRngSliceExact(result.getRngSlices()[113], [
+            'd(6,4)=16', 'rn2(5)=0', 'rn2(5)=2', 'rn2(11)=6',
+            'rn2(28)=12', 'rn2(5)=1', 'rn2(32)=1', 'rn2(5)=3',
+            'rn2(12)=0', 'rn2(12)=8', 'rn2(12)=6', 'rn2(12)=3',
+            'rn2(70)=13', 'rn2(100)=37', 'rn2(20)=17',
+            'rn2(64)=52', 'rn2(31)=25',
+        ], 'seed0097 stun duration, cuss, and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            'You reel...  "Thou shalt repent of thy cunning, fool!"');
+        assert.equal(decodedRow(result.getScreens()[113], 23),
+            'Dlvl:1 $:1524 HP:119(137) Pw:298(298) AC:8 Xp:30 Stun');
+        assert.equal(game.u.stunned, true);
+        assert.equal(game.u.stunnedTurns, 14);
+        assert.equal(game.u.uhp, 99);
+        assert.equal(game.u.uhpmax, 137);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

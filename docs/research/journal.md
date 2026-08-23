@@ -87682,3 +87682,38 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 12:59 EEST, journal block 2913] {#seed97 #wizard-of-yendor #stun-you #dexterity #timeout #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Carrier portfolio:** accumulated natural and controlled recordings contain
+stun feedback at several seeds.  Seed97 is exact through input112's stun
+selection and discarded d(16,6)=57, so it avoids the startup and combat
+prerequisites contaminating the alternatives.
+
+**Source ordering:** mcast_stun_you publishes feedback before effect dice.
+Antimagic or Free Action uses momentary disorientation and make_stunned(1).
+Ordinary non-stunned state publishes You reel, then rolls 6d4 below Dexterity
+12 or 4d4 otherwise, applies half-spell rounding and adds the existing
+timeout.  Seed97 has Dexterity8 and native d(6,4)=16.
+
+**Implementation and measured effect:** spell preview owns resistance and
+current-stun prose; the post-message continuation owns Dexterity dice and
+timeout mutation.  Seed97 is exact for all **127 RNG/screen/cursor states**,
+including input113's same-input cuss.  Final state is HP99/137, AC8, Stun with
+fourteen turns remaining.  Strict replay took **0.27 seconds** at
+**125,386,752 bytes maximum RSS**.  Thirteen selected fixture-disabled Wizard
+controls pass **13/13** in **0.72 seconds** at **152,272,896 bytes maximum
+RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** effect dice after prose falsify
+rolling stun duration in castmu's discarded 16d6 phase.  Exact cuss ordering
+proves the timeout is live before post-attack dialogue.  Section878 maps the
+effect; Lua owns none.  The base monster-Wizard spell table now has selected
+carriers for psi, haste, stun, disappear, weaken, destroy armor, curse,
+aggravation, summon, clone and death touch.  Next emphasize branch controls
+and shared constructor/contact gaps rather than inventing another base effect.
+Keep resistance, repeated stun, Dexterity boundary, half-spell and expiry
+explicit.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

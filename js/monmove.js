@@ -359,6 +359,14 @@ function monsterSpellEffectPreview(spell, damage, state) {
             : 'You suddenly feel weaker!';
     } else if (spell.key === 'aggravation') {
         effectMessage = 'You feel that monsters are aware of your presence.';
+    } else if (spell.key === 'stun-you') {
+        const resisted = antimagic || heroHasFreeAction(state);
+        const alreadyStunned = !!state?.u?.stunned
+            || (state?.u?.stunnedTurns ?? 0) > 0;
+        effectMessage = resisted
+            ? alreadyStunned ? null : 'You feel momentarily disoriented.'
+            : alreadyStunned
+                ? 'You struggle to keep your balance.' : 'You reel...';
     } else if (spell.key === 'curse-items') {
         effectMessage = 'You feel as if you need some help.';
     } else if (spell.key === 'geyser') {
@@ -7843,6 +7851,27 @@ export function resumeDeferredHeroSpell(
     }
     if (attack.spell === 'aggravation') {
         attack.deferredAggravation = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
+    if (attack.spell === 'stun-you') {
+        const resisted = !!(state.u?.antimagic
+            || state.u?.magicResistance || state.u?.magic_resistance
+            || heroHasFreeAction(state));
+        let duration = 1;
+        if (!resisted) {
+            const dexterity = state.u?.acurr?.a?.[1] ?? 10;
+            const dice = dexterity < 12 ? 6 : 4;
+            duration = d(dice, 4);
+            action.calls.push('d(' + dice + ',4)');
+            if (state.u?.halfSpellDamage || state.u?.half_spell_damage)
+                duration = Math.trunc((duration + 1) / 2);
+            duration += state.u?.stunnedTurns ?? 0;
+        }
+        state.u.stunnedTurns = duration;
+        state.u.stunned = duration > 0;
+        attack.stunnedHero = true;
+        attack.stunDuration = duration;
         attack.appliedDamage = 0;
         return attack;
     }

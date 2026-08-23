@@ -31698,3 +31698,36 @@ All 155 controlled states are exact, ending HP114/142 with the lichen at
 (40,14) as the stuck actor and two real Wizards live.  Negated sticking,
 sticky hero forms, AD_WRAP/AT_HUGS forms, barbed-devil prose, existing stuck
 state, displacement and release/expulsion remain separate controls.
+
+## 878. Stun prose precedes Dexterity-scaled duration
+
+~~~mermaid
+flowchart TD
+    Select["AD_SPEL selects stun-you"] --> PreRoll["castmu discards 16d6"]
+    PreRoll --> CastPager["directed cast line crosses tty"]
+    CastPager --> Resist{"Antimagic or Free Action?"}
+    Resist -->|"yes"| Moment["momentarily disoriented if not already stunned"]
+    Moment --> One["make_stunned(1)"]
+    Resist -->|"no"| Existing{"already stunned?"}
+    Existing -->|"no"| Reel["publish You reel..."]
+    Existing -->|"yes"| Balance["publish struggle to keep balance"]
+    Reel --> Dex{"Dexterity below12?"}
+    Balance --> Dex
+    Dex -->|"yes"| Six["d(6,4)"]
+    Dex -->|"no"| Four["d(4,4)"]
+    Six --> Half["apply half-spell rounding"]
+    Four --> Half
+    Half --> Add["add existing timeout and commit Stun"]
+    Add --> Tail["resume cuss and global maintenance"]
+    Lua["Lua owns no spell or timeout phase"] -.-> Select
+~~~
+
+Seed97 is exact through all 127 states.  Input112 selects stun-you after
+claw19 and discards d(16,6)=57 behind the cast pager.  Input113 publishes You
+reel..., then Dexterity8 selects d(6,4)=16.  Stun becomes live before the same
+input's Wizard cuss and maintenance; the captured status shows Stun.
+
+The final session retains fourteen turns after later timeout aging and ends
+HP99/137, AC8.  Antimagic, Free Action, repeated stun, Dexterity12 boundary,
+half-spell duration, timeout expiry, polymorphic attributes and cuss-free
+ordering remain separate controls.

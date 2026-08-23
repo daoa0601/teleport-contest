@@ -12909,3 +12909,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   unchanged apart from maintenance regeneration to114/142.  The selected
   Wizard gate remains 12/12 fixture-disabled.  Negation, sticky forms, wrap/
   hugs, barbed devil and release branches remain open.
+- Seed97 closes stun-you through all 127 exact states.  Input112 selects stun
+  and discards d(16,6)=57; input113 publishes You reel before Dexterity8 drives
+  d(6,4)=16, then the existing cuss/maintenance tail runs with Stun already
+  live.  Final state is HP99/137, AC8 and fourteen stun turns.  The selected
+  Wizard gate rises to 13/13 fixture-disabled.  Antimagic, Free Action,
+  repeated stun, Dexterity12, half-spell and expiry remain open.
