@@ -33893,3 +33893,39 @@ is exact across108,275 RNG calls and1,814 screens/cursors.  This section closes
 the reached random small-form armor pager; controlled transformations and
 other break/slip combinations retain their own witnessed ordering.  Lua owns
 no polymorph transaction logic.
+
+## 933. An underfoot item goal still completes postmov pickup
+
+~~~mermaid
+flowchart TD
+    Search["m_search_items finds desired object at monster square"] --> Done["set MMOVE_DONE and return through postmov"]
+    Done --> Pile{"eligible floor stack remains?"}
+    Pile -->|"yes"| Pickup["mpickstuff transfers stack to minvent"]
+    Pickup --> Visible{"pickup visible?"}
+    Visible -->|"yes"| Message["publish pickup prose, then resume"]
+    Visible -->|"no"| Tail["continue synchronously"]
+    Message --> Tail
+    Pile -->|"no"| Tail
+    Tail --> Flee["dochug second distfleeck"]
+    Flee --> Stop["MMOVE_DONE suppresses phase four"]
+    Lua["Lua contributes pile geometry only"] -.-> Search
+    Lua -.->|"no pickup or movement-tail ownership"| Pickup
+~~~
+
+`m_search_items()` returning TRUE does not bypass `postmov()`.  When the goal
+is already under the actor, status becomes MMOVE_DONE, but postmov still calls
+`mpickstuff()` before dochug's second `distfleeck()`.  The stack's removal and
+minvent insertion are durable even if the pickup line is not visible.
+
+JavaScript represented the underfoot goal as `actionCompleted` and correctly
+suppressed phase four, but initially returned before both pickup and the tail.
+Section928 restored the tail; this section routes the narrower
+`itemGoalUnderfoot` state through the existing hostile pickup continuation
+first.  Other MMOVE_DONE producers still go directly to the tail.
+
+Seed0030 orc95 transfers its gem at segment2/input35.  At input47 the absent
+floor goal lets normal `m_move()` consume its rn2(20) candidate draw, restoring
+the entire ten-segment session:105,529 RNG calls and1,953 screens/cursors.
+This section closes represented underfoot monster pickup and silent/visible
+continuation ordering.  It does not close every `mon_would_take_item` class or
+the remaining seed0399 actor block.  Lua owns geometry only.

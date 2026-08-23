@@ -91330,3 +91330,69 @@ empty.  No normal corpus, hidden judge, push or publication ran; unrelated
 dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:51 EEST, journal block 3038] {#seed0030 #segment2 #input47 #m-search-items #mpickstuff #mmove-done #earliest-divergence #source-diagnosis #prediction}
+
+**New earliest divergence:** seed0030 segment2/input47 is exact through three
+ordinary actors and orc95's opening `rn2(5)=0 @ distfleeck`.  Native then owns
+`rn2(20)=8 @ m_move` and the trailing distfleeck; JavaScript immediately owns
+the tail.  Input48 consequently lacks a visible orc after downstream phase
+shift.
+
+**Producer diagnosis:** at input35 the same orc found a desired gem stack
+underfoot and returned `MMOVE_DONE`.  C `m_move()` returns through `postmov()`,
+whose `mpickstuff()` removes one eligible stack before dochug's second
+distfleeck.  JavaScript's newly repaired `actionCompleted` branch runs the
+tail but still returns before `pickUpMonsterFloorObject()`, leaving that gem on
+the floor.  At input47 it selects the same stale goal and skips candidate
+movement again.
+
+**Prediction:** when and only when `itemGoalUnderfoot` marks an
+`actionCompleted` move, run the existing hostile pickup/deferred-message owner
+before the common tail.  Input35 remains RNG/screen exact but transfers the
+gem; input47 should reach native's rn2(20) candidate reservoir.  Defensive and
+other MMOVE_DONE actions must retain their direct-tail behavior.
+
+---
+
+### [2026-08-23 21:53 EEST, journal block 3039] {#seed0030 #segment2 #m-search-items #mpickstuff #mmove-done #implementation #complete-replay #bounded-regression #heldout-control #architecture #process-safety}
+
+**Implementation:** commit `b0d723f` routes only underfoot-item
+`actionCompleted` movement through the existing hostile pickup/deferred-message
+owner before the common MMOVE_DONE tail.  Orc95 transfers gem type467 into
+minvent at input35; later input47 no longer reselects a stale floor goal and
+reaches native candidate movement.
+
+**Evidence:** the extended three-session MMOVE_DONE regression passes **1/1**
+in **0.87 seconds** at **315,555,840 bytes maximum RSS**, including exact floor
+removal and minvent state through input50.  The complete ten-segment seed0030
+session becomes strict **PASS** at105,529/105,529 RNG and1,953/1,953
+screens/cursors in **0.84 seconds** at **264,880,128 bytes maximum RSS**.
+Custom seed52/seed211 remain strict2/2 with40/40 plus4/4 animation in **0.62
+seconds** at **134,512,640 bytes maximum RSS**.
+
+**Boundary:** architecture section933 maps `m_search_items -> postmov ->
+mpickstuff -> distfleeck`.  Lua supplies the pile coordinate only.  Every
+process exited; no normal corpus, hidden judge, push or publication ran.
+
+---
+
+### [2026-08-23 21:54 EEST, journal block 3040] {#public-corpus #engine-only #43-of-44 #regression-recovery #seed0399 #priority #process-safety}
+
+**Recovered full gate:** one managed engine-only corpus completes **43/44
+exact** at **36+0.31 ms/turn** (R²0.845) in **12.11 seconds** at
+**266,518,528 bytes maximum RSS**.  Seed0030 is newly exact and no accepted
+session regressed.  The normal fixture-on corpus was not run.
+
+**Sole public residual:** seed0399 remains10,224/11,409 RNG,117/532 screens
+and454/532 cursors.  Its first divergence is input117: native begins
+`rn2(5)=2 @ distfleeck` and an m_move candidate block while JavaScript begins
+later global/actor calls; native also displays a `C` glyph at terminal(53,7)
+which JavaScript lacks.
+
+**Priority:** make seed0399 input117 the only public recovery target.  Preserve
+the exact custom intervention carriers and avoid a normal/publication gate
+until engine-only is44/44.  The post-gate registry is empty; no hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---

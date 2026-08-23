@@ -1,5 +1,30 @@
 # Public session status
 
+## Current working-tree engine-only gate: 43/44 exact
+
+Measured 2026-08-23 21:54 EEST from commit `b0d723f`, after completing
+underfoot monster pickup through postmov:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **43/44 exact** at **36+0.31 ms/turn** (R² 0.845).  One owned
+process completed in **12.11 seconds** at **266,518,528 bytes maximum RSS**
+and left no matching process.  Seed0030 is newly exact at
+**105,529/105,529 RNG and 1,953/1,953 screens/cursors**; no accepted session
+regressed.
+
+The sole non-exact session is:
+
+| Session | RNG | Screens | Cursors | Current earliest interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0399` | 10,224/11,409 | 117/532 | 454/532 | input117 missing opening `distfleeck/m_move` block and `C` glyph |
+
+Seed0399 is now the only public engine-only recovery target.  The normal
+fixture-enabled corpus remains deferred until engine-only reaches44/44.
+Nothing was pushed, submitted, or run against the official held-out judge.
+
 ## Current working-tree engine-only gate: 42/44 exact
 
 Measured 2026-08-23 21:47 EEST from commit `852238b`, after closing

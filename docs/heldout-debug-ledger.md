@@ -13426,3 +13426,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   42/44 with no new regression.  Seed0030's segment2/input47 m_move branch and
   seed0399's input117 actor block are the only remaining public engine debts;
   supplemental animation coverage remains separate.
+- Commitb0d723f completes `m_search_items()`'s underfoot MMOVE_DONE path:
+  postmov now transfers the eligible stack through shared mpickstuff before
+  dochug's trailing distfleeck.  Seed0030 becomes exact across105,529 RNG calls
+  and1,953 screens/cursors, while seed52/seed211 remain strict complete.  The
+  managed public gate reaches43/44 with seed0399 input117 as the sole remaining
+  public engine regression.  Its missing opening actor block and `C` glyph are
+  the next source-first target; normal scoring and publication remain deferred.
