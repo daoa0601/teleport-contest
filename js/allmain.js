@@ -7119,6 +7119,10 @@ export async function moveloop_core() {
                 g.moves = (g.moves || 1) + 1;
             }
         }
+        const countedMultiActive = (g._occupation?.key === 's'
+            || g._occupation?.key === '.')
+            && (g._occupation?.remaining ?? 0) > 0;
+        await captureRunmodeDelay(g, countedMultiActive);
         return;
     }
 

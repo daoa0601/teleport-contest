@@ -11712,6 +11712,48 @@ test('seed0006 leap runs capture every-seventh-turn pre/post frame pairs',
         }
     });
 
+test('seed0012 counted searches capture occupation runmode cadence',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0012-monk-vault-escort.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 253),
+            storage: new Map(),
+        });
+        for (const step of [226, 228, 252]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0012 counted search input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0012 counted search input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0012 counted search input${step} cursor`,
+            );
+            const [actualFrame] = result.getAnimationFramesByStep()[step];
+            const [nativeFrame] = session.steps[step].animation_frames;
+            assert.ok(actualFrame);
+            assertScreenExact(
+                actualFrame.screen, nativeFrame.screen,
+                `seed0012 counted search input${step} frame`,
+            );
+            assert.deepEqual(actualFrame.cursor, nativeFrame.cursor);
+        }
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
