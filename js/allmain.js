@@ -2051,6 +2051,10 @@ async function initialTurnMaintenanceWithTty(
         );
     }
     await drainQueuedHelplessRecoveryMessage();
+    await captureRunmodeDelay(
+        game, !!game._delayedAction, completedTurn,
+        { preservePhysicalTopline: true },
+    );
     return result;
 }
 
@@ -3154,20 +3158,35 @@ async function resumeOffensivePotionVapor(potion) {
     }
 }
 
-async function finishDeathSurvivalMessage(g = game) {
-    if (!g._deathSurvivedMessagePending
-        || g._heroTimePending
-        || g.program_state?.gameover) return;
-    const runmodeDelayPending = !!g._deathSurvivalRunmodeDelayPending;
-    delete g._deathSurvivalRunmodeDelayPending;
+function runmodeDelayFrameCount(g, enabled, sourceTurn = g.moves || 0) {
     const runmode = String(g.flags?.runmode || 'run').toLowerCase();
-    const runmodeDelayFrames = !runmodeDelayPending
+    return !enabled
         || runmode === 'teleport' || runmode === 'tport'
         || ((runmode === 'run' || runmode === 'leap')
-            && (g.moves || 0) % 7 !== 0)
+            && sourceTurn % 7 !== 0)
         ? 0 : runmode === 'crawl' ? 5 : 1;
+}
+
+async function captureRunmodeDelay(
+    g, enabled, sourceTurn = g.moves || 0,
+    { preservePhysicalTopline = false } = {},
+) {
+    const runmodeDelayFrames = runmodeDelayFrameCount(
+        g, enabled, sourceTurn,
+    );
     if (runmodeDelayFrames) {
+        const retainedTopline = preservePhysicalTopline
+            ? g.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }))
+            : null;
         await flush_screen(1);
+        if (retainedTopline) {
+            for (let col = 0; col < retainedTopline.length; col++) {
+                const cell = retainedTopline[col];
+                g.nhDisplay?.setCell(
+                    col, 0, cell.ch, cell.color, cell.attr,
+                );
+            }
+        }
         g.nhDisplay?.setCursor(
             (g.u?.ux ?? 1) - 1,
             (g.u?.uy ?? 0) + 1,
@@ -3175,6 +3194,15 @@ async function finishDeathSurvivalMessage(g = game) {
         for (let frame = 0; frame < runmodeDelayFrames; frame++)
             await g.animationFrame?.();
     }
+}
+
+async function finishDeathSurvivalMessage(g = game) {
+    if (!g._deathSurvivedMessagePending
+        || g._heroTimePending
+        || g.program_state?.gameover) return;
+    const runmodeDelayPending = !!g._deathSurvivalRunmodeDelayPending;
+    delete g._deathSurvivalRunmodeDelayPending;
+    await captureRunmodeDelay(g, runmodeDelayPending);
     g._deathSurvivedMessagePending = false;
     await queueTurnMessage('You survived that attempt on your life.');
     if (g._deathSurvivalHeroTookTimePending != null) {

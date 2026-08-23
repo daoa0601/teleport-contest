@@ -11490,6 +11490,46 @@ test('seed0361 dagger flight preserves invisible and impact delays',
         }
     });
 
+test('seed0361 delayed wear runmode frame retains its physical prompt',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0361-archeologist-tour.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 141),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[140],
+            session.steps[140].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0361 delayed wear input140 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[140],
+            session.steps[140].screen,
+            'seed0361 delayed wear input140 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[140],
+            session.steps[140].cursor,
+            'seed0361 delayed wear input140 cursor',
+        );
+        const [actualFrame] = result.getAnimationFramesByStep()[140];
+        const [nativeFrame] = session.steps[140].animation_frames;
+        assert.ok(actualFrame);
+        assertScreenExact(
+            actualFrame.screen, nativeFrame.screen,
+            'seed0361 delayed wear animation frame',
+        );
+        assert.deepEqual(actualFrame.cursor, nativeFrame.cursor);
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
