@@ -1387,9 +1387,9 @@ export function _statusLine2() {
         && ((MONSTER_FLAGS1[u.umonnum] ?? 0) & M1_FLY)) line += ' Fly';
     if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
     if ((game._statusDeafOverride ?? game.deaf)) line += ' Deaf';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
     if (u.hallucinating || (u.hallucinationTurns ?? 0) > 0)
         line += ' Hallu';
+    if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
     return line;
 }
 

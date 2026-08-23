@@ -9773,11 +9773,11 @@ test('seed0014 Hallucinated forced Wizard genesis preserves wear snapshots',
             seed: 14,
             datetime: '20000110090000',
             nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
-            moves: moves.slice(0, 135),
+            moves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 136);
+        assert.equal(result.getScreens().length, 144);
         assertRngSliceExact(result.getRngSlices()[75], [],
             'seed0014 pre-genesis Hallucination activation RNG');
         assert.equal(decodedTopline(result.getScreens()[75]),
@@ -9833,15 +9833,38 @@ test('seed0014 Hallucinated forced Wizard genesis preserves wear snapshots',
             'The mind flayer hits!  The sewer rat casts a spell at you!--More--');
         assert.deepEqual(result.getCursors()[135], [66, 0, 1]);
 
-        assert.equal(game.u.uhp, 111);
+        assertRngSliceExact(result.getRngSlices()[136], [
+            'd(6,4)=11', 'rn2(5)=1', 'rn2(5)=0',
+            'rn2(8)=1', 'rn2(7)=6', 'rn2(6)=0', 'rn2(5)=0',
+            'rn2(4)=0', 'rn2(3)=2', 'rn2(2)=1',
+            'rn2(16)=0', 'rn2(15)=11', 'rn2(14)=6', 'rn2(13)=9',
+            'rn2(12)=7', 'rn2(11)=7', 'rn2(10)=8', 'rn2(9)=4',
+            'rn2(8)=0', 'rn2(7)=4', 'rn2(6)=4', 'rn2(5)=0',
+            'rn2(4)=1', 'rn2(3)=0', 'rn2(2)=1',
+            'rn2(17)=4', 'rn2(16)=2', 'rn2(15)=8', 'rn2(14)=0',
+            'rn2(13)=2', 'rn2(12)=7', 'rn2(11)=2', 'rn2(10)=5',
+            'rn2(9)=7', 'rn2(8)=1', 'rn2(7)=2', 'rn2(6)=4',
+            'rn2(5)=1', 'rn2(4)=3', 'rn2(3)=2', 'rn2(2)=1',
+            'rn2(5)=2', 'rnd(20)=17', 'd(2,12)=18',
+        ], 'seed0014 Hallu-before-Stun status transition RNG');
+        assert.equal(decodedTopline(result.getScreens()[136]),
+            'You reel...  The pugasus vanishes and reappears next to you.--More--');
+        assert.equal(decodedRow(result.getScreens()[136], 23),
+            'Dlvl:1 $:1172 HP:111(144) Pw:288(288) AC:8 Xp:30 Hallu Stun');
+        assert.deepEqual(result.getCursors()[136], [68, 0, 1]);
+
+        assert.equal(game.u.uhp, 58);
         assert.equal(game.u.uhpmax, 144);
-        assert.equal(game.u.hallucinationTurns, 27);
+        assert.equal(game.u.hallucinationTurns, 26);
+        assert.equal(game.u.stunnedTurns, 10);
+        assert.equal(game.u.stunned, true);
         const wizards = game.level.monsters.filter(monster =>
             monster.mnum === 285);
         assert.equal(wizards.length, 2);
         assert.deepEqual(wizards.map(monster => monster.minvent
             .map(object => object.otyp)), [[307], [212]]);
         assert.equal(wizards.every(monster => monster.iswiz), true);
+        assert.equal(game.context.move, 0);
     });
 
 test('seed0014 Hallucination rejects death touch and hides speed potion',
