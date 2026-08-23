@@ -87837,3 +87837,32 @@ rewrite, hidden judge, push or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 13:24 EEST, journal block 2918] {#seed5 #free-action #ring #stun-you #resistance #paired-control #complete-replay #native-witness #regression #architecture #ledger #process-safety #priority}
+
+**Portfolio and rejected route:** inserting timed Antimagic into seed14 makes
+death touch fail usefulness before casting.  A bounded seed1--40 search found
+no Antimagic death-touch effect, so that route remains unclaimed.  Free Action
+stun is independently reachable with a wished and worn ring; seeds1--30 found
+clean seed5 while seed11 has an earlier contact gap.
+
+**Durable branch evidence:** seed5 wears a real uncursed +2 free-action ring on
+the left hand.  Input164 selects the same stun effect; input165 publishes
+momentary disorientation and same-turn recovery with no duration dice.
+Final state retains ring type192/spe2, has no Antimagic, Stunned=false,
+stunnedTurns0 and HP162/210.
+
+**Measured result:** all **172 RNG/screen/cursor states** are exact.  Strict
+replay took **0.28 seconds** at **124,895,232 bytes maximum RSS**.
+Ordinary, Antimagic and Free-Action stun tests pass **3/3**; sixteen selected
+fixture-disabled Wizard controls pass **16/16** in **0.68 seconds** at
+**150,274,048 bytes maximum RSS**.  Every recorder and test process exited.
+
+**Decision and next blocker:** Section883 maps equipment-sourced resistance
+without conflating it with Antimagic.  Keep right-hand/cursed/removal,
+simultaneous resistance, repeated stun, ring discovery and destruction/theft
+open.  MM_EMIN or a death-touch immunity/hallucination branch remains the next
+durable source-state target.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

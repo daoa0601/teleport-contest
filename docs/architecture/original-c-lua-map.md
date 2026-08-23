@@ -31852,3 +31852,29 @@ ordinary combat.  Paired with successful nonfatal seed14, this distinguishes
 the success gate from damage arithmetic.  Nonliving/demon immunity,
 Antimagic shield presentation, hallucination, polymorphic rehumanization,
 fatal drain, life saving and Unchanging remain separate controls.
+
+## 883. Worn Free Action shares resistant stun semantics without Antimagic
+
+~~~mermaid
+flowchart TD
+    Wish["wish uncursed +2 ring of free action"] --> Wear["wear on left hand"]
+    Wear --> Property["heroHasFreeAction derives worn property"]
+    Property --> Cast["same stun-you selection"]
+    Cast --> Resist["Antimagic OR Free Action branch"]
+    Resist --> Prose["momentarily disoriented"]
+    Prose --> One["make_stunned(1), no Dexterity dice"]
+    One --> Timeout["same maintenance ages stun to0"]
+    Timeout --> Recover["feel a bit steadier now"]
+    Recover --> Durable["ring remains worn; Antimagic absent"]
+~~~
+
+Seed5 creates a real +2 free-action ring, wears it on the left hand, and later
+selects stun-you.  Input165 matches the Antimagic feedback/one-turn behavior
+without any d(6,4), but durable state proves the resistance source is
+equipment: ring type192 remains worn and Antimagic is absent.
+
+All 172 states are exact, ending HP162/210 with Stunned=false and timeout0.
+Paired with ordinary and Antimagic seed97, this closes three distinct stun
+routes.  Right-hand wear, cursed ring, ring removal before effect, simultaneous
+Antimagic, already-stunned Free Action, property discovery and destruction/
+theft remain separate controls.

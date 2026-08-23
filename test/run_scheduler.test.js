@@ -25,7 +25,7 @@ import {
     SPEAR,
     TOUCHSTONE,
     WORTHLESS_PIECE_OF_RED_GLASS,
-    QUARTERSTAFF, RIN_CONFLICT,
+    QUARTERSTAFF, RIN_CONFLICT, RIN_FREE_ACTION,
     SPE_BOOK_OF_THE_DEAD, SPE_POLYMORPH, TWO_HANDED_SWORD,
     WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from '../js/object_data.js';
@@ -10181,6 +10181,48 @@ test('seed0097 Antimagic stun lasts one turn and recovers immediately',
         assert.equal(game.u.stunned, false);
         assert.equal(game.u.stunnedTurns, 0);
         assert.equal(game.u.uhp, 112);
+    });
+
+test('seed0005 worn Free Action ring resists stun without Antimagic',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizwish\nuncursed +2 ring of free action\n'
+            + 'Pkl #wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 5,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 172);
+        assertRngSliceExact(result.getRngSlices()[164], [
+            'rn2(20)=3', 'rn2(3)=0', 'rn2(6)=1',
+            'rn2(30)=3', 'rn2(300)=271', 'd(16,6)=61',
+        ], 'seed0005 Free Action stun cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[164]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assertRngSliceExact(result.getRngSlices()[165], [
+            'rn2(5)=2', 'rn2(12)=6', 'rn2(12)=1',
+            'rn2(70)=16', 'rn2(100)=93', 'rn2(20)=9', 'rn2(73)=64',
+        ], 'seed0005 Free Action stun and recovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[165]),
+            'You feel momentarily disoriented.  You feel a bit steadier now.');
+        assert.equal(decodedRow(result.getScreens()[165], 23),
+            'Dlvl:1 $:1109 HP:162(210) Pw:270(270) AC:8 Xp:30');
+        assert.equal(game.uleft?.otyp, RIN_FREE_ACTION);
+        assert.equal(game.uleft?.spe, 2);
+        assert.equal(game.u.antimagic, undefined);
+        assert.equal(game.u.stunned, false);
+        assert.equal(game.u.stunnedTurns, 0);
+        assert.equal(game.u.uhp, 162);
+        assert.equal(game.u.uhpmax, 210);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

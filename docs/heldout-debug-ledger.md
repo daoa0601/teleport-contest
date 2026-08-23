@@ -12943,3 +12943,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   states.  Death-touch success/failure tests pass 2/2 and the selected Wizard
   gate rises to 15/15 fixture-disabled.  Immunity, Antimagic, hallucination,
   polymorph, fatality, life saving and Unchanging remain open.
+- Antimagic death-touch seed1--40 search produced no cast effect because
+  usefulness rejected every candidate; no branch claim was made.  Free Action
+  stun produced a clean seed5 carrier instead.  The +2 ring remains worn on
+  the left hand, Antimagic is absent, input165 has no duration dice, and
+  same-turn recovery clears Stun.  All 172 states are exact, ending HP162/210.
+  Ordinary/Antimagic/Free-Action stun routes pass 3/3; the selected Wizard
+  gate rises to 16/16 fixture-disabled.  Alternate ring/property interactions
+  remain open.
