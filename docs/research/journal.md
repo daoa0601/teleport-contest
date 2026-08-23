@@ -88009,3 +88009,47 @@ public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 13:49 EEST, journal block 2922] {#seed2 #input135 #clone-wizard #m-ap-monster #mappearance #x-monnam #red-dragon #presentation #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** after contact rehumanization, seed2 has
+identical RNG, state and screens through input134.  Input135 retains identical
+twelve-call RNG, damage and spell selection, but native says `The red dragon
+hits!  The red dragon casts a spell at you!` with cursor66 while JavaScript
+says `The Wizard of Yendor...` with cursor78.  The acting clone has true
+Wizard identity and `M_AP_MONSTER/mappearance146`, so this is presentation
+identity, not actor selection or combat policy.
+
+**Source contract and prediction:** `do_name.c:x_monnam()` sets
+`do_mappear` for M_AP_MONSTER unless the caller supplies
+`SUPPRESS_MAPPEARANCE`, then derives its base `pm_name` from mappearance.
+Hallucination and unseen/`it` policy precede or surround that choice; true
+identity remains available to suppressed callers.  A shared visible-name
+owner should use the red-dragon appearance for ordinary hit/cast prose while
+leaving iswiz, HP, spell table, inventory and clone counts unchanged.
+
+**Implementation and measured effect:** commit `648d321` adds a projected
+monster-name helper and uses it in visible contact and cast subjects.  Input135
+now matches native line, HP129/149 status and cursor66.  Final state retains
+two true Wizards; the clone remains iswiz, HP134/134,
+M_AP_MONSTER/mappearance146, while the original Wizard remains undisguised.
+The bounded comparator is exact for all **150 captured states from input3
+onward** in **0.38 seconds** at **124,370,944 bytes maximum RSS**.  The
+permanent complete-session test passes **1/1** in **0.33 seconds** at
+**131,104,768 bytes maximum RSS**; seventeen selected fixture-disabled Wizard
+controls pass **17/17** in **0.67 seconds** at **148,930,560 bytes maximum
+RSS**.  Every process exited.
+
+**Falsification, decision and next blocker:** identical actor RNG, coordinates,
+damage, spell and clone state falsify construction, scheduling and combat
+hypotheses; the paired red D glyph plus true iswiz state falsifies collapsing
+appearance into identity.  Section887 maps the naming boundary; Lua owns
+neither half.  Keep suppressed true-name callers, hallucination, sensing,
+unseen pronouns, priest/shopkeeper cases, assigned names, saddles, quickmimic
+pets, other disguises and disguise removal open.  The controlled seed2 carrier
+is complete.  Return to a source-valid MM_EMIN caller or another death-touch
+resistance/hallucination branch rather than extending this exact session by
+speculation.  No full corpus, public-status rewrite, hidden judge, push, or
+publication ran; unrelated dirty files remain untouched.
+
+---

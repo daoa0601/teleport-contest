@@ -32019,3 +32019,41 @@ saving, and death remain independent controls.  The next mismatch at input135
 has identical RNG and actor state but different visible naming: C calls the
 M_AP_MONSTER clone `red dragon`; JavaScript calls it `Wizard of Yendor`.
 Lua contributes none of this transaction.
+
+## 887. Visible M_AP_MONSTER prose uses appearance, not actor identity
+
+~~~mermaid
+flowchart TD
+    Actor["clone has true mnum Wizard and iswiz identity"] --> Seen{"actor visibly projected?"}
+    Seen -->|"no"| It["unseen contact uses It or separate sensing policy"]
+    Seen -->|"yes"| Hallu{"Hallucination active?"}
+    Hallu -->|"yes"| Random["display RNG chooses hallucinated subject"]
+    Hallu -->|"no"| Appearance{"m_ap_type is M_AP_MONSTER and not suppressed?"}
+    Appearance -->|"yes"| Projected["pmname of mappearance"]
+    Appearance -->|"no"| True["ordinary species, priest, or shopkeeper name"]
+    Projected --> Hit["hitmsg uses The red dragon"]
+    Projected --> Cast["castmu line uses The red dragon"]
+    Actor --> Policy["spell table, covetous logic, inventory, HP use true Wizard"]
+    Lua["Lua owns neither actor identity nor projected prose"] -.-> Actor
+~~~
+
+The clone created at input130 is a real Wizard for every behavioral purpose:
+`mnum=285`, `iswiz=true`, clone HP134/134, Wizard spells and covetous state.
+Its separate presentation record is `m_ap_type=M_AP_MONSTER` with
+`mappearance=146`, a red dragon.  Native `x_monnam()` selects that appearance
+whenever mapappearance is not explicitly suppressed.  Therefore input135's
+natural hit and directed cast both say `The red dragon`, even though all RNG,
+damage, spell policy, inventory, and identity remain Wizard-owned.
+
+JavaScript already projected the red D glyph but formatted actor prose from
+the true species.  A shared visible-name helper now applies mappearance after
+visibility and hallucination policy and is used by both contact and ordinary
+visible-subject formatting.  The controlled seed2 recipe matches native for
+all **150 captured states from input3 onward**, including input135's cursor66;
+final state retains two underlying Wizards and the disguised clone.
+
+This does not authorize mappearance for callers which request
+`SUPPRESS_MAPPEARANCE`/exact identity, nor does it close hallucinated naming,
+telepathic/sensed disguises, unseen pronouns, priests, shopkeepers, assigned
+names, saddles, quickmimic pets, other disguise types, or disguise removal.
+Lua contributes only surrounding level geometry.

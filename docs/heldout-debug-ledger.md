@@ -12986,3 +12986,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   sight/encumbrance follow-ups, Unchanging, human death, and life saving remain
   open.  Input135 is the next mismatch with identical RNG: native names the
   disguised clone `red dragon`, while JS exposes `Wizard of Yendor`.
+- Seed2 is now exact through the complete 150-state controlled recipe after
+  routing visible M_AP_MONSTER names through mappearance.  Input135 has the
+  same twelve RNG calls and underlying clone identity in both engines, but C
+  `x_monnam()` publishes `The red dragon hits!  The red dragon casts a spell
+  at you!` with cursor66; JS previously used the true Wizard species and
+  cursor78.  The clone remains iswiz with HP134/134 and mappearance146, and a
+  second true Wizard remains present.  The permanent complete-session test
+  passes 1/1 and the selected fixture-disabled gate remains 17/17.  Suppressed
+  true-name callers, hallucination, sensing, priests/shopkeepers, named or
+  saddled disguises, other M_AP_MONSTER actors, and disguise removal remain
+  open.  Resume with MM_EMIN or another source-valid resistance branch.
