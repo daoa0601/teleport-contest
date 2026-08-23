@@ -7759,12 +7759,35 @@ export function resumeDeferredHeroStoning(
     if (!attack?.deferredStoningEffect) return action;
     const special = recordRandom(random, action.calls, 3);
     attack.stoningSpecialTriggered = special === 0;
-    // The current source witness takes the ordinary no-hiss branch.  Keep a
-    // named continuation marker for the triggered branch rather than
-    // silently treating it as harmless; its rn2(10), resistance, and delayed
-    // petrification transaction remain a separate effect owner.
-    if (attack.stoningSpecialTriggered)
+    if (attack.stoningSpecialTriggered) {
         attack.deferredStoningSpecial = true;
+        const monster = action.monster;
+        const name = MONSTER_NAME[monster?.mnum] || 'monster';
+        const deaf = !!state?.deaf || (state?.u?.deafTurns ?? 0) > 0;
+        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+        const hallucinating = !!state?.u?.hallucinating
+            || (state?.u?.hallucinationTurns ?? 0) > 0;
+        if (monster?.mcan) {
+            if (!deaf)
+                attack.stoningSpecialMessage = `You hear a cough from the ${name}!`;
+        } else if (hallucinating && !blind) {
+            if (!deaf) attack.stoningSpecialMessage = 'You hear hissing!';
+            attack.unimplementedHallucinatedStoningKiss = true;
+        } else if (!deaf) {
+            attack.stoningSpecialMessage
+                = `You hear the ${name}'s hissing!`;
+        } else if (!blind) {
+            attack.stoningSpecialMessage = `The ${name} seems to grimace.`;
+        }
+        if (!monster?.mcan) {
+            attack.stoningPetrificationSelected
+                = recordRandom(random, action.calls, 10) === 0;
+            // do_stone_u(), including new-moon override and resistance/
+            // delayed-polyform handling, remains a separate successor.
+            if (attack.stoningPetrificationSelected)
+                attack.deferredHeroPetrification = true;
+        }
+    }
     recordRandom(random, action.calls, 3);
     recordRandom(random, action.calls, 6);
     attack.deferredStoningEffect = false;

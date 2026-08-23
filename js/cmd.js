@@ -5870,6 +5870,27 @@ async function gainLevelAbilities(oldLevel, newLevel) {
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
     { suppressStatus = false } = {}) {
     let value = '';
+    let renderedRows = 1;
+    const clearEditorRows = () => {
+        for (let row = 0; row < renderedRows; row++)
+            game.nhDisplay?.clearRow(row);
+    };
+    const renderEditor = () => {
+        const line = `${prompt} ${value}`;
+        clearEditorRows();
+        const width = 79; // tty safe margin; column79 remains wrap sentinel
+        renderedRows = Math.max(1, Math.ceil(line.length / width));
+        for (let row = 0; row < renderedRows; row++) {
+            game.nhDisplay?.putstr(
+                0, row, line.slice(row * width, (row + 1) * width),
+                NO_COLOR,
+            );
+        }
+        const length = line.length;
+        const cursorRow = length ? Math.floor((length - 1) / width) : 0;
+        const cursorX = length ? ((length - 1) % width) + 1 : 0;
+        game.nhDisplay?.setCursor(cursorX, cursorRow);
+    };
     const finish = result => {
         // C tty_getlin() clears WIN_MESSAGE after accepting or cancelling
         // the editor.  A following producer owns a fresh topline; if the
@@ -5877,7 +5898,7 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
         // though it were an ordinary pline message.
         game._pending_message = '';
         game._retained_message = '';
-        game.nhDisplay?.clearRow(0);
+        clearEditorRows();
         return result;
     };
     const clearSuppressedStatus = () => {
@@ -5888,7 +5909,7 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
     await pline(prompt);
     await flush_screen(1);
     clearSuppressedStatus();
-    game.nhDisplay?.setCursor(prompt.length + 1, 0);
+    renderEditor();
     for (;;) {
         const key = await nhgetch();
         if (key === 27) return finish(null);
@@ -5896,12 +5917,12 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
         if (key === 8 || key === 127) value = value.slice(0, -1);
         else {
             const ch = String.fromCharCode(key);
-            if (accepts(ch, key)) value += ch;
+            if (value.length < 80 && accepts(ch, key)) value += ch;
         }
         game._pending_message = `${prompt} ${value}`;
         await flush_screen(1);
         clearSuppressedStatus();
-        game.nhDisplay?.setCursor(prompt.length + 1 + value.length, 0);
+        renderEditor();
     }
 }
 

@@ -12,7 +12,8 @@ import {
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
     randomDefensiveMonsterItem, randomMiscMonsterItem,
     randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
-    summonInsectsForMonster, u_on_upstairs, place_lregion,
+    summonInsectsForMonster, summonNastyMonsters,
+    u_on_upstairs, place_lregion,
 } from './mklev.js';
 import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
@@ -857,6 +858,10 @@ function initializeRandomMonsterInventory(monster) {
     const addObject = otyp => {
         if (!otyp) return null;
         const object = mksobj(otyp, true, false);
+        if (MONSTER_SYMBOL[monster?.mnum] === 56 && object.blessed) {
+            object.blessed = false;
+            object.cursed = true;
+        }
         // makemon.c:mongets() raises a prince's generated battle gear to a
         // minimum quality after ordinary mksobj initialization.
         if (monsterFlags2 & M2_PRINCE) {
@@ -1400,6 +1405,11 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
                 };
                 return;
             } else if (intervention === 5) {
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else if (intervention === 4) {
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
@@ -2035,6 +2045,26 @@ async function initialTurnMaintenanceWithTty(
             delete game._unresolvedDemigodIntervention;
         } else if (intervention.kind === 5) {
             await resurrectWizard();
+            delete game._unresolvedDemigodIntervention;
+        } else if (intervention.kind === 4) {
+            const effect = await summonNastyMonsters(null, {
+                onCreate: async monster => {
+                    newsym(monster.mx, monster.my);
+                    const name = quietMonsterName(monster);
+                    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
+                    const adjacent = Math.max(
+                        Math.abs(monster.mx - (game.u?.ux ?? monster.mx)),
+                        Math.abs(monster.my - (game.u?.uy ?? monster.my)),
+                    ) <= 1;
+                    const message = `${article} ${name} suddenly appears ${
+                        adjacent ? 'next to you' : 'close by'
+                    }!`;
+                    if (game._pending_message !== message)
+                        await queueTurnMessage(message);
+                },
+            });
+            game._lastDemigodNasty = (effect.created || []).map(monster =>
+                monster.m_id);
             delete game._unresolvedDemigodIntervention;
         }
         game.u.udg_cnt = 50 + rn2(200);
@@ -4638,8 +4668,19 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                     if (toggledBlindness) vision_recalc(0);
                 }
-                if (heroAttack.deferredStoningEffect)
+                if (heroAttack.deferredStoningEffect) {
                     resumeDeferredHeroStoning(action, game);
+                    if (heroAttack.stoningSpecialMessage) {
+                        const stoningDismissal = await queueTurnMessage(
+                            heroAttack.stoningSpecialMessage,
+                        );
+                        heroAttack.stoningSpecialMessage = null;
+                        if (stoningDismissal !== null
+                            && stoningDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
+                }
                 if (heroAttack.passive?.messageKind) {
                     const passiveDismissal = await queueTurnMessage(
                         heroPassiveResponseMessage(monster, heroAttack.passive),

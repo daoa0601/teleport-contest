@@ -2398,6 +2398,12 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const monsterInventory = [];
     const mongets = otyp => {
         const object = mksobj(otyp, true, false);
+        // makemon.c:mongets(): demons never retain blessed objects; a raw
+        // blessing becomes a curse before the identity enters minvent.
+        if (MONSTER_SYMBOL[mndx] === 56 && object.blessed) {
+            object.blessed = false;
+            object.cursed = true;
+        }
         monsterInventory.push(object);
         hasMonsterInventory = true;
         return object;
@@ -3365,7 +3371,9 @@ export async function summonInsectsForMonster(summoner) {
 // position, then runs the ordinary makemon() constructor.  The created
 // actors are returned so the caller can repaint them at the same runtime
 // boundary where C's makemon() calls newsym().
-export async function summonNastyMonsters(summoner) {
+export async function summonNastyMonsters(
+    summoner, { onCreate = null } = {},
+) {
     const created = [];
     const inHell = !!game.dungeons?.[
         game.u?.uz?.dnum ?? 0
@@ -3440,6 +3448,7 @@ export async function summonNastyMonsters(summoner) {
             // Preserve that birth-time projection state for the spell owner;
             // the actor becomes hostile below without an immediate repaint.
             monster._nastyBirthPeaceful = monster.mpeaceful;
+            if (onCreate) await onCreate(monster);
             monster.msleeping = 0;
             monster.mpeaceful = 0;
             monster.mtame = 0;

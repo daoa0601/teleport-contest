@@ -11168,6 +11168,129 @@ test('seed0052 visible gas region obscures distant fog actor',
         assert.equal(covering.visible, true);
     });
 
+test('seed0211 outcome4 nasty preserves constructor pager order',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 211,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 546),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 547);
+        const opening = result.getRngSlices()[524];
+        assert.equal(opening.length, 138);
+        assertRngSliceExact(opening.slice(31, 39), [
+            'rn2(6)=4', 'rn2(10)=9', 'rnd(10)=8',
+            'rn2(44)=16', 'rn2(8)=5', 'rn2(7)=1',
+            'rn2(6)=0', 'rn2(5)=1',
+        ], 'seed0211 outcome4 and first nasty selection RNG');
+        assertRngSliceExact(opening.slice(-8), [
+            'rn2(3)=0', 'rn2(2)=1', 'rnd(2)=1',
+            'd(13,8)=55', 'rn2(2)=0', 'rn2(50)=22',
+            'rn2(100)=97', 'rn2(100)=67',
+        ], 'seed0211 second visible constructor suffix RNG');
+        const duplicateStorm = result.getRngSlices()[540];
+        assert.equal(duplicateStorm.length, 144);
+        assertRngSliceExact(duplicateStorm.slice(0, 8), [
+            'rnd(4)=4', 'rn2(44)=27', 'rn2(8)=2',
+            'rn2(7)=6', 'rn2(6)=2', 'rn2(5)=3',
+            'rn2(4)=1', 'rn2(3)=2',
+        ], 'seed0211 first storm postprocess RNG');
+        assertRngSliceExact(duplicateStorm.slice(-8), [
+            'rn2(2)=0', 'rnd(2)=2', 'd(12,8)=61',
+            'rn2(26)=10', 'rn2(2)=1', 'rn2(50)=30',
+            'rn2(100)=45', 'rn2(100)=72',
+        ], 'seed0211 duplicate-storm/fire constructor suffix RNG');
+        assertRngSliceExact(result.getRngSlices()[546], [
+            'rnd(4)=3', 'rn2(200)=154',
+        ], 'seed0211 final nasty cooldown and reset RNG');
+
+        const pageChecks = [
+            [524, 'An ochre jelly suddenly appears next to you!--More--',
+                [52, 0, 1]],
+            [540, 'A storm giant suddenly appears next to you!--More--',
+                [51, 0, 1]],
+            [543, 'A fire elemental suddenly appears close by!--More--',
+                [51, 0, 1]],
+            [546, 'A zruty suddenly appears close by!', [7, 8, 1]],
+        ];
+        for (const [step, topline, cursor] of pageChecks) {
+            assert.equal(decodedTopline(result.getScreens()[step]), topline);
+            assert.deepEqual(result.getCursors()[step], cursor);
+        }
+        assert.equal(decodedRow(result.getScreens()[546], 23),
+            'Dlvl:1 $:1116 HP:176(191) Pw:221(221) AC:8 Xp:30');
+
+        assert.deepEqual(game._lastDemigodNasty, [
+            117, 119, 120, 131, 133, 134, 136, 143, 156, 158,
+        ]);
+        assert.deepEqual(game._lastDemigodNasty.map(id =>
+            game.level.monsters.find(monster => monster.m_id === id)?.mnum), [
+            58, 42, 291, 42, 121, 10, 175, 175, 155, 120,
+        ]);
+        assert.equal(game._unresolvedDemigodIntervention, undefined);
+        assert.equal(game.u.udg_cnt, 204);
+    });
+
+test('seed0211 cursed demon potion owns hiss and saturated call prompt',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 211,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 651),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 652);
+        assertRngSliceExact(result.getRngSlices()[558], [
+            'rn2(3)=0', 'rn2(10)=5', 'rn2(3)=0',
+            'rn2(6)=5', 'rn2(5)=2', 'rnd(20)=17',
+            'd(3,6)=16',
+        ], 'seed0211 non-petrifying cockatrice hiss RNG');
+        assert.equal(decodedTopline(result.getScreens()[558]),
+            "The cockatrice touches you!  You hear the cockatrice's hissing!--More--");
+        assert.deepEqual(result.getCursors()[558], [71, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[567]),
+            'The horned devil looks uneasy.--More--');
+        assert.deepEqual(result.getCursors()[567], [38, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[570]),
+            'Call a pink potion:');
+        assert.deepEqual(result.getCursors()[570], [20, 0, 1]);
+
+        assert.deepEqual(result.getCursors()[629], [79, 0, 1]);
+        assert.deepEqual(result.getCursors()[630], [1, 1, 1]);
+        assert.deepEqual(result.getCursors()[650], [21, 1, 1]);
+        assert.deepEqual(result.getCursors()[651], [21, 1, 1]);
+        assert.equal(
+            decodedRow(result.getScreens()[650], 1),
+            ' m. m. m. m. m. m. m.',
+        );
+        assert.equal(
+            decodedRow(result.getScreens()[651], 1),
+            decodedRow(result.getScreens()[650], 1),
+        );
+
+        const hornedDevil = game.level.monsters.find(monster =>
+            monster.m_id === 120);
+        assert.ok(hornedDevil);
+        const potion = hornedDevil.minvent.find(object =>
+            object.otyp === 309);
+        assert.ok(potion);
+        assert.equal(potion.cursed, true);
+        assert.equal(potion.blessed, false);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
