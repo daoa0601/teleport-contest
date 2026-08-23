@@ -51,7 +51,7 @@ import {
     ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK,
     ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD,
     ELVEN_SHORT_SWORD, ELVEN_SPEAR,
-    FOOD_RATION, GOLD_PIECE, LONG_SWORD,
+    FOOD_RATION, GOLD_PIECE, LARGE_BOX, LONG_SWORD,
     LUCERN_HAMMER,
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
@@ -973,6 +973,21 @@ function initializeRandomMonsterInventory(monster) {
     // ordinary wrapping before the shared defensive/misc reservoirs.
     if (MONSTER_SYMBOL[monster?.mnum] === 39 && rn2(7))
         addObject(MUMMY_WRAPPING);
+
+    // makemon.c:m_initinv(), S_QUANTMECH.  Every class member probes the
+    // Schrödinger-box gate; only PM_QUANTUM_MECHANIC can receive the box.
+    if (MONSTER_SYMBOL[monster?.mnum] === 43) {
+        if (!rn2(20) && monster.mnum === 210) {
+            const box = mksobj(LARGE_BOX, false, false);
+            const cat = mksobj(CORPSE, true, false);
+            box.spe = 1;
+            cat.corpsenm = 33;
+            delete cat.rotAt;
+            cat.otrapped = false;
+            box.contents = [cat];
+            inventory.push(box);
+        }
+    }
 
     // makemon.c:m_initinv(), S_LEPRECHAUN.  Its guaranteed gold stack makes
     // the shared greedy-species gate below skip without another rn2(5).

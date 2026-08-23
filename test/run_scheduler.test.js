@@ -10530,6 +10530,49 @@ test('seed0013 teleport trap rloc can retain the monster square',
         assert.equal(game.u.uhp, 147);
     });
 
+test('seed0012 ambient quantum mechanic preserves Schrodinger probe',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 12,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 296),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 297);
+        const birth = result.getRngSlices()[296];
+        assert.equal(birth.length, 265);
+        assertRngSliceExact(birth.slice(-24), [
+            'rn2(318)=115', 'rn2(319)=303', 'rn2(320)=65',
+            'rn2(321)=130', 'rn2(326)=188', 'rn2(331)=63',
+            'rn2(336)=43', 'rn2(341)=83', 'rn2(343)=169',
+            'rn2(344)=5', 'rnd(2)=1', 'd(10,8)=36',
+            'rn2(2)=0', 'rn2(20)=17', 'rn2(50)=7',
+            'rn2(11)=4', 'rnd(2)=2', 'rn2(4)=2',
+            'rn2(100)=80', 'rn2(100)=77', 'rn2(100)=39',
+            'rn2(400)=101', 'rn2(20)=9', 'rn2(67)=28',
+        ], 'seed0012 rejected Schrodinger-box suffix RNG');
+        assert.equal(decodedTopline(result.getScreens()[296]), '');
+        assert.equal(decodedRow(result.getScreens()[296], 23),
+            'Dlvl:1 $:1031 HP:140(159) Pw:250(250) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[296], [53, 10, 1]);
+
+        const mechanic = game.level.monsters.find(monster =>
+            monster.m_id === 83);
+        assert.ok(mechanic);
+        assert.equal(mechanic.mnum, 210);
+        assert.deepEqual([mechanic.mx, mechanic.my], [47, 6]);
+        assert.equal(mechanic.mhp, 36);
+        assert.deepEqual(mechanic.minvent.map(object => object.otyp), [308]);
+        assert.equal(game.u.udg_cnt, 145);
+        assert.equal(game.u.uhp, 140);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
