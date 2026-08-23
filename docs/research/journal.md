@@ -89392,3 +89392,122 @@ production change, focused regression, corpus, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 18:57 EEST, journal block 2959] {#seed1 #ambient-birth #grey-elf #m-initweap #elf-equipment #rejected-intervention-carrier #earliest-divergence #native-witness #process-safety #priority}
+
+**Rechecked rejected carrier and earliest divergence:** after the newer ambient
+repairs, seed1's plain-dot outcome4 recipe remains invalid and first diverges at
+input159 call228.  Native selects Grey-elf mnum267/id59, then enters
+`m_initweap(is_elf)`.  JavaScript matches selection, ID, d(9,8)=38 HP, sex,
+group and sleep calls but skips the elf equipment graph and starts rn2(50).
+
+**Source prediction:** ordinary elves independently probe mithril/cloak,
+helm-or-boots and dagger, then select one of bow/arrows, broadsword/shield, or
+spear/shield loadouts before the shared offensive reservoir.  The selected
+native prefix begins rn2(2)=0, rn2(2)=1 and constructs the reached items.
+`mklev.js` already implements the full mnum264--269 table; copy it into the
+ambient inventory frontend using the shared stack helper.  Ambient Elven
+Monarch extras should retain their source probes too.
+
+**Decision:** port the complete ordinary-elf arm and relocalize.  The plain-dot
+rest warning still makes the later intervention selection invalid even after
+constructor parity; a future native recipe must switch to `m.`.  The current
+replay remains red at **2937/4536 RNG calls, 169/230 screens and 230/230
+cursors**.  All processes exited; no focused regression, corpus, hidden judge,
+push or publication ran, and unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 19:04 EEST, journal block 2960] {#seed1 #ambient-birth #small-group #m-initgrp #level-divisor #group-chain #earliest-divergence #source-order #process-safety #priority}
+
+**Post-elf replay and next earliest divergence:** copying the ordinary-elf
+equipment graph advances seed1 through input202.  Input203 matches a group
+member's full constructor and then native starts another `collect_coords()`
+ring transaction; JavaScript enters global maintenance instead.
+
+**Source diagnosis:** `m_initgrp()` draws `rnd(n)`, then divides group count by
+4 below hero level3, by2 at levels3--4, and by1 at level5+.  JavaScript uses
+`level<3 ? 4 : 2`, incorrectly halving every high-level group.  At level30 the
+native small-group count remains2 while JavaScript truncates it to1.  Native
+also chains `enexto` from the prior member; the missing count is the immediate
+cause of this entire absent constructor.
+
+**Decision and prediction:** restore the three-band divisor before changing
+group placement.  The second member should consume its complete position/
+constructor calls and make the next locator reveal whether always centering on
+the primary creates a later state-only gap.  The rejected intervention carrier
+remains invalid after input214 until native forced no-ops are used.  No focused
+test, corpus, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---
+
+### [2026-08-23 19:16 EEST, journal block 2961] {#seed1 #intervene #resurrection #forced-noop #wizard-constructor #tty #earliest-divergence #native-witness #process-safety #priority}
+
+**Source-valid resurrection carrier:** after the elf/group repairs, the original
+230-state plain-dot seed1 session is exact from input3 and leaves udg11.  A new
+native recipe appends forced `m.` no-ops.  Real Warg combat eventually opens a
+pager and debug-death refusal; on input272 the resumed global maintenance
+selects `intervene rn2(6)=5`.
+
+**Earliest divergence and source ordering:** JavaScript matches native through
+input272 call28 and the visible `OK, so you don't die.  The warg bites!` pager.
+Native then constructs a revived Wizard, while JavaScript marks unresolved5
+and immediately resets with rn2(200)=44.  Native input273 pages
+`The Wizard of Yendor suddenly appears next to you!`; input274 pages the booming
+voice and only then owns reset rn2(200)=39.  The delayed debug-survival message
+appears at input275.
+
+**Decision and prediction:** export/reuse the existing async
+`resurrectWizard()` owner from cmd.  Outcome5 should store a maintenance
+continuation without reset; unlike outcome2 it must not force the older pager
+before construction, because the constructor's arrival pline is what negotiates
+that backpressure.  Await resurrection, then reset and resume the environmental/
+Seer/nomovemsg tail.  Migrating-existing-Wizard resurrection remains outside
+this fresh-constructor carrier.
+
+**Measured evidence:** the 280-state native recorder exited in **0.09 seconds**
+at **56,016,896 bytes maximum RSS**.  Pre-edit replay matches **4920/4975 RNG
+calls, 271/280 screens and 278/280 cursors** in **0.30 seconds** at
+**129,662,976 bytes**; the bounded locator places the first edge at input272
+call28.  Every process exited.  No focused regression, corpus, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 19:25 EEST, journal block 2962] {#seed1 #intervene #resurrection #forced-noop #wizard #elf #small-group #native-acceptance #implementation #complete-replay #bounded-regression #architecture #ledger #process-safety}
+
+**Implemented source chain:** commit `6f14e74` exports/reuses the existing async
+Wizard resurrection owner for intervention outcome5.  The maintenance clock now
+defers reset through constructor, arrival and voice backpressure before resuming
+the same global tail.  Ambient ordinary elves receive their complete equipment
+table.  Group construction now uses source level bands for size, covers small/
+large group gates, performs the pre-makemon peace check and chains each enexto
+from the previous member.
+
+**Complete native acceptance and durable state:** the 280-state forced-noop
+carrier matches **4975/4975 RNG calls, 279/280 scorer screens and 280/280
+cursors** in **0.27 seconds** at **130,252,800 bytes maximum RSS**.  Input2 is
+the sole screen miss; inputs3--279 match native RNG, decoded screens and cursors.
+Input159 owns Grey-elf equipment, input203 the second group member, input214 the
+plain-rest warning, input251 fatal Warg damage, inputs270--271 death/debug query,
+input272 outcome5 plus 82-call constructor, inputs273--274 arrival/voice/reset,
+and input275 delayed survival.
+
+**Regression and final state:** the permanent test bounds elf/group/constructor
+inputs by length plus small source neighborhoods and fully compares only short
+combat/reset slices.  Final state is revived Wizard HP141/141 at (14,6),
+inventory[329], hostile/mrevived1, Wizard count1, vanquish count1, hero
+HP102/152, mortality2 and udg89.  Focused shared intervention/death tests pass
+**13/13** fixture-disabled in **0.80 seconds** at **256,540,672 bytes maximum
+RSS**.  The expanded portfolio passes **46/46** in **1.24 seconds** at
+**301,318,144 bytes maximum RSS**.  Every runner was singly owned and exited.
+
+**Map and next blocker:** section905 and the ledger distinguish native forced
+no-op admission, constructor/voice continuation and delayed reset; Lua owns only
+placement.  Migrating-Wizard reuse, simultaneous Wizards, intervention outcome3
+aggravate and outcome4 nasty, other group classes/failures, accepted death and
+animation remain open.  No full corpus, public-status rewrite, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---

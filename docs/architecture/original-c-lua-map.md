@@ -32876,3 +32876,48 @@ Magicbane/intelligent-artifact/saddle resistance, blind black-glow suppression,
 intervention aggravate/nasty/resurrection outcomes3--5, invulnerability pause,
 Astral selection, other ambient weapon/inventory classes, or the five native
 animation-frame groups.  Lua owns only physical level geometry.
+
+## 905. Resurrection intervention defers reset through constructor and voice
+
+~~~mermaid
+flowchart TD
+    Death["seed1 first Wizard death initializes demigod state"] --> Wait["ordinary rests count down until hostile rest warning"]
+    Wait --> Force["m-dot forced no-ops continue time under combat pressure"]
+    Force --> Elf["ambient Grey-elf receives full elf equipment graph"]
+    Elf --> Group["high-level small-group divisor1 creates two members"]
+    Group --> Combat["Warg attacks drive hero to HP0 and fill tty"]
+    Combat --> Debug["debug death refusal restores hero; Warg attack remains pending"]
+    Debug --> Outcome["same maintenance selects intervene rn2 6 equals5"]
+    Outcome --> Constructor["resurrectWizard creates fresh revived Wizard"]
+    Constructor --> Arrival["arrival pline pages older OK plus Warg line"]
+    Arrival --> Voice["Wizard arrival page then booming threat page"]
+    Voice --> Reset["only after voice continuation: udg_cnt equals50 plus rn2 200 equals89"]
+    Reset --> Survival["delayed debug survival nomovemsg"]
+    Lua["Lua contributes group and resurrection placement geometry"] -.-> Group
+    Lua -.-> Constructor
+    Lua -.->|"no ownership"| Outcome
+    Lua -.->|"no ownership"| Reset
+~~~
+
+Seed1 also corrects two false shortcuts before resurrection.  Once an adjacent
+hostile makes plain `.` zero-time, only the `m.` force prefix advances the
+countdown.  During those waits an ordinary Grey-elf runs the full clothing and
+loadout graph.  A separate small group uses source divisors4 below level3,2 at
+levels3--4, and1 at level5+, with each new enexto centered on the previous
+member.  At hero level30 the native count stays two rather than being halved.
+
+Input272 resumes from debug refusal and a pending Warg line.  Outcome5 owns a
+complete fresh Wizard constructor before any countdown reset.  The constructor's
+arrival pline first pages the older combat line; input273 pages arrival, input274
+pages the booming threat and only then consumes `rn2(200)=39`.  Input275 emits
+the delayed survival message.  Final state has one revived Wizard at (14,6),
+HP141/141, inventory[329], `mrevived=1`, hostile, Wizard count1; the original
+vanquish count remains1, hero HP102/152, mortality2 and `udg_cnt=89`.
+
+This section closes fresh-constructor non-Astral resurrection outcome5 with
+tty backpressure, forced-noop admission, ordinary-elf equipment and correct
+high-level small-group size/chaining.  It does not close reuse of a migrating
+dead Wizard, simultaneous live-Wizard behavior, resurrected-Wizard tactics,
+controlled monster teleport, intervention aggravate/nasty outcomes3--4,
+accepted hero death, other group classes/placement failure, or the six native
+animation-frame groups.  Lua owns physical placement only.

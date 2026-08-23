@@ -13211,3 +13211,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   Focused and expanded fixture-disabled gates pass 12/12 and45/45.  Outcomes
   3--5, curse resistance variants, blind/invulnerable/Astral and animation
   branches remain open.
+- The initial seed1 outcome4 selector was invalid because plain `.` becomes
+  zero-time under nearby threat.  A native `m.` forced-noop continuation instead
+  reaches outcome5.  Prerequisites close ambient Grey-elf equipment and the
+  high-level small-group divisor/chained placement.  Input272 selects5 behind
+  debug-refusal/Warg tty backpressure and constructs a fresh revived Wizard;
+  inputs273--274 page arrival and booming threat before resetting udg_cnt89;
+  input275 emits the delayed survival message.  Final Wizard is (14,6),
+  HP141/141, inventory[329], mrevived1, count1; hero HP102/152, mortality2 and
+  original vanquish count1.  All 4,975 RNG calls, all cursors, and all screens
+  from input3 through input279 match; input2 alone is red.  Focused/expanded
+  fixture-disabled gates pass 13/13 and46/46.  Migrating-Wizard reuse,
+  simultaneous Wizards, outcomes3--4 and animation remain open.
