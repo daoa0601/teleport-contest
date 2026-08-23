@@ -13,7 +13,8 @@ import {
 } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import {
-    AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, BOULDER,
+    AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
+    AMULET_OF_STRANGULATION, BOULDER,
     ARROW, BOW, ELVEN_ARROW, ORCISH_ARROW, CANDELABRUM_OF_INVOCATION, CHEST,
     CORPSE, CREAM_PIE,
     DAGGER, DART,
@@ -10361,6 +10362,88 @@ test('seed0592 death ray consumes monster and hero life-saving amulets',
         assert.equal(game._knownObjectTypes.has(AMULET_OF_LIFE_SAVING), true);
         assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
         assert.equal(game._deathSurvivedMessagePending, false);
+        assert.equal(game.context.no_of_wizards, 1);
+        assert.equal(game.context.move, 0);
+    });
+
+test('seed0592 reflection amulet reverses the rebounded death ray',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\namulet of reflection\nPk'
+            + '#wizwish\nwand of death\nzlk' + ' '.repeat(20);
+        const result = await runSegment({
+            seed: 592,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 176);
+        assertRngSliceExact(result.getRngSlices()[155], [
+            'rn2(19)=0', 'rn2(7)=1',
+            'rn2(20)=5', 'rnd(8)=3',
+            'rn2(20)=7', 'rnd(8)=3',
+        ], 'seed0592 reflection death-ray opening RNG');
+        assert.equal(decodedTopline(result.getScreens()[155]),
+            'The death ray misses the Wizard of Yendor.  The death ray bounces!--More--');
+        assert.deepEqual(result.getCursors()[155], [74, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[156]),
+            'You kill the Wizard of Yendor!  But wait...--More--');
+        assert.equal(decodedTopline(result.getScreens()[157]),
+            "The Wizard of Yendor's medallion begins to glow!--More--");
+        assert.equal(decodedTopline(result.getScreens()[158]),
+            'The Wizard of Yendor looks much better!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[159], [
+            'rn2(20)=1',
+        ], 'seed0592 reflection hero-hit pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[159]),
+            'The medallion crumbles to dust!  The death ray hits you!--More--');
+        assert.equal(decodedRow(result.getScreens()[159], 23),
+            'Dlvl:1 $:1662 HP:170(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[159], [64, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[160], [
+            'rn2(19)=8', 'rn2(19)=1',
+            'rn2(5)=1', 'rn2(5)=3',
+            'rnd(20)=15', 'd(2,12)=18',
+            'rn2(20)=11', 'rn2(3)=1', 'rn2(6)=2',
+            'rn2(30)=12', 'rn2(300)=234',
+        ], 'seed0592 reflection discovery and Wizard attack RNG');
+        assert.equal(decodedTopline(result.getScreens()[160]),
+            'But it reflects from your medallion!  The Wizard of Yendor hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[160], 23),
+            'Dlvl:1 $:1662 HP:152(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[160], [72, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[161], [
+            'd(16,6)=60',
+        ], 'seed0592 post-reflection Wizard spell RNG');
+        assert.equal(decodedTopline(result.getScreens()[161]),
+            'The Wizard of Yendor casts a spell at you!--More--');
+        assert.equal(decodedTopline(result.getScreens()[162]),
+            'You feel as if you need some help.--More--');
+        assert.equal(decodedTopline(result.getScreens()[163]),
+            'You feel a malignant aura surround you.');
+        assert.equal(decodedRow(result.getScreens()[163], 23),
+            'Dlvl:1 $:1662 HP:153(170) Pw:239(239) AC:8 Xp:30');
+
+        assert.equal(game.uamul.otyp, AMULET_OF_REFLECTION);
+        assert.equal(game.uamul.worn, true);
+        assert.equal(game.uamul.typeKnown, true);
+        assert.equal(game._knownObjectTypes.has(AMULET_OF_REFLECTION), true);
+        assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
+        assert.equal(game.u.umortality || 0, 0);
+        assert.equal(game._lifeSavedCount || 0, 0);
+        assert.equal(game.u.uhp, 153);
+        assert.equal(game.u.uhpmax, 170);
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.mhp, 118);
+        assert.deepEqual(wizard.minvent.map(object => object.otyp), [329]);
+        assert.equal(game._vanquishedCounts?.has(285) ?? false, false);
         assert.equal(game.context.no_of_wizards, 1);
         assert.equal(game.context.move, 0);
     });

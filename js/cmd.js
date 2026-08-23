@@ -82,7 +82,8 @@ import {
     LENSES, BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
+    AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
+    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
     SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_GENOCIDE,
     SCR_LIGHT,
@@ -13004,20 +13005,35 @@ function rayHitsHero() {
     return 3 - chance < effectiveArmorClass;
 }
 
-function heroReflectsSleepRay() {
+function heroReflectionSource() {
+    if (game.uarms?.otyp === SHIELD_OF_REFLECTION) {
+        return { object: game.uarms, noun: 'shield' };
+    }
+    const amulet = game.uamul || game.u?.uamul;
+    if (amulet?.otyp === AMULET_OF_REFLECTION) {
+        return { object: amulet, noun: 'medallion' };
+    }
+    return null;
+}
+
+function heroReflectsRay() {
     return !!(game.u?.reflecting || game.reflecting
-        || game.uarms?.otyp === SHIELD_OF_REFLECTION);
+        || heroReflectionSource());
+}
+
+function discoverHeroReflectionSource(source = heroReflectionSource()) {
+    const object = source?.object;
+    if (!object || game._knownObjectTypes?.has(object.otyp)) return;
+    exerciseAttribute(4, true);
+    recordObjectKnowledge(object.otyp);
+    object.typeKnown = true;
 }
 
 export function discoverReflectingShield() {
     const shield = game.uarms;
     if (!shield || shield.otyp !== SHIELD_OF_REFLECTION) return;
-    if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-    if (game._knownObjectTypes.has(SHIELD_OF_REFLECTION)) return;
     // o_init.c:discover_object() exercises Wisdom only for a new discovery.
-    exerciseAttribute(2, true);
-    game._knownObjectTypes.add(SHIELD_OF_REFLECTION);
-    shield.typeKnown = true;
+    discoverHeroReflectionSource({ object: shield, noun: 'shield' });
 }
 
 // C refs: zap.c:resist(), zhitm(); mhitm.c:sleep_monst().
@@ -13250,14 +13266,16 @@ async function zapSleepRay(direction) {
                     range -= 2;
                     await plineWithContinuation('The sleep ray hits you!');
                     emittedMessage = true;
-                    if (heroReflectsSleepRay()) {
+                    if (heroReflectsRay()) {
+                        const source = heroReflectionSource();
                         // ureflects() submits its prose before makeknown(); if
                         // that third message opens --More--, discovery and its
                         // Wisdom RNG correctly wait until pager dismissal.
                         await plineWithContinuation(
-                            'But it reflects from your shield!',
+                            `But it reflects from your ${
+                                source?.noun || 'shield'}!`,
                         );
-                        discoverReflectingShield();
+                        if (source) discoverHeroReflectionSource(source);
                         dx = -dx;
                         dy = -dy;
                     }
@@ -13377,53 +13395,68 @@ async function zapDeathRay(direction) {
                     range -= 2;
                     await plineWithContinuation('The death ray hits you!');
                     const pending = game._pending_message;
-                    const heroLifeSaver = game.uamul || game.u?.uamul;
-                    const heroLifeSaving = heroLifeSaver?.otyp
-                        === AMULET_OF_LIFE_SAVING;
-                    if (heroLifeSaving) {
-                        // done() commits fatal state before its life-saving
-                        // output.  The short "But wait" clause is allowed to
-                        // join the already-pending ray line even when that
-                        // combined line immediately owns tty's pager.
-                        game.u.uhp = 0;
-                        const lifeSaving = beginHeroLifeSaving();
-                        const opening = `${pending}  But wait...`;
-                        await moreUntilDismissed(`${opening}--More--`);
-                        await pline('Your medallion begins to glow!');
-                        await plineWithContinuation(
-                            'You feel much better!',
-                        );
-                        await plineWithContinuation(
-                            'The medallion crumbles to dust!',
-                        );
-                        completeHeroLifeSaving(lifeSaving);
-                        game._deathSurvivedMessagePending = true;
-                    } else {
-                        // Without an amulet, tty pages the accumulated ray
-                        // prose before done() commits HP zero and opens the
-                        // wizard/explore survival query.
+                    const reflectionSource = heroReflectionSource();
+                    if (heroReflectsRay()) {
                         if (pending)
                             await moreUntilDismissed(`${pending}--More--`);
-                        game.u.uhp = 0;
-                    }
-
-                    if (!heroLifeSaving
-                        && (game.flags?.debug || game.flags?.explore)) {
-                        game.u.umortality = (game.u.umortality || 0) + 1;
-                        const die = String.fromCharCode(
-                            await promptKey('Die? [yn] (n) '),
-                        ).toLowerCase();
-                        if (die !== 'y') {
-                            restoreHeroAfterDeath();
-                            await pline("OK, so you don't die.");
+                        await pline(`But it reflects from your ${
+                            reflectionSource?.noun || 'shield'}!`);
+                        if (reflectionSource)
+                            discoverHeroReflectionSource(reflectionSource);
+                        dx = -dx;
+                        dy = -dy;
+                    } else {
+                        const heroLifeSaver = game.uamul || game.u?.uamul;
+                        const heroLifeSaving = heroLifeSaver?.otyp
+                            === AMULET_OF_LIFE_SAVING;
+                        if (heroLifeSaving) {
+                            // done() commits fatal state before its life-saving
+                            // output.  The short "But wait" clause is allowed
+                            // to join the already-pending ray line even when
+                            // that combined line immediately owns tty's pager.
+                            game.u.uhp = 0;
+                            const lifeSaving = beginHeroLifeSaving();
+                            const opening = `${pending}  But wait...`;
+                            await moreUntilDismissed(`${opening}--More--`);
+                            await pline('Your medallion begins to glow!');
+                            await plineWithContinuation(
+                                'You feel much better!',
+                            );
+                            await plineWithContinuation(
+                                'The medallion crumbles to dust!',
+                            );
+                            completeHeroLifeSaving(lifeSaving);
                             game._deathSurvivedMessagePending = true;
                         } else {
+                            // Without an amulet, tty pages the accumulated ray
+                            // prose before done() commits HP zero and opens the
+                            // wizard/explore survival query.
+                            if (pending) {
+                                await moreUntilDismissed(
+                                    `${pending}--More--`,
+                                );
+                            }
+                            game.u.uhp = 0;
+                        }
+
+                        if (!heroLifeSaving
+                            && (game.flags?.debug || game.flags?.explore)) {
+                            game.u.umortality = (game.u.umortality || 0) + 1;
+                            const die = String.fromCharCode(
+                                await promptKey('Die? [yn] (n) '),
+                            ).toLowerCase();
+                            if (die !== 'y') {
+                                restoreHeroAfterDeath();
+                                await pline("OK, so you don't die.");
+                                game._deathSurvivedMessagePending = true;
+                            } else {
+                                await finishDeathWithBones();
+                                return;
+                            }
+                        } else if (!heroLifeSaving) {
                             await finishDeathWithBones();
                             return;
                         }
-                    } else if (!heroLifeSaving) {
-                        await finishDeathWithBones();
-                        return;
                     }
                 } else {
                     await plineWithContinuation(
