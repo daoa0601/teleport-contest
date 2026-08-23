@@ -9755,13 +9755,11 @@ test('seed0002 wood golem survives death touch then rehumanizes on claw',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            // Stop when the following claw exhausts form HP, rehumanizes,
-            // skips the Upolyd-only passive gate, and selects the next spell.
-            moves: fullMoves.slice(0, 127),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 128);
+        assert.equal(result.getScreens().length, 150);
         assertRngSliceExact(result.getRngSlices()[80], [
             'rn2(2)=0', 'rn2(19)=4', 'rn2(500)=397',
         ], 'seed0002 wood-golem setup RNG');
@@ -9814,14 +9812,34 @@ test('seed0002 wood golem survives death touch then rehumanizes on claw',
             'Dlvl:1 $:1765 HP:149(149) Pw:271(271) AC:8 Xp:30');
         assert.deepEqual(result.getCursors()[127], [61, 0, 1]);
 
+        assertRngSliceExact(result.getRngSlices()[135], [
+            'rn2(5)=3', 'rn2(5)=1', 'rnd(20)=6', 'd(2,12)=20',
+            'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=2', 'rn2(30)=29',
+            'rn2(20)=18', 'rn2(20)=6', 'rn2(300)=182', 'd(16,6)=57',
+        ], 'seed0002 disguised-clone hit and spell RNG');
+        assert.equal(decodedTopline(result.getScreens()[135]),
+            'The red dragon hits!  The red dragon casts a spell at you!--More--');
+        assert.equal(decodedRow(result.getScreens()[135], 23),
+            'Dlvl:1 $:1765 HP:129(149) Pw:271(271) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[135], [66, 0, 1]);
+
         assert.equal(game.u.umonnum, 334);
         assert.equal(game.u.mtimedone, 0);
         assert.equal(game.u.mh, 0);
         assert.equal(game.u.mhmax, 0);
-        assert.equal(game.u.uhp, 149);
+        assert.equal(game.u.uhp, 93);
         assert.equal(game.u.uhpmax, 149);
         assert.equal(game.u.uac, 8);
-        assert.equal(game.context.move, 1);
+        const wizards = game.level.monsters.filter(monster =>
+            monster.mnum === 285);
+        assert.equal(wizards.length, 2);
+        const clone = wizards.find(monster => monster.m_ap_type === 3);
+        assert.ok(clone);
+        assert.equal(clone.mappearance, 146);
+        assert.equal(clone.mhp, 134);
+        assert.equal(clone.mhpmax, 134);
+        assert.equal(clone.iswiz, true);
+        assert.equal(game.context.move, 0);
     });
 
 test('seed0015 rejects useless aggravation before choosing curse-items',

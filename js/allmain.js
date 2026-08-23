@@ -58,7 +58,7 @@ import {
     VAULT, SHOPBASE, ROOMOFFSET,
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
-    Upolyd, Is_airlevel,
+    M_AP_MONSTER, Upolyd, Is_airlevel,
 } from './const.js';
 import { replayCavemanTurn } from './caveman_explore.js';
 import { replayRogueTurn, replayRogueChargenTurn } from './rogue_explore.js';
@@ -2008,7 +2008,8 @@ function monsterAttackMessage(monster, attack, previousAttack = null) {
         || (game.u?.hallucinationTurns ?? 0) > 0;
     const name = actorSpotted && hallucinating ? randomDisplayMonsterName()
         : monster?.isshk ? shopkeeperName(monster)
-            : monsterTypeName(monster?.mnum, !!monster?.female);
+            : actorSpotted ? projectedMonsterName(monster)
+                : quietMonsterName(monster);
     const priestSubject = actorSpotted && !hallucinating
         && (monster?.ispriest || monster?.isminion)
         ? visiblePriestName(monster, game) : null;
@@ -2298,10 +2299,20 @@ function quietMonsterName(monster) {
     return monster?.saddled ? `saddled ${name}` : name;
 }
 
+function projectedMonsterName(monster) {
+    const mnum = monster?.m_ap_type === M_AP_MONSTER
+        && Number.isInteger(monster?.mappearance)
+        ? monster.mappearance : monster?.mnum;
+    const name = monsterTypeName(mnum, !!monster?.female);
+    return monster?.saddled ? `saddled ${name}` : name;
+}
+
 function visibleMonsterSubject(monster) {
     const hallucinating = game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0;
     if (hallucinating) return randomDisplayMonsterSubject();
+    if (monster?.m_ap_type === M_AP_MONSTER)
+        return `The ${projectedMonsterName(monster)}`;
     return monster?.isshk
         ? shopkeeperName(monster)
         : monster?.ispriest || monster?.isminion
