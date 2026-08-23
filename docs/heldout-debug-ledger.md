@@ -13568,3 +13568,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   missing travel frame is rejected because most existing travel frames are
   already misaligned.  Next probes are input306 ray ownership, then560/561
   against the exact seed0361 rolling-boulder control.
+- Commitf57e8f0 restores seed0014 input306's visible cold-ray collision frame
+  at native `dobuzz()`'s pre-`zhitm` delay boundary.  A strict frame-count test
+  rejected the first placement because it also captured four invisible
+  post-kill continuation cells—extras which the supplemental positional scorer
+  does not penalize.  Moving the hook inside the native `cansee()`/paint branch
+  gives an exact1/1 frame/cursor witness.  The managed engine-only corpus stays
+  44/44 and advances to1,294/1,483 animation; seed0014 reaches892/995.  Normal
+  scoring and publication remain deferred; rolling-boulder inputs560/561 are
+  the next generic owner probe.

@@ -92264,3 +92264,93 @@ owners are separated should travel groups be aligned from their first native
 frame and source step.  Keep seed0060/0106 and seed0007 labeled replay debt.
 
 ---
+
+### [2026-08-24 00:05 EEST, journal block 3074] {#seed0014 #input306 #cold-ray #dobuzz #zhitm #source-diagnosis #prediction}
+
+**Witness and earliest divergence:** input306's move `y` has exact RNG and
+boundary state but lacks native's sole animation frame.  The frame paints a
+white diagonal cold-ray `\\` at map cell(18,12), keeps the live newt beneath
+it, and precedes the `You kill the newt!` boundary where that cell becomes the
+yellow corpse.  Its cursor is(19,12); the boundary cursor is(19,13).
+
+**Source owner and evidence:** native `zap.c:dobuzz()` calls `tmp_at()` and
+`nh_delay_output()` immediately after entering the visible ray cell, before
+setting `bhitpos`, `zap_hit()`, `zhitm()` and the kill/corpse transaction.  The
+JavaScript `zapColdRay()` paints the same cell but goes directly to
+`rayMonsterAt()` and `coldRayDamageMonster()`.  Exact RNG confirms this route:
+`dobuzz -> zap_hit -> zhitm -> destroy_items -> resist -> xkilled`, followed by
+bounce-direction calls.
+
+**Prediction and falsified routes:** invoke the existing shared ray traversal
+capture immediately after cold-beam painting and before collision handling.
+Input306 should gain exactly one frame without moving kill/corpse state into
+it, while fire and sleep ray witnesses remain unchanged.  This falsifies a
+travel/getpos explanation and does not justify a session-specific replay or a
+post-kill delay.
+
+---
+
+### [2026-08-24 00:08 EEST, journal block 3075] {#seed0014 #input306 #cold-ray #correction #bounded-witness #test-audit}
+
+**Correction to block3074:** input306 has five native animation frames, not a
+sole native frame.  Four ordinary scheduler frames were already exact; the
+painted cold-ray collision is the sole *missing* frame.  The focused corpus
+rose from891/995 to892/995 as predicted, but a deliberately exact frame-count
+assertion exposed the imprecise inventory wording.
+
+**Decision:** preserve the source fix and make the durable witness compare all
+five input306 frame screens and cursors, not only the newly restored frame.
+Fire, digging and sleep-ray controls passed alongside the failed count
+assertion, so there is no evidence of shared-helper regression.
+
+---
+
+### [2026-08-24 00:12 EEST, journal block 3076] {#seed0014 #input306 #cold-ray #invisible-ray #cansee #false-acceptance #source-correction}
+
+**Second correction and earliest extra-frame owner:** native really records one
+input306 frame.  JavaScript produced five after the first implementation: the
+new exact visible collision frame followed by four duplicate post-kill frames.
+A bounded frame inventory showed those extras retained `You kill the newt!`
+and the corpse state while the ray continued through unseen cells.
+
+**Source distinction:** `zap.c:dobuzz()` places `nh_delay_output()` inside its
+`cansee(sx,sy)` branch.  The first JavaScript slice captured every valid
+non-stone ray cell after optional painting, including four invisible cells.
+The supplemental scorer only compares canonical positional frames and ignores
+extra JavaScript frames, so its892/995 improvement alone was insufficient
+acceptance evidence.
+
+**Decision and prediction:** capture inside the same visible/painted branch as
+native.  The full input306 witness must be exactly one JavaScript frame to one
+native frame, with matching cursor, while fire/digging/sleep controls stay
+green.  This preserves the cold-ray owner without canonizing unscored excess
+animation.
+
+---
+
+### [2026-08-24 00:15 EEST, journal block 3077] {#seed0014 #input306 #cold-ray #implementation #engine-only #44-of-44 #animation #process-safety}
+
+**Implementation and bounded acceptance:** commit `f57e8f0` captures cold-ray
+traversal only when the cell is visible and painted, before monster collision.
+Input306 now has exactly one JavaScript frame for native's one frame, with the
+white diagonal beam, live target, old topline/status and cursor(19,12).  The
+RNG slice and post-kill boundary remain exact.  Fire, digging and sleep-ray
+controls pass5/5.
+
+**Managed corpus evidence:** after a live process-table precheck, one
+fixture-disabled corpus completed **44/44** at **36+0.31 ms/turn** (R²0.817)
+in **11.99 seconds** at **271,777,792 bytes maximum RSS**.  Seed0014 advances
+to **892/995** and the corpus to **1,294/1,483** animation frames; all RNG,
+boundary screens and cursors remain exact.  The owned verifier exited and no
+matching live process remains.  Historical registry entries with stale PIDs
+were not treated as live after the operating-system process check falsified
+them.
+
+**Measured effect and next blocker:** the gain is exactly the predicted one
+canonical frame, with no incidental count changes.  The strict local witness
+also documents a false-acceptance surface in the supplemental scorer: excess
+JavaScript frames are ignored.  Next compare seed0014 inputs560/561 with the
+exact seed0361 rolling-boulder transaction before changing that owner.  No
+normal corpus, push, workflow, hidden judge or publication ran.
+
+---

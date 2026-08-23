@@ -34498,3 +34498,42 @@ Seed0002 inputs256/257/269 pin **12/12** frames and complete the session at
 represented surviving pet-target dagger hit.  Target death, misses, multiple
 volleys, invisible launchers, other projectile classes, floor destruction and
 shop interactions remain controls.  Lua contributes none.
+
+## 949. Cold-ray collision delay belongs only to visible `dobuzz()` cells
+
+~~~mermaid
+flowchart TD
+    Step["dobuzz advances the cold ray"] --> Valid{"in-bounds non-stone cell?"}
+    Valid -->|"no"| Bounce["bounce or exhaust range"]
+    Valid -->|"yes"| Seen{"cansee current cell and beam projection allowed?"}
+    Seen -->|"yes"| Paint["tmp_at paints white cold-ray glyph"]
+    Paint --> Delay["nh_delay_output captures live target before zhitm"]
+    Seen -->|"no"| NoDelay["continue without tty delay"]
+    Delay --> Hit{"monster collision?"}
+    NoDelay --> Hit
+    Hit -->|"yes"| Damage["zap_hit then zhitm then xkilled/corpse"]
+    Hit -->|"no"| Step
+    Damage --> Step
+    Lua["Lua owns level geometry, not ray visibility or tty timing"] -.-> Step
+~~~
+
+The placement of `nh_delay_output()` inside native `dobuzz()`'s `cansee()`
+branch is part of the port boundary.  It captures the temporary beam over the
+still-live target before `bhitpos`, hit resolution, inventory destruction and
+the kill/corpse transaction.  Later out-of-sight continuation cells consume
+ray range and can bounce, but they do not create display frames.
+
+JavaScript's `zapColdRay()` now invokes the shared ray traversal capture inside
+the same visible painted-cell branch.  The first implementation placed it
+after that branch and produced four unscored post-kill frames while the ray
+continued invisibly.  The supplemental comparator still reported the restored
+canonical frame because it compares only native positional slots and ignores
+extra JavaScript frames; the durable test therefore asserts both frame count
+and full cursor/screen equality.
+
+Seed0014 input306 is exact at **1/1** native/JavaScript animation frames while
+retaining59,178/59,178 RNG and714/714 boundaries.  The full corpus advances to
+1,294/1,483.  This closes the reached diagonal visible cold ray hitting and
+killing a monster; resistance/reflection, misses, invisible targets, other
+directions, hero hits, armor/inventory side effects and alternate ray sources
+remain controls.  Lua contributes only the physical level geometry.
