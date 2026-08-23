@@ -11168,6 +11168,80 @@ test('seed0052 visible gas region obscures distant fog actor',
         assert.equal(covering.visible, true);
     });
 
+test('tutorial corner preserves generated underlay across roles', async () => {
+    const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+        + '#wizgenesis\nhostile Wizard of Yendor\ny'
+        + '#wizwish\nwand of death\nzkh   '
+        + 'm. '.repeat(222);
+    const healer = await runSegment({
+        seed: 52,
+        datetime: '20000110090000',
+        nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+        moves: healerMoves.slice(0, 3),
+        storage: new Map(),
+    });
+
+    assertRngSliceExact(healer.getRngSlices()[2], [],
+        'seed0052 tutorial menu RNG');
+    assertRngSliceExact(healer.getRngSlices()[3], [],
+        'seed0052 tutorial dismissal RNG');
+    assert.deepEqual(healer.getCursors().slice(2, 4), [
+        [27, 6, 1], [4, 9, 1],
+    ]);
+    assert.deepEqual(
+        Array.from({ length: 13 }, (_unused, row) =>
+            decodedRow(healer.getScreens()[2], row)),
+        [
+            '                     Do you want a tutorial?',
+            '',
+            '                     y - Yes, do a tutorial',
+            '                     n - No, just start play',
+            '',
+            '                     Put "OPTIONS=!tutorial" in .nethackrc to skip this query.',
+            '                     (end)',
+            '   lqqqqqqqqqqqqqk',
+            '   x~~~~~~~~~~~~~x',
+            '   x@~~~%~!~~~~~~~',
+            '   x{:~~~~~~~~~~~x',
+            '   x~~~~~~~~~~~~~~',
+            '   mqqqqqqqqqqqqqj',
+        ],
+    );
+    assert.equal(decodedRow(healer.getScreens()[3], 9),
+        '   x@~~~%~!~~~~~~~');
+
+    const knightSession = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed0103-knight-ride-pony.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+    const knight = await runSegment({
+        seed: knightSession.seed,
+        datetime: knightSession.datetime,
+        nethackrc: knightSession.nethackrc,
+        moves: knightSession.moves.slice(0, 4),
+        storage: new Map(),
+    });
+    for (const step of [2, 3]) {
+        assertRngSliceExact(
+            knight.getRngSlices()[step],
+            knightSession.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed0103 tutorial input${step} RNG`,
+        );
+        assertScreenExact(
+            knight.getScreens()[step],
+            knightSession.steps[step].screen,
+            `seed0103 tutorial input${step} screen`,
+        );
+        assert.deepEqual(
+            knight.getCursors()[step],
+            knightSession.steps[step].cursor,
+            `seed0103 tutorial input${step} cursor`,
+        );
+    }
+});
+
 test('seed0052 beam and survival animation groups stay exact', async () => {
     const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

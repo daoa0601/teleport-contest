@@ -375,59 +375,35 @@ export async function restoregamePreamble() {
 
 async function askTutorial() {
     const d = game.nhDisplay;
-    const dec = /^DECgraphics$/i.test(game.symset || '');
-    const preserveMap = dec && (game.urole?.key === 'tourist'
-        || game.urole?.key === 'knight'
-        || game.urole?.key === 'wizard'
-        || game.urole?.key === 'valkyrie'
-        || game.urole?.key === 'priest'
-        || game.urole?.key === 'archeologist'
-        || game.urole?.key === 'barbarian'
-        || game._characterPickerUsed
-        || game._rangerNamePath
-        || game._rogueExplorePath
-        || game._rogueChargenPath
-        || game.flags?.suppress_alert === '3.3.1');
-    if (preserveMap) {
-        game._pending_message = '';
-        d.clearRow(0);
-        d.clearRow(1);
-        for (let row = 2; row <= 6; row++)
-            putLine(21, row, ' '.repeat(59));
-    } else if (dec) {
-        d.clearScreen();
-    } else {
-        game._pending_message = '';
-        await docrt();
-        await bot();
-        await flush_screen(1);
-        for (let row = 0; row <= 6; row++) d.clearRow(row);
-    }
+    // tty_end_menu() derives a 59-column tutorial window (content plus menu
+    // margins) from its longest row.  tty_display_nhwindow() therefore puts
+    // the recorded .nethackrc menu boundary at zero-based x20: its leading
+    // blank occupies x20 and text starts at x21.  It is a corner overlay
+    // regardless of role or symset, so retain the actual generated map west
+    // of that boundary instead of synthesizing a border.
+    game._pending_message = '';
+    d.clearRow(0);
+    d.clearRow(1);
+    for (let row = 2; row <= 6; row++)
+        putLine(20, row, ' '.repeat(60));
     putLine(21, 0, 'Do you want a tutorial?', 1);
     putLine(21, 2, 'y - Yes, do a tutorial');
-    if (dec && (game.flags?.suppress_alert === '3.3.1' || preserveMap)) {
-        putLine(21, 3, 'n - No, just start play');
-        putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
-        putLine(21, 6, '(end)');
-    } else if (dec) {
-        putLine(19, 3, '┌ n - No, just start play');
-        putLine(19, 4, '│');
-        putLine(19, 5, '· Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
-        putLine(19, 6, '└ (end)');
-    } else {
-        putLine(21, 3, 'n - No, just start play');
-        putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
-        putLine(21, 6, '(end)');
-    }
+    putLine(21, 3, 'n - No, just start play');
+    putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
+    putLine(21, 6, '(end)');
     if (game._knightCombatPath)
         putLine(17, 6, '---');
     putStatusLines();
     d.setCursor(27, 6);
     let key = await nhgetch();
     while (key !== 121 && key !== 110 && key !== 27) {
-        if (dec && (game.flags?.suppress_alert === '3.3.1' || preserveMap)) {
-            d.clearRow(6);
-            d.clearRow(7);
+        // select_menu() handles ordinary invalid accelerators in place.  Its
+        // outer ask_do_tutorial() loop is re-created only when Space/Return
+        // dismisses PICK_ONE without a selection; that second pass adds the
+        // explanatory row while preserving the same corner underlay.
+        if (key === 32 || key === 10 || key === 13) {
+            putLine(20, 6, ' '.repeat(60));
+            putLine(20, 7, ' '.repeat(60));
             putLine(21, 6, "(Please choose 'y' or 'n'.)");
             putLine(21, 7, '(end)');
             d.setCursor(27, 7);
