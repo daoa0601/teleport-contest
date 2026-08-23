@@ -13597,3 +13597,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   managed engine-only corpus remains44/44 and advances to1,308/1,483, with
   seed0014 at906/995 and no incidental count changes.  Normal scoring and
   publication remain deferred.
+- Commit02d46a0 restores `dotravel()`'s successful first-domove tail cadence.
+  Input595 proved that every existing travel frame was one state phase early;
+  adding the source-owned frame realigns actors, hero steps, messages and
+  cursors without touching pathfinding or getpos.  A strict audit closes all
+  six seed0014 travel groups at100/100 full frames/cursors and makes the session
+  995/995 animation-complete.  Seed4500 input784 independently rises1/3 to3/3.
+  The managed engine-only corpus remains44/44 and advances by91 slots to
+  1,399/1,483; seed4500 reaches24/37.  No normal scorer, push, workflow or
+  hidden judge ran.

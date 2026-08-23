@@ -1,31 +1,32 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,308/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,399/1,483 animation frames
 
-Measured 2026-08-24 00:24 EEST from commit `b486bfe`, after aligning delayed
-armor state and retained prompts:
+Measured 2026-08-24 00:28 EEST from commit `02d46a0`, after restoring selected
+travel's first successful-domove cadence:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **35+0.31 ms/turn** (R² 0.819).
-One owned process completed in **12.01 seconds** at **270,974,976 bytes maximum
+The engine-only gate is **44/44 exact** at **41+0.35 ms/turn** (R² 0.820).
+One owned process completed in **13.77 seconds** at **273,350,656 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,308/1,483** exact frames.  Fourteen sessions
+Supplemental animation is now **1,399/1,483** exact frames.  Fifteen sessions
 are complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
-**49/49**, seed0002 **128/128**, seed0016 **4/4**, seed0030 **40/40**,
+**49/49**, seed0014 **995/995**, seed0002 **128/128**, seed0016 **4/4**,
+seed0030 **40/40**,
 seed0104 **2/2**,
 seed0108 **4/4**, seed0116 **8/8**, seed0360 **12/12**, seed0361 **10/10**,
 seed0383 **1/1**, seed0900 **3/3**, and seed5002 **8/8**.  Seed0900 remains a
 bounded replay carrier, not a generalized Tourist actor/occupation
-implementation.  Major partial carriers are seed0014
-**906/995**, seed0007 **53/58**, and
-seed4500 **22/37**.  These counts are supplemental and do not alter the contest
-pass result.  The input306 cold-ray and inputs560/561 rolling-boulder
-regressions additionally prove exact native-to-JavaScript frame counts and
-cursors; this matters because the supplemental scorer neither compares
-cursors nor penalizes extra contestant frames.
+implementation.  Seed0014 is no longer partial; the largest remaining reached
+partials include seed0007 **53/58** and seed4500 **24/37**.  These counts are
+supplemental and do not alter the contest pass result.  Seed0014's cold-ray,
+rolling-boulder, delayed-armor and six selected-travel regressions prove exact
+native-to-JavaScript frame counts and cursors; this matters because the
+supplemental scorer neither compares cursors nor penalizes extra contestant
+frames.
 
 The normal frozen-overlay gate was not rerun after this animation-only block;
 its latest completed result remains the **44/44** commit-`0dc1776` checkpoint

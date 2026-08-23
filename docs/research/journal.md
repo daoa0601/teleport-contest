@@ -92520,3 +92520,82 @@ automatic travel steps and cursor ownership separately.  No normal corpus,
 push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:26 EEST, journal block 3084] {#seed0014 #input595 #travel #dotravel #domove #runmode #phase-alignment #source-diagnosis #prediction}
+
+**First-divergence alignment:** input595 has15 native frames and14 JavaScript
+frames.  The mismatch is not heterogeneous within this input: native frame0
+shows the first selected travel step already completed while the pet and other
+actors retain pre-monster-turn positions.  Every JavaScript frame `i` then
+matches the state phase of native frame `i+1`: actor movement, later hero
+steps, the crashing-rock line, pet movement and final flounder state all form
+the same ordered sequence one slot early.
+
+**Source owner:** native `hack.c:domove()` unconditionally reaches its tail
+`runmode_delay_output()` while travel `context.run` is live.  JavaScript's
+automatic `continueRun()` has pre- and post-step captures, but `dotravel()`
+performs the selection command's first `domove()` without the post-step capture.
+Its first observed frame therefore occurs only after the intervening actor and
+global turn, at the pre-second-step capture.
+
+**Prediction and guard:** capture one post-step runmode frame after
+`dotravel()`'s successful first move, before clearing travel1 or running actor
+time.  The new frame should match native0; the existing14 should shift to
+native1--14, closing input595 at15/15 without changing its731-call RNG slice or
+boundary.  Audit all other travel groups for exact positional shifts before
+claiming a generic gain; do not add a getpos-entry frame or alter actor order.
+
+---
+
+### [2026-08-24 00:27 EEST, journal block 3085] {#seed0014 #travel #dotravel #runmode #phase-alignment #animation-complete #bounded-acceptance}
+
+**Implementation and measured focused effect:** `dotravel()` now captures the
+same successful-domove tail cadence as automatic `continueRun()`.  Seed0014
+jumps from906/995 to **995/995**, so the effect is the entire remaining89-frame
+travel portfolio, not only input595.  This is one emitted frame per selected
+travel transaction plus positional realignment of every later frame in that
+transaction.
+
+**Full-frame audit beyond scorer evidence:** inputs595/649/651/653/655/666 have
+native/JavaScript counts15/15,13/13,19/19,23/23,21/21 and9/9.  Their combined
+**100** native frames now match every screen and cursor, and
+every RNG/boundary witness remains exact.  The scorer gain is89 because eleven
+slots were already positionally exact despite their shifted transactions.  The
+new durable test compares each frame separately with bounded first-cell
+failures rather than one flattened transcript.  Six independent travel
+controls pass: seed0004 first/repeat travel, seed0360 quest/getpos and
+travel-stop, plus seed4500 punished travel.  No getpos, actor-order or
+pathfinding change was needed.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected seed0014 is animation-complete995/995 and corpus
+1,397/1,483 while public RNG/boundaries remain44/44.  Any cross-session count
+movement must be reported separately.
+
+---
+
+### [2026-08-24 00:29 EEST, journal block 3086] {#seed0014 #seed4500 #travel #animation-complete #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `02d46a0` adds only the successful selected
+travel first-step cadence and a six-group full-frame/cursor regression.
+Seed0014 is now **995/995 animation-complete**, with100/100 travel-group frames
+exact in addition to its previously closed owners.  Six independent travel
+controls pass.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**41+0.35 ms/turn** (R²0.820) in **13.77 seconds** at **273,350,656 bytes
+maximum RSS**.  Total animation advances from1,308 to **1,399/1,483**.  The
+two slots beyond the1,397 prediction are localized to seed4500 input784, whose
+selected-travel group rises from1/3 to3/3; seed4500 becomes24/37.  No other
+session count changes.  The verifier exited and no matching live process
+remains.
+
+**Decision and next blocker:** accept the cross-session gain because it is the
+same native `dotravel -> domove -> runmode_delay_output` boundary and the
+seed4500 travel controls remain exact.  The next largest live partial is
+seed4500's13 residual frames, but they span unrelated inputs211/222/233/274,
+842,852,1136 and1211.  Re-inventory those by source owner before editing;
+seed0007's five replay-state frames remain a separate debt class.  No normal
+corpus, push, workflow, hidden judge or publication ran.
+
+---

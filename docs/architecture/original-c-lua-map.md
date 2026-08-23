@@ -34622,3 +34622,42 @@ closes represented delayed helmet/boots donning under quiet actor work;
 interruptions, theft during donning, cursed replacements, armor destruction,
 new-message paging, nondefault runmodes and every delayed removal variant
 remain controls.  Lua contributes none.
+
+## 952. Selected travel's first `domove()` owns a post-step cadence
+
+~~~mermaid
+flowchart TD
+    Getpos["dotravel getpos selects destination"] --> Start["install run mode 8 and travel target"]
+    Start --> Path["findtravelpath selects first direction"]
+    Path --> Move1["domove performs first hero step"]
+    Move1 --> Delay1["domove tail runmode_delay_output"]
+    Delay1 --> Actors["monster/global elapsed-turn work"]
+    Actors --> Pre["automatic-core pre-step cadence"]
+    Pre --> MoveN["continueRun performs next travel step"]
+    MoveN --> Post["automatic post-step cadence"]
+    Post --> Actors
+    Lua["Lua owns only first-use getpos tutorial text"] -.-> Getpos
+~~~
+
+Native `cmd.c:dotravel()` invokes ordinary `domove()` for the selected
+destination's first step.  `hack.c:domove()` reaches `runmode_delay_output()`
+at its tail while `context.run == 8`, before monster/global time.  Later
+automatic cores additionally have the allmain pre-step delay and the same
+domove post-step delay.  Omitting only the first post-step frame shifts every
+later actor, hero, message and cursor state one positional slot earlier.
+
+JavaScript's `dotravel()` now captures a successful first move before clearing
+`travel1`; blocked first attempts remain time-consuming but emit no invented
+movement frame.  The existing `continueRun()` pre/post cadence, pathfinding,
+getpos selection and actor order are unchanged.
+
+Seed0014 inputs595/649/651/653/655/666 close at **100/100** complete
+frames/cursors and make the session **995/995** animation-complete.  Seed4500
+input784 independently rises from1/3 to3/3, taking that session to24/37.  The
+corpus advances by91 matched slots to1,399/1,483: six selected-travel
+transactions emit six frames, while shifted existing frames account for the
+larger positional gain.  This closes represented successful first steps in
+default leap mode; blocked travel, other runmodes, path interruption, target
+arrival edge cases, ball/chain drag, traps and getpos tutorial variants remain
+controls.  Lua owns first-use tutorial content but no travel movement, cadence,
+actor scheduling or cursor timing.
