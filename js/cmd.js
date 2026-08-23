@@ -10202,6 +10202,7 @@ async function dotakeoff() {
     }
 
     let object;
+    let inventoryPrompt = null;
     if (worn.length === 1) {
         [object] = worn;
     } else {
@@ -10209,6 +10210,7 @@ async function dotakeoff() {
             candidate.class === 'Armor' || candidate.oclass === 3)
             .map(candidate => candidate.invlet).join('');
         const prompt = `What do you want to take off? [${armorLetters} or ?*] `;
+        inventoryPrompt = prompt;
         const selection = await promptInventoryObject(prompt, worn);
         if (selection.cancelled) {
             game.context.move = 0;
@@ -10291,6 +10293,8 @@ async function dotakeoff() {
     // immediate zero-delay armor removal leaves getobj's selector as the
     // physical topline even though the timed state change has committed.
     game._pending_message = '';
+    if (!removalMessage && game.flags?.verbose === false && inventoryPrompt)
+        game._retained_message = inventoryPrompt.trimEnd();
     if (displacementOffMessage)
         await plineWithContinuation(displacementOffMessage);
     if (removalMessage)
