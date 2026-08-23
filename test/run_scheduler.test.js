@@ -10573,6 +10573,58 @@ test('seed0012 ambient quantum mechanic preserves Schrodinger probe',
         assert.equal(game.u.uhp, 140);
     });
 
+test('seed0012 cave spider crosses web before Newt miss',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 12,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 317),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 318);
+        assertRngSliceExact(result.getRngSlices()[317], [
+            'rn2(5)=0', 'rn2(8)=4', 'rn2(5)=4',
+            'rn2(5)=1', 'rn2(8)=0', 'rn2(16)=7',
+            'rn2(1000)=924', 'rn2(5)=1',
+            'rn2(5)=0', 'rn2(5)=2', 'rn2(5)=0',
+            'rn2(5)=0', 'rn2(5)=3', 'rn2(10)=5',
+            'rn2(5)=2', 'rn2(5)=2',
+            'rn2(1000)=657', 'rn2(5)=3',
+            'rn2(5)=1', 'rn2(5)=0', 'rnd(20)=18',
+            'rn2(5)=0', 'rn2(8)=3', 'rn2(5)=1',
+            'rn2(12)=5', 'rn2(12)=6', 'rn2(12)=3',
+            'rn2(12)=3', 'rn2(12)=3', 'rn2(12)=5',
+            'rn2(12)=6', 'rn2(12)=6', 'rn2(12)=4',
+            'rn2(25)=24', 'rn2(100)=56', 'rn2(400)=59',
+            'rn2(20)=15', 'rn2(67)=31',
+        ], 'seed0012 webmaker/Newt miss RNG');
+        assert.equal(decodedTopline(result.getScreens()[317]),
+            'The newt just misses!');
+        assert.equal(decodedRow(result.getScreens()[317], 23),
+            'Dlvl:1 $:1031 HP:141(159) Pw:250(250) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[317], [53, 10, 1]);
+
+        const spider = game.level.monsters.find(monster =>
+            monster.m_id === 75);
+        assert.ok(spider);
+        assert.equal(spider.mnum, 94);
+        assert.equal(spider.mtrapped || 0, 0);
+        assert.deepEqual([spider.mx, spider.my], [21, 7]);
+        const newt = game.level.monsters.find(monster =>
+            monster.m_id === 23);
+        assert.ok(newt);
+        assert.equal(newt.mnum, 322);
+        assert.equal(newt.mhp, 4);
+        assert.equal(game.u.uhp, 141);
+        assert.equal(game.u.udg_cnt, 138);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

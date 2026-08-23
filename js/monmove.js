@@ -5678,7 +5678,7 @@ function triggerMonsterTrap(
     if (trap.ttyp === WEB) {
         // trap.c:trapeffect_web(): webmakers cross safely; an ordinary
         // monster becomes trapped without damage or an additional RNG draw.
-        if (monster.mnum === 96) return null;
+        if ([94, 96].includes(monster.mnum)) return null;
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
