@@ -4899,7 +4899,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (cansee(monster.mx, monster.my))
                         map_invisible(monster.mx, monster.my);
                 }
-                game._knownObjectTypes?.add(misc.object.otyp);
+                if (!game._knownObjectTypes?.has(misc.object.otyp)) {
+                    exerciseAttribute(4, true);
+                    recordObjectKnowledge(misc.object.otyp);
+                }
             } else if (actorWasSeen && !monster.minvis) {
                 await queueTurnMessage(
                     `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,

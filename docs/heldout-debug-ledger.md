@@ -12848,3 +12848,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   forcing hostility and exposed warning3 at inputs106/107.  Birth-attitude
   projection now closes all 127 states, ending HP33/163 with twelve live
   monsters.  The selected Wizard gate rises to 8/8 fixture-disabled.
+- Seed16 closes summoned-monster potion precheck and invisibility discovery
+  through input113 call6.  Input112 owns rn2(5)=3,rn2(13)=8 before the visible
+  smoky-potion pager.  Input113 begins with Wisdom rn2(19)=5 after the
+  cannot-see line, and the Elvenking is permanently invisible with the potion
+  consumed and type known.  The selected Wizard gate rises to 9/9
+  fixture-disabled.  The next gap is the fire-elemental hit's missing d(3,6)
+  and cancellation tail; triggered occupants and alternate potion visibility
+  remain open.

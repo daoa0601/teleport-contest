@@ -957,6 +957,29 @@ function heroCanReleaseWeapon(object) {
     return !!object && !object.cursed;
 }
 
+function probeMonsterPotionOccupant(
+    object, state, random = rn2, calls = [],
+) {
+    if (!object || (object.oclass ?? object.class) !== POTION_CLASS)
+        return null;
+    const appearance = state?.objectDescriptions?.[object.otyp]
+        ?? game.objectDescriptions?.[object.otyp]
+        ?? OBJECT_DESCRIPTIONS[object.otyp];
+    const occupantMnum = appearance === 'milky' ? 287
+        : appearance === 'smoky' ? 315 : null;
+    if (occupantMnum === null
+        || ((state?.mvitals?.[occupantMnum]?.mvflags ?? 0) & G_GONE)) {
+        return null;
+    }
+    const born = state?.mvitals?.[occupantMnum]?.born ?? 0;
+    const sides = 13 + 2 * born;
+    return {
+        appearance,
+        occupant: appearance === 'milky' ? 'ghost' : 'djinni',
+        triggered: recordRandom(random, calls, sides) === 0,
+    };
+}
+
 // C muse.c find_misc()/use_misc().  Generated JavaScript inventories retain
 // chronological acquisition order while C's minvent chain is newest-first.
 // Scan backward to preserve observable per-object RNG, but retain each older
@@ -1033,6 +1056,18 @@ function useMonsterMiscItem(monster, state, random, calls) {
         }
     }
     if (!selected) return null;
+
+    const occupantProbe = probeMonsterPotionOccupant(
+        selected.object, state, random, calls,
+    );
+    if (occupantProbe?.triggered) {
+        return {
+            ...selected,
+            kind: 'potion-occupant',
+            ...occupantProbe,
+            deferredOccupant: true,
+        };
+    }
 
     if (selected.kind === 'potion-gain-level') return selected;
     if (selected.kind === 'potion-invisibility') {
@@ -1207,22 +1242,16 @@ function useNoMoveHealingPotion(
     // before mquaffmsg() and the healing roll.  The nonzero result is the
     // ordinary potion path.  Occupant creation remains an explicit deferred
     // boundary rather than silently skipping the mandatory probe.
-    const appearance = state?.objectDescriptions?.[object.otyp]
-        ?? game.objectDescriptions?.[object.otyp]
-        ?? OBJECT_DESCRIPTIONS[object.otyp];
-    const occupantMnum = appearance === 'milky' ? 287
-        : appearance === 'smoky' ? 315 : null;
-    if (occupantMnum !== null
-        && !((state?.mvitals?.[occupantMnum]?.mvflags ?? 0) & G_GONE)) {
-        const born = state?.mvitals?.[occupantMnum]?.born ?? 0;
-        if (recordRandom(random, calls, 13 + 2 * born) === 0) {
-            return {
-                kind: 'potion-healing',
-                object,
-                occupant: appearance === 'milky' ? 'ghost' : 'djinni',
-                deferredOccupant: true,
-            };
-        }
+    const occupantProbe = probeMonsterPotionOccupant(
+        object, state, random, calls,
+    );
+    if (occupantProbe?.triggered) {
+        return {
+            kind: 'potion-healing',
+            object,
+            occupant: occupantProbe.occupant,
+            deferredOccupant: true,
+        };
     }
 
     const dice = 6 + 2 * (object.blessed ? 1 : object.cursed ? -1 : 0);

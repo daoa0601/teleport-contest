@@ -21,7 +21,7 @@ import {
     CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET,
     LEATHER_GLOVES, LONG_SWORD,
     DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, OIL_LAMP,
-    POT_GAIN_LEVEL, RING_MAIL, ROCK, RUBY, SLING,
+    POT_GAIN_LEVEL, POT_INVISIBILITY, RING_MAIL, ROCK, RUBY, SLING,
     SPEAR,
     TOUCHSTONE,
     WORTHLESS_PIECE_OF_RED_GLASS,
@@ -9785,6 +9785,47 @@ test('seed0013 summon projects birth attitude before forcing hostility',
             12);
         assert.equal(game.u.uhp, 33);
         assert.equal(game.u.uhpmax, 163);
+    });
+
+test('seed0016 smoky invisibility potion probes occupant before quaffing',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 16,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 113),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 114);
+        assertRngSliceExact(result.getRngSlices()[112], [
+            'rn2(5)=3', 'rn2(13)=8',
+        ], 'seed0016 invisibility-potion occupant precheck RNG');
+        assert.equal(decodedTopline(result.getScreens()[112]),
+            'The Elvenking drinks a smoky potion!--More--');
+        assertRngSliceExact(result.getRngSlices()[113].slice(0, 7), [
+            'rn2(19)=5', 'rn2(5)=1', 'rn2(5)=2', 'rn2(5)=1',
+            'rn2(5)=3', 'rn2(5)=3', 'rnd(20)=5',
+        ], 'seed0016 invisibility discovery and actor prefix RNG');
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            'Suddenly you cannot see the Elvenking.  The fire elemental hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[113], 23),
+            'Dlvl:1 $:1668 HP:139(155) Pw:282(282) AC:8 Xp:30');
+        const elvenking = game.level.monsters.find(monster =>
+            monster.mnum === 269);
+        assert.ok(elvenking);
+        assert.equal(elvenking.minvis, 1);
+        assert.equal(elvenking.perminvis, 1);
+        assert.equal(elvenking.minvent.some(object =>
+            object.otyp === POT_INVISIBILITY), false);
+        assert.equal(game._knownObjectTypes.has(POT_INVISIBILITY), true);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

@@ -87403,3 +87403,37 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 12:12 EEST, journal block 2905] {#seed16 #elvenking #potion-invisibility #precheck #smoky #djinni #makeknown #deferred-continuation #bounded-prefix #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and earliest divergence:** seed16 is exact through input111.
+Input112 native owns rn2(5)=3 from distfleeck and rn2(13)=8 from
+muse.c:precheck before publishing the Elvenking's smoky-potion line.  JS
+selected the potion but skipped precheck and stopped after the first call.
+
+**Prediction and source evidence:** precheck() applies to every monster-used
+potion, not just healing.  Milky and smoky appearances probe ghost/djinni
+occupants before mquaffmsg(); a nonzero result proceeds normally.  After the
+drink pager, mon_set_minvis publishes the cannot-see line and makeknown
+credits Wisdom, predicting input113's leading rn2(19)=5.
+
+**Implementation and measured effect:** one shared appearance/birth-count
+probe now serves ordinary misc potions and no-move healing.  A triggered
+occupant is retained as a named continuation; the selected nonzero path
+quaffs normally.  Invisibility discovery now records makeknown's Wisdom draw
+before object knowledge.  Seed16 matches through **input113 call6**, with the
+Elvenking permanently invisible, potion consumed and type known.  Nine
+selected fixture-disabled Wizard controls pass **9/9** in **0.58 seconds** at
+**142,950,400 bytes maximum RSS**; all managed processes exited.
+
+**Adversarial control and next blocker:** the neighboring seed0361 gain-level
+test is currently red at input150 before its potion-use pager, beginning with
+an extra rn2(100).  Its live gain-level appearance is purple-red, so the new
+milky/smoky probe does not execute there; this is not evidence that the new
+precheck path passes that broader control.  Keep it explicitly red for later
+localization.  Seed16's next source call after the exact prefix is fire
+elemental d(3,6)=12 followed by rn2(10)=9.  Section870 maps the potion owner;
+Lua owns none.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

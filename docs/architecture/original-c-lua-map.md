@@ -31438,3 +31438,36 @@ temporary bridge.  Input108's ordinary refresh reveals the warning naturally.
 All 127 seed13 states are exact.  Initially hostile births, peaceful final
 summons, tame/hilite projection, invisible sensing, non-warning heroes and
 non-nasty constructors remain separate controls.
+
+## 870. Monster potion precheck precedes every quaff message
+
+~~~mermaid
+flowchart TD
+    Select["find_misc selects potion"] --> Appearance["precheck inspects shuffled appearance"]
+    Appearance --> Milky["milky probes ghost birth chance"]
+    Appearance --> Smoky["smoky probes djinni birth chance"]
+    Smoky --> Gate["seed16 rn2(13)=8 rejects occupant"]
+    Gate --> Quaff["mquaffmsg publishes visible potion line"]
+    Quaff --> Pager["older actor line forces tty pager"]
+    Pager --> Invis["mon_set_minvis commits permanent invisibility"]
+    Invis --> Feedback["publish cannot-see or transparency feedback"]
+    Feedback --> Learn["makeknown exercises Wisdom rn2(19)"]
+    Learn --> Tail["resume later actors"]
+    Trigger["zero occupant gate"] -.-> Future["ghost/djinni creation remains explicit"]
+    Lua["Lua owns no potion, occupant, or tty phase"] -.-> Select
+~~~
+
+Seed16 input112 belongs to a summoned Elvenking using a smoky invisibility
+potion.  After distfleeck rn2(5)=3, source precheck spends rn2(13)=8 before
+the drink line.  Input113 acknowledges that pager, installs invisibility,
+publishes Suddenly you cannot see the Elvenking, then makeknown exercises
+Wisdom with rn2(19)=5 before the next actor.
+
+The occupant probe is now shared by ordinary miscellaneous potions and the
+existing no-move healing path.  A nonzero gate proceeds with normal potion
+semantics; a zero gate returns a named occupant continuation rather than
+silently quaffing.  Seed16 is exact through input113 call6.  Its next
+independent gap is the fire-elemental hit at call7, where source rolls
+d(3,6)=12 and electric/fire cancellation before the pager tail.  Triggered
+ghost/djinni occupants, cursed invisibility, unseen quaffing, See Invisible,
+speed/gain-level appearances and potion stacks remain separate controls.
