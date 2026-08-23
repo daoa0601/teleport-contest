@@ -34278,3 +34278,36 @@ advancing the full session to **19/40** animation with every input boundary
 unchanged.  This closes the reached sleeping-potion head impact.  Caught
 potions, other potion effects, stacks, intervening actors, hallucinated bottle
 names, and fatal potion impacts remain open.  Lua contributes none.
+
+## 943. Magic resistance owns the shared 21-frame shield-static display
+
+~~~mermaid
+flowchart TD
+    Wand["monster zaps wand of striking"] --> Resist["mbhitm detects hero magic resistance"]
+    Resist --> Seen["record seenMagicResistance and identify effect"]
+    Seen --> Visible{"resisted square visible and sparkle enabled?"}
+    Visible -->|"yes"| Cycle["display shield_static 21 entries"]
+    Cycle --> Flush["show glyph, flush, delay with hero cursor"]
+    Flush --> Cycle
+    Cycle --> Restore["newsym restores hero"]
+    Visible -->|"no"| Restore
+    Restore --> Boing["queue Boing and resume monster transaction"]
+    Lua["Lua owns no resistance or shield display"] -.-> Resist
+~~~
+
+`display.c:shieldeff()` is not wand-specific.  Its fixed array is
+`0 # @ # 0 # *` repeated three times; every entry uses bright-blue `HI_ZAP`,
+flushes immediately, and owns one delay.  Only after all21 frames does
+`newsym()` restore the protected square and the effect owner continue with its
+message.
+
+JavaScript implements this at the display boundary and invokes it from the
+resisted monster striking-wand continuation before `Boing!`.  No RNG or input
+boundary is introduced: animation observes the already pending zap line and
+unchanged status with the cursor on the hero.
+
+Seed0030 segment3/input284 pins all **21/21** frames and completes that
+session at40/40 animation while preserving1,953/1,953 input boundaries.  This
+closes visible striking-wand resistance with sparkle enabled.  Invisible
+targets, disabled sparkle, spell resistance, explosion-mask shield overlays,
+and alternate symbol sets remain separate controls.  Lua contributes none.

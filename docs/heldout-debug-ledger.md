@@ -13523,3 +13523,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   reaches19/40 and the managed corpus remains44/44 with1,117/1,483 frames.
   The first cyan-glyph/dirty-cursor attempt matched only1/3 and regressed one
   public screen, so it was rejected.  The long-wand21 group remains separate.
+- Commit0ca58c6 ports shared `display.c:shieldeff()`: the bright-blue
+  `0 # @ # 0 # *` cycle repeats three times, flushes/delays each entry, and
+  restores the hero before resisted-effect prose.  Seed0030's striking-wand
+  group closes21/21 and the full session becomes40/40 animation.  The managed
+  corpus remains44/44 with1,138/1,483 frames.  Invisible, sparkle-disabled,
+  spell, explosion-overlay and alternate-symset shield controls remain open.

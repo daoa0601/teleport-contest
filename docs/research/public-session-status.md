@@ -1,24 +1,25 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,117/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,138/1,483 animation frames
 
-Measured 2026-08-23 23:21 EEST from commit `b08a9aa`, after completing the
-sleeping-potion flight/impact continuation:
+Measured 2026-08-23 23:25 EEST from commit `0ca58c6`, after porting the shared
+magic shield effect and completing seed0030 animation:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **35+0.31 ms/turn** (R² 0.828).
-One owned process completed in **11.96 seconds** at **273,973,248 bytes maximum
+The engine-only gate is **44/44 exact** at **35+0.31 ms/turn** (R² 0.829).
+One owned process completed in **11.89 seconds** at **271,548,416 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,117/1,483** exact frames.  Nine sessions are
+Supplemental animation is now **1,138/1,483** exact frames.  Ten sessions are
 complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
-**49/49**, seed0104 **2/2**, seed0108 **4/4**, seed0360 **12/12**, seed0361 **10/10**,
+**49/49**, seed0030 **40/40**, seed0104 **2/2**, seed0108 **4/4**,
+seed0360 **12/12**, seed0361 **10/10**,
 seed0383 **1/1**, and
 seed0900 **3/3**.  Seed0900 remains a bounded replay carrier, not a generalized
 Tourist actor/occupation implementation.  Major partial carriers are seed0014
-**833/995**, seed0002 **59/128**, seed0007 **53/58**, seed0030 **19/40**, and
+**833/995**, seed0002 **59/128**, seed0007 **53/58**, and
 seed4500 **13/37**.
 These counts are
 supplemental and do not alter the contest pass result.

@@ -91915,3 +91915,56 @@ editing; determine whether it is one ray plus explosion transaction or multiple
 distinct owners hidden under the same input284 continuation.
 
 ---
+
+### [2026-08-23 23:23 EEST, journal block 3060] {#seed0030 #segment3 #input284 #striking-wand #magic-resistance #shieldeff #animation #source-diagnosis #prediction}
+
+**Frame inventory correction:** input284's21 frames are neither ray traversal
+nor explosion.  Only the hero cell changes, cycling bright-blue
+`0 # @ # 0 # *` three times with a fixed hero cursor and the pending
+`Maganasipi zaps a long wand!` topline.  The RNG slice contains only
+`use_offensive()` selection plus later ordinary monster attack; no buzz or
+explode source calls occur.
+
+**Source owner:** the long wand is a wand of striking resisted by hero magic
+resistance.  `muse -> mbhitm -> resist -> display.c:shieldeff()` shows the
+21-entry `shield_static[]` array, flushing and delaying each entry, then
+`newsym()` restores the hero before `Boing!` is queued.  JavaScript already
+sets seenMagicResistance and effect prose but omits shieldeff.
+
+**Prediction and boundary:** port shieldeff as a reusable display owner and
+invoke it before the resisted striking-wand message.  Segment3/input284 should
+match all21 frames/cursors and complete seed0030 at40/40 animation without
+changing its RNG or1,953 input boundaries.  Preserve the source sequence for
+future spell/explosion resistance users rather than embedding21 frames in the
+session bridge.
+
+---
+
+### [2026-08-23 23:25 EEST, journal block 3061] {#seed0030 #segment3 #striking-wand #magic-resistance #shieldeff #implementation #engine-only #44-of-44 #animation-complete #architecture #process-safety}
+
+**Implementation:** commit `0ca58c6` adds `display.js:shieldeff()` with the
+source21-entry shield-static cycle, bright-blue glyphs, one flush/delay per
+entry, fixed hero cursor, and final `newsym()` restoration.  The resisted
+monster striking-wand branch calls it after resistance is known and before
+queuing `Boing!`.
+
+**Evidence:** seed0030 segment3/input284 matches all **21/21** frame screens and
+cursors with its pending zap topline, unchanged HP/status, and restored hero
+boundary.  The durable striking-shield, sleeping-potion and gas-spore controls
+pass **3/3** in **0.94 seconds**.  The complete ten-segment session is now exact
+at105,529/105,529 RNG,1,953/1,953 screens/cursors, and **40/40 animation**.
+
+**Acceptance and measured effect:** one managed engine-only corpus passes
+**44/44** at **35+0.31 ms/turn** (R²0.829) in **11.89 seconds** at
+**271,548,416 bytes maximum RSS**.  Supplemental animation rises to
+**1,138/1,483** and ten public sessions now have complete animation channels.
+No normal corpus, push, workflow, hidden judge, or publication ran.
+
+**Boundary and next priority:** shieldeff is shared display behavior, but only
+the visible striking-wand resistance carrier is closed.  Invisible resistance,
+spell resistance, explosion shield overlays, `sparkle:false`, and alternate
+symsets remain controls.  The next block should inventory the remaining small
+generic groups (seed0016/0060 four each) before revisiting seed0007's replay-
+state five or seed0014's large162-frame residual.
+
+---
