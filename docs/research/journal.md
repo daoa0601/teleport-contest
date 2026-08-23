@@ -90368,3 +90368,53 @@ remain open.  Every process exited.  No full corpus, public-status rewrite,
 hidden judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-24 00:32 EEST, journal block 2997] {#seed52 #fog-cloud #visible-region #newsym #display-precedence #mon-overrides-region #full-screen #earliest-divergence #architecture #priority}
+
+**Final screen residual:** input761 has no visible region at fog91's square and
+both engines draw monster glyph `v`.  At input762 fog91 remains (18,10) but a
+new harmless gas region covers that cell.  Native draws region glyph `#` from
+762 through792; JavaScript continues drawing `v`.  RNG, cursor, terrain,
+monster position and region state are already exact.
+
+**Source owner and prediction:** native `newsym()` queries `visible_region_at()`
+before ordinary monster projection.  `mon_overrides_region()` permits sensed or
+warned monsters, plus adjacent otherwise-visible monsters, to win; a distant
+unsensed fog actor does not.  JavaScript checks the hero and monster before any
+region layer.  Add the visible-region layer ahead of living projection and the
+reached sensed/adjacent exceptions.  Input762 should repaint `#` at (18,10) and
+close all 31 residual screens without touching RNG or state.
+
+**Decision:** fix display ownership rather than suppressing fog91 or altering
+region lifetime.  Assert the 761->762 glyph transition and full final screen
+parity.  Animation frames remain a separate channel.  No corpus, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 00:43 EEST, journal block 2998] {#seed52 #fog-cloud #visible-region #newsym #display-precedence #outcome3 #complete-replay #engine-only #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and final carrier acceptance:** commit `376a2b1` adds native
+visible-region precedence before ordinary living projection, with reached
+sensed/warning/adjacent overrides, and a 763-state regression for the input761
+`v` to input762 `#` transition.  Fog91 remains (18,10); covering gas is visible,
+ttl8.  The fix changes no RNG, cursor or game state.
+
+**Complete engine-only evidence:** seed52 now reaches **9,928/9,928 RNG calls,
+792/793 scorer screens and 793/793 cursors** in **0.37 seconds** at
+**135,020,544 bytes maximum RSS**.  Full decoded-cell comparison confirms every
+gameplay screen input3--792 is exact; input2's independent tutorial cell is the
+sole screen miss.  Native animation remains **0/40**.  Outcome3's zero-affected
+dispatch/reset and the shared nonempty wake owner are accepted independently of
+the display fix.
+
+**Controls and remaining work:** focused fixture-disabled controls pass
+**11/11** in **0.84 seconds** at **229,523,456 bytes maximum RSS**.  Expanded
+controls pass **59/59** in **1.86 seconds** at **351,436,800 bytes maximum
+RSS**.  Section919 and the ledger close the C/JavaScript display layer; Lua owns
+only coordinates.  Outcome4 nasty, tutorial projection and the 40 native
+animation groups remain open.  Every process exited.  No full corpus, public-
+status rewrite, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---

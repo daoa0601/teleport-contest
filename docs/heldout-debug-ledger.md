@@ -13332,3 +13332,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   screens762--792 differ only by fog region/actor glyph precedence; outcome4
   and 40 animation groups remain open.  Focused/expanded gates pass 10/10 and
   58/58.
+- Seed52's final 31-screen residual was display precedence, not actor state.
+  Native newsym shows visible gas before an ordinary distant monster unless
+  that monster is sensed, warned or adjacent.  At input761 fog91 at (18,10)
+  has no covering region and draws `v`; input762 creates ttl8 gas and draws
+  `#` through the end.  Commit376a2b1 closes all gameplay screens.  Final
+  engine-core score is 9,928/9,928 RNG, 792/793 screens (input2 only), and
+  793/793 cursors; animation is0/40.  Outcome3 is closed.  Outcome4, tutorial
+  projection and animation remain open.  Focused/expanded gates pass 11/11
+  and59/59.

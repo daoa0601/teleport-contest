@@ -33391,3 +33391,37 @@ with the existing controlled-sleeper carrier covering a nonempty shared owner.
 It does not close Wizard-tower partitioning, frozen thaw success/failure inside
 intervention, outcome4 nasty, fog display precedence, or animation.  Lua has no
 ownership.
+
+## 919. Visible gas regions precede ordinary distant monster projection
+
+~~~mermaid
+flowchart TD
+    Before["seed52 input761 fog91 at18,10 without covering region"] --> Monster["newsym draws ordinary fog actor v"]
+    Monster --> Create["input762 everyturn creates visible gas region at18,10"]
+    Create --> Query["newsym queries visible_region_at before living layer"]
+    Query --> Override["mon_overrides_region tests sensing, warning, adjacency"]
+    Override --> Distant["fog91 is distant and unsensed"]
+    Distant --> Region["show_region draws gas cmap glyph hash"]
+    Region --> Persist["inputs762 to792 retain region precedence"]
+    Sensed["sensed, warned, or adjacent visible actor"] -.-> Living["living glyph overrides region"]
+    Override -.-> Sensed
+    Lua["Lua contributes physical region and actor coordinates only"] -.-> Create
+    Lua -.->|"no ownership"| Override
+~~~
+
+Native `newsym()` treats a visible gas region as a display layer before hero or
+ordinary monster glyphs.  A monster can override that layer only when sensed,
+warned, or adjacent and otherwise visible without the gas.  JavaScript formerly
+returned from its monster branch first, making distant fog clouds visible
+through their own vapor.
+
+The bounded transition keeps fog91 at (18,10): input761 shows `v`; input762
+creates a ttl8 region and shows `#` with no RNG/state change.  This closes all
+31 residual gameplay screens.  The complete seed52 carrier is now exact for
+9,928 RNG calls, all screens3--792 and all793 cursors; scorer screen792/793 is
+the independent input2 tutorial cell, and native animation remains0/40.
+
+This section closes reached gas-region versus distant-monster precedence and
+the complete outcome3 carrier's engine core.  It does not close every sensed/
+warning/adjacent region variant, non-gas region glyphs, input2 tutorial,
+outcome4 nasty, or animation.  Lua owns only coordinates.
