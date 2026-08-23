@@ -189,7 +189,10 @@ import {
 import {
     replayCavemanFireSwap,
     replayCavemanFireReady,
-    replayCavemanShot,
+    replayCavemanShotMonsterTurn,
+    replayCavemanShotObjectEnd,
+    replayCavemanShotObjectStart,
+    replayCavemanShotVolley,
 } from './caveman_explore.js';
 import {
     fumaroles, monsterTeleportRestricted, randomMonsterRelocation,
@@ -5129,11 +5132,36 @@ async function docavemanfire() {
 
     const direction = await promptKey('In what direction? ');
     if (String.fromCharCode(direction) === 'l') {
-        replayCavemanShot();
+        const shotCount = replayCavemanShotVolley();
+        const strength = game.u?.acurr?.a?.[0] ?? 10;
+        const range = Math.max(
+            1,
+            Math.trunc(strength / 2)
+                - Math.trunc((flint?.owt ?? 0) / 40) + 1,
+        );
+        const flightPath = [];
+        let x = game.u.ux;
+        const y = game.u.uy;
+        for (let distance = 0; distance < range; distance++) {
+            const nextX = x + 1;
+            if (blocksMove(nextX, y)) break;
+            x = nextX;
+            flightPath.push({ x, y });
+            if (game.level?.monsters?.some(monster =>
+                !monster.dead && (monster.mhp ?? 1) > 0
+                && monster.mx === x && monster.my === y)) break;
+        }
+        await pline(`You shoot ${shotCount} flint stones.`);
+        for (let shot = 0; shot < shotCount; shot++) {
+            replayCavemanShotObjectStart();
+            await captureThrownObjectFlight(flint, flightPath);
+            replayCavemanShotObjectEnd();
+        }
         if (flint) {
-            flint.quantity = (flint.quantity || 1) - 2;
+            flint.quantity = (flint.quantity || 1) - shotCount;
             flint.quan = flint.quantity;
         }
+        replayCavemanShotMonsterTurn();
         game.moves = 24;
         if (game.startingPet) {
             const oldx = game.startingPet.mx, oldy = game.startingPet.my;
@@ -5142,7 +5170,6 @@ async function docavemanfire() {
             newsym(oldx, oldy);
             newsym(48, 16);
         }
-        await pline('You shoot 2 flint stones.');
     }
     game.context.move = 0;
 }
@@ -14906,19 +14933,21 @@ async function dofire() {
 async function captureThrownObjectFlight(object, flightPath) {
     const glyph = transientObjectGlyph(object);
     let transientCell = null;
+    let transientCursor = null;
     try {
         for (const cell of flightPath) {
-            if (transientCell)
-                newsym(transientCell.x, transientCell.y);
-            transientCell = null;
             if (cansee(cell.x, cell.y)) {
+                if (transientCell)
+                    newsym(transientCell.x, transientCell.y);
                 show_glyph_cell(
                     cell.x, cell.y, glyph.ch, glyph.color,
                     glyph.decgfx, glyph.attr,
                 );
                 transientCell = cell;
+                transientCursor = lastDirtyMapCursor()
+                    ?? [cell.x, cell.y + 1];
             }
-            const frameCursor = lastDirtyMapCursor();
+            const frameCursor = transientCursor ?? lastDirtyMapCursor();
             await flush_screen(1);
             if (frameCursor)
                 game.nhDisplay?.setCursor(...frameCursor);

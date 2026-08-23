@@ -12263,6 +12263,52 @@ test('bounded seed0017 cadence exposes every slot while pet phases stay open',
         assert.equal(screenMatches, 20);
     });
 
+test('seed1150 sling volley retains visible flint through invisible tail',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed1150-caveman-explore-move.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            ...session,
+            moves: session.moves.slice(0, 39),
+            storage: new Map(),
+        });
+        const step = 38;
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed1150 sling volley RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            'seed1150 sling volley screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            'seed1150 sling volley cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[step];
+        const nativeFrames = session.steps[step].animation_frames;
+        assert.equal(actualFrames.length, nativeFrames.length);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed1150 sling volley frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed1150 sling volley cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0116 digging beam delays visible and invisible path cells',
     async () => {
         const session = JSON.parse(fs.readFileSync(

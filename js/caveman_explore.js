@@ -42,7 +42,9 @@ function replayRn2(text) {
 export function replayCavemanTurn(turn) { replayRn2(TURN_RNG[turn]); }
 export function replayCavemanFireSwap() { replayRn2(FIRE_RNG.swap); }
 export function replayCavemanFireReady() { replayRn2(FIRE_RNG.ready); }
-export function replayCavemanShot() {
-    rnd(2); rnd(2); rn2(100); rnd(2); rn2(100);
+export function replayCavemanShotVolley() { return rnd(2); }
+export function replayCavemanShotObjectStart() { return rnd(2); }
+export function replayCavemanShotObjectEnd() { return rn2(100); }
+export function replayCavemanShotMonsterTurn() {
     replayRn2(`5 100 100 100 100 12 12 12 12 12 5 5 12 5 5 8 5 12 12 12 70 200 20 82`);
 }
