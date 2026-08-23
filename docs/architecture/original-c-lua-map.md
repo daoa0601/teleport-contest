@@ -34125,3 +34125,40 @@ gains ten additional frames.  The full public corpus remains44/44 at input
 boundaries and reaches1,087/1,483 supplemental frames.  Counted commands with
 nondefault runmode, interruption at the cadence edge, and other occupation
 classes remain open controls.  Lua contributes none.
+
+## 939. The interrupted Tourist search exposes turns inside a bounded bridge
+
+~~~mermaid
+flowchart TD
+    Search["20s begins counted search"] --> Combat["pet attack queues combat pager at T6"]
+    Combat --> Invalid["invalid More keys consume no C source work"]
+    Invalid --> Escape["ESC resumes suspended search stack"]
+    Escape --> Kill["corpse and growth calls, remove jackal, queue kill line"]
+    Kill --> Replay["bounded SEARCH_AFTER_MORE token stream"]
+    Replay --> Tail["recognized moveloop_core turn tail"]
+    Tail --> Time["advance explicit source turn and pet projection"]
+    Time --> Cadence["shared runmode capture at T7, T14, T21"]
+    Cadence --> Replay
+    Replay --> End["T24 final pet square and input boundary"]
+    Lua["Lua owns no search, pet, or cadence logic"] -.-> Search
+~~~
+
+The native control is a real asynchronous transaction: the pager does not end
+the counted command, and invalid dismissal keys do not advance RNG, turns, or
+animation.  When ESC resumes, positive multi remains active across the rest of
+the search.  Its one-per-turn occupation cadence emits at the default leap
+multiples while the pending kill prose and status time change independently of
+the eventual T24 boundary.
+
+The JavaScript path is not yet a source port of those dog/search turns.
+`tourist_explore.js` still replays bounded RNG call shapes.  It now exposes
+recognized `moveloop_core` tails through callbacks so `detect.js` can apply the
+kill event, the three witnessed pet positions, and the shared runmode owner at
+T7/T14/T21.  This removes an opaque T6-to-T24 jump from animation observation,
+but it remains replay debt.
+
+Seed0900 matches all **3/3** animation frames and84/84 boundaries.  This is a
+carrier for tty-continuation and cadence ordering, not evidence that unseen
+Tourist pets or counted searches generalize.  Replacing `SEARCH_TO_MORE` and
+`SEARCH_AFTER_MORE` with ordinary actor/occupation scheduling remains the
+architecture completion condition.  Lua contributes none.

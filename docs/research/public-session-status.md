@@ -1,20 +1,22 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,087/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,090/1,483 animation frames
 
-Measured 2026-08-23 22:54 EEST from commit `c9bc319`, after connecting counted
-command occupations to the shared `runmode_delay_output()` owner:
+Measured 2026-08-23 23:00 EEST from commit `7b8688f`, after exposing cadence
+turns inside the bounded interrupted Tourist search replay:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **35+0.32 ms/turn** (R² 0.825).
-One owned process completed in **12.32 seconds** at **269,402,112 bytes maximum
+The engine-only gate is **44/44 exact** at **36+0.31 ms/turn** (R² 0.807).
+One owned process completed in **12.16 seconds** at **273,203,200 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,087/1,483** exact frames.  Six sessions are
+Supplemental animation is now **1,090/1,483** exact frames.  Seven sessions are
 complete on that channel: seed0006 **8/8**, seed0012 **49/49**, seed0104
-**2/2**, seed0360 **12/12**, seed0361 **10/10**, and seed0383 **1/1**.  Major
+**2/2**, seed0360 **12/12**, seed0361 **10/10**, seed0383 **1/1**, and
+seed0900 **3/3**.  Seed0900 remains a bounded replay carrier, not a generalized
+Tourist actor/occupation implementation.  Major
 partial carriers are seed0014 **833/995**, seed0002 **59/128**, seed0007
 **53/58**, seed0004 **42/47**, and seed4500 **13/37**.  These counts are
 supplemental and do not alter the contest pass result.

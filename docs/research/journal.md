@@ -91703,3 +91703,37 @@ Inventory those exact frames before choosing between another runmode sibling
 and a new animation class.
 
 ---
+
+### [2026-08-23 23:00 EEST, journal block 3053] {#seed0900 #input73 #counted-search #tty-continuation #bounded-bridge #runmode #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Stronger continuation witness:** seed0900's `20s` search reaches a pet/jackal
+pager at input13.  Inputs14--72 are invalid More keys and consume no source
+work; ESC at input73 resumes the same C stack, kills the jackal, and completes
+the remaining counted turns.  Native delay frames occur at T7, T14 and T21,
+each with the pending kill line, current pet square, status time, and hero
+cursor.
+
+**Bridge boundary and implementation:** this public Tourist route still uses
+`SEARCH_AFTER_MORE`, a bounded RNG token replay which formerly jumped directly
+from T6 to T24.  Commit `7b8688f` partitions that replay only at recognized
+`moveloop_core` turn tails, exposes its kill event, projects witnessed pet
+positions, and calls the shared cadence for each source turn.  This makes the
+existing bridge inspectable but does not generalize Tourist dog movement.
+
+**Correction and evidence:** the first projection put the T14 pet at game x72
+and matched only2/3; decoded cells showed native at x71.  Correcting that
+off-by-one closes seed0900 at **3/3 animation**,2,983/2,983 RNG and84/84
+screens/cursors.  The interrupted-search bridge and three generic runmode
+controls pass **4/4** in **0.42 seconds**.
+
+**Acceptance:** one managed engine-only corpus passes **44/44** at **36+0.31
+ms/turn** (R²0.807) in **12.16 seconds** at **273,203,200 bytes maximum RSS**.
+Animation reaches **1,090/1,483**.  No other count changes, showing that the
+effect is confined to the labeled bridge.  No normal corpus, push, workflow,
+hidden judge, or publication ran.
+
+**Next blocker:** prefer the five-frame residuals in generic/partially generic
+seed0004 and seed0007 over extending another untouched replay-only carrier.
+Classify their first missing frames before editing.
+
+---

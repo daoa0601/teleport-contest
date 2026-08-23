@@ -13489,3 +13489,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   The managed corpus remains44/44 and reaches1,087/1,483 frames.  Only counted
   positive-multi representations are admitted; unrelated `_occupation` keys
   remain excluded until their C multi state has its own witness.
+- Commit7b8688f makes seed0900's bounded interrupted-search replay observable
+  at its real T7/T14/T21 turn tails.  The `20s` source stack remains suspended
+  through invalid More keys, queues the jackal kill after ESC, and captures
+  pet/status state through the shared cadence before the T24 boundary.  The
+  session closes at3/3 animation and the managed corpus remains44/44 with
+  1,090/1,483 frames.  `SEARCH_AFTER_MORE` is still explicit replay debt; this
+  carrier is not counted as generalized Tourist dog/search behavior.
