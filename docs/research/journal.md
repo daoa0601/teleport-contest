@@ -92599,3 +92599,71 @@ seed0007's five replay-state frames remain a separate debt class.  No normal
 corpus, push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:32 EEST, journal block 3087] {#seed4500 #animation-residual #input581 #input842 #monster-projectile #prayer-prompt #portfolio #source-diagnosis}
+
+**Correction to block3086:** seed4500's13 residual frames also include
+input581; the complete set is211/222/233/274/581/842/852/1136/1211.  Inputs
+211/222/233/581/1211 are single cadence/status frames, input274 is a three-frame
+cobra-venom projectile, input842 has three screen mismatches inside a four-frame
+ordinary projectile group, and inputs852/1136 are prayer/ambient cadence.
+
+**Next bounded owner:** input842's four JavaScript frames and cursors already
+match native state and count.  Frames0--2 differ only because native retains
+the physical `Force the gods to be pleased? [yn] (n)` line while an unseen
+monster's `m_throw()` flight delays; JavaScript's first `flush_screen()` clears
+that nonlogical line.  Frame3 installs `It misses.` and is already exact.
+
+**Prediction and guard:** snapshot a nonlogical physical topline at the start
+of hero-target projectile flight only when no launch/result message is pending,
+restore it for flight delays, and let the hit/miss line replace it normally.
+Input842 should rise1/4 to4/4 with exact cursors and no effect on launch-line,
+hit, fatal, visible-flight or pet-target controls.  This is projectile tty
+retention, not prayer completion; inputs852/1136 remain separate.
+
+---
+
+### [2026-08-24 00:34 EEST, journal block 3088] {#seed4500 #input842 #monster-projectile #physical-topline #implementation #bounded-acceptance}
+
+**Implementation and focused effect:** hero-target projectile flight now
+snapshots a nonblank physical topline only when no logical message is pending,
+restores it after each flight flush, and stops restoring as soon as thitu's
+hit/miss line takes ownership.  Seed4500 input842 closes from1/4 to **4/4**
+full frames/cursors and the focused session reaches **27/37** animation while
+retaining108,275 RNG calls and1,814 exact boundaries.
+
+**Adversarial controls:** five focused tests pass: the new unseen-launcher
+prayer-prompt carrier, seed0361 invisible/impact dagger flight, seed0108
+nonlethal dagger status, seed0030 sleeping-potion continuation, and the lethal
+hero-projectile death-pager path.  No prompt is synthesized when the physical
+row is blank, and launch/result prose continues to outrank retained tty cells.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected corpus animation is1,402/1,483 with seed4500 at27/37 and no
+other count changes.  Inputs274 (spit),852/1136 (prayer cadence), and the five
+single cadence frames remain open.
+
+---
+
+### [2026-08-24 00:35 EEST, journal block 3089] {#seed4500 #input842 #monster-projectile #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `14e75e8` owns bounded physical-topline
+retention during hero-target flight and the exact input842 full-frame/cursor
+regression.  The group closes4/4, seed4500 reaches **27/37**, and all five
+focused projectile controls pass.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**41+0.35 ms/turn** (R²0.827) in **14.03 seconds** at **450,002,944 bytes
+maximum RSS**.  Animation advances exactly three slots from1,399 to
+**1,402/1,483**, with no other session count changes.  The process exited
+normally and the post-run table contains no matching verifier.  RSS is higher
+than the preceding273 MB run but remains bounded and is recorded rather than
+hidden; no duplicate process was launched.
+
+**Next blocker:** seed4500 has10 residual frames: input274's three-frame cobra
+spit; inputs852/1136 prayer/ambient cadence; and single frames at
+211/222/233/581/1211.  Separate the spit-specific `spitmm -> m_throw -> thitu`
+owner from ordinary projectile flight before implementing it.  No normal
+corpus, push, workflow, hidden judge or publication ran.
+
+---

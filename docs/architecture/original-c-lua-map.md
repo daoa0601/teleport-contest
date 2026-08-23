@@ -34661,3 +34661,40 @@ default leap mode; blocked travel, other runmodes, path interruption, target
 arrival edge cases, ball/chain drag, traps and getpos tutorial variants remain
 controls.  Lua owns first-use tutorial content but no travel movement, cadence,
 actor scheduling or cursor timing.
+
+## 953. Unseen projectile flight can inherit a nonlogical physical topline
+
+~~~mermaid
+flowchart TD
+    Prompt["getpos/yn prompt remains physically painted"] --> Plan["unseen monster plans hero-target projectile"]
+    Plan --> Launch{"visible launcher supplies launch prose?"}
+    Launch -->|"no"| Snapshot["snapshot physical row; logical pending remains empty"]
+    Launch -->|"yes"| Logical["launch prose owns tty normally"]
+    Snapshot --> Flight["tmp_at flight cell and delay"]
+    Flight --> Flush["flush logical map/status"]
+    Flush --> Restore["restore saved row for animation snapshot"]
+    Restore --> MoreFlight{"more path cells?"}
+    MoreFlight -->|"yes"| Flight
+    MoreFlight -->|"no"| Result["thitu hit/miss line takes logical and physical ownership"]
+    Logical --> Flight
+    Lua["Lua owns no projectile or tty state"] -.-> Plan
+~~~
+
+Native tty distinguishes a physical previous topline from a logical pending
+message.  If an unseen launcher produces no throw/shoot line, `m_throw()`'s
+`tmp_at()` delays leave that physical row intact until `thitu()` installs its
+result.  Rebuilding a frame solely from logical state clears the row too early,
+even though projectile cells, status and cursors are otherwise exact.
+
+JavaScript's hero-target projectile owner now snapshots a nonblank physical row
+only when no logical message is pending, restores it after flight flushes, and
+stops restoring once hit/miss prose exists.  Visible launch messages, empty
+rows, impact frames and death pagers keep their existing owners.
+
+Seed4500 input842 closes from1/4 to **4/4** complete frames/cursors and advances
+the session to27/37.  Invisible/impact, nonlethal status, sleeping-potion and
+fatal death-pager controls remain exact.  The corpus advances to1,402/1,483.
+This closes represented unseen ordinary projectile flight over a retained
+debug-prayer prompt; other prompts, wrapped rows, escape suppression, spit/
+venom paths, pet targets and result-less destruction remain controls.  Lua
+contributes none.

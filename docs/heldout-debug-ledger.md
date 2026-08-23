@@ -13606,3 +13606,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   The managed engine-only corpus remains44/44 and advances by91 slots to
   1,399/1,483; seed4500 reaches24/37.  No normal scorer, push, workflow or
   hidden judge ran.
+- Commit14e75e8 preserves a nonlogical physical tty row across unseen
+  hero-target projectile flight until thitu's result line replaces it.
+  Seed4500 input842's three blank-topline mismatches close, making the group
+  4/4 full frames/cursors and the session27/37.  Five visible/invisible,
+  nonlethal, potion and fatal projectile controls remain green.  The managed
+  engine-only corpus stays44/44 and reaches1,402/1,483 in14.03 seconds at
+  450,002,944 bytes maximum RSS.  No normal scorer, push, workflow or hidden
+  judge ran; input274's spit projectile and prayer/cadence groups remain open.
