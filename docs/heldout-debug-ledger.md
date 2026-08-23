@@ -13223,3 +13223,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   from input3 through input279 match; input2 alone is red.  Focused/expanded
   fixture-disabled gates pass 13/13 and46/46.  Migrating-Wizard reuse,
   simultaneous Wizards, outcomes3--4 and animation remain open.
+- Seed13 was rejected as an aggravate-intervention carrier: native later
+  selects nervous outcome0, and the full session remains non-exact after the
+  bounded prefix.  Its input272 independently closes TELEP_TRAP: lich id76
+  enters (34,18), rloc rejects one pair then accepts its own trap square because
+  native destination checks remove self-occupancy.  The teleport consumes the
+  action, so the next rn2(5) belongs to the yellow light rather than a lich
+  postmove tail.  The exact 25-call input272 regression ends with lich at
+  (34,18), trap knowledge bit14, HP147 and udg106.  Focused/expanded fixture-
+  disabled gates pass 14/14 and47/47.  Moved/visible/restricted/pet/controlled
+  teleport-trap branches and the later seed13 intervention remain open.

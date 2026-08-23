@@ -32921,3 +32921,40 @@ dead Wizard, simultaneous live-Wizard behavior, resurrected-Wizard tactics,
 controlled monster teleport, intervention aggravate/nasty outcomes3--4,
 accepted hero death, other group classes/placement failure, or the six native
 animation-frame groups.  Lua owns physical placement only.
+
+## 906. Monster teleport traps remove self-occupancy and consume the action
+
+~~~mermaid
+flowchart TD
+    Move["seed13 lich selects trap square34,18"] --> Trap["postmov mintrap detects TELEP_TRAP"]
+    Trap --> Learn["monster and nearby actors learn trap type"]
+    Learn --> Remove["rloc evaluates destinations as if actor is off-map"]
+    Remove --> Pair1["candidate62,11 rejected"]
+    Pair1 --> Pair2["candidate34,18 equals trap square"]
+    Pair2 --> Accept["self square is legal because only self occupied it"]
+    Accept --> Place["actor remains34,18; track cleared"]
+    Place --> Done["teleport trap consumes complete actor action"]
+    Done --> Next["no lich trailing distfleeck; yellow light begins"]
+    Lua["Lua provides trap and level geometry"] -.-> Trap
+    Lua -.-> Pair1
+    Lua -.->|"no ownership"| Done
+~~~
+
+Seed13 input272 isolates an unseen lich entering teleport trap15.  The shared
+rloc owner initially rejected candidate `(34,18)` because JavaScript still had
+the moving lich in the level occupancy map.  Native rloc removes the actor
+while checking destinations, so the old/self square is eligible.  Allowing
+that exact self coordinate terminates the search after two pairs.
+
+A second bounded native trace distinguishes the actor boundary: after trap
+rloc there is no lich trailing distfleeck.  The next rn2(5) belongs to the
+yellow light's initial `dochug` check.  Marking the teleport trap action-complete
+prevents tunneling, pickup, hiding and phase-four tails while leaving the actor
+on-level.  Final prefix state has lich id76 at (34,18), trap knowledge bit14,
+hero HP147 and demigod countdown106.
+
+This section closes one unseen same-square TELEP_TRAP rloc and its action-
+complete boundary.  It does not close a moved destination, visible vanish/
+arrival prose, restricted teleport levels, once-only trap removal, controlled
+monster teleport, pet/leash handling, trap-chain effects, or seed13's later
+non-exact intervention trajectory.  Lua owns only trap/terrain geometry.

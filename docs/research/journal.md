@@ -89511,3 +89511,105 @@ animation remain open.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 19:35 EEST, journal block 2963] {#seed13 #monster-trap #teleport-trap #lich #rloc #postmov #rejected-intervention-carrier #earliest-divergence #native-witness #process-safety #priority}
+
+**Rejected aggravate candidate and earliest divergence:** the native-compatible
+selector nominated seed13 outcome3, but native actually selects outcome0 at
+input590.  The branch claim is rejected.  Full replay first diverges at
+input272 call2, long before intervention: a lich moves from (33,17) onto unseen
+teleport trap15 at (34,18).
+
+**Source transaction and prediction:** native postmov/mintrap invokes rloc,
+consuming two `rnd(79)/rn2(21)` candidate pairs, then resumes with the ordinary
+second distfleeck.  JavaScript selects the same trap square but `triggerMonsterTrap()`
+has no TELEP_TRAP branch, so it leaves the lich there and immediately consumes
+postmove rn2(5).  Add trap learning/visibility state, call shared
+`randomMonsterRelocation()`, update movement's final coordinates and continue
+postmov without marking the action complete.  The unseen carrier needs no
+message.
+
+**Measured gap and decision:** pre-edit seed13 replay matches **4096/7131 RNG
+calls, 274/652 screens and 613/652 cursors** in **0.34 seconds** at
+**133,136,384 bytes maximum RSS**; the locator places the first edge at
+input272 call2.  Fix the trap owner, then relocalize rather than interpreting
+the later nervous line as aggravation evidence.  Every process exited.  No
+focused regression, corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-23 19:41 EEST, journal block 2964] {#seed13 #rloc #self-square #monster-occupancy #teleport-trap #earliest-divergence #source-order #process-safety #priority}
+
+**Post-trap replay and smaller gap:** adding TELEP_TRAP dispatch makes seed13
+input272 match through the two native candidate pairs.  Native accepts the
+second pair `(34,18)`, which is the lich's current trap square.  JavaScript
+rejects it through `monsterGoodPosition()` because the actor still occupies
+that cell, then consumes many additional candidates.
+
+**Source invariant and prediction:** rloc evaluates destinations as though the
+relocating actor were removed from the map, so its own old square does not fail
+MON_AT occupancy.  Terrain at the current position is necessarily compatible;
+scare-scroll policy still applies.  Teach shared `randomMonsterRelocation()` to
+allow the exact self coordinate while retaining all checks for other occupied
+squares.  This should end the trap relocation after four calls with `moved`
+false and preserve the trailing postmov distfleeck.
+
+**Decision:** fix the physical relocation invariant for every rloc caller,
+then relocalize seed13.  The aggravate outcome claim remains rejected.  No
+focused test, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 19:48 EEST, journal block 2965] {#seed13 #teleport-trap #action-complete #distfleeck #native-trace #actor-boundary #earliest-divergence #process-safety #priority}
+
+**Second bounded trace and corrected ownership:** after allowing rloc's self
+square, seed13 input272 matches both candidate pairs but JavaScript has one
+extra rn2(5).  A call-gated dochug/distfleeck trace proves the lich consumes its
+initial distfleeck and trap rloc, then the next actor (yellow light) begins.
+There is no lich trailing distfleeck.  The native rn2(5) after relocation is
+the yellow light's initial check.
+
+**Source implication and prediction:** teleport-trap rloc is a complete
+monster action.  JavaScript currently updates final coordinates but allows
+`completeMovedMonsterAction()` to continue tunneling/pickup/hiding and trailing
+distfleeck.  Mark the teleport event action-complete and return immediately
+after trap handling while keeping the actor on-level.  The yellow light's
+initial rn2(5) should become input272 call6 and its ordinary rn2(3) movement
+branch should align.
+
+**Trace hygiene:** the trace was limited to cumulative calls3965--3990 and
+printed only dochug/distfleeck actor identities plus state.  Remove it and
+rebuild the canonical recorder after the code change.  No focused test, corpus,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 19:58 EEST, journal block 2966] {#seed13 #teleport-trap #rloc #self-square #action-complete #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `7a7df2f` adds TELEP_TRAP to
+monster mintrap dispatch, shares rloc physical placement, admits the relocating
+actor's self square, records trap knowledge and marks the teleport as a complete
+actor action.  A 273-state regression compares the complete 25-call input272
+slice and durable lich/trap state; it does not claim the later seed13 session.
+
+**Evidence and controls:** native/JavaScript are exact from input3 through
+input272 RNG, decoded screens and cursors.  Final prefix state retains lich
+id76/mnum183 at (34,18), mtrapseen bit14, the teleport trap in place, hero
+HP147 and udg106.  The complete longer replay advances but remains red at
+**4137/7131 RNG calls, 283/652 screens and 632/652 cursors**; its later nervous
+intervention is explicitly rejected as outcome3 evidence.  Focused shared tests
+pass **14/14** fixture-disabled in **0.83 seconds** at **256,557,056 bytes
+maximum RSS**.  Expanded controls pass **47/47** in **1.32 seconds** at
+**304,283,648 bytes maximum RSS**.
+
+**Trace and map hygiene:** the call-gated native dochug/distfleeck trace was
+removed completely and the canonical six-patch recorder rebuilt before final
+verification.  Section906 and the ledger map self-occupancy and action-complete
+ownership; Lua owns only physical geometry.  Visible/moved/restricted/pet/
+controlled teleport traps and intervention outcomes3--4 remain open.  Every
+process exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
