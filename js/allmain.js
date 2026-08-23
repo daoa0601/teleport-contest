@@ -100,7 +100,7 @@ import {
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
     resolveDeferredHeroSummonMonsters,
     resolveDeferredHeroHasteSelf,
-    resolveDeferredHeroAggravation,
+    aggravateMonsters, resolveDeferredHeroAggravation,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     finishDeferredHeroCloneWizard,
@@ -857,6 +857,14 @@ function initializeRandomMonsterInventory(monster) {
     const addObject = otyp => {
         if (!otyp) return null;
         const object = mksobj(otyp, true, false);
+        // makemon.c:mongets() raises a prince's generated battle gear to a
+        // minimum quality after ordinary mksobj initialization.
+        if (monsterFlags2 & M2_PRINCE) {
+            if (object.oclass === 2 && (object.spe ?? 0) < 1)
+                object.spe = 1;
+            else if (object.oclass === 3 && (object.spe ?? 0) < 0)
+                object.spe = 0;
+        }
         inventory.push(object);
         return object;
     };
@@ -1396,6 +1404,11 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
                     kind: intervention, sourceTurn,
                 };
                 return;
+            } else if (intervention === 3) {
+                const affected = aggravateMonsters(game, rn2, []);
+                game._lastDemigodAggravation = affected.map(monster =>
+                    monster.m_id);
+                delete game._unresolvedDemigodIntervention;
             } else {
                 game._unresolvedDemigodIntervention = intervention;
             }
@@ -3952,8 +3965,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     || (game.u?.hallucinationTurns ?? 0) > 0)) {
                 game._boundedOracleHalluPostWieldDisplayDebt = 1;
             }
-            if (movement.deferredHeroWield)
-                resumeDeferredHeroAttackAfterWield(action, game);
+            if (movement.deferredHeroWield) {
+                game._deferVisibleMonsterContact = true;
+                try {
+                    resumeDeferredHeroAttackAfterWield(action, game);
+                } finally {
+                    game._deferVisibleMonsterContact = false;
+                }
+            }
         }
         if (movement?.offensiveWand?.kind
             === 'offensive-wand-magic-missile') {

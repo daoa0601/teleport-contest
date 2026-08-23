@@ -8344,11 +8344,9 @@ export function resolveDeferredHeroHasteSelf(action, state) {
     return effect;
 }
 
-export function resolveDeferredHeroAggravation(
-    action, state, random = rn2,
+export function aggravateMonsters(
+    state, random = rn2, calls = [],
 ) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deferredAggravation) return null;
     const affected = [];
     for (const monster of state.level?.monsters || []) {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
@@ -8360,7 +8358,7 @@ export function resolveDeferredHeroAggravation(
         monster.msleeping = 0;
         let unfroze = false;
         if (monster.mcanmove === 0
-            && recordRandom(random, action.calls, 5) === 0) {
+            && recordRandom(random, calls, 5) === 0) {
             monster.mfrozen = 0;
             monster.mcanmove = 1;
             unfroze = true;
@@ -8368,6 +8366,17 @@ export function resolveDeferredHeroAggravation(
         if (wasSleeping || wasWaiting || unfroze)
             affected.push(monster);
     }
+    return affected;
+}
+
+export function resolveDeferredHeroAggravation(
+    action, state, random = rn2,
+) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredAggravation) return null;
+    const affected = aggravateMonsters(
+        state, random, action.calls,
+    );
     attack.aggravatedMonsters = affected;
     attack.deferredAggravation = false;
     return affected;

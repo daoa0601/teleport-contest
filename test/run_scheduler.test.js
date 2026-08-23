@@ -10719,6 +10719,7 @@ test('seed0052 ambient ogre tyrant receives ranked armament',
         assert.equal(ogre.mhp, 42);
         assert.equal(ogre.mhpmax, 42);
         assert.deepEqual(ogre.minvent.map(object => object.otyp), [45, 429]);
+        assert.equal(ogre.minvent[0].spe, 1);
         assert.equal(ogre.minvent[1].spe, 6);
         assert.equal(game.u.uhp, 60);
         assert.equal(game.u.udg_cnt, 40);
@@ -10926,6 +10927,40 @@ test('seed0052 bounced magic missile can hit its source ogre',
         assert.equal(game.u.udg_cnt, 1);
     });
 
+test('seed0052 intervention outcome3 dispatches zero-affected aggravate',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 540),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 541);
+        assertRngSliceExact(result.getRngSlices()[540], [
+            'rn2(3)=2', 'rn2(6)=5', 'rn2(12)=3',
+            'rn2(12)=9', 'rn2(12)=1', 'rn2(12)=4',
+            'rn2(12)=8', 'rn2(12)=1', 'rn2(12)=10',
+            'rn2(12)=2', 'rn2(25)=22', 'rn2(100)=86',
+            'rn2(400)=178', 'rn2(20)=17', 'rn2(67)=56',
+            'rn2(6)=3', 'rn2(200)=41',
+        ], 'seed0052 outcome3 intervention RNG');
+        assert.equal(decodedTopline(result.getScreens()[540]),
+            'The newt bites!');
+        assert.equal(decodedRow(result.getScreens()[540], 23),
+            'Dlvl:1 $:1965 HP:72(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[540], [4, 9, 1]);
+        assert.deepEqual(game._lastDemigodAggravation, []);
+        assert.equal(game._unresolvedDemigodIntervention, undefined);
+        assert.equal(game.u.udg_cnt, 91);
+        assert.equal(game.u.uhp, 72);
+    });
+
 test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
@@ -10964,7 +10999,7 @@ test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
         assert.equal(decodedTopline(result.getScreens()[546]),
             'The ogre king swings his double-headed axe.  The ogre king hits!');
         assert.equal(decodedRow(result.getScreens()[546], 23),
-            'Dlvl:1 $:1965 HP:56(169) Pw:264(264) AC:8 Xp:30');
+            'Dlvl:1 $:1965 HP:55(169) Pw:264(264) AC:8 Xp:30');
         assert.deepEqual(result.getCursors()[546], [4, 9, 1]);
 
         const ogre = game.level.monsters.find(monster =>
@@ -10972,13 +11007,14 @@ test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
         assert.ok(ogre);
         assert.deepEqual([ogre.mx, ogre.my], [6, 8]);
         assert.equal(ogre.mw?.otyp, 45);
+        assert.equal(ogre.mw?.spe, 1);
         assert.deepEqual(ogre.minvent.map(object => object.otyp), [
             45, 429, 438, 293, 329,
         ]);
         assert.equal(ogre.minvent.find(object => object.otyp === 429).spe, 1);
         assert.equal((game.level.objects?.[6]?.[8] || [])[0].corpsenm, 165);
         assert.equal((game.level.objects?.[6]?.[8] || [])[1].corpsenm, 285);
-        assert.equal(game.u.uhp, 56);
+        assert.equal(game.u.uhp, 55);
         assert.equal(game.u.umortality, 2);
         assert.equal(game.u.udg_cnt, 89);
     });
@@ -11011,7 +11047,7 @@ test('seed0052 later movemon round sees moved fog cloud',
         assert.equal(decodedTopline(result.getScreens()[548]),
             'The ogre king swings his double-headed axe.  The ogre king hits!--More--');
         assert.equal(decodedRow(result.getScreens()[548], 23),
-            'Dlvl:1 $:1965 HP:44(169) Pw:264(264) AC:8 Xp:30');
+            'Dlvl:1 $:1965 HP:42(169) Pw:264(264) AC:8 Xp:30');
         assert.deepEqual(result.getCursors()[548], [72, 0, 1]);
 
         const fog = game.level.monsters.find(monster =>
@@ -11027,7 +11063,7 @@ test('seed0052 later movemon round sees moved fog cloud',
             { ttl: 20, cells: [[26, 9]] },
             { ttl: 4, cells: [[25, 9]] },
         ]);
-        assert.equal(game.u.uhp, 44);
+        assert.equal(game.u.uhp, 42);
         assert.equal(game.u.udg_cnt, 89);
     });
 
@@ -11062,7 +11098,7 @@ test('seed0052 inactive fog hook stays between active actors',
         assert.equal(decodedTopline(result.getScreens()[572]),
             'The ogre king swings his double-headed axe.  The ogre king hits!');
         assert.equal(decodedRow(result.getScreens()[572], 23),
-            'Dlvl:1 $:1965 HP:59(169) Pw:264(264) AC:8 Xp:30');
+            'Dlvl:1 $:1965 HP:55(169) Pw:264(264) AC:8 Xp:30');
         assert.deepEqual(result.getCursors()[572], [4, 9, 1]);
 
         const fog = game.level.monsters.find(monster =>
@@ -11078,7 +11114,7 @@ test('seed0052 inactive fog hook stays between active actors',
             { ttl: 22, cells: [[25, 9]] },
             { ttl: 10, cells: [[24, 9]] },
         ]);
-        assert.equal(game.u.uhp, 59);
+        assert.equal(game.u.uhp, 55);
         assert.equal(game.u.umortality, 3);
         assert.equal(game.u.udg_cnt, 82);
     });
