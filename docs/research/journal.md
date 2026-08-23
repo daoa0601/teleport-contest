@@ -90752,3 +90752,24 @@ status rewrite, hidden judge, push or publication ran; unrelated dirty files
 remain untouched.
 
 ---
+
+### [2026-08-24 03:08 EEST, journal block 3014] {#seed52 #animation #magic-missile #monster-beam #tmp-at #nh-delay-output #portfolio #priority}
+
+**Next animation inventory:** seed52 has40 frames across inputs123/125,
+monster magic-missile inputs491--537, and delayed-survival inputs615/777.  The
+monster travel groups show one additional bright-blue q per frame with cursor
+immediately after that transient glyph; bounce/hit pages also contain
+message-only delay frames with unchanged beam cells.
+
+**First mechanism prediction:** add an animation capture after each visible
+monster-beam paint, using level x as the post-glyph terminal cursor and y+1 as
+map row.  This should recover all pure travel frames without altering input
+screens/RNG.  Compare actual/native per-step counts before adding message-only
+or death-survival captures; do not guess all40 at once.
+
+**Decision:** run the smallest travel-frame implementation, retain exact count/
+screen/cursor gaps per input, and classify the remaining delay owners.  No
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
