@@ -31824,3 +31824,31 @@ with ordinary seed97, this distinguishes resistance from Dexterity duration.
 Free Action without Antimagic, already-stunned resistance, shield-effect
 display, combined half-spell, delayed recovery under occupied tty and timeout
 expiry with other statuses remain separate controls.
+
+## 882. Death-touch failure gate skips drain dice and max-HP mutation
+
+~~~mermaid
+flowchart TD
+    Cast["death-touch selected; discarded 16d6"] --> Warning["publish touch-of-death warning"]
+    Warning --> Immune{"nonliving or demon?"}
+    Immune -->|"yes"| NoDeader["seem no deader branch"]
+    Immune -->|"no"| Resist{"Antimagic?"}
+    Resist -->|"yes"| Lucky["shield and Lucky line"]
+    Resist -->|"no"| Gate["rn2(monster level) > 12?"]
+    Gate -->|"no"| Lucky
+    Gate -->|"yes"| Hallu{"Hallucinating?"}
+    Hallu -->|"yes"| OOB["out-of-body prose; no drain"]
+    Hallu -->|"no"| Drain["fresh 8d6 and HP/max-HP transaction"]
+    Lucky --> Tail["resume actor/global tail without 8d6"]
+~~~
+
+Seed23 supplies the ordinary living, non-Antimagic failed gate.  Input107
+selects death touch and discards d(16,6)=58.  Input108 publishes the warning,
+rn2(30)=0 fails the success threshold, and Lucky for you follows with no 8d6,
+drain, max-HP change or resistance state.
+
+All 127 states are exact, ending max HP158 unchanged and final HP66 after later
+ordinary combat.  Paired with successful nonfatal seed14, this distinguishes
+the success gate from damage arithmetic.  Nonliving/demon immunity,
+Antimagic shield presentation, hallucination, polymorphic rehumanization,
+fatal drain, life saving and Unchanging remain separate controls.

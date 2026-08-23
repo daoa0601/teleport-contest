@@ -12937,3 +12937,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   HP112/137.  Ordinary/resistant stun tests pass 2/2; the selected Wizard gate
   rises to 14/14 fixture-disabled.  Free Action, repeated resistant stun,
   shield presentation and delayed recovery remain open.
+- Seed23 pairs with successful seed14 to close the ordinary failed
+  death-touch gate.  Input108 owns rn2(30)=0, publishes Lucky for you, and has
+  no fresh 8d6 or max-HP mutation; max HP remains158 across all 127 exact
+  states.  Death-touch success/failure tests pass 2/2 and the selected Wizard
+  gate rises to 15/15 fixture-disabled.  Immunity, Antimagic, hallucination,
+  polymorph, fatality, life saving and Unchanging remain open.

@@ -9703,6 +9703,44 @@ test('seed0019 Wizard destroy-armor erodes gloves after its pager',
         assert.equal(game.u.uhp, 104);
     });
 
+test('seed0023 failed death-touch gate preserves maximum HP',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 23,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 127);
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(20)=6', 'rn2(3)=1', 'rn2(6)=5',
+            'rn2(30)=20', 'rn2(300)=96', 'd(16,6)=58',
+        ], 'seed0023 failed death-touch cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell at you!--More--');
+        assertRngSliceExact(result.getRngSlices()[108], [
+            'rn2(30)=0', 'rn2(5)=1',
+            'rn2(12)=9', 'rn2(12)=1', 'rn2(12)=0',
+            'rn2(70)=22', 'rn2(100)=37', 'rn2(300)=275',
+            'rn2(200)=187', 'rn2(20)=19', 'rn2(61)=59',
+        ], 'seed0023 failed death-touch and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            "Oh no, he's using the touch of death!  Lucky for you, it didn't work!");
+        assert.equal(decodedRow(result.getScreens()[108], 23),
+            'Dlvl:1 $:1739 HP:146(158) Pw:281(281) AC:8 Xp:30');
+        assert.equal(game.u.uhpmax, 158);
+        assert.equal(game.u.uhp, 66);
+    });
+
 test('seed0015 rejects useless aggravation before choosing curse-items',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

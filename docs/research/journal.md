@@ -87810,3 +87810,30 @@ controls.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:19 EEST, journal block 2917] {#seed23 #wizard-of-yendor #death-touch #failed-gate #no-drain #paired-control #complete-replay #native-witness #regression #architecture #ledger #process-safety #priority}
+
+**Paired control:** successful nonfatal seed14 proves fresh 8d6, max-HP drain
+and clamp-aware damage.  Seed23 reaches the same spell with an exact prefix
+but native success gate rn2(30)=0.
+
+**Observable contract:** input108 publishes the touch warning and Lucky for
+you, then resumes maintenance without any d(8,6).  Max HP stays158; the
+captured HP rises145 to146 only because later regeneration succeeds.  Final
+HP66 comes from subsequent ordinary combat, not death touch.
+
+**Measured evidence:** seed23 is exact for all **127 RNG/screen/cursor
+states**.  Strict replay took **0.28 seconds** at **126,500,864 bytes maximum
+RSS**.  Paired success/failure death-touch tests pass **2/2**; fifteen selected
+fixture-disabled Wizard controls pass **15/15** in **0.70 seconds** at
+**148,471,808 bytes maximum RSS**.  Every process exited.
+
+**Decision and next blocker:** this closes only the ordinary failed success
+gate.  Section882 maps its early return.  Nonliving/demon, Antimagic,
+hallucination, polymorph, fatal drain, life saving and Unchanging remain
+explicit.  Next choose one of those durable branches or an MM_EMIN caller;
+do not infer them from Lucky prose alone.  No full corpus, public-status
+rewrite, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
