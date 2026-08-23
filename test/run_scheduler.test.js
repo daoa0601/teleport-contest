@@ -11752,6 +11752,53 @@ test('seed0030 resisted striking wand cycles all shield-static frames',
         }
     });
 
+test('seed5002 fire ray delays outbound, bounce, and returning beam cells',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed5002-wizard-coverage-pair.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 89),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[88],
+            session.steps[88].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed5002 fire ray input88 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[88],
+            session.steps[88].screen,
+            'seed5002 fire ray input88 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[88],
+            session.steps[88].cursor,
+            'seed5002 fire ray input88 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[88];
+        const nativeFrames = session.steps[88].animation_frames;
+        assert.equal(actualFrames.length, 8);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed5002 fire ray frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed5002 fire ray cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

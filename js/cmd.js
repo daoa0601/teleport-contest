@@ -13864,6 +13864,21 @@ async function zapFireRay(direction) {
                 paintBeamCell(x, y, dx, dy);
             }
 
+            // zap.c:dobuzz() delays immediately after tmp_at paints (or
+            // revisits) this ray square, before hit or bounce handling can
+            // add another message.  A returning ray often revisits an
+            // identical beam cell: with no map dirt, tty keeps the pending
+            // bounce topline cursor instead.
+            const frameCursor = lastDirtyMapCursor();
+            const messageCursor = game._pending_message
+                ? [game._pending_message.length, 0] : null;
+            await flush_screen(1);
+            if (frameCursor)
+                game.nhDisplay?.setCursor(...frameCursor);
+            else if (messageCursor)
+                game.nhDisplay?.setCursor(...messageCursor);
+            await game.animationFrame?.();
+
             if (x === game.u.ux && y === game.u.uy && range >= 0
                 && rayHitsHero()) {
                 range -= 2;
