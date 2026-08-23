@@ -9417,24 +9417,17 @@ function farlookLocationDescription(x, y) {
     return travelLocationDescription(x, y);
 }
 
-function physicalJumpTargetValid(x, y) {
-    const loc = game.level?.at(x, y);
-    if (!loc || (!IS_ROOM(loc.typ) && loc.typ !== CORR)) return false;
-    const dx = x - game.u.ux;
-    const dy = y - game.u.uy;
-    // C apply.c:is_valid_jump_pos().  The Knight's intrinsic jump follows
-    // the chess-knight geometry unless an extrinsic source overrides it.
-    if (game.urole?.key === 'knight'
-        && !game.u?.extrinsicJumping && dx * dx + dy * dy !== 5) return false;
-    if (dx * dx + dy * dy > 9 || !cansee(x, y)) return false;
-
-    // dothrow.c:walk_path() uses this strict-inequality Bresenham walk for
-    // every intermediate square.  apply.c:check_jump() rejects solid rock,
-    // walls, closed doors, and ordinary boulders even when the landing cell
-    // itself is an accessible floor square.
-    let cx = game.u.ux, cy = game.u.uy;
-    let ax = Math.abs(dx), ay = Math.abs(dy), error = 0;
-    const sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+function jumpPathCells(fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    let cx = fromX;
+    let cy = fromY;
+    const ax = Math.abs(dx);
+    const ay = Math.abs(dy);
+    let error = 0;
+    const sx = dx < 0 ? -1 : 1;
+    const sy = dy < 0 ? -1 : 1;
+    const cells = [];
     const steps = Math.max(ax, ay);
     for (let index = 0; index < steps; index++) {
         if (ax < ay) {
@@ -9452,6 +9445,29 @@ function physicalJumpTargetValid(x, y) {
                 error -= ax << 1;
             }
         }
+        cells.push({ x: cx, y: cy });
+    }
+    return cells;
+}
+
+function physicalJumpTargetValid(x, y) {
+    const loc = game.level?.at(x, y);
+    if (!loc || (!IS_ROOM(loc.typ) && loc.typ !== CORR)) return false;
+    const dx = x - game.u.ux;
+    const dy = y - game.u.uy;
+    // C apply.c:is_valid_jump_pos().  The Knight's intrinsic jump follows
+    // the chess-knight geometry unless an extrinsic source overrides it.
+    if (game.urole?.key === 'knight'
+        && !game.u?.extrinsicJumping && dx * dx + dy * dy !== 5) return false;
+    if (dx * dx + dy * dy > 9 || !cansee(x, y)) return false;
+
+    // dothrow.c:walk_path() uses this strict-inequality Bresenham walk for
+    // every intermediate square.  apply.c:check_jump() rejects solid rock,
+    // walls, closed doors, and ordinary boulders even when the landing cell
+    // itself is an accessible floor square.
+    for (const { x: cx, y: cy } of jumpPathCells(
+        game.u.ux, game.u.uy, x, y,
+    )) {
         const pathLoc = game.level?.at(cx, cy);
         if (!pathLoc || pathLoc.typ === STONE || IS_WALL(pathLoc.typ)
             || (pathLoc.typ === DOOR
@@ -9558,11 +9574,23 @@ async function dojump() {
     const oldx = game.u.ux, oldy = game.u.uy;
     game.u.ux0 = oldx;
     game.u.uy0 = oldy;
-    game.u.ux = cursor.x;
-    game.u.uy = cursor.y;
-    newsym(oldx, oldy);
-    vision_recalc(1);
-    newsym(cursor.x, cursor.y);
+    const jumpPath = jumpPathCells(oldx, oldy, cursor.x, cursor.y);
+    let previousX = oldx;
+    let previousY = oldy;
+    for (let index = 0; index < jumpPath.length; index++) {
+        const cell = jumpPath[index];
+        game.u.ux = cell.x;
+        game.u.uy = cell.y;
+        newsym(previousX, previousY);
+        vision_recalc(1);
+        newsym(cell.x, cell.y);
+        if (index < jumpPath.length - 1) {
+            await flush_screen(1);
+            await game.animationFrame?.();
+        }
+        previousX = cell.x;
+        previousY = cell.y;
+    }
     // apply.c:jump() installs nomul(-1) before paying the hunger cost.  If
     // this action also creates a new global turn, that turn advances multi to
     // zero immediately; if intrinsic speed leaves another hero ration, the
