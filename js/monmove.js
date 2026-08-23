@@ -1374,6 +1374,19 @@ function monsterEveryturnEffect(monster, state, random = rn2) {
     );
 }
 
+export function runMonsterEveryturnEffects(
+    monsters, state, random = rn2,
+) {
+    const effects = [];
+    for (const monster of monstersInFmonOrder(monsters || [])) {
+        initializeMonsterMovement(monster);
+        if (!schedulable(monster)) continue;
+        const effect = monsterEveryturnEffect(monster, state, random);
+        if (effect) effects.push({ monster, effect });
+    }
+    return effects;
+}
+
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
@@ -1608,10 +1621,13 @@ export function scanMonsterMovement(monsters = [], options = {}) {
     do {
         somebodyCanMove = false;
         const actors = [];
+        const firstRound = rounds.length === 0;
         for (const monster of monstersInFmonOrder(monsters)) {
             initializeMonsterMovement(monster);
-            monsterEveryturnEffect(monster, state, options.random ?? rn2);
-            if (!schedulable(monster) || monster.movement < NORMAL_SPEED)
+            if (!schedulable(monster)) continue;
+            if (firstRound)
+                monsterEveryturnEffect(monster, state, options.random ?? rn2);
+            if (monster.movement < NORMAL_SPEED)
                 continue;
             monster.movement -= NORMAL_SPEED;
             actors.push(monster);

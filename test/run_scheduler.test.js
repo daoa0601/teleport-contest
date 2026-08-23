@@ -10983,6 +10983,54 @@ test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
         assert.equal(game.u.udg_cnt, 89);
     });
 
+test('seed0052 later movemon round sees moved fog cloud',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 548),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 549);
+        assertRngSliceExact(result.getRngSlices()[548], [
+            'rn2(5)=1', 'rn2(32)=0', 'rn2(5)=2',
+            'rn2(5)=2', 'rn2(5)=3', 'rn2(5)=1',
+            'rn2(8)=6', 'rn2(5)=0', 'rn2(5)=0',
+            'rnd(20)=15', 'd(3,5)=4', 'rnd(8)=6',
+            'rnd(4)=2', 'rn2(3)=0', 'rn2(6)=3',
+            'rn2(5)=4', 'rn2(12)=5', 'rn2(16)=15',
+            'rn2(20)=3', 'rn2(5)=3', 'rn2(3)=0',
+            'rn2(5)=4',
+        ], 'seed0052 repeated-round fog cloud RNG');
+        assert.equal(decodedTopline(result.getScreens()[548]),
+            'The ogre king swings his double-headed axe.  The ogre king hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[548], 23),
+            'Dlvl:1 $:1965 HP:44(169) Pw:264(264) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[548], [72, 0, 1]);
+
+        const fog = game.level.monsters.find(monster =>
+            monster.m_id === 91);
+        assert.ok(fog);
+        assert.equal(fog.mnum, 106);
+        assert.deepEqual([fog.mx, fog.my], [25, 9]);
+        assert.equal(fog.movement, 0);
+        assert.deepEqual(game.level.regions.map(region => ({
+            ttl: region.ttl,
+            cells: region.cells.map(cell => [cell.x, cell.y]),
+        })), [
+            { ttl: 20, cells: [[26, 9]] },
+            { ttl: 4, cells: [[25, 9]] },
+        ]);
+        assert.equal(game.u.uhp, 44);
+        assert.equal(game.u.udg_cnt, 89);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

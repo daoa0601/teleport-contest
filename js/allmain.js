@@ -125,7 +125,8 @@ import {
     finishDeferredMonsterDeath,
     finishDeferredMonsterCounterattackDeath, fumaroles,
     burnHeroArmorByFire,
-    heroEveryturnEffect, runLevelRegions, runQuietMonsterActions,
+    heroEveryturnEffect, runLevelRegions, runMonsterEveryturnEffects,
+    runQuietMonsterActions,
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
@@ -3438,11 +3439,29 @@ async function executeLiveQuietMonsterScan(monsterScan) {
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
     const actions = [];
+    const laterRoundEffects = new Map();
+    let roundOffset = monsterScan.rounds?.[0]?.length ?? 0;
+    for (let round = 1; round < (monsterScan.rounds?.length ?? 0); round++) {
+        laterRoundEffects.set(
+            roundOffset, (laterRoundEffects.get(roundOffset) || 0) + 1,
+        );
+        roundOffset += monsterScan.rounds[round].length;
+    }
+    const runLaterRoundEffects = actorOffset => {
+        const count = laterRoundEffects.get(actorOffset) || 0;
+        for (let pass = 0; pass < count; pass++) {
+            runMonsterEveryturnEffects(
+                game.level?.monsters || [], game, rn2,
+            );
+        }
+        laterRoundEffects.delete(actorOffset);
+    };
     let earlierActorMessageInScan = false;
     let earlierActorPagerInScan = false;
     for (let actorIndex = 0;
         actorIndex < monsterScan.actors.length;
         actorIndex++) {
+        runLaterRoundEffects(actorIndex);
         const actor = monsterScan.actors[actorIndex];
         // C iter_mons_safe() snapshots pointers, but movemon_singlemon()
         // rechecks DEADMONSTER and mon_offmap when each saved identity is
@@ -5590,6 +5609,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (!movement?.moved) continue;
     }
+    runLaterRoundEffects(monsterScan.actors.length);
     for (const wake of game._deferredMonsterTrapWakes || []) {
         for (const monster of game.level?.monsters || []) {
             if (!monster || (monster.mhp ?? 1) <= 0) continue;
