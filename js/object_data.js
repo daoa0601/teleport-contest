@@ -115,6 +115,7 @@ export const AMULET_OF_LIFE_SAVING = 202;
 export const AMULET_OF_STRANGULATION = 203;
 export const AMULET_OF_RESTFUL_SLEEP = 204;
 export const AMULET_OF_CHANGE = 206;
+export const AMULET_OF_REFLECTION = 208;
 export const AMULET_OF_GUARDING = 210;
 export const FAKE_AMULET_OF_YENDOR = 212;
 export const AMULET_OF_YENDOR = 213;

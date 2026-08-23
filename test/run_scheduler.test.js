@@ -9,7 +9,7 @@ import {
     MAGIC_PORTAL, M_AP_MONSTER,
     MORGUE, POOL, ROOM, SDOOR, SHOPBASE, SINK, SLP_GAS_TRAP, SQKY_BOARD, STONE,
     STRAT_WAITFORU, TEMPLE, TRCORNER,
-    WATER, WEB, W_NONDIGGABLE, W_NONPASSWALL, ZOO,
+    WATER, WEB, W_AMUL, W_NONDIGGABLE, W_NONPASSWALL, ZOO,
 } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import {
@@ -9914,6 +9914,53 @@ test('seed0014 Warning-bearing Hallucination rebuild preserves display phase',
             .map(object => object.otyp)), [[307], [212]]);
         assert.equal(game.context.move, 0);
     });
+
+test('seed0470 created Wizard wears its life-saving amulet', async () => {
+    const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+        + '#wizgenesis\nhostile Wizard of Yendor\ny';
+    const result = await runSegment({
+        seed: 470,
+        datetime: '20000110090000',
+        nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+        moves,
+        storage: new Map(),
+    });
+
+    assert.equal(result.getScreens().length, 98);
+    assertRngSliceExact(result.getRngSlices()[97], [
+        'rn2(8)=2', 'rn2(7)=0', 'rn2(6)=4', 'rn2(5)=1',
+        'rn2(4)=1', 'rn2(3)=0', 'rn2(2)=0',
+        'rn2(16)=4', 'rn2(15)=2', 'rn2(14)=0', 'rn2(13)=10',
+        'rn2(12)=8', 'rn2(11)=4', 'rn2(10)=5', 'rn2(9)=5',
+        'rn2(8)=3', 'rn2(7)=2', 'rn2(6)=3', 'rn2(5)=3',
+        'rn2(4)=2', 'rn2(3)=2', 'rn2(2)=0',
+        'rn2(24)=9', 'rn2(23)=1', 'rn2(22)=13', 'rn2(21)=10',
+        'rn2(20)=14', 'rn2(19)=9', 'rn2(18)=9', 'rn2(17)=6',
+        'rn2(16)=15', 'rn2(15)=8', 'rn2(14)=4', 'rn2(13)=7',
+        'rn2(12)=11', 'rn2(11)=4', 'rn2(10)=0', 'rn2(9)=8',
+        'rn2(8)=0', 'rn2(7)=2', 'rn2(6)=5', 'rn2(5)=2',
+        'rn2(4)=3', 'rn2(3)=1', 'rn2(2)=0',
+        'rnd(2)=2', 'd(30,8)=122', 'rn2(50)=34', 'rn2(100)=15',
+        'rn2(40)=0', 'rnd(2)=1', 'rn2(10)=4', 'rn2(10)=1',
+        'rn2(100)=33',
+    ], 'seed0470 Wizard life-saving amulet construction RNG');
+    assert.equal(decodedTopline(result.getScreens()[97]),
+        'The Wizard of Yendor appears next to you.');
+    assert.equal(decodedRow(result.getScreens()[97], 23),
+        'Dlvl:1 $:1403 HP:177(177) Pw:255(255) AC:8 Xp:30');
+    assert.deepEqual(result.getCursors()[97], [41, 6, 1]);
+
+    const wizard = game.level.monsters.find(monster => monster.mnum === 285);
+    assert.ok(wizard);
+    assert.equal(wizard.iswiz, true);
+    assert.equal(wizard.mhp, 122);
+    assert.equal(wizard.mhpmax, 122);
+    assert.deepEqual(wizard.minvent.map(object => object.otyp), [202]);
+    const amulet = wizard.minvent[0];
+    assert.equal(amulet.worn, true);
+    assert.equal(amulet.owornmask, W_AMUL);
+    assert.equal(wizard.misc_worn_check, W_AMUL);
+});
 
 test('seed0014 Hallucination rejects death touch and hides speed potion',
     async () => {
