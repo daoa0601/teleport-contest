@@ -13407,3 +13407,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   36/44 to39/44 with no new regression.  The next shared public family is
   missing `distfleeck`/actor admission in seed0030,0360,0361 and0399; seed4500
   remains a separate debug-intrinsic continuation.
+- Commit ae0a86f restores `dochug()`'s second `distfleeck` for non-died
+  `MMOVE_DONE` actions before phase-four suppression.  It fully recovers
+  seed0360 at120,639 RNG calls and833 screens/cursors, makes seed0361
+  RNG/cursor complete and advances seed0030.  Commit b4042ac then closes
+  seed0361's sole inventory screen by routing known TOOL_CLASS weapon-tools
+  through weapon-class signed enchantment naming; its pick-axe is shown as
+  +0.  The managed corpus improves to41/44 with no new regression, and the
+  custom seed52/seed211 carriers remain strict complete.  Remaining sessions
+  are seed0030, seed0399 and seed4500; the latter's missing second intrinsic
+  timeout line is the next bounded target.

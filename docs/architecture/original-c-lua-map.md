@@ -33744,3 +33744,64 @@ first-round everyturn effects when no monster can act, across the represented
 scheduler entry loops.  It does not close other everyturn species, dynamic
 membership invalidation or the remaining actor-admission regressions.  Lua
 owns possible level content but no movemon visit/action distinction.
+
+## 928. MMOVE_DONE retains dochug's second distfleeck
+
+~~~mermaid
+flowchart TD
+    Dochug["dochug establishes apparent hero and first distfleeck"] --> Move["m_move or special item action"]
+    Move --> Status{"movement status"}
+    Status -->|"MMOVE_DIED"| Stop["return without post tail"]
+    Status -->|"MMOVE_DONE"| Recheck["second distfleeck"]
+    Status -->|"MMOVE_MOVED or NOTHING"| Recheck
+    Recheck --> Switch["dochug status switch"]
+    Switch -->|"DONE"| Suppress["suppress phase four and return"]
+    Switch -->|"other"| Phase4["continue ranged or adjacent attack checks"]
+    Underfoot["m_search_items finds desired object under actor"] --> Move
+    Defensive["m_move completes defensive action"] --> Move
+    Lua["Lua contributes floor and actor geometry only"] -.-> Underfoot
+    Lua -.->|"no movement-tail ownership"| Recheck
+~~~
+
+`MMOVE_DONE` means that `m_move()` consumed the actor action, not that
+`dochug()` skips its post-movement distance/scare recomputation.  C excludes
+only `MMOVE_DIED` from the second `distfleeck()`, then switches on status and
+uses DONE to suppress phase four.  JavaScript's `actionCompleted` flag already
+represented that latter suppression but was returned before the shared tail.
+
+The completion path now calls `finishDochugAfterMovement()` first.  That helper
+records the second `rn2(5)` and immediately returns for `actionCompleted`, so
+tunneling, pickup, phase-four attacks and actor identity remain unchanged.
+Seed0030's underfoot-item orc, seed0360's world-tour completion and seed0361's
+defensive completion are the three independent witnesses.
+
+This section closes the represented non-died MMOVE_DONE tail and restores
+seed0360 completely.  It does not close every special status producer,
+MMOVE_DIED cleanup or the later seed0030/seed0399 actor gaps.  Lua owns none of
+the status or distfleeck ordering.
+
+## 929. Weapon-tools use weapon-class enchantment naming
+
+~~~mermaid
+flowchart TD
+    Object["known inventory object"] --> Raw{"raw object class"}
+    Raw -->|"weapon or armor"| Weapon["weapon-class naming"]
+    Raw -->|"tool"| Skill{"object subtype or skill nonzero?"}
+    Skill -->|"yes: pick-axe, grappling hook, unicorn horn"| Weapon
+    Skill -->|"no"| Tool["ordinary tool naming"]
+    Weapon --> Bonus["prepend signed spe, including +0"]
+    Bonus --> Slot["append alternate weapon or wielded suffix"]
+    Lua["Lua contributes no inventory naming ownership"] -.-> Object
+~~~
+
+C `doname()` dispatches on `is_weptool(obj) ? WEAPON_CLASS : obj->oclass`.
+Known weapon-tools therefore receive erosion and signed-enchantment naming
+before slot suffixes even though their raw class is TOOL_CLASS.  The generated
+JavaScript `OBJECT_SUBTYPE` is nonzero for exactly the three weapon-tools, so it
+provides the same class promotion without a pick-axe-only exception.
+
+Seed0361 input354 pins a known spe0 pick-axe in the alternate slot as
+`a +0 pick-axe (alternate weapon; not wielded)`.  All53,865 RNG calls and all
+366 screens/cursors are exact afterward.  This section closes known inventory
+enchantment display for the represented weapon-tool set.  It does not claim
+unknown-spe disclosure or every non-inventory naming path.  Lua owns none.

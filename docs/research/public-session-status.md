@@ -1,5 +1,36 @@
 # Public session status
 
+## Current working-tree engine-only gate: 41/44 exact
+
+Measured 2026-08-23 21:30 EEST from commit `b4042ac`, after restoring
+`MMOVE_DONE`'s trailing `distfleeck` and weapon-tool enchantment naming:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **41/44 exact** at **41+0.34 ms/turn** (R² 0.840).  The single
+owned process completed in **13.74 seconds** at **264,978,432 bytes maximum
+RSS** and left no matching process.  Seed0360 and seed0361 are newly exact;
+no previously accepted session regressed.
+
+| Recovered session | RNG | Screens | Cursors |
+| --- | ---: | ---: | ---: |
+| `seed0360` | 120,639/120,639 | 833/833 | 833/833 |
+| `seed0361` | 53,865/53,865 | 366/366 | 366/366 |
+
+The three current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current earliest interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0030` | 29,810/105,529 | 1,911/1,953 | 1,945/1,953 | segment2/input47 missing `rn2(20) @ m_move` |
+| `seed0399` | 10,224/11,409 | 117/532 | 454/532 | input117 missing opening actor block |
+| `seed4500` | 50,318/108,275 | 594/1,814 | 1,293/1,814 | input577 missing second debug-intrinsic timeout line |
+
+The next recovery target is seed4500's bounded intrinsic-timeout continuation.
+The normal fixture-enabled corpus remains deferred while engine-only is red.
+Nothing was pushed, submitted, or run against the official held-out judge.
+
 ## Current working-tree engine-only gate: 39/44 exact
 
 Measured 2026-08-23 21:16 EEST from commit `c379dde`, after recovering

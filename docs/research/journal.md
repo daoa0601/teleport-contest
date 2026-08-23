@@ -91125,3 +91125,111 @@ family before the separate seed4500 debug-intrinsic continuation.
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:21 EEST, journal block 3028] {#distfleeck #mmove-done #action-completed #seed0030 #seed0360 #seed0361 #earliest-divergence #source-diagnosis #prediction}
+
+**Seed0030 identity result:** segment2/input35 has the same two JavaScript
+actors as native's call shape.  Rat109 owns `rn2(5),rn2(32),rn2(5)`; orc95
+owns the next `rn2(5)` and returns `MMOVE_DONE` because an attractive object is
+already underfoot.  Native then owns one more `rn2(5) @ distfleeck` before
+four mcalcmove allocations.  The next-screen orc displacement is downstream
+RNG phase, not evidence for a third actor.
+
+**C/JavaScript owner:** C `dochug()` calls `m_move()`, runs postmov, then
+recomputes `distfleeck()` whenever status is not `MMOVE_DIED`; only afterward
+does its switch handle `MMOVE_DONE`.  JavaScript's
+`completeMovedMonsterAction()` returns immediately on `actionCompleted` before
+calling `finishDochugAfterMovement()`, even though that helper already records
+the trailing call before suppressing phase four for the same flag.
+
+**Cross-witness prediction:** route `actionCompleted` through the existing tail
+and return afterward.  Seed0030 input35 should gain exactly one call;
+seed0360/input673's missing post-move `distfleeck` and seed0361/input236's
+defensive-completion gap may share the same repair.  Do not add an actor or
+patch mcalcmove values.  Seed0399's missing opening actor block remains a
+separate control until evidence joins it.
+
+---
+
+### [2026-08-23 21:26 EEST, journal block 3029] {#seed0361 #input354 #inventory #weapon-tool #pickaxe #enchantment #screen-only #source-diagnosis #prediction}
+
+**Remaining seed0361 witness:** after the MMOVE_DONE repair, all53,865 RNG
+calls and366 cursors match; input354 is the sole red screen.  Native inventory
+row12 reads `e - a +0 pick-axe (alternate weapon; not wielded)`, while
+JavaScript omits `+0`.  The live item is already exact: known, spe/enchantment0,
+tool class6, alternate slot and starting-inventory identity.
+
+**Source owner:** C `objnam.c:doname()` switches on
+`is_weptool(obj) ? WEAPON_CLASS : obj->oclass`, so a known weapon-tool enters
+the same `%+d` branch as weapons.  JavaScript requires raw class2/3/4 for
+visible enchantment.  Generated `OBJECT_SUBTYPE` is nonzero for exactly the
+three C weapon-tools in TOOL_CLASS: pick-axe, grappling hook and unicorn horn.
+
+**Prediction:** treat a class6/nonzero-subtype object as a weapon-tool for
+inventory enchantment visibility.  Pin input354 plus adjacent inputs and rerun
+the complete session; no RNG, state, cursor or other tool naming should change.
+
+---
+
+### [2026-08-23 21:27 EEST, journal block 3030] {#distfleeck #mmove-done #action-completed #implementation #complete-replay #bounded-regression #heldout-control #architecture #process-safety}
+
+**Implementation:** commit `ae0a86f` routes `actionCompleted` movement through
+`finishDochugAfterMovement()` before returning.  That helper records the
+second `distfleeck` for every non-died `MMOVE_DONE` status and then suppresses
+phase four, matching C's order without adding an actor or modifying movement
+allocation.
+
+**Evidence:** the three-witness input regression passes **1/1** in **0.92
+seconds** at **307,494,912 bytes maximum RSS**.  Seed0360 becomes strict
+120,639/120,639 RNG and833/833 screens/cursors.  Seed0361 becomes RNG/cursor
+complete at53,865/53,865 and366/366 with one screen-only naming residue.
+Seed0030 advances to29,810/105,529 RNG,1,911/1,953 screens and1,945/1,953
+cursors.  The three-session scorer took **2.16 seconds** at **269,828,096
+bytes maximum RSS**.
+
+**Adversarial control:** custom seed52/seed211 remain strict2/2 with793/793
+screens/cursors and40/40 plus4/4 animation in **0.68 seconds** at
+**136,560,640 bytes maximum RSS**.  Section928 records the MMOVE_DONE tail;
+Lua owns none.  All processes exited; no normal corpus, hidden judge, push or
+publication ran.
+
+---
+
+### [2026-08-23 21:29 EEST, journal block 3031] {#seed0361 #input354 #inventory #weapon-tool #pickaxe #enchantment #implementation #complete-replay #bounded-regression #architecture #process-safety}
+
+**Implementation:** commit `b4042ac` treats class6 objects with nonzero
+generated `OBJECT_SUBTYPE` as weapon-tools for known enchantment naming.  This
+mirrors C's `is_weptool() ? WEAPON_CLASS : oclass` switch and covers pick-axe,
+grappling hook and unicorn horn rather than special-casing one row.
+
+**Acceptance:** the input353--355 regression passes **1/1** in **0.48 seconds**
+at **167,051,264 bytes maximum RSS**.  Seed0361 becomes strict **PASS** at
+53,865/53,865 RNG and366/366 screens/cursors in **0.52 seconds** at
+**167,198,720 bytes maximum RSS**.  Three inventory naming/BUC controls pass
+**3/3** in **1.02 seconds** at **277,577,728 bytes maximum RSS**.  Section929
+maps the naming owner; Lua owns none.
+
+---
+
+### [2026-08-23 21:30 EEST, journal block 3032] {#public-corpus #engine-only #41-of-44 #regression-recovery #seed0030 #seed0399 #seed4500 #priority #process-safety}
+
+**Recovered full gate:** one managed engine-only corpus completes **41/44
+exact** at **41+0.34 ms/turn** (R²0.840) in **13.74 seconds** at
+**264,978,432 bytes maximum RSS**.  Seed0360 and seed0361 are newly complete;
+no accepted session regressed.  The normal fixture-on corpus was not run.
+
+**Current three:** seed0030 is29,810/105,529 RNG,1,911/1,953 screens and
+1,945/1,953 cursors; its next edge is segment2/input47 call10, where native
+owns `rn2(20)=8 @ m_move`.  Seed0399 remains10,224/11,409 RNG and117/532
+screens, first red at input117's missing opening actor block.  Seed4500 is
+50,318/108,275 RNG,594/1,814 screens and1,293/1,814 cursors; its earliest
+screen is input577's omitted `Timeout for very fast set to 30.` continuation,
+followed by missing maintenance at579.
+
+**Priority:** take seed4500 next because its earliest owner is a bounded
+debug-intrinsic message/input transaction with exact preceding state.  Keep
+seed0030's m_move probe and seed0399's actor admission as independent live
+routes.  The post-gate registry is empty; no normal corpus, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
