@@ -32269,3 +32269,40 @@ non-Wizard unique/personal combinations, failed creation, explicit gender,
 tame/peaceful/sleep modifier timing, invisible/hidden creation, Warning-
 bearing activation, or other constructor frontends.  Lua contributes only
 the current level geometry.
+
+## 892. TTY condition suffixes follow the status table, not legacy bot1 order
+
+~~~mermaid
+flowchart TD
+    State["live hero conditions after spell effect"] --> Manager["botl status manager BL_CONDITION bitmask"]
+    Manager --> Table["conditions array declaration order"]
+    Table --> Blind["Blind"]
+    Blind --> Conf["Conf"]
+    Conf --> Deaf["Deaf"]
+    Deaf --> Fly["Fly"]
+    Fly --> Hallu["Hallu"]
+    Hallu --> Ride["Ride and later declared fields"]
+    Ride --> Stun["Stun"]
+    Legacy["legacy bot1 builds Stun then Hallu"] -.->|"not authoritative for current tty status API"| Manager
+    Stun --> Line["... Xp:30 Hallu Stun"]
+    Lua["Lua owns no hero condition or status layout policy"] -.-> State
+~~~
+
+NetHack retains an older direct string builder in `botl.c` which appends Stun
+before Hallu, but the active status windowport receives a BL_CONDITION bitmask
+and renders names from the `conditions[]` table.  That table declares Hallu
+before Stun.  Source selection therefore depends on the status API in use;
+copying the legacy order into the JavaScript terminal line was not equivalent.
+
+Seed14 input136 has both conditions active after stun-you.  Its gameplay is
+already exact: d(6,4)=11 establishes duration, the Wizard relocates, a later
+claw rolls 18, and tty displays the same combined `You reel...`/pugasus line
+at cursor68.  Only row23 differed.  Moving the Hallu suffix before Stun makes
+the entire 144-state controlled replay exact, ending HP58/144,
+Hallucination26 and Stun10.
+
+This closes the full-name Hallu/Stun ordering in the current 80-column tty
+layout.  It does not establish all `conditions[]` fields, abbreviated labels,
+ranking under width pressure, hilite grouping, Ride position, Busy/held/
+trapped variants, or other windowports.  Lua contributes none of status state
+or formatting.

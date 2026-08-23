@@ -13058,3 +13058,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   `Stun Hallu` in JS versus native `Hallu Stun`.  Non-Wizard ARTICLE_A
   Hallucinated genesis, modifier timing, failed creation, Warning activation,
   and other unique/personal-name combinations remain open.
+- Seed14's Hallucination-before-genesis carrier is now complete at 144/144
+  states after correcting status-condition ordering.  Input136 already had
+  exact stun duration, relocation, contact RNG, topline, HP and cursor; only
+  JavaScript `Stun Hallu` versus native `Hallu Stun` differed.  The active tty
+  status window uses botl.c's `conditions[]` order, where Hallu precedes Stun,
+  not the older legacy bot1 string order.  Swapping those two implemented
+  suffixes restores the complete replay and final HP58/144, Hallucination26,
+  Stun10 state.  Focused Hallucination/stun and combined fixture-disabled
+  portfolios pass 4/4 and 24/24.  Other condition combinations, abbreviated
+  fields, width pressure, hilites, Ride placement, Warning activation and
+  monster amulet wear remain open.

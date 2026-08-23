@@ -88288,3 +88288,42 @@ public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 15:04 EEST, journal block 2927] {#seed14 #input136 #status #conditions-table #hallu #stun #botl #tty #ordering #implementation #complete-replay #regression #architecture #ledger #process-safety #priority}
+
+**Witness and competing source tables:** after Hallucinated forced genesis was
+exact through input135, input136 retained identical 45-call RNG, topline,
+HP111/144, cursor68 and active Hallucination/Stun state.  JavaScript row23
+ended `Stun Hallu`; native ended `Hallu Stun`.  `botl.c` contains both an old
+direct `bot1()` order with Stun before Hallu and the current status-manager
+`conditions[]` table with Hallu before Stun, so choosing the wrong source
+frontend could plausibly justify either string.
+
+**Authoritative contract and implementation:** the tty path used by the
+recording receives BL_CONDITION through the status API and renders the table's
+declared fields.  For the implemented subset that places Blind, Conf, Deaf,
+Fly and Hallu before later Stun.  Commit `11dc5a8` moves only the witnessed
+Hallu suffix ahead of Stun; it does not infer ordering for unimplemented
+condition fields or change live timeouts.
+
+**Measured effect and durable evidence:** seed14 is now exact for all **144
+native RNG/screen/cursor states from input3 onward**.  Strict replay took
+**0.25 seconds** at **124,387,328 bytes maximum RSS**.  Input136 displays
+`... Xp:30 Hallu Stun` while retaining d(6,4)=11, relocation/contact tail and
+cursor68.  Final state is HP58/144, Hallucination26, Stun10 and two real
+Wizards.  The focused forced-genesis/ordinary/Antimagic/Free-Action stun set
+passes **4/4** in **0.29 seconds** at **136,232,960 bytes maximum RSS**.  The
+expanded fixture-disabled Priest/Wizard portfolio passes **24/24** in **0.67
+seconds** at **177,242,112 bytes maximum RSS**.  Every process exited.
+
+**Map and next blocker:** section892 records why the status manager, not the
+legacy direct string, owns this result; Lua owns neither state nor layout.
+The controlled seed14 carrier is complete.  Keep other condition combinations,
+abbreviations, width/ranking, hilites, Ride placement and alternate windowports
+open.  The nearest constructor successors are Warning-bearing Hallucination
+activation and actual monster amulet wear; both require independent native
+state witnesses rather than extension from this status-only change.  No full
+corpus, public-status rewrite, hidden judge, push, or publication ran;
+unrelated dirty files remain untouched.
+
+---
