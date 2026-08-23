@@ -89808,3 +89808,72 @@ rewrite, hidden judge, push or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 21:14 EEST, journal block 2975] {#intervention #outcome3 #aggravate #outcome4 #nasty #selector #seed52 #native-validation-required #process-safety #priority}
+
+**Bounded nominee scan:** one engine-only JavaScript process scanned seeds1--32
+with the source-valid 792-input forced-noop recipe and found no final unresolved
+outcome3/4.  A second singly-owned process scanned seeds33--96 and nominated
+seed52 outcome3; no outcome4 nominee appeared through96.  The scans completed
+in **2.27/3.84 seconds** at **357,253,120/325,550,080 bytes maximum RSS**.
+
+**Evidence boundary and decision:** prior JavaScript selectors falsely labeled
+seed13 and seed12 because earlier state/RNG gaps changed native intervention
+selection.  Seed52 is therefore only a routing hint.  Record the identical
+recipe natively, require an explicit `rn2(6)=3 @ intervene` callsite, then
+localize its earliest engine-only edge before making any aggravate claim.  Do
+not widen the selector window until seed52 is accepted or rejected.  Every
+selector process exited.  No corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 21:22 EEST, journal block 2976] {#seed52 #intervention #outcome3 #aggravate #ogre-tyrant #ambient-birth #m-initweap #earliest-divergence #native-witness #process-safety #priority}
+
+**Native carrier validation:** the fresh 793-state seed52 recording contains
+`rn2(6)=3 @ intervene` at input540 followed by reset `rn2(200)=41`.  Outcome3
+is silent: the visible top line remains `The newt bites!`, so the eventual
+acceptance must assert monster wake/wait state rather than infer from prose.
+
+**Earliest divergence and source owner:** strict engine-only replay first
+diverges at input386 call266 during ambient ogre tyrant mnum205/id86 birth.
+Native completes ID, `d(13,8)=42` HP and sex, then S_OGRE `m_initweap()` owns
+`rn2(3)=0`, constructs a battle-axe, enters `rn2(75)=7`, and constructs the
+selected offensive object.  JavaScript skips the entire ogre class and starts
+the defensive inventory reservoir at `rn2(50)`.
+
+**Prediction and decision:** copy the existing mklev S_OGRE owner into the
+ambient constructor: ranges3 tyrant,6 leader,12 ordinary select battle-axe
+versus club, then the shared level-versus-rn2(75) offensive tail.  Re-localize
+before interpreting outcome3 state.  Pre-edit replay is **5,459/9,928 RNG,
+387/793 screens and 580/793 cursors** in **0.35 seconds** at **133,988,352
+bytes maximum RSS**.  The native recorder ran once and exited.  No focused
+regression, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 21:31 EEST, journal block 2977] {#seed52 #ogre-tyrant #ambient-birth #m-initweap #battle-axe #magic-missile-wand #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `4b17496` ports ambient
+S_OGRE ranked weapon selection plus its shared offensive-item reservoir.  The
+387-state regression bounds input386 by total length289 plus its 26-call
+constructor suffix, screen/cursor and durable ogre inventory state.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input490.  At input386 ogre tyrant id86/mnum205 receives battle-axe45
+from `rn2(3)=0`, wins the level-versus-`rn2(75)=7` gate and receives charged
+magic-missile wand429; final prefix state is (51,3), HP42/42, awake/hostile,
+inventory[45,429], wand spe6, hero HP60/169 and `udg_cnt=40`.  Full replay now
+reaches **7,004/9,928 RNG calls, 490/793 screens and 530/793 cursors** in **0.35
+seconds** at **135,200,768 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **5/5**
+in **0.40 seconds** at **144,375,808 bytes maximum RSS**.  Expanded controls
+pass **51/51** in **1.39 seconds** at **311,525,376 bytes maximum RSS**.
+Section910 and the ledger map the constructor-to-muse handoff.  Input491's
+magic-missile selection/zap/beam, downstream outcome3, outcome4 and animation
+remain open.  Every process exited.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

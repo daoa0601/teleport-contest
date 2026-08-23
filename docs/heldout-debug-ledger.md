@@ -13262,3 +13262,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   cursors; screens are 792/793 solely from input2, with 0/4 animation groups.
   Input731 selects already-mapped nervous outcome1, so nasty outcome4 remains
   unclaimed.  Focused/expanded gates pass 4/4 and50/50.
+- A bounded engine-only selector found no outcome3/4 through seed32 and one
+  outcome3 nominee through seed96.  Native seed52 validates that nominee with
+  `rn2(6)=3 @ intervene` at input540, but the branch remains downstream.
+  Input386 first closes ambient ogre tyrant armament: rank range3 selects
+  battle-axe45, level13 beats rn2(75)=7, and the offensive reservoir creates
+  magic-missile wand429 at spe6.  The actor ends id86 at (51,3), HP42/42,
+  inventory[45,429].  Engine parity advances through input490; input491's wand
+  use/beam is the next edge.  Focused/expanded gates pass 5/5 and51/51.

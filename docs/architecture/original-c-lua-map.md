@@ -33067,3 +33067,39 @@ selects the already-mapped nervous intervention outcome1, not nasty outcome4.
 This section does not close ordinary harmful WEB trapping/escape, blind or
 mindless observer knowledge, web deletion/disclosure, outcome4, tutorial
 projection, or animation.  Lua owns physical WEB/terrain geometry only.
+
+## 910. Ambient ogre armament exposes the offensive-wand boundary
+
+~~~mermaid
+flowchart TD
+    Birth["seed52 input386 ambient mnum205 ogre tyrant"] --> Core["ID86, HP42, sex and attitude"]
+    Core --> Rank["S_OGRE range is3 tyrant,6 leader,12 ordinary"]
+    Rank --> Roll["rn2 3 equals0 selects battle-axe45"]
+    Roll --> Axe["complete mksobj transaction"]
+    Axe --> Reservoir["mlevel13 exceeds rn2 75 equals7"]
+    Reservoir --> Select["rnd_offensive_item selects magic-missile wand429"]
+    Select --> Wand["complete charged-wand constructor, spe6"]
+    Wand --> Shared["ordinary m_initinv and maintenance tails"]
+    Shared --> Later["input491 find_offensive selects the retained wand"]
+    Lua["Lua contributes ambient placement geometry only"] -.-> Birth
+    Lua -.->|"no ownership"| Rank
+    Lua -.->|"no ownership"| Select
+~~~
+
+Native S_OGRE armament is a ranked class branch, not the default weapon table.
+Every ogre receives either a battle-axe or club, with leaders and tyrants using
+narrower battle-axe ranges, and then enters the shared level-versus-rn2(75)
+offensive-item reservoir.  Seed52 reaches the tyrant zero branch and its level
+13 wins the reservoir, producing a charged magic-missile wand after the axe.
+
+The input386 bounded state is ogre tyrant id86 at (51,3), HP42/42, hostile and
+awake, inventory[45,429], wand spe6.  The complete 289-call birth input is
+bounded by length plus its 26-call constructor suffix.  After this repair the
+carrier is exact from input3 through input490; input491 is a new transaction:
+the ogre uses wand429, opens a zap-line pager, and runs a first-experience
+forced-miss magic-missile beam.
+
+This section closes ambient ogre weapon/offensive-item construction.  It does
+not close magic-missile selection, zap prose/charge use, beam traversal,
+forced-miss monster contact, hero whiz/bounce pages, outcome3 aggravation, or
+the carrier's 40 animation groups.  Lua owns only physical placement.
