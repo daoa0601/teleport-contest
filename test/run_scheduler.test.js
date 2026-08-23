@@ -10625,6 +10625,58 @@ test('seed0012 cave spider crosses web before Newt miss',
         assert.equal(game.u.udg_cnt, 138);
     });
 
+test('seed0012 known webmaker preserves harmless-web admission',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 12,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 377),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 378);
+        assertRngSliceExact(result.getRngSlices()[377], [
+            'rn2(5)=1', 'rn2(8)=7', 'rn2(5)=4',
+            'rn2(5)=0', 'rn2(16)=6', 'rn2(1000)=388',
+            'rn2(5)=3', 'rn2(5)=1', 'rn2(5)=2',
+            'rn2(4)=1', 'rn2(5)=3', 'rn2(5)=3',
+            'rn2(5)=2', 'rn2(8)=1', 'rn2(5)=4',
+            'rn2(5)=0', 'rn2(5)=0', 'rn2(10)=3',
+            'rn2(5)=0', 'rn2(5)=3', 'rnd(20)=1',
+            'd(1,2)=2', 'rn2(3)=2', 'rn2(6)=5',
+            'rn2(5)=4', 'rn2(8)=7', 'rn2(5)=3',
+            'rn2(12)=9', 'rn2(12)=0', 'rn2(12)=3',
+            'rn2(12)=3', 'rn2(12)=4', 'rn2(12)=4',
+            'rn2(12)=1', 'rn2(12)=8', 'rn2(12)=0',
+            'rn2(25)=7', 'rn2(100)=17', 'rn2(400)=340',
+            'rn2(20)=13', 'rn2(67)=15',
+        ], 'seed0012 known harmless-web RNG');
+        assert.equal(decodedTopline(result.getScreens()[377]),
+            'The newt bites!');
+        assert.equal(decodedRow(result.getScreens()[377], 23),
+            'Dlvl:1 $:1031 HP:133(159) Pw:250(250) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[377], [53, 10, 1]);
+
+        const spider = game.level.monsters.find(monster =>
+            monster.m_id === 78);
+        assert.ok(spider);
+        assert.equal(spider.mnum, 94);
+        assert.deepEqual([spider.mx, spider.my], [21, 3]);
+        assert.equal(spider.mtrapped || 0, 0);
+        assert.equal(spider.mtrapseen & (1 << 17), 1 << 17);
+        const web = game.level.traps.find(trap =>
+            trap.tx === 21 && trap.ty === 3);
+        assert.ok(web);
+        assert.equal(web.ttyp, 18);
+        assert.equal(game.u.uhp, 133);
+        assert.equal(game.u.udg_cnt, 118);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)

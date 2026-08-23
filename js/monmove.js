@@ -1758,6 +1758,7 @@ function scareScrollAffects(monster, state, x, y) {
 function monsterTrapIsHarmless(monster, trap, state) {
     if (!trap) return true;
     const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
     // trap.c:floor_trigger() is the complete set bypassed by flight.  Magic,
     // anti-magic, polymorph, teleport, and portal traps affect airborne
     // actors and must still participate in known-trap avoidance.
@@ -1771,6 +1772,12 @@ function monsterTrapIsHarmless(monster, trap, state) {
         return true;
     if (trap.ttyp === BEAR_TRAP)
         return (MONSTER_SIZE[monster?.mnum] ?? 2) <= 1;
+    if (trap.ttyp === WEB) {
+        return !!(speciesFlags & (M1_AMORPHOUS | M1_UNSOLID))
+            || [94, 96].includes(monster?.mnum)
+            || symbol === S_VORTEX
+            || monster?.mnum === PM_AIR_ELEMENTAL;
+    }
     return [RUST_TRAP, STATUE_TRAP, MAGIC_TRAP, VIBRATING_SQUARE]
         .includes(trap.ttyp);
 }
@@ -5676,9 +5683,10 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === WEB) {
-        // trap.c:trapeffect_web(): webmakers cross safely; an ordinary
-        // monster becomes trapped without damage or an additional RNG draw.
-        if ([94, 96].includes(monster.mnum)) return null;
+        // trap.c:mintrap() checks learned-trap avoidance, then projects trap
+        // knowledge, before delegating to trapeffect_web().  Only the effect
+        // discovers that webmakers cross safely, so they still learn an
+        // unknown web and own later avoidance probes.
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -5687,6 +5695,7 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        if ([94, 96].includes(monster.mnum)) return null;
         monster.mtrapped = 1;
         if (!state?.viz_array
             || (state.viz_array?.[monster.my]?.[monster.mx] & 0x2)) {
