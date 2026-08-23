@@ -5304,7 +5304,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                     transientFlightCell = null;
-                    if (cansee(cell.x, cell.y)) {
+                    const flightVisible = cansee(cell.x, cell.y);
+                    if (flightVisible) {
                         show_glyph_cell(
                             cell.x, cell.y, projectileGlyph.ch,
                             projectileGlyph.color, projectileGlyph.decgfx,
@@ -5439,7 +5440,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                     transientFlightCell = null;
-                    if (cansee(cell.x, cell.y)) {
+                    const flightVisible = cansee(cell.x, cell.y);
+                    if (flightVisible) {
                         show_glyph_cell(
                             cell.x, cell.y, projectileGlyph.ch,
                             projectileGlyph.color, projectileGlyph.decgfx,
@@ -5447,6 +5449,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                         transientFlightCell = cell;
                     }
+                    await flush_screen(1);
+                    if (flightVisible)
+                        game.nhDisplay?.setCursor(cell.x, cell.y + 1);
+                    await game.animationFrame?.();
                 }
                 const targetVisible = cansee(
                     ranged.target.mx, ranged.target.my,
@@ -5462,6 +5468,25 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             ranged.hit ? 'It is hit.' : 'It is missed.',
                         );
                     }
+                    if (transientFlightCell)
+                        newsym(transientFlightCell.x, transientFlightCell.y);
+                    transientFlightCell = null;
+                    if (targetVisible) {
+                        show_glyph_cell(
+                            ranged.target.mx, ranged.target.my,
+                            projectileGlyph.ch, projectileGlyph.color,
+                            projectileGlyph.decgfx, projectileGlyph.attr,
+                        );
+                        transientFlightCell = {
+                            x: ranged.target.mx, y: ranged.target.my,
+                        };
+                    }
+                    const impactCursor = targetVisible
+                        ? [ranged.target.mx, ranged.target.my + 1]
+                        : [game._pending_message?.length || 0, 0];
+                    await flush_screen(1);
+                    game.nhDisplay?.setCursor(...impactCursor);
+                    await game.animationFrame?.();
                 } finally {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
