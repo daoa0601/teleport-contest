@@ -10024,6 +10024,78 @@ test('seed0470 wizkill consumes life-saving amulet and revives Wizard',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0592 death ray revives worn-amulet Wizard before bouncing',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkk    ';
+        const result = await runSegment({
+            seed: 592,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 128);
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(19)=13', 'rn2(7)=4', 'rn2(20)=17', 'rnd(8)=1',
+        ], 'seed0592 initial death-ray fatality RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You kill the Wizard of Yendor!  But wait...--More--');
+        assert.deepEqual(result.getCursors()[123], [51, 0, 1]);
+        assert.deepEqual(decodeScreen(result.getScreens()[123])[18][38], {
+            ch: 'x', color: 8, attr: 0, decgfx: 1,
+        });
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rn2(19)=15',
+        ], 'seed0592 death-ray life-saving discovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            "The Wizard of Yendor's medallion begins to glow!--More--");
+        assert.deepEqual(result.getCursors()[124], [56, 0, 1]);
+        assertRngSliceExact(result.getRngSlices()[125], [],
+            'seed0592 death-ray restoration pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[125]),
+            'The Wizard of Yendor looks much better!--More--');
+        assert.deepEqual(result.getCursors()[125], [47, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[126], [
+            'rn2(20)=7', 'rnd(8)=4',
+        ], 'seed0592 return-path Wizard miss RNG');
+        assert.equal(decodedTopline(result.getScreens()[126]),
+            'The medallion crumbles to dust!  The death ray bounces!--More--');
+        assert.deepEqual(result.getCursors()[126], [63, 0, 1]);
+        assert.deepEqual(decodeScreen(result.getScreens()[126])[17][38], {
+            ch: 'x', color: 8, attr: 0, decgfx: 1,
+        });
+
+        assertRngSliceExact(result.getRngSlices()[127], [
+            'rn2(20)=1',
+        ], 'seed0592 reflected death-ray hero hit RNG');
+        assert.equal(decodedTopline(result.getScreens()[127]),
+            'The death ray misses the Wizard of Yendor.  The death ray hits you!--More--');
+        assert.deepEqual(result.getCursors()[127], [75, 0, 1]);
+        assert.deepEqual(decodeScreen(result.getScreens()[127])[19][38], {
+            ch: 'x', color: 8, attr: 0, decgfx: 1,
+        });
+
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.dead, false);
+        assert.equal(wizard.mhp, 118);
+        assert.equal(wizard.mhpmax, 118);
+        assert.equal(wizard.mcanmove, 1);
+        assert.equal(wizard.mfrozen, 0);
+        assert.deepEqual(wizard.minvent.map(object => object.otyp), [329]);
+        assert.equal(wizard.misc_worn_check, I_SPECIAL);
+        assert.equal(game._knownObjectTypes.has(202), true);
+        assert.equal(game._vanquishedCounts?.has(285) ?? false, false);
+        assert.equal(game.context.no_of_wizards, 1);
+        assert.equal(game.u.uhp, 170);
+    });
+
 test('seed0014 Hallucination rejects death touch and hides speed potion',
     async () => {
         const result = await runHallucinatedDeathTouch(14, 128);

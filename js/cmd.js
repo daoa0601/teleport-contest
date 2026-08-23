@@ -113,9 +113,12 @@ import {
     findArmorClass, heroIsDisplaced,
 } from './armor.js';
 import {
-    checkMonsterGearNextTurn, findMonsterArmorClass,
+    findMonsterArmorClass,
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
+import {
+    lifeSaveMonster, wornMonsterLifeSaver,
+} from './mondeath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
@@ -223,7 +226,7 @@ import {
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_rogue_level,
-    W_AMUL, W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
+    W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
     WT_TOOMUCH_DIAGONAL, P_BOW,
 } from './const.js';
@@ -6225,46 +6228,6 @@ async function wizGenesis() {
     game.context.move = 0;
 }
 
-function wornMonsterLifeSaver(monster) {
-    return (monster?.minvent || monster?.inventory || []).find(object =>
-        object.otyp === 202 && ((object.owornmask ?? 0) & W_AMUL));
-}
-
-async function lifeSaveKilledMonster(monster, amulet) {
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    const subject = `The ${name}`;
-    await moreUntilDismissed(
-        `You kill the ${name}!  But wait...--More--`,
-    );
-
-    exerciseAttribute(4, true);
-    recordObjectKnowledge(amulet.otyp);
-    await moreUntilDismissed(
-        `${subject}'s medallion begins to glow!--More--`,
-    );
-    await moreUntilDismissed(`${subject} looks much better!--More--`);
-
-    const inventory = monster.minvent || monster.inventory || [];
-    const index = inventory.indexOf(amulet);
-    if (index >= 0) inventory.splice(index, 1);
-    amulet.owornmask = 0;
-    amulet.worn = false;
-    amulet.wornSlot = null;
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~W_AMUL;
-    checkMonsterGearNextTurn(monster);
-    monster.dead = false;
-    monster.mcanmove = 1;
-    monster.mfrozen = 0;
-    monster.mhpmax = Math.max(
-        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
-    );
-    monster.mhp = monster.mhpmax;
-    await pline('The medallion crumbles to dust!');
-    game._cursorOverride = [monster.mx - 1, monster.my + 1];
-}
-
 async function wizKill() {
     if (!game.flags?.debug) {
         await pline('#wizkill: unknown extended command.');
@@ -6314,7 +6277,11 @@ async function wizKill() {
     monster.mhp = 0;
     const amulet = wornMonsterLifeSaver(monster);
     if (amulet) {
-        await lifeSaveKilledMonster(monster, amulet);
+        const name = MONSTER_NAME[monster.mnum] || 'monster';
+        await lifeSaveMonster(monster, amulet, {
+            firstPage: `You kill the ${name}!  But wait...--More--`,
+            retainCursor: true,
+        });
     } else {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
             showKillMessage: true,
@@ -13004,7 +12971,7 @@ function rayMonsterAt(x, y) {
 
 // C ref: zap.c:zap_hit().  Negative AC invokes AC_VALUE only after the
 // ordinary non-zero hit roll; preserving that order matters to the PRNG log.
-function sleepRayHitsMonster(monster) {
+function rayHitsMonster(monster) {
     const armorClass = Number.isFinite(monster.mac) ? monster.mac
         : Number.isFinite(monster.ac) ? monster.ac
             : MONSTER_EXPERIENCE_META[monster.mnum]?.[0] ?? 10;
@@ -13013,6 +12980,17 @@ function sleepRayHitsMonster(monster) {
     const effectiveArmorClass = armorClass >= 0
         ? armorClass : -rnd(-armorClass);
     return 3 - chance < effectiveArmorClass;
+}
+
+const M2_DEMON = 0x00000100;
+const PM_DEATH_RIDER = 311;
+
+function monsterIgnoresDeathRay(monster) {
+    return monster?.mnum === PM_DEATH_RIDER
+        || monsterIsNonliving(monster?.mnum)
+        || !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_DEMON)
+        || !!monster?.vampshifter
+        || !!monster?.resistsMagic;
 }
 
 function rayHitsHero() {
@@ -13245,7 +13223,7 @@ async function zapSleepRay(direction) {
             }
             const monster = rayMonsterAt(x, y);
             if (monster) {
-                if (sleepRayHitsMonster(monster)) {
+                if (rayHitsMonster(monster)) {
                     if (monster.reflecting) {
                         dx = -dx;
                         dy = -dy;
@@ -13303,6 +13281,113 @@ async function zapSleepRay(direction) {
     }
     for (const cell of beamCells.values()) newsym(cell.x, cell.y);
     if (!emittedMessage) game._pending_message = '';
+}
+
+// C refs: zap.c:weffects() -> ubuzz(ZT_DEATH) -> dobuzz() -> zhitm();
+// mon.c:xkilled()/mondead()/lifesaved_monster().  This is a resumable ray:
+// tty can suspend the credited kill, revival, bounce, and return-path miss
+// while the same beam and command transaction remain live.
+async function zapDeathRay(direction) {
+    exerciseAttribute(2, true);
+    let dx = DIR_DX[direction] || 0;
+    let dy = DIR_DY[direction] || 0;
+    let x = game.u.ux;
+    let y = game.u.uy;
+    let range = 7 + rn2(7);
+    const beamCells = new Map();
+
+    const paintBeamCell = (beamX, beamY, beamDx, beamDy) => {
+        beamCells.set(`${beamX},${beamY}`, { x: beamX, y: beamY });
+        if (beamDy === 0) {
+            show_glyph_cell(beamX, beamY, 'q', NO_COLOR, true);
+        } else if (beamDx === 0) {
+            show_glyph_cell(beamX, beamY, 'x', NO_COLOR, true);
+        } else {
+            show_glyph_cell(
+                beamX, beamY, beamDx === beamDy ? '\\' : '/',
+                NO_COLOR, false,
+            );
+        }
+    };
+
+    while (range-- > 0) {
+        const previousX = x;
+        const previousY = y;
+        x += dx;
+        y += dy;
+        const valid = rayPositionIsValid(x, y);
+        const location = valid ? game.level?.at(x, y) : null;
+
+        if (valid && location?.typ !== STONE) {
+            if (cansee(x, y)
+                && (rayPositionIsOpen(x, y)
+                    || (rayPositionIsValid(previousX, previousY)
+                        && cansee(previousX, previousY)))) {
+                paintBeamCell(x, y, dx, dy);
+            }
+
+            const monster = rayMonsterAt(x, y);
+            if (monster) {
+                if (rayHitsMonster(monster)) {
+                    const name = MONSTER_NAME[monster.mnum] || 'monster';
+                    if (monsterIgnoresDeathRay(monster)) {
+                        if (cansee(x, y)) {
+                            await plineWithContinuation(
+                                `The death ray hits the ${name}.`,
+                            );
+                        }
+                    } else {
+                        monster.mhp = 0;
+                        const amulet = wornMonsterLifeSaver(monster);
+                        if (amulet) {
+                            await lifeSaveMonster(monster, amulet, {
+                                firstPage:
+                                    `You kill the ${name}!  But wait...--More--`,
+                            });
+                        } else {
+                            await finishHeroMonsterKill(
+                                monster, monster.mx, monster.my,
+                                { showKillMessage: true, weaponHit: false },
+                            );
+                        }
+                    }
+                    range -= 2;
+                } else if (cansee(x, y)) {
+                    const name = MONSTER_NAME[monster.mnum] || 'monster';
+                    await plineWithContinuation(
+                        `The death ray misses the ${name}.`,
+                    );
+                }
+            } else if (x === game.u.ux && y === game.u.uy && range >= 0) {
+                if (rayHitsHero()) {
+                    range -= 2;
+                    await plineWithContinuation('The death ray hits you!');
+                    // done() is urgent output.  Before it can mutate hero
+                    // death state, tty pages the accumulated ray prose; an
+                    // exhausted replay legitimately ends at this boundary.
+                    const pending = game._pending_message;
+                    if (pending)
+                        await moreUntilDismissed(`${pending}--More--`);
+                    game.u.uhp = 0;
+                    await moreUntilDismissed('You die...--More--');
+                    return;
+                }
+                await plineWithContinuation('The death ray whizzes by you!');
+            }
+        }
+
+        if (!rayPositionIsOpen(x, y)) {
+            range--;
+            if (range > 0 && rayPositionIsValid(previousX, previousY)
+                && cansee(previousX, previousY)) {
+                await plineWithContinuation('The death ray bounces!');
+            }
+            const bounceback = !valid || location?.typ === STONE ? 10 : 75;
+            ({ dx, dy } = rayBounceDirection(x, y, dx, dy, bounceback));
+        }
+    }
+
+    for (const cell of beamCells.values()) newsym(cell.x, cell.y);
 }
 
 // C refs: zap.c:weffects()->bhit()->bhitm(WAN_CANCELLATION),
@@ -13482,7 +13567,7 @@ async function zapColdRay(direction) {
 
             const monster = rayMonsterAt(x, y);
             if (monster) {
-                if (sleepRayHitsMonster(monster)) {
+                if (rayHitsMonster(monster)) {
                     if (monster.reflecting) {
                         dx = -dx;
                         dy = -dy;
@@ -13696,6 +13781,18 @@ async function dozap() {
         }
 
         await finishDeathWithBones();
+        return;
+    }
+    if (wand.otyp === WAN_DEATH && DIR_DX[directionChar] !== undefined
+        && directionChar !== '.') {
+        await zapDeathRay(directionChar);
+        if (wand.dknown) {
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
         return;
     }
     if (wand.otyp === WAN_POLYMORPH && directionChar === '.') {
