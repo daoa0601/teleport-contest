@@ -898,6 +898,41 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
     loc.gnew = 1;
 }
 
+// tty cursor ownership for transient map animation follows the last cell whose
+// pending map projection differs from the physical terminal grid.  A tmp_at()
+// call whose glyph already matches the underlying floor leaves the cursor at
+// an earlier dirty cell, so the projectile coordinate itself is insufficient.
+export function lastDirtyMapCursor(g = game) {
+    const grid = g.nhDisplay?.grid;
+    if (!grid) return null;
+    let cursor = null;
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = g.level?.at(x, y);
+            const rawColor = loc?.disp_color ?? NO_COLOR;
+            const omittedBlank = loc?.disp_ch === ' '
+                && !((loc.disp_attr ?? 0) & 5)
+                && (rawColor === NO_COLOR || rawColor === CLR_GRAY);
+            const desiredCh = loc?.disp_ch && !omittedBlank
+                ? loc.disp_decgfx
+                    ? DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch
+                    : loc.disp_ch
+                : ' ';
+            const desiredColor = loc?.disp_ch && !omittedBlank
+                ? rawColor : CLR_GRAY;
+            const desiredAttr = loc?.disp_ch && !omittedBlank
+                ? loc.disp_attr ?? 0 : 0;
+            const actual = grid[y + 1]?.[x - 1];
+            if (!actual || actual.ch !== desiredCh
+                || actual.color !== desiredColor
+                || actual.attr !== desiredAttr) {
+                cursor = [x, y + 1];
+            }
+        }
+    }
+    return cursor;
+}
+
 // C display.c:map_invisible().  Unlike a transient actor overlay, an unseen
 // attacker's `I` is hero memory and must survive later blind redraws until a
 // caller explicitly discovers that the square no longer contains that

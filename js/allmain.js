@@ -35,6 +35,7 @@ import {
     see_monsters, see_objects, see_traps,
     show_glyph_cell, swallowed, transientObjectGlyph,
     _statusLine1, _statusLine2, canProjectMonster, canSpotMonster,
+    lastDirtyMapCursor,
 } from './display.js';
 import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
@@ -45,9 +46,7 @@ import {
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
-import {
-    NO_COLOR, CLR_GRAY, CLR_WHITE, CLR_BRIGHT_BLUE, DEC_TO_UNICODE,
-} from './terminal.js';
+import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
     ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOULDER, BOW, CLUB, CORPSE, CROSSBOW,
     CROSSBOW_BOLT, CRYSTAL_BALL, DAGGER, DART,
@@ -3330,37 +3329,6 @@ function monsterBeamTargetAt(x, y) {
     return game.level?.monsters?.find(monster =>
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)
         || null;
-}
-
-function lastDirtyMapCursor() {
-    const grid = game.nhDisplay?.grid;
-    if (!grid) return null;
-    let cursor = null;
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            const rawColor = loc?.disp_color ?? NO_COLOR;
-            const omittedBlank = loc?.disp_ch === ' '
-                && !((loc.disp_attr ?? 0) & 5)
-                && (rawColor === NO_COLOR || rawColor === CLR_GRAY);
-            const desiredCh = loc?.disp_ch && !omittedBlank
-                ? loc.disp_decgfx
-                    ? DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch
-                    : loc.disp_ch
-                : ' ';
-            const desiredColor = loc?.disp_ch && !omittedBlank
-                ? rawColor : CLR_GRAY;
-            const desiredAttr = loc?.disp_ch && !omittedBlank
-                ? loc.disp_attr ?? 0 : 0;
-            const actual = grid[y + 1]?.[x - 1];
-            if (!actual || actual.ch !== desiredCh
-                || actual.color !== desiredColor
-                || actual.attr !== desiredAttr) {
-                cursor = [x, y + 1];
-            }
-        }
-    }
-    return cursor;
 }
 
 // C muse.c:use_offensive()->buzz()/buzz_force_miss()->dobuzz().  The beam

@@ -15,7 +15,7 @@ import {
     monsterHasWarningProjection,
     see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName,
     randomDisplayMonsterSubject, see_monsters, see_objects, see_traps,
-    transientObjectGlyph,
+    transientObjectGlyph, lastDirtyMapCursor,
     map_background, map_object, map_engraving, map_trap, map_invisible,
     unmap_invisible,
 } from './display.js';
@@ -62,7 +62,7 @@ import {
     touchArtifactByHero,
 } from './artifacts.js';
 import {
-    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, CLOVE_OF_GARLIC,
+    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, CLOVE_OF_GARLIC, CARROT,
     CREAM_PIE, EGG, SLIME_MOLD, TIN,
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
@@ -14772,6 +14772,33 @@ async function dofire() {
     await dothrow(null, true);
 }
 
+async function captureThrownObjectFlight(object, flightPath) {
+    const glyph = transientObjectGlyph(object);
+    let transientCell = null;
+    try {
+        for (const cell of flightPath) {
+            if (transientCell)
+                newsym(transientCell.x, transientCell.y);
+            transientCell = null;
+            if (cansee(cell.x, cell.y)) {
+                show_glyph_cell(
+                    cell.x, cell.y, glyph.ch, glyph.color,
+                    glyph.decgfx, glyph.attr,
+                );
+                transientCell = cell;
+            }
+            const frameCursor = lastDirtyMapCursor();
+            await flush_screen(1);
+            if (frameCursor)
+                game.nhDisplay?.setCursor(...frameCursor);
+            await game.animationFrame?.();
+        }
+    } finally {
+        if (transientCell)
+            newsym(transientCell.x, transientCell.y);
+    }
+}
+
 async function dothrow(selectedItem = null, capabilityChecked = false) {
     if (!capabilityChecked && !await okToThrow()) return;
 
@@ -15858,7 +15885,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
 
     // Non-arrow survivors retain throwit()->drop_throw()->breaktest()
     // ownership.  Arrow iterations consume this inside resolveArrowShot().
-    rn2(100);
+    if (item.otyp !== CARROT) rn2(100);
 
     if (thrownObjectClass === 2
         && blocksMove(game.u.ux + dx, game.u.uy + dy)) {
@@ -15893,7 +15920,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         return;
     }
 
-    if (thrownObjectClass !== 2 && item.otyp !== 282) {
+    if (thrownObjectClass !== 2 && item.otyp !== CARROT) {
         // dothrow.c removes a directly selected generic object from
         // inventory (or splits one unit from its stack) before drop_throw().
         // The current punishment-scroll witness immediately meets the north
@@ -15929,16 +15956,20 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         game.context.move = 1;
         return;
     }
-    if (item.otyp === 282) {
+    if (item.otyp === CARROT) {
         const dx = DIR_DX[direction], dy = DIR_DY[direction];
         let x = game.u.ux, y = game.u.uy;
+        const flightPath = [];
         for (let distance = 0; distance < 2; distance++) {
             const nx = x + dx, ny = y + dy;
             if (blocksMove(nx, ny)) break;
             x = nx; y = ny;
+            flightPath.push({ x, y });
             if (game.level?.monsters?.some(monster => monster.mx === x
                 && monster.my === y)) break;
         }
+        await captureThrownObjectFlight(item, flightPath);
+        rn2(100); // drop_throw()->breaktest()->obj_resists()
         if (!game.level.objects[x]) game.level.objects[x] = [];
         if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
         const existing = game.level.objects[x][y]
