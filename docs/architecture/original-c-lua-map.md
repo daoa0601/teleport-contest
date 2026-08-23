@@ -32645,3 +32645,47 @@ nonempty inventory release/stacking, repeated Wizard deaths without countdown
 reroll, Wizard resurrection/intervention, quest leader/nemesis bookkeeping,
 peaceful/tame penalties, unseen death, accepted hero death, or the six
 supplemental native animation-frame groups.  Lua owns none of the death state.
+
+## 900. Successful corpse construction precedes closed-door ray absorption
+
+~~~mermaid
+flowchart TD
+    Hit["seed31 death ray kills unamuleted Wizard"] --> Detach["Wizard bookkeeping and relobj"]
+    Detach --> Drop["released object333 lands at death square"]
+    Drop --> CorpseGate["corpse_chance rn2 3 equals zero"]
+    CorpseGate --> Corpse["make_corpse builds corpse285 and timers"]
+    Corpse --> Graph["roughly 430 deterministic object and timer RNG calls"]
+    Graph --> Newsym["death square displays corpse over released inventory"]
+    Newsym --> NextCell["same dobuzz advances into closed door"]
+    NextCell --> Floor["zap_over_floor runs before obstacle handling"]
+    Floor --> Type{"death breath or wand/spell?"}
+    Type -->|"wand in seed31"| Absorb["range minus 1000; door absorbs your bolt"]
+    Absorb --> End["negative range skips closed-door bounce and ends beam"]
+    End --> Learn["learnwand Wisdom exercise and ordinary maintenance"]
+    Lua["Lua provides the closed door and surrounding level geometry"] -.-> NextCell
+    Lua -.->|"no ownership"| Corpse
+    Lua -.->|"no ownership"| Learn
+~~~
+
+Seed31 is the successful-corpse complement to seed1's no-corpse result and
+seed11's independently exact inventory-release control.  Input123 has450 RNG
+calls.  The first443 already matched before the door repair: demigod countdown,
+object333 release, successful corpse gate, corpse285 construction and its large
+object/timer graph.  That exact prefix rejects corpse and inventory logic as
+the cause of the later transcript divergence.
+
+After corpse creation, `dobuzz()` reaches a closed regular door.  Source
+`zap_over_floor()` sets the ray range adjustment to -1000; a wand/spell death
+ray does not take death-breath's door-disintegration exception.  It appends
+`The door absorbs your bolt!` to the kill line, keeps the door intact and ends
+the ray without a bounce or hero hit.  WAN_DEATH discovery and maintenance
+therefore occupy the remaining seven calls in the same input.
+
+Final state has corpse285 then released object333 at (12,7), no live Wizard,
+Wizard count0, demigod countdown126, one difficulty34 vanquish and unchanged
+hero HP132/132.  This section closes successful Wizard corpse construction,
+one nonempty release pile and closed-door absorption for a wand death ray.  It
+does not close successful treasure drops, pile merging, erosion/terrain side
+effects, secret doors, death breath door disintegration, fire/cold/lightning
+door variants, shop billing, invisible door feedback, or the three native
+animation-frame groups.  Lua owns the door placement only.

@@ -13151,3 +13151,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   cell remains red.  Focused and expanded fixture-disabled gates pass 6/6 and
   39/39.  Successful corpse/treasure, nonempty inventory release, repeated
   Wizard death/resurrection and supplemental animation frames remain open.
+- Seed11 independently confirms nonempty Wizard inventory release is already
+  exact.  Seed31 then closes the successful corpse plus door continuation:
+  input123's first443 calls exactly construct corpse285 and release object333,
+  after which native closed-door `zap_over_floor()` absorbs the wand death ray
+  with range -1000 instead of bouncing it into the hero.  Final pile order is
+  corpse285 then object333, Wizard count0, demigod countdown126, one vanquish
+  and untouched hero HP132/132.  All 4,867 RNG calls, all cursors and all
+  screens from input3 through input135 match; only input2's tutorial cell is
+  red.  The durable test bounds the 450-call input by length plus prefix/suffix,
+  and focused/expanded fixture-disabled gates pass 7/7 and 40/40.  Treasure,
+  merge, secret-door, breath-disintegration, shop and animation branches remain
+  open.

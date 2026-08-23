@@ -88804,3 +88804,81 @@ runner exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:31 EEST, journal block 2940] {#seed11 #seed31 #death-wand #wizard-death #inventory-release #corpse #door #zap-over-floor #bounded-selector #native-witness #earliest-divergence #process-safety #priority}
+
+**Portfolio and controls:** a bounded seed1--150 JavaScript selector searched
+only adjacent forced-Wizard death-wand recipes and stopped after four concrete
+Wizard-corpse candidates.  It found seeds31,38,67 and85; seed31 is the smallest
+one-inventory carrier with corpse285 plus released object333 at the death
+square.  Independent seed11 was recorded first and already matches native RNG,
+screens and cursors from input3 onward while releasing object413, confirming
+that generic nonempty `relobj()` is not the seed31 blocker.
+
+**Native corpse witness and earliest divergence:** seed31 input123 contains
+450 calls.  JavaScript matches the first **443** exactly, including fatal ray,
+`wizdeadorgone`, no-extra-drop rn2(6)=2, successful corpse rn2(3)=0, object333
+release and the roughly 430-call corpse/object/timer construction graph.  The
+native suffix then runs WAN_DEATH discovery and maintenance; JavaScript instead
+uses `rn2(20)=19` for a bounced hero hit.  Native topline is
+`You kill the Wizard of Yendor!  The door absorbs your bolt!`; JavaScript says
+kill plus death-ray bounce and opens a pager.
+
+**Source boundary, prediction and falsification:** `dobuzz()` invokes
+`zap_over_floor()` before its obstacle test.  A closed regular door sets range
+modification to -1000.  For ZT_DEATH from a wand, the breath-only disintegration
+exception does not apply, so the visible door remains intact, publishes
+`The door absorbs your bolt!`, and the now-negative range prevents the later
+closed-door bounce branch.  Implement that one floor effect before generic
+bounce.  The exact 443-call prefix falsifies corpse construction, released
+inventory, demigod bookkeeping, vanquish and object RNG as the cause.
+
+**Measured process state and next blocker:** the selector exited in **1.68
+seconds** at **229,670,912 bytes maximum RSS**.  Seed11's recorder/replay exited
+in **0.07/0.28 seconds** at **54,427,648/129,875,968 bytes** and is exact from
+input3.  Seed31's recorder exited in **0.08 seconds** at **55,672,832 bytes**;
+its pre-edit replay matches **4860/4867 RNG calls, 122/136 screens and 133/136
+cursors** in **0.24 seconds** at **126,074,880 bytes**.  Every process exited.
+The next blocker is closed-door absorption and bounded regression over the
+450-call input without a whole-log assertion.  No full corpus, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 16:36 EEST, journal block 2941] {#seed11 #seed31 #death-wand #wizard-death #inventory-release #corpse #closed-door #zap-over-floor #native-acceptance #implementation #complete-replay #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and source effect:** commit `e45715b` adds the reached
+WAN_DEATH floor effect before generic obstacle bounce.  A closed regular door
+now paints the transient beam cell, appends `The door absorbs your bolt!`,
+applies the source -1000 range adjustment, skips bounce and ends traversal.
+The death-breath disintegration exception remains explicitly outside this
+wand-only branch.
+
+**Complete native acceptance and durable state:** seed31 now matches
+**4867/4867 RNG calls, 135/136 scorer screens and 136/136 cursors** in **0.27
+seconds** at **131,891,200 bytes maximum RSS**.  The sole screen miss is input2;
+inputs3--135 match native RNG, decoded screens and cursors.  Input123's first443
+calls preserve exact inventory release/corpse construction; its final seven
+calls now belong to door termination, WAN_DEATH discovery and maintenance.
+Final state contains corpse285 then released object333 at (12,7), no live
+Wizard, count0, demigod=true, udg_cnt126, one difficulty34 vanquish, no hero
+mortality and HP132/132.  Seed11 independently remains exact from input3 with
+released object413.
+
+**Bounded regression and controls:** the permanent seed31 test never compares
+the complete 450-call array.  It asserts length450, the first12-call
+death/corpse prefix, final12-call constructor/discovery/maintenance suffix,
+kill-plus-door prose, immediate next-command ownership and durable pile/state.
+The focused shared-death set passes **7/7** fixture-disabled in **0.35 seconds**
+at **139,100,160 bytes maximum RSS**.  The expanded portfolio passes **40/40**
+in **0.80 seconds** at **172,244,992 bytes maximum RSS**.
+
+**Map and next blocker:** section900 and the ledger separate the already-exact
+corpse graph from the repaired door floor effect and Lua geometry.  Successful
+treasure, pile merge, secret-door conversion, death-breath disintegration,
+other elemental door effects, shop billing, invisible feedback, repeat-Wizard
+resurrection and animation frames remain open.  Every selector, recorder,
+replay and test runner exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
