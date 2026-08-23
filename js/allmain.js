@@ -174,6 +174,19 @@ function observeNearbyNamedObject(object, x, y) {
     recordObjectEncounter(object.otyp);
 }
 
+function observeMonsterUsedObject(object) {
+    if (!object) return;
+    const hallucinating = !!(game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0);
+    if (hallucinating) {
+        // objnam.c:observe_object() does not erase prior knowledge, but it
+        // also does not reveal a newly seen object while Hallucinating.
+        if (object.dknown == null) object.dknown = false;
+        return;
+    }
+    object.dknown = true;
+}
+
 function putLine(col, row, text, attr = 0) {
     const display = game.nhDisplay;
     for (let i = 0; i < text.length && col + i < display.cols; i++)
@@ -3727,8 +3740,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             } looks better.`;
                         }
                         if (heroAttack.spell === 'death-touch') {
-                            const pronoun = monster.female ? 'she'
-                                : monster.genderless ? 'it' : 'he';
+                            let pronoun;
+                            if (game.u?.hallucinating
+                                || (game.u?.hallucinationTurns ?? 0) > 0) {
+                                const gender = rn2(4);
+                                action.calls.push('rn2(4)');
+                                pronoun = ['he', 'she', 'it', 'they'][gender];
+                            } else {
+                                pronoun = monster.female ? 'she'
+                                    : monster.genderless ? 'it' : 'he';
+                            }
                             effectMessage = 'Oh no, ' + pronoun
                                 + "'s using the touch of death!";
                         }
@@ -4937,7 +4958,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.usedDefensive?.kind === 'potion-healing') {
             const defensive = movement.usedDefensive;
             if (actorWasSeen) {
-                defensive.object.dknown = true;
+                observeMonsterUsedObject(defensive.object);
                 await queueTurnMessage(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(defensive.object)}!`,
@@ -4955,7 +4976,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.usedMisc?.kind === 'potion-gain-level') {
             const misc = movement.usedMisc;
             if (actorWasSeen) {
-                misc.object.dknown = true;
+                observeMonsterUsedObject(misc.object);
                 await queueTurnMessage(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)
@@ -5002,7 +5023,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const misc = movement.usedMisc;
             const monsterName = quietMonsterName(monster);
             if (actorWasSeen) {
-                misc.object.dknown = true;
+                observeMonsterUsedObject(misc.object);
                 await queueTurnMessage(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)}!`,
@@ -5082,7 +5103,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.usedMisc?.kind === 'potion-speed') {
             const misc = movement.usedMisc;
             if (actorWasSeen) {
-                misc.object.dknown = true;
+                observeMonsterUsedObject(misc.object);
                 await queueTurnMessage(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)
@@ -5098,14 +5119,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
                 );
-                exerciseAttribute(4, true);
-                recordObjectKnowledge(misc.object.otyp);
+                if (misc.object.dknown) {
+                    exerciseAttribute(4, true);
+                    recordObjectKnowledge(misc.object.otyp);
+                }
             }
         }
         if (movement?.usedMisc?.kind === 'wand-speed-monster') {
             const misc = movement.usedMisc;
             if (actorWasSeen) {
-                misc.object.dknown = true;
+                observeMonsterUsedObject(misc.object);
                 const reflexive = monster.female ? 'herself'
                     : monster.genderless ? 'itself' : 'himself';
                 await queueTurnMessage(
@@ -5131,8 +5154,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
                 );
-                exerciseAttribute(4, true);
-                recordObjectKnowledge(misc.object.otyp);
+                if (misc.object.dknown) {
+                    exerciseAttribute(4, true);
+                    recordObjectKnowledge(misc.object.otyp);
+                }
             }
         }
         if (movement?.guardFinished && !game._suppressMessagesUntilInput) {

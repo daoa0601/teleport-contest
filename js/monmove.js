@@ -7960,6 +7960,13 @@ function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
             // same spell table without consuming another selection draw.
             || (!!monster.mpeaceful && !heroCanSeeInvisible(state));
     }
+    if (spell.key === 'death-touch') {
+        const resisted = !!(state?.u?.antimagic
+            || state?.u?.magicResistance || state?.u?.magic_resistance
+            || state?.u?.hallucinating
+            || (state?.u?.hallucinationTurns ?? 0) > 0);
+        return resisted && recordRandom(random, calls, 2) === 0;
+    }
     if (spell.key === 'geyser')
         return recordRandom(random, calls, 5) === 0;
     if (spell.key === 'clone-wizard') return !monster.iswiz;

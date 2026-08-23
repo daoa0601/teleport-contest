@@ -9741,6 +9741,140 @@ test('seed0023 failed death-touch gate preserves maximum HP',
         assert.equal(game.u.uhp, 66);
     });
 
+const HALLUCINATED_DEATH_TOUCH_MOVES
+    = '  n#levelchange\n14\n' + ' '.repeat(40)
+        + '#wizgenesis\nhostile Wizard of Yendor\ny'
+        + '#wizintrinsic\nh\n '
+        + 'm.    m.    m.    m.        ';
+const HALLUCINATED_DEATH_TOUCH_RC
+    = 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+        + 'OPTIONS=!autopickup\n'
+        + 'OPTIONS=pettype:none\n'
+        + 'OPTIONS=suppress_alert:3.4.3\n'
+        + 'OPTIONS=symset:DECgraphics\n';
+
+async function runHallucinatedDeathTouch(seed, end) {
+    return runSegment({
+        seed,
+        datetime: '20000110090000',
+        nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+        moves: HALLUCINATED_DEATH_TOUCH_MOVES.slice(0, end),
+        storage: new Map(),
+    });
+}
+
+test('seed0014 Hallucination rejects death touch and hides speed potion',
+    async () => {
+        const result = await runHallucinatedDeathTouch(14, 128);
+
+        assert.equal(result.getScreens().length, 129);
+        assertRngSliceExact(result.getRngSlices()[123], [],
+            'seed0014 Hallucinated speed-potion quaff pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'The wire shark drinks a potion!--More--');
+        assert.deepEqual(result.getCursors()[123], [39, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rn2(5)=3', 'rn2(5)=2', 'rn2(5)=4', 'rn2(5)=0',
+            'rn2(5)=3', 'rn2(5)=3', 'rn2(5)=4', 'rn2(5)=1',
+            'rn2(12)=8', 'rn2(12)=2', 'rn2(12)=4', 'rn2(12)=11',
+            'rn2(12)=9', 'rn2(12)=9', 'rn2(12)=7',
+            'rn2(70)=48', 'rn2(200)=65', 'rn2(20)=17', 'rn2(64)=8',
+        ], 'seed0014 Hallucinated speed-potion effect RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'The storm giant is suddenly moving faster.');
+
+        assertRngSliceExact(result.getRngSlices()[128], [
+            'rn2(5)=2', 'rn2(5)=0', 'rnd(20)=13', 'd(2,12)=18',
+            'rn2(20)=15', 'rn2(3)=2', 'rn2(6)=1', 'rn2(30)=20',
+            'rn2(2)=0', 'rn2(300)=166', 'd(16,6)=55',
+        ], 'seed0014 Hallucinated death-touch rejection RNG');
+        assert.equal(decodedTopline(result.getScreens()[128]),
+            'The barrow wight hits!  The white dragon casts a spell!--More--');
+        assert.deepEqual(result.getCursors()[128], [63, 0, 1]);
+
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.permspeed, 2);
+        assert.equal(wizard.mspeed, 2);
+        assert.equal(game._knownObjectTypes.has(302), false);
+        assert.equal(game.u.uhp, 70);
+        assert.equal(game.u.uhpmax, 88);
+        assert.equal(game.u.hallucinationTurns, 28);
+    });
+
+test('seed0021 Hallucinated death touch passes usefulness then fails',
+    async () => {
+        const result = await runHallucinatedDeathTouch(21, 123);
+
+        assert.equal(result.getScreens().length, 124);
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'rn2(5)=4', 'rn2(5)=4', 'rnd(20)=15', 'd(2,12)=5',
+            'rn2(20)=7', 'rn2(3)=1', 'rn2(6)=0', 'rn2(30)=20',
+            'rn2(2)=1', 'rn2(2)=1', 'rn2(300)=89', 'd(16,6)=55',
+            'rn2(4)=1',
+        ], 'seed0021 Hallucinated accepted death-touch cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'The carnivorous ape hits!  The straw golem casts a spell at you!--More--');
+        assert.deepEqual(result.getCursors()[122], [72, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(30)=0', 'rn2(5)=1', 'rn2(5)=3', 'rn2(5)=1',
+            'rn2(12)=0', 'rn2(12)=2', 'rn2(70)=55',
+            'rn2(100)=84', 'rn2(400)=4', 'rn2(20)=9', 'rn2(67)=35',
+        ], 'seed0021 Hallucinated failed death-touch effect RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            "Oh no, she's using the touch of death!  Lucky for you, it didn't work!");
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1301 HP:88(93) Pw:111(111) AC:8 Xp:14 Hallu');
+        assert.deepEqual(result.getCursors()[123], [72, 19, 1]);
+        assert.equal(game.u.uhp, 88);
+        assert.equal(game.u.uhpmax, 93);
+        assert.equal(game.u.hallucinationTurns, 28);
+    });
+
+test('seed0090 Hallucinated death touch succeeds without HP drain',
+    async () => {
+        const result = await runHallucinatedDeathTouch(90, 124);
+
+        assert.equal(result.getScreens().length, 125);
+        assertRngSliceExact(result.getRngSlices()[122], [
+            'rn2(5)=3', 'rn2(5)=1', 'rnd(20)=20', 'd(2,12)=6',
+            'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=20',
+            'rn2(2)=1', 'rn2(2)=1', 'rn2(300)=68', 'd(16,6)=59',
+            'rn2(4)=1',
+        ], 'seed0090 Hallucinated death-touch cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[122]),
+            'The troll hits!  The flesh golem casts a spell at you!--More--');
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(30)=14',
+        ], 'seed0090 Hallucinated successful death-touch gate RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            "Oh no, she's using the touch of death!--More--");
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1610 HP:132(138) Pw:74(74) AC:8 Xp:14 Hallu');
+        assert.deepEqual(result.getCursors()[123], [46, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[124], [
+            'rn2(5)=0', 'rn2(5)=3', 'rn2(11)=1', 'rn2(28)=12',
+        ], 'seed0090 Hallucinated out-of-body effect RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'You have an out of body experience.--More--');
+        assert.equal(decodedRow(result.getScreens()[124], 23),
+            'Dlvl:1 $:1610 HP:132(138) Pw:74(74) AC:8 Xp:14 Hallu');
+        assert.deepEqual(result.getCursors()[124], [43, 0, 1]);
+        assert.equal(
+            [123, 124].some(index => result.getRngSlices()[index]
+                .some(call => call.startsWith('d(8,6)='))),
+            false,
+        );
+        assert.equal(game.u.uhp, 132);
+        assert.equal(game.u.uhpmax, 138);
+        assert.equal(game.u.hallucinationTurns, 29);
+    });
+
 test('seed0002 wood golem survives death touch then rehumanizes on claw',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
