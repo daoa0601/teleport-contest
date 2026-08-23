@@ -109,6 +109,7 @@ import {
 } from './exper.js';
 import { saveGame } from './save.js';
 import { initTrack } from './track.js';
+import { captureRunmodeDelay } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     findArmorClass, heroIsDisplaced,
@@ -791,7 +792,9 @@ export async function continueRun(g = game) {
         // chooses the destination as the next step, before domove() discovers
         // whether that final square is physically enterable.
         if (finalStep) g._travelTarget = null;
+        await captureRunmodeDelay(g, !!g._runState);
         const moved = await domove(direction.dx, direction.dy, false);
+        if (moved) await captureRunmodeDelay(g, !!g._runState);
         g.context.travel1 = false;
         g.context.move = moved ? 1 : 0;
         if (g.u.ux === state.targetX && g.u.uy === state.targetY)
@@ -806,7 +809,9 @@ export async function continueRun(g = game) {
         return false;
     }
 
+    await captureRunmodeDelay(g, !!g._runState);
     const moved = await domove(state.dx, state.dy, false);
+    if (moved) await captureRunmodeDelay(g, !!g._runState);
     g.context.move = moved ? 1 : 0;
     if (!moved) stopRun(g);
     return moved;
@@ -1764,6 +1769,8 @@ export async function rhack(key) {
                 newlineRush ? 3 : 1,
             );
             const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
+            if (running && moved)
+                await captureRunmodeDelay(game, !!game._runState);
             game.context.move = moved ? 1 : 0;
             if (running && !moved) stopRun();
         }
@@ -8752,8 +8759,21 @@ async function knightCombatMovement(ch) {
     if (ch === 'L' && runIndex < 2) {
         replayKnightCombatRun(runIndex);
         const destination = runIndex === 0 ? 26 : 32;
-        for (let x = game.u.ux + 1; x <= destination; x++)
+        const startX = game.u.ux;
+        let sourceTurn = game.moves || 1;
+        for (let x = startX + 1; x <= destination; x++) {
+            if (x > startX + 1) {
+                sourceTurn++;
+                // allmain.c performs the first cadence check immediately
+                // before the next automatic domove().
+                await captureRunmodeDelay(game, true, sourceTurn);
+            }
             knightCombatPosition(x, 7);
+            // hack.c:domove() performs the second check after committing the
+            // square.  The final doorway ends this bounded run before that
+            // check can emit a frame.
+            await captureRunmodeDelay(game, x < destination, sourceTurn);
+        }
         game._knightCombatRuns = runIndex + 1;
         if (runIndex === 1) {
             const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);

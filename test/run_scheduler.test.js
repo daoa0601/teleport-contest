@@ -11616,6 +11616,102 @@ test('seed0383 delayed wear runmode frame prefers newly queued turn prose',
         assert.deepEqual(actualFrame.cursor, nativeFrame.cursor);
     });
 
+test('seed0104 mounted run captures pre-move and post-move cadence frames',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0104-knight-ride-combat.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 13),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[12],
+            session.steps[12].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0104 mounted run input12 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[12],
+            session.steps[12].screen,
+            'seed0104 mounted run input12 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[12],
+            session.steps[12].cursor,
+            'seed0104 mounted run input12 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[12];
+        const nativeFrames = session.steps[12].animation_frames;
+        assert.equal(actualFrames.length, 2);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0104 mounted run animation frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0104 mounted run animation cursor${frame}`,
+            );
+        }
+    });
+
+test('seed0006 leap runs capture every-seventh-turn pre/post frame pairs',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0006-wizard-water-demon.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 93),
+            storage: new Map(),
+        });
+        for (const step of [43, 77, 89, 92]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0006 leap run input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0006 leap run input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0006 leap run input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, 2);
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                assertScreenExact(
+                    actualFrames[frame].screen,
+                    nativeFrames[frame].screen,
+                    `seed0006 leap run input${step} frame${frame}`,
+                );
+                assert.deepEqual(
+                    actualFrames[frame].cursor,
+                    nativeFrames[frame].cursor,
+                    `seed0006 leap run input${step} cursor${frame}`,
+                );
+            }
+        }
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'
