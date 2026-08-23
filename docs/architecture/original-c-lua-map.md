@@ -32829,3 +32829,50 @@ aggravate, nasty or resurrection outcomes2--5, invulnerability pause, Astral
 selection, mnexto overcrowding/failure, controlled teleport, visible rloc
 vanish/reappear variants, other ambient class inventories, or the seven native
 animation-frame groups.  Lua owns only physical geometry.
+
+## 904. Curse intervention resumes after black-glow tty backpressure
+
+~~~mermaid
+flowchart TD
+    Wait["seed84 waits through demigod countdown191"] --> Lep["ambient leprechaun birth"]
+    Lep --> Gold["S_LEPRECHAUN creates d level,30 gold stack"]
+    Gold --> Blob["amorphous acid blob considers closed door in mfndpos"]
+    Blob --> Mummy["ambient dwarf mummy gets wrapping"]
+    Mummy --> Centaur["ambient mountain centaur gets crossbow plus bolts"]
+    Centaur --> Zero["countdown reaches zero after engraving wear"]
+    Zero --> Outcome["intervene rn2 6 equals2"]
+    Outcome --> Glow["You notice a black glow surrounding you"]
+    Glow --> Pager["tty pager suspends same global maintenance"]
+    Pager --> Curse["acknowledgement resumes rndcurse"]
+    Curse --> Count["rnd 6 equals6; six rnd 11 inventory selections"]
+    Count --> Mutate["curse three eligible selected objects"]
+    Mutate --> Aura["You feel a malignant aura surround you"]
+    Aura --> Reset["udg_cnt equals50 plus rn2 200 equals152"]
+    Reset --> Seer["same-turn Seer rn2 31 equals17"]
+    Lua["Lua contributes ambient level geometry and closed-door placement"] -.-> Blob
+    Lua -.->|"no ownership"| Gold
+    Lua -.->|"no ownership"| Outcome
+    Lua -.->|"no ownership"| Curse
+~~~
+
+Seed84 makes intervention outcome2 reachable only after three ambient inventory
+classes and one movement rule are exact.  The leprechaun receives14 gold;
+the dwarf mummy receives wrapping; the mountain centaur receives crossbow and
+nine bolts.  A bounded native roster/mfndpos trace also proves an amorphous
+acid blob must admit a closed door as its fifth candidate.  The trace was
+removed and the canonical recorder rebuilt before acceptance.
+
+Input317 selects outcome2 only after the complete 59-call monster/global tail.
+The black-glow line pages before any curse RNG or countdown reset.  Input318
+then runs `rnd(6)=6`, selects six entries from the eleven-object eligible
+inventory, curses object types391,277 and433, publishes the malignant aura,
+resets `udg_cnt=152`, and runs the same-turn Seer draw.  Hero HP remains139/139
+and no mortality occurs.
+
+This section closes visible non-Astral intervention outcome2 with ordinary
+rndcurse state, three ambient inventory classes, and amorphous closed-door
+admission.  It does not close Antimagic/Half-spell curse count changes,
+Magicbane/intelligent-artifact/saddle resistance, blind black-glow suppression,
+intervention aggravate/nasty/resurrection outcomes3--5, invulnerability pause,
+Astral selection, other ambient weapon/inventory classes, or the five native
+animation-frame groups.  Lua owns only physical level geometry.

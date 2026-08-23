@@ -13200,3 +13200,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   input206 match; input2 alone is red.  Focused and expanded fixture-disabled
   gates pass 11/11 and44/44.  Intervention outcomes2--5, invulnerability,
   Astral selection, tengu mnexto failure/control and animation remain open.
+- Seed84 closes intervention outcome2 after source-valid prerequisites.
+  Ambient leprechaun gets14 gold, dwarf mummy gets wrapping, mountain centaur
+  gets crossbow/nine bolts, and an amorphous acid blob admits a closed door in
+  mfndpos.  Input317 pages black glow before effect; input318 runs rnd(6)=6,
+  six rnd(11) selections, curses types391/277/433, publishes malignant aura,
+  resets udg_cnt152 and consumes the Seer draw.  All 13,371 RNG calls, all
+  cursors, and all screens from input3 through input322 match; input2 alone is
+  red.  Large inputs are asserted only by length plus bounded source slices.
+  Focused and expanded fixture-disabled gates pass 12/12 and45/45.  Outcomes
+  3--5, curse resistance variants, blind/invulnerable/Astral and animation
+  branches remain open.

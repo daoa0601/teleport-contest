@@ -89235,3 +89235,137 @@ public-status rewrite, hidden judge, push or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 18:04 EEST, journal block 2953] {#seed84 #ambient-birth #leprechaun #m-initinv #gold #intervention-curse #rejected-later-evidence #earliest-divergence #native-witness #process-safety #priority}
+
+**Outcome2 carrier and earlier rejection:** seed84 naturally reaches
+intervention outcome2 after countdown191.  Input317 opens the black-glow pager;
+the extended recording shows input318 runs `rndcurse()`, resets with
+rn2(200)=102 and reaches Seer rn2(31)=17.  However, the full replay's first RNG
+divergence is input216, so that later effect is not yet acceptance evidence.
+
+**Earliest owner and prediction:** native input216 matches through random
+monster selection, ID, d(7,8)=43 HP and sleep rn2(2)=1, then S_LEPRECHAUN
+`m_initinv()` consumes `d(1,30)=14` and constructs the gold stack with
+`rnd(2)=2`.  JavaScript skips class inventory and enters rn2(50) plus unrelated
+generic item gates.  Ambient `addObject(GOLD_PIECE)` should own the object ID;
+set quantity/weight from `d(level_difficulty(),30)`.  The later greedy-gold gate
+must then skip because findgold is already true.
+
+**Measured evidence and next step:** the extended native recorder exited in
+**0.13 seconds** at **58,638,336 bytes maximum RSS**.  Before this constructor
+repair, the replay matches **8233/13371 RNG calls, 322/323 screens and 323/323
+cursors** in **0.36 seconds** at **167,755,776 bytes**; the bounded locator
+places the first edge at input216 call269.  Screens remain exact from input3.
+Add the leprechaun class owner, then relocalize before changing outcome2.  All
+processes exited; no focused regression, corpus, hidden judge, push or
+publication ran, and unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 18:15 EEST, journal block 2954] {#seed84 #acid-blob #mfndpos #amorphous #closed-door #native-trace #roster #candidate-reservoir #earliest-divergence #process-safety #priority}
+
+**Bounded trace and falsified families:** after the leprechaun repair, seed84
+advances to input229.  Native has one additional `rn2(5)` in the acid-blob
+movement reservoir.  A call-count-gated recorder trace proves the moving actor
+sequence and complete roster are identical; this falsifies missing group
+members, sleep/movement allocation and postmov control flow.
+
+**Decisive candidate evidence:** at the acid blob's first distfleeck, native
+`mfndpos()` reports five candidates:
+`(39,12),(40,11),(40,13),(41,11),(41,12)`.  JavaScript reports the same set
+except `(40,13)`, a closed door.  C explicitly exempts amorphous/can-fog
+monsters from ordinary closed-door rejection when they are not engulfing the
+hero.  The acid blob carries `M1_AMORPHOUS`; JavaScript's door admission checks
+only open/unlock/dig/passwall capabilities.
+
+**Prediction, decision and trace hygiene:** add the source amorphous/can-fog
+closed-door exception to `mfndpos()`, retaining the engulfing exclusion.  The
+fifth equal-choice call should align while preserving the selected destination
+(41,12).  All trace output was restricted to cumulative calls8455--8511 and
+one roster/candidate snapshot.  Remove the temporary recorder edits and rebuild
+the canonical patchset before accepting any replay.  No production regression,
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 18:22 EEST, journal block 2955] {#seed84 #ambient-birth #dwarf-mummy #m-initinv #mummy-wrapping #earliest-divergence #native-witness #process-safety #priority}
+
+**Post-amorphous replay and next class owner:** adding the closed-door exception
+makes seed84 exact through input242.  Input243 matches random-monster selection,
+ID, d(7,8)=37 HP and sleep rn2(2)=1.  Native then consumes `rn2(7)=2`, creates
+mummy wrapping with `rnd(2)=1` and its object-init calls; JavaScript jumps to
+the shared defensive reservoir and ends with unrelated object438.
+
+**Source prediction:** the selected actor is dwarf mummy mnum190/id105.
+`m_initinv(S_MUMMY)` grants MUMMY_WRAPPING whenever rn2(7) is nonzero.  The
+ambient owner should reuse addObject(138), allowing the standard constructor to
+own identity/state before the shared defensive/misc gates.  No message or map
+change is expected.
+
+**Decision and hygiene:** port the same class arm already present in mklev,
+then relocalize again before accepting outcome2.  The call-count-gated native
+actor/roster/mfndpos instrumentation used for block2954 was removed completely;
+the canonical six-patch recorder was rebuilt from scratch before this replay.
+No focused test, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 18:29 EEST, journal block 2956] {#seed84 #ambient-birth #mountain-centaur #m-initweap #crossbow #bolts #earliest-divergence #native-witness #process-safety #priority}
+
+**Post-mummy replay and next weapon class:** adding S_MUMMY inventory advances
+seed84 through input297.  Input298 matches ambient selection, ID, d(9,8)=41 HP
+and sleep rn2(2)=0.  Native then enters S_CENTAUR m_initweap: `rn2(2)=1`,
+creates a crossbow and crossbow-bolt stack before the offensive reservoir.
+JavaScript has no ambient centaur arm and starts at rn2(50).
+
+**Selected state and prediction:** the actor is mountain centaur mnum132/id108.
+Only forest centaurs use bow/arrows; mountain and plains centaurs use crossbow/
+bolts.  Hoist the existing ambient stack helper, add the class probe and
+weapon/missile constructors, set quantity as `3+rn2(12)`, then run the ordinary
+rn2(75) offensive-item gate.  This mirrors the already-ported mklev owner.
+
+**Decision:** implement the class arm and relocalize once more.  Outcome2's
+black-glow/rndcurse transcript remains downstream evidence, not accepted yet.
+No focused test, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 18:40 EEST, journal block 2957] {#seed84 #intervene #curse #black-glow #rndcurse #leprechaun #mummy #centaur #amorphous #native-acceptance #implementation #complete-replay #bounded-regression #architecture #ledger #process-safety}
+
+**Implemented source chain:** commit `a79c043` makes outcome2 resumable: black
+glow stops maintenance before rndcurse/reset/environment/Seer, and the async
+continuation resumes the existing curse-items owner before completing the same
+global turn.  Ambient constructors now cover guaranteed leprechaun gold,
+mummy wrapping and centaur weapon/missile stacks.  `mfndpos()` now admits closed
+doors for nonengulfing amorphous/can-fog actors.
+
+**Complete native acceptance and durable state:** the 323-state seed84 carrier
+matches **13371/13371 RNG calls, 322/323 scorer screens and 323/323 cursors** in
+**0.36 seconds** at **167,215,104 bytes maximum RSS**.  Input2 is the sole
+screen miss; inputs3--322 match native RNG, decoded screens and cursors.
+Input216 owns leprechaun gold, input229 the five-candidate acid-blob reservoir,
+input243 mummy wrapping, input298 centaur crossbow/bolts, input317 the black-
+glow opening and input318 the nine-call curse/reset/Seer continuation.  Final
+state is HP139/139, mortality0, udg152, one Wizard vanquish; cursed hero types
+are391/277/433, and the three ambient actors retain their source inventories.
+
+**Bounded regression and controls:** the permanent test checks large inputs by
+length plus 13--27-call source neighborhoods and compares only the complete
+nine-call intervention continuation.  Focused shared intervention/death tests
+pass **12/12** fixture-disabled in **0.79 seconds** at **258,883,584 bytes
+maximum RSS**.  The expanded portfolio passes **45/45** in **1.22 seconds** at
+**299,614,208 bytes maximum RSS**.  Every runner was singly owned and exited.
+The temporary native trace was fully removed and the canonical recorder rebuilt.
+
+**Map and next blocker:** section904 and the ledger map ambient prerequisites,
+tty suspension and curse mutation; Lua owns only geometry.  Intervention
+outcomes3 aggravate,4 nasty and5 resurrection, curse resistance variants,
+blind/invulnerable/Astral behavior, remaining ambient inventories and animation
+frames remain open.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---
