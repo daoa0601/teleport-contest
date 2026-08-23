@@ -1479,9 +1479,12 @@ function _buildScreenOutput() {
             const s2 = _statusLine2();
             for (let c = 0; c < Math.min(s2.length, display.cols); c++)
                 display.setCell(c, 23, s2[c], NO_COLOR, 0);
-            // Cursor at hero
-            if (game.u?.ux > 0)
+            const cursorOverride = game._cursorOverride;
+            if (Array.isArray(cursorOverride)) {
+                display.setCursor(cursorOverride[0], cursorOverride[1]);
+            } else if (game.u?.ux > 0) {
                 display.setCursor(game.u.ux - 1, game.u.uy + 1);
+            }
         }
     }
 }

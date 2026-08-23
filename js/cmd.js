@@ -113,7 +113,8 @@ import {
     findArmorClass, heroIsDisplaced,
 } from './armor.js';
 import {
-    findMonsterArmorClass, snapshotMonsterCreationWearNames,
+    checkMonsterGearNextTurn, findMonsterArmorClass,
+    snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
@@ -222,7 +223,7 @@ import {
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_rogue_level,
-    W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
+    W_AMUL, W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
     WT_TOOMUCH_DIAGONAL, P_BOW,
 } from './const.js';
@@ -1626,6 +1627,7 @@ export async function rhack(key) {
     // top-level command.  An `m` prefix below sets it only while dispatching
     // the following movement key.
     game.context.nopick = false;
+    if (key !== 0) delete game._cursorOverride;
     game._heroMeleeThisCommand = false;
     // A prior silent-prefix marker belongs to the monster phase following
     // that command.  Reaching a new top-level dispatch acknowledges it.
@@ -1638,6 +1640,7 @@ export async function rhack(key) {
         if ((game._commandCount || 0) >= 10)
             game.nhDisplay?.setCursor(`Count: ${game._commandCount}`.length, 0);
         key = await nhgetch();
+        delete game._cursorOverride;
     }
     // Status rows beneath a tty pager remain physically unchanged even when
     // the suspended command has already mutated the wallet.  The next real
@@ -6222,6 +6225,105 @@ async function wizGenesis() {
     game.context.move = 0;
 }
 
+function wornMonsterLifeSaver(monster) {
+    return (monster?.minvent || monster?.inventory || []).find(object =>
+        object.otyp === 202 && ((object.owornmask ?? 0) & W_AMUL));
+}
+
+async function lifeSaveKilledMonster(monster, amulet) {
+    const name = MONSTER_NAME[monster.mnum] || 'monster';
+    const subject = `The ${name}`;
+    await moreUntilDismissed(
+        `You kill the ${name}!  But wait...--More--`,
+    );
+
+    exerciseAttribute(4, true);
+    recordObjectKnowledge(amulet.otyp);
+    await moreUntilDismissed(
+        `${subject}'s medallion begins to glow!--More--`,
+    );
+    await moreUntilDismissed(`${subject} looks much better!--More--`);
+
+    const inventory = monster.minvent || monster.inventory || [];
+    const index = inventory.indexOf(amulet);
+    if (index >= 0) inventory.splice(index, 1);
+    amulet.owornmask = 0;
+    amulet.worn = false;
+    amulet.wornSlot = null;
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~W_AMUL;
+    checkMonsterGearNextTurn(monster);
+    monster.dead = false;
+    monster.mcanmove = 1;
+    monster.mfrozen = 0;
+    monster.mhpmax = Math.max(
+        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
+    );
+    monster.mhp = monster.mhpmax;
+    await pline('The medallion crumbles to dust!');
+    game._cursorOverride = [monster.mx - 1, monster.my + 1];
+}
+
+async function wizKill() {
+    if (!game.flags?.debug) {
+        await pline('#wizkill: unknown extended command.');
+        game.context.move = 0;
+        return;
+    }
+
+    const firstUse = !game._travelTipShown;
+    if (firstUse) {
+        await moreUntilDismissed('Pick first monster to slay:--More--');
+        game._travelTipShown = true;
+        await farlookTipUntilDismissed();
+    }
+
+    const cursor = { x: game.u.ux, y: game.u.uy };
+    let message = firstUse ? 'Move cursor to a monster:'
+        : 'Pick first monster to slay.';
+    for (;;) {
+        await paintTravelCursor(cursor, message);
+        const key = await nhgetch();
+        const ch = String.fromCharCode(key);
+        if (key === 27) {
+            game._pending_message = '';
+            game.context.move = 0;
+            return;
+        }
+        if (isGetposPickCharacter(ch)) break;
+        if (isMovementKey(ch)) {
+            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
+            message = farlookLocationDescription(cursor.x, cursor.y);
+            continue;
+        }
+        message = getposFeatureMissMessage(ch);
+    }
+
+    game._pending_message = '';
+    game._retained_message = '';
+    const monster = game.level.monsters.find(candidate =>
+        candidate.mx === cursor.x && candidate.my === cursor.y
+        && !candidate.dead && (candidate.mhp ?? 1) > 0);
+    if (!monster) {
+        await pline('There is no monster there.');
+        game.context.move = 0;
+        return;
+    }
+
+    monster.mhp = 0;
+    const amulet = wornMonsterLifeSaver(monster);
+    if (amulet) {
+        await lifeSaveKilledMonster(monster, amulet);
+    } else {
+        await finishHeroMonsterKill(monster, monster.mx, monster.my, {
+            showKillMessage: true,
+            weaponHit: false,
+        });
+    }
+    game.context.move = 0;
+}
+
 function menuLetter(index) {
     return index < 26
         ? String.fromCharCode('a'.charCodeAt(0) + index)
@@ -7156,6 +7258,8 @@ function completeExtendedCommand(command) {
     if (game.flags?.debug && command.length >= 4
         && 'wizmondiff'.startsWith(command)) return 'wizmondiff';
     if (game.flags?.debug && command.length >= 4
+        && 'wizkill'.startsWith(command)) return 'wizkill';
+    if (game.flags?.debug && command.length >= 4
         && 'wizintrinsic'.startsWith(command)) return 'wizintrinsic';
     if (command.length >= 2 && 'ride'.startsWith(command)) return 'ride';
     if (command.length >= 2 && 'rub'.startsWith(command)) return 'rub';
@@ -7219,6 +7323,7 @@ async function runExtendedCommand(command) {
     if (command === 'wizwhere') return wizWhere();
     if (command === 'wizwish') return wizWish();
     if (command === 'wizgenesis') return wizGenesis();
+    if (command === 'wizkill') return wizKill();
     if (command === 'wizidentify') return wizIdentify();
     if (command === 'wizintrinsic') return wizIntrinsic();
     if (command === 'wizmap') return wizMap();

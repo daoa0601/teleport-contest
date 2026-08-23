@@ -9,7 +9,7 @@ import {
     MAGIC_PORTAL, M_AP_MONSTER,
     MORGUE, POOL, ROOM, SDOOR, SHOPBASE, SINK, SLP_GAS_TRAP, SQKY_BOARD, STONE,
     STRAT_WAITFORU, TEMPLE, TRCORNER,
-    WATER, WEB, W_AMUL, W_NONDIGGABLE, W_NONPASSWALL, ZOO,
+    I_SPECIAL, WATER, WEB, W_AMUL, W_NONDIGGABLE, W_NONPASSWALL, ZOO,
 } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import {
@@ -9961,6 +9961,68 @@ test('seed0470 created Wizard wears its life-saving amulet', async () => {
     assert.equal(amulet.owornmask, W_AMUL);
     assert.equal(wizard.misc_worn_check, W_AMUL);
 });
+
+test('seed0470 wizkill consumes life-saving amulet and revives Wizard',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizkill\n  u.  \x1b';
+        const result = await runSegment({
+            seed: 470,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 114);
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'Pick first monster to slay:--More--');
+        assert.deepEqual(result.getCursors()[106], [35, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            '          Tip: Farlooking or selecting a map location');
+        assert.deepEqual(result.getCursors()[107], [16, 8, 1]);
+        assert.equal(decodedTopline(result.getScreens()[108]),
+            'Move cursor to a monster:');
+        assert.deepEqual(result.getCursors()[108], [41, 6, 1]);
+        assert.equal(decodedTopline(result.getScreens()[109]),
+            'Wizard of Yendor, meditating');
+        assert.deepEqual(result.getCursors()[109], [42, 5, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[110], [],
+            'seed0470 wizkill initial life-saving pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[110]),
+            'You kill the Wizard of Yendor!  But wait...--More--');
+        assert.deepEqual(result.getCursors()[110], [51, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[111], [
+            'rn2(19)=1',
+        ], 'seed0470 life-saving amulet discovery RNG');
+        assert.equal(decodedTopline(result.getScreens()[111]),
+            "The Wizard of Yendor's medallion begins to glow!--More--");
+        assert.deepEqual(result.getCursors()[111], [56, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[112]),
+            'The Wizard of Yendor looks much better!--More--');
+        assert.deepEqual(result.getCursors()[112], [47, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[113]),
+            'The medallion crumbles to dust!');
+        assert.deepEqual(result.getCursors()[113], [42, 5, 1]);
+
+        const wizard = game.level.monsters.find(monster =>
+            monster.mnum === 285);
+        assert.ok(wizard);
+        assert.equal(wizard.dead, false);
+        assert.equal(wizard.mhp, 122);
+        assert.equal(wizard.mhpmax, 122);
+        assert.equal(wizard.mcanmove, 1);
+        assert.equal(wizard.mfrozen, 0);
+        assert.deepEqual(wizard.minvent, []);
+        assert.equal(wizard.misc_worn_check, I_SPECIAL);
+        assert.equal(game._knownObjectTypes.has(202), true);
+        assert.equal(game._vanquishedCounts?.has(285) ?? false, false);
+        assert.equal(game.context.no_of_wizards, 1);
+        assert.equal(game.context.move, 0);
+    });
 
 test('seed0014 Hallucination rejects death touch and hides speed potion',
     async () => {
