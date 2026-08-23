@@ -34774,3 +34774,35 @@ prayer and Samurai prayer controls remain exact.  This closes represented
 default-leap prayer cadence; alternate runmodes, interruption, life-saving
 rebasing, outcome pagers and burdened multi-allocation variants remain
 controls.  Lua contributes none.
+
+## 956. Knight jump animation belongs to nonfinal `hurtle_step()` cells
+
+~~~mermaid
+flowchart TD
+    Pick["jump getpos selects valid Knight destination"] --> Path["walk_path builds strict Bresenham cells"]
+    Path --> Step["hurtle_step moves hero, recalculates vision, flushes"]
+    Step --> Remaining{"range remains after this cell?"}
+    Remaining -->|"yes"| Delay["nh_delay_output captures intermediate hero"]
+    Delay --> Step
+    Remaining -->|"no"| Land["final landing: no hurtle delay"]
+    Land --> Multi["nomul -1, hunger, elapsed-turn transaction"]
+    Lua["Lua owns getpos tutorial text, not jump trajectory"] -.-> Pick
+~~~
+
+Native `apply.c:jump()` and obstacle validation share `dothrow.c:walk_path()`.
+For a successful jump, each callback moves the hero and refreshes vision; only
+a nonfinal cell calls `nh_delay_output()` after decrementing range.  A
+chess-knight jump therefore exposes one intermediate frame and does not animate
+the landing cell.
+
+JavaScript now shares one strict-inequality Bresenham cell generator between
+validation and execution.  Live execution updates the hero/map and captures
+each nonfinal cell before retaining the existing landing, hunger and one-turn
+helpless owners.
+
+Seed4500 inputs211/222/233 each close at **1/1** complete frames/cursors and
+advance the session to35/37; the corpus reaches1,410/1,483.  The three observed
+paths cover both vertical signs and horizontal signs of Knight geometry.  This
+closes clear-floor two-cell jumps; intermediate actors, traps, punishment,
+special-room effects, water/lava, pass-walls, magic jumps and longer paths
+remain controls.  Lua supplies only shared getpos tutorial content.

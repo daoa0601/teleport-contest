@@ -13630,3 +13630,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   controls pass, and seed4500 reaches32/37.  The managed engine-only corpus
   remains44/44 at1,407/1,483 in13.85 seconds and275,349,504 bytes maximum RSS.
   No normal scorer, push, workflow or hidden judge ran.
+- Commit0c36a1a makes jump validation and execution share native's strict
+  Bresenham path, moves/recalculates each cell, and captures only nonfinal
+  `hurtle_step()` cells.  Seed4500's three Knight jumps each close1/1 full
+  frames/cursors, taking the session to35/37.  The broader punished-transition
+  control passes.  The managed engine-only corpus remains44/44 at1,410/1,483
+  in14.02 seconds and277,659,648 bytes maximum RSS.  No normal scorer, push,
+  workflow or hidden judge ran.

@@ -1,18 +1,18 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,407/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,410/1,483 animation frames
 
-Measured 2026-08-24 00:42 EEST from commit `a1122e8`, after connecting prayer
-negative-multi turns to shared runmode cadence:
+Measured 2026-08-24 00:50 EEST from commit `0c36a1a`, after restoring Knight
+jump intermediates through the shared Bresenham path:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **40+0.35 ms/turn** (R² 0.836).
-One owned process completed in **13.85 seconds** at **275,349,504 bytes maximum
+The engine-only gate is **44/44 exact** at **40+0.35 ms/turn** (R² 0.831).
+One owned process completed in **14.02 seconds** at **277,659,648 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,407/1,483** exact frames.  Fifteen sessions
+Supplemental animation is now **1,410/1,483** exact frames.  Fifteen sessions
 are complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
 **49/49**, seed0014 **995/995**, seed0002 **128/128**, seed0016 **4/4**,
 seed0030 **40/40**,
@@ -21,7 +21,7 @@ seed0108 **4/4**, seed0116 **8/8**, seed0360 **12/12**, seed0361 **10/10**,
 seed0383 **1/1**, seed0900 **3/3**, and seed5002 **8/8**.  Seed0900 remains a
 bounded replay carrier, not a generalized Tourist actor/occupation
 implementation.  Seed0014 is no longer partial; the largest remaining reached
-partials include seed0007 **53/58** and seed4500 **32/37**.  These counts are
+partials include seed0007 **53/58** and seed4500 **35/37**.  These counts are
 supplemental and do not alter the contest pass result.  Seed0014's cold-ray,
 rolling-boulder, delayed-armor and six selected-travel regressions prove exact
 native-to-JavaScript frame counts and cursors; this matters because the

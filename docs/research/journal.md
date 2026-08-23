@@ -92783,3 +92783,72 @@ movement/run state before introducing any generic cadence call.  No normal
 corpus, push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:49 EEST, journal block 3095] {#seed4500 #input211 #input222 #input233 #jump #walk-path #hurtle-step #source-diagnosis #prediction}
+
+**Call-stack split:** temporary bounded animation-stack tracing shows the
+existing input1210 frame comes from generic helpless cadence, while no
+JavaScript call occurs for211/222/233.  Native screen geometry identifies the
+latter as jump intermediates: (36,14)->**(36,13)**->(35,12),
+(35,12)->**(35,11)**->(36,10), and
+(36,10)->**(36,11)**->(35,12).  Each bold cell is the sole native frame.
+
+**Source owner:** `apply.c:jump()` sends the Knight path through
+`walk_path(hurtle_jump)`.  `dothrow.c:hurtle_step()` moves/recalculates vision,
+flushes every path cell, and calls `nh_delay_output()` whenever range remains;
+the final landing cell has range zero and no delay.  JavaScript reused the
+Bresenham algorithm only to validate obstacles, then teleported directly to
+the target.
+
+**Prediction and guard:** extract one shared jump-path cell generator, use it
+for validation and live movement, capture every nonfinal path cell, then keep
+the existing landing/negative-multi transaction.  The three inputs should each
+close1/1 with exact retained getpos description, old T status and hero cursor.
+Do not add a runmode frame or animate the final landing cell; traps, monsters,
+punishment and special-room effects along a jump remain explicit controls.
+
+---
+
+### [2026-08-24 00:50 EEST, journal block 3096] {#seed4500 #input211 #input222 #input233 #jump #hurtle-step #implementation #bounded-acceptance}
+
+**Implementation and focused effect:** jump validation and execution now share
+one strict-inequality Bresenham cell generator.  Live jump execution moves,
+recalculates vision and captures every nonfinal path cell; the final landing
+still flows directly into the existing one-turn helpless/hunger transaction.
+Seed4500 advances from32/37 to **35/37** exactly.
+
+**Bounded acceptance:** inputs211/222/233 are each1/1 on full frame/cursor,
+complete RNG slice and final boundary.  Their intermediate hero cells and
+retained `floor of a room` topline match native.  The broader seed4500 punished
+level-transition control also passes.  Final landing, path obstacles, actors,
+traps, punishment and special-room side effects remain unclaimed beyond the
+already exact public boundaries.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected total is1,410/1,483 and seed4500 at35/37.  Inputs581/1211
+remain tied to the generic helpless cadence path but require duration/source-
+turn localization before a fix.
+
+---
+
+### [2026-08-24 00:51 EEST, journal block 3097] {#seed4500 #jump #hurtle-step #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `0c36a1a` owns shared jump path generation,
+nonfinal hurtle capture and the exact three-input regression.  Inputs211/222/
+233 each pass1/1 full frame/cursor plus RNG and final boundary; the broader
+seed4500 transition control passes.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**40+0.35 ms/turn** (R²0.831) in **14.02 seconds** at **277,659,648 bytes
+maximum RSS**.  Animation advances exactly three slots to **1,410/1,483** and
+seed4500 reaches **35/37**, with no other count changes.  The verifier exited
+and no matching live process remains.
+
+**Next blocker:** only seed4500 inputs581 and1211 remain.  Both are silent
+post-move frames with no JavaScript counterpart; neighboring inputs589 and1210
+already come from `initialTurnMaintenanceWithTty` helpless cadence.  Measure
+the cause/duration and recorded source turn of each missing pending marker
+before extending generic helpless state.  No normal corpus, push, workflow,
+hidden judge or publication ran.
+
+---
