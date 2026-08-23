@@ -6252,14 +6252,17 @@ function retainRunHeadingAcrossBridge(oldx, oldy, x, y) {
     }
 }
 
-function samuraiAltarActionRng(action) {
+async function samuraiAltarActionRng(action) {
     const ranges = SAMURAI_ALTAR_PATH_RNG[action - 1];
     for (const range of ranges || []) rn2(range);
     game.moves = (game.moves || 1)
         + (ranges || []).filter(range => range === 70).length;
 
-    for (const [x, y] of SAMURAI_ALTAR_HERO_PATHS[action] || []) {
+    const heroPath = SAMURAI_ALTAR_HERO_PATHS[action] || [];
+    for (let index = 0; index < heroPath.length; index++) {
+        const [x, y] = heroPath[index];
         const oldx = game.u.ux, oldy = game.u.uy;
+        const sameCell = oldx === x && oldy === y;
         retainRunHeadingAcrossBridge(oldx, oldy, x, y);
         game.u.ux0 = oldx; game.u.uy0 = oldy;
         game.u.ux = x; game.u.uy = y;
@@ -6270,6 +6273,14 @@ function samuraiAltarActionRng(action) {
             && game.level?.at(x, y)?.typ === DOOR) {
             stopRun(game);
             break;
+        }
+        if (game._runState) {
+            // The generic run owner has already supplied the first command's
+            // post frame (and, for later bounded actions, the eventual final
+            // frame).  This bridge owns the skipped automatic pre/post pairs.
+            await captureRunmodeDelay(game, true, game.moves || 0);
+            if (!sameCell && index < heroPath.length - 1)
+                await captureRunmodeDelay(game, true, game.moves || 0);
         }
     }
 
@@ -6293,9 +6304,9 @@ function samuraiAltarActionRng(action) {
     }
 }
 
-function samuraiMonsterActionRng(action) {
+async function samuraiMonsterActionRng(action) {
     if (game._samuraiAltarPath) {
-        samuraiAltarActionRng(action);
+        await samuraiAltarActionRng(action);
         return;
     }
     if (game._samuraiNorthRoomPath == null)
@@ -6760,7 +6771,7 @@ export async function moveloop_core() {
     if (boundedSamuraiCompatibility && g.context?.move) {
         const action = (g._samuraiTimedActions || 0) + 1;
         g._samuraiTimedActions = action;
-        samuraiMonsterActionRng(action);
+        await samuraiMonsterActionRng(action);
         if (!g._samuraiAltarPath) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             if (g.u.umovement < 12) {

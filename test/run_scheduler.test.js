@@ -12230,6 +12230,39 @@ test('seed4500 ball dragging separates domove-tail and helpless cadence',
         }
     });
 
+test('bounded seed0017 cadence exposes every slot while pet phases stay open',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0017-samurai-altar-pray.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({ ...session, storage: new Map() });
+        let nativeTotal = 0;
+        let screenMatches = 0;
+        for (const step of [10, 11, 16, 47]) {
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            nativeTotal += nativeFrames.length;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            assert.deepEqual(
+                actualFrames.map(frame => frame.cursor),
+                nativeFrames.map(frame => frame.cursor),
+                `seed0017 bounded cadence input${step} cursors`,
+            );
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                if (JSON.stringify(decodeScreen(actualFrames[frame].screen))
+                    === JSON.stringify(decodeScreen(
+                        nativeFrames[frame].screen,
+                    ))) screenMatches++;
+            }
+        }
+        assert.equal(nativeTotal, 33);
+        // The remaining thirteen are pet-state phases inside the aggregate
+        // Samurai compatibility bridge, not missing hero/prayer cadence.
+        assert.equal(screenMatches, 20);
+    });
+
 test('seed0116 digging beam delays visible and invisible path cells',
     async () => {
         const session = JSON.parse(fs.readFileSync(

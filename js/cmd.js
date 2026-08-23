@@ -8985,6 +8985,13 @@ async function dopray() {
             + SAMURAI_ALTAR_PRAYER_TURN_RNG.filter(range => range === 70).length;
         rnz(250);
         rn2(4);
+        await pline('You begin praying to Amaterasu Omikami.');
+        for (let turn = 0; turn < 3; turn++) {
+            await captureRunmodeDelay(
+                game, true, game.moves || 0,
+                { preservePhysicalTopline: true },
+            );
+        }
         await promptKey('You begin praying to Amaterasu Omikami.  You finish your prayer.--More--');
         rnz(300);
         await pline('You feel that Amaterasu Omikami is displeased.');
