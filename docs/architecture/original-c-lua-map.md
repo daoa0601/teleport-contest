@@ -34806,3 +34806,37 @@ paths cover both vertical signs and horizontal signs of Knight geometry.  This
 closes clear-floor two-cell jumps; intermediate actors, traps, punishment,
 special-room effects, water/lava, pass-walls, magic jumps and longer paths
 remain controls.  Lua supplies only shared getpos tutorial content.
+
+## 957. Ball-drag `nomul(-2)` has immediate and later cadence owners
+
+~~~mermaid
+flowchart TD
+    Move["domove moves punished hero"] --> Drag["drag_ball returns cause_delay"]
+    Drag --> Spots["move_bc and destination spoteffects settle"]
+    Spots --> Multi["install nomul -2 dragging state"]
+    Multi --> Tail["same domove tail runmode_delay_output at current moves"]
+    Tail --> Global1["first monster/global helpless turn"]
+    Global1 --> Cadence1["runmode delay before multi advances"]
+    Cadence1 --> Global2["second monster/global helpless turn"]
+    Global2 --> Cadence2["independent later cadence opportunity"]
+    Cadence2 --> Resume["multi reaches zero; input resumes"]
+    Lua["Lua owns no punishment or movement cadence"] -.-> Move
+~~~
+
+Native costly ball dragging installs `nomul(-2)` after movement and destination
+effects, then immediately reaches `domove()`'s runmode tail with the pre-
+maintenance turn number.  The two subsequent global turns separately invoke
+negative-multi cadence before advancing the counter.  Either owner may satisfy
+default leap mode; they must not be merged or deduplicated by effect name.
+
+JavaScript now captures the immediate tail only when the ball-chain plan set
+`causeDelay`, after destination effects and using current `moves`.  The existing
+two-turn helpless counter continues to own later maintenance cadence.
+
+Seed4500 inputs581/1211 close at **1/1** immediate-tail frames while inputs589/
+1210 remain exactly one later-helpless frame each; no extra frames are emitted.
+Seed4500 becomes **37/37 animation-complete** and the corpus reaches
+1,412/1,483.  Punished transition and travel controls remain exact.  This
+closes represented clear-floor dragging in leap mode; traps, messages,
+alternate runmodes, blocked drag, carried ball and special destination effects
+remain controls.  Lua contributes none.

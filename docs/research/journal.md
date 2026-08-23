@@ -92852,3 +92852,73 @@ before extending generic helpless state.  No normal corpus, push, workflow,
 hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 00:55 EEST, journal block 3098] {#seed4500 #input581 #input1211 #punishment #ball-chain #domove-tail #runmode #source-diagnosis #prediction}
+
+**State/call-stack localization:** bounded instrumentation (removed after the
+probe) shows the surrounding JavaScript frames589/1210 come from later
+`initialTurnMaintenanceWithTty` helpless markers.  Live counter tracing shows
+the relevant cause is consistently `dragging an iron ball`, installed as two
+turns by `finishBallAndChainMove()`.  Input581 begins at T98 and input1211 at
+T203; both source turns satisfy default leap cadence, and native frames show
+the newly moved hero with pre-maintenance status.  JavaScript waits until
+maintenance turns99/100 and204/205, none cadence-eligible.
+
+**Source owner:** native `hack.c:domove()` calls `drag_ball`, later installs
+`nomul(-2)` when `cause_delay` is true, then reaches its unconditional tail
+`runmode_delay_output()` before returning to moveloop.  Subsequent global turns
+independently advance negative multi and may create their own cadence (the
+already exact inputs589/1210 demonstrate that separate owner).
+
+**Prediction and guard:** after destination effects settle, capture shared
+runmode cadence when the current ball-chain plan set `causeDelay`, using the
+current pre-maintenance `moves`.  Inputs581/1211 should each close1/1.  Inputs
+589/1210 must retain exactly one later helpless frame—no duration change and no
+duplicate immediate frame on non-cadence source turns.  This falsifies a
+missing helpless turn or off-by-one counter as the final blocker.
+
+---
+
+### [2026-08-24 00:56 EEST, journal block 3099] {#seed4500 #input581 #input1211 #ball-chain #domove-tail #runmode #animation-complete #bounded-acceptance}
+
+**Implementation and focused effect:** after destination effects, a costly
+ball-chain move now reaches shared runmode cadence with the current pre-
+maintenance `moves`, matching native domove's tail after `nomul(-2)`.  The
+existing two-turn helpless state and later maintenance cadence are unchanged.
+Seed4500 closes from35/37 to **37/37 animation-complete**.
+
+**Full-count audit beyond scorer:** inputs581/1211 each gain exactly one native
+frame; inputs589/1210 remain exactly one frame each, with no unscored extras.
+All four pass complete screens/cursors, RNG slices and boundaries.  The broader
+punished level-transition and punished-travel controls pass.  Immediate tail
+and later negative-multi cadence are now separate tested owners.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected total is1,412/1,483 with seed4500 at37/37 and no unrelated
+count changes.  Afterward, re-rank the remaining corpus-wide76 misses rather
+than continuing from the now-complete seed4500 carrier.
+
+---
+
+### [2026-08-24 00:58 EEST, journal block 3100] {#seed4500 #ball-chain #animation-complete #engine-only #44-of-44 #portfolio #architecture #process-safety}
+
+**Committed acceptance:** commit `c976117` owns ball-drag immediate tail
+cadence and the four-input exact-count regression.  Seed4500 is now
+**37/37 animation-complete**; immediate and later helpless owners are separately
+proven with no extras.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**42+0.37 ms/turn** (R²0.807) in **14.72 seconds** at **273,956,864 bytes
+maximum RSS**.  Animation advances exactly two slots to **1,412/1,483**, with
+no other session count changes.  The verifier exited and no matching live
+process remains.
+
+**Correction and next priority:** block3099 estimated76 remaining frames before
+the two ball-drag frames closed; the measured remaining total is **71**.  They
+partition exactly as seed0017:30, the two seed0013 sessions:10+10, seed0106:6,
+seed1150:6, seed0007:5, and seed0060:4.  Seed0017's prayer carrier is the next
+largest, but its bounded Samurai fast-forward path must be separated from live
+generic prayer cadence before editing.  No normal corpus, push, workflow,
+hidden judge or publication ran.
+
+---

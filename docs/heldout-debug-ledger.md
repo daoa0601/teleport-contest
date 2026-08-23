@@ -13637,3 +13637,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   control passes.  The managed engine-only corpus remains44/44 at1,410/1,483
   in14.02 seconds and277,659,648 bytes maximum RSS.  No normal scorer, push,
   workflow or hidden judge ran.
+- Commitc976117 restores costly ball dragging's immediate `domove()` tail
+  cadence after destination effects and `nomul(-2)`.  Inputs581/1211 each
+  close1/1; later helpless inputs589/1210 remain exactly one frame with no
+  extras.  Seed4500 becomes37/37 animation-complete.  The managed engine-only
+  corpus remains44/44 at1,412/1,483 in14.72 seconds and273,956,864 bytes
+  maximum RSS.  The remaining71 frames are now confined to seed0017, both
+  seed0013 sessions, seed0106, seed1150, seed0007 and seed0060.  No normal
+  scorer, push, workflow or hidden judge ran.
