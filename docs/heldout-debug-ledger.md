@@ -13043,3 +13043,18 @@ attempt: **402 calls**, not a direct two-pass retry.
   and 23/23.  Ordinary forced-genesis snapshot/announcement wiring, monster
   amulet wear, non-humanoid slot combinations, Warning activation and other
   Hallucinated constructor messages remain open.
+- The same source wear-snapshot owner now closes forced Wizard genesis under
+  active Hallucination through input135.  `create_particular_creation()`
+  replays makemon's initial projection, eight wear-name snapshots, final
+  projection and randomized announcement; seed14 input114 consequently says
+  `The pit fiend appears next to you` with exact core RNG/cursor.  Input123
+  exposed the complement: personal bogus name `Domo-kun` must still receive
+  ARTICLE_THE because underlying Wizard of Yendor has an explicit x_monnam
+  exception.  The shared formatter now accepts that true-Wizard policy, so
+  `The Domo-kun casts...` and later Hallucinated names remain display-exact.
+  Native/JS parity is exact from input3 through input135; focused and combined
+  fixture-disabled gates pass 1/1 and 24/24.  Input136 is the next independent
+  mismatch with identical RNG/prose/state: status conditions are ordered
+  `Stun Hallu` in JS versus native `Hallu Stun`.  Non-Wizard ARTICLE_A
+  Hallucinated genesis, modifier timing, failed creation, Warning activation,
+  and other unique/personal-name combinations remain open.

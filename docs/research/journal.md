@@ -88237,3 +88237,54 @@ public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
 files remain untouched.
 
 ---
+
+### [2026-08-23 15:00 EEST, journal block 2926] {#seed14 #input114 #input123 #input135 #hallucination #wizgenesis #create-particular #makemon #m-dowear #name-snapshot #rndmonnam #domo-kun #article-the #x-monnam #implementation #bounded-replay #regression #architecture #ledger #process-safety #priority}
+
+**Shared-successor contract:** after closing clonewiz, the previously rejected
+Hallucination-before-genesis seed14 carrier was rerun against the same source
+constructor boundary.  Acceptance required exact core RNG, display-stream
+position, announcement article, later combat names and durable Wizard state;
+merely printing the known native noun at input114 was insufficient.
+
+**Constructor result and next display edge:** wiring the shared creation-wear
+snapshot owner into `create_particular_creation()` immediately closes input114:
+all 46 core calls remain exact and the visible line becomes `The pit fiend
+appears next to you.` at cursor11,3.  Native/JavaScript then match through
+input122.  Input123 has identical 60-call clone/cast RNG and identical random
+identity text, but JavaScript printed bare `Domo-kun` while native printed
+`The Domo-kun`.  This falsified display-stream phase and clone-policy
+hypotheses; only article ownership differed.
+
+**Source article contract and implementation:** `Amonnam()` starts from
+ARTICLE_A.  Hallucination substitutes `rndmonnam()` and normally treats a
+personal bogus code as name-at-start, but `x_monnam()` has an explicit
+underlying-Wizard exception which forces ARTICLE_THE.  Commit `e326774` adds a
+force-the option to the shared random subject formatter and uses it only when
+the real actor is Wizard of Yendor, including genesis, clone announcement,
+ordinary visible cast/hit and cuss paths.  Non-Wizard Hallucinated subject
+semantics remain unchanged.
+
+**Measured effect and durable evidence:** seed14 now matches native RNG,
+decoded screens and cursors from **input3 through input135**.  Strict replay
+took **0.24 seconds** at **124,715,008 bytes maximum RSS**.  Input123 displays
+`The rock piercer hits!  The Domo-kun casts a spell!  Double Trouble...` at
+cursor78; input135's later mind-flayer/sewer-rat cast remains exact.  State at
+the bounded endpoint is HP111/144, Hallucination27 and two underlying iswiz
+actors with inventories307 and212.  The permanent focused test passes **1/1**
+in **0.23 seconds** at **131,678,208 bytes maximum RSS**.  The expanded
+fixture-disabled Priest/Wizard portfolio passes **24/24** in **0.70 seconds**
+at **178,601,984 bytes maximum RSS**.  Every comparator and test process
+exited.
+
+**Map, falsification and next blocker:** section891 maps the shared constructor
+snapshots separately from create-particular parsing/article policy.  Lua owns
+neither.  Input136 is the first remaining mismatch and is not presentation RNG:
+RNG, topline, HP, cursor and active conditions are identical, but JavaScript
+orders status suffixes `Stun Hallu` while native orders `Hallu Stun`.  Keep
+non-Wizard ARTICLE_A, unique/personal alternatives, failed creation, explicit
+gender, requested tame/peace/sleep timing, invisible/hidden creation, Warning
+activation and other constructor frontends open.  No full corpus,
+public-status rewrite, hidden judge, push, or publication ran; unrelated dirty
+files remain untouched.
+
+---

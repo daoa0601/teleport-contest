@@ -32218,3 +32218,54 @@ invisibility potion305 and fake Amulet212.  Ordinary forced-genesis wiring,
 monster amulet equipment, alternate body/weapon slot counts, prior invisibility,
 Warning-bearing activation, other Hallucinated constructors and suppressed
 true-name callers remain separate controls.  Lua supplies only level geometry.
+
+## 891. Forced Wizard genesis reuses constructor snapshots but owns article policy
+
+~~~mermaid
+flowchart TD
+    Cmd["wizard #wizgenesis hostile Wizard of Yendor"] --> Parse["create_particular_parse and cant_revive force prompt"]
+    Parse --> Make["makemon at hero square with MM_NOEXCLAM"]
+    Make --> Initial["byyou initial newsym and apparent-hero state"]
+    Initial --> Snapshots["shared eight m_dowear_type name snapshots"]
+    Snapshots --> Final["makemon final newsym"]
+    Final --> Amon["Amonnam uses ARTICLE_A request"]
+    Amon --> Hallu{"Hallucinating?"}
+    Hallu -->|"no"| True["underlying unique Wizard name"]
+    Hallu -->|"yes"| Random["rndmonnam replacement identity"]
+    Random --> Personal{"replacement is personal bogus name?"}
+    Personal -->|"no"| Unique["underlying G_UNIQ converts A to THE"]
+    Personal -->|"yes and underlying Wizard"| WizardThe["Wizard-specific x_monnam exception still forces THE"]
+    Unique --> Line["The pit fiend appears next to you"]
+    WizardThe --> Later["The Domo-kun casts a spell"]
+    True --> Line
+    Line --> Modifiers["caller applies requested hostile/sleep state"]
+    Lua["Lua owns no command parser, constructor, article, or display state"] -.-> Cmd
+~~~
+
+`#wizgenesis` and `clonewiz()` are different frontends to the same monster
+constructor.  The command path parses requested disposition and special-
+monster substitution, then asks `makemon()` to create the actor at the hero's
+square.  Its JavaScript wrapper now consumes the same shared creation wear
+snapshots mapped in section890 between the initial and final projections,
+before formatting the visible announcement.
+
+Seed14 enables Hallucination before requesting the forced Wizard.  Input114's
+core constructor was already exact; restoring presentation ownership moves the
+display stream to native `The pit fiend appears next to you`, cursor11,3.  The
+later input123 reaches a random personal bogus identity.  General
+`bogon_is_pname()` would suppress an article, but `x_monnam()` explicitly
+special-cases an underlying Wizard of Yendor and changes the ARTICLE_A request
+to ARTICLE_THE even when the replacement starts like a personal name.  The
+correct cast line is therefore `The Domo-kun`, not bare `Domo-kun`.
+
+The controlled replay matches native RNG, decoded screens and cursors from
+input3 through input135.  It retains two real Wizards with inventories307 and
+212 while later Hallucinated hit/cast subjects stay phase-exact.  Input136 is
+the separate status formatter boundary: all gameplay and topline evidence is
+exact, but JavaScript renders `Stun Hallu` and native renders `Hallu Stun`.
+
+This section does not close ordinary non-Wizard Hallucinated ARTICLE_A,
+non-Wizard unique/personal combinations, failed creation, explicit gender,
+tame/peaceful/sleep modifier timing, invisible/hidden creation, Warning-
+bearing activation, or other constructor frontends.  Lua contributes only
+the current level geometry.
