@@ -90418,3 +90418,61 @@ status rewrite, hidden judge, push or publication ran; unrelated dirty files
 remain untouched.
 
 ---
+
+### [2026-08-24 00:51 EEST, journal block 2999] {#outcome4 #selector #ambient-ogre #club #reference-error #coverage-gap #regression #process-safety #priority}
+
+**Aborted selector and real coverage hole:** the bounded outcome4 nominee scan
+for seeds97--160 stopped before producing results when an ambient S_OGRE
+nonzero rank roll selected CLUB.  `initializeRandomMonsterInventory()` referenced
+`CLUB` but allmain did not import that object constant; seed52's zero branch and
+the 59-test expanded pattern exercised only BATTLE_AXE.
+
+**Decision:** discard the partial selector result, import CLUB from the shared
+object table, and rerun the identical bounded window from97.  Retain a concrete
+club carrier if the scan exposes one so the else arm no longer relies on branch
+syntax alone.  The single selector process exited with status1 in **2.24
+seconds** at **312,426,496 bytes maximum RSS**; no recorder/test process was
+left alive.  No corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-24 00:57 EEST, journal block 3000] {#outcome4 #selector #seed-window #ambient-ogre #club #no-candidate #process-safety #priority}
+
+**Corrected bounded scan:** after importing CLUB, the same engine-only
+seed97--160 window completes with no final unresolved outcome4 nominee.  A
+final-roster club query also finds none because the transient actor which
+triggered the former ReferenceError does not survive to the session endpoint;
+the import fixes execution but is not yet a durable branch witness.
+
+**Decision:** extend the same forced-noop selector once through seeds161--256,
+still as nominee generation only.  Stop and native-record the first outcome4
+candidate; if none appears, reconsider the recipe instead of opening an
+unbounded search.  The corrected process exited in **3.81 seconds** at
+**327,286,784 bytes maximum RSS**.  No recorder, corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 01:07 EEST, journal block 3001] {#outcome4 #selector #seed-window #no-candidate #ambient-ogre #club #implementation #stop-rule #ledger #process-safety}
+
+**Bounded selector result and stop:** the identical engine-only forced-noop
+recipe finds no outcome4 nominee in seeds161--256, after no candidate in97--160.
+The second process completes in **5.55 seconds** at **348,389,376 bytes maximum
+RSS**.  Stop at256 and redesign the carrier recipe/selection method rather than
+expanding an unbounded seed search.
+
+**Narrow implementation:** commit `6f11bc0` imports CLUB for ambient S_OGRE's
+nonzero rank arm.  The original97--160 window had proved the branch executable
+by crashing there; after the import the same complete window exits cleanly in
+3.81 seconds.  No persistent club actor survives in the endpoint roster, so the
+repair is accepted as a smoke-proven execution fix, not mislabeled as a native
+state carrier.
+
+**Remaining priority:** outcome3 and seed52 engine core are closed.  Outcome4
+still requires native branch evidence; input2 tutorial and native animation are
+independent open visual channels.  Every selector process exited and no runner
+or recorder remains.  No full corpus, public-status rewrite, hidden judge, push
+or publication ran; unrelated dirty files remain untouched.
+
+---

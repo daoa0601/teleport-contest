@@ -13341,3 +13341,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   793/793 cursors; animation is0/40.  Outcome3 is closed.  Outcome4, tutorial
   projection and animation remain open.  Focused/expanded gates pass 11/11
   and59/59.
+- Outcome4 nominee search remains open.  Corrected engine-only windows97--160
+  and161--256 found no final unresolved outcome4 under the 792-input forced-
+  noop recipe, so the scan stopped at256 rather than becoming unbounded.  The
+  first97--160 attempt did expose a real missing CLUB import in ambient S_OGRE;
+  commit6f11bc0 fixes that nonzero arm and the identical window then completes.
+  A new native-valid recipe or selection strategy is required before any nasty
+  branch claim.
