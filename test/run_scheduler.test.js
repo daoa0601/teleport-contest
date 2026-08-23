@@ -11258,6 +11258,41 @@ test('MMOVE_DONE actors retain their trailing distfleeck', async () => {
     }
 });
 
+test('known weapon tools expose enchantment in inventory', async () => {
+    const session = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed0361-archeologist-tour.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+    const result = await runSegment({
+        seed: session.seed,
+        datetime: session.datetime,
+        nethackrc: session.nethackrc,
+        moves: session.moves.slice(0, 355),
+        storage: new Map(),
+    });
+    for (let step = 353; step <= 355; step++) {
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed0361 weapon-tool input${step} RNG`,
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            `seed0361 weapon-tool input${step} screen`,
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            `seed0361 weapon-tool input${step} cursor`,
+        );
+    }
+    assert.equal(decodedRow(result.getScreens()[354], 12),
+        '                   e - a +0 pick-axe (alternate weapon; not wielded)');
+});
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

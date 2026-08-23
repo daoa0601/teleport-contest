@@ -14,6 +14,7 @@ import { NO_COLOR } from './terminal.js';
 import {
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, OBJECT_CHARGED,
     OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION,
+    OBJECT_SUBTYPE,
 } from './object_data.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { unseenObjectNoun } from './objnam.js';
@@ -157,8 +158,11 @@ export function inventoryItemDescription(item) {
     if (item.rustproof) parts.push('rustproof');
     const enchantment = Number.isInteger(item.enchantment)
         ? item.enchantment : Number.isInteger(item.spe) ? item.spe : null;
+    const weaponTool = item.oclass === 6
+        && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0;
     const visibleEnchantment = item.known && OBJECT_CHARGED[item.otyp]
-        && [2, 3, 4].includes(item.oclass) ? enchantment : null;
+        && ([2, 3, 4].includes(item.oclass) || weaponTool)
+        ? enchantment : null;
     if (Number.isInteger(visibleEnchantment)) {
         parts.push(`${visibleEnchantment >= 0 ? '+' : ''}${visibleEnchantment}`);
     }
