@@ -13396,3 +13396,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   Seed0002 returns to595/595 screens/cursors and four pickup/capacity controls
   pass4/4.  The measured aggregate remains36/44 until a later full gate; seven
   other public regressions remain open.
+- Commitc379dde repairs the everyturn regression introduced when stateful fog
+  hooks moved out of speculative planning.  Every scan now distinguishes live
+  fmon visits from full-ration actors: zero-actor source-ration scans execute
+  their ordered inactive visit tail without gaining actor actions or promoting
+  the branch into global maintenance.  Seed0367 returns to50,125/50,125 RNG
+  and324/324 screens/cursors; seed0383 returns to16,915/16,915 and219/219;
+  seed0360 advances to110,869/120,639.  Seed52/seed211 remain strict complete,
+  including40/40 and4/4 animation.  The managed public gate improves from
+  36/44 to39/44 with no new regression.  The next shared public family is
+  missing `distfleeck`/actor admission in seed0030,0360,0361 and0399; seed4500
+  remains a separate debug-intrinsic continuation.

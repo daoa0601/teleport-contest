@@ -33700,3 +33700,47 @@ then shows the movement-slowing line and `Burdened`.  The complete session is
 exact at27,158 RNG calls and595 screens/cursors.  This section closes the
 once-per-command pickup/encumber pager ordering.  It does not claim every
 direct `encumber_msg()` caller or animation, and Lua has no ownership.
+
+## 927. Inactive-only movemon scans execute visits without promoting turns
+
+~~~mermaid
+flowchart TD
+    Scan["scanMonsterMovement snapshots fmon visits and active actors"] --> Visits{"any live visits?"}
+    Visits -->|"no"| Empty["no executor work"]
+    Visits -->|"yes"| Execute["execute ordered visit batches"]
+    Execute --> Effect["m_everyturn_effect before movement gate"]
+    Effect --> Active{"actor has full ration?"}
+    Active -->|"yes"| Action["run actor action in same fmon position"]
+    Active -->|"no"| Tail["effect only; no actor action"]
+    Action --> Maintenance["existing loop decides allocation and maintenance"]
+    Tail --> Maintenance
+    Wrong["any visit promotes live-role maintenance"] -.->|"falsified by 151-call seed0360 overrun"| Maintenance
+    Lua["Lua contributes level and monster identities"] -.-> Scan
+    Lua -.->|"no scheduler ownership"| Effect
+~~~
+
+C `movemon_singlemon()` checks death/off-map state, runs
+`m_everyturn_effect()`, and only then tests whether the monster has a full
+movement ration.  `scanMonsterMovement()` therefore needs two products:
+ordered live identity visits and the smaller active actor list.  Whether a
+visit exists decides executor admission; whether an actor exists decides
+action execution.  Neither decision is permission to allocate a global turn.
+
+Sections915--916 established live per-identity interleaving for scans with
+active actors.  Moving those effects out of speculative planning accidentally
+dropped the first-round tail when `_heroTimePending` loops saw zero actors.
+Restoring effects by widening the later live-role branch was also wrong: it
+promoted seed0360's two TTL draws into151 calls.  The shared
+`monsterScanHasVisits()` gate now invokes the same executor from both
+source-ration loops while leaving every allocation/maintenance condition
+unchanged.  The later scan block uses an equivalent inactive tail without
+changing its branch selection.
+
+Seed0360 inputs168--170 retain two fog-cloud TTL draws, seed0367 inputs262--264
+retain three, and seed0383 inputs134--136 retain one followed by exact monster
+allocation.  Seed52 still pins an inactive fog identity between active actors
+and a moved zero-ration fog on a later round.  This section closes ordered
+first-round everyturn effects when no monster can act, across the represented
+scheduler entry loops.  It does not close other everyturn species, dynamic
+membership invalidation or the remaining actor-admission regressions.  Lua
+owns possible level content but no movemon visit/action distinction.

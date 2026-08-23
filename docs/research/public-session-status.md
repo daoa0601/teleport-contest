@@ -1,5 +1,42 @@
 # Public session status
 
+## Current working-tree engine-only gate: 39/44 exact
+
+Measured 2026-08-23 21:16 EEST from commit `c379dde`, after recovering
+seed0002's pickup-status boundary and inactive-only monster everyturn visits:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is **39/44 exact** at **49+0.29 ms/turn** (R² 0.710).  One owned
+process completed in **13.32 seconds** at **268,861,440 bytes maximum RSS**;
+the post-run registry is empty.  No previously green session regressed.
+
+Recovered since the 36/44 gate:
+
+| Session | RNG | Screens | Cursors |
+| --- | ---: | ---: | ---: |
+| `seed0002` | 27,158/27,158 | 595/595 | 595/595 |
+| `seed0367` | 50,125/50,125 | 324/324 | 324/324 |
+| `seed0383` | 16,915/16,915 | 219/219 | 219/219 |
+
+The five current non-exact sessions are:
+
+| Session | RNG | Screens | Cursors | Current earliest interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `seed0030` | 29,718/105,529 | 1,903/1,953 | 1,936/1,953 | segment2/input35 missing `distfleeck` |
+| `seed0360` | 110,869/120,639 | 695/833 | 745/833 | input673 missing `distfleeck` after m_move |
+| `seed0361` | 22,205/53,865 | 243/366 | 279/366 | input236 missing `distfleeck` |
+| `seed0399` | 10,224/11,409 | 117/532 | 454/532 | input117 missing actor `distfleeck/m_move` block |
+| `seed4500` | 50,272/108,275 | 581/1,814 | 905/1,814 | input577 debug-intrinsic continuation |
+
+The normal fixture-enabled corpus was not run because engine-only remains red.
+The next recovery block is the shared actor-admission/`distfleeck` family in
+the first four sessions; seed4500 remains a separate presentation/scheduler
+transaction.  Nothing was pushed, submitted, or run against the official
+held-out judge.
+
 ## Current working-tree engine-only regression: 36/44 exact
 
 Measured 2026-08-23 20:56 EEST from commit `b229ec0`, after closing the

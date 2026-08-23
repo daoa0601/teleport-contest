@@ -91020,3 +91020,108 @@ per-input divergence; do not infer37/44 from this focused pass alone.
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:05 EEST, journal block 3024] {#public-regressions #earliest-divergence #portfolio #gas-cloud #distfleeck #monster-move #wizintrinsic #priority #process-safety}
+
+**Seven-session earliest-boundary inventory:** one managed per-input locator
+finds seed0030 segment2/input35 missing `rn2(5) @ distfleeck`, seed0360/input168
+missing two `rn2(3) @ create_gas_cloud`, seed0361/input236 missing
+`rn2(5) @ distfleeck`, seed0367/input262 missing three gas-cloud draws,
+seed0383/input134 missing one gas-cloud draw, seed0399/input117 missing its
+opening `distfleeck/m_move` block, and seed4500/input577 first missing the
+second debug-intrinsic timeout line before its input579 maintenance calls.
+
+**Portfolio classification:** this falsifies one common tutorial/status cause.
+Four independent mechanism families remain: everyturn gas-cloud scheduling,
+ordinary actor admission/order, hallucinated Big-Room movement, and debug
+intrinsic presentation/scheduler continuation.  The gas-cloud family is the
+highest-leverage next block because the same exact C owner is the earliest RNG
+divergence in three sessions with counts2,3 and1.
+
+**Decision:** trace the fog-cloud identities, positions, movement/activity and
+ordered everyturn visits at seed0360/0367/0383 before editing.  Reconcile that
+evidence with the seed52 inactive/later-round interleaving rule; do not restore
+bulk hook execution or sacrifice the exact held-out carrier.  The other four
+first divergences remain recorded, not discarded.
+
+**Process safety:** the seven-session locator completed in **2.11 seconds** at
+**285,065,216 bytes maximum RSS** and left no process running.  No normal
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 21:09 EEST, journal block 3025] {#gas-cloud #everyturn #inactive-scan #falsified-hypothesis #correction #source-ration #portfolio}
+
+**Falsified candidate:** changing the later live-role gate from
+`actors.length` to any visit promoted seed0360's inactive-only scan into a
+full maintenance transaction.  Its native two gas TTL draws became151 calls
+and the map shifted before the witness.  The edit was reverted before commit.
+
+**Historical/source correction:** commit `bca6ac9` correctly removed
+stateful everyturn effects from speculative planning so active identities
+could interleave at the executor.  It did not replace planner execution for
+zero-actor scans in the earlier `_heroTimePending` movement-ration loops.
+Those loops still invoke the executor only for `actors.length`, even though C
+visits every live fmon identity before its movement gate.
+
+**Decision:** distinguish executor admission from maintenance admission.
+Invoke the existing ordered-visit executor whenever a scan has visits; do not
+change actor lists, movement allocation, global maintenance, or role-branch
+selection.  Retain the separate inactive tail for the later scan block and
+adversarially rerun seed52's active/inactive interleave.
+
+---
+
+### [2026-08-23 21:14 EEST, journal block 3026] {#gas-cloud #everyturn #inactive-scan #implementation #complete-replay #bounded-regression #heldout-control #architecture #process-safety}
+
+**Implementation:** commit `c379dde` centralizes `monsterScanHasVisits()` and
+uses it only to admit the ordered executor in both source-ration loops.  A
+zero-ration scan runs its inactive fmon visit tail but no actor action; existing
+conditions still decide allocation and maintenance.  Active scans retain the
+per-identity interleaving from sections915--916.
+
+**Focused evidence:** seed0360 inputs168--170, seed0367 inputs262--264 and
+seed0383 inputs134--136 are exact in RNG/screens/cursors.  The durable
+three-session regression passes **1/1** in **0.51 seconds** at **193,216,512
+bytes maximum RSS**.  The fog/region control family passes **5/5** in **0.83
+seconds** at **207,224,832 bytes maximum RSS**.
+
+**Complete-session and held-out controls:** seed0367 returns to strict
+50,125/50,125 RNG and324/324 screens/cursors; seed0383 returns to
+16,915/16,915 and219/219.  Seed0360 advances from37,861 to110,869 matched RNG
+calls and695/833 screens.  The three-session scorer took **1.45 seconds** at
+**252,690,432 bytes maximum RSS**.  Custom seed52/seed211 remain strict2/2 at
+793/793 screens/cursors and40/40 plus4/4 animation in **0.70 seconds** at
+**136,593,408 bytes maximum RSS**.
+
+**Boundary:** section927 records inactive visit admission across all scheduler
+entry loops.  Lua supplies level/fog identities but no everyturn scheduling.
+No normal corpus, hidden judge, push or publication ran; every process exited.
+
+---
+
+### [2026-08-23 21:16 EEST, journal block 3027] {#public-corpus #engine-only #39-of-44 #regression-recovery #distfleeck #priority #process-safety}
+
+**Recovered full gate:** one managed engine-only corpus completes **39/44
+exact** at **49+0.29 ms/turn** (R²0.710) in **13.32 seconds** at
+**268,861,440 bytes maximum RSS**.  Seed0002, seed0367 and seed0383 are fully
+recovered with no newly red session.
+
+**Current five:** seed0030 remains29,718/105,529 RNG and1,903/1,953 screens;
+seed0360 is110,869/120,639 and695/833; seed0361 is22,205/53,865 and243/366;
+seed0399 is10,224/11,409 and117/532; seed4500 is50,272/108,275 and581/1,814.
+The normal fixture-on corpus was not run.
+
+**Next shared boundary:** seed0360's new earliest RNG divergence is input673
+call424, after an exact m_move candidate block: native next owns
+`rn2(5)=3 @ distfleeck`, while JavaScript begins later candidate/state calls.
+This joins seed0030 segment2/input35 and seed0361/input236 as explicit missing
+`distfleeck` owners; seed0399/input117 also begins with a missing
+`distfleeck/m_move` actor block.  Prioritize that four-session actor-admission
+family before the separate seed4500 debug-intrinsic continuation.
+
+**Process safety:** the post-gate registry is empty.  No normal corpus, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
