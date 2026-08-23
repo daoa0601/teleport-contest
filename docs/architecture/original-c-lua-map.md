@@ -33522,6 +33522,37 @@ unchanged prompt endpoint792.
 
 This section closes reached multirow getlin rendering and saturation, completing
 the seed211 engine core: 10,399 RNG calls, all gameplay screens3--792 and all793
-cursors.  Scorer screen792/793 is input2; native animation remains0/4.  It does
+cursors.  Scorer screen792/793 is input2; section923 closes native animation4/4.  It does
 not close editing beyond backspace/termination, other window types, tutorial or
 animation.  Lua has no ownership.
+
+## 923. Death-ray tmp_at delays capture four transient beam frames
+
+~~~mermaid
+flowchart TD
+    Paint1["input123 paint q over adjacent Wizard"] --> Delay1["flush and animationFrame: blank topline, xq-at row"]
+    Delay1 --> Kill["death hit removes Wizard; floor ! and kill line"]
+    Kill --> Paint2["paint next left cell"]
+    Paint2 --> Delay2["frame q ! at with kill prose"]
+    Delay2 --> Bounce["wall bounce line; return direction"]
+    Bounce --> Paint3["paint return cell over floor !"]
+    Paint3 --> Delay3["frame qq-at with kill plus bounce"]
+    Delay3 --> Paint4["paint q over hero cell"]
+    Paint4 --> Delay4["frame qqq; cursor after transient hero-cell glyph"]
+    Delay4 --> Final["ordinary input-boundary screen remains unchanged"]
+    Lua["Lua contributes beam path geometry only"] -.-> Paint1
+    Lua -.->|"no ownership"| Delay1
+~~~
+
+The death-ray loop already owned exact transient cell/message state but omitted
+the supplemental `nh_delay_output()` boundary.  Each visible paint now flushes
+and invokes the environment-neutral animation hook.  Cursor projection uses
+terminal rather than level coordinates: frames0--2 retain hero column
+`u.ux-1`; a beam over the hero advances to level x.
+
+Seed211 input123 now matches all four decoded transient screens and raw frame
+cursors: (7,8),(7,8),(7,8),(8,8).  The complete carrier is exact at
+10,399/10,399 RNG, gameplay screens3--792, 793/793 input cursors and4/4 native
+animation frames.  This section closes the reached hero death-ray animation
+group.  It does not close sleep/fire/cold rays, monster-origin beams, other
+tmp_at effects, or input2 tutorial.  Lua owns only geometry.

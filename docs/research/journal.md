@@ -90684,3 +90684,71 @@ Every process exited.  No full corpus, public-status rewrite, hidden judge,
 push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-24 02:42 EEST, journal block 3011] {#seed211 #animation #death-ray #tmp-at #nh-delay-output #beam #cursor #priority}
+
+**Remaining native animation group:** seed211 owns exactly four supplemental
+frames, all at input123's hero death ray.  Frame0 paints q over adjacent Wizard
+with blank topline; frame1 paints the next cell after Wizard death and shows the
+kill line plus `!` floor glyph; frame2 paints the return cell after bounce;
+frame3 paints q over the hero.  Cursors are hero(7,8) for frames0--2 and(8,8)
+when the final beam occupies the hero cell.
+
+**Source owner and prediction:** `zapDeathRay()` already mutates the same beam
+cells/messages in the correct order but never calls the universal
+`game.animationFrame()` hook corresponding to C `nh_delay_output()`.  After
+each visible `paintBeamCell`, flush the current grid, hold cursor at the hero
+unless that cell is the hero (then advance after q), and capture one frame.
+The reached path has exactly four visible paints, so it should produce4/4
+without changing RNG or input-boundary screens.
+
+**Decision:** implement only the shared death-ray delay owner, compare all four
+decoded frames/cursors, then audit expanded controls and the complete carrier.
+Sleep/fire/cold and monster-origin beam animation groups remain separate.
+No corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-24 02:49 EEST, journal block 3012] {#seed211 #animation #death-ray #cursor #coordinate-transform #focused-regression #correction #priority}
+
+**Focused frame regression:** all four transient frame screens match, and the
+scorer reports4/4 frame images, but direct cursor assertions find JavaScript one
+column right: (8,8) versus native(7,8) for frames0--2 and (9,8) versus(8,8)
+for the hero-cell frame.  The focused gate is red4/5 solely on these cursors.
+
+**Diagnosis and prediction:** gameplay level x maps to terminal column x-1.
+Non-hero tmp_at delays retain the projected hero cursor at `u.ux-1`; when q
+occupies the hero cell, tmp_at advances to level x, one terminal column after
+the glyph.  Replace the level-coordinate cursor assignment with those two
+cases.  Frame cells/messages and all input-boundary evidence must remain exact.
+
+**Decision:** correct the transform, rerun direct frame assertions, then run
+the expanded gate.  No corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-24 02:58 EEST, journal block 3013] {#seed211 #animation #death-ray #tmp-at #nh-delay-output #complete-replay #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and animation acceptance:** commit `1b129c4` captures a frame
+after each visible hero death-ray paint and uses the corrected terminal cursor
+transform.  The seed211 outcome4 regression compares all four frame toplines,
+map rows and raw cursors, not just scorer frame-image count.
+
+**Evidence:** frames0--3 match native xq-at, q!-at, qq-at and qqq states with
+cursors(7,8),(7,8),(7,8),(8,8).  The complete carrier remains **10,399/10,399
+RNG, 792/793 screens and 793/793 input cursors**, and animation improves to
+**4/4**, in **0.32 seconds** at **134,627,328 bytes maximum RSS**.  Input2 is
+the only screen residual.
+
+**Controls and remaining channel:** focused controls pass **5/5** in **0.55
+seconds** at **213,024,768 bytes maximum RSS**.  Expanded fixture-disabled
+controls pass **61/61** in **1.94 seconds** at **394,051,584 bytes maximum
+RSS**.  Section923 and the ledger close this C tmp_at/delay owner; Lua owns
+path geometry only.  Seed52 still exposes40 native animation frames, and input2
+tutorial remains independent.  Every process exited.  No full corpus, public-
+status rewrite, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---

@@ -13357,4 +13357,5 @@ attempt: **402 calls**, not a direct two-pass retry.
   non-petrification, demon blessed-to-cursed mongets for potion309, and the
   uneasy pink-potion call prompt.  Shared getLine now wraps at width79 and caps
   values at80.  Final carrier score is10,399/10,399 RNG,792/793 screens(input2),
-  793/793 cursors and0/4 animation.  Focused/expanded gates pass5/5 and61/61.
+  793/793 cursors and4/4 animation after commit1b129c4 adds exact death-ray
+  tmp_at frames/cursors.  Focused/expanded gates pass5/5 and61/61.
