@@ -8784,6 +8784,16 @@ function completeMovedMonsterAction(
     // concealment, the second distfleeck(), or phase-four attacks.
     if (movement.actorLeftLevel || movement.actorDied) return movement;
     if (movement.actionCompleted) {
+        if (movement.itemGoalUnderfoot
+            && !movement.swallowedHold && !monster?.pet && !monster?.mtame) {
+            const pickedUp = pickUpMonsterFloorObject(monster, state);
+            if (pickedUp) {
+                movement.pickedUpHostile = pickedUp;
+                movement.pickupConsumedAction = true;
+                movement.deferredAfterPickupMessage = true;
+                return movement;
+            }
+        }
         // dochug() recomputes distfleeck() for every non-died m_move status,
         // including MMOVE_DONE, before its switch suppresses phase four.
         finishDochugAfterMovement(

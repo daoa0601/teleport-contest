@@ -11209,7 +11209,7 @@ test('inactive-only monster scans retain ordered everyturn visits', async () => 
 
 test('MMOVE_DONE actors retain their trailing distfleeck', async () => {
     const witnesses = [
-        ['seed0030-ten-diverse-deaths.session.json', 2, 38, 35],
+        ['seed0030-ten-diverse-deaths.session.json', 2, 50, 35],
         ['seed0360-wizard-world-tour.session.json', 0, 676, 673],
         ['seed0361-archeologist-tour.session.json', 0, 239, 236],
     ];
@@ -11253,6 +11253,16 @@ test('MMOVE_DONE actors retain their trailing distfleeck', async () => {
                 result.getCursors()[step],
                 session.steps[step].cursor,
                 `${filename} MMOVE_DONE input${step} cursor`,
+            );
+        }
+        if (filename === 'seed0030-ten-diverse-deaths.session.json') {
+            const orc = game.level.monsters.find(monster =>
+                monster.m_id === 95);
+            assert.ok(orc?.minvent?.some(object => object.otyp === 467));
+            assert.equal(
+                (game.level.objects?.[20]?.[8] || [])
+                    .some(object => object.o_id === 108),
+                false,
             );
         }
     }
