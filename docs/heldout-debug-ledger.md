@@ -13141,3 +13141,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   cell remains red.  Focused/shared-death and expanded fixture-disabled gates
   pass 5/5 and 38/38.  Unknown/blind hero-amulet discovery, polymorph,
   genocide/slime recurrence, accepted death and animation frames remain open.
+- Seed1 closes true Wizard death without W_AMUL.  The empty-inventory carrier
+  proves `m_detach()->wizdeadorgone()` must decrement Wizard count and install
+  first-demigod `udg_cnt=50+rn2(250)` before generic xkilled treasure/corpse
+  policy and the resumed ray hit.  Final state has no Wizard, count0,
+  demigod=true, udg_cnt99 and one difficulty34 vanquish; rn2(6)=5 creates no
+  extra drop and rn2(3)=1 creates no corpse.  All 2,379 RNG calls, all cursors,
+  and all screens from input3 through input135 match; only input2's tutorial
+  cell remains red.  Focused and expanded fixture-disabled gates pass 6/6 and
+  39/39.  Successful corpse/treasure, nonempty inventory release, repeated
+  Wizard death/resurrection and supplemental animation frames remain open.

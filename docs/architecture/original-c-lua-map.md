@@ -32601,3 +32601,47 @@ blind glow/warmth prose, choking/vomiting, genocided/slimed follow-up death,
 polymorphed/Unchanging repair, multiple amulets, accepted/non-debug death,
 reflection, or the four supplemental native animation-frame groups.  Lua owns
 only the level geometry.
+
+## 899. True Wizard detachment starts demigod intervention before corpse policy
+
+~~~mermaid
+flowchart TD
+    Ray["seed1 southbound death ray hits unamuleted Wizard"] --> Fatal["zhitm damage exceeds current HP"]
+    Fatal --> Xkill["xkilled credits kill"]
+    Xkill --> Mondead["mondead confirms no life-saving interception"]
+    Mondead --> Detach["m_detach removes actor from map"]
+    Detach --> Wiz["wizdeadorgone decrements no_of_wizards"]
+    Wiz --> First{"first true Wizard removal?"}
+    First -->|"yes"| Demigod["set udemigod and udg_cnt equals 50 plus rn2 250"]
+    Demigod --> Release["relobj releases inventory; empty in seed1"]
+    Release --> Treasure["xkilled extra-drop rn2 6 is 5; no object"]
+    Treasure --> Corpse["corpse_chance rn2 3 is 1; no corpse"]
+    Corpse --> Vanquish["record vanquish and award experience"]
+    Vanquish --> Resume["return to dobuzz; bounce and hero zap_hit"]
+    Lua["Lua contributes room and wall geometry only"] -.-> Ray
+    Lua -.->|"no ownership"| Wiz
+    Lua -.->|"no ownership"| Corpse
+~~~
+
+Seed1 isolates real Wizard death with empty monster inventory and no W_AMUL.
+Input123 first spends the ordinary ray calls, then
+`wizdeadorgone()` consumes `rn2(250)=49` and installs `udg_cnt=99` before the
+generic no-extra-drop `rn2(6)=5`, no-corpse `rn2(3)=1`, and resumed hero-hit
+`rn2(20)=12`.  Omitting the Wizard-specific call left every visible ray/death
+line and cursor correct while shifting all later random state, demonstrating
+that presentation parity cannot stand in for lifecycle bookkeeping.
+
+After the repair, the Wizard actor is absent, `no_of_wizards` is zero,
+`u.uevent.udemigod` is true, the intervention countdown is99, and the
+vanquished ledger records one difficulty34 Wizard.  No corpse is present at
+the former Wizard square because this carrier explicitly takes the failed
+corpse-chance branch.  The ray continues: the kill plus bounce line pages,
+the hero hit pages next, and wizard-mode refusal restores HP110/152.
+
+This section closes first true-Wizard removal, demigod countdown installation,
+one no-extra-drop/no-corpse decision, vanquish/experience handoff and continued
+ray traversal.  It does not close a successful corpse or treasure drop,
+nonempty inventory release/stacking, repeated Wizard deaths without countdown
+reroll, Wizard resurrection/intervention, quest leader/nemesis bookkeeping,
+peaceful/tame penalties, unseen death, accepted hero death, or the six
+supplemental native animation-frame groups.  Lua owns none of the death state.

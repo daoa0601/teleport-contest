@@ -88726,3 +88726,81 @@ replay and test runner exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:22 EEST, journal block 2938] {#seed1 #death-wand #wizard-death #no-amulet #xkilled #m-detach #wizdeadorgone #demigod #corpse #experience #native-witness #earliest-divergence #process-safety #priority}
+
+**Carrier and observable acceptance boundary:** seed1 creates an adjacent
+south Wizard with empty inventory, wishes a death wand and fires south.  Native
+input123 kills without life saving, bounces, rolls the later hero hit, and
+pages `You kill the Wizard of Yendor!  The death ray bounces!`; input124 then
+pages the hero hit and inputs125--126 cover wizard-mode refusal/survival.  All
+screens from input3 onward and all **136/136 cursors** already match current
+JavaScript, so this is a hidden-state/RNG owner rather than a prose defect.
+
+**Earliest divergence and source evidence:** input123 is exact through
+`rn2(19)=10,rn2(7)=4,rn2(20)=18,rnd(8)=7`.  Native next consumes
+`rn2(250)=49`, then `rn2(6)=5,rn2(3)=1,rn2(20)=12`; JavaScript skips the
+250-range call and consumes shifted values5,2,4.  C
+`mondead()->m_detach()->wizdeadorgone()` decrements `no_of_wizards`; on the
+first true Wizard removal it sets `u.uevent.udemigod` and
+`u.udg_cnt=50+rn2(250)` before `relobj()`, xkilled treasure/corpse policy and
+the resumed ray's hero `zap_hit()`.  Current `finishHeroMonsterKill()` detaches
+and records vanquish but omits that Wizard-specific owner.
+
+**Prediction, decision and falsification:** add Wizard death bookkeeping at
+the pre-inventory-release position.  The predicted durable state is Wizard
+count0, demigod=true and `udg_cnt=99`; inserting exactly one rn2(250) should
+make the existing extra-drop rn2(6), corpse rn2(3), hero rn2(20), wand
+discovery and maintenance tail align without changing any screen.  The exact
+visible transcript falsifies tty, beam, generic corpse and debug-survival code
+as the earliest cause; the empty monster inventory also removes release-order
+ambiguity.
+
+**Measured process state and next blocker:** the single native recorder exited
+in **0.07 seconds** at **54,231,040 bytes maximum RSS**.  The pre-edit replay
+matches **2366/2379 RNG calls, 125/136 scorer screens and 136/136 cursors** in
+**0.24 seconds** at **128,794,624 bytes**; its eleven screen misses are the
+known input2 cell plus RNG-shifted later states, not a new death-line mismatch.
+Both processes exited.  No implementation, focused test, family gate, corpus,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 16:26 EEST, journal block 2939] {#seed1 #death-wand #wizard-death #no-amulet #wizdeadorgone #demigod #corpse #vanquish #native-acceptance #implementation #complete-replay #regression #architecture #ledger #process-safety}
+
+**Implementation and exact effect:** commit `83bf65b` adds source-positioned
+Wizard removal bookkeeping to shared `finishHeroMonsterKill()`.  A true iswiz
+death decrements `context.no_of_wizards`; the first removal sets
+`u.uevent.udemigod` and `u.udg_cnt=50+rn2(250)` before inventory release,
+treasure/corpse policy, vanquish/experience and later ray traversal.  It does
+not run for the two life-saved Wizard carriers because those return before
+detachment.
+
+**Complete native acceptance and durable state:** seed1 now matches
+**2379/2379 RNG calls, 135/136 scorer screens and 136/136 cursors** in **0.25
+seconds** at **129,597,440 bytes maximum RSS**.  The sole screen miss is the
+independent input2 tutorial cell; inputs3--135 match native RNG, decoded screens
+and cursors.  Input123 owns the exact eight-call ray/death/corpse/hero-hit
+slice and unchanged kill+bounce pager.  Final state has no Wizard actor,
+Wizard count0, demigod=true, udg_cnt99, one difficulty34 Wizard vanquish,
+no corpse at the former square, WAN_DEATH known, and hero HP110/152 after one
+recorded mortality/refusal.
+
+**Regression and adversarial controls:** the permanent test asserts the full
+input123 call slice, kill/bounce and hit pagers, HP0 debug prompt, nine-call
+survival tail, demigod/countdown, actor removal, vanquish, explicit no-corpse
+outcome and final hero state.  The focused shared-death set passes **6/6**
+fixture-disabled in **0.35 seconds** at **137,084,928 bytes maximum RSS**.  The
+expanded portfolio passes **39/39** in **0.75 seconds** at **180,420,608 bytes
+maximum RSS**.
+
+**Map and next blocker:** section899 and the ledger separate Wizard lifecycle
+from generic corpse policy and Lua geometry.  The exact visible pre-fix screen
+falsifies treating terminal equality as demigod/countdown evidence.  Successful
+corpse/treasure, nonempty inventory release, repeat-Wizard no-reroll,
+resurrection/intervention, other special-monster detach effects, accepted hero
+death and animation frames remain open.  Every recorder, replay and test
+runner exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
