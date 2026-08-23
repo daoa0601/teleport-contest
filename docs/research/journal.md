@@ -92718,3 +92718,68 @@ unproved hypothesis.  No normal corpus, push, workflow, hidden judge or
 publication ran.
 
 ---
+
+### [2026-08-24 00:43 EEST, journal block 3092] {#seed4500 #input852 #input1136 #prayer #negative-multi #runmode #source-diagnosis #prediction}
+
+**Paired witness:** input852's sole native frame retains `You are surrounded by
+a shimmering light.` at T133/Pw88 before the forced-prayer completion pager;
+input1136 retains `You hear someone counting gold coins.` at T196 before its
+completion pager.  JavaScript emits no frames.  Both source turns are divisible
+by seven, exactly the default leap-mode cadence condition; their differing
+toplines are already the correct live pending owners.
+
+**Source owner:** native `allmain.c` calls `runmode_delay_output()` inside the
+negative-`multi` global-turn block before `++multi` and `unmul()` invokes
+`prayer_done`.  JavaScript's `_prayerTurnsRemaining` branch deduplicates ticks
+with `_prayerLastTickMove`, decrements the counter, and calls
+`finishPrayerOccupation()`, but never captures the shared cadence.
+
+**Prediction and guard:** invoke `captureRunmodeDelay()` only inside a newly
+admitted prayer source turn, before decrement/completion, with physical-topline
+retention enabled.  Turns133 and196 should add one exact frame each; non-cadence
+prayer turns add none, Fast re-entry cannot duplicate a source turn, and the
+existing completion pager/prose remains untouched.  This falsifies separate
+shimmering-light and ambient-sound animation owners for these two frames.
+
+---
+
+### [2026-08-24 00:44 EEST, journal block 3093] {#seed4500 #input852 #input1136 #prayer #runmode #implementation #bounded-acceptance}
+
+**Implementation and focused effect:** each newly admitted prayer source turn
+now invokes shared runmode cadence before `_prayerTurnsRemaining` decrements
+and before `finishPrayerOccupation()`.  `_prayerLastTickMove` remains the
+admission guard, so a Fast hero cannot capture twice for one global turn.
+Seed4500 advances from30/37 to **32/37** exactly.
+
+**Bounded acceptance:** inputs852 and1136 are each1/1 on full frame/cursor,
+RNG slice and completion boundary.  The first retains shimmering-light state at
+T133/Pw88; the second retains the ambient gold-counting line at T196.  The
+broader seed4500 timed-blindness/prayer transaction and seed0017 Samurai prayer
+control also pass.  No outcome, alignment, anger, healing or completion-pager
+code changed.
+
+**Next gate:** commit the code/test batch and run one managed engine-only
+corpus.  Expected total is1,407/1,483 with seed4500 at32/37.  The five remaining
+single cadence/status frames require their own source-phase inventory.
+
+---
+
+### [2026-08-24 00:46 EEST, journal block 3094] {#seed4500 #input852 #input1136 #prayer #engine-only #44-of-44 #architecture #process-safety}
+
+**Committed acceptance:** commit `a1122e8` owns prayer pre-decrement cadence
+and exact input852/1136 regressions.  Both frames/cursors and their complete
+RNG/boundary witnesses pass with the two broader prayer controls.
+
+**Managed corpus evidence:** one fixture-disabled corpus completed **44/44** at
+**40+0.35 ms/turn** (R²0.836) in **13.85 seconds** at **275,349,504 bytes
+maximum RSS**.  Animation advances exactly two slots to **1,407/1,483** and
+seed4500 reaches **32/37**, with no other session count changes.  The verifier
+exited and no matching live process remains.
+
+**Next blocker:** seed4500's last five frames are inputs211/222/233/581/1211.
+All are single frames with no JavaScript counterpart, but their commands,
+source turns and status deltas differ.  Align each against its surrounding
+movement/run state before introducing any generic cadence call.  No normal
+corpus, push, workflow, hidden judge or publication ran.
+
+---

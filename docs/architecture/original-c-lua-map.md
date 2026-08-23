@@ -34738,3 +34738,39 @@ controls remain green.  This closes the represented visible cobra miss;
 acid/blinding hits, resistance, blindness-time projection, intervening monster
 targets, invisible final cells and pet spit remain controls.  Lua contributes
 none.
+
+## 955. Prayer negative multi delays before counter advance and completion
+
+~~~mermaid
+flowchart TD
+    Pray["dopray installs three-turn negative multi and afternmv"] --> Turn["new source global turn admitted"]
+    Turn --> Actors["monster, timeout, sound, hunger, regeneration work"]
+    Actors --> Cadence["runmode_delay_output observes current topline/status"]
+    Cadence --> Increment["increment multi / decrement prayer counter"]
+    Increment --> Done{"counter reaches zero?"}
+    Done -->|"no"| Next["retain prayer state for next source turn"]
+    Done -->|"yes"| Unmul["unmul emits completion and invokes prayer_done"]
+    NewText["shimmering light or ambient sound"] --> Cadence
+    Lua["Lua owns no prayer or runmode timing"] -.-> Pray
+~~~
+
+Native prayer is an ordinary negative-`multi` occupation with an `afternmv`
+callback.  On every admitted global turn, `allmain.c` performs environmental
+work and `runmode_delay_output()` before advancing `multi`; completion and
+`prayer_done()` are downstream.  Default leap mode captures only turns divisible
+by seven, but the frame inherits whatever live topline and status that turn
+already produced.
+
+JavaScript now invokes shared cadence only when `_prayerLastTickMove` admits a
+new source turn, immediately before decrementing `_prayerTurnsRemaining`.
+Physical-topline retention stays enabled, while the existing guard prevents a
+Fast hero from duplicating one turn.  Prayer outcomes and completion paging are
+unchanged.
+
+Seed4500 input852 captures shimmering light at T133 and input1136 captures the
+ambient gold-counting line at T196; both close at **1/1** full frames/cursors
+and advance the session to32/37.  The corpus reaches1,407/1,483.  Broader forced
+prayer and Samurai prayer controls remain exact.  This closes represented
+default-leap prayer cadence; alternate runmodes, interruption, life-saving
+rebasing, outcome pagers and burdened multi-allocation variants remain
+controls.  Lua contributes none.

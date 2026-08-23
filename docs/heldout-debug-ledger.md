@@ -13623,3 +13623,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   managed engine-only corpus remains44/44 at1,405/1,483 in13.80 seconds and
   275,333,120 bytes maximum RSS.  No normal scorer, push, workflow or hidden
   judge ran.
+- Commita1122e8 connects newly admitted prayer source turns to shared runmode
+  cadence before counter decrement and `prayer_done()`.  Seed4500 input852
+  retains shimmering light at T133; input1136 retains ambient gold-counting at
+  T196.  Both are1/1 full frames/cursors, the broader forced-prayer and Samurai
+  controls pass, and seed4500 reaches32/37.  The managed engine-only corpus
+  remains44/44 at1,407/1,483 in13.85 seconds and275,349,504 bytes maximum RSS.
+  No normal scorer, push, workflow or hidden judge ran.
