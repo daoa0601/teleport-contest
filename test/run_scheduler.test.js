@@ -27,7 +27,8 @@ import {
     WORTHLESS_PIECE_OF_RED_GLASS,
     QUARTERSTAFF, RIN_CONFLICT, RIN_FREE_ACTION,
     SPE_BOOK_OF_THE_DEAD, SPE_POLYMORPH, TWO_HANDED_SWORD,
-    WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_SPEED_MONSTER, WAN_STRIKING,
+    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE,
+    WAN_SPEED_MONSTER, WAN_STRIKING,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import {
@@ -10024,11 +10025,11 @@ test('seed0470 wizkill consumes life-saving amulet and revives Wizard',
         assert.equal(game.context.move, 0);
     });
 
-test('seed0592 death ray revives worn-amulet Wizard before bouncing',
+test('seed0592 death ray revives Wizard then survives its rebound',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
             + '#wizgenesis\nhostile Wizard of Yendor\ny'
-            + '#wizwish\nwand of death\nzkk    ';
+            + '#wizwish\nwand of death\nzkk      n ';
         const result = await runSegment({
             seed: 592,
             datetime: '20000110090000',
@@ -10037,7 +10038,7 @@ test('seed0592 death ray revives worn-amulet Wizard before bouncing',
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 128);
+        assert.equal(result.getScreens().length, 132);
         assertRngSliceExact(result.getRngSlices()[123], [
             'rn2(19)=13', 'rn2(7)=4', 'rn2(20)=17', 'rnd(8)=1',
         ], 'seed0592 initial death-ray fatality RNG');
@@ -10080,6 +10081,38 @@ test('seed0592 death ray revives worn-amulet Wizard before bouncing',
             ch: 'x', color: 8, attr: 0, decgfx: 1,
         });
 
+        assertRngSliceExact(result.getRngSlices()[128], [],
+            'seed0592 debug death prompt RNG');
+        assert.equal(decodedTopline(result.getScreens()[128]),
+            'Die? [yn] (n)');
+        assert.equal(decodedRow(result.getScreens()[128], 23),
+            'Dlvl:1 $:1662 HP:0(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[128], [14, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[129], [
+            'rn2(19)=3',
+            'rn2(12)=10', 'rn2(12)=9', 'rn2(12)=0',
+            'rn2(70)=50', 'rn2(100)=65', 'rn2(20)=5', 'rn2(64)=2',
+        ], 'seed0592 death refusal and elapsed-turn RNG');
+        assert.equal(decodedTopline(result.getScreens()[129]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+        assert.equal(decodedRow(result.getScreens()[129], 23),
+            'Dlvl:1 $:1662 HP:130(170) Pw:239(239) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[129], [38, 19, 1]);
+        assert.deepEqual(decodeScreen(result.getScreens()[129])[19][38], {
+            ch: '@', color: 15, attr: 0, decgfx: 0,
+        });
+
+        assertRngSliceExact(result.getRngSlices()[130], [],
+            'seed0592 post-survival southeast move RNG');
+        assert.equal(decodedTopline(result.getScreens()[130]), '');
+        assert.deepEqual(result.getCursors()[130], [38, 19, 1]);
+        assertRngSliceExact(result.getRngSlices()[131], [],
+            'seed0592 post-survival unknown-space RNG');
+        assert.equal(decodedTopline(result.getScreens()[131]),
+            "Unknown command ' '.");
+        assert.deepEqual(result.getCursors()[131], [38, 19, 1]);
+
         const wizard = game.level.monsters.find(monster =>
             monster.mnum === 285);
         assert.ok(wizard);
@@ -10093,7 +10126,12 @@ test('seed0592 death ray revives worn-amulet Wizard before bouncing',
         assert.equal(game._knownObjectTypes.has(202), true);
         assert.equal(game._vanquishedCounts?.has(285) ?? false, false);
         assert.equal(game.context.no_of_wizards, 1);
-        assert.equal(game.u.uhp, 170);
+        assert.equal(game.u.uhp, 130);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
+        assert.equal(game._helplessTurns, 0);
+        assert.equal(game._debugDeathSurvivedMessagePending, false);
+        assert.equal(game.context.move, 0);
     });
 
 test('seed0014 Hallucination rejects death touch and hides speed potion',

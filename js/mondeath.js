@@ -37,7 +37,7 @@ export async function lifeSaveMonster(
     const subject = `The ${name}`;
     await lifeSavingPage(firstPage || 'But wait...--More--');
 
-    exerciseAttribute(4, true);
+    exerciseAttribute(2, true);
     recordObjectKnowledge(amulet.otyp);
     await lifeSavingPage(
         `${subject}'s medallion begins to glow!--More--`,

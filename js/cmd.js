@@ -146,6 +146,7 @@ import {
 } from './ball.js';
 import {
     finishOrdinaryDeath, finishOrdinaryQuit, recordVanquished,
+    restoreHeroAfterDeath,
 } from './end.js';
 import {
     rankAchievement, recordAchievement, recordDungeonEntryAchievements,
@@ -13369,10 +13370,28 @@ async function zapDeathRay(direction) {
                     if (pending)
                         await moreUntilDismissed(`${pending}--More--`);
                     game.u.uhp = 0;
-                    await moreUntilDismissed('You die...--More--');
-                    return;
+                    game.u.umortality = (game.u.umortality || 0) + 1;
+                    if (game.flags?.debug || game.flags?.explore) {
+                        const die = String.fromCharCode(
+                            await promptKey('Die? [yn] (n) '),
+                        ).toLowerCase();
+                        if (die !== 'y') {
+                            restoreHeroAfterDeath();
+                            await pline("OK, so you don't die.");
+                            game._debugDeathSurvivedMessagePending = true;
+                        } else {
+                            await finishDeathWithBones();
+                            return;
+                        }
+                    } else {
+                        await finishDeathWithBones();
+                        return;
+                    }
+                } else {
+                    await plineWithContinuation(
+                        'The death ray whizzes by you!',
+                    );
                 }
-                await plineWithContinuation('The death ray whizzes by you!');
             }
         }
 
@@ -13785,8 +13804,10 @@ async function dozap() {
     }
     if (wand.otyp === WAN_DEATH && DIR_DX[directionChar] !== undefined
         && directionChar !== '.') {
+        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
         await zapDeathRay(directionChar);
         if (wand.dknown) {
+            if (wasUnknown) exerciseAttribute(2, true);
             recordObjectKnowledge(wand.otyp);
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
