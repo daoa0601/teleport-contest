@@ -35,7 +35,7 @@ import {
     see_monsters, see_objects, see_traps,
     show_glyph_cell, swallowed, transientObjectGlyph,
     _statusLine1, _statusLine2, canProjectMonster, canSpotMonster,
-    lastDirtyMapCursor,
+    lastDirtyMapCursor, shieldeff,
 } from './display.js';
 import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
@@ -4122,6 +4122,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (game._runState) stopRun(game);
 
             const effect = resumeDeferredMonsterStrikingWand(action, game);
+            if (effect?.message === 'Boing!')
+                await shieldeff(game.u.ux, game.u.uy);
             if (effect?.message) {
                 const effectDismissal = await queueTurnMessage(effect.message);
                 if (effectDismissal !== null

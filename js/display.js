@@ -933,6 +933,31 @@ export function lastDirtyMapCursor(g = game) {
     return cursor;
 }
 
+const SHIELD_STATIC = [
+    '0', '#', '@', '#', '0', '#', '*',
+    '0', '#', '@', '#', '0', '#', '*',
+    '0', '#', '@', '#', '0', '#', '*',
+];
+
+// C display.c:shieldeff().  Resistance effects own a fixed 21-frame glyph
+// cycle at the protected coordinate, then restore the normal map projection.
+export async function shieldeff(x, y, g = game) {
+    if (!cansee(x, y)) return;
+    try {
+        for (const ch of SHIELD_STATIC) {
+            show_glyph_cell(x, y, ch, CLR_BRIGHT_BLUE, false);
+            await flush_screen(1);
+            g.nhDisplay?.setCursor(
+                (g.u?.ux ?? 1) - 1,
+                (g.u?.uy ?? 0) + 1,
+            );
+            await g.animationFrame?.();
+        }
+    } finally {
+        newsym(x, y);
+    }
+}
+
 // C display.c:map_invisible().  Unlike a transient actor overlay, an unseen
 // attacker's `I` is hero memory and must survive later blind redraws until a
 // caller explicitly discovers that the square no longer contains that

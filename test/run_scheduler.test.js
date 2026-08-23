@@ -11693,6 +11693,65 @@ test('seed0030 sleeping-potion flight spans impact continuation',
         }
     });
 
+test('seed0030 resisted striking wand cycles all shield-static frames',
+    async () => {
+        const file = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0030-ten-diverse-deaths.session.json',
+                import.meta.url),
+            'utf8',
+        ));
+        const storage = new Map();
+        for (let index = 0; index < 3; index++) {
+            const prior = file.segments[index];
+            await runSegment({
+                seed: prior.seed,
+                datetime: prior.datetime,
+                nethackrc: prior.nethackrc,
+                moves: prior.moves,
+                storage,
+            });
+        }
+        const session = file.segments[3];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 285),
+            storage,
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[284],
+            session.steps[284].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0030 striking shield input284 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[284],
+            session.steps[284].screen,
+            'seed0030 striking shield input284 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[284],
+            session.steps[284].cursor,
+            'seed0030 striking shield input284 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[284];
+        const nativeFrames = session.steps[284].animation_frames;
+        assert.equal(actualFrames.length, 21);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0030 striking shield frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0030 striking shield cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(
