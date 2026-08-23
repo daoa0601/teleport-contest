@@ -13367,6 +13367,13 @@ async function zapDeathRay(direction) {
                     || (rayPositionIsValid(previousX, previousY)
                         && cansee(previousX, previousY)))) {
                 paintBeamCell(x, y, dx, dy);
+                await flush_screen(1);
+                game.nhDisplay?.setCursor(
+                    x === game.u?.ux && y === game.u?.uy
+                        ? x : (game.u?.ux ?? x) - 1,
+                    (game.u?.uy ?? y) + 1,
+                );
+                await game.animationFrame?.();
             }
 
             // zap_over_floor() runs before dobuzz() tests the obstacle.  A

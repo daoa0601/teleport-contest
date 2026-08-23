@@ -11227,6 +11227,28 @@ test('seed0211 outcome4 nasty preserves constructor pager order',
         assert.equal(decodedRow(result.getScreens()[546], 23),
             'Dlvl:1 $:1116 HP:176(191) Pw:221(221) AC:8 Xp:30');
 
+        const deathRayFrames = result.getAnimationFramesByStep()[123];
+        assert.equal(deathRayFrames.length, 4);
+        assert.deepEqual(deathRayFrames.map(frame => ({
+            topline: decodedTopline(frame.screen),
+            map: decodedRow(frame.screen, 8),
+            cursor: frame.cursor,
+        })), [
+            { topline: '', map: '     xq@~x', cursor: [7, 8, 1] },
+            {
+                topline: 'You kill the Wizard of Yendor!',
+                map: '     q!@~x', cursor: [7, 8, 1],
+            },
+            {
+                topline: 'You kill the Wizard of Yendor!  The death ray bounces!',
+                map: '     qq@~x', cursor: [7, 8, 1],
+            },
+            {
+                topline: 'You kill the Wizard of Yendor!  The death ray bounces!',
+                map: '     qqq~x', cursor: [8, 8, 1],
+            },
+        ]);
+
         assert.deepEqual(game._lastDemigodNasty, [
             117, 119, 120, 131, 133, 134, 136, 143, 156, 158,
         ]);
