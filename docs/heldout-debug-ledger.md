@@ -11041,6 +11041,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   white @ without changing iswiz identity; context count is2.  The selected
   Wizard gate rises to 10/10 fixture-disabled.  Other disguises, fake Amulet,
   shapechanger protection and clone lifecycle remain open.
+- A serial seed21--100 search separates real haste-self from potion/wand
+  speed.  Seed73 is exact through input118: input106 selects haste and
+  discards d(16,6)=45; input107 sets Wizard permspeed/mspeed to MFAST,
+  publishes the faster line and resumes exact maintenance.  The selected
+  Wizard gate rises to 11/11 fixture-disabled.  Input119 later misses a
+  rust-trap rn2(5) before mcalcmove, so the carrier is bounded rather than
+  called complete.  Slow cancellation, already-fast, equipment and invisible
+  message controls remain open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

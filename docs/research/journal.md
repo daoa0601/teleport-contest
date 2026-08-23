@@ -87544,3 +87544,38 @@ remain explicit.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:37 EEST, journal block 2909] {#seed73 #wizard-of-yendor #haste-self #mon-adjust-speed #mfast #carrier-search #bounded-prefix #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Carrier portfolio:** seed25 reaches haste-self only after unrelated
+genetic-engineer/dragon combat drift.  A serial native search across seeds
+21--100 found actual cast-driven haste at55,63,71,73,74 and82, while rejecting
+speed potion/wand lookalikes.  Seed73 has the cleanest prefix: exact through
+input106's selection and discarded d(16,6)=45.
+
+**Source contract and implementation:** MCAST_HASTE_SELF delegates to
+mon_adjust_speed(+1).  Permanent slow first becomes normal; otherwise the
+actor becomes permanently fast.  Feedback exists only for a visible,
+mobile, awake actor whose effective speed changed.  The existing movement
+spell implementation and adjacent mattacku continuation now share one helper
+for those state and prose rules.
+
+**Measured effect:** seed73 input107 has no haste-effect RNG, displays The
+Wizard of Yendor is suddenly moving faster, and leaves both mspeed and
+permspeed at MFAST before the exact fifteen-call actor/maintenance tail.
+Replay remains exact through **input118**.  Eleven selected fixture-disabled
+Wizard controls pass **11/11** in **0.58 seconds** at **146,309,120 bytes
+maximum RSS**.  Every one of the eighty serial recorders and all test
+processes exited; no yielded process remains.
+
+**Falsification, decision and next blocker:** potion/wand feedback is not
+haste evidence, and seed25's later line cannot excuse its earlier combat
+drift.  Seed73 input119 diverges at a rust-trap rn2(5) before mcalcmove, so it
+does not prove the full post-haste session.  Section874 maps the accepted
+spell effect; Lua owns none.  Next either port that compact monster
+rust-trap boundary to close seed73 or select another remaining Wizard effect.
+Keep slow, already-fast, equipment, visibility and movement-ration controls
+explicit.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

@@ -7773,6 +7773,11 @@ export function resumeDeferredHeroSpell(
         attack.appliedDamage = 0;
         return attack;
     }
+    if (attack.spell === 'haste-self') {
+        attack.deferredHasteSelf = true;
+        attack.appliedDamage = 0;
+        return attack;
+    }
     if (attack.spell === 'destroy-armor') {
         attack.deferredDestroyArmor = true;
         attack.appliedDamage = 0;
@@ -8033,6 +8038,39 @@ export function finishDeferredHeroCloneWizard(action, state, random = rn2) {
     return clone;
 }
 
+function monsterHasteSelfEffect(monster, state) {
+    const oldSpeed = monster.mspeed ?? 0;
+    monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
+    monster.mspeed = monster.permspeed;
+    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+    const inSight = !blind
+        && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
+    const canSeeInvisible = !!(state?.u?.seeInvisible
+        || state?.u?.see_invisible);
+    const visible = inSight && !monster.mundetected
+        && (!monster.minvis || canSeeInvisible);
+    let message = null;
+    if (visible && monster.mspeed !== oldSpeed
+        && naturalMonsterSpeed(monster) !== 0
+        && monster.mcanmove !== 0 && !monster.msleeping
+        && !(monster.mfrozen ?? 0)) {
+        const much = monster.mspeed + oldSpeed === MFAST + MSLOW
+            ? 'much ' : '';
+        message = 'The ' + MONSTER_NAME[monster.mnum]
+            + ' is suddenly moving ' + much + 'faster.';
+    }
+    return { message, oldSpeed, speed: monster.mspeed };
+}
+
+export function resolveDeferredHeroHasteSelf(action, state) {
+    const attack = action?.movement?.attack;
+    if (!attack?.deferredHasteSelf) return null;
+    const effect = monsterHasteSelfEffect(action.monster, state);
+    attack.hasteSelf = effect;
+    attack.deferredHasteSelf = false;
+    return effect;
+}
+
 // Resume a successful castmu(FALSE,FALSE) after its casting line has crossed
 // the tty boundary.  The source effect can create actors, so it remains async
 // and only then returns to dochug() for the second distfleeck/phase-four tail.
@@ -8048,31 +8086,10 @@ export async function resumeDeferredMovementSpell(
     if (spellCast.spell === 'summon-monsters') {
         effect = await monsterSummonSpellEffect(action.monster, state);
     } else if (spellCast.spell === 'haste-self') {
-        // C mcastu.c:MCAST_HASTE_SELF delegates to
-        // worn.c:mon_adjust_speed(+1).  Permanent slow is first cancelled;
-        // otherwise the actor becomes permanently fast.  This state changes
-        // the next mcalcmove() amount without consuming another RNG call.
-        const monster = action.monster;
-        const oldSpeed = monster.mspeed ?? 0;
-        monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
-        monster.mspeed = monster.permspeed;
-        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-        const inSight = !blind
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-        const canSeeInvisible = !!(state?.u?.seeInvisible
-            || state?.u?.see_invisible);
-        const visible = inSight && !monster.mundetected
-            && (!monster.minvis || canSeeInvisible);
-        if (visible && monster.mspeed !== oldSpeed
-            && naturalMonsterSpeed(monster) !== 0
-            && monster.mcanmove !== 0 && !monster.msleeping
-            && !(monster.mfrozen ?? 0)) {
-            const much = monster.mspeed + oldSpeed === MFAST + MSLOW
-                ? 'much ' : '';
-            effect.message = `The ${MONSTER_NAME[monster.mnum]} is suddenly moving ${
-                much
-            }faster.`;
-        }
+        effect = {
+            ...effect,
+            ...monsterHasteSelfEffect(action.monster, state),
+        };
     } else if (spellCast.spell === 'disappear') {
         // C mcastu.c:mcast_disappear() makes invisibility permanent, repaints
         // the actor square, and leaves an invisible marker when the hero saw

@@ -31569,3 +31569,37 @@ instead of Wizard magenta while preserving real identity and behavior.
 Nonzero fake-Amulet creation, other twelve disguises, Protection from Shape
 Changers, failed placement, clone death/resurrection, multiple-clone
 uselessness and hallucinated disguise projection remain separate controls.
+
+## 874. Adjacent and movement haste share mon_adjust_speed ownership
+
+~~~mermaid
+flowchart TD
+    Select["AD_SPEL selects haste-self"] --> PreRoll["castmu retains discarded 16d6"]
+    PreRoll --> CastPager["undirected cast line crosses tty"]
+    CastPager --> Adjust["mon_adjust_speed(+1)"]
+    Adjust --> Slow{"permspeed is slow?"}
+    Slow -->|"yes"| Normal["clear permanent slow"]
+    Slow -->|"no"| Fast["set permanent fast"]
+    Normal --> Effective["recompute effective speed"]
+    Fast --> Effective
+    Effective --> Visible{"visible, mobile, awake, speed changed?"}
+    Visible -->|"yes"| Message["publish suddenly moving faster"]
+    Visible -->|"no"| Silent["no message"]
+    Message --> Future["later mcalcmove observes fast state"]
+    Movement["far/indirect spell path"] --> Shared["monsterHasteSelfEffect"]
+    Select --> Shared
+    Lua["Lua owns no speed or spell phase"] -.-> Adjust
+~~~
+
+Serial seeds21--100 distinguish potion/wand speed from actual haste-self.
+Seed73 is the clean adjacent carrier: input106 owns claw19, spell selection
+and discarded d(16,6)=45 behind the cast pager.  Input107 installs
+permspeed=MFAST with no effect RNG, publishes the Wizard's faster line, then
+resumes the exact actor/global tail.
+
+The adjacent and far/indirect casting paths now reuse one speed-state and
+visibility helper.  Seed73 is exact through input118; input119's later
+divergence is an unrelated missing rust-trap effect before mcalcmove, not
+haste scheduling.  Permanent-slow cancellation, already-fast usefulness,
+speed boots, immobile/asleep/unseen suppression, See Invisible and later
+movement-ration consequences remain separate controls.

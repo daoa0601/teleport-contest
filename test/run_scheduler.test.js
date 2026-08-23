@@ -9915,6 +9915,48 @@ test('seed0032 clone-Wizard constructs and projects a human disguise',
         assert.equal(game.u.uhp, 114);
     });
 
+test('seed0073 adjacent haste-self shares permanent speed adjustment',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 73,
+            datetime: '20000110090000',
+            nethackrc: 'OPTIONS=name:ricky,role:Healer,race:human,gender:female,align:neutral,playmode:debug\n'
+                + 'OPTIONS=!autopickup\n'
+                + 'OPTIONS=pettype:none\n'
+                + 'OPTIONS=suppress_alert:3.4.3\n'
+                + 'OPTIONS=symset:DECgraphics\n',
+            moves: fullMoves.slice(0, 108),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 109);
+        assertRngSliceExact(result.getRngSlices()[106], [
+            'rn2(5)=3', 'rn2(5)=0', 'rnd(20)=11', 'd(2,12)=19',
+            'rn2(20)=12', 'rn2(3)=1', 'rn2(6)=5', 'rn2(30)=2',
+            'rn2(300)=165', 'd(16,6)=45',
+        ], 'seed0073 haste-self cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[106]),
+            'The Wizard of Yendor hits!  The Wizard of Yendor casts a spell!--More--');
+        assertRngSliceExact(result.getRngSlices()[107], [
+            'rn2(5)=4', 'rn2(5)=3', 'rn2(5)=3', 'rn2(5)=3',
+            'rn2(5)=3', 'rn2(12)=5', 'rn2(12)=10', 'rn2(12)=11',
+            'rn2(12)=8', 'rn2(70)=29', 'rn2(100)=95', 'rn2(400)=362',
+            'rn2(300)=260', 'rn2(20)=14', 'rn2(64)=57',
+        ], 'seed0073 haste feedback and maintenance RNG');
+        assert.equal(decodedTopline(result.getScreens()[107]),
+            'The Wizard of Yendor is suddenly moving faster.');
+        assert.equal(decodedRow(result.getScreens()[107], 23),
+            'Dlvl:1 $:1251 HP:141(160) Pw:294(294) AC:8 Xp:30');
+        const wizard = game.level.monsters.find(monster => monster.iswiz);
+        assert.ok(wizard);
+        assert.equal(wizard.mspeed, MFAST);
+        assert.equal(wizard.permspeed, MFAST);
+        assert.equal(game.u.uhp, 141);
+    });
+
 test('seed0017 Wizard rejects its old square and defers a speed wand',
     async () => {
         const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)

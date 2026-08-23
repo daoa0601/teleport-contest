@@ -90,6 +90,7 @@ import {
     rollDeferredHeroSpellDamage,
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
     resolveDeferredHeroSummonMonsters,
+    resolveDeferredHeroHasteSelf,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     finishDeferredHeroCloneWizard,
@@ -3763,6 +3764,13 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             if (clone?.message)
                                 await queueTurnMessage(clone.message);
                             finishDeferredHeroCloneWizard(action, game);
+                        }
+                        if (heroAttack.deferredHasteSelf) {
+                            const haste = resolveDeferredHeroHasteSelf(
+                                action, game,
+                            );
+                            if (haste?.message)
+                                await queueTurnMessage(haste.message);
                         }
                         if (heroAttack.deferredDeathTouch)
                             await resolveDeferredHeroDeathTouch(
