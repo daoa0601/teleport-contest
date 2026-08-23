@@ -34389,3 +34389,38 @@ frame at **8/8**, completing the session's supplemental channel while keeping
 single wall bounce.  Other directions, reflections, monsters, armor/inventory
 continuations, fatal return rays, and other ray types remain separate controls.
 Lua contributes none.
+
+## 946. Digging beam delays every in-bounds cell before terrain mutation
+
+~~~mermaid
+flowchart TD
+    Zap["hero zaps wand of digging"] --> Depth["rn1 selects dig depth"]
+    Depth --> Step["advance to next in-bounds cell"]
+    Step --> Visible{"cell visible?"}
+    Visible -->|"yes"| Paint["accumulate white digbeam glyph"]
+    Visible -->|"no"| Retain["retain prior visible beam and cursor"]
+    Paint --> Delay["flush and delay before mutation"]
+    Retain --> Delay
+    Delay --> Mutate["raze door/wall or convert stone/corridor"]
+    Mutate --> Budget["adjust depth and advance"]
+    Budget --> Step
+    Step -->|"out of bounds or exhausted"| End["DISP_END restores mutated terrain"]
+    End --> Vision["recalculate vision and expose boundary"]
+    Lua["Lua owns level geometry, not dig traversal or delay"] -.-> Step
+~~~
+
+`zap_dig()` delays before it mutates the current cell.  `DISP_BEAM` retains the
+visible path, so later invisible iterations still emit frames with the last
+visible beam and cursor.  Per-cell `newsym()` would erase that history too
+early; restoration belongs to the single `DISP_END` after traversal.
+
+JavaScript now records every traversed cell, paints visible `*` glyphs in
+white, captures once per in-bounds iteration, mutates terrain, and restores all
+traversed projections together before vision recalculation.
+
+Seed0116 input80 pins three visible and four invisible-tail delays at **7/7**,
+closing the session at8/8 animation while preserving127/127 boundaries.  The
+same owner advances seed4500 by six frames.  This closes the reached lateral
+beam toward a level edge; vertical digging, pits, shops, nondiggable terrain,
+cavern/maze policy, messages, and other directions remain controls.  Lua
+contributes only the original level geometry.

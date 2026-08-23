@@ -92088,3 +92088,52 @@ generic display owner.  Seed0060 and seed0106 remain bounded role bridges, and
 seed0007 remains state-mismatched replay output rather than missing delays.
 
 ---
+
+### [2026-08-23 23:43 EEST, journal block 3067] {#seed0116 #input80 #digging-beam #zap-dig #animation #source-diagnosis #priority #prediction}
+
+**Native sequence:** seed0116 input80 rolls depth12 in `zap_dig()`, then records
+seven in-bounds loop iterations before the southern level edge.  The first
+three frames add a white `*` at terminal rows15/16/17 with matching map cursor;
+the next four invisible iterations retain the accumulated visible beam and its
+last cursor.  Status remains at T14 and no prose is emitted.
+
+**Source owner:** `dig.c:zap_dig()` calls `tmp_at(DISP_BEAM)` once, then
+`tmp_at(zx,zy)` plus `nh_delay_output()` before processing terrain on every
+iteration.  `DISP_END` restores the final mutated terrain after traversal.
+JavaScript already owns depth, mutation and vision but calls `newsym()` per
+cell and exposes no transient delay.
+
+**Prediction and guard:** accumulate visible white beam cells, capture once per
+in-bounds iteration before terrain mutation, retain the last visible cursor for
+invisible tail iterations, and restore all traversed cells only at end.  Input80
+should become7/7 exact without changing the T14 boundary or digging RNG.  Keep
+fire/sleep/death ray tests as independent tmp_at controls.
+
+---
+
+### [2026-08-23 23:45 EEST, journal block 3068] {#seed0116 #seed4500 #digging-beam #zap-dig #implementation #engine-only #44-of-44 #animation-complete #architecture #process-safety}
+
+**Implementation:** commit `63e02c2` makes `zapDig()` async, captures before
+each iteration's terrain mutation, accumulates visible white beam cells, and
+retains the last visible cursor through invisible in-bounds tail iterations.
+It defers `newsym()` restoration until traversal completes, matching
+`tmp_at(DISP_END)` before vision rebuild and boundary display.
+
+**Evidence:** seed0116 input80 matches all **7/7** beam screens/cursors plus its
+RNG and T14 boundary.  Together with its already exact run frame, the complete
+session reaches **8/8 animation**,12,562 RNG and127 boundaries.  Digging, fire,
+self-sleep and monster-projectile controls pass **4/4** in **0.40 seconds**.
+
+**Acceptance and measured effect:** one managed engine-only corpus passes
+**44/44** at **37+0.31 ms/turn** (R²0.828) in **12.26 seconds** at
+**273,301,504 bytes maximum RSS**.  Animation reaches **1,228/1,483**:
+seed0116 contributes7 and seed4500 advances16->22/37 through the same generic
+digging owner.  No public boundary changes.  No normal corpus, push, workflow,
+hidden judge, or publication ran.
+
+**Next blocker:** the remaining small groups are replay-backed seed0060/0106,
+seed0007's replay-state mismatches, and live effect groups of at least ten or
+more frames.  Re-inventory seed4500's remaining15 and seed0002's remaining65 by
+owner before choosing the next generic block.
+
+---

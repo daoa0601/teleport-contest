@@ -13544,3 +13544,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   delays with topline cursor, and one hero-overwriting return cell.  The managed
   corpus remains44/44 with1,215/1,483 frames.  Other ray directions, targets,
   reflections, fatal/armor continuations and ray types remain unclaimed.
+- Commit63e02c2 captures live digging-beam traversal before terrain mutation,
+  accumulating visible white cells and retaining the last cursor through four
+  invisible tail iterations before DISP_END restoration.  Seed0116 closes8/8;
+  seed4500 advances to22/37.  The managed corpus remains44/44 with1,228/1,483
+  frames.  Vertical, pit, shop, nondiggable, maze/cavern and message branches
+  remain open.
