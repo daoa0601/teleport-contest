@@ -8397,7 +8397,7 @@ async function wizIntrinsic() {
         );
         game._pending_message = '';
         game._retained_message = '';
-        await docrt();
+        await docrtRecalc();
         return;
     }
     if (timeoutMessages.length) {
