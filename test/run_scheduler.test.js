@@ -9836,9 +9836,11 @@ test('seed0021 Hallucinated death touch passes usefulness then fails',
 
 test('seed0090 Hallucinated death touch succeeds without HP drain',
     async () => {
-        const result = await runHallucinatedDeathTouch(90, 124);
+        const result = await runHallucinatedDeathTouch(
+            90, HALLUCINATED_DEATH_TOUCH_MOVES.length,
+        );
 
-        assert.equal(result.getScreens().length, 125);
+        assert.equal(result.getScreens().length, 143);
         assertRngSliceExact(result.getRngSlices()[122], [
             'rn2(5)=3', 'rn2(5)=1', 'rnd(20)=20', 'd(2,12)=6',
             'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=20',
@@ -9870,9 +9872,48 @@ test('seed0090 Hallucinated death touch succeeds without HP drain',
                 .some(call => call.startsWith('d(8,6)='))),
             false,
         );
-        assert.equal(game.u.uhp, 132);
+
+        assertRngSliceExact(result.getRngSlices()[135], [
+            'rn2(8)=4', 'rn2(7)=1', 'rn2(6)=1', 'rn2(5)=2',
+            'rn2(4)=0', 'rn2(3)=2', 'rn2(2)=0',
+            'rn2(16)=12', 'rn2(15)=6', 'rn2(14)=6', 'rn2(13)=1',
+            'rn2(12)=9', 'rn2(11)=9', 'rn2(10)=4', 'rn2(9)=1',
+            'rn2(8)=2', 'rn2(7)=4', 'rn2(6)=4', 'rn2(5)=4',
+            'rn2(4)=1', 'rn2(3)=0', 'rn2(2)=0',
+            'rn2(24)=17', 'rn2(23)=6', 'rn2(22)=14', 'rn2(21)=12',
+            'rn2(20)=1', 'rn2(19)=8', 'rn2(18)=14', 'rn2(17)=2',
+            'rn2(16)=5', 'rn2(15)=10', 'rn2(14)=11', 'rn2(13)=8',
+            'rn2(12)=10', 'rn2(11)=3', 'rn2(10)=8', 'rn2(9)=5',
+            'rn2(8)=7', 'rn2(7)=1', 'rn2(6)=2', 'rn2(5)=0',
+            'rn2(4)=2', 'rn2(3)=2', 'rn2(2)=1',
+            'rnd(2)=1', 'd(30,8)=133',
+            'rn2(50)=1', 'rn2(11)=0', 'rnd(2)=1', 'rn2(4)=2',
+            'rn2(100)=29', 'rn2(40)=20', 'rn2(3)=1', 'rn2(6)=3',
+            'rnd(2)=2', 'rn2(4)=1', 'rn2(100)=85',
+            'rn2(2)=1', 'rnd(2)=1', 'rn2(10)=3', 'rn2(10)=6',
+            'rn2(12)=7', 'rn2(5)=0', 'rn2(5)=0',
+        ], 'seed0090 Hallucinated clone construction and cuss RNG');
+        assert.equal(decodedTopline(result.getScreens()[135]),
+            'Double Trouble...  The loan shark suddenly appears next to you!--More--');
+        assert.equal(decodedRow(result.getScreens()[135], 23),
+            'Dlvl:1 $:1610 HP:96(138) Pw:74(74) AC:8 Xp:14 Hallu');
+        assert.deepEqual(result.getCursors()[135], [71, 0, 1]);
+
+        assert.equal(game.u.uhp, 95);
         assert.equal(game.u.uhpmax, 138);
-        assert.equal(game.u.hallucinationTurns, 29);
+        assert.equal(game.u.hallucinationTurns, 26);
+        const wizards = game.level.monsters.filter(monster =>
+            monster.mnum === 285);
+        assert.equal(wizards.length, 2);
+        const clone = wizards.find(monster => monster.m_ap_type === 3);
+        assert.ok(clone);
+        assert.equal(clone.iswiz, true);
+        assert.equal(clone.mhp, 133);
+        assert.equal(clone.mhpmax, 133);
+        assert.equal(clone.mappearance, 117);
+        assert.deepEqual(clone.minvent.map(object => object.otyp), [
+            333, 305, 212,
+        ]);
     });
 
 test('seed0002 wood golem survives death touch then rehumanizes on claw',

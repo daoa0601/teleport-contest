@@ -6,7 +6,9 @@ import { armorBonus, armorSlotFor } from './armor.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { AMULET_OF_GUARDING, OBJECT_DELAY } from './object_data.js';
+import {
+    AMULET_OF_GUARDING, OBJECT_BIMANUAL, OBJECT_DELAY,
+} from './object_data.js';
 import {
     AC_MAX, I_SPECIAL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS,
     W_ARMU,
@@ -20,7 +22,9 @@ const M1_ANIMAL = 0x00040000;
 const M1_SLITHY = 0x00080000;
 const MZ_SMALL = 1;
 const MZ_LARGE = 3;
+const MZ_HUGE = 4;
 const S_CENTAUR = 29;
+const S_GHOST = 54;
 const SPEED_BOOTS = 166;
 const PM_WINGED_GARGOYLE = 42;
 const PM_MARILITH = 295;
@@ -59,6 +63,35 @@ function monsterCanWearSuit(monster) {
         && !!(flags & M1_HUMANOID)
         && monster.mnum !== PM_MARILITH
         && monster.mnum !== PM_WINGED_GARGOYLE;
+}
+
+function monsterWrappingAllowed(monster) {
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const size = MONSTER_SIZE[monster?.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
+    return !!(flags & M1_HUMANOID)
+        && size >= MZ_SMALL && size <= MZ_HUGE
+        && symbol !== S_GHOST && symbol !== S_CENTAUR
+        && monster.mnum !== PM_WINGED_GARGOYLE
+        && monster.mnum !== PM_MARILITH;
+}
+
+function monsterCreationWearSnapshotSlots(monster) {
+    if (!monsterCanDress(monster, true)) return [];
+    const canWearSuit = monsterCanWearSuit(monster);
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const weapon = monster?.mw;
+    const slots = ['uamul'];
+    if (canWearSuit && !((monster.misc_worn_check ?? 0) & W_ARM))
+        slots.push('uarmu');
+    if (canWearSuit || monsterWrappingAllowed(monster)) slots.push('uarmc');
+    slots.push('uarmh');
+    if (!weapon || !OBJECT_BIMANUAL[weapon.otyp]) slots.push('uarms');
+    slots.push('uarmg');
+    if (!(flags & M1_SLITHY)
+        && MONSTER_SYMBOL[monster?.mnum] !== S_CENTAUR) slots.push('uarmf');
+    slots.push('uarm');
+    return slots;
 }
 
 function slotAllowed(monster, slot) {
@@ -154,6 +187,13 @@ export function initializeMonsterArmor(monster) {
         if (change) changes.push(change);
     }
     return changes;
+}
+
+export function snapshotMonsterCreationWearNames(monster, snapshotName) {
+    if (typeof snapshotName !== 'function') return 0;
+    const slots = monsterCreationWearSnapshotSlots(monster);
+    for (const slot of slots) snapshotName(monster, slot);
+    return slots.length;
 }
 
 export function checkMonsterGearNextTurn(monster) {

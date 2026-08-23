@@ -11,7 +11,8 @@ import {
 } from './armor.js';
 import { nextIdent } from './ident.js';
 import {
-    map_invisible, newsym, swallowed, unmap_invisible,
+    map_invisible, newsym, randomDisplayMonsterName,
+    randomDisplayMonsterSubject, swallowed, unmap_invisible,
 } from './display.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
@@ -55,6 +56,7 @@ import { collectNearbyCoords } from './u_init.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import {
     checkMonsterGearNextTurn, findMonsterArmorClass, reassessMonsterArmor,
+    snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { inTown } from './room.js';
 import {
@@ -8117,9 +8119,22 @@ export async function beginDeferredHeroCloneWizard(action, state) {
     }
     attack.cloneWizard = clone;
     newsym(clone.mx, clone.my);
+    const hallucinating = !!(state.u?.hallucinating
+        || (state.u?.hallucinationTurns ?? 0) > 0);
+    if (hallucinating) {
+        snapshotMonsterCreationWearNames(
+            clone, () => randomDisplayMonsterName(),
+        );
+    }
+    // makemon() repaints after the complete creation wear pass, then formats
+    // its visible announcement.  clonewiz() performs another repaint later,
+    // after fake-Amulet and wizapp state have been installed.
+    newsym(clone.mx, clone.my);
+    const subject = hallucinating
+        ? randomDisplayMonsterSubject() : 'The Wizard of Yendor';
     return {
         clone,
-        message: 'The Wizard of Yendor suddenly appears next to you!',
+        message: `${subject} suddenly appears next to you!`,
     };
 }
 
