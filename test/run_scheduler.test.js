@@ -12017,6 +12017,53 @@ test('seed0900 interrupted-search bridge exposes cadence turn snapshots',
         }
     });
 
+test('seed0016 self-sleep bridge exposes negative-multi cadence turns',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0016-healer-newmoon-eat-zap.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 17),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[16],
+            session.steps[16].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0016 self-sleep input16 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[16],
+            session.steps[16].screen,
+            'seed0016 self-sleep input16 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[16],
+            session.steps[16].cursor,
+            'seed0016 self-sleep input16 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[16];
+        const nativeFrames = session.steps[16].animation_frames;
+        assert.equal(actualFrames.length, 4);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0016 self-sleep frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0016 self-sleep cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0004 carrot flight preserves transient glyph and dirty cursor',
     async () => {
         const session = JSON.parse(fs.readFileSync(

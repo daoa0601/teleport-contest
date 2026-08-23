@@ -1341,6 +1341,7 @@ function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     // helplessness so fast heroes and multi-round movement rations retain the
     // same boundary.
     if ((game._helplessTurns || 0) > 0) {
+        game._helplessRunmodeDelayPending = sourceTurn;
         game._helplessTurns--;
         if (game._helplessTurns === 0) {
             const doneMessage = game._helplessDoneMessage
@@ -2050,6 +2051,13 @@ async function initialTurnMaintenanceWithTty(
             intervention.sourceTurn,
         );
     }
+    const helplessDelayTurn = game._helplessRunmodeDelayPending;
+    delete game._helplessRunmodeDelayPending;
+    await captureRunmodeDelay(
+        game, Number.isInteger(helplessDelayTurn),
+        helplessDelayTurn ?? completedTurn,
+        { preservePhysicalTopline: true },
+    );
     await drainQueuedHelplessRecoveryMessage();
     await captureRunmodeDelay(
         game, !!game._delayedAction, completedTurn,

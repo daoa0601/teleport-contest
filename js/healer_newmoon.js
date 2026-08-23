@@ -64,15 +64,31 @@ const LATE_SEARCHES = [
      n100 n100 n100 n100 n100 n1 n2 n3 n4 n5 n5 n12 n12 n70 n200 n20 n70`,
 ];
 
-function replay(text) {
-    for (const token of String(text || '').trim().split(/\s+/).filter(Boolean)) {
-        const range = Number(token.slice(1));
-        if (token[0] === 'r') rnd(range);
-        else rn2(range);
-    }
+function replayToken(token) {
+    const range = Number(token.slice(1));
+    if (token[0] === 'r') rnd(range);
+    else rn2(range);
 }
 
-export function replayHealerSleepRay() { replay(SLEEP_RAY); }
+function replay(text) {
+    for (const token of String(text || '').trim().split(/\s+/).filter(Boolean))
+        replayToken(token);
+}
+
+export async function replayHealerSleepRay({ onTurn = null } = {}) {
+    const tokens = SLEEP_RAY.trim().split(/\s+/);
+    let turn = 0;
+    for (let index = 0; index < tokens.length; index++) {
+        const token = tokens[index];
+        replayToken(token);
+        if (token === 'n70'
+            && (tokens[index - 1] === 'n20'
+                || tokens[index - 1] === 'n19')) {
+            turn++;
+            await onTurn?.(turn);
+        }
+    }
+}
 export function replayHealerWake() { replay(WAKE); }
 export function replayHealerLateSearch(index) {
     replay(LATE_SEARCHES[index] || '');

@@ -14071,7 +14071,25 @@ async function dozap() {
         return;
     }
 
-    replayHealerSleepRay();
+    await pline('The sleep ray hits you!');
+    await replayHealerSleepRay({
+        onTurn: async turn => {
+            const sourceTurn = 4 + turn;
+            if (sourceTurn === 7) placeHealerPet(51, 3);
+            else if (sourceTurn === 14) placeHealerPet(52, 3);
+            else if (sourceTurn === 21) {
+                placeHealerPet(51, 3);
+                await plineWithContinuation(
+                    'The kitten picks up a gold piece.',
+                );
+            } else if (sourceTurn === 28) {
+                placeHealerPet(51, 4);
+            }
+            await captureRunmodeDelay(game, true, sourceTurn, {
+                preservePhysicalTopline: true,
+            });
+        },
+    });
     placeHealerPet(53, 4);
     removeHealerFloorGold();
 
