@@ -12923,3 +12923,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   gasp and gain-level growth.  The focused control passes 1/1 and the selected
   Wizard gate remains 13/13 fixture-disabled.  MM_EMIN and ordinary renegade
   combinations remain open.
+- The exact clone pair now covers both independent post-constructor gates.
+  Seed32 has rn2(2)=0 and human mappearance with no fake Amulet.  Controlled
+  seed17 has rn2(2)=1, creates object212, then rn2(12)=3 projects red dragon.
+  The clone remains hostile iswiz, HP144/144, carries only the fake Amulet,
+  and paints D while underlying Wizard count stays2.  The paired durable
+  tests pass 2/2 fixture-disabled.  Real-Amulet suppression, shapechanger
+  protection, other appearances, theft/disclosure and clone death remain open.

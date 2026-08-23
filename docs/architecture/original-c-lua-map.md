@@ -31762,3 +31762,37 @@ states.  Ordinary roaming aligned/high clerics remain covered by their
 separate forced carriers.  MM_EMIN details, renegade combinations, priest
 replacement/growth, temple ownership and cross-level migration remain
 separate controls.
+
+## 880. Clone fake-Amulet and disguise gates are independent
+
+~~~mermaid
+flowchart TD
+    Clone["clone Wizard constructed"] --> Hero{"hero carries real Amulet?"}
+    Hero -->|"yes"| NoFake["skip fake gate"]
+    Hero -->|"no"| FakeGate["rn2(2)"]
+    FakeGate -->|"0"| NoFake
+    FakeGate -->|"1"| Fake["mksobj fake Amulet; add_to_minv"]
+    Fake --> Protect{"Protection from Shape Changers?"}
+    NoFake --> Protect
+    Protect -->|"yes"| Real["retain real Wizard projection"]
+    Protect -->|"no"| App["rn2(12) wizapp"]
+    App --> Human["seed32 index0 human"]
+    App --> Dragon["controlled seed17 index3 red dragon"]
+    Human --> Paint["M_AP_MONSTER repaint"]
+    Dragon --> Paint
+    Paint --> State["underlying iswiz identity remains"]
+~~~
+
+Seed32 closes fake-gate zero plus human disguise: clone HP139/139, no fake
+Amulet, mappearance260.  The exact controlled aggravation session supplies
+the complementary branch.  Input147 uses rn2(2)=1, constructs object212, then
+rn2(12)=3 selects red dragon.  The resulting clone remains a real hostile
+Wizard at HP144/144 but carries the cheap plastic imitation and projects a
+red D at row15.
+
+The paired durable regression asserts real Wizard count, inventory type,
+M_AP_MONSTER state, mappearance and rendered glyph.  Both branches share the
+same constructor without conflating item or disguise selection.  Real-Amulet
+suppression, Protection from Shape Changers, the other ten appearances,
+object beatitude/merge, theft of the fake, disclosure and clone death remain
+separate controls.

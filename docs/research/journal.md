@@ -87751,3 +87751,32 @@ full corpus, public-status rewrite, hidden judge, push or publication ran;
 unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 13:10 EEST, journal block 2915] {#clone-wizard #fake-amulet #wizapp #red-dragon #mappearance #paired-control #durable-state #regression #architecture #ledger #process-safety #priority}
+
+**Paired branch contract:** seed32 already proves fake gate0 and human
+mappearance.  The exact 155-state controlled aggravation session contains the
+complement: clone input147 records rn2(2)=1, a real object212 constructor, and
+rn2(12)=3 after the appearance announcement.
+
+**Durable evidence:** final state contains two real Wizards.  The clone is
+hostile, HP144/144, M_AP_MONSTER with red-dragon mappearance146, and carries
+exactly the cheap plastic imitation of the Amulet of Yendor.  The input147
+map displays D, not @, while iswiz identity and context count2 remain.
+This separates disguise presentation from actor identity and fake inventory.
+
+**Measured regression:** the existing controlled-session test now asserts
+clone HP discriminator, fake-Amulet inventory, mappearance, and rendered row.
+Together with seed32's no-fake/human control, the paired fixture-disabled gate
+passes **2/2** in **0.42 seconds** at **133,464,064 bytes maximum RSS**.  No
+production change was needed; every process exited.
+
+**Decision and next blocker:** keep the clone constructor closed only for
+these two gate combinations.  Section880 maps the independence.  Real-Amulet
+suppression, Protection from Shape Changers, ten remaining appearances,
+object merge/beatitude, theft/disclosure and clone death remain open.  Next
+select a resistance or MM_EMIN control with a native state witness.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---

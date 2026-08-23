@@ -17,7 +17,7 @@ import {
     ARROW, BOW, ELVEN_ARROW, ORCISH_ARROW, CANDELABRUM_OF_INVOCATION, CHEST,
     CORPSE, CREAM_PIE,
     DAGGER, DART,
-    FOOD_RATION,
+    FAKE_AMULET_OF_YENDOR, FOOD_RATION,
     CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER, GOLD_PIECE, HELMET,
     LEATHER_GLOVES, LONG_SWORD,
     DIAMOND, DILITHIUM_CRYSTAL, FLINT, MACE, MAGIC_LAMP, OIL_LAMP,
@@ -10030,6 +10030,8 @@ test('seed0017 controlled sleeper makes aggravation useful and wakes',
         ], 'controlled clone tail and lichen sticking prefix RNG');
         assert.equal(decodedTopline(result.getScreens()[147]),
             'Double Trouble...  The Wizard of Yendor suddenly appears next to you!--More--');
+        assert.equal(decodedRow(result.getScreens()[147], 15),
+            '                                    x~~FDx');
         assertRngSliceExact(result.getRngSlices()[148], [
             'rn2(3)=1', 'rn2(6)=3', 'rn2(5)=2', 'rn2(20)=0',
             'rn2(5)=2', 'rn2(12)=10', 'rn2(12)=8', 'rn2(12)=5',
@@ -10044,6 +10046,17 @@ test('seed0017 controlled sleeper makes aggravation useful and wakes',
         assert.equal(game.u.ustuck?.mx, 40);
         assert.equal(game.u.ustuck?.my, 14);
         assert.equal(game.u.uhp, 114);
+        const controlledWizards = game.level.monsters.filter(monster =>
+            monster.iswiz);
+        assert.equal(controlledWizards.length, 2);
+        const controlledClone = controlledWizards.find(monster =>
+            monster.mhpmax === 144);
+        assert.ok(controlledClone);
+        assert.equal(controlledClone.m_ap_type, M_AP_MONSTER);
+        assert.equal(controlledClone.mappearance, 146);
+        assert.deepEqual(controlledClone.minvent.map(object => object.otyp), [
+            FAKE_AMULET_OF_YENDOR,
+        ]);
     });
 
 test('seed0097 stun-you rolls Dexterity duration after effect prose',
