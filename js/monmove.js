@@ -7178,11 +7178,17 @@ export function resumeDeferredHeroContact(
     if (attack.deferredAmuletTheftGate) {
         const stealGate = recordRandom(random, calls, 20);
         attack.deferredAmuletTheftGate = false;
-        if (stealGate === 0) {
-            // The selected Wizard carrier has no quest artifact, Amulet, Bell,
-            // Book, or Candelabrum.  Preserve the successful gate as a named
-            // continuation for a real theft carrier.
+        const theftTarget = (state.inventory || []).find(object =>
+            object?.questArtifact || object?.isQuestArtifact
+            || [AMULET_OF_YENDOR, BELL_OF_OPENING,
+                SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION]
+                .includes(object?.otyp));
+        if (stealGate === 0 && theftTarget) {
+            // Actual worn-item removal, theft, and relocation remain a named
+            // continuation.  A successful gate with no special target is a
+            // source no-op and must continue into knockback/passive handling.
             attack.deferredAmuletTheft = true;
+            attack.amuletTheftTarget = theftTarget;
             return action;
         }
     }
