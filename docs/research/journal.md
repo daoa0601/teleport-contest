@@ -90260,3 +90260,111 @@ remain open.  Every process exited.  No full corpus, public-status rewrite,
 hidden judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 23:58 EEST, journal block 2993] {#seed52 #verification-gap #full-screen #status #wield-continuation #deferred-contact #false-acceptance #correction #earliest-divergence #priority}
+
+**Correction to blocks2988--2992:** the frontier locator compared exact RNG,
+topline and cursor but not every decoded screen cell.  A full decoded-screen
+comparison finds the earliest remaining screen divergence at input546 status:
+native HP55 versus JavaScript HP56.  The input548 and input572 tests then
+hardcoded downstream JavaScript HP44/59 rather than native HP42/55.  Their RNG,
+topline, cursor and region assertions remain source-backed, but the HP claims
+are invalid and must be corrected before those blocks are accepted as complete
+screen witnesses.
+
+**Root cause:** the ogre's melee is a deferred continuation from its visible
+battle-axe wield transaction.  The main actor entry sets
+`_deferVisibleMonsterContact`, but `resumeDeferredHeroAttackAfterWield()` runs
+later with that guard off.  It commits physical damage before the tty message
+boundary, changing the relative damage/regeneration state even though all RNG
+and prose match.  Native performs hit prose, knockback and HP damage in the
+resumed source stack.
+
+**Prediction and decision:** wrap the after-wield attack continuation in the
+same visible-contact deferral guard used by ordinary actor entry, then let the
+existing attack presenter call `resumeDeferredHeroContact()` after prose.
+Input546 should become native HP55; downstream input548/572 statuses should
+become42/55 without changing their RNG/regions.  Replace the false expected HP
+values and re-run a full decoded-screen frontier locator plus focused/expanded
+gates.  Do not publish another exact-prefix claim from topline-only evidence.
+No corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-24 00:05 EEST, journal block 2994] {#seed52 #ogre-tyrant #mongets #prince #weapon-enchantment #battle-axe #hp-drift #diagnosis-refinement #source-state #priority}
+
+**Refinement to block2993:** deferring the after-wield continuation does not
+change input546.  Native and JavaScript both apply the visible contact in the
+resumed source phase; the one-point damage difference is already stored on the
+weapon.  `mongets()` postprocesses every prince's battle gear: a weapon with
+spe below1 is raised to +1 and negative armor to0.  Ogre tyrant205 carries
+M2_PRINCE.  JavaScript's ambient `addObject()` returns the raw spe0 battle-axe
+and never applies this shared rank policy.
+
+**Prediction and decision:** apply prince-quality postprocessing inside the
+ambient mongets-shaped `addObject()` helper, before inventory insertion.  Axe45
+should remain +1 from input386 onward; each later battle-axe hit gains one
+deterministic damage without RNG changes.  Native input546/548/572 statuses
+should become55/42/55, and the input581 hit should reach HP0 and enter the
+existing death pager.  Keep the contact-deferral guard because it is source-
+correct, but attribute the measured HP repair to prince weapon quality.  Update
+the durable constructor/combat assertions and re-run full decoded-screen
+comparison.  No corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-24 00:14 EEST, journal block 2995] {#seed52 #intervention #outcome3 #aggravate #zero-affected #shared-owner #native-branch #fog-display #priority}
+
+**Prince repair result and corrected frontier:** applying prince minimum +1 to
+axe45 makes the entire 793-state seed52 replay RNG-exact at **9,928/9,928** and
+cursor-exact at **793/793**.  Full decoded screens now match inputs3--761.  The
+31 residual screens762--792 differ at one fog cell (`#` native region glyph
+versus `v` JavaScript fog actor), so that residual is region-display precedence,
+not outcome3 state.
+
+**Outcome3 branch evidence:** native input540 explicitly owns
+`rn2(6)=3 @ intervene` and reset `rn2(200)=41`.  The pre-intervention carrier
+has no sleeping, WAITFORU/APPEARMSG, frozen or immobile actor, so source
+`aggravate()` consumes no rn2(5) and changes no reached actor.  This is a valid
+zero-affected aggravate dispatch; seed17's controlled-sleeper regression already
+pins the shared wake/strategy mutation owner.
+
+**Prediction and decision:** extract/reuse a synchronous `aggravateMonsters()`
+owner from the hero-spell continuation and dispatch it for intervention3 before
+countdown reset.  Record the affected list, clear unresolved intervention state,
+and assert input540's exact 17-call slice plus udg91 and zero affected actors.
+Outcome3 can then close independently of the later fog display residual.
+Outcome4 remains unclaimed.  No corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-24 00:24 EEST, journal block 2996] {#seed52 #prince #mongets #battle-axe #intervention #outcome3 #aggravate #verification-correction #full-screen #native-session #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and corrected acceptance:** commit `6b13fb8` restores prince
+minimum weapon/armor quality in ambient mongets, retains source-correct visible
+after-wield deferral, extracts shared `aggravateMonsters()`, and dispatches it
+for intervention3.  Durable tests now assert axe spe1 and native HP55/42/55 at
+inputs546/548/572, replacing the false JavaScript expectations.  The outcome3
+test compares input540's complete 17-call slice, screen/cursor, udg91, empty
+affected-id list and cleared unresolved state.
+
+**Full-session evidence:** strict engine-only replay reaches **9,928/9,928 RNG
+calls, 761/793 screens and 793/793 cursors** in **0.36 seconds** at
+**135,184,384 bytes maximum RSS**.  A full decoded-cell locator—not the prior
+topline shortcut—confirms inputs3--761 are exact.  All 31 residual screens
+762--792 share the fog cell at level (18,10): native projects region `#`,
+JavaScript projects fog actor `v`.  Native animation remains0/40.  Outcome3 is
+therefore closed; the remaining visual residual is independently localized.
+
+**Controls and next boundary:** focused fixture-disabled controls pass
+**10/10** in **0.72 seconds** at **224,935,936 bytes maximum RSS**.  Expanded
+controls pass **58/58** in **1.83 seconds** at **382,156,800 bytes maximum
+RSS**.  Sections917--918 and the ledger record the acceptance correction and
+branch ownership.  Fog actor/region display precedence, outcome4 and animation
+remain open.  Every process exited.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

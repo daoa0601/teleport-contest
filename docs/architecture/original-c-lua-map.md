@@ -33254,7 +33254,7 @@ Once adjacent, `find_offensive()` applies `reflection_skip=monnear()` to ray
 wands but not striking/non-reflectable offense.  The ogre therefore retains
 magic-missile wand429 at spe1 and attacks with its already-wielded battle-axe.
 Against the small hero the axe owns both its encoded 1d8 and supplemental 1d4
-after the AT_WEAP base damage.  Input546 ends hero HP56/169, `udg_cnt=89`, ogre
+after the AT_WEAP base damage.  Input546 ends hero HP55/169, `udg_cnt=89`, ogre
 at (6,8), HP34/42, inventory[45,429,438,293,329].
 
 This section closes reached ordinary-corpse rejection, useful scroll-create-
@@ -33291,7 +33291,7 @@ JavaScript now retains first-round planning effects, suppresses later-round
 effect speculation, and runs those hooks against current live state when the
 async actor executor crosses each planned round boundary.  The input548 witness
 keeps old region (26,9) ttl20 and creates new region (25,9) ttl4 after fog91 has
-moved and exhausted its ration.  Hero ends HP44/169, `udg_cnt=89`.
+moved and exhausted its ration.  Hero ends HP42/169, `udg_cnt=89`.
 
 This section closes later-round everyturn timing for the reached fog-cloud
 move.  It does not close input572's later gas-region lifecycle edge, arbitrary
@@ -33328,9 +33328,66 @@ The async executor runs each current-state visit batch immediately before its
 associated actor, with inactive suffixes at the round boundary.  At input572
 xorn92 owns calls0--2, fog91 at (24,9) owns cloud TTL draw call3 despite
 movement0, and grid bug90 begins call4.  Regions end (26,9)/ttl13,
-(25,9)/ttl22 and (24,9)/ttl10; hero HP59/169, mortality3, `udg_cnt=82`.
+(25,9)/ttl22 and (24,9)/ttl10; hero HP55/169, mortality3, `udg_cnt=82`.
 
 This section supersedes section915's bulk-first-round wording and closes the
 reached inactive fmon interleave plus later-round movement case.  It does not
 close dynamic actor-membership replanning, non-fog everyturn classes, input581
 lethal melee paging, aggravate mutation, or animation.  Lua owns geometry only.
+
+## 917. Ambient mongets applies prince minimum quality after object creation
+
+~~~mermaid
+flowchart TD
+    Birth["seed52 input386 ogre tyrant205 has M2_PRINCE"] --> Create["mksobj builds battle-axe45 at spe0"]
+    Create --> Mongets["mongets rank postprocessing"]
+    Mongets --> Upgrade["prince weapon minimum raises spe to1"]
+    Upgrade --> Carry["inventory retains +1 axe through wield/pickup"]
+    Carry --> Damage["later dmgval adds encoded dice, supplement and spe1"]
+    Damage --> Status["input546 HP55; input548 HP42; input572 HP55"]
+    Status --> Fatal["input581 reaches exact HP0/death continuation"]
+    Lua["Lua contributes no object-quality ownership"] -.-> Birth
+    Lua -.->|"no ownership"| Mongets
+~~~
+
+Ambient constructors already reused `mksobj()` but skipped `mongets()`'s
+rank-sensitive postprocessing.  For every prince, generated weapons have a
+minimum +1 enchantment and negative armor is raised to zero.  Ogre tyrant205
+therefore carried a +1 battle-axe from input386; leaving it at spe0 preserved
+all RNG and prose but reduced every later hit by one, creating a hidden HP drift.
+
+The corrected durable tests assert axe spe1 at construction and native status
+HP55/42/55 at inputs546/548/572.  A full decoded-cell audit—not topline only—
+now matches native through input761.  This section closes reached prince weapon
+quality and corrects the earlier false HP acceptance.  It does not close demon,
+lawful-minion or player-monster mongets policies, other rank gear, the final fog
+display precedence, or animation.  Lua has no ownership.
+
+## 918. Intervention outcome3 reuses the shared aggravate state owner
+
+~~~mermaid
+flowchart TD
+    Clock["seed52 input540 udg reaches0"] --> Select["intervene rn2 6 equals3"]
+    Select --> Loop["aggravate scans live fmon in matching Wizard-tower region"]
+    Loop --> Strategy["clear WAITFORU and APPEARMSG"]
+    Strategy --> Sleep["clear msleeping"]
+    Sleep --> Frozen["only immobile actors probe rn2 5 for thaw"]
+    Frozen --> Empty["seed52 has zero affected/frozen actors; no effect RNG"]
+    Empty --> Reset["udg reset 50 plus rn2 200 equals91"]
+    Reset --> Tail["environment and Seer continue same global turn"]
+    Control["seed17 controlled sleeper separately proves nonempty wake mutation"] -.-> Loop
+    Lua["Lua contributes no intervention state ownership"] -.-> Select
+~~~
+
+Seed52 supplies native branch evidence rather than inferring from JavaScript:
+input540 explicitly records outcome3 and the reset.  Its zero-affected roster
+means aggravate itself has no RNG or visible prose.  The implementation extracts
+the synchronous mutation owner already used by Wizard spell aggravation and
+dispatches it before reset, recording an empty affected-id list and clearing
+unresolved intervention state.
+
+This section closes non-Astral outcome3 selection and zero-affected execution,
+with the existing controlled-sleeper carrier covering a nonempty shared owner.
+It does not close Wizard-tower partitioning, frozen thaw success/failure inside
+intervention, outcome4 nasty, fog display precedence, or animation.  Lua has no
+ownership.

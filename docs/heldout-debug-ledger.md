@@ -13300,7 +13300,7 @@ attempt: **402 calls**, not a direct two-pass retry.
   searches_for_item set recognizes scroll329, so ogre86 skips two corpses and
   picks up the FNORD scroll.  Adjacent monnear reflection-skip then suppresses
   the remaining ray-wand charge and falls through to battle-axe45.  Its damage
-  is base d(3,5), rnd(8), plus small-target rnd(4), ending hero HP56/169 and
+  is base d(3,5), rnd(8), plus small-target rnd(4), ending hero HP55/169 and
   udg89 with inventory[45,429,438,293,329].  Parity advances through input547;
   input548 gas-cloud state and aggravate mutation remain open.  Focused/
   expanded gates pass 7/7 and55/55.
@@ -13322,3 +13322,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   later-round and input572 inactive-interleave witnesses remain exact, advancing
   parity through input580.  Input581 lethal melee pager and aggravate mutation
   remain open.  Focused/expanded gates pass 9/9 and57/57.
+- Acceptance correction and outcome3 closure: full decoded-cell comparison
+  found prior HP expectations at inputs546/548/572 were JavaScript values, not
+  native.  Ogre tyrant is M2_PRINCE, so mongets raises axe45 from spe0 to1;
+  corrected native HP is55/42/55.  With that deterministic point restored,
+  seed52 reaches 9,928/9,928 RNG and 793/793 cursors; decoded screens match
+  inputs3--761.  Input540 natively selects outcome3, shared aggravate finds
+  zero affected actors, clears unresolved state and resets udg91.  The 31
+  screens762--792 differ only by fog region/actor glyph precedence; outcome4
+  and 40 animation groups remain open.  Focused/expanded gates pass 10/10 and
+  58/58.
