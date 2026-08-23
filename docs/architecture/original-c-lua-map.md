@@ -33144,3 +33144,44 @@ This section closes the first-use cardinal forced-miss magic-missile beam and
 its tty/map lifetime.  It does not close experienced hit/damage, monster kill,
 resistance/reflection, diagonal bounce choice, unseen zap prose, other beam
 types, outcome3, or the carrier's 40 animation groups.  Lua owns geometry only.
+
+## 912. Experienced beams split hit selection, death, and damage at tty
+
+~~~mermaid
+flowchart TD
+    Shot["seed52 input512 known wand, mwandexp1, range11"] --> MonsterHit["zap_hit rn2 20 equals0; rnd 10 equals1"]
+    MonsterHit --> MonsterDamage["zhitm d 2,6 equals7 kills gnome zombie"]
+    MonsterDamage --> DeathLine["destroyed-by-magic-missile line pages zap"]
+    DeathLine --> CorpseGate["after ack: corpse_chance rn2 3 equals0"]
+    CorpseGate --> Temp["mksobj random temporary corpse identity"]
+    Temp --> Convert["override zombie240 to living gnome165; backdate age"]
+    Convert --> Timeout["rot timer transaction"]
+    Timeout --> HeroRoll["same beam zap_hit rn2 20 equals2"]
+    HeroRoll --> HeroLine["hero-hit line pages death line"]
+    HeroLine --> HeroDamage["after ack: d 2,6 equals7 and Strength exercise"]
+    HeroDamage --> Resume["restore cells; complete actor/global turn"]
+    Resume --> Later["later experienced shots reuse hero hit/bounce owner"]
+    Lua["Lua contributes beam/actor/terrain geometry only"] -.-> Shot
+    Lua -.->|"no ownership"| MonsterHit
+    Lua -.->|"no ownership"| CorpseGate
+~~~
+
+Experienced `buzz()` contacts use the ordinary `zap_hit()` armor-class test.
+Monster damage is committed before the destroyed line; monster detach and
+corpse work wait until that line returns from tty.  Hero hit selection happens
+before its hit line, while hero damage and Strength exercise wait until the
+line returns.  These are three distinct continuation boundaries inside one
+beam, not one atomic damage helper.
+
+The gnome-zombie death also corrects the shared ray corpse owner: G_NOCORPSE
+prevents a zombie corpse but does not prevent `make_corpse()` from converting
+the undead form to living gnome165.  Input513 therefore owns a 224-call bounded
+transaction and leaves a gnome corpse at (6,8), age73, rotAt380.  Input516 ends
+hero HP123/169, mortality2 and `udg_cnt=4`; wand429 is spe4.  Reused experienced
+hero contacts and cardinal bounces remain exact through input536.
+
+This section closes experienced external monster/hero contacts, converted
+zombie corpse construction, and nonfatal hero damage.  It does not close a
+return beam hitting its source, nonfatal monster damage prose, hero fatality,
+reflection/resistance, diagonal bounces, outcome3, or animation.  Lua owns
+geometry only.

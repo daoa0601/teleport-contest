@@ -89935,3 +89935,58 @@ status rewrite, hidden judge, push or publication ran; unrelated dirty files
 remain untouched.
 
 ---
+
+### [2026-08-23 22:06 EEST, journal block 2980] {#seed52 #magic-missile #experienced-wand #zap-hit #monster-death #zombie-corpse #hero-hit #tty #earliest-divergence #source-order #priority}
+
+**Experienced-shot frontier:** after first-shot acceptance seed52 is exact
+through input511.  Input512 repeats range11 with known wand429, then
+`zap_hit()` owns `rn2(20)=0`, `rnd(10)=1`; experienced fire hits the gnome
+zombie and `d(2,6)=7` is lethal.  JavaScript currently restricts its beam
+resolver to `firstShotForcedMiss`, so it publishes only the zap line and
+advances later RNG instead.
+
+**Deferred death and return path:** the destroyed-gnome line pages the zap line
+before `corpse_chance rn2(3)=0`.  On input513, converted-undead corpse creation
+owns the 224-call transaction: object ID, randomized temporary corpse identity,
+override to living gnome, and rot timeout.  The same beam then reaches the hero
+and owns `zap_hit rn2(20)=2`; its hit line pages the death line before damage.
+Input516 resumes `d(2,6)=7`, Strength exercise `rn2(2)=1`, restores the beam
+cells and completes global maintenance at HP123/169.
+
+**Prediction and decision:** extend the live beam with real zap-hit contacts.
+Monster damage precedes its death line; detach/corpse work follows that line's
+acknowledgement.  Hero hit selection precedes its line, while hero damage and
+exercise follow acknowledgement.  Reuse/fix the existing ray-death corpse
+owner so zombie G_NOCORPSE still converts to a living-form corpse.  Reflection,
+resistance, nonfatal monster hits and diagonal bounces remain successors.  No
+focused regression, corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-23 22:18 EEST, journal block 2981] {#seed52 #magic-missile #experienced-wand #zap-hit #monster-death #zombie-corpse #hero-hit #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `c5d6563` extends the live
+beam with real monster/hero zap-hit contacts, deferred external-monster death,
+converted-undead corpse creation, and post-line hero damage/exercise.  The
+517-state regression compares short input512/516 slices and only the length,
+two-call prefix and eight-call suffix of input513's 224-call corpse graph,
+plus three pager/map states and durable corpse/wand/hero state.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input536.  Gnome zombie81 is removed; the pile at (6,8) begins with
+corpse265/corpsenm165, age73, rotAt380, and vanquish count240 is1.  Input516
+ends HP123/169, mortality2 and `udg_cnt=4`; ogre86 retains known/dknown wand429
+at spe4 with `mwandexp=1`.  Later experienced hero-hit/bounce transactions also
+align.  Full replay advances to **7,373/9,928 RNG calls, 537/793 screens and
+610/793 cursors** in **0.35 seconds** at **134,168,576 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **5/5**
+in **0.46 seconds** at **147,980,288 bytes maximum RSS**.  Expanded controls
+pass **53/53** in **1.44 seconds** at **343,572,480 bytes maximum RSS**.
+Section912 and the ledger map the hit/death/damage tty splits.  Input537's
+return-beam source hit, downstream outcome3, outcome4 and animation remain
+open.  Every process exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

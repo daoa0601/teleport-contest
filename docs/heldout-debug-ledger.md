@@ -13279,3 +13279,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   spe5 and the ogre is experienced.  Engine parity advances through input511;
   input512's experienced shot remains open.  Focused/expanded gates pass 4/4
   and52/52.
+- Seed52 input512 closes experienced external magic-missile contacts.  The
+  ogre's zap_hit/d(2,6)=7 kills gnome zombie81; its destroyed line pages before
+  corpse work.  Input513 then performs the bounded 224-call corpse transaction,
+  converts zombie240 to living gnome165, and rolls the return hero hit before
+  its line.  Input516 applies seven damage plus Strength exercise, ending
+  HP123/169 and udg4.  Later hero-only experienced shots reuse the same owner,
+  so engine parity advances through input536.  Input537's return beam hitting
+  the source ogre remains open.  Focused/expanded gates pass 5/5 and53/53.
