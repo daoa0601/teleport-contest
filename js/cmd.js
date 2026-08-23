@@ -16287,6 +16287,20 @@ export async function finishHeroMonsterKill(monster, x, y, {
     );
     const monsterName = nameMonster();
 
+    // mon.c:m_detach() calls wizdeadorgone() before relobj() releases the
+    // inventory and before xkilled() reaches treasure/corpse policy.  The
+    // first true Wizard removal starts the demigod intervention countdown;
+    // later Wizard deaths still decrement the live-instance count but do not
+    // reroll that countdown.
+    if (monster.iswiz) {
+        game.context.no_of_wizards = (game.context.no_of_wizards || 0) - 1;
+        if (!game.u.uevent) game.u.uevent = {};
+        if (!game.u.uevent.udemigod) {
+            game.u.uevent.udemigod = true;
+            game.u.udg_cnt = 50 + rn2(250);
+        }
+    }
+
     // mondead()->m_detach()->relobj() releases the complete inventory before
     // xkilled() evaluates treasure and corpse creation.
     const carried = monster.minvent || monster.inventory || [];

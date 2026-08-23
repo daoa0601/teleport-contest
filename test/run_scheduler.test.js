@@ -10025,6 +10025,69 @@ test('seed0470 wizkill consumes life-saving amulet and revives Wizard',
         assert.equal(game.context.move, 0);
     });
 
+test('seed0001 death ray removes Wizard and starts demigod countdown',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkj' + ' '.repeat(12);
+        const result = await runSegment({
+            seed: 1,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves,
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 136);
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(19)=10', 'rn2(7)=4', 'rn2(20)=18', 'rnd(8)=7',
+            'rn2(250)=49', 'rn2(6)=5', 'rn2(3)=1', 'rn2(20)=12',
+        ], 'seed0001 fatal death-ray Wizard bookkeeping RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'You kill the Wizard of Yendor!  The death ray bounces!--More--');
+        assert.equal(decodedRow(result.getScreens()[123], 23),
+            'Dlvl:1 $:1836 HP:152(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[123], [62, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[124], [],
+            'seed0001 post-Wizard-death hero hit pager RNG');
+        assert.equal(decodedTopline(result.getScreens()[124]),
+            'The death ray hits you!--More--');
+        assert.deepEqual(result.getCursors()[124], [31, 0, 1]);
+        assert.equal(decodedTopline(result.getScreens()[125]),
+            'Die? [yn] (n)');
+        assert.equal(decodedRow(result.getScreens()[125], 23),
+            'Dlvl:1 $:1836 HP:0(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[125], [14, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[126], [
+            'rn2(19)=3', 'rn2(12)=2', 'rn2(25)=24',
+            'rn2(100)=91', 'rn2(400)=376', 'rn2(300)=55',
+            'rn2(20)=6', 'rn2(64)=55', 'rn2(31)=24',
+        ], 'seed0001 post-Wizard-death survival RNG');
+        assert.equal(decodedTopline(result.getScreens()[126]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+        assert.equal(decodedRow(result.getScreens()[126], 23),
+            'Dlvl:1 $:1836 HP:110(152) Pw:241(241) AC:8 Xp:30');
+        assert.deepEqual(result.getCursors()[126], [12, 7, 1]);
+
+        assert.equal(game.level.monsters.some(monster =>
+            monster.mnum === 285), false);
+        assert.equal(game.context.no_of_wizards, 0);
+        assert.equal(game.u.uevent.udemigod, true);
+        assert.equal(game.u.udg_cnt, 99);
+        assert.equal(game._vanquishedCounts.get(285).count, 1);
+        assert.equal(game._vanquishedCounts.get(285).difficulty, 34);
+        const deathSquare = game.level.objects?.[13]?.[7] || [];
+        assert.equal(deathSquare.some(object => object.otyp === CORPSE), false);
+        assert.equal(game.u.uhp, 110);
+        assert.equal(game.u.uhpmax, 152);
+        assert.equal(game.u.umortality, 1);
+        assert.equal(game._knownObjectTypes.has(WAN_DEATH), true);
+        assert.equal(game._deathSurvivedMessagePending, false);
+        assert.equal(game.context.move, 0);
+    });
+
 test('seed0592 death ray revives Wizard then survives its rebound',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
