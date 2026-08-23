@@ -13270,3 +13270,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   magic-missile wand429 at spe6.  The actor ends id86 at (51,3), HP42/42,
   inventory[45,429].  Engine parity advances through input490; input491's wand
   use/beam is the next edge.  Focused/expanded gates pass 5/5 and51/51.
+- Seed52's first ogre wand shot closes the `find_offensive -> mzapwand ->
+  dobuzz` first-experience path.  Input491 discovers wand429 and chooses
+  range11; `mwandexp=0` forces both gnome and hero contacts to miss.  One live
+  bright-blue beam crosses pager inputs491/492/495/498/501, bounces at the
+  cardinal wall, returns, then restores its cells before the later gnome hit.
+  Debug refusal ends HP130/169, mortality2 and udg5; the wand is known/dknown,
+  spe5 and the ogre is experienced.  Engine parity advances through input511;
+  input512's experienced shot remains open.  Focused/expanded gates pass 4/4
+  and52/52.

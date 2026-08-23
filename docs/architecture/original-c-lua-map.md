@@ -33103,3 +33103,44 @@ This section closes ambient ogre weapon/offensive-item construction.  It does
 not close magic-missile selection, zap prose/charge use, beam traversal,
 forced-miss monster contact, hero whiz/bounce pages, outcome3 aggravation, or
 the carrier's 40 animation groups.  Lua owns only physical placement.
+
+## 911. First-use monster wands keep one beam live across tty pages
+
+~~~mermaid
+flowchart TD
+    Phase4["seed52 input491 moved ogre enters phase four"] --> Select["find_offensive selects WAN_MAGIC_MISSILE429"]
+    Select --> Zap["mzapwand publishes iridium-wand line"]
+    Zap --> Learn["visible discovery owns rn2 19 equals4"]
+    Learn --> Range["dobuzz range 7 plus rn2 7 equals11"]
+    Range --> First["mwandexp false selects buzz_force_miss"]
+    First --> Gnome1["paint row; miss gnome zombie"]
+    Gnome1 --> Hero1["paint hero; whizzes by you"]
+    Hero1 --> Wall["paint wall; cardinal bounce"]
+    Wall --> Hero2["return whiz"]
+    Hero2 --> Gnome2["return miss; restore beam cells"]
+    Gnome2 --> Resume["same movemon scan resumes later actors"]
+    Resume --> Death["gnome hit causes debug death/refusal"]
+    Lua["Lua contributes row, wall and actor geometry only"] -.-> Range
+    Lua -.->|"no ownership"| Select
+    Lua -.->|"no ownership"| First
+~~~
+
+`find_offensive()` is evaluated after the moved actor's second distfleeck and
+before ranged weapon fallback.  The JavaScript selector now retains either a
+striking or magic-missile wand as the actor's complete phase-four action.  For
+the reached visible magic-missile wand, discovery and charge use precede beam
+traversal; the first-use `mwandexp` gate forces every contact to miss without
+to-hit RNG.
+
+One async beam transaction remains live while tty pages inputs491,492,495,498
+and501.  Bright-blue horizontal cells accumulate from the ogre to the gnome,
+hero and wall, survive the bounce/return acknowledgements, and are restored
+only after the final gnome miss.  The actor scan then resumes: the gnome's
+five-damage hit reaches HP0, existing debug-death handling restores HP130/169,
+mortality2 and `udg_cnt=5`.  Wand429 is known, dknown, spe5 and the ogre has
+`mwandexp=1`.
+
+This section closes the first-use cardinal forced-miss magic-missile beam and
+its tty/map lifetime.  It does not close experienced hit/damage, monster kill,
+resistance/reflection, diagonal bounce choice, unseen zap prose, other beam
+types, outcome3, or the carrier's 40 animation groups.  Lua owns geometry only.

@@ -89877,3 +89877,61 @@ remain open.  Every process exited.  No full corpus, public-status rewrite,
 hidden judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 21:42 EEST, journal block 2978] {#seed52 #ogre-tyrant #find-offensive #magic-missile-wand #mzapwand #dobuzz #forced-miss #beam #tty #earliest-divergence #source-order #priority}
+
+**Post-constructor frontier:** seed52 is exact through input490.  At input491
+the moved ogre tyrant completes trailing distfleeck, then native
+`find_offensive()` selects wand429.  `mzapwand()` publishes `The ogre king zaps
+an iridium wand!`, new discovery owns `rn2(19)=4`, and `dobuzz()` chooses range
+`7+rn2(7)=11`.  JavaScript has the correct spe6 wand but no generic magic-
+missile use path, so it advances to the winter wolf and gnome zombie instead.
+
+**Native continuation and architecture:** because `mwandexp` is false, the
+first shot uses `buzz_force_miss`: it crosses the horizontal row, misses the
+gnome zombie, whizzes by the hero, paints/bounces at the wall, whizzes by the
+hero on return, and misses the gnome zombie again without hit RNG.  Tty splits
+that one live beam across inputs491,492,495,498 and501 while bright-blue beam
+cells remain painted; only after the final miss are they restored and the
+later gnome attack allowed to publish.
+
+**Prediction and decision:** extend the shared offensive-wand selector with
+WAN_MAGIC_MISSILE, retain the action after moved phase-four setup, and add a
+resumable first-experience beam owner.  Spend/discover the wand and range before
+the first pager, preserve painted cells across acknowledgements, then set
+`mwandexp` and resume the same actor scan.  Experienced hits, monster death,
+reflection/resistance and other elemental beams remain successor blocks.  No
+focused regression, corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-23 21:57 EEST, journal block 2979] {#seed52 #ogre-tyrant #find-offensive #magic-missile-wand #mzapwand #dobuzz #forced-miss #beam #tty #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `df179f2` adds generic
+magic-missile selection beside the existing striking-wand owner, a deferred
+range/charge boundary, and a resumable first-experience cardinal beam.  The
+511-state regression asserts only three short RNG slices, five pager/map
+checkpoints and durable wand/hero state; no flattened transcript is compared.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input511.  Input491 owns discovery `rn2(19)=4`, range `rn2(7)=4`, the
+iridium-wand page and the first painted cells.  Inputs492/495/498/501 preserve
+the gnome miss, two hero whizzes, cardinal bounce, return miss and map cleanup.
+The resumed gnome hit kills the three-HP hero; input510's shared debug refusal
+ends HP130/169, mortality2 and `udg_cnt=5`.  Wand429 is known/dknown at spe5 and
+ogre id86 has `mwandexp=1`.  Full replay advances to **7,042/9,928 RNG calls,
+511/793 screens and 584/793 cursors** in **0.33 seconds** at **137,560,064 bytes
+maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **4/4**
+in **0.43 seconds** at **144,932,864 bytes maximum RSS**.  Expanded controls
+pass **52/52** in **1.35 seconds** at **351,567,872 bytes maximum RSS**.
+Section911 and the ledger map the live beam/tty lifetime.  Input512 experienced
+hit logic, monster death, downstream outcome3, outcome4 and animation remain
+open.  Every process exited.  The initial module-load failure performed no
+session work and was corrected before verification.  No full corpus, public-
+status rewrite, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---
