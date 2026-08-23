@@ -1375,10 +1375,12 @@ function monsterEveryturnEffect(monster, state, random = rn2) {
 }
 
 export function runMonsterEveryturnEffects(
-    monsters, state, random = rn2,
+    monsters, state, random = rn2, { fmonOrdered = false } = {},
 ) {
     const effects = [];
-    for (const monster of monstersInFmonOrder(monsters || [])) {
+    const visits = fmonOrdered
+        ? Array.from(monsters || []) : monstersInFmonOrder(monsters || []);
+    for (const monster of visits) {
         initializeMonsterMovement(monster);
         if (!schedulable(monster)) continue;
         const effect = monsterEveryturnEffect(monster, state, random);
@@ -1614,31 +1616,32 @@ function schedulable(monster) {
 // full ration. Actor behavior is deliberately left to dochug()/dog_move().
 export function scanMonsterMovement(monsters = [], options = {}) {
     const heroMovement = options.heroMovement ?? 0;
-    const state = options.state;
     const rounds = [];
+    const visits = [];
     let somebodyCanMove;
 
     do {
         somebodyCanMove = false;
         const actors = [];
-        const firstRound = rounds.length === 0;
+        const roundVisits = [];
         for (const monster of monstersInFmonOrder(monsters)) {
             initializeMonsterMovement(monster);
             if (!schedulable(monster)) continue;
-            if (firstRound)
-                monsterEveryturnEffect(monster, state, options.random ?? rn2);
+            roundVisits.push(monster);
             if (monster.movement < NORMAL_SPEED)
                 continue;
             monster.movement -= NORMAL_SPEED;
             actors.push(monster);
             if (monster.movement >= NORMAL_SPEED) somebodyCanMove = true;
         }
+        visits.push(roundVisits);
         rounds.push(actors);
         if (heroMovement >= NORMAL_SPEED) break;
     } while (somebodyCanMove);
 
     return {
         rounds,
+        visits,
         actors: rounds.flat(),
         somebodyCanMove,
     };

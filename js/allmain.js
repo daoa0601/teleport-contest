@@ -3439,29 +3439,44 @@ async function executeLiveQuietMonsterScan(monsterScan) {
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
     const actions = [];
-    const laterRoundEffects = new Map();
-    let roundOffset = monsterScan.rounds?.[0]?.length ?? 0;
-    for (let round = 1; round < (monsterScan.rounds?.length ?? 0); round++) {
-        laterRoundEffects.set(
-            roundOffset, (laterRoundEffects.get(roundOffset) || 0) + 1,
-        );
-        roundOffset += monsterScan.rounds[round].length;
-    }
-    const runLaterRoundEffects = actorOffset => {
-        const count = laterRoundEffects.get(actorOffset) || 0;
-        for (let pass = 0; pass < count; pass++) {
-            runMonsterEveryturnEffects(
-                game.level?.monsters || [], game, rn2,
-            );
+    const everyturnVisits = new Map();
+    let actorOffset = 0;
+    for (let round = 0;
+        round < (monsterScan.rounds?.length ?? 0);
+        round++) {
+        const active = monsterScan.rounds[round] || [];
+        const visits = monsterScan.visits?.[round] || active;
+        let visitOffset = 0;
+        for (const actor of active) {
+            const batch = [];
+            while (visitOffset < visits.length) {
+                const visit = visits[visitOffset++];
+                batch.push(visit);
+                if (visit === actor) break;
+            }
+            everyturnVisits.set(actorOffset, [
+                ...(everyturnVisits.get(actorOffset) || []), ...batch,
+            ]);
+            actorOffset++;
         }
-        laterRoundEffects.delete(actorOffset);
+        everyturnVisits.set(actorOffset, [
+            ...(everyturnVisits.get(actorOffset) || []),
+            ...visits.slice(visitOffset),
+        ]);
+    }
+    const runEveryturnVisits = offset => {
+        const visits = everyturnVisits.get(offset) || [];
+        runMonsterEveryturnEffects(
+            visits, game, rn2, { fmonOrdered: true },
+        );
+        everyturnVisits.delete(offset);
     };
     let earlierActorMessageInScan = false;
     let earlierActorPagerInScan = false;
     for (let actorIndex = 0;
         actorIndex < monsterScan.actors.length;
         actorIndex++) {
-        runLaterRoundEffects(actorIndex);
+        runEveryturnVisits(actorIndex);
         const actor = monsterScan.actors[actorIndex];
         // C iter_mons_safe() snapshots pointers, but movemon_singlemon()
         // rechecks DEADMONSTER and mon_offmap when each saved identity is
@@ -5609,7 +5624,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (!movement?.moved) continue;
     }
-    runLaterRoundEffects(monsterScan.actors.length);
+    runEveryturnVisits(monsterScan.actors.length);
     for (const wake of game._deferredMonsterTrapWakes || []) {
         for (const monster of game.level?.monsters || []) {
             if (!monster || (monster.mhp ?? 1) <= 0) continue;
