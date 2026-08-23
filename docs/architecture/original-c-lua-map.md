@@ -32352,3 +32352,49 @@ This section does not close warning without Hallucination, Warn_of_mon versus
 general Warning, multiple warning actors, warnlevel thresholds, invisible or
 detected actors, other docrt callers, swallowed/underwater redraws, or status
 hilites.  Lua contributes only level geometry.
+
+## 894. Monster creation equips survival amulets before armor
+
+~~~mermaid
+flowchart TD
+    Birth["eligible living monster construction"] --> MiscGate["m_initinv: level greater than rn2(100)"]
+    MiscGate --> LifeGate["rnd_misc_item: rn2(40) equals zero"]
+    LifeGate --> Amulet["mongets amulet of life saving"]
+    Amulet --> Wear["m_dowear creation pass begins with W_AMUL"]
+    Wear --> Old{"already wearing cursed/non-guarding amulet?"}
+    Old -->|"yes"| Keep["retain existing amulet"]
+    Old -->|"no"| Scan["scan minvent for life saving, reflection, guarding"]
+    Scan --> Priority{"life saving or reflection found?"}
+    Priority -->|"yes"| Immediate["select immediately"]
+    Priority -->|"no"| Guarding["guarding remains fallback"]
+    Immediate --> Masks["set object owornmask and monster misc_worn_check W_AMUL"]
+    Guarding --> Masks
+    Masks --> Property{"selected amulet type"}
+    Property -->|"life saving"| Revive["mlifesaver can consume it on later death"]
+    Property -->|"reflection"| Reflect["later reflection owner"]
+    Property -->|"guarding"| AC["find_mac subtracts guarding bonus"]
+    Lua["Lua owns no inventory reservoir, wear slot, or amulet property"] -.-> Birth
+~~~
+
+Monster amulets are part of `m_dowear()`, not weapon selection or a later
+gear-reassessment special case.  W_AMUL is visited before shirt, cloak, helm,
+shield, gloves, boots and suit.  `m_dowear_type()` accepts exactly life saving,
+reflection and guarding.  Life saving or reflection wins immediately;
+guarding is used only if neither stronger semantic amulet is encountered.
+Both the object's `owornmask` and monster's `misc_worn_check` carry W_AMUL.
+
+Seed470 selects the rare constructor branch without post-creation mutation.
+The level30 Wizard passes the miscellaneous-inventory gate, rolls the
+one-in-forty life-saving result, and ends with only object202 in inventory.
+All 98 native RNG/screen/cursor states already matched while JavaScript left
+that object unworn, demonstrating why presentation exactness alone cannot
+prove equipment state.  After the wear-slot repair, durable state is
+`owornmask=65536`, `misc_worn_check=65536`, `worn=true`, HP122/122 and iswiz
+identity unchanged.
+
+The amulet of life saving does not alter armor class or construction prose.
+This section establishes equip eligibility and mask ownership only; it does
+not claim later death interception, revival HP/state, message/discovery,
+reflection, guarding AC, multiple or cursed amulet preference, replacement,
+removal, theft, destruction or inventory release.  Lua supplies only the
+level in which construction occurs.

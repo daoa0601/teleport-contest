@@ -13082,3 +13082,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   2/2 and 25/25.  Warning without Hallucination, type/class warning, multiple
   warning actors, warning-level thresholds, alternate docrt callers and
   monster amulet wear remain open.
+- Seed470 closes actual monster W_AMUL construction state.  A serial forced-
+  Wizard seed search found six life-saving carriers; seed470 is minimal with
+  inventory only object202.  Native construction is exact for all 98 recorded
+  RNG/screen/cursor states and source `m_dowear_type(W_AMUL)` deterministically
+  equips life saving or reflection ahead of guarding.  JS previously carried
+  the amulet with zero worn masks.  The shared wear pass now visits uamul
+  first, selects life-saving/reflection/guarding with guarding as fallback,
+  and sets object and monster W_AMUL=65536 plus worn=true.  Presentation/core
+  replay remains exact; the durable test, existing armor unit and expanded
+  fixture-disabled portfolio pass 1/1, 1/1 and 26/26.  Actual monster
+  life-saving consumption/revival, reflection, guarding AC, multiple/cursed
+  amulets, replacement/removal, theft and dropped inventory remain open.

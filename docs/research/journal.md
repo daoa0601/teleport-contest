@@ -88372,3 +88372,50 @@ amulet wear open.  No full corpus, public-status rewrite, hidden judge, push,
 or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 15:21 EEST, journal block 2929] {#seed470 #wizard-of-yendor #monster-inventory #rnd-misc-item #amulet-life-saving #w-amul #m-dowear #m-dowear-type #worn-mask #hidden-state #native-witness #implementation #complete-replay #regression #architecture #ledger #process-safety #priority}
+
+**Carrier selection and evidence boundary:** source `rnd_misc_item()` gives an
+eligible living monster an amulet of life saving on rn2(40)=0 after the
+level-vs-rn2(100) miscellaneous inventory gate.  A bounded forced-Wizard
+seed1--1000 search found carriers133/203/470/533/592/970; seed470 has only
+object202 and therefore isolates W_AMUL selection.  The selector exited in
+**8.01 seconds** at **250,544,128 bytes maximum RSS**.  Native recording took
+**0.31 seconds** at **53,821,440 bytes maximum RSS**.
+
+**Pre-fix contract and hidden divergence:** seed470 already matched all **98
+native RNG/screen/cursor states** because life saving has no construction
+message or armor-class effect.  JavaScript durable state contradicted source:
+the Wizard carried inventory[202], but `owornmask`, `misc_worn_check` and worn
+state were all zero/absent.  Source `m_dowear()` visits W_AMUL first;
+`m_dowear_type()` accepts life saving, reflection and guarding, prefers the
+first life-saving/reflection candidate, and uses guarding only as fallback.
+The native transcript proves the exact constructor/item branch; the C source
+is the authoritative hidden-state witness for the deterministic wear result.
+
+**Implementation and measured effect:** commit `81237c4` adds the exported
+reflection constant, W_AMUL to the shared monster wear order/mask map, and a
+source-shaped amulet selector.  Seed470 retains exact presentation/core replay
+while ending with Wizard HP122/122, iswiz=true, inventory[202], object
+`worn=true`, object `owornmask=65536` and monster
+`misc_worn_check=65536`.  Strict replay took **0.19 seconds** at **123,142,144
+bytes maximum RSS**.  The permanent constructor regression passes **1/1**;
+the existing dwarf creation/reassessment unit remains **1/1**.  The expanded
+fixture-disabled Priest/Wizard portfolio passes **26/26** in **0.71 seconds**
+at **188,268,544 bytes maximum RSS**.  Every selector, recorder, comparator
+and test process exited.
+
+**Map, falsification and next blocker:** exact screens before and after the
+repair falsify using terminal parity as evidence that silent equipment is
+correct.  The one-item carrier falsifies preference/order ambiguity, and no
+Hallucination display debt is involved.  Section894 maps W_AMUL creation and
+later property dispatch; Lua owns neither.  This block closes equip state,
+not actual `mlifesaver()` consumption.  Life-saving death interception and
+revival, reflection, guarding AC, multiple/cursed preferences, replacement,
+removal, theft, destruction and inventory release remain open.  The closest
+successor is a controlled fatal monster event proving the worn amulet is
+consumed and the actor survives.  No full corpus, public-status rewrite,
+hidden judge, push, or publication ran; unrelated dirty files remain
+untouched.
+
+---
