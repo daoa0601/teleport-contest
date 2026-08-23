@@ -11799,6 +11799,53 @@ test('seed5002 fire ray delays outbound, bounce, and returning beam cells',
         }
     });
 
+test('seed0014 cold ray delays its live target before kill and corpse state',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0014-dequa-fountain-explore.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 307),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[306],
+            session.steps[306].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0014 cold ray input306 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[306],
+            session.steps[306].screen,
+            'seed0014 cold ray input306 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[306],
+            session.steps[306].cursor,
+            'seed0014 cold ray input306 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[306];
+        const nativeFrames = session.steps[306].animation_frames;
+        assert.equal(actualFrames.length, nativeFrames.length);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0014 cold ray frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0014 cold ray cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0116 digging beam delays visible and invisible path cells',
     async () => {
         const session = JSON.parse(fs.readFileSync(

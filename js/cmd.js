@@ -13794,6 +13794,10 @@ async function zapColdRay(direction) {
                     || (rayPositionIsValid(previousX, previousY)
                         && cansee(previousX, previousY)))) {
                 paintBeamCell(x, y, dx, dy);
+                // Native dobuzz() delays visible cells before bhitpos,
+                // zap_hit(), zhitm(), and any kill/corpse mutation.  It does
+                // not delay the ray's later out-of-sight continuation cells.
+                await captureRayTraversalFrame();
             }
 
             const monster = rayMonsterAt(x, y);
