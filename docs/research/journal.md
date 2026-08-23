@@ -89016,3 +89016,222 @@ process exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 17:12 EEST, journal block 2946] {#seed5 #death-wand #xkilled #kill-message #tty-backpressure #wizard-death #intervention #rejected-later-evidence #earliest-divergence #native-witness #process-safety #priority}
+
+**Planned intervention carrier and redirection:** seed5 naturally installs the
+short demigod countdown69, survives the rebounded death ray, then waits until
+native input194 runs intervention outcome1 (`You feel vaguely nervous`) and
+resets the countdown with rn2(200)=115.  However, the complete JavaScript replay
+does not reach that boundary validly.  The carrier is rejected for intervention
+work until its earlier death transaction is exact.
+
+**Earliest divergence and source evidence:** input123 matches native's six ray
+calls and miss/bounce pager.  Native stops there.  JavaScript consumes seven
+additional Wizard death/treasure/corpse calls before displaying the same pager.
+On input124, native dismisses miss/bounce, installs `You kill...`, then runs
+`wizdeadorgone`, extra-drop and corpse processing before the later hero hit.
+C `xkilled()` emits the credited kill line before `mondead()`; pending tty
+backpressure can therefore suspend the function before any detach mutation.
+Current `finishHeroMonsterKill()` releases inventory, records Wizard/demigod,
+rolls drops/corpse and vanquish, then emits kill prose at the end.
+
+**Prediction and decision:** move the already-computed credited kill message to
+the beginning of `finishHeroMonsterKill()`, after visibility/name snapshot but
+before Wizard bookkeeping and inventory release.  Remove the later duplicate.
+Seed5 input123 should then end at six calls; input124 should own the seven death
+calls plus hero hit.  Carriers without an older pending line should retain the
+same per-input RNG/screens because their early kill line does not suspend.
+
+**Measured process state and exact gap:** the native 207-state recorder exited
+in **0.09 seconds** at **55,410,688 bytes maximum RSS**.  The pre-edit replay
+matches **3758/4604 RNG calls, 158/207 screens and 207/207 cursors** in **0.29
+seconds** at **129,220,608 bytes**; the bounded locator places the first mismatch
+at input123 call6.  Every process exited.  No intervention implementation,
+focused test, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 17:18 EEST, journal block 2947] {#seed5 #ambient-birth #mountain-nymph #m-initinv #mirror #object-detection #earliest-divergence #source-order #process-safety #priority}
+
+**Post-kill-order replay and next earliest divergence:** moving credited kill/
+conduct before detach makes seed5 exact through input155.  The next mismatch is
+input156 call231 during an ambient mountain-nymph birth.  Native has already
+matched random-monster selection, ID, d(4,8)=10 HP and makemon rn2(5)=1, then
+consumes `rn2(2)=1,rn2(2)=1`; JavaScript jumps directly to `rn2(50)` and is two
+calls short.
+
+**Source owner and prediction:** `makemon.c:m_initinv()` enters S_NYMPH for
+every nymph and unconditionally evaluates two independent gates: mirror on
+`!rn2(2)`, then potion of object detection on `!rn2(2)`.  Both reject in this
+carrier, so no object constructor/state is needed, but both calls remain part
+of the ambient birth contract before defensive/miscellaneous reservoirs.
+`mklev.js` already implements the class arm; `allmain.js`'s separate ambient
+inventory owner lacks it.  Add the same ordered gates with existing addObject.
+
+**Decision and remaining acceptance:** this is independent of udg countdown,
+intervention, tty and Wizard death.  After adding it, input156 should align and
+the next bounded locator will decide whether the intervention carrier reaches
+another constructor/scheduler gap or the countdown itself.  The post-kill-order
+replay exited in **0.26 seconds** at **128,942,080 bytes maximum RSS**; the
+bounded locator and inspection processes also exited.  No focused regression,
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 17:23 EEST, journal block 2948] {#seed5 #demigod #udg-countdown #intervene #nervous #allmain #engraving-order #earliest-divergence #native-witness #process-safety #priority}
+
+**Post-nymph replay and intended boundary:** adding the two rejected nymph
+inventory probes advances seed5 from input156 through input193 exactly.  At
+input194 JavaScript matches all22 preceding monster/global calls, ending with
+engraving-wear `rn2(73)=70`, then stops.  Native consumes `rn2(6)=1` for
+`intervene()`, publishes `You feel vaguely nervous.`, and resets the countdown
+with `rn2(200)=115`.
+
+**Source lifecycle and prediction:** once `u.uevent.udemigod` is true and the
+hero is not invulnerable, allmain decrements nonzero `u.udg_cnt` after hunger,
+exercise, vault/amulet and engraving wear on every allocated global turn.  At
+zero it calls `intervene()` and unconditionally assigns `50+rn2(200)`.  Outside
+Astral, outcomes0 and1 share the nervous line.  JavaScript has countdown
+initialization at Wizard death but no maintenance owner, leaving the durable
+value69 unchanged through every wait.
+
+**Decision and bounded scope:** add countdown maintenance immediately after
+the existing engraving-wear gate in `finishInitialTurnMaintenanceRng()`.  For
+the witnessed which1 branch, append the nervous line and set udg_cnt165.
+Record other outcomes as unresolved rather than mapping curse/aggravate/nasty/
+resurrect to nervous.  No RNG should move before input194.
+
+**Measured effect before implementation:** the post-nymph replay matches
+**4510/4604 RNG calls, 194/207 screens and 207/207 cursors** in **0.27 seconds**
+at **127,516,672 bytes maximum RSS**.  The bounded locator proves input194
+call22 is the next edge.  Every process exited.  No intervention regression,
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 17:29 EEST, journal block 2949] {#seed5 #tengu #innate-teleport #rloc #monster-move #earliest-divergence #source-order #native-witness #process-safety #priority}
+
+**Post-intervention replay and earliest divergence:** countdown maintenance now
+makes seed5 exact through input194, including nervous prose and reset165.  At
+input195 native begins with tengu `distfleeck rn2(5)=2`, teleport gate
+`rn2(5)=0`, branch `rn2(2)=1`, then ten `rnd(79)/rn2(21)` rloc candidate pairs.
+JavaScript consumes the first two calls, marks `tenguTeleportPending`, and
+continues ordinary movement with `rn2(20)`.
+
+**Source boundary and prediction:** `m_move()` tests innate tengu teleport
+before ordinary candidate movement.  For a noncancelled, unrestricted, healthy
+hostile tengu, `rn2(2)!=0` selects `rloc(RLOC_MSG)`; the relocation is the
+complete actor movement and returns through `postmov()` without entering normal
+movement selection.  Existing `randomMonsterRelocation()` already implements
+the physical fifty-attempt rloc transaction and is shared by theft/fleeing
+teleports.  Invoke it here and return its moved coordinates; retain the
+`mnexto()` half as an explicit future branch.
+
+**Decision and remaining evidence:** the carrier's tenth pair should land the
+tengu and make native call23 belong to the next actor's distfleeck.  No tty
+message is expected because the tengu is unseen.  The post-intervention replay
+matches **4519/4604 RNG calls, 195/207 screens and 207/207 cursors** in **0.25
+seconds** at **128,942,080 bytes maximum RSS**; its bounded locator proves
+input195 call2 is the next edge.  All processes exited.  No focused regression,
+corpus, hidden judge, push or publication ran; unrelated dirty files remain
+untouched.
+
+---
+
+### [2026-08-23 17:35 EEST, journal block 2950] {#seed5 #tengu #mnexto #enexto #adjacent-teleport #relocation-message #earliest-divergence #native-witness #process-safety #priority}
+
+**Post-rloc replay and complementary branch:** routing input195 through shared
+`randomMonsterRelocation()` makes that complete actor turn exact.  Input196
+then reaches the same tengu's next one-in-five teleport, but `rn2(2)=0` selects
+`mnexto()` rather than rloc.  Native consumes all three enexto shuffle rings,
+moves the formerly unseen tengu next to the hero and publishes
+`The tengu appears next to you!`; JavaScript returns its explicit unresolved
+marker after the first three calls.
+
+**Source owner and prediction:** `mnexto()` calls `enexto()` around the hero,
+which gathers and shuffles radius1,2,3 coordinate rings before `goodpos()` picks
+the first viable destination.  The moving actor's old square remains occupied
+during selection and must be rejected.  Existing `collectNearbyCoords()` and
+`expulsionDestinationOk()` already implement the physical shuffle/terrain/
+occupancy contract.  Move the tengu to the first valid non-old coordinate,
+return a dedicated deferred relocation marker, repaint endpoints and reuse the
+generic source-aware relocation message in allmain.
+
+**Measured gap:** after the rloc repair the replay matches **4548/4604 RNG
+calls, 195/207 screens and 207/207 cursors** in **0.28 seconds** at
+**128,598,016 bytes maximum RSS**.  The bounded locator places the next edge at
+input196 call3.  No tty backpressure precedes the short arrival line in this
+carrier.  Every process exited.  No focused regression, corpus, hidden judge,
+push or publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 17:42 EEST, journal block 2951] {#regression #udg-countdown #same-turn-maintenance #seed1 #seed31 #correction #hidden-state #source-order #process-safety #priority}
+
+**Focused regression red and correction:** the new intervention owner passes
+seed5 but reopens three pre-intervention hidden-state assertions.  Seed1's first
+death ends at udg98 rather than99; its repeat-death carrier ends97 rather than99;
+seed31 ends125 rather than126.  Screens, RNG and cursors remain exact; only the
+tests' old durable expectations are wrong.
+
+**Source evidence:** `wizdeadorgone()` initializes the counter inside the fatal
+command.  The elapsed action then reaches the same allmain global-maintenance
+block which decrements every nonzero demigod counter after engraving wear.
+Seed1 therefore performs one 99-to98 decrement after refusal; the second fatal
+action decrements again to97.  Seed31's non-reflected, nonfatal-to-hero command
+still consumes its ordinary maintenance in input123, decrementing126 to125.
+The native transcripts expose no extra RNG because countdown decrement is
+deterministic.
+
+**Decision and documentation debt:** update the three durable tests to the
+post-maintenance values.  Preserve the earlier journal conclusions as
+pre-maintenance snapshots and append this correction; architecture/ledger
+follow-ups must state both initialization and final observed values.  The
+focused run is **8/11 passing**, with only these three assertion failures; it
+exited in **0.69 seconds** at **245,760,000 bytes maximum RSS**.  No production
+rollback, corpus, hidden judge, push or publication ran; unrelated dirty files
+remain untouched.
+
+---
+
+### [2026-08-23 17:51 EEST, journal block 2952] {#seed5 #xkilled #ambient-nymph #demigod #intervene #nervous #tengu #rloc #mnexto #native-acceptance #implementation #complete-replay #bounded-regression #architecture #ledger #process-safety}
+
+**Implemented source chain:** commit `d1407a7` closes the earliest owners needed
+to reach intervention honestly.  `finishHeroMonsterKill()` now breaks killer
+conduct and submits credited kill prose before detach while leaving vanquish
+later.  Ambient births run S_NYMPH's two inventory gates.  Global maintenance
+decrements udg after engraving wear, implements nervous outcomes0/1 and resets
+the counter.  Tengu innate teleport now owns both unrestricted rloc and mnexto
+physical transactions plus source-aware relocation presentation.
+
+**Complete native acceptance and durable state:** the 207-state seed5 carrier
+matches **4604/4604 RNG calls, 206/207 scorer screens and 207/207 cursors** in
+**0.26 seconds** at **128,040,960 bytes maximum RSS**.  Input2 is the sole
+screen miss; inputs3--206 match native RNG, decoded screens and cursors.
+Input123 stops before death RNG, input124 resumes death/hero hit, input156 owns
+the 239-call nymph birth, input194 resets countdown165 with nervous prose,
+input195 owns 40-call rloc and input196 owns 63-call mnexto plus visible arrival.
+Final state is HP159/210, mortality1, demigod=true, udg163, Wizard count0 and
+one vanquish; nymph inventory is empty and tengu is (70,16) with inventory333.
+
+**Regression and correction:** the permanent test bounds large input156 by
+length/suffix and input195/196 by length plus small prefix/suffix neighborhoods.
+Focused regression first exposed the stale countdown expectations documented in
+block2951; after correcting them to98/97/125, the shared portfolio passes
+**11/11** fixture-disabled in **0.70 seconds** at **248,102,912 bytes maximum
+RSS**.  The expanded portfolio passes **44/44** in **1.17 seconds** at
+**294,518,784 bytes maximum RSS**.  Every run was one owned process and exited.
+
+**Map and next blocker:** section903 and the ledger map kill tty ownership,
+ambient inventory, countdown placement and both tengu teleport branches; Lua
+owns only good-position geometry.  Intervention outcomes2--5, invulnerability,
+Astral selection, resurrection/nasty/curse effects, tengu failure/control,
+other ambient inventories and animation frames remain open.  No full corpus,
+public-status rewrite, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---

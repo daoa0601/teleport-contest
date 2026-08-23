@@ -13186,3 +13186,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   control and focused/expanded fixture-disabled gates pass 10/10 and43/43.
   Simultaneous/clone/resurrected Wizard counts, intervention and animation
   frames remain open.
+- Correction to the earlier Wizard countdown bullets: 99 and126 are the
+  `wizdeadorgone()` initialization values.  Same-action global maintenance
+  decrements seed1 to98, repeat seed1 to97, and seed31 to125; the durable tests
+  now assert those post-maintenance states.
+- Seed5 closes the first real intervention path plus its prerequisite owners.
+  Pending kill prose suspends `xkilled()` before detach; ambient mountain-nymph
+  birth consumes both rejected inventory gates; global maintenance decrements
+  udg69 after engraving wear until input194 selects nervous outcome1 and resets
+  to165.  Consecutive tengu turns then take exact rloc and mnexto branches,
+  ending adjacent at (70,16), visible with inventory[333], while countdown is
+  163.  All 4,604 RNG calls, all cursors, and all screens from input3 through
+  input206 match; input2 alone is red.  Focused and expanded fixture-disabled
+  gates pass 11/11 and44/44.  Intervention outcomes2--5, invulnerability,
+  Astral selection, tengu mnexto failure/control and animation remain open.

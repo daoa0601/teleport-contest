@@ -32632,8 +32632,9 @@ line and cursor correct while shifting all later random state, demonstrating
 that presentation parity cannot stand in for lifecycle bookkeeping.
 
 After the repair, the Wizard actor is absent, `no_of_wizards` is zero,
-`u.uevent.udemigod` is true, the intervention countdown is99, and the
-vanquished ledger records one difficulty34 Wizard.  No corpse is present at
+`u.uevent.udemigod` is true, the intervention countdown initializes at99 and
+the elapsed action's maintenance decrements it to98, and the vanquished ledger
+records one difficulty34 Wizard.  No corpse is present at
 the former Wizard square because this carrier explicitly takes the failed
 corpse-chance branch.  The ray continues: the kill plus bounce line pages,
 the hero hit pages next, and wizard-mode refusal restores HP110/152.
@@ -32682,8 +32683,9 @@ the ray without a bounce or hero hit.  WAN_DEATH discovery and maintenance
 therefore occupy the remaining seven calls in the same input.
 
 Final state has corpse285 then released object333 at (12,7), no live Wizard,
-Wizard count0, demigod countdown126, one difficulty34 vanquish and unchanged
-hero HP132/132.  This section closes successful Wizard corpse construction,
+Wizard count0, demigod countdown initialized at126 and decremented to125 by
+same-action maintenance, one difficulty34 vanquish and unchanged hero HP132/132.
+This section closes successful Wizard corpse construction,
 one nonempty release pile and closed-door absorption for a wand death ray.  It
 does not close successful treasure drops, pile merging, erosion/terrain side
 effects, secret doors, death breath door disintegration, fire/cold/lightning
@@ -32740,17 +32742,19 @@ supplemental native animation-frame groups.  Lua owns none of the property.
 ~~~mermaid
 flowchart TD
     First["first Wizard death"] --> Init["count to zero; set udemigod; udg_cnt99"]
-    Init --> SecondBirth["forced second true Wizard creation"]
+    Init --> FirstTurn["first survival maintenance decrements countdown to98"]
+    FirstTurn --> SecondBirth["forced second true Wizard creation"]
     SecondBirth --> CountOne["no_of_wizards returns to one"]
     CountOne --> SecondRay["same death wand kills second Wizard"]
     SecondRay --> Detach["m_detach calls wizdeadorgone"]
     Detach --> Decrement["no_of_wizards one to zero"]
     Decrement --> Existing{"udemigod already true?"}
-    Existing -->|"yes"| NoRoll["do not consume rn2 250; preserve udg_cnt99"]
+    Existing -->|"yes"| NoRoll["do not consume rn2 250; preserve current udg_cnt98"]
     NoRoll --> Release["release objects329 and309"]
     Release --> Generic["no-extra-drop rn2 6; no-corpse rn2 3"]
     Generic --> Vanquish["Wizard vanquish count becomes two"]
     Vanquish --> Rebound["ray bounces, hits hero, debug refusal records mortality two"]
+    Rebound --> SecondTurn["second maintenance decrements countdown to97"]
     Lua["Lua contributes only second-Wizard placement and rebound geometry"] -.-> SecondBirth
     Lua -.->|"no ownership"| Existing
 ~~~
@@ -32762,7 +32766,7 @@ no-corpse and hero-hit calls, but no rn2(250).  `wizdeadorgone()` still
 decrements the live count; it simply skips countdown initialization because
 `u.uevent.udemigod` is already true.
 
-Final state keeps `udg_cnt=99`, has `no_of_wizards=0`, records two Wizard
+Final state has `udg_cnt=97`, has `no_of_wizards=0`, records two Wizard
 vanquishes, drops objects329/309 at (14,6), creates no second corpse and ends
 at HP111/152 after the second debug refusal.  This proves that Wizard removal
 bookkeeping is not a one-shot function as a whole: count mutation repeats,
@@ -32774,3 +32778,54 @@ removal, resurrected Wizard identity/state, `intervene()` countdown expiry,
 Wizard migration/escape, multiple corpse/drop combinations, accepted hero
 death, or the twelve supplemental native animation-frame groups.  Lua owns no
 countdown or detach state.
+
+## 903. Demigod intervention sits inside global maintenance before environment
+
+~~~mermaid
+flowchart TD
+    Ray["seed5 rebound ray has pending miss plus bounce"] --> KillLine["xkilled submits credited kill before detach"]
+    KillLine --> Pager["tty suspends before Wizard death RNG"]
+    Pager --> Detach["acknowledgement resumes demigod, drop, corpse and hero-hit owners"]
+    Detach --> Wait["hero survives; repeated rest allocates global turns"]
+    Wait --> Birth["ambient mountain nymph construction"]
+    Birth --> Nymph["m_initinv always probes mirror then object-detection potion"]
+    Nymph --> Turns["each global maintenance decrements nonzero udg_cnt"]
+    Turns --> Zero{"count reaches zero after engraving wear"}
+    Zero --> Which["intervene rn2 6 equals1"]
+    Which --> Nervous["append You feel vaguely nervous"]
+    Nervous --> Reset["udg_cnt equals50 plus rn2 200 equals165"]
+    Reset --> TenguRloc["next tengu teleport chooses rloc with rn2 2 equals1"]
+    TenguRloc --> Random["ten candidate pairs; complete random relocation"]
+    Random --> TenguNext["following turn chooses mnexto with rn2 2 equals0"]
+    TenguNext --> Rings["shuffle radius1,2,3 rings; pick valid adjacent cell"]
+    Rings --> Arrive["repaint and publish The tengu appears next to you"]
+    Lua["Lua contributes level geometry for births and teleport goodpos"] -.-> Birth
+    Lua -.-> Rings
+    Lua -.->|"no ownership"| KillLine
+    Lua -.->|"no ownership"| Which
+~~~
+
+Seed5 exposes four owners which must remain in source order before intervention
+can be accepted.  First, the already-pending miss/bounce line forces
+`xkilled()` to suspend before detach RNG; killer conduct is updated before the
+pager, while vanquish remains after detachment.  Second, an ambient mountain
+nymph always consumes two S_NYMPH inventory gates even when both reject.
+Third, demigod maintenance decrements after engraving wear and calls
+`intervene()` only at zero.  Fourth, the same tengu demonstrates both innate
+teleport destinations on consecutive turns.
+
+At input194 the countdown reaches zero, outcome1 publishes the nervous line,
+and `50+rn2(200)=165` resets the clock.  Input195 takes unrestricted `rloc()`
+and consumes ten random candidate pairs.  Input196 takes `mnexto()`, shuffles
+all three near rings, moves to (70,16) and becomes visible.  Two subsequent
+global turns leave the durable countdown163.  Final state is HP159/210,
+mortality1, one Wizard vanquish, mountain nymph inventory empty, and tengu
+inventory[333].
+
+This section closes intervention outcomes0/1, deterministic countdown/reset,
+one rejected-item nymph birth, unrestricted tengu rloc and successful tengu
+mnexto with visible arrival.  It does not close intervention black-glow/curse,
+aggravate, nasty or resurrection outcomes2--5, invulnerability pause, Astral
+selection, mnexto overcrowding/failure, controlled teleport, visible rloc
+vanish/reappear variants, other ambient class inventories, or the seven native
+animation-frame groups.  Lua owns only physical geometry.
