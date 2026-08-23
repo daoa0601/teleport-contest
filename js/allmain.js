@@ -5159,24 +5159,61 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 );
             }
 
+            const potionGlyph = {
+                ch: potion.flightGlyph || '!',
+                color: NO_COLOR, decgfx: false, attr: 0,
+            };
+            if (!potion.caught && Number.isFinite(potion.preHitHp))
+                game._statusHpOverride = potion.preHitHp;
             let transientFlightCell = null;
+            let lastFlightCursor = null;
             for (const cell of potion.flightPath || []) {
                 if (transientFlightCell)
                     newsym(transientFlightCell.x, transientFlightCell.y);
                 transientFlightCell = null;
                 if (cansee(cell.x, cell.y)) {
                     show_glyph_cell(
-                        cell.x, cell.y, potion.flightGlyph || '!',
-                        NO_COLOR, false,
+                        cell.x, cell.y, potionGlyph.ch,
+                        potionGlyph.color, potionGlyph.decgfx,
+                        potionGlyph.attr,
                     );
                     transientFlightCell = cell;
                 }
+                // m_throw's potion tmp_at path leaves tty at bhitpos even
+                // when that square itself is not visible.
+                const frameCursor = [cell.x, cell.y + 1];
+                await flush_screen(1);
+                game.nhDisplay?.setCursor(...frameCursor);
+                lastFlightCursor = frameCursor;
+                await game.animationFrame?.();
             }
+            delete game._statusHpOverride;
+            const capturePotionImpactFrame = async () => {
+                if (transientFlightCell)
+                    newsym(transientFlightCell.x, transientFlightCell.y);
+                transientFlightCell = null;
+                const impactCell = { x: game.u.ux, y: game.u.uy };
+                if (cansee(impactCell.x, impactCell.y)) {
+                    show_glyph_cell(
+                        impactCell.x, impactCell.y, potionGlyph.ch,
+                        potionGlyph.color, potionGlyph.decgfx,
+                        potionGlyph.attr,
+                    );
+                    transientFlightCell = impactCell;
+                }
+                const impactCursor = lastFlightCursor
+                    || lastDirtyMapCursor();
+                await flush_screen(1);
+                if (impactCursor)
+                    game.nhDisplay?.setCursor(...impactCursor);
+                await game.animationFrame?.();
+            };
             try {
                 if (potion.caught) {
                     await queueTurnMessage(
                         `You catch the ${potion.appearance} potion!`,
                     );
+                    await capturePotionImpactFrame();
                 } else {
                     await queueTurnMessage(potion.impactMessage);
                     // potionhit() applies impact damage after the crash line,
@@ -5188,8 +5225,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game._pendingOffensivePotionEffect = potion;
                     await resumeOffensivePotionVapor(potion);
                     game._pendingOffensivePotionEffect = null;
+                    await capturePotionImpactFrame();
                 }
             } finally {
+                delete game._statusHpOverride;
                 if (transientFlightCell)
                     newsym(transientFlightCell.x, transientFlightCell.y);
             }

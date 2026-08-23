@@ -11644,6 +11644,55 @@ test('seed0030 gas-spore death paints and clears two noxious blast frames',
         }
     });
 
+test('seed0030 sleeping-potion flight spans impact continuation',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0030-ten-diverse-deaths.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 52),
+            storage: new Map(),
+        });
+        for (const step of [50, 51]) {
+            assertRngSliceExact(
+                result.getRngSlices()[step],
+                session.steps[step].rng.map(call =>
+                    call.replace(/\s+@.*$/, '')),
+                `seed0030 sleeping potion input${step} RNG`,
+            );
+            assertScreenExact(
+                result.getScreens()[step],
+                session.steps[step].screen,
+                `seed0030 sleeping potion input${step} screen`,
+            );
+            assert.deepEqual(
+                result.getCursors()[step],
+                session.steps[step].cursor,
+                `seed0030 sleeping potion input${step} cursor`,
+            );
+            const actualFrames = result.getAnimationFramesByStep()[step];
+            const nativeFrames = session.steps[step].animation_frames;
+            assert.equal(actualFrames.length, nativeFrames.length);
+            for (let frame = 0; frame < nativeFrames.length; frame++) {
+                assertScreenExact(
+                    actualFrames[frame].screen,
+                    nativeFrames[frame].screen,
+                    `seed0030 sleeping potion input${step} frame${frame}`,
+                );
+                assert.deepEqual(
+                    actualFrames[frame].cursor,
+                    nativeFrames[frame].cursor,
+                    `seed0030 sleeping potion input${step} cursor${frame}`,
+                );
+            }
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

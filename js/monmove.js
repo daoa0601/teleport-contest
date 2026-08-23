@@ -4039,12 +4039,13 @@ function maybeThrowOffensiveSleepingPotion(
     ];
     const damage = rollOne(2);
     calls.push('rnd(2)');
-    state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
+    const preHitHp = state.u.uhp ?? 1;
+    state.u.uhp = Math.max(0, preHitHp - damage);
     movement.actionCompleted = true;
     return {
         kind: 'offensive-sleeping-potion', object: potion,
         appearance, flightPath: path, flightGlyph: '!',
-        heroTarget: true, caught: false, bottleName, damage,
+        heroTarget: true, caught: false, bottleName, damage, preHitHp,
         impactMessage: `The ${bottleName} crashes on your head and breaks into shards.`,
         evaporationMessage: `The ${appearance} potion evaporates.`,
         deferredVaporEffect: true,
