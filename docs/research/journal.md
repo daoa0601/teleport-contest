@@ -89369,3 +89369,26 @@ frames remain open.  No full corpus, public-status rewrite, hidden judge, push
 or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 18:47 EEST, journal block 2958] {#seed1 #intervention #nasty #rest #forced-noop #rejected-carrier #selector-falsified #native-witness #process-safety #priority}
+
+**Rejected outcome4 carrier:** the JavaScript selector reported seed1 outcome4
+after waiting its post-death countdown98, but native disproves reachability for
+that keyplan.  At input214 an adjacent hostile makes ordinary `.` stop time and
+publish `Are you waiting to get hit?  Use 'm' prefix to force a no-op (to
+rest).`  Every subsequent dot is zero-time, so no intervention call occurs.
+
+**Decision and evidence:** do not use JavaScript `_unresolved` state as native
+branch evidence when command-admission behavior has diverged.  A valid outcome4
+recipe must acknowledge the warning and use repeated `m.` forced no-ops, then
+be rerecorded and replayed from its exact prefix.  The 230-state rejected native
+recording took **0.35 seconds** at **55,099,392 bytes maximum RSS**.  Current
+JavaScript replay is red at **2937/4536 RNG calls, 169/230 screens and 230/230
+cursors**, confirming it is not an intervention witness.  Every process exited.
+
+**Next priority:** retain outcomes3--5 as open and select again with native
+command admission, or move to another source-valid special-detach branch.  No
+production change, focused regression, corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
