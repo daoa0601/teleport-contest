@@ -5113,6 +5113,28 @@ function triggerMonsterTrap(
         movement.actionCompleted = true;
         return event;
     }
+    if (trap.ttyp === RUST_TRAP) {
+        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
+            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
+            && (!monster.minvis || state?.u?.seeInvisible
+                || state?.u?.see_invisible);
+        if (visible) trap.tseen = true;
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        const targetRoll = recordRandom(random, calls, 5);
+        const event = {
+            kind: 'rust-trap', trap, visible, targetRoll,
+            deferredWaterDamage: true,
+            damage: 0, killed: false,
+        };
+        // The selected seed73 actor takes the default body splash with no
+        // lit item or worn torso armor.  Head/arm equipment damage, complete
+        // rusting, and gremlin splitting remain named effect branches.
+        if (targetRoll < 3)
+            event.unimplementedTargetedWaterDamage = true;
+        movement.trap = event;
+        return event;
+    }
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
         // trap.c:mintrap()->trapeffect_pit().  Destination admission and pit
         // contact are separate phases: mfndpos() can select the square, then

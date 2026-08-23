@@ -9928,11 +9928,11 @@ test('seed0073 adjacent haste-self shares permanent speed adjustment',
                 + 'OPTIONS=pettype:none\n'
                 + 'OPTIONS=suppress_alert:3.4.3\n'
                 + 'OPTIONS=symset:DECgraphics\n',
-            moves: fullMoves.slice(0, 108),
+            moves: fullMoves,
             storage: new Map(),
         });
 
-        assert.equal(result.getScreens().length, 109);
+        assert.equal(result.getScreens().length, 127);
         assertRngSliceExact(result.getRngSlices()[106], [
             'rn2(5)=3', 'rn2(5)=0', 'rnd(20)=11', 'd(2,12)=19',
             'rn2(20)=12', 'rn2(3)=1', 'rn2(6)=5', 'rn2(30)=2',
@@ -9954,7 +9954,18 @@ test('seed0073 adjacent haste-self shares permanent speed adjustment',
         assert.ok(wizard);
         assert.equal(wizard.mspeed, MFAST);
         assert.equal(wizard.permspeed, MFAST);
-        assert.equal(game.u.uhp, 141);
+        assertRngSliceExact(result.getRngSlices()[119], [
+            'rn2(5)=1', 'rn2(5)=0', 'rn2(20)=19', 'rn2(5)=3',
+            'rn2(5)=3', 'rn2(5)=0', 'rn2(12)=9', 'rn2(5)=3',
+            'rn2(5)=2', 'rn2(5)=2', 'rnd(20)=16', 'd(2,12)=10',
+            'rn2(20)=14', 'rn2(3)=0', 'rn2(6)=0', 'rn2(30)=22',
+            'rn2(20)=19', 'rn2(20)=8',
+        ], 'seed0073 rust trap and later Wizard attack RNG');
+        assert.equal(decodedTopline(result.getScreens()[119]),
+            '"Destroy the thief, my pets!"  The Wizard of Yendor hits!--More--');
+        assert.equal(decodedRow(result.getScreens()[119], 23),
+            'Dlvl:1 $:1251 HP:100(160) Pw:294(294) AC:8 Xp:30');
+        assert.equal(game.u.uhp, 100);
     });
 
 test('seed0017 Wizard rejects its old square and defers a speed wand',

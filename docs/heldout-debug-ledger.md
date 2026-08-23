@@ -11049,6 +11049,13 @@ attempt: **402 calls**, not a direct two-pass retry.
   rust-trap rn2(5) before mcalcmove, so the carrier is bounded rather than
   called complete.  Slow cancellation, already-fast, equipment and invisible
   message controls remain open.
+- Seed73 is now exact through all 127 states after adding the silent monster
+  rust-trap default branch.  Input119 places rn2(5)=3 between m_move and the
+  next distfleeck; there is no carried lit item, torso armor, iron-golem death
+  or gremlin split.  The replay ends HP100/160 and AC8 with the Wizard still
+  MFAST.  The selected Wizard gate remains 11/11 fixture-disabled.  Visible,
+  targeted, erosive, extinguishing and species-special rust branches remain
+  open.
 - Lamp plus nine singular-gold wishes selects the adjacent
   `peacefuls_respond()` observer-growl arm.  Native C consumes response zero,
   growl zero, flee probe two and duration nineteen; target and observer both

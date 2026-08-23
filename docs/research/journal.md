@@ -87579,3 +87579,36 @@ explicit.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 12:39 EEST, journal block 2910] {#seed73 #rust-trap #monster-trap #postmov #water-damage #complete-replay #native-witness #implementation #regression #architecture #ledger #process-safety #priority}
+
+**Witness and correction to the haste residual:** after haste, seed73 is exact
+through input119 call2.  The next native call is not mcalcmove; raw provenance
+shows rn2(5)=3 in trapeffect_rust_trap after m_move.  JS had no monster
+RUST_TRAP branch, so allocation appeared early.
+
+**Source contract:** mintrap dispatches rust after destination movement and
+before dochug's trailing distfleeck.  The five-way roll targets head, arms, or
+the default body/inventory splash.  Roll3 in this carrier finds no lit item or
+torso armor and no completely-rusting/gremlin species, predicting one silent
+RNG call with no state mutation or prose.
+
+**Implementation and measured effect:** triggerMonsterTrap now owns rust-trap
+visibility, knowledge and target selection.  The selected empty default branch
+returns normally; targeted water damage remains a named future path.  Seed73
+is exact for all **127 RNG/screen/cursor states**, ending HP100/160 and AC8
+with the Wizard permanently fast.  The strict replay took **0.27 seconds** at
+**125,779,968 bytes maximum RSS**.  Eleven selected fixture-disabled Wizard
+controls pass **11/11** in **0.59 seconds** at **145,309,696 bytes maximum
+RSS**; all processes exited.
+
+**Falsification, decision and next blocker:** exact ordering falsifies a
+haste/movement-allocation defect; the missing owner was postmov trap dispatch.
+Section875 maps it; Lua owns none.  The accepted haste carrier is now complete.
+Choose the next unimplemented Wizard branch from the source table, preferring
+an exact-prefix aggravation-effect or alternate clone control over broad
+public-corpus work.  Keep targeted water damage, erosion, golem/gremlin and
+visible trap presentation explicit.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

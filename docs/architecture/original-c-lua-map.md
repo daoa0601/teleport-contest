@@ -31603,3 +31603,35 @@ divergence is an unrelated missing rust-trap effect before mcalcmove, not
 haste scheduling.  Permanent-slow cancellation, already-fast usefulness,
 speed boots, immobile/asleep/unseen suppression, See Invisible and later
 movement-ration consequences remain separate controls.
+
+## 875. Monster rust-trap target roll precedes post-move scheduling
+
+~~~mermaid
+flowchart TD
+    Move["m_move selects rust-trap destination"] --> Post["postmov calls mintrap"]
+    Post --> Learn["monster/trap knowledge updates"]
+    Learn --> Roll["trapeffect_rust_trap rn2(5)"]
+    Roll --> Head["0: head armor water damage"]
+    Roll --> Left["1: shield, bimanual weapon, gloves"]
+    Roll --> Right["2: weapon then gloves"]
+    Roll --> Body["3/4: lit inventory and cloak/suit/shirt splash"]
+    Body --> Species["iron golem death or gremlin split checks"]
+    Species --> Dist["dochug trailing distfleeck"]
+    Dist --> Allocation["later mcalcmove allocation"]
+    Lua["Lua owns no trap or movement phase"] -.-> Post
+~~~
+
+Seed73 input119's moved actor enters a rust trap.  Source spends rn2(5)=3
+inside trapeffect_rust_trap before the next distfleeck and mcalcmove.  The
+selected default body splash has no lit inventory or worn torso target and
+the actor is neither an iron golem nor gremlin, so it changes no object or HP
+state and emits no visible line.
+
+JavaScript now records a real rust-trap event, marks trap knowledge, and owns
+the five-way target draw in postmov order.  The selected empty default branch
+is complete; targeted water damage remains explicitly named.  With that call,
+all 127 seed73 states are exact, ending HP100/160 and AC8 while the Wizard
+remains permanently fast.  Visible gush prose, all armor/weapon targets,
+water_damage erosion/proof/grease, lit-item extinguishing, completely-rusting
+forms, gremlin splitting, mounts and known-trap avoidance remain separate
+controls.
