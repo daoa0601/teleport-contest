@@ -19062,6 +19062,40 @@ test('seed0002 untraversed branch stairs retain ordinary stair color', async () 
     }
 });
 
+test('seed0002 pickup pager defers its encumbrance status commit', async () => {
+    const session = JSON.parse(fs.readFileSync(
+        new URL('../sessions/seed0002-healer-reflection-drummer.session.json',
+            import.meta.url),
+        'utf8',
+    )).segments[0];
+
+    const result = await runSegment({
+        ...session, moves: session.moves.slice(0, 223),
+    });
+    for (let step = 220; step <= 222; step++) {
+        assertRngSliceExact(
+            result.getRngSlices()[step],
+            session.steps[step].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            `seed0002 pickup input${step} RNG`,
+        );
+        assertScreenExact(
+            result.getScreens()[step],
+            session.steps[step].screen,
+            `seed0002 pickup input${step} screen`,
+        );
+        assert.deepEqual(
+            result.getCursors()[step],
+            session.steps[step].cursor,
+            `seed0002 pickup input${step} cursor`,
+        );
+    }
+    assert.equal(decodedRow(result.getScreens()[221], 23),
+        'Dlvl:1 $:1225 HP:13(13) Pw:5(5) AC:8 Xp:1');
+    assert.equal(decodedRow(result.getScreens()[222], 23),
+        'Dlvl:1 $:1225 HP:13(13) Pw:5(5) AC:8 Xp:1 Burdened');
+});
+
 test('seed0002 overview menu preserves map cells west of its overlay', async () => {
     const session = JSON.parse(fs.readFileSync(
         new URL('../sessions/seed0002-healer-reflection-drummer.session.json', import.meta.url),
