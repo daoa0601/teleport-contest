@@ -177,6 +177,7 @@ const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
+const WAN_MAGIC_MISSILE = 429;
 const G_UNIQ = 0x1000;
 const S_GOLEM = 55;
 const AD_RUST = 24;
@@ -4027,8 +4028,8 @@ function heroHasMagicResistance(state) {
 // mzapwand() presents the zap line before charge decrement and mbhit()'s
 // rn1(8,6).  Keep the post-line work deferred so tty can suspend the same
 // actor transaction on an older topline.
-function maybeBeginOffensiveStrikingWand(
-    monster, state, random, calls,
+function maybeBeginOffensiveWand(
+    monster, state, random, calls, { linedUp = undefined } = {},
 ) {
     const flags1 = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (monster?.mpeaceful || state?.u?.uswallow
@@ -4036,15 +4037,17 @@ function maybeBeginOffensiveStrikingWand(
         return { probed: false, action: null };
     }
 
-    const linedUp = hostileLinedUp(monster, state, random, calls);
+    const aimed = linedUp === undefined
+        ? hostileLinedUp(monster, state, random, calls) : linedUp;
     const heroMagicResistance = heroHasMagicResistance(state);
-    if (!linedUp || monster?.seenMagicResistance) {
+    if (!aimed || monster?.seenMagicResistance) {
         return { probed: true, action: null };
     }
 
     const inventory = monster?.minvent || monster?.inventory || [];
     const wand = inventory.find(object =>
-        object?.otyp === WAN_STRIKING && (object.spe ?? 0) > 0);
+        [WAN_MAGIC_MISSILE, WAN_STRIKING].includes(object?.otyp)
+        && (object.spe ?? 0) > 0);
     if (!wand) return { probed: true, action: null };
 
     const heroX = state?.u?.ux;
@@ -4055,7 +4058,9 @@ function maybeBeginOffensiveStrikingWand(
     return {
         probed: true,
         action: {
-            kind: 'offensive-wand-striking',
+            kind: wand.otyp === WAN_MAGIC_MISSILE
+                ? 'offensive-wand-magic-missile'
+                : 'offensive-wand-striking',
             object: wand,
             targetX,
             targetY,
@@ -4064,6 +4069,7 @@ function maybeBeginOffensiveStrikingWand(
             heroTarget: targetX === heroX && targetY === heroY
                 && distmin(monster.mx, monster.my, heroX, heroY) === 1,
             heroMagicResistance,
+            firstShotForcedMiss: !monster.mwandexp,
             deferredEffect: true,
         },
     };
@@ -4075,7 +4081,7 @@ function beginHeroAttackOrStrikingWand(
     const threshold = monsterAttackThreshold(
         monster, state, rollOne, calls,
     );
-    const offensive = maybeBeginOffensiveStrikingWand(
+    const offensive = maybeBeginOffensiveWand(
         monster, state, random, calls,
     );
     if (offensive.action) return { offensiveWand: offensive.action };
@@ -8597,6 +8603,17 @@ function finishDochugAfterMovement(
         distantPhaseFourAttackSetup(
             monster, movement, state, random, rollOne, calls,
         );
+        if (movement.phaseFourOffensiveEvaluated) {
+            const offensive = maybeBeginOffensiveWand(
+                monster, state, random, calls,
+                { linedUp: movement.phaseFourOffensiveLinedUp },
+            );
+            if (offensive.action) {
+                movement.offensiveWand = offensive.action;
+                movement.actionCompleted = true;
+                return;
+            }
+        }
         const offensivePotion = maybeThrowOffensiveSleepingPotion(
             monster, movement, state, random, rollOne, calls,
         );
@@ -9146,6 +9163,19 @@ export function resumeDeferredMonsterStrikingWand(
             offensive.identifiesType = false;
         }
     }
+    return offensive;
+}
+
+export function resumeDeferredMonsterMagicMissileWand(
+    action, state, random = rn2,
+) {
+    const offensive = action?.movement?.offensiveWand;
+    if (offensive?.kind !== 'offensive-wand-magic-missile'
+        || !offensive.deferredEffect) return null;
+
+    offensive.deferredEffect = false;
+    offensive.object.spe = Math.max(0, (offensive.object.spe ?? 1) - 1);
+    offensive.range = 7 + recordRandom(random, action.calls, 7);
     return offensive;
 }
 

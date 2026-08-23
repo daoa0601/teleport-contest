@@ -61,7 +61,8 @@ import {
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import {
-    BOLT_LIM, COLNO, ROWNO, DOOR, HOLE, SPIKED_PIT,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
+    STONE, ZAP_POS,
     VAULT, SHOPBASE, ROOMOFFSET,
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
@@ -111,6 +112,7 @@ import {
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     resumeDeferredMonsterRollingBoulder,
+    resumeDeferredMonsterMagicMissileWand,
     resumeDeferredMonsterStrikingWand,
     finishDeferredMonsterStrikingWandHit,
     relocateMonsterAfterTheft,
@@ -3278,6 +3280,93 @@ async function waterDemonAdjacentAttack(monster) {
     };
 }
 
+function monsterBeamPositionIsValid(x, y) {
+    return x >= 1 && x < COLNO && y >= 0 && y < ROWNO;
+}
+
+function monsterBeamPositionIsOpen(x, y) {
+    if (!monsterBeamPositionIsValid(x, y)) return false;
+    const location = game.level?.at(x, y);
+    const closedDoor = location?.typ === DOOR
+        && !!(location.doormask & (D_CLOSED | D_LOCKED));
+    return !!location && ZAP_POS(location.typ) && !closedDoor;
+}
+
+function monsterBeamTargetAt(x, y, source) {
+    return game.level?.monsters?.find(monster => monster !== source
+        && (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)
+        || null;
+}
+
+// C muse.c:use_offensive()->buzz_force_miss()->dobuzz(), first-wand-use
+// branch.  The beam stays painted while tty pages each collision message;
+// later actors cannot run until this async source transaction has completed.
+async function resolveFirstMonsterMagicMissileBeam(action) {
+    const offensive = action?.movement?.offensiveWand;
+    if (offensive?.kind !== 'offensive-wand-magic-missile'
+        || !offensive.firstShotForcedMiss) return offensive || null;
+
+    let x = action.monster.mx;
+    let y = action.monster.my;
+    let dx = offensive.rayDx;
+    let dy = offensive.rayDy;
+    let range = offensive.range;
+    const beamCells = new Map();
+
+    const paintBeamCell = (beamX, beamY) => {
+        beamCells.set(`${beamX},${beamY}`, { x: beamX, y: beamY });
+        const glyph = dy === 0 ? 'q' : dx === 0 ? 'x'
+            : dx === dy ? '\\' : '/';
+        show_glyph_cell(
+            beamX, beamY, glyph, CLR_BRIGHT_BLUE, dx === 0 || dy === 0,
+        );
+    };
+
+    while (range-- > 0) {
+        const previousX = x;
+        const previousY = y;
+        x += dx;
+        y += dy;
+        const valid = monsterBeamPositionIsValid(x, y);
+        const location = valid ? game.level?.at(x, y) : null;
+
+        if (valid && location?.typ !== STONE) {
+            if (cansee(x, y)
+                && (monsterBeamPositionIsOpen(x, y)
+                    || (monsterBeamPositionIsValid(previousX, previousY)
+                        && cansee(previousX, previousY)))) {
+                paintBeamCell(x, y);
+            }
+            const target = monsterBeamTargetAt(x, y, action.monster);
+            if (target && cansee(x, y)) {
+                await queueTurnMessage(
+                    `The magic missile misses the ${
+                        quietMonsterName(target)
+                    }.`,
+                );
+            } else if (x === game.u?.ux && y === game.u?.uy && range >= 0) {
+                await queueTurnMessage('The magic missile whizzes by you!');
+            }
+        }
+
+        if (!monsterBeamPositionIsOpen(x, y)) {
+            range--;
+            if (range > 0
+                && monsterBeamPositionIsValid(previousX, previousY)
+                && cansee(previousX, previousY)) {
+                await queueTurnMessage('The magic missile bounces!');
+            }
+            // This reached first-shot carrier is cardinal.  Native dobuzz()
+            // reverses a cardinal beam without a bounce-direction RNG draw.
+            dx = -dx;
+            dy = -dy;
+        }
+    }
+    for (const cell of beamCells.values()) newsym(cell.x, cell.y);
+    offensive.beamCompleted = true;
+    return offensive;
+}
+
 async function executeLiveQuietMonsterScan(monsterScan) {
     // Bounded Oracle witness: after the visible soldier wield transaction,
     // C's next hero-movement/vision boundary advances one presentation draw
@@ -3773,6 +3862,53 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             }
             if (movement.deferredHeroWield)
                 resumeDeferredHeroAttackAfterWield(action, game);
+        }
+        if (movement?.offensiveWand?.kind
+            === 'offensive-wand-magic-missile') {
+            const offensive = movement.offensiveWand;
+            let offensiveLineDismissal;
+            if (actorWasSeen || monsterIsSeen) {
+                offensive.object.dknown = true;
+                recordObjectEncounter(offensive.object.otyp);
+                offensiveLineDismissal = await queueTurnMessage(
+                    `${visibleMonsterSubject(monster)} zaps ${
+                        distantMonsterObjectName(offensive.object)
+                    }!`,
+                );
+            } else if (!game.deaf) {
+                const range = couldsee(monster.mx, monster.my)
+                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
+                const proximity = dist2(
+                    monster.mx, monster.my,
+                    game.u?.ux ?? monster.mx,
+                    game.u?.uy ?? monster.my,
+                ) <= range * range ? 'nearby' : 'distant';
+                offensiveLineDismissal = await queueTurnMessage(
+                    `You hear a ${proximity} zap.`,
+                );
+                offensive.object.dknown = false;
+            }
+            if (offensiveLineDismissal !== null
+                && offensiveLineDismissal !== undefined) {
+                earlierActorPagerInScan = true;
+            }
+
+            if (game._occupation)
+                game._interruptedMultiActionDebt = true;
+            game._occupation = null;
+            game._cannedCommands = [];
+            if (game._runState) stopRun(game);
+
+            if ((actorWasSeen || monsterIsSeen)
+                && !game._knownObjectTypes?.has(offensive.object.otyp)) {
+                exerciseAttribute(2, true);
+                recordObjectKnowledge(offensive.object.otyp);
+            }
+            resumeDeferredMonsterMagicMissileWand(action, game);
+            await resolveFirstMonsterMagicMissileBeam(action);
+            monster.mwandexp = true;
+            earlierActorMessageInScan = true;
+            movement = action.movement;
         }
         if (movement?.offensiveWand?.kind === 'offensive-wand-striking') {
             const offensive = movement.offensiveWand;

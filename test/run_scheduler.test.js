@@ -10724,6 +10724,80 @@ test('seed0052 ambient ogre tyrant receives ranked armament',
         assert.equal(game.u.udg_cnt, 40);
     });
 
+test('seed0052 first magic-missile wand shot stays forced-miss',
+    async () => {
+        const fullMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizgenesis\nhostile Wizard of Yendor\ny'
+            + '#wizwish\nwand of death\nzkh   '
+            + 'm. '.repeat(222);
+        const result = await runSegment({
+            seed: 52,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: fullMoves.slice(0, 510),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 511);
+        assertRngSliceExact(result.getRngSlices()[491], [
+            'rn2(5)=1', 'rn2(32)=17', 'rn2(5)=0',
+            'rn2(5)=0', 'rn2(8)=5', 'rn2(5)=3',
+            'rn2(5)=1', 'rn2(32)=14', 'rn2(5)=4',
+            'rn2(19)=4', 'rn2(7)=4',
+        ], 'seed0052 first magic-missile opening RNG');
+        assertRngSliceExact(result.getRngSlices()[501], [
+            'rn2(5)=3', 'rn2(24)=20', 'rn2(28)=7',
+            'rn2(32)=23', 'rn2(20)=7', 'rn2(5)=4',
+            'rn2(5)=1', 'rnd(20)=17', 'd(1,5)=5',
+            'rn2(3)=1', 'rn2(6)=1',
+        ], 'seed0052 post-beam gnome attack RNG');
+        assertRngSliceExact(result.getRngSlices()[510], [
+            'rn2(12)=7', 'rn2(12)=5', 'rn2(12)=4',
+            'rn2(12)=11', 'rn2(12)=2', 'rn2(12)=8',
+            'rn2(12)=3', 'rn2(12)=7', 'rn2(12)=8',
+            'rn2(25)=21', 'rn2(100)=48', 'rn2(400)=113',
+            'rn2(20)=2', 'rn2(67)=56',
+        ], 'seed0052 debug survival tail RNG');
+
+        const pageChecks = [
+            [491, 'The ogre king zaps an iridium wand!--More--',
+                'x@qqqqqqO~', [43, 0, 1]],
+            [492, 'The magic missile misses the gnome zombie.--More--',
+                'xqqqqqqqO~', [50, 0, 1]],
+            [495, 'The magic missile whizzes by you!  The magic missile bounces!--More--',
+                'qqqqqqqqO~', [69, 0, 1]],
+            [498, 'The magic missile whizzes by you!--More--',
+                'qqqqqqqqO~', [41, 0, 1]],
+            [501, 'The magic missile misses the gnome zombie.  The gnome zombie hits!--More--',
+                'x@Z~~%~!O~', [74, 0, 1]],
+        ];
+        for (const [step, topline, mapSlice, cursor] of pageChecks) {
+            assert.equal(decodedTopline(result.getScreens()[step]), topline);
+            assert.equal(
+                decodedRow(result.getScreens()[step], 9).slice(3, 13),
+                mapSlice,
+            );
+            assert.deepEqual(result.getCursors()[step], cursor);
+        }
+        assert.equal(decodedTopline(result.getScreens()[510]),
+            "OK, so you don't die.  You survived that attempt on your life.");
+        assert.equal(decodedRow(result.getScreens()[510], 23),
+            'Dlvl:1 $:1965 HP:130(169) Pw:264(264) AC:8 Xp:30');
+
+        const ogre = game.level.monsters.find(monster =>
+            monster.m_id === 86);
+        assert.ok(ogre);
+        const wand = ogre.minvent.find(object => object.otyp === 429);
+        assert.ok(wand);
+        assert.equal(wand.spe, 5);
+        assert.equal(wand.dknown, true);
+        assert.equal(ogre.mwandexp, true);
+        assert.equal(game._knownObjectTypes.has(429), true);
+        assert.equal(game.u.uhp, 130);
+        assert.equal(game.u.umortality, 2);
+        assert.equal(game.u.udg_cnt, 5);
+    });
+
 test('seed0031 Wizard corpse and inventory precede death-ray door absorption',
     async () => {
         const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
