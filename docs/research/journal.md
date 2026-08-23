@@ -89613,3 +89613,52 @@ process exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 20:08 EEST, journal block 2967] {#seed12 #ambient-birth #quantum-mechanic #schrodinger-box #m-initinv #rejected-intervention-carrier #earliest-divergence #native-witness #process-safety #priority}
+
+**Rejected nasty candidate and earliest divergence:** the native-compatible
+selector nominated seed12 outcome4, but native selects nervous outcome1 at
+input731.  The nasty claim is rejected.  Full replay first diverges at input296
+call254 when ambient quantum mechanic mnum210/id83 completes HP/sex state.
+
+**Source owner and prediction:** S_QUANTMECH always evaluates `rn2(20)` before
+checking whether the actor is PM_QUANTUM_MECHANIC.  Native value17 rejects the
+Schrödinger-box branch, then shared defensive/misc gates follow.  JavaScript
+skips the class probe and enters rn2(50).  Copy the full mklev owner: on a zero
+for actual quantum mechanic, create an uninitialized large box containing a
+housecat corpse with rot timer suppressed; the reached rejection consumes only
+the probe.
+
+**Measured evidence and decision:** pre-edit 793-state replay matches
+**5024/13287 RNG calls, 301/793 screens and 783/793 cursors** in **0.45 seconds**
+at **181,223,424 bytes maximum RSS**.  Fix this ambient class and relocalize;
+the later nervous line is not outcome4 evidence.  Every process exited.  No
+focused regression, corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-23 20:19 EEST, journal block 2968] {#seed12 #ambient-birth #quantum-mechanic #schrodinger-box #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `5c81c06` adds the ambient
+S_QUANTMECH probe and complete zero-branch container owner.  The 297-state
+regression compares input296 length265 plus its bounded 24-call suffix, screen/
+cursor and durable mechanic state; it does not claim the later seed12 session.
+
+**Evidence and controls:** JavaScript/native are exact from input3 through
+input296 RNG, decoded screens and cursors.  Prefix state is mechanic id83/mnum210
+at (47,6), HP36, inventory[308], hero HP140/159 and udg145.  Full replay moves
+the earliest edge to input317's independent Newt hit/miss state and remains red
+at **5473/13287 RNG calls, 316/793 screens and 763/793 cursors**; native outcome1
+therefore remains rejected as outcome4 evidence.  Focused controls pass
+**15/15** fixture-disabled in **0.88 seconds** at **257,359,872 bytes maximum
+RSS**.  Expanded controls pass **48/48** in **1.35 seconds** at **327,663,616
+bytes maximum RSS**.  Every runner was singly owned and exited.
+
+**Map and next blocker:** section907 and the ledger map class-probe/container
+ownership; Lua owns only placement.  Native box success, later Newt combat,
+outcomes3--4, genetic-engineer behavior and animation remain open.  No full
+corpus, public-status rewrite, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---

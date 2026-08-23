@@ -13233,3 +13233,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   (34,18), trap knowledge bit14, HP147 and udg106.  Focused/expanded fixture-
   disabled gates pass 14/14 and47/47.  Moved/visible/restricted/pet/controlled
   teleport-trap branches and the later seed13 intervention remain open.
+- Seed12 was rejected as a nasty-intervention carrier: native later selects
+  nervous outcome1 and the full 793-state session remains non-exact after the
+  accepted prefix.  Input296 independently closes ambient S_QUANTMECH's
+  `rn2(20)=17` rejection before the defensive reservoir.  The quantum mechanic
+  ends id83 at (47,6), HP36, inventory[308]; hero HP140/159 and udg145.  The
+  zero branch is implemented as a real large box/housecat-corpse container but
+  still lacks a native success witness.  Focused/expanded fixture-disabled
+  gates pass 15/15 and48/48.  Box success/disclosure, genetic engineer, later
+  Newt combat, outcome4 and animation remain open.

@@ -32958,3 +32958,38 @@ complete boundary.  It does not close a moved destination, visible vanish/
 arrival prose, restricted teleport levels, once-only trap removal, controlled
 monster teleport, pet/leash handling, trap-chain effects, or seed13's later
 non-exact intervention trajectory.  Lua owns only trap/terrain geometry.
+
+## 907. Ambient quantum mechanics probe the box before shared reservoirs
+
+~~~mermaid
+flowchart TD
+    Birth["seed12 ambient mnum210 quantum mechanic birth"] --> Core["ID, HP36, sex and sleep state"]
+    Core --> Class["m_initinv enters S_QUANTMECH"]
+    Class --> Probe["rn2 20 equals17"]
+    Probe --> Reject["Schrodinger-box branch rejected"]
+    Reject --> Defensive["shared rn2 50 defensive reservoir"]
+    Defensive --> Item["constructor yields object308"]
+    Item --> Misc["shared misc, saddle and maintenance tails"]
+    Success["unreached zero for PM_QUANTUM_MECHANIC"] --> Box["large box with housecat corpse, spe1, no rot timer"]
+    Probe -.-> Success
+    Lua["Lua contributes ambient placement geometry only"] -.-> Birth
+    Lua -.->|"no ownership"| Probe
+    Lua -.->|"no ownership"| Box
+~~~
+
+Seed12 input296 proves the S_QUANTMECH probe is class-wide and ordered before
+species selection.  Genetic engineers would consume the same rn2(20) but can
+never receive the box; only actual quantum mechanic mnum210 takes a zero into
+the contained-object transaction.  The reached value17 rejects, then the
+ordinary reservoirs leave object308 in inventory.
+
+The JavaScript ambient owner also implements the zero branch as a real large
+box containing a housecat corpse, with `spe=1` and its rot timer suppressed,
+matching the existing mklev owner.  The bounded prefix ends at input296 with
+mechanic id83 at (47,6), HP36, inventory[308], hero HP140/159 and udg145.
+
+This section closes the rejected ambient box probe and establishes the success
+constructor owner structurally.  It does not provide a native zero-branch
+witness, container weight/timeout/disclosure behavior, genetic-engineer control,
+later seed12 Newt combat, the rejected nasty-intervention claim, or the four
+native animation-frame groups.  Lua owns placement only.
