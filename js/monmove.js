@@ -8131,7 +8131,7 @@ export async function beginDeferredHeroCloneWizard(action, state) {
     // after fake-Amulet and wizapp state have been installed.
     newsym(clone.mx, clone.my);
     const subject = hallucinating
-        ? randomDisplayMonsterSubject() : 'The Wizard of Yendor';
+        ? randomDisplayMonsterSubject(true) : 'The Wizard of Yendor';
     return {
         clone,
         message: `${subject} suddenly appears next to you!`,

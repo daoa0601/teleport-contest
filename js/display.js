@@ -1127,9 +1127,9 @@ export function randomDisplayMonsterName() {
 
 // C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
 // names suppress the article before the result is sentence-capitalized.
-export function randomDisplayMonsterSubject() {
+export function randomDisplayMonsterSubject(forceThe = false) {
     const { name, personal } = randomDisplayMonsterIdentity();
-    const subject = personal ? name : `the ${name}`;
+    const subject = personal && !forceThe ? name : `the ${name}`;
     return subject.charAt(0).toUpperCase() + subject.slice(1);
 }
 

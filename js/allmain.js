@@ -2323,7 +2323,8 @@ function projectedMonsterName(monster) {
 function visibleMonsterSubject(monster) {
     const hallucinating = game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0;
-    if (hallucinating) return randomDisplayMonsterSubject();
+    if (hallucinating)
+        return randomDisplayMonsterSubject(monster?.mnum === 285);
     if (monster?.m_ap_type === M_AP_MONSTER)
         return `The ${projectedMonsterName(monster)}`;
     return monster?.isshk

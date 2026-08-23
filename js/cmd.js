@@ -112,7 +112,9 @@ import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     findArmorClass, heroIsDisplaced,
 } from './armor.js';
-import { findMonsterArmorClass } from './monworn.js';
+import {
+    findMonsterArmorClass, snapshotMonsterCreationWearNames,
+} from './monworn.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
@@ -6190,16 +6192,27 @@ async function wizGenesis() {
             monster.mpeaceful = 0;
             delete monster.malign;
         }
-        // create_particular_creation() applies requested sleep after ordinary
-        // makemon() construction and before the monster is projected.
+        // create_particular_creation() applies requested sleep after makemon
+        // has announced the actor.  The JS constructor returns without those
+        // presentation boundaries, so replay them here in source order.
         if (sleeping) monster.msleeping = 1;
+        newsym(monster.mx, monster.my);
+        const hallucinating = heroHallucinating();
+        if (hallucinating) {
+            snapshotMonsterCreationWearNames(
+                monster, () => randomDisplayMonsterName(),
+            );
+        }
         newsym(monster.mx, monster.my);
         if (canSpotMonster(monster)) {
             const clericInstance = monster.ispriest || monster.isminion
                 ? visiblePriestName(monster) : null;
             const name = MONSTER_NAME[mnum];
             const subject = clericInstance
-                || (mnum === 285 ? `The ${name}` : null)
+                || (mnum === 285
+                    ? (hallucinating
+                        ? randomDisplayMonsterSubject(true) : `The ${name}`)
+                    : null)
                 || `${indefiniteArticle(name)} ${name}`;
             await pline(
                 `${subject[0].toUpperCase()}${subject.slice(1)} appears next to you.`,

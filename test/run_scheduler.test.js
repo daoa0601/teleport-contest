@@ -9763,6 +9763,87 @@ async function runHallucinatedDeathTouch(seed, end) {
     });
 }
 
+test('seed0014 Hallucinated forced Wizard genesis preserves wear snapshots',
+    async () => {
+        const moves = '  n#levelchange\n30\n' + ' '.repeat(40)
+            + '#wizintrinsic\nh\n '
+            + '#wizgenesis\nhostile Wizard of Yendor\ny '
+            + 'm.    m.    m.    m.        ';
+        const result = await runSegment({
+            seed: 14,
+            datetime: '20000110090000',
+            nethackrc: HALLUCINATED_DEATH_TOUCH_RC,
+            moves: moves.slice(0, 135),
+            storage: new Map(),
+        });
+
+        assert.equal(result.getScreens().length, 136);
+        assertRngSliceExact(result.getRngSlices()[75], [],
+            'seed0014 pre-genesis Hallucination activation RNG');
+        assert.equal(decodedTopline(result.getScreens()[75]),
+            'Oh wow!  Everything looks so cosmic!--More--');
+        assert.deepEqual(result.getCursors()[75], [44, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[114], [
+            'rn2(8)=4', 'rn2(7)=1', 'rn2(6)=3', 'rn2(5)=3',
+            'rn2(4)=2', 'rn2(3)=2', 'rn2(2)=0',
+            'rn2(16)=11', 'rn2(15)=13', 'rn2(14)=1', 'rn2(13)=4',
+            'rn2(12)=0', 'rn2(11)=0', 'rn2(10)=4', 'rn2(9)=3',
+            'rn2(8)=7', 'rn2(7)=1', 'rn2(6)=2', 'rn2(5)=1',
+            'rn2(4)=3', 'rn2(3)=1', 'rn2(2)=0',
+            'rn2(17)=6', 'rn2(16)=14', 'rn2(15)=5', 'rn2(14)=12',
+            'rn2(13)=10', 'rn2(12)=6', 'rn2(11)=6', 'rn2(10)=6',
+            'rn2(9)=1', 'rn2(8)=6', 'rn2(7)=4', 'rn2(6)=0',
+            'rn2(5)=0', 'rn2(4)=3', 'rn2(3)=2', 'rn2(2)=0',
+            'rnd(2)=2', 'd(30,8)=131', 'rn2(50)=0', 'rn2(11)=3',
+            'rnd(2)=2', 'rn2(4)=3', 'rn2(100)=49', 'rn2(100)=83',
+        ], 'seed0014 Hallucinated forced-Wizard construction RNG');
+        assert.equal(decodedTopline(result.getScreens()[114]),
+            'The pit fiend appears next to you.');
+        assert.deepEqual(result.getCursors()[114], [11, 3, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[123], [
+            'rn2(5)=1', 'rn2(5)=2', 'rnd(20)=12', 'd(2,12)=11',
+            'rn2(20)=10', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=20',
+            'rn2(2)=0', 'rn2(300)=280', 'd(16,6)=63',
+            'rn2(8)=2', 'rn2(7)=0', 'rn2(6)=5', 'rn2(5)=4',
+            'rn2(4)=1', 'rn2(3)=1', 'rn2(2)=0',
+            'rn2(16)=1', 'rn2(15)=12', 'rn2(14)=12', 'rn2(13)=6',
+            'rn2(12)=8', 'rn2(11)=9', 'rn2(10)=9', 'rn2(9)=2',
+            'rn2(8)=3', 'rn2(7)=3', 'rn2(6)=1', 'rn2(5)=0',
+            'rn2(4)=2', 'rn2(3)=1', 'rn2(2)=0',
+            'rn2(17)=0', 'rn2(16)=3', 'rn2(15)=12', 'rn2(14)=6',
+            'rn2(13)=12', 'rn2(12)=2', 'rn2(11)=3', 'rn2(10)=4',
+            'rn2(9)=5', 'rn2(8)=1', 'rn2(7)=6', 'rn2(6)=0',
+            'rn2(5)=4', 'rn2(4)=2', 'rn2(3)=1', 'rn2(2)=1',
+            'rnd(2)=1', 'd(30,8)=119', 'rn2(50)=49', 'rn2(100)=8',
+            'rn2(40)=31', 'rn2(3)=0', 'rn2(6)=1', 'rnd(2)=2',
+            'rn2(4)=0', 'rn2(2)=1', 'rn2(100)=87',
+        ], 'seed0014 personal bogus Wizard article and clone RNG');
+        assert.equal(decodedTopline(result.getScreens()[123]),
+            'The rock piercer hits!  The Domo-kun casts a spell!  Double Trouble...--More--');
+        assert.deepEqual(result.getCursors()[123], [78, 0, 1]);
+
+        assertRngSliceExact(result.getRngSlices()[135], [
+            'rn2(5)=2', 'rn2(5)=0', 'rnd(20)=11', 'd(2,12)=6',
+            'rn2(20)=5', 'rn2(3)=2', 'rn2(6)=4', 'rn2(30)=3',
+            'rn2(300)=169', 'd(16,6)=57',
+        ], 'seed0014 post-genesis Hallucinated stun-cast RNG');
+        assert.equal(decodedTopline(result.getScreens()[135]),
+            'The mind flayer hits!  The sewer rat casts a spell at you!--More--');
+        assert.deepEqual(result.getCursors()[135], [66, 0, 1]);
+
+        assert.equal(game.u.uhp, 111);
+        assert.equal(game.u.uhpmax, 144);
+        assert.equal(game.u.hallucinationTurns, 27);
+        const wizards = game.level.monsters.filter(monster =>
+            monster.mnum === 285);
+        assert.equal(wizards.length, 2);
+        assert.deepEqual(wizards.map(monster => monster.minvent
+            .map(object => object.otyp)), [[307], [212]]);
+        assert.equal(wizards.every(monster => monster.iswiz), true);
+    });
+
 test('seed0014 Hallucination rejects death touch and hides speed potion',
     async () => {
         const result = await runHallucinatedDeathTouch(14, 128);
