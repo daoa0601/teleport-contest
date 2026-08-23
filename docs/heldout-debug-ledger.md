@@ -13562,3 +13562,9 @@ attempt: **402 calls**, not a direct two-pass retry.
   Seed0002 closes128/128 animation and the managed corpus remains44/44 with
   1,293/1,483 frames.  The full cursor witness corrected two errors hidden by
   the scorer's screen-only supplemental animation metric.
+- Next residual portfolio: seed0014's104 misses are split across delayed-wear
+  state, one live ray effect, rolling-boulder/target continuation, and several
+  travel/getpos groups with broad positional state mismatch.  Adding a single
+  missing travel frame is rejected because most existing travel frames are
+  already misaligned.  Next probes are input306 ray ownership, then560/561
+  against the exact seed0361 rolling-boulder control.

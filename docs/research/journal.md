@@ -92241,3 +92241,26 @@ replay-only seed0060/0106 out of generic readiness claims.  No normal corpus,
 push, workflow, hidden judge, or publication ran.
 
 ---
+
+### [2026-08-24 00:01 EEST, journal block 3073] {#seed0014 #animation-residual #travel #rolling-boulder #wear #ray #portfolio #priority}
+
+**Bounded residual inventory:** seed0014 remains891/995, but its104 misses are
+heterogeneous.  Inputs125 and470 are delayed-wear prompt/state frames; input306
+is a one-frame `dobuzz/zhitm` effect; inputs560/561 are rolling-boulder and
+target-continuation frames; inputs595,649,651,653,655 and666 are travel/getpos
+groups where JavaScript usually emits one fewer frame and many existing frames
+carry different intermediate map/cursor state.
+
+**Rejected aggregate hypothesis:** neither generic runmode nor “one missing
+travel delay” explains the set.  Several travel groups have native15--23 and
+actual14--22 frames but only0--5 positional matches, so adding one frame would
+preserve a deeper state-alignment error.  The rolling-boulder group also owns
+projectile glyphs/prose unrelated to getpos.
+
+**Next discriminating order:** first isolate input306's one-frame live ray
+effect against the newly shared ray-step owner; then compare560/561 with the
+already exact seed0361 rolling-boulder transaction.  Only after those generic
+owners are separated should travel groups be aligned from their first native
+frame and source step.  Keep seed0060/0106 and seed0007 labeled replay debt.
+
+---
