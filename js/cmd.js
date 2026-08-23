@@ -17719,9 +17719,19 @@ async function finishMovedHero({
         }
     }
 
-    return finishDestinationSpotEffects({
+    const finished = await finishDestinationSpotEffects({
         oldx, oldy, newx, newy, loc, explicitAttempt,
     });
+    // Native domove() installs nomul(-2) for a costly ball drag after
+    // spoteffects, then reaches its runmode-delay tail before any monster or
+    // global maintenance advances that helpless counter.
+    if (ballChainMove?.causeDelay) {
+        await captureRunmodeDelay(
+            game, true, game.moves || 0,
+            { preservePhysicalTopline: true },
+        );
+    }
+    return finished;
 }
 
 async function domove(dx, dy, explicitAttempt = true) {
