@@ -13163,3 +13163,15 @@ attempt: **402 calls**, not a direct two-pass retry.
   and focused/expanded fixture-disabled gates pass 7/7 and 40/40.  Treasure,
   merge, secret-door, breath-disintegration, shop and animation branches remain
   open.
+- A 1,500-seed forced-Wizard scan found no worn monster reflection-amulet
+  carrier and that route was rejected.  A source-valid seed592 hero W_AMUL
+  carrier instead closes reflection before death: input159 pages monster
+  crumble plus hero hit at HP170; input160 names the medallion, discovers
+  object208 with Wisdom rn2(19)=8, reverses the ray, learns WAN_DEATH with
+  rn2(19)=1, and enters the Wizard scheduler without mortality.  Final HP is
+  153/170, amulet208 remains worn/known, the revived Wizard remains HP118 and
+  no vanquish occurs.  All 3,021 RNG calls, all cursors, and all screens from
+  input3 through input175 match; input2 alone is red.  Focused including the
+  shield/sleep control and expanded fixture-disabled gates pass 9/9 and42/42.
+  Monster/weapon/armor/form reflection, deeper precedence, remaining range and
+  animation frames remain open.

@@ -32689,3 +32689,48 @@ does not close successful treasure drops, pile merging, erosion/terrain side
 effects, secret doors, death breath door disintegration, fire/cold/lightning
 door variants, shop billing, invisible door feedback, or the three native
 animation-frame groups.  Lua owns the door placement only.
+
+## 901. Worn hero reflection is resolved before death state
+
+~~~mermaid
+flowchart TD
+    Setup["hero wears amulet of reflection; Wizard wears life-saving amulet"] --> Ray["death ray misses Wizard, bounces, then kills on return"]
+    Ray --> MonsterSave["monster life saving restores Wizard and leaves crumble pending"]
+    MonsterSave --> HeroHit["same ray reaches hero and zap_hit succeeds"]
+    HeroHit --> HitPage["crumble plus death-ray hit pager; HP remains170"]
+    HitPage --> Property{"Reflecting extrinsic active?"}
+    Property --> Source["ureflects source precedence"]
+    Source --> Shield["shield"]
+    Source --> Weapon["weapon artifact"]
+    Source --> Amulet["worn amulet in seed592"]
+    Source --> Armor["armor or form"]
+    Amulet --> Prose["But it reflects from your medallion"]
+    Prose --> Discover["makeknown amulet208; Wisdom rn2 19 equals8"]
+    Discover --> Reverse["reverse dx and dy; never enter done DIED"]
+    Reverse --> Learn["finish beam; learn WAN_DEATH with Wisdom rn2 19 equals1"]
+    Learn --> Scheduler["revived Wizard hit and spell scheduler"]
+    Lua["Lua contributes wall-return geometry only"] -.-> Ray
+    Lua -.->|"no ownership"| Property
+    Lua -.->|"no ownership"| Discover
+~~~
+
+Seed592's reflection carrier stays exact through input159 before the repair.
+That input displays the monster crumble and hero hit while HP remains170.  On
+acknowledgement, the worn object208 projection wins the reached source lookup,
+`ureflects()` names it `medallion`, discovers the type and reverses the ray.
+No HP0 state, mortality, debug prompt or life-saving transaction is entered.
+
+Input160 first consumes reflection-am­ulet Wisdom `rn2(19)=8`, then death-wand
+Wisdom `rn2(19)=1`, and continues into the exact Wizard attack tail.  The
+Wizard's 2d12 hit deals18, leaving HP152; later maintenance reaches HP153.
+Final state retains the worn, type-known reflection amulet, one live revived
+Wizard at HP118/118 with inventory[329], Wizard count1 and no vanquish.
+
+The JavaScript projection now preserves the reached source precedence of
+shield before amulet and uses the same discovery helper for the existing
+sleep-ray shield carrier.  This section closes visible hero W_AMUL reflection
+for one rebound death ray plus the shield control.  It does not close weapon,
+armor, silver-dragon or intrinsic compatibility sources, multiple-source
+precedence beyond shield/amulet, blind prose, repeated reflection, monster
+reflection, rays with remaining range after reversal, or the twenty-five
+supplemental native animation-frame groups.  Lua owns none of the property.

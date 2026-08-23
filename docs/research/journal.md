@@ -88882,3 +88882,80 @@ replay and test runner exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:42 EEST, journal block 2942] {#seed592 #death-wand #reflection #hero-amulet #ureflects #property #makeknown #bounded-selector #rejected-carrier #native-witness #earliest-divergence #process-safety #priority}
+
+**Rejected monster route and selected carrier:** a bounded forced-Wizard
+constructor scan through seed1500 found no worn AMULET_OF_REFLECTION carrier.
+That route is rejected rather than injecting monster state.  Seed592 instead
+wishes/wears a hero reflection amulet, then reuses the exact wall-return death
+ray.  Native input159 pages monster crumble plus `The death ray hits you!`;
+input160 publishes `But it reflects from your medallion!` and proceeds into
+the ordinary Wizard attack scheduler with no hero death.
+
+**Earliest divergence and source boundary:** JavaScript matches native RNG,
+screens and cursors through input159, including monster life saving and hero
+`rn2(20)=1`.  On acknowledgement it opens `Die?` because reflection projection
+checks only an explicit boolean or shield, not worn object208.  C Reflecting is
+an extrinsic property; `ureflects()` resolves sources outermost-first (shield,
+weapon, amulet, armor, form), names W_AMUL as `medallion`, and calls
+`makeknown(AMULET_OF_REFLECTION)` before `dobuzz()` reverses direction.  Native
+input160 therefore owns reflection discovery `rn2(19)=8`, WAN_DEATH discovery
+`rn2(19)=1`, then the exact Wizard attack tail.
+
+**Prediction and decision:** project the reached hero reflection sources from
+worn equipment, preserve shield-before-amulet precedence, and centralize
+source-specific discovery/naming.  After the already-exact input159 pager,
+the death ray should publish medallion reflection, learn type208, reverse,
+finish without mortality or HP loss, then let learnwand and the scheduler own
+their native calls.  Existing sleep-shield reflection must retain its prose and
+call values; its hidden Wisdom exercise index should be corrected to JS index4.
+
+**Measured process state and next blocker:** the rejected 1500-seed selector
+exited in **12.38 seconds** at **280,870,912 bytes maximum RSS**.  The native
+hero-reflection recorder exited in **0.08 seconds** at **54,575,104 bytes**.
+The pre-edit replay matches **3013/3021 RNG calls, 159/176 screens and 171/176
+cursors** in **0.26 seconds** at **126,074,880 bytes**; every process exited.
+The next blocker is W_AMUL reflection projection and bounded regression.
+Monster reflection, other source precedence, repeated reflection, accepted
+death and animation frames remain open.  No full corpus, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 16:49 EEST, journal block 2943] {#seed592 #death-wand #reflection #hero-amulet #ureflects #property #makeknown #native-acceptance #implementation #complete-replay #regression #architecture #ledger #process-safety}
+
+**Implementation and source ordering:** commit `eb5917a` adds a reached hero
+reflection-source projection with shield-before-amulet precedence, source noun
+and shared discovery.  The death-ray hero-hit owner now pages its existing hit
+line before reflection prose, learns only the responsible object, reverses the
+live direction and skips all death state.  Existing sleep-ray shield reflection
+uses the same source/discovery helper, and its hidden Wisdom exercise was
+corrected to JavaScript attribute index4 without changing call values or prose.
+
+**Complete native acceptance and durable state:** the 176-state carrier now
+matches **3021/3021 RNG calls, 175/176 scorer screens and 176/176 cursors** in
+**0.24 seconds** at **125,992,960 bytes maximum RSS**.  Input2 is the sole
+screen miss; inputs3--175 match native RNG, decoded screens and cursors.
+Input159 retains HP170 at the hit pager.  Input160 owns reflection discovery
+rn2(19)=8, wand discovery rn2(19)=1 and the exact Wizard hit tail.  Final state
+is HP153/170, mortality0, life-saved count0, worn/type-known amulet208,
+WAN_DEATH known, one live HP118 Wizard with inventory[329], count1 and no
+vanquish.
+
+**Regression and controls:** the permanent test asserts the complete reflected
+ray opening, monster revival, HP-preserving hit pager, eleven-call reflection/
+discovery/attack slice, later spell/status tail and durable property state.
+The focused shared-death/reflection set including the sleep-shield control
+passes **9/9** fixture-disabled in **0.67 seconds** at **243,826,688 bytes
+maximum RSS**.  The expanded portfolio passes **42/42** in **1.10 seconds** at
+**299,335,680 bytes maximum RSS**.  Both are single owned runners and exited.
+
+**Map and next blocker:** section901 and the ledger record source precedence,
+discovery and the no-death boundary; Lua owns only geometry.  Monster,
+weapon/armor/form reflection, blind prose, remaining-range re-entry, repeated
+reflection and animation frames remain open.  Every selector, recorder,
+replay and test process exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
