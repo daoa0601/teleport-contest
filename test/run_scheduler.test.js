@@ -16212,10 +16212,10 @@ test('Pri-strt operation graph and first quest pager match the source replay', a
             result.getCursors()[step], session.steps[step].cursor,
             `cursor ${step}`,
         );
-        assert.deepEqual(
+        assertRngSliceExact(
             result.getRngSlices()[step],
             session.steps[step].rng.map(call => call.replace(/\s+@.*$/, '')),
-            `RNG ${step}`,
+            `Pri-strt RNG ${step}`,
         );
     }
     assert.equal(game.level.monsters.length, 21);
@@ -16258,10 +16258,10 @@ test('clean Priest leader chat assigns the quest through live state', async () =
             result.getCursors()[step], session.steps[step].cursor,
             `cursor ${step}`,
         );
-        assert.deepEqual(
+        assertRngSliceExact(
             result.getRngSlices()[step],
             session.steps[step].rng.map(call => call.replace(/\s+@.*$/, '')),
-            `RNG ${step}`,
+            `Pri-leader RNG ${step}`,
         );
     }
     assert.equal(game.u.ualign.record, 20);
@@ -16309,10 +16309,10 @@ test('clean Pri-loca construction, arrival, and locate pager close one live bloc
             result.getCursors()[step], session.steps[step].cursor,
             `cursor ${step}`,
         );
-        assert.deepEqual(
+        assertRngSliceExact(
             result.getRngSlices()[step],
             session.steps[step].rng.map(call => call.replace(/\s+@.*$/, '')),
-            `RNG ${step}`,
+            `Pri-loca RNG ${step}`,
         );
     }
 
@@ -16325,6 +16325,37 @@ test('clean Pri-loca construction, arrival, and locate pager close one live bloc
     assert.equal(game.level.at(context.xstart, context.ystart).lit, false);
     assert.equal(game.level.at(game.u.ux, game.u.uy).lit, true);
     assert.equal(game.quest_status.first_locate, true);
+
+    const clerics = game.level.monsters.filter(monster =>
+        monster.mnum === 275);
+    assert.equal(clerics.length, 2);
+    const resident = clerics.find(monster => monster.ispriest);
+    assert.ok(resident);
+    assert.equal(resident.isminion, 0);
+    assert.equal(resident.mpeaceful, 1);
+    assert.equal(resident.epri.shralign, -128);
+    assert.deepEqual(resident.epri.shrpos, { x: 41, y: 12 });
+    assert.equal(resident.emin, undefined);
+    assert.equal(resident.mtrapseen, 0x7fffffff);
+    assert.deepEqual(resident.minvent.map(object => object.otyp), [
+        400, 382, 73, 143, 150, 438,
+    ]);
+
+    const roamer = clerics.find(monster => monster.isminion);
+    assert.ok(roamer);
+    assert.equal(roamer.ispriest, 0);
+    assert.equal(roamer.mpeaceful, 0);
+    assert.deepEqual(roamer.emin, {
+        min_align: -128,
+        renegade: false,
+    });
+    assert.equal(roamer.epri, undefined);
+    assert.equal(roamer.maligntyp, undefined);
+    assert.equal(roamer.malign, 20);
+    assert.equal(roamer.mtrapseen, 0x7fffffff);
+    assert.deepEqual(roamer.minvent.map(object => object.otyp), [
+        73, 430, 143, 150, 438, 315,
+    ]);
 });
 
 test('clean Pri-goal construction, population, and goal pager close one live block', async () => {

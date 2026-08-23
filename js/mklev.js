@@ -3837,7 +3837,7 @@ function renewBonesIdentities(level) {
 // non-shopkeeper for the new hero after all level chains and identities have
 // been restored.  This must happen before the first scheduler pass: peaceful
 // item search and directed movement own different RNG transactions.
-function setRestoredMonsterMalign(monster) {
+function setMonsterMalign(monster) {
     let alignment = MONSTER_ALIGNMENT[monster?.mnum] ?? 0;
     if (monster?.ispriest || monster?.isminion) {
         if (monster.ispriest && monster.epri)
@@ -3882,7 +3882,7 @@ function restoreBonesMonsterAttitudes(level) {
             monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum)
                 ? 1 : 0;
         }
-        setRestoredMonsterMalign(monster);
+        setMonsterMalign(monster);
     }
 }
 
@@ -5389,6 +5389,7 @@ async function specialMonsterAt(context, mndx, x, y,
         randomGender = true,
         randomAlignment = true,
         peaceful = null,
+        mmflags = 0,
     } = {}) {
     // Lua's find_montype() resolves a requested gender before
     // create_monster() resolves random alignment.  Fixed-sex monsters skip
@@ -5399,7 +5400,7 @@ async function specialMonsterAt(context, mndx, x, y,
         rn2(3); // sp_amask_to_amask(AM_SPLEV_RANDOM) -> induced_align(80)
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const monster = await makemon(
-        mndx, context.xstart + x, context.ystart + y, 0,
+        mndx, context.xstart + x, context.ystart + y, mmflags,
     );
     if (monster && randomGender) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -8541,13 +8542,14 @@ async function generatePriestLocate(active) {
 
     const hostileCleric = await specialMonsterAt(
         context, PM_ALIGNED_CLERIC, 20, 7,
-        { randomAlignment: false },
+        { randomAlignment: false, mmflags: MM_EMIN },
     );
     if (hostileCleric) {
         hostileCleric.mpeaceful = 0;
         hostileCleric.ispriest = 0;
         hostileCleric.isminion = 1;
         hostileCleric.emin = { min_align: A_NONE, renegade: false };
+        setMonsterMalign(hostileCleric);
         // sp_lev.c:create_monster() routes a descriptor with explicit
         // alignment through priest.c:mk_roamer(), which knows all traps.
         hostileCleric.mtrapseen = 0x7fffffff;
@@ -9559,13 +9561,14 @@ function markSpecialSelectionWallProperty(selection, property) {
 async function sanctumHostileCleric(context, x, y) {
     const cleric = await specialMonsterAt(
         context, PM_ALIGNED_CLERIC, x, y,
-        { randomAlignment: false },
+        { randomAlignment: false, mmflags: MM_EMIN },
     );
     if (!cleric) return null;
     cleric.mpeaceful = 0;
     cleric.ispriest = 0;
     cleric.isminion = 1;
     cleric.emin = { min_align: A_NONE, renegade: false };
+    setMonsterMalign(cleric);
     // sanctum.lua supplies align="noalign", so create_monster() delegates to
     // mk_roamer() rather than ordinary makemon(); roamers know every trap.
     cleric.mtrapseen = 0x7fffffff;
