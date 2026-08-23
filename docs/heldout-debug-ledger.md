@@ -13130,3 +13130,14 @@ attempt: **402 calls**, not a direct two-pass retry.
   tutorial cell is red.  Focused and expanded fixture-disabled gates pass
   3/3 and 34/34.  Answer-yes/non-debug death, hero-amulet life saving,
   polymorphed recovery and supplemental animation frames remain open.
+- Seed592's 169-state double-life-saving carrier equips a wished hero amulet
+  in addition to the Wizard's generated amulet.  It proves pending ray prose
+  must page before a return-path credited kill, then proves hero `done(DIED)`
+  appends `But wait` only after HP0.  Monster life saving restores HP118;
+  hero life saving consumes the second amulet, drops Constitution16 to15,
+  restores HP120, then the Wizard hit/spell tail reaches HP106 before the
+  shared survival nomovemsg.  All 3,021 RNG calls, all cursors, and all screens
+  from input3 through input168 match; only the independent input2 tutorial
+  cell remains red.  Focused/shared-death and expanded fixture-disabled gates
+  pass 5/5 and 38/38.  Unknown/blind hero-amulet discovery, polymorph,
+  genocide/slime recurrence, accepted death and animation frames remain open.

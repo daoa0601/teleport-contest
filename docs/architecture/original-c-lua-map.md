@@ -32545,3 +32545,59 @@ life saving, polymorphed/Unchanging repair, hunger or fatal-timeout cleanup,
 accepted-death bones/disclosure, repeated ray contact after recovery, or the
 five supplemental native animation-frame groups.  Lua owns none of this
 lifecycle.
+
+## 898. Hero and monster life saving share death state but not tty openings
+
+~~~mermaid
+flowchart TD
+    Setup["seed592 wears hero amulet and creates Wizard with worn amulet"] --> Outbound["northbound death ray misses Wizard"]
+    Outbound --> Bounce["miss plus bounce fills first pager"]
+    Bounce --> ReturnKill["return-path zap_hit is fatal"]
+    ReturnKill --> Xkill["xkilled submits credited kill through tty continuation"]
+    Xkill --> MonsterSave["shared mondeath consumes monster amulet and restores HP118"]
+    MonsterSave --> RayResume["same dobuzz resumes with monster crumble pending"]
+    RayResume --> HeroHit["next zap_hit hits hero"]
+    HeroHit --> Done["done DIED commits HP0 and mortality"]
+    Done --> LifeSaved{"hero wears life-saving amulet?"}
+    LifeSaved -->|"yes"| FirstPage["append But wait to crumble plus hit pager"]
+    FirstPage --> Glow["hero medallion glow plus feel-better pager"]
+    Glow --> Consume["crumble; consume amulet; Constitution 16 to 15"]
+    Consume --> SaveLife["savelife restores HP120 and one helpless turn"]
+    SaveLife --> Learn["beam cleanup and WAN_DEATH Wisdom discovery"]
+    Learn --> Actor["Wizard hit deals 15; spell and maintenance follow"]
+    Actor --> Nomove["common death-survival owner emits nomovemsg at HP106"]
+    Lua["Lua contributes only the wall and open-cell geometry"] -.-> Bounce
+    Lua -.->|"no ownership"| Xkill
+    Lua -.->|"no ownership"| Done
+    Lua -.->|"no ownership"| SaveLife
+~~~
+
+The second seed592 carrier deliberately equips both sides with life-saving
+amulets.  Its changed setup RNG makes the outbound `zap_hit()` miss, so the
+ray already owns `The death ray misses...  The death ray bounces!` when the
+return path kills the Wizard.  Passing the credited kill through ordinary tty
+continuation is essential: input156 pages the old ray line, input157 then pages
+`You kill...  But wait`, and only inputs158--159 run monster restoration.
+
+When the ray resumes, the monster crumble remains pending.  The hero hit and
+`done(DIED)` append `The death ray hits you!  But wait...` and display HP0 at
+input160.  Input161 retains HP0 while glow and feel-better prose page.  Only
+after that acknowledgement does the hero amulet disappear, Constitution fall
+from16 to15, and `savelife()` restore HP120.  WAN_DEATH discovery consumes
+Wisdom `rn2(19)=8`; the revived Wizard then hits for15, leaving the visible
+input162 HP105.  Later maintenance reaches HP106 before the common survival
+nomovemsg appears at input166.
+
+Monster and hero life saving therefore share fatal-state interception and
+post-survival scheduling, but their tty openings are not interchangeable.
+`xkilled()` must first submit credited kill prose; hero `done()` starts from
+the ray line and can append `But wait` only after HP0 is committed.  The common
+allmain survival flag now serves both debug refusal and real amulet savelife,
+while Constitution remains JS attribute index2 and Wisdom index4.
+
+This section closes one visible double-life-saving rebound with a known hero
+amulet.  It does not close previously unknown hero-amulet discovery timing,
+blind glow/warmth prose, choking/vomiting, genocided/slimed follow-up death,
+polymorphed/Unchanging repair, multiple amulets, accepted/non-debug death,
+reflection, or the four supplemental native animation-frame groups.  Lua owns
+only the level geometry.

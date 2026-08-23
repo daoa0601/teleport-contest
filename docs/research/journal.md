@@ -88643,3 +88643,86 @@ replay and test runner exited.  No full corpus, public-status rewrite, hidden
 judge, push or publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 16:11 EEST, journal block 2936] {#seed592 #double-life-saving #hero-amulet #monster-amulet #death-wand #tty-backpressure #xkilled #done #attribute-index #correction #native-witness #earliest-divergence #process-safety #priority}
+
+**Native carrier and earliest divergence:** adding a wished/worn hero amulet
+to seed592 produces a 169-state double-life-saving carrier.  Changed setup RNG
+makes the first northbound Wizard roll miss; native input156 publishes the
+pending miss/bounce pager, then input157 installs the return-path credited
+kill/`But wait` page.  JavaScript consumes the same six calls but immediately
+replaces the pending ray line with the kill page.  The pre-edit replay matches
+**3018/3021 RNG calls, 155/169 screens and 159/169 cursors**; input156 is the
+first new presentation divergence.
+
+**Source prediction and decision:** `xkilled()` emits the credited kill through
+ordinary `pline()` before `lifesaved_monster()` emits `But wait`.  Therefore
+the shared monster revival owner must first pass the kill through tty
+continuation, allowing an older ray line to page, then combine kill plus
+`But wait` into its own forced page.  After monster revival, native input160
+hits the hero and combines the monster's crumble line with death-ray hit plus
+`But wait`; inputs161--162 then prove the existing hero life-saving owner's
+glow/better, consumption, Constitution loss, HP120 repair and delayed survival
+message while the Wizard continues attacking.
+
+**Correction to block2935:** the JavaScript attribute vector is
+`[Strength,Dexterity,Constitution,Intelligence,Wisdom,Charisma]`.  Wisdom is
+index4 and Constitution index2.  Changing monster life-saving discovery and
+directional WAN_DEATH exercise from index4 to index2 was incorrect even though
+the RNG call shape stayed exact.  Restore both to index4; retain index2 only
+for savelife's Constitution calculation/decrement.  This append corrects the
+prior conclusion without rewriting it.
+
+**Measured process state and next blocker:** the native recorder exited in
+**0.08 seconds** at **54,493,184 bytes maximum RSS**; the pre-edit replay
+exited in **0.28 seconds** at **131,842,048 bytes**.  Both processes are gone.
+The next blocker is source-ordered monster opening backpressure, followed by
+routing hero W_AMUL through `beginHeroLifeSaving()/completeHeroLifeSaving()`
+without disturbing the already-exact wizard-refusal carrier.  No focused test,
+family gate, corpus, hidden judge, push or publication ran; unrelated dirty
+files remain untouched.
+
+---
+
+### [2026-08-23 16:18 EEST, journal block 2937] {#seed592 #double-life-saving #hero-amulet #monster-amulet #death-wand #tty #xkilled #done #savelife #attribute-index #native-acceptance #implementation #complete-replay #regression #architecture #ledger #process-safety}
+
+**Implementation and corrected ownership:** commit `95bb9f6` makes the shared
+monster revival opening source-ordered: credited kill first traverses tty
+continuation, then `But wait` forms the life-saving pager.  Directional death
+rays now detect hero W_AMUL before selecting debug refusal, use existing
+`beginHeroLifeSaving()/completeHeroLifeSaving()`, preserve the two HP0 pager
+boundaries, consume the hero amulet, apply Constitution loss, schedule one
+helpless turn and use a generalized allmain death-survival nomovemsg owner.
+Monster life-saving, WAN_DEATH `weffects` and `learnwand` exercise were restored
+to JavaScript Wisdom index4; Constitution repair/decrement remains index2,
+correcting block2935 as recorded in block2936.
+
+**Complete native acceptance and durable state:** the 169-state double carrier
+matches **3021/3021 RNG calls, 168/169 scorer screens and 169/169 cursors** in
+**0.25 seconds** at **130,236,416 bytes maximum RSS**.  The only screen miss is
+the independent input2 tutorial cell; inputs3--168 match native RNG, decoded
+screens and cursors.  Final hero state is HP106/170, Constitution15, mortality1,
+life-saved count1, neither W_AMUL nor object202 in inventory, and WAN_DEATH/
+type202 known.  The Wizard remains HP118/118, inventory[329], I_SPECIAL,
+on-level and unvanquished.
+
+**Regression and adversarial controls:** the permanent test asserts input156's
+pending miss/bounce pager, input157's delayed credited kill, both monster
+revival pages, both hero HP0 pages, amulet consumption/Constitution repair,
+post-save Wizard hit/spell RNG, maintenance, final survival message and durable
+state.  The focused shared-death set passes **5/5** fixture-disabled in **0.32
+seconds** at **137,560,064 bytes maximum RSS**.  The expanded death/Wizard/
+cleric/abbot scheduler portfolio passes **38/38** in **0.74 seconds** at
+**181,190,656 bytes maximum RSS**.
+
+**Map and next blocker:** section898 maps distinct monster/hero tty openings
+into shared death survival; the ledger records the same bounded evidence.  It
+falsifies precombining every monster revival page, treating life saving as
+terminal to the ray, treating debug refusal and hero amulet output as the same
+branch, and treating attribute index2 as Wisdom.  Unknown/blind hero amulets,
+polymorph/Unchanging, genocide/slime recurrence, accepted/non-debug death,
+multiple amulets, reflection and animation frames remain open.  Every recorder,
+replay and test runner exited.  No full corpus, public-status rewrite, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---
