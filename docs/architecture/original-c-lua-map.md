@@ -33606,3 +33606,54 @@ monster magic-missile, dirty-output cursor and default-runmode survival-delay
 boundaries.  It does not close other ray types, nondefault runmode witnesses,
 projectile/explosion animations or input2 tutorial.  Lua supplies geometry but
 no beam rendering, tty flushing or runmode scheduling.
+
+## 925. Tutorial selection is a corner window over the live generated map
+
+~~~mermaid
+flowchart TD
+    Level["C constructors and optional Lua themes build initial level"] --> Welcome["welcome pager paints live map"]
+    Welcome --> Ask["options.c ask_do_tutorial builds NHW_MENU rows"]
+    Ask --> Width["tty_end_menu: longest57 plus margins gives maxcol59"]
+    Width --> Offset["tty_display_nhwindow: zero-based offx20"]
+    Offset --> Message["clear message rows0 and1"]
+    Offset --> Corner["menu rows clear x20 through79; text starts x21"]
+    Level --> Underlay["retain real map cells x0 through19"]
+    Underlay --> Corner
+    Corner --> Input{"select_menu input"}
+    Input -->|"y or n"| Choice["return selected item"]
+    Input -->|"ordinary invalid accelerator"| Same["leave same menu and cursor in place"]
+    Input -->|"Space or Return"| Empty["return zero to ask_do_tutorial"]
+    Empty --> Retry["recreate corner menu with Please choose row"]
+    Lua["Lua can influence underlying level geometry"] -.-> Level
+    Lua -.->|"no menu or tty ownership"| Ask
+~~~
+
+The tutorial prompt's strings belong to `options.c`, but their destructive
+rectangle belongs to tty.  The longest recorded row has57 visible characters;
+`tty_end_menu()` adds its two margins, and the80-column offset formula places
+the corner boundary at terminal x20.  The menu's leading blank clears x20 and
+its visible text begins at x21.  Rows west of x20 are not menu decoration: they
+remain the actual generated map and therefore vary by seed, role and any Lua
+theme operations used during initial level construction.
+
+The removed JavaScript branch confused coincident level glyphs with a DEC menu
+border.  Its role/symset whitelist sometimes retained the map and sometimes
+drew fixed `l/x/~/m` cells at x19, which happened to resemble one Ranger room
+but erased distinct Healer underlays.  The shared renderer now preserves the
+live base window for every role and symset and clears only tty's measured
+corner rectangle.
+
+Menu retry ownership is also split.  `select_menu()` consumes ordinary invalid
+accelerators without rebuilding the page; only Space or Return produces a
+zero-item result which makes `ask_do_tutorial()` add the explanatory row on its
+second pass.  Seed103's `s` pins the unchanged page, while seed52 and seed211
+pin distinct Healer underlays and normal `n` dismissal.
+
+Both complete carriers now match793/793 screens and cursors, all RNG calls and
+all native animation frames.  A bounded public audit finds30/31 tutorial-screen
+plus next-input pairs exact; seed15's remaining glyph lies on row13 outside the
+menu and is an independent generation debt.  This section closes the recorded
+.nethackrc/80-column tutorial corner and ordinary-invalid behavior.  It does
+not close other terminal widths, longer configuration basenames or the
+unrelated seed15 generation mismatch.  Lua owns possible underlay content but
+none of the menu geometry or input loop.

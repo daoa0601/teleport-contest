@@ -90867,3 +90867,72 @@ exited; no full corpus, public-status rewrite, hidden judge, push or publication
 ran, and unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 20:46 EEST, journal block 3019] {#input2 #tutorial-menu #tty #corner-window #underlay #fake-acceptance #source-diagnosis #portfolio #priority}
+
+**Shared earliest divergence:** seed52 input2 has94 differing cells and
+seed211 has39, with exact RNG and cursor.  JavaScript clears the generated map
+and draws a synthetic DEC `l/x/~/m` column at terminal x19; native preserves
+the actual seed-dependent level west of tutorial text x21.  The two native
+underlays differ, proving this is not a fixed menu border or role graphic.
+
+**C owner:** `options.c:ask_do_tutorial()` creates an ordinary `NHW_MENU`.
+`tty_end_menu()` derives its width from the longest row, and
+`tty_display_nhwindow()` computes `offx=21` for the recorded `.nethackrc`
+message.  `process_menu_window()` clears each menu row only from that corner
+offset to end-of-line; the base/map cells west of x21 survive.  A native-only
+scan of the public tutorial prompts finds distinct nonblank west underlays for
+Monk, Ranger, Knight, Archeologist and Wizard sessions in addition to these
+Healer carriers.
+
+**False acceptance and prediction:** JavaScript's accumulated role whitelist
+and x19 pseudo-border are not source ownership.  In at least one Ranger
+witness the pseudo-border merely coincided with a real generated room edge.
+Replace both with one corner-window renderer: clear the message rows and the
+right-side rectangle, retain the actual map underlay for every role/symset, and
+use the same rectangle on invalid-choice redraw.  Both complete carriers should
+rise from792/793 to793/793 screens without RNG/cursor changes; public startup
+prefixes must be audited before acceptance.
+
+**Process safety:** two-input engine replays and native-only screen inventory
+exited synchronously.  No full corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 20:52 EEST, journal block 3020] {#input2 #tutorial-menu #tty #corner-window #underlay #correction #complete-replay #engine-only #bounded-regression #architecture #ledger #process-safety}
+
+**Corrections to block3019:** `tty_end_menu()` computes `maxcol=59` from the
+57-character configuration row plus two menu margins.  The recorded80-column
+tty therefore uses zero-based `offx=20`: x20 is the cleared leading blank and
+text starts at x21.  The first public-prefix attempt exposed retained map cells
+at x20 in Ranger101 and Knight104.  It also exposed `select_menu()` ownership:
+an ordinary invalid accelerator such as Knight103's `s` leaves the menu in
+place; only Space/Return returns zero to `ask_do_tutorial()` and adds the
+"Please choose" row.  Both predictions were corrected before acceptance.
+
+**Implementation:** commit `b5ddb58` removes the role/symset whitelist and the
+synthetic DEC pseudo-border.  One corner renderer clears row0/row1 plus x20--79
+on menu rows, preserves the live generated map west of x20, and applies the
+same rectangle only when Space/Return recreates the menu.  The durable test
+pins seed52's distinct Healer underlay, exact empty input2/input3 RNG and
+cursors, and Knight103's unchanged invalid-accelerator screen using bounded
+per-input screen comparison.
+
+**Acceptance evidence:** seed52 and seed211 are now both strict **PASS** at
+**793/793 screens and input cursors**, with RNG still **9,928/9,928** and
+**10,399/10,399** and animation still **40/40** and **4/4**.  The paired
+official scorer exits in **0.62 seconds** at **135,249,920 bytes maximum RSS**.
+The focused tutorial regression passes **1/1** in **0.23 seconds** at
+**135,004,160 bytes maximum RSS**; the seed52/seed211 family passes **13/13**
+in **0.97 seconds** at **274,317,312 bytes maximum RSS**.
+
+**Public-prefix audit and boundary:** 30/31 public tutorial-screen plus
+next-input pairs are exact.  Seed0015's sole audited difference is an existing
+level-generation glyph at row13, outside the menu rows; its tutorial cursor and
+overlay geometry are unaffected.  Architecture section925 and the held-out
+ledger close this shared startup window boundary.  Every managed process
+exited.  No full corpus, public-status rewrite, hidden judge, push or
+publication ran; unrelated dirty files remain untouched.
+
+---

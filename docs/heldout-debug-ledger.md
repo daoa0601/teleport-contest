@@ -13373,3 +13373,17 @@ attempt: **402 calls**, not a direct two-pass retry.
   regression plus seed211 control pass2/2; all seed52 and outcome4/hiss
   controls pass12/12.  Other ray/projectile/explosion groups, nondefault
   runmode carriers and input2 tutorial remain open.
+- The shared input2 tutorial residue is closed by commitb5ddb58.  Native
+  `ask_do_tutorial()` uses an ordinary59-column tty corner menu with zero-based
+  boundary x20 and text x21; generated map cells west of x20 remain visible.
+  JavaScript's role/symset whitelist and fixed DEC pseudo-border were fake
+  acceptance, including a Ranger room edge which only happened to resemble
+  those fixed glyphs.  The shared renderer now retains each live underlay,
+  clears only x20--79 on menu rows, keeps ordinary invalid accelerators in the
+  same `select_menu()` page, and recreates the explanatory row only after
+  Space/Return.  Seed52 and seed211 both become strict793/793 screen/cursor
+  PASS while retaining9,928/9,928 and10,399/10,399 RNG plus40/40 and4/4
+  animation.  The bounded public tutorial/next-input audit is30/31 exact; the
+  sole seed15 difference is an independent row13 generation glyph outside the
+  menu.  Other terminal widths/configuration basenames and that generation
+  debt remain open.
