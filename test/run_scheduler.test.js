@@ -11754,6 +11754,53 @@ test('seed0012 counted searches capture occupation runmode cadence',
         }
     });
 
+test('seed0900 interrupted-search bridge exposes cadence turn snapshots',
+    async () => {
+        const session = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0900-tourist-explore-actions.session.json',
+                import.meta.url),
+            'utf8',
+        )).segments[0];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 74),
+            storage: new Map(),
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[73],
+            session.steps[73].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0900 interrupted search input73 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[73],
+            session.steps[73].screen,
+            'seed0900 interrupted search input73 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[73],
+            session.steps[73].cursor,
+            'seed0900 interrupted search input73 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[73];
+        const nativeFrames = session.steps[73].animation_frames;
+        assert.equal(actualFrames.length, 3);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0900 interrupted search frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0900 interrupted search cursor${frame}`,
+            );
+        }
+    });
+
 test('tutorial corner preserves generated underlay across roles', async () => {
     const healerMoves = '  n#levelchange\n30\n' + ' '.repeat(40)
         + '#wizgenesis\nhostile Wizard of Yendor\ny'

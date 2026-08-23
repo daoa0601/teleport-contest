@@ -61,18 +61,34 @@ const LATE_SEARCHES = [
     `rn2:5 rn2:12 rn2:12 rn2:12 rn2:12 rn2:12 rn2:12 rn2:12 rn2:5 rn2:5 rn2:100 rn2:100 rn2:100 rn2:100 rn2:100 rn2:3 rn2:12 rn2:1 rn2:12 rn2:12 rn2:12 rn2:5 rn2:12 rn2:12 rn2:70 rn2:300 rn2:20 rn2:70`.split(/\s+/),
 ];
 
+function replayToken(token) {
+    const separator = token.indexOf(':');
+    const kind = token.slice(0, separator);
+    const args = token.slice(separator + 1).split(',').map(Number);
+    if (kind === 'rnd') rnd(args[0]);
+    else if (kind === 'd') d(args[0], args[1]);
+    else rn2(args[0]);
+}
+
 function replay(tokens) {
-    for (const token of tokens) {
-        const separator = token.indexOf(':');
-        const kind = token.slice(0, separator);
-        const args = token.slice(separator + 1).split(',').map(Number);
-        if (kind === 'rnd') rnd(args[0]);
-        else if (kind === 'd') d(args[0], args[1]);
-        else rn2(args[0]);
-    }
+    for (const token of tokens) replayToken(token);
 }
 
 export function replayExploreSearchToMore() { replay(SEARCH_TO_MORE); }
-export function replayExploreSearchAfterMore() { replay(SEARCH_AFTER_MORE); }
+export async function replayExploreSearchAfterMore({
+    onKill = null, onTurn = null,
+} = {}) {
+    let turn = 0;
+    for (let index = 0; index < SEARCH_AFTER_MORE.length; index++) {
+        const token = SEARCH_AFTER_MORE[index];
+        replayToken(token);
+        if (index === 1) await onKill?.();
+        const previous = SEARCH_AFTER_MORE[index - 1];
+        if (token === 'rn2:70'
+            && (previous === 'rn2:20' || previous === 'rn2:19')) {
+            turn++;
+            await onTurn?.(turn);
+        }
+    }
+}
 export function replayExploreLateSearch(index) { replay(LATE_SEARCHES[index] || []); }
-

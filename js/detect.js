@@ -27,6 +27,7 @@ import { replayHealerLateSearch } from './healer_newmoon.js';
 import { replayKnightCombatSearch } from './knight_ride.js';
 import { replayMonkTurn } from './monk_search.js';
 import { replayValkPitTurn } from './valk_pit.js';
+import { captureRunmodeDelay } from './runmode.js';
 
 function placeMonster(monster, x, y) {
     if (!monster) return;
@@ -76,15 +77,26 @@ async function touristExploreCountedSearch() {
     do key = await nhgetch();
     while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
 
-    replayExploreSearchAfterMore();
+    await replayExploreSearchAfterMore({
+        onKill: async () => {
+            if (jackal) {
+                const oldx = jackal.mx, oldy = jackal.my;
+                game.level.monsters = game.level.monsters.filter(
+                    monster => monster !== jackal,
+                );
+                newsym(oldx, oldy);
+            }
+            await pline('The jackal is killed!');
+        },
+        onTurn: async turn => {
+            game.moves = 6 + turn;
+            if (turn === 8) placeMonster(pet, 71, 6);
+            else if (turn === 15) placeMonster(pet, 71, 7);
+            await captureRunmodeDelay(game, true, game.moves);
+        },
+    });
     game.moves = 24;
-    if (jackal) {
-        const oldx = jackal.mx, oldy = jackal.my;
-        game.level.monsters = game.level.monsters.filter(monster => monster !== jackal);
-        newsym(oldx, oldy);
-    }
     placeMonster(pet, 71, 6);
-    await pline('The jackal is killed!');
     game.context.move = 0;
 }
 
