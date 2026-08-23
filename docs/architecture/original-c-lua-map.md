@@ -33993,10 +33993,20 @@ for the final impact frame and then restores the underlying map.  The cursor
 comes from the last map cell whose tty projection is dirty, not necessarily
 from the projectile's current coordinate.
 
+Damage/status has the same transaction boundary.  Because JavaScript planning
+pre-debits hit damage, the renderer temporarily projects `preHitHp` throughout
+flight and launch paging.  A returning nonlethal `thitu()` removes that override
+before the final impact delay, exposing committed HP; a fatal path retains it
+through the hit/death pagers which prevent `m_throw()` from returning.  A
+visible first flight cell settles earlier actor-map dirtiness before choosing
+its cursor, while an invisible first delay deliberately preserves that dirt.
+
 Seed0361 input234 pins two path delays plus the final miss-impact frame at
 **3/3** full screens/cursors.  Seed0108 input30 pins a launch pager with the
-dagger still one square beyond the hero, while seed0030 segment6 inputs240--246
-pin an arrow on the last flight square through lethal hit/death pagers.  This
+dagger still one square beyond the hero and input31 pins post-hit HP at the
+impact delay, closing **4/4** frames.  Seed0030 segment6 inputs240--246 pin an
+arrow on the last flight square through lethal hit/death pagers and the full
+session now matches14/40 supplemental frames.  This
 closes the represented hero-target object flight; potion splashes, tethered
 return weapons, monster targets, and other projectile classes retain their
 own owners.  Lua contributes none.

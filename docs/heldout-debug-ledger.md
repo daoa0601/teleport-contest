@@ -13503,3 +13503,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   prior dirty cursor.  Seed0004 becomes47/47 animation and the managed corpus
   remains44/44 with1,095/1,483 frames.  This does not claim arrow, gem, return,
   vertical, or arbitrary food projectile coverage.
+- Commitf0ffbd1 aligns monster-projectile status with `m_throw -> thitu`:
+  flight and launch paging project pre-hit HP, a returning nonlethal impact
+  projects committed HP, and fatal pagers retain the pre-hit bridge because
+  m_throw never returns.  Visible first flight cells settle prior actor dirt;
+  invisible delays retain it.  Seed0108 closes at4/4, seed0030 rises to14/40,
+  and the managed corpus remains44/44 with1,112/1,483 frames.  An unconditional
+  preflush was rejected by seed0361's invisible-frame cursor control.

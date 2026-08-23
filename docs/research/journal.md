@@ -91792,3 +91792,40 @@ smallest generic projectile/animation group in parallel with deciding whether
 to expose its replay turn states or replace the replay itself.
 
 ---
+
+### [2026-08-23 23:11 EEST, journal block 3056] {#seed0108 #seed0030 #seed0361 #projectile #thitu #status-phase #visible-first-step #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Earliest frame mismatch:** seed0108 already emits three dagger flight frames
+and one impact frame with exact glyphs/toplines, but their HP phases are
+inverted.  JavaScript planning has pre-debited damage, so flight shows10 instead
+of native12; `_statusHpOverride` is then installed too late and makes the final
+impact show12 instead of native10.  The first visible flight cursor also sees
+an unflushed actor-map cell and lands one column too far right.
+
+**Source boundary and implementation:** native `m_throw()` flight precedes
+`thitu()`'s damage commit; the final hero-cell delay follows a returning
+`thitu()`.  Commit `f0ffbd1` installs pre-hit status before flight/launch pager,
+retains it through fatal non-return paths, removes it before a nonlethal impact,
+and settles actor-map dirtiness before a visible first tmp_at cell.  Invisible
+first steps still retain the earlier dirty cursor.
+
+**Falsified route and controls:** unconditionally preflushing every flight
+changed seed0361's invisible frame0 cursor from native[52,17] to the hero and
+failed the focused gate.  Gating the preflush on first-cell visibility restores
+seed0361.  Seed0108, seed0361 and lethal seed0030 projectile tests then pass
+**3/3** in **0.79 seconds**; seed0108 closes at **4/4 animation**,16,958 RNG
+and303 boundary screens/cursors.
+
+**Acceptance and measured effect:** one managed engine-only corpus passes
+**44/44** at **35+0.31 ms/turn** (R²0.823) in **11.81 seconds** at
+**272,695,296 bytes maximum RSS**.  Animation rises from1,095 to
+**1,112/1,483**: seed0108 contributes4 and seed0030 advances from1/40 to14/40
+because thirteen already-emitted lethal/nonlethal projectile frames now see the
+correct status phase.  No normal corpus, push, workflow, hidden judge, or
+publication ran.
+
+**Next blocker:** re-inventory seed0030's remaining26 frames by owner rather
+than treating the new14/40 as complete projectile coverage; keep seed0007's
+five replay-state mismatches separate.
+
+---

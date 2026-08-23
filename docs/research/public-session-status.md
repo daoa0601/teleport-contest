@@ -1,24 +1,25 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, 1,095/1,483 animation frames
+## Current working-tree checkpoint: 44/44 engine-only, 1,112/1,483 animation frames
 
-Measured 2026-08-23 23:07 EEST from commit `344342d`, after adding the reached
-hero-thrown food projectile flight owner:
+Measured 2026-08-23 23:11 EEST from commit `f0ffbd1`, after aligning monster-
+projectile flight and impact status phases:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **34+0.31 ms/turn** (R² 0.841).
-One owned process completed in **11.93 seconds** at **276,086,784 bytes maximum
+The engine-only gate is **44/44 exact** at **35+0.31 ms/turn** (R² 0.823).
+One owned process completed in **11.81 seconds** at **272,695,296 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Supplemental animation is now **1,095/1,483** exact frames.  Eight sessions are
+Supplemental animation is now **1,112/1,483** exact frames.  Nine sessions are
 complete on that channel: seed0004 **47/47**, seed0006 **8/8**, seed0012
-**49/49**, seed0104 **2/2**, seed0360 **12/12**, seed0361 **10/10**,
+**49/49**, seed0104 **2/2**, seed0108 **4/4**, seed0360 **12/12**, seed0361 **10/10**,
 seed0383 **1/1**, and
 seed0900 **3/3**.  Seed0900 remains a bounded replay carrier, not a generalized
 Tourist actor/occupation implementation.  Major partial carriers are seed0014
-**833/995**, seed0002 **59/128**, seed0007 **53/58**, and seed4500 **13/37**.
+**833/995**, seed0002 **59/128**, seed0007 **53/58**, seed0030 **14/40**, and
+seed4500 **13/37**.
 These counts are
 supplemental and do not alter the contest pass result.
 
