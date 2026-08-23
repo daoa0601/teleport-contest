@@ -11585,6 +11585,65 @@ test('seed0108 dagger flight keeps pre-hit flight and post-hit impact status',
         }
     });
 
+test('seed0030 gas-spore death paints and clears two noxious blast frames',
+    async () => {
+        const file = JSON.parse(fs.readFileSync(
+            new URL('../sessions/seed0030-ten-diverse-deaths.session.json',
+                import.meta.url),
+            'utf8',
+        ));
+        const storage = new Map();
+        for (let index = 0; index < 9; index++) {
+            const prior = file.segments[index];
+            await runSegment({
+                seed: prior.seed,
+                datetime: prior.datetime,
+                nethackrc: prior.nethackrc,
+                moves: prior.moves,
+                storage,
+            });
+        }
+        const session = file.segments[9];
+        const result = await runSegment({
+            seed: session.seed,
+            datetime: session.datetime,
+            nethackrc: session.nethackrc,
+            moves: session.moves.slice(0, 261),
+            storage,
+        });
+        assertRngSliceExact(
+            result.getRngSlices()[260],
+            session.steps[260].rng.map(call =>
+                call.replace(/\s+@.*$/, '')),
+            'seed0030 gas-spore input260 RNG',
+        );
+        assertScreenExact(
+            result.getScreens()[260],
+            session.steps[260].screen,
+            'seed0030 gas-spore input260 screen',
+        );
+        assert.deepEqual(
+            result.getCursors()[260],
+            session.steps[260].cursor,
+            'seed0030 gas-spore input260 cursor',
+        );
+        const actualFrames = result.getAnimationFramesByStep()[260];
+        const nativeFrames = session.steps[260].animation_frames;
+        assert.equal(actualFrames.length, 2);
+        for (let frame = 0; frame < nativeFrames.length; frame++) {
+            assertScreenExact(
+                actualFrames[frame].screen,
+                nativeFrames[frame].screen,
+                `seed0030 gas-spore frame${frame}`,
+            );
+            assert.deepEqual(
+                actualFrames[frame].cursor,
+                nativeFrames[frame].cursor,
+                `seed0030 gas-spore cursor${frame}`,
+            );
+        }
+    });
+
 test('seed0361 delayed wear runmode frame retains its physical prompt',
     async () => {
         const session = JSON.parse(fs.readFileSync(

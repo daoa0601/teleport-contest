@@ -95,7 +95,7 @@ import {
     OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE, OBJECT_HIT_BONUS,
 } from './object_data.js';
 import {
-    CLR_WHITE, CLR_ORANGE, CLR_BRIGHT_BLUE, NO_COLOR,
+    CLR_WHITE, CLR_ORANGE, CLR_BRIGHT_BLUE, CLR_GREEN, NO_COLOR,
 } from './terminal.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_EXPERIENCE_META,
@@ -12069,11 +12069,48 @@ function monsterResistsPhysicalExplosion(monster) {
         < (MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0);
 }
 
+async function captureNoxiousPhysicalExplosion(x, y) {
+    const cells = [];
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const tx = x + dx;
+            const ty = y + dy;
+            if (tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) continue;
+            cells.push({ x: tx, y: ty });
+        }
+    }
+    if (!cells.some(cell => cansee(cell.x, cell.y))) return;
+
+    const mask = [
+        ['/', false], ['o', true], ['\\', false],
+        ['x', true], [' ', false], ['x', true],
+        ['\\', false], ['s', true], ['/', false],
+    ];
+    try {
+        for (const cell of cells) {
+            const index = (cell.y - (y - 1)) * 3
+                + (cell.x - (x - 1));
+            const [ch, decgfx] = mask[index];
+            show_glyph_cell(cell.x, cell.y, ch, CLR_GREEN, decgfx);
+        }
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(
+            (game.u?.ux ?? 1) - 1,
+            (game.u?.uy ?? 0) + 1,
+        );
+        await game.animationFrame?.();
+        await game.animationFrame?.();
+    } finally {
+        for (const cell of cells) newsym(cell.x, cell.y);
+    }
+}
+
 async function resolvePhysicalMonsterExplosion(
     sourceMonster, x, y, damage,
 ) {
     const sourceName = MONSTER_NAME[sourceMonster.mnum] || 'monster';
     const explosionName = `${sourceName}'s explosion`;
+    await captureNoxiousPhysicalExplosion(x, y);
     await plineWithContinuation('Boom!');
 
     // explode.c stores its 3-by-3 mask column-first and applies every
