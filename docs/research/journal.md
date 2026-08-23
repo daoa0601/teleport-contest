@@ -90207,3 +90207,56 @@ rebuilt.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 23:35 EEST, journal block 2991] {#seed52 #fog-cloud #m-everyturn-effect #fmon-order #inactive-visit #planner #prediction-refinement #earliest-divergence #architecture #priority}
+
+**Refinement to section915/block2990:** the later-round boundary fix is valid
+but incomplete.  At input572 there is only one planned active round.  JavaScript
+bulk-runs fog91's uncovered effect before every actor and consumes rn2(3)=0 at
+call0.  Native first lets newer xorn92 act through calls0--2, then visits
+inactive fog91 in fmon order and consumes `rn2(3)=2 @ create_gas_cloud` at
+call3, before grid bug90.
+
+**Architectural correction:** `m_everyturn_effect()` is per fmon identity,
+immediately after dead/off-map checks and before that identity's movement gate.
+Actor-only round arrays cannot represent inactive visits, and bulk first-round
+effects cannot preserve interleaving.  Extend planning to retain ordered live
+visit identities for each round while still debiting only active rations.
+During async execution, run each visit batch immediately before its associated
+active actor, with trailing inactive identities at the round boundary.  Do not
+mutate stateful hooks in the planner at all.
+
+**Prediction and decision:** input548 should remain exact because its second-
+round fog visit will still occur after movement; input572 should move the fog
+TTL draw from call0 to call3 and recover the complete 33-call slice.  Audit the
+expanded scheduler portfolio before accepting this deeper ownership change.
+No focused regression, corpus, hidden judge, push or publication ran; unrelated
+dirty files remain untouched.
+
+---
+
+### [2026-08-23 23:48 EEST, journal block 2992] {#seed52 #fog-cloud #m-everyturn-effect #fmon-order #inactive-visit #planner #live-executor #native-prefix #bounded-regression #architecture #ledger #process-safety}
+
+**Implementation and bounded acceptance:** commit `bca6ac9` makes the planner
+retain ordered live visits and active subsets per round without executing
+stateful hooks.  The async actor executor interleaves current-state visit
+batches immediately before actors and at round tails.  The 573-state regression
+compares input572's complete 33-call slice, screen/cursor and durable fog/region
+state; the prior input548 later-round witness remains unchanged.
+
+**Evidence and measured effect:** JavaScript/native are exact from input3
+through input580.  Input572 call3 now belongs to inactive fog91 between xorn92
+and grid bug90.  Fog is (24,9), movement0; regions (26,9),(25,9),(24,9) have
+ttl13,22,10.  Hero ends HP59/169, mortality3 and `udg_cnt=82`.  Full replay
+advances to **8,029/9,928 RNG calls, 554/793 screens and 610/793 cursors** in
+**0.35 seconds** at **134,365,184 bytes maximum RSS**.
+
+**Controls and next boundary:** focused fixture-disabled controls pass **9/9**
+in **0.71 seconds** at **220,987,392 bytes maximum RSS**.  Expanded controls
+pass **57/57** in **1.74 seconds** at **364,101,632 bytes maximum RSS**.
+Section916 and the ledger supersede section915's bulk-first-round wording.
+Input581 lethal melee paging, outcome3 actor mutation, outcome4 and animation
+remain open.  Every process exited.  No full corpus, public-status rewrite,
+hidden judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

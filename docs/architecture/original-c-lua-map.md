@@ -33297,3 +33297,40 @@ This section closes later-round everyturn timing for the reached fog-cloud
 move.  It does not close input572's later gas-region lifecycle edge, arbitrary
 state changes invalidating preplanned actor membership, hezrou/steam postmove
 clouds, aggravate mutation, or animation.  Lua owns geometry only.
+
+## 916. Fmon visit plans retain inactive identities without running effects
+
+~~~mermaid
+flowchart TD
+    Plan["planner snapshots per-round live fmon visits"] --> Debit["movement ration selects active actor subset"]
+    Debit --> NoEffect["planner performs no stateful everyturn effect"]
+    NoEffect --> Batches["executor partitions visits around active identities"]
+    Batches --> Xorn["input572 xorn92 visit plus action owns calls0 to2"]
+    Xorn --> Fog["inactive fog91 visit owns create-cloud rn2 3 equals2"]
+    Fog --> Grid["grid bug90 visit plus action begins call4"]
+    Grid --> Ogre["later active visits and maintenance retain order"]
+    RoundTail["trailing inactive visits"] --> Boundary["run before next round's first actor"]
+    Boundary --> Batches
+    Lua["Lua contributes live level and region-cell geometry only"] -.-> Fog
+    Lua -.->|"no ownership"| Plan
+    Lua -.->|"no ownership"| Batches
+~~~
+
+Round-level effect batches are still too coarse.  Source runs
+`m_everyturn_effect()` on each live fmon identity immediately after dead/off-map
+checks and before that identity's movement gate.  Inactive monsters therefore
+remain observable between two active actors.  The planner may snapshot visit
+identity/order and debit deterministic movement rations, but it must not run
+the effect against speculative state.
+
+The scheduler now stores both ordered live visits and active subsets per round.
+The async executor runs each current-state visit batch immediately before its
+associated actor, with inactive suffixes at the round boundary.  At input572
+xorn92 owns calls0--2, fog91 at (24,9) owns cloud TTL draw call3 despite
+movement0, and grid bug90 begins call4.  Regions end (26,9)/ttl13,
+(25,9)/ttl22 and (24,9)/ttl10; hero HP59/169, mortality3, `udg_cnt=82`.
+
+This section supersedes section915's bulk-first-round wording and closes the
+reached inactive fmon interleave plus later-round movement case.  It does not
+close dynamic actor-membership replanning, non-fog everyturn classes, input581
+lethal melee paging, aggravate mutation, or animation.  Lua owns geometry only.

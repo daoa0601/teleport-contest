@@ -13313,3 +13313,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   owns rn2(3)=0.  Parity advances through input571; input572's later region
   lifecycle and aggravate mutation remain open.  Focused/expanded gates pass
   8/8 and56/56.
+- Correction/refinement: effects cannot be bulk-run even for round one.
+  Input572 has xorn92 active calls0--2, then inactive fog91's cloud TTL call3,
+  then grid bug90 at call4.  Planning now retains per-round ordered live fmon
+  visits and active subsets without executing hooks; the async executor
+  interleaves current-state visit batches around each active actor and at round
+  tails.  The three regions end ttl13/22/10 at x26/25/24.  Both the input548
+  later-round and input572 inactive-interleave witnesses remain exact, advancing
+  parity through input580.  Input581 lethal melee pager and aggravate mutation
+  remain open.  Focused/expanded gates pass 9/9 and57/57.
