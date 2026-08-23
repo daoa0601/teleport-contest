@@ -90936,3 +90936,87 @@ exited.  No full corpus, public-status rewrite, hidden judge, push or
 publication ran; unrelated dirty files remain untouched.
 
 ---
+
+### [2026-08-23 20:56 EEST, journal block 3021] {#public-corpus #engine-only #regression #36-of-44 #seed0002 #priority #process-safety}
+
+**Full engine-only evidence gate:** one managed
+`TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions` process
+completed **36/44 exact** at **42+0.25 ms/turn** (R²0.751) in **11.52
+seconds** at **266,305,536 bytes maximum RSS**.  The post-run registry is
+empty; no duplicate or abandoned verifier exists.
+
+**Red matrix:** seed0002 is27,158/27,158 RNG,594/595 screens and595/595
+cursors.  The other red sessions are seed0030(29,718/105,529 RNG),
+seed0360(37,861/120,639), seed0361(22,205/53,865),
+seed0367(35,869/50,125), seed0383(10,470/16,915),
+seed0399(10,224/11,409) and seed4500(50,272/108,275), each with downstream
+presentation/cursor loss recorded in the public status matrix.
+
+**Decision and priority change:** this contradicts the older accepted/public
+43/44 and44/44 checkpoints and blocks publication.  The exact custom seed52
+and seed211 carriers do not excuse these regressions.  Recover accepted public
+sessions one by one from their earliest divergence, beginning with seed0002's
+single screen-only mismatch because its complete RNG and cursor channels sharply
+bound the problem to display ownership.  Do not run the normal suite while the
+engine-only gate is red.
+
+**Process boundary:** no normal corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 21:01 EEST, journal block 3022] {#seed0002 #input221 #pickup #encumbrance #status #tty #earliest-divergence #source-diagnosis #prediction}
+
+**Earliest divergence:** seed0002 is exact through input220 and after
+input221.  Its only red cell is status row23 x42 at input221's
+`You have a little trouble lifting x - a chain mail.--More--`: JavaScript
+already shows `Burdened`, while native retains the unencumbered row.  RNG is
+27,158/27,158 and all595 cursors match; input222 correctly shows the load
+message and `Burdened` on both sides.
+
+**Source owner and portfolio result:** real inventory weight is not the cause:
+the chain mail and later capacity state are exact, and every later screen
+matches.  C `pickup.c:encumber_msg()` computes `newcap`, calls `Your()` first,
+then sets `disp.botl=TRUE` and commits `oldcap`.  The `Your()` call must page the
+pending pickup line while status is still old.  JavaScript's
+`moveloop_core()` instead commits `_encumbranceLevel` and `u._encumbrance`
+before awaiting `plineWithContinuation()`, leaking the future label into that
+pager.
+
+**Prediction and decision:** await the capacity message first, then commit the
+new label/level.  With no pager, both operations still complete before the next
+input; with pickup backpressure, input221 retains the old row and input222
+receives the new one.  Add a bounded three-input public regression and rerun
+seed0002 plus neighboring capacity controls before another corpus gate.
+
+**Process safety:** the single-session locator and prefix-state probe exited
+synchronously.  No normal corpus, hidden judge, push or publication ran;
+unrelated dirty files remain untouched.
+
+---
+
+### [2026-08-23 21:04 EEST, journal block 3023] {#seed0002 #input221 #pickup #encumbrance #status #tty #implementation #complete-replay #bounded-regression #architecture #process-safety}
+
+**Implementation and measured effect:** commit `d1109b1` moves the persistent
+encumbrance level/label commit to the far side of the awaited capacity message
+in `moveloop_core()`.  Input221 now pages the pickup line with the old status;
+after acknowledgement, input222 publishes the load message and `Burdened`.
+No inventory, weight, RNG, cursor or later scheduler state changed.
+
+**Acceptance evidence:** the new bounded input220--222 regression passes
+**1/1** in **0.35 seconds** at **147,341,312 bytes maximum RSS**.  The complete
+official seed0002 scorer is strict **PASS** at **27,158/27,158 RNG and
+595/595 screens/cursors** in **0.48 seconds** at **224,378,880 bytes maximum
+RSS**.  The pickup/shop/encumbrance control family passes **4/4** in **0.71
+seconds** at **252,919,808 bytes maximum RSS**.
+
+**Boundary and next priority:** architecture section926 records C's
+message-before-botl/oldcap ordering; Lua owns none.  Seed0002 is recovered, but
+the aggregate remains the measured red36/44 until another deliberate corpus
+gate.  Continue through the remaining seven red sessions from their earliest
+per-input divergence; do not infer37/44 from this focused pass alone.
+
+**Process safety:** every focused verifier exited.  No normal corpus, hidden
+judge, push or publication ran; unrelated dirty files remain untouched.
+
+---

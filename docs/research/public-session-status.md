@@ -1,5 +1,50 @@
 # Public session status
 
+## Current working-tree engine-only regression: 36/44 exact
+
+Measured 2026-08-23 20:56 EEST from commit `b229ec0`, after closing the
+seed52/seed211 animation and tutorial-window blocks:
+
+```sh
+TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
+```
+
+The result is a red **36/44 exact** gate at **42+0.25 ms/turn**
+(R² 0.751).  It completed as one owned process in **11.52 seconds** at
+**266,305,536 bytes maximum RSS** and left no matching scorer or test process.
+The normal fixture-enabled gate was not run.
+
+| Session | RNG | Screens | Cursors | Animation | Current interpretation |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `seed0002` | 27,158/27,158 | 594/595 | 595/595 | 0/128 | one screen-only regression; first recovery target |
+| `seed0030` | 29,718/105,529 | 1,903/1,953 | 1,936/1,953 | 0/40 | multi-segment RNG/presentation regression |
+| `seed0360` | 37,861/120,639 | 218/833 | 411/833 | 0/12 | world-tour RNG/presentation regression |
+| `seed0361` | 22,205/53,865 | 243/366 | 279/366 | 6/10 | Archeologist-tour RNG/presentation regression |
+| `seed0367` | 35,869/50,125 | 272/324 | 297/324 | 0/0 | Priest-tour RNG/presentation regression |
+| `seed0383` | 10,470/16,915 | 141/219 | 162/219 | 0/1 | hallucinated Wizard RNG/presentation regression |
+| `seed0399` | 10,224/11,409 | 117/532 | 454/532 | 0/0 | hallucinated-actions RNG/presentation regression |
+| `seed4500` | 50,272/108,275 | 581/1,814 | 905/1,814 | 0/37 | Knight coverage RNG/presentation regression |
+
+This gate contradicts the older accepted/public checkpoints below and is not
+publishable.  The seed52 and seed211 custom carriers remain independently
+exact, but they do not substitute for public regression recovery.  Work must
+proceed from each session's earliest divergence, starting with seed0002's
+single screen.  Nothing was pushed, submitted, or run against the official
+held-out judge.
+
+### Focused recovery after the gate: seed0002 exact
+
+Commit `d1109b1` repairs seed0002's sole input221 status cell by committing the
+new encumbrance label only after the capacity message returns across tty's
+pickup pager.  The complete focused scorer is now **27,158/27,158 RNG and
+595/595 screens/cursors**.  Four neighboring pickup/encumbrance controls pass
+**4/4**.
+
+This focused result proves seed0002 recovery but does not replace the measured
+36/44 corpus or justify reporting37/44.  The other seven red sessions remain
+open, and another full engine-only gate is deferred until additional focused
+recovery warrants it.
+
 ## Current publish checkpoint: 43/44 engine-only, 44/44 normal
 
 Measured 2026-08-01 17:22 EEST from checkpoint branch commit `81f84f3`,

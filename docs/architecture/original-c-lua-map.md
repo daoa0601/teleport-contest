@@ -33657,3 +33657,46 @@ menu and is an independent generation debt.  This section closes the recorded
 not close other terminal widths, longer configuration basenames or the
 unrelated seed15 generation mismatch.  Lua owns possible underlay content but
 none of the menu geometry or input loop.
+
+## 926. Encumbrance status commits after its message returns
+
+~~~mermaid
+sequenceDiagram
+    participant Pick as pickup.c pickup_prinv
+    participant Loop as allmain.c moveloop
+    participant Enc as pickup.c encumber_msg
+    participant TTY as pline and tty More
+    participant Status as botl oldcap
+
+    Pick->>Pick: link chain mail into inventory
+    Pick->>TTY: You have a little trouble lifting...
+    Loop->>Enc: encumber_msg after timed command
+    Enc->>Enc: compute newcap=Burdened
+    Enc->>TTY: Your movements are slowed...
+    TTY-->>Enc: pending pickup line pages first
+    Note over TTY,Status: input221 still uses old status row
+    TTY-->>Enc: acknowledgement returns from Your
+    Enc->>Status: set botl=true and oldcap=newcap
+    Note over TTY,Status: input222 shows load message plus Burdened
+~~~
+
+Capacity state has three distinct observations here: inventory weight is
+already committed, `pickup_prinv()` uses `near_capacity()` to choose the
+"little trouble" prefix, and persistent status still reflects `go.oldcap`.
+They intentionally disagree while tty pages the pickup line.  C does not set
+`disp.botl` or update `oldcap` until the subsequent encumbrance message call
+returns.
+
+JavaScript previously updated `_encumbranceLevel` and `u._encumbrance` before
+awaiting `plineWithContinuation()`.  That made `_statusLine2()` expose
+`Burdened` during the earlier pickup pager even though inventory/RNG/cursor
+state was otherwise exact.  The shared moveloop owner now awaits first and
+commits afterward.  If no pager occurs, both operations still finish before
+the next input boundary; if tty backpressure occurs, the old row is preserved.
+
+Seed0002 input221 is the witness: the chain mail is live and the pickup prefix
+already reflects its weight, but the status row remains unencumbered.  Input222
+then shows the movement-slowing line and `Burdened`.  The complete session is
+exact at27,158 RNG calls and595 screens/cursors.  This section closes the
+once-per-command pickup/encumber pager ordering.  It does not claim every
+direct `encumber_msg()` caller or animation, and Lua has no ownership.

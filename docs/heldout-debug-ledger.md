@@ -13387,3 +13387,12 @@ attempt: **402 calls**, not a direct two-pass retry.
   sole seed15 difference is an independent row13 generation glyph outside the
   menu.  Other terminal widths/configuration basenames and that generation
   debt remain open.
+- The 2026-08-23 public engine-only gate regressed to36/44 and reopened
+  seed0002 by one status cell despite exact27,158 RNG calls and595 cursors.
+  Commitd1109b1 closes that input221 pickup boundary: C `encumber_msg()` emits
+  the capacity line before setting `disp.botl` and committing `oldcap`, so tty
+  pages the earlier chain-mail pickup with the old status row.  JavaScript now
+  awaits the message before committing `_encumbranceLevel`/`u._encumbrance`.
+  Seed0002 returns to595/595 screens/cursors and four pickup/capacity controls
+  pass4/4.  The measured aggregate remains36/44 until a later full gate; seven
+  other public regressions remain open.
