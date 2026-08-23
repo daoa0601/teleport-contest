@@ -34044,3 +34044,47 @@ session **1/1** animation exact without changing any of its219 boundaries.
 This closes the reached default-runmode delayed armor cadence.  Nondefault
 runmode carriers, other negative-multi occupations, and broader supplemental
 animation totals remain open.  Lua contributes none.
+
+## 937. Running has paired pre-`domove` and post-`domove` delay owners
+
+~~~mermaid
+flowchart TD
+    Key["capital direction starts context.run and first domove"] --> Post0["domove tail calls runmode_delay_output"]
+    Post0 --> Turn["monster/global turn advances moves"]
+    Turn --> Look["lookaround validates continued run"]
+    Look --> Pre["allmain pre-domove runmode_delay_output"]
+    Pre --> Move["automatic domove commits next square and spoteffects"]
+    Move --> Active{"run still active?"}
+    Active -->|"yes"| Post["domove tail runmode_delay_output"]
+    Post --> Turn
+    Active -->|"no"| Boundary["ordinary input boundary"]
+    Cadence["shared runmode cadence: tport 0, leap every 7th, walk 1, crawl 5"] --> Post0
+    Cadence --> Pre
+    Cadence --> Post
+    Lua["Lua owns level geometry, not cadence or tty delay"] -.-> Look
+~~~
+
+The two calls surrounding an automatic step are distinct.  With default leap
+mode, both observe the same `svm.moves % 7 == 0` turn: the pre-call captures
+the hero on the old square and the `domove()` tail captures the new square.
+The first explicit run step has only the tail call.  If movement, terrain,
+objects, or actors end the run, the final tail call sees cleared run state and
+emits no frame.
+
+`js/runmode.js` is now the common cadence/snapshot boundary for ordinary
+movement, negative-multi delayed actions, and death-survival.  The command
+loop calls it after the explicit movement and on both sides of each automatic
+movement.  It flushes current map/status state, places the cursor on the hero,
+and captures without manufacturing an input boundary.
+
+Seed0006 is the generic source witness: four independent runs match all
+**8/8** pre/post frames while retaining123/123 public screens/cursors.  The
+older seed0104 Knight combat route still uses a bounded RNG/state replay, but
+feeds its explicit source-turn sequence through the same owner and matches its
+two frames; it is a carrier, not evidence that the replayed combat is generic.
+Seed0360 independently closes at **12/12**, and the full corpus improves from
+14/1,483 to1,068/1,483 animation frames without changing44/44 boundary parity.
+
+This closes ordinary represented leap-run cadence.  Nondefault runmode
+carriers, animation classes outside runmode, and removal of historical replay
+bridges remain separate architecture work.  Lua contributes geometry only.

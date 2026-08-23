@@ -91612,3 +91612,43 @@ determining whether those frames belong to mount movement, combat impact, or a
 different C delay owner.
 
 ---
+
+### [2026-08-23 22:49 EEST, journal block 3050] {#runmode #domove #seed0006 #seed0104 #seed0360 #animation #shared-owner #bounded-bridge #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Inventory and earliest owner:** seed0104 input12's two frames are the mounted
+hero at consecutive corridor squares, not combat or riding impact.  Native
+`hack.c:runmode_delay_output()` is called twice at a leap-cadence turn: once in
+`allmain.c` immediately before an automatic `domove()`, then again at
+`domove()`'s common tail.  At move7 those calls capture x24 and x25; the run
+then reaches its normal boundary at x26.
+
+**Architecture decision:** move the cadence and tty snapshot owner into shared
+`js/runmode.js`.  Generic initial runs capture after the explicit `domove()`;
+automatic runs capture before and after each continued step.  The historical
+seed0104 Knight path still replays bounded RNG/state, so it now calls the same
+owner with its explicit source-turn sequence and is labeled only as a carrier.
+Ordinary seed0006, which has no session replay module, is the independent
+generalization witness.
+
+**Implementation and focused evidence:** commit `8391893` adds the shared
+module and pre/post movement calls.  Seed0104 becomes **2/2** animation exact;
+seed0006 becomes **8/8** across four separate capital-direction runs.  Six
+paired runmode/projectile controls pass **6/6** in **0.84 seconds**.  A focused
+four-session replay preserves every boundary and independently reports
+seed0006 **8/8**, seed0104 **2/2**.
+
+**Acceptance and measured effect:** one prechecked managed engine-only corpus
+passes **44/44** at **36+0.31 ms/turn** (R²0.816) in **11.99 seconds** at
+**271,024,128 bytes maximum RSS**.  Supplemental animation rises from
+**14/1,483 to 1,068/1,483** exact frames.  Seed0360 also closes at12/12; the
+largest partial gains are seed0014 833/995, seed0002 58/128, seed0007 51/58,
+seed0012 46/49, and seed0004 39/47.  All RNG/screens/cursors remain exact.
+
+**Falsified and next blocker:** a seed0104-only movement loop was insufficient
+as architecture evidence; the generic seed0006 carrier and broad corpus gains
+confirm the shared owner.  The remaining415 frames are not one bug: projectile,
+beam, redraw, occupation, and specialized replay families remain.  Re-inventory
+the smallest residual by first mismatching frame before selecting the next
+block.  No normal corpus, push, workflow, hidden judge, or publication ran.
+
+---

@@ -1,23 +1,23 @@
 # Public session status
 
-## Current working-tree checkpoint: 44/44 engine-only, two animation carriers exact
+## Current working-tree checkpoint: 44/44 engine-only, 1,068/1,483 animation frames
 
-Measured 2026-08-23 22:40 EEST from commit `1563ae4`, after distinguishing
-physical and newly queued toplines during delayed runmode output:
+Measured 2026-08-23 22:49 EEST from commit `8391893`, after centralizing
+`runmode_delay_output()` cadence and connecting its pre/post-movement owners:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
 ```
 
-The engine-only gate is **44/44 exact** at **35+0.30 ms/turn** (R² 0.851).
-One owned process completed in **11.82 seconds** at **267,157,504 bytes maximum
+The engine-only gate is **44/44 exact** at **36+0.31 ms/turn** (R² 0.816).
+One owned process completed in **11.99 seconds** at **271,024,128 bytes maximum
 RSS**.  Every public RNG, boundary-screen, and cursor channel remains exact.
-Seed0361's supplemental animation channel is now independently exact at
-**10/10**: one delayed-wear runmode frame, six rolling-boulder frames, and
-three monster-dagger flight/impact frames.  Seed0383 is independently exact at
-**1/1**, a delayed-wear frame containing newly queued freezing prose.  The
-same discriminator incidentally matches one of seed0030's 40 frames; its other
-39 remain open and are not claimed by this block.
+Supplemental animation rises from **14/1,483 to 1,068/1,483** exact frames.
+Five sessions are complete on that channel: seed0006 **8/8**, seed0104
+**2/2**, seed0360 **12/12**, seed0361 **10/10**, and seed0383 **1/1**.  Major
+partial carriers are seed0014 **833/995**, seed0002 **58/128**, seed0007
+**51/58**, seed0012 **46/49**, and seed0004 **39/47**.  These counts are
+supplemental and do not alter the contest pass result.
 
 The normal frozen-overlay gate was not rerun after this animation-only block;
 its latest completed result remains the **44/44** commit-`0dc1776` checkpoint

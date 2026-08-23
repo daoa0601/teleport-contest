@@ -13474,3 +13474,11 @@ attempt: **402 calls**, not a direct two-pass retry.
   animation exact and the managed engine-only corpus stays44/44; seed0361
   remains10/10.  One seed0030 frame also matches incidentally, but its other39
   are explicitly unclaimed.  Seed0104's two frames are the next bounded group.
+- Commit8391893 centralizes `runmode_delay_output()` in `js/runmode.js` and
+  connects both C movement owners: the pre-automatic-step call in allmain and
+  the post-step call at domove's tail.  Seed0006 is the generic witness at8/8
+  animation; seed0104's bounded Knight replay is only a carrier at2/2; seed0360
+  independently reaches12/12.  The managed corpus remains44/44 on public RNG,
+  screens and cursors while animation jumps from14/1,483 to1,068/1,483.  Large
+  partial gains in seed0014,0002,0007,0012 and0004 confirm a shared owner, but
+  the remaining415 frames are explicitly not classified as one residual.
