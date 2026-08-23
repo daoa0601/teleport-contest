@@ -91878,3 +91878,40 @@ only.  Take the sleeping-potion flight/helpless group next unless a smaller
 generic untouched session yields a stronger source owner.
 
 ---
+
+### [2026-08-23 23:21 EEST, journal block 3059] {#seed0030 #segment0 #sleeping-potion #m-throw #potionhit #tty-continuation #animation #correction #implementation #engine-only #44-of-44 #architecture #process-safety}
+
+**Transaction diagnosis:** segment0/input50 owns two m_throw path delays before
+the potion hits: an invisible square and the visible square adjacent to the
+hero, both at pre-impact HP5.  The crash line then pages.  Input51 resumes
+`potionhit()`, commits HP4, composes evaporation plus tired prose, paints the
+final hero-cell `tmp_at`, and delays once before later work forces that prose
+to `--More--`.
+
+**First correction rejected:** using `transientObjectGlyph()` colored the
+potion cyan while native's monster flight glyph is no-color, left that glyph
+in the input50 pager, and matched only1/3 frames.  Dirty-map inference also put
+the invisible first cursor at[35,6] instead of native bhitpos[34,7].  The red
+focused replay stayed RNG/cursor exact but lost one screen; no acceptance claim
+was made.
+
+**Implementation and evidence:** commit `b08a9aa` records preHitHp in the
+planned potion action, uses no-color `!`, assigns every flight cursor directly
+from bhitpos even when invisible, keeps the last flight glyph through the crash
+pager, removes the HP override on continuation, then paints/captures the hero
+impact after evaporation/vapor handling.  Inputs50/51 become **3/3** full frame
+screen/cursor exact.  Four potion/weapon/food projectile controls pass **4/4**
+in **0.55 seconds**.
+
+**Acceptance and boundary:** seed0030 reaches **19/40 animation** with all
+105,529 RNG and1,953 boundaries exact.  One managed corpus passes **44/44** at
+**35+0.31 ms/turn** (R²0.828) in **11.96 seconds** at **273,973,248 bytes
+maximum RSS**; total animation is **1,117/1,483**.  Only seed0030's long-wand21
+group remains.  No normal corpus, push, workflow, hidden judge, or publication
+ran.
+
+**Next blocker:** map the segment3 long-wand sequence frame-by-frame before
+editing; determine whether it is one ray plus explosion transaction or multiple
+distinct owners hidden under the same input284 continuation.
+
+---

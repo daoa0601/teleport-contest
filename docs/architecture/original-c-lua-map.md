@@ -34243,3 +34243,38 @@ Seed0030 segment9/input260 pins both frames and advances the full session to
 closes the reached visible noxious/no-shield explosion only.  Other colors,
 shield sparkle, clipped masks, invisible blasts, elemental inventory damage,
 and fatal hero effects remain separate owners.  Lua contributes none.
+
+## 942. Sleeping-potion flight crosses crash paging before final impact delay
+
+~~~mermaid
+flowchart TD
+    Select["monster selects one sleeping potion and apparent hero"] --> Path["m_throw advances path and records forcehit"]
+    Path --> Flight["per-square no-color ! tmp_at plus delay at pre-hit HP"]
+    Flight --> Crash["potionhit queues bottle crash line"]
+    Crash --> Pager["crash line pages while last flight glyph remains"]
+    Pager --> Damage["resume: commit impact damage"]
+    Damage --> Evap["queue evaporation and potionbreathe tired prose"]
+    Evap --> Impact["final tmp_at on hero plus one delay at committed HP"]
+    Impact --> End["DISP_END clears glyph"]
+    End --> Later["later source work may force evaporation/tired More"]
+    Lua["Lua owns no projectile, potion, or tty continuation"] -.-> Select
+~~~
+
+The potion branch differs from ordinary weapon projectiles in two observed
+ways.  Its temporary `!` uses no color even though the identified potion object
+has a colored appearance, and tty positions the flight cursor at `bhitpos`
+even for an invisible path square.  Damage is preplanned in JavaScript, so a
+temporary `preHitHp` projection covers flight and the crash pager, then expires
+when `potionhit()` resumes.
+
+The final hero-cell delay is on the far side of that pager.  By then impact HP,
+evaporation prose, and sleeping-vapor prose are committed, but the line has not
+yet been forced to `--More--`.  The impact frame therefore contains the bare
+composed line and a hero-overwriting `!`; later actor/global work owns the
+boundary pager.
+
+Seed0030 segment0 inputs50/51 pin two path frames plus the one impact frame,
+advancing the full session to **19/40** animation with every input boundary
+unchanged.  This closes the reached sleeping-potion head impact.  Caught
+potions, other potion effects, stacks, intervening actors, hallucinated bottle
+names, and fatal potion impacts remain open.  Lua contributes none.

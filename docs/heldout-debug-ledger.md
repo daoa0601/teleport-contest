@@ -13516,3 +13516,10 @@ attempt: **402 calls**, not a direct two-pass retry.
   the full session reaches16/40; the managed corpus remains44/44 with
   1,114/1,483 frames.  Other explosion colors, sparkle shields, clipping and
   invisible/fatal effect variants remain unclaimed.
+- Commitb08a9aa closes seed0030's sleeping-potion continuation: two no-color
+  flight delays at pre-impact HP, crash pager with the last flight glyph, then
+  a post-impact hero-cell delay after evaporation/tired prose resumes.  Direct
+  bhitpos cursor ownership is required even on the invisible step.  Seed0030
+  reaches19/40 and the managed corpus remains44/44 with1,117/1,483 frames.
+  The first cyan-glyph/dirty-cursor attempt matched only1/3 and regressed one
+  public screen, so it was rejected.  The long-wand21 group remains separate.
