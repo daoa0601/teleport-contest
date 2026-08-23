@@ -88419,3 +88419,51 @@ hidden judge, push, or publication ran; unrelated dirty files remain
 untouched.
 
 ---
+
+### [2026-08-23 15:36 EEST, journal block 2930] {#seed470 #wizkill #getpos #tty #monster-death #xkilled #mlifesaver #amulet-life-saving #revival #wisdom #i-special #cursor #native-witness #implementation #complete-replay #regression #architecture #ledger #process-safety #priority}
+
+**Carrier construction and rejected attempts:** `#wizkill` is the lowest-noise
+native path from seed470's worn life-saving amulet to ordinary `xkilled()`.
+The first recording typed targeting keys into the `Pick first monster to slay
+--More--` pager; the second acknowledged that pager but typed into the one-time
+farlook tip.  Neither reached death and both were rejected.  The final recipe
+acknowledges both modal boundaries, moves getpos northeast to `Wizard of
+Yendor, meditating`, selects it, then supplies two lifesaving acknowledgements
+and Escape for the third.  Native recording took **0.07 seconds** at
+**54,296,576 bytes maximum RSS**.
+
+**Source lifecycle and UI contract:** native autocompletes physical `wizk` to
+`wizkill` while leaving the editable buffer active.  `wiz_kill()` publishes
+the credited kill line then calls `xkilled(XKILL_NOMSG)`.
+`mondead()->lifesaved_monster()` finds only a worn W_AMUL type202.  It pages
+`But wait`, publishes glow, calls makeknown (Wisdom rn2(19)=1), pages `looks
+much better`, publishes crumble, consumes the object, schedules gear
+reassessment and restores movement/HP before mondead can detach the actor.
+The debug target loop retains its getpos cursor on the final line.
+
+**Implementation and measured effect:** commit `a67d589` adds the debug
+autocomplete/first-target getpos transaction, a bounded worn-life-saving
+resolver and a one-input cursor override cleared only after the next top-level
+key is captured.  The three message continuations match inputs110--113
+exactly.  Final state retains the Wizard at HP122/122, `dead=false`,
+`mcanmove=1`, `mfrozen=0`; inventory is empty, W_AMUL is clear,
+`misc_worn_check=I_SPECIAL(536870912)`, type202 is known, Wizard count remains1
+and no vanquished entry exists.  The complete carrier matches all **114 native
+RNG/screen/cursor states from input3 onward** in **0.20 seconds** at
+**123,305,984 bytes maximum RSS**.
+
+**Regression, map and next blocker:** the seed470 construction/revival pair
+passes **2/2** in **0.25 seconds** at **133,840,896 bytes maximum RSS**.  The
+expanded fixture-disabled Priest/Wizard portfolio passes **27/27** in **0.73
+seconds** at **184,975,360 bytes maximum RSS**.  Every failed recorder,
+successful recorder, comparator and test process exited.  Section895 maps
+pre-detach life saving and tty/getpos ownership; Lua owns none.  The command is
+deliberately bounded to its first visible living target.  Multi-target,
+empty/cancel, unseen/tame/nonliving, ordinary attack/environment deaths,
+replacement amulets, genocide failure, pet reset, nonvisible feedback and real
+death remain open.  The closest shared successor is routing an existing
+ordinary fatal monster owner through the same revival transaction.  No full
+corpus, public-status rewrite, hidden judge, push, or publication ran;
+unrelated dirty files remain untouched.
+
+---

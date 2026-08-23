@@ -13094,3 +13094,16 @@ attempt: **402 calls**, not a direct two-pass retry.
   fixture-disabled portfolio pass 1/1, 1/1 and 26/26.  Actual monster
   life-saving consumption/revival, reflection, guarding AC, multiple/cursed
   amulets, replacement/removal, theft and dropped inventory remain open.
+- Seed470 now also closes worn-am­ulet consumption and monster revival through
+  a complete native `#wizkill` carrier.  Two initial recordings were rejected
+  because genesis tty backpressure and the one-time getpos tip consumed the
+  targeting keys; the final recipe acknowledges both, selects the northeast
+  Wizard, and records 114 exact states.  Source/JS now autocomplete `wizkill`
+  at `wizk`, retain the getpos cursor, publish kill/But wait, glow, looks-better
+  and crumble pages, spend Wisdom rn2(19)=1, learn type202, consume the worn
+  object, clear W_AMUL, schedule I_SPECIAL and restore HP122/122/movement.
+  The actor is not detached or counted vanquished and Wizard count remains1.
+  Focused and expanded fixture-disabled gates pass 2/2 and 27/27.  Multi-target
+  wizkill, no-target/cancel variants, unseen/tame/nonliving monsters, ordinary
+  lethal attacks, replacement amulets, genocide failure and non-Wizard death
+  messages remain open.

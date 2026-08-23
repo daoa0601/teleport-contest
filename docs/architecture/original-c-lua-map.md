@@ -32398,3 +32398,52 @@ not claim later death interception, revival HP/state, message/discovery,
 reflection, guarding AC, multiple or cursed amulet preference, replacement,
 removal, theft, destruction or inventory release.  Lua supplies only the
 level in which construction occurs.
+
+## 895. Worn monster life saving intercepts death before detachment
+
+~~~mermaid
+flowchart TD
+    Cmd["wizard #wizkill first target"] --> Prompt["force old topline through More"]
+    Prompt --> Tip["one-time getpos tip"]
+    Tip --> Cursor["move cursor to adjacent Wizard and select"]
+    Cursor --> Kill["wiz_kill publishes You kill and calls xkilled NOMSG"]
+    Kill --> Death["mondead enters lifesaved_monster before m_detach"]
+    Death --> Find["mlifesaver finds which_armor W_AMUL type202"]
+    Find --> Wait["But wait pager"]
+    Wait --> Glow["medallion glows; makeknown and Wisdom exercise"]
+    Glow --> Better["visible living monster looks much better pager"]
+    Better --> Dust["medallion crumbles to dust"]
+    Dust --> Consume["m_useup clears object and W_AMUL masks"]
+    Consume --> Gear["check_gear_next_turn sets I_SPECIAL"]
+    Gear --> Reset["restore movement and HP to max(level+1, old max, 10)"]
+    Reset --> Survive["return from xkilled without detach, drops, corpse, XP or vanquish"]
+    Survive --> Retain["final tty screen retains selected getpos cursor"]
+    Lua["Lua owns no debug command, death, amulet, or cursor policy"] -.-> Cmd
+~~~
+
+Monster life saving belongs inside the death transaction.  `mlifesaver()`
+consults `which_armor(W_AMUL)`, so merely carrying object202 is insufficient.
+`lifesaved_monster()` runs before `m_detach()`: a successful amulet prevents
+inventory release, corpse creation, vanquished bookkeeping, experience and
+Wizard-count decrement.  The actor's existing maximum HP is retained unless
+it is below max(monster level+1,10), and current HP is restored to that maximum.
+
+Seed470 uses the debug killer to isolate this branch without combat damage or
+scheduler noise.  The command itself has two modal prerequisites: the old
+genesis line makes `Pick first monster to slay` page, and first getpos use opens
+the shared farlook tip.  After both acknowledgements, northeast selection
+targets the meditating Wizard.  Native then separates three tty continuations:
+kill plus `But wait`, medallion glow with Wisdom rn2(19)=1, and `looks much
+better`; the final crumbling line retains the target cursor.
+
+After revival the Wizard remains iswiz at HP122/122, mobile and on the level.
+The amulet inventory entry is gone, W_AMUL is clear, I_SPECIAL is set so a
+replacement could be equipped next move, type202 is known, and no vanquished
+record exists.  All 114 native RNG/screen/cursor states match.
+
+This section closes the first-target visible living `#wizkill` route only.
+It does not close multiple targets, empty/cancel selection, unseen/tame/
+nonliving names, ordinary combat or environmental fatality, replacement
+amulets, genocide after attempted revival, pet wary state, nonvisible `Maybe
+not`, reflection/guarding, inventory drop or real monster death.  Lua
+contributes none of the lifecycle.
