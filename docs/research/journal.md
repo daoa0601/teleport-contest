@@ -93107,3 +93107,96 @@ action—when explicitly resumed—is bridge-free mode plus its static/runtime
 bridge-usage audit.  Do not resume from the remaining animation inventory.
 
 ---
+
+### [2026-08-24 23:53 EEST, journal block 3108] {#bridge-free #runtime-ledger #static-audit #replayMoves #fastforward #ownership-registry #implementation #bounded-acceptance #process-safety}
+
+**Contract and non-results:** the resumed task is enforcement slice1 of the
+bridge-free regime, not recovery of the remaining48 animation frames.  A pass
+must bypass top-level fixtures, never call `fastforward`, never read
+`replayMoves`, reject seeded replay/snapshot painters with a named call site,
+and expose a zero-hit runtime ledger.  Public exactness, the old
+fixture-disabled mode, or a replay helper renamed behind a new flag remain
+explicit non-results.  No sealed corpus was opened or created.
+
+**Independent mechanism inventory:** entry-level fixtures were centralized in
+`runSegment`; session-shape behavior was distributed across twelve direct
+`g.replayMoves` reads; unconditional pre-mklev startup entered
+`fastforward_pre_mklev`; and seeded scheduler/snapshot debt lived in fifteen
+exporting modules plus one internal Wizard maintenance helper.  Prediction:
+entry gating alone would still allow default turn fast-forward, while helper
+guards alone would still allow session identity to select a bridge before the
+guard.  The implementation therefore combines entry bypass, a poisoned
+`replayMoves` property, centralized compatibility-path rejection, helper-level
+guards, and a bounded usage ledger.
+
+**First falsification and correction:** the first one-command bridge-free
+Tourist probe failed loudly at `fastforward.turn`, proving the default quiet-
+role tail still called the old replay after fixture/session gates were clean.
+The corrected tail runs source global maintenance for a quiet role with no
+full-ration actor, never invokes `fastforward_step`, and preserves a separate
+`scheduler.default-replay-gap` failure for paths without a live owner.  The
+pre-mklev live operations now reside in `js/startup.js`; legacy mode may call
+them through the guarded compatibility wrapper, while bridge-free mode calls
+the source boundary directly.
+
+**Measured bounded evidence:** `node scripts/audit-bridge-free.mjs` passes over
+105 production JavaScript files, discovering15 guarded replay/fast-forward
+modules and19 top-level fixture modules.  The focused test file passes4/4:
+named fail-loud/call-site behavior, poisoned `replayMoves` plus representative
+fast-forward/replay/painter rejection, mechanical source audit, and a live
+Tourist turn.  That live probe produces2 captured boundaries and2,995 live RNG
+calls with ledger `{bridgeFree:true,totalHits:0,forbiddenHits:0,bridges:{}}`.
+Only one focused Node test process ran at a time; each exited and no Contest
+suite/corpus process remains.
+
+**Mechanical ownership decision:** `docs/architecture/c-lua-ownership.json`
+now validates exactly one of implemented/partial/stubbed/absent per registered
+subsystem and generates a Mermaid dependency graph plus status table.  Initial
+inventory:1 implemented core (RNG),10 partial subsystems,0 stubbed and1 absent
+subsystem (`init_artifacts`).  Public witnesses are labeled regressions, every
+sealed-gate field is null, and the inventory says it is not exhaustive.
+
+**Falsified hypotheses and next blocker:** fixture bypass alone and the
+existing `TELEPORT_DISABLE_FIXTURES=1` path are both falsified as bridge-free
+evidence; the first live probe also falsified the claim that all quiet-role
+fallbacks were already source-owned.  This slice proves enforcement and one
+no-actor live path, not actor-rich generalization.  The next coherent source
+block is still Samurai `dog_move()` scheduling across the altar run and prayer
+occupation, followed by Rogue, Priest, and remaining startup/object gaps.  No
+full public gate, push, workflow dispatch, hidden judge, or publication ran.
+
+---
+
+### [2026-08-24 23:57 EEST, journal block 3109] {#bridge-free #top-level-fixtures #dynamic-import #audit-correction #focused-regression #process-safety}
+
+**Adversarial correction to block3108:** bypassing fixture matching did not
+prevent the nineteen statically imported fixture modules from decoding their
+trace payloads during bridge-free module load.  That is an execution and
+memory dependency even when no fixture is returned, so block3108's initial
+105-file audit was insufficient to establish that top-level fixtures were
+disabled.
+
+**Implementation and prediction:** all top-level fixture imports and matching
+now live in `js/session_fixtures.js`, dynamically imported only inside the
+legacy `fixturesEnabled` branch.  Each matched legacy fixture also records a
+named bridge ID.  The mechanical audit rejects any fixture import outside that
+router, requires bridge-free `jsmain.js` to use the dynamic import, and checks
+that the router owns every discovered `*_fixture.js` module.  Prediction:
+bridge-free startup loads no public fixture payload, while normal fixture-on
+behavior remains byte-for-byte available.
+
+**Final focused evidence:** the corrected audit passes across107 production
+JavaScript files,15 guarded replay/fast-forward modules and19 fixture modules.
+The bridge-free test remains4/4 and its quiet Tourist witness retains a zero-
+hit ledger.  A separate normal-mode seed9 fixture control returns73 screens
+and3,713 RNG calls.  The adjacent startup/object/character focused gate also
+passes29/29, and the generated ownership registry passes its stale-output
+check.  Each command exited; no full suite/corpus process remains.
+
+**Scope and next blocker:** this closes the enforcement slice's hidden fixture
+load path but does not claim actor-rich or sealed-corpus parity.  Samurai
+source-turn pet/prayer scheduling remains the next implementation slice.  No
+full public gate, sealed evaluation, push, workflow, hidden judge, or
+publication ran.
+
+---

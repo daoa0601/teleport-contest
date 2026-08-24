@@ -1,6 +1,7 @@
 # Bridge-free acceptance regime
 
-Status: adopted 2026-08-24; implementation has not started.
+Status: adopted 2026-08-24; enforcement slice 1 implemented locally, sealed
+evaluation not started.
 
 This regime supersedes public-session and supplemental-animation optimization
 as the development acceptance target.  The current public checkpoint remains a
@@ -28,6 +29,30 @@ The frozen regression baseline at adoption is:
   bridges.
 
 Do not optimize those 48 frames for their own sake.
+
+### Enforcement checkpoint 1
+
+The first local slice adds `TELEPORT_BRIDGE_FREE=1` as an enforced runtime
+contract:
+
+- top-level fixtures are behind a legacy-only dynamic router, so bridge-free
+  startup neither imports their modules nor decodes their trace payloads;
+- `replayMoves` is installed as a poisoned property and the one legacy
+  classifier reads it only outside bridge-free mode;
+- fast-forward, seeded replay, and snapshot-painter boundaries record a
+  bounded bridge ID/call site and throw if reached;
+- `getBridgeUsageLedger()` exposes per-segment runtime evidence;
+- `scripts/audit-bridge-free.mjs` mechanically audits the centralized fixture
+  entry and discovered replay exporters;
+- the pre-mklev live operations moved to `js/startup.js`, allowing a quiet
+  one-command Tourist witness to execute with zero bridge hits;
+- `docs/architecture/c-lua-ownership.json` is the validated four-state
+  ownership source, with a generated graph and summary.
+
+This is not a generalization result.  No sealed corpus exists yet, actor-rich
+compatibility paths intentionally fail loudly, and no public/full corpus or
+official measurement was run for this checkpoint.  The next bridge replacement
+remains Samurai pet turns and altar-run/prayer scheduling.
 
 ## 1. Genuinely bridge-free mode
 

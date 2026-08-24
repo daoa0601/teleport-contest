@@ -16,6 +16,13 @@ Source anchors use the current pinned tree:
 - transitions: `src/do.c`, `src/bones.c`, `src/save.c`
 - debug commands: `src/wizcmds.c`, `src/exper.c`, `src/teleport.c`
 
+Mechanical implementation status lives in `c-lua-ownership.json`; its
+validated dependency graph and summary are generated as
+`c-lua-ownership.generated.md`.  The registry's four statuses are the source
+of truth for coverage claims.  This prose map explains call ownership but does
+not promote a subsystem to `implemented` merely because a public trace is
+exact.
+
 ## 1. Runtime ownership map
 
 ```mermaid

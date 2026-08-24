@@ -8,6 +8,8 @@
     "score": "bash frozen/score.sh",
     "score:engine": "TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions",
     "audit:bridge-free": "node scripts/audit-bridge-free.mjs",
+    "ownership:generate": "node scripts/generate-ownership-map.mjs",
+    "ownership:check": "node scripts/generate-ownership-map.mjs --check",
     "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
     "play": "echo 'Open index.html in a browser to play'"
   },

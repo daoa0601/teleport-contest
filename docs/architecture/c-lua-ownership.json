@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "scope": "Initial parity-critical ownership inventory; not yet exhaustive",
+  "statuses": ["implemented", "partial", "stubbed", "absent"],
+  "entries": [
+    {
+      "id": "runtime-entry",
+      "label": "Runtime entry and segment lifecycle",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/unixmain.c", "src/allmain.c"],
+        "cSymbols": ["nethack_main", "newgame", "moveloop"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/jsmain.js", "js/allmain.js", "js/bridge_policy.js"],
+      "dependencies": ["startup-pre-mklev", "turn-scheduler", "tty-display"],
+      "bridgeIds": ["top-level-fixtures", "session-shape.replayMoves"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: live quiet-role turn has zero bridge hits"],
+      "lastSealedGate": null,
+      "openGap": "Save/restore, browser entry, and all role paths have not passed a sealed bridge-free gate."
+    },
+    {
+      "id": "rng-core",
+      "label": "Core and display RNG streams",
+      "status": "implemented",
+      "source": {
+        "cFiles": ["src/rng.c"],
+        "cSymbols": ["rn2", "rnd", "rnl", "rn2_on_display_rng"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/rng.js", "js/isaac64.js"],
+      "dependencies": [],
+      "bridgeIds": ["seeded-replay.recorded-rnl"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: live quiet-role turn advances RNG with zero bridge hits"],
+      "lastSealedGate": null,
+      "openGap": "No open gap inside the live RNG wrapper scope; seeded replay helpers remain separately forbidden."
+    },
+    {
+      "id": "startup-pre-mklev",
+      "label": "Pre-mklev object, role, and dungeon initialization",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/allmain.c", "src/o_init.c", "src/role.c", "src/dungeon.c"],
+        "cSymbols": ["newgame", "init_objects", "role_init", "init_dungeons"],
+        "luaFiles": ["dat/dungeon.lua"],
+        "luaSymbols": ["dungeon definitions"]
+      },
+      "javascriptOwners": ["js/startup.js", "js/o_init.js", "js/dungeon.js"],
+      "dependencies": ["rng-core", "startup-artifacts", "level-generation"],
+      "bridgeIds": ["fastforward.pre-mklev"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: startup executes without importing the fast-forward boundary"],
+      "lastSealedGate": null,
+      "openGap": "Artifact initialization and remaining role_init state are not yet owned at this boundary."
+    },
+    {
+      "id": "startup-artifacts",
+      "label": "New-game artifact initialization",
+      "status": "absent",
+      "source": {
+        "cFiles": ["src/artifact.c"],
+        "cSymbols": ["init_artifacts", "hack_artifacts"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": [],
+      "dependencies": ["rng-core"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": [],
+      "lastSealedGate": null,
+      "openGap": "js/artifacts.js owns runtime artifact behavior but no JavaScript owner initializes the new-game artifact table."
+    },
+    {
+      "id": "startup-role-inventory",
+      "label": "Role inventory, attributes, skills, and starting pet",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/u_init.c", "src/dog.c"],
+        "cSymbols": ["u_init", "ini_inv", "u_init_inventory_attrs", "makedog"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/u_init.js", "js/allmain.js"],
+      "dependencies": ["startup-pre-mklev", "level-generation", "samurai-pet-turns"],
+      "bridgeIds": ["fastforward.post-mklev"],
+      "acceptanceWitnesses": ["public fixture-disabled startup tests; not bridge-free generalization evidence"],
+      "lastSealedGate": null,
+      "openGap": "Role-specific inventory branches and cross-role pet state have not passed a bridge-free stratified gate."
+    },
+    {
+      "id": "level-generation",
+      "label": "C and Lua level construction",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/mklev.c", "src/sp_lev.c", "src/nhlua.c"],
+        "cSymbols": ["mklev", "makelevel", "makerooms", "load_special"],
+        "luaFiles": ["dat/themerms.lua", "dat/nhcore.lua", "dat/*.lua"],
+        "luaSymbols": ["des.* operations", "themerooms_generate"]
+      },
+      "javascriptOwners": ["js/mklev.js", "js/dungeon.js", "js/lua_des.js"],
+      "dependencies": ["rng-core"],
+      "bridgeIds": ["fastforward.mineralize", "seeded room-fill compatibility paths"],
+      "acceptanceWitnesses": ["public fixture-disabled level witnesses; no sealed gate"],
+      "lastSealedGate": null,
+      "openGap": "Special-level operations, ordinary room fill, startup objects, and unseen Lua variants remain incomplete."
+    },
+    {
+      "id": "turn-scheduler",
+      "label": "Hero, monster, and global-turn scheduler",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/allmain.c", "src/mon.c", "src/monmove.c", "src/dogmove.c"],
+        "cSymbols": ["moveloop_core", "movemon", "dochug", "dog_move"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
+      "dependencies": ["rng-core", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
+      "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance"],
+      "lastSealedGate": null,
+      "openGap": "Actor-rich role paths still enter seeded scheduler replay or fail loudly in bridge-free mode."
+    },
+    {
+      "id": "samurai-pet-turns",
+      "label": "Samurai pet turns, altar run, and prayer occupation",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/dogmove.c", "src/allmain.c", "src/pray.c"],
+        "cSymbols": ["dog_move", "moveloop_core", "dopray", "prayer_done"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/pray.js"],
+      "dependencies": ["turn-scheduler", "startup-role-inventory"],
+      "bridgeIds": ["samurai.altar-run-prayer", "bounded Samurai compatibility cadence"],
+      "acceptanceWitnesses": ["public seed0017 regression only"],
+      "lastSealedGate": null,
+      "openGap": "Native dog_move phases are collapsed across the altar run and prayer occupation."
+    },
+    {
+      "id": "rogue-actor-scheduling",
+      "label": "Rogue and Rogue-Orc actor scheduling",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/allmain.c", "src/mon.c", "src/monmove.c", "src/dogmove.c"],
+        "cSymbols": ["movemon", "dochug", "dog_move", "mattackm"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/rogue_explore.js", "js/rogue_orc.js", "js/rogue_friday13.js"],
+      "dependencies": ["turn-scheduler"],
+      "bridgeIds": ["rogue.explore", "rogue.friday13", "rogue.orc", "rogue.chargen", "seeded-replay.rogue-explore", "seeded-replay.rogue-orc", "seeded-replay.rogue-friday13"],
+      "acceptanceWitnesses": ["generic quiet Rogue live path plus public bridge regressions"],
+      "lastSealedGate": null,
+      "openGap": "Named Rogue runs still replay aggregate actor turns instead of scheduling live fmon and dog_move phases."
+    },
+    {
+      "id": "priest-passive-projectiles",
+      "label": "Priest passive projectiles and extended commands",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/mthrowu.c", "src/dogmove.c", "src/cmd.c"],
+        "cSymbols": ["m_throw", "pet_ranged_attk", "doextcmd"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/allmain.js", "js/cmd.js", "js/monmove.js", "js/priest_extcmd.js"],
+      "dependencies": ["turn-scheduler", "tty-display"],
+      "bridgeIds": ["priest.passive-projectile", "seeded-replay.priest-extcmd", "snapshot-painter.fixture-screen"],
+      "acceptanceWitnesses": ["live projectile unit witnesses plus public seed0106 regression"],
+      "lastSealedGate": null,
+      "openGap": "Passive projectile timing and the extended-command sweep still cross recorded boundary replay and snapshot painting."
+    },
+    {
+      "id": "tty-display",
+      "label": "TTY display, cursor, and input-boundary capture",
+      "status": "partial",
+      "source": {
+        "cFiles": ["win/tty/*.c", "src/display.c", "src/vision.c"],
+        "cSymbols": ["tty_display_nhwindow", "flush_screen", "newsym"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/terminal.js", "js/game_display.js", "js/display.js", "js/jsmain.js"],
+      "dependencies": [],
+      "bridgeIds": ["snapshot-painter.fixture-screen"],
+      "acceptanceWitnesses": ["focused terminal serialization tests and bridge-free live capture"],
+      "lastSealedGate": null,
+      "openGap": "Snapshot painters remain in legacy mode and the full tty/window surface has no sealed bridge-free gate."
+    },
+    {
+      "id": "level-transition-persistence",
+      "label": "Level transitions, save/restore, and bones",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/do.c", "src/save.c", "src/bones.c"],
+        "cSymbols": ["goto_level", "savelev", "getlev", "getbones"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/cmd.js", "js/save.js", "js/mklev.js"],
+      "dependencies": ["level-generation", "turn-scheduler"],
+      "bridgeIds": ["stress and ten-deaths top-level fixtures"],
+      "acceptanceWitnesses": ["public multi-segment regressions; not sealed bridge-free evidence"],
+      "lastSealedGate": null,
+      "openGap": "Fresh save/restore chains and bones have not been exercised by a sealed bridge-free corpus."
+    }
+  ]
+}
