@@ -1,5 +1,10 @@
 # Public session status
 
+> **Priority freeze (2026-08-24):** this checkpoint is retained only as a
+> regression baseline.  Public-session and supplemental-animation optimization
+> is paused.  New acceptance work follows
+> `docs/research/bridge-free-acceptance-regime.md`.
+
 ## Current working-tree checkpoint: 44/44 engine-only, 1,435/1,483 animation frames
 
 Measured 2026-08-24 01:14 EEST from commit `6bb6b5b`, after routing the bounded

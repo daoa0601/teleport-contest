@@ -93078,3 +93078,32 @@ replace with live source-turn scheduling, not which animation hook to add.  No
 normal corpus, push, workflow, hidden judge or publication ran.
 
 ---
+
+### [2026-08-24 21:04 EEST, journal block 3107] {#priority-change #bridge-free #sealed-corpus #phase2 #maintainability #stop #acceptance-regime}
+
+**User-directed stop:** public-session and supplemental-animation optimization
+stops at code checkpoint `6bb6b5b` / documentation checkpoint `a78a5e3`.
+The remaining48 animation frames are explicitly not a work queue: completing
+them would improve a non-ranking metric while reinforcing compatibility
+replays.  The previous persistent port/animation goal is paused, not completed.
+
+**Official target evidence:** the leaderboard labels Anim as supplemental and
+outside official ranking.  `docs/PHASES.md` and the official contest description
+state that Phase2 changes the target and divides new-target parity by a penalty
+proportional to the changed `js/` surface from the immutable Phase1 tag.  This
+falsifies public exactness or animation completion as the correct optimization
+objective.
+
+**New acceptance contract:** `docs/research/bridge-free-acceptance-regime.md`
+defines five gates: a fail-loud bridge-free mode; a sealed stratified fresh C
+corpus with scheduled inspection; source-turn replacement beginning with
+Samurai, Rogue, Priest and startup/object bridges; a mechanical four-state C/
+Lua ownership registry; and one audited publication after a coherent slice.
+Public fixture-disabled/normal suites remain lower-tier regressions only.
+
+**Decision and stop state:** no production code, test, corpus, push, workflow,
+or official measurement ran for this priority change.  The next implementation
+action—when explicitly resumed—is bridge-free mode plus its static/runtime
+bridge-usage audit.  Do not resume from the remaining animation inventory.
+
+---

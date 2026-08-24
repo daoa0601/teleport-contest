@@ -1,5 +1,21 @@
 # Teleport contest working agreement
 
+## Current acceptance priority
+
+Read `docs/research/bridge-free-acceptance-regime.md` before planning new port
+work.  Public-session exactness and supplemental animation are frozen as
+regression witnesses; do not choose work because it improves either metric.
+In particular, do not finish the remaining public animation frames while they
+are owned by trace-specific compatibility bridges.
+
+The next acceptance target is a genuinely bridge-free execution mode: no
+top-level fixtures, `fastforward`, seeded replay helpers, or production control
+flow based on `replayMoves`.  Generalization claims require that mode plus a
+scheduled sealed-corpus gate.  Do not inspect individual sealed traces between
+gates.  Replace bridges by coherent source-owned subsystem slices, maintain the
+mechanical C/Lua ownership registry, and publish only after the regime's audit
+gate authorizes one measurement.
+
 ## Parity journal
 
 Before changing parity-sensitive code, read `docs/research/journal.md`,
@@ -45,8 +61,9 @@ whole-log assertion as an unsafe acceptance check until it is converted.
 ## Evidence gates
 
 Fixture-on scoring is a public-regression gate, not evidence of
-generalization. Any claim about the real port or held-out readiness must include
-an engine-only measurement:
+generalization.  The existing fixture-disabled command below disables only
+top-level fixtures; it is still allowed to execute `fastforward`, replay
+helpers, and `replayMoves` branches, so it is also not bridge-free evidence:
 
 ```sh
 TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
