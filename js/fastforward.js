@@ -5,41 +5,20 @@
 // Generated from: seed8000-tourist-starter.session.json
 
 import { rn2, rnd, d, rne, rnz } from "./rng.js";
-import { init_dungeons } from "./dungeon.js";
-import { game } from "./gstate.js";
-import { initializeObjectDescriptions } from "./o_init.js";
+import { useCompatibilityBridge } from './bridge_policy.js';
+import { initializeSourceStartup } from './startup.js';
 
 // Pre-mklev startup: o_init shuffles, dungeon init, u_init_misc
 // 303 leaf RNG calls (session indices 0-308)
 export function fastforward_pre_mklev() {
-    initializeObjectDescriptions();
-    // Priests borrow a pantheon from a randomly selected non-Priest role.
-    // C's randrole() retries while it selects Priest itself (role index 6).
-    if (game.urole?.key === 'priest') {
-        do game._priestPantheonIndex = rn2(13);
-        while (game._priestPantheonIndex === 6);
-    }
-    // The Wizard and Archeologist quest nemeses have random gender, chosen
-    // during role_init() before Lua and dungeon initialization.
-    if (game.urole?.key === 'wizard' || game.urole?.key === 'archeologist')
-        rn2(100);
-    // random
-    rn2(3); rn2(2);
-    init_dungeons();
-    // newpw(): Priest initial energy is 4 + rnd(3), before the human
-    // racial point is added by u_init_misc().
-    if (game.urole?.key === 'priest' || game.urole?.key === 'wizard')
-        game._initialPwBonus = rnd(3);
-    else if (game.urole?.key === 'healer' || game.urole?.key === 'knight')
-        game._initialPwBonus = rnd(4);
-    else if (game.urole?.key === 'monk') game._initialPwBonus = rnd(2);
-    // u_init_misc; return the roll so the real hero state can retain it.
-    return rn2(10);
+    useCompatibilityBridge('fastforward.pre-mklev');
+    return initializeSourceStartup();
 }
 
 // Post-mklev startup: u_init_role, ini_inv, attributes, moveloop_preamble
 // 124 leaf RNG calls (regenerated from session data)
 export function fastforward_post_mklev() {
+    useCompatibilityBridge('fastforward.post-mklev');
     rnd(1000); rn2(20); rnd(2); rn2(6); rn2(11); rn2(10); rn2(10); rn2(100); rn2(20); rn2(1);
     rnd(1000); rnd(2); rn2(6); rnd(1000); rnd(2); rn2(6); rnd(1000); rnd(2); rn2(6); rnd(1000);
     rnd(2); rn2(6); rnd(1000); rnd(2); rn2(6); rnd(1000); rnd(2); rn2(6); rnd(1000); rnd(2);
@@ -57,6 +36,7 @@ export function fastforward_post_mklev() {
 
 // Per-step leaf RNG calls
 export function fastforward_step(stepNum) {
+    useCompatibilityBridge('fastforward.turn');
     const steps = [
         () => { rn2(12); rn2(12); rn2(12); rn2(12); rn2(70); rn2(300); rn2(20); rn2(82); }, // step 1
         () => { rn2(5); rn2(5); rn2(5); rn2(5); rn2(12); rn2(12); rn2(12); rn2(12); rn2(70); rn2(300); rn2(20); rn2(82); }, // step 2
@@ -78,6 +58,7 @@ export function fastforward_step(stepNum) {
 // general monster turn loop lands, keep this small boundary explicit rather
 // than replaying the Tourist/no-pet maintenance shape.
 export function fastforward_ranger_step(stepNum) {
+    useCompatibilityBridge('fastforward.ranger-turn');
     if (stepNum === 1) {
         rn2(12); rn2(12); rn2(12); rn2(12);
         rn2(70); rn2(20); rn2(73);
@@ -101,6 +82,7 @@ export function fastforward_ranger_step(stepNum) {
 }
 // Fill + mineralize: 1448 calls
 export function fastforward_fill_mineralize() {
+    useCompatibilityBridge('fastforward.mineralize');
     rn2(8); rn2(3); rn2(8); rn2(3); rn2(8); rn2(6); rnd(2); rnd(3); rnd(2); rn2(10); rn2(60); 
     rn2(60); rn2(78); rn2(20); rn2(20); rn2(30); rn2(3); rn2(8); rn2(6); rnd(100); rnd(1000); 
     rnd(2); rn2(10); rn2(11); rn2(10); rn2(10); rn2(40); rn2(100); rn2(80); rn2(80); rn2(1000); 

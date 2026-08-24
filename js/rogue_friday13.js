@@ -3,6 +3,7 @@
 // the C monster-turn scheduler until monmove.c is ported in full.
 
 import { rn2, rnd, rnl } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const COMBAT_RNG = `
 n12 n12 n12 n70 n300 n20 n88 n5 n4 n5 n5 n5 n12 n12 n12 n70 n300 n20 n88 n5 n5 n12 n12 n12 n70 n300 n20 n88
@@ -49,6 +50,7 @@ n70 n300 n20 n88
 const THROUGH_SAVE_CALLS = 976;
 
 export function replayRogueFriday13Combat(includePostSave = true) {
+    useCompatibilityBridge('seeded-replay.rogue-friday13');
     const tokens = COMBAT_RNG.trim().split(/\s+/);
     const replay = includePostSave ? tokens : tokens.slice(0, THROUGH_SAVE_CALLS);
     for (const token of replay) {

@@ -3,6 +3,7 @@
 // kitten's full target scan, so live PRNG values are consumed in C order.
 
 import { rn2, rnd, rne } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const TURN_RNG = {
     1: `12 12 12 12 12 70 200 20 94`,
@@ -26,6 +27,7 @@ const CHARGEN_TURN_RNG = {
 };
 
 export function replayRogueTurn(turn) {
+    useCompatibilityBridge('seeded-replay.rogue-explore');
     for (const token of String(TURN_RNG[turn] || '').split(/\s+/).filter(Boolean)) {
         if (token.startsWith('rnd:')) rnd(Number(token.slice(4)));
         else if (token.startsWith('rne:')) rne(Number(token.slice(4)));
@@ -34,6 +36,7 @@ export function replayRogueTurn(turn) {
 }
 
 export function replayRogueChargenTurn(turn) {
+    useCompatibilityBridge('seeded-replay.rogue-chargen');
     for (const token of String(CHARGEN_TURN_RNG[turn] || '').split(/\s+/).filter(Boolean))
         rn2(Number(token));
 }

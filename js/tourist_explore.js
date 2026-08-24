@@ -6,6 +6,7 @@
 // its arguments, never the recorded result.
 
 import { rn2, rnd, d } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const SEARCH_TO_MORE = `
 rn2:5 rn2:100 rn2:100 rn2:100 rn2:100 rn2:100 rnd:5 rn2:5 rn2:5 rn2:32
@@ -71,6 +72,7 @@ function replayToken(token) {
 }
 
 function replay(tokens) {
+    useCompatibilityBridge('seeded-replay.tourist-explore');
     for (const token of tokens) replayToken(token);
 }
 
@@ -78,6 +80,7 @@ export function replayExploreSearchToMore() { replay(SEARCH_TO_MORE); }
 export async function replayExploreSearchAfterMore({
     onKill = null, onTurn = null,
 } = {}) {
+    useCompatibilityBridge('seeded-replay.tourist-explore');
     let turn = 0;
     for (let index = 0; index < SEARCH_AFTER_MORE.length; index++) {
         const token = SEARCH_AFTER_MORE[index];

@@ -4,6 +4,7 @@
 // order at the input boundaries where that simulation runs.
 
 import { rn2, rnd, d } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const BOUNDARY_RNG = {
     2: '12 12 12 70 300 20 94',
@@ -30,6 +31,7 @@ const BOUNDARY_RNG = {
 };
 
 export function replayRogueOrcBoundary(boundary) {
+    useCompatibilityBridge('seeded-replay.rogue-orc');
     let elapsedTurns = 0;
     for (const token of String(BOUNDARY_RNG[boundary] || '').split(/\s+/).filter(Boolean)) {
         if (token.startsWith('rnd:')) {

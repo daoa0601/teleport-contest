@@ -3,8 +3,10 @@
 // dogmove()/monmove() until the general monster scheduler is complete.
 
 import { rn2, rnd, rnz } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 function replayCalls(chunks) {
+    useCompatibilityBridge('seeded-replay.valkyrie-pit');
     const tokens = chunks.join(' ').trim().split(/\s+/).filter(Boolean);
     for (const token of tokens) {
         const range = Number(token.slice(1));

@@ -1,12 +1,9 @@
 // o_init.js — Object initialization.
 // C ref: o_init.c — shuffle gem colors, potion descriptions, etc.
 //
-// STUB: Uses fastforward to consume the correct RNG calls.
-// Contestants should port the real init_objects() from o_init.c.
-
-// The real init_objects() shuffles object descriptions using
-// Fisher-Yates. The shuffles consume ~200 RNG calls.
-// See nethack-c/src/o_init.c for the full implementation.
+// The live init_objects() boundary owns per-game knowledge reset and the
+// Fisher-Yates description/color shuffles.  Other startup owners remain
+// partial and are tracked in docs/architecture/c-lua-ownership.json.
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { bot, docrtRecalc, flush_screen } from './display.js';

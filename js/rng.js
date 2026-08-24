@@ -5,6 +5,7 @@
 
 import { isaac64_init, isaac64_next_uint64 } from './isaac64.js';
 import { game } from './gstate.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 let _rngLog = [];
 let _rngLogEnabled = false;
@@ -81,6 +82,7 @@ export function rnl(x) {
 // reproduce the visible call order without needing to reconstruct historical
 // luck state from a tty session.
 export function replayRecordedRnl(x, nestedRange, result) {
+    useCompatibilityBridge('seeded-replay.recorded-rnl');
     if (x > 0) RND(x);
     if (nestedRange > 0) rn2(nestedRange);
     if (_rngLogEnabled) _rngLog.push(`rnl(${x})=${result}`);

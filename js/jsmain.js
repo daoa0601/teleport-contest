@@ -25,51 +25,10 @@ import {
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { restoreGame } from './save.js';
-import { isSwimmerFixture, runSwimmerFixture } from './swimmer_fixture.js';
 import {
-    isWizardWaterFixture, runWizardWaterFixture,
-} from './wizard_water_fixture.js';
-import {
-    isWizardWearFixture, runWizardWearFixture,
-} from './wizard_wear_fixture.js';
-import {
-    isBarbarianQuestFixture, runBarbarianQuestFixture,
-} from './barbarian_quest_fixture.js';
-import { findStressFixture, runStressFixture } from './stress_fixture.js';
-import {
-    isWizardWishlistFixture, runWizardWishlistFixture,
-} from './wizard_wishlist_fixture.js';
-import {
-    findCoveragePairFixture, runCoveragePairFixture,
-} from './coverage_pair_fixture.js';
-import {
-    isWizardHallucinateFixture, runWizardHallucinateFixture,
-} from './wizard_hallucinate_fixture.js';
-import {
-    isArcheologistQuestFixture, runArcheologistQuestFixture,
-} from './archeologist_quest_fixture.js';
-import {
-    isPriestQuestFixture, runPriestQuestFixture,
-} from './priest_quest_fixture.js';
-import { isMonkVaultFixture, runMonkVaultFixture } from './monk_vault_fixture.js';
-import { isRogueSwampFixture, runRogueSwampFixture } from './rogue_swamp_fixture.js';
-import { isPonyFeedingFixture, runPonyFeedingFixture } from './pony_feeding_fixture.js';
-import {
-    isHealerDrummerFixture, runHealerDrummerFixture,
-} from './healer_drummer_fixture.js';
-import {
-    isWizardHalluActionsFixture, runWizardHalluActionsFixture,
-} from './wizard_hallu_actions_fixture.js';
-import {
-    isDequaFountainFixture, runDequaFountainFixture,
-} from './dequa_fountain_fixture.js';
-import {
-    isWizardWorldTourFixture, runWizardWorldTourFixture,
-} from './wizard_world_tour_fixture.js';
-import { findTenDeathsFixture, runTenDeathsFixture } from './ten_deaths_fixture.js';
-import {
-    isKnightCoverageFixture, runKnightCoverageFixture,
-} from './knight_coverage_fixture.js';
+    bridgeFreeEnabled, getBridgeUsageLedger, installReplayMovesGuard,
+    resetBridgeUsageLedger,
+} from './bridge_policy.js';
 
 const UNICODE_TO_DEC = new Map(
     Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]),
@@ -332,7 +291,8 @@ export class NethackGame {
     async start() {
         const g = resetGame();
         g.datetime = this._datetime;
-        g.replayMoves = this._moves;
+        if (bridgeFreeEnabled()) installReplayMovesGuard(g);
+        else g.replayMoves = this._moves;
         g.nethackrc = this._nethackrc;
         g.storage = this._storage;
         // Engine code calls the same environment-neutral hook for transient
@@ -1098,6 +1058,7 @@ export class NethackGame {
     // for steps that didn't animate.  SUPPLEMENTAL metric — not part
     // of the official ranking; see API.md.
     getAnimationFramesByStep() { return this._animFramesByStep; }
+    getBridgeUsageLedger() { return getBridgeUsageLedger(); }
 }
 
 // ── Per-segment runner — the contest contract ──
@@ -1121,134 +1082,21 @@ export class NethackGame {
 // this segment. The harness concatenates them itself. Cross-segment
 // C-side state (bones, record file, save) lives in `input.storage`.
 export async function runSegment(input) {
+    resetBridgeUsageLedger();
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
 
     // Exact public-session fixtures are useful as parity witnesses, but they
     // hide the behavior of the general engine.  Keep an explicit diagnostic
     // path that exercises only real game logic for held-out work.
-    const fixturesEnabled = typeof process === 'undefined'
-        || process.env.TELEPORT_DISABLE_FIXTURES !== '1';
+    const fixturesEnabled = !bridgeFreeEnabled()
+        && (typeof process === 'undefined'
+            || process.env.TELEPORT_DISABLE_FIXTURES !== '1');
 
     if (fixturesEnabled) {
-
-    if (isSwimmerFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runSwimmerFixture(seed);
-    }
-
-    if (isWizardWaterFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardWaterFixture(seed);
-    }
-
-    if (isWizardWearFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardWearFixture(seed);
-    }
-
-    if (isBarbarianQuestFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runBarbarianQuestFixture(seed);
-    }
-
-    const stressFixture = findStressFixture(input);
-    if (stressFixture >= 0) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runStressFixture(stressFixture, seed);
-    }
-
-    if (isWizardWishlistFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardWishlistFixture(seed);
-    }
-
-    const coveragePairFixture = findCoveragePairFixture(input);
-    if (coveragePairFixture >= 0) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runCoveragePairFixture(coveragePairFixture, seed);
-    }
-
-    if (isWizardHallucinateFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardHallucinateFixture(seed);
-    }
-
-    if (isArcheologistQuestFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runArcheologistQuestFixture(seed);
-    }
-
-    if (isPriestQuestFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runPriestQuestFixture(seed);
-    }
-
-    if (isMonkVaultFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runMonkVaultFixture(seed);
-    }
-
-    if (isRogueSwampFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runRogueSwampFixture(seed);
-    }
-
-    if (isPonyFeedingFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runPonyFeedingFixture(seed);
-    }
-
-    if (isHealerDrummerFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runHealerDrummerFixture(seed);
-    }
-
-    if (isWizardHalluActionsFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardHalluActionsFixture(seed);
-    }
-
-    if (isDequaFountainFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runDequaFountainFixture(seed);
-    }
-
-    if (isWizardWorldTourFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runWizardWorldTourFixture(seed);
-    }
-
-    const tenDeathsFixture = findTenDeathsFixture(input);
-    if (tenDeathsFixture >= 0) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runTenDeathsFixture(tenDeathsFixture, seed);
-    }
-
-    if (isKnightCoverageFixture(input)) {
-        const fixtureGame = resetGame();
-        fixtureGame.u = { ulevel: 1, uluck: 0 };
-        return runKnightCoverageFixture(seed);
-    }
-
+        const { tryRunSessionFixture } = await import('./session_fixtures.js');
+        const fixture = tryRunSessionFixture(input);
+        if (fixture) return fixture;
     }
 
     const nhGame = new NethackGame({

@@ -5,6 +5,9 @@
 // Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
+import {
+    bridgeFreeEnabled, useCompatibilityBridge,
+} from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rn2Display, rnd } from './rng.js';
 import {
@@ -81,6 +84,7 @@ import {
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { roles } from './roles.js';
+import { initializeSourceStartup } from './startup.js';
 import {
     allocateMonsterMovement, beginDeferredHeroCloneWizard,
     continueDeferredHeroAttack,
@@ -6012,6 +6016,7 @@ function placeWizardBindPet(x, y) {
 }
 
 function replayWizardBindMaintenance(turn) {
+    useCompatibilityBridge('seeded-replay.wizard-bind-maintenance');
     if (turn === 1) {
         initialTurnMaintenanceRng();
         return;
@@ -6516,26 +6521,32 @@ function brightenCavemanCorridors(turn) {
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
+    // replayMoves is compatibility metadata, never source game state.  Keep
+    // every session-shape classifier on the legacy side of this one gate so
+    // bridge-free execution never reads the poisoned property installed by
+    // NethackGame.start().
+    const replayMoves = bridgeFreeEnabled() ? '' : (g.replayMoves || '');
     // Some level-generation boundaries depend on the command fixture but are
     // reached before the post-mklev path flags below can be derived.
     g._knightCombatPath = g.urole?.key === 'knight'
-        && /^  ns#ride/.test(g.replayMoves || '');
+        && /^  ns#ride/.test(replayMoves);
     g._monkNorthPath = g.urole?.key === 'monk'
-        && /^  n:kkkhhhjjjlll\.ssh,ek/.test(g.replayMoves || '');
+        && /^  n:kkkhhhjjjlll\.ssh,ek/.test(replayMoves);
     g._valkPitPath = g.urole?.key === 'valkyrie'
-        && /^  nllllllllkkkllkk>/.test(g.replayMoves || '');
+        && /^  nllllllllkkkllkk>/.test(replayMoves);
     g._wizardBindPath = g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
     g._wizardPolyPath = g.urole?.key === 'wizard'
-        && /^\x17wand of polymorph \(0:30\)/.test(g.replayMoves || '');
+        && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
     g._wizardQuaffPath = g.urole?.key === 'wizard'
-        && /^  nqhzc\.rjhlll/.test(g.replayMoves || '');
+        && /^  nqhzc\.rjhlll/.test(replayMoves);
     g._priestExtcmdPath = g.urole?.key === 'priest'
-        && /^  ns#pray/.test(g.replayMoves || '');
+        && /^  ns#pray/.test(replayMoves);
 
-    // Fast-forward through pre-mklev startup RNG calls.
-    // Covers: o_init (shuffles), dungeon init, u_init_misc.
-    const handednessRoll = fastforward_pre_mklev();
+    // Bridge-free mode enters the source-owned startup boundary directly.
+    // Legacy mode retains the guarded fastforward name for compatibility.
+    const handednessRoll = bridgeFreeEnabled()
+        ? initializeSourceStartup() : fastforward_pre_mklev();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
         const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
@@ -6576,22 +6587,42 @@ export async function newgame() {
     if (g._rogueFriday13Path) {
         g.flags.pickup = false;
         g._friday13ElapsedTurns = 46;
-        g._rogueFriday13SavePath = /Sy$/.test(g.replayMoves || '');
+        g._rogueFriday13SavePath = /Sy$/.test(replayMoves);
     }
     g._rogueOrcPath = g.urole?.key === 'rogue'
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
     g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
         && g.u?.ux === 36 && g.u?.uy === 7;
     g._valkChatPath = g.urole?.key === 'valkyrie'
-        && /#chat/.test(g.replayMoves || '');
+        && /#chat/.test(replayMoves);
     g._priestCastPath = g.urole?.key === 'priest'
-        && /Z.*#turn/s.test(g.replayMoves || '');
+        && /Z.*#turn/s.test(replayMoves);
     g._healerNewmoonPath = g.urole?.key === 'healer'
-        && /szf/.test(g.replayMoves || '');
+        && /szf/.test(replayMoves);
     g._knightPonyPath = g.urole?.key === 'knight'
-        && /^  sns#ride/.test(g.replayMoves || '');
+        && /^  sns#ride/.test(replayMoves);
     g._knightCombatPath = g.urole?.key === 'knight'
-        && /^  ns#ride/.test(g.replayMoves || '');
+        && /^  ns#ride/.test(replayMoves);
+
+    if (bridgeFreeEnabled()) {
+        const compatibilityPaths = [
+            ['samurai.altar-run-prayer', g._samuraiAltarPath],
+            ['tourist.explore-search', g._touristExplorePath],
+            ['ranger.named-start', g._rangerNamePath],
+            ['rogue.explore', g._rogueExplorePath],
+            ['rogue.friday13', g._rogueFriday13Path],
+            ['rogue.orc', g._rogueOrcPath],
+            ['rogue.chargen', g._rogueChargenPath],
+            ['valkyrie.chat', g._valkChatPath],
+            ['priest.passive-projectile', g._priestCastPath],
+            ['healer.newmoon', g._healerNewmoonPath],
+            ['knight.pony', g._knightPonyPath],
+            ['wizard.bind', g._wizardBindPath],
+        ];
+        for (const [bridgeId, selected] of compatibilityPaths) {
+            if (selected) useCompatibilityBridge(bridgeId);
+        }
+    }
     if (g._valkChatPath) {
         // The C room-fill order leaves this generated boulder in the
         // upstairs room.  Preserve that state until room filling itself is
@@ -6638,7 +6669,7 @@ export async function newgame() {
     } else {
         // Roles not ported yet retain the starter replay until their real
         // inventory tables are translated.
-        fastforward_post_mklev();
+        if (!bridgeFreeEnabled()) fastforward_post_mklev();
     }
 
     // This Priest fixture begins with a zero-time cast menu.  newgame() has
@@ -6999,6 +7030,7 @@ export async function moveloop_core() {
             if (stepNum === 1) initialTurnMaintenanceRng();
             else if (g._rangerNamePath)
                 petMoved = rangerNameMonsterActionRng(stepNum);
+            else if (bridgeFreeEnabled()) initialTurnMaintenanceRng();
             else petMoved = fastforward_ranger_step(stepNum);
             if (petMoved && g.startingPet) {
                 const { mx, my } = g.startingPet;
@@ -7108,7 +7140,13 @@ export async function moveloop_core() {
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
-        } else fastforward_step(stepNum);
+        } else if (bridgeFreeEnabled() && liveQuietRole) {
+            // A quiet source-owned role with no full-ration actor still owns
+            // the global maintenance pass.  The legacy fallback padded this
+            // boundary with the Tourist transcript even when no actor moved.
+            initialTurnMaintenanceRng();
+        } else if (!bridgeFreeEnabled()) fastforward_step(stepNum);
+        else useCompatibilityBridge('scheduler.default-replay-gap');
         g._maintenanceMove = g.moves || 1;
     }
 

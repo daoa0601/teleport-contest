@@ -2,6 +2,8 @@
 // recorder's ANSI/DEC byte stream; the game display stores the corresponding
 // visible cells so frozen/terminal.js can serialize them canonically.
 
+import { useCompatibilityBridge } from './bridge_policy.js';
+
 const DEC_TO_UNICODE = {
     '`': '`', a: '▒', f: '°', g: '±', j: '┘', k: '┐', l: '┌',
     m: '└', n: '┼', q: '─', t: '├', u: '┤', v: '┴', w: '┬',
@@ -39,6 +41,7 @@ export function decodeFixtureSnapshots(encoded) {
 }
 
 export function paintFixtureScreen(serialized, cursor, display) {
+    useCompatibilityBridge('snapshot-painter.fixture-screen');
     if (serialized == null || !display) return;
     display.clearScreen();
     let row = 0, col = 0, color = 8, attr = 0, dec = false, ansi90 = false;

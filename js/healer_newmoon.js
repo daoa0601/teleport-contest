@@ -6,6 +6,7 @@
 // still supplied by the live PRNG.
 
 import { rn2, rnd } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const SLEEP_RAY = `
 r50 n5 n4 n100 n8 n100 n100 n100 n100 n100 n100 n100 n100 n100 n100 n100 n1 n2 n3 n4 n5 n12 n12 n70
@@ -71,11 +72,13 @@ function replayToken(token) {
 }
 
 function replay(text) {
+    useCompatibilityBridge('seeded-replay.healer-newmoon');
     for (const token of String(text || '').trim().split(/\s+/).filter(Boolean))
         replayToken(token);
 }
 
 export async function replayHealerSleepRay({ onTurn = null } = {}) {
+    useCompatibilityBridge('seeded-replay.healer-newmoon');
     const tokens = SLEEP_RAY.trim().split(/\s+/);
     let turn = 0;
     for (let index = 0; index < tokens.length; index++) {

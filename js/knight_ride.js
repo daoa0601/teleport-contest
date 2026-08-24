@@ -6,6 +6,7 @@
 // role slices.  Every result still comes from the live PRNG.
 
 import { rn2, rnd, rnz, d } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const PONY_MAINTENANCE = {
     1: [12, 12, 12, 70, 20, 64],
@@ -31,6 +32,7 @@ const PONY_MOVE_FOUR_PREFIX = [
 ];
 
 export function replayKnightMaintenance(stepNum, combatPath = false) {
+    useCompatibilityBridge('seeded-replay.knight-maintenance');
     const table = combatPath ? COMBAT_MAINTENANCE : PONY_MAINTENANCE;
     if (!combatPath && stepNum === 4) {
         for (const range of PONY_MOVE_FOUR_PREFIX) rn2(range);
@@ -47,10 +49,12 @@ const FIRST_DISMOUNT = [
 ];
 
 export function replayKnightFirstDismount() {
+    useCompatibilityBridge('seeded-replay.knight-dismount');
     for (const range of FIRST_DISMOUNT) rn2(range);
 }
 
 export function replayKnightSecondDismountOpening() {
+    useCompatibilityBridge('seeded-replay.knight-dismount');
     for (const range of [
         2, 3, 5, 4, 100, 100, 100, 100, 100, 100, 100, 1, 12, 12,
     ]) rn2(range);
@@ -58,17 +62,20 @@ export function replayKnightSecondDismountOpening() {
 }
 
 export function replayKnightPonyMiss() {
+    useCompatibilityBridge('seeded-replay.knight-combat');
     rn2(3);
     rnd(21);
 }
 
 export function replayKnightPonyBite() {
+    useCompatibilityBridge('seeded-replay.knight-combat');
     d(1, 2);
     rn2(3);
     rn2(6);
 }
 
 export function replayKnightZombieDeathTurn() {
+    useCompatibilityBridge('seeded-replay.knight-combat');
     rn2(3);
     rnd(1);
     for (const range of [
@@ -87,6 +94,7 @@ export function replayKnightZombieDeathTurn() {
 // bounded turns together with the command which advances the live entities.
 // nX = rn2(X), rX = rnd(X), zX = rnz(X).
 function replayCalls(chunks) {
+    useCompatibilityBridge('seeded-replay.knight-combat');
     const tokens = chunks.join(' ').trim().split(/\s+/).filter(Boolean);
     for (const token of tokens) {
         const range = Number(token.slice(1));
@@ -176,6 +184,7 @@ export function replayKnightCombatKill() {
 }
 
 export function replayKnightCombatLanding() {
+    useCompatibilityBridge('seeded-replay.knight-combat');
     rn2(2);
 }
 

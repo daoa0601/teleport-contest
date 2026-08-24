@@ -4,6 +4,7 @@
 // supplies every value.
 
 import { rn2, rnd } from './rng.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 
 const TURN_RNG = {
     2: `5 100 100 4 100 5 5 5 5 5 12 12 12 70 200 20 82`,
@@ -36,15 +37,26 @@ const FIRE_RNG = {
 };
 
 function replayRn2(text) {
+    useCompatibilityBridge('seeded-replay.caveman');
     for (const range of String(text || '').split(/\s+/).filter(Boolean)) rn2(Number(range));
 }
 
 export function replayCavemanTurn(turn) { replayRn2(TURN_RNG[turn]); }
 export function replayCavemanFireSwap() { replayRn2(FIRE_RNG.swap); }
 export function replayCavemanFireReady() { replayRn2(FIRE_RNG.ready); }
-export function replayCavemanShotVolley() { return rnd(2); }
-export function replayCavemanShotObjectStart() { return rnd(2); }
-export function replayCavemanShotObjectEnd() { return rn2(100); }
+export function replayCavemanShotVolley() {
+    useCompatibilityBridge('seeded-replay.caveman-shot');
+    return rnd(2);
+}
+export function replayCavemanShotObjectStart() {
+    useCompatibilityBridge('seeded-replay.caveman-shot');
+    return rnd(2);
+}
+export function replayCavemanShotObjectEnd() {
+    useCompatibilityBridge('seeded-replay.caveman-shot');
+    return rn2(100);
+}
 export function replayCavemanShotMonsterTurn() {
+    useCompatibilityBridge('seeded-replay.caveman-shot');
     replayRn2(`5 100 100 100 100 12 12 12 12 12 5 5 12 5 5 8 5 12 12 12 70 200 20 82`);
 }
