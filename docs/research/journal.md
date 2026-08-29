@@ -93739,3 +93739,63 @@ the reroll lifecycle before leaving startup, without opening a sealed trace or
 publishing a measurement.
 
 ---
+
+### [2026-08-29 14:04 EEST, journal block 3122] {#bridge-free #startup #reroll #inventory #attributes #skills #spells #tty #conduct #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** pinned `allmain.c:newgame()`,
+`invent.c:reroll_menu()`, and `u_init.c:u_init_inventory_attrs()` /
+`u_init_skills_discoveries()` establish a two-phase lifecycle before any
+session was selected. JavaScript had no reroll menu or counter, but the earlier
+break was deeper: `iniInv()` immediately wore, wielded, learned, discovered,
+and skill-initialized every generated candidate. A rejected Wizard spellbook
+therefore could survive in `spells` and knowledge even if a loop were added.
+
+**Prediction portfolio and decisive evidence:** (1) a menu-only hypothesis
+predicted candidate replacement would be sufficient; a direct two-generation
+probe retained the architecture for leaked spell/equipment effects and was
+rejected against `ini_inv_use_obj()`'s post-loop source position. (2) a
+restart-RNG hypothesis predicted a reroll should reseed; C simply calls the
+generator again, so the live stream must continue. (3) a turn-command
+hypothesis predicted movement or pet recreation; the loop changes neither.
+(4) an identification hypothesis predicted displaying a candidate should add
+discoveries; C's `distantname` plus `override_ID` identifies only the menu
+view. (5) a fixed `p/r` hypothesis was incomplete because `lootabc` assigns
+automatic `a/b` accelerators while returning the same internal no/yes choices.
+
+**Decision and implementation:** carry `reroll` and `numrerolls` in
+`u.uroleplay`; add the state-derived startup menu, map-underlay restoration,
+identified clone descriptions, `p/r` and `a/b` languages, and the source
+cancel-to-yes/no fallback. Each accepted reroll increments the counter and
+re-enters the role/race/money/attribute/carry constructor without reseeding or
+recreating the starting pet. Move wear, wield, starting spells, discovery,
+Wizard skill-based knowledge, skill initialization, pauper reduction, minimum
+spell power, and AC into one idempotent finalization after the last candidate.
+Preserve the pre-finalization status snapshot under the later legacy pager,
+which matches C's absence of a second `bot()` while keeping the live state
+finalized.
+
+**Measured effect and regression:** `test/startup_reroll.test.js` passes 4/4:
+two generated candidates share no object identities; rejected candidates have
+no equipment, spells, encounters, or skill table; fresh Wizard and Gnome
+Ranger starts exercise default and `lootabc` menus; cancel falls through to
+the source yes/no prompt; conduct reports zero/one rerolls correctly; and all
+live starts record zero compatibility hits. An initial focused run exposed
+only a stale unit assumption that the empty encounter set was absent rather
+than allocated; correcting the assertion did not change production behavior.
+The combined startup, artifact, bridge-policy, Priest/Rogue/Samurai, and exact
+chargen regression passes **54/54**. Every verifier exited normally, and a
+post-run process check found no owned test tree. Implementation commit
+`9a7bf31` contains only the source owners and focused startup tests.
+
+**Falsified hypotheses, limit, and next blocker:** reroll is not a command,
+not a seed reset, not a menu-only presentation feature, and not compatible
+with applying `ini_inv_use_obj()` during construction. This closes the named
+reroll lifecycle under focused fresh witnesses but does not create a sealed
+generalization result. No full suite, public corpus, sealed trace, score,
+animation check, push, publication, or official measurement ran. The startup
+registry remains `partial` for permanent blind/deaf state and broader
+cross-role pet behavior. Next port the permanent blind/deaf initialization
+boundary from `u_init_misc()` and its perception/status invariants, then return
+to room fill before scheduling the one-shot sealed gate.
+
+---

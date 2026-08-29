@@ -35291,3 +35291,54 @@ to reach, then checks all 13 role startups and a fresh bridge-free Tourist
 turn. Lua owns none of this boundary. The registry remains **partial** because
 reroll and permanent blind/deaf strata, broader cross-role pet behavior, and
 the sealed stratified gate remain open.
+
+## 968. Reroll separates disposable candidates from final startup effects
+
+~~~mermaid
+sequenceDiagram
+    participant Gen as u_init_inventory_attrs
+    participant TTY as invent.c:reroll_menu
+    participant State as candidate inventory and attributes
+    participant Final as u_init_skills_discoveries
+    Gen->>State: clear prior inventory and purse
+    Gen->>State: generate role, race, mode, money, attributes, carry boost
+    State->>TTY: identified temporary names plus six attributes
+    TTY-->>Gen: reroll; increment numrerolls without advancing a turn
+    Gen->>State: replace candidate; continue the existing RNG stream
+    State->>TTY: present next candidate
+    TTY-->>Final: accept or cancel to no
+    Final->>State: discover, wear, wield, and learn final objects only
+    Final->>State: initialize skills, pauper state, spell power, and AC once
+~~~
+
+Pinned `allmain.c:newgame()` draws the first map and status, then loops over
+`reroll_menu()` and `u_init_inventory_attrs()` before it ever invokes
+`u_init_skills_discoveries()`. The distinction is state-bearing. Rejected
+spellbooks must not remain learned; rejected armor and weapons must not remain
+worn or wielded; rejected object types must not enter discoveries; and skill
+initialization must inspect only the accepted inventory. The prior JavaScript
+owner performed all of those effects inside every `iniInv()` construction, so
+adding a menu alone would have preserved a cross-candidate leak.
+
+The live owner now copies `OPTIONS=reroll` into `u.uroleplay`, presents the
+source `p/r` accelerators or automatic `a/b` letters under `lootabc`, identifies
+only cloned naming views, and restores the map under the startup menu. Closing
+the menu enters the source yes/no fallback; a second cancel accepts the current
+candidate. Every accepted reroll increments `numrerolls`, replaces inventory,
+money, attributes, spells, equipment caches, and skill caches, and continues
+from the current RNG state without spending a turn or recreating the pet.
+
+`finishStartingDiscoveries()` is now the single finalization boundary. It
+applies starting object discovery, oil/lamp coupling, equipment, initial
+spells, role skills, pauper reductions, minimum casting power, and armor class
+exactly once after acceptance. The legacy page is still painted over the
+pre-finalization status snapshot, matching C's no-`bot()` ordering while the
+underlying game state is already final.
+
+`test/startup_reroll.test.js` covers disposable candidate isolation, two live
+candidate screens, the default and `lootabc` input languages, cancellation,
+conduct counts, and zero bridge usage on fresh Wizard and Gnome Ranger starts.
+The combined startup, artifact, bridge-policy, and exact represented chargen
+regression is 54/54. Lua owns none of this boundary. The registry remains
+**partial** for permanent blind/deaf startup, broader cross-role pet behavior,
+and the scheduled sealed corpus gate.

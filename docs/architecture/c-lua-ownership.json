@@ -76,17 +76,17 @@
       "label": "Role/race inventory, attributes, skills, and starting pet",
       "status": "partial",
       "source": {
-        "cFiles": ["src/u_init.c", "src/dog.c", "src/options.c", "src/weapon.c", "src/insight.c", "src/allmain.c", "src/hack.c", "src/vault.c", "src/shk.c", "src/end.c"],
-        "cSymbols": ["u_init", "ini_inv", "ini_inv_obj_substitution", "u_init_role", "u_init_race", "u_init_inventory_attrs", "u_init_carry_attr_boost", "pauper_reinit", "skill_init", "makedog", "hidden_gold", "contained_gold", "inv_weight", "weight_cap", "show_conduct", "newgame"],
+        "cFiles": ["src/u_init.c", "src/invent.c", "src/dog.c", "src/options.c", "src/weapon.c", "src/insight.c", "src/allmain.c", "src/hack.c", "src/vault.c", "src/shk.c", "src/end.c"],
+        "cSymbols": ["u_init", "ini_inv", "ini_inv_obj_substitution", "ini_inv_use_obj", "u_init_role", "u_init_race", "u_init_inventory_attrs", "u_init_skills_discoveries", "u_init_carry_attr_boost", "reroll_menu", "pauper_reinit", "skill_init", "makedog", "hidden_gold", "contained_gold", "inv_weight", "weight_cap", "show_conduct", "newgame"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/u_init.js", "js/allmain.js", "js/options.js", "js/skills.js", "js/gold.js", "js/weight.js", "js/insight.js", "js/cmd.js", "js/vault.js", "js/end.js"],
+      "javascriptOwners": ["js/u_init.js", "js/allmain.js", "js/invent.js", "js/windows.js", "js/options.js", "js/skills.js", "js/gold.js", "js/weight.js", "js/insight.js", "js/cmd.js", "js/vault.js", "js/end.js"],
       "dependencies": ["startup-pre-mklev", "level-generation", "samurai-pet-turns"],
       "bridgeIds": ["fastforward.post-mklev"],
-      "acceptanceWitnesses": ["test/startup_carry.test.js: recursive contained-gold knowledge, container and bag weight, Strength-then-Constitution carry boost, all-role startup invariant, and fresh bridge-free Tourist turn", "test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
+      "acceptanceWitnesses": ["test/startup_reroll.test.js: disposable candidate isolation, deferred final effects, live default and lootabc menus, cancel fallback, reroll count/conduct, and fresh zero-bridge starts", "test/startup_carry.test.js: recursive contained-gold knowledge, container and bag weight, Strength-then-Constitution carry boost, all-role startup invariant, and fresh bridge-free Tourist turn", "test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, and the pauper/nudist contract. Reroll and blind/deaf strata, cross-role pet state beyond pauper saddle suppression, and a sealed stratified gate remain open."
+      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, pauper/nudist, and the complete startup reroll candidate/finalization lifecycle. Permanent blind/deaf strata, cross-role pet state beyond pauper saddle suppression, and a sealed stratified gate remain open."
     },
     {
       "id": "level-generation",
