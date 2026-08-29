@@ -94878,3 +94878,78 @@ coherent residual owner rather than generalize this successful-rescue path into
 the non-equivalent failure families.
 
 ---
+
+### [2026-08-29 18:00 EEST, journal block 3140] {#bridge-free #ice-room #boulder #monster-death #life-saving #genocide #minliquid #m-in-air #corpse-rng #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3139 left genocide-defeated
+monster life-saving behind the fail-loud boundary. Native
+`lifesaved_monster()` does not jump directly from amulet consumption to common
+death. It first restores movement and maximum HP, calls `wary_dog()` for a
+non-minion pet, and only then checks `G_GENOD`. On an ordinary genocided
+monster, a visible `Unfortunately, ... is still genocided...` line observes
+the restored actor and consumed amulet; after that line returns, HP becomes
+zero and `mondead()` continues through ordinary death bookkeeping. The earliest
+missing owner was this temporary-restoration tty boundary, not corpse creation
+or the later splash.
+
+**Prediction portfolio and decisive evidence:** five routes remained distinct.
+(1) Treating a genocide defeat as a failed precondition predicted the amulet
+remained worn; source consumes it and schedules replacement gear before testing
+`G_GENOD`. (2) Setting HP zero before the failure line predicted observers saw
+a dead actor; source presents the line while restored HP is live. (3) Treating
+the failure as a new special-death family predicted no reuse of the common
+path; after HP returns to zero, an otherwise ordinary actor re-enters the
+existing `mondead()` continuation. (4) Using a lizard as the first witness
+predicted it reached boulder fill; `minliquid()` kills that actor in the exposed
+moat first, so it is not a carrier for this later boundary. (5) Expecting only
+the fill and Wisdom draws through splash predicted corpse construction was
+RNG-free; native `mkcorpstat(CORPSTAT_INIT)` pays its initialized corpse
+reservoir after the genocide line and before burial. The final witness therefore
+compares bounded per-message slices rather than one flattened post-death log.
+
+**Decision and implementation:** commit `f130155` owns genocide-defeated rescue
+only when its subsequent death remains in the already-supported ordinary
+non-pet, non-shapeshifter family. The shared `lifeSaveMonster()` consumes and
+discovers the amulet with the existing visible/unseen policy, restores movement
+and at least ten HP, presents the optional failure line against that restored
+state, then returns HP zero with `survived:false`. The boulder continuation
+validates that resolution against its pending `G_GENOD` state, rejoins the
+common detachment, inventory, vanquish, corpse, and burial owner, and reaches
+splash only afterward. The preflight guard recursively checks the post-rescue
+death family before the earlier ICE mutation. Tame pets, shapechangers, and
+special death/detachment actors remain rejected rather than inheriting this
+ordinary projection.
+
+**Measured effect and regression:** the grounded named-wumpus witness is safe
+under `minliquid()` as a clinger but not airborne under `m_in_air()`. It proves
+the boulder `rn2(10)=5` and Wisdom `rn2(19)=11` are the only calls through the
+visible failure line; that line sees HP ten, an absent amulet, an attached
+actor, a free boulder, and an unburied statue. Initialized corpse RNG begins
+only afterward, and the splash sees HP zero, a detached actor, a buried named
+corpse and statue, and the destroyed boulder. A direct unseen witness consumes
+no RNG, emits no line, teaches no amulet type, and returns fatal HP zero.
+`test/themerooms.test.js` passes **47/47**; the combined bridge-policy,
+Priest-startup, ordinary-room, and themed-room gate passes **63/63**; four
+shared Wizard/death-ray life-saving carriers pass **4/4**; and five represented
+level-generation carriers pass **5/5**. Every verifier exited, and every guard
+found no prior suite or corpus process.
+
+**Corrections, falsified hypotheses, limit, and next blocker:** the lizard
+failure was a discriminating carrier error, not a request to weaken the earlier
+unsafe-liquid boundary; the grounded wumpus reaches the intended later source
+state. The initial full-log RNG expectation was also wrong: later initialized
+corpse construction is real source work, so the accepted witness stops exact
+comparison at the first post-failure call boundary and checks only that later
+RNG begins before splash. A genocide defeat does not preserve its amulet, does
+not set HP zero before its optional line, and is not a separate terminal state.
+Ice remains `partial`: tame-pet `wary_dog()` recovery, shapechanging, special
+corpse/explosion families, active-mimic and pit detachment,
+pet/unique/special actors, unsafe monster `minliquid()`, hero and drawbridge
+continuations, timer lifecycle gaps, and a sealed stratum remain open. No full
+suite, public corpus, sealed-trace inspection, score, push, publication,
+official measurement, or animation work ran. The next narrow candidate is
+tame-pet life-saving only if `wary_dog()` plus leash/steed state can be closed
+as one source-owned slice; otherwise retain its guard and choose a smaller
+timer or detachment owner.
+
+---

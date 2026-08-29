@@ -35814,11 +35814,11 @@ suspend tty. The focused continuation witness records the message/RNG timeline
 directly: zero calls at the first two messages, `rn2(10)=0` at the first splash
 and wake, then `rn2(10)=6` before the fill repaint and second splash.
 
-The common occupant-death continuation and successful worn-amulet interception
-are now source-owned by section 975. Shapechanging, life-saving failure for a
-genocided species, tame-pet recovery, special death/corpse, and unsupported
-actor-detachment families retain a pre-mutation fail-loud boundary. Hero water
-state, drawbridges, and unsafe `minliquid()` branches remain separate gaps.
+The common occupant-death continuation and both ordinary worn-amulet
+interception outcomes are now source-owned by section 975. Shapechanging,
+tame-pet recovery, special death/corpse, and unsupported actor-detachment
+families retain a pre-mutation fail-loud boundary. Hero water state,
+drawbridges, and unsafe `minliquid()` branches remain separate gaps.
 
 ## 975. Ice-fill occupant death is ordered before burial and splash
 
@@ -35837,7 +35837,10 @@ flowchart TD
     Silent --> Consume["consume amulet"]
     Crumble --> Restore["clear W_AMUL, set I_SPECIAL, restore move and HP"]
     Consume --> Restore
-    Restore --> Bury
+    Restore --> Genocided{"species genocided?"}
+    Genocided -->|no| Bury
+    Genocided -->|yes| StillGone["optional Unfortunately line, then HP zero"]
+    StillGone --> Detach
     Saver -->|no| Detach["m_detach then relobj inventory to floor"]
     Detach --> Chance["corpse_chance"]
     Chance --> NoCorpse{"G_NOCORPSE or no roll?"}
@@ -35868,21 +35871,31 @@ witness proves the initial melt and settling messages see the live actor and
 zero boulder/death RNG, while the splash sees the detached actor and buried
 pile.
 
-Successful monster life-saving is the other owned exit from `mondead()`.
+Worn monster life-saving now has two owned outcomes inside `mondead()`.
 `mlifesaver()` ignores a worn amulet on an ordinary nonliving monster. For an
 eligible living monster, a filled square and HP zero precede the life-saving
 presentation, while actor detachment, vanquish, inventory drop, and corpse
-creation never occur. A visible square owns `But wait`, glow, optional
-canseemon recovery prose, object discovery, and the crumble line. An unseen
-square consumes the amulet silently and does not teach its type. Only after the
-crumble boundary does `m_useup()` clear W_AMUL, `check_gear_next_turn()` set
-I_SPECIAL, and the source restore movement and at least ten HP; the ordinary
-boulder burial and splash then resume. Existing Wizard/death-ray carriers
-independently protect the shared visible life-saving owner.
+creation have not yet occurred. A visible square owns `But wait`, glow,
+optional `canseemon()` recovery prose, object discovery, and the crumble line.
+An unseen square consumes the amulet silently and does not teach its type. Only
+after the crumble boundary does `m_useup()` clear W_AMUL,
+`check_gear_next_turn()` set I_SPECIAL, and the source restore movement and at
+least ten HP. A surviving species then resumes ordinary boulder burial and
+splash without entering death bookkeeping. Existing Wizard/death-ray carriers
+independently protect that shared successful owner.
+
+For an otherwise ordinary non-pet whose species has `G_GENOD`, that restoration
+is temporary but still observable source state. A visible square reports
+`Unfortunately, ... is still genocided...` while the monster has restored HP
+and the amulet is already gone; an unseen square adds no line. Only after that
+boundary does HP return to zero and the transaction rejoin common detachment,
+corpse construction RNG, residual-pile burial, and splash. The grounded-wumpus
+witness is deliberately safe under `minliquid()` but not `m_in_air()`, so it
+reaches this later boundary without conflating the earlier liquid-death gap.
 
 This is not a claim that generic `mondead()` is complete. Shapechanging can
-restore a vampire form; genocide can defeat life-saving after consuming the
-amulet; tame pets require `wary_dog()`; explosions, special corpses, golems,
+restore a vampire form; tame pets require `wary_dog()` during life-saving;
+explosions, special corpses, golems,
 mummies/zombies, Riders, pets, unique monsters, shopkeepers, priests, guards,
 worms, and quest actors have additional state or presentation owners. Active
 mimics and pit occupants also need map-detachment callbacks. Those families are
