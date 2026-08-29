@@ -72,20 +72,16 @@ test('blind fate17 uncurses without resolving or printing liquid text', () => {
         cursed: true,
         buc: 'cursed',
     };
-    let liquidLookups = 0;
-
     const effect = resolveDippedBucFate({
         fate: 17,
         object,
         blind: true,
         liquidName() {
-            liquidLookups++;
-            return 'water';
+            throw new Error('blind glow must not resolve liquid text');
         },
     });
 
     assert.deepEqual(effect, { handled: true, message: '' });
-    assert.equal(liquidLookups, 0);
     assert.deepEqual(
         [object.blessed, object.cursed, object.buc],
         [false, false, 'uncursed'],
@@ -126,29 +122,22 @@ test('hands receive the loss message instead of a BUC mutation', () => {
 });
 
 test('fate26 resolves the current arm noun into the exact tingling line', () => {
-    let armLookups = 0;
     const effect = resolveDippedSensationFate({
         fate: 26,
-        armName() {
-            armLookups++;
-            return 'tentacle';
-        },
+        armName: () => 'tentacle',
     });
 
     assert.deepEqual(effect, {
         handled: true,
         message: 'A strange tingling runs up your tentacle.',
     });
-    assert.equal(armLookups, 1);
 });
 
 test('fate27 does not resolve anatomy for the exact sudden-chill line', () => {
-    let armLookups = 0;
     const effect = resolveDippedSensationFate({
         fate: 27,
         armName() {
-            armLookups++;
-            return 'arm';
+            throw new Error('sudden chill must not resolve anatomy');
         },
     });
 
@@ -156,7 +145,6 @@ test('fate27 does not resolve anatomy for the exact sudden-chill line', () => {
         handled: true,
         message: 'You feel a sudden chill.',
     });
-    assert.equal(armLookups, 0);
 });
 
 test('sensation reducer leaves adjacent fountain fates to their owners', () => {

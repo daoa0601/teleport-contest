@@ -97763,3 +97763,45 @@ corpus, scorer, sealed trace, push, publication, official hidden measurement,
 or animation work ran.
 
 ---
+
+### [2026-08-30 02:50 EEST, journal block 3185] {#test-quality #change-detector #lazy-resolution #presentation #fountain #web-trap #negative-contract #focused-regression #process-safety}
+
+**Witness and diagnosis:** block 3184 left direct presentation callbacks for a
+semantic pass.  Three default files still expressed lazy naming, actor
+construction, wish eligibility, trap eligibility, and anatomy/liquid prose as
+`subjectCalls`, `nameResolutions`, `armLookups`, `creations`, `trapChecks`, or
+similar counters.  Laziness is real behavior here because display-name
+resolution can consume display RNG and forbidden downstream work can mutate
+the game, but an exact count merely restates the coordinator branch.
+
+**Decision and independent contracts:** positive paths now prove the resolved
+value through the returned/emitted sentence, resulting actor state, completed
+trap, survivor set, or `wishGranted` mutation.  Negative paths supply a
+resolver or side-effect boundary that throws if touched, then assert the
+silent/fallback/non-granting result.  This makes accidental forbidden work a
+hard failure without encoding how many internal calls the accepted branch
+uses.  Visible web presentation still proves that the actual monster is passed
+to naming because that value determines the message; unseen and adjacent event
+kinds prove no presentation by their returned state and forbidden resolvers.
+
+**Measured effect and adversarial check:** the batch removes **68 lines** and
+adds **49**.  Static search finds no remaining default-lane variables or
+assertions with the `*Calls`/`*Lookups` counter pattern.  Syntax and
+`git diff --check` pass.  After a clean live process guard, the three changed
+files plus bridge-free policy/role witnesses pass **28/28**.  No production
+code changed in this batch, so the already-green **371/371** complete
+behavioral result from block 3184 remains the production regression gate; it
+was not redundantly rerun.
+
+**Falsified hypotheses, limits, and next blocker:** replacing a zero count
+with a forbidden dependency gives a stronger negative contract; a resolved
+message can prove positive lazy lookup without counting it; and a wish flag on
+the actor is a domain effect while `grantWishCalls === 1` is not.  This does
+not prove every remaining test behavioral: generic arrays named `messages`
+are valid only when they represent presented output, and event objects are
+valid only when consumed state makes them observable.  Future reviews should
+apply that semantic distinction instead of banning identifier patterns.  No
+public regression lane, full Contest corpus, scorer, sealed trace, push,
+publication, official hidden measurement, or animation work ran.
+
+---
