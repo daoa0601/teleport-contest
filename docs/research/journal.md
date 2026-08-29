@@ -96226,3 +96226,76 @@ work ran. The next portfolio should re-rank these remaining arms by coherent
 source dependency cone rather than public-session effect.
 
 ---
+
+### [2026-08-29 22:10 EEST, journal block 3160] {#bridge-free #swallowed-throw #weapon-damage #hmon #dmgval #mpickobj #critical-debugging-portfolio #fail-closed #test-slop #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after block 3159, the debugging
+portfolio compared ordinary swallowed weapons, food and potions, and the
+engulfer-death continuation. The survivor weapon route reuses the live damage,
+skill, exercise, and acquisition owners without opening consumption or death
+side effects, so it was selected as the smallest coherent source slice. On the
+old route, a live `t` command with either a dagger or pick-axe left the
+trapper at 40 HP and never linked the object into `minvent`; both red witnesses
+failed **0/2** at that first HP/ownership divergence.
+
+**Prediction and decisive C evidence:** `dothrow.c:thitmonst()` guarantees the
+hit while `engulfing_u(mon)` but still consumes `rnd(20)`. A weapon or
+weapon-tool enters `uhitm.c:hmon(..., HMON_THROWN)`: `weapon.c:dmgval()` rolls
+the physical target-size table, extra weapon dice, enchantment, and erosion;
+the hit path composes `dbon()` and the weapon-skill damage bonus, calls
+`use_skill()` when the physical roll exceeds one, changes monster HP, reports
+and wakes the target, then exercises Dexterity. The surviving projectile alone
+continues through `swallowit()` and `steal.c:mpickobj()`. The predicted mundane
+cases were therefore a trained dagger, an untrained one-damage pick-axe, a
+multi-die two-handed sword, and cursed-slip direction rerolls before the hit
+and damage draws.
+
+**Decision and implementation:** commit `2fd6e3d` adds
+`weapon_damage.js` as the shared owner for the ordinary physical table and
+Strength damage bonus, and routes only ordinary guaranteed-survivor,
+hard-material, non-ammunition weapons and weapon-tools through the live
+swallowed transaction. Eligibility excludes launchers, silver, axes,
+target-specific bonuses, poison, artifacts, passives, peaceful/pet/worm
+carriers, equipment, shop/timer state, special hero state, and every kill
+continuation. A conservative maximum-damage calculation proves before RNG
+that all accepted outcomes leave the engulfer alive; it is based on source
+damage bounds, not on a known seed or replay transcript. Fixture,
+fast-forward, seeded replay, and `replayMoves` control flow remain absent.
+
+**Adversarial correction:** a resolver returning `false` did not make an
+unsupported swallowed weapon fail closed. `dothrow()` would continue into its
+unrelated floor/projectile compatibility fallback. The dispatcher now crosses
+the named `throw.swallowed-weapon-unsupported` bridge before that fallback.
+Bridge-free mode raises there before inventory, monster HP, or RNG mutation;
+legacy mode records the already-existing compatibility behavior. A
+potentially lethal dagger directly witnesses the forbidden boundary. This
+names and exposes an implicit bridge rather than treating its old behavior as
+live source ownership.
+
+**Measured effect, regression, and process custody:** the two core witnesses
+went red **0/2** and green **2/2**; ordinary dagger, minimal pick-axe,
+multi-die sword, cursed slip, and lethal fail-loud cases are all green. The
+actual swallowed/lamp/acquisition gate passes **27/27**, the exceptional
+Strength witness passes **1/1**, `test/bridge_free.test.js` passes **8/8**, and
+the mechanical audit is clean at **121 files, 15 guarded modules, and 19
+fixture modules**. One post-compaction command mistakenly named two nonexistent
+test files; Node silently ignored them and reported only the nine swallowed
+cases. Count reconciliation caught the error, that invocation is explicitly
+discarded as acceptance evidence, and the corrected three-file 27-case gate
+then passed. Every invocation was preceded by the process guard, ran as the
+only verifier, and exited normally; no yielded process remained.
+
+**Falsified hypotheses, limit, and next blocker:** swallowed weapon contact is
+not the generic disappearance-only arm; guaranteed contact does not eliminate
+the accuracy RNG call; minimal physical damage must not train the skill;
+multi-die weapons cannot be represented by one metadata die; and a bounded
+resolver alone is not fail-closed unless the dispatcher prevents unrelated
+fallback. The survivor slice does not infer ammo, launchers, special
+materials/targets, poison, artifacts, passives, wielded or returning weapons,
+shop state, food/potions, or death/expulsion/corpse/autopickup semantics. No
+full Contest suite, engine/public corpus, sealed-trace inspection, score, push,
+publication, official measurement, or animation work ran. The next portfolio
+must re-rank the remaining source arms and keep the named unsupported bridge
+closed until one complete continuation replaces it.
+
+---

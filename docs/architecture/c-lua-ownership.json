@@ -291,24 +291,41 @@
       "bridgeIds": [],
       "acceptanceWitnesses": ["test/monster_inventory_acquisition.test.js: live dog_invent pickup and relobj-shaped release preserve identity and clear carrier ownership; covetous STRAT_GROUND head-links the target; bullwhip snatch transfers and merges the real hero weapon; clonewiz uses direct add_to_minv without carrying effects; origin-specific ox/oy survive linkage; zero bridge usage", "focused test/run_scheduler.test.js: unicorn gift acceptance/relocation, clone-Wizard construction, pet pickup tty continuation, hero gold merging, and blocked-arrow parent-stack pickup all preserve exact RNG and screens", "combined bridge-free object-lifecycle gate: 190/190"],
       "lastSealedGate": null,
-      "openGap": "Unicorn gem acceptance, ordinary pet pickup/release, exact-square covetous artifact pickup, bullwhip inventory snatch, and clone-Wizard fake-Amulet linkage now use the common source-shaped boundaries. Stack merging and the generic swallowed-throw transaction, including its supported lamp snuffing, are tracked separately. Swallowed damaging or consuming objects, other thrown or kicked catches, shopkeeper projectile snatches, quest-leader retention, monster container rummaging, polymorph transfers, knowledge loss, non-swallowed light snuffing and candle burn, equipment continuation, migration persistence, and a sealed stratum remain open."
+      "openGap": "Unicorn gem acceptance, ordinary pet pickup/release, exact-square covetous artifact pickup, bullwhip inventory snatch, and clone-Wizard fake-Amulet linkage now use the common source-shaped boundaries. Stack merging and the generic swallowed-throw transaction, including supported lamp snuffing and surviving physical weapons, are tracked separately. Swallowed consuming objects and engulfer-death continuations, other thrown or kicked catches, shopkeeper projectile snatches, quest-leader retention, monster container rummaging, polymorph transfers, knowledge loss, non-swallowed light snuffing and candle burn, equipment continuation, migration persistence, and a sealed stratum remain open."
     },
     {
       "id": "generic-swallowed-throw",
       "label": "Generic swallowed throw contact and acquisition",
       "status": "partial",
       "source": {
-        "cFiles": ["src/dothrow.c", "src/steal.c", "src/light.c", "src/timeout.c", "src/mkobj.c", "src/invent.c", "src/objnam.c"],
-        "cSymbols": ["throw_obj", "throwit", "thitmonst", "swallowit", "mpickobj", "obj_sheds_light", "attacktype", "snuff_light_source", "end_burn", "cleanup_burn", "carry_obj_effects", "add_to_minv", "Tobjnam", "next_ident", "splitobj"],
+        "cFiles": ["src/dothrow.c", "src/uhitm.c", "src/weapon.c", "src/attrib.c", "src/steal.c", "src/light.c", "src/timeout.c", "src/mkobj.c", "src/invent.c", "src/objnam.c"],
+        "cSymbols": ["throw_obj", "throwit", "thitmonst", "hmon", "hmon_hitmon", "hmon_hitmon_weapon", "hmon_hitmon_dmg_recalc", "dmgval", "dbon", "weapon_dam_bonus", "use_skill", "exercise", "swallowit", "mpickobj", "obj_sheds_light", "attacktype", "snuff_light_source", "end_burn", "cleanup_burn", "carry_obj_effects", "add_to_minv", "Tobjnam", "next_ident", "splitobj"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/swallowed_throw.js", "js/cmd.js", "js/monster_inventory.js", "js/object_merge.js", "js/figurine_timer.js", "js/light.js", "js/object_timers.js", "js/senses.js", "js/vision.js"],
-      "dependencies": ["rng-core", "turn-scheduler", "runtime-monster-inventory-acquisition", "object-stack-merging", "object-timer-queue", "tty-display"],
-      "bridgeIds": [],
-      "acceptanceWitnesses": ["test/swallowed_throw.test.js: live t command transfers the selected cursed figurine identity into an energy vortex, preserves rn2(7)->rnd(20)->rnd(9000) order, replaces its timer, records stolen provenance, and emits currents attribution; a two-scroll live split pays rnd(2)->rnd(20), leaves the parent carried, converts thrown to stolen before merge, absorbs into the existing purple-worm stack, emits entrails attribution, and creates no floor identity; a lit oil lamp head-links to a trapper before BURN_OBJECT cancellation restores 30 unused turns, while a blind magic-lamp throw omits the visual snuff line but still darkens after linkage; zero bridge usage", "focused swallowed, lamp, and acquisition gate: 22/22", "mechanical bridge audit: 120 files, 15 guarded modules, 19 fixture modules"],
+      "javascriptOwners": ["js/swallowed_throw.js", "js/cmd.js", "js/weapon_damage.js", "js/skills.js", "js/attrib.js", "js/monster_inventory.js", "js/object_merge.js", "js/figurine_timer.js", "js/light.js", "js/object_timers.js", "js/senses.js", "js/vision.js"],
+      "dependencies": ["rng-core", "physical-weapon-damage", "turn-scheduler", "runtime-monster-inventory-acquisition", "object-stack-merging", "object-timer-queue", "tty-display"],
+      "bridgeIds": ["throw.swallowed-weapon-unsupported"],
+      "acceptanceWitnesses": ["test/swallowed_throw.test.js: live t command transfers the selected cursed figurine identity into an energy vortex, preserves rn2(7)->rnd(20)->rnd(9000) order, replaces its timer, records stolen provenance, and emits currents attribution; a two-scroll live split pays rnd(2)->rnd(20), leaves the parent carried, converts thrown to stolen before merge, absorbs into the existing purple-worm stack, emits entrails attribution, and creates no floor identity; a lit oil lamp head-links to a trapper before BURN_OBJECT cancellation restores 30 unused turns, while a blind magic-lamp throw omits the visual snuff line but still darkens after linkage; ordinary dagger, minimal pick-axe, multi-die two-handed sword, and cursed-slip witnesses pay source-shaped hit/damage/training/exercise/acquisition cadence with zero bridge usage; a potentially lethal dagger reaches the named unsupported bridge before RNG or mutation", "focused swallowed, lamp, and acquisition gate: 27/27", "test/bridge_free.test.js: 8/8", "mechanical bridge audit: 121 files, 15 guarded modules, 19 fixture modules"],
       "lastSealedGate": null,
-      "openGap": "The non-worn, paid, generic non-consuming object path is live from selector and direction through split/free ownership, slip and hit-roll cadence, wake/contact prose, LOST_THROWN-to-LOST_STOLEN repair, carrying effects, timer replacement, minvent insertion, and compatible-stack absorption. Lit oil lamps, brass lanterns, and magic lamps additionally own the sighted/blind mpickobj message gate, link-before-snuff ordering, BURN_OBJECT cancellation, unused-fuel restoration, and mobile-light invalidation. Weapons and weapon-tools, gems, gold, food and taming, potions, eggs/pies/venom, boulders and iron balls, attached or worn objects, unsupported burning objects and artifact lights, shop billing, petrifying corpses, low-stamina drops, timed stack splitting, returning missiles, engulfer death, complete naming variants, and a sealed stratum remain open."
+      "openGap": "The non-worn, paid, generic non-consuming object path is live from selector and direction through split/free ownership, slip and hit-roll cadence, wake/contact prose, LOST_THROWN-to-LOST_STOLEN repair, carrying effects, timer replacement, minvent insertion, and compatible-stack absorption. Lit oil lamps, brass lanterns, and magic lamps additionally own the sighted/blind mpickobj message gate, link-before-snuff ordering, BURN_OBJECT cancellation, unused-fuel restoration, and mobile-light invalidation. Ordinary guaranteed-survivor hard-material non-ammo weapons and weapon-tools now own physical damage, Strength and skill bonuses, training, Dexterity exercise, wake/presentation, and acquisition. Ammo, missiles, launchers, silver and target-specific modifiers, axes, poison, artifacts, passives, peaceful/pet/worm carriers, wielded or returning weapons, shop state, gems, gold, food and taming, potions, eggs/pies/venom, boulders and iron balls, attached or worn objects, unsupported burning objects and artifact lights, low-stamina drops, timed stack splitting, engulfer death/expulsion/corpse/pickup continuation, complete naming variants, and a sealed stratum remain open."
+    },
+    {
+      "id": "physical-weapon-damage",
+      "label": "Physical weapon damage dice, enchantment, erosion, and Strength",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/weapon.c", "src/uhitm.c", "src/attrib.c"],
+        "cSymbols": ["dmgval", "dbon", "hmon_hitmon_weapon", "hmon_hitmon_dmg_recalc"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/weapon_damage.js", "js/swallowed_throw.js", "js/cmd.js"],
+      "dependencies": ["rng-core"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/swallowed_throw.test.js: ordinary dagger, minimal pick-axe, and multi-die two-handed sword prove small-target physical dice, enchantment/erosion boundary, Strength and skill bonuses, training cadence, and survivor acquisition with zero bridge usage", "test/run_scheduler.test.js: exceptional Strength values retain NetHack internal encoding across the shared damage-bonus owner"],
+      "lastSealedGate": null,
+      "openGap": "The ordinary physical damage table, enchantment, erosion, and Strength bonus core are shared, and the swallowed guaranteed-survivor caller composes live skill damage and training. Target-specific blessed, silver, wooden, artifact-light, shade, thick-hide, axe, poison, and special-monster modifiers are deliberately excluded; melee and other projectile callers still retain partial duplicated ownership, and no sealed stratum has run."
     },
     {
       "id": "object-stack-merging",

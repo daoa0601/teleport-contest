@@ -36734,12 +36734,14 @@ unworn generic non-consuming objects, including ordinary tools, armor, rings,
 amulets, scrolls, spellbooks, wands, statues, and chains when they do not select
 a stronger source arm. Section 991 adds the lit oil-lamp, brass-lantern, and
 magic-lamp continuation without broadening that generic eligibility to other
-burning objects. Weapons and weapon-tools, gems, gold, food/taming, potions,
-eggs, pies, venom, boulders, iron balls, attached or worn objects, unsupported
-lights, shop billing, petrifying corpses, low-stamina drops, timed stack
-splitting, returning missiles, engulfer death, exhaustive naming, and a sealed
-stratum remain open. Fixture, fast-forward, seeded replay, and `replayMoves`
-control flow are absent from this path.
+burning objects. Section 992 adds a bounded ordinary physical survivor for
+weapons and weapon-tools without claiming their kill or special-effect arms.
+Gems, gold, food/taming, potions, eggs, pies, venom, boulders, iron balls,
+attached or worn objects, unsupported lights, shop billing, petrifying
+corpses, low-stamina drops, timed stack splitting, returning missiles,
+engulfer death, exhaustive naming, and a sealed stratum remain open. Fixture,
+fast-forward, seeded replay, and `replayMoves` control flow are absent from
+this path.
 
 ## 991. Swallowed lamp acquisition links ownership before snuffing light
 
@@ -36794,4 +36796,68 @@ ordering, timer cancellation, unused-fuel restoration, and mobile-light
 invalidation. Candles, candelabrum state, potions of oil, artifact light,
 weapons that shed light, ordinary non-swallowed monster pickup, merge-light
 identity transfer, invalid or overdue timer recovery, shop billing, and a
+sealed stratum remain open.
+
+## 992. Surviving swallowed weapons damage before acquisition
+
+~~~mermaid
+flowchart TD
+    Throw["section 990 selected weapon or weapon-tool"] --> Bound{"ordinary supported physical survivor?"}
+    Bound -->|"no"| Bridge["throw.swallowed-weapon-unsupported"]
+    Bridge -->|"bridge-free"| Stop["fail before RNG or mutation"]
+    Bridge -->|"legacy"| Compat["retain named compatibility fallback"]
+    Bound -->|"yes"| Detach["split or detach; LOST_THROWN"]
+    Detach --> Slip["cursed or greased rn2(7); direction rerolls"]
+    Slip --> Hit["guaranteed thitmonst still consumes rnd(20)"]
+    Hit --> Dice["dmgval physical table: base, extra dice, enchantment, erosion"]
+    Dice --> Bonus["dbon plus weapon skill damage bonus"]
+    Bonus --> Practice{"physical dmg greater than one?"}
+    Practice -->|"yes"| Train["use_skill once"]
+    Practice -->|"no"| Hurt["minimum final damage is one"]
+    Train --> Hurt
+    Hurt --> HP["subtract monster HP; hit prose and wake"]
+    HP --> Exercise["exercise Dexterity"]
+    Exercise --> Survives{"engulfer survives"}
+    Survives -->|"yes"| Acquire["swallowit to mpickobj; stolen provenance and minvent link"]
+    Survives -->|"no"| Open["death, expulsion, corpse, and same-square pickup remain open"]
+    Lua["Lua owns no physical hit or acquisition transition"] -.-> Throw
+~~~
+
+`dothrow.c:thitmonst()` marks a projectile aimed at `u.ustuck` as a
+guaranteed hit, but it does not skip the ordinary `rnd(20)` accuracy draw.
+Weapons and weapon-tools then enter `uhitm.c:hmon()` with `HMON_THROWN`.
+`weapon.c:dmgval()` rolls the physical small- or large-target table, including
+the exceptional extra dice for weapons such as a two-handed sword, then
+applies enchantment and erosion. `hmon()` composes the hero's Strength and
+weapon-skill damage bonuses, trains the skill when the physical roll exceeds
+one, subtracts HP, wakes the engulfer, and exercises Dexterity. Only a surviving
+engulfer reaches the existing `swallowit()` to `mpickobj()` ownership boundary.
+
+JavaScript isolates the reusable physical table and Strength calculation in
+`weapon_damage.js`. `swallowed_throw.js` admits a deliberately bounded
+hard-material, non-ammunition, non-launcher survivor with an explicit skill
+state and no target-specific, attitude, passive, artifact, poison, equipment,
+shop, timer, or special-carrier continuation. Its maximum-damage check proves
+before any draw that the current engulfer cannot die for any RNG outcome. This
+is a source-invariant acceptance boundary, not a seed or transcript identity
+check. The accepted transaction then detaches the real object, preserves the
+cursed-slip draw order, pays the unused hit roll, rolls damage, trains and
+exercises, emits the live hit message, wakes the engulfer, and reuses the
+shared monster-acquisition owner.
+
+Returning `false` from that bounded resolver was not by itself fail-closed:
+the command dispatcher would continue into an unrelated floor-projectile
+fallback. Unsupported swallowed weapons now cross the explicit
+`throw.swallowed-weapon-unsupported` compatibility bridge. Bridge-free mode
+therefore raises before inventory, HP, or RNG changes; legacy mode only names
+and records the pre-existing compatibility route. A potentially lethal dagger
+is the direct witness for that boundary.
+
+This subsystem is mechanically **partial**. Ordinary daggers, a minimal
+pick-axe weapon-tool, a multi-die two-handed sword, and cursed throwing-weapon
+slip have direct live-command witnesses. Ammunition, missiles, launchers,
+silver and special target/material bonuses, axes, poison, artifacts, passives,
+peaceful or pet engulfer behavior, worm segments, wielded and returning
+weapons, billing, low-stamina drops, engulfer death, expulsion, corpse
+suppression, same-square autopickup, other physical-damage callers, and a
 sealed stratum remain open.
