@@ -9,15 +9,17 @@ import {
 } from './const.js';
 import { newsym } from './display.js';
 import { game } from './gstate.js';
-import { makemonNear } from './mklev.js';
+import { findMonsterNearPosition, makemonAt } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_MOVE, MONSTER_SYMBOL,
     monsterTypeName,
 } from './monster_data.js';
 import { FIGURINE } from './object_data.js';
-import { OBJECT_TIMER_KIND } from './object_timers.js';
-import { rn2 } from './rng.js';
+import {
+    OBJECT_TIMER_KIND, scheduleObjectTimer,
+} from './object_timers.js';
+import { rn2, rnd } from './rng.js';
 
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
@@ -104,10 +106,29 @@ export async function runClaimedCarriedFigurineTimer(
     let flags = MM_EDOG | MM_IGNOREWATER | NO_MINVENT | MM_NOMSG;
     if (gender === 1) flags |= MM_FEMALE;
     else if (gender === 2) flags |= MM_MALE;
-    // enexto() receives the hero as its center, but native makemon() receives
-    // the chosen adjacent coordinate.  It must not run hero-square birth state.
-    const monster = await makemonNear(
-        figurine.corpsenm, state.u.ux, state.u.uy, flags, false,
+    // enexto() failure is not make_familiar() failure: native retains the
+    // figurine and schedules a relative retry before any construction RNG.
+    const position = findMonsterNearPosition(
+        figurine.corpsenm, state.u.ux, state.u.uy,
+    );
+    if (!position) {
+        const retryDelay = rnd(5000);
+        const retryTimer = scheduleObjectTimer(
+            figurine, OBJECT_TIMER_KIND.FIG_TRANSFORM,
+            currentTurn + retryDelay, state,
+        );
+        return {
+            figurine, monster: null, transformed: false,
+            retryScheduled: true, retryDelay,
+            retryDeadline: retryTimer.deadline,
+            finishPending: false, message: null,
+        };
+    }
+
+    // Native makemon() receives the chosen coordinate, not the hero center,
+    // and therefore must not run hero-square birth initialization.
+    const monster = await makemonAt(
+        figurine.corpsenm, position.x, position.y, flags,
     );
     if (!monster) {
         deleteCarriedFigurine(figurine, state);

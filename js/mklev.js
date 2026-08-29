@@ -97,7 +97,7 @@ import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
-import { makeEngravingAt, wipeoutText } from './engrave.js';
+import { engravingAt, makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -297,6 +297,7 @@ const PM_CHAMELEON = 327;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD_OF_YENDOR = 285;
 const PM_DEATH = 311;
+const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_WIZARD = 343;
 const PM_LORD_CARNARVON = 344;
@@ -309,6 +310,10 @@ const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
 const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
+const M1_NOEYES = 0x00001000;
+const S_ANGEL = 27;
+const S_VAMPIRE = 48;
+const S_HUMAN = 53;
 const SCR_CREATE_MONSTER = 329;
 const AMULET_OF_REFLECTION = 208;
 const HELM_OF_BRILLIANCE = 96;
@@ -2226,6 +2231,7 @@ function levelMonsterAt(x, y, ignore = null) {
 
 export function monsterGoodPosition(
     mndx, x, y, avoidMonsterGenerationExclusions = false,
+    checkScary = false,
 ) {
     const loc = game.level?.at?.(x, y);
     if (!loc || !isok(x, y)) return false;
@@ -2258,6 +2264,8 @@ export function monsterGoodPosition(
             && !(loc.wall_info & W_NONPASSWALL)) return true;
         if ((flags1 & 0x00000004) && loc.typ === DOOR
             && (loc.doormask & (D_CLOSED | D_LOCKED))) return true;
+        if (checkScary && monsterTypeScaredFromPosition(mndx, x, y))
+            return false;
     }
     // C teleport.c:accessible() excludes a closed or locked door even
     // though DOOR is otherwise an ACCESSIBLE terrain type.  Pass-wall and
@@ -2277,6 +2285,25 @@ export function monsterGoodPosition(
         return false;
     }
     return true;
+}
+
+// C teleport.c:goodpos_onscary().  New-monster placement has species data
+// but no live actor state, so its first enexto pass uses this deliberately
+// narrower scare approximation before retrying without GP_CHECKSCARY.
+function monsterTypeScaredFromPosition(mndx, x, y) {
+    const symbol = MONSTER_SYMBOL[mndx] ?? 0;
+    if (symbol === S_HUMAN || symbol === S_ANGEL
+        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(mndx)
+        || ((MONSTER_GENO[mndx] ?? 0) & G_UNIQ_MASK)) return false;
+    const loc = game.level?.at?.(x, y);
+    if (loc?.typ === ALTAR && symbol === S_VAMPIRE) return true;
+    if (game.level?.objects?.[x]?.[y]?.some(
+        object => object.otyp === SCR_SCARE_MONSTER,
+    )) return true;
+    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
+    if (inHell || In_endgame(game.u?.uz) || mndx === PM_MINOTAUR
+        || ((MONSTER_FLAGS1[mndx] ?? 0) & M1_NOEYES)) return false;
+    return !!engravingAt(x, y)?.text?.includes('Elbereth');
 }
 
 // C ref: makemon.c makemon_rnd_goodpos().  The random phase owns a complete
@@ -3395,15 +3422,19 @@ export async function makemonAt(mnum, x, y, flags = 0) {
     return makemon(mnum, x, y, flags);
 }
 
-// C refs: teleport.c collect_coords()/enexto_core() and makemon.c makemon().
-// A monster requested on the hero's occupied square is placed on the first
-// viable coordinate from three independently shuffled square rings.
-export async function makemonNear(
-    mnum, centerX, centerY, flags = 0,
-    requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy,
-) {
+// C teleport.c:collect_coords().  Each square ring is completely collected
+// and shuffled before the next ring begins.  A zero maximum means the whole
+// usable map, excluding the center and unused column zero.
+function collectShuffledMonsterCoordinates(centerX, centerY, maxRadius = 0) {
     const candidates = [];
-    for (let radius = 1; radius <= 3; radius++) {
+    const rowRange = centerY < ROWNO / 2
+        ? ROWNO - 1 - centerY : centerY;
+    const columnRange = centerX < COLNO / 2
+        ? COLNO - 1 - centerX : centerX;
+    const finalRadius = maxRadius
+        ? Math.min(maxRadius, Math.max(rowRange, columnRange))
+        : Math.max(rowRange, columnRange);
+    for (let radius = 1; radius <= finalRadius; radius++) {
         const ring = [];
         const lowx = centerX - radius, highx = centerX + radius;
         const lowy = centerY - radius, highy = centerY + radius;
@@ -3421,15 +3452,48 @@ export async function makemonNear(
         }
         candidates.push(...ring);
     }
-    for (const pos of candidates) {
-        // teleport.c:enexto_core() tests every shuffled coordinate through
-        // goodpos() for the requested species.  Accessibility alone would
-        // incorrectly put non-flying group members into pools or lava.
-        const good = monsterGoodPosition(mnum, pos.x, pos.y);
-        if (!good) continue;
-        return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
+    return candidates;
+}
+
+function findMonsterNearPositionCore(
+    mnum, centerX, centerY, checkScary,
+) {
+    const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
+    for (const pos of nearby) {
+        if (monsterGoodPosition(mnum, pos.x, pos.y, false, checkScary))
+            return pos;
+    }
+
+    // NEW_ENEXTO deliberately reshuffles the near rings while collecting the
+    // complete map, then skips their count because they were already tested.
+    const all = collectShuffledMonsterCoordinates(centerX, centerY, 0);
+    for (let index = nearby.length; index < all.length; index++) {
+        const pos = all[index];
+        if (monsterGoodPosition(mnum, pos.x, pos.y, false, checkScary))
+            return pos;
     }
     return null;
+}
+
+// C teleport.c:enexto().  The first complete search avoids scary squares;
+// only total failure triggers an independently shuffled unrestricted search.
+// Exposing selection separately lets callbacks distinguish enexto failure
+// from a later makemon()/make_familiar() construction failure.
+export function findMonsterNearPosition(mnum, centerX, centerY) {
+    return findMonsterNearPositionCore(mnum, centerX, centerY, true)
+        || findMonsterNearPositionCore(mnum, centerX, centerY, false);
+}
+
+// C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
+export async function makemonNear(
+    mnum, centerX, centerY, flags = 0,
+    requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy,
+) {
+    const pos = findMonsterNearPosition(mnum, centerX, centerY);
+    if (!pos) return null;
+    // teleport.c:enexto_core() tests every shuffled coordinate through
+    // goodpos() for the requested species before makemon() owns construction.
+    return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
 }
 
 // C mcastu.c:mcast_insects().  enexto() tests positions using the caster's

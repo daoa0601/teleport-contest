@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
-import { G_GENOD, ROOM } from '../js/const.js';
+import { COLNO, G_GENOD, ROOM, ROWNO, STONE } from '../js/const.js';
 import {
     finishCarriedFigurineTimer, runClaimedCarriedFigurineTimer,
 } from '../js/figurine.js';
@@ -205,5 +205,65 @@ test('unsupported shapechanger rejects before transform RNG or mutation',
         assert.deepEqual(getRngLog(), []);
         assert.equal(figurine.where, 'inventory');
         assert.equal(game.level.monsters.length, 0);
+        assertNoBridgeUse();
+    });
+
+test('carried figurine uses whole-map enexto fallback before retrying',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++)
+                game.level.at(x, y).typ = STONE;
+        }
+        game.level.at(game.u.ux, game.u.uy).typ = ROOM;
+        game.level.at(game.u.ux + 4, game.u.uy).typ = ROOM;
+
+        const event = await claimTransform(figurine, 29);
+        assert.equal(event.transformed, true);
+        assert.equal(event.retryScheduled, undefined);
+        assert.equal(event.monster.mx, game.u.ux + 4);
+        assert.equal(event.monster.my, game.u.uy);
+        assert.equal(getRngLog().some(call => call.startsWith('rnd(5000)')), false);
+        assert.ok(game.inventory.includes(figurine));
+        finishCarriedFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('blocked carried figurine retains identity and schedules rnd(5000) retry',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++)
+                game.level.at(x, y).typ = STONE;
+        }
+        // get_obj_location() still resolves the carried identity at the hero;
+        // enexto() must reject every other map coordinate for a wumpus.
+        game.level.at(game.u.ux, game.u.uy).typ = ROOM;
+
+        const event = await claimTransform(figurine, 29);
+        const log = getRngLog();
+        const rowRange = game.u.uy < ROWNO / 2
+            ? ROWNO - 1 - game.u.uy : game.u.uy;
+        const columnRange = game.u.ux < COLNO / 2
+            ? COLNO - 1 - game.u.ux : game.u.ux;
+        const wholeMapShuffleCalls = (COLNO - 1) * ROWNO - 1
+            - Math.max(rowRange, columnRange);
+        // Two enexto_core passes, each with 7+15+23 nearby shuffles and a
+        // complete whole-map reshuffle, followed by exactly one retry draw.
+        assert.equal(log.length, 2 * (45 + wholeMapShuffleCalls) + 1);
+        assert.match(log.at(-1), /^rnd\(5000\)=\d+$/);
+        const retryRoll = Number(log.at(-1).match(/=(\d+)$/)[1]);
+        assert.equal(event.retryScheduled, true);
+        assert.equal(event.retryDelay, retryRoll);
+        assert.equal(event.retryDeadline, game.moves + retryRoll);
+        assert.equal(event.message, null);
+        assert.equal(event.monster, null);
+        assert.equal(game.level.monsters.length, 0);
+        assert.ok(game.inventory.includes(figurine));
+        assert.equal(figurine.where, 'inventory');
+        assert.equal(figTimer(figurine).deadline, event.retryDeadline);
         assertNoBridgeUse();
     });
