@@ -35468,9 +35468,9 @@ flowchart TD
     Static --> Room
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
-    Pick --> Live["Ghost, Cloud, hazards, Massacre, Statuary: implemented"]
+    Pick --> Live["Ghost, Cloud, hazards, Garden, populations: implemented"]
     Pick --> Partial["Buried zombies, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["four callbacks: absent"]
+    Pick --> Absent["three callbacks: absent"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35491,9 +35491,9 @@ dispatcher now makes this boundary explicit and returns false for a named
 callback which has not been ported instead of reporting an empty callback as
 implemented. The generated ownership registry records every fill separately.
 Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
-Massacre, and Statuary are `implemented`; Buried zombies, Temple of the gods,
-Storeroom, and Teleportation hub are `partial`; the remaining four are
-`absent`.
+Garden, Massacre, and Statuary are `implemented`; Buried zombies, Temple of
+the gods, Storeroom, and Teleportation hub are `partial`; the remaining three
+are `absent`.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35505,7 +35505,7 @@ It consults no seed, role, move sequence, fixture, or replay flag. The same
 fill dispatcher is used by static-map and dynamically shaped themed rooms.
 
 The level-generation registry therefore remains **partial**. In addition to
-the eight incomplete fills, exact source ordering across all 31 shapes,
+the seven incomplete fills, exact source ordering across all 31 shapes,
 remaining seeded generation branches, broader `sp_lev.c` operations, and the
 scheduled sealed corpus gate remain open. Public-session exactness is not an
 ownership status in this graph.
@@ -35545,3 +35545,15 @@ by 1d3 statue traps. Those traps are not inert markers: the shared trap owner
 constructs their resident statue and inventory graph. Both fills use live
 random room placement and create saveable floor/trap state without a seed,
 role, replay-move, or session predicate.
+
+Garden is a two-phase owner. Its immediate callback captures the room
+selection, creates one asleep wood nymph per six cells, and independently
+attempts a fountain after each nymph. Its deferred `post_level_generate`
+callback grows a fresh copy of that selection after all rooms have been filled,
+turns every selected stone/wall cell into a tree, and attempts to replace each
+secret door with air. `mkmaze.c:set_levltyp()` deliberately intercepts that
+last replacement: the tile remains an `SDOOR` and gains `arboreal_sdoor`, so
+later discovery reveals a tree-compatible door rather than empty air. The
+JavaScript postprocess queue now retains the selection until this actual
+post-fill boundary; executing it during the immediate callback would observe
+the wrong surrounding topology.

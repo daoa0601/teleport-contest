@@ -94167,3 +94167,58 @@ and Buried treasure's nested container/postprocess ownership; choose the first
 one whose complete state and continuation fit a coherent bridge-free slice.
 
 ---
+
+### [2026-08-29 15:14 EEST, journal block 3129] {#bridge-free #level-generation #lua #garden #nymphs #fountains #postprocess #trees #secret-doors #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** the pinned Garden callback crosses
+two source phases. Its immediate body selects a lit room, creates nymphs and
+optional fountains, then stores a second room selection for
+`post_level_generate()`. JavaScript had neither phase. The earliest
+architectural risk was executing wall conversion immediately: source grows
+the captured selection only after ordinary/special room filling, just before
+whole-level wallification, so earlier execution observes incomplete walls and
+doors.
+
+**Prediction portfolio and decisive evidence:** (1) a monster-only hypothesis
+predicted Garden was just a nymph room; every one-per-six-cell iteration also
+owns a 30% fountain branch. (2) a direct-wall hypothesis predicted walls could
+be converted during the fill callback; the queued Lua postprocess and final
+wallification ordering falsified it. (3) a rectangular-ring hypothesis
+predicted the room bounds were sufficient, but `selection.room():grow()`
+preserves irregular membership and grows all eight neighbor directions. (4)
+an AIR replacement hypothesis predicted secret doors should disappear;
+`set_levltyp(SDOOR,AIR)` instead leaves the secret door and sets
+`arboreal_sdoor`. (5) a fresh random selection hypothesis predicted the
+postprocess could reconstruct any current room; Lua captures this room's exact
+selection in its queue entry.
+
+**Decision and implementation:** add a shared special-feature location owner
+for dry non-furniture terrain. Garden now derives `floor(numpoints/6)`, creates
+that many asleep wood nymphs, evaluates each fountain branch, and enqueues the
+exact room cells. Extend the existing theme postprocess boundary with a
+`garden-walls` callback which reconstructs and grows the selection, converts
+stone/walls to trees in source iteration order, preserves secret-door terrain,
+and installs the arboreal flag. Export that boundary only for direct source
+invariants; production still calls it once after all room fills.
+
+**Measured effect and regression:** the direct themed-room selection passes
+**17/17**; Garden owns its source-sized asleep population, bounded fountain
+count, deferred queue, grown tree boundary, arboreal secret-door state, queue
+drain, and zero compatibility hits. The combined bridge-policy, Priest
+startup, ordinary-room, and themed-room selection passes **33/33**. Five
+represented level carriers again pass for Storeroom, nesting rooms,
+secret-door orientation, clean Minetown-2, and Orcus ghost-town shops. The
+bridge-free audit remains green over 111 files. Every verifier exited and a
+post-run process check found no owned test tree. Implementation commit
+`75008bf` contains only the immediate/deferred Garden owners and focused
+witness.
+
+**Falsified hypotheses, limit, and next blocker:** Garden is not only a monster
+population, its wall phase is not immediate, irregular selection growth is not
+a rectangular ring, and AIR does not erase an arboreal secret door. No full
+suite, public corpus, sealed trace, score, push, publication, official
+measurement, or animation work ran. Seven fill callbacks remain incomplete.
+Next audit Buried treasure's initialized-then-replaced chest contents, burial
+chain, and delayed directional engraving as one container/postprocess slice.
+
+---
