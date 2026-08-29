@@ -7,7 +7,8 @@ import {
 } from '../js/bridge_policy.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
-    G_GENOD, ICE, LANDMINE, M_AP_OBJECT, MAXNROFROOMS, MOAT, OROOM, PIT,
+    G_GENOD, ICE, LANDMINE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
+    MAXNROFROOMS, MOAT, OROOM, PIT,
     ROCKTRAP,
     ROLLING_BOULDER_TRAP, ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE,
     SLP_GAS_TRAP, STRAT_WAITFORU,
@@ -1413,10 +1414,12 @@ test('melt-ice boulder death rejects special corpse effects before mutation',
         assert.equal(pudding.mhp, 8);
     });
 
-test('melt-ice boulder death rejects active mimic detachment before mutation',
-    () => {
+test('melt-ice boulder death reveals a light-blocking object mimic',
+    async () => {
         themedState(4100, 8);
         const x = 10, y = 10;
+        game.u.ux = x - 1;
+        game.u.uy = y;
         game.level.at(x, y).typ = ICE;
         game.level.at(x, y).flags = 0;
         const boulder = place_object({
@@ -1424,23 +1427,127 @@ test('melt-ice boulder death rejects active mimic detachment before mutation',
         }, x, y);
         const mimic = {
             mnum: 64, mx: x, my: y, mhp: 8, mhpmax: 8,
-            m_ap_type: M_AP_OBJECT, mappearance: STATUE,
+            m_ap_type: M_AP_OBJECT, mappearance: BOULDER,
+            mcorpsenm: 159, mextra: { mcorpsenm: 159 },
             minvent: [], inventory: [],
         };
         game.level.monsters.push(mimic);
+        game.in_mklev = false;
+        vision_reset_new_level();
+        vision_recalc(0);
+        assert.equal(cansee(x, y), true);
+        game.vision_full_recalc = 0;
         scheduleLevelTimer(
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
-        assert.throws(
-            () => runClaimedMeltIceTimer(
-                claimNextDueObjectTimer(game, game.moves), game,
-            ),
-            /occupant mimic detachment is not implemented/,
+        initRng(1n);
+        enableRngLog();
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
         );
-        assert.equal(game.level.at(x, y).typ, ICE);
-        assert.equal(boulder.where, 'floor');
-        assert.equal(mimic.mhp, 8);
+        await finishMeltIceTimer(event, {
+            visible: true, heroAt: false, heroInWater: false,
+            announce: async () => {}, wake: async () => {},
+            disturb: () => {}, repaint: () => {},
+        });
+        const outcome = event.boulderOutcomes[0];
+
+        assert.deepEqual(outcome.occupantDeath.appearanceReveal, {
+            revealed: true, type: M_AP_OBJECT, appearance: BOULDER,
+            corpsenm: 159, lightBlocker: true,
+        });
+        assert.equal(mimic.m_ap_type, 0);
+        assert.equal(mimic.mappearance, 0);
+        assert.equal(mimic.mcorpsenm, undefined);
+        assert.equal(mimic.mextra.mcorpsenm, undefined);
+        assert.equal(game.vision_full_recalc, 1);
+        assert.equal(mimic.dead, true);
+        assert.equal(game.level.monsters.includes(mimic), false);
+        assert.equal(game.level.at(x, y).typ, ROOM);
+        assert.equal(boulder.where, 'gone');
+        assert.equal(getRngLog()[0], 'rn2(10)=5');
+        assert.deepEqual(getBridgeUsageLedger(), {
+            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+        });
     });
+
+test('melt-ice boulder death reveals non-blocking furniture mimic state',
+    async () => {
+        themedState(4102, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        place_object({
+            otyp: BOULDER, o_id: 9977, contents: [], timed: 0,
+        }, x, y);
+        const mimic = {
+            mnum: 64, mx: x, my: y, mhp: 8, mhpmax: 8,
+            m_ap_type: M_AP_FURNITURE, mappearance: FOUNTAIN,
+            minvent: [], inventory: [],
+        };
+        game.level.monsters.push(mimic);
+        game.vision_full_recalc = 0;
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        initRng(1n);
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        );
+        await finishMeltIceTimer(event, {
+            visible: false, heroAt: false, heroInWater: false, deaf: true,
+            announce: async () => {}, wake: async () => {},
+            disturb: () => {}, repaint: () => {},
+        });
+
+        assert.deepEqual(event.boulderOutcomes[0]
+            .occupantDeath.appearanceReveal, {
+            revealed: true, type: M_AP_FURNITURE,
+            appearance: FOUNTAIN, corpsenm: null, lightBlocker: false,
+        });
+        assert.equal(mimic.m_ap_type, 0);
+        assert.equal(mimic.mappearance, 0);
+        assert.equal(game.vision_full_recalc, 0);
+        assert.equal(mimic.dead, true);
+    });
+
+test('melt-ice death preserves M_AP_MONSTER until actor removal', async () => {
+    themedState(4103, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    place_object({
+        otyp: BOULDER, o_id: 9978, contents: [], timed: 0,
+    }, x, y);
+    const mimic = {
+        mnum: 64, mx: x, my: y, mhp: 8, mhpmax: 8,
+        m_ap_type: M_AP_MONSTER, mappearance: 68,
+        minvent: [], inventory: [],
+    };
+    game.level.monsters.push(mimic);
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    initRng(1n);
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
+    );
+    await finishMeltIceTimer(event, {
+        visible: false, heroAt: false, heroInWater: false, deaf: true,
+        announce: async () => {}, wake: async () => {},
+        disturb: () => {}, repaint: () => {},
+    });
+
+    assert.deepEqual(event.boulderOutcomes[0]
+        .occupantDeath.appearanceReveal, {
+        revealed: false, type: M_AP_MONSTER,
+        appearance: 68, lightBlocker: false,
+    });
+    assert.equal(mimic.m_ap_type, M_AP_MONSTER);
+    assert.equal(mimic.mappearance, 68);
+    assert.equal(mimic.dead, true);
+    assert.equal(game.level.monsters.includes(mimic), false);
+});
 
 test('melt-ice boulder death rejects pit detachment before mutation', () => {
     themedState(4101, 8);
