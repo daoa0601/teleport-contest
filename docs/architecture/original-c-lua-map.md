@@ -37043,3 +37043,65 @@ source chain rather than accepting chronological arrays.  The subsystem is
 still mechanically **partial**: contained, worn, timed, lit, billed, artifact,
 migrating, polymorph-transfer, and other special release effects remain
 separate owners, and no sealed gate has run.
+
+## 996. Inert potion impact is still a complete ownership transaction
+
+```mermaid
+sequenceDiagram
+    participant Throw as throwit/thitmonst
+    participant Bottle as bottlename
+    participant Hit as potionhit
+    participant Breath as potionbreathe
+    participant Mon as wakeup
+    participant Obj as trycall/obfree
+
+    Throw->>Throw: split/detach, grease slip, then rnd(20)
+    Throw->>Bottle: rn2(7) or hallucinating rn2(24)
+    Bottle->>Hit: source bottle noun
+    alt visible headed target
+        Hit->>Hit: crash on the target's head
+    else visible headless target
+        Hit->>Hit: crash on the target
+    else unseen target
+        Hit->>Hit: generic Crash!
+    end
+    Hit->>Hit: rn2(5), optional one-HP chip
+    Hit->>Hit: inert direct-effect switch
+    Hit->>Mon: wake and anger target
+    Hit->>Breath: distance zero while swallowed
+    Breath->>Breath: inert vapor-effect switch
+    Breath->>Obj: interactive naming policy when applicable
+    Hit->>Obj: consume exact object identity
+```
+
+`dothrow.c:thitmonst()` pays `rnd(20)` before dispatching a potion to
+`potion.c:potionhit()`, even though swallowed contact cannot miss.  The impact
+owner then chooses a bottle noun, emits visibility- and anatomy-dependent
+contact prose, pays `rn2(5)` for the possible one-point physical chip, applies
+the potion-specific direct effect, wakes the target, applies close-range vapor
+effects, handles naming policy, and finally frees the exact object identity.
+This is a consumption transaction, not merely another damage branch.
+
+Six source types form one complete inert family across both effect switches:
+gain level, gain energy, levitation, fruit juice, monster detection, and object
+detection.  JavaScript's shared `potion_hit.js` owner implements that family.
+The live swallowed throw caller composes split and detach ownership, cursed or
+greased slip order, the unconditional hit roll, impact, wakeup, and object
+consumption.  The existing monster-thrown sleeping-potion path now reuses the
+same source bottle-name selector instead of carrying a second ordinary-only
+name list.
+
+The adversarial witnesses corrected two false assumptions rather than bending
+production around them.  A swallowed hero cannot see the engulfer square, so
+the live path says only `Crash!` and does not print visible evaporation.  Also,
+trappers are source `M1_NOHEAD`; a visible purple worm is the headed control,
+while an energy vortex proves the headless branch.  A known-description but
+unknown-identity potion remains fail-loud because native `trycall()` is an
+interactive policy owner; effectful potion types, saddle/equipment and shop
+state are likewise excluded before mutation.
+
+This subsystem is mechanically **partial**.  The shared direct impact owner is
+live for swallowed guaranteed contact, but ordinary map flight, hit, and miss
+do not yet call it.  Healing and other effectful families, hero targets,
+resistances, special monster effects, billing, interactive naming, and a sealed
+stratum remain open.  Lua owns none of this runtime path.

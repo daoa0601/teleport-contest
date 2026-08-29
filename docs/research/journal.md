@@ -96539,3 +96539,75 @@ next source slice remains the special-carried-effect versus `potionhit()`
 portfolio named in block 3163.
 
 ---
+
+### [2026-08-29 23:19 EEST, journal block 3165] {#bridge-free #potionhit #swallowed-throw #object-consumption #visibility #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3164 left two viable
+source routes: special carried-object release or the first shared
+`potionhit()` owner. Three live swallowed throws of source-inert potion types
+all reached `throw.swallowed-special-unsupported`; the discriminating set was
+red **0/3**. The critical-debugging portfolio rejected special release for
+this slice because worn, lit, timed, billed, artifact, and contained identities
+fan into separate equipment, timer, shop, and container owners. By contrast,
+six potion types share one complete empty direct-effect and vapor-effect
+family, making potion impact the smaller coherent ownership transaction.
+
+**Prediction and decisive C evidence:** `dothrow.c:thitmonst()` consumes
+`rnd(20)` before its potion branch even when swallowed contact is guaranteed.
+`potion.c:potionhit()` then chooses a bottle through `bottlename()` using
+ordinary `rn2(7)` or hallucinating `rn2(24)`, emits visibility- and
+head-dependent crash prose, consumes `rn2(5)` and removes one HP when nonzero
+and the target has more than one HP, prints visible non-oil evaporation,
+dispatches the direct effect, wakes and angers the target, applies distance-zero
+vapor effects, and frees the object. Gain level, gain energy, levitation, fruit
+juice, monster detection, and object detection are inert in both switches.
+The predicted live result was exact source RNG and prose, optional one-HP
+attrition, a woken target, and one consumed thrown identity with no fixture or
+replay bridge.
+
+**Decision and implementation:** commit `2d9011d` adds one shared
+`potion_hit.js` owner for source bottle naming and the six-type inert monster
+impact transaction. `swallowed_throw.js` now composes stack splitting,
+detach/free ownership, cursed or greased slip cadence, the unconditional hit
+roll, impact, wakeup, and consumption; `cmd.js` routes the eligible live
+command before the named compatibility boundary. The existing
+monster-thrown sleeping-potion path reuses the same bottle-name selector, so
+ordinary and hallucinated bottle domains no longer have separate owners.
+Effectful potions, saddle/equipment, unpaid or contained state, and known
+descriptions with unknown identity remain fail-loud before RNG or mutation;
+the last boundary preserves native interactive `trycall()` as explicit debt.
+
+**False-acceptance corrections:** the first live expectation incorrectly
+required visible evaporation while swallowed. JavaScript's generic `Crash!`
+was source-correct because the swallowed hero cannot see the engulfer square;
+the witness was corrected without changing production. A second draft treated
+a trapper as headed, but native monster data marks it `M1_NOHEAD`; direct
+controls now use a visible purple worm for the headed branch and an energy
+vortex for the headless branch. An impossible saddled-engulfer construction
+was removed rather than retained as fake acceptance; production still rejects
+that unsupported state.
+
+**Measured effect and process custody:** the three discriminating live
+witnesses moved from red **0/3** to green. The full focused acquisition,
+direct-potion, and swallowed files pass **40/40**. Five ambient-ogre,
+sleeping-potion flight, striking-wand, smoky-invisibility-potion, and clean
+Priest source-turn controls pass **5/5** with exact RNG/screens.
+`test/bridge_free.test.js` passes **8/8**, and the mechanical audit reports
+**123 audited files, 15 guarded modules, and 19 fixture modules**. Every
+`node --test` command was process-guarded, singular, and observed through
+normal exit; no process yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** potion contact is not just
+damage plus deletion; bottle-name RNG, visibility, anatomy, wakeup, vapor, and
+naming policy are ordered owners. Swallowed contact is not a valid witness for
+visible evaporation. Public-session exactness was neither targeted nor used as
+coverage. The production caller currently covers only swallowed guaranteed
+contact for the six inert types. Ordinary non-swallowed map flight, hit and
+miss, healing and other effectful families, hero targets, resistance and
+special-monster effects, billing, interactive naming, and a sealed stratum
+remain open. No full Contest suite, engine/public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should compare connecting ordinary map hit/miss to this
+shared owner against the first coherent effectful potion family.
+
+---
