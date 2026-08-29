@@ -110,17 +110,17 @@
       "label": "C and Lua level construction",
       "status": "partial",
       "source": {
-        "cFiles": ["src/mklev.c", "src/sp_lev.c", "src/nhlua.c"],
-        "cSymbols": ["mklev", "makelevel", "makerooms", "load_special"],
+        "cFiles": ["src/mklev.c", "src/mkobj.c", "src/dungeon.c", "src/sp_lev.c", "src/nhlua.c"],
+        "cSymbols": ["mklev", "makelevel", "makerooms", "fill_ordinary_room", "mksobj", "level_difficulty", "load_special"],
         "luaFiles": ["dat/themerms.lua", "dat/nhcore.lua", "dat/*.lua"],
         "luaSymbols": ["des.* operations", "themerooms_generate"]
       },
-      "javascriptOwners": ["js/mklev.js", "js/dungeon.js", "js/lua_des.js"],
+      "javascriptOwners": ["js/mklev.js", "js/weight.js", "js/dungeon.js", "js/lua_des.js"],
       "dependencies": ["rng-core"],
       "bridgeIds": ["fastforward.mineralize", "seeded room-fill compatibility paths"],
-      "acceptanceWitnesses": ["public fixture-disabled level witnesses; no sealed gate"],
+      "acceptanceWitnesses": ["test/room_fill.test.js: direct fresh-seed ordinary-fill control flow, Amulet difficulty/spawn, giant-spider web, Rogue skip, grave burial, supply-container weight, object final weight, and zero bridge usage", "focused test/run_scheduler.test.js level regressions: nesting rooms, ordinary graffiti, temple-before-fill, Arc-filb, Minetown, branch stairs, Tower object order, and Rogue level", "public fixture-disabled level witnesses; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "Special-level operations, ordinary room fill, startup objects, and unseen Lua variants remain incomplete."
+      "openGap": "The ordinary-room orchestration now owns descendant-first fill, Amulet spawn/difficulty, monster/web, traps, Rogue skip, furniture/statue/bonus/chest/graffiti, random-object rejoin, grave burial, and final object/container weight under direct witnesses. Many special-level operations, legacy seeded room-fill compatibility branches, incomplete monster/trap/special-object constructors, dynamic and unseen Lua variants, and a sealed gate remain open."
     },
     {
       "id": "turn-scheduler",

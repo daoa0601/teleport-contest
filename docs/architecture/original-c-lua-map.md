@@ -35390,3 +35390,68 @@ eyewear loss, drums, and disclosure behavior. Lua owns none of this property
 boundary. The mechanical registry remains **partial** for light/engulfing
 details, ball-and-chain repaint coupling, every artifact message transition,
 unsupported deaf extrinsics, and the scheduled sealed gate.
+
+## 970. Ordinary room fill is a source-ordered state graph
+
+~~~mermaid
+flowchart TD
+    Room["fill_ordinary_room"] --> Children["fill subrooms before parent"]
+    Children --> Need{"FILL_NORMAL?"}
+    Need -->|no| Return["return"]
+    Need -->|yes| Spawn{"has Amulet or rn2(3)==0"}
+    Spawn --> Monster["makemon MM_NOGRP"]
+    Monster --> Spider{"giant spider and square unoccupied?"}
+    Spider -->|yes| Web["co-located WEB"]
+    Spider --> Traps["difficulty-scaled mktrap loop"]
+    Spawn --> Traps
+    Traps --> Gold["optional floor gold"]
+    Gold --> Rogue{"Rogue level?"}
+    Rogue -->|yes| Objects["random-object tail"]
+    Rogue -->|no| Features["fountain, sink, altar, grave, statue"]
+    Features --> Bonus["branch food or pre-Oracle supply chest"]
+    Bonus --> Chest["ordinary chest and graffiti"]
+    Chest --> Objects
+    Objects --> Done["complete room state"]
+~~~
+
+Pinned `mklev.c` supplies two control edges which a shallow public start does
+not naturally demonstrate. Carrying the Amulet short-circuits the one-in-three
+monster draw and uses `deepest_lev_reached(FALSE)` for difficulty. A Rogue
+level exits the non-Rogue feature block immediately after gold, but rejoins at
+the random-object tail. JavaScript previously omitted both edges, used local
+dungeon level for trap difficulty, and let Rogue rooms attempt furniture,
+graves, statues, bonus containers, chests, and graffiti.
+
+The monster edge also owns a composite state transition: an ordinary generated
+giant spider receives a web on the same square when no trap or furniture
+already occupies it. This is not a monster-display shortcut; the trap changes
+later movement and `mintrap()` behavior. Seed241 at depth10 now witnesses the
+live pair without selecting a recorded command sequence. Seed2 distinguishes
+the ordinary and Amulet spawn prefixes and the Rogue/non-Rogue rejoin point.
+
+Object construction closes a second graph:
+
+~~~mermaid
+flowchart LR
+    New["mksobj base identity"] --> Init["type-specific quantity, BUC, corpse, contents"]
+    Init --> Weight["final weight after all initialization"]
+    Weight --> Floor["floor chain"]
+    Weight --> Container["container contents; caller commits container weight"]
+    Weight --> Buried["grave contents linked to buried-object chain"]
+~~~
+
+Previously a generated dart stack retained one dart's `owt`; a supply chest
+retained its empty-shell weight; and `mkgrave_room()` generated gold and
+cursed objects but never attached them to any level chain. The shared weight
+projection now finalizes each `mksobj()` after type initialization, the supply
+owner recomputes after manual contents, and grave objects carry coordinates,
+buried location state, and newest-first chain identity. Seed153 witnesses five
+actual buried objects at one grave; seed1 witnesses a weighted two-item supply
+chest.
+
+Lua owns none of this ordinary C fill loop, but Lua-created ordinary or themed
+rooms hand their `needfill` state into it. That call boundary is why the
+mechanical level entry stays **partial**: dynamic Lua variants, special-level
+operations, legacy seeded room-fill branches, and several delegated
+monster/trap/special-object constructors remain open even though the core
+ordinary orchestration now has direct fresh-seed witnesses.

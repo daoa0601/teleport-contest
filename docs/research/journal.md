@@ -93860,3 +93860,66 @@ ordinary room-fill/startup-object ownership before deciding whether the next
 coherent slice is large enough to schedule the one-shot sealed corpus gate.
 
 ---
+
+### [2026-08-29 14:31 EEST, journal block 3124] {#bridge-free #level-generation #ordinary-room #objects #weight #amulet #rogue-level #spider #web #grave #supply-chest #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** the next audit compared pinned
+`mklev.c:fill_ordinary_room()`, `mkobj.c:mksobj()`, and
+`dungeon.c:level_difficulty()` with the live generic JavaScript path before
+opening a session. The first control-flow break was the monster predicate:
+JavaScript always paid `rn2(3)` and therefore ignored the Amulet's guaranteed
+room monster. The same comparison found an absent spider-to-web transaction,
+no Rogue-level jump to the object tail, local-depth trap difficulty, and an
+object lifecycle which retained pre-initialization weight. Grave contents were
+constructed but never linked to floor or buried state.
+
+**Prediction portfolio and decisive evidence:** (1) a retained public boulder
+placeholder predicted the room gap was one missing glyph; direct source flow
+showed independent monster, trap, furniture, bonus, object, and burial owners,
+falsifying that scope. (2) a screen-only hypothesis predicted unlinked grave
+objects were harmless, but source `add_to_buried()` makes them available to
+digging, quest-artifact scans, bones, and save state. (3) a cosmetic `owt`
+hypothesis predicted generated quantities could rely on base type weight;
+dart stacks and supply contents falsified it before any carrying calculation.
+(4) a generic early return for Rogue levels predicted loss of random objects;
+the C `goto skip_nonrogue` instead rejoins precisely at that tail. (5) a trace
+carrier hypothesis was falsified by direct fresh seeds: seed2 distinguishes
+ordinary, Amulet, and Rogue prefixes; seed241 creates a giant spider and web;
+seed153 creates one grave with five buried objects; and seed1 creates a
+two-item supply chest.
+
+**Decision and implementation:** make Amulet difficulty scan visited-level
+state and short-circuit room spawn chance; use source difficulty for the trap
+loop; attach a web to an eligible generated giant spider; and route Rogue
+levels from optional gold directly to a shared random-object tail. Finalize
+`mksobj()` weight after quantities, corpse state, and contents. Recompute a
+supply chest after its manual contents. Link grave gold and cursed items into
+the buried chain with coordinates, location state, weight, and newest-first
+identity. Preserve descendant-before-parent fill and all existing C/Lua room
+call boundaries; add no fixture, replay, seed predicate, or compatibility
+owner.
+
+**Measured effect and regression:** `test/room_fill.test.js` passes 7/7 over
+final stack weight, Amulet deepest-level difficulty, guaranteed spawn,
+giant-spider web, Rogue source rejoin, grave burial, supply weight, and a zero
+bridge ledger. The combined artifact, bridge-policy, startup, sensory, carry,
+and room selection passes 48/48. Nine focused represented level regressions
+pass for nesting rooms, ordinary graffiti, temple-before-fill, Arc-filb,
+Minetown, branch stairs, Tower object order, ordinary discovery separation,
+and the Rogue level. The bridge-free source audit remains green over110 files.
+Every verifier exited; no full suite, corpus, sealed gate, score, push,
+publication, or animation work ran. Implementation commit `31c723a` contains
+only the room/object owners and direct witness.
+
+**Falsified hypotheses, limit, and next blocker:** ordinary fill was not one
+missing public object, buried state was not presentation-only, stored base
+weight was not valid after initialization, and Rogue fill does not return
+before random objects. The mechanical level entry remains `partial` for
+legacy seeded room-fill branches, delegated monster/trap and special-object
+constructors, dynamic/unseen Lua forms, and the sealed gate. Next audit the
+Lua-to-ordinary-fill ownership boundary and the remaining explicit seeded
+generation branches as architecture, not as public carriers; do not schedule
+or publish a measurement until that produces another coherent bridge-free
+slice and passes the one-shot gate checklist.
+
+---
