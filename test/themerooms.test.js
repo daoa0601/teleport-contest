@@ -7,12 +7,14 @@ import {
 } from '../js/bridge_policy.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
-    G_GENOD, ICE, LANDMINE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
-    MAXNROFROOMS, MOAT, OROOM, PIT,
+    G_GENOD, ICE, LANDMINE, MAGIC_PORTAL,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
+    MAXNROFROOMS, MOAT, OROOM, PIT, SPIKED_PIT,
     ROCKTRAP,
     ROLLING_BOULDER_TRAP, ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE,
     SLP_GAS_TRAP, STRAT_WAITFORU,
-    SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
+    SDOOR, STATUE_TRAP, THEMEROOM, TREE, VIBRATING_SQUARE, WEB,
+    MM_NOCOUNTBIRTH, MM_NOMSG,
     I_SPECIAL, MM_NOWAIT, NO_MINVENT, W_AMUL,
 } from '../js/const.js';
 import {
@@ -1549,15 +1551,66 @@ test('melt-ice death preserves M_AP_MONSTER until actor removal', async () => {
     assert.equal(game.level.monsters.includes(mimic), false);
 });
 
-test('melt-ice boulder death rejects pit detachment before mutation', () => {
-    themedState(4101, 8);
+test('melt-ice removes a pit and untraps its occupant before boulder death',
+    async () => {
+        themedState(4101, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        const boulder = place_object({
+            otyp: BOULDER, o_id: 9976, contents: [], timed: 0,
+        }, x, y);
+        const pit = { tx: x, ty: y, ttyp: PIT, tseen: 0 };
+        game.level.traps.push(pit);
+        // A grounded wumpus survives the exposed moat as a clinger but is not
+        // airborne when the boulder fills it.
+        const wumpus = {
+            mnum: 84, mx: x, my: y, mhp: 8, mhpmax: 8,
+            mtrapped: 1, minvent: [], inventory: [],
+        };
+        game.level.monsters.push(wumpus);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        initRng(1n);
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        );
+
+        assert.equal(event.trap.trap, pit);
+        assert.equal(event.trap.removed, true);
+        assert.equal(game.level.traps.includes(pit), false);
+        assert.equal(wumpus.mtrapped, 0);
+        assert.equal(wumpus.mhp, 8);
+        assert.equal(game.level.monsters.includes(wumpus), true);
+        assert.equal(game.level.at(x, y).typ, MOAT);
+        assert.equal(boulder.where, 'floor');
+        await finishMeltIceTimer(event, {
+            visible: false, heroAt: false, heroInWater: false, deaf: true,
+            announce: async () => {}, wake: async () => {},
+            disturb: () => {}, repaint: () => {},
+        });
+        const outcome = event.boulderOutcomes[0];
+
+        assert.equal(outcome.occupantDeath.monster, wumpus);
+        assert.equal(outcome.removedTrap, null);
+        assert.equal(wumpus.dead, true);
+        assert.equal(game.level.monsters.includes(wumpus), false);
+        assert.equal(game.level.traps.includes(pit), false);
+        assert.equal(boulder.where, 'gone');
+        assert.equal(outcome.occupantDeath.corpse.where, 'buried');
+        assert.deepEqual(getBridgeUsageLedger(), {
+            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+        });
+    });
+
+test('melt-ice removes a spiked pit and leaves its clinger alive', () => {
+    themedState(4104, 8);
     const x = 10, y = 10;
     game.level.at(x, y).typ = ICE;
     game.level.at(x, y).flags = 0;
-    const boulder = place_object({
-        otyp: BOULDER, o_id: 9976, contents: [], timed: 0,
-    }, x, y);
-    game.level.traps.push({ tx: x, ty: y, ttyp: PIT, tseen: 0 });
+    const pit = { tx: x, ty: y, ttyp: SPIKED_PIT, tseen: 1 };
+    game.level.traps.push(pit);
     const piercer = {
         mnum: 78, mx: x, my: y, mhp: 8, mhpmax: 8,
         mtrapped: 1, minvent: [], inventory: [],
@@ -1566,16 +1619,42 @@ test('melt-ice boulder death rejects pit detachment before mutation', () => {
     scheduleLevelTimer(
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
-    assert.throws(
-        () => runClaimedMeltIceTimer(
-            claimNextDueObjectTimer(game, game.moves), game,
-        ),
-        /occupant pit detachment is not implemented/,
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
     );
-    assert.equal(game.level.at(x, y).typ, ICE);
-    assert.equal(boulder.where, 'floor');
+
+    assert.equal(event.trap.trap, pit);
+    assert.equal(event.trap.removed, true);
+    assert.equal(game.level.traps.includes(pit), false);
+    assert.equal(piercer.mtrapped, 0);
     assert.equal(piercer.mhp, 8);
-    assert.equal(piercer.mtrapped, 1);
+    assert.equal(game.level.monsters.includes(piercer), true);
+    assert.equal(event.pendingBoulder, null);
+    assert.equal(game.level.at(x, y).typ, MOAT);
+});
+
+test('melt-ice preserves source-undestroyable traps', () => {
+    for (const [offset, ttyp] of [
+        [0, MAGIC_PORTAL], [1, VIBRATING_SQUARE],
+    ]) {
+        themedState(4105 + offset, 8);
+        const x = 10 + offset, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        const trap = { tx: x, ty: y, ttyp, tseen: 1 };
+        game.level.traps.push(trap);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        );
+
+        assert.equal(event.trap.trap, trap);
+        assert.equal(event.trap.removed, false);
+        assert.equal(game.level.traps.includes(trap), true);
+        assert.equal(game.level.at(x, y).typ, MOAT);
+    }
 });
 
 test('Boulder room owns filtered boulders and rolling traps live', async () => {

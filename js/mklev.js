@@ -4064,9 +4064,10 @@ function meltOccupantDeathGap(
     if (monster.mtame || monster.pet) return 'pet traits';
     if (state.u?.ustuck === monster || state.u?.usteed === monster)
         return 'hero attachment';
-    const trap = state.level?.traps?.find(candidate =>
-        candidate.tx === monster.mx && candidate.ty === monster.my);
-    if (trap && is_pit(trap.ttyp)) return 'pit detachment';
+    // trap_ice_effects() runs before any boulder-fill death.  It clears
+    // mtrapped and destroys ordinary pits/holes, so mon_leaving_level() has
+    // no pit left to fill for this callback.  Do not guard on the stale
+    // pre-melt trap state inspected by runClaimedMeltIceTimer().
     if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
         return 'unique monster bookkeeping';
     if (monster.isgd || monster.iswiz || monster.isshk || monster.ispriest
