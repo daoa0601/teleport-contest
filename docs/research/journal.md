@@ -95216,3 +95216,77 @@ complete new callback owner rather than relabel this mechanics-only expansion
 as complete `BURN_OBJECT` coverage.
 
 ---
+
+### [2026-08-29 19:01 EEST, journal block 3145] {#bridge-free #doapply #use-lamp #end-burn #shop-usage #cursed-lamp #critical-debugging-portfolio #focused-regression #process-safety #partial}
+
+**Witness and earliest source divergence:** after the shared oil-lamp/brass-
+lantern timer owner reached exact breakpoints and mobile light, live `a`
+application still fell through `cmd.js:doapply()` to `You use <letter> -
+<name>.` The first common divergence was therefore command entry, before any
+timer callback: native `apply.c:use_lamp()` distinguishes already-lit,
+underwater, empty, cursed, unpaid, and ordinary-on states. The most damaging
+state gap was manual extinction. `timeout.c:end_burn(..., TRUE)` invokes
+`cleanup_burn()`, which restores `expire_time - moves` to `obj->age`; simply
+clearing the JavaScript timer would discard the fuel interval owned by it.
+
+**Prediction portfolio and decisive evidence:** four independent candidates
+remained. `HATCH_EGG`, `FIG_TRANSFORM`, and `SHRINK_GLOB` each still cross new
+actor, placement, carrier, deletion, and catch-up graphs. Lamp application
+instead completes the entry and cancellation boundary for a timer owner that
+already has fresh-seed floor, inventory-graph, deadline, catch-up, and vision
+witnesses. Native source also falsified several tempting collapses: lit state
+is checked before underwater state; cursed brass lantern failure does not pay
+the oil-only `rn2(3)` draw; blind cursed failure is not visible flicker; and an
+unpaid successful activation consumes shop prefix RNG and usage fee state
+before `begin_burn()`. That source ordering selected the lamp slice without
+claiming the non-equivalent new callbacks.
+
+**Decision and implementation:** commit `6842398` routes ordinary `OIL_LAMP`
+and `BRASS_LANTERN` selections through a live `use_lamp` transaction. Normal
+activation reports the type-appropriate on line and schedules the next native
+fuel breakpoint. Manual off stops the owned `BURN_OBJECT` timer, adds its
+unspent deadline interval back to age, preserves object identity, clears light,
+and requests vision recalculation. Underwater and empty outcomes consume the
+command without scheduling. Cursed oil spill owns `rn2(2)`, oil-only `rn2(3)`,
+`d(2,10)`, and additive `glibTurns`; visible flicker, blind nothing, and cursed
+success remain distinct. The shop owner now charges an unpaid timed lamp only
+when its resident still owns the hero's current shop, consumes both prefix
+draws before deaf/mute presentation, applies audible Wisdom exercise, commits
+debit, and then rejoins the on/burn path.
+
+**Measured effect and regression:** five new command-level witnesses pass
+**5/5** with zero bridge hits. They cover 200 fuel at move 40 storing 150 behind
+a move-90 deadline, switch-off at move 60 restoring age 180, lit-first
+underwater switch-off, unlit underwater refusal, sighted oil exhaustion, blind
+lantern exhaustion, cursed spill/flicker/blind/success RNG, and visible unpaid
+usage-fee ordering. The themed timer/light owner remains **54/54**; the existing
+apply-letter compaction/cancellation witness passes **1/1**; and the focused
+bridge-policy, Priest-startup, ordinary-room, and themed-room gate remains
+**70/70**. The mechanical bridge audit reports 113 files audited, 15 guarded
+modules, and 19 fixture modules with `ok: true`.
+
+**Verifier incident and correction:** the first isolated 5-test command
+verifier yielded while its worker stayed at roughly 99% CPU and low memory.
+It was not retried concurrently. The exact yielded session was polled twice,
+sampled, interrupted, and its parent/worker process tree was confirmed gone.
+The focused fixture had created a new `GameMap` but had not initialized the
+vision buffers/blocker tables. Its first lamp activation set
+`vision_full_recalc`; the next apply prompt entered visibility work against
+that incomplete test state. Adding the same `vision_reset_new_level()`
+initialization used by live level entry made the exact verifier finish in 75ms,
+and the subsequent 54- and 70-test gates also exited normally. This was test-
+harness state, not a second Contest suite or a product lamp loop.
+
+**Falsified hypotheses, limit, and next blocker:** manual off is not timer
+deletion, underwater is not always the first rejection, oil and brass curse
+draws are not equivalent, and public generic tool feedback is not lamp
+coverage. Conversely, this slice does not make `use_lamp()` complete. Magic
+lamps use untimed permanent light while charged; candles, oil potions, the
+Candelabrum, artifact light, threshold warnings, inactive-level timing, and
+broader shop mute/species cases remain separate. `HATCH_EGG`, `FIG_TRANSFORM`,
+`SHRINK_GLOB`, relocation/catch-up breadth, and the sealed stratum also remain
+open. No full suite, public corpus, sealed-trace inspection, score, push,
+publication, official measurement, or animation work ran. The next portfolio
+should compare the magic-lamp extension with one complete new callback owner.
+
+---

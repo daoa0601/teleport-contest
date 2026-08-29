@@ -36007,8 +36007,56 @@ overdue extinction, object survival, illumination appearance, and illumination
 removal with zero bridge hits.
 
 This is still a mechanically **partial** burn owner. Threshold warning prose,
-interactive lamp activation/extinguishing, cursed and underwater application,
-shop billing, potions of oil, candles, the Candelabrum of Invocation, artifact
+magic lamps, potions of oil, candles, the Candelabrum of Invocation, artifact
 light, and inactive-level presentation are separate source transactions. Egg,
 figurine, and glob callbacks also remain separate timer owners; none is inferred
 from the shared lamp graph.
+
+## 977. Timed lamp application owns cancellation fuel and source branch order
+
+~~~mermaid
+flowchart TD
+    Apply["doapply selects oil lamp or brass lantern"] --> Lit{"already lamplit?"}
+    Lit -->|yes| OffLine["report lamp or lantern off"]
+    OffLine --> Stop["stop BURN_OBJECT timer"]
+    Stop --> Restore["age += deadline - current move"]
+    Restore --> Dark["clear lamplit; request vision recalc"]
+    Lit -->|no| Water{"Underwater?"}
+    Water -->|yes| Diving["not a diving lamp; no timer"]
+    Water -->|no| Fuel{"age is zero?"}
+    Fuel -->|yes| Empty["no oil / out of power / blind nothing"]
+    Fuel -->|no| Cursed{"cursed and rn2(2) is zero?"}
+    Cursed -->|oil lamp and rn2(3) is zero| Spill["spill oil; add d(2,10) Glib"]
+    Cursed -->|other visible failure| Flicker["flicker, then die; no timer"]
+    Cursed -->|other blind failure| Nothing["Nothing seems to happen; no timer"]
+    Cursed -->|no| Shop["check unpaid usage fee and prefix RNG"]
+    Shop --> OnLine["report lamp or lantern on"]
+    OnLine --> Begin["begin_burn schedules next breakpoint"]
+~~~
+
+`apply.c:use_lamp()` tests the lit state before water, fuel, or curse state.
+That ordering is functional: a lamp already burning underwater can still be
+switched off. `timeout.c:end_burn(..., TRUE)` does more than remove the timer.
+Its `cleanup_burn()` callback adds the unspent interval owned by that timer
+back to `obj->age`. A 200-turn lamp switched on at move 40 stores age 150 behind
+a move-90 deadline; switching it off at move 60 restores 30 and leaves age
+180. Clearing `lamplit` without that addition would silently destroy fuel on
+every manual use.
+
+The JavaScript command owner now routes ordinary oil lamps and brass lanterns
+through that transaction instead of the generic `You use ...` fallback. It
+preserves the no-timer underwater and empty outcomes, oil-only second curse
+draw, oil spill and `d(2,10)` slippery-finger duration, sight-dependent
+flicker/nothing presentation, and cursed success path. Normal activation calls
+the live shop owner first: an unpaid lamp in its resident's current shop
+consumes both `rn2(3)` prefix draws, optionally presents the usage fee and
+Wisdom exercise, commits debit, then reports the lamp on and starts its burn
+timer. Manual extinction retains object identity and returns the source-owned
+unspent fuel before mobile illumination is recalculated.
+
+This owner remains mechanically **partial**. Magic lamps share `use_lamp()`
+presentation but have permanent untimed light while charged and a distinct
+empty state. Candles, oil potions, the Candelabrum, artifact light, warning
+prose, inactive-level timing, and broader shop mute/species variants remain
+separate. The five direct command witnesses are bridge-free; no public-session
+exactness or supplemental-animation claim follows from them.
