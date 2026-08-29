@@ -97,6 +97,7 @@ import { initializeMonsterArmor } from './monworn.js';
 import { setupElementalBubbles } from './elemental.js';
 import { roomForIndex } from './room.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
+import { objectWeight } from './weight.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -575,6 +576,18 @@ export function level_difficulty() {
         return depth_of_level(game.sanctum_level)
             + Math.trunc((game.u?.ulevel || 1) / 2);
     }
+    if (game.u?.uhave?.amulet) {
+        let deepest = depth_of_level(uz);
+        for (const key of game._levelCache?.keys?.() || []) {
+            const [dnum, dlevel] = String(key).split(':').map(Number);
+            if (!Number.isInteger(dnum) || !Number.isInteger(dlevel))
+                continue;
+            deepest = Math.max(
+                deepest, depth_of_level({ dnum, dlevel }),
+            );
+        }
+        return deepest;
+    }
     let difficulty = depth_of_level(uz);
     const dungeon = game.dungeons?.[uz?.dnum ?? 0];
     if ((dungeon?.entry_lev ?? 1) > 1) {
@@ -648,6 +661,9 @@ export function mksobj(otyp, init, artif) {
         // floor glyph is currently visible.
         otmp.novelidx = rn2(41);
     }
+    // C mkobj.c:mksobj() computes weight only after type-specific state,
+    // quantities, corpse identity, timers, and generated contents are final.
+    otmp.owt = objectWeight(otmp);
     return otmp;
 }
 
@@ -9366,6 +9382,18 @@ function addSpecialContainerObject(container, object) {
     return object;
 }
 
+function addBuriedObject(object, x, y) {
+    if (!object) return object;
+    removeFloorObject(object);
+    object.where = 'buried';
+    object.buried = true;
+    object.ox = x;
+    object.oy = y;
+    if (!game.level.buriedObjects) game.level.buriedObjects = [];
+    game.level.buriedObjects.unshift(object);
+    return object;
+}
+
 function medusaInducedAlignment() {
     // Medusa has an aligned special-level descriptor.  induced_align(80)
     // usually returns it after rn2(100), falling back to rn2(3) on 80..99.
@@ -16350,26 +16378,41 @@ function mkaltar(croom) {
 }
 
 function mkgrave_room(croom) {
-    if (croom.rtype !== OROOM) return;
     const dobell = !rn2(10);
+    if (croom.rtype !== OROOM) return;
     const pos = { x: 0, y: 0 };
     if (!find_okay_roompos(croom, pos)) return;
     make_grave(pos.x, pos.y, dobell ? 'Saved by the bell!' : null);
     if (!rn2(3)) {
         const gold = mksobj(GOLD_PIECE, true, false);
         if (gold) {
-            const depth = game.u?.uz?.dlevel ?? 1;
-            gold.quan = rnd(20) + depth * rnd(5);
+            gold.quan = gold.quantity = rnd(20)
+                + level_difficulty() * rnd(5);
+            gold.owt = objectWeight(gold);
+            addBuriedObject(gold, pos.x, pos.y);
         }
     }
     for (let tryct = rn2(5); tryct > 0; tryct--) {
         const otmp = mkobj(RANDOM_CLASS, true);
         curse(otmp);
+        addBuriedObject(otmp, pos.x, pos.y);
     }
     if (dobell) mksobj_at(BELL, pos.x, pos.y, true, false);
 }
 
-async function fill_ordinary_room(croom, bonus_items) {
+function fillRandomRoomObjects(croom, pos) {
+    if (!rn2(3) && somexyspace(croom, pos)) {
+        mkobj_at(RANDOM_CLASS, pos.x, pos.y, true);
+        let objTrycnt = 0;
+        while (!rn2(5)) {
+            if (++objTrycnt > 100) break;
+            if (somexyspace(croom, pos))
+                mkobj_at(RANDOM_CLASS, pos.x, pos.y, true);
+        }
+    }
+}
+
+export async function fill_ordinary_room(croom, bonus_items) {
     const g = game;
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM)) return;
     // C fills descendants before their parent and does so even when the
@@ -16379,13 +16422,18 @@ async function fill_ordinary_room(croom, bonus_items) {
     if (croom.needfill !== FILL_NORMAL) return;
 
     const pos = { x: 0, y: 0 };
-    // Sleeping monster (33%)
-    if (!rn2(3) && somexyspace(croom, pos)) {
-        await makemon(null, pos.x, pos.y, MM_NOGRP);
+    // With the Amulet, every ordinary room receives a monster and the
+    // one-in-three selection draw is short-circuited.  A generated giant
+    // spider owns a co-located web if no prior furniture or trap occupies it.
+    if ((g.u?.uhave?.amulet || !rn2(3)) && somexyspace(croom, pos)) {
+        const tmonst = await makemon(null, pos.x, pos.y, MM_NOGRP);
+        if (tmonst?.mnum === PM_GIANT_SPIDER
+            && !occupied(pos.x, pos.y)) {
+            await maketrap(pos.x, pos.y, WEB);
+        }
     }
     // Traps
-    const u_depth = g.u?.uz?.dlevel ?? 1;
-    let x = 8 - Math.trunc(u_depth / 6);
+    let x = 8 - Math.trunc(level_difficulty() / 6);
     if (x <= 1) x = 2;
     let trycnt = 0;
     while (!rn2(x) && ++trycnt < 1000) {
@@ -16394,6 +16442,12 @@ async function fill_ordinary_room(croom, bonus_items) {
     // Gold
     if (!rn2(3) && somexyspace(croom, pos)) {
         mkgold(0, pos.x, pos.y);
+    }
+    // Rogue levels skip furniture, statues, bonus/chest construction, and
+    // graffiti, then rejoin the ordinary random-object tail.
+    if (Is_rogue_level(g.u?.uz)) {
+        fillRandomRoomObjects(croom, pos);
+        return;
     }
     // Fountain
     if (!rn2(10)) mkfount(croom);
@@ -16407,7 +16461,7 @@ async function fill_ordinary_room(croom, bonus_items) {
     // Altar
     if (!rn2(60)) mkaltar(croom);
     // Grave
-    x = 80 - (u_depth * 2);
+    x = 80 - (depth_of_level(g.u?.uz) * 2);
     if (x < 2) x = 2;
     if (!rn2(x)) mkgrave_room(croom);
     // Statue
@@ -16470,6 +16524,7 @@ async function fill_ordinary_room(croom, bonus_items) {
                     }
                     addSpecialContainerObject(supply_chest, otmp);
                 }
+                supply_chest.owt = objectWeight(supply_chest);
             }
             skip_chests = true;
         }
@@ -16491,15 +16546,7 @@ async function fill_ordinary_room(croom, bonus_items) {
                 make_engr_at(pos.x, pos.y, engrText, pristine, 0, MARK);
         }
     }
-    // Random objects
-    if (!rn2(3) && somexyspace(croom, pos)) {
-        mkobj_at(RANDOM_CLASS, pos.x, pos.y, true);
-        let objTrycnt = 0;
-        while (!rn2(5)) {
-            if (++objTrycnt > 100) break;
-            if (somexyspace(croom, pos)) mkobj_at(RANDOM_CLASS, pos.x, pos.y, true);
-        }
-    }
+    fillRandomRoomObjects(croom, pos);
 }
 
 // ============================================================
