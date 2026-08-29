@@ -15,10 +15,10 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
-    POT_CONFUSION, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY,
+    POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, POT_SICKNESS,
+    POT_OBJECT_DETECTION, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -615,10 +615,41 @@ test('swallowed sickness harms the engulfer and hero in source order',
         assertNoBridgeUse();
     });
 
-test('unsupported confusion potion fails before floor fallback or RNG',
+test('swallowed booze confuses the engulfer and hero in source order',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const raw = mksobj(POT_CONFUSION, true, false);
+        engulfer.m_lev = 12;
+        engulfer.mconf = 0;
+        game.u.confusionTurns = 0;
+        const raw = mksobj(POT_BOOZE, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2955n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'l');
+
+        assert.equal(engulfer.mhp, 39);
+        assert.equal(engulfer.mconf, 1);
+        assert.equal(game.u.confusionTurns, 3);
+        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=4', 'rn2(7)=1', 'rn2(5)=1', 'rn2(94)=57',
+            'rnd(5)=3',
+        ]);
+        assert.equal(potion.where, 'gone');
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(game._pending_message, 'Crash!  You feel somewhat dizzy.');
+        assertNoBridgeUse();
+    });
+
+test('unsupported paralysis potion fails before floor fallback or RNG',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_PARALYSIS, true, false);
         raw.cursed = raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;

@@ -2,25 +2,28 @@
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
 
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { Upolyd } from './const.js';
+import { TIMEOUT, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_EXTRA_HEALING, POT_FRUIT_JUICE,
-    POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
-    POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
+    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BOOZE, POT_CONFUSION,
+    POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
+    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
+    POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_RESTORE_ABILITY,
+    POT_SICKNESS, TOWEL,
 } from './object_data.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_RESISTS,
-    monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, monsterTypeName,
 } from './monster_data.js';
-import { rn2 } from './rng.js';
+import { rnd, rn2 } from './rng.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import { cansee } from './vision.js';
 
 const PM_PESTILENCE = 312;
+const PM_ARCHEOLOGIST = 331;
+const PM_WIZARD = 343;
 const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
@@ -50,6 +53,8 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     ...INERT_MONSTER_POTION_TYPES,
     ...HEALING_MONSTER_POTION_TYPES,
     POT_SICKNESS,
+    POT_CONFUSION,
+    POT_BOOZE,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -58,6 +63,7 @@ const ABILITY_POTION_TYPES = new Set([
 const HEALING_POTION_TYPES = new Set([
     POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING,
 ]);
+const CONFUSION_POTION_TYPES = new Set([POT_CONFUSION, POT_BOOZE]);
 
 const ORDINARY_BOTTLE_NAMES = [
     'bottle', 'phial', 'flagon', 'carafe', 'flask', 'jar', 'vial',
@@ -173,6 +179,21 @@ function sicknessCannotHarmMonster(monster) {
             attack[1] === AD_DISE || attack[1] === AD_PEST);
 }
 
+// zap.c:resist() uses potion attack level 6 and the target's runtime level.
+// NOTELL suppresses shield presentation but the resistance draw still occurs.
+function monsterResistsPotion(monster, state = game) {
+    const mnum = monster?.mnum;
+    let defenseLevel = monster?.m_lev
+        ?? MONSTER_LEVEL[mnum] ?? 1;
+    if (defenseLevel < 1)
+        defenseLevel = mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD
+            ? state.u?.ulevel ?? 1 : 1;
+    defenseLevel = Math.max(1, Math.min(50, defenseLevel));
+    const resistanceRange = 100 + 6 - defenseLevel;
+    return rn2(resistanceRange)
+        < (MONSTER_MAGIC_RESISTANCE[mnum] ?? 0);
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -191,6 +212,7 @@ export async function applySupportedPotionVapor({
     }
 
     let abilityStart = null;
+    let confusionDuration = null;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
@@ -216,13 +238,35 @@ export async function applySupportedPotionVapor({
         if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
         else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
         exerciseAttribute(2, false, state);
+    } else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
+        const hero = state.u || (state.u = {});
+        if ((hero.confusionTurns ?? 0) <= 0)
+            await publish('You feel somewhat dizzy.');
+        confusionDuration = rnd(5);
+        hero.confusionTurns = Math.min(
+            TIMEOUT,
+            Math.max(0, hero.confusionTurns ?? 0) + confusionDuration,
+        );
     }
-    return { received: true, abilityStart };
+    return { received: true, abilityStart, confusionDuration };
 }
 
 async function applySupportedDirectEffect({
-    monster, potion, targetVisible, wakeMonster, publish,
+    state, monster, potion, targetVisible, wakeMonster, publish,
 }) {
+    if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
+        const resisted = monsterResistsPotion(monster, state);
+        if (!resisted) monster.mconf = 1;
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            resisted,
+            confused: !resisted,
+        };
+    }
+
     if (potion.otyp === POT_SICKNESS && monster.mnum !== PM_PESTILENCE) {
         const oldHp = monster.mhp;
         if (sicknessCannotHarmMonster(monster)) {
@@ -327,7 +371,7 @@ export async function hitMonsterWithSupportedPotion({
     }
 
     const directEffect = await applySupportedDirectEffect({
-        monster, potion, targetVisible, wakeMonster, publish,
+        state, monster, potion, targetVisible, wakeMonster, publish,
     });
     let breathedVapor = false;
     let vaporEffect = null;

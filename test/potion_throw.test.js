@@ -12,7 +12,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
-    POT_SICKNESS,
+    POT_PARALYSIS, POT_SICKNESS,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -271,6 +271,34 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
     assertNoBridgeUse();
 });
 
+test('map confusion contact pays resistance before nearby hero vapor', async () => {
+    const monster = freshMapPotionState(2);
+    monster.m_lev = 15;
+    monster.mconf = 0;
+    game.u.confusionTurns = 0;
+    const potion = addKnownPotion(POT_CONFUSION);
+
+    initRng(2998n);
+    enableRngLog();
+    await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
+
+    assert.deepEqual(getRngLog(), [
+        'rnd(20)=7',
+        'rnd(25)=8',
+        'rn2(7)=2',
+        'rn2(5)=3',
+        'rn2(91)=68',
+        'rn2(9)=0',
+        'rnd(5)=1',
+    ]);
+    assert.equal(monster.mhp, 11);
+    assert.equal(monster.mconf, 1);
+    assert.equal(game.u.confusionTurns, 1);
+    assert.equal(potion.where, 'gone');
+    assert.match(game._pending_message, /You feel somewhat dizzy\.$/);
+    assertNoBridgeUse();
+});
+
 test('adjacent hard-floor break applies healing vapor without monster contact',
     async () => {
         freshMapPotionState(2);
@@ -294,9 +322,9 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         assertNoBridgeUse();
     });
 
-test('unsupported confusion map potion fails before split or throw RNG', async () => {
+test('unsupported paralysis map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
-    const potion = addKnownPotion(POT_CONFUSION);
+    const potion = addKnownPotion(POT_PARALYSIS);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 

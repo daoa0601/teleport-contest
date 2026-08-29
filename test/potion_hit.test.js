@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 
 import { game, resetGame } from '../js/gstate.js';
 import {
-    POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING,
-    POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
+    POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
+    POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -251,6 +251,124 @@ test('sickness heals Pestilence and clears sleep without anger', async () => {
     assert.equal(potion.where, 'gone');
 });
 
+test('confusion potion confuses a monster after its resistance draw',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            m_lev: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mconf: 0,
+        };
+        const potion = potionObject(POT_CONFUSION);
+        const messages = [];
+        let wakeCount = 0;
+
+        initRng(2950n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => { wakeCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=2', 'rn2(5)=1', 'rn2(105)=52',
+        ]);
+        assert.deepEqual(messages, [
+            "The flagon crashes on the killer bee's head and breaks into shards.",
+            'The potion of confusion evaporates.',
+        ]);
+        assert.equal(monster.mhp, 19);
+        assert.equal(monster.mconf, 1);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.resisted, false);
+        assert.equal(potion.where, 'gone');
+    });
+
+test('booze leaves a magic-resistant monster unconfused but still wakes it',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 312,
+            m_lev: 30,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mconf: 0,
+        };
+        const potion = potionObject(POT_BOOZE);
+        const messages = [];
+        let wakeCount = 0;
+
+        initRng(2951n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => { wakeCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=1', 'rn2(5)=3', 'rn2(76)=5',
+        ]);
+        assert.deepEqual(messages, [
+            "The phial crashes on Pestilence's head and breaks into shards.",
+            'The potion of booze evaporates.',
+        ]);
+        assert.equal(monster.mhp, 19);
+        assert.equal(monster.mconf, 0);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.resisted, true);
+        assert.equal(potion.where, 'gone');
+    });
+
+test('zero-level player monsters defend with the hero level', async () => {
+    resetGame();
+    game.u = { hallucinationTurns: 0, ulevel: 20 };
+    const monster = {
+        mnum: 343,
+        m_lev: 0,
+        mx: 10,
+        my: 10,
+        mhp: 20,
+        mhpmax: 20,
+        mconf: 0,
+    };
+    const potion = potionObject(POT_CONFUSION);
+
+    initRng(3004n);
+    enableRngLog();
+    const result = await hitMonsterWithSupportedPotion({
+        state: game,
+        monster,
+        potion,
+        targetVisible: false,
+        publish: async () => {},
+        wakeMonster: async () => {},
+    });
+
+    assert.deepEqual(getRngLog(), [
+        'rn2(7)=2', 'rn2(5)=0', 'rn2(86)=0',
+    ]);
+    assert.equal(monster.mhp, 20);
+    assert.equal(monster.mconf, 0);
+    assert.equal(result.directEffect.resisted, true);
+    assert.equal(potion.where, 'gone');
+});
+
 test('ability potion heals a peaceful monster without angering it', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0 };
@@ -421,6 +539,46 @@ test('sickness vapor cannot reduce base HP below one', async () => {
     assert.equal(game.u.uhp, 1);
     assert.equal(game.u._exercise[2], -1);
 });
+
+test('confusion vapor announces and increments a clear hero timeout',
+    async () => {
+        resetGame();
+        game.u = { confusionTurns: 0 };
+        const messages = [];
+
+        initRng(2954n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_CONFUSION),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=3']);
+        assert.deepEqual(messages, ['You feel somewhat dizzy.']);
+        assert.equal(game.u.confusionTurns, 3);
+        assert.equal(result.confusionDuration, 3);
+    });
+
+test('booze vapor silently extends and caps an existing confusion timeout',
+    async () => {
+        resetGame();
+        game.u = { confusionTurns: 0x00fffffe };
+        const messages = [];
+
+        initRng(2957n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_BOOZE),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
+        assert.deepEqual(messages, []);
+        assert.equal(game.u.confusionTurns, 0x00ffffff);
+        assert.equal(result.confusionDuration, 4);
+    });
 
 test('vapor respects breathless forms with and without eyes', async () => {
     resetGame();
