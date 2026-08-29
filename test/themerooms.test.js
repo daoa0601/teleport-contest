@@ -17,7 +17,8 @@ import { game, resetGame } from '../js/gstate.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
-    makemonAt, runThemeroomPostprocess, THEMEROOM_META,
+    makemonAt, runNextBuriedZombieTimer, runThemeroomPostprocess,
+    THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
 import { BOULDER, CHEST, CORPSE, OIL_LAMP, STATUE } from '../js/object_data.js';
@@ -563,6 +564,42 @@ test('NO_MINVENT skips weapon and inventory RNG without skipping birth', async (
         );
         assert.ok(ordinaryLog.length > emptyLog.length);
     }
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('a due buried-zombie timer revives through an empty actor and pit', async () => {
+    themedState(7007, 7);
+    assert.equal(await generateThemeroomByName('default', 7), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(
+        room, 'Buried zombies', 7,
+    ), true);
+    const corpse = game.level.buriedObjects[0];
+    const livingSpecies = corpse.corpsenm;
+    const expectedZombie = new Map([
+        [59, 239], [165, 240], [72, 241], [44, 242],
+        [264, 243], [260, 244], [174, 245], [169, 247],
+    ]).get(livingSpecies);
+    for (const other of game.level.buriedObjects)
+        other.zombifyAt = game.moves + 100;
+    corpse.zombifyAt = game.moves;
+    game.in_mklev = false;
+    game.level.at(corpse.ox, corpse.oy).typ = ROOM;
+
+    const event = await runNextBuriedZombieTimer(game, game.moves);
+    assert.equal(event.kind, 'revived');
+    assert.equal(event.monster.mnum, expectedZombie);
+    assert.equal(event.monster.female, corpse.female);
+    assert.equal(event.monster.mrevived, 1);
+    assert.equal(event.monster.hasInventory, false);
+    assert.deepEqual(event.monster.minvent, []);
+    assert.equal(event.trap.ttyp, 11); // PIT
+    assert.equal(event.trap.tx, event.monster.mx);
+    assert.equal(event.trap.ty, event.monster.my);
+    assert.equal(game.level.buriedObjects.includes(corpse), false);
+    assert.equal(corpse.where, 'gone');
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

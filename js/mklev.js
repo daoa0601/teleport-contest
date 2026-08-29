@@ -37,7 +37,7 @@ import {
     M_AP_FURNITURE, M_AP_OBJECT,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL,
-    MM_NOCOUNTBIRTH, MM_NOMSG, NO_MINVENT,
+    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT, G_GENOD,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
 } from './const.js';
@@ -1268,12 +1268,21 @@ function startCorpseTimeout(body) {
     const age = currentMove - body.age;
     const baseDelay = age > 250 ? rotAdjust : 250 - age;
     body.rotAt = currentMove + baseDelay + rnz(rotAdjust) - rotAdjust;
+    body.timed = 1;
 }
 
 function set_corpsenm(otmp, pm) {
     if (!otmp) return;
+    // C stops every existing corpse timer before replacing its species.
+    delete otmp.rotAt;
+    delete otmp.zombifyAt;
+    delete otmp.zombifyOrder;
+    otmp.timed = 0;
     otmp.corpsenm = pm;
-    if (otmp.otyp === CORPSE) startCorpseTimeout(otmp);
+    if (otmp.otyp === CORPSE) {
+        startCorpseTimeout(otmp);
+        otmp.owt = objectWeight(otmp);
+    }
 }
 
 // mkcorpstat stub
@@ -2307,11 +2316,18 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         && !(genderFlags & (M2_LORD | M2_PRINCE));
     const isQuestLeaderType = mndx === game.urole?.ldrnum;
     const isQuestNemesis = mndx === game.urole?.neminum;
+    const femaleOk = !(genderFlags & (M2_MALE | M2_NEUTER));
+    const maleOk = !(genderFlags & (M2_FEMALE | M2_NEUTER));
     const monsterFemale = (genderFlags & M2_FEMALE) ? true
-        : (genderFlags & (M2_MALE | M2_NEUTER)) ? false
-            : isQuestLeaderType ? game.quest_status?.ldrgend === 1
-                : isQuestNemesis ? game.quest_status?.nemgend === 1
-                    : !!rn2(2);
+        : ((mmflags & MM_FEMALE) && femaleOk) ? true
+            : (genderFlags & M2_MALE) ? false
+                : ((mmflags & MM_MALE) && maleOk) ? false
+                    : (genderFlags & M2_NEUTER) ? false
+                        : isQuestLeaderType
+                            ? game.quest_status?.ldrgend === 1
+                            : isQuestNemesis
+                                ? game.quest_status?.nemgend === 1
+                                : !!rn2(2);
     // makemon.c honors MM_ANGRY before consulting peace_minded().  This is
     // RNG-visible for co-aligned neutral species such as fallback garter
     // snakes; hostile ant summons happened to short-circuit the same helper.
@@ -3662,6 +3678,84 @@ async function maketrap(x, y, typ, options = undefined) {
         }
     }
     return trap;
+}
+
+const ZOMBIE_FORM_BY_LIVING_CORPSE = new Map([
+    [59, 239], [165, 240], [72, 241], [44, 242],
+    [264, 243], [260, 244], [174, 245], [169, 247],
+]);
+
+function dueBuriedZombieCorpses(state, currentTurn) {
+    return (state.level?.buriedObjects || [])
+        .filter(corpse => corpse.otyp === CORPSE
+            && corpse.zombifyAt != null
+            && corpse.zombifyAt <= currentTurn)
+        .sort((left, right) => (left.zombifyAt - right.zombifyAt)
+            || ((left.zombifyOrder ?? left.o_id ?? 0)
+                - (right.zombifyOrder ?? right.o_id ?? 0)));
+}
+
+export function hasDueBuriedZombieTimer(
+    state = game, currentTurn = state.moves ?? 0,
+) {
+    return dueBuriedZombieCorpses(state, currentTurn).length > 0;
+}
+
+function removeBuriedCorpse(corpse, state = game) {
+    const index = state.level?.buriedObjects?.indexOf(corpse) ?? -1;
+    if (index >= 0) state.level.buriedObjects.splice(index, 1);
+    delete corpse.rotAt;
+    delete corpse.zombifyAt;
+    delete corpse.zombifyOrder;
+    corpse.timed = 0;
+    corpse.where = 'gone';
+    corpse.buried = false;
+    corpse.ox = corpse.oy = 0;
+}
+
+// C refs: timeout.c:run_timers(), do.c:zombify_mon()/revive_mon(), and
+// zap.c:revive().  Claiming removes the ZOMBIFY_MON timer before its callback;
+// a failed dig or birth retains the replacement zombie corpse and its newly
+// installed ROT_CORPSE timer.
+export async function runNextBuriedZombieTimer(
+    state = game, currentTurn = state.moves ?? 0,
+) {
+    const corpse = dueBuriedZombieCorpses(state, currentTurn)[0];
+    if (!corpse) return null;
+    delete corpse.zombifyAt;
+    delete corpse.zombifyOrder;
+    corpse.timed = Math.max(0, (corpse.timed ?? 1) - 1);
+
+    const zombieForm = ZOMBIE_FORM_BY_LIVING_CORPSE.get(corpse.corpsenm);
+    if (zombieForm == null
+        || ((state.mvitals?.[zombieForm]?.mvflags ?? 0) & G_GENOD)) {
+        removeBuriedCorpse(corpse, state);
+        return { kind: 'rotted', corpse, monster: null, trap: null };
+    }
+
+    set_corpsenm(corpse, zombieForm);
+    const x = corpse.ox, y = corpse.oy;
+    const location = state.level?.at(x, y);
+    const hasTrap = state.level?.traps?.some(trap =>
+        trap.tx === x && trap.ty === y);
+    if (!location || hasTrap
+        || ![ROOM, CORR, GRAVE].includes(location.typ)) {
+        return { kind: 'failed', corpse, monster: null, trap: null };
+    }
+
+    const flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH
+        | (corpse.female ? MM_FEMALE : MM_MALE);
+    const occupied = !!levelMonsterAt(x, y);
+    const monster = occupied
+        ? await makemonNear(zombieForm, x, y, flags)
+        : await makemonAt(zombieForm, x, y, flags);
+    if (!monster)
+        return { kind: 'failed', corpse, monster: null, trap: null };
+
+    monster.mrevived = 1;
+    removeBuriedCorpse(corpse, state);
+    const trap = await maketrap(monster.mx, monster.my, PIT);
+    return { kind: 'revived', corpse, monster, trap };
 }
 
 function make_engr_at(
@@ -15003,6 +15097,8 @@ function fillBuriedZombies(room, difficulty = level_difficulty()) {
         // it with an absolute ZOMBIFY_MON deadline from math.random(990,1010).
         delete corpse.rotAt;
         corpse.zombifyAt = (game.moves ?? 0) + 990 + rn2(21);
+        game._nextObjectTimerOrder = (game._nextObjectTimerOrder ?? 0) + 1;
+        corpse.zombifyOrder = game._nextObjectTimerOrder;
         corpse.timed = 1;
     }
 }

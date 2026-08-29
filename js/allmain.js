@@ -17,6 +17,7 @@ import {
     randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
+    hasDueBuriedZombieTimer, runNextBuriedZombieTimer,
 } from './mklev.js';
 import {
     animateRollingBoulderCell,
@@ -1776,6 +1777,25 @@ function initialTurnMaintenanceRng(
     const sourceTurn = completedTurn;
     if ((game.u?.mtimedone ?? 0) > 0) game.u.mtimedone--;
     runObjectBurnTimers(game, sourceTurn);
+    if (hasDueBuriedZombieTimer(game, sourceTurn)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'due zombify timer requires source-ordered async maintenance',
+            );
+        }
+        return {
+            deferredZombifyTimer: true,
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterObjectTimers({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterObjectTimers({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}) {
     for (let x = 1; x < COLNO; x++) {
         const column = game.level?.objects?.[x];
         if (!column) continue;
@@ -2019,10 +2039,38 @@ function finishInitialTurnMaintenanceAfterConfusion({
     });
 }
 
+async function presentBuriedZombieTimer(event) {
+    if (event?.kind !== 'revived' || !event.monster) return;
+    const { monster, trap } = event;
+    if (cansee(monster.mx, monster.my)) {
+        if (trap) trap.tseen = true;
+        const name = quietMonsterName(monster);
+        const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
+        await queueTurnMessage(
+            `${article} ${name} claws itself out of the ground!`,
+        );
+        newsym(monster.mx, monster.my);
+        return;
+    }
+    const dx = monster.mx - (game.u?.ux ?? monster.mx);
+    const dy = monster.my - (game.u?.uy ?? monster.my);
+    const deaf = !!(game.u?.deaf || game.deaf);
+    if (!deaf && dx * dx + dy * dy < 25)
+        await queueTurnMessage('You hear scratching noises.');
+}
+
 async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
     let phase = initialTurnMaintenanceRng(completedTurn, true);
+    while (phase?.deferredZombifyTimer) {
+        const event = await runNextBuriedZombieTimer(
+            game, phase.sourceTurn,
+        );
+        await presentBuriedZombieTimer(event);
+        if (hasDueBuriedZombieTimer(game, phase.sourceTurn)) continue;
+        phase = finishInitialTurnMaintenanceAfterObjectTimers(phase);
+    }
     while (phase?.deferredTimeoutMessage) {
         await queueTurnMessage(phase.message);
         if (phase.timeoutKind === 'stun') {
