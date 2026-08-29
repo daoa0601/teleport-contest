@@ -35455,3 +35455,56 @@ mechanical level entry stays **partial**: dynamic Lua variants, special-level
 operations, legacy seeded room-fill branches, and several delegated
 monster/trap/special-object constructors remain open even though the core
 ordinary orchestration now has direct fresh-seed witnesses.
+
+## 971. Lua themed-room shape and fill ownership are separate graphs
+
+~~~mermaid
+flowchart TD
+    Reservoir["themerooms_generate: exact 31-name weighted reservoir"] --> Named["generateThemeroomByName"]
+    Named --> Generic["ordinary and themed rectangles"]
+    Named --> Static["17 pinned ASCII-map shapes"]
+    Named --> Rare["room-in-room, huge, mausoleum, odd feature, twin shops"]
+    Generic --> Room["room identity, fill bit, light, children, doors"]
+    Static --> Room
+    Rare --> Room
+    Room --> Pick["independent 15-name themeroom_fills reservoir"]
+    Pick --> Ghost["Ghost of an Adventurer: implemented live callback"]
+    Pick --> Partial["Buried zombies, temple, storeroom, teleport hub: partial"]
+    Pick --> Absent["ten callbacks: absent"]
+    Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
+~~~
+
+Pinned `dat/themerms.lua` declares 31 top-level names. JavaScript previously
+renamed the odd-feature form and silently mapped five rare constructors to a
+generic rectangle: Room in a room, Huge room with another room inside,
+Mausoleum, Random dungeon feature in the middle of an odd-sized room, and
+Twin businesses. The named dispatcher now retains every exact source name and
+gives those forms live parent/child, terrain, tomb, shop, door, fill, and
+joining structure. A direct invariant parses the pinned Lua table rather than
+maintaining an ungrounded JavaScript-only count. This establishes reachable
+source-owned shapes; it does not claim exhaustive RNG parity for all forms or
+a sealed generalization result.
+
+Shape ownership must not be conflated with fill ownership. A selected static
+or dynamic room independently chooses among 15 fill callbacks. The shared
+dispatcher now makes this boundary explicit and returns false for a named
+callback which has not been ported instead of reporting an empty callback as
+implemented. The generated ownership registry records every fill separately:
+Ghost of an Adventurer is `implemented`; Buried zombies, Temple of the gods,
+Storeroom, and Teleportation hub are `partial`; the remaining ten are
+`absent`.
+
+The ghost callback is the first bridge deletion in this graph. The former
+`fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
+when `_valkPitPath` identified a legacy public replay carrier. The live owner
+now takes `selection.room():rndcoord(0)`, creates an asleep waiting ghost, then
+performs the six independent Lua percentage branches for colocated dagger,
+weapon, bow/arrow, armor, ring, and scroll objects with `not-blessed` state.
+It consults no seed, role, move sequence, fixture, or replay flag. The same
+fill dispatcher is used by static-map and dynamically shaped themed rooms.
+
+The level-generation registry therefore remains **partial**. In addition to
+the fourteen incomplete fills, exact source ordering across all 31 shapes,
+remaining seeded generation branches, broader `sp_lev.c` operations, and the
+scheduled sealed corpus gate remain open. Public-session exactness is not an
+ownership status in this graph.

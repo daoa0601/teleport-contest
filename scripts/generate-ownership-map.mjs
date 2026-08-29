@@ -38,6 +38,18 @@ export function loadAndValidateOwnershipRegistry() {
             failures.push(`${entry.id}: openGap must be explicit`);
         if (entry.lastSealedGate !== null && typeof entry.lastSealedGate !== 'string')
             failures.push(`${entry.id}: lastSealedGate must be null or a string`);
+        const componentIds = new Set();
+        if (entry.components != null && !Array.isArray(entry.components))
+            failures.push(`${entry.id}: components must be an array when present`);
+        for (const component of entry.components || []) {
+            if (!component.id || componentIds.has(component.id))
+                failures.push(`${entry.id}: duplicate or missing component id: ${component.id}`);
+            componentIds.add(component.id);
+            if (!ALLOWED_STATUSES.has(component.status))
+                failures.push(`${entry.id}/${component.id}: invalid status ${component.status}`);
+            if (typeof component.openGap !== 'string' || !component.openGap.trim())
+                failures.push(`${entry.id}/${component.id}: openGap must be explicit`);
+        }
     }
     for (const entry of registry.entries || []) {
         for (const dependency of entry.dependencies || []) {
@@ -76,6 +88,17 @@ export function renderOwnershipMap(registry) {
         '| --- | --- | --- | --- | --- |');
     for (const entry of registry.entries) {
         lines.push(`| ${entry.label} | ${entry.status} | ${entry.javascriptOwners.join('<br/>') || 'none'} | ${entry.bridgeIds.join('<br/>') || 'none'} | ${entry.openGap} |`);
+    }
+    const componentEntries = registry.entries.flatMap(entry =>
+        (entry.components || []).map(component => ({ entry, component })),
+    );
+    if (componentEntries.length) {
+        lines.push('', '## Component ownership', '',
+            '| Subsystem | Component | Status | Open gap |',
+            '| --- | --- | --- | --- |');
+        for (const { entry, component } of componentEntries) {
+            lines.push(`| ${entry.label} | ${component.label || component.id} | ${component.status} | ${component.openGap} |`);
+        }
     }
     lines.push('', 'No entry has a sealed-corpus gate yet. Public-session witnesses are retained only where the registry explicitly labels them as regressions.', '');
     return lines.join('\n');

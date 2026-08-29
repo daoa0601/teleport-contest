@@ -93923,3 +93923,72 @@ or publish a measurement until that produces another coherent bridge-free
 slice and passes the one-shot gate checklist.
 
 ---
+
+### [2026-08-29 14:47 EEST, journal block 3125] {#bridge-free #level-generation #lua #themerooms #ghost #bridge-deletion #ownership #implementation #focused-regression #acceptance-debt #process-safety}
+
+**Witness and earliest source divergence:** the audit compared the pinned
+top-level and fill tables in `dat/themerms.lua` with `js/mklev.js` before
+selecting a public session. The 31-form top-level reservoir had already
+collapsed five rare source constructors into generic rectangles and shortened
+the odd-feature name. The deeper control-flow violation was in the independent
+fill reservoir: selecting `Ghost of an Adventurer` created nothing unless the
+legacy `_valkPitPath` replay carrier was active, at which point a hard-coded
+RNG-only helper ran without creating the ghost or equipment. This was a real
+bridge-free generalization gap at room construction, not a later screen or
+animation mismatch.
+
+**Prediction portfolio and decisive evidence:** (1) a metadata-only hypothesis
+predicted fixing the missing names would be sufficient; direct named
+construction showed that five forms needed distinct parent/child, terrain,
+tomb, shop, door, and fill behavior. (2) a generic-rectangle hypothesis
+predicted source names were cosmetic, but Lua gives the rare forms different
+room types, joining state, normal-fill ownership, and nested children. (3) an
+RNG-shape hypothesis predicted the Valkyrie helper could remain as an
+equivalent callback; it produced no world objects and was gated by a replay
+role/path flag, so it was deleted. (4) a broad “themed fills are covered”
+hypothesis was falsified mechanically: of 15 callbacks, only Ghost is complete
+in this scope, four are partial, and ten remain absent. (5) a new regression
+hypothesis for the focused Wizard water state test was falsified by reproducing
+its `weaponCheck` 0-versus-`NEED_WEAPON` assertion at clean commit `327c0d8`,
+before either current room-generation slice; its full RNG/screen carrier still
+passes, so the state-only assertion is retained as pre-existing acceptance
+debt rather than edited into a false pass.
+
+**Decision and implementation:** retain all exact Lua names and route the
+weighted reservoir through an exported named dispatcher. Port Room in a room,
+Huge room with another room inside, Mausoleum, the odd central feature, and
+Twin businesses as live source-owned constructors. Separate shape dispatch
+from fill dispatch. Replace `fillGhostAdventurerValkSlice()` with live
+`selection.room()` coordinate ownership, an asleep waiting ghost, and all six
+independent source percentage branches for colocated not-blessed equipment.
+Use the same callback from static and dynamic themed rooms, correct Temple of
+the gods from four altar attempts to the source's three, and make unknown or
+unported named callbacks report false. Extend the generated ownership registry
+with component-level validation so partial, implemented, and absent fills are
+visible without inferring coverage from a public transcript.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **10/10**:
+the pinned Lua table and JavaScript metadata agree on all 31 names and
+frequencies; every name reaches a live constructor with zero bridge hits; five
+rare forms retain structural invariants; the ghost exists asleep and waiting
+with colocated not-blessed equipment while `_valkPitPath` is absent; and
+unported fill names are not reported as implemented. The combined bridge,
+Priest startup, ordinary-room, and themed-room selection passes **26/26**.
+Five focused represented level carriers pass for Storeroom, nesting rooms,
+secret-door orientation, clean Minetown-2, and Orcus ghost-town shops. The
+bridge-free audit remains green over 110 files. Every verifier exited and a
+post-run process check found no owned test tree. Implementation commit
+`2e79f57` contains only `js/mklev.js` and the new focused test.
+
+**Falsified hypotheses, limit, and next blocker:** source names are not
+cosmetic, shape reachability is not fill completeness, hard-coded RNG calls
+are not a live world callback, and a public replay flag cannot own a Lua room.
+No full suite, public corpus, sealed trace, score, push, publication, official
+measurement, or animation work ran. The mechanical level entry stays
+`partial`: complete the remaining fourteen fill callbacks in coherent
+source-owned slices, beginning with the selection/terrain family (Ice, Cloud,
+Boulder, Spider nest, and Trap room), and remove any adjacent seeded generation
+branch encountered. Do not inspect a sealed trace or schedule publication
+before the acceptance gate authorizes it.
+
+---
