@@ -96767,3 +96767,72 @@ greased ordinary map flight; neither choice should be justified by public
 session coverage.
 
 ---
+
+### [2026-08-30 00:05 EEST, journal block 3168] {#bridge-free #potionhit #potionbreathe #sickness #poison-resistance #pestilence #healer #polymorph #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3167 left sickness
+effects versus cursed/greased ordinary transport. Three direct witnesses, one
+polymorph-vapor witness, and one live swallowed command reached the unsupported
+type boundary or returned no effect, producing a recorded red **0/5**. The
+critical-debugging portfolio kept the mechanisms separate. Transport would
+broaden direction rerolls before the caller can know whether a rerolled path
+crosses supported terrain, making rollback and mutation order the unresolved
+gap. Sickness is one complete direct-plus-vapor family inside the already live
+impact transaction, so it was selected as the smaller source-owned slice.
+
+**Prediction and decisive C evidence:** after `bottlename()` and the common
+`rn2(5)` chip, `potion.c:potionhit()` heals Pestilence to maximum and clears
+sleep without `wakeup()`. Other monsters with `AD_DISE` or `AD_PEST` attacks,
+or poison resistance from species, intrinsic, or extrinsic bits, look
+unharmed; a susceptible target above two HP is halved and retains hostile wake
+policy. `potionbreathe()` exempts the Healer role, otherwise subtracts five
+from polymorph `mh` or base `uhp` with a floor of one, then calls
+`exercise(A_CON, FALSE)`. The predicted order was common impact, direct
+monster illness or immunity, wake policy, active-form hero damage, negative
+exercise, and exact identity deletion.
+
+**Decision and implementation:** commit `5a04c09` adds sickness to the shared
+impact owner without fixture, replay, seed, or session control flow. Generated
+monster attacks and resistance bits, plus live intrinsic/extrinsic fields,
+decide direct immunity. The existing Pestilence healing branch is reused in
+the reverse direction. Hero vapor selects active HP through `Upolyd`, preserves
+the one-HP floor, exempts Healers, and reuses the shared breathless/eyes and
+damp-towel admission policy. Swallowed distance-zero contact and ordinary map
+proximity both compose this owner. Confusion replaces sickness as the explicit
+unsupported pre-mutation control.
+
+**False-acceptance corrections and adversarial audit:** the first Healer test
+passed while sickness was unsupported because returning `null` happened to
+leave HP unchanged. It was invalid acceptance, so the witness now requires a
+successful `received` result as well as unchanged HP and zero RNG. Initial
+direct test seeds were also predicted after an extra `rnd(20)` that belongs to
+`thitmonst()`, not direct `potionhit()` calls; expectations were corrected to
+the actual direct boundary while the live map and swallowed tests retain that
+mandatory roll. Added controls distinguish physical chip from later halving,
+poison resistance from susceptibility, Pestilence healing from illness,
+polymorph HP from base HP, and the one-HP floor.
+
+**Measured effect and process custody:** the five valid red witnesses and the
+corrected Healer witness are green; live map and low-HP adversarial witnesses
+also pass. Acquisition, direct-impact, map-potion, and swallowed files pass
+**64/64**. Five ambient-ogre, sleeping-potion flight, striking-wand,
+smoky-invisibility-potion, and clean Pri-loca controls pass **5/5** with exact
+RNG/screens. `test/bridge_free.test.js` passes **8/8**, and the mechanical
+audit reports **125 audited files, 15 guarded modules, and 19 fixture
+modules**. Every `node --test` process was guarded, singular, and observed
+through normal exit; none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** unchanged Healer HP alone
+does not prove a supported effect; direct helper RNG must not include its
+caller's hit roll; and cursed/greased transport is not a smaller change than a
+complete effect family while rerolled terrain validity lacks a rollback
+invariant. The remaining confusion/booze family, blindness/paralysis/speed,
+invisibility, sleeping, water/oil/acid/polymorph, cursed/greased and special
+terrain flight, nonordinary targets, broader equipment resistance, hero
+impact, shops, saddles, interactive naming, and a sealed stratum remain open.
+No full Contest suite, engine/public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should compare the shared confusion/booze effect family against a
+mutation-safe cursed/greased map transport plan.
+
+---

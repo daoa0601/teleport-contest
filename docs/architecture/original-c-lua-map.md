@@ -37226,3 +37226,49 @@ greased throws, blind or burdened heroes, special terrain and recoil, shops,
 saddles, and nonordinary live targets.  Interactive `trycall()`, hero impact
 targets, broader resistance/effect state, and a sealed stratum remain open.
 Lua owns none of this impact or vapor graph.
+
+## 999. Sickness reverses the Pestilence exception and selects active hero HP
+
+```mermaid
+flowchart TD
+    A[potionhit common crash and rn2 5 chip] --> B{target is Pestilence?}
+    B -- yes --> C[heal to mhpmax]
+    C --> D[clear sleep without anger]
+    B -- no --> E{disease attack or poison resistance?}
+    E -- yes --> F[looks unharmed]
+    E -- no --> G{mhp above two?}
+    G -- yes --> H[halve monster HP]
+    G -- no --> I[retain post-impact HP]
+    F --> J[wakeup and anger]
+    H --> J
+    I --> J
+    D --> K{vapor reaches hero?}
+    J --> K
+    K -- Healer --> L[no sickness effect]
+    K -- polymorphed --> M[mh minus five, floor one]
+    K -- base form --> N[uhp minus five, floor one]
+    M --> O[exercise Constitution false]
+    N --> O
+```
+
+Sickness shares the bottle, physical chip, visibility, proximity, and exact
+identity lifecycle already owned by `potion_hit.js`, but its two patients have
+different immunity rules.  `potionhit()` first reverses the healing-family
+Pestilence exception: sickness heals Pestilence to maximum and clears sleep
+without anger.  Every other monster is unharmed when its species has a disease
+or pestilence attack, or when its species, intrinsic, or extrinsic state grants
+poison resistance.  A susceptible target above two HP is halved only after the
+common glass-impact chip and then follows ordinary hostile wake policy.
+
+`potionbreathe()` independently exempts the Healer role.  For every other role
+it damages the currently active body: polymorph `mh` when polymorphed,
+otherwise base `uhp`.  Five points are removed without crossing below one, and
+`exercise(A_CON, FALSE)` follows the HP mutation.  Map proximity and swallowed
+distance-zero contact both compose this same owner, so they cannot disagree on
+Pestilence, poison resistance, role immunity, or active-form selection.
+
+The subsystem remains mechanically **partial**.  Cursed and greased ordinary
+map flight, special terrain and recoil, nonordinary live map targets, broader
+equipment-derived resistance state, the remaining potion families, hero
+impact targets, shops, saddles, interactive naming, and a sealed stratum
+remain open.  Lua owns none of this effect graph.
