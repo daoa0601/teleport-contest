@@ -7,22 +7,27 @@ import {
 } from '../js/bridge_policy.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
-    LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
+    G_GENOD, LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
     ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
     SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
     MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
+import { buriedZombieTimerMessage } from '../js/allmain.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
-    makemonAt, runNextBuriedZombieTimer, runThemeroomPostprocess,
-    THEMEROOM_META,
+    makemonAt, mksobj, place_object, runClaimedObjectRotTimer,
+    runNextBuriedZombieTimer, runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
 import { BOULDER, CHEST, CORPSE, OIL_LAMP, STATUE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
+import {
+    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
+    peekNextDueObjectTimer, scheduleObjectTimer,
+} from '../js/object_timers.js';
 import { init_rect } from '../js/rect.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import {
@@ -582,9 +587,15 @@ test('a due buried-zombie timer revives through an empty actor and pit', async (
         [59, 239], [165, 240], [72, 241], [44, 242],
         [264, 243], [260, 244], [174, 245], [169, 247],
     ]).get(livingSpecies);
-    for (const other of game.level.buriedObjects)
-        other.zombifyAt = game.moves + 100;
-    corpse.zombifyAt = game.moves;
+    for (const other of game.level.buriedObjects) {
+        scheduleObjectTimer(
+            other, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+            game.moves + 100, game,
+        );
+    }
+    scheduleObjectTimer(
+        corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves, game,
+    );
     game.in_mklev = false;
     game.level.at(corpse.ox, corpse.oy).typ = ROOM;
 
@@ -600,6 +611,246 @@ test('a due buried-zombie timer revives through an empty actor and pit', async (
     assert.equal(event.trap.ty, event.monster.my);
     assert.equal(game.level.buriedObjects.includes(corpse), false);
     assert.equal(corpse.where, 'gone');
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('a blocked buried zombie becomes a buried corpse with a rot timer',
+    async () => {
+        themedState(7011, 7);
+        assert.equal(await generateThemeroomByName('default', 7), true);
+        const room = game.level.rooms[0];
+        assert.equal(await applyThemeroomFillByName(
+            room, 'Buried zombies', 7,
+        ), true);
+        const corpse = game.level.buriedObjects[0];
+        const livingSpecies = corpse.corpsenm;
+        for (const other of game.level.buriedObjects) {
+            scheduleObjectTimer(
+                other, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+                game.moves + 100, game,
+            );
+        }
+        scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves, game,
+        );
+        game.in_mklev = false;
+        game.level.at(corpse.ox, corpse.oy).typ = ROOM;
+        game.level.traps.push({
+            ttyp: ARROW_TRAP, tx: corpse.ox, ty: corpse.oy,
+            tseen: false,
+        });
+
+        const event = await runNextBuriedZombieTimer(game, game.moves);
+        assert.equal(event.kind, 'failed');
+        assert.notEqual(corpse.corpsenm, livingSpecies);
+        assert.equal(corpse.where, 'buried');
+        assert.equal(game.level.buriedObjects.includes(corpse), true);
+        assert.deepEqual(
+            objectTimers(corpse).map(timer => timer.kind),
+            [OBJECT_TIMER_KIND.ROT_CORPSE],
+        );
+        assert.ok(objectTimers(corpse)[0].deadline > game.moves);
+    });
+
+test('a genocided zombie form rots without birth or pit', async () => {
+    themedState(7012, 7);
+    assert.equal(await generateThemeroomByName('default', 7), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(
+        room, 'Buried zombies', 7,
+    ), true);
+    const corpse = game.level.buriedObjects[0];
+    const zombieForm = new Map([
+        [59, 239], [165, 240], [72, 241], [44, 242],
+        [264, 243], [260, 244], [174, 245], [169, 247],
+    ]).get(corpse.corpsenm);
+    for (const other of game.level.buriedObjects) {
+        scheduleObjectTimer(
+            other, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+            game.moves + 100, game,
+        );
+    }
+    scheduleObjectTimer(
+        corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves, game,
+    );
+    game.mvitals = [];
+    game.mvitals[zombieForm] = { mvflags: G_GENOD };
+    game.in_mklev = false;
+
+    const event = await runNextBuriedZombieTimer(game, game.moves);
+    assert.equal(event.kind, 'rotted');
+    assert.equal(game.level.buriedObjects.includes(corpse), false);
+    assert.equal(corpse.where, 'gone');
+    assert.equal(game.level.monsters.length, 0);
+    assert.equal(game.level.traps.length, 0);
+});
+
+test('an occupied revival square moves the zombie without moving its blocker',
+    async () => {
+        themedState(7013, 7);
+        assert.equal(await generateThemeroomByName('default', 7), true);
+        const room = game.level.rooms[0];
+        assert.equal(await applyThemeroomFillByName(
+            room, 'Buried zombies', 7,
+        ), true);
+        const corpse = game.level.buriedObjects[0];
+        for (const other of game.level.buriedObjects) {
+            scheduleObjectTimer(
+                other, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+                game.moves + 100, game,
+            );
+        }
+        scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves, game,
+        );
+        game.in_mklev = false;
+        game.level.at(corpse.ox, corpse.oy).typ = ROOM;
+        const blocker = await makemonAt(
+            0, corpse.ox, corpse.oy,
+            NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH,
+        );
+        const original = { x: blocker.mx, y: blocker.my };
+
+        const event = await runNextBuriedZombieTimer(game, game.moves);
+        assert.equal(event.kind, 'revived');
+        assert.deepEqual({ x: blocker.mx, y: blocker.my }, original);
+        assert.notDeepEqual(
+            { x: event.monster.mx, y: event.monster.my }, original,
+        );
+        assert.equal(event.trap.tx, event.monster.mx);
+        assert.equal(event.trap.ty, event.monster.my);
+    });
+
+test('a boulder fills the revival pit and buries the remaining floor pile',
+    async () => {
+        themedState(7014, 7);
+        assert.equal(await generateThemeroomByName('default', 7), true);
+        const room = game.level.rooms[0];
+        assert.equal(await applyThemeroomFillByName(
+            room, 'Buried zombies', 7,
+        ), true);
+        const corpse = game.level.buriedObjects[0];
+        for (const other of game.level.buriedObjects) {
+            scheduleObjectTimer(
+                other, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+                game.moves + 100, game,
+            );
+        }
+        scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves, game,
+        );
+        game.in_mklev = false;
+        game.level.at(corpse.ox, corpse.oy).typ = ROOM;
+        const boulder = place_object(
+            mksobj(BOULDER, true, false), corpse.ox, corpse.oy,
+        );
+        const lamp = place_object(
+            mksobj(OIL_LAMP, true, false), corpse.ox, corpse.oy,
+        );
+
+        const event = await runNextBuriedZombieTimer(game, game.moves);
+        assert.equal(event.kind, 'revived');
+        assert.equal(event.pitFilled, true);
+        assert.equal(event.filledByBoulder, boulder);
+        assert.equal(boulder.where, 'gone');
+        assert.equal(lamp.where, 'buried');
+        assert.equal(game.level.buriedObjects.includes(lamp), true);
+        assert.equal(game.level.traps.some(trap =>
+            trap.tx === event.monster.mx && trap.ty === event.monster.my
+            && (trap.ttyp === 11 || trap.ttyp === 12)), false);
+    });
+
+test('buried zombie presentation distinguishes sight, invisibility, and sound',
+    () => {
+        const event = {
+            kind: 'revived',
+            monster: { mnum: 239, mx: 10, my: 10 },
+            trap: { ttyp: 11, tx: 10, ty: 10 },
+        };
+        assert.deepEqual(buriedZombieTimerMessage(event, {
+            visible: true, spotted: true, monsterName: 'kobold zombie',
+        }), {
+            message: 'A kobold zombie claws itself out of the ground!',
+            visible: true, trap: event.trap,
+        });
+        assert.equal(buriedZombieTimerMessage(event, {
+            visible: true, spotted: false,
+        }).message, 'Something claws itself out of the ground!');
+        assert.equal(buriedZombieTimerMessage(event, {
+            visible: false, deaf: false, heroX: 12, heroY: 12,
+        }).message, 'You hear scratching noises.');
+        assert.equal(buriedZombieTimerMessage(event, {
+            visible: false, deaf: true, heroX: 10, heroY: 10,
+        }), null);
+        assert.equal(buriedZombieTimerMessage(event, {
+            visible: false, deaf: false, heroX: 15, heroY: 10,
+        }), null);
+    });
+
+test('object timers run by deadline then newest equal-deadline id', () => {
+    themedState(7010, 7);
+    const older = place_object({
+        otyp: CHEST, o_id: 9001, contents: [], timed: 0,
+    }, 10, 10);
+    const newer = place_object({
+        otyp: OIL_LAMP, o_id: 9002, contents: [], timed: 0,
+    }, 11, 10);
+    const earlier = place_object({
+        otyp: CHEST, o_id: 9003, contents: [], timed: 0,
+    }, 12, 10);
+    scheduleObjectTimer(
+        older, OBJECT_TIMER_KIND.ROT_ORGANIC, 40, game,
+    );
+    scheduleObjectTimer(
+        newer, OBJECT_TIMER_KIND.BURN_OBJECT, 40, game,
+    );
+    scheduleObjectTimer(
+        earlier, OBJECT_TIMER_KIND.ROT_ORGANIC, 39, game,
+    );
+
+    assert.equal(peekNextDueObjectTimer(game, 40).object, earlier);
+    assert.equal(claimNextDueObjectTimer(game, 40).object, earlier);
+    assert.equal(peekNextDueObjectTimer(game, 40).object, newer);
+    assert.equal(claimNextDueObjectTimer(game, 40).object, newer);
+    assert.equal(peekNextDueObjectTimer(game, 40).object, older);
+    assert.deepEqual(objectTimers(newer), []);
+});
+
+test('ordered rot callbacks remove floor corpses and unbox buried contents', async () => {
+    themedState(7011, 7);
+    const corpse = place_object(mksobj(CORPSE, true, false), 10, 10);
+    scheduleObjectTimer(
+        corpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves, game,
+    );
+    const corpseTimer = claimNextDueObjectTimer(game, game.moves);
+    const corpseEvent = runClaimedObjectRotTimer(corpseTimer, game);
+    assert.equal(corpseEvent.kind, OBJECT_TIMER_KIND.ROT_CORPSE);
+    assert.equal(corpseEvent.where, 'floor');
+    assert.equal(corpse.where, 'gone');
+    assert.equal(game.level.objects[10][10].includes(corpse), false);
+
+    assert.equal(await generateThemeroomByName('default', 7), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(
+        room, 'Buried treasure', 7,
+    ), true);
+    const chest = game.level.buriedObjects.find(object =>
+        object.otyp === CHEST);
+    const contents = [...chest.contents];
+    const x = chest.ox, y = chest.oy;
+    scheduleObjectTimer(
+        chest, OBJECT_TIMER_KIND.ROT_ORGANIC, game.moves, game,
+    );
+    const chestTimer = claimNextDueObjectTimer(game, game.moves);
+    const chestEvent = runClaimedObjectRotTimer(chestTimer, game);
+    assert.equal(chestEvent.kind, OBJECT_TIMER_KIND.ROT_ORGANIC);
+    assert.equal(chest.where, 'gone');
+    assert.equal(game.level.buriedObjects.includes(chest), false);
+    assert.ok(contents.every(object =>
+        object.where === 'gone'
+        || (object.where === 'buried' && object.ox === x && object.oy === y)));
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

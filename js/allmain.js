@@ -17,7 +17,8 @@ import {
     randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
-    hasDueBuriedZombieTimer, runNextBuriedZombieTimer,
+    finishBuriedZombieTimer, runClaimedBuriedZombieTimer,
+    runClaimedObjectRotTimer,
 } from './mklev.js';
 import {
     animateRollingBoulderCell,
@@ -85,7 +86,11 @@ import {
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { syncBlindness, syncDeafness } from './senses.js';
-import { runObjectBurnTimers } from './light.js';
+import { runClaimedObjectBurnTimer } from './light.js';
+import {
+    claimNextDueObjectTimer, OBJECT_TIMER_KIND, peekNextDueObjectTimer,
+    stopObjectTimer,
+} from './object_timers.js';
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import {
@@ -1016,7 +1021,7 @@ function initializeRandomMonsterInventory(monster) {
             const cat = mksobj(CORPSE, true, false);
             box.spe = 1;
             cat.corpsenm = 33;
-            delete cat.rotAt;
+            stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
             box.contents = [cat];
             inventory.push(box);
@@ -1776,15 +1781,14 @@ function initialTurnMaintenanceRng(
     // expires.
     const sourceTurn = completedTurn;
     if ((game.u?.mtimedone ?? 0) > 0) game.u.mtimedone--;
-    runObjectBurnTimers(game, sourceTurn);
-    if (hasDueBuriedZombieTimer(game, sourceTurn)) {
+    if (peekNextDueObjectTimer(game, sourceTurn)) {
         if (!deferAmbientMessage) {
             throw new Error(
-                'due zombify timer requires source-ordered async maintenance',
+                'due object timer requires source-ordered async maintenance',
             );
         }
         return {
-            deferredZombifyTimer: true,
+            deferredObjectTimer: true,
             sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
         };
     }
@@ -1796,21 +1800,6 @@ function initialTurnMaintenanceRng(
 function finishInitialTurnMaintenanceAfterObjectTimers({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
 }) {
-    for (let x = 1; x < COLNO; x++) {
-        const column = game.level?.objects?.[x];
-        if (!column) continue;
-        for (let y = 0; y < ROWNO; y++) {
-            const pile = column[y];
-            if (!Array.isArray(pile) || !pile.length) continue;
-            const survivors = pile.filter(object =>
-                object.rotAt == null || object.rotAt > sourceTurn);
-            if (survivors.length !== pile.length) {
-                column[y] = survivors;
-                newsym(x, y);
-            }
-        }
-    }
-
     // C timeout.c:nh_timeout() expires temporary confusion before regen,
     // sounds, hunger, and exerchk().  The final tick is observable twice:
     // it queues the recovery message and prevents this same turn's periodic
@@ -2039,36 +2028,82 @@ function finishInitialTurnMaintenanceAfterConfusion({
     });
 }
 
-async function presentBuriedZombieTimer(event) {
+export function buriedZombieTimerMessage(event, options = {}) {
     if (event?.kind !== 'revived' || !event.monster) return;
     const { monster, trap } = event;
-    if (cansee(monster.mx, monster.my)) {
-        if (trap) trap.tseen = true;
-        const name = quietMonsterName(monster);
+    const visible = options.visible
+        ?? cansee(monster.mx, monster.my);
+    if (visible) {
+        const spotted = options.spotted ?? canSpotMonster(monster);
+        if (!spotted) {
+            return {
+                message: 'Something claws itself out of the ground!',
+                visible: true, trap,
+            };
+        }
+        const name = options.monsterName ?? quietMonsterName(monster);
         const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-        await queueTurnMessage(
-            `${article} ${name} claws itself out of the ground!`,
-        );
-        newsym(monster.mx, monster.my);
-        return;
+        return {
+            message: `${article} ${name} claws itself out of the ground!`,
+            visible: true, trap,
+        };
     }
-    const dx = monster.mx - (game.u?.ux ?? monster.mx);
-    const dy = monster.my - (game.u?.uy ?? monster.my);
-    const deaf = !!(game.u?.deaf || game.deaf);
-    if (!deaf && dx * dx + dy * dy < 25)
-        await queueTurnMessage('You hear scratching noises.');
+    const heroX = options.heroX ?? game.u?.ux ?? monster.mx;
+    const heroY = options.heroY ?? game.u?.uy ?? monster.my;
+    const dx = monster.mx - heroX;
+    const dy = monster.my - heroY;
+    const deaf = options.deaf ?? !!(game.u?.deaf || game.deaf);
+    if (!deaf && dx * dx + dy * dy < 25) {
+        return {
+            message: 'You hear scratching noises.',
+            visible: false, trap,
+        };
+    }
+    return null;
+}
+
+async function presentBuriedZombieTimer(event) {
+    const presentation = buriedZombieTimerMessage(event);
+    if (!presentation) return;
+    if (presentation.visible && presentation.trap)
+        presentation.trap.tseen = true;
+    await queueTurnMessage(presentation.message);
+    if (presentation.visible)
+        newsym(event.monster.mx, event.monster.my);
+}
+
+async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
+    if (!claimed) return null;
+    const kind = claimed.timer.kind;
+    if (kind === OBJECT_TIMER_KIND.BURN_OBJECT) {
+        return runClaimedObjectBurnTimer(claimed, game, sourceTurn);
+    }
+    if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
+        const event = await runClaimedBuriedZombieTimer(
+            claimed, game, sourceTurn,
+        );
+        await presentBuriedZombieTimer(event);
+        return finishBuriedZombieTimer(event, game);
+    }
+    const event = runClaimedObjectRotTimer(claimed, game);
+    if (event?.where === 'floor') newsym(event.x, event.y);
+    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE
+        && event?.where === 'inventory') {
+        await queueTurnMessage('Your corpse rots away.');
+    }
+    return event;
 }
 
 async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
     let phase = initialTurnMaintenanceRng(completedTurn, true);
-    while (phase?.deferredZombifyTimer) {
-        const event = await runNextBuriedZombieTimer(
+    while (phase?.deferredObjectTimer) {
+        const claimed = claimNextDueObjectTimer(
             game, phase.sourceTurn,
         );
-        await presentBuriedZombieTimer(event);
-        if (hasDueBuriedZombieTimer(game, phase.sourceTurn)) continue;
+        await runAndPresentClaimedObjectTimer(claimed, phase.sourceTurn);
+        if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
         phase = finishInitialTurnMaintenanceAfterObjectTimers(phase);
     }
     while (phase?.deferredTimeoutMessage) {

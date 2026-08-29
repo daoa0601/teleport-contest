@@ -98,6 +98,11 @@ import { setupElementalBubbles } from './elemental.js';
 import { roomForIndex } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginOilLampBurn } from './light.js';
+import {
+    claimNextDueObjectTimer, OBJECT_TIMER_KIND, peekNextDueObjectTimer,
+    objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers,
+    stopObjectTimer,
+} from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 
@@ -1267,17 +1272,17 @@ function startCorpseTimeout(body) {
     if (body.age == null) body.age = currentMove;
     const age = currentMove - body.age;
     const baseDelay = age > 250 ? rotAdjust : 250 - age;
-    body.rotAt = currentMove + baseDelay + rnz(rotAdjust) - rotAdjust;
-    body.timed = 1;
+    scheduleObjectTimer(
+        body, OBJECT_TIMER_KIND.ROT_CORPSE,
+        currentMove + baseDelay + rnz(rotAdjust) - rotAdjust,
+        game,
+    );
 }
 
 function set_corpsenm(otmp, pm) {
     if (!otmp) return;
     // C stops every existing corpse timer before replacing its species.
-    delete otmp.rotAt;
-    delete otmp.zombifyAt;
-    delete otmp.zombifyOrder;
-    otmp.timed = 0;
+    stopAllObjectTimers(otmp);
     otmp.corpsenm = pm;
     if (otmp.otyp === CORPSE) {
         startCorpseTimeout(otmp);
@@ -3165,7 +3170,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             const cat = mksobj(CORPSE, true, false);
             box.spe = 1;
             cat.corpsenm = 33; // PM_HOUSECAT
-            delete cat.rotAt;
+            stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
             box.contents = [cat];
             monsterInventory.push(box);
@@ -3685,46 +3690,233 @@ const ZOMBIE_FORM_BY_LIVING_CORPSE = new Map([
     [264, 243], [260, 244], [174, 245], [169, 247],
 ]);
 
-function dueBuriedZombieCorpses(state, currentTurn) {
-    return (state.level?.buriedObjects || [])
-        .filter(corpse => corpse.otyp === CORPSE
-            && corpse.zombifyAt != null
-            && corpse.zombifyAt <= currentTurn)
-        .sort((left, right) => (left.zombifyAt - right.zombifyAt)
-            || ((left.zombifyOrder ?? left.o_id ?? 0)
-                - (right.zombifyOrder ?? right.o_id ?? 0)));
-}
-
 export function hasDueBuriedZombieTimer(
     state = game, currentTurn = state.moves ?? 0,
 ) {
-    return dueBuriedZombieCorpses(state, currentTurn).length > 0;
+    return !!peekNextDueObjectTimer(
+        state, currentTurn,
+        new Set([OBJECT_TIMER_KIND.ZOMBIFY_MON]),
+    );
 }
 
 function removeBuriedCorpse(corpse, state = game) {
     const index = state.level?.buriedObjects?.indexOf(corpse) ?? -1;
     if (index >= 0) state.level.buriedObjects.splice(index, 1);
-    delete corpse.rotAt;
-    delete corpse.zombifyAt;
-    delete corpse.zombifyOrder;
-    corpse.timed = 0;
+    stopAllObjectTimers(corpse);
     corpse.where = 'gone';
     corpse.buried = false;
     corpse.ox = corpse.oy = 0;
+}
+
+const RIDER_CORPSE_TYPES = new Set([
+    MONSTER_NAME.indexOf('Death'),
+    MONSTER_NAME.indexOf('Pestilence'),
+    MONSTER_NAME.indexOf('Famine'),
+]);
+
+function objectResists(object, ordinaryChance, artifactChance) {
+    if (object.otyp === AMULET_OF_YENDOR
+        || object.otyp === SPE_BOOK_OF_THE_DEAD
+        || object.otyp === CANDELABRUM_OF_INVOCATION
+        || object.otyp === BELL_OF_OPENING
+        || (object.otyp === CORPSE
+            && RIDER_CORPSE_TYPES.has(object.corpsenm))) return true;
+    const chance = rn2(100);
+    return chance < (object.artifact || object.oartifact
+        ? artifactChance : ordinaryChance);
+}
+
+function containingObject(target, state = game) {
+    return objectsInTimerGraph(state).find(object =>
+        object !== target && object.contents?.includes(target));
+}
+
+function extractObjectFromGraph(object, state = game) {
+    const where = object.where;
+    const x = object.ox, y = object.oy;
+    let removed = false;
+    if (where === 'floor') {
+        const pile = state.level?.objects?.[x]?.[y];
+        const index = pile?.indexOf(object) ?? -1;
+        if (index >= 0) {
+            pile.splice(index, 1);
+            removed = true;
+        }
+    } else if (where === 'buried') {
+        const index = state.level?.buriedObjects?.indexOf(object) ?? -1;
+        if (index >= 0) {
+            state.level.buriedObjects.splice(index, 1);
+            removed = true;
+        }
+    } else if (where === 'contained') {
+        const container = containingObject(object, state);
+        const index = container?.contents?.indexOf(object) ?? -1;
+        if (index >= 0) {
+            container.contents.splice(index, 1);
+            container.owt = objectWeight(container);
+            removed = true;
+        }
+    } else if (where === 'inventory') {
+        const index = state.inventory?.indexOf(object) ?? -1;
+        if (index >= 0) {
+            state.inventory.splice(index, 1);
+            removed = true;
+        }
+    } else if (where === 'minvent') {
+        for (const monster of state.level?.monsters || []) {
+            const lists = new Set([monster.minvent, monster.inventory]);
+            for (const list of lists) {
+                const index = list?.indexOf(object) ?? -1;
+                if (index >= 0) {
+                    list.splice(index, 1);
+                    removed = true;
+                }
+            }
+        }
+    }
+    stopAllObjectTimers(object);
+    object.where = 'gone';
+    object.buried = false;
+    object.ox = object.oy = 0;
+    return { removed, where, x, y };
+}
+
+function buryContainedObject(object, container, x, y, state = game) {
+    if (objectResists(object, 0, 0)) return false;
+    const index = container.contents?.indexOf(object) ?? -1;
+    if (index >= 0) container.contents.splice(index, 1);
+    container.owt = objectWeight(container);
+    object.where = 'free';
+    object.ox = x;
+    object.oy = y;
+
+    if (object.lamplit && object.otyp !== POT_OIL) {
+        object.lamplit = false;
+        stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+        state.vision_full_recalc = 1;
+    }
+    if (object.otyp === ROCK || object.otyp === BOULDER) {
+        extractObjectFromGraph(object, state);
+        return true;
+    }
+    if (object.otyp !== CORPSE
+        && (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8
+        && !objectResists(object, 5, 95)) {
+        scheduleObjectTimer(
+            object, OBJECT_TIMER_KIND.ROT_ORGANIC,
+            (state.moves ?? 0) + 250 + rnd(250), state,
+        );
+    }
+    addBuriedObject(object, x, y);
+    return true;
+}
+
+function buryFloorObjectsAt(x, y, state = game) {
+    const buried = [];
+    const pile = state.level?.objects?.[x]?.[y];
+    for (const object of [...(pile || [])]) {
+        // C bury_an_obj() leaves invocation artifacts and Rider corpses on
+        // the floor.  objectResists(,0,0) owns that non-random special case.
+        if (objectResists(object, 0, 0)) continue;
+        const index = pile.indexOf(object);
+        if (index >= 0) pile.splice(index, 1);
+
+        if (object.lamplit && object.otyp !== POT_OIL) {
+            object.lamplit = false;
+            stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+            state.vision_full_recalc = 1;
+        }
+        if (object.otyp === ROCK || object.otyp === BOULDER) {
+            stopAllObjectTimers(object);
+            object.where = 'gone';
+            object.buried = false;
+            object.ox = object.oy = 0;
+            continue;
+        }
+        if (object.otyp !== CORPSE
+            && (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8
+            && !objectResists(object, 5, 95)) {
+            scheduleObjectTimer(
+                object, OBJECT_TIMER_KIND.ROT_ORGANIC,
+                (state.moves ?? 0) + 250 + rnd(250), state,
+            );
+        }
+        object.where = 'buried';
+        object.buried = true;
+        object.ox = x;
+        object.oy = y;
+        if (!state.level.buriedObjects) state.level.buriedObjects = [];
+        state.level.buriedObjects.unshift(object);
+        buried.push(object);
+    }
+    return buried;
+}
+
+// C ref: trap.c:fill_pit() -> do.c:flooreffects().  The new pit survives
+// unless a floor boulder settles into it; that consumes the boulder, removes
+// the pit, and buries the rest of the floor pile.  revive_corpse() calls this
+// only after its visible/audible presentation has completed.
+export function finishBuriedZombieTimer(event, state = game) {
+    if (!event || event.kind !== 'revived' || event.finished) return event;
+    const x = event.monster?.mx, y = event.monster?.my;
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === x && candidate.ty === y
+        && (is_pit(candidate.ttyp) || is_hole(candidate.ttyp)));
+    const boulder = state.level?.objects?.[x]?.[y]?.find(object =>
+        object.otyp === BOULDER);
+    event.finished = true;
+    event.pitFilled = false;
+    event.filledByBoulder = null;
+    event.buriedFloorObjects = [];
+    if (!trap || !boulder) return event;
+
+    const pile = state.level.objects[x][y];
+    const boulderIndex = pile.indexOf(boulder);
+    if (boulderIndex >= 0) pile.splice(boulderIndex, 1);
+    stopAllObjectTimers(boulder);
+    boulder.where = 'gone';
+    boulder.buried = false;
+    boulder.ox = boulder.oy = 0;
+    const trapIndex = state.level.traps.indexOf(trap);
+    if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
+    event.pitFilled = true;
+    event.filledByBoulder = boulder;
+    event.buriedFloorObjects = buryFloorObjectsAt(x, y, state);
+    return event;
+}
+
+export function runClaimedObjectRotTimer(claimed, state = game) {
+    const object = claimed?.object;
+    const kind = claimed?.timer?.kind;
+    if (!object || ![
+        OBJECT_TIMER_KIND.ROT_CORPSE,
+        OBJECT_TIMER_KIND.ROT_ORGANIC,
+    ].includes(kind)) return null;
+
+    if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC) {
+        while (object.contents?.length) {
+            const content = object.contents[0];
+            if (!buryContainedObject(
+                content, object, object.ox, object.oy, state,
+            )) {
+                return { kind: 'blocked-organic-rot', object };
+            }
+        }
+    }
+    const location = extractObjectFromGraph(object, state);
+    return { kind, object, ...location };
 }
 
 // C refs: timeout.c:run_timers(), do.c:zombify_mon()/revive_mon(), and
 // zap.c:revive().  Claiming removes the ZOMBIFY_MON timer before its callback;
 // a failed dig or birth retains the replacement zombie corpse and its newly
 // installed ROT_CORPSE timer.
-export async function runNextBuriedZombieTimer(
-    state = game, currentTurn = state.moves ?? 0,
+export async function runClaimedBuriedZombieTimer(
+    claimed, state = game, currentTurn = state.moves ?? 0,
 ) {
-    const corpse = dueBuriedZombieCorpses(state, currentTurn)[0];
-    if (!corpse) return null;
-    delete corpse.zombifyAt;
-    delete corpse.zombifyOrder;
-    corpse.timed = Math.max(0, (corpse.timed ?? 1) - 1);
+    const corpse = claimed?.object;
+    if (!corpse || claimed?.timer?.kind !== OBJECT_TIMER_KIND.ZOMBIFY_MON)
+        return null;
 
     const zombieForm = ZOMBIE_FORM_BY_LIVING_CORPSE.get(corpse.corpsenm);
     if (zombieForm == null
@@ -3756,6 +3948,20 @@ export async function runNextBuriedZombieTimer(
     removeBuriedCorpse(corpse, state);
     const trap = await maketrap(monster.mx, monster.my, PIT);
     return { kind: 'revived', corpse, monster, trap };
+}
+
+export async function runNextBuriedZombieTimer(
+    state = game, currentTurn = state.moves ?? 0,
+) {
+    const claimed = claimNextDueObjectTimer(
+        state, currentTurn,
+        new Set([OBJECT_TIMER_KIND.ZOMBIFY_MON]),
+    );
+    if (!claimed) return null;
+    const event = await runClaimedBuriedZombieTimer(
+        claimed, state, currentTurn,
+    );
+    return finishBuriedZombieTimer(event, state);
 }
 
 function make_engr_at(
@@ -14873,8 +15079,12 @@ function fillBuriedTreasure(room) {
     // and cannot save a non-artifact chest.  A wooden chest then gets a
     // second 5% resistance test before its ROT_ORGANIC timer is scheduled.
     rn2(100);
-    if (rn2(100) >= 5)
-        chest.rotOrganicAt = (game.moves ?? 0) + 250 + rnd(250);
+    if (rn2(100) >= 5) {
+        scheduleObjectTimer(
+            chest, OBJECT_TIMER_KIND.ROT_ORGANIC,
+            (game.moves ?? 0) + 250 + rnd(250), game,
+        );
+    }
     addBuriedObject(chest, x, y);
 
     // otmp:totable() observes the retained burial coordinates.  Queueing the
@@ -15095,11 +15305,11 @@ function fillBuriedZombies(room, difficulty = level_difficulty()) {
         // create_object() returns to Lua only after burial.  The callback then
         // stops the ROT_CORPSE timer installed by set_corpsenm() and replaces
         // it with an absolute ZOMBIFY_MON deadline from math.random(990,1010).
-        delete corpse.rotAt;
-        corpse.zombifyAt = (game.moves ?? 0) + 990 + rn2(21);
-        game._nextObjectTimerOrder = (game._nextObjectTimerOrder ?? 0) + 1;
-        corpse.zombifyOrder = game._nextObjectTimerOrder;
-        corpse.timed = 1;
+        stopObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE);
+        scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+            (game.moves ?? 0) + 990 + rn2(21), game,
+        );
     }
 }
 
