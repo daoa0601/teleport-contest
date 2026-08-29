@@ -7,29 +7,37 @@ import {
 } from '../js/bridge_policy.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
-    G_GENOD, LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
-    ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
+    G_GENOD, ICE, LANDMINE, MAXNROFROOMS, MOAT, OROOM, ROCKTRAP,
+    ROLLING_BOULDER_TRAP, ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE,
+    SLP_GAS_TRAP, STRAT_WAITFORU,
     SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
     MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
-import { buriedZombieTimerMessage } from '../js/allmain.js';
+import {
+    buriedZombieTimerMessage, meltIceTimerMessage,
+} from '../js/allmain.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
-    makemonAt, mksobj, place_object, runClaimedObjectRotTimer,
-    runNextBuriedZombieTimer, runThemeroomPostprocess, THEMEROOM_META,
+    makemonAt, mksobj, place_object, runClaimedMeltIceTimer,
+    runClaimedObjectRotTimer, runNextBuriedZombieTimer,
+    runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
-import { BOULDER, CHEST, CORPSE, OIL_LAMP, STATUE } from '../js/object_data.js';
+import {
+    BOULDER, CHEST, CORPSE, LAND_MINE, OIL_LAMP, STATUE,
+} from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-    peekNextDueObjectTimer, scheduleObjectTimer,
+    claimNextDueObjectTimer, LEVEL_TIMER_KIND, levelTimers,
+    OBJECT_TIMER_KIND, objectTimers, peekNextDueObjectTimer,
+    scheduleLevelTimer, scheduleObjectTimer, stopLevelTimer,
 } from '../js/object_timers.js';
 import { init_rect } from '../js/rect.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
@@ -255,15 +263,159 @@ test('Ghost of an Adventurer is live without a Valkyrie replay carrier', async (
     });
 });
 
-test('declared but unported themed fills are not reported as implemented', async () => {
+test('unknown themed fills are not reported as implemented', async () => {
     themedState(4001);
     assert.equal(await generateThemeroomByName('default', 8), true);
     const room = game.level.rooms[0];
-    assert.equal(await applyThemeroomFillByName(room, 'Ice room', 8), false);
     assert.equal(await applyThemeroomFillByName(
         room, 'not a source fill', 8,
     ), false);
 });
+
+test('Ice room owns terrain and row-major positional melt timers', async () => {
+    themedState(4002, 8);
+    assert.equal(await generateThemeroomByName('default', 8), true);
+    const room = game.level.rooms[0];
+    const roomno = ROOMOFFSET;
+    const cells = [];
+    for (let x = room.lx; x <= room.hx; x++) {
+        for (let y = room.ly; y <= room.hy; y++) {
+            const loc = game.level.at(x, y);
+            if (loc?.roomno === roomno && !loc.edge) cells.push({ x, y });
+        }
+    }
+    const rowMajor = [...cells].sort((left, right) =>
+        left.y - right.y || left.x - right.x);
+
+    // This fresh generator state makes percent(25) succeed; the callback then
+    // owns one independent rn2(1000) deadline per row-major Lua cell.
+    initRng(9n);
+    assert.equal(await applyThemeroomFillByName(room, 'Ice room', 8), true);
+    assert.ok(cells.length > 0);
+    assert.ok(cells.every(({ x, y }) => game.level.at(x, y).typ === ICE));
+    const timers = levelTimers(game);
+    assert.equal(timers.length, cells.length);
+    assert.deepEqual(
+        timers.map(({ x, y }) => ({ x, y })), rowMajor,
+    );
+    assert.ok(timers.every(timer =>
+        timer.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY
+        && timer.deadline >= game.moves + 200
+        && timer.deadline <= game.moves + 1199));
+    assert.ok(timers.every((timer, index) =>
+        index === 0 || timer.id > timers[index - 1].id));
+    const saved = new Map();
+    const storage = {
+        setItem: (key, value) => saved.set(key, value),
+        getItem: key => saved.get(key) ?? null,
+        removeItem: key => saved.delete(key),
+    };
+    game.plname = 'IceTimerWitness';
+    assert.equal(saveGame(storage), true);
+    game.level.levelTimers = [];
+    assert.equal(restoreGame(game.plname, storage), true);
+    assert.deepEqual(levelTimers(game), timers);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('melt-ice resumes corpse timers, converts traps, and unearths objects',
+    async () => {
+        themedState(4003, 8);
+        assert.equal(await generateThemeroomByName('default', 8), true);
+        const room = game.level.rooms[0];
+        initRng(9n);
+        assert.equal(await applyThemeroomFillByName(
+            room, 'Ice room', 8,
+        ), true);
+        const originalTimers = levelTimers(game);
+        const point = { x: originalTimers[0].x, y: originalTimers[0].y };
+        for (const timer of originalTimers) {
+            stopLevelTimer(
+                timer.x, timer.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game,
+            );
+        }
+
+        game.moves = 50;
+        const corpse = {
+            otyp: CORPSE, corpsenm: 59, o_id: 9901,
+            age: 40, contents: [], timed: 0,
+        };
+        scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ROT_CORPSE, 150, game,
+        );
+        place_object(corpse, point.x, point.y);
+        assert.equal(corpse.on_ice, true);
+        assert.equal(objectTimers(corpse)[0].deadline, 250);
+        assert.equal(corpse.age, 30);
+
+        const lamp = mksobj(OIL_LAMP, true, false);
+        lamp.where = 'buried';
+        lamp.buried = true;
+        lamp.ox = point.x;
+        lamp.oy = point.y;
+        game.level.buriedObjects = [lamp];
+        scheduleObjectTimer(
+            lamp, OBJECT_TIMER_KIND.ROT_ORGANIC, 550, game,
+        );
+        game.level.traps.push({
+            ttyp: LANDMINE, tx: point.x, ty: point.y, tseen: false,
+        });
+        game.level.engravings = [{
+            x: point.x, y: point.y, text: 'under ice', engr_type: BURN,
+        }];
+        scheduleLevelTimer(
+            point.x, point.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY,
+            game.moves, game,
+        );
+
+        const claimed = claimNextDueObjectTimer(game, game.moves);
+        assert.equal(claimed.timer.kind, LEVEL_TIMER_KIND.MELT_ICE_AWAY);
+        const event = runClaimedMeltIceTimer(claimed, game);
+        assert.equal(event.meltInto, MOAT);
+        assert.equal(game.level.at(point.x, point.y).typ, MOAT);
+        assert.equal(game.level.traps.some(trap =>
+            trap.tx === point.x && trap.ty === point.y), false);
+        assert.equal(event.trap.converted.otyp, LAND_MINE);
+        assert.equal(event.trap.converted.where, 'floor');
+        assert.equal(lamp.where, 'floor');
+        assert.equal(objectTimers(lamp).some(timer =>
+            timer.kind === OBJECT_TIMER_KIND.ROT_ORGANIC), false);
+        assert.equal(corpse.on_ice, false);
+        assert.equal(corpse.age, 40);
+        assert.equal(objectTimers(corpse)[0].deadline, 150);
+        assert.equal(game.level.engravings.length, 0);
+        assert.equal(meltIceTimerMessage(event, { visible: true }),
+            'Some ice melts away.');
+        assert.equal(meltIceTimerMessage(event, {
+            visible: false, heroAt: false,
+        }), null);
+        assert.deepEqual(getBridgeUsageLedger(), {
+            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+        });
+    });
+
+test('melt-ice fails before mutation on an unowned boulder continuation',
+    () => {
+        themedState(4004, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        place_object(mksobj(BOULDER, true, false), x, y);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        const claimed = claimNextDueObjectTimer(game, game.moves);
+        assert.throws(
+            () => runClaimedMeltIceTimer(claimed, game),
+            /boulder\/pool lifecycle is not implemented/,
+        );
+        assert.equal(game.level.at(x, y).typ, ICE);
+        assert.deepEqual(getBridgeUsageLedger(), {
+            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+        });
+    });
 
 test('Boulder room owns filtered boulders and rolling traps live', async () => {
     themedState(4010, 8);
@@ -789,7 +941,7 @@ test('buried zombie presentation distinguishes sight, invisibility, and sound',
         }), null);
     });
 
-test('object timers run by deadline then newest equal-deadline id', () => {
+test('object and level timers share deadline and newest-id ordering', () => {
     themedState(7010, 7);
     const older = place_object({
         otyp: CHEST, o_id: 9001, contents: [], timed: 0,
@@ -809,9 +961,18 @@ test('object timers run by deadline then newest equal-deadline id', () => {
     scheduleObjectTimer(
         earlier, OBJECT_TIMER_KIND.ROT_ORGANIC, 39, game,
     );
+    scheduleLevelTimer(
+        13, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, 40, game,
+    );
 
     assert.equal(peekNextDueObjectTimer(game, 40).object, earlier);
     assert.equal(claimNextDueObjectTimer(game, 40).object, earlier);
+    assert.deepEqual(peekNextDueObjectTimer(game, 40).position, {
+        x: 13, y: 10,
+    });
+    assert.deepEqual(claimNextDueObjectTimer(game, 40).position, {
+        x: 13, y: 10,
+    });
     assert.equal(peekNextDueObjectTimer(game, 40).object, newer);
     assert.equal(claimNextDueObjectTimer(game, 40).object, newer);
     assert.equal(peekNextDueObjectTimer(game, 40).object, older);

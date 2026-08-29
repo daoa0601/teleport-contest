@@ -18,7 +18,7 @@ import {
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     finishBuriedZombieTimer, runClaimedBuriedZombieTimer,
-    runClaimedObjectRotTimer,
+    runClaimedMeltIceTimer, runClaimedObjectRotTimer,
 } from './mklev.js';
 import {
     animateRollingBoulderCell,
@@ -88,8 +88,8 @@ import {
 import { syncBlindness, syncDeafness } from './senses.js';
 import { runClaimedObjectBurnTimer } from './light.js';
 import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, peekNextDueObjectTimer,
-    stopObjectTimer,
+    claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
+    peekNextDueObjectTimer, stopObjectTimer,
 } from './object_timers.js';
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
@@ -2072,6 +2072,14 @@ async function presentBuriedZombieTimer(event) {
         newsym(event.monster.mx, event.monster.my);
 }
 
+export function meltIceTimerMessage(event, options = {}) {
+    if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY) return null;
+    const visible = options.visible ?? cansee(event.x, event.y);
+    const heroAt = options.heroAt
+        ?? (game.u?.ux === event.x && game.u?.uy === event.y);
+    return visible || heroAt ? 'Some ice melts away.' : null;
+}
+
 async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
     if (!claimed) return null;
     const kind = claimed.timer.kind;
@@ -2084,6 +2092,12 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         );
         await presentBuriedZombieTimer(event);
         return finishBuriedZombieTimer(event, game);
+    }
+    if (kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY) {
+        const event = runClaimedMeltIceTimer(claimed, game);
+        const message = meltIceTimerMessage(event);
+        if (message) await queueTurnMessage(message);
+        return event;
     }
     const event = runClaimedObjectRotTimer(claimed, game);
     if (event?.where === 'floor') newsym(event.x, event.y);

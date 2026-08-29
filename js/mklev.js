@@ -30,6 +30,7 @@ import {
     Is_rogue_level,
     SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, FILL_LVFLAGS,
     ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DBWALL,
+    ICED_POOL, ICED_MOAT,
     DB_EAST, TREE, AIR, CLOUD,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
@@ -55,6 +56,7 @@ import {
     OIL_LAMP,
     MAGIC_LAMP, EXPENSIVE_CAMERA, BLINDFOLD,
     CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER,
+    LAND_MINE, BEARTRAP,
     MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, KELP_FROND,
     SLIME_MOLD, MELON, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, NOVEL,
@@ -99,9 +101,10 @@ import { roomForIndex } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginOilLampBurn } from './light.js';
 import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, peekNextDueObjectTimer,
-    objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers,
-    stopObjectTimer,
+    claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
+    objectTimers, objectsInTimerGraph, peekNextDueObjectTimer,
+    scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers,
+    stopLevelTimer, stopObjectTimer,
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
@@ -1111,6 +1114,7 @@ export function place_object(otmp, x, y) {
     if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
     // C links newly placed objects at the head of the square's object chain.
     game.level.objects[x][y].unshift(otmp);
+    updateCorpseIceTimer(otmp, x, y, game.level.at(x, y)?.typ === ICE);
     return otmp;
 }
 
@@ -1233,6 +1237,7 @@ export function remove_object(otmp) {
     const index = pile?.indexOf(otmp) ?? -1;
     if (index >= 0) pile.splice(index, 1);
     otmp.where = 'free';
+    updateCorpseIceTimer(otmp, otmp.ox, otmp.oy, false);
     return otmp;
 }
 function dealloc_obj(otmp) { /* stub */ }
@@ -1277,6 +1282,42 @@ function startCorpseTimeout(body) {
         currentMove + baseDelay + rnz(rotAdjust) - rotAdjust,
         game,
     );
+}
+
+// C ref: mkobj.c:obj_timer_checks(). Corpse rot/revival time doubles while a
+// floor or buried corpse is on ice and contracts by the inverse adjustment
+// when it leaves. Stopping and restarting also assigns a new source timer id.
+function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
+    if (!body || body.otyp !== CORPSE) return false;
+    const timer = objectTimers(body).find(candidate =>
+        candidate.kind === OBJECT_TIMER_KIND.ROT_CORPSE);
+    if (!timer) return false;
+    const currentMove = state.moves ?? 0;
+    if (isOnIce && !body.on_ice) {
+        const remaining = Math.max(0, timer.deadline - currentMove);
+        stopObjectTimer(body, OBJECT_TIMER_KIND.ROT_CORPSE);
+        body.on_ice = true;
+        const age = currentMove - (body.age ?? currentMove);
+        body.age = currentMove - age * 2;
+        scheduleObjectTimer(
+            body, OBJECT_TIMER_KIND.ROT_CORPSE,
+            currentMove + remaining * 2, state,
+        );
+        return true;
+    }
+    if (!isOnIce && body.on_ice) {
+        const remaining = Math.max(0, timer.deadline - currentMove);
+        stopObjectTimer(body, OBJECT_TIMER_KIND.ROT_CORPSE);
+        body.on_ice = false;
+        const age = currentMove - (body.age ?? currentMove);
+        body.age += Math.trunc(age / 2);
+        scheduleObjectTimer(
+            body, OBJECT_TIMER_KIND.ROT_CORPSE,
+            currentMove + Math.trunc(remaining / 2), state,
+        );
+        return true;
+    }
+    return false;
 }
 
 function set_corpsenm(otmp, pm) {
@@ -3883,6 +3924,116 @@ export function finishBuriedZombieTimer(event, state = game) {
     event.filledByBoulder = boulder;
     event.buriedFloorObjects = buryFloorObjectsAt(x, y, state);
     return event;
+}
+
+function iceMeltTrapEffects(x, y, state = game) {
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === x && candidate.ty === y);
+    if (!trap) return { trap: null, removed: false, converted: null };
+    const monster = levelMonsterAt(x, y);
+    if (monster?.mtrapped) monster.mtrapped = 0;
+    if (state.u?.ux === x && state.u?.uy === y) {
+        state.u.utrap = 0;
+        state.u.utraptype = 0;
+    }
+
+    let converted = null;
+    if (trap.ttyp === LANDMINE || trap.ttyp === BEAR_TRAP) {
+        converted = mksobj(
+            trap.ttyp === LANDMINE ? LAND_MINE : BEARTRAP,
+            true, false,
+        );
+        place_object(converted, x, y);
+        // trap.c:cnv_trap_obj(..., bury_it=TRUE) delegates to bury_an_obj();
+        // even a non-resistant ordinary tool owns obj_resists(0,0)'s draw.
+        rn2(100);
+        addBuriedObject(converted, x, y);
+    }
+    const removable = trap.ttyp !== MAGIC_PORTAL
+        && trap.ttyp !== VIBRATING_SQUARE;
+    if (removable) {
+        const index = state.level.traps.indexOf(trap);
+        if (index >= 0) state.level.traps.splice(index, 1);
+    }
+    return { trap, removed: removable, converted };
+}
+
+function unearthObjectsAt(x, y, state = game) {
+    const unearthed = [];
+    for (const object of [...(state.level?.buriedObjects || [])]) {
+        if (object.ox !== x || object.oy !== y) continue;
+        const index = state.level.buriedObjects.indexOf(object);
+        if (index >= 0) state.level.buriedObjects.splice(index, 1);
+        stopObjectTimer(object, OBJECT_TIMER_KIND.ROT_ORGANIC);
+        object.where = 'free';
+        object.buried = false;
+        place_object(object, x, y);
+        stack_object(object);
+        unearthed.push(object);
+    }
+    if (state.level?.engravings) {
+        state.level.engravings = state.level.engravings.filter(engraving =>
+            engraving.x !== x || engraving.y !== y);
+    }
+    return unearthed;
+}
+
+function monsterSafelySurvivesMeltedIce(monster) {
+    if (!monster) return true;
+    const name = MONSTER_NAME[monster.mnum];
+    // minliquid() gives these two species separate split/rust transactions.
+    if (name === 'gremlin' || name === 'iron golem') return false;
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    return !!(flags & (0x00000001 | 0x00000002 | 0x00000010
+        | 0x00000200 | 0x00000400)) || symbol === 5 || symbol === 25;
+}
+
+// C refs: zap.c:melt_ice_away()/melt_ice(), trap.c:trap_ice_effects(),
+// mkobj.c:obj_ice_effects(), and dig.c:unearth_objs(). The shared timer has
+// already been claimed, so this callback owns terrain, trap, corpse-timer,
+// burial, engraving, and repaint state before its conditional message.
+export function runClaimedMeltIceTimer(claimed, state = game) {
+    if (claimed?.timer?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
+        || !claimed.position) return null;
+    const { x, y } = claimed.position;
+    const loc = state.level?.at?.(x, y);
+    if (!loc || loc.typ !== ICE) {
+        throw new Error(`melt-ice timer at non-ice position ${x},${y}`);
+    }
+    const pile = state.level?.objects?.[x]?.[y] || [];
+    if (pile.some(object => object.otyp === BOULDER)) {
+        throw new Error(
+            `melt-ice boulder/pool lifecycle is not implemented at ${x},${y}`,
+        );
+    }
+    if (state.u?.ux === x && state.u?.uy === y) {
+        throw new Error(
+            `melt-ice hero liquid lifecycle is not implemented at ${x},${y}`,
+        );
+    }
+    const occupant = levelMonsterAt(x, y);
+    if (occupant && !monsterSafelySurvivesMeltedIce(occupant)) {
+        throw new Error(
+            `melt-ice monster liquid lifecycle is not implemented at ${x},${y}`,
+        );
+    }
+
+    const icedpool = loc.icedpool ?? loc.flags ?? ICED_MOAT;
+    const meltInto = icedpool === ICED_POOL ? POOL : MOAT;
+    loc.typ = meltInto;
+    loc.flags = 0;
+    loc.icedpool = 0;
+    stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
+    const trap = iceMeltTrapEffects(x, y, state);
+    for (const object of state.level?.objects?.[x]?.[y] || [])
+        updateCorpseIceTimer(object, x, y, false, state);
+    const unearthed = unearthObjectsAt(x, y, state);
+    if (state === game) newsym(x, y);
+    return {
+        kind: LEVEL_TIMER_KIND.MELT_ICE_AWAY,
+        x, y, meltInto, trap, unearthed, occupant,
+    };
 }
 
 export function runClaimedObjectRotTimer(claimed, state = game) {
@@ -9717,6 +9868,7 @@ function addBuriedObject(object, x, y) {
     object.oy = y;
     if (!game.level.buriedObjects) game.level.buriedObjects = [];
     game.level.buriedObjects.unshift(object);
+    updateCorpseIceTimer(object, x, y, game.level.at(x, y)?.typ === ICE);
     return object;
 }
 
@@ -14986,6 +15138,27 @@ function pickThemeroomFill(room, difficulty) {
 // selection_filter_percent(), and sp_lev.c create_object()/create_trap().
 // percentage() owns its x-major filter draws; selection:iterate() then invokes
 // the retained callbacks in row-major Lua order.
+function fillIceRoom(room, difficulty = level_difficulty()) {
+    const ice = themeroomSelection(room);
+    // des.terrain(selection, "I") routes through sel_set_ter(). The themed
+    // room VM has no des.level_init({ icedpools=true }), so the existing ROOM
+    // flags remain the melt-underlay and ordinary zero flags melt to MOAT.
+    specialSelectionTerrain(ice, ICE);
+    for (const { x, y } of luaSelectionCoordinates(ice)) {
+        const loc = game.level.at(x, y);
+        loc.icedpool = loc.flags ?? 0;
+    }
+    if (rn2(100) < 25) {
+        const minTime = 1000 - difficulty * 100;
+        for (const { x, y } of luaSelectionCoordinates(ice)) {
+            scheduleLevelTimer(
+                x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY,
+                (game.moves ?? 0) + minTime + rn2(1000), game,
+            );
+        }
+    }
+}
+
 async function fillBoulderRoom(room) {
     const context = specialRoomContext(room);
     const selected = themeroomSelection(room).percentage(30);
@@ -15362,7 +15535,8 @@ function fillTempleOfGods(room) {
 
 async function applyThemeroomFill(room, fill, difficulty) {
     if (!fill) return false;
-    if (fill.name === 'Cloud room') await fillCloudRoom(room);
+    if (fill.name === 'Ice room') fillIceRoom(room, difficulty);
+    else if (fill.name === 'Cloud room') await fillCloudRoom(room);
     else if (fill.name === 'Garden') await fillGarden(room);
     else if (fill.name === 'Boulder room') await fillBoulderRoom(room);
     else if (fill.name === 'Spider nest')

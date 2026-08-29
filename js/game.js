@@ -16,6 +16,7 @@ export function makeLocation() {
         seenv: 0,          // which angles the hero has seen this wall from
         horizontal: false, // is this a horizontal wall?
         edge: false,       // is this at the edge of the map?
+        icedpool: 0,       // ICE underlay: ICED_POOL or ICED_MOAT/other
         wall_info: 0,      // wall flags (W_NONDIGGABLE, etc.)
         disp_ch: ' ',      // current display character
         disp_color: NO_COLOR,
@@ -45,6 +46,9 @@ export class GameMap {
         this.monsters = [];
         this.traps = [];
         this.regions = [];
+        // timeout.c TIMER_LEVEL entries are saved with this level rather
+        // than following the hero across the dungeon graph.
+        this.levelTimers = [];
         // C dungeon.h: special-level exclusion zones persist with the map.
         this.exclusionZones = [];
         this.flags = {
