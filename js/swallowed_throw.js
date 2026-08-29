@@ -6,6 +6,7 @@ import { LOST_THROWN } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { nextIdent } from './ident.js';
 import { endLampBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
@@ -17,6 +18,10 @@ import {
 } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rn2, rnd } from './rng.js';
+import {
+    applyProjectileObjectPassive, destroyMulchedProjectile, projectileKind,
+    shouldMulchMissile,
+} from './projectile.js';
 import { heroIsBlind } from './senses.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus,
@@ -91,6 +96,13 @@ function itemIsEquipped(state, item) {
         || !!(item.owornmask ?? 0);
 }
 
+function projectileIsEquipped(state, item) {
+    return EQUIPMENT_SLOTS.filter(slot => slot !== 'uquiver').some(slot =>
+        state[slot] === item || state.u?.[slot] === item)
+        || !!((item.owornmask ?? 0) && state.uquiver !== item
+            && state.u?.uquiver !== item);
+}
+
 function activeObjectTimerCount(item) {
     return Math.max(
         item.timed ?? 0,
@@ -142,6 +154,7 @@ function survivingWeaponEligibility(
     // poison, artifacts, passives, attitude changes, and engulfer death all
     // retain separate fail-closed continuations.
     if (!weaponOrTool || subtype <= 0 || LAUNCHER_SKILLS.has(skill)
+        || (selectedQuantity > 1 && objectClass === 2)
         || !skillState || !Number.isInteger(skillState.skill)
         || material < IRON || material === SILVER
         || AXE_NAMES.has(OBJECT_NAMES[item.otyp])
@@ -175,6 +188,69 @@ function survivingWeaponEligibility(
         return null;
     }
     return { engulfer, skill };
+}
+
+function survivingProjectileEligibility(
+    state, item, objectClass, selectedQuantity,
+) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    const kind = projectileKind(item);
+    if (!engulfer || objectClass !== 2 || !kind
+        || selectedQuantity !== 1) return null;
+
+    const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
+    const wielded = state.uwep ?? state.u?.uwep ?? null;
+    const launcher = kind === 'ammunition' && wielded
+        && (OBJECT_SUBTYPE[wielded.otyp] ?? 0) === -subtype
+        ? wielded : null;
+    const skill = launcher
+        ? Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0)
+        : kind === 'missile' ? Math.abs(subtype) : null;
+    const skillState = skill == null ? null : state.u?.weaponSkills?.[skill];
+    const material = OBJECT_MATERIAL[item.otyp] ?? 0;
+    const itemName = OBJECT_NAMES[item.otyp] ?? '';
+    const launcherName = OBJECT_NAMES[launcher?.otyp] ?? '';
+    const roleDamage = state.urole?.key === 'samurai'
+        && itemName === 'ya' && launcherName === 'yumi'
+        ? 1
+        : state.urace?.key === 'elf'
+            && itemName === 'elven arrow' && launcherName === 'elven bow'
+            ? 1 : 0;
+
+    // The first shared projectile continuation owns a single ordinary
+    // weapon-class identity. Gem/sling ammo, multishot, poison, target
+    // material bonuses, returning boomerangs, and kill handling stay behind
+    // the named swallowed-weapon bridge.
+    if ((skill != null && (!skillState
+            || !Number.isInteger(skillState.skill)))
+        || material === SILVER || item.blessed || item.opoisoned
+        || item.oartifact || item.artifact || item.lamplit
+        || containsUnpaidObject(item) || projectileIsEquipped(state, item)
+        || activeObjectTimerCount(item) > 0
+        || itemName === 'boomerang'
+        || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
+        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
+        || state.u?.polymorphed || state.u?.upolyd
+        || state.u?.twoweap || state.twoweap) return null;
+
+    const baseMaximum = kind === 'ammunition' && !launcher
+        ? 2 : maximumPhysicalWeaponDamage(item, engulfer) + roleDamage;
+    const maximumDamage = Math.max(
+        1,
+        baseMaximum
+            + (state.u?.udaminc ?? state.udaminc ?? 0)
+            + (launcher ? 0 : strengthDamageBonus(currentAttribute(0, state)))
+            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
+    );
+    if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)
+        || engulfer.mhp <= maximumDamage) return null;
+    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
+    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
+    if (currentHp < 10 && currentHp !== currentHpMax
+        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
+        return null;
+    }
+    return { engulfer, kind, launcher, skill, roleDamage };
 }
 
 function genericSwallowedEligibility(
@@ -214,6 +290,11 @@ function detachThrownUnit(
 ) {
     let thrown = item;
     if (selectedQuantity > 1) {
+        if (splitObjectId == null) {
+            splitObjectId = nextIdent();
+            item.quantity = selectedQuantity - 1;
+            item.quan = item.quantity;
+        }
         const unitWeight = OBJECT_WEIGHT[item.otyp]
             ?? Math.max(1, Math.trunc((item.owt ?? 1) / selectedQuantity));
         item.owt = unitWeight * (item.quantity ?? item.quan ?? 1);
@@ -247,6 +328,73 @@ function detachThrownUnit(
     }
     thrown.how_lost = LOST_THROWN;
     return thrown;
+}
+
+export async function resolveSurvivingSwallowedProjectileThrow({
+    state = game,
+    item,
+    objectClass,
+    selectedQuantity,
+    splitObjectId,
+    wakeMonster,
+}) {
+    const eligible = survivingProjectileEligibility(
+        state, item, objectClass, selectedQuantity,
+    );
+    if (!eligible) return false;
+    const { engulfer, kind, launcher, skill, roleDamage } = eligible;
+    const thrown = detachThrownUnit(
+        state, item, selectedQuantity, splitObjectId,
+    );
+
+    if ((thrown.cursed || thrown.greased) && rn2(7) === 0) {
+        const slipok = !!launcher || thrown.greased || kind === 'missile';
+        if (slipok) {
+            const action = launcher
+                ? `${thrownObjectName(thrown, state)} misfires!`
+                : `${thrownObjectName(thrown, state)} slips as you throw it!`;
+            await plineWithContinuation(`The ${action}`);
+            rn2(3);
+            rn2(3);
+        }
+    }
+
+    rnd(20);
+    const unlaunchedAmmo = kind === 'ammunition' && !launcher;
+    const physicalDamage = unlaunchedAmmo
+        ? rnd(2) : rollPhysicalWeaponDamage(thrown, engulfer) + roleDamage;
+    const trains = launcher ? physicalDamage > 0 : physicalDamage > 1;
+    if (skill != null && trains) recordWeaponPractice(state, skill, 1);
+    const damage = Math.max(
+        1,
+        physicalDamage
+            + (state.u?.udaminc ?? state.udaminc ?? 0)
+            + (launcher ? 0 : strengthDamageBonus(currentAttribute(0, state)))
+            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
+    );
+    engulfer.mhp -= damage;
+
+    const monsterName = engulfer.name
+        || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
+    await plineWithContinuation(
+        `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
+            damage > 4 ? '!' : '.'
+        }`,
+    );
+    await wakeMonster(engulfer);
+    exerciseAttribute(1, true, state);
+
+    if (shouldMulchMissile(thrown)) {
+        destroyMulchedProjectile(thrown);
+        state.context.move = 1;
+        return true;
+    }
+    await applyProjectileObjectPassive(engulfer, thrown);
+    addObjectToMonsterInventory(
+        engulfer, thrown, state, { atFront: true },
+    );
+    state.context.move = 1;
+    return true;
 }
 
 export async function resolveSurvivingSwallowedWeaponThrow({

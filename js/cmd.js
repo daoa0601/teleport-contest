@@ -60,8 +60,13 @@ import {
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSurvivingSwallowedWeaponThrow,
+    resolveGenericSwallowedThrow, resolveSurvivingSwallowedProjectileThrow,
+    resolveSurvivingSwallowedWeaponThrow,
 } from './swallowed_throw.js';
+import {
+    applyProjectileObjectPassive as applySharedProjectileObjectPassive,
+    destroyMulchedProjectile, shouldMulchMissile,
+} from './projectile.js';
 import {
     objectStatePrefix, readObjectName, unseenObjectNoun,
     wishedObjectPresentation,
@@ -78,7 +83,7 @@ import {
     STETHOSCOPE,
     WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM, BOULDER, ROCK, ARROW, BOW, DART,
     LONG_SWORD,
-    DILITHIUM_CRYSTAL, HARD_GEM_TYPES, LUCKSTONE, TOUCHSTONE,
+    DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
     STATUE,
@@ -98,9 +103,9 @@ import {
     SCR_LIGHT,
     SCR_IDENTIFY, SCR_PUNISHMENT, SCR_BLANK_PAPER,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, NOVEL,
-    MAGIC_OBJECTS, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_NUTRITION, OBJECT_WEIGHT,
-    OBJECT_CHARGED, OBJECT_SUBTYPE,
+    OBJECT_SUBTYPE,
     OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE, OBJECT_HIT_BONUS,
 } from './object_data.js';
 import {
@@ -15432,13 +15437,16 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // Tourist darts get their role multishot roll even when the result can
     // only be one projectile.  A Ranger using a matching bow selects one
     // action-level volley count; splitobj() still belongs to each iteration.
-    if (game.urole?.key === 'tourist' && item.otyp === DART) rnd(1);
+    if (!game.u?.uswallow
+        && game.urole?.key === 'tourist' && item.otyp === DART) rnd(1);
     let arrowVolleyCount = 1;
-    if (game.urole?.key === 'ranger' && launchedArrow) {
+    if (!game.u?.uswallow
+        && game.urole?.key === 'ranger' && launchedArrow) {
         arrowVolleyCount = Math.min(rnd(2), selectedQuantity);
     }
     let splitObjectId = null;
-    if (!launchedArrow && !handThrownArrow && selectedQuantity > 1) {
+    if (!game.u?.uswallow && !launchedArrow && !handThrownArrow
+        && selectedQuantity > 1) {
         splitObjectId = nextIdent(); // splitobj()
         item.quantity = selectedQuantity - 1;
         item.quan = item.quantity;
@@ -15484,6 +15492,14 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // and suppresses dothrow()'s launcher warning.
     const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
 
+    if (await resolveSurvivingSwallowedProjectileThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        wakeMonster: wakeAttackedMonster,
+    })) return;
     if (await resolveSurvivingSwallowedWeaponThrow({
         state: game,
         item,
@@ -15510,6 +15526,12 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
     })) return;
+    if (game.u?.uswallow) {
+        // No unresolved swallowed object may continue into the ordinary
+        // projectile/floor implementation in bridge-free mode. That fallback
+        // targets map coordinates and is not a source-shaped engulfed path.
+        useCompatibilityBridge('throw.swallowed-special-unsupported');
+    }
 
     if (thrownObjectClass === 3) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
@@ -15842,17 +15864,11 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
                 );
             }
             exerciseAttribute(1, true);
-            const erosion = Math.max(
-                thrown.oeroded ?? 0,
-                thrown.oeroded2 ?? 0,
-            );
-            const chance = 3 + erosion
-                - (thrown.spe ?? thrown.enchantment ?? 0);
-            let mulched = chance > 1
-                ? rn2(chance) !== 0 : rn2(4) === 0;
-            if (thrown.blessed && rnl(4) === 0) mulched = false;
-            if (mulched) return;
-            await applyProjectileObjectPassive(monster, thrown);
+            if (shouldMulchMissile(thrown)) {
+                destroyMulchedProjectile(thrown);
+                return;
+            }
+            await applySharedProjectileObjectPassive(monster, thrown);
             rn2(100);
             landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
             return;
@@ -16383,35 +16399,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
                 await wakeAttackedMonster(contact);
             }
             exerciseAttribute(1, true);
-            let mulched = false;
-            if (!MAGIC_OBJECTS.has(thrownMineral.otyp)) {
-                const erosion = Math.max(
-                    thrownMineral.oeroded ?? 0,
-                    thrownMineral.oeroded2 ?? 0,
-                );
-                const mulchChance = 3 + erosion
-                    - (thrownMineral.spe
-                        ?? thrownMineral.enchantment ?? 0);
-                mulched = mulchChance > 1
-                    ? rn2(mulchChance) !== 0 : rn2(4) === 0;
-                if (thrownMineral.blessed && rnl(4) === 0)
-                    mulched = false;
-                // dothrow.c:should_mulch_missile(): every Mohs-eight-plus real
-                // gem, plus explicit FLINT, owns this second survival draw
-                // after ordinary/blessed mulch policy.  Lower-Mohs real gems
-                // and glass omit it.
-                if (matchingSlingGem
-                    && (HARD_GEM_TYPES.has(thrownMineral.otyp)
-                        || thrownMineral.otyp === FLINT)
-                    && rn2(2) === 0) {
-                    mulched = false;
-                }
-            }
+            const mulched = shouldMulchMissile(thrownMineral);
             if (mulched) {
+                destroyMulchedProjectile(thrownMineral);
                 game.context.move = 1;
                 return;
             }
-            await applyProjectileObjectPassive(contact, thrownMineral);
+            await applySharedProjectileObjectPassive(
+                contact, thrownMineral,
+            );
             rn2(100); // drop_throw()->breaktest()->obj_resists()
             place_object(thrownMineral, x, y);
             await settleThrownShopObject(thrownMineral, x, y);
@@ -16555,197 +16551,6 @@ function passiveContact(monster, malive) {
     if (dice > 0) d(dice, sides);
     else if (sides > 0) d((monster.m_lev ?? 0) + 1, sides);
     if (malive && !monster.mcan) rn2(3);
-}
-
-// C uhitm.c:passive_obj(), reached by thitmonst() only after a projectile
-// survives should_mulch_missile().  This is distinct from passive(), which
-// affects the hero during contact.  The first live object branch is an
-// ungreased iron arrow corroded by an acid blob; other erosion materials,
-// grease protection, and passive damage types retain separate witnesses.
-async function applyProjectileObjectPassive(monster, object) {
-    const passive = MONSTER_ATTACKS[monster.mnum]
-        ?.find(attack => attack[0] === 0);
-    if (!passive) return;
-    const passiveDamageType = passive[1];
-    const AD_FIRE = 2;
-    const AD_ACID = 8;
-    const AD_RUST = 24;
-    const AD_ENCH = 41;
-    const AD_CORR = 42;
-    if (passiveDamageType === AD_FIRE) {
-        // passive_obj() pays the fire probe before checking cancellation,
-        // steam-vortex identity, or whether erode_obj can burn this object.
-        if (rn2(6) !== 0 || monster.mcan
-            || MONSTER_NAME[monster.mnum] === 'steam vortex') return;
-        // mkobj.c:is_flammable(): the represented projectile materials accept
-        // non-liquid organic material through WOOD plus PLASTIC.  Fire wands,
-        // candles and FIRE_RES object properties do not currently reach this
-        // bow-ammo/slung-gem owner and retain separate witnesses.
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-        const flammable = (material > 1 && material <= 8)
-            || material === 18;
-        if (!flammable) return;
-        if (object.oerodeproof || object.fireproof) {
-            // trap.c:erode_obj() treats a proof detached object as visible at
-            // bhitpos, announces protection even without EF_VERBOSE, and
-            // learns the proof bit before returning to floor handoff.
-            object.rknown = true;
-            if (cansee(monster.mx, monster.my)) {
-                const objectName = OBJECT_NAMES[object.otyp]
-                    || object.name || 'object';
-                const quantity = object.quantity ?? object.quan ?? 1;
-                await plineWithContinuation(
-                    `Somehow, the ${objectName} ${
-                        quantity === 1 ? 'is' : 'are'
-                    } not affected by the heat.`,
-                );
-            }
-            return;
-        }
-        if (object.blessed && rnl(4) === 0) return;
-
-        const oldBurn = object.oeroded ?? 0;
-        if (oldBurn >= 3) return;
-        object.oeroded = oldBurn + 1;
-        const objectName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        const adverb = oldBurn + 1 === 3
-            ? ' completely' : oldBurn ? ' further' : '';
-        await plineWithContinuation(
-            `The ${objectName} smoulders${adverb}!`,
-        );
-        return;
-    }
-    if (passiveDamageType === AD_RUST) {
-        if (monster.mcan) return;
-        // trap.c:erode_obj(..., ERODE_RUST, EF_GREASE) checks grease
-        // before vulnerability and always lets grease_protect() own rn2(2).
-        // A projectile is not carried yet, so grease wear has no message.
-        if (object.greased) {
-            if (rn2(2) === 0) object.greased = false;
-            return;
-        }
-        // objclass.h:is_rustprone() is a material predicate.  Ordinary and
-        // orcish arrows are both IRON; wooden/silver ammunition must bypass
-        // this branch even when it shares P_BOW launcher classification.
-        if ((OBJECT_MATERIAL[object.otyp] ?? 0) !== 11) return;
-        if (object.oerodeproof || object.rustproof) {
-            object.rknown = true;
-            if (cansee(monster.mx, monster.my)) {
-                const objectName = OBJECT_NAMES[object.otyp]
-                    || object.name || 'object';
-                const quantity = object.quantity ?? object.quan ?? 1;
-                await plineWithContinuation(
-                    `Somehow, the ${objectName} ${
-                        quantity === 1 ? 'is' : 'are'
-                    } not affected by the oxidation.`,
-                );
-            }
-            return;
-        }
-        if (object.blessed && rnl(4) === 0) return;
-
-        const oldRust = object.oeroded ?? 0;
-        if (oldRust >= 3) return;
-        object.oeroded = oldRust + 1;
-        const objectName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        const adverb = oldRust + 1 === 3
-            ? ' completely' : oldRust ? ' further' : '';
-        await plineWithContinuation(
-            `The ${objectName} rusts${adverb}!`,
-        );
-        return;
-    }
-    if (passiveDamageType === AD_CORR) {
-        if (monster.mcan) return;
-        // AD_CORR shares erode_obj(..., EF_GREASE) control order with
-        // AD_RUST but selects secondary corrosion rather than primary rust.
-        if (object.greased) {
-            if (rn2(2) === 0) object.greased = false;
-            return;
-        }
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-        if (![11, 13].includes(material)) return;
-        if (object.oerodeproof || object.corrodeproof) {
-            object.rknown = true;
-            if (cansee(monster.mx, monster.my)) {
-                const objectName = OBJECT_NAMES[object.otyp]
-                    || object.name || 'object';
-                const quantity = object.quantity ?? object.quan ?? 1;
-                await plineWithContinuation(
-                    `Somehow, the ${objectName} ${
-                        quantity === 1 ? 'is' : 'are'
-                    } not affected by the corrosion.`,
-                );
-            }
-            return;
-        }
-        if (object.blessed && rnl(4) === 0) return;
-
-        const oldCorrosion = object.oeroded2 ?? 0;
-        if (oldCorrosion >= 3) return;
-        object.oeroded2 = oldCorrosion + 1;
-        const objectName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        const adverb = oldCorrosion + 1 === 3
-            ? ' completely' : oldCorrosion ? ' further' : '';
-        await plineWithContinuation(
-            `The ${objectName} corrodes${adverb}!`,
-        );
-        return;
-    }
-    if (passiveDamageType === AD_ENCH) {
-        if (monster.mcan) return;
-        const enchantment = Number.isInteger(object.spe)
-            ? object.spe : Number.isInteger(object.enchantment)
-                ? object.enchantment : 0;
-        // zap.c:drain_item() rejects uncharged or non-positive objects before
-        // obj_resists().  Invocation objects resist without paying RNG.
-        if (!OBJECT_CHARGED[object.otyp] || enchantment <= 0
-            || [AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
-                CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING]
-                .includes(object.otyp)) return;
-        if (rn2(100) < (object.oartifact ? 90 : 10)) return;
-        object.spe = enchantment - 1;
-        object.enchantment = object.spe;
-        // A projectile is detached from inventory at this boundary, so C's
-        // carried(obj) presentation and update_inventory() paths are silent.
-        return;
-    }
-    if (passiveDamageType !== AD_ACID || rn2(6) !== 0) return;
-    // AD_ACID differs from AD_CORR only by its unconditional one-in-six
-    // passive gate.  Once that gate succeeds, erode_obj(..., EF_GREASE)
-    // still lets grease_protect() consume rn2(2) before vulnerability or
-    // erosion checks; a detached projectile loses grease silently on zero.
-    if (object.greased) {
-        if (rn2(2) === 0) object.greased = false;
-        return;
-    }
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    if (![11, 13].includes(material)) return;
-    if (object.oerodeproof || object.corrodeproof) {
-        object.rknown = true;
-        if (cansee(monster.mx, monster.my)) {
-            const objectName = OBJECT_NAMES[object.otyp]
-                || object.name || 'object';
-            const quantity = object.quantity ?? object.quan ?? 1;
-            await plineWithContinuation(
-                `Somehow, the ${objectName} ${
-                    quantity === 1 ? 'is' : 'are'
-                } not affected by the corrosion.`,
-            );
-        }
-        return;
-    }
-    if (object.blessed && rnl(4) === 0) return;
-
-    const oldCorrosion = object.oeroded2 ?? 0;
-    if (oldCorrosion >= 3) return;
-    object.oeroded2 = oldCorrosion + 1;
-    const objectName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-    const adverb = oldCorrosion + 1 === 3
-        ? ' completely' : oldCorrosion ? ' further' : '';
-    await plineWithContinuation(
-        `The ${objectName} corrodes${adverb}!`,
-    );
 }
 
 // C refs: lock.c autokey(TRUE), pick_lock().  Default autounlock includes
