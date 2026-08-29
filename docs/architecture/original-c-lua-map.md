@@ -37320,3 +37320,57 @@ map flight, special terrain and recoil, nonordinary targets, paralysis,
 sleeping, speed, blindness, invisibility, water, oil, acid, polymorph, hero
 impact targets, shops, saddles, interactive naming, and a sealed stratum
 remain open.  Lua owns none of this effect graph.
+
+## 1001. Paralysis and sleeping join impact state to the live helpless scheduler
+
+```mermaid
+flowchart TD
+    A[potionhit common crash and rn2 5 chip] --> B{direct type}
+    B -- paralysis and target can move --> C[rnd 25]
+    C --> D[mcanmove 0; replace mfrozen; stop meal; clear WAITFORU]
+    B -- sleeping --> E[rnd 12 before defenses]
+    E --> F{sleep resistance or defended?}
+    F -- yes --> G[shieldeff; skip magic-resistance draw]
+    F -- no --> H[potion-class resist draw]
+    H -- resisted --> G
+    H -- succeeds and target can move --> I[add/cap mfrozen; stop meal]
+    I --> J[falls asleep; release non-engulfing grip]
+    D --> K[hostile wake policy]
+    G --> K
+    J --> K
+    K --> L{vapor reaches hero?}
+    L -- paralysis plus free action --> M[stiffen momentarily]
+    L -- sleeping plus free action or sleep resistance --> N[yawn; observers learn M_SEEN_SLEEP]
+    L -- susceptible --> O[rnd 5; install reason and recovery message]
+    O --> P[exercise Dexterity false]
+    P --> Q[allmain decrements after complete global turns]
+```
+
+The two direct effects share impact and hostile wake ownership but do not share
+monster mutation.  `paralyze_monst()` rolls only for a target which can still
+move, replaces rather than extends `mfrozen`, terminates eating, and clears
+`STRAT_WAITFORU`.  `sleep_monst()` instead consumes `rnd(12)` before checking
+inherent or defended sleep resistance and before potion-class magic
+resistance.  Inherent or defended resistance skips the magic-resistance draw;
+every resistant outcome displays the shield cycle.  A successful sleep adds
+the old frozen duration, caps at 127, and can release a non-engulfing monster's
+grip before ordinary attack wake policy runs.  That wake clears `msleeping`
+and anger state without undoing the timed `mcanmove`/`mfrozen` sleep.
+
+The hero-side vapor continuation now joins the existing live negative-multi
+representation.  Free action turns paralysis into a momentary stiffen.  Free
+action or sleep resistance turns sleeping vapor into a yawn and records
+`M_SEEN_SLEEP` for living monsters which could see the visible hero, matching
+`monstseesu()`.  Otherwise `rnd(5)` installs `_helplessTurns`, the source
+reason, and `You can move again.`, followed by negative Dexterity exercise.
+The command does not consume those turns itself: `allmain.js` decrements them
+only after each complete monster/global-turn allocation and publishes recovery
+at the normal input boundary.
+
+The subsystem remains mechanically **partial**.  The shared owner is live for
+swallowed guaranteed contact and ordinary sighted map contact, including one
+adjacent proximity-vapor witness.  Cursed and greased map transport, special
+terrain and recoil, nonordinary targets, speed, blindness, invisibility,
+water, oil, acid, polymorph, hero impact targets, shops, saddles, interactive
+naming, full observer knowledge consumption, and a sealed stratum remain open.
+Lua owns none of this effect or scheduler graph.

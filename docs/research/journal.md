@@ -96902,3 +96902,82 @@ ran. The next portfolio should compare the paralysis/sleeping helpless-state
 family against a mutation-safe cursed/greased transport plan.
 
 ---
+
+### [2026-08-30 00:35 EEST, journal block 3170] {#bridge-free #potionhit #potionbreathe #paralysis #sleeping #sleep-monst #paralyze-monst #helpless-scheduler #resistance-learning #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3169 left the shared
+paralysis/sleeping helpless-state family versus mutation-safe cursed/greased
+transport. Eight direct and vapor witnesses initially returned before bottle,
+impact, duration, resistance, shield, monster-state, or hero-state ownership,
+so the discriminating set was red **0/8**. The critical-debugging portfolio
+kept three routes independent: one paralysis-only status mutation, the complete
+two-type direct-plus-vapor family, or transport direction rerolls. A
+paralysis-only route would omit the shared Free action and live negative-multi
+boundary; transport still lacks a pre-mutation validity or complete rollback
+proof after direction changes. The two-type family was therefore selected as
+the coherent source-owned slice.
+
+**Prediction and decisive C evidence:** `potion.c:potionhit()` calls
+`paralyze_monst(mon, rnd(25))` only while the target can move. That replaces
+`mfrozen`, terminates eating, and clears `STRAT_WAITFORU`. Sleeping always
+consumes `rnd(12)` before `sleep_monst()`. Inherent or defended sleep
+resistance shields without a magic-resistance draw; otherwise potion-class
+`resist()` uses attack level six. Success adds the prior frozen duration,
+caps at 127, stops eating, prints the sleep line, and lets `slept_monst()`
+release a non-engulfing grip. The later hostile `wakeup()` clears ordinary
+sleep and anger state without undoing timed `mcanmove`/`mfrozen` helplessness.
+`potionbreathe()` maps susceptible paralysis and sleeping vapor to `rnd(5)`,
+the exact negative-multi reason and recovery message, and negative Dexterity
+exercise. Free action resists both; sleep resistance also resists sleeping,
+and the yawn branch teaches `M_SEEN_SLEEP` to living monsters which could see
+the visible hero.
+
+**Decision and implementation:** commit `29056a9` broadens `potion_hit.js` to
+sixteen source-owned potion identities without fixture, replay, seed, or
+session control flow. The shared direct owner now distinguishes active versus
+already-frozen paralysis, inherent/defended versus magic sleep resistance,
+shield continuation, capped sleep extension, meal termination, wait strategy,
+and grip release. The vapor owner derives Free action from live equipment,
+handles sleep-resistance aliases and observer knowledge, and installs
+`_helplessTurns`, `_helplessReason`, and `_helplessDoneMessage` for the existing
+`allmain.js` scheduler rather than decrementing time inside projectile code.
+Ordinary map proximity and swallowed distance-zero callers compose the same
+direct-before-vapor transaction. Invisibility replaces paralysis as the named
+fail-loud pre-split and pre-RNG control.
+
+**False-acceptance corrections and adversarial audit:** the first adjacent-map
+expectation assumed distance one guaranteed vapor. C guarantees only distance
+zero; distance one still pays `rn2((1 + Dex) / 2)`, and the corrected witness
+requires that gate to select vapor before accepting hero helplessness. The
+first negative-exercise seed produced `rn2(2)=0`; an initialized zero exercise
+array proved the callback ran but not a state decrement, so a second witness
+uses `rn2(2)=1` and requires `-1`. Separate controls prove that already-frozen
+paralysis consumes no duration draw, inherent sleep resistance skips magic
+resistance, a mind flayer pays and succeeds at magic resistance, successful
+sleep releases a non-engulfing grip, and swallowed sleep leaves the engulfer's
+timed freeze intact despite hostile wake policy.
+
+**Measured effect and process custody:** all eight initial red witnesses plus
+the map, swallowed, magic-resistance, and grip counterexamples are green. The
+acquisition, direct-impact, map-potion, and swallowed files pass **83/83**.
+Five ambient-ogre, sleeping-potion flight, striking-wand,
+smoky-invisibility-potion, and clean Pri-loca controls pass **5/5** with exact
+RNG/screens. `test/bridge_free.test.js` passes **8/8**, and the mechanical
+audit reports **125 audited files, 15 guarded modules, and 19 fixture
+modules**. Every `node --test` process was guarded, singular, and observed
+through normal exit; none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** attack wakeup does not undo
+timed sleep; inherent sleep resistance does not pay potion magic resistance;
+distance-one contact does not guarantee vapor; and final status text is not an
+acceptance substitute for live scheduler state. Cursed and greased ordinary
+map flight, special terrain and recoil, nonordinary targets, speed, blindness,
+invisibility, water, oil, acid, polymorph, hero impact, shops, saddles,
+interactive naming, broader resistance consumers, and a sealed stratum remain
+open. No full Contest suite, engine/public corpus, sealed-trace inspection,
+score, push, publication, official measurement, or animation work ran. The
+next portfolio should compare the speed/blindness effect boundary against a
+mutation-safe cursed/greased transport design; neither is justified by public
+session exactness.
+
+---
