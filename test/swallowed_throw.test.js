@@ -602,7 +602,7 @@ test('unsupported swallowed potion fails before floor fallback or RNG',
             throwThroughLiveCommand(potion, 'l'),
             error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
                 && error?.bridgeId
-                    === 'throw.swallowed-special-unsupported',
+                    === 'throw.potion-impact-unsupported',
         );
 
         assert.equal(engulfer.mhp, 40);
@@ -615,7 +615,7 @@ test('unsupported swallowed potion fails before floor fallback or RNG',
         assert.equal(ledger.totalHits, 1);
         assert.equal(ledger.forbiddenHits, 1);
         assert.equal(
-            ledger.bridges['throw.swallowed-special-unsupported'].count,
+            ledger.bridges['throw.potion-impact-unsupported'].count,
             1,
         );
     });
@@ -732,7 +732,7 @@ test('dknown unknown inert potion remains fail-loud before call prompt debt',
             throwThroughLiveCommand(potion, 'l'),
             error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
                 && error?.bridgeId
-                    === 'throw.swallowed-special-unsupported',
+                    === 'throw.potion-impact-unsupported',
         );
 
         assert.equal(engulfer.mhp, 40);

@@ -2,11 +2,10 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { LOST_THROWN, W_SADDLE } from './const.js';
+import { W_SADDLE } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { nextIdent } from './ident.js';
 import { endLampBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
@@ -34,6 +33,7 @@ import {
     maximumPhysicalWeaponDamage, rollPhysicalWeaponDamage,
     strengthDamageBonus,
 } from './weapon_damage.js';
+import { detachThrownUnit } from './thrown_object.js';
 
 const PM_AIR_ELEMENTAL = 154;
 const AT_ENGL = 11;
@@ -323,51 +323,6 @@ function swallowedInertPotionEligibility(
     return engulfer;
 }
 
-function detachThrownUnit(
-    state, item, selectedQuantity, splitObjectId,
-) {
-    let thrown = item;
-    if (selectedQuantity > 1) {
-        if (splitObjectId == null) {
-            splitObjectId = nextIdent();
-            item.quantity = selectedQuantity - 1;
-            item.quan = item.quantity;
-        }
-        const unitWeight = OBJECT_WEIGHT[item.otyp]
-            ?? Math.max(1, Math.trunc((item.owt ?? 1) / selectedQuantity));
-        item.owt = unitWeight * (item.quantity ?? item.quan ?? 1);
-        thrown = {
-            ...item,
-            o_id: splitObjectId,
-            invlet: null,
-            quan: 1,
-            quantity: 1,
-            owt: unitWeight,
-            owornmask: 0,
-            worn: false,
-            wornSlot: null,
-            ready: false,
-            where: 'free',
-            objectTimers: [],
-            timed: 0,
-        };
-    } else {
-        const index = state.inventory.indexOf(item);
-        if (index >= 0) state.inventory.splice(index, 1);
-        for (const slot of EQUIPMENT_SLOTS) {
-            if (state[slot] === item) state[slot] = null;
-            if (state.u?.[slot] === item) state.u[slot] = null;
-        }
-        thrown.owornmask = 0;
-        thrown.worn = false;
-        thrown.wornSlot = null;
-        thrown.ready = false;
-        thrown.where = 'free';
-    }
-    thrown.how_lost = LOST_THROWN;
-    return thrown;
-}
-
 export async function resolveSwallowedProjectileThrow({
     state = game,
     item,
@@ -550,6 +505,8 @@ export async function resolveSwallowedInertPotionThrow({
         monster: engulfer,
         potion: thrown,
         wakeMonster,
+        resolveVapor: true,
+        distance: 0,
     });
     state.context.move = 1;
     return true;

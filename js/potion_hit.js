@@ -11,6 +11,7 @@ import {
 import {
     MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
+import { currentAttribute } from './attrib.js';
 import { rn2 } from './rng.js';
 import { objectTypeKnown } from './shk.js';
 import { cansee } from './vision.js';
@@ -73,7 +74,7 @@ function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
-function destroyPotionIdentity(potion) {
+export function destroyPotionIdentity(potion) {
     potion.where = 'gone';
     potion.ox = potion.oy = 0;
     potion.ocarry = null;
@@ -93,6 +94,8 @@ export async function hitMonsterWithInertPotion({
     wakeMonster,
     publish = plineWithContinuation,
     targetVisible = cansee(monster?.mx, monster?.my),
+    resolveVapor = false,
+    distance = 0,
 }) {
     if (!monster || !potion
         || !INERT_MONSTER_POTION_TYPES.has(potion.otyp)) return null;
@@ -123,6 +126,12 @@ export async function hitMonsterWithInertPotion({
     // empty.  dknown+unknown identities are rejected by the caller because
     // trycall() owns an interactive naming continuation not represented here.
     await wakeMonster?.(monster);
+    if (resolveVapor && distance > 0 && distance < 3) {
+        // potionhit() still pays the proximity gate before entering the empty
+        // potionbreathe() switch.  Distance zero (swallowed contact) breathes
+        // unconditionally and distance three or more never probes.
+        rn2(Math.trunc((1 + currentAttribute(1, state)) / 2));
+    }
     destroyPotionIdentity(potion);
     return {
         bottleName,

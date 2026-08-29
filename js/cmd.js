@@ -63,6 +63,7 @@ import {
     resolveGenericSwallowedThrow, resolveSwallowedInertPotionThrow,
     resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
+import { resolveMapInertPotionThrow } from './potion_throw.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
     destroyMulchedProjectile, shouldMulchMissile,
@@ -15472,6 +15473,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     game._pending_message = '';
 
     const selectedQuantity = item.quantity ?? item.quan ?? 1;
+    const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
     // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
     // by the signed P_BOW subtype, not the ordinary ARROW/BOW identities.
     // This includes elven, orcish, silver and ya ammunition with any matching
@@ -15493,7 +15495,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         arrowVolleyCount = Math.min(rnd(2), selectedQuantity);
     }
     let splitObjectId = null;
-    if (!game.u?.uswallow && !launchedArrow && !handThrownArrow
+    if (!game.u?.uswallow && thrownObjectClass !== 8
+        && !launchedArrow && !handThrownArrow
         && selectedQuantity > 1) {
         splitObjectId = nextIdent(); // splitobj()
         item.quantity = selectedQuantity - 1;
@@ -15538,8 +15541,6 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // exercised by seed0399.  Missiles retain their class-specific handling:
     // routing arrows and darts through this branch consumes the entire stack
     // and suppresses dothrow()'s launcher warning.
-    const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
-
     if (await resolveSwallowedProjectileThrow({
         state: game,
         item,
@@ -15578,6 +15579,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
     })) return;
+    if (game.u?.uswallow && thrownObjectClass === 8)
+        useCompatibilityBridge('throw.potion-impact-unsupported');
 
     if (await resolveGenericSwallowedThrow({
         state: game,
@@ -15587,12 +15590,27 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
     })) return;
-    if (game.u?.uswallow) {
+    if (game.u?.uswallow && thrownObjectClass !== 8) {
         // No unresolved swallowed object may continue into the ordinary
         // projectile/floor implementation in bridge-free mode. That fallback
         // targets map coordinates and is not a source-shaped engulfed path.
         useCompatibilityBridge('throw.swallowed-special-unsupported');
     }
+
+    if (!game.u?.uswallow && await resolveMapInertPotionThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        dx,
+        dy,
+        blocksMove,
+        captureFlight: captureThrownObjectFlight,
+        wakeMonster: wakeAttackedMonster,
+    })) return;
+    if (!game.u?.uswallow && thrownObjectClass === 8)
+        useCompatibilityBridge('throw.potion-impact-unsupported');
 
     if (thrownObjectClass === 3) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
