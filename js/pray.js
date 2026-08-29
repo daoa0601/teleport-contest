@@ -171,9 +171,11 @@ export async function finishPrayerOccupation(state = game) {
             `You feel that ${deity} is displeased.`, state,
         );
     } else if (outcome <= 3) {
-        rn2(4); // pray.c:godvoice() voice selector
+        const voice = [
+            'booms out', 'thunders', 'rings out', 'booms',
+        ][rn2(4)];
         await prayerContinuationLine(
-            `The voice of ${deity} thunders:`, state,
+            `The voice of ${deity} ${voice}: `, state,
         );
         await prayerContinuationLine('"Thou art arrogant, mortal."', state);
         await prayerContinuationLine(

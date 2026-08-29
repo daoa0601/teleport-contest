@@ -38,7 +38,7 @@ import { dosearch } from './detect.js';
 import { donull, threateningMonsterNearby } from './do.js';
 import {
     ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
-    showPagedPickOneMenu,
+    showDisclosureOverlay, showPagedPickOneMenu,
     showTextMenuOverlay, showTextPages,
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
@@ -150,7 +150,7 @@ import {
     beginHeroLifeSaving, completeHeroLifeSaving,
     finishOrdinaryDeath, finishOrdinaryQuit,
     recordHeroKillConduct, recordVanquished,
-    restoreHeroAfterDeath,
+    restoreHeroAfterDeath, vanquishedLines,
 } from './end.js';
 import {
     rankAchievement, recordAchievement, recordDungeonEntryAchievements,
@@ -178,6 +178,7 @@ import {
 import {
     priestIsCoaligned, visiblePriestName,
 } from './priest.js';
+import { gameLogEvents, recordGameLogEvent } from './gamelog.js';
 import {
     maybeSmudgeEngravings, readEngravingAt, wipeEngravingAt,
 } from './engrave.js';
@@ -196,7 +197,7 @@ import {
 } from './caveman_explore.js';
 import {
     fumaroles, monsterTeleportRestricted, randomMonsterRelocation,
-    triggerImmediateMonsterTrap,
+    sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -5606,29 +5607,47 @@ async function touristExploreRunWest() {
     }
 }
 
-function samuraiSkillPage() {
-    const lines = Array(24).fill('');
-    lines[0] = { text: 'Current skills:', attr: ATR_INVERSE, col: 1 };
-    const body = [
-        '', ' Fighting Skills', '   martial arts      [Basic]',
-        '   two weapon combat [Unskilled]', '   riding            [Unskilled]',
-        ' Weapon Skills', '   dagger            [Unskilled]',
-        '   knife             [Unskilled]', '   short sword       [Basic]',
-        '   broadsword        [Unskilled]', '   long sword        [Basic]',
-        '   two-handed sword  [Unskilled]', '   saber             [Unskilled]',
-        '   flail             [Unskilled]', '   quarterstaff      [Unskilled]',
-        '   polearms          [Unskilled]', '   spear             [Unskilled]',
-        '   lance             [Unskilled]', '   bow               [Basic]',
-        '   shuriken          [Unskilled]', ' Spellcasting Skills',
-        '   attack spells     [Unskilled]', ' (1 of 2)',
-    ];
-    for (let i = 0; i < body.length; i++) lines[i + 1] = body[i];
-    for (const row of [2, 6, 21]) {
-        lines[row] = {
-            text: lines[row].slice(1), attr: ATR_INVERSE, col: 1,
-        };
+function currentSkillPages() {
+    const skills = ensureHeroSkills(game);
+    if (!skills) return [];
+
+    // weapon.c:add_skills_to_menu().  P_NAME(P_BARE_HANDED_COMBAT) is
+    // role-sensitive: Monks call the same mechanical skill "martial arts".
+    const nameFor = skill => skill === 35
+        && (game.urole?.key === 'monk' || game.urole?.key === 'samurai')
+        ? 'martial arts' : SKILL_NAMES[skill];
+    const unrestricted = skills
+        .map((state, skill) => ({ state, skill }))
+        .filter(({ state, skill }) => skill > 0 && state.skill > 0);
+    const longest = Math.max(0, ...unrestricted.map(({ skill }) =>
+        nameFor(skill).length));
+    const body = [];
+    for (const group of SKILL_GROUPS) {
+        body.push({ text: group.heading, attr: ATR_INVERSE, col: 1 });
+        for (let skill = group.first; skill <= group.last; skill++) {
+            const state = skills[skill];
+            if (!state?.skill) continue;
+            body.push(`   ${nameFor(skill).padEnd(longest)} `
+                + `[${SKILL_LEVEL_NAMES[state.skill]}]`);
+        }
     }
-    return { lines, cursor: [9, 23] };
+
+    // The 24-row tty reserves row 0 for the menu prompt, row 1 for its
+    // separator, and row 23 for the page marker.  NetHack repeats that frame
+    // on every page and paginates the 21 menu entries in between.
+    const pageSize = 21;
+    const pageCount = Math.max(1, Math.ceil(body.length / pageSize));
+    return Array.from({ length: pageCount }, (_, page) => {
+        const lines = Array(24).fill('');
+        lines[0] = { text: 'Current skills:', attr: ATR_INVERSE, col: 1 };
+        const entries = body.slice(page * pageSize, (page + 1) * pageSize);
+        for (let row = 0; row < entries.length; row++)
+            lines[row + 2] = entries[row];
+        const marker = pageCount > 1
+            ? `(${page + 1} of ${pageCount})` : '(end)';
+        lines[23] = ` ${marker}`;
+        return { lines, cursor: [marker.length + 1, 23] };
+    });
 }
 
 async function dotwoweapon() {
@@ -5753,7 +5772,9 @@ async function doenhance() {
             return;
         }
     }
-    await showTextPages([samuraiSkillPage()]);
+    await showTextPages(currentSkillPages(), {
+        validKeys: [27, 32, 10, 13],
+    });
     game._pending_message = '';
     game.context.move = 0;
 }
@@ -5794,9 +5815,50 @@ async function dochat() {
             game.context.move = 1;
             return;
         }
-        if (monster?.pet && monster.meating)
-            await pline('The saddled pony is eating noisily.');
-        else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
+        if (monster?.pet && monster.meating) {
+            await pline(`${monster.name
+                ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
+                : `The ${monsterInstanceDisplayName(monster)}`
+            } is eating noisily.`);
+        } else if (monster && !(game.deaf || game.u?.deaf)
+            && [1, 2, 12].includes(MONSTER_SOUND[monster.mnum] ?? 0)) {
+            const sound = MONSTER_SOUND[monster.mnum];
+            const hungryTime = monster.edog?.hungrytime ?? 0;
+            const moves = game.moves ?? 1;
+            let noise = null;
+            if (sound === 1) { // MS_BARK
+                if (game.flags?.moonphase === 4
+                    && sessionIsNight(game.datetime)) noise = 'howls.';
+                else if (!monster.mpeaceful) noise = 'growls.';
+                else if (monster.mtame && (monster.mconf || monster.mflee
+                    || monster.mtrapped || moves > hungryTime
+                    || monster.mtame < 5)) noise = 'whines.';
+                else if (monster.mtame && hungryTime > moves + 1000)
+                    noise = 'yips.';
+                else if (MONSTER_NAME[monster.mnum] !== 'dingo')
+                    noise = 'barks.';
+            } else if (sound === 2) { // MS_MEW
+                if (monster.mtame && (monster.mconf || monster.mflee
+                    || monster.mtrapped || monster.mtame < 5)) noise = 'yowls.';
+                else if (monster.mtame && moves > hungryTime) noise = 'meows.';
+                else if (monster.mtame && hungryTime > moves + 1000)
+                    noise = 'purrs.';
+                else noise = monster.mtame ? 'mews.'
+                    : monster.mpeaceful ? 'snarls.' : 'growls!';
+            } else if (sound === 12) { // MS_NEIGH
+                noise = monster.mtame < 5 ? 'neighs.'
+                    : moves > hungryTime ? 'whinnies.' : 'whickers.';
+            }
+            if (noise) {
+                const subject = monster.name
+                    ? monster.name.charAt(0).toUpperCase()
+                        + monster.name.slice(1)
+                    : `The ${monsterInstanceDisplayName(monster)}`;
+                await pline(`${subject} ${noise}`);
+            }
+            game.context.move = 1;
+            return;
+        } else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
         else if (!monster) {
             const statue = (game.level?.objects?.[x]?.[y] || [])
                 .find(object => object.otyp === STATUE);
@@ -5836,9 +5898,11 @@ async function dosit() {
     const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
     const corpse = objects.find(object => object.name?.includes('corpse')
         || object.corpsenm !== undefined);
+    const surface = game.level?.at(game.u?.ux, game.u?.uy)?.typ === FOUNTAIN
+        ? 'fountain' : 'floor';
     await pline(corpse
         ? "You sit on the corpse.  It's not very comfortable..."
-        : 'Having fun sitting on the floor?');
+        : `Having fun sitting on the ${surface}?`);
     game.context.move = 1;
 }
 
@@ -7336,7 +7400,9 @@ function completeExtendedCommand(command) {
     if (command.length >= 2 && 'conduct'.startsWith(command))
         return 'conduct';
     if ('enhance'.startsWith(command)) return 'enhance';
-    if (command === 'g') return 'genocided';
+    if ('genocided'.startsWith(command)) return 'genocided';
+    if (command.length >= 2 && 'vanquished'.startsWith(command))
+        return 'vanquished';
     // In normal play, pray is the only AUTOCOMPLETE command beginning with
     // "p".  Wizard mode also exposes panic and polyself, so tty leaves a
     // single "p" literal and completes pray only once "pr" is unique.
@@ -7378,6 +7444,8 @@ function completeExtendedCommand(command) {
     if (command.length >= 2 && 'ride'.startsWith(command)) return 'ride';
     if (command.length >= 2 && 'rub'.startsWith(command)) return 'rub';
     if (command.length >= 3 && 'chat'.startsWith(command)) return 'chat';
+    if (command.length >= 3 && 'chronicle'.startsWith(command))
+        return 'chronicle';
     // In wizard mode, version and vision share `v`; the second physical byte
     // makes `ve` the unique AUTOCOMPLETE entry.
     if (command.length >= 2 && 'version'.startsWith(command))
@@ -7397,6 +7465,8 @@ function completeExtendedCommand(command) {
         return 'adjust';
     // `t` still matches several AUTOCOMPLETE commands (terrain,
     // therecmdmenu, timeout, tip, turn); `tu` uniquely identifies turn.
+    if (command.length >= 2 && 'terrain'.startsWith(command))
+        return 'terrain';
     if (command.length >= 2 && 'turn'.startsWith(command)) return 'turn';
     if ('untrap'.startsWith(command)) return 'untrap';
     if (command.length >= 3 && 'wipe'.startsWith(command)) return 'wipe';
@@ -7407,6 +7477,10 @@ function completeExtendedCommand(command) {
 
 async function runExtendedCommand(command) {
     if (command === 'conduct') return doconduct();
+    if (command === 'chronicle') return doChronicle();
+    if (command === 'vanquished') return doVanquished();
+    if (command === 'genocided') return doGenocided();
+    if (command === 'terrain') return doTerrainOverview();
     if (command === 'version') return doextversion();
     if (command === 'quit') return doquit();
     if (command === 'twoweapon') return dotwoweapon();
@@ -7802,7 +7876,7 @@ async function wizMap() {
             }
         }
     }
-    recordMappedOverviewState();
+    recordMappedOverviewState({ mapped: true });
 
     exerciseAttribute(4, true);
     if (game.u) {
@@ -8163,34 +8237,49 @@ function visitedDungeonLevels() {
     return byDungeon;
 }
 
-function recordMappedOverviewState() {
+function recordMappedOverviewState({ mapped = false } = {}) {
     const level = game.level;
     const dnum = game.u?.uz?.dnum ?? 0;
     const dlevel = game.u?.uz?.dlevel ?? 1;
     const cap3 = count => Math.min(3, count);
     const countTerrain = typ => {
         let count = 0;
-        for (let x = 1; x < COLNO; x++)
-            for (let y = 0; y < ROWNO; y++)
-                if (level?.at(x, y)?.typ === typ) count++;
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const loc = level?.at(x, y);
+                if (loc?.typ !== typ) continue;
+                // dungeon.c:recalc_mapseen() counts lastseentyp, not the
+                // hidden live level.  A square enters that memory when it
+                // has been seen, or when the non-levitating hero feels the
+                // terrain underfoot.  wizMap() sets seenv for every square,
+                // so the same projection also covers magic mapping.
+                if (loc.seenv || (x === game.u?.ux && y === game.u?.uy))
+                    count++;
+            }
+        }
         return cap3(count);
     };
+    const heroRoom = level?.at(game.u?.ux, game.u?.uy)?.roomno;
     const shops = (level?.rooms || [])
         .slice(0, level?.nroom ?? 0)
-        .filter(room => (room?.rtype ?? 0) >= SHOPBASE);
+        .filter((room, index) => (room?.rtype ?? 0) >= SHOPBASE
+            && (mapped || heroRoom === (room.roomnoidx ?? index) + ROOMOFFSET));
     const sourceBranch = game.branches?.find(candidate =>
         candidate.end1?.dnum === dnum
         && candidate.end1?.dlevel === dlevel);
-    const branch = sourceBranch ? {
+    const prior = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
+    const branch = mapped && sourceBranch ? {
         up: !!sourceBranch.end1_up,
         dnum: sourceBranch.end2.dnum,
         dlevel: sourceBranch.end2.dlevel,
-    } : null;
+    } : prior?.branch || null;
     if (!game._overviewRecords) game._overviewRecords = new Map();
     game._overviewRecords.set(`${dnum}:${dlevel}`, {
         features: {
-            nshop: cap3(shops.length),
-            shoptype: shops.length === 1 ? shops[0].rtype : 0,
+            nshop: mapped ? cap3(shops.length)
+                : Math.max(prior?.features?.nshop || 0, cap3(shops.length)),
+            shoptype: shops.length === 1 ? shops[0].rtype
+                : prior?.features?.shoptype || 0,
             nfount: countTerrain(FOUNTAIN),
             nsink: countTerrain(SINK),
             naltar: countTerrain(ALTAR),
@@ -8204,10 +8293,14 @@ function recordMappedOverviewState() {
 
 function dungeonOverviewHeading(dnum, levels) {
     const dungeon = game.dungeons?.[dnum];
+    const reached = dungeon?.entry_lev === dungeon?.num_dunlevs
+        ? Math.min(...levels) : Math.max(...levels);
+    if (reached === (dungeon?.entry_lev ?? 1))
+        return `${dungeon?.dname || 'Dungeon'}:`;
     const depths = levels.map(dlevel => dungeonDepth(dnum, dlevel))
         .sort((a, b) => a - b);
-    const range = depths[0] === depths.at(-1)
-        ? `level ${depths[0]}`
+    const range = dungeon?.entry_lev === dungeon?.num_dunlevs
+        ? `levels ${depths.at(-1)} up to ${depths[0]}`
         : `levels ${depths[0]} to ${depths.at(-1)}`;
     return `${dungeon?.dname || 'Dungeon'}: ${range}`;
 }
@@ -8259,6 +8352,10 @@ function overviewFeatureLine(features) {
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
 async function doDungeonOverview() {
+    // The C command lazily calls recalc_mapseen() before rendering.  Refresh
+    // the current level from remembered/underfoot terrain at that same
+    // boundary; do not infer features from unseen live squares.
+    recordMappedOverviewState();
     const lines = [];
     const visited = [...visitedDungeonLevels().entries()]
         .sort(([left], [right]) => left - right);
@@ -8298,6 +8395,58 @@ async function doDungeonOverview() {
     }
     await showTextMenuOverlay(lines);
     game._pending_message = '';
+    game.context.move = 0;
+}
+
+// C ref: insight.c:do_gamelog()/show_gamelog(ENL_GAMEINPROGRESS).  Chronicle
+// is a projection of events recorded by their owning mechanics; it does not
+// infer history from the command transcript or current aggregate counters.
+async function doChronicle() {
+    const events = gameLogEvents(game);
+    if (!events.length) {
+        await pline('No chronicled events.');
+        game.context.move = 0;
+        return;
+    }
+    const stream = [
+        'Logged events:',
+        ' Turn',
+        ...events.map(event => `${String(event.turn).padStart(5)}: ${event.text}`),
+    ];
+    const pageSize = 23;
+    const pages = [];
+    for (let offset = 0; offset < stream.length; offset += pageSize) {
+        const lines = Array(24).fill('');
+        const chunk = stream.slice(offset, offset + pageSize);
+        for (let row = 0; row < chunk.length; row++) lines[row] = chunk[row];
+        lines[23] = '--More--';
+        pages.push({ lines, cursor: [8, 23] });
+    }
+    await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+    game._pending_message = '';
+    game.context.move = 0;
+}
+
+async function doVanquished() {
+    if (!game._vanquishedCounts?.size) {
+        await pline('No creatures have been vanquished.');
+    } else {
+        await showDisclosureOverlay(vanquishedLines(), {
+            restoreUnderlay: true,
+        });
+    }
+    game._pending_message = '';
+    game.context.move = 0;
+}
+
+async function doGenocided() {
+    const genocided = [...(game._genocidedMonsters || [])];
+    if (!genocided.length) {
+        await pline('No creatures have been genocided.');
+    } else {
+        const lines = ['Genocided species:', '', ...genocided];
+        await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    }
     game.context.move = 0;
 }
 
@@ -9093,6 +9242,12 @@ async function dopray() {
         game.context.move = 0;
         return;
     }
+
+    if (!game.u.uconduct) game.u.uconduct = {};
+    const firstPrayer = !(game.u.uconduct.gnostic || 0);
+    game.u.uconduct.gnostic = (game.u.uconduct.gnostic || 0) + 1;
+    if (firstPrayer)
+        recordGameLogEvent('rejected atheism with a prayer');
 
     if (game._samuraiAltarPath) {
         for (const range of SAMURAI_ALTAR_PRAYER_TURN_RNG) rn2(range);
@@ -17380,7 +17535,15 @@ async function attackHostileMonster(monster, x, y) {
     exerciseAttribute(1, true); // exercise(A_DEX, TRUE)
     if (game.uwep) {
         if (!game.u.uconduct) game.u.uconduct = {};
+        const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
         game.u.uconduct.weaphit = (game.u.uconduct.weaphit || 0) + 1;
+        if (firstWeaponHit) {
+            const weaponName = game.uwep.name
+                || OBJECT_NAMES[game.uwep.otyp] || 'weapon';
+            recordGameLogEvent(
+                `hit with a wielded weapon (${weaponName}) for the first time`,
+            );
+        }
     }
     // C mondata.h:bigmonst() begins at MZ_LARGE (3), not MZ_HUGE (4).
     // Weapon large-damage dice therefore apply to tigers, horses, and other

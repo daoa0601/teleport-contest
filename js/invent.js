@@ -8,7 +8,9 @@ import {
 import { showChoiceWindow, showInventoryWindow } from './windows.js';
 import { nhgetch } from './input.js';
 import {
-    DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, SINK,
+    DOOR, D_BROKEN, D_ISOPEN, D_NODOOR,
+    FOUNTAIN, GRAVE, ICE, IRONBARS, LAVAPOOL, LAVAWALL,
+    MOAT, POOL, SINK, THRONE, TREE,
 } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import {
@@ -144,7 +146,12 @@ export function inventoryItemDescription(item) {
     // redundant adjective while blessed and cursed state remains visible.
     observeBucForNaming(item);
     const quantity = item.quantity ?? 1;
-    const holyWater = item.otyp === 322 && item.blessed;
+    // objnam.c names both non-neutral forms intrinsically; "blessed potion
+    // of holy water" and "cursed potion of unholy water" would duplicate
+    // the same beatitude state.
+    const holyWater = item.otyp === 322 && (item.blessed || item.cursed);
+    const waterName = item.blessed
+        ? 'potion of holy water' : 'potion of unholy water';
     const parts = [];
     if (item.empty) parts.push('empty');
     const buc = bucAdjectiveForName(item, holyWater);
@@ -171,14 +178,14 @@ export function inventoryItemDescription(item) {
     const typeKnown = item.typeKnown
         || game._knownObjectTypes?.has(item.otyp);
     const baseName = item.dknown === false ? unseenObjectNoun(item)
-        : holyWater ? 'potion of holy water'
+        : holyWater ? waterName
         : typeKnown && item.otyp === 296 ? identifiedTinName(item)
         : typeKnown ? knownObjectName(item)
         : callName ? `${item.name} called ${callName}`
         : item.name === 'object' && item.otyp === 314
             ? 'white potion' : item.name;
     let noun = quantity === 1 ? baseName
-        : holyWater ? 'potions of holy water'
+        : holyWater ? waterName.replace('potion ', 'potions ')
             : (item.plural || `${baseName}s`);
     let description = [...parts, noun].join(' ');
     if (quantity > 1) description = `${quantity} ${description}`;
@@ -431,6 +438,20 @@ export function dungeonFeatureSentenceAt(x, y) {
                     : 'closed door';
         return `There is a ${feature} here.`;
     }
+    const feature = new Map([
+        [FOUNTAIN, 'a fountain'],
+        [THRONE, 'an opulent throne'],
+        [LAVAPOOL, 'molten lava'],
+        [LAVAWALL, 'molten lava'],
+        [ICE, 'ice'],
+        [POOL, 'a pool of water'],
+        [MOAT, 'a pool of water'],
+        [SINK, 'a sink'],
+        [GRAVE, 'a grave'],
+        [TREE, 'a tree'],
+        [IRONBARS, 'a set of iron bars'],
+    ]).get(loc?.typ);
+    if (feature) return `There is ${feature} here.`;
     return stairwayFeatureSentenceAt(x, y);
 }
 
@@ -443,6 +464,9 @@ export async function dolook({
         && game.level?.upstair?.y === game.u?.uy;
     const stairway = stairwayAt(game.u?.ux, game.u?.uy);
     const loc = game.level?.at(game.u?.ux, game.u?.uy);
+    const dungeonFeature = dungeonFeatureSentenceAt(
+        game.u?.ux, game.u?.uy,
+    );
     if (game._knightCombatPath
         && objects.some(object => object.name === 'goblin corpse')) {
         game.context.move = 0;
@@ -468,13 +492,16 @@ export async function dolook({
     } else if (stairway) {
         await pline(stairwayFeatureSentenceAt(game.u?.ux, game.u?.uy));
     } else if (objects.length === 1 && describeObject) {
-        await pline(`You ${game.blind ? 'feel' : 'see'} here ${
+        const objectLine = `You ${game.blind ? 'feel' : 'see'} here ${
             describeObject(objects[0])
-        }.`);
-    } else if (loc?.typ === SINK) {
+        }.`;
+        await pline(dungeonFeature
+            ? `${dungeonFeature}  ${objectLine}` : objectLine);
+    } else if (dungeonFeature) {
         // invent.c:dfeature_at()/look_here(): terrain is reported before the
-        // empty-object fallback, using There("is ... here.").
-        await pline('There is a sink here.');
+        // empty-object fallback, using the feature's live singular/plural
+        // article policy.
+        await pline(dungeonFeature);
     } else if (!objects.length) {
         await pline('You see no objects here.');
     }

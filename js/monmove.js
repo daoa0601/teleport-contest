@@ -733,6 +733,12 @@ export function finishDeferredRangedProjectileHit(
         }
     }
     if (broken) {
+        // mthrowu.c:drop_throw()->delobj()->delobj_core() still consults
+        // obj_resists(obj, 0, 0) for an ordinary destroyed missile.  The
+        // zero-percent decision cannot save it, but its rn2(100) call is part
+        // of the source transaction before global movement allocation.
+        if (!objectResistsWithoutRoll(object))
+            recordRandom(random, action.calls, 100);
         object.where = 'gone';
         object.ox = object.oy = 0;
         clearThrownObject(state, object);

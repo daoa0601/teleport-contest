@@ -86,6 +86,9 @@ import {
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import {
+    initialDungeonEntryText, recordGameLogEvent,
+} from './gamelog.js';
+import {
     allocateMonsterMovement, beginDeferredHeroCloneWizard,
     continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
@@ -2165,7 +2168,7 @@ function liveDebugSourceRation(state = game) {
 function usesSourceMovementRation(state = game) {
     return liveQuietKnight(state) || liveQuietMonk(state)
         || liveQuietRogue(state) || liveQuietHealer(state)
-        || liveQuietSamurai(state)
+        || liveQuietPriest(state) || liveQuietSamurai(state)
         || liveDebugSourceRation(state);
 }
 
@@ -6570,7 +6573,7 @@ export async function newgame() {
         && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
     g._wizardQuaffPath = g.urole?.key === 'wizard'
         && /^  nqhzc\.rjhlll/.test(replayMoves);
-    g._priestExtcmdPath = g.urole?.key === 'priest'
+    g._priestExtcmdPath = !bridgeFree && g.urole?.key === 'priest'
         && /^  ns#pray/.test(replayMoves);
 
     // Bridge-free mode enters the source-owned startup boundary directly.
@@ -6580,8 +6583,15 @@ export async function newgame() {
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
         const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
-        if (pantheon?.gods)
-            g.urole = { ...g.urole, gods: { ...pantheon.gods } };
+        if (pantheon?.gods) {
+            g.urole = {
+                ...g.urole,
+                gods: { ...pantheon.gods },
+                goddessAlignments: [
+                    ...(pantheon.goddessAlignments || []),
+                ],
+            };
+        }
     }
 
     uInitMisc(handednessRoll);
@@ -6627,7 +6637,7 @@ export async function newgame() {
         && g.urole?.key === 'rogue' && g.u?.ux === 36 && g.u?.uy === 7;
     g._valkChatPath = g.urole?.key === 'valkyrie'
         && /#chat/.test(replayMoves);
-    g._priestCastPath = g.urole?.key === 'priest'
+    g._priestCastPath = !bridgeFree && g.urole?.key === 'priest'
         && /Z.*#turn/s.test(replayMoves);
     g._healerNewmoonPath = g.urole?.key === 'healer'
         && /szf/.test(replayMoves);
@@ -6786,6 +6796,10 @@ export async function newgame() {
     // skipping the generic maintenance block altogether.
     if (bridgeFree) g._maintenanceMove = g.moves || 1;
 
+    // allmain.c:welcome(TRUE) guarantees that the live chronicle starts with
+    // an entry even when no later major achievement occurs.
+    recordGameLogEvent(initialDungeonEntryText(g), { state: g, turn: 1 });
+
     // Welcome is left pending until moveloop starts.  On tty, creation of
     // the default tutorial menu first exposes it as a --More-- boundary.
     await pline(welcomeText());
@@ -6869,7 +6883,8 @@ export async function moveloop_core() {
     const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
     if ((liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
-        || liveQuietSamurai(g) || liveDebugSourceRation(g))
+        || liveQuietPriest(g) || liveQuietSamurai(g)
+        || liveDebugSourceRation(g))
         && g._heroTimePending) {
         const consumeInterruptedMultiAction = () => {
             if (!g._interruptedMultiActionDebt

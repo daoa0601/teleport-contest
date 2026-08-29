@@ -13,6 +13,7 @@ import { rn2 } from './rng.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { rebasePrayerAfterLifeSaving } from './pray.js';
 import { depth } from './hacklib.js';
+import { recordGameLogEvent } from './gamelog.js';
 import {
     ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME, isok,
 } from './const.js';
@@ -197,7 +198,10 @@ function conductState(state = game) {
 // after mondead(), so keep this mutation independently callable.
 export function recordHeroKillConduct(state = game) {
     const conduct = conductState(state);
+    const firstKill = !(conduct.killer || 0);
     conduct.killer = (conduct.killer || 0) + 1;
+    if (firstKill)
+        recordGameLogEvent('killed for the first time', { state });
 }
 
 // C xkilled()/monkilled() both update mvitals[].died; only hero kills break
@@ -227,7 +231,7 @@ async function promptDeathQuestion(message) {
     return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 
-function vanquishedLines() {
+export function vanquishedLines() {
     const entries = [...(game._vanquishedCounts?.values() || [])]
         .sort((a, b) => b.difficulty - a.difficulty || a.mnum - b.mnum);
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);

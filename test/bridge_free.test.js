@@ -246,3 +246,28 @@ test('bridge-free Rogue save and restore retain live scheduler state', async () 
         }
     });
 });
+
+test('bridge-free Priest owns prayer, projectiles, and command state', async () => {
+    await withBridgeFreeModeAsync(async () => {
+        for (const filename of [
+            'seed0501-priest-cast-read-turn.session.json',
+            'seed0106-priest-extcmd-sweep.session.json',
+        ]) {
+            const session = JSON.parse(fs.readFileSync(
+                new URL(`../sessions/${filename}`, import.meta.url),
+                'utf8',
+            )).segments[0];
+            const result = await runSegment({
+                ...session, storage: new Map(),
+            });
+
+            assertBoundedSessionParity(result, session);
+            assert.deepEqual(result.getBridgeUsageLedger(), {
+                bridgeFree: true,
+                totalHits: 0,
+                forbiddenHits: 0,
+                bridges: {},
+            }, filename);
+        }
+    });
+});

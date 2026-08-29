@@ -2,6 +2,7 @@
 // C refs: exper.c experience()/more_experienced(), mon.c xkilled().
 
 import { game } from './gstate.js';
+import { recordGameLogEvent } from './gamelog.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON,
 } from './monster_data.js';
@@ -20,8 +21,13 @@ export function newExperienceThreshold(level) {
 export function loseExperienceLevel(state = game) {
     const u = state.u;
     const oldLevel = u.ulevel ?? 1;
-    if (oldLevel > 1) u.ulevel = oldLevel - 1;
-    else u.uexp = 0;
+    if (oldLevel > 1) {
+        u.ulevel = oldLevel - 1;
+        recordGameLogEvent(`lost experience level ${oldLevel}`, { state });
+    } else {
+        u.uexp = 0;
+        recordGameLogEvent('lost all experience', { state });
+    }
 
     const level = u.ulevel ?? 1;
     const hpLoss = Number(u.uhpinc?.[level] || 0);
