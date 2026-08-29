@@ -35114,3 +35114,47 @@ screens/cursors, with empty compatibility ledgers for both.  The registry
 remains **partial**: these are public regression witnesses, and alternate
 pantheons, actors, projectile outcomes, option/history states, legacy bridge
 removal, and the scheduled sealed-corpus gate remain open.
+
+## 964. Artifact initialization is per-game role state, not static data
+
+~~~mermaid
+flowchart TD
+    Role["role_init selects role and initial alignment"] --> Init["init_artifacts resets existence and discovery"]
+    Static["33 compiled artilist entries"] --> Copy["copy per-game runtime artifact records"]
+    Init --> Copy
+    Copy --> Gift["retarget role gift alignments"]
+    Copy --> Excalibur{"Knight role?"}
+    Excalibur -->|yes| Keep["Excalibur retains Knight role"]
+    Excalibur -->|no| Clear["Excalibur role becomes unrestricted"]
+    Gift --> Quest["retarget selected quest artifact role and alignment"]
+    Keep --> Quest
+    Clear --> Quest
+    Quest --> UInit["u_init inventory and later artifact creation"]
+    Lua["Lua owns no artifact-table initialization"] -.-> Init
+~~~
+
+Pinned `artifact.c` places `init_artifacts()` after `role_init()` and dungeon
+initialization but before `u_init_misc()`.  The JavaScript source startup now
+copies the immutable artifact definitions into a per-game runtime table at
+that boundary, clears existence/discovery and base-type generation counts,
+then applies `hack_artifacts()`: role gift alignments follow the selected
+initial alignment, non-Knights release Excalibur's Knight restriction, and
+the selected quest artifact receives the live role/alignment.
+
+The audit exposed a separate data error.  `The Palantir of Westernesse` is
+inside the pinned `artilist.h` historical `#if 0`, but the JavaScript array had
+included it as artifact24.  That invented a 34th artifact and shifted the IDs
+of Staff of Aesculapius through Eye of the Aethiopica.  Removing the disabled
+entry restores the compiled 33-entry enum; all 13 role records now carry their
+quest-artifact name so retargeting is table-driven rather than a five-role
+special case.
+
+Compatibility classifiers are now independently protected by the mechanical
+bridge-free audit.  Every retained legacy `_...Path` selector must begin with
+`!bridgeFree`; empty `replayMoves`, an unlikely coordinate, or a particular
+option is no longer accepted as evidence that the branch is unreachable.
+`test/artifact_startup.test.js` passes all four bounded cases, and the existing
+bridge-free and Samurai skill controls remain green.  New-game artifact-table
+initialization is mechanically **implemented**; save/restore, unsupported
+artifact powers, remaining `role_init` state, and a sealed startup gate are
+separate open scopes.

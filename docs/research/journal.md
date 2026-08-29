@@ -93528,3 +93528,46 @@ do not run a full corpus, sealed evaluation, push, or publication until its
 scheduled audit gate authorizes one measurement.
 
 ---
+
+### [2026-08-29 13:21 EEST, journal block 3118] {#bridge-free #startup #artifacts #role-init #compatibility-gates #implementation #focused-regression #process-safety}
+
+**Witness and earliest structural gap:** after closing Priest, the ordered
+startup/object audit found two independent defects before selecting any new
+trace.  First, several retained `_...Path` classifiers were only false because
+bridge-free mode substituted an empty `replayMoves` string or happened not to
+match a public coordinate; Wizard bind, Tourist explore, and Ranger startup
+showed why that is not a structural guarantee.  Second, the ownership registry
+correctly marked `artifact.c:init_artifacts()/hack_artifacts()` absent: runtime
+artifact behavior existed, but new games did not reset or retarget an artifact
+table at all.
+
+**Source decision and implementation:** every known compatibility classifier
+now begins with `!bridgeFree`, and the mechanical audit enumerates those names
+so a new ungated assignment fails acceptance.  Startup now invokes a no-RNG
+artifact initializer after role/dungeon initialization and before hero
+attributes in both source and legacy modes.  It copies immutable definitions
+per game, resets existence/discovery/base-type counts, retargets role gift and
+quest artifact alignments, and releases Excalibur's Knight role for
+non-Knights.  All13 role records now supply quest-artifact identity.
+
+**Decisive table evidence and measured effect:** pinned `artilist.h` places
+`The Palantir of Westernesse` inside historical `#if 0`; JavaScript had treated
+it as artifact24, creating34 entries and shifting every later quest artifact
+ID.  Removing it restores the compiled33-entry enum.  The new bounded artifact
+file passes4/4 across enum identity, state reset, all-role quest retargeting,
+gift alignment, and Knight/non-Knight Excalibur controls.  The bridge-free file
+remains8/8, the mechanical audit passes108 files, and the focused seed0107
+Samurai screen control passes1/1.  Every verifier exited; no full suite or
+corpus was started.
+
+**Falsified hypotheses, limit, and next blocker:** static artifact constants
+were not sufficient new-game state, and the disabled Palantir was not a valid
+placeholder.  Empty replay metadata and coordinate non-matches are no longer
+accepted as bridge-free reachability proofs.  The narrow new-game artifact
+entry is now `implemented`, while artifact persistence/powers, remaining
+`role_init`, role-inventory strata, ordinary startup objects, Lua room fill,
+and the sealed gate remain separate.  Next inspect the first unowned
+startup-object constructor boundary without opening a sealed trace or
+optimizing public animation.  No push or publication ran.
+
+---

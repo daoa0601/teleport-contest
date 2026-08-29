@@ -6,14 +6,14 @@ Scope: Initial parity-critical ownership inventory; not yet exhaustive.
 
 | Implemented | Partial | Stubbed | Absent | Total |
 | ---: | ---: | ---: | ---: | ---: |
-| 1 | 10 | 0 | 1 | 12 |
+| 2 | 10 | 0 | 0 | 12 |
 
 ```mermaid
 flowchart LR
     n_runtime_entry["Runtime entry and segment lifecycle<br/>partial"]
     n_rng_core["Core and display RNG streams<br/>implemented"]
     n_startup_pre_mklev["Pre-mklev object, role, and dungeon initialization<br/>partial"]
-    n_startup_artifacts["New-game artifact initialization<br/>absent"]
+    n_startup_artifacts["New-game artifact initialization<br/>implemented"]
     n_startup_role_inventory["Role inventory, attributes, skills, and starting pet<br/>partial"]
     n_level_generation["C and Lua level construction<br/>partial"]
     n_turn_scheduler["Hero, monster, and global-turn scheduler<br/>partial"]
@@ -50,8 +50,8 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | Runtime entry and segment lifecycle | partial | js/jsmain.js<br/>js/allmain.js<br/>js/bridge_policy.js | top-level-fixtures<br/>session-shape.replayMoves | Save/restore, browser entry, and all role paths have not passed a sealed bridge-free gate. |
 | Core and display RNG streams | implemented | js/rng.js<br/>js/isaac64.js | seeded-replay.recorded-rnl | No open gap inside the live RNG wrapper scope; seeded replay helpers remain separately forbidden. |
-| Pre-mklev object, role, and dungeon initialization | partial | js/startup.js<br/>js/o_init.js<br/>js/dungeon.js | fastforward.pre-mklev | Artifact initialization and remaining role_init state are not yet owned at this boundary. |
-| New-game artifact initialization | absent | none | none | js/artifacts.js owns runtime artifact behavior but no JavaScript owner initializes the new-game artifact table. |
+| Pre-mklev object, role, and dungeon initialization | partial | js/startup.js<br/>js/o_init.js<br/>js/dungeon.js<br/>js/artifacts.js<br/>js/roles.js | fastforward.pre-mklev | Artifact initialization is source-owned; remaining role_init state, fresh option/race combinations, and a sealed startup gate are still open. |
+| New-game artifact initialization | implemented | js/artifacts.js<br/>js/startup.js<br/>js/allmain.js<br/>js/roles.js | none | No open gap inside the new-game init_artifacts/hack_artifacts scope; artifact save/restore and unsupported runtime powers are tracked outside this entry. |
 | Role inventory, attributes, skills, and starting pet | partial | js/u_init.js<br/>js/allmain.js | fastforward.post-mklev | Role-specific inventory branches and cross-role pet state have not passed a bridge-free stratified gate. |
 | C and Lua level construction | partial | js/mklev.js<br/>js/dungeon.js<br/>js/lua_des.js | fastforward.mineralize<br/>seeded room-fill compatibility paths | Special-level operations, ordinary room fill, startup objects, and unseen Lua variants remain incomplete. |
 | Hero, monster, and global-turn scheduler | partial | js/allmain.js<br/>js/monmove.js | fastforward.turn<br/>fastforward.ranger-turn<br/>scheduler.default-replay-gap<br/>seeded role replay modules | Samurai, all five represented Rogue carriers, and the two represented Priest carriers have public bridge-free actor-rich witnesses; broader unseen actor/terrain branches and a sealed gate remain open. |

@@ -47,29 +47,29 @@
         "luaFiles": ["dat/dungeon.lua"],
         "luaSymbols": ["dungeon definitions"]
       },
-      "javascriptOwners": ["js/startup.js", "js/o_init.js", "js/dungeon.js"],
+      "javascriptOwners": ["js/startup.js", "js/o_init.js", "js/dungeon.js", "js/artifacts.js", "js/roles.js"],
       "dependencies": ["rng-core", "startup-artifacts", "level-generation"],
       "bridgeIds": ["fastforward.pre-mklev"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: startup executes without importing the fast-forward boundary"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: startup executes without importing the fast-forward boundary and the mechanical audit proves every compatibility classifier is explicitly legacy-only", "test/artifact_startup.test.js: per-game artifact reset and all-role retargeting"],
       "lastSealedGate": null,
-      "openGap": "Artifact initialization and remaining role_init state are not yet owned at this boundary."
+      "openGap": "Artifact initialization is source-owned; remaining role_init state, fresh option/race combinations, and a sealed startup gate are still open."
     },
     {
       "id": "startup-artifacts",
       "label": "New-game artifact initialization",
-      "status": "absent",
+      "status": "implemented",
       "source": {
         "cFiles": ["src/artifact.c"],
         "cSymbols": ["init_artifacts", "hack_artifacts"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": [],
+      "javascriptOwners": ["js/artifacts.js", "js/startup.js", "js/allmain.js", "js/roles.js"],
       "dependencies": ["rng-core"],
       "bridgeIds": [],
-      "acceptanceWitnesses": [],
+      "acceptanceWitnesses": ["test/artifact_startup.test.js: exact 33-entry enum, reset existence/discovery state, role gift and quest retargeting for all 13 roles, and Knight Excalibur control"],
       "lastSealedGate": null,
-      "openGap": "js/artifacts.js owns runtime artifact behavior but no JavaScript owner initializes the new-game artifact table."
+      "openGap": "No open gap inside the new-game init_artifacts/hack_artifacts scope; artifact save/restore and unsupported runtime powers are tracked outside this entry."
     },
     {
       "id": "startup-role-inventory",
