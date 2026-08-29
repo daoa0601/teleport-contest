@@ -95832,3 +95832,65 @@ the monster-inventory `fig_transform()` attribution path before choosing it
 over the smallest owned-egg/taming branch.
 
 ---
+
+### [2026-08-29 20:32 EEST, journal block 3154] {#bridge-free #object-timers #fig-transform #monster-inventory #mpickobj #carry-obj-effects #carrier-attribution #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** following the dropped-floor owner,
+the next carrier audit entered `steal.c:mpickobj()` and
+`invent.c:carry_obj_effects()`. Native code replaces a viable cursed
+figurine's prior deadline before `add_to_minv()` links it, while JavaScript's
+ordinary floor pickup and deferred hero-theft routes directly appended the
+object and left its hero-inventory deadline unchanged. The callback then
+rejected `where == minvent` entirely. The earliest shared divergence was the
+acquisition boundary, before placement, familiar construction, carrier prose,
+or deletion.
+
+**Prediction portfolio and decisive evidence:** the carrier paths were kept
+separate from floor and hero inventory. A new monster acquisition must consume
+exactly one `rnd(9000)`, replace rather than duplicate the prior timer, and
+link only afterward. At callback time, a blocked `enexto()` must retain that
+link through a relative `rnd(5000)` retry. A successful exact callback must
+retain the figurine through presentation, attribute a visible carrier via an
+indefinite possessive pack name, use `empty water` for an unseen carrier in a
+pool and `thin air` otherwise, suppress overdue prose, and unlink only after
+the staged line. C inspection also falsified sensory attribution: this branch
+uses optical `canseemon()`, not the broader telepathic projection boundary.
+
+**Decision and implementation:** commit `67022df` adds a shared
+`addObjectToMonsterInventory()` owner and routes ordinary monster floor pickup
+plus deferred hero theft through it. The boundary attaches carrying effects
+before linking, aliases the live `minvent`/`inventory` chain, records carrier
+coordinates, and has a symmetric unlink path. `FIG_TRANSFORM` now accepts a
+live monster carrier, searches around its current position, preserves the
+carrier on placement retry, stages source-shaped visible/invisible/pool and
+overdue presentation, then deletes from the actual carrier after the line.
+No fixture, fast-forward, replay helper, or `replayMoves` control flow was
+added.
+
+**Measured effect and regression:** `test/figurine_transform.test.js` expands
+from **13/13 to 18/18**. The new cases prove timer replacement before linkage,
+visible pack attribution, invisible thin-air and pool-water attribution,
+overdue silence, retained carrier state through presentation, post-message
+unlink, and blocked placement retry. The bounded bridge-policy, egg, figurine,
+glob, lamp, Priest-startup, ordinary-room, and themed-room gate passes
+**111/111** with zero bridge hits. The mechanical audit remains clean at 118
+files, 15 guarded modules, and 19 fixture modules. Both test commands were
+guarded, singular, owned to normal exit, and no duplicate verifier was
+started.
+
+**Falsified hypotheses, limit, and next blocker:** a figurine transferred from
+the hero does not retain its old deadline; monster attribution does not use
+telepathy; successful construction does not unlink before its message; and a
+blocked callback does not detach from its carrier. Conversely, the shared
+boundary currently covers ordinary floor pickup and deferred theft, not every
+manual minvent insertion. Generated inventory, thrown/kicked acquisition,
+swallowing, special-level ownership, polymorph transfer, shop paths,
+merge/free identity, light and knowledge side effects, named/long-worm/
+See-invisible attribution, special familiar families, cached-level timing, and
+a sealed stratum remain open. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should inventory live startup-generated minvent
+insertions and choose the smallest constructor route that can replace a manual
+link with this source-owned acquisition boundary.
+
+---

@@ -36487,3 +36487,56 @@ immediate pet weapon setup, unique/extinct limits, liquid death, throwing and
 forced-drop timer preservation, inactive cached-level timing, and a sealed
 stratum remain open. Monster inventory remains a separate carrier rather than
 an extension of floor attribution.
+
+## 986. Monster inventory reattaches figurine timers before linking
+
+~~~mermaid
+flowchart TD
+    Acquire["monster acquires a cursed figurine"] --> Effects["carry_obj_effects before add_to_minv"]
+    Effects --> Replace["stop old FIG_TRANSFORM; attach moves plus rnd(9000) plus 200"]
+    Replace --> Link["link same identity to minvent and carrier"]
+    Link --> Due["claim FIG_TRANSFORM at callback turn"]
+    Due --> Locate["read carrier coordinates; run enexto"]
+    Locate -->|no legal coordinate| Retry["rnd(5000) retry; retain minvent identity and carrier"]
+    Locate -->|coordinate found| Familiar["make_familiar at selected square"]
+    Familiar --> Made{"actor constructed?"}
+    Made -->|no| Delete["unlink and free figurine"]
+    Made -->|yes| Exact{"destination visible and callback exact?"}
+    Exact -->|no| Delete
+    Exact -->|yes, carrier visible| Pack["drop out of a monster's pack"]
+    Exact -->|yes, carrier unseen in pool| Water["drop out of empty water"]
+    Exact -->|yes, other unseen carrier| Air["drop out of thin air"]
+    Pack --> Delete
+    Water --> Delete
+    Air --> Delete
+    Lua["Lua owns no monster acquisition or figurine callback"] -.-> Acquire
+~~~
+
+Native `mpickobj()` deliberately runs `carry_obj_effects()` before
+`add_to_minv()`: the carrying effect replaces any earlier figurine deadline,
+while the later link may merge or free ordinary objects. JavaScript now has a
+shared monster-acquisition boundary with that ordering. Ordinary floor pickup
+and deferred theft from the hero call it instead of constructing inventory
+links independently. The current figurine family does not merge, so its exact
+identity gains the new deadline and then records the live carrier.
+
+At callback time, the carrier is resolved from the current monster inventory,
+not from a replay move or cached trace. `enexto()` uses the monster's current
+coordinate. Total placement failure schedules one relative `rnd(5000)` retry
+and keeps both the object and carrier link. Successful construction keeps the
+figurine linked until any exact-due visible presentation completes, then
+unlinks it and updates the carrier's inventory state. Attribution follows
+`canseemon()` independently of destination visibility: a visible ordinary
+leocrotta supplies its indefinite possessive pack name, while an invisible
+carrier supplies `empty water` on a pool square and `thin air` elsewhere.
+Overdue callbacks construct and delete without that line.
+
+This owner is mechanically **partial**. Its direct witnesses use an ordinary
+wumpus figurine and leocrotta carrier. Generated monster inventory, thrown or
+kicked catches, swallowing, special-level inventory, polymorph transfer,
+shopkeeper acquisition, merge/free identity behavior, light snuffing,
+knowledge loss, named and long-worm attribution, See-invisible, alternate
+locomotion, hidden spawned forms, special familiar state, inactive cached-level
+timing, and a sealed stratum remain open. Those other manual minvent insertions
+must cross the shared boundary before monster acquisition can be marked
+implemented.
