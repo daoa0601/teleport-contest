@@ -104,7 +104,7 @@ function ordinaryEligibility({
 
     // These branches change flight, billing, object lifecycle, or naming.
     // Reject them before splitobj()/freeinv() and before any throw RNG.
-    if (item.cursed || item.greased || item.lamplit
+    if (item.greased || item.lamplit
         || item.oartifact || item.artifact || equipped(state, item)
         || containsUnpaidObject(item) || activeTimerCount(item) > 0
         || (item.contents?.length ?? 0) > 0
@@ -181,6 +181,14 @@ export async function resolveMapPotionThrow({
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
+
+    // dothrow.c:throwit() consumes the cursed/greased slip gate after
+    // splitobj()/freeinv() and before bhit() flight.  An ungreased potion is
+    // neither launcher ammunition nor throwing_weapon(), so even a zero gate
+    // sets slipok false and cannot reroll direction.  Greased potions remain
+    // excluded by ordinaryEligibility() because they do reroll two axes.
+    if (thrown.cursed && (dx || dy)) rn2(7);
+
     await captureFlight?.(thrown, eligible.path);
 
     if (eligible.contact) {

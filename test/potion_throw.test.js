@@ -405,6 +405,63 @@ test('map invisibility contact hides the target and records its remembered squar
         assertNoBridgeUse();
     });
 
+test('cursed map potion pays a zero slip gate without rerouting its flight',
+    async () => {
+        const monster = freshMapPotionState(2);
+        monster.minvis = 1;
+        monster.perminvis = 1;
+        monster.invis_blkd = 0;
+        game.level.flags.hero_memory = true;
+        game.level.at(monster.mx, monster.my).remembered_glyph = {
+            ch: 'I', color: 0, decgfx: false, kind: 'invisible',
+        };
+        const potion = addKnownPotion(POT_INVISIBILITY);
+        potion.cursed = true;
+        potion.blessed = false;
+
+        initRng(7n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=0', 'rnd(20)=5', 'rnd(25)=16',
+            'rn2(7)=5', 'rn2(5)=0', 'rn2(9)=2',
+        ]);
+        assert.equal(monster.mhp, 12);
+        assert.equal(monster.perminvis, 0);
+        assert.equal(monster.minvis, 0);
+        assert.notEqual(
+            game.level.at(monster.mx, monster.my).remembered_glyph?.kind,
+            'invisible',
+        );
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('greased map potion remains fail-loud before split or throw RNG',
+    async () => {
+        freshMapPotionState(2);
+        const potion = addKnownPotion(POT_INVISIBILITY);
+        potion.greased = true;
+        potion.quan = potion.quantity = 2;
+        potion.owt *= 2;
+
+        initRng(7n);
+        enableRngLog();
+        await assert.rejects(
+            throwEast(potion),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(potion.quan, 2);
+        assert.equal(potion.quantity, 2);
+        assert.equal(potion.where, 'inventory');
+        assert.equal(floorObjects().length, 0);
+    });
+
 test('unsupported oil map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
     const potion = addKnownPotion(POT_OIL);
