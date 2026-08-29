@@ -96445,3 +96445,97 @@ head-linked `mpickobj()->relobj()` order, then widen death only with direct
 object-identity and pickup-order witnesses.
 
 ---
+
+### [2026-08-29 22:58 EEST, journal block 3163] {#bridge-free #monster-inventory #minvent #add-to-minv #relobj #swallowed-throw #source-order #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3162 left pre-existing
+engulfer inventory as the next death blocker. The first direct witness linked
+two unmergeable identities through the shared JavaScript owner and expected
+C's new-head chain; JavaScript instead returned chronological acquisition
+order. Two live killing-projectile witnesses then used an engulfer carrying
+either an ordinary scroll or a compatible dart stack; both stopped at
+`throw.swallowed-weapon-unsupported`. The discriminating set was red **0/3**.
+The critical-debugging portfolio compared three mechanisms: reorder only the
+death path, retain chronological arrays plus parallel source-order metadata,
+or correct the shared representation. The first two would preserve a global
+ownership defect and create another compatibility carrier, so the shared
+source representation was selected.
+
+**Prediction and decisive C evidence:** `mkobj.c:add_to_minv()` first scans
+`mon->minvent` for a compatible stack. If the incoming identity survives, it
+sets `obj->nobj` to the old head and assigns `mon->minvent = obj`; acquisition
+is therefore head insertion. `steal.c:mpickobj()` repairs thrown provenance
+and applies carrying effects before that boundary. `steal.c:relobj()` then
+repeatedly removes the current head and `mdrop_obj()` places each released
+identity at the floor head. The predicted invariant is one JavaScript array
+ordered from newest C head to oldest tail, forward source scans, forward
+release, and a reversed same-square floor chain. A killing dart compatible
+with a prior `LOST_STOLEN` stack must disappear into that survivor before
+detach; two unmergeable identities must both release in the derived order.
+
+**Decision and implementation:** `monster_inventory.js` now makes head
+insertion the default for both effectful acquisition and direct linkage.
+Generated, special-level, pet, theft, covetous, clone, and swallowed producers
+therefore share one representation. Death, ray-death, and melt-death release
+walk that chain forward. `find_misc()` and the represented offensive-item
+slice were corrected to preserve C's head-to-tail scan and last-viable-type
+selection; same-type sleeping-potion selection keeps the first head identity.
+The swallowed ordinary-death eligibility boundary now admits only prior
+ordinary weapon or scroll identities with no worn, wielded, ready, lit,
+timed, unpaid, artifact, or contained state. No seed, replay move, fixture,
+fast-forward helper, or trace classifier participates in the branch.
+
+**False-acceptance correction:** several internal scheduler assertions had
+encoded the JavaScript chronological bridge rather than native structure.
+They were not valid ownership evidence even though their screens and RNG were
+exact. Cleric, mummy, centaur, ogre, Wizard-clone, summoned-nasty, and Priest
+resident/roamer expectations now assert the source head-to-tail chains. The
+centaur is decisive: C creates its crossbow before its bolt stack, so repeated
+head insertion yields `[bolt, crossbow]`, not the former chronological
+`[crossbow, bolt]`. No production behavior was changed merely to preserve
+those stale assertions.
+
+**Measured effect and process custody:** the discriminating set moved from
+red **0/3** to green **3/3**. The complete acquisition plus swallowed files
+pass **32/32**; nine constructor, misc/offensive, clone, summon, and Priest
+source-turn controls pass **9/9** with their exact RNG/screens; and six cold
+ray, Wizard inventory/death-ray, killing-arrow, melee-kill, and melt-death
+controls pass **6/6**. Every `node --test` invocation was preceded by the
+live-process guard, ran singularly, exited normally, and left no yielded
+process. No full Contest suite, engine/public corpus, sealed-trace inspection,
+score, push, publication, official measurement, or animation work ran.
+
+**Falsified hypotheses, limit, and next blocker:** JavaScript arrays cannot be
+chronological while claiming direct `minvent` ownership; death-only reverse
+iteration does not repair source-order selection in `muse` or weapon paths;
+parallel order metadata would duplicate the same state; and passing public
+screens does not validate internal ownership order. The new ordinary death
+slice does not admit worn, lit, timed, billed, artifact, contained, food,
+potion, gold, gem, or other class-specific release effects, nor special
+deaths, shops, traps, punishment, or alternate pickup capacity. The next
+portfolio should compare one coherent special-carried-effect release slice
+against the first shared `potionhit()` owner, using fresh bridge-free
+witnesses rather than public-session exactness.
+
+---
+
+### [2026-08-29 23:03 EEST, journal block 3164] {#bridge-free #monster-inventory #acceptance-gate #ownership-registry #audit #commit #process-safety}
+
+**Final focused gate and publication boundary:** commit `f8ddc66` records the
+source-head monster-inventory implementation and its direct/source-turn
+witnesses. After that exact code state, `test/bridge_free.test.js` passed
+**8/8**: replayMoves poisoning, known replay-boundary guards, the mechanical
+source policy, a quiet live turn, Samurai, three Rogue carriers including
+save/restore, and Priest all remained live with zero forbidden bridge hits.
+`npm run audit:bridge-free` independently reported **122 audited files, 15
+guarded modules, and 19 fixture modules**. The generated ownership view was
+rebuilt from the JSON registry and `npm run ownership:check` passed.
+
+**Decision and next blocker:** this closes the focused implementation slice,
+not the generalization program. No full Contest suite, engine/public corpus,
+sealed-trace inspection, score, push, publication, official measurement, or
+animation work ran. The branch remains inside the scheduled-gate rule; the
+next source slice remains the special-carried-effect versus `potionhit()`
+portfolio named in block 3163.
+
+---

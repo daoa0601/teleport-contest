@@ -13129,7 +13129,7 @@ sequenceDiagram
     participant Wake as wakeup/growl
     participant Scan as monster scan
     participant Theft as AD_SITM/steal
-    participant Inv as chronological JS minvent
+    participant Inv as source-ordered JS minvent
     participant Tty as tty
 
     Hero->>Tty: hit + wake line
@@ -13138,15 +13138,16 @@ sequenceDiagram
     Wake->>Scan: leave combined line pending
     Scan->>Theft: nymph d(0,0), weighted selection
     Theft->>Tty: removal/theft/no-teleport lines
-    Theft->>Inv: append newly stolen object
-    Inv->>Inv: death relobj walks backward
+    Theft->>Inv: head-link newly stolen object
+    Inv->>Inv: death relobj walks head-first
     Inv->>Tty: corpse, older inventory, newest stolen object
 ```
 
-JS monster inventory is chronological; C's linked `minvent` is newest-first.
-Acquisition therefore appends in JS, and death release traverses backward
-before floor insertion.  Floor menus are only a projection of that released
-object graph.
+JS monster inventory now mirrors C's linked `minvent` from newest head to
+oldest tail.  Acquisition head-links in both runtimes, and death release walks
+that representation forward.  Because each released object is inserted at
+the floor head, the resulting same-square pile is the reverse of the carried
+chain.  Floor menus remain a projection of that released object graph.
 
 ## 379. Natural blindness and fire breath are resumable monster transactions
 
@@ -24407,8 +24408,9 @@ Inventory search is an actor phase, not a movement-candidate concern.
 Because C traverses its newest-first object chain while retaining the last
 viable miscellaneous item, a newer bullwhip can consume its one-in-five
 disarm probe even when an older potion of invisibility ultimately wins and
-uses the whole action.  JavaScript's chronological array must reproduce both
-the reverse scan's observable RNG order and the source's final selection.
+uses the whole action.  JavaScript's source-ordered array therefore scans
+forward: this preserves both the observable RNG order and the source's final
+selection.
 Seed0014 input615 first pins this boundary for bugbear 395: the actor carries
 invisibility potion 305, agate 459, and bullwhip 82; native consumes the
 bullwhip `rn2(5)` and then quaffs the potion before weapon readiness or
@@ -36980,12 +36982,64 @@ already disposed of, so neither missile mulching nor `passive_obj()` runs.
 
 Potentially fatal rolls are classified before `freeinv()`, damage RNG, or HP
 mutation.  The live owner currently admits only an ordinary hostile,
-nonunique, nonshifting engulfer with empty prior inventory on an untrapped
-`ROOM`, outside shop, punishment, steed, life-saving, explosion, and special
-death state.  A worn monster life-saving amulet proves the negative boundary:
-it reaches `throw.swallowed-weapon-unsupported` with the hero object still in
-inventory and zero RNG.  This is mechanically **partial**.  Pre-existing
-monster inventory and stack order, special carried effects, life-saving and
-vampire revival, unique or role monsters, shops, traps and other terrain,
-punishment, alternate pickup/capacity variants, and a sealed stratum remain
-explicitly open.  Lua owns no part of this runtime death or arrival path.
+nonunique, nonshifting engulfer with ordinary non-worn weapon or scroll
+inventory on an untrapped `ROOM`, outside shop, punishment, steed,
+life-saving, explosion, and special death state.  It supports both distinct
+pre-existing identities and compatible projectile-stack absorption.  A worn
+monster life-saving amulet proves the negative boundary: it reaches
+`throw.swallowed-weapon-unsupported` with the hero object still in inventory
+and zero RNG.  This is mechanically **partial**.  Special carried effects,
+other object classes, life-saving and vampire revival, unique or role
+monsters, shops, traps and other terrain, punishment, alternate
+pickup/capacity variants, and a sealed stratum remain explicitly open.  Lua
+owns no part of this runtime death or arrival path.
+
+## 995. Monster inventory is one source-ordered ownership chain
+
+```mermaid
+sequenceDiagram
+    participant Producer as makemon/mpickobj/direct link
+    participant Add as carry_obj_effects/add_to_minv
+    participant Chain as JS minvent head-to-tail
+    participant Consumer as weapon/muse/equipment scans
+    participant Rel as relobj/mdrop_obj
+    participant Floor as same-square floor chain
+
+    Producer->>Add: acquire live object identity
+    Add->>Add: merge with first compatible head-first identity
+    alt incoming identity survives
+        Add->>Chain: insert at index 0, matching obj->nobj = minvent
+    else compatible stack absorbs it
+        Add->>Chain: keep survivor in its existing source position
+    end
+    Chain->>Consumer: scan index 0 to tail in C traversal order
+    Chain->>Rel: remove index 0 repeatedly
+    Rel->>Floor: insert each released identity at floor head
+    Note over Chain,Floor: floor order reverses the carried chain
+```
+
+`mkobj.c:add_to_minv()` first scans the linked inventory for a compatible
+stack.  If no merge occurs, it assigns the old head to `obj->nobj` and makes
+the incoming identity the new head.  JavaScript arrays now encode that exact
+chain: index zero is C's current `minvent`, not the oldest acquisition.
+Generated inventory, special-level creation, pet pickup, theft, covetous
+pickup, clone construction, and swallowed acquisition all cross the same
+head-link boundary.
+
+Order-sensitive consumers use the same representation directly.  Weapon and
+equipment selection retain the first matching identity in source traversal
+order.  `find_misc()` and the represented `find_offensive()` slice scan from
+the head while retaining later viable types, matching C's last-viable policy.
+`relobj()` repeatedly removes the head; the floor insertion reverses that
+chain without a second inventory-order convention in JavaScript.
+
+Three witnesses distinguish this model from the former chronological bridge:
+two direct unmerged acquisitions must produce `[newest, oldest]`; a killing
+swallowed projectile with a prior scroll must release and autopick the
+source-derived floor order; and a compatible prior dart stack must absorb the
+killing dart before the survivor is released.  Existing cleric, centaur,
+ogre, Wizard-clone, summon, and Priest constructors now assert the actual
+source chain rather than accepting chronological arrays.  The subsystem is
+still mechanically **partial**: contained, worn, timed, lit, billed, artifact,
+migrating, polymorph-transfer, and other special release effects remain
+separate owners, and no sealed gate has run.
