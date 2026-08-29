@@ -95494,3 +95494,79 @@ and determine whether a complete ordinary floor or carried familiar path is
 now smaller than one of the remaining egg/glob carrier gaps.
 
 ---
+
+### [2026-08-29 19:50 EEST, journal block 3149] {#bridge-free #object-timers #fig-transform #carry-obj-effects #figurine #make-familiar #initedog #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after ordinary floor egg and glob
+callbacks, `FIG_TRANSFORM` was the last wholly absent enumerated object-timer
+kind. Fresh floor figurines correctly had no timer, which initially obscured
+the real entry boundary. Native `invent.c:carry_obj_effects()` attaches the
+timer only after a cursed typed figurine enters hero or monster inventory and
+only when neither its adult nor its egg-family younger form is genocided. The
+earliest divergence was therefore carried-object linkage: JavaScript pickup
+and general inventory insertion retained the figurine but never called
+`attach_fig_transform_timeout()`.
+
+**Prediction portfolio and decisive evidence:** four distinct carriers were
+kept separate. A floor figurine can only transform if it retained a timer from
+earlier carrying and uses its own square. Monster inventory owns carrier
+visibility and pack attribution. Blocked carried placement consumes
+`rnd(5000)` and retries without transforming. The ordinary hero-inventory
+family uses `enexto()` around the hero, `make_familiar()`, BUC-sensitive
+disposition, sighted or tactile pack prose, and post-message object deletion.
+Within that family, special locomotion, named or invisible actors, mimics,
+hiders, minions, shapechangers, weaponed pets, liquid death, and unique/extinct
+limits remain non-equivalent. Source inspection selected the ordinary walking,
+weaponless, nonshifting, nonminion family because its actor and `initedog()`
+state already have live JavaScript owners and can be completed without
+approximating those presentation and lifecycle branches.
+
+**Decision and implementation:** commit `fd44334` adds saveable
+`FIG_TRANSFORM` state and a source-ordered attachment helper. General/startup
+inventory insertion and live floor pickup now set `OBJ_INVENT`, remove a prior
+figurine deadline, then attach at `moves + rnd(9000) + 200` only for a viable
+cursed figurine. The claimed ordinary callback runs three shuffled adjacent
+rings, calls `makemon()` at the chosen coordinate with `MM_EDOG`,
+`MM_IGNOREWATER`, `NO_MINVENT`, `MM_NOMSG`, and figurine gender, but explicitly
+does not run the unrelated hero-square birth initialization. Only after birth
+does it consume `rn2(10)`. Outcome zero initializes domestic/non-domestic
+tameness, peacefulness, conduct, Charisma apport, hunger, goal, and complete
+simple `edog` history; outcome one refrains from taming while preserving the
+species/alignment attitude chosen by `makemon()`; outcome two forces hostility.
+The actor is awake and repainted before sighted or blind pack prose, while the
+figurine remains in inventory until tty accepts that line; finalization then
+deletes it.
+
+**Measured effect, correction, and regression:** the new witness file passes
+**6/6**. It covers viable cursed versus uncursed/genocided attachment, exact
+deadline arithmetic, a male wumpus birth, hostile outcome two, non-domestic
+tame outcome zero with `mtame == 5` and full `edog`, outcome one retaining the
+initial hostile attitude, exact sighted prose, overdue blind tactile prose, and
+shapechanger rejection before transform RNG or actor mutation. The first run
+passed five cases and failed only the rejection label: the fixture used monster
+index 329 as a chameleon, but the generated table identifies 329 as a
+salamander, so the implementation correctly reported nonstandard locomotion.
+Index 327 is the chameleon; correcting the fixture made the exact rerun pass
+**6/6**. The bounded combined bridge-policy, egg, figurine, glob, lamp, Priest-
+startup, ordinary-room, and themed-room gate passes **93/93** with zero bridge
+hits. The mechanical audit reports 117 files, 15 guarded modules, and 19
+fixture modules with `ok: true`. Each process was guarded, singular, and owned
+until exit.
+
+**Falsified hypotheses, limit, and next blocker:** fresh floor construction is
+not the transform-timer entry; the `rn2(10) == 1` outcome does not force a
+peaceful actor but merely skips taming; an overdue carried transform is not
+silent; and figurine deletion must not precede pack prose. Reaching all seven
+enumerated object callback kinds is not complete callback coverage. Floor and
+monster-inventory figurines, blocked-location retry, named and special-
+locomotion prose, invisibility/mimic/hiding, minion/shapechanger/weaponed pet
+state, unique/extinct limits, liquid death, manual application, timer removal
+and reattachment across every inventory transition, broader save relocation,
+and a sealed stratum remain open. Egg and glob carrier gaps also remain. No
+full suite, public corpus, sealed-trace inspection, score, push, publication,
+official measurement, or animation work ran. The next portfolio should compare
+blocked carried-figurine retry against ordinary inventory glob shrink and
+ordinary carried-egg hatching, prioritizing the slice with the strongest live
+turn reachability.
+
+---

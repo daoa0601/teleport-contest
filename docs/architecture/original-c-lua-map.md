@@ -36217,3 +36217,68 @@ have different chains. Glob absorption also combines mass, eating state, age,
 and two timer remainders. Those branches, save relocation, inactive-level
 breadth, and a sealed stratum remain open and fail loudly rather than inheriting
 the ordinary floor result.
+
+## 981. Cursed carried figurines own timer attachment and familiar birth
+
+~~~mermaid
+flowchart TD
+    Carry["addinv or live pickup links figurine into hero inventory"] --> Eligible{"cursed, typed, and egg-family species not genocided?"}
+    Eligible -->|no| Dormant["no new FIG_TRANSFORM timer"]
+    Eligible -->|yes| Stop["stop an earlier transform timer"]
+    Stop --> Attach["attach at moves plus rnd(9000) plus 200"]
+    Attach --> Claim["run_timers claims FIG_TRANSFORM"]
+    Claim --> Carrier{"ordinary supported hero-inventory familiar?"}
+    Carrier -->|no| Reject["fail loud before transform RNG or actor mutation"]
+    Carrier -->|yes| Adjacent["enexto: shuffled rings around hero"]
+    Adjacent --> Birth["makemon at chosen coordinate with EDOG, IGNOREWATER, NO_MINVENT, NOMSG, and figurine gender"]
+    Birth --> Chance["rn2(10); 0 tame, 1 no-tame, 2 hostile; larger values map through current BUC"]
+    Chance -->|tame| Dog["initedog: mtame 10 or 5, peaceful, conduct, hunger, apport, goal and history"]
+    Chance -->|no-tame| Preserve["retain makemon species and alignment attitude"]
+    Chance -->|hostile| Angry["clear peaceful state"]
+    Dog --> Awake["clear sleeping and repaint newborn"]
+    Preserve --> Awake
+    Angry --> Awake
+    Awake --> Sight{"hero blind?"}
+    Sight -->|no| See["see named species drop out of pack"]
+    Sight -->|yes| Feel["feel something drop from pack"]
+    See --> Delete["after tty boundary, remove and free figurine"]
+    Feel --> Delete
+~~~
+
+Spontaneous transformation begins at inventory linkage, not at figurine
+construction. `carry_obj_effects()` attaches a timer only for a cursed typed
+figurine whose adult and corresponding younger form are not genocided.
+`attach_fig_transform_timeout()` first removes an earlier deadline, then
+chooses `rnd(9000) + 200`. JavaScript now runs that transaction for ordinary
+hero-inventory insertion through startup/general inventory linking and live
+floor pickup, retaining one saveable timer on the carried identity.
+
+At expiry, the ordinary carried owner finds an adjacent source-valid square,
+then asks `makemon()` to create the figurine species at that already-selected
+coordinate. Passing the hero as the `enexto()` center must not imply that
+`makemon()` was called on the hero square, so this path explicitly suppresses
+the unrelated requested-by-hero birth state. Figurine gender enters the birth
+flags, initial inventory and birth prose are suppressed, and `rn2(10)` runs
+only after actor construction. Outcome zero runs the complete simple
+`initedog()` state: domestic versus non-domestic tameness, peacefulness,
+conduct, Charisma-derived apport, hunger deadline, goal sentinel, and pet
+history. Outcome one deliberately refrains from taming without overwriting the
+attitude chosen by `makemon()`; outcome two makes the newborn hostile. This
+counterintuitive distinction is source behavior, not a generic
+peaceful/hostile relabeling.
+
+The newborn exists, is awake, and has been repainted before pack prose. A
+sighted hero sees an ordinary species drop out; a blind hero feels something
+drop. Inventory presentation is not suppressed merely because the timer is
+overdue. Only after tty accepts that line is the figurine removed from the
+inventory and freed. Direct witnesses protect all three disposition branches,
+male gender, exact and overdue presentation, object survival at the suspension
+boundary, final deletion, and non-domestic pet state.
+
+This owner is mechanically **partial**. Floor and monster-inventory carriers,
+blocked-location `rnd(5000)` retry, named familiars, flyers/floaters/slithy or
+amorphous locomotion, immobile and limbless forms, invisibility, mimics,
+hiding, minions, shapechangers, weaponed pets, unique/extinct limits, liquid
+death, manual application, timer cancellation on inventory exit, unrepresented
+inventory insertion routes, and a sealed stratum remain open. Each is rejected
+before transformation rather than borrowing the ordinary carried result.
