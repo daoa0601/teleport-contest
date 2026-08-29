@@ -101,7 +101,9 @@ import {
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
 } from './figurine.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import {
+    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+} from './monster_inventory.js';
 import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
@@ -875,8 +877,11 @@ function randomMonsterRecord(mnum, x, y) {
     return monster;
 }
 
-function initializeRandomMonsterInventory(monster) {
+export function initializeRandomMonsterInventory(monster) {
     const inventory = monster.minvent || monster.inventory || [];
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
     const monsterFlags2 = MONSTER_FLAGS2[monster?.mnum] || 0;
     const addObject = otyp => {
         if (!otyp) return null;
@@ -893,8 +898,7 @@ function initializeRandomMonsterInventory(monster) {
             else if (object.oclass === 3 && (object.spe ?? 0) < 0)
                 object.spe = 0;
         }
-        inventory.push(object);
-        return object;
+        return addObjectToMonsterInventory(monster, object, game);
     };
     const initThrow = (otyp, quantityRange) => {
         const object = addObject(otyp);
@@ -1039,7 +1043,7 @@ function initializeRandomMonsterInventory(monster) {
             stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
             box.contents = [cat];
-            inventory.push(box);
+            addObjectToMonsterInventory(monster, box, game);
         }
     }
 
@@ -1047,10 +1051,11 @@ function initializeRandomMonsterInventory(monster) {
     // the shared greedy-species gate below skip without another rn2(5).
     if (MONSTER_SYMBOL[monster?.mnum] === 12) {
         const amount = d(level_difficulty(), 30);
-        const gold = addObject(GOLD_PIECE);
+        const gold = mksobj(GOLD_PIECE, false, false);
         gold.quan = amount;
         gold.quantity = amount;
         gold.owt = Math.max(1, Math.trunc((amount + 50) / 100));
+        linkObjectToMonsterInventory(monster, gold);
     }
 
     // makemon.c:m_initinv(), S_NYMPH.  These independent class gates are
@@ -1094,12 +1099,10 @@ function initializeRandomMonsterInventory(monster) {
         gold.quan = amount;
         gold.quantity = amount;
         gold.owt = Math.max(1, Math.trunc((amount + 50) / 100));
-        inventory.push(gold);
+        linkObjectToMonsterInventory(monster, gold);
     }
 
     rn2(100);
-    monster.minvent = inventory;
-    monster.inventory = inventory;
     if (inventory.some(object => object.oclass === 2))
         monster.weaponCheck = NEED_WEAPON;
 }

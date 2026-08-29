@@ -101,6 +101,9 @@ import { engravingAt, makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
+import {
+    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+} from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
 import { roomForIndex } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
@@ -2451,7 +2454,14 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // creation-order slot now so enexto() sees the occupied center and the
     // final JS array retains primary-then-members order.
     if (!game.level.monsters) game.level.monsters = [];
-    const pendingMonster = { mnum: mndx, mx: x, my: y, mhp: hp };
+    const monsterInventory = [];
+    const pendingMonster = {
+        m_id: monsterId,
+        mnum: mndx, mx: x, my: y, mhp: hp,
+        minvent: monsterInventory,
+        inventory: monsterInventory,
+        hasInventory: false,
+    };
     const monsterIndex = game.level.monsters.push(pendingMonster) - 1;
 
     let generatedGhostName = null;
@@ -2535,7 +2545,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
-    const monsterInventory = [];
     const mongets = otyp => {
         const object = mksobj(otyp, true, false);
         // makemon.c:mongets(): demons never retain blessed objects; a raw
@@ -2544,7 +2553,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             object.blessed = false;
             object.cursed = true;
         }
-        monsterInventory.push(object);
+        addObjectToMonsterInventory(pendingMonster, object, game);
         hasMonsterInventory = true;
         return object;
     };
@@ -2552,7 +2561,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         const gold = mksobj(GOLD_PIECE, false, false);
         gold.quan = amount;
         gold.quantity = amount;
-        monsterInventory.push(gold);
+        linkObjectToMonsterInventory(pendingMonster, gold);
         hasMonsterInventory = true;
         return gold;
     };
@@ -2662,7 +2671,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         weapon.cursed = false;
         weapon.oerodeproof = true;
         weapon.spe = rn2(4) + (weapon.otyp === SILVER_MACE ? 3 : 0);
-        monsterInventory.push(weapon);
+        addObjectToMonsterInventory(pendingMonster, weapon, game);
         hasMonsterInventory = true;
 
         const shield = mksobj(
@@ -2671,7 +2680,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         );
         shield.oerodeproof = true;
         shield.spe = 0;
-        monsterInventory.push(shield);
+        addObjectToMonsterInventory(pendingMonster, shield, game);
         giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 8 && mndx === PM_HOBBIT) {
         // C ref: makemon.c m_initweap(), S_HUMANOID/PM_HOBBIT.
@@ -2849,7 +2858,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         const whistle = mksobj(TIN_WHISTLE, true, false);
         whistle.cursed = true;
         whistle.buc = 'cursed';
-        monsterInventory.push(whistle);
+        addObjectToMonsterInventory(pendingMonster, whistle, game);
         hasMonsterInventory = true;
     } else if (mndx === PM_SHOPKEEPER) {
         // C refs: makemon.c m_initweap() and m_initinv().  Shopkeepers have
@@ -2903,7 +2912,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             mace.cursed = true;
             mace.buc = 'cursed';
         }
-        monsterInventory.push(mace);
+        addObjectToMonsterInventory(pendingMonster, mace, game);
         hasMonsterInventory = true;
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
@@ -3218,7 +3227,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             gem.quan = rn1(2, 3);
             gem.quantity = gem.quan;
             gem.owt = (OBJECT_WEIGHT[gem.otyp] ?? 1) * gem.quan;
-            monsterInventory.push(gem);
+            addObjectToMonsterInventory(pendingMonster, gem, game);
             hasMonsterInventory = true;
         }
     }
@@ -3238,7 +3247,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             );
             if (weapon.spe < 2) weapon.spe = rnd(3);
             if (!rn2(4)) weapon.oerodeproof = true;
-            monsterInventory.push(weapon);
+            addObjectToMonsterInventory(pendingMonster, weapon, game);
             hasMonsterInventory = true;
         }
     }
@@ -3272,7 +3281,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
             box.contents = [cat];
-            monsterInventory.push(box);
+            addObjectToMonsterInventory(pendingMonster, box, game);
             hasMonsterInventory = true;
         }
     }
@@ -6161,10 +6170,7 @@ async function fillCourtRoom(room) {
         ruler.msleeping = 1;
         ruler.mpeaceful = 0;
         const mace = mksobj(MACE, true, false);
-        mace.where = 'minvent';
-        ruler.minvent.unshift(mace);
-        ruler.inventory = ruler.minvent;
-        ruler.hasInventory = true;
+        addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
 
     const entrance = room.doorct
@@ -6423,7 +6429,7 @@ function discardSpecialMonsterInventory(monster) {
     monster.hasInventory = false;
 }
 
-function giveSpecialMonsterObject(context, monster, otyp, spe) {
+export function giveSpecialMonsterObject(context, monster, otyp, spe) {
     const point = specialRandomLocation(context);
     if (!point || !monster) return null;
     const object = mksobj_at(otyp, point.x, point.y, true, true);
@@ -6431,11 +6437,9 @@ function giveSpecialMonsterObject(context, monster, otyp, spe) {
     const pile = game.level.objects?.[point.x]?.[point.y];
     const index = pile?.indexOf(object) ?? -1;
     if (index >= 0) pile.splice(index, 1);
-    object.where = 'minvent';
-    monster.minvent.unshift(object);
-    monster.inventory = monster.minvent;
-    monster.hasInventory = true;
-    return object;
+    return addObjectToMonsterInventory(
+        monster, object, game, { atFront: true },
+    );
 }
 
 function specialNonPasswall(context) {
@@ -9228,19 +9232,17 @@ async function specialShrinePriest(temple, altarX, altarY, altarAlignment,
 
     if (sanctum && altarAlignment === A_NONE) {
         const amulet = mksobj(AMULET_OF_YENDOR, true, false);
-        amulet.where = 'minvent';
-        priest.minvent.unshift(amulet);
-        priest.inventory = priest.minvent;
-        priest.hasInventory = true;
+        addObjectToMonsterInventory(
+            priest, amulet, game, { atFront: true },
+        );
     }
 
     const spellbookCount = 2 + rn2(3);
     for (let count = 0; count < spellbookCount; count++) {
         const spellbook = mkobj(SPBOOK_no_NOVEL, false);
-        spellbook.where = 'minvent';
-        priest.minvent.unshift(spellbook);
-        priest.inventory = priest.minvent;
-        priest.hasInventory = true;
+        addObjectToMonsterInventory(
+            priest, spellbook, game, { atFront: true },
+        );
     }
     // which_armor(W_ARMC) only mutates the generated robe or cloak; the
     // alignment-based curse/uncurse operation itself consumes no RNG.
@@ -14678,22 +14680,22 @@ async function stockShopRoom(sroom) {
     // C ref: shkinit().  The gold object and possible charging scroll live
     // in the shopkeeper's inventory even though only their RNG-visible
     // initialization is needed by the current session.
-    const carryShopObject = object => {
-        if (!object) return null;
-        object.where = 'minvent';
-        shopkeeper.minvent.unshift(object);
-        shopkeeper.inventory = shopkeeper.minvent;
-        shopkeeper.hasInventory = true;
-        return object;
-    };
     shopkeeper.gold = 1000 + 30 * rnd(100);
-    carryShopObject(mksobj(GOLD_PIECE, false, false));
+    linkObjectToMonsterInventory(
+        shopkeeper, mksobj(GOLD_PIECE, false, false), { atFront: true },
+    );
     if (shopIndex === 6)
-        carryShopObject(mksobj(TOUCHSTONE, true, false));
+        addObjectToMonsterInventory(
+            shopkeeper, mksobj(TOUCHSTONE, true, false), game,
+            { atFront: true },
+        );
     if (shopIndex === 8 || shopIndex === 7
         || (shopIndex === 6 && rn2(2))
         || (shopIndex === 0 && rn2(5)))
-        carryShopObject(mksobj(SCR_CHARGING, true, false));
+        addObjectToMonsterInventory(
+            shopkeeper, mksobj(SCR_CHARGING, true, false), game,
+            { atFront: true },
+        );
     const shopkeeperNames = SHOPKEEPER_NAMES[shopIndex];
     if (shopIndex === 8) {
         // nameshk() deliberately randomizes hardware-store names instead of

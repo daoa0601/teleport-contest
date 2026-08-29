@@ -13,6 +13,17 @@ export function addObjectToMonsterInventory(
 ) {
     if (!monster || !object) return null;
     attachCursedFigurineTimer(object, state);
+    return linkObjectToMonsterInventory(monster, object, { atFront });
+}
+
+// add_to_minv() is also called directly for identities such as newly minted
+// monster gold.  That source boundary links ownership without
+// carry_obj_effects(); keep it distinct so future carrying effects do not
+// silently consume RNG or mutate direct-link objects.
+export function linkObjectToMonsterInventory(
+    monster, object, { atFront = false } = {},
+) {
+    if (!monster || !object) return null;
     const inventory = monster.minvent || monster.inventory || [];
     if (atFront) inventory.unshift(object);
     else inventory.push(object);
