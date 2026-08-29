@@ -17,8 +17,9 @@ import {
     randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
-    finishBuriedZombieTimer, runClaimedBuriedZombieTimer,
-    runClaimedMeltIceTimer, runClaimedObjectRotTimer,
+    disturbBuriedZombieTimers, finishBuriedZombieTimer,
+    runClaimedBuriedZombieTimer, runClaimedMeltIceTimer,
+    runClaimedObjectRotTimer, runNextMeltIceBoulder,
 } from './mklev.js';
 import {
     animateRollingBoulderCell,
@@ -27,6 +28,7 @@ import {
     destroyWornArmor, objectErosionKind, objectErosionMessage,
     getLine, promptYesNo, performQuestExpulsion, discoverReflectingShield,
     resurrectWizard, rhack, stopRun, wakeMonstersNear,
+    wakeMonstersNearWithMessages,
     wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
@@ -2080,6 +2082,76 @@ export function meltIceTimerMessage(event, options = {}) {
     return visible || heroAt ? 'Some ice melts away.' : null;
 }
 
+export function meltIceBoulderSettleMessage(event, options = {}) {
+    if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
+        || !event.pendingBoulder) return null;
+    const visible = options.visible ?? cansee(event.x, event.y);
+    return visible ? 'A boulder settles...' : null;
+}
+
+export function meltIceBoulderSplashMessage(outcome, options = {}) {
+    if (outcome?.kind !== 'melt-ice-boulder') return null;
+    const heroInWater = options.heroInWater ?? !!game.u?.uinwater;
+    if (heroInWater) return null;
+    const visible = options.visible ?? cansee(outcome.x, outcome.y);
+    if (visible) {
+        const action = outcome.fillsUp ? 'fills' : 'falls into';
+        return `There is a large splash as the boulder ${action} the ${outcome.waterBody}.`;
+    }
+    const deaf = options.deaf ?? !!(game.u?.deaf || game.deaf);
+    return deaf ? null : 'You hear a splash.';
+}
+
+export function meltIceBoulderSinkMessage(outcome, options = {}) {
+    if (outcome?.kind !== 'melt-ice-boulder' || outcome.fillsUp) return null;
+    const visible = options.visible ?? cansee(outcome.x, outcome.y);
+    const verbose = options.verbose ?? game.flags?.verbose ?? true;
+    return visible && verbose ? 'It sinks without a trace!' : null;
+}
+
+// zap.c:melt_ice() is resumable across four presentation boundaries: the
+// initial melt line, the one-time settling line, each splash, and each
+// sink-without-a-trace line.  Keep the boulder RNG and wake transaction on
+// their source side of those awaits rather than collapsing the callback into
+// one synchronous final-state patch.
+export async function finishMeltIceTimer(event, options = {}) {
+    if (!event || event.meltPresentationFinished) return event;
+    const announce = options.announce ?? queueTurnMessage;
+    const repaint = options.repaint ?? newsym;
+    const wake = options.wake ?? wakeMonstersNearWithMessages;
+    const disturb = options.disturb ?? disturbBuriedZombieTimers;
+    const heroInWater = options.heroInWater ?? !!game.u?.uinwater;
+
+    const message = meltIceTimerMessage(event, options);
+    const lastMessage = options.lastMessage ?? game._last_message;
+    if (message && lastMessage !== message) await announce(message);
+    if (event.pendingBoulder) {
+        const settles = meltIceBoulderSettleMessage(event, options);
+        if (settles) await announce(settles);
+    }
+    while (event.pendingBoulder) {
+        const outcome = runNextMeltIceBoulder(event, game);
+        if (!outcome) break;
+        // boulder_hits_pool() repaints a filled square before reporting its
+        // splash; a sinking boulder remains visually cached until the
+        // melt_ice() post-loop newsym().
+        if (outcome.fillsUp) repaint(event.x, event.y);
+        const splash = meltIceBoulderSplashMessage(outcome, {
+            ...options, heroInWater,
+        });
+        if (splash) await announce(splash);
+        if (!heroInWater) {
+            await wake(event.x, event.y, 40);
+            disturb(event.x, event.y, game);
+        }
+        const sinks = meltIceBoulderSinkMessage(outcome, options);
+        if (sinks) await announce(sinks);
+    }
+    if (event.boulderOutcomes.length) repaint(event.x, event.y);
+    event.meltPresentationFinished = true;
+    return event;
+}
+
 async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
     if (!claimed) return null;
     const kind = claimed.timer.kind;
@@ -2095,9 +2167,7 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
     }
     if (kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY) {
         const event = runClaimedMeltIceTimer(claimed, game);
-        const message = meltIceTimerMessage(event);
-        if (message) await queueTurnMessage(message);
-        return event;
+        return finishMeltIceTimer(event);
     }
     const event = runClaimedObjectRotTimer(claimed, game);
     if (event?.where === 'floor') newsym(event.x, event.y);

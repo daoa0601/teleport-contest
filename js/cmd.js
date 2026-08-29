@@ -4955,7 +4955,7 @@ export function wakeMonstersNear(x, y, distance) {
 // indeterminate sleeper.  Keep the message-capable continuation separate
 // until the other synchronous wakeMonstersNear() callers have their own
 // native pager witnesses.
-async function wakeMonstersNearWithMessages(x, y, distance) {
+export async function wakeMonstersNearWithMessages(x, y, distance) {
     for (const monster of game.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
         const dx = (monster.mx ?? 0) - x;

@@ -3989,6 +3989,95 @@ function monsterSafelySurvivesMeltedIce(monster) {
         | 0x00000200 | 0x00000400)) || symbol === 5 || symbol === 25;
 }
 
+// C ref: hack.c:disturb_buried_zombies().  wake_nearto() shortens each
+// adjacent ZOMBIFY_MON timer to two thirds of its remaining duration, then
+// restarts it in the shared queue with a fresh insertion id.
+export function disturbBuriedZombieTimers(x, y, state = game) {
+    const disturbed = [];
+    const currentMove = state.moves ?? 0;
+    for (const corpse of state.level?.buriedObjects || []) {
+        if (corpse.otyp !== CORPSE || !corpse.timed
+            || corpse.ox < x - 1 || corpse.ox > x + 1
+            || corpse.oy < y - 1 || corpse.oy > y + 1) continue;
+        const timer = objectTimers(corpse).find(candidate =>
+            candidate.kind === OBJECT_TIMER_KIND.ZOMBIFY_MON);
+        if (!timer || timer.deadline <= 0) continue;
+        const remaining = timer.deadline - currentMove;
+        stopObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON);
+        const delay = Math.max(1, Math.trunc(remaining * 2 / 3));
+        const replacement = scheduleObjectTimer(
+            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+            currentMove + delay, state,
+        );
+        disturbed.push({ corpse, prior: timer, replacement, delay });
+    }
+    return disturbed;
+}
+
+function floorBoulderAt(x, y, state = game) {
+    return state.level?.objects?.[x]?.[y]?.find(object =>
+        object.otyp === BOULDER) || null;
+}
+
+// C refs: do.c:boulder_hits_pool() and dig.c:bury_objs().  This is one
+// resumable iteration after melt_ice()'s initial and "settles" messages have
+// returned.  Melted ICE can only expose ordinary POOL/MOAT here, so the
+// native fill rule is rn2(10) != 0; a zero sinks this boulder and leaves the
+// next boulder for another iteration.
+export function runNextMeltIceBoulder(event, state = game) {
+    if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
+        || event.boulderComplete) return null;
+    const { x, y } = event;
+    const loc = state.level?.at?.(x, y);
+    if (!loc || !IS_POOL(loc.typ)) {
+        throw new Error(`melt-ice boulder at non-pool position ${x},${y}`);
+    }
+    const boulder = floorBoulderAt(x, y, state);
+    if (!boulder) {
+        event.pendingBoulder = null;
+        event.boulderComplete = true;
+        return null;
+    }
+
+    const pile = state.level.objects[x][y];
+    const index = pile.indexOf(boulder);
+    if (index >= 0) pile.splice(index, 1);
+    boulder.where = 'free';
+    const chance = rn2(10);
+    const fillsUp = chance !== 0;
+    const waterType = loc.typ;
+    let removedTrap = null;
+    let buriedFloorObjects = [];
+    if (fillsUp) {
+        loc.typ = ROOM;
+        loc.flags = 0;
+        loc.icedpool = 0;
+        removedTrap = state.level?.traps?.find(trap =>
+            trap.tx === x && trap.ty === y) || null;
+        if (removedTrap) {
+            const trapIndex = state.level.traps.indexOf(removedTrap);
+            if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
+        }
+        buriedFloorObjects = buryFloorObjectsAt(x, y, state);
+    }
+
+    stopAllObjectTimers(boulder);
+    boulder.where = 'gone';
+    boulder.buried = false;
+    boulder.ox = boulder.oy = 0;
+    const pendingBoulder = fillsUp ? null : floorBoulderAt(x, y, state);
+    event.pendingBoulder = pendingBoulder;
+    event.boulderComplete = !pendingBoulder;
+    const outcome = {
+        kind: 'melt-ice-boulder', x, y, boulder, chance, fillsUp,
+        waterType, waterBody: waterType === POOL ? 'pool' : 'moat',
+        removedTrap, buriedFloorObjects, pendingBoulder,
+    };
+    if (!event.boulderOutcomes) event.boulderOutcomes = [];
+    event.boulderOutcomes.push(outcome);
+    return outcome;
+}
+
 // C refs: zap.c:melt_ice_away()/melt_ice(), trap.c:trap_ice_effects(),
 // mkobj.c:obj_ice_effects(), and dig.c:unearth_objs(). The shared timer has
 // already been claimed, so this callback owns terrain, trap, corpse-timer,
@@ -4002,17 +4091,18 @@ export function runClaimedMeltIceTimer(claimed, state = game) {
         throw new Error(`melt-ice timer at non-ice position ${x},${y}`);
     }
     const pile = state.level?.objects?.[x]?.[y] || [];
-    if (pile.some(object => object.otyp === BOULDER)) {
-        throw new Error(
-            `melt-ice boulder/pool lifecycle is not implemented at ${x},${y}`,
-        );
-    }
+    const boulder = pile.find(object => object.otyp === BOULDER) || null;
     if (state.u?.ux === x && state.u?.uy === y) {
         throw new Error(
             `melt-ice hero liquid lifecycle is not implemented at ${x},${y}`,
         );
     }
     const occupant = levelMonsterAt(x, y);
+    if (boulder && occupant) {
+        throw new Error(
+            `melt-ice boulder occupant lifecycle is not implemented at ${x},${y}`,
+        );
+    }
     if (occupant && !monsterSafelySurvivesMeltedIce(occupant)) {
         throw new Error(
             `melt-ice monster liquid lifecycle is not implemented at ${x},${y}`,
@@ -4033,6 +4123,9 @@ export function runClaimedMeltIceTimer(claimed, state = game) {
     return {
         kind: LEVEL_TIMER_KIND.MELT_ICE_AWAY,
         x, y, meltInto, trap, unearthed, occupant,
+        pendingBoulder: floorBoulderAt(x, y, state),
+        boulderComplete: !floorBoulderAt(x, y, state),
+        boulderOutcomes: [],
     };
 }
 

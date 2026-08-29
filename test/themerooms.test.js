@@ -14,15 +14,19 @@ import {
     MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
 import {
-    buriedZombieTimerMessage, meltIceTimerMessage,
+    buriedZombieTimerMessage, finishMeltIceTimer,
+    meltIceBoulderSettleMessage,
+    meltIceBoulderSinkMessage, meltIceBoulderSplashMessage,
+    meltIceTimerMessage,
 } from '../js/allmain.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
-    makemonAt, mksobj, place_object, runClaimedMeltIceTimer,
-    runClaimedObjectRotTimer, runNextBuriedZombieTimer,
+    disturbBuriedZombieTimers, makemonAt, mksobj, place_object,
+    runClaimedMeltIceTimer, runClaimedObjectRotTimer,
+    runNextBuriedZombieTimer, runNextMeltIceBoulder,
     runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
@@ -396,26 +400,173 @@ test('melt-ice resumes corpse timers, converts traps, and unearths objects',
         });
     });
 
-test('melt-ice fails before mutation on an unowned boulder continuation',
+test('melt-ice stages boulder RNG after feedback and fills the exposed moat',
     () => {
         themedState(4004, 8);
         const x = 10, y = 10;
         game.level.at(x, y).typ = ICE;
         game.level.at(x, y).flags = 0;
-        place_object(mksobj(BOULDER, true, false), x, y);
+        const statue = place_object({
+            otyp: STATUE, o_id: 9910, contents: [], timed: 0,
+        }, x, y);
+        const boulder = place_object({
+            otyp: BOULDER, o_id: 9911, contents: [], timed: 0,
+        }, x, y);
         scheduleLevelTimer(
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
+        initRng(1n); // first boulder rn2(10) is 5: it fills the water
+        enableRngLog();
         const claimed = claimNextDueObjectTimer(game, game.moves);
-        assert.throws(
-            () => runClaimedMeltIceTimer(claimed, game),
-            /boulder\/pool lifecycle is not implemented/,
-        );
-        assert.equal(game.level.at(x, y).typ, ICE);
+        const event = runClaimedMeltIceTimer(claimed, game);
+
+        // melt_ice() presents both of these lines before obj_extract_self()
+        // and boulder_hits_pool() consume their first RNG call.
+        assert.equal(game.level.at(x, y).typ, MOAT);
+        assert.equal(boulder.where, 'floor');
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(meltIceTimerMessage(event, { visible: true }),
+            'Some ice melts away.');
+        assert.equal(meltIceBoulderSettleMessage(event, { visible: true }),
+            'A boulder settles...');
+
+        const outcome = runNextMeltIceBoulder(event, game);
+        assert.equal(getRngLog()[0], 'rn2(10)=5');
+        assert.equal(outcome.fillsUp, true);
+        assert.equal(game.level.at(x, y).typ, ROOM);
+        assert.equal(boulder.where, 'gone');
+        assert.equal(statue.where, 'buried');
+        assert.ok(game.level.buriedObjects.includes(statue));
+        assert.equal(event.pendingBoulder, null);
+        assert.equal(event.boulderComplete, true);
+        assert.equal(meltIceBoulderSplashMessage(outcome, { visible: true }),
+            'There is a large splash as the boulder fills the moat.');
+        assert.equal(meltIceBoulderSplashMessage(outcome, {
+            visible: false, deaf: false,
+        }), 'You hear a splash.');
+        assert.equal(meltIceBoulderSinkMessage(outcome, { visible: true }),
+            null);
         assert.deepEqual(getBridgeUsageLedger(), {
             bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
         });
     });
+
+test('melt-ice resumes stacked boulders after each source message', async () => {
+    themedState(4005, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    const second = place_object({
+        otyp: BOULDER, o_id: 9920, contents: [], timed: 0,
+    }, x, y);
+    const first = place_object({
+        otyp: BOULDER, o_id: 9921, contents: [], timed: 0,
+    }, x, y);
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    initRng(11n); // rn2(10): 0 sinks, then 6 fills
+    enableRngLog();
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
+    );
+    assert.equal(event.pendingBoulder, first);
+    assert.deepEqual(getRngLog(), []);
+
+    const timeline = [];
+    const record = label => timeline.push({
+        label, rng: getRngLog().slice(),
+    });
+    await finishMeltIceTimer(event, {
+        visible: true, heroAt: false, heroInWater: false,
+        deaf: false, verbose: true,
+        announce: async message => record(message),
+        wake: async () => record('wake_nearto'),
+        disturb: () => record('disturb_buried_zombies'),
+        repaint: () => record('newsym'),
+    });
+
+    const [sunk, filled] = event.boulderOutcomes;
+    assert.equal(sunk.chance, 0);
+    assert.equal(sunk.fillsUp, false);
+    assert.equal(first.where, 'gone');
+    assert.equal(filled.chance, 6);
+    assert.equal(filled.fillsUp, true);
+    assert.equal(second.where, 'gone');
+    assert.equal(game.level.at(x, y).typ, ROOM);
+    assert.equal(event.boulderComplete, true);
+    assert.deepEqual(getRngLog().slice(0, 2), [
+        'rn2(10)=0', 'rn2(10)=6',
+    ]);
+    assert.deepEqual(timeline, [
+        { label: 'Some ice melts away.', rng: [] },
+        { label: 'A boulder settles...', rng: [] },
+        {
+            label: 'There is a large splash as the boulder falls into the moat.',
+            rng: ['rn2(10)=0'],
+        },
+        { label: 'wake_nearto', rng: ['rn2(10)=0'] },
+        { label: 'disturb_buried_zombies', rng: ['rn2(10)=0'] },
+        { label: 'It sinks without a trace!', rng: ['rn2(10)=0'] },
+        { label: 'newsym', rng: ['rn2(10)=0', 'rn2(10)=6'] },
+        {
+            label: 'There is a large splash as the boulder fills the moat.',
+            rng: ['rn2(10)=0', 'rn2(10)=6'],
+        },
+        { label: 'wake_nearto', rng: ['rn2(10)=0', 'rn2(10)=6'] },
+        {
+            label: 'disturb_buried_zombies',
+            rng: ['rn2(10)=0', 'rn2(10)=6'],
+        },
+        { label: 'newsym', rng: ['rn2(10)=0', 'rn2(10)=6'] },
+    ]);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('boulder splash wake-up shortens adjacent buried-zombie timers', () => {
+    themedState(4006, 8);
+    const corpse = {
+        otyp: CORPSE, corpsenm: 59, o_id: 9930,
+        contents: [], timed: 0, where: 'buried', buried: true,
+        ox: 11, oy: 10,
+    };
+    game.level.buriedObjects = [corpse];
+    const prior = scheduleObjectTimer(
+        corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves + 90, game,
+    );
+    const disturbed = disturbBuriedZombieTimers(10, 10, game);
+    assert.equal(disturbed.length, 1);
+    const replacement = objectTimers(corpse)[0];
+    assert.equal(replacement.deadline, game.moves + 60);
+    assert.ok(replacement.id > prior.id);
+    assert.equal(corpse.timed, 1);
+});
+
+test('melt-ice still fails before mutation for a boulder occupant', () => {
+    themedState(4007, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    const boulder = place_object({
+        otyp: BOULDER, o_id: 9940, contents: [], timed: 0,
+    }, x, y);
+    game.level.monsters.push({ mnum: 106, mx: x, my: y, mhp: 10 });
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    const claimed = claimNextDueObjectTimer(game, game.moves);
+    assert.throws(
+        () => runClaimedMeltIceTimer(claimed, game),
+        /boulder occupant lifecycle is not implemented/,
+    );
+    assert.equal(game.level.at(x, y).typ, ICE);
+    assert.equal(boulder.where, 'floor');
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
 
 test('Boulder room owns filtered boulders and rolling traps live', async () => {
     themedState(4010, 8);
