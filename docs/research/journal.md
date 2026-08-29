@@ -95092,3 +95092,62 @@ detachment with its complete `fill_pit()`/burial order or select another
 smaller complete source owner after a fresh portfolio comparison.
 
 ---
+
+### [2026-08-29 18:38 EEST, journal block 3143] {#bridge-free #ice-room #trap-ice-effects #pit #spiked-pit #mtrapped #undestroyable-trap #correction #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Correction, witness, and earliest source divergence:** blocks 3141 and 3142
+listed pit detachment as an open Ice boulder-death owner. That is false for an
+ordinary icy pit. Native `melt_ice()` calls `trap_ice_effects(..., TRUE)` before
+the settling line, boulder RNG, `boulder_hits_pool()`, or `mondied()`. The trap
+callback clears a colocated actor's `mtrapped`, converts landmines and bear
+traps, preserves only `MAGIC_PORTAL` and `VIBRATING_SQUARE`, and deletes other
+traps including `PIT`, `SPIKED_PIT`, `HOLE`, and `TRAPDOOR`. The later
+`mon_leaving_level()->fill_pit()` edge therefore has no pit to observe in this
+path. The earliest real divergence was the JavaScript preflight inspecting the
+pre-melt trap and rejecting a source state that the already-owned earlier
+callback normalizes.
+
+**Prediction portfolio and decisive evidence:** four incompatible predictions
+were kept live. (1) A genuine detach gap predicted the pit and `mtrapped`
+survived until actor removal. (2) A boulder-owned pit fill predicted the first
+boulder consumed the original trap before monster death. (3) A pre-death trap
+transaction predicted the actor remained alive and attached but untrapped on
+the exposed moat, with the original pit already absent and the boulder still on
+the floor. (4) Treating every trap as destructible predicted portals and
+vibrating squares disappeared too. `trap.c:trap_ice_effects()` and the direct
+state witness select prediction three while the undestroyable-trap witness
+falsifies four. Generic `fill_pit()` remains real in other callbacks, but it is
+not evidence for retaining this Ice-specific rejection.
+
+**Decision and implementation:** commit `97a5d4f` removes only the stale
+pit-detachment branch from `meltOccupantDeathGap()`. It does not add a generic
+pit approximation. The existing source-ordered melt core remains responsible
+for clearing `mtrapped` and deleting the pit before presentation. A grounded
+wumpus witness observes that intermediate state with positive HP, the actor
+still on the map, moat terrain committed, and the boulder still unextracted;
+only after the settling boundary does the boulder fill, ordinary death detach
+the actor, create and bury its corpse, and reach splash. An independent spiked
+pit leaves its grounded clinger alive without a boulder. Portal and vibrating-
+square controls remain on the melted square exactly as
+`undestroyable_trap()` requires.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **53/53**;
+the combined bridge-policy, Priest-startup, ordinary-room, and themed-room gate
+passes **69/69**; four shared Wizard/death-ray life-saving carriers pass
+**4/4**; and five represented level-generation carriers pass **5/5**. All four
+trap strata execute with zero forbidden bridge hits. Every verifier exited,
+and every guard found no pre-existing suite or corpus process.
+
+**Falsified hypotheses, limit, and next blocker:** pre-melt pit state is not
+post-melt detachment state; generic `fill_pit()` ownership does not imply this
+callback reaches it; and preserving undestroyable traps is not equivalent to
+preserving ordinary pits. Ice remains `partial`: shapechanging; special
+corpse/explosion; complex pet and special actors; unsafe monster
+`minliquid()`; hero and drawbridge continuations; `HATCH_EGG`, `FIG_TRANSFORM`,
+`SHRINK_GLOB`, and other timer lifecycle gaps; and a sealed stratum remain
+open. No full suite, public corpus, sealed-trace inspection, score, push,
+publication, official measurement, or animation work ran. The next portfolio
+must select among those real remaining owners rather than reconstruct the
+falsified Ice-pit gap.
+
+---

@@ -35725,8 +35725,15 @@ flowchart TD
     Claim --> Guard{"continuation mechanically owned?"}
     Guard -->|hero, unsafe monster, unsupported death family| Fail["fail before terrain mutation"]
     Guard -->|ordinary or owned boulder occupant| Melt["ICE to MOAT or POOL"]
-    Melt --> Trap["trap_ice_effects; mine/bear-trap object conversion"]
-    Trap --> Corpses["obj_ice_effects; halve thawed corpse age/time"]
+    Melt --> Trap["trap_ice_effects; clear mtrapped, normalize trap"]
+    Trap --> TrapKind{"trap kind"}
+    TrapKind -->|mine or bear trap| Convert["convert to buried object"]
+    TrapKind -->|portal or vibrating square| Retain["retain undestroyable trap"]
+    TrapKind -->|ordinary, pit, or hole| Delete["delete trap before liquid/death"]
+    Convert --> Corpses
+    Retain --> Corpses
+    Delete --> Corpses
+    Corpses["obj_ice_effects; halve thawed corpse age/time"]
     Corpses --> Unearth["unearth objects; stop ROT_ORGANIC; delete engraving"]
     Unearth --> Present["newsym and conditional Some ice melts away"]
 ~~~
@@ -35750,9 +35757,19 @@ save/restore witness proves that the positional timer state survives as level
 state, and an equal-deadline witness proves it interleaves with object timers by
 newest shared id.
 
+Trap normalization is earlier than every liquid or boulder-death continuation.
+Native `trap_ice_effects()` clears a colocated monster's `mtrapped` bit, then
+converts landmines and bear traps, preserves only `MAGIC_PORTAL` and
+`VIBRATING_SQUARE`, and deletes ordinary traps including both pit kinds and
+holes. A monster which began the callback trapped in an icy pit therefore
+cannot reach the later `mon_leaving_level()->fill_pit()` edge: the trap is gone
+before the first settling message or boulder RNG draw. Direct pit,
+spiked-pit, portal, and vibrating-square witnesses protect that ordering.
+
 This owner is deliberately **partial**. The boulder continuation is
 source-owned as section 974 records, and section 975 closes the common ordinary
-occupant death/drop/corpse/burial branch. Life-saving, shapechanging, special
+occupant death/drop/corpse/burial branch plus the represented ordinary and
+simple-pet life-saving strata. Shapechanging, complex pet recovery, special
 corpse and explosion families, and pet/unique/special detachment still fail
 before terrain mutation. Hero `spoteffects()` and drowning, monster
 `minliquid()` including teleport/death and the gremlin and iron-golem special
@@ -35920,9 +35937,11 @@ heavy-abuse eye/gaze messages, minions, active eating/appearance, leash
 release, steed dismount, and hero attachment before mutation. Explosions,
 special corpses, golems, mummies/zombies, Riders, pets, unique monsters,
 shopkeepers, priests, guards,
-worms, and quest actors have additional state or presentation owners. Pit
-occupants still need their `fill_pit()` detachment callback. Those families are
-named and rejected before ice changes. Unsafe `minliquid()`, hero, drawbridge,
+worms, and quest actors have additional state or presentation owners. Generic
+pit detachment still exists in other source paths, but it is not an Ice gap:
+`trap_ice_effects()` has already deleted any ordinary pit and cleared
+`mtrapped` before this death can occur. The remaining families are named and
+rejected before ice changes. Unsafe `minliquid()`, hero, drawbridge,
 timer lifecycle, and sealed-corpus strata remain open, so Ice stays
 mechanically `partial`.
 
