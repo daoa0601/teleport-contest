@@ -1,7 +1,9 @@
 // weight.js — Hero inventory weight and carrying-capacity state.
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
 
-import { OBJECT_NUTRITION, OBJECT_WEIGHT } from './object_data.js';
+import {
+    BAG_OF_HOLDING, OBJECT_NUTRITION, OBJECT_WEIGHT,
+} from './object_data.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
@@ -24,12 +26,17 @@ function quantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
 
-function objectWeight(object) {
+export function objectWeight(object) {
     if (!object) return 0;
     // C stores a stack's complete weight in owt.  Several early JS object
     // constructors still leave owt at the one-item metadata value after
     // changing quan, so reconstruct ordinary stack weight from the table.
     const base = OBJECT_WEIGHT[object.otyp];
+    // A top-level coin stack is treated specially by inv_weight(), but coin
+    // inside a container reaches mkobj.c:weight() and therefore weighs at
+    // least one unit even below 50 pieces.
+    if (object.oclass === 12)
+        return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition.  touchfood() splits stacks first, but retain the
     // quantity-aware formula for restored objects and future constructors.
@@ -41,6 +48,17 @@ function objectWeight(object) {
                 base * quantity(object) * object.oeaten / fullNutrition,
             ));
         }
+    }
+    if (Array.isArray(object.contents)) {
+        let contentsWeight = object.contents.reduce(
+            (total, content) => total + objectWeight(content), 0,
+        );
+        if (object.otyp === BAG_OF_HOLDING) {
+            contentsWeight = object.cursed ? contentsWeight * 2
+                : object.blessed ? Math.trunc((contentsWeight + 3) / 4)
+                    : Math.trunc((contentsWeight + 1) / 2);
+        }
+        return (base || object.owt || 0) + contentsWeight;
     }
     if (base > 0) return base * quantity(object);
     return object.owt ?? 0;

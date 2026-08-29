@@ -47,6 +47,8 @@ import {
     recordObjectEncounter, recordObjectKnowledge,
 } from './object_knowledge.js';
 import { ensureHeroSkills } from './skills.js';
+import { hiddenGold } from './gold.js';
+import { invWeight } from './weight.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -1196,6 +1198,36 @@ function initAttributes() {
     game.u.amax = { a: displayOrder.slice() };
 }
 
+// C ref: u_init_carry_attr_boost(). Starting inventory must not leave the
+// hero over normal capacity. Strength is exhausted first, then Constitution.
+export function uInitCarryAttrBoost(state = game) {
+    const current = state.u?.acurr?.a;
+    const maximum = state.u?.amax?.a;
+    if (!Array.isArray(current) || !Array.isArray(maximum)) {
+        return { strength: 0, constitution: 0, excess: invWeight(state) };
+    }
+    const strengthMax = state.urace?.attrmax?.[0] ?? current[0];
+    const constitutionMax = state.urace?.attrmax?.[4] ?? current[2];
+    let strength = 0;
+    let constitution = 0;
+    while (invWeight(state) > 0) {
+        if (current[0] < strengthMax) {
+            current[0]++;
+            maximum[0] = Math.max(maximum[0], current[0]);
+            strength++;
+            continue;
+        }
+        if (current[2] < constitutionMax) {
+            current[2]++;
+            maximum[2] = Math.max(maximum[2], current[2]);
+            constitution++;
+            continue;
+        }
+        break;
+    }
+    return { strength, constitution, excess: invWeight(state) };
+}
+
 const ELF_INSTRUMENTS = [
     WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM,
 ];
@@ -1369,6 +1401,10 @@ export function uInitInventoryAttrs() {
     if (game.spells.length && (game.u.uenmax || 0) < 5)
         game._startingPwMinimum = 5;
     initAttributes();
+    // u.umoney0 is startup bookkeeping rather than the live purse. Include
+    // recursively contained gold without moving it out of its container.
+    game._initialGoldCount = (game._goldCount || 0) + hiddenGold(game, true);
+    uInitCarryAttrBoost(game);
     game.discoveries = game.u?.uroleplay?.pauper ? []
         : role === 'archeologist' || role === 'barbarian'
         ? [] : role === 'healer' ? [

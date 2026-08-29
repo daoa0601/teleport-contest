@@ -142,6 +142,7 @@ import {
     inventoryWeight, invWeight, HVY_ENCUMBER, OVERLOADED, pickupLoadPrefix,
     SLT_ENCUMBER,
 } from './weight.js';
+import { hiddenGold } from './gold.js';
 import {
     beginBallAndChainMove, beginBallAndChainTeleport,
     finishBallAndChainMove, finishBallAndChainTeleport,
@@ -4568,9 +4569,25 @@ async function pickupFloorObject() {
 }
 
 async function doWalletQuery() {
-    await pline((game._goldCount || 0) > 0
-        ? `Your wallet contains ${game._goldCount} zorkmids.`
-        : 'Your wallet is empty.');
+    const purse = game._goldCount || 0;
+    const stashed = hiddenGold(game, false);
+    if (game.flags?.verbose !== false) {
+        let message = purse
+            ? `Your wallet contains ${purse} zorkmid${purse === 1 ? '' : 's'}`
+            : 'Your wallet is empty';
+        if (stashed) {
+            message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${
+                purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`
+            } stashed away in your pack`;
+        }
+        await pline(`${message}.`);
+    } else {
+        const total = purse + stashed;
+        await pline(total
+            ? `You are carrying a total of ${total} zorkmid${
+                total === 1 ? '' : 's'}.`
+            : 'You have no money.');
+    }
     game.context.move = 0;
 }
 
@@ -13159,16 +13176,6 @@ function removeHealerFloorGold() {
     newsym(53, 4);
 }
 
-function containedGold(objects) {
-    let total = 0;
-    for (const object of objects || []) {
-        if (object.otyp === GOLD_PIECE)
-            total += object.quan ?? object.quantity ?? 0;
-        total += containedGold(object.contents);
-    }
-    return total;
-}
-
 function terminalLine(row, col, value) {
     const display = game.nhDisplay;
     for (let index = 0; index < value.length; index++)
@@ -13183,7 +13190,7 @@ function tombstoneLine(value) {
 
 function deathSummaryValues() {
     const visibleGold = game._goldCount || 0;
-    const gold = visibleGold + containedGold(game.inventory);
+    const gold = visibleGold + hiddenGold(game, true);
     const initialGold = game._initialGoldCount || 0;
     const gain = Math.max(0, gold - initialGold);
     const depth = game.u?.uz?.dlevel ?? 1;

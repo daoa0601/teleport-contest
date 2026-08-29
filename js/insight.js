@@ -18,6 +18,7 @@ import { OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
 import {
     ensureHeroSkills, SKILL_LEVEL_NAMES, SKILL_NAMES,
 } from './skills.js';
+import { hiddenGold } from './gold.js';
 
 function alignmentName(value) {
     return value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
@@ -36,6 +37,23 @@ function nextExperienceLevel(level) {
     if (level < 10) return 10 * (2 ** level);
     if (level < 20) return 10000 * (2 ** (level - 10));
     return 10000000 * (level - 19);
+}
+
+export function goldInsightLines(final, indent = '  ') {
+    const purse = game._goldCount || 0;
+    const stashed = hiddenGold(game, final);
+    let wallet = purse
+        ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} zorkmid${
+            purse === 1 ? '' : 's'}`
+        : `Your wallet ${final ? 'was' : 'is'} empty`;
+    wallet += stashed ? purse ? ', and' : ', but' : '.';
+    const lines = [`${indent}${wallet}`];
+    if (stashed) {
+        lines.push(`${indent}you ${final ? 'had' : 'have'} ${stashed} ${
+            purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`
+        } stashed away in your pack.`);
+    }
+    return lines;
 }
 
 function piousness(record) {
@@ -467,9 +485,7 @@ function attributePages() {
                 : `  You have ${u.uen} out of ${u.uenmax
                 } energy points (spell power).`,
         `  Your armor class is ${u.uac}.`,
-        game._goldCount
-            ? `  Your wallet contains ${game._goldCount} zorkmids.`
-            : '  Your wallet is empty.',
+        ...goldInsightLines(false),
         game.flags?.pickup && game.flags?.pickup_types
             ? `  Autopickup is on for '${game.flags.pickup_types}' plus thrown.`
             : `  Autopickup is ${game.flags?.pickup ? 'on' : 'off'}.`,
@@ -588,10 +604,11 @@ function finalAttributePages() {
                 ? ` You had all ${u.uenmax} energy points (spell power).`
                 : ` You had ${u.uen || 0} out of ${u.uenmax || 0} energy points (spell power).`;
         page1[16] = ` Your armor class was ${u.uac}.`;
-        page1[17] = (game._goldCount || 0) > 0
-            ? ` Your wallet contained ${game._goldCount} zorkmids.`
-            : ' Your wallet was empty.';
-        page1[18] = game.flags?.pickup && game.flags?.pickup_types
+        const goldLines = goldInsightLines(true, ' ');
+        page1[17] = goldLines[0];
+        const autopickupRow = goldLines.length > 1 ? 19 : 18;
+        if (goldLines.length > 1) page1[18] = goldLines[1];
+        page1[autopickupRow] = game.flags?.pickup && game.flags?.pickup_types
             ? ` Autopickup was on for '${game.flags.pickup_types}' plus thrown.`
             : ` Autopickup was ${game.flags?.pickup ? 'on' : 'off'}.`;
         page1[20] = 'Final Characteristics:';
@@ -711,9 +728,7 @@ function finalAttributePages() {
         ? ` You had all ${u.uenmax} energy points (spell power).`
         : ` You had ${u.uen || 0} out of ${u.uenmax || 0} energy points (spell power).`);
     lines.push(` Your armor class was ${u.uac}.`);
-    lines.push((game._goldCount || 0) > 0
-        ? ` Your wallet contained ${game._goldCount} zorkmids.`
-        : ' Your wallet was empty.');
+    lines.push(...goldInsightLines(true, ' '));
     lines.push(game.flags?.pickup && game.flags?.pickup_types
         ? ` Autopickup was on for '${game.flags.pickup_types}' plus thrown.`
         : ` Autopickup was ${game.flags?.pickup ? 'on' : 'off'}.`);

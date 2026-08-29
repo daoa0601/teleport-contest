@@ -14,6 +14,7 @@ import { recordObjectKnowledge } from './object_knowledge.js';
 import { rebasePrayerAfterLifeSaving } from './pray.js';
 import { depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
+import { hiddenGold } from './gold.js';
 import {
     ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME, isok,
 } from './const.js';
@@ -288,16 +289,6 @@ function overviewLines(killer, deathVerb = 'killed') {
     return lines;
 }
 
-function containedGold(objects) {
-    let total = 0;
-    for (const object of objects || []) {
-        if (object.otyp === 449)
-            total += object.quan ?? object.quantity ?? 0;
-        total += containedGold(object.contents);
-    }
-    return total;
-}
-
 function sourceMove() {
     return game._statusTurnOverride ?? game._maintenanceMove
         ?? game.moves ?? 1;
@@ -318,7 +309,7 @@ function deepestVisitedDepth() {
 
 function deathSummaryValues() {
     const visibleGold = game._goldCount || 0;
-    const gold = visibleGold + containedGold(game.inventory);
+    const gold = visibleGold + hiddenGold(game, true);
     const initialGold = game._initialGoldCount || 0;
     const gain = Math.max(0, gold - initialGold);
     const currentDepth = depth(game.u?.uz);
