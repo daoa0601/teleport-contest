@@ -95570,3 +95570,67 @@ ordinary carried-egg hatching, prioritizing the slice with the strongest live
 turn reachability.
 
 ---
+
+### [2026-08-29 19:56 EEST, journal block 3150] {#bridge-free #object-timers #shrink-glob #inventory #active-eating #encumbrance #tty-boundary #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after the ordinary carried
+figurine owner, the next portfolio compared blocked-figurine retry, carried-egg
+hatching, and hero-inventory glob shrinking. Live pickup already moves a timed
+glob into hero inventory, where the new floor callback rejected it. Native
+`shrink_glob()` does not share floor presentation: it snapshots a `Your ...`
+name, owns 20-to-19 and 10-to-9 threshold lines, leaves a zero-weight identity
+linked through the dissolution line, and runs inventory/capacity updates only
+after deletion or rescheduling. The earliest divergence was therefore the
+first exact carried deadline, not eventual object disappearance.
+
+**Prediction portfolio and decisive evidence:** blocked figurines require
+distinguishing `enexto()` failure from later `makemon()` failure and own a
+fresh `rnd(5000)` retry. Carried eggs combine parentage RNG, taming, dragon
+special handling, newborn cries, visibility and pack prose, quantity, and
+learning. Inventory globs reuse the now-owned mass and timer arithmetic but
+add two bounded suspension points: threshold/dissolution prose before object
+lifecycle, then optional encumbrance prose after inventory refresh. Active
+eating is a separate early reschedule branch. That smaller complete carrier
+and its direct live-pickup reachability selected the glob extension without
+claiming either actor-producing family.
+
+**Decision and implementation:** commit `83c9dea` generalizes the claimed glob
+owner across ordinary non-ice floor and unworn hero inventory. Exact inventory
+callbacks snapshot the partly-eaten `Your` name and old capacity, subtract
+`owt` and `oeaten`, and expose shrink prose only at native 20/10 thresholds or
+complete dissolution at zero. The object remains carried and timerless while
+tty presents that first line. Finalization then either deletes it or attaches
+`23 + rn2(5)`, refreshes capacity, and exposes any burden/relief line as a
+second boundary. A currently eaten glob instead retains its mass, schedules a
+fresh attempt, and returns silently. The existing arithmetic overdue branch
+also handles an unworn inventory identity without replaying exact threshold
+messages. Contained, buried, migrating, monster-carried, worn, and icy states
+remain rejected at their distinct lifecycle boundaries.
+
+**Measured effect and regression:** `test/glob_shrink.test.js` expands from
+five to **8/8**. A partly eaten black-pudding glob proves 20-to-19 mutation and
+`Your ... shrinks` occur before rescheduling. A one-weight gray-ooze glob plus
+exact 200-weight ballast proves the object remains linked through `dissolves
+completely`, is then deleted, and only afterward produces `Your movements are
+now unencumbered.` An active green-slime glob proves no mass change and one
+fresh timer draw. The prior all-species constructor, floor exact/delete,
+overdue arithmetic, and fail-loud container/ice witnesses remain green. The
+bounded combined bridge-policy, egg, figurine, glob, lamp, Priest-startup,
+ordinary-room, and themed-room gate passes **96/96**, and the mechanical audit
+remains clean at 117 files, 15 guarded modules, and 19 fixture modules. Every
+verifier was guarded, singular, owned, and exited normally.
+
+**Falsified hypotheses, limit, and next blocker:** floor silence at 20-to-19
+does not apply to inventory; zero weight is not immediate deletion; capacity
+feedback cannot precede dissolution or object removal; and active eating does
+not consume a mass unit. Conversely, hero-inventory ownership does not cover
+worn cleanup, monster inventory, containers and recursive weight, ice/burial,
+migration, melding/timer averaging, all name/shop variants, or restored-
+inventory UI reconciliation. Carried eggs and blocked or nonordinary figurines
+remain open. No full suite, public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should now compare carried-egg hatching against blocked-figurine
+retry using the shared familiar/pet state just added, without expanding into a
+sealed gate prematurely.
+
+---

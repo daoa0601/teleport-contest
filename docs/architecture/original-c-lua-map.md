@@ -36282,3 +36282,52 @@ hiding, minions, shapechangers, weaponed pets, unique/extinct limits, liquid
 death, manual application, timer cancellation on inventory exit, unrepresented
 inventory insertion routes, and a sealed stratum remain open. Each is rejected
 before transformation rather than borrowing the ordinary carried result.
+
+## 982. Inventory globs suspend before deletion and capacity feedback
+
+~~~mermaid
+flowchart TD
+    Claim["claim exact SHRINK_GLOB for hero inventory"] --> Eating{"actively being eaten?"}
+    Eating -->|yes| Defer["preserve weight; schedule 23 plus rn2(5); return"]
+    Eating -->|no| Snapshot["capture Your-name and old carrying capacity"]
+    Snapshot --> Shrink["subtract one weight and oeaten above one"]
+    Shrink --> Notice{"old weight crossed 20/10 threshold or reached zero?"}
+    Notice -->|threshold| Line["Your glob shrinks"]
+    Notice -->|zero| Dissolve["Your glob dissolves completely"]
+    Notice -->|neither| Finish["no first line"]
+    Line --> Finish
+    Dissolve --> Finish
+    Finish --> Gone{"weight zero?"}
+    Gone -->|yes| Delete["remove from inventory and free identity"]
+    Gone -->|no| Reschedule["attach moves plus 23 plus rn2(5)"]
+    Delete --> Update["update inventory and recompute capacity"]
+    Reschedule --> Update
+    Update --> Changed{"capacity category changed?"}
+    Changed -->|yes| Encumber["present burden or relief line"]
+    Changed -->|no| Done["resume turn"]
+~~~
+
+The native inventory carrier shares glob mass arithmetic with the floor but
+not its presentation or deletion order. `Yname2()` snapshots `Your` plus the
+partly-eaten type before `owt` and `oeaten` change. At old weights 20 and 10,
+the carried glob reports that it shrinks; at one it reports complete
+dissolution. That line is a suspension boundary: the zero-weight object is
+still linked in inventory while tty presents it. Only afterward does
+`shrinking_glob_gone()` remove it, or `start_glob_timeout()` attach a new
+23-through-27-turn deadline. Inventory refresh and `encumber_msg()` follow
+that lifecycle, so a final unit can first dissolve and then report that the
+hero is unencumbered.
+
+Active eating is ordered before ordinary shrink. It retains both `owt` and
+`oeaten`, consumes one new `rn2(5)` deadline, and returns without threshold or
+capacity prose. Overdue catch-up remains the earlier shared branch and does
+not replay exact inventory messages. JavaScript now stages exact inventory
+events across the same two presentation boundaries and retains the existing
+floor behavior unchanged.
+
+This carrier remains mechanically **partial**. Worn cleanup, shop and broader
+name variants, restored-overdue inventory UI reconciliation, monster
+inventory, nested containers and recursive weight, ice and buried-under-ice
+cadence, migration, burial, glob absorption/timer averaging, and a sealed
+stratum remain open. The completed hero-inventory path does not imply those
+chains share its prose or capacity behavior.
