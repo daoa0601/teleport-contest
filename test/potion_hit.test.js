@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, resetGame } from '../js/gstate.js';
 import {
     POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING,
-    POT_RESTORE_ABILITY, TOWEL,
+    POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -135,6 +135,122 @@ test('healing potion makes Pestilence ill and retains hostile wake policy',
         assert.equal(potion.where, 'gone');
     });
 
+test('sickness halves a susceptible monster after the common impact chip',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 40,
+            msleeping: 1,
+        };
+        const potion = potionObject(POT_SICKNESS);
+        const messages = [];
+        let wakeCount = 0;
+
+        initRng(2860n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async target => {
+                wakeCount++;
+                target.msleeping = 0;
+            },
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=0', 'rn2(5)=2']);
+        assert.deepEqual(messages, [
+            "The bottle crashes on the purple worm's head and breaks into shards.",
+            'The potion of sickness evaporates.',
+            'The purple worm looks rather ill.',
+        ]);
+        assert.equal(monster.mhp, 9);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.angered, true);
+        assert.equal(potion.where, 'gone');
+    });
+
+test('sickness leaves poison-resistant monsters unharmed after impact',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+        };
+        const potion = potionObject(POT_SICKNESS);
+        const messages = [];
+
+        initRng(2861n);
+        enableRngLog();
+        await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=3', 'rn2(5)=4']);
+        assert.deepEqual(messages, [
+            "The carafe crashes on the killer bee's head and breaks into shards.",
+            'The potion of sickness evaporates.',
+            'The killer bee looks unharmed.',
+        ]);
+        assert.equal(monster.mhp, 19);
+        assert.equal(potion.where, 'gone');
+    });
+
+test('sickness heals Pestilence and clears sleep without anger', async () => {
+    resetGame();
+    game.u = { hallucinationTurns: 0 };
+    const monster = {
+        mnum: 312,
+        mx: 10,
+        my: 10,
+        mhp: 20,
+        mhpmax: 40,
+        msleeping: 1,
+    };
+    const potion = potionObject(POT_SICKNESS);
+    const messages = [];
+    let wakeCount = 0;
+
+    initRng(2862n);
+    enableRngLog();
+    const result = await hitMonsterWithSupportedPotion({
+        state: game,
+        monster,
+        potion,
+        targetVisible: true,
+        publish: async message => messages.push(message),
+        wakeMonster: async () => { wakeCount++; },
+    });
+
+    assert.deepEqual(getRngLog(), ['rn2(7)=1', 'rn2(5)=3']);
+    assert.deepEqual(messages, [
+        "The phial crashes on Pestilence's head and breaks into shards.",
+        'The potion of sickness evaporates.',
+        'Pestilence looks sound and hale again.',
+    ]);
+    assert.equal(monster.mhp, 40);
+    assert.equal(monster.msleeping, 0);
+    assert.equal(wakeCount, 0);
+    assert.equal(result.directEffect.angered, false);
+    assert.equal(potion.where, 'gone');
+});
+
 test('ability potion heals a peaceful monster without angering it', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0 };
@@ -231,6 +347,80 @@ test('full-healing vapor heals both polymorph and base HP per fallthrough',
         assert.equal(game.u.deafTurns, 0);
         assert.equal(game.u._exercise[2], 1);
     });
+
+test('sickness vapor damages only the active polymorph form', async () => {
+    resetGame();
+    game.urole = { key: 'tourist' };
+    game.u = {
+        mtimedone: 10,
+        mh: 12,
+        mhmax: 20,
+        uhp: 30,
+        uhpmax: 30,
+        acurr: { a: [12, 12, 12, 12, 12, 12] },
+        amax: { a: [12, 12, 12, 12, 12, 12] },
+    };
+
+    initRng(2864n);
+    enableRngLog();
+    await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_SICKNESS),
+        publish: async () => {},
+    });
+
+    assert.deepEqual(getRngLog(), ['rn2(2)=1']);
+    assert.equal(game.u.mh, 7);
+    assert.equal(game.u.uhp, 30);
+    assert.equal(game.u._exercise[2], -1);
+});
+
+test('Healer role is immune to sickness vapor', async () => {
+    resetGame();
+    game.urole = { key: 'healer' };
+    game.u = {
+        uhp: 12,
+        uhpmax: 30,
+        acurr: { a: [12, 12, 12, 12, 12, 12] },
+        amax: { a: [12, 12, 12, 12, 12, 12] },
+    };
+
+    initRng(2864n);
+    enableRngLog();
+    const result = await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_SICKNESS),
+        publish: async () => {},
+    });
+
+    assert.deepEqual(getRngLog(), []);
+    assert.equal(result.received, true);
+    assert.equal(game.u.uhp, 12);
+    assert.equal(game.u._exercise, undefined);
+});
+
+test('sickness vapor cannot reduce base HP below one', async () => {
+    resetGame();
+    game.urole = { key: 'tourist' };
+    game.u = {
+        uhp: 4,
+        uhpmax: 30,
+        acurr: { a: [12, 12, 12, 12, 12, 12] },
+        amax: { a: [12, 12, 12, 12, 12, 12] },
+    };
+
+    initRng(2864n);
+    enableRngLog();
+    await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_SICKNESS),
+        publish: async () => {},
+    });
+
+    assert.deepEqual(getRngLog(), ['rn2(2)=1']);
+    assert.equal(game.u.uhp, 1);
+    assert.equal(game.u._exercise[2], -1);
+});
 
 test('vapor respects breathless forms with and without eyes', async () => {
     resetGame();

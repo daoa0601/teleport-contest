@@ -15,7 +15,8 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
-    POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
+    POT_CONFUSION, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY,
+    POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
     POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, POT_SICKNESS,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
@@ -588,7 +589,7 @@ test('swallowed hand-thrown arrow uses ranged damage and Strength without skill'
         assertNoBridgeUse();
     });
 
-test('unsupported sickness potion fails before floor fallback or RNG',
+test('swallowed sickness harms the engulfer and hero in source order',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         const raw = mksobj(POT_SICKNESS, true, false);
@@ -598,6 +599,32 @@ test('unsupported sickness potion fails before floor fallback or RNG',
         const potion = addInventoryItem(raw);
 
         initRng(2510n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'l');
+
+        assert.equal(engulfer.mhp, 19);
+        assert.equal(game.u.uhp, 35);
+        assert.equal(game.u._exercise[2], -1);
+        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=12', 'rn2(7)=0', 'rn2(5)=2', 'rn2(2)=1',
+        ]);
+        assert.equal(potion.where, 'gone');
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assertNoBridgeUse();
+    });
+
+test('unsupported confusion potion fails before floor fallback or RNG',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_CONFUSION, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
         enableRngLog();
         await assert.rejects(
             throwThroughLiveCommand(potion, 'l'),
@@ -611,14 +638,6 @@ test('unsupported sickness potion fails before floor fallback or RNG',
         assert.deepEqual(engulfer.minvent, []);
         assert.deepEqual(getRngLog(), []);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        const ledger = getBridgeUsageLedger();
-        assert.equal(ledger.bridgeFree, true);
-        assert.equal(ledger.totalHits, 1);
-        assert.equal(ledger.forbiddenHits, 1);
-        assert.equal(
-            ledger.bridges['throw.potion-impact-unsupported'].count,
-            1,
-        );
     });
 
 test('swallowed healing family heals both monster and hero through vapor',

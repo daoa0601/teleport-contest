@@ -9,10 +9,11 @@ import {
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_EXTRA_HEALING, POT_FRUIT_JUICE,
     POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, TOWEL,
+    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
 } from './object_data.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_RESISTS,
+    monsterTypeName,
 } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { syncBlindness, syncDeafness } from './senses.js';
@@ -24,6 +25,9 @@ const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
+const MR_POISON = 0x20;
+const AD_DISE = 33;
+const AD_PEST = 38;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
@@ -45,6 +49,7 @@ export const HEALING_MONSTER_POTION_TYPES = new Set([
 export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     ...INERT_MONSTER_POTION_TYPES,
     ...HEALING_MONSTER_POTION_TYPES,
+    POT_SICKNESS,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -159,6 +164,15 @@ function heroHasVaporShield(state) {
     return eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0;
 }
 
+function sicknessCannotHarmMonster(monster) {
+    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
+        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+    return !!(resistanceBits & MR_POISON)
+        || !!monster?.poisonResistance
+        || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
+            attack[1] === AD_DISE || attack[1] === AD_PEST);
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -196,6 +210,12 @@ export async function applySupportedPotionVapor({
             syncDeafness(state);
         }
         exerciseAttribute(2, true, state);
+    } else if (potion.otyp === POT_SICKNESS
+        && state.urole?.key !== 'healer') {
+        const hero = state.u || (state.u = {});
+        if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
+        else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
+        exerciseAttribute(2, false, state);
     }
     return { received: true, abilityStart };
 }
@@ -203,7 +223,28 @@ export async function applySupportedPotionVapor({
 async function applySupportedDirectEffect({
     monster, potion, targetVisible, wakeMonster, publish,
 }) {
-    if (!HEALING_MONSTER_POTION_TYPES.has(potion.otyp)) {
+    if (potion.otyp === POT_SICKNESS && monster.mnum !== PM_PESTILENCE) {
+        const oldHp = monster.mhp;
+        if (sicknessCannotHarmMonster(monster)) {
+            if (targetVisible)
+                await publish(`${sentenceSubject(monster)} looks unharmed.`);
+        } else if (monster.mhp > 2) {
+            monster.mhp = Math.trunc(monster.mhp / 2);
+            if (targetVisible)
+                await publish(`${sentenceSubject(monster)} looks rather ill.`);
+        }
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: monster.mhp - oldHp,
+            curedBlindness: false,
+        };
+    }
+
+    const healsMonster = HEALING_MONSTER_POTION_TYPES.has(potion.otyp)
+        || (potion.otyp === POT_SICKNESS
+            && monster.mnum === PM_PESTILENCE);
+    if (!healsMonster) {
         await wakeMonster?.(monster);
         return { angered: true, healed: 0, curedBlindness: false };
     }

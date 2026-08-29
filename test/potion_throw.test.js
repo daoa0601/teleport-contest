@@ -11,7 +11,8 @@ import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
-    POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL, POT_SICKNESS,
+    POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
+    POT_SICKNESS,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -245,6 +246,31 @@ test('map extra healing contact heals monster then hero through nearby vapor',
         assertNoBridgeUse();
     });
 
+test('map sickness contact harms monster before nearby hero vapor', async () => {
+    const monster = freshMapPotionState(2);
+    game.u.uhp = 30;
+    game.u.uhpmax = 30;
+    const potion = addKnownPotion(POT_SICKNESS);
+
+    initRng(2942n);
+    enableRngLog();
+    await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ']);
+
+    assert.deepEqual(getRngLog(), [
+        'rnd(20)=19',
+        'rnd(25)=3',
+        'rn2(7)=4',
+        'rn2(5)=4',
+        'rn2(9)=0',
+        'rn2(2)=1',
+    ]);
+    assert.equal(monster.mhp, 5);
+    assert.equal(game.u.uhp, 25);
+    assert.equal(game.u._exercise[2], -1);
+    assert.equal(potion.where, 'gone');
+    assertNoBridgeUse();
+});
+
 test('adjacent hard-floor break applies healing vapor without monster contact',
     async () => {
         freshMapPotionState(2);
@@ -268,9 +294,9 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         assertNoBridgeUse();
     });
 
-test('unsupported sickness map potion fails before split or throw RNG', async () => {
+test('unsupported confusion map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
-    const potion = addKnownPotion(POT_SICKNESS);
+    const potion = addKnownPotion(POT_CONFUSION);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 
