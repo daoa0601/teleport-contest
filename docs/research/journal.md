@@ -96091,3 +96091,66 @@ animation work ran. The next portfolio can now enter swallowed throws without
 carrying an equivalent-strength unknown at `add_to_minv()`.
 
 ---
+
+### [2026-08-29 21:35 EEST, journal block 3158] {#bridge-free #swallowed-throw #throwit #thitmonst #swallowit #mpickobj #object-identity #figurine-timer #stack-merge #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** two live `t`-command witnesses
+started from a real swallowed state rather than calling the inventory helper
+directly. Before production changed, the selected cursed figurine left hero
+inventory and appeared on the adjacent floor with its original timer, while a
+split blank-paper scroll left the purple worm's existing minvent stack at
+quantity three. Native `throwit()` never enters `bhit()` while `u.uswallow`;
+the earliest divergence was therefore the post-`freeinv()` contact owner,
+before floor placement, timer replacement, merge compatibility, or the next
+turn.
+
+**Prediction portfolio and decisive evidence:** the selected generic branch
+must retain the full source transaction: `splitobj()`/`next_ident()` when
+needed, `where=free` plus `LOST_THROWN`, the cursed/greased `rn2(7)` probe,
+`thitmonst()`'s otherwise-unused `rnd(20)`, engulfer wake and
+`Tobjnam(..., "vanish")` contact, then `mpickobj()`. A hostile `mpickobj()`
+must repair thrown provenance to `LOST_STOLEN` before carrying effects and
+`add_to_minv()` compare stacks. The first green split witness exposed an
+omitted prediction rather than an implementation fault: the child identity
+allocation pays `rnd(2)` before `rnd(20)`. A second intermediate failure named
+monster 114 as a purple worm, but generated metadata and C identify it as a
+long worm; correcting the witness to PM 115 restored the expected entrails
+arm without changing production.
+
+**Decision and implementation:** commit `1eb7be6` adds
+`js/swallowed_throw.js` as the owner for paid, unlit, unworn generic
+non-consuming objects. `cmd.js` retains live selection, direction, and the
+existing split allocation, then delegates detachment, slip/hit cadence, wake,
+actor/entrails/currents presentation, and `mpickobj` transfer. The shared
+monster acquisition boundary now performs native `LOST_THROWN` to
+`LOST_STOLEN` and `LOST_DROPPED` to `LOST_NONE` repair for non-pets, clears
+`no_charge`, then applies carrying effects before link/merge. A cursed
+figurine therefore replaces its hero timer only after contact; a compatible
+stolen scroll stack absorbs the split child and frees that identity. No
+fixture, fast-forward, seeded replay helper, or `replayMoves` control flow was
+added.
+
+**Measured effect and regression:** the new live-command file goes red **0/2**
+on the pre-slice behavior and green **2/2** after implementation. The focused
+figurine plus monster-acquisition family passes **31/31**. Adding the
+bridge-free role/entry gate passes **39/39**, with every new witness asserting
+zero compatibility hits. `node --check` passes for the new owner and the
+mechanical audit is clean at **120 files, 15 guarded modules, and 19 fixture
+modules**. Every test command was preceded by the process guard, ran as the
+only verifier, and exited normally; no yielded process remained.
+
+**Falsified hypotheses, limit, and next blocker:** swallowed contact is not a
+floor-landing special case; an unused accuracy result is not a skippable RNG
+call; stack splitting does not begin at `rnd(20)`; carrying effects cannot run
+after a merge which may free the input identity; and a green quantity check
+alone would not prove timer or provenance ownership. The branch remains
+partial for weapons and weapon-tools, gems, gold, food/taming, potions,
+eggs/pies/venom, boulders and iron balls, attached or worn objects,
+lit-object snuffing, shop billing, petrifying corpses, low-stamina drops,
+timed stack splitting, returning missiles, engulfer death, and exhaustive
+naming. No full Contest suite, public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should compare swallowed weapons against lit-object `mpickobj`
+snuffing and select the smaller dependency cone with an observable survivor.
+
+---

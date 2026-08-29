@@ -36633,8 +36633,9 @@ floor pickups retain their former square. Timer callbacks resolve the actor
 through `carrierMid` and its current coordinates, so relocation does not
 depend on stale object coordinates.
 
-This subsystem is mechanically **partial**. Swallowed arbitrary throws, other
-thrown or kicked catches, shopkeeper projectile snatches, quest-leader
+This subsystem is mechanically **partial**. Generic non-consuming swallowed
+throws are tracked in section 990. Damaging or consuming swallowed objects,
+other thrown or kicked catches, shopkeeper projectile snatches, quest-leader
 retention, monster container rummaging, polymorph transfers, knowledge loss,
 light snuffing and candle burn, equipment
 continuations, migration persistence, and a sealed stratum remain open.
@@ -36683,5 +36684,57 @@ This subsystem is mechanically **partial**. Unpaid `same_price()` and bill
 fixups, mail-command identity, lit-object light-source merging, hero `addinv`
 and worn-slot reconciliation, contained/migrating/buried chains, pudding
 presentation, all `how_lost` and sensory knowledge combinations, and a sealed
-stratum remain open. Swallowed throws are still a separate absent command and
-monster-contact transaction; stack merging does not claim to implement it.
+stratum remain open. Section 990 now reaches this merger after repairing a
+swallowed projectile's loss provenance, but that route does not expand the
+merge policy beyond the compatibility represented here.
+
+## 990. Generic swallowed throws retain the complete ownership transaction
+
+~~~mermaid
+flowchart TD
+    Command["live t command"] --> Select["getobj selection and direction"]
+    Select --> Split{"stack quantity greater than one?"}
+    Split -->|yes| Identity["next_ident via rnd(2); parent quantity remains carried"]
+    Split -->|no| Detach["selected identity leaves hero inventory"]
+    Identity --> Detach
+    Detach --> Free["where=free; how_lost=LOST_THROWN"]
+    Free --> Slip["cursed or greased rn2(7); greased direction rerolls"]
+    Slip --> Hit["thitmonst guaranteed contact still pays rnd(20)"]
+    Hit --> Wake["wakeup engulfer"]
+    Wake --> Contact["Tobjnam vanishes into actor, entrails, or currents"]
+    Contact --> Provenance["hostile mpickobj changes thrown to stolen"]
+    Provenance --> Effects["carry_obj_effects; replace cursed figurine timer"]
+    Effects --> Merge{"compatible minvent stack?"}
+    Merge -->|yes| Absorb["existing identity survives; incoming identity freed"]
+    Merge -->|no| Link["incoming identity head-links to carrier"]
+    Absorb --> Turn["ECMD_TIME / context.move=1"]
+    Link --> Turn
+    Lua["Lua owns no swallowed command or object transfer"] -.-> Command
+~~~
+
+Native `throwit()` does not project a swallowed object across the map. It
+targets `u.ustuck` directly, but only after `throw_obj()` has split or detached
+the real inventory identity. `thitmonst()` marks that contact guaranteed and
+still consumes its ordinary `rnd(20)` before the generic class arm wakes the
+engulfer and reports the object's disappearance. `swallowit()` then calls
+`mpickobj()`; a hostile carrier changes `LOST_THROWN` to `LOST_STOLEN` before
+carrying effects and `add_to_minv()` inspect timer or merge compatibility.
+
+JavaScript now gives that cone to `swallowed_throw.js`. The command dispatcher
+retains selection, direction, and the pre-existing `splitobj()` identity draw,
+then delegates one live object. A single cursed figurine keeps its identity,
+receives `rn2(7)`, `rnd(20)`, and one replacement `rnd(9000)` deadline in
+source order, and becomes reachable through the energy vortex's `carrierMid`.
+A two-scroll witness pays `rnd(2)` for the child identity before `rnd(20)`,
+leaves the parent carried, changes the child to stolen provenance, and lets a
+matching purple-worm stack absorb it without creating a floor identity.
+
+This subsystem is mechanically **partial**. The accepted branch covers paid,
+unlit, unworn generic non-consuming objects, including ordinary tools, armor,
+rings, amulets, scrolls, spellbooks, wands, statues, and chains when they do
+not select a stronger source arm. Weapons and weapon-tools, gems, gold,
+food/taming, potions, eggs, pies, venom, boulders, iron balls, attached or worn
+objects, lit-object snuffing, shop billing, petrifying corpses, low-stamina
+drops, timed stack splitting, returning missiles, engulfer death, exhaustive
+naming, and a sealed stratum remain open. Fixture, fast-forward, seeded replay,
+and `replayMoves` control flow are absent from this path.
