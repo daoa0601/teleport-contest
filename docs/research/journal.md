@@ -93681,3 +93681,61 @@ boundary and hidden starting contents without choosing a public carrier. Do
 not publish an official measurement yet.
 
 ---
+
+### [2026-08-29 13:51 EEST, journal block 3121] {#bridge-free #startup #inventory #carry #weight #containers #hidden-gold #attributes #implementation #focused-regression #process-safety}
+
+**Contract and earliest source evidence:** audit the declared
+`hidden_gold(TRUE)`/`u_init_carry_attr_boost()` gap without selecting a public
+carrier. Pinned `mkobj.c:mkbox_cnts()` first falsified the assumption that a
+normal starting sack might explain overweight startup: SACK and OILSKIN_SACK
+use a zero-content reservoir while `moves <= 1 && !in_mklev`. The first actual
+JavaScript divergence was later: `initAttributes()` returned directly to
+discovery projection and never executed the source loop which raises Strength,
+then Constitution, while `inv_weight() > 0`.
+
+**Prediction portfolio and decisive probes:** (1) starting hidden contents
+predicted role sacks with nested gold; both pinned source and live constructors
+showed empty sacks, falsifying it for ordinary role startup. (2) a stale stored
+`owt` hypothesis predicted nested contents would still be counted by the
+shared capacity owner; `weight.js` instead rebuilt only the outer metadata
+weight and ignored contents. (3) a gold-projection hypothesis predicted all
+consumers already shared recursion; vault searched one level, command/end each
+had private recursion, and `end.js` searched stale object type449 rather than
+the pinned GOLD_PIECE identity438. (4) a carry-loop hypothesis predicted a
+synthetic weight400 suit at Strength3/Constitution3 would raise only Strength
+to11, while two suits at capped Strength18 would raise Constitution to12;
+the bounded probes distinguish and now enforce both sequences.
+
+**Decision and implementation:** add one dependency-light gold owner for
+`contained_gold()` and `hidden_gold(even_if_unknown)`, with the knowledge bit
+checked at every nested container. Route startup bookkeeping, `$` wallet
+queries, current/final insight, vault guards, and both death-score paths
+through it. Make carried container weight recursive, including minimum
+contained-coin weight and all three bag-of-holding modifiers. After attribute
+randomization, run a source-order carry loop which exhausts the racial
+Strength maximum before raising Constitution and updates current/maximum
+arrays together. If both attributes cap while still overweight, retain the
+positive excess rather than looping or weakening the inventory.
+
+**Measured effect and acceptance:** `test/startup_carry.test.js` passes 7/7
+across nested known/unknown gold, insight disclosure, recursive/bag weight,
+Strength-only and Constitution carry adjustment, capped failure, all13 roles,
+and a new seed8201 bridge-free Tourist turn. That live turn has a zero bridge
+ledger and coherent initial-money/capacity state. The combined startup,
+artifact, Priest, and bridge-policy selection passes33/33. The nearby exact
+character-selection/live-Rogue regression remains18/18. Every verifier exited
+normally; no full suite, corpus, sealed gate, score, push, publication, or
+animation work ran. Implementation commit `a1f87a8` owns the shared code and
+focused test.
+
+**Falsified hypotheses, limits, and next blocker:** ordinary starting sacks do
+not contain hidden gold, stored outer-object weight was not a sufficient
+recursive owner, and the existing duplicate gold helpers were neither
+identity-safe nor knowledge-complete. Carry/content startup is now
+source-owned under bounded witnesses, but the registry remains `partial`:
+reroll, permanent blind/deaf strata, broader cross-role pet behavior, remaining
+room-fill/fixture bridges, and the sealed corpus gate remain open. Next inspect
+the reroll lifecycle before leaving startup, without opening a sealed trace or
+publishing a measurement.
+
+---

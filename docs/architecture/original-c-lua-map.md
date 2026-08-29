@@ -35246,3 +35246,48 @@ selective knowledge, race controls, nudist, and the pony saddle. Lua owns none
 of these boundaries. The registry stays **partial** pending hidden starting
 gold/carry adjustment, reroll and blind/deaf option strata, broader pet state,
 and the scheduled sealed gate.
+
+## 967. Starting carry capacity closes over the complete object graph
+
+~~~mermaid
+flowchart TD
+    Role["u_init_role / u_init_race inventory"] --> Graph["carried object graph"]
+    Graph --> Gold["hidden_gold / contained_gold"]
+    Graph --> Weight["recursive weight; bag status modifies contents"]
+    Gold --> Initial["u.umoney0 startup bookkeeping"]
+    Weight --> Excess["inv_weight = carried weight - weight_cap"]
+    Attr["init_attr + vary_init_attr"] --> Excess
+    Excess --> Check{"over normal capacity?"}
+    Check -->|yes| Strength["adjattrib Strength +1 until capped"]
+    Strength --> Check
+    Check -->|Strength capped| Constitution["adjattrib Constitution +1 until fit/capped"]
+    Constitution --> Check
+    Check -->|no| Skills["u_init_skills_discoveries"]
+    Gold --> Consumers["wallet, insight, vault guard, death score"]
+~~~
+
+Pinned `mkbox_cnts()` proves that ordinary role sacks are deliberately empty
+while `moves <= 1`, so hidden gold is not the cause of represented overweight
+startup. `hidden_gold(TRUE)` is nevertheless part of the source boundary: it
+recurses through all carried containers and contributes to initial-money
+bookkeeping without moving coins into the purse. The shared JavaScript owner
+now preserves the `even_if_unknown` rule at every enclosing container and is
+used by startup, wallet queries, insight, vault guards, and death scoring.
+This also removes a concrete stale identity: one end path searched for object
+type 449 even though the pinned gold-piece identity is 438.
+
+Carried weight now follows the same recursive graph. Immediate contained coin
+stacks weigh at least one unit; ordinary containers add content weight; and a
+bag of holding applies cursed 2x, blessed ceiling-quarter, or uncursed
+ceiling-half content weight. `u_init_carry_attr_boost()` runs after attribute
+randomization. While `inv_weight()` is positive it raises Strength to the
+racial maximum first, then Constitution, stopping honestly if both are capped.
+The stored display-order attribute arrays and their maxima are updated
+together, so later status, combat, and capacity owners observe one state.
+
+The focused witness uses synthetic nested containers and deliberately
+overweight states to exercise branches ordinary current starts do not happen
+to reach, then checks all 13 role startups and a fresh bridge-free Tourist
+turn. Lua owns none of this boundary. The registry remains **partial** because
+reroll and permanent blind/deaf strata, broader cross-role pet behavior, and
+the sealed stratified gate remain open.
