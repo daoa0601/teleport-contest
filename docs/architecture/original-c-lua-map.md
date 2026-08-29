@@ -36163,3 +36163,57 @@ dragon eggs have an additional tame path. Those branches, broader adjacent-
 placement and extinction-during-batch behavior, `set_corpsenm()` timer
 preservation, object move/split/relink semantics, inactive-level catch-up, and
 a sealed stratum remain open and are rejected rather than approximated.
+
+## 980. Ordinary floor globs own variable weight, catch-up, and deletion
+
+~~~mermaid
+flowchart TD
+    Construct["mksobj initializes one of four glob types"] --> Identity["next_ident consumes rnd(2)"]
+    Identity --> State["globby; quantity 1; weight 20; known; pudding species"]
+    State --> First["start_glob_timeout: moves plus 23 plus rn2(5)"]
+    First --> Claim["run_timers claims SHRINK_GLOB"]
+    Claim --> Carrier{"ordinary non-ice floor carrier?"}
+    Carrier -->|no| Reject["fail loud; separate lifecycle owner remains open"]
+    Carrier -->|yes| Away{"deadline earlier than current move?"}
+    Away -->|yes| Delta["delta = floor((moves - deadline + 24) / 25)"]
+    Delta --> CatchGone{"delta at least current weight?"}
+    CatchGone -->|yes| SilentDelete["set weight zero; delete silently without repaint"]
+    CatchGone -->|no| CatchShrink["subtract delta; next delay = 25 - delta mod 25"]
+    CatchShrink --> FirstFixed["schedule deterministic residual deadline"]
+    Away -->|no| One["subtract one weight and one oeaten when above one"]
+    One --> Gone{"weight is zero?"}
+    Gone -->|no| Again["schedule 23 plus rn2(5)"]
+    Again --> Claim
+    Gone -->|yes| Delete["extract and delete floor identity"]
+    Delete --> Seen{"square visible?"}
+    Seen -->|yes| Repaint["newsym, then present fade-away line"]
+    Seen -->|no| Done["no presentation"]
+~~~
+
+Native pudding globs are not ordinary food stacks. Initialized construction
+sets `globby`, forces quantity one, stores the complete mass directly in
+`owt`, marks the type known and description-known, records the corresponding
+ooze or pudding species, and immediately starts a random 23-through-27-turn
+timer. Object identity allocation remains before that timer draw. JavaScript
+now preserves the same ordering and `weight()` returns the live `owt` even for
+a partly eaten glob instead of reconstructing `base weight * quantity`.
+
+For an ordinary non-ice floor glob, an exact callback removes one unit of
+weight, also reduces `oeaten` when it exceeds one, and schedules another fresh
+23-through-27-turn attempt. The native 20-to-19 and 10-to-9 shrink notices are
+inventory-only; a visible floor glob remains silent until its final unit. At
+zero, object extraction and repaint happen before the fade-away line. An
+overdue callback follows a different source transaction: it derives the number
+of missed 25-turn units arithmetically, deletes a consumed glob silently, or
+subtracts the missed mass and schedules the deterministic residual interval
+without consuming RNG.
+
+This owner is mechanically **partial**. A glob on ice shrinks only on its
+three-turn cadence and overdue ice catch-up scales delta. A glob buried under
+ice pauses while retaining its timer. Inventory and nested-container carriers
+own threshold or carrying-capacity prose and recursive weights; monster
+inventory, migration, burial, active eating, worn cleanup, and final deletion
+have different chains. Glob absorption also combines mass, eating state, age,
+and two timer remainders. Those branches, save relocation, inactive-level
+breadth, and a sealed stratum remain open and fail loudly rather than inheriting
+the ordinary floor result.

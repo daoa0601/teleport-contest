@@ -95422,3 +95422,75 @@ portfolio should compare a complete figurine carrier against a complete glob
 carrier, while retaining the explicit egg-carrier gaps.
 
 ---
+
+### [2026-08-29 19:37 EEST, journal block 3148] {#bridge-free #object-timers #shrink-glob #fresh-seed #floor-object #catch-up #variable-weight #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after the visible-floor egg owner,
+the remaining new-callback portfolio compared `FIG_TRANSFORM` with
+`SHRINK_GLOB`. JavaScript could name the four glob object types, but initialized
+them through the ordinary food path: no `globby` identity, no fixed quantity
+one, no pudding `corpsenm`, no variable `owt` contract, and no shrink timer.
+The earliest common divergence was therefore fresh object construction rather
+than a late fade line. Native `mkobj.c:mksobj_init()` commits those properties
+and calls `start_glob_timeout()` immediately after object identity allocation.
+
+**Prediction portfolio and decisive evidence:** figurines initially appeared
+small, but their first useful timer carrier is added through inventory or
+monster inventory and then crosses `enexto()`, `figurine_location_checks()`,
+`make_familiar()`, taming, invisibility, mimic and hiding state, carrier prose,
+retry, and deletion. Globs have broad carriers too, but native source exposes a
+coherent ordinary non-ice floor slice: all four constructors, one-unit exact
+shrink, partly-eaten mass, fresh rescheduling, arithmetic overdue catch-up,
+silent catch-up deletion, and visible exact deletion. That slice introduces no
+missing actor relationship. Direct inspection of
+`mkobj.c:start_glob_timeout()/shrink_glob()/shrinking_glob_gone()/weight()`
+selected it while keeping ice, containers, inventory, migration, burial,
+eating, encumbrance, and melding as independent predictions rather than
+assuming they share floor behavior.
+
+**Decision and implementation:** commit `f242f18` defines the four glob object
+constants and initializes a real glob as quantity one, weight 20, known and
+description-known, tied to the corresponding gray ooze, brown pudding, green
+slime, or black pudding. Construction inserts `SHRINK_GLOB` at
+`moves + 23 + rn2(5)`. The shared queue claims that event before the callback.
+An exact ordinary-floor callback subtracts one live weight unit and one
+`oeaten` unit when above one, then schedules a fresh 23-through-27-turn attempt.
+At zero it extracts and deletes the object, repaints a visible square, and only
+then exposes the fade line for tty. An overdue callback computes missed
+25-turn units, deletes silently when exhausted, or subtracts the aggregate and
+schedules `25 - (delta % 25)` without RNG. Shared `objectWeight()` now returns
+the stored glob mass before ordinary partly-eaten food scaling. Non-floor and
+ice carriers reject before callback mutation rather than borrowing this result.
+
+**Measured effect, correction, and regression:** the new witness file passes
+**5/5**. It covers all four fresh constructor identities, exact source order,
+one-unit and partly-eaten shrink, variable weight, fresh random rescheduling,
+visible deletion before prose, two-unit overdue catch-up with a deterministic
+23-turn residual, and explicit carried/ice rejection. Its first bounded run
+passed four cases but failed a construction-log assertion: the test expected
+four timer draws while the trace contained eight calls. The first diagnosis
+incorrectly attributed the leading call to erosion. An isolated one-object
+trace showed the actual pair was `next_ident()`'s `rnd(2)` followed by the
+glob timer's `rn2(5)`; the corrected assertion now pins that identity-before-
+timer order and the exact rerun exits **5/5**. The combined bridge-policy,
+egg, glob, lamp, Priest-startup, ordinary-room, and themed-room gate passes
+**87/87**, with zero bridge hits. The mechanical audit reports 115 files,
+15 guarded modules, and 19 fixture modules with `ok: true`. Every run was
+guarded, singular, owned until exit, and no duplicate verifier was launched.
+
+**Falsified hypotheses, limit, and next blocker:** a glob is not an ordinary
+quantity-bearing food stack; `weight()` must not reconstruct its mass from the
+object table; floor callbacks do not emit the 20-to-19 or 10-to-9 inventory
+shrink notices; overdue catch-up does not replay random 25-turn callbacks; and
+its residual deadline is deterministic rather than a fresh `rn2(5)`. The
+ordinary floor owner remains `partial`: ice and buried-under-ice cadence,
+inventory and monster inventory, recursive container weights, active eating,
+encumbrance feedback, migration and burial, worn cleanup, absorption and timer
+averaging, save relocation, inactive-level breadth, and a sealed stratum remain
+open. `FIG_TRANSFORM` remains absent. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next callback portfolio should begin with figurine timer attachment
+and determine whether a complete ordinary floor or carried familiar path is
+now smaller than one of the remaining egg/glob carrier gaps.
+
+---
