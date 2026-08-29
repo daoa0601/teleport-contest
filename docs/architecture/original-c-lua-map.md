@@ -35469,8 +35469,8 @@ flowchart TD
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
     Pick --> Live["Ghost, Cloud, hazards, Garden, populations: implemented"]
-    Pick --> Partial["Buried treasure/zombies, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["Ice and Light source: absent"]
+    Pick --> Partial["Buried treasure/zombies, Light, temple, storeroom, teleport hub: partial"]
+    Pick --> Absent["Ice room: absent"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35492,8 +35492,8 @@ callback which has not been ported instead of reporting an empty callback as
 implemented. The generated ownership registry records every fill separately.
 Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
 Garden, Massacre, and Statuary are `implemented`; Buried zombies, Temple of
-the gods, Storeroom, Teleportation hub, and Buried treasure are `partial`;
-Ice room and Light source are `absent`.
+the gods, Storeroom, Teleportation hub, Buried treasure, and Light source are
+`partial`; Ice room is `absent`.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35578,3 +35578,23 @@ It records the organic rot deadline but has no shared timer-queue dispatcher or
 `rot_organic()` callback yet, so this component remains mechanically
 `partial`; a passing construction witness is not being promoted into fake
 runtime acceptance.
+
+Light source also crosses construction into a shared runtime graph. Lua is
+eligible only for an unlit room, then creates an initialized oil lamp with
+`lit=true`. `mksobj()` first selects 1000..1499 turns of fuel and BUC state;
+`begin_burn()` schedules the distance to the next breakpoint and stores only
+the remaining threshold fuel on the object. For an ordinary new lamp that is
+`initial fuel -> 150 -> 100 -> 50 -> 25 -> 0`, followed by one final callback
+which removes the mobile light. The JavaScript owner now retains the deadline
+and timed state on the object, advances it during the source global-turn
+maintenance boundary, and extinguishes at zero.
+
+`light.c:do_light_sources()` does not mutate permanent terrain lighting. At
+every vision recalculation it projects a radius-three circle from the lamp;
+an off-hero source uses `clear_path()` for every candidate, while a carried
+source reuses the hero's `COULD_SEE` bitmap. The existing transient-monster
+light projection now shares this mobile-light map with top-level floor, hero,
+and monster oil lamps, so pickup and save/restore move the source through live
+object identity rather than a room fixture. Threshold warning text, other
+burning object types, and timer-id ordering in the generic queue remain open,
+so Light source is mechanically `partial`, not `implemented`.

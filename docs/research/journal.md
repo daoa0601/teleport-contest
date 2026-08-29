@@ -94286,3 +94286,63 @@ to close it; otherwise continue one of the existing partial callbacks without
 mislabeling a timer or runtime stub as acceptance.
 
 ---
+
+### [2026-08-29 15:30 EEST, journal block 3131] {#bridge-free #level-generation #lua #light-source #oil-lamp #vision #timers #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** after block 3130, the audit
+followed the one-line Lua Light source callback through
+`sp_lev.c:create_object()`, `timeout.c:begin_burn()/burn_object()`, and
+`light.c:do_light_sources()`. JavaScript returned false and created no lamp.
+Merely setting `lamplit=true` would still leave the object inert: source C
+registers a fuel timer and a mobile radius-three light whose position is
+recomputed from live object ownership at every vision pass.
+
+**Prediction portfolio and decisive evidence:** (1) a permanent-terrain-light
+hypothesis predicted setting room cells `lit`; source instead stores temporary
+illumination in the vision buffer without mutating `levl[].lit`. (2) an
+initial-fuel countdown predicted the object could retain 1000..1499 in `age`;
+`begin_burn()` schedules the distance to the next magic breakpoint and stores
+only the remaining 150, then repeats through 100, 50, 25, and 0. (3) one final
+zero event predicted reaching `age=0` immediately extinguished the lamp; C
+schedules the last 25 turns with zero stored, then the following callback calls
+`end_burn()`. (4) one square-radius hypothesis predicted every 7x7 cell was
+lit; `circle_data` clips each row, and off-hero sources additionally require
+`clear_path()`. (5) a floor-coordinate fixture predicted light state could
+stay attached to its creation tile; `get_obj_location()` follows a picked-up
+lamp to the hero and a monster-held lamp to that monster.
+
+**Decision and implementation:** introduce a narrow shared oil-lamp runtime
+owner rather than a room-only flag. Light source constructs the initialized
+lamp at a live dry room coordinate, then schedules its first source breakpoint.
+Object deadline and timed state survive ordinary serialization. Global-turn
+maintenance advances exact breakpoints, handles overdue callbacks, and
+extinguishes the lamp. Vision now composes source-shaped mobile illumination
+for floor, hero-inventory, and monster-inventory oil lamps alongside existing
+light-emitting monsters, using the hero `COULD_SEE` optimization or off-hero
+`clearPath()` as C does. Keep the component `partial`: threshold warning text,
+other burning object types, and generic timer-id ordering are not yet owned.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **19/19**.
+The new witness pins an eligible unlit-room lamp, constructor-selected fuel
+range, initial timer deadline, every breakpoint, final extinction, timed state,
+radius-three illumination of a cell which is dark without the lamp, and zero
+bridge hits. The combined bridge-policy, Priest startup, ordinary-room, and
+themed-room selection passes **35/35**. Five represented level carriers again
+pass for Storeroom, nesting rooms, secret-door orientation, clean Minetown-2,
+and Orcus ghost-town shops. The bridge-free audit remains green over 112 files.
+Every verifier exited and the post-run guard found no owned test tree.
+Implementation commit `7983cca` contains only the shared light owner, vision
+and turn integration, the callback, and its focused witness.
+
+**Falsified hypotheses, limit, and next blocker:** a lit lamp is not permanent
+room terrain, fuel age is not a simple decrementing initial total, reaching a
+stored zero is not immediate extinction, the light radius is not a square, and
+creation coordinates cannot own a mobile object. No full suite, public corpus,
+sealed trace, score, push, publication, official measurement, or animation
+work ran. Seven fills remain incomplete because Light source advanced from
+`absent` to `partial`. Ice is now the only absent callback, but its melt graph
+remains deliberately deferred. Next improve an existing partial callback,
+starting with Buried zombies' depth-expanded species and source timer ordering,
+unless that audit requires the generic timer queue first.
+
+---
