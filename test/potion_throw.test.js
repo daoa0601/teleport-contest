@@ -509,6 +509,92 @@ test('live cursed water heals a demon without taking the hostile wake branch',
         assertNoBridgeUse();
     });
 
+test('live blessed water damages silent undead without waking its neighbors',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 187,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const neighbor = {
+            m_id: 2711,
+            mnum: PM_PURPLE_WORM,
+            mx: 13,
+            my: 10,
+            mhp: 12,
+            mhpmax: 12,
+            msleeping: 1,
+            mpeaceful: 0,
+            mtame: 0,
+            minvent: [],
+            inventory: [],
+        };
+        game.level.monsters.push(neighbor);
+        const potion = addKnownPotion(POT_WATER);
+        potion.blessed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.ok(monster.mhp < 19);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(neighbor.msleeping, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live cursed water changes a human were only without shape protection',
+    async () => {
+        for (const protectedHero of [false, true]) {
+            const monster = freshMapPotionState(2);
+            Object.assign(monster, {
+                mnum: 263,
+                mhp: 10,
+                mhpmax: 20,
+                msleeping: 1,
+            });
+            game.u.protectionFromShapeChangers = protectedHero;
+            const potion = addKnownPotion(POT_WATER);
+            potion.cursed = true;
+
+            initRng(2702n);
+            enableRngLog();
+            await throwEast(potion, Array(20).fill(' '));
+
+            assert.equal(monster.mnum, protectedHero ? 263 : 21);
+            assert.ok(monster.mhp > 9);
+            assert.equal(monster.msleeping, 0);
+            assert.equal(potion.where, 'gone');
+            assertNoBridgeUse();
+        }
+    });
+
+test('live ordinary water rusts a surviving iron golem', async () => {
+    const monster = freshMapPotionState(2);
+    Object.assign(monster, {
+        mnum: 259,
+        mhp: 20,
+        mhpmax: 20,
+        msleeping: 1,
+    });
+    const potion = addKnownPotion(POT_WATER);
+
+    initRng(2702n);
+    enableRngLog();
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.ok(monster.mhp < 19);
+    assert.equal(monster.dead, undefined);
+    assert.equal(game.level.monsters.includes(monster), true);
+    assert.equal(monster.msleeping, 0);
+    assert.match(game._pending_message, /iron golem rusts\./);
+    assert.equal(potion.where, 'gone');
+    assertNoBridgeUse();
+});
+
 test('live water contact clones a hostile gremlin with split hit points',
     async () => {
         const monster = freshMapPotionState(2);
