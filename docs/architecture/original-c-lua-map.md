@@ -35492,9 +35492,10 @@ implemented. The generated ownership registry records every fill separately.
 Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
 Garden, Massacre, and Statuary are `implemented`; Buried zombies, Temple of
 the gods, Storeroom, Teleportation hub, Buried treasure, and Light source are
-`partial`. Ice room is now also `partial`: its ordinary timer-driven melt core
-is live, but liquid-occupant, boulder, drawbridge, and cached-level continuations
-remain explicit gaps.
+`partial`. Ice room is now also `partial`: its ordinary timer-driven melt core,
+boulder continuation, and common ordinary occupant death transaction are live,
+but life-saving/special-death, unsafe-liquid, hero, drawbridge, and cached-level
+continuations remain explicit gaps.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35722,8 +35723,8 @@ flowchart TD
     Schedule --> Shared["shared TIMER_OBJECT/TIMER_LEVEL ordered queue"]
     Shared --> Claim["claim before callback"]
     Claim --> Guard{"continuation mechanically owned?"}
-    Guard -->|hero, unsafe monster, boulder occupant| Fail["fail before terrain mutation"]
-    Guard -->|ordinary| Melt["ICE to MOAT or POOL"]
+    Guard -->|hero, unsafe monster, unsupported death family| Fail["fail before terrain mutation"]
+    Guard -->|ordinary or owned boulder occupant| Melt["ICE to MOAT or POOL"]
     Melt --> Trap["trap_ice_effects; mine/bear-trap object conversion"]
     Trap --> Corpses["obj_ice_effects; halve thawed corpse age/time"]
     Corpses --> Unearth["unearth objects; stop ROT_ORGANIC; delete engraving"]
@@ -35749,16 +35750,16 @@ save/restore witness proves that the positional timer state survives as level
 state, and an equal-deadline witness proves it interleaves with object timers by
 newest shared id.
 
-This owner is deliberately **partial**. The no-occupant boulder continuation is
-now source-owned as section 974 records, but a fill can kill a non-airborne
-occupant and enter inventory drop/death handling; that combined branch remains
-unowned. Hero `spoteffects()` and drowning, monster `minliquid()` including
-teleport/death and the gremlin and iron-golem special transactions, drawbridge
-ice, timer coordinate remapping, explicit terrain replacement cancellation,
-inactive-level catch-up, and spot-time queries are also open. JavaScript rejects
-hero, unsafe-monster, and boulder-plus-occupant edges before mutating terrain,
-so a hidden carrier fails at the first honest missing owner instead of receiving
-a plausible but false acceptance state.
+This owner is deliberately **partial**. The boulder continuation is
+source-owned as section 974 records, and section 975 closes the common ordinary
+occupant death/drop/corpse/burial branch. Life-saving, shapechanging, special
+corpse and explosion families, and pet/unique/special detachment still fail
+before terrain mutation. Hero `spoteffects()` and drowning, monster
+`minliquid()` including teleport/death and the gremlin and iron-golem special
+transactions, drawbridge ice, timer coordinate remapping, explicit terrain
+replacement cancellation, inactive-level catch-up, and spot-time queries are
+also open. A hidden carrier therefore still fails at the first honest missing
+owner rather than receiving a plausible but false acceptance state.
 
 ## 974. Melted-ice boulders resume across messages before owning RNG
 
@@ -35813,10 +35814,56 @@ suspend tty. The focused continuation witness records the message/RNG timeline
 directly: zero calls at the first two messages, `rn2(10)=0` at the first splash
 and wake, then `rn2(10)=6` before the fill repaint and second splash.
 
-This slice stops before the remaining death transaction. When a boulder fills
-water occupied by a non-airborne monster, native code can call `mondied()`
-inside `boulder_hits_pool()` before burial and splash presentation; inventory,
-corpse, life-saving, and pending actor-scan state all become observable. The
-port rejects every boulder-plus-occupant carrier before melting the ice until
-that complete owner exists. Hero water state, drawbridges, and unsafe
-`minliquid()` branches remain separate explicit gaps.
+The common occupant-death continuation is now source-owned by section 975.
+Unsupported life-saving, shapechanging, special death/corpse, and actor
+detachment families retain a pre-mutation fail-loud boundary. Hero water state,
+drawbridges, and unsafe `minliquid()` branches remain separate explicit gaps.
+
+## 975. Ice-fill occupant death is ordered before burial and splash
+
+~~~mermaid
+flowchart TD
+    Fill["boulder fill changes water to ROOM"] --> Air{"m_in_air(monster)?"}
+    Air -->|yes| Survive["monster survives on the dry square"]
+    Air -->|no| Gap{"common death family owned?"}
+    Gap -->|no| Fail["fail before the earlier ice mutation"]
+    Gap -->|yes| Mondied["mondied then mondead"]
+    Mondied --> Detach["m_detach then relobj inventory to floor"]
+    Detach --> Chance["corpse_chance"]
+    Chance --> NoCorpse{"G_NOCORPSE or no roll?"}
+    NoCorpse -->|yes| None["no corpse object"]
+    NoCorpse -->|no| Corpse["make_corpse through gendered mkcorpstat"]
+    None --> Bury["bury remaining floor pile"]
+    Corpse --> Bury
+    Bury --> Splash["present splash, then wake and disturb"]
+~~~
+
+Two similar source predicates deliberately remain separate. `minliquid()`
+lets swimmers, clingers, amphibious and breathless monsters survive ordinary
+water; a clinger does not need to be hidden for that safety gate. By contrast,
+`m_in_air()` treats a clinger as airborne only when it is `mundetected` on a
+level with a ceiling. A grounded piercer therefore survives the liquid check
+but dies when the boulder fills it, while a hidden ceiling piercer survives the
+same fill. Direct adversarial witnesses pin both outcomes.
+
+For the common non-airborne family, JavaScript follows the observable
+`mondied()` sequence before the boulder transaction continues: record the
+death, detach the actor, clear equipment state, drop each carried identity,
+evaluate level-specific and ordinary corpse chance, honor `G_NOCORPSE`, and
+create, name, and stack a gendered corpse through `mkcorpstat()` when eligible.
+The dropped inventory and corpse are already in the floor pile when
+`bury_objs()` runs, so
+they are buried or resisted before the splash can be displayed. A continuation
+witness proves the initial melt and settling messages see the live actor and
+zero boulder/death RNG, while the splash sees the detached actor and buried
+pile.
+
+This is not a claim that generic `mondead()` is complete. Worn monster
+life-saving can revive the actor and present several messages; shapechanging
+can restore a vampire form; explosions, special corpses, golems,
+mummies/zombies, Riders, pets, unique monsters, shopkeepers, priests, guards,
+worms, and quest actors have additional state or presentation owners. Active
+mimics and pit occupants also need map-detachment callbacks. Those families are
+named and rejected before ice changes. Unsafe `minliquid()`, hero, drawbridge,
+timer lifecycle, and sealed-corpus strata remain open, so Ice stays
+mechanically `partial`.

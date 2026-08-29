@@ -94725,3 +94725,80 @@ either close the boulder-occupant death/drop transaction end to end or select a
 different complete timer family; it must not weaken the fail-loud boundary.
 
 ---
+
+### [2026-08-29 17:19 EEST, journal block 3138] {#bridge-free #ice-room #melt-ice #boulder #monster-death #m-in-air #minliquid #inventory-drop #corpse #burial #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3137 stopped before every
+boulder-plus-monster carrier because native `do.c:boulder_hits_pool()` can call
+`mondied()` after changing the liquid to `ROOM` and before trap deletion,
+`bury_objs()`, splash presentation, and `wake_nearto()`. The earliest missing
+owner was not one generic “water-safe monster” check. Source inspection split
+two independent predicates: `minliquid()` lets ordinary clingers survive water,
+but `m_in_air()` counts a clinger only when it is hidden on a ceiling. A
+grounded piercer therefore reaches the fill and dies; an otherwise identical
+`mundetected` piercer survives above the newly dry square.
+
+**Prediction portfolio and decisive evidence:** the critical-debugging
+portfolio kept six competing families live. (1) Reusing the `minliquid()` safe
+set for boulder survival predicted both piercers survived; `m_in_air()`
+falsifies it. (2) Treating every clinger as grounded predicted both died; the
+ceiling/mundetected clause falsifies it. (3) Detaching after burial predicted
+inventory and corpse remained accessible; `mondead()->m_detach()->relobj()` and
+`mondied()->corpse_chance()->make_corpse()` put them on the floor before
+`bury_objs()`. (4) Checking `G_NOCORPSE` before the corpse roll predicted no
+second RNG call for a skeleton; native `mondied()` pays `corpse_chance()` first
+and `make_corpse()` rejects the object afterward. (5) Modeling all deaths as
+ordinary predicted life-saving and black-pudding branches could share the same
+projection; monster revival messages, vampire/special corpse behavior,
+explosions, and actor-specific detachment state falsify that equivalence. (6)
+Creating a corpse directly predicted sufficient state; `mkcorpstat()` also
+records corpse/statue gender bits in `spe`.
+
+**Decision and implementation:** commit `047f01e` owns only the common
+non-airborne death family. The pre-mutation guard now separates ordinary liquid
+safety from `m_in_air`, names unsupported life-saving, shapechanging,
+active-mimic/pit, pet/unique/special-actor, and special corpse/death families,
+and rejects them before the earlier ICE mutation. The owned path records the death, releases
+and clears monster equipment/inventory, detaches the actor, evaluates
+level-specific and ordinary corpse chance, honors `G_NOCORPSE`, constructs,
+names, and stacks an eligible gendered corpse through `mkcorpstat()`, and lets
+the existing boulder fill bury the resulting floor pile before splash. Airborne occupants survive
+without entering that transaction. The architecture graph and mechanical
+registry now record this owned stratum and its residual gaps.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **42/42**.
+The airborne witness preserves a floating eye; the adversarial clinger witness
+kills only the grounded piercer; the ordinary brown-mold witness proves the
+initial melt/settling messages see a live actor and zero boulder/death RNG,
+then proves inventory release, vanquished state, corpse gender, invocation-tool
+resistance, residual-pile burial, and actor removal before the splash. The
+named brown-mold corpse retains `Mildew` before burial. The skeleton witness
+records `rn2(10)=3`, then `rn2(3)=0`, and still creates no
+corpse through `G_NOCORPSE`. Worn life-saving and black-pudding special death
+both preserve ICE and actor state on rejection; active-mimic and pit-detachment
+witnesses do the same. The combined bridge-policy, Priest startup,
+ordinary-room, and themed-room gate passes **58/58**; the five
+represented Storeroom, nesting-room, secret-door, Minetown-2, and Orcus level
+carriers pass **5/5**. The ownership generator and stale-file check both pass.
+Every verifier exited and each guard found no owned suite or corpus process.
+
+**Corrections, falsified hypotheses, limit, and next blocker:** the first
+focused run failed immediately because `G_UNIQ` is not exported by `const.js`;
+the owner now uses the exact local `0x1000` mask and no process remained. A
+later failure was only the test observer reading optional
+`level.buriedObjects.length` before that array existed; the observer now uses
+the accurate zero default. Neither was a production-path acceptance failure.
+Ordinary water safety is not airborne status; clingers are not one outcome;
+inventory/corpse burial is not a post-splash effect; `G_NOCORPSE` does not
+skip `corpse_chance()`; and the common projection is not generic `mondead()`.
+Ice remains `partial`: monster life-saving, shapechanging, special
+corpse/explosion, active-mimic/pit, and pet/unique/special detachment; unsafe
+`minliquid()` including teleport, drowning, gremlin, and iron-golem effects; hero
+`spoteffects()`, drawbridge ice, timer coordinate remapping and cancellation,
+inactive cached-level catch-up, spot-time queries, and a sealed stratum remain
+open. No full suite, public corpus, sealed trace, score, push, publication,
+official measurement, or animation work ran. The next coherent source-owned
+slice should select one complete residual family, with monster life-saving the
+narrowest candidate, rather than broadening the common projection.
+
+---
