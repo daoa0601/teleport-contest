@@ -23,6 +23,7 @@ import {
     cansee, clearAreaCells, couldsee, visibleCellsFrom, vision_recalc, vision_reset,
     vision_reset_new_level,
 } from './vision.js';
+import { beginLampBurn, endLampBurn } from './light.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
     dungeonFeatureSentenceAt,
@@ -171,7 +172,8 @@ import {
     weaponSkillDamageBonus, weaponSkillHitBonus,
 } from './skills.js';
 import {
-    addShopObjectToBill, billedPickupQuote, checkSpecialRoom,
+    addShopObjectToBill, billedPickupQuote, chargeUnpaidLampUse,
+    checkSpecialRoom,
     carriedShopBill, getCostOfShopItem, objectTypeKnown,
     SHOP_TYPE_NAMES,
     settleCarriedShopBillItem, settleThrownShopObject,
@@ -15019,6 +15021,70 @@ async function useMagicMarker() {
     }
 }
 
+function timedLampXname(object) {
+    if (object?.otyp === BRASS_LANTERN) return 'brass lantern';
+    const typeKnown = object?.typeKnown
+        || game._knownObjectTypes?.has(object?.otyp);
+    return typeKnown ? 'oil lamp' : 'lamp';
+}
+
+// C ref: apply.c:use_lamp().  This owner is deliberately limited to the two
+// fuel-timed lamp types already implemented by light.js; magic lamps, candles,
+// and their non-equivalent lifecycle remain explicit gaps.
+async function useTimedLamp(object) {
+    const lamp = object.otyp === BRASS_LANTERN ? 'lantern' : 'lamp';
+    if (object.lamplit) {
+        await pline(`Your ${lamp} is now off.`);
+        endLampBurn(object, game, game.moves ?? 0);
+        game.context.move = 1;
+        return;
+    }
+
+    if (game.underwater || game.u?.uinwater) {
+        await pline('This is not a diving lamp.');
+        game.context.move = 1;
+        return;
+    }
+
+    if ((object.age ?? 0) === 0) {
+        if (object.otyp === BRASS_LANTERN) {
+            await pline(heroIsBlind(game)
+                ? 'Nothing seems to happen.'
+                : 'Your lantern is out of power.');
+        } else {
+            await pline(`This ${timedLampXname(object)} has no oil.`);
+        }
+        game.context.move = 1;
+        return;
+    }
+
+    if (object.cursed && rn2(2) === 0) {
+        if (object.otyp === OIL_LAMP && rn2(3) === 0) {
+            const fingers = (game.uarmg || game.u?.uarmg)
+                ? 'gloves' : 'fingers';
+            await pline(
+                `The lamp spills and covers your ${fingers} with oil.`,
+            );
+            game.u.glibTurns = (game.u.glibTurns ?? 0) + d(2, 10);
+        } else if (!heroIsBlind(game)) {
+            await pline(
+                `The ${timedLampXname(object)} flickers for a moment, then dies.`,
+            );
+        } else {
+            await pline('Nothing seems to happen.');
+        }
+        game.context.move = 1;
+        return;
+    }
+
+    const usageFee = await chargeUnpaidLampUse(object, game);
+    if (usageFee?.message)
+        await plineWithContinuation(`Your ${lamp} is now on.`);
+    else await pline(`Your ${lamp} is now on.`);
+    beginLampBurn(object, game, game.moves ?? 0);
+    game.context.move = 1;
+}
+
 async function doapply() {
     // apply.c:doapply() rejects the current body and excessive load before
     // building the applicable-object set or exposing getobj().
@@ -15066,6 +15132,10 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if ([OIL_LAMP, BRASS_LANTERN].includes(item.otyp)) {
+                await useTimedLamp(item);
+                return;
+            }
             if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(item.otyp)) {
                 await useCarriedBag(item, underlay);
                 return;

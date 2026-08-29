@@ -46,6 +46,25 @@ export function beginOilLampBurn(
     return beginLampBurn(object, state, currentTurn);
 }
 
+// timeout.c:end_burn(..., TRUE) reaches cleanup_burn() through stop_timer().
+// The object's stored age excludes the turns owned by its active timer, so a
+// manual switch-off must restore the still-unspent portion before darkening
+// the source.  Natural expiry has already claimed its timer and deliberately
+// uses extinguishTimedLamp() below instead.
+export function endLampBurn(
+    object, state = game, currentTurn = state.moves ?? 0,
+) {
+    if (!object || !TIMED_LAMP_TYPES.has(object.otyp) || !object.lamplit)
+        return false;
+    const timer = stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+    if (!timer || !Number.isFinite(timer.deadline)) return false;
+    object.age = (object.age ?? 0)
+        + Math.max(0, timer.deadline - currentTurn);
+    object.lamplit = false;
+    state.vision_full_recalc = 1;
+    return true;
+}
+
 function extinguishTimedLamp(object, state) {
     object.lamplit = false;
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);

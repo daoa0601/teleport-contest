@@ -8,11 +8,13 @@ import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
 import { nextIdent } from './ident.js';
+import { exerciseAttribute } from './attrib.js';
+import { heroIsDeaf } from './senses.js';
 import { MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
 import { roomForRoomno } from './room.js';
 import { intemple, templeRoomAt } from './priest.js';
 import {
-    OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES,
+    BRASS_LANTERN, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OIL_LAMP,
 } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_TOWN, recordAchievement } from './achievements.js';
@@ -371,6 +373,35 @@ export function shopObjectUnitCost(object, resident = null, state = game) {
     if (resident?.eshk?.surcharge)
         cost += Math.trunc((cost + 2) / 3);
     return cost;
+}
+
+// C refs: shk.c:check_unpaid()/check_unpaid_usage()/cost_per_charge().
+// Ordinary oil lamps and brass lanterns pay a usage fee only when switched
+// on while their resident shopkeeper is still operating the current shop.
+// Prefix RNG is consumed before deaf/mute presentation, exactly as in C.
+export async function chargeUnpaidLampUse(object, state = game) {
+    if (!object?.unpaid
+        || ![OIL_LAMP, BRASS_LANTERN].includes(object.otyp)) return null;
+    const resident = shopkeeperForHero(state);
+    if (!resident) return null;
+
+    let amount = shopObjectUnitCost(object, resident, state);
+    if ((object.spe ?? 0) > 1) amount = Math.trunc(amount / 4);
+    if (amount <= 0) return null;
+
+    const first = rn2(3) === 0 ? 'Hey!  ' : '';
+    const second = rn2(3) === 0 ? 'Ahem.  ' : '';
+    const audible = !heroIsDeaf(state) && !resident.mute;
+    const message = audible
+        ? `"${first}${second}Usage fee, ${amount} zorkmid${
+            amount === 1 ? '' : 's'}."`
+        : null;
+    if (message) {
+        await pline(message);
+        exerciseAttribute(4, true, state);
+    }
+    resident.eshk.debit = (resident.eshk.debit ?? 0) + amount;
+    return { resident, amount, message };
 }
 
 export function getCostOfShopItem(object, state = game) {
