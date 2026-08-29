@@ -36532,11 +36532,61 @@ carrier supplies `empty water` on a pool square and `thin air` elsewhere.
 Overdue callbacks construct and delete without that line.
 
 This owner is mechanically **partial**. Its direct witnesses use an ordinary
-wumpus figurine and leocrotta carrier. Generated monster inventory, thrown or
-kicked catches, swallowing, special-level inventory, polymorph transfer,
-shopkeeper acquisition, merge/free identity behavior, light snuffing,
+wumpus figurine and leocrotta carrier. Generated and selected special-level
+inventory ownership is tracked in the next section. Thrown or kicked catches,
+swallowing, polymorph transfer, merge/free identity behavior, light snuffing,
 knowledge loss, named and long-worm attribution, See-invisible, alternate
 locomotion, hidden spawned forms, special familiar state, inactive cached-level
-timing, and a sealed stratum remain open. Those other manual minvent insertions
-must cross the shared boundary before monster acquisition can be marked
-implemented.
+timing, and a sealed stratum remain open.
+
+## 987. Generated monster inventory separates acquisition from direct linking
+
+~~~mermaid
+flowchart TD
+    Reserve["reserve primary actor id, coordinates, and empty minvent"] --> Core["m_initweap and m_initinv construct objects in source order"]
+    Core --> Kind{"source insertion boundary"}
+    Kind -->|mongets or mpickobj| Effects["run carry_obj_effects"]
+    Kind -->|mkmonmoney or direct add_to_minv| Direct["skip carrying effects"]
+    Effects --> Link["link where=minvent, carrier id, carrier coordinates"]
+    Direct --> Link
+    Link --> Final["final actor reuses reserved id and same inventory array"]
+    Ambient["ambient random birth record"] --> AmbientInv["duplicated live m_initinv"]
+    AmbientInv --> Kind
+    Special["Lua/special object first constructed on floor"] --> Extract["remove floor link after object fields are finalized"]
+    Extract --> SpecialAcquire["mpickobj-shaped head link"]
+    SpecialAcquire --> Effects
+    Priest["shrine, court, and shop startup objects"] --> Kind
+    Lua["Lua declares inventory contents but owns no JS linkage policy"] -.-> Special
+~~~
+
+C does not treat every minvent insertion alike. `mongets()` and most generated
+gear call `mpickobj()`, which runs `carry_obj_effects()` before
+`add_to_minv()`. `mkmonmoney()` calls `add_to_minv()` directly and therefore
+must not acquire a figurine timer or any future carrying-effect RNG merely
+because both identities end in the same chain. JavaScript now exposes these as
+two boundaries: acquisition with effects and direct linkage without effects.
+
+The main `makemon()` implementation used to construct its JavaScript array
+before the final actor record existed. It now reserves the native actor id,
+coordinates, and aliased inventory on the pending map actor; each generated
+object links at its actual construction point, and the final record reuses the
+same id and array. The duplicated ambient `m_initinv` path uses the same two
+boundaries. Hardcoded Lua/special-level objects retain their source sequence:
+construct on a temporary floor square, finalize declared fields, remove the
+floor link, then enter monster inventory. Court rulers, shrine priests, and
+shop startup inventory also delegate instead of hand-editing arrays.
+
+Every selected object now owns `where == minvent`, carrier coordinates,
+`carrierMid`, aliased `minvent`/`inventory`, and `hasInventory`; the timer graph
+can reach it through the live actor. A direct cursed-figurine control proves
+that bare `add_to_minv` consumes no RNG and attaches no timer, while the
+separate monster-figurine witnesses protect the `mpickobj` effect.
+
+This subsystem is mechanically **partial**. Merge/free identity, the canonical
+chain traversal order across all consumers, mplayer and lawful-minion object
+normalization, knowledge loss, light snuffing and candle burn, saddle/equipment
+continuations, thrown/kicked/swallowed/polymorph acquisition, remaining manual
+insertions in command and monster-movement modules, migration persistence, and
+a sealed stratum remain open. The broad scheduler test file also contains 13
+pre-existing failures on detached clean HEAD; those stale assertions are not
+accepted as inventory coverage or attributed to this slice.

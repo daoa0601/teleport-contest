@@ -95894,3 +95894,70 @@ insertions and choose the smallest constructor route that can replace a manual
 link with this source-owned acquisition boundary.
 
 ---
+
+### [2026-08-29 20:49 EEST, journal block 3155] {#bridge-free #monster-inventory #makemon #m-initinv #mpickobj #add-to-minv #startup #special-level #critical-debugging-portfolio #test-slop #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** the startup inventory portfolio
+separated primary `makemon()`, ambient random births, and Lua/special-level
+transfers. All three JavaScript routes built arrays directly, so generated
+objects could remain carrierless even though C had already run either
+`mpickobj()` or direct `add_to_minv()`. The earliest common divergence was the
+link itself: before monster use, timer callbacks, death drops, equipment, or
+display, a generated object lacked `OBJ_MINVENT`, carrier coordinates, and its
+actor identity. The primary route also delayed all linkage until after its
+entire inventory RNG graph because the final JavaScript actor record did not
+yet exist.
+
+**Prediction portfolio and decisive evidence:** four mechanisms were kept
+distinct. Normal `mongets()` and `mpickobj()` must run carrying effects before
+linkage. `mkmonmoney()` and bare `add_to_minv()` must link without those effects
+or their RNG. The primary constructor needs a reserved actor identity so each
+object can link at its source point before later constructor RNG. A Lua object
+must first finish its floor construction and declared fields, then lose floor
+ownership and head-link to the selected monster. The first special-inventory
+implementation incorrectly changed established array order; the Pri-loca
+witness exposed `[generated..., special...]` instead of its prior head-linked
+order, so that unrelated representation change was reverted while preserving
+the new ownership boundary.
+
+**Decision and implementation:** commit `6855e67` splits shared direct linkage
+from acquisition with `carry_obj_effects()`. Primary `makemon()` now reserves
+the actor id, coordinates, and aliased empty inventory on its pending actor;
+all normal and bypass gear paths link through that identity before the final
+actor record reuses the same array. The duplicated ambient `m_initinv` owner
+uses the same boundary, with leprechaun and greedy gold taking the direct-link
+route. Court equipment, hardcoded Lua/special transfers, shrine-priest
+inventory, and shop startup stock no longer mutate inventory arrays manually.
+No fixture, fast-forward, replay helper, or `replayMoves` branch was added.
+
+**Measured effect, adversarial audit, and test-slop control:** the new focused
+file passes **4/4**, covering primary shopkeeper gear, ambient direct money,
+a direct cursed-figurine no-effect control, and special floor-to-carrier
+transfer. The combined bridge-policy, timer, startup, room, and themed-room
+gate passes **115/115** with zero bridge hits. The mechanical audit remains
+clean at 118 files, 15 guarded modules, and 19 fixture modules. A broad
+`run_scheduler` run initially reported 14 failures; after restoring the one
+Pri-loca ordering regression, a targeted 17-case failure-surface run left 13.
+Running those exact names in a detached clean-HEAD worktree produced the same
+13 failures and four passes. One concrete stale assertion expects a tamed
+djinni's `pet` field to be absent even though committed production code sets it
+true. Those failures are baseline test slop, not new acceptance failures, and
+were neither edited nor relabeled green. Every verifier was singular, retained
+through exit, and the temporary worktree was removed afterward.
+
+**Falsified hypotheses, limit, and next blocker:** every minvent insertion does
+not run carrying effects; the final actor record is not required before a
+pending actor can own generated objects; array ordering is not safely changed
+inside an ownership-only slice; and a broad red test file does not prove a new
+regression without a clean baseline control. Conversely, merge/free identity,
+canonical chain traversal, mplayer/lawful-minion normalization, knowledge
+loss, light snuffing and candle burn, saddle/equipment continuations,
+thrown/kicked/swallowed/polymorph routes, manual insertions outside the selected
+constructors, migration, and a sealed stratum remain open. No full Contest
+suite, public corpus, sealed-trace inspection, score, push, publication,
+official measurement, or animation work ran. The next portfolio should compare
+the remaining live `mpickobj` entry routes—thrown/kicked catches versus
+swallowing and polymorph transfer—and select the smallest route whose object
+identity remains observable through a later timer, use, or drop.
+
+---
