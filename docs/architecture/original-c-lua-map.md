@@ -35634,8 +35634,12 @@ living corpsenm to its zombie form, reconstructs ordinary corpse timer state,
 and calls the revival graph. A buried zombie can require adjacent relocation,
 must be constructed with `NO_MINVENT`, removes the corpse only after successful
 creation, creates a pit, and emits visibility- or distance-dependent feedback.
-The current generic monster constructor does not yet honor `NO_MINVENT`, and
-the synchronous timeout position precedes later per-turn RNG. Deferring this
-work to an unrelated asynchronous tail would reorder the source turn. The
-ownership component therefore remains mechanically `partial` until that full
-runtime edge has a source-ordered owner and direct witness.
+The shared monster constructor now honors `NO_MINVENT` around fixed starting
+objects, `m_initweap()`, `m_initinv()`, the common item reservoirs, greedy gold,
+and the domestic-saddle probe. It still preserves non-inventory birth state,
+including sleep, peacefulness, mimic appearance, and shapechanging. That
+removes a revival-constructor blocker without pretending the callback exists:
+the synchronous timeout position still precedes later per-turn RNG. Deferring
+zombification to an unrelated asynchronous tail would reorder the source turn.
+The ownership component therefore remains mechanically `partial` until that
+full runtime edge has a source-ordered owner and direct witness.

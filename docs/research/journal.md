@@ -94410,3 +94410,57 @@ that runtime slice cannot be completed without a broader monster-constructor
 refactor.
 
 ---
+
+### [2026-08-29 15:47 EEST, journal block 3133] {#bridge-free #monster-construction #no-minvent #buried-zombies #rng #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3132 left native buried
+zombie revival blocked on `makemon(..., NO_MINVENT | MM_NOWAIT | MM_NOMSG |
+MM_NOCOUNTBIRTH)`. The shared JavaScript constructor imported the other flags
+but ignored `NO_MINVENT`: even an unarmed explicit zombie entered the common
+defensive/miscellaneous reservoirs and domestic-saddle probe, while an armed
+species also entered `m_initweap()`. The first divergence was therefore inside
+the reusable constructor, before the missing timer dispatcher.
+
+**Prediction portfolio and decisive evidence:** (1) discarding the finished
+inventory predicted equivalent final state; it would retain all constructor
+and item RNG, unlike C's `allow_minvent` gate. (2) skipping the entire monster
+constructor predicted an easy empty actor; C still owns hit points, gender,
+peacefulness, sleep, mimic appearance, shapechanging, placement, and identity.
+(3) a zombie-only exception predicted other callers were irrelevant; C defines
+`NO_MINVENT` at the shared constructor boundary, and an armed skeleton proves
+that the weapon graph must also be suppressed. (4) guarding only
+`m_initweap()` predicted an empty minvent; fixed quest/Vlad objects,
+`m_initinv()`, common reservoirs, greedy gold, and the saddle probe are all
+separate inventory owners under the same gate.
+
+**Decision and implementation:** make `allowMonsterInventory` a first-class
+projection of `NO_MINVENT`. Gate fixed starting objects, the complete weapon
+chain, every class-specific inventory branch, common item reservoirs, greedy
+gold, and the final saddle roll. Preserve quest-nemesis sleep and mimic/birth
+state outside that gate, and preserve `MM_NOWAIT` as the independent strategy
+owner. Implementation commit `e953dd5` contains only the shared constructor
+change and a direct kobold-zombie/armed-skeleton witness.
+
+**Measured effect and regression:** the direct themed-room and constructor
+selection passes **21/21**. The new witness replays each species from the same
+fresh seed with and without `NO_MINVENT`: the empty actor retains the ordinary
+birth RNG prefix and state, owns no inventory, and consumes none of the later
+weapon/inventory suffix. The combined bridge-policy, Priest startup,
+ordinary-room, and themed-room selection passes **37/37**. Five represented
+level carriers again pass for Storeroom, nesting rooms, secret-door
+orientation, clean Minetown-2, and Orcus ghost-town shops. The mechanical
+bridge audit remains green over 112 files. Every verifier exited and the
+post-run guard found no owned test tree.
+
+**Falsified hypotheses, limit, and next blocker:** final empty inventory is not
+enough if initialization RNG already ran, `NO_MINVENT` does not suppress birth
+state, its contract is not zombie-specific, and weapon suppression alone does
+not cover initial inventory. No full suite, public corpus, sealed trace, score,
+push, publication, official measurement, or animation work ran. The remaining
+Buried-zombies edge is now narrower but still real: install source-ordered
+object timer dispatch, map living corpses to zombie forms, choose a viable
+revival square, invoke the no-inventory constructor synchronously in the
+global-turn transaction, remove the corpse on success, and create the visible
+or audible pit-emergence result.
+
+---
