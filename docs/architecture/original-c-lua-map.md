@@ -35845,9 +35845,18 @@ flowchart TD
     Restore --> Genocided{"species genocided?"}
     Genocided -->|no| Bury
     Genocided -->|yes| StillGone["optional Unfortunately line, then HP zero"]
-    StillGone --> Detach
-    Saver -->|no| Detach["m_detach then relobj inventory to floor"]
-    Detach --> Chance["corpse_chance"]
+    StillGone --> Remove
+    Saver -->|no| Remove["m_detach removes actor from map"]
+    Remove --> Appearance{"object or furniture appearance?"}
+    Appearance -->|yes| Reveal["seemimic: clear appearance and mcorpsenm"]
+    Reveal --> Blocker{"appearance blocked light and square is now transparent?"}
+    Blocker -->|yes| Unblock["unblock_point then newsym"]
+    Blocker -->|no| Repaint["newsym"]
+    Unblock --> Repaint
+    Appearance -->|M_AP_MONSTER or nothing| Preserve["preserve appearance state until deallocation"]
+    Preserve --> Repaint
+    Repaint --> Drop["final newsym then relobj inventory to floor"]
+    Drop --> Chance["corpse_chance"]
     Chance --> NoCorpse{"G_NOCORPSE or no roll?"}
     NoCorpse -->|yes| None["no corpse object"]
     NoCorpse -->|no| Corpse["make_corpse through gendered mkcorpstat"]
@@ -35865,8 +35874,9 @@ but dies when the boulder fills it, while a hidden ceiling piercer survives the
 same fill. Direct adversarial witnesses pin both outcomes.
 
 For the common non-airborne family, JavaScript follows the observable
-`mondied()` sequence before the boulder transaction continues: record the
-death, detach the actor, clear equipment state, drop each carried identity,
+`mondied()` sequence before the boulder transaction continues: set HP zero,
+record the death, remove the actor from the map, resolve any object/furniture
+mimic appearance, repaint, clear equipment state, drop each carried identity,
 evaluate level-specific and ordinary corpse chance, honor `G_NOCORPSE`, and
 create, name, and stack a gendered corpse through `mkcorpstat()` when eligible.
 The dropped inventory and corpse are already in the floor pile when
@@ -35910,8 +35920,22 @@ heavy-abuse eye/gaze messages, minions, active eating/appearance, leash
 release, steed dismount, and hero attachment before mutation. Explosions,
 special corpses, golems, mummies/zombies, Riders, pets, unique monsters,
 shopkeepers, priests, guards,
-worms, and quest actors have additional state or presentation owners. Active
-mimics and pit occupants also need map-detachment callbacks. Those families are
+worms, and quest actors have additional state or presentation owners. Pit
+occupants still need their `fill_pit()` detachment callback. Those families are
 named and rejected before ice changes. Unsafe `minliquid()`, hero, drawbridge,
 timer lifecycle, and sealed-corpus strata remain open, so Ice stays
 mechanically `partial`.
+
+Object and furniture mimic detachment is now an owned subgraph rather than a
+blanket gap. Native `mon_leaving_level()` removes the actor before calling
+`seemimic()`, so the JavaScript owner follows that order: capture whether the
+appearance blocked light, remove the actor, clear `m_ap_type`, `mappearance`,
+and optional `mcorpsenm`, rebuild the blocker table only for a blocking
+appearance, repaint from `seemimic()`, repaint again at the end of the detach,
+and only then release inventory. `M_AP_MONSTER` deliberately bypasses
+`seemimic()` and retains its stale appearance data until later deallocation;
+an adversarial witness protects that non-equivalent branch. A boulder mimic,
+a nonblocking fountain mimic, and `M_AP_MONSTER` all pass without bridge hits.
+The blocker witness enters live-play visibility before recalculation because
+the themed-room fixture otherwise remains in `in_mklev`, where native-shaped
+visibility correctly defers its work.

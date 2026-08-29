@@ -95025,3 +95025,70 @@ measurement, or animation work ran. The next slice should leave the complex
 pet guard intact and select a smaller complete timer or detachment family.
 
 ---
+
+### [2026-08-29 18:29 EEST, journal block 3142] {#bridge-free #ice-room #boulder #monster-death #mimic #seemimic #vision #m-detach #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3141 left active mimic and
+pit detachment behind one blanket fail-loud boundary. Native
+`mon_leaving_level()` separates them: it removes the actor from the level map,
+calls `seemimic()` only for object or furniture appearances, conditionally
+repairs the light blocker, performs both mimic and final-square repaints, and
+only afterward does `m_detach()` release inventory. `M_AP_MONSTER` deliberately
+does not enter `seemimic()`. The earliest coherent missing owner was therefore
+object/furniture appearance removal after actor removal, not the later corpse,
+burial, or splash state and not pit `fill_pit()`.
+
+**Prediction portfolio and decisive evidence:** five candidate families were
+kept independent. (1) `HATCH_EGG` crosses monster construction, taming,
+placement, message, and remainder-timer ownership. (2) `FIG_TRANSFORM` crosses
+`make_familiar()`, retry placement, invisibility/mimic state, inventories, and
+floor/minvent presentation. (3) `SHRINK_GLOB` recurs through inventory,
+containers, floor, burial, migration, ice, eating, and encumbrance. (4) Pit
+detachment reaches residual boulders, trap removal, and burial ordering.
+(5) Object/furniture mimic detachment reaches a bounded complete source owner:
+`is_lightblocker_mappear()`, `remove_monster()`, `seemimic()`,
+`unblock_point()`, and `newsym()`. That fifth route was selected because its
+boundary could be closed without pretending the other four were equivalent.
+
+**Decision and implementation:** commit `c599c07` removes only the blanket
+mimic-detachment rejection. The ordinary ice-fill death owner now sets HP zero
+and records death, removes the actor, captures and clears object/furniture
+appearance plus direct or `mextra` `mcorpsenm`, rebuilds visibility for boulder,
+wall, closed-door, or tree appearances, performs the source-shaped repaint
+pair, and releases inventory afterward. The blocker predicate accepts both
+native cmap indices and the port's persisted terrain encoding. A
+non-light-blocking furniture appearance clears without a vision recalculation;
+`M_AP_MONSTER` remains attached to the dead object until later deallocation,
+matching the source exclusion. Pit and every previously named special actor or
+death family remain guarded before the earlier ICE mutation.
+
+**Measured effect and regression:** the blocker witness proves a boulder
+appearance clears both `mcorpsenm` projections, schedules a full live-play
+vision recalculation, detaches the actor, and reaches dry terrain with the real
+boulder consumed and zero bridge hits. Independent fountain and
+`M_AP_MONSTER` witnesses protect the nonblocker and deliberate non-reveal
+branches. `test/themerooms.test.js` passes **51/51**; the combined bridge-policy,
+Priest-startup, ordinary-room, and themed-room gate passes **67/67**; four
+shared Wizard/death-ray life-saving carriers pass **4/4**; and five represented
+level-generation carriers pass **5/5**. Every verifier exited, and every guard
+found no pre-existing suite or corpus process.
+
+**Corrections, falsified hypotheses, limit, and next blocker:** the first
+themed run passed 50 tests and failed the blocker precondition because the
+themed fixture still had `in_mklev=true`; `vision_recalc()` correctly defers
+during level construction, so `cansee()` could not establish live visibility.
+Entering live-play mode made the source-shaped visibility witness valid and
+falsified the hypothesis that the production unblock callback was broken. A
+subsequent source-order audit found and corrected a real draft defect: actor
+removal must precede `seemimic()`, and inventory release must follow both
+repaints. A green result before that audit would have been fake acceptance.
+Ice remains `partial`: pit detachment; shapechanging; special corpse/explosion;
+complex pet and special actors; unsafe monster `minliquid()`; hero and
+drawbridge continuations; `HATCH_EGG`, `FIG_TRANSFORM`, `SHRINK_GLOB`, and
+other timer lifecycle gaps; and a sealed stratum remain open. No full suite,
+public corpus, sealed-trace inspection, score, push, publication, official
+measurement, or animation work ran. The next slice should either close pit
+detachment with its complete `fill_pit()`/burial order or select another
+smaller complete source owner after a fresh portfolio comparison.
+
+---
