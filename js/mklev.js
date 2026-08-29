@@ -97,6 +97,7 @@ import { initializeMonsterArmor } from './monworn.js';
 import { setupElementalBubbles } from './elemental.js';
 import { roomForIndex } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
+import { beginOilLampBurn } from './light.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 
@@ -14790,6 +14791,14 @@ function fillBuriedTreasure(room) {
     }
 }
 
+// C/Lua refs: themerms.lua "Light source" and timeout.c begin_burn().
+// The initialized oil lamp keeps its constructor-selected fuel, then lit=true
+// schedules the first source breakpoint and registers mobile illumination.
+function fillLightSource(room) {
+    const lamp = specialObjectOfType(specialRoomContext(room), OIL_LAMP);
+    if (lamp) beginOilLampBurn(lamp);
+}
+
 async function fillSpiderNest(room, difficulty) {
     const context = specialRoomContext(room);
     const selected = themeroomSelection(room).percentage(30);
@@ -15044,6 +15053,7 @@ async function applyThemeroomFill(room, fill, difficulty) {
         fillBuriedZombies(room, difficulty);
     else if (fill.name === 'Massacre') fillMassacre(room);
     else if (fill.name === 'Statuary') await fillStatuary(room);
+    else if (fill.name === 'Light source') fillLightSource(room);
     else if (fill.name === 'Ghost of an Adventurer')
         await fillGhostAdventurer(room);
     else if (fill.name === 'Temple of the gods') fillTempleOfGods(room);

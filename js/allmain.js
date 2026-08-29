@@ -84,6 +84,7 @@ import {
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { syncBlindness, syncDeafness } from './senses.js';
+import { runObjectBurnTimers } from './light.js';
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import {
@@ -1774,6 +1775,7 @@ function initialTurnMaintenanceRng(
     // expires.
     const sourceTurn = completedTurn;
     if ((game.u?.mtimedone ?? 0) > 0) game.u.mtimedone--;
+    runObjectBurnTimers(game, sourceTurn);
     for (let x = 1; x < COLNO; x++) {
         const column = game.level?.objects?.[x];
         if (!column) continue;

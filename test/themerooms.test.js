@@ -13,15 +13,19 @@ import {
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
+import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
     runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
-import { BOULDER, CHEST, CORPSE, STATUE } from '../js/object_data.js';
+import { BOULDER, CHEST, CORPSE, OIL_LAMP, STATUE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
 import { initRng } from '../js/rng.js';
+import {
+    cansee, vision_recalc, vision_reset_new_level,
+} from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
@@ -471,6 +475,73 @@ test('Buried treasure owns nested contents before its deferred clue', async () =
     }
     assert.equal(engraving.text, `Dig${direction}`);
     assert.equal(game._themeroomPostprocess.length, 0);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Light source creates a mobile oil-lamp light with live fuel breakpoints', async () => {
+    themedState(4033, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    const room = game.level.rooms[0];
+    room.rlit = 0;
+    for (let x = 1; x < game.level.locations.length; x++)
+        for (const loc of game.level.locations[x] || []) loc.lit = false;
+    assert.equal(await applyThemeroomFillByName(
+        room, 'Light source', 12,
+    ), true);
+
+    const lamps = game.level.objects.flatMap(column =>
+        (column || []).flatMap(pile => pile || []),
+    ).filter(object => object.otyp === OIL_LAMP);
+    assert.equal(lamps.length, 1);
+    const lamp = lamps[0];
+    assert.equal(lamp.lamplit, true);
+    assert.equal(lamp.timed, 1);
+    assert.equal(lamp.age, 150);
+    assert.ok(lamp.burnAt >= game.moves + 850);
+    assert.ok(lamp.burnAt <= game.moves + 1349);
+
+    const circleOffsets = [3, 3, 2, 1];
+    let hero = null;
+    for (let x = room.lx; x <= room.hx && !hero; x++) {
+        for (let y = room.ly; y <= room.hy; y++) {
+            const dx = Math.abs(x - lamp.ox);
+            const dy = Math.abs(y - lamp.oy);
+            if (Math.max(dx, dy) > 1 && dy <= 3
+                && dx <= circleOffsets[dy]
+                && game.level.at(x, y)?.typ === ROOM) {
+                hero = { x, y };
+                break;
+            }
+        }
+    }
+    assert.ok(hero);
+    game.u.ux = hero.x;
+    game.u.uy = hero.y;
+    game.in_mklev = false;
+    game.blind = false;
+    lamp.lamplit = false;
+    vision_reset_new_level();
+    vision_recalc(0);
+    assert.equal(cansee(lamp.ox, lamp.oy), false);
+    lamp.lamplit = true;
+    game.vision_full_recalc = 1;
+    vision_recalc(0);
+    assert.equal(cansee(lamp.ox, lamp.oy), true);
+
+    for (const expectedAge of [100, 50, 25, 0]) {
+        const deadline = lamp.burnAt;
+        assert.equal(runObjectBurnTimers(game, deadline).length, 1);
+        assert.equal(lamp.age, expectedAge);
+        assert.equal(lamp.lamplit, true);
+    }
+    const finalDeadline = lamp.burnAt;
+    assert.equal(runObjectBurnTimers(game, finalDeadline).length, 1);
+    assert.equal(lamp.age, 0);
+    assert.equal(lamp.lamplit, false);
+    assert.equal(lamp.burnAt, undefined);
+    assert.equal(lamp.timed, 0);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

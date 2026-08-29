@@ -12,7 +12,7 @@ import {
     IS_WALL,
 } from './const.js';
 import { newsym } from './display.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, OIL_LAMP } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 
 const COULD_SEE = 0x1;
@@ -36,21 +36,45 @@ function monsterEmitsLight(mnum) {
         || LIGHT_EMITTING_MONSTERS.has(mnum);
 }
 
-function monsterLightMap(level) {
+function mobileLightMap(level, couldSee) {
     const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
     const sources = (level?.monsters || []).filter(monster =>
-        !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum));
+        !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
+        .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
     if ((game.u?.mtimedone ?? 0) > 0 && monsterEmitsLight(game.u.umonnum)) {
-        sources.push({ mx: game.u.ux, my: game.u.uy });
+        sources.push({ x: game.u.ux, y: game.u.uy, range: 1 });
     }
+    const addLamp = (object, x, y) => {
+        if (object?.lamplit && object.otyp === OIL_LAMP)
+            sources.push({ x, y, range: 3 });
+    };
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            for (const object of level?.objects?.[x]?.[y] || [])
+                addLamp(object, x, y);
+    for (const object of game.inventory || [])
+        addLamp(object, game.u.ux, game.u.uy);
+    for (const monster of level?.monsters || []) {
+        for (const object of monster.minvent || [])
+            addLamp(object, monster.mx, monster.my);
+        for (const object of monster.inventory || [])
+            addLamp(object, monster.mx, monster.my);
+    }
+
     for (const source of sources) {
-        for (let y = Math.max(0, source.my - 1);
-            y <= Math.min(ROWNO - 1, source.my + 1); y++) {
-            for (let x = Math.max(1, source.mx - 1);
-                x <= Math.min(COLNO - 1, source.mx + 1); x++) {
-                // With radius 1 there are no intermediate cells for
-                // clear_path() to reject, so this is the exact circle.
-                lit[y][x] = 1;
+        const limits = circle_start[source.range];
+        for (let y = Math.max(0, source.y - source.range);
+            y <= Math.min(ROWNO - 1, source.y + source.range); y++) {
+            const offset = circle_data[limits + Math.abs(y - source.y)];
+            for (let x = Math.max(1, source.x - offset);
+                x <= Math.min(COLNO - 1, source.x + offset); x++) {
+                const atHero = source.x === game.u.ux
+                    && source.y === game.u.uy;
+                if (atHero ? (couldSee[y]?.[x] & COULD_SEE)
+                    : ((source.x === x && source.y === y)
+                        || clearPath(source.x, source.y, x, y))) {
+                    lit[y][x] = 1;
+                }
             }
         }
     }
@@ -612,7 +636,7 @@ export function vision_recalc(control = 0) {
 
     // Compute IN_SIGHT from COULD_SEE + lighting
     const level = game.level;
-    const temporaryLight = monsterLightMap(level);
+    const temporaryLight = mobileLightMap(level, next);
     const isLitAt = (x, y) => !!level?.at(x, y)?.lit
         || !!temporaryLight[y]?.[x];
     const ux = u.ux, uy = u.uy;
