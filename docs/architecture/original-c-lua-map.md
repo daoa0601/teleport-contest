@@ -35598,3 +35598,44 @@ and monster oil lamps, so pickup and save/restore move the source through live
 object identity rather than a room fixture. Threshold warning text, other
 burning object types, and timer-id ordering in the generic queue remain open,
 so Light source is mechanically `partial`, not `implemented`.
+
+Buried zombies has a complete construction transaction but an intentionally
+open runtime edge:
+
+~~~mermaid
+flowchart LR
+    Diff["Lua level_difficulty thresholds"] --> Pool["4, 6, or 8 living species"]
+    Pool --> Shuffle["per-corpse Fisher-Yates shuffle"]
+    Shuffle --> Coord["fresh dry room coordinate"]
+    Coord --> Corpse["mksobj_at corpse; random initial corpsenm and rot timer"]
+    Corpse --> Replace["set_corpsenm to selected living species"]
+    Replace --> Bury["bury_an_obj; resistance draw; buried chain"]
+    Bury --> Stop["Lua stop_timer ROT_CORPSE"]
+    Stop --> Deadline["Lua start_timer ZOMBIFY_MON at moves + 990..1010"]
+    Deadline -. "runtime still absent" .-> Dispatch["run_timers in timeout order"]
+    Dispatch --> Zombify["zombie_form then set_corpsenm"]
+    Zombify --> Revive["revive_mon and makemon NO_MINVENT"]
+    Revive --> Pit["buried zombie claws out through a pit"]
+~~~
+
+The source reservoir begins with kobold, gnome, orc, and dwarf. Difficulty
+greater than three adds elf and human; greater than six adds ettin and giant.
+Each corpse independently reshuffles the whole current reservoir before using
+its first entry. Object construction still initializes a temporary random
+corpse and its rot timer before the explicit `montype` replaces it. Burial then
+owns its unconditional ordinary-corpse resistance draw before Lua cancels the
+replacement `ROT_CORPSE` timer and installs `ZOMBIFY_MON` with an absolute
+deadline. JavaScript now retains all of those construction and timer-state
+boundaries on the buried object chain without consulting a seed, role, replay
+move, fixture, or session.
+
+An expired deadline is not yet acceptance. Native `zombify_mon()` changes the
+living corpsenm to its zombie form, reconstructs ordinary corpse timer state,
+and calls the revival graph. A buried zombie can require adjacent relocation,
+must be constructed with `NO_MINVENT`, removes the corpse only after successful
+creation, creates a pit, and emits visibility- or distance-dependent feedback.
+The current generic monster constructor does not yet honor `NO_MINVENT`, and
+the synchronous timeout position precedes later per-turn RNG. Deferring this
+work to an unrelated asynchronous tail would reorder the source turn. The
+ownership component therefore remains mechanically `partial` until that full
+runtime edge has a source-ordered owner and direct witness.

@@ -94346,3 +94346,67 @@ starting with Buried zombies' depth-expanded species and source timer ordering,
 unless that audit requires the generic timer queue first.
 
 ---
+
+### [2026-08-29 15:39 EEST, journal block 3132] {#bridge-free #level-generation #lua #buried-zombies #corpses #burial #timers #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** following block 3131, the audit
+traced `themerms.lua` Buried zombies through `sp_lev.c:create_object()`,
+`mkobj.c:set_corpsenm()/start_corpse_timeout()`, `dig.c:bury_an_obj()`, the
+object timer queue, and `do.c:zombify_mon()/revive_mon()`. JavaScript used the
+four shallow species at every difficulty, left the replacement corpse rot
+deadline live, and stored a relative `zombifyTimeout` which no runtime owner
+consumed. The earliest divergence was therefore construction, before any
+future expiry or revival symptom.
+
+**Prediction portfolio and decisive evidence:** (1) a fixed four-species
+hypothesis predicted every depth used kobold, gnome, orc, and dwarf; Lua adds
+elf/human above difficulty three and ettin/giant above six before every
+shuffle. (2) a final-species-only constructor predicted the temporary random
+corpse could be skipped; `mksobj_at(CORPSE, TRUE, FALSE)` fully initializes
+that corpse and timer before explicit `montype` invokes `set_corpsenm()` again.
+(3) burial-after-timer-replacement predicted the zombify draw preceded burial;
+`create_object()` completes `bury_an_obj()` before returning to the Lua object
+handle, so the unconditional `obj_resists(0,0)` draw comes first. (4) two live
+corpse timers predicted rot and zombify could coexist; Lua explicitly stops
+`rot-corpse` before starting `zombify-mon`. (5) a stored deadline predicted the
+callback was thereby implemented; native expiry continues through
+`zombie_form`, `set_corpsenm`, `revive_mon`, `makemon(NO_MINVENT)`, corpse
+removal, pit construction, and conditional feedback.
+
+**Decision and implementation:** finish only the complete construction and
+timer-state transaction. The live callback now expands the reservoir at the
+two source difficulty thresholds, reshuffles it per corpse, delegates random
+corpse construction and explicit species replacement, preserves the burial
+draw and shared buried-chain identity, removes the ordinary rot deadline, and
+stores one absolute `zombifyAt = moves + 990..1010` deadline with timed state.
+Keep the component `partial`: the generic timer queue and complete revival edge
+are not being replaced by an asynchronous approximation which would reorder
+later global-turn RNG. Implementation commit `cfd18a5` contains only this
+construction owner and its focused witness.
+
+**Measured effect and regression:** the first focused witness correctly failed
+because one deterministic room did not happen to sample a newly eligible
+species; eligibility does not guarantee representation in each random room.
+The corrected bounded stratum aggregates four fresh seeds per threshold while
+still validates every individual corpse. `test/themerooms.test.js` then passes
+**20/20**, pinning source-sized counts, shallow/middle/deep eligibility, buried
+coordinates and chain state, rot cancellation, absolute deadline bounds,
+timed state, and zero bridge hits. The combined bridge-policy, Priest startup,
+ordinary-room, and themed-room selection passes **36/36**. Five represented
+level carriers again pass for Storeroom, nesting rooms, secret-door
+orientation, clean Minetown-2, and Orcus ghost-town shops. The mechanical
+bridge audit remains green over 112 files. Every verifier exited and the
+post-run process guard found no owned test tree.
+
+**Falsified hypotheses, limit, and next blocker:** the species pool is not
+depth-invariant, final corpse state cannot erase constructor RNG, burial does
+not follow Lua timer setup, rot and zombify are not concurrent, and retained
+deadline state is not runtime acceptance. No full suite, public corpus, sealed
+trace, score, push, publication, official measurement, or animation work ran.
+Seven fill callbacks remain incomplete because Buried zombies is still
+`partial`. Next choose a coherent owner for the generic object-timer queue and
+source-ordered `NO_MINVENT` zombie revival, or redirect to Temple/Storeroom if
+that runtime slice cannot be completed without a broader monster-constructor
+refactor.
+
+---
