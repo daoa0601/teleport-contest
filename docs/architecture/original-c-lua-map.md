@@ -37162,3 +37162,67 @@ blind heroes, air/levitation/underwater recoil, web and special-terrain flight,
 shops, saddles, peaceful/tame/unique/special targets, effectful potions,
 interactive naming, timer-bearing splits, return/unsplit paths, and a sealed
 stratum remain open.  Lua owns none of the throw, impact, or break transaction.
+
+## 998. Healing potions have two patients and two wake policies
+
+```mermaid
+flowchart TD
+    A[potionhit common crash and rn2 5 chip] --> B{direct potion family}
+    B -- inert six --> C[wakeup and anger target]
+    B -- gain or restore ability --> D[heal monster to mhpmax]
+    B -- healing family --> E{target is Pestilence?}
+    E -- yes --> F[halve HP above two and retain anger]
+    E -- no --> D
+    D --> G[BUC-gated monster blindness cure]
+    G --> H[clear sleep without anger]
+    C --> I{vapor reaches hero?}
+    F --> I
+    H --> I
+    I -- breathless and eyeless --> J[no vapor effect]
+    I -- damp worn towel --> K[harmless shielding message]
+    I -- gain or restore ability --> L[cursed odor or rn2 6 ordered repair]
+    I -- healing family --> M[one, two, or three HP fallthrough]
+    M --> N[BUC-gated blind and deaf cure]
+    N --> O[exercise Constitution]
+    J --> P[trycall policy then obfree]
+    K --> P
+    L --> P
+    O --> P
+```
+
+`potion.c:potionhit()` does not treat every thrown potion as an attack after
+the common glass impact.  Gain ability, restore ability, healing, extra
+healing, and full healing set `angermon` false, heal an injured monster to its
+maximum, and clear ordinary sleep without calling `wakeup()`.  Healing-family
+blindness cure depends on beatitude: blessed healing, non-cursed extra healing,
+and every full-healing potion call `mcureblindness()`.  A peaceful target
+therefore remains peaceful.  Pestilence is the source exception: healing,
+extra healing, and full healing jump to the sickness branch, halve HP above
+two, and retain hostile wake/anger policy.
+
+The second patient is the hero.  At swallowed distance zero, on a successful
+distance-one-or-two proximity probe, or after nearby hard-floor breakage,
+`potionbreathe()` applies a separate effect.  Healing, extra healing, and full
+healing fall through one, two, or three times, incrementing both polymorph HP
+and base HP when each is below maximum.  Their same beatitude policy clears
+blindness and deafness, then `exercise(A_CON, TRUE)` pays its own `rn2(19)`.
+Gain and restore ability instead begin at `rn2(A_MAX)` and scan cyclically;
+uncursed vapor repairs the first reduced base attribute, blessed vapor repairs
+every reduced attribute once, and cursed vapor only produces the appropriate
+odor or eye-sting presentation.
+
+Vapor admission is itself source state.  Breathless and eyeless forms receive
+no effect, while breathless forms with eyes still receive eye-delivered vapor.
+A damp worn towel intercepts every supported effect and prints the harmless
+shielding line.  These decisions happen after direct monster effects but before
+the exact potion identity is freed, so contact and nearby breakage share one
+vapor owner rather than copying hero-state mutations into their callers.
+
+The production family remains mechanically **partial**.  Sickness, confusion,
+booze, invisibility, sleeping, paralysis, speed, blindness, water, oil, acid,
+polymorph, and the remaining potion effects still reach
+`throw.potion-impact-unsupported`.  Map flight also still excludes cursed or
+greased throws, blind or burdened heroes, special terrain and recoil, shops,
+saddles, and nonordinary live targets.  Interactive `trycall()`, hero impact
+targets, broader resistance/effect state, and a sealed stratum remain open.
+Lua owns none of this impact or vapor graph.

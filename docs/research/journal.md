@@ -96687,3 +96687,83 @@ against implementing the first complete healing-family direct-plus-vapor
 owner; public score remains irrelevant to that choice.
 
 ---
+
+### [2026-08-29 23:55 EEST, journal block 3167] {#bridge-free #potionhit #potionbreathe #healing #abilities #pestilence #wake-policy #attributes #senses #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3166 left cursed and
+special-terrain flight versus the first complete effectful potion family. Four
+live witnesses placed healing/ability potions into swallowed and ordinary map
+contact paths; every one reached `throw.potion-impact-unsupported`, so the
+discriminating set was red **0/4**. The critical-debugging portfolio compared
+three mechanisms: transport-only cursed/greased routing, one isolated healing
+type, or the five-type direct-plus-vapor family. Transport-only work would
+leave every effectful identity behind the same bridge, and one type would copy
+the shared fallthrough graph incompletely. Gain ability, restore ability,
+healing, extra healing, and full healing share one monster-heal owner and one
+hero-vapor owner, so that complete family was selected.
+
+**Prediction and decisive C evidence:** after common bottle, crash,
+`rn2(5)` chip, and evaporation handling, `potion.c:potionhit()` sets
+`angermon = FALSE` for the five types, heals an injured monster to `mhpmax`,
+and applies beatitude-gated `mcureblindness()` before clearing sleep without
+`wakeup()`. Blessed healing, non-cursed extra healing, and all full healing
+cure monster blindness. Pestilence is the exception for the three healing
+types: it jumps to illness, halves HP above two, and retains hostile wake
+policy. `potionbreathe()` then treats the hero independently. Healing-family
+fallthrough adds one, two, or three points to both polymorph and base HP when
+below maximum, applies the same blind/deaf cure policy, and exercises
+Constitution. Gain/restore ability pays `rn2(A_MAX)`, cyclically repairs the
+first reduced base attribute or every deficit when blessed, and produces only
+odor/eye-sting presentation when cursed. Breathless eyeless forms reject vapor
+and a damp worn towel shields it.
+
+**Decision and implementation:** commit `758b1d2` broadens `potion_hit.js`
+from six inert types to eleven source-owned types. One shared direct owner now
+handles healing, blindness, Pestilence inversion, proper-name presentation,
+and the anger-versus-clear-sleep branch. One shared vapor owner handles hero
+and polymorph HP, blind/deaf synchronization, Constitution exercise, ordered
+attribute repair, cursed presentation, breathless/eyeless admission, and damp
+towel shielding. `potion_throw.js` composes that owner after successful map
+contact and after adjacent hard-floor breakage; `swallowed_throw.js` composes it
+at guaranteed distance-zero contact. Unsupported sickness and the remaining
+families still fail before split, RNG, or inventory mutation.
+
+**False-acceptance corrections:** the first cursed full-healing and
+restore-ability expectations omitted `throwit()`'s `rn2(7)` gate. C consumes
+that gate for every cursed or greased directed object even when an ungreased
+potion cannot actually slip; the witnesses were corrected to retain the extra
+draw. The first map-extra-healing draft made the hero blind even though the
+current map-flight envelope deliberately rejects blind presentation before
+mutation. That was not evidence for vapor cure, so the map witness now proves
+deafness cure while swallowed and direct witnesses own blindness. Finally,
+Pestilence uses the `M2_PNAME` proper-name path; the shared impact owner now
+suppresses the ordinary `the` article instead of encoding a source-inaccurate
+test name.
+
+**Measured effect and process custody:** the selected effect witnesses moved
+from red **0/4** to green. The acquisition, direct-impact, map-potion, and
+swallowed files pass **56/56**. Those witnesses include peaceful non-anger,
+Pestilence illness, polymorph/base-HP fallthrough, nearby-break vapor,
+single/all attribute repair, cursed odor and eye-sting, breathless no-eyes
+suppression, and damp-towel shielding. Five ambient-ogre, sleeping-potion
+flight, striking-wand, smoky-invisibility-potion, and clean Priest controls
+pass **5/5** with exact RNG/screens. `test/bridge_free.test.js` passes **8/8**,
+and the mechanical audit reports **125 audited files, 15 guarded modules, and
+19 fixture modules**. Every test process was guarded, singular, and observed
+through normal exit; none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** healing is not only a
+monster HP assignment; direct and vapor patients, wake policy, Pestilence,
+beatitude, senses, polymorph state, attribute scan order, and final identity
+deletion are one ordered transaction. Cursed throw RNG cannot be inferred from
+whether a slip occurs, and a blind-map witness cannot validate a sighted-only
+caller. Sickness, confusion/booze, invisibility, sleeping, paralysis, speed,
+blindness, water, oil, acid, polymorph, hero impact, resistance, special live
+map targets, shops, saddles, and interactive naming remain open. No full
+Contest suite, engine/public corpus, sealed-trace inspection, score, push,
+publication, official measurement, or animation work ran. The next portfolio
+should compare the sickness direct-plus-vapor family against closing cursed and
+greased ordinary map flight; neither choice should be justified by public
+session coverage.
+
+---
