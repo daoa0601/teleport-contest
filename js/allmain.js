@@ -83,6 +83,7 @@ import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
+import { syncBlindness, syncDeafness } from './senses.js';
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import {
@@ -1866,12 +1867,15 @@ function finishInitialTurnMaintenanceAfterConfusion({
     // owner, rather than the attack resolver, accounts for the duration which
     // elapses while monsters and the hero continue taking turns.
     if (!prayerTimeoutFreeze && (game.u?.blindTurns ?? 0) > 0) {
+        const wasBlind = !!game.blind;
         game.u.blindTurns--;
         if (game.u.blindTurns === 0) {
-            game.blind = false;
-            appendTurnMessage('You can see again.');
-            game.vision_full_recalc = 1;
-            if (game._occupation) game._occupation = null;
+            syncBlindness(game);
+            if (wasBlind && !game.blind) {
+                appendTurnMessage('You can see again.');
+                game.vision_full_recalc = 1;
+                if (game._occupation) game._occupation = null;
+            }
         }
     }
 
@@ -1953,7 +1957,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
 
     if (!prayerTimeoutFreeze && (game.u?.deafTurns ?? 0) > 0) {
         game.u.deafTurns--;
-        if (game.u.deafTurns === 0) game.deaf = false;
+        if (game.u.deafTurns === 0) syncDeafness(game);
     }
 
     if (!prayerTimeoutFreeze && (game.u?._woundedLegTurns ?? 0) > 0) {
@@ -2123,7 +2127,7 @@ async function drainQueuedHelplessRecoveryMessage() {
     // the recovery message becomes the next input boundary.
     if (after === 'hear-again' && rn2(2) === 0) {
         game.u.deafTurns = 0;
-        game.deaf = false;
+        syncDeafness(game);
     }
 }
 
@@ -2992,7 +2996,7 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
     action.calls.push('rnd(100)');
     await queueTurnMessage('You are blinded by the flash!');
     game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
-    game.blind = true;
+    syncBlindness(game);
     game.vision_full_recalc = 1;
     vision_recalc(0);
 

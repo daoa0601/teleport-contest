@@ -19,6 +19,9 @@ import {
     ensureHeroSkills, SKILL_LEVEL_NAMES, SKILL_NAMES,
 } from './skills.js';
 import { hiddenGold } from './gold.js';
+import {
+    blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
+} from './senses.js';
 
 function alignmentName(value) {
     return value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
@@ -72,7 +75,12 @@ function statusEnlightenmentLines() {
     const lines = [];
     if (u.hallucinating || (u.hallucinationTurns ?? 0) > 0)
         lines.push('  You are hallucinating.');
-    if (game._statusDeafOverride ?? game.deaf)
+    if (heroIsBlind(game)) {
+        const kind = permanentBlind(game) ? 'permanently'
+            : blindfolded(game) ? 'deliberately' : 'temporarily';
+        lines.push(`  You are ${kind} blind.`);
+    }
+    if (game._statusDeafOverride ?? heroIsDeaf(game))
         lines.push('  You are deaf.');
     if (u.punished || (game.uball && game.uchain))
         lines.push('  You are chained to a heavy iron ball.');
@@ -839,6 +847,10 @@ export function currentConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
     lines.push(rerollConductLine());
+    if (game.u?.uroleplay?.blind)
+        lines.push(' You have been blind from birth.');
+    if (game.u?.uroleplay?.deaf)
+        lines.push(' You have been deaf from birth.');
     if (game.u?.uroleplay?.pauper) {
         lines.push((game.inventory || []).length
             ? ' You started without possessions.'
@@ -913,6 +925,10 @@ export function finalConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
     lines.push(rerollConductLine());
+    if (game.u?.uroleplay?.blind)
+        lines.push(' You were blind from birth.');
+    if (game.u?.uroleplay?.deaf)
+        lines.push(' You were deaf from birth.');
     if (game.u?.uroleplay?.pauper)
         lines.push(' You started out without possessions.');
     if (game.u?.uroleplay?.nudist)

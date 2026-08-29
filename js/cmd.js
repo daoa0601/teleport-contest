@@ -144,6 +144,9 @@ import {
 } from './weight.js';
 import { hiddenGold } from './gold.js';
 import {
+    heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
+} from './senses.js';
+import {
     beginBallAndChainMove, beginBallAndChainTeleport,
     finishBallAndChainMove, finishBallAndChainTeleport,
 } from './ball.js';
@@ -988,9 +991,10 @@ export async function continueCountedCommand(g = game) {
         if ((g.u?.blindTurns ?? 0) === 0) {
             await pline("You've got the glop off.");
             g.u.ucreamed = 0;
-            g.blind = false;
+            syncBlindness(g);
             g.vision_full_recalc = 1;
-            await plineWithContinuation('You can see again.');
+            if (!g.blind)
+                await plineWithContinuation('You can see again.');
             g._occupation = null;
         } else if ((g.u?.ucreamed ?? 0) === 0) {
             await pline('Your face feels clean now.');
@@ -1225,9 +1229,11 @@ function renderRequestMenuOptionsPage(page, selected) {
         lines[4] = ' ? - view help for options menu';
         lines[5] = "     [To suppress this menu help, toggle off the 'cmdassist' option.]";
         lines[7] = ' Booleans (selecting will toggle value):';
-        lines[8] = '     blind                   [false]';
+        lines[8] = '     blind                   ['
+            + String(!!game.u?.uroleplay?.blind) + ']';
         lines[9] = '     bones                   [true]';
-        lines[10] = '     deaf                    [false]';
+        lines[10] = '     deaf                    ['
+            + String(!!game.u?.uroleplay?.deaf) + ']';
         lines[11] = `     legacy                  [${game.flags?.legacy !== false}]`;
         lines[12] = '     news                    [false]';
         lines[13] = `     nudist                  [${
@@ -2144,9 +2150,9 @@ async function doquaff() {
             }
             if (!potion.cursed) {
                 game.u.blindTurns = 0;
-                game.blind = !!game.ublindf;
+                syncBlindness(game);
                 game.u.deafTurns = 0;
-                game.deaf = false;
+                syncDeafness(game);
             }
             if (potion.blessed) {
                 game.u.vomiting = false;
@@ -2172,9 +2178,9 @@ async function doquaff() {
             const wasBlind = !!game.blind
                 || (game.u.blindTurns ?? 0) > 0;
             game.u.blindTurns = 0;
-            game.blind = !!(game.ublindf || game.u?.ublindf);
+            syncBlindness(game);
             game.u.deafTurns = 0;
-            game.deaf = false;
+            syncDeafness(game);
             if (!potion.cursed) {
                 game.u.vomiting = false;
                 game.u.vomitingTurns = 0;
@@ -8751,7 +8757,7 @@ async function wizIntrinsic() {
                 : 'A cloud of darkness falls upon you.--More--');
         }
         game.u.blindTurns = oldTimeout + 30;
-        game.blind = true;
+        syncBlindness(game);
         if (!oldTimeout) game.vision_full_recalc = 1;
     }
     if (selections.includes('deafness')) {
@@ -8762,7 +8768,7 @@ async function wizIntrinsic() {
         // transition line, so the suspended pager already renders `Deaf` in
         // the status row.  Extending an active timed timeout is silent.
         game.u.deafTurns = oldTimeout + 30;
-        game.deaf = true;
+        syncDeafness(game);
         if (!oldTimeout) {
             await moreUntilDismissed(
                 'You are unable to hear anything.--More--',
@@ -10345,12 +10351,30 @@ async function putOnAccessoryObject(object) {
             game.context.move = 0;
             return;
         }
+        const wasBlind = heroIsBlind(game);
         game.ublindf = object;
         if (game.u) game.u.ublindf = object;
         object.worn = true;
         object.wornSlot = 'ublindf';
         if (object.otyp === LENSES) {
-            await pline('You are now wearing a pair of lenses.');
+            const eyes = isEyesOfTheOverworld(object);
+            syncBlindness(game);
+            await pline(eyes
+                ? 'You are now wearing the Eyes of the Overworld.'
+                : 'You are now wearing a pair of lenses.');
+            if (eyes && wasBlind && !game.blind) {
+                if (game.u?.uroleplay?.blind) {
+                    game.u.uroleplay.blind = false;
+                    await plineWithContinuation(
+                        'For the first time in your life, you can see!',
+                    );
+                } else {
+                    await plineWithContinuation('You can see!');
+                }
+                game.vision_full_recalc = 1;
+                vision_recalc(0);
+                await docrt();
+            }
             game._liveQuietTurnRequested = true;
             game.context.move = 1;
             return;
@@ -10367,7 +10391,7 @@ async function putOnAccessoryObject(object) {
                 };
             }
         }
-        game.blind = true;
+        syncBlindness(game);
         game.vision_full_recalc = 1;
         vision_recalc(0);
         await docrt();
@@ -10587,15 +10611,26 @@ async function dotakeoff() {
     }
 
     if (object === game.ublindf) {
+        const eyes = isEyesOfTheOverworld(object);
         game.ublindf = null;
         if (game.u) game.u.ublindf = null;
         object.worn = false;
         object.wornSlot = null;
-        game.blind = false;
+        syncBlindness(game);
         game.vision_full_recalc = 1;
         vision_recalc(0);
         game._pending_message = '';
-        await pline('You were wearing a blindfold.  You can see again.');
+        if (object.otyp === LENSES) {
+            await pline(eyes
+                ? 'You were wearing the Eyes of the Overworld.'
+                : 'You were wearing a pair of lenses.');
+            if (eyes && game.blind)
+                await plineWithContinuation("You can't see anything now!");
+        } else if (game.blind) {
+            await pline('You were wearing a blindfold.  You still cannot see.');
+        } else {
+            await pline('You were wearing a blindfold.  You can see again.');
+        }
         game._liveQuietTurnRequested = true;
         game.context.move = 1;
         return;
@@ -12569,7 +12604,7 @@ function rottenFoodEffect() {
     } else if (rn2(4) === 0 && !game.blind) {
         messages.push('Everything suddenly goes dark.');
         game.u.blindTurns = (game.u.blindTurns ?? 0) + d(2, 10);
-        game.blind = true;
+        syncBlindness(game);
         game.vision_full_recalc = 1;
         return { message: messages.join('  '), passedOut: false };
     } else if (rn2(3) === 0) {
@@ -12580,7 +12615,7 @@ function rottenFoodEffect() {
                 : `you slap against the ${game.u?.usteed ? 'saddle' : 'floor'}`;
         messages.push(`The world spins and ${ending}.`);
         game.u.deafTurns = (game.u.deafTurns ?? 0) + duration;
-        game.deaf = true;
+        syncDeafness(game);
         game._helplessTurns = duration;
         game._helplessReason = 'unconscious from rotten food';
         game._helplessDoneMessage = 'You are conscious again.';
@@ -13582,14 +13617,14 @@ async function maybeDestroyFireItem(item) {
         );
         if (item.otyp === POT_EXTRA_HEALING && !item.cursed) {
             game.u.blindTurns = 0;
-            game.blind = !!(game.ublindf || game.u?.ublindf);
+            syncBlindness(game);
             game.u.deafTurns = 0;
-            game.deaf = false;
+            syncDeafness(game);
         } else if (item.otyp === POT_HEALING && item.blessed) {
             game.u.blindTurns = 0;
-            game.blind = !!(game.ublindf || game.u?.ublindf);
+            syncBlindness(game);
             game.u.deafTurns = 0;
-            game.deaf = false;
+            syncDeafness(game);
         }
         exerciseAttribute(2, true);
     }
@@ -14707,7 +14742,7 @@ async function playLeatherDrum(item) {
     if (!game.deaf) {
         await plineWithContinuation('You beat a deafening row!');
         game.u.deafTurns = (game.u.deafTurns ?? 0) + rn2(20) + 30;
-        game.deaf = true;
+        syncDeafness(game);
         // C has changed HDeaf here, but tty does not refresh the status line
         // until the pending topline pager has completed.
         game._statusDeafOverride = false;
@@ -15057,7 +15092,7 @@ async function doapply() {
                 const blindIncrement = rnd(25);
                 game.u.ucreamed = (game.u.ucreamed || 0) + blindIncrement;
                 game.u.blindTurns = (game.u.blindTurns || 0) + blindIncrement;
-                game.blind = true;
+                syncBlindness(game);
                 game.vision_full_recalc = 1;
                 // potion.c:toggle_blindness() performs this repaint
                 // synchronously, before the sticky-goop pline can force the

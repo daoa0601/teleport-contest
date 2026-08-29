@@ -61,6 +61,10 @@ export function parseNethackrc(rc) {
                     if (value) result.flags.nudist = true;
                 }
                 else if (lname === 'nudist') result.flags.nudist = value;
+                else if (lname === 'blind' || lname === 'permablind')
+                    result.flags.blind = value;
+                else if (lname === 'deaf' || lname === 'permadeaf')
+                    result.flags.deaf = value;
                 else if (lname === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
                 else if (lname === 'splash_screen') result.iflags.wc_splash_screen = value;
                 else if (lname === 'pushweapon') result.flags.pushweapon = value;

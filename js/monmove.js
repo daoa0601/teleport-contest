@@ -59,6 +59,7 @@ import {
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { inTown } from './room.js';
+import { syncBlindness } from './senses.js';
 import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
@@ -4859,7 +4860,7 @@ function resolveSpitFlight(
                         + blindIncrement;
                     state.u.blindTurns = (state.u.blindTurns ?? 0)
                         + blindIncrement;
-                    state.blind = true;
+                    syncBlindness(state);
                     spit.blindIncrement = blindIncrement;
                 }
                 destroyTransientVenom(spit.venom, random, calls);
@@ -7763,7 +7764,7 @@ export function resumeDeferredHeroBlindness(
         if (state?.u)
             state.u.blindTurns = oldTurns + increment;
         toggled = !state.blind && oldTurns <= 0;
-        state.blind = true;
+        syncBlindness(state);
         state.vision_full_recalc = 1;
     }
     recordRandom(random, action.calls, 3);
@@ -7914,7 +7915,7 @@ export function resumeDeferredHeroSpell(
             || state.u?.half_spell_damage ? 100 : 200;
         const wasBlind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
         state.u.blindTurns = turns;
-        state.blind = true;
+        syncBlindness(state);
         state.vision_full_recalc = 1;
         attack.toggledBlindness = !wasBlind;
         attack.appliedDamage = 0;

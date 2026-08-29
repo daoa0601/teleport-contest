@@ -20,6 +20,7 @@ import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import { STAIRS } from './const.js';
+import { syncBlindness } from './senses.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
@@ -139,10 +140,7 @@ export function rehumanizeHero(state = game) {
     let regainedSight = false;
     if (wasBlindFromForm) {
         delete state._blindFromMonsterForm;
-        if ((u.blindTurns ?? 0) <= 0 && !state.ublindf && !u.ublindf) {
-            state.blind = false;
-            regainedSight = true;
-        }
+        regainedSight = !syncBlindness(state);
     }
 
     findArmorClass(state);
@@ -307,10 +305,9 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
 
     // Blind is a derived property of an eyeless current form.  Preserve its
     // provenance so rehumanize can later distinguish it from timed blindness.
-    if (!heroHasEyes(game)) {
-        game._blindFromMonsterForm = true;
-        game.blind = true;
-    }
+    if (!heroHasEyes(game)) game._blindFromMonsterForm = true;
+    else delete game._blindFromMonsterForm;
+    syncBlindness(game);
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
@@ -485,8 +482,8 @@ export async function polyselfControlledMonster(mnum) {
         eyewear.worn = false;
         eyewear.wornSlot = null;
         eyewear.owornmask = 0;
-        if (!heroHasEyes(game) && eyewear.otyp !== LENSES) {
-            game.blind = true;
+        const stillBlind = syncBlindness(game);
+        if (stillBlind && eyewear.otyp !== LENSES) {
             await plineWithContinuation('You still cannot see.');
         }
         dropCarriedObject(eyewear, ['ublindf']);

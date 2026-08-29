@@ -49,6 +49,7 @@ import {
 import { ensureHeroSkills } from './skills.js';
 import { hiddenGold } from './gold.js';
 import { invWeight } from './weight.js';
+import { syncBlindness, syncDeafness } from './senses.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -510,6 +511,8 @@ export function uInitMisc(handednessRoll) {
             ? !!g.flags.nudist : !!g.flags?.pauper,
         reroll: !!g.flags?.reroll,
         numrerolls: 0,
+        blind: !!g.flags?.blind,
+        deaf: !!g.flags?.deaf,
     };
     ensureQuestStatus(g);
     u.rightHanded = !!handednessRoll;
@@ -534,6 +537,14 @@ export function uInitMisc(handednessRoll) {
     }
     u.nv_range = 1;
     u.xray_range = -1;
+    // OPTIONS:blind installs a permanent intrinsic source.  Keep that source
+    // distinct from the conduct bit so the Eyes of the Overworld can void
+    // the conduct without curing the underlying blindness.
+    u.permaBlind = !!u.uroleplay.blind;
+    u.blindTurns = 0;
+    u.deafTurns = 0;
+    syncBlindness(g);
+    syncDeafness(g);
     g._goldCount = 0;
     g.inventory = [];
     g._lastInvNr = 51;
