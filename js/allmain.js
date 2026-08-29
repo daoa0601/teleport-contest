@@ -99,7 +99,7 @@ import {
     finishInventoryGlobTimer, runClaimedGlobTimer,
 } from './glob.js';
 import {
-    finishCarriedFigurineTimer, runClaimedCarriedFigurineTimer,
+    finishFigurineTimer, runClaimedFigurineTimer,
 } from './figurine.js';
 import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
@@ -2206,11 +2206,11 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         return finished;
     }
     if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
-        const event = await runClaimedCarriedFigurineTimer(
+        const event = await runClaimedFigurineTimer(
             claimed, game, sourceTurn,
         );
         if (event?.message) await queueTurnMessage(event.message);
-        return finishCarriedFigurineTimer(event, game);
+        return finishFigurineTimer(event, game);
     }
     if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedBuriedZombieTimer(

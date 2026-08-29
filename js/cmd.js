@@ -11158,14 +11158,10 @@ async function dodrop() {
     }
     object.worn = false;
     object.wornSlot = null;
-    object.ox = game.u.ux;
-    object.oy = game.u.uy;
-    game._fobjSerial = (game._fobjSerial || 0) + 1;
-    object._fobjOrder = game._fobjSerial;
-    if (!game.level.objects[object.ox]) game.level.objects[object.ox] = [];
-    if (!game.level.objects[object.ox][object.oy])
-        game.level.objects[object.ox][object.oy] = [];
-    game.level.objects[object.ox][object.oy].unshift(object);
+    // C dropx()->place_object() changes object ownership before map
+    // projection.  Timed identities must no longer look carried after they
+    // enter the floor chain; their existing timer remains attached.
+    place_object(object, game.u.ux, game.u.uy);
     newsym(object.ox, object.oy);
     if (game.flags?.verbose !== false)
         await pline(`You drop ${droppedObjectDescription(object)}.`);

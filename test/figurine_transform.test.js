@@ -4,12 +4,14 @@ import assert from 'node:assert/strict';
 import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
+import { rhack } from '../js/cmd.js';
 import { COLNO, G_GENOD, ROOM, ROWNO, STONE } from '../js/const.js';
 import {
-    finishCarriedFigurineTimer, runClaimedCarriedFigurineTimer,
+    finishFigurineTimer, runClaimedFigurineTimer,
 } from '../js/figurine.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
+import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import { FIGURINE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -46,6 +48,7 @@ function freshFigurineState() {
     game.mvitals = [];
     game.inventory = [];
     game.flags = {};
+    game.context = {};
     game.level = new GameMap();
     game.level.monsters = [];
     for (let x = 7; x <= 16; x++) {
@@ -60,6 +63,7 @@ function freshFigurineState() {
     vision_recalc(0);
     initRng(999n);
     init_objects();
+    resetInputState();
     resetBridgeUsageLedger();
 }
 
@@ -98,9 +102,22 @@ async function claimTransform(figurine, seed, overdue = 0) {
     game.moves = timer.deadline + overdue;
     initRng(BigInt(seed));
     enableRngLog();
-    return runClaimedCarriedFigurineTimer(
+    return runClaimedFigurineTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
+}
+
+async function dropFigurineThroughCommand(figurine) {
+    const before = figTimer(figurine);
+    pushKey(figurine.invlet);
+    await rhack('d'.charCodeAt(0));
+    const after = figTimer(figurine);
+    assert.equal(after.id, before.id);
+    assert.equal(after.deadline, before.deadline);
+    assert.equal(figurine.where, 'floor');
+    assert.equal(game.inventory.includes(figurine), false);
+    assert.ok(game.level.objects[figurine.ox][figurine.oy].includes(figurine));
+    return after;
 }
 
 test('only a viable cursed carried figurine receives a fresh timer', () => {
@@ -135,7 +152,7 @@ test('cursed carried figurine creates a hostile actor before pack prose',
         assert.ok(game.level.monsters.includes(event.monster));
         assert.ok(game.inventory.includes(figurine));
 
-        finishCarriedFigurineTimer(event, game);
+        finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assert.equal(game.inventory.includes(figurine), false);
         assertNoBridgeUse();
@@ -155,7 +172,7 @@ test('zero disposition initializes a complete non-domestic figurine pet',
         assert.equal(event.monster.edog.apport, 12);
         assert.equal(event.monster.edog.hungrytime, game.moves + 1000);
         assert.equal(game.u.uconduct.pets, 1);
-        finishCarriedFigurineTimer(event, game);
+        finishFigurineTimer(event, game);
         assertNoBridgeUse();
     });
 
@@ -171,7 +188,7 @@ test('one disposition preserves the familiar birth attitude without taming',
         assert.equal(event.monster.mpeaceful, 0);
         assert.equal(event.monster.mtame, 0);
         assert.equal(event.monster.pet, false);
-        finishCarriedFigurineTimer(event, game);
+        finishFigurineTimer(event, game);
         assertNoBridgeUse();
     });
 
@@ -184,7 +201,7 @@ test('overdue blind inventory transform still presents tactile pack prose',
         assert.equal(event.overdue, true);
         assert.equal(event.message, 'You feel something drop from your pack!');
         assert.ok(game.inventory.includes(figurine));
-        finishCarriedFigurineTimer(event, game);
+        finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assertNoBridgeUse();
     });
@@ -199,12 +216,128 @@ test('unsupported shapechanger rejects before transform RNG or mutation',
         enableRngLog();
         const claimed = claimNextDueObjectTimer(game, game.moves);
         await assert.rejects(
-            runClaimedCarriedFigurineTimer(claimed, game, game.moves),
+            runClaimedFigurineTimer(claimed, game, game.moves),
             /excludes minion or shapechanger/,
         );
         assert.deepEqual(getRngLog(), []);
         assert.equal(figurine.where, 'inventory');
         assert.equal(game.level.monsters.length, 0);
+        assertNoBridgeUse();
+    });
+
+test('drop command preserves figurine timer into visible floor transformation',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+        game.u.ux = x + 2;
+        vision_recalc(0);
+
+        const event = await claimTransform(figurine, 1);
+        assert.equal(event.carrier, 'floor');
+        assert.equal(event.message, 'You see a figurine transform into a wumpus!');
+        assert.equal(event.monster.mx, x);
+        assert.equal(event.monster.my, y);
+        assert.equal(event.redraw, true);
+        assert.ok(game.level.objects[x][y].includes(figurine));
+
+        finishFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assert.equal(game.level.objects[x][y].includes(figurine), false);
+        assertNoBridgeUse();
+    });
+
+test('floor figurine under hero uses makemon adjacent placement',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+
+        const event = await claimTransform(figurine, 1);
+        assert.equal(event.carrier, 'floor');
+        assert.equal(event.message, 'You see a figurine transform into a wumpus!');
+        assert.equal(event.x, x);
+        assert.equal(event.y, y);
+        assert.notDeepEqual(
+            [event.monster.mx, event.monster.my], [game.u.ux, game.u.uy],
+        );
+        assert.equal(Math.max(
+            Math.abs(event.monster.mx - x), Math.abs(event.monster.my - y),
+        ), 1);
+        finishFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('overdue visible floor transformation is silent before object deletion',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+        game.u.ux = x + 2;
+        vision_recalc(0);
+
+        const event = await claimTransform(figurine, 1, 25);
+        assert.equal(event.transformed, true);
+        assert.equal(event.overdue, true);
+        assert.equal(event.message, null);
+        assert.equal(event.redraw, false);
+        assert.ok(game.level.objects[x][y].includes(figurine));
+        finishFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('obstructed floor figurine retains its square and schedules one retry',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+        game.u.ux = x + 2;
+        game.level.at(x, y).typ = STONE;
+        vision_recalc(0);
+
+        const event = await claimTransform(figurine, 31);
+        const log = getRngLog();
+        assert.equal(log.length, 1);
+        assert.match(log[0], /^rnd\(5000\)=\d+$/);
+        assert.equal(event.carrier, 'floor');
+        assert.equal(event.retryScheduled, true);
+        assert.equal(event.retryDeadline, game.moves + event.retryDelay);
+        assert.equal(event.message, null);
+        assert.equal(figurine.where, 'floor');
+        assert.equal(figurine.ox, x);
+        assert.equal(figurine.oy, y);
+        assert.ok(game.level.objects[x][y].includes(figurine));
+        assert.equal(figTimer(figurine).deadline, event.retryDeadline);
+        assertNoBridgeUse();
+    });
+
+test('occupied floor square consumes figurine as construction failure',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+        game.u.ux = x + 2;
+        game.level.monsters.push({
+            mnum: PM_LEOCROTTA, mx: x, my: y, mhp: 20, mhpmax: 20,
+        });
+        vision_recalc(0);
+
+        const event = await claimTransform(figurine, 37);
+        assert.equal(event.carrier, 'floor');
+        assert.equal(event.transformed, false);
+        assert.equal(event.retryScheduled, undefined);
+        assert.equal(event.message, null);
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(figurine.where, 'gone');
+        assert.equal(game.level.objects[x][y].includes(figurine), false);
+        assert.equal(game.level.monsters.length, 1);
         assertNoBridgeUse();
     });
 
@@ -226,7 +359,7 @@ test('carried figurine uses whole-map enexto fallback before retrying',
         assert.equal(event.monster.my, game.u.uy);
         assert.equal(getRngLog().some(call => call.startsWith('rnd(5000)')), false);
         assert.ok(game.inventory.includes(figurine));
-        finishCarriedFigurineTimer(event, game);
+        finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assertNoBridgeUse();
     });

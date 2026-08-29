@@ -37,7 +37,7 @@ import {
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
     M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
-    MM_NOWAIT, MM_NOTAIL,
+    MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT,
     G_GENOD, G_NOCORPSE,
     W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_INIT,
@@ -2231,7 +2231,7 @@ function levelMonsterAt(x, y, ignore = null) {
 
 export function monsterGoodPosition(
     mndx, x, y, avoidMonsterGenerationExclusions = false,
-    checkScary = false,
+    checkScary = false, ignoreWater = false,
 ) {
     const loc = game.level?.at?.(x, y);
     if (!loc || !isok(x, y)) return false;
@@ -2246,11 +2246,13 @@ export function monsterGoodPosition(
             || symbol === 5 || symbol === 25;
         const swimmer = !!(flags1 & 0x00000002);
 
-        if (IS_POOL(loc.typ)) {
+        if (IS_POOL(loc.typ) && !ignoreWater) {
             const waterWall = loc.typ === WATER;
             return swimmer || (!game.level?.flags?.waterlevel
                 && !waterWall && inAir);
-        } else if (symbol === 57 && rn2(13)) { // S_EEL avoids dry terrain
+        } else if (symbol === 57 && rn2(13) && !ignoreWater) {
+            // C evaluates the eel probe before MM_IGNOREWATER suppresses its
+            // result, so an ignored-water eel still owns the rn2(13) draw.
             return false;
         } else if (IS_LAVA(loc.typ)) {
             if (mndx === PM_FLOATING_EYE) return false;
@@ -2272,7 +2274,7 @@ export function monsterGoodPosition(
     // amorphous species have already taken their explicit exceptions above.
     if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED)))
         return false;
-    if (loc.typ < DOOR) return false;
+    if (loc.typ < DOOR && !(ignoreWater && IS_POOL(loc.typ))) return false;
     const hasBoulder = game.level.objects?.[x]?.[y]?.some(
         object => object.otyp === BOULDER,
     );
@@ -3456,11 +3458,13 @@ function collectShuffledMonsterCoordinates(centerX, centerY, maxRadius = 0) {
 }
 
 function findMonsterNearPositionCore(
-    mnum, centerX, centerY, checkScary,
+    mnum, centerX, centerY, checkScary, ignoreWater,
 ) {
     const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
     for (const pos of nearby) {
-        if (monsterGoodPosition(mnum, pos.x, pos.y, false, checkScary))
+        if (monsterGoodPosition(
+            mnum, pos.x, pos.y, false, checkScary, ignoreWater,
+        ))
             return pos;
     }
 
@@ -3469,7 +3473,9 @@ function findMonsterNearPositionCore(
     const all = collectShuffledMonsterCoordinates(centerX, centerY, 0);
     for (let index = nearby.length; index < all.length; index++) {
         const pos = all[index];
-        if (monsterGoodPosition(mnum, pos.x, pos.y, false, checkScary))
+        if (monsterGoodPosition(
+            mnum, pos.x, pos.y, false, checkScary, ignoreWater,
+        ))
             return pos;
     }
     return null;
@@ -3479,9 +3485,14 @@ function findMonsterNearPositionCore(
 // only total failure triggers an independently shuffled unrestricted search.
 // Exposing selection separately lets callbacks distinguish enexto failure
 // from a later makemon()/make_familiar() construction failure.
-export function findMonsterNearPosition(mnum, centerX, centerY) {
-    return findMonsterNearPositionCore(mnum, centerX, centerY, true)
-        || findMonsterNearPositionCore(mnum, centerX, centerY, false);
+export function findMonsterNearPosition(
+    mnum, centerX, centerY, { ignoreWater = false } = {},
+) {
+    return findMonsterNearPositionCore(
+        mnum, centerX, centerY, true, ignoreWater,
+    ) || findMonsterNearPositionCore(
+        mnum, centerX, centerY, false, ignoreWater,
+    );
 }
 
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
@@ -3489,7 +3500,9 @@ export async function makemonNear(
     mnum, centerX, centerY, flags = 0,
     requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy,
 ) {
-    const pos = findMonsterNearPosition(mnum, centerX, centerY);
+    const pos = findMonsterNearPosition(mnum, centerX, centerY, {
+        ignoreWater: !!(flags & MM_IGNOREWATER),
+    });
     if (!pos) return null;
     // teleport.c:enexto_core() tests every shuffled coordinate through
     // goodpos() for the requested species before makemon() owns construction.
