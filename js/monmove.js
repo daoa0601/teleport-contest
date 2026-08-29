@@ -957,10 +957,8 @@ function pickUpMonsterFloorObject(monster, state) {
     } else {
         [carriedObject] = pile.splice(index, 1);
     }
-    // Generated minvent arrays are chronological in the JS projection.
-    // Appending a later pickup lets relobj's reverse traversal reproduce C's
-    // newest-first minvent chain. Shared mpickobj ownership attaches any
-    // carrying effect before linking the identity into that array.
+    // mpickobj() attaches carrying effects before add_to_minv() head-links the
+    // new identity into the source-ordered minvent array.
     addObjectToMonsterInventory(monster, carriedObject, state);
     monster.weaponCheck = NEED_WEAPON;
     checkMonsterGearNextTurn(monster);
@@ -1023,10 +1021,9 @@ function probeMonsterPotionOccupant(
     };
 }
 
-// C muse.c find_misc()/use_misc().  Generated JavaScript inventories retain
-// chronological acquisition order while C's minvent chain is newest-first.
-// Scan backward to preserve observable per-object RNG, but retain each older
-// viable type exactly as C's "last viable item wins" loop does.
+// C muse.c find_misc()/use_misc().  JavaScript minvent mirrors the C chain
+// head-to-tail.  Scan newest-to-oldest and retain each later viable type,
+// exactly matching C's "last viable item wins" loop.
 function useMonsterMiscItem(monster, state, random, calls) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if ((flags & (M1_MINDLESS | M1_ANIMAL))
@@ -1049,7 +1046,7 @@ function useMonsterMiscItem(monster, state, random, calls) {
         .some(([attackType]) => attackType === AT_GAZE);
     let selected = null;
 
-    for (let index = inventory.length - 1; index >= 0; index--) {
+    for (let index = 0; index < inventory.length; index++) {
         const object = inventory[index];
         // muse.c:find_misc() lets a temple priest use an uncursed gain-level
         // potion, but rejects a cursed one so the resident cannot leave the
@@ -3014,8 +3011,7 @@ function createOrdinaryMonsterCorpse(defender, state, random, calls) {
 function releaseDeadMonsterInventory(defender, state) {
     const x = defender.mx, y = defender.my;
     const carried = defender.minvent || defender.inventory || [];
-    for (let index = carried.length - 1; index >= 0; index--) {
-        const object = carried[index];
+    for (const object of carried) {
         // extract_from_minvent() clears carrier-owned equipment state before
         // mdrop_obj() places and stacks the same object identity.
         object.owornmask = 0;
@@ -3983,10 +3979,10 @@ function maybeThrowOffensiveSleepingPotion(
         || !movement.phaseFourOffensiveLinedUp
         || monster?.seenSleepResistance) return null;
     const inventory = monster?.minvent || monster?.inventory || [];
-    let potion = null;
-    for (const object of inventory) {
-        if (object?.otyp === POT_SLEEPING) potion = object;
-    }
+    // find_offensive()'s nomore(MUSE_POT_SLEEPING) keeps the first
+    // matching identity in the source minvent chain when there are duplicate
+    // sleeping-potion stacks.
+    const potion = inventory.find(object => object?.otyp === POT_SLEEPING);
     if (!potion
         || (potion.quan ?? potion.quantity ?? 1) !== 1) return null;
 
@@ -4106,10 +4102,17 @@ function maybeBeginOffensiveWand(
         monster.mx, monster.my, targetX, targetY,
     ) <= 1 || !!monster?.seenReflection;
     const inventory = monster?.minvent || monster?.inventory || [];
-    const wand = inventory.find(object =>
-        (object?.otyp === WAN_STRIKING
-            || object?.otyp === WAN_MAGIC_MISSILE && !reflectionSkip)
-        && (object.spe ?? 0) > 0);
+    // find_offensive() walks minvent head-to-tail and keeps the last viable
+    // *type*.  For this projected striking/magic-missile slice, retaining each
+    // later eligible object reproduces that oldest-viable final selection.
+    let wand = null;
+    for (const object of inventory) {
+        if ((object?.otyp === WAN_STRIKING
+                || object?.otyp === WAN_MAGIC_MISSILE && !reflectionSkip)
+            && (object.spe ?? 0) > 0) {
+            wand = object;
+        }
+    }
     if (!wand) return { probed: true, action: null };
 
     return {
@@ -4631,8 +4634,8 @@ function rayMonsterLeavesCorpse(monster, state, random, calls) {
 function finishRayKilledMonster(monster, state, random, calls) {
     const x = monster.mx, y = monster.my;
     const carried = monster.minvent || monster.inventory || [];
-    for (let index = carried.length - 1; index >= 0; index--)
-        placeThrownObject(state, carried[index], x, y);
+    for (const object of carried)
+        placeThrownObject(state, object, x, y);
     monster.minvent = [];
     monster.inventory = monster.minvent;
     state.level.monsters = state.level.monsters.filter(candidate =>

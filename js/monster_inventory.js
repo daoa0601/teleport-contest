@@ -8,12 +8,13 @@ import {
 import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 
-// Runtime monster inventories use acquisition order in JavaScript. Callers
-// which mirror a source head insertion can request the front explicitly.
+// Runtime monster inventories mirror C's minvent chain head-to-tail.  Every
+// unmerged add_to_minv() acquisition becomes the new head; callers may request
+// tail insertion only for a source boundary which explicitly constructs one.
 // carry_obj_effects() must run before add_to_minv() because linking/merging may
 // replace the input identity; the current live carrying effect is FIG_TRANSFORM.
 export function addObjectToMonsterInventory(
-    monster, object, state = game, { atFront = false } = {},
+    monster, object, state = game, { atFront = true } = {},
 ) {
     if (!monster || !object) return null;
     // steal.c:mpickobj() repairs hero-loss provenance before carrying
@@ -38,7 +39,7 @@ export function addObjectToMonsterInventory(
 // carry_obj_effects(); keep it distinct so future carrying effects do not
 // silently consume RNG or mutate direct-link objects.
 export function linkObjectToMonsterInventory(
-    monster, object, { atFront = false, state = game } = {},
+    monster, object, { atFront = true, state = game } = {},
 ) {
     if (!monster || !object) return null;
     const inventory = monster.minvent || monster.inventory || [];

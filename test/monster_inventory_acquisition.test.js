@@ -158,6 +158,30 @@ test('direct add_to_minv linkage does not invent carrying effects', () => {
     assertNoBridgeUse();
 });
 
+test('ordinary add_to_minv head-links each unmerged identity by default', () => {
+    freshInventoryState(2112);
+    const monster = {
+        m_id: 712,
+        mnum: PM_LEPRECHAUN,
+        mx: 12, my: 10,
+        minvent: [],
+        inventory: [],
+        hasInventory: false,
+    };
+    game.level.monsters.push(monster);
+    const oldest = mksobj(DAGGER, true, false);
+    const newest = mksobj(MACE, true, false);
+
+    linkObjectToMonsterInventory(monster, oldest);
+    linkObjectToMonsterInventory(monster, newest);
+
+    assert.deepEqual(monster.minvent, [newest, oldest]);
+    assert.strictEqual(monster.inventory, monster.minvent);
+    assertMonsterOwns(monster, newest);
+    assertMonsterOwns(monster, oldest);
+    assertNoBridgeUse();
+});
+
 test('special-level inventory transfer removes floor ownership and head-links',
     () => {
         freshInventoryState(2103);

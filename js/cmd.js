@@ -15347,6 +15347,15 @@ function canFinishOrdinarySwallowedThrowKill(monster) {
     const leaderId = game.quest_status?.leader_m_id
         ?? game.u?.quest_status?.leader_m_id;
     const carried = monster.minvent || monster.inventory || [];
+    const ordinaryPriorInventory = carried.every(object => {
+        const objectClass = object.oclass || objectClassForType(object.otyp);
+        return [2, 9].includes(objectClass)
+            && !(object.owornmask ?? 0) && !object.worn && !object.wielded
+            && !object.ready && !object.lamplit && !object.unpaid
+            && !object.oartifact && !object.artifact
+            && !(object.timed ?? 0) && !(object.objectTimers?.length ?? 0)
+            && !(object.contents?.length ?? 0);
+    });
     return location?.typ === ROOM
         && !game.level?.traps?.some(trap =>
             trap.tx === monster.mx && trap.ty === monster.my)
@@ -15362,10 +15371,10 @@ function canFinishOrdinarySwallowedThrowKill(monster) {
         && !MONSTER_ATTACKS[monster.mnum]?.some(attack =>
             attack[0] === AT_BOOM)
         && !wornMonsterLifeSaver(monster)
-        // The first coherent death slice proves the killing projectile's own
-        // mpickobj()->relobj() round trip.  Pre-existing minvent ordering and
-        // special carried effects remain a separate fail-loud expansion.
-        && carried.length === 0;
+        // Weapon and scroll identities exercise ordinary minvent order and
+        // stack absorption.  Worn, timed, lit, billed, contained, artifact,
+        // and other class-specific release effects remain fail-loud.
+        && ordinaryPriorInventory;
 }
 
 async function finishOrdinarySwallowedThrowKill(monster, projectile) {
@@ -16897,8 +16906,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     // mondead()->m_detach()->relobj() releases the complete inventory before
     // xkilled() evaluates treasure and corpse creation.
     const carried = monster.minvent || monster.inventory || [];
-    for (let index = carried.length - 1; index >= 0; index--) {
-        const object = carried[index];
+    for (const object of carried) {
         // steal.c:mdrop_obj() calls distant_name(obj, doname) before it
         // extracts each newest-first minvent object, even when no drop line
         // will be printed.  A visible nearby carrier therefore teaches the

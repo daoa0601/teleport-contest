@@ -2670,10 +2670,9 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     object.ready = false;
     const index = game.inventory.indexOf(object);
     if (index >= 0) game.inventory.splice(index, 1);
-    // Runtime monster inventories retain acquisition order.  Hero-kill
-    // relobj walks this array backward, reproducing C's newest-first minvent
-    // chain. mpickobj() applies carrying effects before linking the stolen
-    // identity, which can replace a cursed figurine's existing deadline.
+    // Runtime monster inventories mirror C minvent head-to-tail. mpickobj()
+    // applies carrying effects before head-linking the stolen identity, which
+    // can replace a cursed figurine's existing deadline.
     addObjectToMonsterInventory(monster, object, game);
     monster.mavenge = 1;
     findArmorClass(game);

@@ -697,6 +697,96 @@ test('a killing swallowed weapon remains on the death square without autopickup'
         assertNoBridgeUse();
     });
 
+test('a killing projectile releases prior minvent ahead of itself into autopickup',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 1;
+        game.flags.pickup = true;
+
+        const prior = mksobj(SCR_BLANK_PAPER, true, false);
+        prior.quan = prior.quantity = 1;
+        prior.cursed = prior.blessed = false;
+        prior.bknown = prior.dknown = prior.known = true;
+        prior.typeKnown = true;
+        linkObjectToMonsterInventory(engulfer, prior);
+
+        const raw = mksobj(DART, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        raw.spe = raw.enchantment = 0;
+        raw.oeroded = raw.oeroded2 = 0;
+        const dart = addInventoryItem(raw);
+        setBasicWeaponSkill(dart);
+
+        initRng(2312n);
+        enableRngLog();
+        await throwThroughLiveCommand(dart, 'h', [' ']);
+
+        assert.deepEqual(game.inventory, [prior, dart]);
+        assert.equal(prior.where, 'inventory');
+        assert.equal(dart.where, 'inventory');
+        assert.equal(prior.how_lost, 0);
+        assert.equal(dart.how_lost, 0);
+        assert.equal('carrierMid' in prior, false);
+        assert.equal('carrierMid' in dart, false);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
+        );
+        assertNoBridgeUse();
+    });
+
+test('a killing projectile merges in minvent before the survivor is released',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 1;
+        game.flags.pickup = true;
+
+        const survivor = mksobj(DART, true, false);
+        survivor.quan = survivor.quantity = 2;
+        survivor.cursed = survivor.blessed = false;
+        survivor.bknown = survivor.dknown = survivor.known = true;
+        survivor.typeKnown = true;
+        survivor.spe = survivor.enchantment = 0;
+        survivor.oeroded = survivor.oeroded2 = 0;
+        survivor.how_lost = LOST_STOLEN;
+        linkObjectToMonsterInventory(engulfer, survivor);
+
+        const raw = mksobj(DART, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        raw.spe = raw.enchantment = 0;
+        raw.oeroded = raw.oeroded2 = 0;
+        const dart = addInventoryItem(raw);
+        setBasicWeaponSkill(dart);
+
+        initRng(2312n);
+        enableRngLog();
+        await throwThroughLiveCommand(dart, 'h');
+
+        assert.deepEqual(game.inventory, [survivor]);
+        assert.equal(survivor.quan, 3);
+        assert.equal(survivor.quantity, 3);
+        assert.equal(survivor.where, 'inventory');
+        assert.equal(survivor.how_lost, 0);
+        assert.equal(dart.where, 'gone');
+        assert.equal('carrierMid' in survivor, false);
+        assert.equal('carrierMid' in dart, false);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
+        );
+        assertNoBridgeUse();
+    });
+
 test('potentially lethal swallowed weapon with life-saving fails before mutation',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);

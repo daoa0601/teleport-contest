@@ -9449,7 +9449,7 @@ test('seed0011 forced high cleric reaches fire-pillar effect boundary',
         assert.equal(cleric.mhpmax, 102);
         assert.equal(cleric.mw?.otyp, 73);
         assert.deepEqual(cleric.minvent.map(object => object.otyp), [
-            73, 143, 150, 438, 333,
+            333, 438, 150, 143, 73,
         ]);
         assert.equal(game.u.uhp, 133);
         assert.equal(game.context.move, 1);
@@ -10469,12 +10469,14 @@ test('seed0084 curse intervention preserves ambient inventory owners',
         const mummy = game.level.monsters.find(monster =>
             monster.mnum === 190);
         assert.ok(mummy);
-        assert.equal(mummy.minvent[0].otyp, MUMMY_WRAPPING);
+        assert.deepEqual(mummy.minvent.map(object => object.otyp), [
+            438, MUMMY_WRAPPING,
+        ]);
         const centaur = game.level.monsters.find(monster =>
             monster.mnum === 132);
         assert.ok(centaur);
-        assert.deepEqual(centaur.minvent.map(object => object.otyp), [88, 23]);
-        assert.equal(centaur.minvent[1].quan, 9);
+        assert.deepEqual(centaur.minvent.map(object => object.otyp), [23, 88]);
+        assert.equal(centaur.minvent[0].quan, 9);
         assert.deepEqual(game.inventory.filter(object => object.cursed)
             .map(object => object.otyp), [391, 277, WAN_DEATH]);
         assert.equal(game.u.udg_cnt, 152);
@@ -10718,9 +10720,9 @@ test('seed0052 ambient ogre tyrant receives ranked armament',
         assert.deepEqual([ogre.mx, ogre.my], [51, 3]);
         assert.equal(ogre.mhp, 42);
         assert.equal(ogre.mhpmax, 42);
-        assert.deepEqual(ogre.minvent.map(object => object.otyp), [45, 429]);
-        assert.equal(ogre.minvent[0].spe, 1);
-        assert.equal(ogre.minvent[1].spe, 6);
+        assert.deepEqual(ogre.minvent.map(object => object.otyp), [429, 45]);
+        assert.equal(ogre.minvent[0].spe, 6);
+        assert.equal(ogre.minvent[1].spe, 1);
         assert.equal(game.u.uhp, 60);
         assert.equal(game.u.udg_cnt, 40);
     });
@@ -11009,7 +11011,7 @@ test('seed0052 ogre skips ordinary corpses and adjacent ray wand',
         assert.equal(ogre.mw?.otyp, 45);
         assert.equal(ogre.mw?.spe, 1);
         assert.deepEqual(ogre.minvent.map(object => object.otyp), [
-            45, 429, 438, 293, 329,
+            329, 293, 438, 429, 45,
         ]);
         assert.equal(ogre.minvent.find(object => object.otyp === 429).spe, 1);
         assert.equal((game.level.objects?.[6]?.[8] || [])[0].corpsenm, 165);
@@ -13652,7 +13654,7 @@ test('seed0090 Hallucinated death touch succeeds without HP drain',
         assert.equal(clone.mhpmax, 133);
         assert.equal(clone.mappearance, 117);
         assert.deepEqual(clone.minvent.map(object => object.otyp), [
-            333, 305, 212,
+            212, 305, 333,
         ]);
     });
 
@@ -14359,7 +14361,7 @@ test('seed0017 adjacent Wizard summon shares the nasty constructor',
         assert.equal(summoned.msleeping, 0);
         assert.equal(summoned.mpeaceful, 0);
         assert.deepEqual(summoned.minvent.map(object => object.otyp), [
-            45, 333,
+            333, 45,
         ]);
         assertRngSliceExact(result.getRngSlices()[118], [
             'rn2(5)=3',
@@ -20268,7 +20270,7 @@ test('clean Pri-loca construction, arrival, and locate pager close one live bloc
     assert.equal(resident.emin, undefined);
     assert.equal(resident.mtrapseen, 0x7fffffff);
     assert.deepEqual(resident.minvent.map(object => object.otyp), [
-        400, 382, 73, 143, 150, 438,
+        400, 382, 438, 150, 143, 73,
     ]);
 
     const roamer = clerics.find(monster => monster.isminion);
@@ -20284,7 +20286,7 @@ test('clean Pri-loca construction, arrival, and locate pager close one live bloc
     assert.equal(roamer.malign, 20);
     assert.equal(roamer.mtrapseen, 0x7fffffff);
     assert.deepEqual(roamer.minvent.map(object => object.otyp), [
-        73, 430, 143, 150, 438, 315,
+        315, 438, 150, 143, 430, 73,
     ]);
 });
 

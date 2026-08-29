@@ -4122,8 +4122,7 @@ function releaseMeltMonsterInventory(monster, state = game) {
     const carried = monster.minvent?.length
         ? monster.minvent : monster.inventory || monster.minvent || [];
     const released = [];
-    for (let index = carried.length - 1; index >= 0; index--) {
-        const object = carried[index];
+    for (const object of carried) {
         object.owornmask = 0;
         object.worn = false;
         object.wornSlot = null;
