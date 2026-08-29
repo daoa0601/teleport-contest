@@ -118,9 +118,9 @@
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
       "dependencies": ["rng-core", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance and live Samurai actor/prayer scheduling"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance plus live Samurai and three live Rogue actor/scheduler carriers"],
       "lastSealedGate": null,
-      "openGap": "Samurai has one public bridge-free actor-rich witness; Rogue, Priest, and broader actor/terrain branches still enter seeded replay or lack a sealed gate."
+      "openGap": "Samurai and three Rogue carriers have public bridge-free actor-rich witnesses; Friday-the-13th run continuation, Priest, broader actor/terrain branches, and a sealed gate remain open."
     },
     {
       "id": "samurai-pet-turns",
@@ -144,17 +144,17 @@
       "label": "Rogue and Rogue-Orc actor scheduling",
       "status": "partial",
       "source": {
-        "cFiles": ["src/allmain.c", "src/mon.c", "src/monmove.c", "src/dogmove.c"],
-        "cSymbols": ["movemon", "dochug", "dog_move", "mattackm"],
+        "cFiles": ["src/allmain.c", "src/mon.c", "src/monmove.c", "src/dogmove.c", "src/trap.c", "src/dokick.c", "src/apply.c", "src/invent.c"],
+        "cSymbols": ["movemon", "dochug", "dog_move", "mattackm", "mintrap", "thitm", "kick_dumb", "doapply", "look_here"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/rogue_explore.js", "js/rogue_orc.js", "js/rogue_friday13.js"],
+      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/cmd.js", "js/invent.js", "js/rogue_explore.js", "js/rogue_orc.js", "js/rogue_friday13.js"],
       "dependencies": ["turn-scheduler"],
-      "bridgeIds": ["rogue.explore", "rogue.friday13", "rogue.orc", "rogue.chargen", "seeded-replay.rogue-explore", "seeded-replay.rogue-orc", "seeded-replay.rogue-friday13"],
-      "acceptanceWitnesses": ["generic quiet Rogue live path plus public bridge regressions"],
+      "bridgeIds": ["legacy-only rogue.explore", "legacy-only rogue.friday13", "legacy-only rogue.orc", "legacy-only rogue.chargen", "legacy-only seeded-replay.rogue-explore", "legacy-only seeded-replay.rogue-orc", "legacy-only seeded-replay.rogue-friday13"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: seed0077 chargen, seed1500 pet/dart-trap, and seed0060 orc combat/run parity with zero bridge hits; public regressions only"],
       "lastSealedGate": null,
-      "openGap": "Named Rogue runs still replay aggregate actor turns instead of scheduling live fmon and dog_move phases."
+      "openGap": "Three represented Rogue paths use live source-ration and actor/trap scheduling, but the Friday-the-13th carrier diverges when its first run should continue after a distant squeaky-board sound; save/restore and sealed strata remain unverified."
     },
     {
       "id": "priest-passive-projectiles",

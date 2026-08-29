@@ -34960,3 +34960,56 @@ public regression witness, not sealed-corpus evidence: the ownership entry
 remains **partial**, legacy scoring retains the named compatibility bridge, and
 unseen pet candidates, combat, terrain, interruption and divine outcomes stay
 open.  Lua owns none of this scheduling or prayer state.
+
+## 961. Rogue source ration crosses pet combat and visible trap continuations
+
+~~~mermaid
+sequenceDiagram
+    participant Cmd as cmd.c/dokick.c/apply.c
+    participant Loop as allmain.c movement ration
+    participant Actor as movemon/dochug/dog_move
+    participant Trap as postmov/mintrap/thitm
+    participant TTY as tty topline
+    Cmd->>Loop: timed move, search, kick, or lock-pick action
+    Loop->>Loop: debit hero movement; allocate only below NORMAL_SPEED
+    Loop->>Actor: scan live fmon order and debit actor movement
+    Actor->>Actor: pet goal, candidate, combat, pickup/drop
+    Actor->>Trap: moved pet enters current destination trap
+    Trap->>Trap: construct dart/arrow and roll hit
+    Actor->>TTY: reluctance line remains pending
+    Trap->>TTY: visible hit/miss line pages the older topline
+    TTY-->>Trap: acknowledgement resumes damage or floor placement
+    Trap-->>Actor: finish postmov and remaining actor scan
+    Actor-->>Loop: global maintenance and next hero ration
+~~~
+
+Bridge-free Rogue startup makes all four coordinate/session classifiers
+legacy-only, so the poisoned `replayMoves` property and seeded Rogue modules
+cannot select production behavior.  `liveQuietRogue()` now participates in
+the shared source movement-ration loop rather than incrementing `moves`
+directly.  The same live actor scan therefore owns human and orc Rogue pets,
+ordinary hostiles, long Shift-runs, search turns and pet-versus-monster combat.
+
+Two command seams were also trace predicates masquerading as role behavior.
+Applying a lock tool now asks for direction from its live object type, and
+explicit look reports the upstairs feature as `invent.c:look_here()`'s
+ordinary pline.  `dokick.c:kick_dumb()` supplies its unconditional Dexterity
+exercise before empty-space feedback, preventing a missing `rn2(2)` from
+shifting every later actor turn.
+
+Visible projectile traps are a resumable `postmov()` transaction.  Missile
+construction, poison selection and `thitm()`'s to-hit roll precede the visible
+hit/miss pline; damage, death, or miss placement follows its tty continuation.
+This ordering lets a pending pet-reluctance line own `--More--` while the live
+pet and trap square retain the correct physical projection.  Bear traps retain
+their distinct later destination repaint rather than inheriting the dart
+policy.
+
+Seed0077 closes33/33 chargen/tool/search boundaries, seed1500 closes40/40
+pet/corpse/dart-trap boundaries, and seed0060 closes41/41 orc pet combat,
+run, kick and search boundaries.  All three are exact on per-input RNG, screen
+and cursor with empty bridge ledgers.  The entry remains **partial**: the
+Friday-the-13th carrier reaches live execution but its first run stops after a
+distant squeaky-board sound instead of continuing before the next input; its
+save/restore complement and sealed strata are also unverified.  Lua owns none
+of these command, actor, trap, or continuation boundaries.

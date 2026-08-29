@@ -93278,3 +93278,91 @@ after it.  No full corpus, public suite, sealed evaluation, push, workflow,
 hidden judge, supplemental-animation work, or publication ran.
 
 ---
+
+### [2026-08-29 12:24 EEST, journal block 3112] {#bridge-free #rogue #seed0077 #chargen #dog-move #source-turn #diagnosis #portfolio #process-safety}
+
+**Contract and non-results:** begin the second bridge-replacement slice with
+the shortest Rogue carrier, seed0077.  Acceptance is all33 input boundaries
+executing with live startup, hero-ration, pet/grid-bug actor, maintenance and
+tty owners plus a zero-hit bridge ledger.  Merely suppressing `rogue.chargen`,
+retaining its pet-coordinate/RNG tables, or passing only the zero-time menus is
+not acceptance.  This public trace remains a regression witness rather than a
+sealed generalization result.
+
+**Managed baseline:** one owned
+`TELEPORT_BRIDGE_FREE=1 node frozen/ps_test_runner.mjs
+sessions/seed0077-rogue-chargen.session.json` invocation exited normally with
+0/3,242 RNG and0/33 screens because `newgame()` selected the named
+`rogue.chargen` bridge.  The failure occurs before the first scored boundary;
+no verifier remains live.
+
+**Independent mechanism families and predictions:** (1) classifier ownership:
+making all Rogue compatibility classifiers legacy-only should expose the
+existing generic live scan without reading poisoned `replayMoves`; if it fails
+before input11, startup state is still trace-shaped.  (2) startup state: the
+old chargen branch manually moves the kitten and rewrites a potion appearance;
+if live object/pet construction is complete, removing those mutations should
+leave the 3,192-call startup slice exact.  (3) hero ration: `liveQuietRogue()`
+currently drives actor scans but is excluded from
+`usesSourceMovementRation()`; a divergence at the first time-taking door or
+search predicts missing debit/allocation ownership.  (4) actor state: if the
+first door action is exact but searches at inputs30--31 diverge, current
+`dog_move()`/grid-bug state rather than scheduler admission is the remaining
+gap.  The first discriminating probe is classifier bypass alone, followed by a
+bounded per-input divergence report.
+
+**Next blocker:** determine whether seed0077 reaches its first scored startup
+boundary without any chargen mutation, then distinguish hero-ration timing
+from pet/hostile actor state.  No implementation acceptance, full corpus,
+sealed evaluation, push, workflow, hidden judge, or publication ran.
+
+---
+
+### [2026-08-29 12:37 EEST, journal block 3113] {#bridge-free #rogue #seed0077 #seed1500 #seed0060 #source-turn #projectile-trap #kick #implementation #focused-regression #process-safety}
+
+**Earliest divergences and decisions:** with all four Rogue compatibility
+classifiers made legacy-only, seed0077 remained exact through input18.  The
+first live mismatch was applying a lock pick at input19: `doapply()` deferred
+the direction prompt only behind trace-path flags.  Lock-tool handling now
+derives from the live object type.  The remaining mismatch at input32 was an
+explicit look at the upstairs incorrectly receiving a role/path-specific
+pager; `look_here()` now lets the ordinary topline owner decide it.  Admitting
+live quiet Rogue turns to the source movement ration preserved exactness across
+all33 boundaries, falsifying the prediction that the removed chargen mutation
+or `dog_move()` state was required by this carrier.
+
+**Pet/projectile continuation slice:** seed1500 next remained exact through
+input12 and diverged when the kitten reluctantly entered a visible dart trap.
+The live port had discarded visible arrow/dart traps before the C-owned missile
+constructor and hit test, and therefore could not resume damage or floor-object
+placement after the tty pager.  Projectile creation, poison and hit rolls now
+occur before the message; a bounded deferred event resumes damage/death or
+placement and the remaining monster-action tail after acknowledgement.  Pet
+and corpse messages are derived from live monster/object state.  An
+adversarial regression caught an over-broad destination repaint that exposed a
+pony rather than the corpse before an adjacent bear-trap pager; the early
+repaint is now limited to projectile traps.  Both the unseen-gnome dart-trap
+control and the reluctant-pony bear-trap control pass after the correction.
+
+**Rogue combat/run slice and measured effect:** seed0060 remained exact through
+input14, then an empty-space kick omitted `exercise(A_DEX,FALSE)` and its
+source `rn2(2)` decision.  The generic `kick_dumb()` tail now owns Dexterity
+exercise, the martial/Dexterity empty-space branch, and the wounded-leg/Strength
+penalty branch.  One managed three-carrier runner exited normally with
+seed0077 at3,242/3,242 RNG and33/33 screens, seed1500 at2,768/2,768 RNG and
+40/40 screens, and seed0060 at3,626/3,626 RNG and41/41 screens.  The bounded
+bridge-free test passes6/6 and asserts an empty bridge ledger after every
+carrier.  No matching verifier remains live.
+
+**Falsified hypotheses, limit, and next blocker:** classifier reachability was
+the initial blocker, but replay tables, chargen mutations, and trace-specific
+pet coordinates were not needed for these three carriers.  Source movement
+ration, live pet state, tty continuation, and generic kick ownership are now
+the accepted mechanisms.  Rogue remains `partial`: seed0013 Friday-the-13th
+runs live without selecting a bridge, but at input5 the previous Shift-L run
+has stopped after a distant squeaky-board sound, so form-feed is consumed as a
+new command rather than after the source run continuation.  That continuation
+is the next Rogue blocker.  No full corpus, public suite, sealed evaluation,
+push, workflow, hidden judge, supplemental-animation work, or publication ran.
+
+---
