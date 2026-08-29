@@ -76,17 +76,17 @@
       "label": "Role/race inventory, attributes, skills, and starting pet",
       "status": "partial",
       "source": {
-        "cFiles": ["src/u_init.c", "src/dog.c"],
-        "cSymbols": ["u_init", "ini_inv", "ini_inv_obj_substitution", "u_init_role", "u_init_race", "u_init_inventory_attrs", "makedog"],
+        "cFiles": ["src/u_init.c", "src/dog.c", "src/options.c", "src/weapon.c", "src/insight.c", "src/allmain.c"],
+        "cSymbols": ["u_init", "ini_inv", "ini_inv_obj_substitution", "u_init_role", "u_init_race", "u_init_inventory_attrs", "pauper_reinit", "skill_init", "makedog", "show_conduct", "newgame"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/u_init.js", "js/allmain.js"],
+      "javascriptOwners": ["js/u_init.js", "js/allmain.js", "js/options.js", "js/skills.js", "js/insight.js", "js/cmd.js"],
       "dependencies": ["startup-pre-mklev", "level-generation", "samurai-pet-turns"],
       "bridgeIds": ["fastforward.post-mklev"],
-      "acceptanceWitnesses": ["test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
+      "acceptanceWitnesses": ["test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, and role-money order. Pauper handling, hidden gold/carry boost, remaining role/option strata, cross-role pet state, and a sealed stratified gate remain open."
+      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, and the pauper/nudist contract. Hidden starting gold/carry boost, reroll and blind/deaf strata, cross-role pet state beyond pauper saddle suppression, and a sealed stratified gate remain open."
     },
     {
       "id": "level-generation",

@@ -93627,3 +93627,57 @@ knowledge, and skill contract, before returning to room fill. Do not run or
 publish a corpus measurement yet.
 
 ---
+
+### [2026-08-29 13:41 EEST, journal block 3120] {#bridge-free #startup #options #pauper #nudist #inventory #skills #pet #legacy #conduct #implementation #focused-regression #process-safety}
+
+**Contract and earliest source divergence:** the next fresh-option audit began
+at `options.c`, before consulting a session. JavaScript parsed `pauper` into a
+generic flag but never copied it to `u.uroleplay`; `iniInv()` therefore always
+constructed role inventory, skills stayed Basic, role/race preknowledge
+remained visible, and Knight always allocated a saddle. The request-menu line
+was hard-coded `[false]`. The earliest ownership break was option state, not a
+later inventory screen.
+
+**Prediction portfolio and decisive evidence:** (1) a cosmetic-only option
+hypothesis predicted an ordinary Wizard loadout under `OPTIONS=pauper`; direct
+startup confirmed it. (2) an indiscriminate RNG-suppression fix predicted no
+role startup draws, but pinned `u_init_role()` keeps its optional choice rolls
+and only `ini_inv()` returns before `trquan()`; that fix was rejected. (3) an
+empty-inventory-only hypothesis could not explain C `pauper_reinit()`, Priest's
+override knowledge, the unsaddled pony, or `pauper_legacy`, so it was
+insufficient. (4) a trace-carrier hypothesis was falsified by the option being
+absent across every role/race and by a newly generated bridge-free startup
+reproducing the missing state without recorded moves.
+
+**Decision and implementation:** carry ordered `pauper`/`nudist` parsing into
+`u.uroleplay`; make `iniInv()` return before its first quantity or constructor
+draw for pauper while leaving caller RNG untouched; and implement standalone
+nudist's post-construction armor rejection. Ordinary role/race knowledge is
+suppressed, Priest water remains an override, and the nine source role
+identities are installed after skills. All initially trained skills become
+Unskilled with two weapon slots. Pauper role money, discover-mode wishing, and
+the Knight saddle are absent, while the pony remains. The live legacy pager,
+options page, and current/final conduct now project the same roleplay state.
+Role reinitialization also clears its cached skill table before rebuilding it.
+
+**Measured effect and acceptance:** `test/startup_roleplay.test.js` passes 7/7
+over all13 roles, Elf/Orc negative controls, standalone nudist, Knight saddle,
+conduct, ordered option override, and a fresh bridge-free Wizard. That live
+startup renders `You, an untrained Evoker`, has no inventory, knows only force
+bolt, has two slots, and reports zero compatibility hits. The combined
+bridge-policy, artifact, Priest, race, and roleplay selection passes 26/26.
+The nearby character-selection/live-Rogue file passes 18/18, preserving exact
+represented chargen. Every process exited; no full suite, corpus, sealed gate,
+score, push, publication, or animation work ran. Implementation commit
+`6112c30` contains the six owners plus the focused test.
+
+**Falsified hypotheses, limits, and next blocker:** pauper was not a menu-only
+conduct, could not be implemented by suppressing all startup RNG, and was not
+complete after clearing inventory alone. This bounded option slice is
+source-owned, but the registry remains `partial`: `hidden_gold(TRUE)`,
+`u_init_carry_attr_boost()`, reroll, permanent blind/deaf strata, broader pet
+state, and the sealed corpus gate remain open. Next audit the carry-weight
+boundary and hidden starting contents without choosing a public carrier. Do
+not publish an official measurement yet.
+
+---

@@ -35201,3 +35201,48 @@ identity order, and purse reset. The registry remains **partial** because
 pauper/unprepared behavior, hidden starting gold and carry-attribute boost,
 remaining option strata, cross-role pet state, and the scheduled sealed gate
 are still open.
+
+## 966. Pauper is an execution contract, not an empty-inventory label
+
+~~~mermaid
+flowchart TD
+    Option["options.c: pauper; implies nudist at option position"] --> State["u.uroleplay.pauper / nudist"]
+    State --> Pet{"makedog creates starting pony?"}
+    Pet -->|ordinary Knight| Saddle["construct and wear saddle"]
+    Pet -->|pauper Knight| BarePony["retain pony; no saddle construction"]
+    State --> Role["u_init_role callers still spend optional-choice RNG"]
+    Role --> Inv{"ini_inv entry"}
+    Inv -->|pauper| Empty["return before trquan and object construction"]
+    Inv -->|nudist only| Armor["construct/substitute, then discard hero armor"]
+    State --> Know["suppress ordinary role and race knowledge"]
+    Know --> Override["retain Priest water plus one role-specific pauper identity"]
+    Empty --> Skills["skill_init then pauper_reinit"]
+    Skills --> Untrained["all trained skills become Unskilled; two slots"]
+    Untrained --> TTY["pauper legacy page, options, and conduct disclosure"]
+~~~
+
+Pinned startup distinguishes the RNG owner from the inventory owner. Role
+switches still choose Barbarian loadout, optional lamps/markers/blindfolds,
+Tourist money, Monk spell, and Elf instrument before or around calls to
+`ini_inv()`. Pauper makes each `ini_inv()` return before `trquan()` or object
+construction; it does not erase the caller's choice draw. The JavaScript port
+now carries `OPTIONS=pauper` into `u.uroleplay`, preserves this split, applies
+the option to every role and race, and clears the represented purse.
+
+The contract also spans state that an empty inventory alone cannot represent.
+Ordinary role/class and racial preknowledge is suppressed; Priest holy-water
+knowledge deliberately overrides that suppression, and `pauper_reinit()`
+adds one role-dependent identity for nine roles. Skills retain their role
+ceilings but lose every initially Basic-or-better rank, with two unspent
+weapon slots. A Knight keeps the starting pony but the saddle constructor is
+not entered. Standalone nudist mode still constructs and substitutes role
+objects before discarding hero armor, preserving the C RNG boundary.
+
+The roleplay state now reaches the source `pauper_legacy` wording, the options
+projection, and current/final conduct disclosure. A generated, fresh
+bridge-free Wizard startup reaches that page with an empty compatibility
+ledger; the all-role tests also cover inventory, spells, money, skill state,
+selective knowledge, race controls, nudist, and the pony saddle. Lua owns none
+of these boundaries. The registry stays **partial** pending hidden starting
+gold/carry adjustment, reroll and blind/deaf option strata, broader pet state,
+and the scheduled sealed gate.
