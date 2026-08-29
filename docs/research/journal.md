@@ -94658,3 +94658,70 @@ pool/fill transaction or another complete timer family, not public replay
 tuning.
 
 ---
+
+### [2026-08-29 16:55 EEST, journal block 3137] {#bridge-free #ice-room #melt-ice #boulder #pool-fill #burial #tty-continuation #wake-nearto #buried-zombies #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3136 deliberately failed on
+every boulder left above newly melted ice. Native `zap.c:melt_ice()` does not
+resolve that object as part of the initial terrain mutation. It first presents
+the conditional melt line and one visible `A boulder settles...` line; only
+after both continuations return does `do.c:boulder_hits_pool()` extract the
+first boulder and consume `rn2(10)`. The earliest remaining shared divergence
+was therefore the tty/RNG boundary before the pool-fill roll, not the eventual
+absence of a boulder.
+
+**Prediction portfolio and decisive evidence:** (1) deleting the boulder during
+the terrain callback predicted equivalent final state; it moves `rn2(10)` and
+all burial RNG before two possible tty suspensions. (2) one boulder roll
+predicted the square was resolved; a zero sinks only the current boulder and
+`melt_ice()` retries the next floor-chain boulder while liquid remains. (3) an
+even fill/sink choice predicted generic pool behavior; ordinary POOL/MOAT fills
+when `rn2(10) != 0`, so the split is 90/10. (4) a successful fill predicted
+only water-to-floor plus boulder deletion; native `bury_objs()` then processes
+the complete remaining pile, including invocation/Rider resistance, boulder and
+rock destruction, lamp shutdown, and organic timer installation. (5) splash
+feedback predicted presentation was the tail; `wake_nearto(...,40)` runs after
+the splash returns and before the verbose sink line, presents visible sleepers,
+clears sleep/wait state, and calls `disturb_buried_zombies()`. (6) ordinary wake
+predicted no timer effect; every adjacent ZOMBIFY_MON deadline is stopped and
+restarted at two thirds of its remaining time with a new shared timer id.
+
+**Decision and implementation:** commit `ca488e5` makes the no-occupant boulder
+path a resumable source callback. The initial melt and settling messages retain
+zero boulder RNG. Each continuation iteration extracts one live boulder, owns
+the native `rn2(10)` rule, either leaves water for the next boulder or changes
+it to ROOM, deletes a remaining trap, buries the residual pile, destroys the
+current boulder, and returns its observable outcome. `allmain.js` resumes splash,
+wake, buried-zombie disturbance, optional verbose sink, and repaint in native
+order. The initial line now honors its `Norep` boundary. A boulder with any
+monster occupant still fails before terrain mutation because the fill path can
+enter `mondied()`, inventory drops, corpse/life-saving, and actor-scan state.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **35/35**.
+The fill witness proves the first boulder draw occurs only after both pre-RNG
+messages and that a non-boulder floor object enters the buried chain. The
+stacked witness records the complete injected continuation timeline: no calls
+at the melt/settle lines, `rn2(10)=0` at the first splash/wake/disturb/sink,
+then `rn2(10)=6` before fill repaint and the second splash. A direct zombie
+witness proves 90 remaining turns become 60 with a newer timer id, and a
+boulder-occupant witness preserves ICE on failure. The combined bridge-policy,
+Priest startup, ordinary-room, and themed-room gate passes **51/51**. Five
+represented level carriers again pass **5/5** for Storeroom, nesting rooms,
+secret-door orientation, clean Minetown-2, and Orcus ghost-town shops. Every
+verifier exited and every pre-run guard found no owned test or corpus process.
+
+**Falsified hypotheses, limit, and next blocker:** boulder deletion is not an
+initial melt-state patch; one sink does not resolve a stacked pile; the fill
+chance is not symmetric; water-to-floor is not complete without residual-pile
+burial; splash is not the end of the callback; and waking sleepers is not the
+whole `wake_nearto()` state change. Ice remains `partial`: boulder-plus-occupant
+death/drop behavior, hero `spoteffects()` and drowning, unsafe monster
+`minliquid()` including gremlin and iron-golem effects, drawbridge ice,
+timer-coordinate remapping, explicit terrain-replacement cancellation,
+inactive cached-level catch-up, spot-time queries, and a sealed stratum remain
+open. No full suite, public corpus, sealed trace, score, push, publication,
+official measurement, or animation work ran. The next source-owned slice should
+either close the boulder-occupant death/drop transaction end to end or select a
+different complete timer family; it must not weaken the fail-loud boundary.
+
+---

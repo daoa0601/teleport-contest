@@ -35703,8 +35703,9 @@ Mechanical status is **partial**. The queue does not yet own `HATCH_EGG`,
 `FIG_TRANSFORM`, `SHRINK_GLOB`, non-oil burn variants, timer move/split/relink
 and coordinate-remap behavior, explicit terrain-mutation cancellation, exact
 equal-time reconstruction for old saves which predate timer ids, inactive-level
-catch-up, or spot-time queries. Ice boulder/hero/unsafe-monster/drawbridge
-continuations and inventory/worn corpse rot effects also remain incomplete.
+catch-up, or spot-time queries. Ice boulder-occupant, hero, unsafe-monster, and
+drawbridge continuations and inventory/worn corpse rot effects also remain
+incomplete.
 Those are source lifecycle gaps, not reasons to retain per-session replay
 carriers or inspect sealed traces early.
 
@@ -35721,7 +35722,7 @@ flowchart TD
     Schedule --> Shared["shared TIMER_OBJECT/TIMER_LEVEL ordered queue"]
     Shared --> Claim["claim before callback"]
     Claim --> Guard{"continuation mechanically owned?"}
-    Guard -->|boulder, hero, unsafe monster| Fail["fail before terrain mutation"]
+    Guard -->|hero, unsafe monster, boulder occupant| Fail["fail before terrain mutation"]
     Guard -->|ordinary| Melt["ICE to MOAT or POOL"]
     Melt --> Trap["trap_ice_effects; mine/bear-trap object conversion"]
     Trap --> Corpses["obj_ice_effects; halve thawed corpse age/time"]
@@ -35748,11 +35749,74 @@ save/restore witness proves that the positional timer state survives as level
 state, and an equal-deadline witness proves it interleaves with object timers by
 newest shared id.
 
-This owner is deliberately **partial**. `melt_ice()` can continue into boulder
-pool filling and burial, hero `spoteffects()` and drowning, or monster
-`minliquid()` including teleport/death and the gremlin and iron-golem special
-transactions. Drawbridge ice, timer coordinate remapping, explicit terrain
-replacement cancellation, inactive-level catch-up, and spot-time queries are
-also unowned. JavaScript rejects the boulder, hero, and unsafe-monster edges
-before mutating terrain, so a hidden carrier fails at the first honest missing
-owner instead of receiving a plausible but false acceptance state.
+This owner is deliberately **partial**. The no-occupant boulder continuation is
+now source-owned as section 974 records, but a fill can kill a non-airborne
+occupant and enter inventory drop/death handling; that combined branch remains
+unowned. Hero `spoteffects()` and drowning, monster `minliquid()` including
+teleport/death and the gremlin and iron-golem special transactions, drawbridge
+ice, timer coordinate remapping, explicit terrain replacement cancellation,
+inactive-level catch-up, and spot-time queries are also open. JavaScript rejects
+hero, unsafe-monster, and boulder-plus-occupant edges before mutating terrain,
+so a hidden carrier fails at the first honest missing owner instead of receiving
+a plausible but false acceptance state.
+
+## 974. Melted-ice boulders resume across messages before owning RNG
+
+~~~mermaid
+sequenceDiagram
+    participant T as timeout callback
+    participant UI as tty continuation
+    participant B as boulder_hits_pool
+    participant O as floor and buried objects
+    participant W as wake_nearto
+    T->>UI: Some ice melts away (Norep)
+    UI-->>T: dismissal
+    T->>UI: A boulder settles (visible once)
+    UI-->>T: dismissal
+    loop while water remains and another boulder exists
+        T->>B: extract current boulder
+        B->>B: rn2(10)
+        alt zero: sink
+            B->>UI: large splash or audible splash
+            UI-->>B: dismissal
+            B->>W: wake sleepers and disturb buried zombies
+            B->>UI: It sinks without a trace (visible and verbose)
+            UI-->>B: dismissal
+        else nonzero: fill
+            B->>O: water to ROOM; delete trap; bury remaining pile
+            B->>UI: large splash as boulder fills water
+            UI-->>B: dismissal
+            B->>W: wake sleepers and disturb buried zombies
+        end
+    end
+    T->>T: final newsym
+~~~
+
+For ordinary `POOL` or `MOAT`, `do.c:boulder_hits_pool()` fills on nine of ten
+rolls and sinks on zero. The boulder is extracted before the draw and always
+destroyed afterward. A sink leaves the liquid in place, so `melt_ice()` repeats
+with the next boulder in floor-chain order. A fill changes the square to
+`ROOM`, deletes any retained floor trap, and runs `bury_objs()` over everything
+still on the floor. That burial owns each `obj_resists(0,0)` call, deletes rocks
+and remaining boulders, stops non-oil light timers, and installs organic-rot
+timers where applicable. Invocation objects and Rider corpses remain accessible
+on the new dry square.
+
+Presentation is part of this state machine. The initial melt and one-time
+settling lines occur before the first boulder RNG call. Each splash observes the
+post-roll state; a filled square repaints before its splash, while a sinking
+boulder remains visually cached until the outer final repaint. After the splash
+returns, `wake_nearto(...,40)` presents and wakes source-order sleepers and
+shortens every adjacent `ZOMBIFY_MON` timer to two thirds of its remaining
+duration with a new shared timer id. Only then can the visible verbose sink line
+suspend tty. The focused continuation witness records the message/RNG timeline
+directly: zero calls at the first two messages, `rn2(10)=0` at the first splash
+and wake, then `rn2(10)=6` before the fill repaint and second splash.
+
+This slice stops before the remaining death transaction. When a boulder fills
+water occupied by a non-airborne monster, native code can call `mondied()`
+inside `boulder_hits_pool()` before burial and splash presentation; inventory,
+corpse, life-saving, and pending actor-scan state all become observable. The
+port rejects every boulder-plus-occupant carrier before melting the ice until
+that complete owner exists. Hero water state, drawbridges, and unsafe
+`minliquid()` branches remain separate explicit gaps.
