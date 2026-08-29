@@ -94053,3 +94053,63 @@ runtime lifecycle exposes a wider gap, redirect to a contained complete fill
 such as Massacre/Statuary rather than recording a partial result as accepted.
 
 ---
+
+### [2026-08-29 15:04 EEST, journal block 3127] {#bridge-free #level-generation #lua #cloud-room #regions #fog-cloud #runtime-lifecycle #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** the next source comparison followed
+`themerms.lua` Cloud room through `sp_lev.c:lspo_gas_cloud()`,
+`region.c:create_gas_cloud_selection()`, and `run_regions()`. JavaScript had
+no Cloud fill callback and no selection-backed region constructor. The first
+runtime divergence was also shared: `runLevelRegions()` used `some()` and
+extended a gas region once when any fog monster was inside, while C invokes
+`inside_gas_cloud()` first for a polymorphed hero and then for every tracked
+monster, adding five for each fog occupant while the current TTL is below 20.
+
+**Prediction portfolio and decisive evidence:** (1) a terrain-only hypothesis
+predicted painting `CLOUD` cells would reproduce the room, but C uses a visible
+region over ordinary room terrain; this changes vision blocking, save state,
+movement membership, and aging. (2) a finite-vapor hypothesis predicted the
+existing one-cell fog hook could be expanded, but selection-backed gas defaults
+to TTL -1 and has no creation-time TTL draw. (3) one-extension-per-region
+predicted the old runtime `some()` was equivalent; a room with multiple fogs
+changes -1 to 4, 9, 14, 19, then 24 as successive callbacks run, not merely
+to 4. (4) monster-only ownership predicted the hero case was irrelevant, but
+C invokes the hero callback first and a polymorphed fog hero can contribute
+the first five. (5) a generic gas API predicted accepting a damage field would
+be reusable; poisonous gas additionally owns blindness, coughing, resistance,
+anger, damage, and death, so such an API would silently advertise unsupported
+behavior.
+
+**Decision and implementation:** add a first-class region list to every
+`GameMap` and a shared, saveable, x-major harmless gas-selection constructor
+which installs visible blocker state. Route ordinary one-cell fog vapor and
+Cloud room through that constructor. Cloud creates `floor(numpoints/4)` asleep
+fog monsters using the existing live special-monster owner before installing
+one permanent region over the exact room selection. Replace the aggregate fog
+test in `runLevelRegions()` with source-order hero and per-monster callbacks,
+retaining the less-than-20 gate for each occupant. Keep the constructor
+harmless-only so poisonous lifecycle work remains explicit rather than fake.
+
+**Measured effect and regression:** the direct themed-room selection passes
+**14/14**; Cloud owns its fog count, asleep state, exact room cells, visible
+damage-zero TTL -1 region, per-occupant first aging pass, and zero compatibility
+hits. Four existing gas-region carriers pass for polymorphed-hero vapor, moved
+fog, inactive fog scheduling, and visible-region projection. The combined
+bridge-policy, Priest startup, ordinary-room, and themed-room selection passes
+**30/30**. Five represented level carriers again pass for Storeroom, nesting
+rooms, secret-door orientation, clean Minetown-2, and Orcus ghost-town shops.
+The bridge-free audit remains green over 111 files. Every verifier exited and
+a post-run process check found no owned test tree. Implementation commit
+`68e677b` contains the region owner, shared lifecycle correction, Cloud callback,
+and focused witness.
+
+**Falsified hypotheses, limit, and next blocker:** Cloud is not terrain, its
+selection region is not finite at construction, multiple fogs are not one
+boolean extension, and harmless region support is not poisonous-gas support.
+No full suite, public corpus, sealed trace, score, push, publication, official
+measurement, or animation work ran. Ten fill callbacks remain incomplete.
+Next implement level-owned timers and their global-turn/save lifecycle before
+claiming Ice room, or redirect to the self-contained Massacre/Statuary object
+family if the timer owner expands beyond a coherent slice.
+
+---
