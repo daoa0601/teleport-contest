@@ -37,6 +37,10 @@ export function objectWeight(object) {
     // least one unit even below 50 pieces.
     if (object.oclass === 12)
         return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
+    // C mkobj.c:weight(): globs keep quantity one while absorption and
+    // SHRINK_GLOB mutate their complete weight directly in owt.  This check
+    // precedes partly-eaten food scaling because oeaten is also glob mass.
+    if (object.globby) return object.owt ?? base ?? 0;
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition.  touchfood() splits stacks first, but retain the
     // quantity-aware formula for restored objects and future constructors.

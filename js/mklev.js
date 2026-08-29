@@ -60,7 +60,8 @@ import {
     CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER,
     LAND_MINE, BEARTRAP,
     MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
-    DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, KELP_FROND,
+    DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING,
+    GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND,
     SLIME_MOLD, MELON, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, NOVEL,
     DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE,
     ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE,
@@ -887,6 +888,19 @@ function mksobj_init(otmp, artif) {
                 }
             } else otmp.spe = 1;
             blessorcurse(otmp, 10);
+        } else if (otyp >= GLOB_OF_GRAY_OOZE
+            && otyp <= GLOB_OF_BLACK_PUDDING) {
+            // mkobj.c:mksobj_init() constructs globs as one variable-weight
+            // identity and immediately starts their first 23..27-turn timer.
+            otmp.globby = true;
+            otmp.quan = otmp.quantity = 1;
+            otmp.owt = OBJECT_WEIGHT[otyp];
+            otmp.known = otmp.dknown = true;
+            otmp.corpsenm = 206 + (otyp - GLOB_OF_GRAY_OOZE);
+            scheduleObjectTimer(
+                otmp, OBJECT_TIMER_KIND.SHRINK_GLOB,
+                (game.moves ?? 0) + 23 + rn2(5), game,
+            );
         } else if (otyp === KELP_FROND) {
             otmp.quan = rnd(2);
         } else if (otyp === CANDY_BAR) {
@@ -894,7 +908,9 @@ function mksobj_init(otmp, artif) {
             // deliberately-unused blank wrapper.
             otmp.spe = 1 + rn2(12);
         }
-        if (otyp !== CORPSE && otyp !== MEAT_RING && otyp !== KELP_FROND)
+        if (otyp !== CORPSE && otyp !== MEAT_RING && otyp !== KELP_FROND
+            && !(otyp >= GLOB_OF_GRAY_OOZE
+                && otyp <= GLOB_OF_BLACK_PUDDING))
             if (!rn2(6)) otmp.quan = 2;
         break;
     case GEM_CLASS:

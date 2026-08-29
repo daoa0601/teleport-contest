@@ -95,6 +95,7 @@ import { runClaimedObjectBurnTimer } from './light.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
+import { runClaimedFloorGlobTimer } from './glob.js';
 import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
@@ -2190,6 +2191,11 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         );
         if (event?.message) await queueTurnMessage(event.message);
         return finishEggHatchTimer(event, game, sourceTurn);
+    }
+    if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
+        const event = runClaimedFloorGlobTimer(claimed, game, sourceTurn);
+        if (event?.message) await queueTurnMessage(event.message);
+        return event;
     }
     if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedBuriedZombieTimer(
