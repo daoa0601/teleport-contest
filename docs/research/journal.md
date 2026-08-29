@@ -94953,3 +94953,75 @@ as one source-owned slice; otherwise retain its guard and choose a smaller
 timer or detachment owner.
 
 ---
+
+### [2026-08-29 18:11 EEST, journal block 3141] {#bridge-free #ice-room #boulder #monster-death #life-saving #pet #wary-dog #edog #tameness #canspotmon #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3140 identified tame-pet
+life-saving as the next candidate but required proof that `wary_dog()` could be
+bounded without swallowing unrelated leash, steed, or abuse behavior. Native
+`lifesaved_monster()` consumes the amulet, restores movement, and then calls
+`wary_dog(mtmp, !surviver)` before `set_mon_min_mhpmax()` and final HP
+restoration. For a surviving ordinary pet, the earliest missing owner was
+therefore the pet-state and RNG transaction while HP is still zero, not the
+later splash or generic monster scheduler.
+
+**Prediction portfolio and decisive evidence:** five non-equivalent routes
+remained live. (1) Treating a pet like an ordinary surviving monster predicted
+no RNG; even an unhurt, un-abused pet consumes `rn2(mtame+1)`. (2) Restoring HP
+before pet state predicted disposition observers saw positive HP; native
+`wary_dog()` runs first and only a starvation penalty can temporarily raise it.
+(3) Reusing `canseemon()` predicted an invisible sensed pet emitted no
+disposition line; native uses the broader `canspotmon()`. (4) Treating every
+nonzero result as the only coherent outcome predicted the pet always stayed
+tame; a zero tameness draw consumes `rn2(2)`, can become peaceful but untame,
+presents state, and repaints. (5) Treating all pet records as one strength
+predicted the same continuation for abuse, eating, minions, leashes, steeds,
+and genocide; each crosses additional source state or presentation and remains
+a separate fail-loud family.
+
+**Decision and implementation:** commit `d8a4236` adds a shared preflight and
+one simple `wary_dog()` owner. The accepted stratum is a non-minion tame actor
+with a live `edog`, no active eating or appearance, no heavy-abuse branch, no
+leash, steed, or hero attachment, and no genocide-defeated follow-on death.
+After amulet consumption and movement restoration it clears any starvation HP
+penalty, consumes source tameness and optional peacefulness RNG, updates the
+JavaScript `pet` projection, presents and repaints an observed untame outcome,
+or increments revivals and resets killed-by-hero, abuse, goal, and hunger-floor
+state for a retained pet. Drop, whistle, and apport history remain intact on
+ordinary successful life-saving. Final HP restoration and boulder burial resume
+only after that callback. The same gap predicate protects direct shared death
+callers and the ice pre-mutation boundary.
+
+**Measured effect and regression:** the retained-tame unseen Hachi witness
+consumes exactly `rn2(11)=10`, repairs a two-HP starvation penalty, increments
+revivals, clears abuse, resets its goal, raises hunger to `moves+500`, retains
+drop/whistle/apport history, and reaches ten HP with no presentation or repaint.
+The ice-fill Hachi witness records fill `rn2(10)=5`, Wisdom `rn2(19)=11`,
+tameness `rn2(6)=0`, and peacefulness `rn2(2)=1`; its `Hachi is no longer
+tame.` line and repaint both see HP zero and the consumed amulet, while splash
+sees HP ten, the actor still attached to the level but no longer a pet, and the
+residual statue buried. A heavy-abuse witness rejects before RNG or amulet
+mutation. `test/themerooms.test.js` passes **49/49**; the combined bridge-policy,
+Priest-startup, ordinary-room, and themed-room gate passes **65/65**; four
+shared Wizard/death-ray life-saving carriers pass **4/4**; and five represented
+level-generation carriers pass **5/5**. Every verifier exited and every guard
+found no prior suite or corpus process.
+
+**Corrections, falsified hypotheses, limit, and next blocker:** the first pet
+integration emitted no disposition line because its synthetic optical fixture
+set `occupantSpotted` but had no broader `canspotmon()` projection. The witness
+now supplies a distinct `occupantPetSpotted` observation; production still
+defaults to live `canSpotMonster()`. The first full-log expectation also omitted
+the already-owned post-restoration `rn2(100)` statue burial check, which is now
+recorded after the four pet-boundary calls. Pet life-saving is not RNG-free,
+does not restore final HP before `wary_dog()`, and does not use only optical
+visibility. Ice remains `partial`: genocide-defeated pet death, heavy-abuse
+gaze/disposition, minion, active-eating/appearance, leash, steed, and hero-
+attachment recovery; shapechanging; special corpse/explosion; active-mimic and
+pit detachment; unsafe monster `minliquid()`; hero and drawbridge continuations;
+timer lifecycle gaps; and a sealed stratum remain open. No full suite, public
+corpus, sealed-trace inspection, score, push, publication, official
+measurement, or animation work ran. The next slice should leave the complex
+pet guard intact and select a smaller complete timer or detachment family.
+
+---
