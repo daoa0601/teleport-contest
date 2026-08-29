@@ -4,7 +4,9 @@
   "description": "The Teleport Coding Challenge — Port NetHack C to JavaScript",
   "type": "module",
   "scripts": {
-    "test": "node --test --test-concurrency=1 --test-reporter=dot test/*.test.js",
+    "test": "npm run test:behavior",
+    "test:behavior": "node --test --test-concurrency=1 --test-reporter=dot $(find test -maxdepth 1 -type f -name '*.test.js' ! -name 'run_scheduler.test.js' ! -name 'pet_inventory_split.test.js' ! -name 'wizard_water_transition.test.js' ! -name 'seed4500_full_session.test.js' ! -name 'epitaph.test.js' ! -name 'fountain_snake_integration.test.js' ! -name 'monster_contact_tty.test.js' -print | sort)",
+    "test:public-regression": "node --test --test-concurrency=1 --test-reporter=dot test/run_scheduler.test.js test/pet_inventory_split.test.js test/wizard_water_transition.test.js test/seed4500_full_session.test.js test/epitaph.test.js test/fountain_snake_integration.test.js test/monster_contact_tty.test.js",
     "score": "bash frozen/score.sh",
     "score:engine": "TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions",
     "audit:bridge-free": "node scripts/audit-bridge-free.mjs",

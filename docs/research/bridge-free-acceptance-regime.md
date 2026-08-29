@@ -159,6 +159,23 @@ From strongest to weakest:
 
 Evidence lower in the hierarchy cannot establish a claim from a higher level.
 
+## Test independence and lanes
+
+`npm test` is the default behavioral lane. A test belongs there only when its
+oracle is independent of the JavaScript implementation: a C/Lua rule, a live
+command and observable state transition, a cross-owner invariant, a fail-before-
+mutation boundary, or a mechanical bridge-free constraint. Mock call order,
+callback argument sequences, private scheduling logs, and values copied from
+the implementation are not acceptance contracts by themselves.
+
+`npm run test:public-regression` is the explicit compatibility lane for tests
+derived from recorded public sessions. Exact RNG, screen, and cursor equality
+there can detect drift in a frozen witness, but cannot prove correctness or
+generalization. The legacy mixed `run_scheduler` and `pet_inventory_split`
+files stay in that lane until any useful source-independent contracts are
+extracted into focused behavioral tests. A green compatibility lane must never
+be reported as bridge-free acceptance.
+
 ## Explicit non-results
 
 The following do not satisfy this regime:

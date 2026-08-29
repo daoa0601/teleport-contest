@@ -97288,3 +97288,59 @@ against the acid damage/resistance graph, selecting the route with a coherent
 pre-mutation lifecycle boundary rather than a public-session metric.
 
 ---
+
+### [2026-08-30 01:52 EEST, journal block 3175] {#priority #test-quality #change-detector #fake-acceptance #public-regression #behavioral-contract #water #monmove #process-safety}
+
+**Priority change and diagnosis:** the user stopped the water-lifecycle
+portfolio from block 3174 and made test quality the active task. The inventory
+found **31,634 lines and 646 named tests** in nine public-session-derived or
+legacy mixed files. Those tests primarily compare exact recorded RNG, screens,
+cursors, or internal scheduler call shapes. They remain useful compatibility
+checks, but their oracle is derived from the same public traces that shaped the
+implementation, so they cannot establish correctness or hidden-set
+generalization. Two additional untracked files, `level_teleport.test.js` and
+`live_role_scheduler.test.js`, contained another **3,197 lines and 100 tests**
+of the same pattern.
+
+**Independent contract and decision:** the default behavioral lane now admits
+tests whose oracle comes from a C/Lua rule, live command and observable state
+transition, cross-owner invariant, fail-before-mutation boundary, or mechanical
+bridge-free constraint. `npm test` delegates to this lane. The nine tracked
+compatibility carriers are excluded and have an explicit
+`npm run test:public-regression` command; their exactness is labeled drift
+detection only. The two untracked replay files were reversibly renamed with a
+`.public-regression.js` suffix so the default Node glob cannot execute them.
+The dirty 2,204-line `monmove.test.js` expansion, which mixed dozens of internal
+RNG/callback-shape assertions into one file, was likewise preserved under
+`monmove.source-order.public-regression.js`; the default `monmove.test.js` now
+contains only three compact source-data/state contracts. No untracked
+quarantine file was staged or represented as accepted coverage.
+
+**Water test rewrite and measured effect:** nine direct water tests duplicated
+live ownership by injecting `wakeNearby`, `wakeMonster`, `transformWere`,
+`splitMonster`, and `finishKill` callbacks, then asserting their invocation
+order and arguments. Removed those **362 lines**. Three live `throw` witnesses
+now cover silent-undead neighborhood isolation, shape-protection-sensitive
+human-were transformation, and surviving iron-golem rust through real map,
+command, potion, monster, and bridge-ledger owners. Existing live witnesses
+already cover audible demon wake, cursed healing, gremlin cloning, beast-were
+rehumanization, fatality, and fail-before-mutation. The guarded focused lane
+passes **74/74** in **270 ms**. Static selection reports a default lane of
+**40 files, 11,760 lines, and 135 named tests**, and `git diff --check` plus the
+shell syntax check for the new package command pass.
+
+**Falsified hypotheses, limits, and next blocker:** exact public replay is not
+an independent behavioral oracle; mock callback order is not needed when the
+same branch can be observed through the live command owner; and preserving a
+large dirty spec does not require executing or counting it. Conversely, exact
+RNG can remain valid when independently derived from C/Lua and paired with an
+observable effect, and mechanical bridge audits enforce an explicit
+architecture contract rather than copy implementation text. The public
+regression lane was deliberately **not run or called green**; the legacy mixed
+files still need source-independent contracts extracted before any test moves
+back to the default lane. Remaining direct potion hook tests and the quarantined
+monster scheduler portfolio are the next cleanup surface. No production code,
+full Contest suite, corpus, scorer, sealed trace, push, publication, official
+measurement, or animation work occurred.
+
+---
