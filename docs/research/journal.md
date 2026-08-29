@@ -97473,3 +97473,47 @@ deletion. No full Contest suite, corpus, scorer, sealed trace, push,
 publication, official measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:08 EEST, journal block 3179] {#test-quality #production-instrumentation #monster-scheduler #rng #call-sink #bridge-free #architecture #focused-regression #process-safety}
+
+**Witness and decisive audit:** block 3178 estimated roughly 575 scheduler
+call-log references and rejected mechanical deletion. A read/write audit found
+the simpler invariant: live `action.calls` contents are never indexed, counted,
+searched, branched on, persisted, or consumed by production. They are only
+append targets passed through the same semantic action object so old tests can
+observe RNG decomposition. The only spread boundary merges a nested covetous
+continuation log; no game state depends on the merged values. Tracked tests no
+longer read `.calls` at all.
+
+**Decision and implementation:** introduced one frozen, append-shaped,
+empty-iterable call sink and used it at the three live allocation boundaries:
+ordinary quiet monster actions, per-actor scans, and immediate trap entry.
+Canonical RNG functions still execute at every source point and the global RNG
+recorder remains unchanged; semantic movement, attack, trap, projectile, and
+tty continuation state stays on the action object. The sink merely discards
+the duplicate per-action diagnostic transcript, avoiding an array allocation
+and unbounded pushes for every actor visit. The architecture map now records
+this execution/observation separation.
+
+**Measured effect and adversarial check:** the guarded bridge-free role/runtime,
+monster inventory acquisition, and immediate trap gate passes **24/24** in
+**670 ms**. This exercises deferred role scheduling, Rogue save/restore, pet
+pickup/release, covetous pickup, bullwhip transfer, clone inventory, merge,
+glob absorption, web entry, known-trap avoidance, and deferred bear-trap state.
+Syntax and `git diff --check` pass. Static search confirms no tracked test reads
+`.calls` and no production code reads call-log contents.
+
+**Falsified hypotheses, limits, and next blocker:** the hundreds of append
+sites did not require a hundreds-line refactor; RNG execution and action
+continuation do not require transcript retention; and a shared stateless sink
+is sufficient because no consumer owns its identity. Manually constructed
+hero/monster continuation actions elsewhere still contain small transient
+arrays, and untracked quarantine tests still expect historical call lists; they
+are outside this coherent live scheduler slice. The next generalization step
+should return to a source-owned mechanic rather than further public replay
+cleanup, selecting a named ownership gap whose bridge-free result is observable
+without a trace-derived oracle. No full Contest suite, public regression lane,
+corpus, scorer, sealed trace, push, publication, official measurement, or
+animation work ran.
+
+---

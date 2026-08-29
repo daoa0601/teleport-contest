@@ -2071,6 +2071,17 @@ function recordRandom(random, calls, range) {
     return random(range);
 }
 
+// Live monster scheduling needs the action object across tty continuations,
+// but no gameplay branch reads the diagnostic RNG transcript. Keep the
+// append-shaped dependency without allocating or retaining one array per
+// actor. The empty iterator preserves the one continuation which merges a
+// nested action log; there is deliberately nothing to merge in live mode.
+const DISCARDED_CALL_LOG = Object.freeze({
+    length: 0,
+    push() { return 0; },
+    *[Symbol.iterator]() {},
+});
+
 // C hack.h:AC_VALUE().  Hero AC below zero is deliberately randomized each
 // time an attack transaction evaluates it; callers must retain the returned
 // threshold across later slots of that same mattacku() invocation.
@@ -5862,7 +5873,7 @@ export function triggerImmediateMonsterTrap(
     rollDice = d,
     rollOne = rnd,
 ) {
-    const calls = [];
+    const calls = DISCARDED_CALL_LOG;
     const movement = {
         oldx: monster?.mx,
         oldy: monster?.my,
@@ -8897,7 +8908,7 @@ export function quietMonsterActionRng(
     monster, state, random = rn2, rollDice = d, rollOne = rnd,
     options = {},
 ) {
-    const calls = [];
+    const calls = DISCARDED_CALL_LOG;
     if (!options.afterCovetousRelocation) {
         // monmove.c:dochug() erodes text beneath every awake, mobile actor
         // before confusion/fleeing checks and the first set_apparxy().
@@ -9618,7 +9629,7 @@ export function runQuietMonsterActions(
     actors, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     return actors.map(monster => {
-        const calls = [];
+        const calls = DISCARDED_CALL_LOG;
         const liquidDeath = fatalUnseenLavaDeathBeforeMove(monster, state);
         if (liquidDeath)
             return { monster, calls, movement: liquidDeath };

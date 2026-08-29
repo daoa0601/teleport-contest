@@ -19937,6 +19937,12 @@ role-specific actor transcript.  Seed0014 input16 and seed0030's first two
 segments prove that the existing live pet graph consumes the correct floor
 objects and chooses the correct positions once it is actually reached.
 
+Live scheduler actions retain only semantic movement/continuation state across
+tty suspension. Their historical `calls` append target is now a shared
+non-retaining sink: RNG still executes through the canonical generator and
+global recorder, but one diagnostic array is no longer allocated per actor.
+No production branch ever read those per-action transcript contents.
+
 ## 584. Starting inventory is role phase, race phase, then attributes
 
 `u_init_inventory_attrs()` composes two inventory producers before it spends
