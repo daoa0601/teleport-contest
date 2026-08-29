@@ -96611,3 +96611,79 @@ ran. The next portfolio should compare connecting ordinary map hit/miss to this
 shared owner against the first coherent effectful potion family.
 
 ---
+
+### [2026-08-29 23:38 EEST, journal block 3166] {#bridge-free #potionhit #bhit #thitmonst #breakobj #splitobj #map-flight #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3165 left ordinary map
+flight versus the first effectful potion family. Two live map throws placed an
+inert potion into a sighted target's source path and predicted the independent
+hit and miss continuations. Both instead consumed only one `rn2(100)`, advanced
+the identity one adjacent square, and left it on the floor; the discriminating
+set was red **0/2**. The critical-debugging portfolio kept three mechanisms
+separate: add healing effects to the swallowed caller, factor generic map
+flight without potion contact, or connect the existing six-type family through
+the native flight/contact/break transaction. Healing would deepen a
+swallowed-only special case, while flight without `thitmonst()` would preserve
+the earliest defect. The complete inert map transaction was selected.
+
+**Prediction and decisive C evidence:** `dothrow.c:throwit()` derives range
+from Strength and object weight, then calls `zap.c:bhit()` before
+`throwit_mon_hit()`. At a monster, `thitmonst()` always pays `rnd(20)` and then
+uses `ACURR(A_DEX) > rnd(25)` for potion contact. A hit calls `potionhit()` and
+at distance one or two still pays the proximity `rn2((1+DEX)/2)` before the
+empty vapor switch. A miss runs `tmiss()` and its `rn2(3)` wake gate, then
+rejoins landing. On hard terrain, `breaktest()` calls
+`obj_resists(obj, 1, 99)`: an ordinary potion survives exactly one percent of
+arrivals and otherwise crosses `breakmsg()->breakobj()`, including nearby
+odor/vapor handling, before deletion. The predicted identity either disappears
+through impact/breakage or survives as the same floor object; it never becomes
+an unconditional one-square generic drop.
+
+**Decision and implementation:** commit `56898d2` adds `potion_throw.js` as
+the ordinary sighted, unencumbered ROOM/CORR/open-DOOR owner. It records live
+flight cells, stops at the first monster or wall, composes exact contact/miss
+RNG with `potion_hit.js`, and owns hard-floor breakage plus the one-percent
+survivor. `thrown_object.js` extracts the timerless `splitobj()/freeinv()`
+boundary shared by swallowed and map callers: child identity allocation occurs
+before stack mutation, while singletons detach the exact carried object and
+acquire `LOST_THROWN`. Unsupported potion effects now use the specific
+`throw.potion-impact-unsupported` boundary for both swallowed and map throws.
+
+**False-acceptance and mutation-order corrections:** the first post-change hit
+still printed `Crash!`, but the implementation was not at fault: the fresh-map
+witness reset vision without running `vision_recalc(0)`, so its claimed
+"sighted" target was not sighted by the runtime. Recomputing native visibility
+made the expected head/evaporation branch observable without changing
+production. A more serious audit found that `dothrow()` previously allocated
+and decremented every non-swallowed stack before class eligibility. Potion
+class detection now precedes that generic split, and the shared detach owner is
+entered only after potion eligibility. Effectful and interactive-name stacks
+therefore fail with zero RNG and unchanged quantity rather than carrying a
+hidden partial mutation into the compatibility error.
+
+**Measured effect and process custody:** the original map witnesses moved from
+red **0/2** to green, and six live map witnesses now cover hit, miss and wake,
+stack split, one-percent survival, effectful failure, and interactive naming
+debt. Against committed production `56898d2`, the acquisition, direct-impact,
+map-potion, and swallowed files pass **46/46**; five ambient-ogre,
+sleeping-potion flight, striking-wand, smoky-invisibility-potion, and clean
+Priest controls pass **5/5** with exact RNG/screens. The bridge-free gate
+passes **8/8**, and the mechanical audit reports **125 audited files, 15
+guarded modules, and 19 fixture modules**. Every `node --test` process was
+guarded, singular, and observed through normal exit; none yielded or was
+abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** a generic adjacent floor
+placement is not a degraded version of `bhit()`; healing effects cannot repair
+missing map scheduling; and a fail-loud boundary after an eager stack split is
+not mutation-safe. The admitted map slice deliberately excludes cursed or
+greased throws, burdened or blind heroes, air/levitation/underwater recoil,
+traps and special terrain, shops, saddles, peaceful/tame/unique/special
+targets, timer-bearing splits, and all effectful potion families. No full
+Contest suite, engine/public corpus, sealed-trace inspection, score, push,
+publication, official measurement, or animation work ran. The next portfolio
+should compare closing the ordinary cursed/greased and terrain flight envelope
+against implementing the first complete healing-family direct-plus-vapor
+owner; public score remains irrelevant to that choice.
+
+---

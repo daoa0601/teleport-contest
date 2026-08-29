@@ -37105,3 +37105,60 @@ live for swallowed guaranteed contact, but ordinary map flight, hit, and miss
 do not yet call it.  Healing and other effectful families, hero targets,
 resistances, special monster effects, billing, interactive naming, and a sealed
 stratum remain open.  Lua owns none of this runtime path.
+
+## 997. Ordinary potion flight joins impact and breakage at `bhitpos`
+
+```mermaid
+flowchart TD
+    A[throw_obj selection] --> B[splitobj or freeinv]
+    B --> C[throwit range]
+    C --> D[bhit cell-by-cell flight]
+    D --> E{monster at bhitpos?}
+    E -- no --> J[breaktest and obj_resists 1 percent]
+    E -- yes --> F[rnd 20 then Dexterity vs rnd 25]
+    F -- contact --> G[potionhit shared impact]
+    G --> H[wakeup then proximity vapor gate]
+    H --> I[obfree exact identity]
+    F -- miss --> K[tmiss and rn2 3 wake gate]
+    K --> J
+    J -- survives --> L[place_object then stackobj]
+    J -- breaks --> M[breakmsg then breakobj]
+    M --> N[nearby potionbreathe then delete]
+```
+
+The previous generic-object continuation was not a partial implementation of
+this path.  It advanced a selected potion one adjacent square, consumed only a
+break-resistance-shaped draw, and left the identity on the floor even when C
+would have flown farther, contacted a monster, or shattered.  A live target at
+distance two therefore exposed the earliest boundary directly: JavaScript
+never entered `zap.c:bhit()` or `dothrow.c:thitmonst()`.
+
+`potion_throw.js` now owns the ordinary sighted, unencumbered hard-floor slice.
+It derives range from Strength and object weight, records each traversed
+ROOM/CORR/open-DOOR cell, stops at the first monster or blocking boundary, and
+then follows the source contact split.  Every target encounter pays the
+otherwise-independent `rnd(20)` before Dexterity is compared with `rnd(25)`.
+A successful contact rejoins `potion_hit.js`, including bottle and impact RNG,
+wakeup, and the distance-one-or-two proximity-vapor draw.  A miss instead runs
+`tmiss()`'s one-in-three wakeup gate before hard-floor breakage.
+
+Thrown potion breakage is also an ownership fork.  `breaktest()` calls
+`obj_resists(obj, 1, 99)`, so an ordinary potion has a real one-percent
+survivor path into `place_object()->stackobj()`.  Otherwise `breakmsg()` and
+`breakobj()` consume the identity; adjacent breakage additionally crosses the
+odor and empty vapor-effect continuation for this six-type family.  Tests
+retain the exact live identity on the rare survivor branch instead of treating
+all glass arrivals as unconditional deletion.
+
+`thrown_object.js` is now the common timerless `splitobj()/freeinv()` boundary
+for swallowed and map callers.  It allocates the child identifier before
+mutating a stack parent, detaches a singleton identity, clears represented
+equipment state, and records `LOST_THROWN`.  Effectful or interactive-name
+potions reach `throw.potion-impact-unsupported` before this boundary, so a
+failed bridge-free command cannot leave a decremented stack behind.
+
+This is mechanically **partial**.  Cursed or greased map throws, burdened or
+blind heroes, air/levitation/underwater recoil, web and special-terrain flight,
+shops, saddles, peaceful/tame/unique/special targets, effectful potions,
+interactive naming, timer-bearing splits, return/unsplit paths, and a sealed
+stratum remain open.  Lua owns none of the throw, impact, or break transaction.
