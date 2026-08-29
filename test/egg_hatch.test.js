@@ -46,6 +46,7 @@ function freshEggState(seed) {
     game.context = { move: 0, nopick: false };
     game.moves = 2;
     game.mvitals = [];
+    game.inventory = [];
     game.level = new GameMap();
     game.level.monsters = [];
     for (let x = 8; x <= 16; x++) {
@@ -182,12 +183,87 @@ test('genocide consumes the hatch attempt but leaves the egg untimed',
         assertNoBridgeUse();
     });
 
-test('carried egg callback fails before approximating taming or pack prose',
+test('unowned carried egg hatches beside a female hero before pack deletion',
+    async () => {
+        freshEggState(2);
+        const egg = mksobj(EGG, true, false);
+        egg.where = 'inventory';
+        game.inventory = [egg];
+        const timer = hatchTimer(egg);
+        game.moves = timer.deadline;
+        enableRngLog();
+
+        const event = await runClaimedEggHatchTimer(
+            claimNextDueObjectTimer(game, game.moves), game, game.moves,
+        );
+        assert.equal(event.message,
+            'You see a cave spider drop out of your pack!');
+        assert.equal(event.hatched, 1);
+        assert.ok(game.inventory.includes(egg));
+        assert.ok(game.level.monsters.some(monster => monster.mnum === 94));
+
+        finishEggHatchTimer(event, game, game.moves);
+        assert.equal(egg.where, 'gone');
+        assert.equal(game.inventory.includes(egg), false);
+        assert.ok(game.mvitals[94].mvflags & MV_KNOWS_EGG);
+        assertNoBridgeUse();
+    });
+
+test('blind carried hatching uses tactile prose and does not teach identity',
+    async () => {
+        freshEggState(2);
+        game.blind = true;
+        game.u.blindTurns = 10;
+        vision_recalc(0);
+        const egg = mksobj(EGG, true, false);
+        egg.where = 'inventory';
+        game.inventory = [egg];
+        const timer = hatchTimer(egg);
+        game.moves = timer.deadline;
+
+        const event = await runClaimedEggHatchTimer(
+            claimNextDueObjectTimer(game, game.moves), game, game.moves,
+        );
+        assert.equal(event.message,
+            'You feel something drop from your pack!');
+        finishEggHatchTimer(event, game, game.moves);
+        assert.equal((game.mvitals[94]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
+        assertNoBridgeUse();
+    });
+
+test('carried egg stack keeps its remainder and short timer after pack prose',
+    async () => {
+        freshEggState(10);
+        const egg = mksobj(EGG, true, false);
+        egg.where = 'inventory';
+        game.inventory = [egg];
+        const timer = hatchTimer(egg);
+        game.moves = timer.deadline;
+        initRng(4n);
+        enableRngLog();
+
+        const event = await runClaimedEggHatchTimer(
+            claimNextDueObjectTimer(game, game.moves), game, game.moves,
+        );
+        assert.equal(event.message,
+            'You see a baby crocodile drop out of your pack!');
+        assert.equal(egg.quan, 1);
+        assert.equal(objectTimers(egg).length, 0);
+        finishEggHatchTimer(event, game, game.moves);
+        assert.ok(game.inventory.includes(egg));
+        assert.equal(egg.where, 'inventory');
+        assert.ok(hatchTimer(egg).deadline >= game.moves + 1);
+        assert.ok(hatchTimer(egg).deadline <= game.moves + 12);
+        assertNoBridgeUse();
+    });
+
+test('owned carried egg callback fails before approximating taming or cries',
     async () => {
         freshEggState(2);
         const egg = mksobj(EGG, true, false);
         const timer = hatchTimer(egg);
         egg.where = 'inventory';
+        egg.spe = 1;
         game.inventory = [egg];
         game.moves = timer.deadline;
         enableRngLog();
@@ -195,7 +271,7 @@ test('carried egg callback fails before approximating taming or pack prose',
         const claimed = claimNextDueObjectTimer(game, game.moves);
         await assert.rejects(
             runClaimedEggHatchTimer(claimed, game, game.moves),
-            /excludes carried, monster-carried, and own eggs/,
+            /excludes owned or male-parentage taming/,
         );
         assert.deepEqual(getRngLog(), []);
         assert.equal(egg.quan, 1);
