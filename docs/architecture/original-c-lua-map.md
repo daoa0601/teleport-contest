@@ -37513,3 +37513,46 @@ targets and terrain, blind/burdened transport, shops and saddles, hero impact,
 interactive naming, fire-destruction call-site unification, remaining potion
 families, and a sealed stratum remain open.  Lua owns none of this perception
 or map-memory path.
+
+## 1004. Potion curse and grease share a draw but not a direction transition
+
+```mermaid
+flowchart TD
+    A[splitobj or freeinv exact thrown identity] --> B{cursed or greased and directed?}
+    B -- no --> H[ordinary range and bhit path]
+    B -- yes --> C[rn2 7]
+    C -- nonzero --> H
+    C -- zero --> D{launcher ammo, greased, or throwing weapon?}
+    D -- no: cursed ungreased potion --> H
+    D -- yes --> E[misfire or slip message]
+    E --> F[rn2 3 for dx]
+    F --> G[rn2 3 for dy; 0,0 becomes downward]
+    G --> I[recompute range and path for alternate direction]
+```
+
+The earlier combined “cursed or greased map transport” gap was too broad.
+`dothrow.c:throwit()` does test both properties after detaching the thrown
+identity, but a zero `rn2(7)` changes direction only when `slipok` remains
+true.  A potion is neither launcher ammunition nor `throwing_weapon()`, so an
+ungreased cursed potion sets `slipok` false.  Its source-complete transaction
+is therefore: detach the exact identity, consume one `rn2(7)` for a directed
+throw, retain the requested direction even when the result is zero, then enter
+the ordinary range and `bhit()` path.
+
+JavaScript now admits cursed ungreased identities through the same side-effect-
+free eligibility calculation as uncursed potions, detaches once, consumes the
+curse gate before flight capture, and rejoins the existing contact, miss,
+floor-break, proximity-vapor, and identity lifecycle.  A zero-gate cursed
+invisibility witness reaches the original eastward target, reveals it, and
+clears its stale invisible-square memory.  That counterexample would fail if
+the projectile inherited the arrow implementation's unconditional direction
+reroll.
+
+Grease remains a distinct mechanical gap.  Its zero branch emits a
+continuation and consumes both axis draws after the identity is detached; the
+new direction can encounter unsupported terrain, traps, special targets, or a
+downward self-square continuation.  Until those alternate paths are all live
+or a complete source-equivalent preflight/rollback exists, a greased map
+potion fails before split and before RNG.  Cursed support does not weaken that
+guard and does not establish grease support.  Lua owns none of this transport
+boundary.

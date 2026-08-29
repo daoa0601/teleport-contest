@@ -97143,3 +97143,68 @@ mutation-safe cursed/greased transport design; neither may use public-session
 exactness as acceptance.
 
 ---
+
+### [2026-08-30 01:12 EEST, journal block 3173] {#bridge-free #throwit #potion-transport #cursed #greased #slipok #identity-lifecycle #critical-debugging-portfolio #correction #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3172 left water's
+target taxonomy against a mutation-safe cursed/greased transport design. The
+portfolio kept water effects, curse-only transport, grease transport, and a
+combined transport rewrite independent. The existing eligibility gate rejected
+a cursed invisibility bottle before detachment or `throwit()` RNG, so a new
+zero-gate map witness was red **0/1** at the named potion bridge. A greased
+stack remained a separate pre-mutation safety control.
+
+**Correction and decisive C evidence:** blocks 3170--3172 treated cursed and
+greased potion direction changes as one invariant. `dothrow.c:throwit()` proves
+that is false. Both properties enter `rn2(7)`, but a zero result changes
+direction only when `slipok` remains true. An ungreased potion is neither
+launcher ammunition nor `throwing_weapon()`, so cursed-only potion transport
+sets `slipok = FALSE`: it pays the draw but never emits a message or consumes
+two axis draws. Grease alone keeps `slipok` true and retains the alternate-path
+validation/rollback gap. This source distinction makes curse-only transport a
+strictly smaller complete invariant rather than a renamed version of the
+grease blocker.
+
+**Decision and implementation:** commit `eaeb24b` admits cursed ungreased
+potions through the existing side-effect-free ordinary-path preflight. After
+the selected identity is split or freed, a directed cursed throw consumes its
+mandatory `rn2(7)` before flight capture, then rejoins the same range,
+`bhit()`, contact/miss, floor break, vapor, and deletion owners without any
+direction branch. The zero-gate witness throws east into an initially invisible
+target, pays `rn2(7)=0`, reaches that same target, reveals it, clears stale `I`
+memory, and records zero bridge hits. A greased two-potion stack still reaches
+the named bridge with zero RNG, no split identity, and no inventory mutation.
+
+**Adversarial audit and attractive non-results:** inheriting the arrow path's
+unconditional zero-gate reroll would be wrong because arrows are throwing
+weapons or ammunition and potions are not. Consuming the gate before
+detachment would also be wrong even though the later RNG transcript length
+matched. Accepting grease because cursed now works would cross an unsupported
+alternate terrain/target/downward path after mutation. The witness therefore
+requires exact draw order, exact retained direction, live invisibility state,
+map-memory repair, gone identity, and a zero bridge ledger rather than merely a
+successful command.
+
+**Measured effect and process custody:** acquisition, direct-impact,
+map-potion, and swallowed files pass **107/107**. Eight ambient-ogre, known
+monster-speed-potion, sleeping-potion flight, striking-wand,
+smoky-invisibility-potion, timed-blindness, clean Pri-loca, and live
+Fast-ration controls pass **8/8** with exact RNG/screens.
+`test/bridge_free.test.js` passes **8/8**, and the mechanical audit reports
+**125 audited files, 15 guarded modules, and 19 fixture modules**. Every test
+process was guarded, singular, and observed through normal exit; none yielded
+or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** cursed potion direction does
+not reroll; curse and grease are not one transport invariant; and successful
+cursed contact does not establish grease. Greased map flight, alternate-axis
+path ownership, blind or burdened throwers, special terrain and recoil,
+nonordinary targets, water, oil, acid, polymorph, hero impact, shops, saddles,
+interactive naming, and a sealed stratum remain open. No full Contest suite,
+engine/public corpus, sealed-trace inspection, score, push, publication,
+official measurement, or animation work ran. Water is now the leading next
+slice because cursed water can traverse the live map path; its blessed/cursed,
+undead/demon/were/vampire, gremlin, iron-golem, transformation, splitting,
+fatality, and wake-radius branches must be mapped before implementation.
+
+---
