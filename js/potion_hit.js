@@ -1,22 +1,29 @@
-// potion_hit.js — Shared potion impact naming and the inert monster branch.
+// potion_hit.js — Shared potion impact, direct effect, and vapor ownership.
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
 
+import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_FRUIT_JUICE, POT_GAIN_ENERGY,
-    POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION,
+    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_EXTRA_HEALING, POT_FRUIT_JUICE,
+    POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
+    POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
+    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, TOWEL,
 } from './object_data.js';
 import {
-    MONSTER_FLAGS1, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, monsterTypeName,
 } from './monster_data.js';
-import { currentAttribute } from './attrib.js';
 import { rn2 } from './rng.js';
+import { syncBlindness, syncDeafness } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import { cansee } from './vision.js';
 
+const PM_PESTILENCE = 312;
+const M1_BREATHLESS = 0x00000400;
+const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
+const M2_PNAME = 0x00080000;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
@@ -25,6 +32,26 @@ export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_FRUIT_JUICE,
     POT_MONSTER_DETECTION,
     POT_OBJECT_DETECTION,
+]);
+
+export const HEALING_MONSTER_POTION_TYPES = new Set([
+    POT_GAIN_ABILITY,
+    POT_RESTORE_ABILITY,
+    POT_HEALING,
+    POT_EXTRA_HEALING,
+    POT_FULL_HEALING,
+]);
+
+export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
+    ...INERT_MONSTER_POTION_TYPES,
+    ...HEALING_MONSTER_POTION_TYPES,
+]);
+
+const ABILITY_POTION_TYPES = new Set([
+    POT_GAIN_ABILITY, POT_RESTORE_ABILITY,
+]);
+const HEALING_POTION_TYPES = new Set([
+    POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING,
 ]);
 
 const ORDINARY_BOTTLE_NAMES = [
@@ -66,8 +93,15 @@ export function potionImpactObjectName(potion, state = game) {
 }
 
 function monsterImpactName(monster) {
-    return monster?.name
-        || `the ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
+    if (monster?.name) return monster.name;
+    const typeName = monsterTypeName(monster?.mnum, !!monster?.female);
+    return ((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_PNAME)
+        ? typeName : `the ${typeName}`;
+}
+
+function sentenceSubject(monster) {
+    const subject = monsterImpactName(monster);
+    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)}`;
 }
 
 function possessive(name) {
@@ -83,11 +117,140 @@ export function destroyPotionIdentity(potion) {
     delete potion.carrierMid;
 }
 
-// The six types in INERT_MONSTER_POTION_TYPES deliberately have no entry in
-// either potionhit(monster)'s effect switch or potionbreathe()'s vapor switch.
-// Their complete source transaction still owns bottle presentation, optional
-// one-HP impact attrition, wake/anger, discovery policy, and object deletion.
-export async function hitMonsterWithInertPotion({
+function healingCuresBlindness(potion) {
+    if (potion.otyp === POT_FULL_HEALING) return true;
+    if (potion.otyp === POT_EXTRA_HEALING) return !potion.cursed;
+    return potion.otyp === POT_HEALING && !!potion.blessed;
+}
+
+function healHeroOnePoint(state) {
+    const hero = state.u || (state.u = {});
+    if (Upolyd(hero) && (hero.mh ?? 0) < (hero.mhmax ?? 0)) hero.mh++;
+    if ((hero.uhp ?? 0) < (hero.uhpmax ?? 0)) hero.uhp++;
+}
+
+function restoreBaseAttributes(state, potion) {
+    const base = state.u?.acurr?.a;
+    const maximum = state.u?.amax?.a;
+    const start = rn2(6);
+    if (!Array.isArray(base) || !Array.isArray(maximum)) return start;
+    for (let offset = 0; offset < 6; offset++) {
+        const index = (start + offset) % 6;
+        if ((base[index] ?? 0) < (maximum[index] ?? 0)) {
+            base[index]++;
+            if (!potion.blessed) break;
+        }
+    }
+    return start;
+}
+
+function heroVaporProfile(state) {
+    const mnum = Number.isInteger(state.u?.umonnum)
+        ? state.u.umonnum
+        : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
+    const flags = Number.isInteger(mnum) ? MONSTER_FLAGS1[mnum] ?? 0 : 0;
+    const breathless = !!(flags & M1_BREATHLESS);
+    const hasEyes = !(flags & M1_NOEYES);
+    return { breathless, hasEyes, canReceive: !breathless || hasEyes };
+}
+
+function heroHasVaporShield(state) {
+    const eyewear = state.ublindf || state.u?.ublindf;
+    return eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0;
+}
+
+// potionbreathe() is shared by monster contact and nearby floor breakage.
+// Naming is bounded by callers: dknown-but-unknown identities never enter
+// this owner because trycall() would start an interactive continuation.
+export async function applySupportedPotionVapor({
+    state = game,
+    potion,
+    publish = plineWithContinuation,
+}) {
+    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
+
+    const profile = heroVaporProfile(state);
+    if (!profile.canReceive) return { received: false };
+    if (heroHasVaporShield(state)) {
+        await publish('Some vapor passes harmlessly around you.');
+        return { received: true, shielded: true };
+    }
+
+    let abilityStart = null;
+    if (ABILITY_POTION_TYPES.has(potion.otyp)) {
+        if (potion.cursed) {
+            await publish(profile.breathless
+                ? 'Your eyes sting!'
+                : 'Ulch!  That potion smells terrible!');
+        } else {
+            abilityStart = restoreBaseAttributes(state, potion);
+        }
+    } else if (HEALING_POTION_TYPES.has(potion.otyp)) {
+        const points = potion.otyp === POT_FULL_HEALING ? 3
+            : potion.otyp === POT_EXTRA_HEALING ? 2 : 1;
+        for (let point = 0; point < points; point++) healHeroOnePoint(state);
+        if (healingCuresBlindness(potion)) {
+            state.u.blindTurns = 0;
+            state.u.deafTurns = 0;
+            syncBlindness(state);
+            syncDeafness(state);
+        }
+        exerciseAttribute(2, true, state);
+    }
+    return { received: true, abilityStart };
+}
+
+async function applySupportedDirectEffect({
+    monster, potion, targetVisible, wakeMonster, publish,
+}) {
+    if (!HEALING_MONSTER_POTION_TYPES.has(potion.otyp)) {
+        await wakeMonster?.(monster);
+        return { angered: true, healed: 0, curedBlindness: false };
+    }
+
+    // Healing potions invert against Pestilence; gain/restore ability do not.
+    if (monster.mnum === PM_PESTILENCE
+        && HEALING_POTION_TYPES.has(potion.otyp)) {
+        const oldHp = monster.mhp;
+        if (monster.mhp > 2) {
+            monster.mhp = Math.trunc(monster.mhp / 2);
+            if (targetVisible)
+                await publish(`${sentenceSubject(monster)} looks rather ill.`);
+        }
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: monster.mhp - oldHp,
+            curedBlindness: false,
+        };
+    }
+
+    const oldHp = monster.mhp;
+    if (monster.mhp < monster.mhpmax) {
+        monster.mhp = monster.mhpmax;
+        if (targetVisible)
+            await publish(`${sentenceSubject(monster)} looks sound and hale again.`);
+    }
+
+    let curedBlindness = false;
+    if (healingCuresBlindness(potion) && !monster.mcansee) {
+        monster.mcansee = 1;
+        monster.mblinded = 0;
+        curedBlindness = true;
+        if (targetVisible
+            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
+            await publish(`${sentenceSubject(monster)} can see again.`);
+        }
+    }
+    monster.msleeping = 0;
+    return {
+        angered: false,
+        healed: monster.mhp - oldHp,
+        curedBlindness,
+    };
+}
+
+export async function hitMonsterWithSupportedPotion({
     state = game,
     monster,
     potion,
@@ -98,7 +261,7 @@ export async function hitMonsterWithInertPotion({
     distance = 0,
 }) {
     if (!monster || !potion
-        || !INERT_MONSTER_POTION_TYPES.has(potion.otyp)) return null;
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp)) return null;
 
     const bottleName = randomBottleName(state);
     const monsterName = monsterImpactName(monster);
@@ -122,15 +285,24 @@ export async function hitMonsterWithInertPotion({
         await publish(evaporationMessage);
     }
 
-    // For this source family the direct and vapor effect switches are both
-    // empty.  dknown+unknown identities are rejected by the caller because
-    // trycall() owns an interactive naming continuation not represented here.
-    await wakeMonster?.(monster);
-    if (resolveVapor && distance > 0 && distance < 3) {
-        // potionhit() still pays the proximity gate before entering the empty
-        // potionbreathe() switch.  Distance zero (swallowed contact) breathes
-        // unconditionally and distance three or more never probes.
-        rn2(Math.trunc((1 + currentAttribute(1, state)) / 2));
+    const directEffect = await applySupportedDirectEffect({
+        monster, potion, targetVisible, wakeMonster, publish,
+    });
+    let breathedVapor = false;
+    let vaporEffect = null;
+    if (resolveVapor) {
+        breathedVapor = distance === 0;
+        if (!breathedVapor && distance > 0 && distance < 3) {
+            breathedVapor = rn2(
+                Math.trunc((1 + currentAttribute(1, state)) / 2),
+            ) === 0;
+        }
+        if (breathedVapor) {
+            vaporEffect = await applySupportedPotionVapor({
+                state, potion, publish,
+            });
+            breathedVapor = vaporEffect?.received !== false;
+        }
     }
     destroyPotionIdentity(potion);
     return {
@@ -138,5 +310,15 @@ export async function hitMonsterWithInertPotion({
         crashMessage,
         evaporationMessage,
         impactDamage,
+        directEffect,
+        breathedVapor,
+        vaporEffect,
     };
+}
+
+// Retain the narrow API for direct inert witnesses while all production
+// callers use the complete supported-family owner.
+export async function hitMonsterWithInertPotion(options) {
+    if (!INERT_MONSTER_POTION_TYPES.has(options?.potion?.otyp)) return null;
+    return hitMonsterWithSupportedPotion(options);
 }

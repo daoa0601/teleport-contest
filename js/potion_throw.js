@@ -12,8 +12,9 @@ import {
 } from './monster_data.js';
 import { OBJECT_WEIGHT } from './object_data.js';
 import {
-    destroyPotionIdentity, hitMonsterWithInertPotion,
-    INERT_MONSTER_POTION_TYPES, potionImpactObjectName,
+    applySupportedPotionVapor, destroyPotionIdentity,
+    hitMonsterWithSupportedPotion, potionImpactObjectName,
+    SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -97,7 +98,7 @@ function ordinaryEligibility({
     state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
 }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
-        || !INERT_MONSTER_POTION_TYPES.has(item?.otyp)
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1
         || !Number.isInteger(dx) || !Number.isInteger(dy)) return null;
 
@@ -153,14 +154,13 @@ async function settlePotionAfterMiss({
     await publish(`${indefiniteObjectName(potion, state)} shatters!`);
     if (distanceFromHero(state, x, y) <= 1) {
         await publish('You smell a peculiar odor...');
-        // All six admitted types have an empty potionbreathe() switch.  Their
-        // known identities also bypass trycall().
+        await applySupportedPotionVapor({ state, potion, publish });
     }
     destroyPotionIdentity(potion);
     return { broke: true };
 }
 
-export async function resolveMapInertPotionThrow({
+export async function resolveMapPotionThrow({
     state = game,
     item,
     objectClass,
@@ -186,7 +186,7 @@ export async function resolveMapInertPotionThrow({
     if (eligible.contact) {
         rnd(20); // thitmonst() computes this before the potion class test
         if (currentAttribute(1, state) > rnd(25)) {
-            await hitMonsterWithInertPotion({
+            await hitMonsterWithSupportedPotion({
                 state,
                 monster: eligible.contact,
                 potion: thrown,

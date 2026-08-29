@@ -60,10 +60,10 @@ import {
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSwallowedInertPotionThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
     resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
-import { resolveMapInertPotionThrow } from './potion_throw.js';
+import { resolveMapPotionThrow } from './potion_throw.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
     destroyMulchedProjectile, shouldMulchMissile,
@@ -15571,7 +15571,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         useCompatibilityBridge('throw.swallowed-weapon-unsupported');
     }
 
-    if (await resolveSwallowedInertPotionThrow({
+    if (await resolveSwallowedPotionThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,
@@ -15597,7 +15597,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         useCompatibilityBridge('throw.swallowed-special-unsupported');
     }
 
-    if (!game.u?.uswallow && await resolveMapInertPotionThrow({
+    if (!game.u?.uswallow && await resolveMapPotionThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,

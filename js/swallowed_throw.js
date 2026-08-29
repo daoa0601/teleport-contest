@@ -22,7 +22,7 @@ import {
     shouldMulchMissile,
 } from './projectile.js';
 import {
-    hitMonsterWithInertPotion, INERT_MONSTER_POTION_TYPES,
+    hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
 import {
@@ -290,12 +290,12 @@ function genericSwallowedEligibility(
     return engulfer;
 }
 
-function swallowedInertPotionEligibility(
+function swallowedPotionEligibility(
     state, item, objectClass, selectedQuantity,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer || objectClass !== POTION_CLASS
-        || !INERT_MONSTER_POTION_TYPES.has(item?.otyp)
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1) {
         return null;
     }
@@ -471,7 +471,7 @@ export async function resolveSwallowedWeaponThrow({
     return true;
 }
 
-export async function resolveSwallowedInertPotionThrow({
+export async function resolveSwallowedPotionThrow({
     state = game,
     item,
     objectClass,
@@ -479,7 +479,7 @@ export async function resolveSwallowedInertPotionThrow({
     splitObjectId,
     wakeMonster,
 }) {
-    const engulfer = swallowedInertPotionEligibility(
+    const engulfer = swallowedPotionEligibility(
         state, item, objectClass, selectedQuantity,
     );
     if (!engulfer) return false;
@@ -500,7 +500,7 @@ export async function resolveSwallowedInertPotionThrow({
     }
 
     rnd(20);
-    await hitMonsterWithInertPotion({
+    await hitMonsterWithSupportedPotion({
         state,
         monster: engulfer,
         potion: thrown,

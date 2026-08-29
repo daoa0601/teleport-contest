@@ -5,13 +5,13 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
-import { ROOM } from '../js/const.js';
+import { ROOM, STONE } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
-    POT_FRUIT_JUICE, POT_GAIN_LEVEL, POT_HEALING,
+    POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL, POT_SICKNESS,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -210,9 +210,67 @@ test('one-percent map potion break resistance preserves the thrown identity',
         assertNoBridgeUse();
     });
 
-test('effectful map potion fails loudly before split or throw RNG', async () => {
+test('map extra healing contact heals monster then hero through nearby vapor',
+    async () => {
+        const monster = freshMapPotionState(2);
+        monster.mhp = 4;
+        monster.mcansee = 0;
+        monster.mblinded = 12;
+        game.u.uhp = 20;
+        game.u.uhpmax = 30;
+        game.u.blindTurns = 0;
+        game.u.deafTurns = 6;
+        const potion = addKnownPotion(POT_EXTRA_HEALING);
+
+        initRng(2804n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=15',
+            'rnd(25)=2',
+            'rn2(7)=6',
+            'rn2(5)=2',
+            'rn2(9)=0',
+            'rn2(19)=13',
+        ]);
+        assert.equal(monster.mhp, monster.mhpmax);
+        assert.equal(monster.mcansee, 1);
+        assert.equal(monster.mblinded, 0);
+        assert.equal(game.u.uhp, 22);
+        assert.equal(game.u.blindTurns, 0);
+        assert.equal(game.u.deafTurns, 0);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game.u._exercise[2], 1);
+        assertNoBridgeUse();
+    });
+
+test('adjacent hard-floor break applies healing vapor without monster contact',
+    async () => {
+        freshMapPotionState(2);
+        game.level.monsters = [];
+        game.level.at(11, 10).typ = STONE;
+        game.u.uhp = 20;
+        game.u.uhpmax = 30;
+        const potion = addKnownPotion(POT_EXTRA_HEALING);
+        potion.cursed = false;
+        potion.blessed = false;
+
+        initRng(2850n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ']);
+
+        assert.deepEqual(getRngLog(), ['rn2(100)=22', 'rn2(19)=10']);
+        assert.equal(game.u.uhp, 22);
+        assert.equal(potion.where, 'gone');
+        assert.equal(floorObjects().length, 0);
+        assert.match(game._pending_message, /You smell a peculiar odor\.\.\.$/);
+        assertNoBridgeUse();
+    });
+
+test('unsupported sickness map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
-    const potion = addKnownPotion(POT_HEALING);
+    const potion = addKnownPotion(POT_SICKNESS);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 

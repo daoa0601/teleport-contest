@@ -15,9 +15,10 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
-    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
-    POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, SCR_BLANK_PAPER,
-    TWO_HANDED_SWORD,
+    POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
+    POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
+    POT_OBJECT_DETECTION, POT_RESTORE_ABILITY, POT_SICKNESS,
+    SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { objectTimers } from '../js/object_timers.js';
@@ -587,10 +588,10 @@ test('swallowed hand-thrown arrow uses ranged damage and Strength without skill'
         assertNoBridgeUse();
     });
 
-test('unsupported swallowed potion fails before floor fallback or RNG',
+test('unsupported sickness potion fails before floor fallback or RNG',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const raw = mksobj(POT_HEALING, true, false);
+        const raw = mksobj(POT_SICKNESS, true, false);
         raw.cursed = raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;
@@ -618,6 +619,120 @@ test('unsupported swallowed potion fails before floor fallback or RNG',
             ledger.bridges['throw.potion-impact-unsupported'].count,
             1,
         );
+    });
+
+test('swallowed healing family heals both monster and hero through vapor',
+    async () => {
+        const cases = [
+            {
+                type: POT_HEALING,
+                blessed: true,
+                cursed: false,
+                seed: 2813n,
+                heroGain: 1,
+                expectedRng: [
+                    'rnd(20)=8', 'rn2(7)=1', 'rn2(5)=2', 'rn2(19)=16',
+                ],
+            },
+            {
+                type: POT_FULL_HEALING,
+                blessed: false,
+                cursed: true,
+                seed: 2810n,
+                heroGain: 3,
+                expectedRng: [
+                    'rn2(7)=5', 'rnd(20)=17', 'rn2(7)=2', 'rn2(5)=2',
+                    'rn2(19)=6',
+                ],
+            },
+        ];
+
+        for (const specimen of cases) {
+            const engulfer = freshSwallowedState(PM_TRAPPER);
+            engulfer.mhp = 9;
+            engulfer.mcansee = 0;
+            engulfer.mblinded = 20;
+            engulfer.msleeping = 1;
+            game.u.uhp = 30;
+            game.u.uhpmax = 40;
+            game.u.blindTurns = 5;
+            game.u.deafTurns = 7;
+            const raw = mksobj(specimen.type, true, false);
+            raw.cursed = specimen.cursed;
+            raw.blessed = specimen.blessed;
+            raw.bknown = raw.dknown = raw.known = true;
+            raw.typeKnown = true;
+            const potion = addInventoryItem(raw);
+
+            initRng(specimen.seed);
+            enableRngLog();
+            await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ', ' ']);
+
+            assert.deepEqual(getRngLog(), specimen.expectedRng);
+            assert.equal(engulfer.mhp, engulfer.mhpmax);
+            assert.equal(engulfer.mcansee, 1);
+            assert.equal(engulfer.mblinded, 0);
+            assert.equal(engulfer.msleeping, 0);
+            assert.equal(game.u.uhp, 30 + specimen.heroGain);
+            assert.equal(game.u.blindTurns, 0);
+            assert.equal(game.u.deafTurns, 0);
+            assert.equal(potion.where, 'gone');
+            assertNoBridgeUse();
+        }
+    });
+
+test('swallowed blessed gain ability restores every reduced base attribute',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 11;
+        game.u.acurr.a = [10, 12, 9, 12, 8, 12];
+        game.u.amax.a = [12, 12, 12, 12, 12, 12];
+        const raw = mksobj(POT_GAIN_ABILITY, true, false);
+        raw.cursed = false;
+        raw.blessed = true;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2824n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=9', 'rn2(7)=5', 'rn2(5)=4', 'rn2(6)=0',
+        ]);
+        assert.equal(engulfer.mhp, engulfer.mhpmax);
+        assert.deepEqual(game.u.acurr.a, [11, 12, 10, 12, 9, 12]);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('cursed restore ability vapor smells but cannot restore attributes',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 12;
+        game.u.acurr.a = [10, 12, 9, 12, 8, 12];
+        game.u.amax.a = [12, 12, 12, 12, 12, 12];
+        const raw = mksobj(POT_RESTORE_ABILITY, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2820n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=5', 'rnd(20)=6', 'rn2(7)=1', 'rn2(5)=3',
+        ]);
+        assert.equal(engulfer.mhp, engulfer.mhpmax);
+        assert.deepEqual(game.u.acurr.a, [10, 12, 9, 12, 8, 12]);
+        assert.equal(game._pending_message,
+            'Crash!  Ulch!  That potion smells terrible!');
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
     });
 
 test('all monster-inert potions crash unseen, chip, and disappear live',
