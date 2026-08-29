@@ -35468,9 +35468,9 @@ flowchart TD
     Static --> Room
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
-    Pick --> Live["Ghost, Cloud, Boulder, Spider, Trap: implemented live callbacks"]
+    Pick --> Live["Ghost, Cloud, hazards, Massacre, Statuary: implemented"]
     Pick --> Partial["Buried zombies, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["six callbacks: absent"]
+    Pick --> Absent["four callbacks: absent"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35490,9 +35490,10 @@ or dynamic room independently chooses among 15 fill callbacks. The shared
 dispatcher now makes this boundary explicit and returns false for a named
 callback which has not been ported instead of reporting an empty callback as
 implemented. The generated ownership registry records every fill separately.
-Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, and Trap room
-are `implemented`; Buried zombies, Temple of the gods, Storeroom, and
-Teleportation hub are `partial`; the remaining six are `absent`.
+Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
+Massacre, and Statuary are `implemented`; Buried zombies, Temple of the gods,
+Storeroom, and Teleportation hub are `partial`; the remaining four are
+`absent`.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35504,7 +35505,7 @@ It consults no seed, role, move sequence, fixture, or replay flag. The same
 fill dispatcher is used by static-map and dynamically shaped themed rooms.
 
 The level-generation registry therefore remains **partial**. In addition to
-the ten incomplete fills, exact source ordering across all 31 shapes,
+the eight incomplete fills, exact source ordering across all 31 shapes,
 remaining seeded generation branches, broader `sp_lev.c` operations, and the
 scheduled sealed corpus gate remain open. Public-session exactness is not an
 ownership status in this graph.
@@ -35533,3 +35534,14 @@ inside; it now evaluates the polymorphed hero first and every fog monster in
 turn, adding five only while the current TTL is below 20. The constructor is
 deliberately harmless-only: accepting poisonous damage before resistance,
 blindness, anger, damage, and death callbacks exist would overstate its scope.
+
+Massacre and Statuary stay inside the existing object/trap construction graph.
+Massacre evaluates one of 27 Lua names before its 5d5 loop, then independently
+reselects with 10% probability before each corpse. Gendered priest/priestess
+and caveman/cavewoman names intentionally resolve to duplicate cleric and cave
+dweller corpse species; removing those duplicate reservoir slots would change
+the source distribution. Statuary constructs 5d5 initialized statues followed
+by 1d3 statue traps. Those traps are not inert markers: the shared trap owner
+constructs their resident statue and inventory graph. Both fills use live
+random room placement and create saveable floor/trap state without a seed,
+role, replay-move, or session predicate.

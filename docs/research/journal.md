@@ -94113,3 +94113,57 @@ claiming Ice room, or redirect to the self-contained Massacre/Statuary object
 family if the timer owner expands beyond a coherent slice.
 
 ---
+
+### [2026-08-29 15:10 EEST, journal block 3128] {#bridge-free #level-generation #lua #massacre #statuary #corpses #statues #traps #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** the Ice follow-up reached
+`timeout.c`, frozen-object timers, `trap_ice_effects()`, buried objects,
+boulder/pool resolution, and hero/monster liquid effects behind
+`melt_ice()`. A terrain-plus-expiry patch would therefore have been another
+partial callback mislabeled as accepted. Following block 3127's declared
+redirect, the audit returned to the pinned `themerms.lua` table. Massacre and
+Statuary were fully absent: the dispatcher returned false before their first
+role-reservoir or population-dice draw.
+
+**Prediction portfolio and decisive evidence:** (1) an Ice timer-only
+hypothesis predicted expiry could just turn ICE into MOAT; source falsified it
+with trap, object, burial, boulder, hero, monster, and timer-chain effects. (2)
+a 25-entry Massacre reservoir predicted one slot per distinct species, but the
+27 Lua names intentionally include priest/priestess and caveman/cavewoman as
+duplicate cleric and cave-dweller outcomes. (3) one species per room predicted
+the initial `idx` was fixed; each corpse first owns an independent 10%
+reselection. (4) a fixed population predicted five corpses and five statues;
+both use 5d5. (5) inert statue-trap markers predicted only trap coordinates
+were required; shared `maketrap()` creates an initialized statue and its
+possible inventory at every live trap.
+
+**Decision and implementation:** preserve the exact 27-slot role/guardian
+reservoir, choose once before the loop, evaluate the 10% reselection before
+each of 5d5 corpses, and delegate every corpse through the shared initialized
+object/location owner. For Statuary, delegate 5d5 loose statues through the
+shared initialized statue constructor, then delegate 1d3 random-room statue
+traps through the live special-trap owner. Keep Ice mechanically absent rather
+than landing a timer stub; its broader runtime graph remains the next explicit
+architecture decision.
+
+**Measured effect and regression:** the direct themed-room selection passes
+**16/16**; Massacre produces 5..25 corpses only from the source role/guardian
+set, Statuary produces 5d5 loose statues plus 1d3 live statue traps with
+co-located statue state, and both record zero compatibility hits. The combined
+bridge-policy, Priest startup, ordinary-room, and themed-room selection passes
+**32/32**. Five represented level carriers again pass for Storeroom, nesting
+rooms, secret-door orientation, clean Minetown-2, and Orcus ghost-town shops.
+The bridge-free audit remains green over 111 files. Every verifier exited and
+a post-run process check found no owned test tree. Implementation commit
+`5d0f256` contains only the two fill callbacks and focused witnesses.
+
+**Falsified hypotheses, limit, and next blocker:** Ice expiry is not a terrain
+assignment, distinct corpse species are not the source reservoir cardinality,
+Massacre does not retain one species unconditionally, and statue traps are not
+presentation markers. No full suite, public corpus, sealed trace, score, push,
+publication, official measurement, or animation work ran. Eight fill
+callbacks remain incomplete. Next audit Garden's deferred wall transformation
+and Buried treasure's nested container/postprocess ownership; choose the first
+one whose complete state and continuation fit a coherent bridge-free slice.
+
+---
