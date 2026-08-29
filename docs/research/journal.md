@@ -94802,3 +94802,79 @@ slice should select one complete residual family, with monster life-saving the
 narrowest candidate, rather than broadening the common projection.
 
 ---
+
+### [2026-08-29 17:47 EEST, journal block 3139] {#bridge-free #ice-room #boulder #monster-death #life-saving #tty-order #object-knowledge #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** block 3138 left every worn
+monster-life-saving carrier behind the pre-mutation boundary. Native
+`do.c:boulder_hits_pool()` changes the liquid to `ROOM` and enters
+`mondied()->mondead()->lifesaved_monster()` before trap deletion, residual-pile
+burial, splash, wake-up, and buried-zombie disturbance. The earliest missing
+owner was therefore not a later corpse exception: it was the HP-zero
+life-saving transaction and its tty suspension before the ordinary death path
+can detach the actor.
+
+**Prediction portfolio and decisive evidence:** the critical-debugging
+portfolio separated five non-equivalent families. (1) Treating life-saving as
+ordinary death plus an HP reset predicted inventory release, corpse chance,
+and vanquish state before restoration; native `lifesaved_monster()` intercepts
+before all three. (2) Treating the worn amulet as universally eligible
+predicted a skeleton revived; `mlifesaver()` ignores an ordinary nonliving
+monster's amulet. (3) Treating visible and unseen recovery as one presentation
+predicted object discovery and Wisdom RNG in both; an unseen square silently
+consumes the amulet and teaches nothing. (4) Applying restored state before the
+crumble line predicted observers would see positive HP and an absent amulet;
+native message order retains HP zero and the carried amulet until after that
+tty boundary. (5) Treating every failed rescue as ordinary death predicted one
+continuation; genocide can consume the amulet and still kill, tame pets require
+`wary_dog()`, and vampire/special-death families enter different owners.
+
+**Decision and implementation:** commit `2da73db` extends the shared monster
+death owner and the resumable ice-fill continuation only for successful worn
+amulet rescue. `mondeath.js` now identifies an eligible saver, preserves named,
+gendered, visible, invisible, and unseen presentation distinctions, discovers
+the object only on a visible square, avoids repeated Wisdom RNG for an already
+known amulet, consumes the exact object identity, clears `W_AMUL`, schedules
+`I_SPECIAL`, and restores movement and at least ten HP only after the crumble
+boundary. `mklev.js` pauses the filled-square transaction at HP zero and
+returns the same pending outcome without extra RNG until the rescue is
+resolved; `allmain.js` then resumes trap deletion, residual-pile burial,
+repaint, splash, wake-up, and zombie disturbance. Genocide failure, tame-pet
+recovery, shapechanging, and other special-death families still reject before
+the earlier ice mutation. A worn amulet on an ordinary nonliving monster stays
+on the ordinary death/drop/burial path.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **46/46**.
+The visible named-Naiad witness proves melt and settling use zero RNG, the
+`rn2(10)=5` fill precedes `But wait`, Wisdom `rn2(19)=11` occurs before the
+glow page, the crumble observer still sees HP zero, the carried amulet, and an
+unburied floor statue, and burial `rn2(100)=60` occurs only after restoration;
+the splash then sees ten HP, a consumed amulet, buried statue, and destroyed
+boulder with no vanquish, corpse, or death record. The unseen witness is silent
+and preserves amulet ignorance. A known visible-square but invisible-monster
+witness uses `Its`, omits recovery prose, and consumes no repeated Wisdom RNG.
+The skeleton witness ignores the worn saver, drops and buries it, pays ordinary
+corpse chance, and then honors `G_NOCORPSE`. Four pre-existing shared
+Wizard/death-ray life-saving carriers pass **4/4**; the combined bridge-policy,
+Priest-startup, ordinary-room, and themed-room gate passes **62/62**; five
+represented level-generation carriers pass **5/5**. Every verifier exited, no
+duplicate was launched, and no full suite or corpus process was started.
+
+**Correction, falsified hypotheses, limit, and next blocker:** the first
+themed-room run expected a synthetic monster to be spotted, but that unit
+fixture had no initialized optical map, so `canSeeMonster()` correctly returned
+false. The witness now supplies its explicit visible-actor observation; this
+was a fixture-observer correction, not a production control-flow change.
+Life-saving is not ordinary death plus reset; nonliving eligibility is not the
+living rule; visible and unseen rescue do not share knowledge or RNG; and
+restoration does not precede the crumble tty boundary. Ice remains `partial`:
+life-saving genocide failure, tame-pet `wary_dog()` recovery, shapechanging,
+special corpse/explosion families, active-mimic and pit detachment,
+pet/unique/special actors, unsafe monster `minliquid()`, hero and drawbridge
+continuations, timer lifecycle gaps, and a sealed stratum remain open. No full
+suite, public corpus, sealed trace inspection, score, push, publication,
+official measurement, or animation work ran. The next slice must choose one
+coherent residual owner rather than generalize this successful-rescue path into
+the non-equivalent failure families.
+
+---
