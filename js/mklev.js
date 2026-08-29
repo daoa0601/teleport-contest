@@ -4862,7 +4862,8 @@ function specialObject(context) {
         && !game.level.objects?.[x]?.[y]?.some(
             object => object.otyp === BOULDER,
         ));
-    if (point) mkobj_at(RANDOM_CLASS, point.x, point.y, true);
+    if (point) return mkobj_at(RANDOM_CLASS, point.x, point.y, true);
+    return null;
 }
 
 function specialObjectOfClass(context, objectClass) {
@@ -14749,6 +14750,46 @@ async function fillStatuary(room) {
         await specialTrapOfType(context, STATUE_TRAP);
 }
 
+// C/Lua refs: themerms.lua "Buried treasure", sp_lev.c create_object(),
+// dig.c bury_an_obj(), and zap.c obj_resists().  create_object() buries the
+// initialized chest before Lua enters its contents callback.  Keep that
+// ordering explicit: the burial draws precede d(3,4) and every child object.
+function fillBuriedTreasure(room) {
+    const context = specialRoomContext(room);
+    const chest = specialObjectOfType(context, CHEST);
+    if (!chest) return;
+    const x = chest.ox, y = chest.oy;
+
+    // A Lua `contents` function clears mkbox_cnts() only after the complete
+    // initialized chest constructor (and all of its RNG) has run.
+    chest.contents = [];
+
+    // bury_an_obj(): the first ordinary-object resistance test always draws
+    // and cannot save a non-artifact chest.  A wooden chest then gets a
+    // second 5% resistance test before its ROT_ORGANIC timer is scheduled.
+    rn2(100);
+    if (rn2(100) >= 5)
+        chest.rotOrganicAt = (game.moves ?? 0) + 250 + rnd(250);
+    addBuriedObject(chest, x, y);
+
+    // otmp:totable() observes the retained burial coordinates.  Queueing the
+    // callback itself is RNG-free and occurs before the child-count dice.
+    game._themeroomPostprocess.push({
+        kind: 'buried-treasure-engraving',
+        x,
+        y,
+    });
+
+    const contentCount = d(3, 4);
+    for (let count = 0; count < contentCount; count++) {
+        // Nested des.object() still samples a dry room coordinate and builds
+        // a floor object before create_object() moves it into the container.
+        const object = specialObject(context);
+        addSpecialContainerObject(chest, object);
+        chest.owt = objectWeight(chest);
+    }
+}
+
 async function fillSpiderNest(room, difficulty) {
     const context = specialRoomContext(room);
     const selected = themeroomSelection(room).percentage(30);
@@ -14854,6 +14895,30 @@ export async function runThemeroomPostprocess() {
                 if (IS_STWALL(loc.typ)) loc.typ = TREE;
                 else if (loc.typ === SDOOR) loc.arboreal_sdoor = 1;
             });
+            continue;
+        }
+        if (callback.kind === 'buried-treasure-engraving') {
+            const floors = new SpecialSelection();
+            for (let x = 0; x < COLNO; x++) {
+                for (let y = 0; y < ROWNO; y++) {
+                    if (game.level.at(x, y)?.typ === ROOM) floors.add(x, y);
+                }
+            }
+            const pos = floors.randomCoordinate(false);
+            if (!pos) continue;
+            const tx = callback.x - pos.x - 1;
+            const ty = callback.y - pos.y;
+            let direction = '';
+            if (tx === 0 && ty === 0) direction = ' here';
+            else {
+                if (tx)
+                    direction += ` ${Math.abs(tx)} ${tx > 0 ? 'east' : 'west'}`;
+                if (ty)
+                    direction += ` ${Math.abs(ty)} ${ty > 0 ? 'south' : 'north'}`;
+            }
+            makeEngravingAt(
+                pos.x, pos.y, `Dig${direction}`, null, 0, BURN,
+            );
             continue;
         }
         if (callback.kind !== 'teleportation-hub-trap') continue;
@@ -14974,6 +15039,7 @@ async function applyThemeroomFill(room, fill, difficulty) {
     else if (fill.name === 'Spider nest')
         await fillSpiderNest(room, difficulty);
     else if (fill.name === 'Trap room') await fillTrapRoom(room);
+    else if (fill.name === 'Buried treasure') fillBuriedTreasure(room);
     else if (fill.name === 'Buried zombies')
         fillBuriedZombies(room, difficulty);
     else if (fill.name === 'Massacre') fillMassacre(room);

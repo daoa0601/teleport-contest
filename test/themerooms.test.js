@@ -6,7 +6,7 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL, FOUNTAIN,
+    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
     LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
     ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
     SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB,
@@ -18,10 +18,11 @@ import {
     runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
-import { BOULDER, CORPSE, STATUE } from '../js/object_data.js';
+import { BOULDER, CHEST, CORPSE, STATUE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
 import { initRng } from '../js/rng.js';
+import { objectWeight } from '../js/weight.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
@@ -417,6 +418,59 @@ test('Statuary composes loose statues and live statue traps', async () => {
         (column || []).flatMap(pile => pile || []),
     ).filter(object => object.otyp === STATUE);
     assert.ok(statues.length >= game.level.traps.length + 5);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Buried treasure owns nested contents before its deferred clue', async () => {
+    themedState(4032, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(
+        room, 'Buried treasure', 12,
+    ), true);
+
+    assert.equal(game.level.buriedObjects.length, 1);
+    const chest = game.level.buriedObjects[0];
+    assert.equal(chest.otyp, CHEST);
+    assert.equal(chest.where, 'buried');
+    assert.equal(chest.buried, true);
+    assert.ok(chest.ox >= room.lx && chest.ox <= room.hx);
+    assert.ok(chest.oy >= room.ly && chest.oy <= room.hy);
+    assert.ok(chest.contents.length >= 3 && chest.contents.length <= 12);
+    assert.ok(chest.contents.every(object =>
+        object.where === 'contained' && object.ox === 0 && object.oy === 0));
+    assert.equal(chest.owt, objectWeight(chest));
+    assert.equal(game.level.objects.flatMap(column =>
+        (column || []).flatMap(pile => pile || []),
+    ).some(object => object === chest), false);
+    if (chest.rotOrganicAt != null) {
+        assert.ok(chest.rotOrganicAt >= game.moves + 251);
+        assert.ok(chest.rotOrganicAt <= game.moves + 500);
+    }
+    assert.deepEqual(game._themeroomPostprocess, [{
+        kind: 'buried-treasure-engraving',
+        x: chest.ox,
+        y: chest.oy,
+    }]);
+
+    await runThemeroomPostprocess();
+    assert.equal(game.level.engravings.length, 1);
+    const engraving = game.level.engravings[0];
+    assert.equal(engraving.engr_type, BURN);
+    const tx = chest.ox - engraving.x - 1;
+    const ty = chest.oy - engraving.y;
+    let direction = '';
+    if (tx === 0 && ty === 0) direction = ' here';
+    else {
+        if (tx)
+            direction += ` ${Math.abs(tx)} ${tx > 0 ? 'east' : 'west'}`;
+        if (ty)
+            direction += ` ${Math.abs(ty)} ${ty > 0 ? 'south' : 'north'}`;
+    }
+    assert.equal(engraving.text, `Dig${direction}`);
+    assert.equal(game._themeroomPostprocess.length, 0);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });
