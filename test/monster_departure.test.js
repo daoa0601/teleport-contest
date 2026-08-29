@@ -4,16 +4,21 @@ import assert from 'node:assert/strict';
 import {
     AMULET_OF_YENDOR, CORPSE, ORCISH_DAGGER,
 } from '../js/object_data.js';
+import { GameMap } from '../js/game.js';
+import { game, resetGame } from '../js/gstate.js';
 import { removeWishGrantingMonster } from '../js/monster_departure.js';
+import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 
-function departureState(monster) {
-    return {
-        u: { ustuck: monster, uswallow: true },
-        level: { monsters: [monster, { mnum: 0 }] },
-    };
+function installDepartureState(monster) {
+    resetGame();
+    game.level = new GameMap();
+    game.level.monsters = [monster, { mnum: 0 }];
+    game.u = { ux: 10, uy: 10, ustuck: monster, uswallow: true };
+    initRng(3n);
+    enableRngLog();
 }
 
-test('wish departure probes ordinary and quest items but drops protected identities', () => {
+test('wish departure leaves protected identities and removes ordinary cargo', () => {
     const invocation = { otyp: AMULET_OF_YENDOR, where: 'monster' };
     const quest = {
         otyp: ORCISH_DAGGER, questArtifact: true,
@@ -25,61 +30,48 @@ test('wish departure probes ordinary and quest items but drops protected identit
         minvent: [invocation, quest, ordinary], hasInventory: true,
     };
     monster.inventory = monster.minvent;
-    const state = departureState(monster);
-    const ranges = [];
-    const dropped = [];
-    const repaints = [];
+    installDepartureState(monster);
 
     const result = removeWishGrantingMonster(monster, {
-        state,
-        random: range => { ranges.push(range); return 99; },
-        dropObject: (object, x, y) => {
-            object.where = 'floor';
-            object.ox = x;
-            object.oy = y;
-            dropped.push(object);
-            return object;
-        },
-        repaint: (...args) => repaints.push(args),
         preserveGlyph: true,
     });
 
-    assert.deepEqual(ranges, [100, 100]);
-    assert.deepEqual(dropped, [invocation, quest]);
+    assert.equal(getRngLog().length, 2);
+    assert.ok(getRngLog().every(call => /^rn2\(100\)=/.test(call)));
+    assert.deepEqual(new Set(result.dropped), new Set([invocation, quest]));
     assert.deepEqual(result.discarded, [ordinary]);
+    assert.ok(game.level.objects[11][10].includes(invocation));
+    assert.ok(game.level.objects[11][10].includes(quest));
+    assert.equal(invocation.where, 'floor');
+    assert.equal(quest.where, 'floor');
     assert.equal(quest.worn, false);
     assert.equal(quest.owornmask, 0);
     assert.equal(ordinary.where, 'gone');
     assert.equal(monster.dead, true);
     assert.deepEqual(monster.minvent, []);
-    assert.equal(state.level.monsters.includes(monster), false);
-    assert.equal(state.u.ustuck, null);
-    assert.equal(state.u.uswallow, false);
-    assert.deepEqual(repaints, []);
+    assert.equal(game.level.monsters.includes(monster), false);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(game.u.uswallow, false);
 });
 
-test('Rider corpses resist without RNG and ordinary removal repaints', () => {
+test('Rider corpses survive departure without consuming core RNG', () => {
     const rider = { otyp: CORPSE, corpsenm: 311, where: 'monster' };
     const monster = {
         mnum: 289, mx: 12, my: 9, mhp: 20,
         minvent: [rider], hasInventory: true,
     };
     monster.inventory = monster.minvent;
-    const state = departureState(monster);
-    const calls = [];
-    const dropped = [];
-    const repaints = [];
+    installDepartureState(monster);
 
     const result = removeWishGrantingMonster(monster, {
-        state,
-        random: range => calls.push(range),
-        dropObject: object => { dropped.push(object); return object; },
-        repaint: (x, y) => repaints.push([x, y]),
+        preserveGlyph: true,
     });
 
-    assert.deepEqual(calls, []);
-    assert.deepEqual(dropped, [rider]);
-    assert.deepEqual(repaints, [[12, 9]]);
+    assert.deepEqual(getRngLog(), []);
+    assert.deepEqual(result.dropped, [rider]);
+    assert.equal(game.level.objects[12][9][0], rider);
+    assert.equal(rider.where, 'floor');
+    assert.equal(game.level.monsters.includes(monster), false);
 });
 
 test('null wish departure is a zero-work boundary', () => {

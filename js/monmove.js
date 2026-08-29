@@ -5869,9 +5869,6 @@ function triggerMonsterTrap(
 export function triggerImmediateMonsterTrap(
     monster,
     state = game,
-    random = rn2,
-    rollDice = d,
-    rollOne = rnd,
 ) {
     const calls = DISCARDED_CALL_LOG;
     const movement = {
@@ -5883,7 +5880,7 @@ export function triggerImmediateMonsterTrap(
         immediateTrap: true,
     };
     const event = triggerMonsterTrap(
-        monster, state, movement, random, rollDice, rollOne, calls,
+        monster, state, movement, rn2, d, rnd, calls,
     );
     return { monster, movement, event };
 }

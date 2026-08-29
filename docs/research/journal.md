@@ -97706,3 +97706,60 @@ Contest corpus, scorer, sealed trace, push, publication, official hidden
 measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:48 EEST, journal block 3184] {#test-quality #change-detector #outcome-contract #test-seam #canonical-owner #fountain #mongone #mintrap #rng #architecture #process-safety}
+
+**Witness, portfolio, and earliest risk:** block 3183 made replay quarantine
+structural, then the default-lane audit compared four remaining mechanism
+families: ordered mock transcripts, test-only production injection seams,
+deterministic core-RNG behavior, and final world/presentation state.  The
+strongest change detectors were fountain gem `order[]`, fountain coin
+`calls[]`/counter objects, wish-departure substitute state/drop/repaint/RNG
+callbacks, and immediate-trap substitute RNG/dice callbacks.  All could pass
+while the live global world owners were disconnected.
+
+**Prediction and source evidence:** `fountain.c` makes coin quantity, looted
+state, one floor identity, visibility-dependent prose, Wisdom exercise, and
+map refresh observable; collaborator ordering is not independently observable
+inside the extracted reducer.  `steal.c:mdrop_special_objs()` and
+`zap.c:obj_resists()` make two details independently deterministic: invocation
+objects and Rider corpses resist without a draw, while an ordinary current
+quest artifact still consumes `rn2(100)` before it is rescued.  Core PRNG
+consumption is scored game behavior here, unlike an arbitrary mock call list.
+`trap.c:mintrap()` makes learned-web avoidance observable through the actor's
+trapped state, so a fixed seed is sufficient without injecting and inspecting
+the random range.
+
+**Decision and implementation:** fountain tests now assert an in-memory world:
+announced prose, the identical floor gem, coin quantity, looted bit, Wisdom
+exercise, repaint state, and blind/looted negative work boundaries.  Top and
+bottom dungeon ranges are tested through their maximum possible resulting
+quantities instead of a copied range-call list.  Wish departure no longer
+accepts test-only state, random, drop, or repaint owners; it always composes the
+live game, core RNG, floor placement/stacking, and `newsym()` owners.  Immediate
+monster trap entry likewise always composes canonical `rn2`, `d`, and `rnd`.
+Its seeded web witness asserts the monster outcome rather than the injected
+argument.  The C/Lua map now records these canonical boundaries.
+
+**Measured effect and adversarial check:** the batch removes **135 lines** and
+adds **107**, including the architecture correction.  The guarded changed-file
+plus bridge-free gate passes **23/23**; the complete structurally selected
+behavioral lane passes **371/371** in **4.3 seconds**.  Syntax checks, static
+caller search, absence of the four removed transcript arrays, and
+`git diff --check` pass.  The two wish-departure RNG assertions remain because
+they are source-derived core-stream behavior paired with floor/actor state;
+they do not assert a production collaborator decomposition.
+
+**Falsified hypotheses, limits, and next blocker:** dependency injection is
+not automatically a behavioral contract when only tests select the dependency;
+a counter object renamed `world` would still be weak unless tied to resulting
+domain state; a fixed seed can replace a mocked RNG interaction when the game
+outcome distinguishes the branch; and eliminating every RNG assertion would
+erase a real deterministic acceptance dimension.  Other default tests still
+need semantic review, especially direct callback presentations and internal
+event-return assertions, but broad mechanical deletion would also destroy
+valid C/Lua-derived invariants.  No public regression lane, full Contest
+corpus, scorer, sealed trace, push, publication, official hidden measurement,
+or animation work ran.
+
+---

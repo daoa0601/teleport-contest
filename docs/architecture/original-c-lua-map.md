@@ -25296,13 +25296,16 @@ flowchart LR
 ```
 
 `monmove.js:triggerImmediateMonsterTrap()` constructs only the bounded action
-envelope needed by the existing trap engine: current coordinates, a private
-numeric RNG-bound ledger, and the resulting event.  It does not pretend that a
+envelope needed by the existing trap engine: current coordinates, the
+canonical `rn2`/`d`/`rnd` owners, a discarded diagnostic sink, and the
+resulting event.  It does not pretend that a
 newborn actor just completed `m_move()`, so it never reaches door handling,
 tunneling, pickup, concealment, the second `distfleeck()`, or an attack.
 
-The accepted direct boundary covers absence, web capture, known-trap
-avoidance, and the existing visible bear-trap deferred-damage marker.  It does
+The accepted direct boundary covers absence, web capture, seeded known-trap
+avoidance through resulting monster state, and the existing visible bear-trap
+deferred-damage marker.  The exported entry no longer accepts substitute RNG
+or dice callbacks solely so tests can assert their invocation shape.  It does
 not make the event self-presenting.  The actor scan currently understands
 squeaky boards, sleep gas, pits, rolling boulders, portals, holes/trapdoors,
 bear traps, and webs; several other state events have no corresponding shared
@@ -25409,9 +25412,12 @@ protected inventory instead of putting it on the floor.
 The adapter clears worn/wielded carrier state, preserves exact dropped object
 identities, discards ordinary inventory, releases hero attachment, unlinks the
 actor, and can suppress repaint while the wish prompt intentionally displays
-the removed actor's old glyph.  The lamp-djinni path now delegates to this
-owner and remains exact.  Fountain demon orchestration can reuse it only after
-its own message/wish gating and embedded-command movement policy are accepted.
+the removed actor's old glyph.  It now always uses the live global game,
+canonical core RNG, shared floor placement/stacking, and `newsym()` owners;
+test-only state, random, drop, and repaint substitutions are absent.  The
+lamp-djinni path delegates to this owner and remains exact.  Fountain demon
+orchestration can reuse it only after its own message/wish gating and
+embedded-command movement policy are accepted.
 
 ## 745. Water demon live dispatch composes birth, wish removal, and dryup
 

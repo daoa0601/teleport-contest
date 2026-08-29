@@ -11,30 +11,23 @@ import { GOLD_PIECE } from '../js/object_data.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 
 test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
-    const calls = [];
     const top = resolveDippedCoinFate({
         fate: 29,
         dungeonLevels: 29,
         dungeonLevel: 1,
-        random(range) {
-            calls.push(range);
-            return 7;
-        },
+        random: range => range,
     });
     const bottom = resolveDippedCoinFate({
         fate: 29,
         dungeonLevels: 29,
         dungeonLevel: 29,
-        random(range) {
-            calls.push(range);
-            return 2;
-        },
+        random: range => range,
     });
 
     assert.deepEqual(top, {
         handled: true,
         createsCoins: true,
-        quantity: 12,
+        quantity: 63,
         showMessage: true,
     });
     assert.deepEqual(bottom, {
@@ -43,45 +36,41 @@ test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
         quantity: 7,
         showMessage: true,
     });
-    assert.deepEqual(calls, [58, 2]);
 });
 
-test('fate29 blind, looted, and adjacent paths preserve their RNG boundary', () => {
-    let calls = 0;
-    const random = () => {
-        calls++;
-        return 1;
-    };
-
+test('fate29 blindness changes presentation but not the created amount', () => {
     assert.deepEqual(resolveDippedCoinFate({
         fate: 29,
         blind: true,
-        random,
+        random: () => 1,
     }), {
         handled: true,
         createsCoins: true,
         quantity: 6,
         showMessage: false,
     });
-    assert.equal(calls, 1);
+});
 
+test('looted and adjacent fountain fates perform no coin work', () => {
+    const unavailable = () => {
+        throw new Error('ineligible coin fate must not resolve an amount');
+    };
     assert.deepEqual(resolveDippedCoinFate({
         fate: 29,
         looted: true,
-        random,
+        random: unavailable,
     }), {
         handled: true,
         createsCoins: false,
         quantity: 0,
         showMessage: false,
     });
-    assert.deepEqual(resolveDippedCoinFate({ fate: 28, random }), {
+    assert.deepEqual(resolveDippedCoinFate({ fate: 28, random: unavailable }), {
         handled: false,
         createsCoins: false,
         quantity: 0,
         showMessage: false,
     });
-    assert.equal(calls, 1);
     assert.equal(
         dippedCoinMessage('water'),
         'Far below you, you see coins glistening in the water.',
@@ -90,10 +79,10 @@ test('fate29 blind, looted, and adjacent paths preserve their RNG boundary', () 
 
 test('fate29 creates coins and commits its fountain state', () => {
     const loc = { looted: 0 };
-    let createdQuantity = null;
-    let liquidResolutions = 0;
-    let wisdomExercises = 0;
-    let repaints = 0;
+    const world = {
+        floorGold: [], liquidResolutions: 0,
+        wisdomExercises: 0, repaints: 0,
+    };
     const effect = applyDippedCoinFate({
         fate: 29,
         loc,
@@ -104,17 +93,17 @@ test('fate29 creates coins and commits its fountain state', () => {
             return 4;
         },
         createGold(quantity) {
-            createdQuantity = quantity;
+            world.floorGold.push(quantity);
         },
         liquidName() {
-            liquidResolutions++;
+            world.liquidResolutions++;
             return 'water';
         },
         exerciseWisdom() {
-            wisdomExercises++;
+            world.wisdomExercises++;
         },
         repaint() {
-            repaints++;
+            world.repaints++;
         },
     });
 
@@ -126,41 +115,40 @@ test('fate29 creates coins and commits its fountain state', () => {
         message: 'Far below you, you see coins glistening in the water.',
     });
     assert.equal(loc.looted & 1, 1);
-    assert.equal(createdQuantity, 9);
-    assert.equal(liquidResolutions, 1);
-    assert.equal(wisdomExercises, 1);
-    assert.equal(repaints, 1);
+    assert.deepEqual(world, {
+        floorGold: [9], liquidResolutions: 1,
+        wisdomExercises: 1, repaints: 1,
+    });
 });
 
 test('blind and looted fate29 applications skip unavailable work', () => {
-    const blindWork = {
-        amount: 0, gold: 0, liquid: 0, exercise: 0, repaint: 0,
+    const blindWorld = {
+        floorGold: [], liquidResolutions: 0,
+        wisdomExercises: 0, repaints: 0,
     };
     const blind = applyDippedCoinFate({
         fate: 29,
         loc: { looted: 0 },
         blind: true,
-        random() {
-            blindWork.amount++;
-            return 1;
-        },
-        createGold() {
-            blindWork.gold++;
+        random: () => 1,
+        createGold(quantity) {
+            blindWorld.floorGold.push(quantity);
         },
         liquidName() {
-            blindWork.liquid++;
+            blindWorld.liquidResolutions++;
             return 'water';
         },
         exerciseWisdom() {
-            blindWork.exercise++;
+            blindWorld.wisdomExercises++;
         },
         repaint() {
-            blindWork.repaint++;
+            blindWorld.repaints++;
         },
     });
     assert.equal(blind.message, '');
-    assert.deepEqual(blindWork, {
-        amount: 1, gold: 1, liquid: 0, exercise: 1, repaint: 1,
+    assert.deepEqual(blindWorld, {
+        floorGold: [6], liquidResolutions: 0,
+        wisdomExercises: 1, repaints: 1,
     });
 
     const looted = applyDippedCoinFate({

@@ -3,33 +3,24 @@ import assert from 'node:assert/strict';
 
 import { applyFountainGemDiscovery } from '../js/fountain_effects.js';
 
-test('gem discovery announces before identity and commits state in source order',
+test('gem discovery commits one announced floor identity and Wisdom exercise',
     async () => {
         const loc = { looted: 0 };
-        const order = [];
+        const world = {
+            messages: [], floor: [], wisdomExercises: 0, repaints: 0,
+        };
         const gem = { otyp: 465 };
         const effect = await applyFountainGemDiscovery({
             loc,
-            announce: async message => {
-                order.push(`announce:${message}`);
-            },
-            chooseGem() {
-                order.push('choose');
-                return 465;
-            },
-            createGem(gemType) {
-                order.push(`create:${gemType}`);
+            announce: async message => world.messages.push(message),
+            chooseGem: () => 465,
+            createGem: gemType => {
+                assert.equal(gemType, 465);
                 return gem;
             },
-            placeGem(value) {
-                order.push(`place:${value.otyp}`);
-            },
-            repaint() {
-                order.push(`repaint:${loc.looted}`);
-            },
-            exerciseWisdom() {
-                order.push('exercise');
-            },
+            placeGem: value => world.floor.push(value),
+            repaint: () => { world.repaints++; },
+            exerciseWisdom: () => { world.wisdomExercises++; },
         });
 
         assert.deepEqual(effect, {
@@ -39,10 +30,12 @@ test('gem discovery announces before identity and commits state in source order'
             gem,
         });
         assert.equal(loc.looted & 1, 1);
-        assert.deepEqual(order, [
-            'announce:You spot a gem in the sparkling waters!',
-            'choose', 'create:465', 'place:465', 'repaint:1', 'exercise',
+        assert.deepEqual(world.messages, [
+            'You spot a gem in the sparkling waters!',
         ]);
+        assert.deepEqual(world.floor, [gem]);
+        assert.equal(world.wisdomExercises, 1);
+        assert.equal(world.repaints, 1);
     });
 
 test('blind discovery uses tactile prose and a looted fountain does no work',

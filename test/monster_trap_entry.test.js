@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { BEAR_TRAP, WEB } from '../js/const.js';
 import { triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { initRng } from '../js/rng.js';
 
 function trapState(monster, trap = null) {
     return {
@@ -39,22 +40,21 @@ test('immediate mintrap entry delegates web state to the existing engine', () =>
     assert.equal(trap.tseen, true);
 });
 
-test('known-trap avoidance retains the injected RNG boundary', () => {
+test('a monster which recognizes a web can avoid becoming trapped', () => {
     const monster = {
         mnum: 16, mx: 11, my: 10, mhp: 8,
         mtrapseen: 1 << (WEB - 1),
     };
     const trap = { tx: 11, ty: 10, ttyp: WEB, tseen: true };
-    const ranges = [];
+    initRng(3n); // first rn2(4) is 3, so source avoidance succeeds
     const result = triggerImmediateMonsterTrap(
         monster,
         trapState(monster, trap),
-        range => { ranges.push(range); return 3; },
     );
 
     assert.equal(result.event.kind, 'known-trap-avoided');
     assert.equal(monster.mtrapped ?? 0, 0);
-    assert.deepEqual(ranges, [4]);
+    assert.equal(monster.mtrapseen, 1 << (WEB - 1));
 });
 
 test('visible bear trap returns the existing deferred-damage handoff', () => {
