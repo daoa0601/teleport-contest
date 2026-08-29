@@ -36547,7 +36547,7 @@ flowchart TD
     Core --> Kind{"source insertion boundary"}
     Kind -->|mongets or mpickobj| Effects["run carry_obj_effects"]
     Kind -->|mkmonmoney or direct add_to_minv| Direct["skip carrying effects"]
-    Effects --> Link["link where=minvent, carrier id, carrier coordinates"]
+    Effects --> Link["link where=minvent and carrier id; preserve ox and oy"]
     Direct --> Link
     Link --> Final["final actor reuses reserved id and same inventory array"]
     Ambient["ambient random birth record"] --> AmbientInv["duplicated live m_initinv"]
@@ -36576,17 +36576,64 @@ construct on a temporary floor square, finalize declared fields, remove the
 floor link, then enter monster inventory. Court rulers, shrine priests, and
 shop startup inventory also delegate instead of hand-editing arrays.
 
-Every selected object now owns `where == minvent`, carrier coordinates,
-`carrierMid`, aliased `minvent`/`inventory`, and `hasInventory`; the timer graph
-can reach it through the live actor. A direct cursed-figurine control proves
-that bare `add_to_minv` consumes no RNG and attaches no timer, while the
-separate monster-figurine witnesses protect the `mpickobj` effect.
+Every selected object now owns `where == minvent`, `carrierMid`, aliased
+`minvent`/`inventory`, and `hasInventory`; the timer graph can reach it through
+the live actor. `add_to_minv()` does not rewrite `ox` or `oy`, so the shared
+link preserves their origin-specific payload instead of treating them as
+carrier coordinates. A direct cursed-figurine control proves that bare
+`add_to_minv` consumes no RNG and attaches no timer, while the separate
+monster-figurine witnesses protect the `mpickobj` effect.
 
 This subsystem is mechanically **partial**. Merge/free identity, the canonical
 chain traversal order across all consumers, mplayer and lawful-minion object
 normalization, knowledge loss, light snuffing and candle burn, saddle/equipment
-continuations, thrown/kicked/swallowed/polymorph acquisition, remaining manual
-insertions in command and monster-movement modules, migration persistence, and
-a sealed stratum remain open. The broad scheduler test file also contains 13
+continuations, migration persistence, and a sealed stratum remain open. Live
+command and movement acquisitions are tracked in the next section. The broad
+scheduler test file also contains 13
 pre-existing failures on detached clean HEAD; those stale assertions are not
 accepted as inventory coverage or attributed to this slice.
+
+## 988. Live acquisitions share effects, linkage, and release boundaries
+
+~~~mermaid
+flowchart TD
+    Floor["floor identity"] --> Pet["dog_invent pickup"]
+    Floor --> Covetous["tactics STRAT_GROUND"]
+    Hero["hero inventory identity"] --> Gift["gem_accept"]
+    Hero --> Whip["bullwhip snatch"]
+    Mint["new fake Amulet"] --> Clone["clonewiz"]
+    Pet --> Acquire["mpickobj-shaped acquisition"]
+    Covetous --> Acquire
+    Gift --> Acquire
+    Whip --> Acquire
+    Acquire --> Effects["carry_obj_effects"]
+    Effects --> Link["add_to_minv-shaped link"]
+    Clone --> Direct["direct add_to_minv-shaped link"]
+    Direct --> Link
+    Link --> Owner["where=minvent plus carrierMid; ox and oy preserved"]
+    Owner --> PetRelease["pet relobj-shaped release"]
+    PetRelease --> Unlink["remove carrierMid and set floor ownership"]
+~~~
+
+The runtime routes have different preconditions and scheduler owners but the
+same two C insertion boundaries. Unicorn gift acceptance, ordinary pet pickup,
+same-square covetous artifact pickup, and a bullwhip snatch all call
+`mpickobj()`, so JavaScript now applies carrying effects before linking the
+live identity. `clonewiz()` calls `add_to_minv()` directly for its newly minted
+fake Amulet, so that route links without inventing carrying-effect RNG. Pet
+release crosses the symmetric unlink boundary before the same identity is
+placed back on the floor.
+
+The first production-shaped unicorn regression falsified an earlier map
+assumption: the shared helper had rewritten `ox` and `oy` to the carrier's
+square, but native `add_to_minv()` changes only `where`, `ocarry`, and chain
+links. Preserving the fields restores the thrown ruby's zero coordinates while
+floor pickups retain their former square. Timer callbacks resolve the actor
+through `carrierMid` and its current coordinates, so relocation does not
+depend on stale object coordinates.
+
+This subsystem is mechanically **partial**. Swallowed arbitrary throws, other
+thrown or kicked catches, shopkeeper projectile snatches, quest-leader
+retention, monster container rummaging, polymorph transfers, merge/free
+identity, knowledge loss, light snuffing and candle burn, equipment
+continuations, migration persistence, and a sealed stratum remain open.

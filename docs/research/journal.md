@@ -95961,3 +95961,66 @@ swallowing and polymorph transfer—and select the smallest route whose object
 identity remains observable through a later timer, use, or drop.
 
 ---
+
+### [2026-08-29 21:01 EEST, journal block 3156] {#bridge-free #monster-inventory #runtime-acquisition #mpickobj #add-to-minv #pet #covetous #gem-accept #bullwhip #clonewiz #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** the remaining live acquisition
+portfolio separated `dog_invent()` pet pickup, covetous `tactics(STRAT_GROUND)`,
+`gem_accept()`, bullwhip disarm, and `clonewiz()`. The first four call
+`mpickobj()` after their route-specific extraction, while clone-Wizard creation
+calls bare `add_to_minv()` for a new fake Amulet. JavaScript still hand-edited
+`minvent` in each route, and pet release cleared its arrays without clearing
+the object's carrier state. The earliest shared divergence was therefore the
+acquisition/link or release boundary, before relocation, later use, drop,
+timer attribution, or display.
+
+**Prediction portfolio and decisive evidence:** runtime identities must retain
+their route-specific ordering while crossing one of two insertion boundaries:
+`carry_obj_effects()` then link for `mpickobj()`, or direct link without effects
+for `add_to_minv()`. Pet release must symmetrically remove the carrier back-link
+before floor placement. The first production unicorn witness then exposed a
+wrong architectural prediction: the helper rewrote `ox/oy` to the monster's
+square and changed the accepted ruby from `(0,0)` to `(33,5)`. Native
+`mkobj.c:add_to_minv()` sets `where`, `ocarry`, and chain links but does not
+touch `ox/oy`; those fields are origin payload, not carrier coordinates.
+Removing that rewrite restored the existing exact witness without weakening
+it and preserves former floor coordinates for pet and covetous pickups.
+
+**Decision and implementation:** commit `2a9a336` routes unicorn gifts, pet
+pickup, exact-square covetous artifacts, and bullwhip snatches through
+`addObjectToMonsterInventory()`. Clone-Wizard fake-Amulet construction uses
+the distinct `linkObjectToMonsterInventory()` path. Pet release now removes
+each object through the shared unlink boundary, clears `carrierMid`, updates
+the aliased inventories and `hasInventory`, then records floor ownership. The
+shared linker preserves `ox/oy` and uses `carrierMid` as the JavaScript
+equivalent of C's `ocarry`. No fixture, fast-forward, seeded replay helper, or
+`replayMoves` control flow was added.
+
+**Measured effect and regression:** the focused acquisition file expands from
+**4/4 to 8/8**, with actual scheduler/continuation witnesses for pet pickup and
+release, covetous ground pickup, bullwhip transfer, and clone direct linkage.
+The existing production-shaped unicorn acceptance/relocation, clone-Wizard,
+and pet tty pickup witnesses pass **3/3** with exact RNG and screens after the
+coordinate correction. The bounded bridge-policy, timer, startup, room, and
+themed-room family gate passes **119/119** with zero bridge hits. The static
+audit remains clean at **118 files, 15 guarded modules, and 19 fixture
+modules**; `ownership:check` also passed after regenerating the expanded
+registry. Every
+test command was guarded, singular, and owned through normal exit. The failed
+intermediate unicorn run was bounded to one witness and left no process.
+
+**Falsified hypotheses, limit, and next blocker:** `ox/oy` are not monster
+carrier coordinates; every `add_to_minv()` route does not own carrying effects;
+pet array clearing alone does not release object ownership; and a manual link
+that preserves screens is not mechanically equivalent to `mpickobj()`. The
+runtime owner remains partial for swallowed arbitrary throws, other thrown or
+kicked catches, shopkeeper projectile snatches, quest-leader retention,
+monster container rummaging, polymorph transfer, merge/free identity,
+knowledge and light side effects, equipment continuations, migration, and a
+sealed stratum. No full Contest suite, public corpus, sealed-trace inspection,
+score, push, publication, official measurement, or animation work ran. The
+next portfolio should compare swallowed throw ownership against merge/free
+identity, because both cross `mpickobj()` but only the former currently lacks
+its surrounding command transaction.
+
+---
