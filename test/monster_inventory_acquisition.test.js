@@ -11,13 +11,18 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { initializeRandomMonsterInventory } from '../js/allmain.js';
 import {
-    giveSpecialMonsterObject, makemonAt, mksobj,
+    giveSpecialMonsterObject, makemonAt, mksobj, place_object,
 } from '../js/mklev.js';
+import {
+    finishDeferredHeroCloneWizard, finishDeferredMonsterMiscItem,
+    quietMonsterActionRng,
+} from '../js/monmove.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from '../js/monster_inventory.js';
 import {
-    DAGGER, FIGURINE, GOLD_PIECE, MACE, WAN_STRIKING,
+    DAGGER, FAKE_AMULET_OF_YENDOR, FIGURINE, GOLD_PIECE, MACE,
+    SPE_BOOK_OF_THE_DEAD, WAN_STRIKING,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { objectTimers, objectsInTimerGraph } from '../js/object_timers.js';
@@ -71,9 +76,6 @@ function freshInventoryState(seed = 1) {
 function assertMonsterOwns(monster, object) {
     assert.equal(object.where, 'minvent');
     assert.equal(object.carrierMid, monster.m_id);
-    assert.deepEqual({ x: object.ox, y: object.oy }, {
-        x: monster.mx, y: monster.my,
-    });
     assert.ok(monster.minvent.includes(object));
 }
 
@@ -179,5 +181,177 @@ test('special-level inventory transfer removes floor ownership and head-links',
         assert.strictEqual(monster.inventory, monster.minvent);
         assertMonsterOwns(monster, object);
         assert.equal((game.level.objects || []).flat(2).includes(object), false);
+        assertNoBridgeUse();
+    });
+
+test('pet mpickobj ownership survives the complete pickup and release cycle',
+    () => {
+        freshInventoryState(2105);
+        const pet = {
+            m_id: 705,
+            mnum: 100,
+            mx: 13, my: 10,
+            mux: game.u.ux, muy: game.u.uy,
+            m_lev: 4,
+            mhp: 20, mhpmax: 20,
+            mcanmove: 1,
+            pet: true,
+            mtame: 10,
+            edog: { apport: 1 },
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+        };
+        game.level.monsters.push(pet);
+        const dagger = mksobj(DAGGER, true, false);
+        dagger.blessed = false;
+        dagger.cursed = false;
+        place_object(dagger, pet.mx, pet.my);
+
+        const pickup = quietMonsterActionRng(
+            pet, game,
+            range => (range > 1 ? 1 : 0),
+            (count, sides) => count * sides,
+            range => Math.max(1, range),
+        );
+
+        assert.strictEqual(pickup.movement.pickedUp, dagger);
+        assert.equal(pickup.movement.deferredPetMove, true);
+        assertMonsterOwns(pet, dagger);
+        assert.equal(game.level.objects[pet.mx][pet.my].includes(dagger), false);
+
+        const dropped = quietMonsterActionRng(
+            pet, game,
+            range => (range === 10 ? 0 : Math.min(1, range - 1)),
+            (count, sides) => count * sides,
+            range => Math.max(1, range),
+        );
+
+        assert.strictEqual(dropped.movement.dropped[0], dagger);
+        assert.equal(dropped.movement.deferredPetMove, true);
+        assert.deepEqual(pet.minvent, []);
+        assert.strictEqual(pet.inventory, pet.minvent);
+        assert.equal(pet.hasInventory, false);
+        assert.equal(dagger.where, 'floor');
+        assert.equal('carrierMid' in dagger, false);
+        assert.ok(game.level.objects[pet.mx][pet.my].includes(dagger));
+        assertNoBridgeUse();
+    });
+
+test('covetous ground tactics head-link the source artifact through mpickobj',
+    () => {
+        freshInventoryState(2106);
+        const wizard = {
+            m_id: 706,
+            mnum: 285,
+            mx: 16, my: 12,
+            mux: game.u.ux, muy: game.u.uy,
+            m_lev: 30,
+            mhp: 120, mhpmax: 120,
+            mcanmove: 1,
+            mpeaceful: 0,
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+            iswiz: true,
+        };
+        game.level.monsters.push(wizard);
+        const prior = mksobj(DAGGER, true, false);
+        addObjectToMonsterInventory(wizard, prior, game);
+        const book = mksobj(SPE_BOOK_OF_THE_DEAD, true, false);
+        place_object(book, wizard.mx, wizard.my);
+
+        quietMonsterActionRng(
+            wizard, game,
+            range => Math.max(0, range - 1),
+            (count, sides) => count * sides,
+            range => Math.max(1, range),
+        );
+
+        assert.deepEqual(wizard.minvent.slice(0, 2), [book, prior]);
+        assert.strictEqual(wizard.inventory, wizard.minvent);
+        assert.equal(book.where, 'minvent');
+        assert.equal(book.carrierMid, wizard.m_id);
+        assert.deepEqual([book.ox, book.oy], [16, 12]);
+        assert.equal(game.level.objects[16][12].includes(book), false);
+        assertNoBridgeUse();
+    });
+
+test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
+    freshInventoryState(2107);
+    const monster = {
+        m_id: 707,
+        mnum: 285,
+        mx: 12, my: 10,
+        minvent: [],
+        inventory: [],
+        hasInventory: false,
+    };
+    game.level.monsters.push(monster);
+    const dagger = mksobj(DAGGER, true, false);
+    dagger.where = 'invent';
+    dagger.wielded = true;
+    game.inventory = [dagger];
+    game.uwep = dagger;
+    game.u.uwep = dagger;
+    const action = {
+        monster,
+        calls: [],
+        movement: {
+            usedMisc: {
+                kind: 'bullwhip-disarm',
+                target: dagger,
+                whereTo: 3,
+                deferredEffect: true,
+            },
+        },
+    };
+
+    finishDeferredMonsterMiscItem(action, game);
+
+    assert.deepEqual(game.inventory, []);
+    assert.equal(game.uwep, null);
+    assert.equal(game.u.uwep, null);
+        assertMonsterOwns(monster, dagger);
+        assert.deepEqual([dagger.ox, dagger.oy], [0, 0]);
+    assertNoBridgeUse();
+});
+
+test('clonewiz direct add_to_minv links its minted fake without effects',
+    () => {
+        freshInventoryState(2108);
+        game.u.protectionFromShapeChangers = true;
+        const clone = {
+            m_id: 708,
+            mnum: 285,
+            mx: 12, my: 10,
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+        };
+        game.level.monsters.push(clone);
+        const action = {
+            calls: [],
+            movement: {
+                attack: {
+                    deferredCloneWizard: true,
+                    cloneWizard: clone,
+                },
+            },
+        };
+
+        finishDeferredHeroCloneWizard(action, game, range => {
+            assert.equal(range, 2);
+            return 1;
+        });
+
+        assert.equal(clone.minvent.length, 1);
+        assert.equal(clone.minvent[0].otyp, FAKE_AMULET_OF_YENDOR);
+        assertMonsterOwns(clone, clone.minvent[0]);
+        assert.deepEqual(
+            [clone.minvent[0].ox, clone.minvent[0].oy],
+            [0, 0],
+        );
+        assert.equal(action.movement.attack.deferredCloneWizard, false);
         assertNoBridgeUse();
     });

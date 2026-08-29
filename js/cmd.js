@@ -57,6 +57,7 @@ import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     objectStatePrefix, readObjectName, unseenObjectNoun,
     wishedObjectPresentation,
@@ -16132,15 +16133,12 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
                     );
                 }
                 if (accepted) {
-                    thrownMineral.where = 'minvent';
-                    thrownMineral.ox = 0;
-                    thrownMineral.oy = 0;
-                    const carried = contact.minvent
-                        || contact.inventory || [];
-                    carried.push(thrownMineral);
-                    contact.minvent = carried;
-                    contact.inventory = carried;
-                    contact.hasInventory = true;
+                    // dothrow.c:gem_accept()->mpickobj().  Ownership and
+                    // carrying effects commit before the acceptance prose
+                    // and the unicorn's subsequent relocation.
+                    addObjectToMonsterInventory(
+                        contact, thrownMineral, game,
+                    );
                 }
                 await plineWithContinuation(accepted
                     ? `${subject}${policy} accepts your gift.`

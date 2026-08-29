@@ -31,8 +31,9 @@ export function linkObjectToMonsterInventory(
     monster.inventory = inventory;
     monster.hasInventory = inventory.length > 0;
     object.where = 'minvent';
-    object.ox = monster.mx;
-    object.oy = monster.my;
+    // C add_to_minv() does not rewrite ox/oy.  Those fields retain their
+    // origin-specific payload (often 0,0 for a constructed/inventory object
+    // or its former square for a floor pickup); ocarry is the ownership link.
     object.carrierMid = monster.m_id ?? null;
     return object;
 }

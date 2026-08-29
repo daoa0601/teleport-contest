@@ -61,7 +61,10 @@ import {
 import { inTown } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { syncBlindness } from './senses.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import {
+    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+    removeObjectFromMonsterInventory,
+} from './monster_inventory.js';
 import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
@@ -1255,11 +1258,10 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
         const heroIndex = heroInventory.indexOf(target);
         if (heroIndex >= 0) heroInventory.splice(heroIndex, 1);
         if (misc.whereTo === 3) {
-            const inventory = monster.minvent || monster.inventory || [];
-            inventory.push(target);
-            monster.minvent = inventory;
-            monster.inventory = inventory;
-            target.where = 'minvent';
+            // muse.c:use_misc(MUSE_BULLWHIP)->mpickobj().  The disarmed
+            // identity is free of hero equipment state before the monster
+            // applies carrying effects and links it into minvent.
+            addObjectToMonsterInventory(monster, target, state);
         } else {
             const x = misc.whereTo === 1 ? monster.mx : state.u.ux;
             const y = misc.whereTo === 1 ? monster.my : state.u.uy;
@@ -2797,11 +2799,11 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
         if (!release) release = recordRandom(random, calls, apport) === 0;
         if (release && recordRandom(random, calls, 10) < apport) {
             const dropped = [...carried];
-            monster.minvent = [];
-            monster.inventory = [];
             for (const object of dropped) {
+                removeObjectFromMonsterInventory(monster, object);
                 object.ox = monster.mx;
                 object.oy = monster.my;
+                object.where = 'floor';
                 state._fobjSerial = (state._fobjSerial || 0) + 1;
                 object._fobjOrder = state._fobjSerial;
                 if (!state.level.objects[monster.mx])
@@ -2880,10 +2882,11 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
                     const index = pile.indexOf(object);
                     if (index >= 0) pile.splice(index, 1);
                 }
-                pickedUp.ox = pickedUp.oy = 0;
-                pickedUp.where = 'monster';
-                monster.minvent = [pickedUp];
-                monster.inventory = monster.minvent;
+                // dogmove.c:dog_invent()->mpickobj().  The floor extraction
+                // above precedes carrying effects and final minvent linkage.
+                addObjectToMonsterInventory(
+                    monster, pickedUp, state,
+                );
                 return { pickedUp };
             }
         }
@@ -7217,13 +7220,9 @@ function covetousPicksUpTargetUnderfoot(monster, state) {
             covetousObjectMatchesMask(object, mask, state));
         if (index < 0) continue;
         const [object] = pile.splice(index, 1);
-        object.ox = object.oy = 0;
-        object.where = 'minvent';
-        if (!Array.isArray(monster.minvent))
-            monster.minvent = monster.inventory || [];
-        monster.minvent.unshift(object);
-        monster.inventory = monster.minvent;
-        monster.hasInventory = true;
+        addObjectToMonsterInventory(
+            monster, object, state, { atFront: true },
+        );
         return object;
     }
     return null;
@@ -8342,11 +8341,9 @@ export function finishDeferredHeroCloneWizard(action, state, random = rn2) {
     if (!state.u?.uhave?.amulet
         && recordRandom(random, action.calls, 2) !== 0) {
         const fake = mksobj(FAKE_AMULET_OF_YENDOR, true, false);
-        const inventory = clone.minvent || clone.inventory || [];
-        inventory.push(fake);
-        clone.minvent = inventory;
-        clone.inventory = inventory;
-        clone.hasInventory = true;
+        // wizard.c:clonewiz() uses add_to_minv(), not mpickobj(): a newly
+        // minted fake Amulet links directly without carrying effects.
+        linkObjectToMonsterInventory(clone, fake);
     }
     const protectedFromShapechangers = !!(
         state.u?.protectionFromShapeChangers
