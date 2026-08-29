@@ -36331,3 +36331,53 @@ inventory, nested containers and recursive weight, ice and buried-under-ice
 cadence, migration, burial, glob absorption/timer averaging, and a sealed
 stratum remain open. The completed hero-inventory path does not imply those
 chains share its prose or capacity behavior.
+
+## 983. Unowned carried eggs hatch through pack prose before lifecycle finish
+
+~~~mermaid
+flowchart TD
+    Claim["claim exact HATCH_EGG in hero inventory"] --> Carrier{"female hero, spe zero, non-dragon, ordinary locomotion?"}
+    Carrier -->|no| Reject["fail loud before parentage, taming, or hatch RNG"]
+    Carrier -->|yes| Younger["big_to_little stored egg species"]
+    Younger --> Quantity["rnd current egg-stack quantity"]
+    Quantity --> Viable{"unique, genocided, or extinct?"}
+    Viable -->|yes| Spent["consume timer; leave unchanged egg untimed"]
+    Viable -->|no| Birth["enexto around hero; makemon with NO_MINVENT and NOMSG"]
+    Birth --> Reduce["subtract each successful newborn before prose"]
+    Reduce --> Blind{"hero blind?"}
+    Blind -->|no| See["see newborn or newborns drop out of pack"]
+    Blind -->|yes| Feel["feel something drop from pack"]
+    See --> Learn["learn adult egg type"]
+    Feel --> Finish["do not learn identity"]
+    Learn --> Finish
+    Finish --> Left{"egg quantity remains?"}
+    Left -->|yes| Timer["recompute weight; attach moves plus rnd(12)"]
+    Left -->|no| Delete["remove and free carried egg"]
+~~~
+
+The carried callback shares younger-form selection, quantity RNG, species
+availability, adjacent actor construction, and stack reduction with the floor
+owner, but it does not share floor presentation. For the first complete
+inventory carrier, the hero is female and the egg has `spe == 0`, so native
+`yours` is false without consuming the male-parentage `rn2(2)` and no newborn
+taming or cry branch can run. Dragons and nonstandard `locomotion()` families
+remain excluded. `enexto()` uses the hero as its search center, but
+`makemon()` receives the chosen adjacent coordinate and therefore does not run
+hero-square birth initialization.
+
+Successful births reduce quantity before pack prose. A sighted hero sees the
+specific baby form drop out and can learn the adult egg identity; a blind hero
+gets tactile `something` prose and does not learn it. The egg identity remains
+in inventory throughout that line. Only after tty accepts it does a remainder
+stack acquire a fresh `rnd(12)` deadline and updated weight, or an exhausted
+stack leave inventory and get freed. Direct witnesses cover a single cave-
+spider egg, blind nonlearning, and a crocodile stack which produces a baby
+crocodile and retains one timed egg.
+
+This carrier is mechanically **partial**. `spe`-owned eggs, a male hero's
+parentage draw, taming and parent cries, carried dragon taming, alternate
+locomotion prose, overdue carried state, monster inventory and carrier
+visibility, placement failure breadth, extinction during a multi-hatch,
+timer-preserving species mutation, object move/split/relink semantics, and a
+sealed stratum remain open. Those paths are rejected before RNG rather than
+inferred from the unowned female-hero result.

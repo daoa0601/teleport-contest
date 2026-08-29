@@ -95634,3 +95634,65 @@ retry using the shared familiar/pet state just added, without expanding into a
 sealed gate prematurely.
 
 ---
+
+### [2026-08-29 20:00 EEST, journal block 3151] {#bridge-free #object-timers #hatch-egg #inventory #pack-prose #learning #younger-form #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after hero-inventory glob
+shrinking, the portfolio compared carried-egg hatching with blocked-figurine
+retry. The floor egg owner deliberately rejected every carried identity, but a
+female hero carrying an unowned `spe == 0` non-dragon egg reaches a smaller
+native family than the earlier inventory audit suggested. `hatch_egg()` makes
+`yours` false without the male-parentage draw, so this carrier needs neither
+taming nor parent cries. Its earliest divergence was the carrier check before
+`rnd(quantity)`: JavaScript threw where C would select a younger form and an
+adjacent pack birth.
+
+**Prediction portfolio and decisive evidence:** owned eggs still require tame
+state and cry presentation; a male hero adds `rn2(2)` before location and
+quantity; carried dragons can tame even when not `yours`; special locomotion
+changes the pack verb; and monster inventory owns carrier visibility. By
+contrast, the female, unowned, non-dragon ordinary-locomotion family reuses the
+floor owner's availability, quantity, younger-form, birth, learning, and stack
+lifecycle while adding only sighted/tactile pack prose and inventory deletion.
+Blocked figurines remain a retry-only control-flow slice, but this carried egg
+family has stronger live turn reachability and broader actor/object state, so
+it was selected without collapsing the excluded parentage and taming routes.
+
+**Decision and implementation:** commit `0d9785a` extends `HATCH_EGG` to that
+ordinary hero-inventory carrier. It validates the no-parentage/no-taming
+preconditions before RNG, uses the hero only as `enexto()`'s center, and calls
+`makemon()` at the chosen adjacent coordinate with `NO_MINVENT | MM_NOMSG`
+without requested-by-hero birth state. `rnd(quantity)` still precedes species
+availability, successful births reduce the carried stack before presentation,
+and the newborn is the source `big_to_little()` form. A sighted hero sees the
+specific newborn drop out and later learns the adult egg identity; a blind
+hero feels something drop and does not learn it. The egg remains carried
+through that message. Finalization then deletes an exhausted identity or
+reweights a remainder and attaches `moves + rnd(12)`.
+
+**Measured effect and regression:** `test/egg_hatch.test.js` expands from five
+to **8/8**. A cave-spider egg proves adjacent birth, sighted pack prose,
+learning, and post-message deletion. A blind control proves tactile prose and
+no learning. A two-crocodile-egg stack produces a baby crocodile, retains one
+inventory egg through the message, then gains the bounded short timer. The
+existing floor single/stack/overdue/genocide witnesses remain green, and an
+owned carried egg now protects the fail-loud taming boundary before RNG. The
+bounded combined bridge-policy, egg, figurine, glob, lamp, Priest-startup,
+ordinary-room, and themed-room gate passes **99/99** with zero bridge hits.
+The mechanical audit remains clean at 117 files, 15 guarded modules, and 19
+fixture modules. Every verifier was guarded, singular, owned, and exited.
+
+**Falsified hypotheses, limit, and next blocker:** all carried eggs do not
+require the same parentage/taming graph; `enexto()` centered on the hero does
+not make the eventual newborn a hero-square `makemon()` call; pack prose does
+not wait until after egg deletion; and blindness blocks egg-type learning even
+though the hero knows the event came from inventory. Conversely, this does not
+cover owned eggs, male-parentage RNG, tame/cry state, dragons, special
+locomotion, overdue inventory, monster inventory, broader placement/extinction
+behavior, or timer moves/splits. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next slice should return to blocked carried-figurine retry or take the
+smallest remaining parentage-free egg carrier, whichever closes a real live
+control-flow gap without widening into special pet behavior.
+
+---
