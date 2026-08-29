@@ -97390,3 +97390,43 @@ compatibility. No full Contest suite, public regression lane, corpus, scorer,
 sealed trace, push, publication, official measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:02 EEST, journal block 3177] {#test-quality #change-detector #potionhit #live-command #wake-policy #visibility #bridge-free #focused-regression #process-safety}
+
+**Witness and diagnosis:** block 3176 named direct potion callback counters as
+the next high-confidence cleanup. `potion_hit.test.js` still counted or forbade
+`wakeMonster`, repaint, invisible-memory, and vision-recalculation hooks even
+where `potion_throw.test.js` already executes the same effect through the real
+`rhack -> throwit -> bhit -> potionhit` path. Those assertions coupled the
+reducer tests to its current collaborator decomposition and let direct mocks,
+rather than live monster/map state, stand in for integration ownership.
+
+**Independent contract and implementation:** removed the duplicated wake,
+repaint, memory, and vision callback counters from the direct reducer tests.
+Those tests retain independent effect contracts: HP, resistance, paralysis,
+sleep, speed, invisibility, blindness, messages, potion identity, RNG boundary,
+and the returned anger/effect policy. The live map tests now start inert,
+sickness, confusion, speed, and cursed-invisibility targets asleep and require
+the actual command path to wake them. Invisibility memory remains asserted only
+in the live map witness, and the overclaiming direct test title was corrected
+to the state it actually proves.
+
+**Measured effect and adversarial check:** the batch removes **81 lines** and
+adds **24**. The guarded direct-plus-live potion gate passes **71/71**; the
+second compact run emitted exactly 71 passing dots and exited zero. Syntax and
+`git diff --check` pass. Two shield-presentation counters remain intentionally:
+they observe the only presentation output of resistant sleep effects and do
+not assert collaborator order. No production behavior changed in this batch.
+
+**Falsified hypotheses, limits, and next blocker:** a direct anger-policy bit
+plus a mock wake count is not stronger than the same policy paired with a live
+sleep-state transition; no-op dependency injection does not prove map memory;
+and a callback invocation count is not needed when the state model already
+records sight toggling. The remaining high-risk cleanup is broader scheduler
+`action.calls` instrumentation and the quarantined source-order tests which
+consume it. That surface crosses resumable production continuations and must be
+audited before deletion rather than mechanically stripped. No full Contest
+suite, public regression lane, corpus, scorer, sealed trace, push, publication,
+official measurement, or animation work ran.
+
+---

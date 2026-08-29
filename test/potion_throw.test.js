@@ -116,6 +116,7 @@ function floorObjects() {
 test('live map potion crosses bhit and consumes a successful inert contact',
     async () => {
         const monster = freshMapPotionState(2);
+        monster.msleeping = 1;
         const potion = addKnownPotion(POT_FRUIT_JUICE);
 
         initRng(2702n);
@@ -131,6 +132,7 @@ test('live map potion crosses bhit and consumes a successful inert contact',
         ]);
         assert.equal(game.context.move, 1);
         assert.equal(monster.mhp, 11);
+        assert.equal(monster.msleeping, 0);
         assert.equal(potion.where, 'gone');
         assert.equal(game.inventory.includes(potion), false);
         assert.equal(floorObjects().includes(potion), false);
@@ -249,6 +251,7 @@ test('map extra healing contact heals monster then hero through nearby vapor',
 
 test('map sickness contact harms monster before nearby hero vapor', async () => {
     const monster = freshMapPotionState(2);
+    monster.msleeping = 1;
     game.u.uhp = 30;
     game.u.uhpmax = 30;
     const potion = addKnownPotion(POT_SICKNESS);
@@ -266,6 +269,7 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
         'rn2(2)=1',
     ]);
     assert.equal(monster.mhp, 5);
+    assert.equal(monster.msleeping, 0);
     assert.equal(game.u.uhp, 25);
     assert.equal(game.u._exercise[2], -1);
     assert.equal(potion.where, 'gone');
@@ -276,6 +280,7 @@ test('map confusion contact pays resistance before nearby hero vapor', async () 
     const monster = freshMapPotionState(2);
     monster.m_lev = 15;
     monster.mconf = 0;
+    monster.msleeping = 1;
     game.u.confusionTurns = 0;
     const potion = addKnownPotion(POT_CONFUSION);
 
@@ -294,6 +299,7 @@ test('map confusion contact pays resistance before nearby hero vapor', async () 
     ]);
     assert.equal(monster.mhp, 11);
     assert.equal(monster.mconf, 1);
+    assert.equal(monster.msleeping, 0);
     assert.equal(game.u.confusionTurns, 1);
     assert.equal(potion.where, 'gone');
     assert.match(game._pending_message, /You feel somewhat dizzy\.$/);
@@ -355,6 +361,7 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         const monster = freshMapPotionState(2);
         monster.permspeed = 0;
         monster.mspeed = 0;
+        monster.msleeping = 1;
         game.u.fast = false;
         game.u.veryFast = false;
         game.u.veryFastTurns = 0;
@@ -371,6 +378,7 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         assert.equal(monster.mhp, 11);
         assert.equal(monster.permspeed, 2);
         assert.equal(monster.mspeed, 2);
+        assert.equal(monster.msleeping, 0);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 5);
         assert.equal(game.u._exercise[1], 0);
@@ -412,6 +420,7 @@ test('cursed map potion pays a zero slip gate without rerouting its flight',
         monster.minvis = 1;
         monster.perminvis = 1;
         monster.invis_blkd = 0;
+        monster.msleeping = 1;
         game.level.flags.hero_memory = true;
         game.level.at(monster.mx, monster.my).remembered_glyph = {
             ch: 'I', color: 0, decgfx: false, kind: 'invisible',
@@ -431,6 +440,7 @@ test('cursed map potion pays a zero slip gate without rerouting its flight',
         assert.equal(monster.mhp, 12);
         assert.equal(monster.perminvis, 0);
         assert.equal(monster.minvis, 0);
+        assert.equal(monster.msleeping, 0);
         assert.notEqual(
             game.level.at(monster.mx, monster.my).remembered_glyph?.kind,
             'invisible',
