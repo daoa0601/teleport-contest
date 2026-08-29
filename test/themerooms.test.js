@@ -6,15 +6,17 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import {
-    FILL_NORMAL, MAXNROFROOMS, OROOM, ROOM, SHOPBASE, STRAT_WAITFORU,
-    THEMEROOM,
+    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL,
+    LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
+    ROOM, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
+    THEMEROOM, WEB,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName, THEMEROOM_META,
 } from '../js/mklev.js';
-import { CORPSE } from '../js/object_data.js';
+import { BOULDER, CORPSE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
 import { initRng } from '../js/rng.js';
@@ -247,6 +249,64 @@ test('declared but unported themed fills are not reported as implemented', async
     assert.equal(await applyThemeroomFillByName(
         room, 'not a source fill', 8,
     ), false);
+});
+
+test('Boulder room owns filtered boulders and rolling traps live', async () => {
+    themedState(4010, 8);
+    assert.equal(await generateThemeroomByName('default', 8), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(room, 'Boulder room', 8), true);
+
+    const boulders = game.level.objects.flatMap(column =>
+        (column || []).flatMap(pile => pile || []),
+    ).filter(object => object.otyp === BOULDER);
+    assert.ok(boulders.length + game.level.traps.length > 0);
+    assert.ok(game.level.traps.every(trap =>
+        trap.ttyp === ROLLING_BOULDER_TRAP));
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Spider nest gates resident spiders by source difficulty', async () => {
+    themedState(4011, 8);
+    assert.equal(await generateThemeroomByName('default', 8), true);
+    assert.equal(await applyThemeroomFillByName(
+        game.level.rooms[0], 'Spider nest', 8,
+    ), true);
+    assert.ok(game.level.traps.length > 0);
+    assert.ok(game.level.traps.every(trap => trap.ttyp === WEB));
+    assert.equal(game.level.monsters.some(monster => monster.mnum === 96), false);
+
+    themedState(4011, 9);
+    assert.equal(await generateThemeroomByName('default', 9), true);
+    assert.equal(await applyThemeroomFillByName(
+        game.level.rooms[0], 'Spider nest', 9,
+    ), true);
+    assert.ok(game.level.traps.every(trap => trap.ttyp === WEB));
+    assert.equal(game.level.monsters.some(monster => monster.mnum === 96), true);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Trap room shuffles once and applies one trap type to its selection', async () => {
+    themedState(4012, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    assert.equal(await applyThemeroomFillByName(
+        game.level.rooms[0], 'Trap room', 12,
+    ), true);
+    assert.ok(game.level.traps.length > 0);
+    const expectedTypes = new Set([
+        ARROW_TRAP, DART_TRAP, ROCKTRAP, BEAR_TRAP,
+        LANDMINE, SLP_GAS_TRAP, RUST_TRAP, ANTI_MAGIC,
+    ]);
+    assert.ok(expectedTypes.has(game.level.traps[0].ttyp));
+    assert.ok(game.level.traps.every(trap =>
+        trap.ttyp === game.level.traps[0].ttyp));
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
 });
 
 test('unknown themeroom names fail instead of becoming generic rooms', async () => {

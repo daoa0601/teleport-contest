@@ -376,6 +376,7 @@ const ARROW_TRAP = 1;
 const DART_TRAP = 2;
 const ROCKTRAP = 3;
 const SQKY_BOARD = 4;
+const BEAR_TRAP = 5;
 const LANDMINE = 6;
 const ROLLING_BOULDER_TRAP = 7;
 const SLP_GAS_TRAP = 8;
@@ -5578,12 +5579,14 @@ async function specialMonsterOfClass(
     return resolved;
 }
 
-async function finishSpecialTrapConstruction(trap) {
+async function finishSpecialTrapConstruction(
+    trap, { spiderOnWeb = true } = {},
+) {
     if (!trap) return null;
     const kind = trap.ttyp;
     // mklev.c:mktrap() owns the web's resident spider before evaluating the
     // shallow-level dead-predecessor gate.
-    if (kind === WEB)
+    if (kind === WEB && spiderOnWeb)
         await makemon(PM_GIANT_SPIDER, trap.tx, trap.ty, 0);
 
     if (!game.in_mklev || kind === NO_TRAP) return trap;
@@ -5614,11 +5617,11 @@ async function specialTrapOfType(context, typ) {
     return finishSpecialTrapConstruction(trap);
 }
 
-async function specialTrapAt(context, typ, x, y) {
+async function specialTrapAt(context, typ, x, y, options = undefined) {
     const trap = await maketrap(
-        context.xstart + x, context.ystart + y, typ,
+        context.xstart + x, context.ystart + y, typ, options,
     );
-    return finishSpecialTrapConstruction(trap);
+    return finishSpecialTrapConstruction(trap, options);
 }
 
 // Lua source: dat/bigrm-2.lua.  This runner deliberately stays at the script
@@ -14637,6 +14640,12 @@ function themeroomSelection(room) {
     return selection;
 }
 
+function luaSelectionCoordinates(selection) {
+    const coordinates = [];
+    selection.forEachLua((x, y) => coordinates.push({ x, y }));
+    return coordinates;
+}
+
 function pickThemeroomFill(room, difficulty) {
     let pick = null;
     let totalFrequency = 0;
@@ -14648,6 +14657,58 @@ function pickThemeroomFill(room, difficulty) {
         if (rn2(totalFrequency) < 1) pick = meta;
     }
     return pick;
+}
+
+// C/Lua refs: themerms.lua selection-driven hazard fills, selvar.c
+// selection_filter_percent(), and sp_lev.c create_object()/create_trap().
+// percentage() owns its x-major filter draws; selection:iterate() then invokes
+// the retained callbacks in row-major Lua order.
+async function fillBoulderRoom(room) {
+    const context = specialRoomContext(room);
+    const selected = themeroomSelection(room).percentage(30);
+    for (const coord of luaSelectionCoordinates(selected)) {
+        const x = coord.x - context.xstart;
+        const y = coord.y - context.ystart;
+        if (rn2(100) < 50)
+            specialObjectAt(context, BOULDER, x, y);
+        else
+            await specialTrapAt(context, ROLLING_BOULDER_TRAP, x, y);
+    }
+}
+
+async function fillSpiderNest(room, difficulty) {
+    const context = specialRoomContext(room);
+    const selected = themeroomSelection(room).percentage(30);
+    const spidersEligible = difficulty > 8;
+    for (const coord of luaSelectionCoordinates(selected)) {
+        const spiderOnWeb = spidersEligible && rn2(100) < 80;
+        await specialTrapAt(
+            context, WEB,
+            coord.x - context.xstart,
+            coord.y - context.ystart,
+            { spiderOnWeb },
+        );
+    }
+}
+
+async function fillTrapRoom(room) {
+    const traps = [
+        ARROW_TRAP, DART_TRAP, ROCKTRAP, BEAR_TRAP,
+        LANDMINE, SLP_GAS_TRAP, RUST_TRAP, ANTI_MAGIC,
+    ];
+    for (let count = traps.length; count > 1; count--) {
+        const index = rn2(count);
+        [traps[count - 1], traps[index]] = [traps[index], traps[count - 1]];
+    }
+    const context = specialRoomContext(room);
+    const selected = themeroomSelection(room).percentage(30);
+    for (const coord of luaSelectionCoordinates(selected)) {
+        await specialTrapAt(
+            context, traps[0],
+            coord.x - context.xstart,
+            coord.y - context.ystart,
+        );
+    }
 }
 
 // C/Lua refs: themerms.lua "Storeroom", selvar.c
@@ -14821,7 +14882,12 @@ function fillTempleOfGods(room) {
 
 async function applyThemeroomFill(room, fill, difficulty) {
     if (!fill) return false;
-    if (fill.name === 'Buried zombies') fillBuriedZombies(room, difficulty);
+    if (fill.name === 'Boulder room') await fillBoulderRoom(room);
+    else if (fill.name === 'Spider nest')
+        await fillSpiderNest(room, difficulty);
+    else if (fill.name === 'Trap room') await fillTrapRoom(room);
+    else if (fill.name === 'Buried zombies')
+        fillBuriedZombies(room, difficulty);
     else if (fill.name === 'Ghost of an Adventurer')
         await fillGhostAdventurer(room);
     else if (fill.name === 'Temple of the gods') fillTempleOfGods(room);
