@@ -97575,3 +97575,55 @@ lane, scorer, sealed trace, push, publication, official hidden measurement, or
 animation work ran.
 
 ---
+
+### [2026-08-30 02:29 EEST, journal block 3181] {#bridge-free #acid #potionhit #resists-elem #potion-resistance #alchemy-smock #buc #wake-nearto #fatality #vapor #behavioral-contract #architecture #focused-regression #process-safety}
+
+**Witness and earliest divergence:** block 3180 completed fatal iron-golem
+water ownership.  Acid remained a named gap in both live map and swallowed
+`throw` commands; five initial source-independent witnesses all failed at
+`throw.potion-impact-unsupported` before mutation, giving a deliberate red
+**0/5**.  No public or sealed trace selected this slice.  The contract came
+from `potion.c:potionhit(POT_ACID)`, `potionbreathe(POT_ACID)`,
+`mondata.c:Resists_Elem()`, and `zap.c:resist()`.
+
+**Prediction, decisive evidence, and decision:** acid has two ordered and
+non-equivalent resistance gates.  Species/runtime resistance, worn yellow
+dragon armor, and a worn alchemy smock skip potion magic resistance entirely.
+Only a non-resistant target consumes the attack-level-six potion-resistance
+draw.  A target which fails both gates writhes silently or shrieks and wakes a
+species-level radius before blessed `1d4`, uncursed `1d8`, or cursed `2d8`
+damage; a hero-caused death enters `killed()`.  Acid vapor independently leaves
+hero HP unchanged and negatively exercises Constitution.  Implementing one
+generic damage roll, consulting both resistance gates unconditionally, or
+testing only final HP would be false acceptance.
+
+**Implementation and test independence:** `potion_hit.js` now admits acid in
+the shared direct/map/swallowed owner, models source elemental and worn-item
+resistance, reuses one pain/radius-wake transaction with blessed water, applies
+the three beatitude dice, rejoins `finishHeroMonsterKill()` on supported fatal
+map contact, and applies Constitution vapor.  Maximum fatal-damage preflight
+includes the common bottle chip plus the acid maximum.  The live tests relate
+the selected source die to HP loss, distinguish absence versus presence of the
+potion-resistance draw, and assert actor/radius state, object consumption,
+death accounting, hero HP, exercise state, and zero bridge use; they do not
+snapshot the complete RNG or collaborator order.
+
+**Measured effect and falsified hypotheses:** eight acid witnesses now pass
+**8/8**, including inherent, worn-smock/dragon-armor, and potion magic resistance; audible
+and silent pain; all beatitudes; survival; ordinary fatality; and swallowed
+vapor.  Shared acid/water controls pass **20/20**.  The complete focused direct
+impact, map, swallowed, and bridge-free process passes **125/125** in
+**480 ms**, comprising behavioral **117/117** plus bridge-free **8/8**.  Every
+runner was guarded and exited normally.  Inherent resistance is not the same
+as potion MR; resisted targets do not wake a radius; acid resistance does not
+block vapor exercise; and monster-impact acid is not hero-impact acid.
+
+**Limit and next blocker:** monster-caused acid death credit, direct hero
+impact, unique/life-saving and other nonordinary targets, shops/saddles,
+special terrain, greased alternate flight, broader visibility, and a sealed
+stratum remain open.  The ownership registry and C/Lua graph retain
+**partial** status.  No full Contest suite, public regression lane, corpus,
+scorer, sealed-trace inspection, push, publication, official hidden
+measurement, or animation work ran.
+
+---

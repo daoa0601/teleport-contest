@@ -5,14 +5,14 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
-import { ROOM, STONE } from '../js/const.js';
+import { ROOM, STONE, W_ARM, W_ARMC } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
     CORPSE, IRON_CHAIN,
-    POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
+    POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
     POT_WATER,
 } from '../js/object_data.js';
@@ -112,6 +112,25 @@ function floorObjects() {
         for (const pile of column || []) objects.push(...(pile || []));
     }
     return objects;
+}
+
+function addSleepingNeighbor(m_id, { strategy = null } = {}) {
+    const neighbor = {
+        m_id,
+        mnum: PM_PURPLE_WORM,
+        mx: 13,
+        my: 10,
+        mhp: 12,
+        mhpmax: 12,
+        msleeping: 1,
+        mpeaceful: 0,
+        mtame: 0,
+        minvent: [],
+        inventory: [],
+    };
+    if (strategy !== null) neighbor.mstrategy = strategy;
+    game.level.monsters.push(neighbor);
+    return neighbor;
 }
 
 test('live map potion crosses bhit and consumes a successful inert contact',
@@ -450,6 +469,224 @@ test('cursed map potion pays a zero slip gate without rerouting its flight',
         assertNoBridgeUse();
     });
 
+test('live acid-resistant target skips resistance, pain, and radius damage',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 6,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const neighbor = addSleepingNeighbor(2712);
+        const potion = addKnownPotion(POT_ACID);
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        const rngLog = getRngLog();
+        const chip = Number(rngLog.find(entry =>
+            entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+        assert.equal(rngLog.some(entry => entry.startsWith('rn2(105)=')),
+            false);
+        assert.equal(rngLog.some(entry => entry.startsWith('d(1,8)=')),
+            false);
+        assert.equal(monster.mhp, 20 - chip);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(neighbor.msleeping, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live worn acid-protection armor grants resistance before potion MR',
+    async () => {
+        for (const equipment of [
+            { otyp: 144, mask: W_ARMC },
+            { otyp: 110, mask: W_ARM },
+        ]) {
+            const monster = freshMapPotionState(2);
+            Object.assign(monster, {
+                mnum: 289,
+                mhp: 20,
+                mhpmax: 20,
+                msleeping: 1,
+                misc_worn_check: equipment.mask,
+            });
+            const armor = {
+                otyp: equipment.otyp,
+                owornmask: equipment.mask,
+                worn: true,
+            };
+            monster.minvent = [armor];
+            monster.inventory = monster.minvent;
+            const potion = addKnownPotion(POT_ACID);
+
+            initRng(2702n);
+            enableRngLog();
+            await throwEast(potion, Array(20).fill(' '));
+
+            const rngLog = getRngLog();
+            const chip = Number(rngLog.find(entry =>
+                entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+            assert.equal(rngLog.some(entry => entry.startsWith('rn2(98)=')),
+                false);
+            assert.equal(rngLog.some(entry => /^d\([12],[48]\)=/.test(entry)),
+                false);
+            assert.equal(monster.mhp, 20 - chip);
+            assert.equal(monster.msleeping, 0);
+            assert.strictEqual(monster.minvent[0], armor);
+            assert.equal(potion.where, 'gone');
+            assertNoBridgeUse();
+        }
+    });
+
+test('live magic-resistant acid target pays resistance without radius damage',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 48,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const neighbor = addSleepingNeighbor(2713);
+        const potion = addKnownPotion(POT_ACID);
+
+        initRng(2700n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        const rngLog = getRngLog();
+        const resistanceEntry = rngLog.find(entry =>
+            entry.startsWith('rn2(97)='));
+        const chip = Number(rngLog.find(entry =>
+            entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+        assert.ok(resistanceEntry);
+        assert.ok(Number(resistanceEntry.split('=')[1]) < 90);
+        assert.equal(rngLog.some(entry => entry.startsWith('d(1,8)=')),
+            false);
+        assert.equal(monster.mhp, 20 - chip);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(neighbor.msleeping, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live acid damage wakes the audible source radius before survival',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 289,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const neighbor = addSleepingNeighbor(2714, {
+            strategy: 0x60000000,
+        });
+        const potion = addKnownPotion(POT_ACID);
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        const rngLog = getRngLog();
+        const resistanceEntry = rngLog.find(entry =>
+            entry.startsWith('rn2(98)='));
+        const damageEntry = rngLog.find(entry =>
+            entry.startsWith('d(1,8)='));
+        const chip = Number(rngLog.find(entry =>
+            entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+        assert.ok(Number(resistanceEntry.split('=')[1]) >= 30);
+        assert.ok(damageEntry);
+        assert.equal(monster.mhp,
+            20 - chip - Number(damageEntry.split('=')[1]));
+        assert.equal(monster.msleeping, 0);
+        assert.equal(neighbor.msleeping, 0);
+        assert.equal(neighbor.mstrategy, 0x40000000);
+        assert.match(game._pending_message, /shrieks in pain!/);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live acid damages a silent target without radius wake', async () => {
+    const monster = freshMapPotionState(2);
+    Object.assign(monster, {
+        mnum: 99,
+        mhp: 20,
+        mhpmax: 20,
+        msleeping: 1,
+    });
+    const neighbor = addSleepingNeighbor(2715);
+    const potion = addKnownPotion(POT_ACID);
+
+    initRng(2702n);
+    enableRngLog();
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.ok(getRngLog().some(entry => entry.startsWith('d(1,8)=')));
+    assert.ok(monster.mhp < 19);
+    assert.equal(monster.msleeping, 0);
+    assert.equal(neighbor.msleeping, 1);
+    assert.match(game._pending_message, /writhes in pain!/);
+    assert.equal(potion.where, 'gone');
+    assertNoBridgeUse();
+});
+
+test('live blessed and cursed acid use their distinct source damage dice',
+    async () => {
+        for (const specimen of [
+            { blessed: true, cursed: false, signature: 'd(1,4)=' },
+            { blessed: false, cursed: true, signature: 'd(2,8)=' },
+        ]) {
+            const monster = freshMapPotionState(2);
+            Object.assign(monster, {
+                mnum: 289,
+                mhp: 40,
+                mhpmax: 40,
+            });
+            const potion = addKnownPotion(POT_ACID);
+            potion.blessed = specimen.blessed;
+            potion.cursed = specimen.cursed;
+
+            initRng(2702n);
+            enableRngLog();
+            await throwEast(potion, Array(20).fill(' '));
+
+            const rngLog = getRngLog();
+            const damageEntry = rngLog.find(entry =>
+                entry.startsWith(specimen.signature));
+            const chip = Number(rngLog.find(entry =>
+                entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+            assert.ok(damageEntry);
+            assert.equal(monster.mhp,
+                40 - chip - Number(damageEntry.split('=')[1]));
+            assert.equal(potion.where, 'gone');
+            assertNoBridgeUse();
+        }
+    });
+
+test('live fatal acid crosses the ordinary map death continuation', async () => {
+    const monster = freshMapPotionState(2);
+    Object.assign(monster, {
+        mnum: 289,
+        mhp: 2,
+        mhpmax: 20,
+    });
+    const potion = addKnownPotion(POT_ACID);
+
+    initRng(2702n);
+    enableRngLog();
+    await throwEast(potion, Array(40).fill(' '));
+
+    assert.equal(monster.dead, true);
+    assert.equal(game.level.monsters.includes(monster), false);
+    assert.equal(game.u.uconduct.killer, 1);
+    assert.equal(potion.where, 'gone');
+    assertNoBridgeUse();
+});
+
 test('live blessed water damages a demon and wakes its source-radius neighbors',
     async () => {
         const monster = freshMapPotionState(2);
@@ -459,21 +696,9 @@ test('live blessed water damages a demon and wakes its source-radius neighbors',
             mhpmax: 20,
             msleeping: 1,
         });
-        const neighbor = {
-            m_id: 2710,
-            mnum: PM_PURPLE_WORM,
-            mx: 13,
-            my: 10,
-            mhp: 12,
-            mhpmax: 12,
-            msleeping: 1,
-            mstrategy: 0x60000000,
-            mpeaceful: 0,
-            mtame: 0,
-            minvent: [],
-            inventory: [],
-        };
-        game.level.monsters.push(neighbor);
+        const neighbor = addSleepingNeighbor(2710, {
+            strategy: 0x60000000,
+        });
         const potion = addKnownPotion(POT_WATER);
         potion.blessed = true;
 
@@ -529,20 +754,7 @@ test('live blessed water damages silent undead without waking its neighbors',
             mhpmax: 20,
             msleeping: 1,
         });
-        const neighbor = {
-            m_id: 2711,
-            mnum: PM_PURPLE_WORM,
-            mx: 13,
-            my: 10,
-            mhp: 12,
-            mhpmax: 12,
-            msleeping: 1,
-            mpeaceful: 0,
-            mtame: 0,
-            minvent: [],
-            inventory: [],
-        };
-        game.level.monsters.push(neighbor);
+        const neighbor = addSleepingNeighbor(2711);
         const potion = addKnownPotion(POT_WATER);
         potion.blessed = true;
 

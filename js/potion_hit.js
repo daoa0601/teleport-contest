@@ -3,7 +3,9 @@
 
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd } from './const.js';
+import {
+    M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, W_ARMC, W_ARMOR,
+} from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
     plineWithContinuation, shieldeff,
@@ -11,7 +13,8 @@ import {
 import { game } from './gstate.js';
 import { splitHostileMonster } from './mklev.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
+    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE,
+    POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
     POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
@@ -52,6 +55,10 @@ const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
+const MR_ACID = 0x40;
+const YELLOW_DRAGON_SCALE_MAIL = 110;
+const YELLOW_DRAGON_SCALES = 120;
+const ALCHEMY_SMOCK = 144;
 const MSLOW = 1;
 const MFAST = 2;
 const AT_HUGS = 7;
@@ -90,6 +97,7 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_BLINDNESS,
     POT_INVISIBILITY,
     POT_WATER,
+    POT_ACID,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -213,6 +221,26 @@ function sicknessCannotHarmMonster(monster) {
         || !!monster?.poisonResistance
         || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
             attack[1] === AD_DISE || attack[1] === AD_PEST);
+}
+
+// C mondata.c:Resists_Elem(ACID_RES).  Species and runtime resistance bits
+// precede worn yellow dragon armor and the alchemy smock.  No NetHack 5.0
+// artifact has AD_ACID in its defense or carried-defense field.
+function monsterHasAcidResistance(monster) {
+    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
+        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+    if ((resistanceBits & MR_ACID) || monster?.acidResistance
+        || monster?.acid_resistance) return true;
+    return (monster?.minvent || monster?.inventory || []).some(object => {
+        const wornMask = object?.owornmask ?? 0;
+        const dragonArmor = [
+            YELLOW_DRAGON_SCALE_MAIL,
+            YELLOW_DRAGON_SCALES,
+        ].includes(object?.otyp) && !!(wornMask & W_ARMOR);
+        const smock = object?.otyp === ALCHEMY_SMOCK
+            && !!(wornMask & W_ARMC);
+        return dragonArmor || smock;
+    });
 }
 
 // zap.c:resist() uses potion attack level 6 and the target's runtime level.
@@ -359,10 +387,16 @@ function waterWouldTransformWere(state, potion, monster) {
         && !heroBlocksShapeChange(state);
 }
 
-// Includes the one-point bottle chip which precedes potionhit()'s water die.
-// A bottle chip alone cannot kill because C only applies it above one HP, so
-// non-damaging water identities return zero rather than one.
+// Includes the one-point bottle chip which precedes potionhit()'s damaging
+// water or acid die. A bottle chip alone cannot kill because C applies it only
+// above one HP, so non-damaging identities return zero rather than one.
 export function maximumSupportedPotionFatalDamage(potion, monster) {
+    if (potion?.otyp === POT_ACID) {
+        if (monsterHasAcidResistance(monster)) return 0;
+        const dice = potion.cursed ? 2 : 1;
+        const sides = potion.blessed ? 4 : 8;
+        return 1 + dice * sides;
+    }
     if (potion?.otyp !== POT_WATER) return 0;
     if (monsterHatesBlessings(monster) || monsterIsWere(monster)) {
         return potion.blessed ? 13 : 0;
@@ -384,6 +418,28 @@ export function supportedPotionTargetGap({ state = game, potion, monster }) {
 
 function waterEffectSubject(monster, targetSpotted) {
     return targetSpotted ? sentenceSubject(monster) : 'It';
+}
+
+// potion.c:potionhit() shares this exact pain/wake transaction between holy
+// water and acid.  Silence selects writhing and suppresses wake_nearto(); an
+// audible species wakes the level-scaled radius before any damage die.
+async function publishPotionPainAndWakeRadius({
+    monster, targetSpotted, wakeNearby, effectName,
+    publish = plineWithContinuation,
+}) {
+    const silent = (MONSTER_SOUND[monster.mnum] ?? 0) === 0;
+    await publish(`${waterEffectSubject(
+        monster, targetSpotted,
+    )} ${silent ? 'writhes' : 'shrieks'} in pain!`);
+    if (!silent) {
+        if (!wakeNearby)
+            throw new Error(`${effectName} wake-radius owner unavailable`);
+        await wakeNearby(
+            monster.mx,
+            monster.my,
+            (MONSTER_LEVEL[monster.mnum] ?? 0) * 10,
+        );
+    }
 }
 
 function wereTransformationNoun(monster) {
@@ -526,6 +582,8 @@ export async function applySupportedPotionVapor({
         // potionbreathe() has no water case.  Admission and possible naming
         // still occur in the caller, but hero state and gameplay RNG do not.
         waterEffect = null;
+    } else if (potion.otyp === POT_ACID) {
+        exerciseAttribute(2, false, state);
     }
     return {
         received: true,
@@ -546,6 +604,41 @@ async function applySupportedDirectEffect({
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
     wakeNearby, splitMonster, transformWere, finishKill,
 }) {
+    if (potion.otyp === POT_ACID) {
+        const acidResistant = monsterHasAcidResistance(monster);
+        const resisted = !acidResistant
+            && monsterResistsPotion(monster, state);
+        let acidDamage = 0;
+        let killed = false;
+        if (!acidResistant && !resisted) {
+            await publishPotionPainAndWakeRadius({
+                monster,
+                targetSpotted,
+                wakeNearby,
+                effectName: 'acid',
+                publish,
+            });
+            acidDamage = d(potion.cursed ? 2 : 1, potion.blessed ? 4 : 8);
+            monster.mhp -= acidDamage;
+            killed = monster.mhp <= 0;
+            if (killed) {
+                if (!finishKill)
+                    throw new Error('acid fatality owner unavailable');
+                await finishKill(monster);
+            }
+        }
+        if (!killed) await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            acidResistant,
+            resisted,
+            acidDamage,
+            killed,
+        };
+    }
+
     if (potion.otyp === POT_WATER) {
         const affectedByHoliness = monsterHatesBlessings(monster)
             || monsterIsWere(monster);
@@ -558,19 +651,13 @@ async function applySupportedDirectEffect({
 
         if (affectedByHoliness) {
             if (potion.blessed) {
-                const silent = (MONSTER_SOUND[monster.mnum] ?? 0) === 0;
-                await publish(`${waterEffectSubject(monster, targetSpotted)} ${
-                    silent ? 'writhes' : 'shrieks'
-                } in pain!`);
-                if (!silent) {
-                    if (!wakeNearby)
-                        throw new Error('water wake-radius owner unavailable');
-                    await wakeNearby(
-                        monster.mx,
-                        monster.my,
-                        (MONSTER_LEVEL[monster.mnum] ?? 0) * 10,
-                    );
-                }
+                await publishPotionPainAndWakeRadius({
+                    monster,
+                    targetSpotted,
+                    wakeNearby,
+                    effectName: 'water',
+                    publish,
+                });
                 waterDamage = d(2, 6);
                 monster.mhp -= waterDamage;
                 killed = monster.mhp <= 0;

@@ -37641,3 +37641,62 @@ greased alternate-direction transport; complete visibility/pager variants;
 and a sealed stratum remain open.  These named gaps preserve `partial` status;
 the direct, map, and swallowed zero-bridge witnesses are not a coverage or
 hidden-generalization claim.  Lua owns none of this runtime effect graph.
+
+## 1006. Acid separates elemental resistance from potion magic resistance before damage
+
+```mermaid
+flowchart TD
+    A[potionhit common crash and rn2 5 chip] --> B{Resists_Elem ACID_RES?}
+    B -- yes --> J[ordinary hostile wake only]
+    B -- no --> C[resist POTION_CLASS attack level 6]
+    C -- resisted --> J
+    C -- failed --> D{species silent?}
+    D -- yes --> E[writhes; no radius wake]
+    D -- no --> F[shrieks; wake_nearto at species level times ten]
+    E --> G[blessed 1d4, uncursed 1d8, cursed 2d8]
+    F --> G
+    G --> H{dead?}
+    H -- yes, hero throw --> I[shared xkilled lifecycle]
+    H -- no --> J
+    A --> K{hero receives vapor?}
+    K -- towel or breathless eyeless --> L[shield or no effect]
+    K -- yes --> M[exercise Constitution negatively]
+```
+
+`potion.c:potionhit(POT_ACID)` first calls `resists_acid()`, which reaches
+`mondata.c:Resists_Elem(ACID_RES)`.  Species and runtime resistance bits, worn
+yellow dragon scale mail or scales, and a worn alchemy smock all suppress the
+later potion-resistance draw.  NetHack 5.0 has no artifact whose defense or
+carried-defense field grants `AD_ACID`, so this supported equipment branch has
+no omitted artifact selector.  A non-resistant target then calls
+`zap.c:resist()` with potion attack level six.  Resistance is silent because
+the call uses `NOTELL`; the target still reaches ordinary hostile wakeup but
+does not publish pain, wake a radius, consume a damage die, or die.
+
+Only a target which fails both gates publishes pain.  Silent species writhe
+without waking neighbors; audible species shriek and call `wake_nearto()` with
+the base species level times ten before damage.  Beatitude selects three
+different dice rather than scaling one result: blessed acid is `d(1,4)`,
+ordinary acid is `d(1,8)`, and cursed acid is `d(2,8)`.  A hero-caused fatality
+rejoins the existing `finishHeroMonsterKill()` owner.  Independently,
+`potionbreathe(POT_ACID)` does not deal acid HP damage or consult acid
+resistance; after the common vapor-reception and wet-towel gates it negatively
+exercises Constitution.
+
+JavaScript owns this graph in the shared `potion_hit.js` impact/effect/vapor
+boundary used by both ordinary map flight and swallowed guaranteed contact.
+The maximum-damage preflight includes the common one-point bottle chip and the
+beatitude-specific acid maximum, so any potentially fatal ordinary target must
+prove the shared kill continuation before object detachment or throw RNG.  The
+live witnesses distinguish inherent resistance, worn-smock resistance, potion
+magic resistance, audible and silent pain, all three dice, radius wake,
+survival, ordinary fatality, swallowed damage, unchanged hero HP, Constitution
+exercise, consumed identity, and zero bridge use without copying a whole RNG
+transcript.
+
+The subsystem remains **partial**.  Monster-caused acid fatalities need the
+separate `monkilled(..., AD_ACID)` credit path; direct impacts on the hero,
+unique or life-saving targets, peaceful/tame/worm/saddle/shop targets, broader
+visibility variants, greased alternate flight, floor effects outside the
+ordinary room slice, and a sealed stratum remain open.  Lua owns none of this
+runtime effect graph.

@@ -15,7 +15,7 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
-    POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
+    POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
@@ -799,6 +799,35 @@ test('swallowed cursed water heals a demonic engulfer without angering it',
         ]);
         assert.equal(engulfer.mhp, 31);
         assert.equal(engulfer.msleeping, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('swallowed acid damages the engulfer and exercises hero Constitution',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_ACID, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        const rngLog = getRngLog();
+        const damageEntry = rngLog.find(entry =>
+            entry.startsWith('d(1,8)='));
+        const chip = Number(rngLog.find(entry =>
+            entry.startsWith('rn2(5)=')).split('=')[1]) !== 0 ? 1 : 0;
+        assert.ok(damageEntry);
+        assert.equal(engulfer.mhp,
+            40 - chip - Number(damageEntry.split('=')[1]));
+        assert.equal(game.u.uhp, 40);
+        assert.equal(game.u._exercise[2], -1);
         assert.equal(potion.where, 'gone');
         assertNoBridgeUse();
     });
