@@ -37219,7 +37219,7 @@ the exact potion identity is freed, so contact and nearby breakage share one
 vapor owner rather than copying hero-state mutations into their callers.
 
 The production family remains mechanically **partial**.  Sickness, confusion,
-booze, invisibility, sleeping, paralysis, speed, blindness, water, oil, acid,
+booze, invisibility, sleeping, paralysis, speed, blindness, oil, acid,
 polymorph, and the remaining potion effects still reach
 `throw.potion-impact-unsupported`.  Map flight also still excludes cursed or
 greased throws, blind or burdened heroes, special terrain and recoil, shops,
@@ -37317,7 +37317,7 @@ zero.  Paralysis now remains the named fail-loud control before split or RNG.
 
 The subsystem remains mechanically **partial**.  Cursed and greased ordinary
 map flight, special terrain and recoil, nonordinary targets, paralysis,
-sleeping, speed, blindness, invisibility, water, oil, acid, polymorph, hero
+sleeping, speed, blindness, invisibility, oil, acid, polymorph, hero
 impact targets, shops, saddles, interactive naming, and a sealed stratum
 remain open.  Lua owns none of this effect graph.
 
@@ -37371,7 +37371,7 @@ The subsystem remains mechanically **partial**.  The shared owner is live for
 swallowed guaranteed contact and ordinary sighted map contact, including one
 adjacent proximity-vapor witness.  Cursed and greased map transport, special
 terrain and recoil, nonordinary targets, speed, blindness, invisibility,
-water, oil, acid, polymorph, hero impact targets, shops, saddles, interactive
+oil, acid, polymorph, hero impact targets, shops, saddles, interactive
 naming, full observer knowledge consumption, and a sealed stratum remain open.
 Lua owns none of this effect or scheduler graph.
 
@@ -37438,7 +37438,7 @@ The subsystem remains mechanically **partial**.  These effects are live for
 swallowed guaranteed contact and ordinary sighted map contact, including a
 selected proximity-vapor branch.  Cursed and greased transport, blind or
 burdened throwers, special terrain and recoil, nonordinary targets,
-invisibility, water, oil, acid, polymorph, hero impact, shops, saddles,
+invisibility, oil, acid, polymorph, hero impact, shops, saddles,
 interactive naming, broader equipment and visibility variants, and a sealed
 stratum remain open.  Lua owns none of this state, movement, or vision graph.
 
@@ -37556,3 +37556,74 @@ or a complete source-equivalent preflight/rollback exists, a greased map
 potion fails before split and before RNG.  Cursed support does not weaken that
 guard and does not establish grease support.  Lua owns none of this transport
 boundary.
+
+## 1005. Water dispatches by monster taxonomy into wake, shape, clone, and death owners
+
+```mermaid
+flowchart TD
+    A[potionhit common crash and rn2 5 chip] --> B{hates blessings, were, or vampire shifter?}
+    B -- yes, blessed --> C[sound-sensitive pain message]
+    C --> D{species is silent?}
+    D -- no --> E[wake_nearto at species level times ten]
+    D -- yes --> F[skip radius wake]
+    E --> G[d 2 6 damage]
+    F --> G
+    G --> H{dead?}
+    H -- yes --> I[killed ordinary lifecycle]
+    H -- no, beast were --> J[new_were to human form]
+    H -- no, other --> K[hostile wakeup]
+    B -- yes, cursed --> L[d 2 6 heal; clear sleep without anger]
+    L --> M{human were and no shape protection?}
+    M -- yes --> N[new_were to beast form]
+    M -- no --> O[retain form]
+    B -- no --> P{gremlin?}
+    P -- yes --> Q[enexto before next_ident]
+    Q --> R[clone without inventory; halve current and maximum HP]
+    P -- no --> S{iron golem?}
+    S -- yes --> T[d 1 6 rust damage]
+    T --> U{dead?}
+    U -- yes --> V[special iron-chain death gap]
+    U -- no --> K
+    S -- no --> K
+```
+
+`potion.c:potionhit(POT_WATER)` is not one holiness calculation.  Its first
+predicate joins `mon_hates_blessings()` (undead, demon, or vampire shifter)
+with every were-creature.  Blessed water publishes pain, wakes the audible
+neighborhood using the species base level before damage, consumes `d(2,6)`,
+then either enters `killed()` or returns a surviving beast-form were-creature
+to human form.  Cursed water instead heals through `d(2,6)`, clears ordinary
+sleep without anger, and changes a human-form were-creature only when the hero
+lacks Protection from shape changers.  Plain water still follows ordinary
+hostile wake policy but performs no holiness mutation.
+
+Targets outside that predicate select two independent species branches.
+Gremlins call `split_mon()` after the common bottle chip.  Its `clone_mon()`
+owner rejects one-HP or extinct species, consumes the shuffled `enexto()`
+position before `next_ident()`, copies condition but not inventory or special
+carrier state, keeps the odd current and maximum HP points on the original,
+and inserts the clone into source-newest actor order.  Water does not anger the
+original and merely clears its sleep.  Iron golems instead consume `d(1,6)`,
+retain hostile wake on survival, and use `make_corpse()`'s special 2d6
+iron-chain continuation on death rather than an ordinary corpse.
+
+JavaScript composes these branches from shared live owners.  `were.js` is the
+deterministic `counter_were()`/`new_were()` core used by both ordinary were
+scheduling and potion contact.  `mklev.js` owns the bounded hostile
+`clone_mon()` continuation because it already owns `enexto()`, identity
+allocation, actor insertion, and repaint.  Map contact passes the existing
+synchronous radius wake and ordinary hero-kill lifecycle; swallowed contact
+uses the same effect and zero-RNG water-vapor owner.  A maximum-damage
+preflight runs before split, inventory detachment, or throw RNG so unsupported
+fatalities cannot partially commit.
+
+The subsystem remains mechanically **partial**.  `new_were()` still needs
+`mon_break_armor()` and `possibly_unwield()` for equipped targets, so any water
+contact which might transform equipped gear fails before mutation.  A
+potentially fatal iron golem likewise fails before mutation until its special
+chain drops are live.  Unique, life-saving, shapechanging, peaceful/tame,
+worm, saddle, shop, special-terrain, and other nonordinary target lifecycles;
+greased alternate-direction transport; complete visibility/pager variants;
+and a sealed stratum remain open.  These named gaps preserve `partial` status;
+the direct, map, and swallowed zero-bridge witnesses are not a coverage or
+hidden-generalization claim.  Lua owns none of this runtime effect graph.

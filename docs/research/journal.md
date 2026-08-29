@@ -97208,3 +97208,83 @@ undead/demon/were/vampire, gremlin, iron-golem, transformation, splitting,
 fatality, and wake-radius branches must be mapped before implementation.
 
 ---
+
+### [2026-08-30 01:37 EEST, journal block 3174] {#bridge-free #potionhit #water #holy-water #unholy-water #were #new-were #gremlin #split-mon #clone-mon #iron-golem #wake-nearto #fatality #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3173 required the full
+water taxonomy before implementation. Ten direct witnesses initially returned
+before water impact state, damage/healing dice, wake radius, transformation,
+splitting, rust, fatality, or vapor admission, so the discriminating set was
+red **0/10**. Map and swallowed commands still selected
+`throw.potion-impact-unsupported`. The critical-debugging portfolio kept four
+mechanisms independent: holiness-sensitive target effects, deterministic were
+transformation, gremlin cloning, and iron-golem rust/death. A tempting HP-only
+implementation would have made demon tests green while leaving actor identity,
+movement, scheduler insertion, special death, and neighborhood wake ownership
+absent, so it was rejected as false coverage.
+
+**Prediction and decisive C evidence:** `potion.c:potionhit(POT_WATER)` first
+selects undead, demons, were-creatures, or vampire shifters. Blessed water
+publishes writhing for silent species or shrieking otherwise, calls
+`wake_nearto(tx, ty, species_mlevel * 10)` before `d(2,6)`, kills at zero HP,
+and otherwise rehumanizes a beast were. Cursed water clears anger, heals by
+`d(2,6)`, and changes a human were into beast form only without Protection
+from shape changers. Gremlins instead call `split_mon()`: `clone_mon()` runs
+`enexto()` before `next_ident()`, drops cloned inventory/special state, and
+halves both current and maximum HP with odd points retained by the original.
+Iron golems rust for `d(1,6)`; fatal `make_corpse()` produces 2d6 iron chains,
+so an ordinary corpse continuation is not equivalent. `potionbreathe()` has no
+water state or RNG branch.
+
+**Decision and implementation:** commit `66aecb7` adds water to the shared
+source impact owner and composes it with live map and swallowed callers without
+fixture, replay, seed, session, or trace control flow. `were.js` now provides
+one deterministic `counter_were()`/`new_were()` core to both monster distress
+and potion contact, including movement-ration scaling, form data, waking,
+quarter-missing-HP regeneration, protection, and repaint policy. `mklev.js`
+owns bounded hostile cloning through the existing shuffled placement and
+identity owners. Map contact supplies synchronous radius wake and ordinary
+hero-kill continuation; swallowed contact shares the effect and water's
+zero-RNG vapor. Maximum-damage and target-shape preflight runs before object
+detachment or throw RNG. Potentially fatal iron golems, equipped were
+transformations, and unique/special/life-saving fatalities therefore remain
+named fail-loud paths rather than partially committed approximations.
+
+**Adversarial audit and false-acceptance corrections:** wake radius uses the
+species base level and squared-distance threshold, not runtime `m_lev` or a
+linear radius, and silent species skip it entirely. Shape protection blocks
+human-to-beast transformation but never beast-to-human reversion. New-form
+healing occurs after water damage/healing and the bottle chip. Gremlin cloning
+must shuffle placement before allocating the clone identity and split maximum
+HP as well as current HP; an injected clone or copied inventory would not
+establish production ownership. Swallowed water's naturally susceptible
+engulfer is Juiblex: nonfatal blessed/cursed effects are live, while its unique
+fatality correctly rejects before inventory or RNG mutation. A generic death
+callback is not a substitute for iron-golem chain drops.
+
+**Measured effect and process custody:** nineteen direct, map, swallowed,
+preflight, fatality, radius, transform, and clone water witnesses pass
+**19/19**. The complete direct-impact, map-potion, and swallowed-potion files
+pass **114/114**. Two existing were-change/distress controls pass **2/2**;
+eight ambient-ogre, known monster-speed-potion, sleeping-potion flight,
+striking-wand, smoky-invisibility-potion, timed-blindness, clean Pri-loca, and
+live Fast-ration controls pass **8/8**. `test/bridge_free.test.js` passes
+**8/8**, and the mechanical audit reports **126 audited files, 15 guarded
+modules, and 19 fixture modules**. Every `node --test` command was preceded by
+the live-process guard, ran alone, and exited normally; none yielded or was
+abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** water is not only holy
+damage; silent and audible targets do not share wake behavior; were changes
+are not identity-only; gremlin multiplication is not a second HP object; and
+ordinary death ownership does not imply iron-golem death ownership. The
+subsystem remains mechanically **partial** at equipped `mon_break_armor()` /
+`possibly_unwield()`, fatal iron-chain drops, special target lifecycles,
+greased transport, broader visibility/pager variants, and a sealed stratum.
+No full Contest suite, engine/public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should compare completing the two named water lifecycle debts
+against the acid damage/resistance graph, selecting the route with a coherent
+pre-mutation lifecycle boundary rather than a public-session metric.
+
+---
