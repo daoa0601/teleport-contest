@@ -14,7 +14,9 @@ import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
-    OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_HEALING, SCR_BLANK_PAPER,
+    OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
+    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
+    POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, SCR_BLANK_PAPER,
     TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -616,6 +618,179 @@ test('unsupported swallowed potion fails before floor fallback or RNG',
             ledger.bridges['throw.swallowed-special-unsupported'].count,
             1,
         );
+    });
+
+test('all monster-inert potions crash unseen, chip, and disappear live',
+    async () => {
+        const inertTypes = [
+            POT_GAIN_LEVEL, POT_GAIN_ENERGY, POT_LEVITATION,
+            POT_FRUIT_JUICE, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
+        ];
+        const expectedRng = [
+            ['rnd(20)=8', 'rn2(7)=5', 'rn2(5)=2'],
+            ['rnd(20)=8', 'rn2(7)=5', 'rn2(5)=0'],
+            ['rnd(20)=13', 'rn2(7)=5', 'rn2(5)=2'],
+            ['rnd(20)=3', 'rn2(7)=3', 'rn2(5)=1'],
+            ['rnd(20)=8', 'rn2(7)=5', 'rn2(5)=0'],
+            ['rnd(20)=3', 'rn2(7)=0', 'rn2(5)=3'],
+        ];
+        const expectedHp = [39, 40, 39, 39, 40, 39];
+
+        for (let index = 0; index < inertTypes.length; index++) {
+            const engulfer = freshSwallowedState(PM_TRAPPER);
+            if (index === 0) engulfer.msleeping = 1;
+            const raw = mksobj(inertTypes[index], true, false);
+            raw.quan = raw.quantity = 1;
+            raw.cursed = raw.blessed = false;
+            raw.bknown = raw.dknown = raw.known = true;
+            raw.typeKnown = true;
+            const potion = addInventoryItem(raw);
+
+            initRng(2511n + BigInt(index));
+            enableRngLog();
+            await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ']);
+
+            assert.deepEqual(getRngLog(), expectedRng[index]);
+            assert.equal(engulfer.mhp, expectedHp[index]);
+            assert.equal(engulfer.msleeping, 0);
+            assert.deepEqual(game.inventory, []);
+            assert.deepEqual(engulfer.minvent, []);
+            assert.equal(potion.where, 'gone');
+            assert.equal(potion.ox, 0);
+            assert.equal(potion.oy, 0);
+            assert.equal(game._pending_message, 'Crash!');
+            assert.equal((game.level.objects || []).flat(2).length, 0);
+            assertNoBridgeUse();
+        }
+    });
+
+test('unseen swallowed bottle selection remains hallucination-sensitive',
+    async () => {
+        const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+        game.u.hallucinationTurns = 8;
+        const raw = mksobj(POT_GAIN_LEVEL, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2520n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'h', [' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=13', 'rn2(24)=8', 'rn2(5)=1',
+        ]);
+        assert.equal(engulfer.mhp, 39);
+        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game._pending_message, 'Crash!');
+        assertNoBridgeUse();
+    });
+
+test('swallowed inert potion stack splits one consumed identity', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const raw = mksobj(POT_FRUIT_JUICE, true, false);
+    raw.quan = raw.quantity = 2;
+    raw.cursed = raw.blessed = false;
+    raw.bknown = raw.dknown = raw.known = true;
+    raw.typeKnown = true;
+    const potion = addInventoryItem(raw);
+
+    initRng(2521n);
+    enableRngLog();
+    await throwThroughLiveCommand(potion, 'j', [' ', ' ', ' ']);
+
+    assert.deepEqual(getRngLog(), [
+        'rnd(2)=1', 'rnd(20)=19', 'rn2(7)=4', 'rn2(5)=0',
+    ]);
+    assert.equal(engulfer.mhp, 40);
+    assert.deepEqual(game.inventory, [potion]);
+    assert.equal(potion.quan, 1);
+    assert.equal(potion.quantity, 1);
+    assert.equal(potion.where, 'inventory');
+    assert.deepEqual(engulfer.minvent, []);
+    assert.equal((game.level.objects || []).flat(2).length, 0);
+    assertNoBridgeUse();
+});
+
+test('dknown unknown inert potion remains fail-loud before call prompt debt',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_FRUIT_JUICE, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = true;
+        raw.known = raw.typeKnown = false;
+        const potion = addInventoryItem(raw);
+
+        initRng(2522n);
+        enableRngLog();
+        await assert.rejects(
+            throwThroughLiveCommand(potion, 'l'),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId
+                    === 'throw.swallowed-special-unsupported',
+        );
+
+        assert.equal(engulfer.mhp, 40);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.deepEqual(getRngLog(), []);
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+    });
+
+test('unseen unknown inert potion needs no naming continuation', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const raw = mksobj(POT_FRUIT_JUICE, true, false);
+    raw.quan = raw.quantity = 1;
+    raw.cursed = raw.blessed = false;
+    raw.bknown = raw.dknown = raw.known = raw.typeKnown = false;
+    const potion = addInventoryItem(raw);
+    potion.bknown = potion.dknown = potion.known = potion.typeKnown = false;
+
+    initRng(2523n);
+    enableRngLog();
+    await throwThroughLiveCommand(potion, 'l');
+
+    assert.deepEqual(getRngLog(), [
+        'rnd(20)=11', 'rn2(7)=5', 'rn2(5)=1',
+    ]);
+    assert.equal(engulfer.mhp, 39);
+    assert.deepEqual(game.inventory, []);
+    assert.deepEqual(engulfer.minvent, []);
+    assert.equal(potion.where, 'gone');
+    assert.equal(game._pending_message, 'Crash!');
+    assertNoBridgeUse();
+});
+
+test('greased inert potion slips before its swallowed impact transaction',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_GAIN_ENERGY, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.greased = true;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2524n);
+        enableRngLog();
+        await throwThroughLiveCommand(potion, 'h', [' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=0', 'rn2(3)=1', 'rn2(3)=1', 'rnd(20)=4',
+            'rn2(7)=6', 'rn2(5)=4',
+        ]);
+        assert.equal(engulfer.mhp, 39);
+        assert.deepEqual(game.inventory, []);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game._pending_message,
+            'The potion of gain energy slips as you throw it!  Crash!');
+        assertNoBridgeUse();
     });
 
 test('a killing swallowed dart is acquired, dropped, and autopicked before cleanup',

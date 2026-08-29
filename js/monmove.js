@@ -69,6 +69,7 @@ import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
+import { randomBottleName } from './potion_hit.js';
 import {
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
     ALLOW_SSM,
@@ -3963,15 +3964,11 @@ function moveHostile(
 // heroes give it a distance-scaled hesitation roll; a zero proceeds with the
 // throw.  Intermediate flight squares each own forcehit's rn2(5) before the
 // missile reaches an intervening monster.
-const ORDINARY_BOTTLE_NAMES = [
-    'bottle', 'phial', 'flagon', 'carafe', 'flask', 'jar', 'vial',
-];
-
 // C mhitu.c:mattacku() -> muse.c:find_offensive()/use_offensive().
 // Offensive potions preempt an AT_WEAP actor's launcher and ammunition.  The
 // first live branch is one sleeping potion aimed directly at the hero; other
-// potion types, stacks, intervening targets, and hallucinated bottle names
-// retain distinct effect owners.
+// potion types, stacks, and intervening targets retain distinct effect
+// owners. Bottle naming itself is shared with hero-thrown potionhit().
 function maybeThrowOffensiveSleepingPotion(
     monster, movement, state, random, rollOne, calls,
 ) {
@@ -4046,9 +4043,9 @@ function maybeThrowOffensiveSleepingPotion(
         };
     }
 
-    const bottleName = ORDINARY_BOTTLE_NAMES[
-        recordRandom(random, calls, ORDINARY_BOTTLE_NAMES.length)
-    ];
+    const bottleName = randomBottleName(
+        state, range => recordRandom(random, calls, range),
+    );
     const damage = rollOne(2);
     calls.push('rnd(2)');
     const preHitHp = state.u.uhp ?? 1;

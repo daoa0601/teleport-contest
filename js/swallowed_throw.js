@@ -2,7 +2,7 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { LOST_THROWN } from './const.js';
+import { LOST_THROWN, W_SADDLE } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -22,6 +22,9 @@ import {
     applyProjectileObjectPassive, destroyMulchedProjectile, projectileKind,
     shouldMulchMissile,
 } from './projectile.js';
+import {
+    hitMonsterWithInertPotion, INERT_MONSTER_POTION_TYPES,
+} from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus,
@@ -35,6 +38,7 @@ import {
 const PM_AIR_ELEMENTAL = 154;
 const AT_ENGL = 11;
 const AD_DGST = 26;
+const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
 const SILVER = 14;
@@ -259,7 +263,8 @@ function genericSwallowedEligibility(
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer) return null;
 
-    // Weapon/gem damage, food/taming, potions, balls, boulders, venom,
+    // Weapon/gem damage, food/taming, effectful potions, balls, boulders,
+    // venom,
     // shop objects, worn-state removal, unsupported burning objects, and
     // timed stack splitting own materially different continuations and
     // remain explicit successors.  The supported lamps below reuse the
@@ -276,6 +281,39 @@ function genericSwallowedEligibility(
         && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
         return null;
     }
+    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
+    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
+    if (currentHp < 10 && currentHp !== currentHpMax
+        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
+        return null;
+    }
+    return engulfer;
+}
+
+function swallowedInertPotionEligibility(
+    state, item, objectClass, selectedQuantity,
+) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer || objectClass !== POTION_CLASS
+        || !INERT_MONSTER_POTION_TYPES.has(item?.otyp)
+        || !Number.isInteger(selectedQuantity) || selectedQuantity < 1) {
+        return null;
+    }
+
+    // potionhit() can divert into saddle dipping, shop settlement, interactive
+    // trycall(), or special identity cleanup. Keep those owners fail-loud
+    // before splitobj(), freeinv(), or the mandatory thitmonst() dieroll.
+    if (((engulfer.misc_worn_check ?? 0) & W_SADDLE)
+        || engulfer.saddle
+        || itemIsEquipped(state, item)
+        || containsUnpaidObject(item)
+        || item.lamplit || item.oartifact || item.artifact
+        || activeObjectTimerCount(item) > 0
+        || (item.contents?.length ?? 0) > 0
+        || (item.dknown !== false && !objectTypeKnown(item, state))) {
+        return null;
+    }
+
     const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
     const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
     if (currentHp < 10 && currentHp !== currentHpMax
@@ -474,6 +512,45 @@ export async function resolveSwallowedWeaponThrow({
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },
     );
+    state.context.move = 1;
+    return true;
+}
+
+export async function resolveSwallowedInertPotionThrow({
+    state = game,
+    item,
+    objectClass,
+    selectedQuantity,
+    splitObjectId,
+    wakeMonster,
+}) {
+    const engulfer = swallowedInertPotionEligibility(
+        state, item, objectClass, selectedQuantity,
+    );
+    if (!engulfer) return false;
+    const thrown = detachThrownUnit(
+        state, item, selectedQuantity, splitObjectId,
+    );
+
+    // throwit() evaluates its cursed/greased slip draw before thitmonst().
+    // Potions only enter the displacement branch when greased, but a cursed
+    // ungreased identity still consumes the rn2(7) gate.
+    if ((thrown.cursed || thrown.greased) && rn2(7) === 0
+        && thrown.greased) {
+        await plineWithContinuation(
+            `The ${thrownObjectName(thrown, state)} slips as you throw it!`,
+        );
+        rn2(3);
+        rn2(3);
+    }
+
+    rnd(20);
+    await hitMonsterWithInertPotion({
+        state,
+        monster: engulfer,
+        potion: thrown,
+        wakeMonster,
+    });
     state.context.move = 1;
     return true;
 }

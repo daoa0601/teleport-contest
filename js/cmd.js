@@ -60,8 +60,8 @@ import {
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSwallowedProjectileThrow,
-    resolveSwallowedWeaponThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedInertPotionThrow,
+    resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
@@ -15569,6 +15569,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         // named bridge so bridge-free execution cannot silently accept it.
         useCompatibilityBridge('throw.swallowed-weapon-unsupported');
     }
+
+    if (await resolveSwallowedInertPotionThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        wakeMonster: wakeAttackedMonster,
+    })) return;
 
     if (await resolveGenericSwallowedThrow({
         state: game,
