@@ -93799,3 +93799,64 @@ boundary from `u_init_misc()` and its perception/status invariants, then return
 to room fill before scheduling the one-shot sealed gate.
 
 ---
+
+### [2026-08-29 14:18 EEST, journal block 3123] {#bridge-free #startup #options #blind #deaf #perception #properties #eyewear #polymorph #conduct #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** the audit began at pinned
+`u_init.c:u_init_misc()` and `include/youprop.h`, before selecting any public
+session. C copies the roleplay options, installs permanent blindness as a
+distinct `FROMOUTSIDE` intrinsic, and derives `Blind`/`Deaf` from all current
+sources. JavaScript parsed neither source alias and represented each resulting
+property as one mutable top-level boolean. The earliest divergence was
+therefore option/property initialization, not a later status row: an ordinary
+timeout expiry or healing path could set the boolean false and silently cure a
+birth option.
+
+**Prediction portfolio and decisive evidence:** (1) a display-only hypothesis
+predicted that adding `Blind Deaf` to the status row would suffice, but direct
+`uInitMisc()` state had no permanent source and falsified it. (2) a large
+timeout hypothesis predicted permanent blindness could be represented by an
+unclearable counter; `PermaBlind`, `make_blinded()`, and the Eyes blocker prove
+that permanent, timed, extrinsic, blocked, and current-form sources must remain
+separate. (3) treating all `LENSES` as a blindfold predicted ordinary lenses
+would cause or block blindness; `youprop.h` and `Blindf_on/off()` falsify it.
+(4) clearing the permanent intrinsic when the Eyes are worn predicted a true
+cure, but C clears only the birth-conduct flag and retains the intrinsic so
+removal restores blindness. (5) a public-carrier explanation was falsified by
+a new seed9183 Tourist with both options reproducing the missing property and
+perception state with no recorded moves or bridge hits.
+
+**Decision and implementation:** add a single derived sensory owner over
+permanent, timed, equipment, current-form, blocked, and extrinsic sources;
+copy ordered `blind`/`permablind` and `deaf`/`permadeaf` options into startup
+roleplay state; and synchronize both `game` and `u` aggregate consumers.
+Route timeout, healing, wipe, rotten food, lightning, monster attack/spell,
+cream, drum, polymorph, and eyewear transitions through that owner. Ordinary
+lenses remain neutral. The Eyes block without erasing the permanent intrinsic
+and can void only the birth-conduct flag. Status, live perception, insight,
+and current/final conduct now share the resulting state.
+
+**Measured effect and regression:** `test/startup_senses.test.js` passes 5/5
+for aliases and ordered negation, startup source separation, Blind-before-Deaf
+status/conduct, temporary clearing under permanent state, ordinary lenses,
+the Eyes blocker, fresh-seed perception, and a zero compatibility ledger. The
+combined bridge-policy, pauper, reroll, and sensory startup selection passes
+24/24. Eleven focused existing scheduler regressions pass for cream blindness,
+blind/deaf sound behavior, two rehumanization routes, blindfold/lenses loss,
+healing, drums, controlled polymorph/wipe, and attribute disclosure. The
+bridge-free audit covers 110 files with no failure. Every command exited; no
+full suite, corpus, sealed gate, score, push, publication, or animation work
+ran. Implementation commit `825c92b` contains only the property owners and
+fresh witness.
+
+**Falsified hypotheses, limit, and next blocker:** permanent sensory options
+are not presentation flags, a timeout cannot stand in for source provenance,
+ordinary lenses are not blindfolds, and the Eyes do not permanently cure the
+intrinsic. The mechanical sensory entry remains `partial`: light/engulfing
+details, ball-and-chain repaint coupling, every artifact message transition,
+unsupported deaf extrinsics, and the sealed gate remain open. The startup
+entry remains `partial` for broader cross-role pet state. Return now to
+ordinary room-fill/startup-object ownership before deciding whether the next
+coherent slice is large enough to schedule the one-shot sealed corpus gate.
+
+---

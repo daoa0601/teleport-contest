@@ -6,7 +6,7 @@ Scope: Initial parity-critical ownership inventory; not yet exhaustive.
 
 | Implemented | Partial | Stubbed | Absent | Total |
 | ---: | ---: | ---: | ---: | ---: |
-| 2 | 10 | 0 | 0 | 12 |
+| 2 | 11 | 0 | 0 | 13 |
 
 ```mermaid
 flowchart LR
@@ -15,6 +15,7 @@ flowchart LR
     n_startup_pre_mklev["Pre-mklev object, role, and dungeon initialization<br/>partial"]
     n_startup_artifacts["New-game artifact initialization<br/>implemented"]
     n_startup_role_inventory["Role/race inventory, attributes, skills, and starting pet<br/>partial"]
+    n_hero_sensory_properties["Hero blindness and deafness property sources<br/>partial"]
     n_level_generation["C and Lua level construction<br/>partial"]
     n_turn_scheduler["Hero, monster, and global-turn scheduler<br/>partial"]
     n_samurai_pet_turns["Samurai pet turns, altar run, and prayer occupation<br/>partial"]
@@ -32,6 +33,9 @@ flowchart LR
     n_startup_role_inventory --> n_startup_pre_mklev
     n_startup_role_inventory --> n_level_generation
     n_startup_role_inventory --> n_samurai_pet_turns
+    n_hero_sensory_properties --> n_startup_pre_mklev
+    n_hero_sensory_properties --> n_startup_artifacts
+    n_hero_sensory_properties --> n_turn_scheduler
     n_level_generation --> n_rng_core
     n_turn_scheduler --> n_rng_core
     n_turn_scheduler --> n_samurai_pet_turns
@@ -52,7 +56,8 @@ flowchart LR
 | Core and display RNG streams | implemented | js/rng.js<br/>js/isaac64.js | seeded-replay.recorded-rnl | No open gap inside the live RNG wrapper scope; seeded replay helpers remain separately forbidden. |
 | Pre-mklev object, role, and dungeon initialization | partial | js/startup.js<br/>js/o_init.js<br/>js/dungeon.js<br/>js/artifacts.js<br/>js/roles.js | fastforward.pre-mklev | Object-description and artifact initialization are source-owned; remaining role_init selection/pantheon permutations, dungeon option strata, and a sealed startup gate are still open. |
 | New-game artifact initialization | implemented | js/artifacts.js<br/>js/startup.js<br/>js/allmain.js<br/>js/roles.js | none | No open gap inside the new-game init_artifacts/hack_artifacts scope; artifact save/restore and unsupported runtime powers are tracked outside this entry. |
-| Role/race inventory, attributes, skills, and starting pet | partial | js/u_init.js<br/>js/allmain.js<br/>js/invent.js<br/>js/windows.js<br/>js/options.js<br/>js/skills.js<br/>js/gold.js<br/>js/weight.js<br/>js/insight.js<br/>js/cmd.js<br/>js/vault.js<br/>js/end.js | fastforward.post-mklev | Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, pauper/nudist, and the complete startup reroll candidate/finalization lifecycle. Permanent blind/deaf strata, cross-role pet state beyond pauper saddle suppression, and a sealed stratified gate remain open. |
+| Role/race inventory, attributes, skills, and starting pet | partial | js/u_init.js<br/>js/allmain.js<br/>js/invent.js<br/>js/windows.js<br/>js/options.js<br/>js/skills.js<br/>js/gold.js<br/>js/weight.js<br/>js/insight.js<br/>js/cmd.js<br/>js/vault.js<br/>js/end.js | fastforward.post-mklev | Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, pauper/nudist, the complete startup reroll candidate/finalization lifecycle, and permanent blind/deaf initialization through the separate sensory-property owner. Cross-role pet state beyond pauper saddle suppression and a sealed stratified gate remain open. |
+| Hero blindness and deafness property sources | partial | js/senses.js<br/>js/u_init.js<br/>js/options.js<br/>js/allmain.js<br/>js/cmd.js<br/>js/monmove.js<br/>js/polyself.js<br/>js/display.js<br/>js/insight.js | none | Permanent blind/deaf startup, aggregate property synchronization, timed-source clearing, current-form blindness, ordinary eyewear, and the Eyes blocker invariant are source-owned under focused witnesses. Light/engulfing blindness details, ball-and-chain repaint coupling, every artifact equipment message transition, unsupported deaf extrinsics, and a sealed stratified gate remain open. |
 | C and Lua level construction | partial | js/mklev.js<br/>js/dungeon.js<br/>js/lua_des.js | fastforward.mineralize<br/>seeded room-fill compatibility paths | Special-level operations, ordinary room fill, startup objects, and unseen Lua variants remain incomplete. |
 | Hero, monster, and global-turn scheduler | partial | js/allmain.js<br/>js/monmove.js | fastforward.turn<br/>fastforward.ranger-turn<br/>scheduler.default-replay-gap<br/>seeded role replay modules | Samurai, all five represented Rogue carriers, and the two represented Priest carriers have public bridge-free actor-rich witnesses; broader unseen actor/terrain branches and a sealed gate remain open. |
 | Samurai pet turns, altar run, and prayer occupation | partial | js/allmain.js<br/>js/monmove.js<br/>js/pray.js | legacy-only samurai.altar-run-prayer<br/>legacy-only bounded Samurai compatibility cadence | The represented bridge-free Samurai path uses live dog_move and prayer turns, but wider candidate, combat, interruption, terrain, and sealed-corpus coverage is absent; legacy scoring still retains its compatibility bridge. |

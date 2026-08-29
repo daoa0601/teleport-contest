@@ -35342,3 +35342,51 @@ The combined startup, artifact, bridge-policy, and exact represented chargen
 regression is 54/54. Lua owns none of this boundary. The registry remains
 **partial** for permanent blind/deaf startup, broader cross-role pet behavior,
 and the scheduled sealed corpus gate.
+
+## 969. Blind and Deaf are projections over sources, not mutable conditions
+
+~~~mermaid
+flowchart TD
+    Option["options.c: blind/permablind and deaf/permadeaf"] --> Roleplay["u.uroleplay conduct state"]
+    Roleplay --> Init["u_init_misc"]
+    Init --> PBlind["permanent blind intrinsic source"]
+    Init --> PDeaf["permanent deaf roleplay source"]
+    Timers["make_blinded / make_deaf / nh_timeout"] --> Derived["shared Blind / Deaf projection"]
+    Form["current form has no eyes"] --> Derived
+    Eyewear["blindfold or towel extrinsic"] --> Derived
+    PBlind --> Derived
+    PDeaf --> Derived
+    Eyes["Eyes of the Overworld blocked source"] -. "suppresses Blind without erasing intrinsic" .-> Derived
+    Derived --> Runtime["vision, sound, commands, status, and insight"]
+    Roleplay --> Conduct["current/final conduct"]
+    Eyes --> Conduct
+~~~
+
+Pinned `youprop.h` makes the central ownership rule explicit: `Blind` is the
+union of intrinsic blindness and a worn blindfold, with the Eyes of the
+Overworld blocking those sources, while `PermaBlind` remains a distinct
+`FROMOUTSIDE` bit. `Deaf` similarly combines timed/extrinsic state with the
+permanent roleplay option. The former JavaScript representation collapsed
+each property into one mutable boolean. Clearing a potion timeout, finishing
+a wipe, returning from an eyeless form, or recovering from rotten food could
+therefore erase a permanent option even though only one source had ended.
+
+`js/senses.js` is now the shared property projection. Producers change their
+owned source--startup intrinsic, timed counter, current form, eyewear, or deaf
+extrinsic--and then synchronize `game` and `u` aggregate views. Timeout,
+healing, wipe, monster attacks and spells, cream, lightning, instruments, and
+polymorph/equipment transitions no longer assign those aggregates directly.
+Ordinary lenses neither blind nor block blindness. The Eyes block the live
+property without removing the permanent intrinsic; wearing them can void the
+blind-from-birth conduct, and removing them exposes the intrinsic again.
+
+Status keeps the C `Blind` then `Deaf` order, while current and final conduct
+read the roleplay flags rather than inferring birth state from a temporary
+condition. A fresh seed with both permanent options reaches a live
+bridge-free turn, geometrically sees an adjacent cell with `couldsee`, cannot
+actually see it with `cansee`, and records no compatibility hits. Focused
+existing regressions retain timed effects, healing, rehumanization, headless
+eyewear loss, drums, and disclosure behavior. Lua owns none of this property
+boundary. The mechanical registry remains **partial** for light/engulfing
+details, ball-and-chain repaint coupling, every artifact message transition,
+unsupported deaf extrinsics, and the scheduled sealed gate.

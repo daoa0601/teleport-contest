@@ -86,7 +86,24 @@
       "bridgeIds": ["fastforward.post-mklev"],
       "acceptanceWitnesses": ["test/startup_reroll.test.js: disposable candidate isolation, deferred final effects, live default and lootabc menus, cancel fallback, reroll count/conduct, and fresh zero-bridge starts", "test/startup_carry.test.js: recursive contained-gold knowledge, container and bag weight, Strength-then-Constitution carry boost, all-role startup invariant, and fresh bridge-free Tourist turn", "test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, pauper/nudist, and the complete startup reroll candidate/finalization lifecycle. Permanent blind/deaf strata, cross-role pet state beyond pauper saddle suppression, and a sealed stratified gate remain open."
+      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, role-money order, recursive contained gold/weight, carry-attribute boost, pauper/nudist, the complete startup reroll candidate/finalization lifecycle, and permanent blind/deaf initialization through the separate sensory-property owner. Cross-role pet state beyond pauper saddle suppression and a sealed stratified gate remain open."
+    },
+    {
+      "id": "hero-sensory-properties",
+      "label": "Hero blindness and deafness property sources",
+      "status": "partial",
+      "source": {
+        "cFiles": ["include/youprop.h", "src/u_init.c", "src/potion.c", "src/do_wear.c", "src/timeout.c", "src/polyself.c", "src/insight.c"],
+        "cSymbols": ["Blind", "Blinded", "PermaBlind", "Blindfolded", "Deaf", "u_init_misc", "make_blinded", "toggle_blindness", "Blindf_on", "Blindf_off", "nh_timeout", "status_enlightenment", "show_conduct"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/senses.js", "js/u_init.js", "js/options.js", "js/allmain.js", "js/cmd.js", "js/monmove.js", "js/polyself.js", "js/display.js", "js/insight.js"],
+      "dependencies": ["startup-pre-mklev", "startup-artifacts", "turn-scheduler"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/startup_senses.test.js: option aliases, permanent-source initialization, conduct/status ordering, temporary-source clearing, ordinary lenses, Eyes blocking, live fresh-seed perception, and zero bridge usage", "focused test/run_scheduler.test.js sensory regressions: timed blindness/deafness, healing, rehumanization, headless eyewear loss, drum effects, and attributes"],
+      "lastSealedGate": null,
+      "openGap": "Permanent blind/deaf startup, aggregate property synchronization, timed-source clearing, current-form blindness, ordinary eyewear, and the Eyes blocker invariant are source-owned under focused witnesses. Light/engulfing blindness details, ball-and-chain repaint coupling, every artifact equipment message transition, unsupported deaf extrinsics, and a sealed stratified gate remain open."
     },
     {
       "id": "level-generation",
