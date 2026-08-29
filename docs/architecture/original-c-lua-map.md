@@ -35469,8 +35469,8 @@ flowchart TD
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
     Pick --> Live["Ghost, Cloud, hazards, Garden, populations: implemented"]
-    Pick --> Partial["Buried zombies, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["three callbacks: absent"]
+    Pick --> Partial["Buried treasure/zombies, temple, storeroom, teleport hub: partial"]
+    Pick --> Absent["Ice and Light source: absent"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35492,8 +35492,8 @@ callback which has not been ported instead of reporting an empty callback as
 implemented. The generated ownership registry records every fill separately.
 Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
 Garden, Massacre, and Statuary are `implemented`; Buried zombies, Temple of
-the gods, Storeroom, and Teleportation hub are `partial`; the remaining three
-are `absent`.
+the gods, Storeroom, Teleportation hub, and Buried treasure are `partial`;
+Ice room and Light source are `absent`.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35557,3 +35557,24 @@ later discovery reveals a tree-compatible door rather than empty air. The
 JavaScript postprocess queue now retains the selection until this actual
 post-fill boundary; executing it during the immediate callback would observe
 the wrong surrounding topology.
+
+Buried treasure crosses object initialization, burial, containment, and the
+same deferred postprocess boundary. `sp_lev.c:create_object()` first constructs
+an initialized chest, including `mkbox_cnts()` and all of its RNG, then clears
+those generated contents because Lua supplied a `contents` function. Contrary
+to a natural nested-callback reading, C buries the chest before invoking that
+function. The first ordinary `obj_resists(0,0)` draw cannot save the chest;
+the second `obj_resists(5,95)` draw controls whether the wooden container gets
+a `ROT_ORGANIC` deadline. Only then does Lua retain the burial coordinates,
+roll 3d4, and construct each random child at a fresh dry room coordinate before
+C removes it from the floor, inserts it at the head of the chest contents, and
+recomputes container weight.
+
+The deferred clue builds a fresh whole-level ROOM selection, samples it in
+x-major order without removal, and burns text whose vector uses the source's
+intentional `chest.x - engraving.x - 1` horizontal offset. JavaScript now owns
+that construction and postprocess state without any fixture or replay carrier.
+It records the organic rot deadline but has no shared timer-queue dispatcher or
+`rot_organic()` callback yet, so this component remains mechanically
+`partial`; a passing construction witness is not being promoted into fake
+runtime acceptance.

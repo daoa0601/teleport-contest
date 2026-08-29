@@ -94222,3 +94222,67 @@ Next audit Buried treasure's initialized-then-replaced chest contents, burial
 chain, and delayed directional engraving as one container/postprocess slice.
 
 ---
+
+### [2026-08-29 15:23 EEST, journal block 3130] {#bridge-free #level-generation #lua #buried-treasure #containers #burial #engraving #timers #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** following block 3129, the audit
+traced `themerms.lua` Buried treasure through `sp_lev.c:create_object()`,
+`dig.c:bury_an_obj()`, `zap.c:obj_resists()`, and the deferred
+`make_dig_engraving()` callback. JavaScript's dispatcher returned false before
+the chest constructor. The first non-obvious ordering boundary was earlier
+than the Lua contents loop: C initializes and clears the chest, then buries it
+before invoking the Lua `contents` function, so burial resistance and timer
+draws precede 3d4 and every child-object constructor.
+
+**Prediction portfolio and decisive evidence:** (1) a callback-then-burial
+hypothesis predicted that child objects were inserted before `bury_an_obj()`;
+`lspo_object()` calls `create_object()` to completion before invoking the Lua
+function, falsifying that order. (2) clearing an initialized chest up front
+predicted its random starting contents could be skipped; `SP_OBJ_CONTAINER`
+calls `delete_contents()` only after `mksobj_at(CHEST, ..., TRUE, TRUE)`, so all
+constructor RNG remains owned. (3) direct in-container construction predicted
+nested `des.object()` avoided a location draw; every child first samples a dry
+room coordinate and enters the floor chain, then C removes and head-inserts it
+into the chest. (4) one burial draw predicted ordinary chests only encounter
+the 0% resistance gate; their wooden material also owns a second 5% gate and,
+on failure to resist, `rnd(250)` for the organic deadline. (5) a direct clue at
+the chest predicted no postprocess draw; source samples a fresh whole-level
+ROOM selection and deliberately subtracts one additional horizontal cell when
+forming the direction text.
+
+**Decision and implementation:** preserve the exact C/Lua transaction rather
+than flattening it into final state. `specialObject()` now returns the live
+object it creates. Buried treasure constructs the initialized chest, clears
+only its contents, consumes burial resistance and optional rot-deadline draws,
+moves it to the buried chain with coordinates intact, queues the clue, then
+rolls 3d4 and moves each independently constructed random floor object into
+the container while recomputing its weight. The deferred owner samples current
+ROOM terrain in x-major order and creates the exact directional burn engraving.
+Record `rotOrganicAt`, but keep the mechanical component `partial` because the
+shared timer queue and `rot_organic()` dispatcher do not yet fire that deadline.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **18/18**;
+the new witness pins one buried chest, 3..12 contained children, floor-chain
+removal, container weight, retained coordinates, optional source-bounded rot
+deadline, queued callback state, exact clue vector, burn type, queue drain, and
+zero bridge hits. The combined bridge-policy, Priest startup, ordinary-room,
+and themed-room selection passes **34/34**. Five represented level carriers
+again pass for Storeroom, nesting rooms, secret-door orientation, clean
+Minetown-2, and Orcus ghost-town shops. The bridge-free audit remains green
+over 111 files. Every verifier exited and the post-run guard found no owned
+test tree. Implementation commit `cfb4941` contains only `js/mklev.js` and the
+focused test.
+
+**Falsified hypotheses, limit, and next blocker:** Lua callback nesting does
+not determine C burial order; clearing custom contents does not erase their
+constructor RNG; contained children do not skip random room placement; burial
+is not one resistance draw; and a stored rot deadline is not a working timer
+lifecycle. No full suite, public corpus, sealed trace, score, push,
+publication, official measurement, or animation work ran. Seven fill
+callbacks remain incomplete because Buried treasure moved from `absent` to
+`partial`, not `implemented`. Next audit Light source as a small constructor
+slice, then choose whether the shared lit-object lifecycle is complete enough
+to close it; otherwise continue one of the existing partial callbacks without
+mislabeling a timer or runtime stub as acceptance.
+
+---
