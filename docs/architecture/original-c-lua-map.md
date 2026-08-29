@@ -37590,7 +37590,7 @@ flowchart TD
     P -- no --> S{iron golem?}
     S -- yes --> T[d 1 6 rust damage]
     T --> U{dead?}
-    U -- yes --> V[special iron-chain death gap]
+    U -- yes --> V[shared xkilled and special iron-chain drops]
     U -- no --> K
     S -- no --> K
 ```
@@ -37620,16 +37620,22 @@ deterministic `counter_were()`/`new_were()` core used by both ordinary were
 scheduling and potion contact.  `mklev.js` owns the bounded hostile
 `clone_mon()` continuation because it already owns `enexto()`, identity
 allocation, actor insertion, and repaint.  Map contact passes the existing
-synchronous radius wake and ordinary hero-kill lifecycle; swallowed contact
-uses the same effect and zero-RNG water-vapor owner.  A maximum-damage
-preflight runs before split, inventory detachment, or throw RNG so unsupported
-fatalities cannot partially commit.
+synchronous radius wake and shared hero-kill lifecycle; swallowed contact uses
+the same effect and zero-RNG water-vapor owner.  `finishHeroMonsterKill()` now
+owns the iron-golem branch of `make_corpse()`: after the ordinary `xkilled()`
+inventory, treasure, and corpse-eligibility stages, it consumes `d(2,6)` and
+places that many initialized, non-stacking iron-chain identities at the death
+square.  It creates no corpse and does not transfer the golem's given name to
+any chain.  Keeping this in the shared death owner means potion contact selects
+a cause of death rather than a trace-specific drop constructor.  A
+maximum-damage preflight still runs before split, inventory detachment, or
+throw RNG for unsupported fatalities.
 
 The subsystem remains mechanically **partial**.  `new_were()` still needs
 `mon_break_armor()` and `possibly_unwield()` for equipped targets, so any water
-contact which might transform equipped gear fails before mutation.  A
-potentially fatal iron golem likewise fails before mutation until its special
-chain drops are live.  Unique, life-saving, shapechanging, peaceful/tame,
+contact which might transform equipped gear fails before mutation. Fatal iron
+golems now cross the live shared special-drop continuation. Unique,
+life-saving, shapechanging, peaceful/tame,
 worm, saddle, shop, special-terrain, and other nonordinary target lifecycles;
 greased alternate-direction transport; complete visibility/pager variants;
 and a sealed stratum remain open.  These named gaps preserve `partial` status;

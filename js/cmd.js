@@ -87,7 +87,7 @@ import {
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
-    STATUE,
+    STATUE, IRON_CHAIN,
     RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
@@ -12376,6 +12376,7 @@ const PM_LICHEN = 158;
 const PM_BLACK_PUDDING = 209;
 const PM_LEATHER_GOLEM = 253;
 const PM_FLESH_GOLEM = 255;
+const PM_IRON_GOLEM = 259;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const PM_LIZARD = 326;
@@ -17032,10 +17033,20 @@ export async function finishHeroMonsterKill(monster, x, y, {
     recordVanquished(monster, monsterName, { weaponHit });
     const corpseForm = undeadToCorpse(monster.mnum);
     const convertedUndeadCorpse = corpseForm !== monster.mnum;
-    // mon.c:make_corpse() handles zombies, mummies, and vampires before its
-    // generic G_NOCORPSE default.  Their generation flag prevents a corpse
-    // of the undead species, not the old living-form cadaver created here.
-    if (leavesCorpse
+    // mon.c:make_corpse() substitutes material drops for several golems.
+    // Iron golems produce independent, non-stacking mksobj_at() identities;
+    // unlike ordinary corpses this branch precedes the G_NOCORPSE default.
+    // The remaining live special cases are zombies, mummies, and vampires;
+    // their generation flag suppresses the undead species, not the old
+    // living-form cadaver created here.
+    if (leavesCorpse && monster.mnum === PM_IRON_GOLEM) {
+        const chainCount = d(2, 6);
+        for (let index = 0; index < chainCount; index++) {
+            const chain = mksobj(IRON_CHAIN, true, false);
+            place_object(chain, x, y);
+        }
+        delete monster.name;
+    } else if (leavesCorpse
         && (convertedUndeadCorpse || !(generationFlags & G_NOCORPSE))) {
         const corpse = mkcorpstat(CORPSE, monster, corpseForm, x, y, 8);
         Object.assign(corpse, {

@@ -11,6 +11,7 @@ import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
+    CORPSE, IRON_CHAIN,
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
     POT_WATER,
@@ -666,38 +667,65 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
     assertNoBridgeUse();
 });
 
-test('were equipment and fatal iron-golem drops fail before map throw mutation',
+test('equipped were transformation fails before map throw mutation',
     async () => {
-        for (const specimen of [
-            { mnum: 21, mhp: 20, blessed: true, equipped: true },
-            { mnum: 259, mhp: 7, blessed: false, equipped: false },
-        ]) {
-            const monster = freshMapPotionState(2);
-            Object.assign(monster, {
-                mnum: specimen.mnum,
-                mhp: specimen.mhp,
-                mhpmax: 20,
-            });
-            if (specimen.equipped) {
-                monster.misc_worn_check = 1;
-                monster.minvent = [{ otyp: 0, owornmask: 1, worn: true }];
-                monster.inventory = monster.minvent;
-            }
-            const potion = addKnownPotion(POT_WATER);
-            potion.blessed = specimen.blessed;
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, { mnum: 21, mhp: 20, mhpmax: 20 });
+        monster.misc_worn_check = 1;
+        monster.minvent = [{ otyp: 0, owornmask: 1, worn: true }];
+        monster.inventory = monster.minvent;
+        const potion = addKnownPotion(POT_WATER);
+        potion.blessed = true;
 
-            initRng(2702n);
-            enableRngLog();
-            await assert.rejects(
-                throwEast(potion),
-                error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                    && error?.bridgeId === 'throw.potion-impact-unsupported',
-            );
+        initRng(2702n);
+        enableRngLog();
+        await assert.rejects(
+            throwEast(potion),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
 
-            assert.deepEqual(getRngLog(), []);
-            assert.deepEqual(game.inventory, [potion]);
-            assert.equal(potion.where, 'inventory');
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(potion.where, 'inventory');
+    });
+
+test('live fatal iron-golem water creates source special chain drops',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 259,
+            mhp: 2,
+            mhpmax: 20,
+            name: 'Ferrum',
+        });
+        game.u.ulevel = 30;
+        const potion = addKnownPotion(POT_WATER);
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(40).fill(' '));
+
+        const drops = floorObjects();
+        const chains = drops.filter(object => object.otyp === IRON_CHAIN);
+        const chainRolls = getRngLog().filter(entry =>
+            entry.startsWith('d(2,6)='));
+        assert.equal(monster.dead, true);
+        assert.equal(game.level.monsters.includes(monster), false);
+        assert.equal(drops.some(object => object.otyp === CORPSE), false);
+        assert.equal(chainRolls.length, 1);
+        assert.equal(chains.length, Number(chainRolls[0].split('=')[1]));
+        assert.ok(chains.length >= 2 && chains.length <= 12);
+        assert.equal(new Set(chains.map(object => object.o_id)).size,
+            chains.length);
+        for (const chain of chains) {
+            assert.equal(chain.where, 'floor');
+            assert.deepEqual([chain.ox, chain.oy], [monster.mx, monster.my]);
+            assert.notEqual(chain.name, 'Ferrum');
         }
+        assert.equal(game.u.uconduct.killer, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
     });
 
 test('live fatal blessed water uses the ordinary map death continuation',

@@ -97517,3 +97517,61 @@ corpus, scorer, sealed trace, push, publication, official measurement, or
 animation work ran.
 
 ---
+
+### [2026-08-30 02:16 EEST, journal block 3180] {#bridge-free #water #iron-golem #xkilled #make-corpse #iron-chain #change-detector #behavioral-contract #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Witness and earliest divergence:** block 3179 returned from diagnostic-test
+cleanup to a source-owned mechanic.  The live `throw` command against a
+two-HP iron golem initially failed at the pre-mutation
+`throw.potion-impact-unsupported` bridge, so the new behavioral witness was
+red **0/1** before implementation.  The oracle comes from
+`potion.c:potionhit(POT_WATER)` and `mon.c:make_corpse()`, not the current
+JavaScript decomposition: fatal rust must remove the actor, create no corpse,
+and place one distinct iron-chain identity for each result of exactly one
+`d(2,6)` decision.
+
+**Prediction, evidence, and portfolio decision:** the critical-debugging
+portfolio kept potion damage, ordinary `xkilled()` bookkeeping, special corpse
+dispatch, object construction, and floor identity ownership separate.  C
+subtracts `d(1,6)` after the common bottle chip, calls `killed()`, then the
+iron-golem `make_corpse()` case consumes `d(2,6)` and repeatedly calls
+`mksobj_at(IRON_CHAIN, ..., TRUE, FALSE)` without creating or naming a corpse.
+A potion-local chain injection, an ordinary corpse, a fixed chain count, or an
+HP-only death assertion would each leave a source owner absent and were
+rejected as false acceptance.
+
+**Implementation and independent contract:** `finishHeroMonsterKill()` now
+owns the iron-golem special-drop branch after shared inventory, treasure, and
+corpse-eligibility handling.  It creates initialized, non-stacking chain
+objects through `mksobj()` and `place_object()`, preserves distinct object
+identities and coordinates, and does not transfer a given monster name.  The
+water preflight no longer rejects this ordinary fatal target.  The test asserts
+live actor removal, killer conduct, consumed potion identity, no corpse,
+distinct floor identities, the 2-through-12 domain, and equality between the
+single recorded `d(2,6)` decision and the resulting floor count; it does not
+copy the whole RNG transcript or collaborator call order.  The equipped-were
+gap remains a separate fail-before-mutation witness.
+
+**Measured effect and adversarial audit:** the first post-implementation run
+reached the shared death owner but did not kill a seven-HP specimen, falsifying
+the assumption that maximum possible damage implied deterministic death.  The
+witness now uses two HP, where the source bottle chip plus `d(1,6)` guarantees
+death, and pins the synthetic hero at level 30 so missing role-title fixture
+state cannot turn this into an experience-progression test.  The complete live
+map-potion file passes **25/25**.  Direct potion, swallowed throw/death, and
+mechanical bridge-free neighbors pass **92/92**, for a focused potion/map/
+swallowed behavioral gate of **109/109** plus bridge-free **8/8**.  The final
+strengthened special-drop witness passes **1/1**.  Every runner was guarded,
+owned to normal exit, and no full Contest suite or corpus ran.
+
+**Falsified hypotheses, limits, and next blocker:** potential fatality is not
+guaranteed fatality; a bounded range alone does not prove the chain count is
+driven by the source die; `mksobj_at()` places but does not stack these
+non-mergeable identities; and special death belongs in the shared kill owner,
+not the initiating potion.  Water remains mechanically **partial** at equipped
+were armor/weapon transitions, unique and life-saving deaths, greased flight,
+special targets/terrain, and the sealed corpus gate.  No public regression
+lane, scorer, sealed trace, push, publication, official hidden measurement, or
+animation work ran.
+
+---

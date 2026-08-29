@@ -373,17 +373,11 @@ export function maximumSupportedPotionFatalDamage(potion, monster) {
 
 // Production callers ask this before splitobj()/freeinv() or throw RNG.  The
 // deterministic new_were() core is live, but mon_break_armor() and
-// possibly_unwield() are not; fatal iron golems likewise need make_corpse()'s
-// special iron-chain drops rather than the ordinary death continuation.
+// possibly_unwield() are not.
 export function supportedPotionTargetGap({ state = game, potion, monster }) {
     if (waterWouldTransformWere(state, potion, monster)
         && monsterHasTransformEquipment(monster)) {
         return 'water-were-equipment';
-    }
-    if (potion?.otyp === POT_WATER && monster?.mnum === PM_IRON_GOLEM
-        && (monster.mhp ?? 0)
-            <= maximumSupportedPotionFatalDamage(potion, monster)) {
-        return 'water-iron-golem-fatality';
     }
     return null;
 }
