@@ -97662,3 +97662,47 @@ Contest suite, public regression lane, corpus, scorer, sealed trace, push,
 publication, official hidden measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:44 EEST, journal block 3183] {#test-quality #change-detector #public-regression #behavioral-lane #structural-quarantine #fake-acceptance #ownership-registry #process-safety}
+
+**Contract, witness, and earliest risk:** the user's mechanical-test example
+made the acceptance distinction explicit: a test derived from production
+source shape or collaborator order is a checksum, not evidence that either the
+old or changed program is correct.  Block 3175 had separated seven tracked
+public replay suites only through a hand-maintained negative list in
+`package.json`.  Those files still ended in `.test.js`, so an ordinary
+`node --test` discovery could silently mix 28,388 lines of exact public
+RNG/screen/cursor and scheduler-decomposition checks into the behavioral lane.
+That was a fake-acceptance hazard even though `npm test` happened to exclude
+them.
+
+**Decision and implementation:** renamed all seven tracked compatibility files
+to the structural `.public-regression.js` quarantine and changed
+`test:behavior` to select every remaining `.test.js` without filename
+exceptions.  `test:public-regression` retains an explicit allowlist, so the
+three untracked quarantine files are neither staged nor silently admitted.
+Current ownership-witness paths were updated in the mechanical registry and
+the generated ownership view was regenerated and checked.  Historical journal
+and held-out-ledger filenames remain unchanged because they accurately name
+the files at those earlier gates.
+
+**Measured effect and adversarial check:** the default lane is now
+structurally defined by **40 `.test.js` files and 370 named tests**, while the
+working tree contains **10 `.public-regression.js` files**, three of them
+untracked and outside this batch.  After the live process guard found no
+matching runner, `npm test` passed **370/370** in **4.6 seconds**.  JSON parsing,
+ownership generation/checking, and `git diff --check` pass.  The public replay
+lane was deliberately not run and is not called behavioral acceptance.
+
+**Falsified hypotheses, limits, and next blocker:** a package-level exclusion
+list is not sufficient quarantine when generic Node discovery still recognizes
+the files; retaining public traces as drift witnesses does not require naming
+them behavioral tests; and a large exact-replay suite cannot become an
+independent oracle merely by passing.  Remaining default-lane candidates must
+be judged semantically: C/Lua-derived RNG boundaries can be real deterministic
+behavior, but ordered arrays of mock dependency calls should be replaced by
+resulting world, actor, inventory, timer, or presentation state.  No full
+Contest corpus, scorer, sealed trace, push, publication, official hidden
+measurement, or animation work ran.
+
+---
