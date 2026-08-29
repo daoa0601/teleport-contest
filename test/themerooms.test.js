@@ -480,6 +480,57 @@ test('Buried treasure owns nested contents before its deferred clue', async () =
     });
 });
 
+test('Buried zombies own depth species and replace corpse rot timers', async () => {
+    const strata = [
+        { difficulty: 3, allowed: [59, 165, 72, 44], expanded: [] },
+        {
+            difficulty: 4,
+            allowed: [59, 165, 72, 44, 264, 260],
+            expanded: [264, 260],
+        },
+        {
+            difficulty: 7,
+            allowed: [59, 165, 72, 44, 264, 260, 174, 169],
+            expanded: [174, 169],
+        },
+    ];
+    for (const { difficulty, allowed, expanded } of strata) {
+        const observed = new Set();
+        for (let sample = 0; sample < 4; sample++) {
+            themedState(5000 + difficulty * 10 + sample, difficulty);
+            assert.equal(await generateThemeroomByName(
+                'default', difficulty,
+            ), true);
+            const room = game.level.rooms[0];
+            assert.equal(await applyThemeroomFillByName(
+                room, 'Buried zombies', difficulty,
+            ), true);
+
+            const corpses = game.level.buriedObjects;
+            assert.equal(corpses.length, Math.floor(
+                ((room.hx - room.lx + 1) * (room.hy - room.ly + 1)) / 2,
+            ));
+            assert.ok(corpses.every(corpse =>
+                corpse.otyp === CORPSE
+                && allowed.includes(corpse.corpsenm)
+                && corpse.where === 'buried'
+                && corpse.buried === true
+                && corpse.ox >= room.lx && corpse.ox <= room.hx
+                && corpse.oy >= room.ly && corpse.oy <= room.hy
+                && corpse.rotAt == null
+                && corpse.zombifyAt >= game.moves + 990
+                && corpse.zombifyAt <= game.moves + 1010
+                && corpse.timed === 1));
+            for (const corpse of corpses) observed.add(corpse.corpsenm);
+        }
+        if (expanded.length)
+            assert.ok(expanded.some(species => observed.has(species)));
+    }
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
 test('Light source creates a mobile oil-lamp light with live fuel breakpoints', async () => {
     themedState(4033, 12);
     assert.equal(await generateThemeroomByName('default', 12), true);

@@ -14961,9 +14961,13 @@ export async function runThemeroomPostprocess() {
     game._themeroomPostprocess = [];
 }
 
-function fillBuriedZombies(room) {
-    // Monster indices in the NetHack 5.0 mons[] table.
+function fillBuriedZombies(room, difficulty = level_difficulty()) {
+    // Monster indices in the NetHack 5.0 mons[] table.  themerms.lua expands
+    // this reservoir at the same two level_difficulty() thresholds before
+    // entering the per-corpse shuffle loop.
     const zombifiable = [59, 165, 72, 44]; // kobold, gnome, orc, dwarf
+    if (difficulty > 3) zombifiable.push(264, 260); // elf, human
+    if (difficulty > 6) zombifiable.push(174, 169); // ettin, giant
     const count = Math.floor(((room.hx - room.lx + 1)
         * (room.hy - room.ly + 1)) / 2);
     if (!game.level.buriedObjects) game.level.buriedObjects = [];
@@ -14982,14 +14986,14 @@ function fillBuriedZombies(room) {
         // floor chain.  Ordinary corpses cannot resist, but the RNG call is
         // unconditional and therefore part of the replay contract.
         rn2(100);
-        const pile = game.level.objects[pos.x]?.[pos.y];
-        const pileIndex = pile?.indexOf(corpse) ?? -1;
-        if (pileIndex >= 0) pile.splice(pileIndex, 1);
-        corpse.buried = true;
-        game.level.buriedObjects.unshift(corpse);
+        addBuriedObject(corpse, pos.x, pos.y);
 
-        // Lua's math.random(990, 1010), used for the zombify-mon timer.
-        corpse.zombifyTimeout = 990 + rn2(21);
+        // create_object() returns to Lua only after burial.  The callback then
+        // stops the ROT_CORPSE timer installed by set_corpsenm() and replaces
+        // it with an absolute ZOMBIFY_MON deadline from math.random(990,1010).
+        delete corpse.rotAt;
+        corpse.zombifyAt = (game.moves ?? 0) + 990 + rn2(21);
+        corpse.timed = 1;
     }
 }
 
