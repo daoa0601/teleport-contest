@@ -5,7 +5,7 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
-import { LOST_STOLEN, ROOM } from '../js/const.js';
+import { LOST_STOLEN, ROOM, W_AMUL } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
@@ -13,8 +13,9 @@ import { beginLampBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP, OBJECT_SUBTYPE,
-    OIL_LAMP, PICK_AXE, POT_HEALING, SCR_BLANK_PAPER, TWO_HANDED_SWORD,
+    AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
+    OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_HEALING, SCR_BLANK_PAPER,
+    TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { objectTimers } from '../js/object_timers.js';
@@ -98,9 +99,12 @@ function setBasicWeaponSkill(object) {
     return skill;
 }
 
-async function throwThroughLiveCommand(object, direction = 'l') {
+async function throwThroughLiveCommand(
+    object, direction = 'l', continuationKeys = [],
+) {
     pushKey(object.invlet);
     pushKey(direction);
+    for (const key of continuationKeys) pushKey(key);
     await rhack('t'.charCodeAt(0));
 }
 
@@ -614,10 +618,93 @@ test('unsupported swallowed potion fails before floor fallback or RNG',
         );
     });
 
-test('potentially lethal swallowed weapon fails before compatibility fallback',
+test('a killing swallowed dart is acquired, dropped, and autopicked before cleanup',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 1;
+        game.flags.pickup = true;
+        const raw = mksobj(DART, true, false);
+        raw.quan = raw.quantity = 1;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        raw.spe = raw.enchantment = 0;
+        raw.oeroded = raw.oeroded2 = 0;
+        const dart = addInventoryItem(raw);
+        const skill = setBasicWeaponSkill(dart);
+
+        initRng(2312n);
+        enableRngLog();
+        await throwThroughLiveCommand(dart, 'h');
+
+        assert.equal(engulfer.mhp, 0);
+        assert.equal(engulfer.dead, true);
+        assert.equal(game.level.monsters.includes(engulfer), false);
+        assert.equal(game.u.uswallow, 0);
+        assert.equal(game.u.ustuck, null);
+        assert.equal(game.u.uswldtim, 0);
+        assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+        assert.ok([1, 2].includes(engulfer.mspec_used));
+        assert.deepEqual(game.inventory, [dart]);
+        assert.equal(dart.where, 'inventory');
+        assert.equal(dart.how_lost, 0);
+        assert.equal('carrierMid' in dart, false);
+        assert.equal((game.level.objects || []).flat(2).includes(dart), false);
+        assert.equal(game.u.weaponSkills[skill].advance, 1);
+        assert.equal(game.u._exercise[1], 1);
+        assert.equal(game.u.uconduct.killer, 1);
+        assert.equal(game._vanquishedCounts.get(PM_TRAPPER).count, 1);
+        assert.ok((game.u.uexp ?? 0) > 0);
+        assert.equal((game.level.objects || []).flat(2)
+            .some(object => /corpse/.test(object.name || '')), false);
+        assert.match(game._pending_message, /a - (?:an? )?dart\./);
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
+        );
+        assertNoBridgeUse();
+    });
+
+test('a killing swallowed weapon remains on the death square without autopickup',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 1;
+        game.flags.pickup = false;
+        const raw = mksobj(DAGGER, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        raw.spe = raw.enchantment = 0;
+        raw.oeroded = raw.oeroded2 = 0;
+        const dagger = addInventoryItem(raw);
+        setBasicWeaponSkill(dagger);
+
+        initRng(2312n);
+        enableRngLog();
+        await throwThroughLiveCommand(dagger, 'h', [' ']);
+
+        const pile = game.level.objects[10][10];
+        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(pile, [dagger]);
+        assert.equal(dagger.where, 'floor');
+        assert.equal(dagger.how_lost, LOST_STOLEN);
+        assert.equal('carrierMid' in dagger, false);
+        assert.match(game._pending_message, /You see here a \+0 dagger\./);
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)', 'rnd(3)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
+        );
+        assertNoBridgeUse();
+    });
+
+test('potentially lethal swallowed weapon with life-saving fails before mutation',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 3;
+        const amulet = mksobj(AMULET_OF_LIFE_SAVING, true, false);
+        amulet.owornmask = W_AMUL;
+        amulet.worn = true;
+        linkObjectToMonsterInventory(engulfer, amulet, { atFront: true });
         const raw = mksobj(DAGGER, true, false);
         raw.cursed = raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
@@ -638,7 +725,7 @@ test('potentially lethal swallowed weapon fails before compatibility fallback',
 
         assert.equal(engulfer.mhp, 3);
         assert.deepEqual(game.inventory, [dagger]);
-        assert.deepEqual(engulfer.minvent, []);
+        assert.deepEqual(engulfer.minvent, [amulet]);
         assert.deepEqual(getRngLog(), []);
         const ledger = getBridgeUsageLedger();
         assert.equal(ledger.bridgeFree, true);

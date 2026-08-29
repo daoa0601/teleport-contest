@@ -137,7 +137,7 @@ function intendedThrowingWeapon(item) {
     return skill === 17 || THROWING_WEAPON_NAMES.has(OBJECT_NAMES[item.otyp]);
 }
 
-function survivingWeaponEligibility(
+function swallowedWeaponEligibility(
     state, item, objectClass, selectedQuantity,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
@@ -179,18 +179,17 @@ function survivingWeaponEligibility(
             + strengthDamageBonus(currentAttribute(0, state))
             + weaponSkillDamageBonus(state, skill),
     );
-    if (!Number.isFinite(engulfer.mhp) || engulfer.mhp <= maximumDamage)
-        return null;
+    if (!Number.isFinite(engulfer.mhp)) return null;
     const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
     const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
     if (currentHp < 10 && currentHp !== currentHpMax
         && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
         return null;
     }
-    return { engulfer, skill };
+    return { engulfer, skill, maximumDamage };
 }
 
-function survivingProjectileEligibility(
+function swallowedProjectileEligibility(
     state, item, objectClass, selectedQuantity,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
@@ -242,15 +241,16 @@ function survivingProjectileEligibility(
             + (launcher ? 0 : strengthDamageBonus(currentAttribute(0, state)))
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
-    if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)
-        || engulfer.mhp <= maximumDamage) return null;
+    if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
     const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
     const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
     if (currentHp < 10 && currentHp !== currentHpMax
         && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
         return null;
     }
-    return { engulfer, kind, launcher, skill, roleDamage };
+    return {
+        engulfer, kind, launcher, skill, roleDamage, maximumDamage,
+    };
 }
 
 function genericSwallowedEligibility(
@@ -330,19 +330,27 @@ function detachThrownUnit(
     return thrown;
 }
 
-export async function resolveSurvivingSwallowedProjectileThrow({
+export async function resolveSwallowedProjectileThrow({
     state = game,
     item,
     objectClass,
     selectedQuantity,
     splitObjectId,
     wakeMonster,
+    canFinishKill,
+    finishKill,
 }) {
-    const eligible = survivingProjectileEligibility(
+    const eligible = swallowedProjectileEligibility(
         state, item, objectClass, selectedQuantity,
     );
     if (!eligible) return false;
-    const { engulfer, kind, launcher, skill, roleDamage } = eligible;
+    const {
+        engulfer, kind, launcher, skill, roleDamage, maximumDamage,
+    } = eligible;
+    // A potential fatal roll must have a complete source continuation before
+    // freeinv()/splitobj() detaches the real object or any combat RNG advances.
+    if (engulfer.mhp <= maximumDamage
+        && (!finishKill || !canFinishKill?.(engulfer))) return false;
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
@@ -381,6 +389,14 @@ export async function resolveSurvivingSwallowedProjectileThrow({
             damage > 4 ? '!' : '.'
         }`,
     );
+    if (engulfer.mhp <= 0) {
+        // hmon()->xkilled() consumes the killing missile through mpickobj(),
+        // then thitmonst() returns past exercise without mulch or passive_obj.
+        await finishKill(engulfer, thrown);
+        exerciseAttribute(1, true, state);
+        state.context.move = 1;
+        return true;
+    }
     await wakeMonster(engulfer);
     exerciseAttribute(1, true, state);
 
@@ -397,19 +413,23 @@ export async function resolveSurvivingSwallowedProjectileThrow({
     return true;
 }
 
-export async function resolveSurvivingSwallowedWeaponThrow({
+export async function resolveSwallowedWeaponThrow({
     state = game,
     item,
     objectClass,
     selectedQuantity,
     splitObjectId,
     wakeMonster,
+    canFinishKill,
+    finishKill,
 }) {
-    const eligible = survivingWeaponEligibility(
+    const eligible = swallowedWeaponEligibility(
         state, item, objectClass, selectedQuantity,
     );
     if (!eligible) return false;
-    const { engulfer, skill } = eligible;
+    const { engulfer, skill, maximumDamage } = eligible;
+    if (engulfer.mhp <= maximumDamage
+        && (!finishKill || !canFinishKill?.(engulfer))) return false;
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
@@ -442,6 +462,12 @@ export async function resolveSurvivingSwallowedWeaponThrow({
             damage > 4 ? '!' : '.'
         }`,
     );
+    if (engulfer.mhp <= 0) {
+        await finishKill(engulfer, thrown);
+        exerciseAttribute(1, true, state);
+        state.context.move = 1;
+        return true;
+    }
     await wakeMonster(engulfer);
     exerciseAttribute(1, true, state);
 

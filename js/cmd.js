@@ -60,8 +60,8 @@ import {
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSurvivingSwallowedProjectileThrow,
-    resolveSurvivingSwallowedWeaponThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedProjectileThrow,
+    resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
@@ -15336,6 +15336,45 @@ async function captureThrownObjectFlight(object, flightPath) {
     }
 }
 
+// C mon.c:xkilled() has a distinct wasinside continuation.  Admit only the
+// ordinary room transaction here so a potentially fatal roll cannot detach an
+// object and then discover that life-saving, special death, punishment, shop,
+// or terrain ownership is still missing.
+function canFinishOrdinarySwallowedThrowKill(monster) {
+    if (!monster || game.u?.ustuck !== monster || !game.u?.uswallow)
+        return false;
+    const location = game.level?.at?.(monster.mx, monster.my);
+    const leaderId = game.quest_status?.leader_m_id
+        ?? game.u?.quest_status?.leader_m_id;
+    const carried = monster.minvent || monster.inventory || [];
+    return location?.typ === ROOM
+        && !game.level?.traps?.some(trap =>
+            trap.tx === monster.mx && trap.ty === monster.my)
+        && !game._shopRooms?.current
+        && !game.uball && !game.u?.uball && !game.uchain && !game.u?.uchain
+        && !game.u?.usteed
+        && !monster.iswiz && !monster.isshk && !monster.ispriest
+        && !monster.isminion && !monster.isgd && !monster.mleashed
+        && !monster.mtrapped && !monster.m_ap_type
+        && !(Number.isInteger(monster.cham) && monster.cham >= 0)
+        && monster.m_id !== leaderId
+        && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
+        && !MONSTER_ATTACKS[monster.mnum]?.some(attack =>
+            attack[0] === AT_BOOM)
+        && !wornMonsterLifeSaver(monster)
+        // The first coherent death slice proves the killing projectile's own
+        // mpickobj()->relobj() round trip.  Pre-existing minvent ordering and
+        // special carried effects remain a separate fail-loud expansion.
+        && carried.length === 0;
+}
+
+async function finishOrdinarySwallowedThrowKill(monster, projectile) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        weaponHit: false,
+        deathContext: { kind: 'swallowed-projectile', projectile },
+    });
+}
+
 async function dothrow(selectedItem = null, capabilityChecked = false) {
     if (!capabilityChecked && !await okToThrow()) return;
 
@@ -15492,21 +15531,25 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // and suppresses dothrow()'s launcher warning.
     const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
 
-    if (await resolveSurvivingSwallowedProjectileThrow({
+    if (await resolveSwallowedProjectileThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
+        canFinishKill: canFinishOrdinarySwallowedThrowKill,
+        finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
-    if (await resolveSurvivingSwallowedWeaponThrow({
+    if (await resolveSwallowedWeaponThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
+        canFinishKill: canFinishOrdinarySwallowedThrowKill,
+        finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
     if (game.u?.uswallow
         && (thrownObjectClass === 2
@@ -16773,6 +16816,8 @@ function releaseMonsterInventoryObject(object) {
     object.wielded = false;
     object.alternate = false;
     object.ready = false;
+    object.ocarry = null;
+    delete object.carrierMid;
 }
 
 export async function finishHeroMonsterKill(monster, x, y, {
@@ -16784,9 +16829,14 @@ export async function finishHeroMonsterKill(monster, x, y, {
         : MONSTER_NAME[monster?.mnum] || 'monster',
     showKillMessage = true,
     weaponHit = !!game.uwep,
+    deathContext = null,
 } = {}) {
+    if (deathContext && deathContext.kind !== 'swallowed-projectile')
+        throw new Error(`unsupported monster death context ${deathContext.kind}`);
+    const wasInside = deathContext?.kind === 'swallowed-projectile';
+    if (wasInside) monster.mhp = 0;
     // xkilled() snapshots visibility before mondead() detaches the actor.
-    const deathWasSpotted = canProjectMonster(
+    const deathWasSpotted = wasInside || canProjectMonster(
         monster, monster.mx, monster.my,
     );
     const monsterName = nameMonster();
@@ -16805,6 +16855,29 @@ export async function finishHeroMonsterKill(monster, x, y, {
         await plineWithContinuation(
             `You ${deathVerb} ${deathTarget}!`,
         );
+    }
+
+    if (wasInside) {
+        // xkilled() gives the killing missile to the engulfer after the kill
+        // line but before mondead()->m_detach().  relobj() below must therefore
+        // release the acquired identity with the rest of minvent rather than
+        // letting thitmonst() mulch it or apply passive_obj().
+        addObjectToMonsterInventory(
+            monster, deathContext.projectile, game, { atFront: true },
+        );
+
+        // mon_leaving_level()->unstuck() clears attachment first so docrt()'s
+        // status is accurate, restores the shared map coordinate and sight,
+        // then installs the engulfer cooldown before relobj() drops inventory.
+        game.u.ustuck = null;
+        game.u.uswallow = 0;
+        game.u.uswldtim = 0;
+        game.u.ux = x;
+        game.u.uy = y;
+        game.vision_full_recalc = 1;
+        vision_recalc(0);
+        await docrt();
+        if (!(monster.mspec_used ?? 0)) monster.mspec_used = rnd(2);
     }
 
     // mon.c:m_detach() calls wizdeadorgone() before relobj() releases the
@@ -16833,6 +16906,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         observeMonsterDropName(object, x, y);
         releaseMonsterInventoryObject(object);
         place_object(object, x, y);
+        stack_object(object, game);
     }
     monster.minvent = [];
     monster.inventory = monster.minvent;
@@ -16877,9 +16951,12 @@ export async function finishHeroMonsterKill(monster, x, y, {
         const blastDamage = rollMonsterAttackDamage(monster, boomAttack);
         explosion = { containedDamage, blastDamage };
     } else {
-        leavesCorpse = permitsDeathDrops && corpseChance(monster);
+        // xkilled() explicitly suppresses a corpse when the hero was inside
+        // the monster; the killing projectile is the only ordinary drop.
+        leavesCorpse = !wasInside && permitsDeathDrops && corpseChance(monster);
     }
     unmap_invisible(x, y, false);
+    monster.dead = true;
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
@@ -16898,6 +16975,22 @@ export async function finishHeroMonsterKill(monster, x, y, {
         });
         if (convertedUndeadCorpse)
             corpse.age = (corpse.age ?? game.moves ?? 1) - (TAINT_AGE + 1);
+    }
+
+    if (wasInside) {
+        // xkilled() calls spoteffects(TRUE) after death drops but before luck,
+        // experience, and alignment cleanup.  Rejoin the same destination
+        // owner used by ordinary movement so autopickup, look_here, engraving,
+        // and trap ordering cannot drift into a death-only approximation.
+        await finishDestinationSpotEffects({
+            oldx: game.u.ux0 ?? x,
+            oldy: game.u.uy0 ?? y,
+            newx: x,
+            newy: y,
+            loc: game.level?.at?.(x, y),
+            explicitAttempt: false,
+        });
+        newsym(x, y);
     }
 
     if (monster.mpeaceful) {
@@ -16926,13 +17019,13 @@ export async function finishHeroMonsterKill(monster, x, y, {
     // square after xkilled()'s kill line and before corpse_chance() can enter
     // a resumable death effect.  Keep the later repaint too: it exposes any
     // corpse or floor mutation produced by that effect transaction.
-    newsym(x, y);
-    if (explosion) {
+    if (!wasInside) newsym(x, y);
+    if (!wasInside && explosion) {
         await resolvePhysicalMonsterExplosion(
             monster, x, y, explosion.blastDamage,
         );
     }
-    newsym(x, y);
+    if (!wasInside) newsym(x, y);
 
     if (monster.mtame) {
         adjustHeroAlignment(-15);
