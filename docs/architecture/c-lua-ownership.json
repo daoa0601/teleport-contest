@@ -118,9 +118,9 @@
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
       "dependencies": ["rng-core", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance and live Samurai actor/prayer scheduling"],
       "lastSealedGate": null,
-      "openGap": "Actor-rich role paths still enter seeded scheduler replay or fail loudly in bridge-free mode."
+      "openGap": "Samurai has one public bridge-free actor-rich witness; Rogue, Priest, and broader actor/terrain branches still enter seeded replay or lack a sealed gate."
     },
     {
       "id": "samurai-pet-turns",
@@ -134,10 +134,10 @@
       },
       "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/pray.js"],
       "dependencies": ["turn-scheduler", "startup-role-inventory"],
-      "bridgeIds": ["samurai.altar-run-prayer", "bounded Samurai compatibility cadence"],
-      "acceptanceWitnesses": ["public seed0017 regression only"],
+      "bridgeIds": ["legacy-only samurai.altar-run-prayer", "legacy-only bounded Samurai compatibility cadence"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: seed0017 pet, run, prayer, RNG, screen, and cursor parity with zero bridge hits; public regression only"],
       "lastSealedGate": null,
-      "openGap": "Native dog_move phases are collapsed across the altar run and prayer occupation."
+      "openGap": "The represented bridge-free Samurai path uses live dog_move and prayer turns, but wider candidate, combat, interruption, terrain, and sealed-corpus coverage is absent; legacy scoring still retains its compatibility bridge."
     },
     {
       "id": "rogue-actor-scheduling",

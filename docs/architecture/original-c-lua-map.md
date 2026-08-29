@@ -34914,3 +34914,49 @@ corpus reaches1,435/1,483.  This closes represented visible-to-invisible sling
 ammo flight; impacts, intervening actors, alternate ammo/launchers, returning
 weapons, underwater/air range and multishot interruption remain controls.  Lua
 contributes none.
+
+## 960. Bridge-free Samurai shares live run, pet, and prayer turn ownership
+
+~~~mermaid
+sequenceDiagram
+    participant Cmd as cmd.c / js/cmd.js
+    participant Loop as allmain.c / js/allmain.js
+    participant Pet as dogmove.c / js/monmove.js
+    participant Pray as pray.c / js/pray.js
+    participant TTY as tty topline
+    Cmd->>Loop: startRun / continueRun spends hero ration
+    Loop->>Pet: scan fmon, debit movement, dog_move current state
+    Pet-->>Loop: coordinates, goal, inventory, messages, repaint
+    Cmd->>TTY: can_pray prints opening line
+    Cmd->>Loop: install three-turn negative multi
+    loop each newly allocated source turn
+        Loop->>Pet: live pet actor turn
+        Loop->>Loop: global maintenance, then prayer counter
+    end
+    Loop->>TTY: unmul emits completion on existing topline
+    Loop->>Pray: prayer_done / angrygods live state and RNG
+    Pray->>TTY: divine response triggers prior topline pager
+~~~
+
+Bridge-free startup no longer derives the Samurai altar carrier from starting
+coordinates.  It marks the role for the existing source-ration scheduler,
+leaving generic run continuation to own corridor turns and
+`scanMonsterMovement()`/`executeSourceTurnMonsterScan()` to execute the live
+pet graph.  The initial maintenance watermark is set to the current move after
+new-game construction, because dismissing the welcome does not allocate a
+global turn; the first time-taking command owns that allocation.
+
+Prayer now follows the C message and continuation boundary.  `can_pray()`'s
+opening line is not an ordinary-input pager.  `nomul(-3)` advances once per new
+global turn, `unmul()` emits the completion as a distinct pline, and
+`prayer_done()` emits the divine response afterwards.  Consequently tty can
+combine opening plus completion, page that combined line when the response
+arrives, then continue with the response after acknowledgement.  The separate
+wizard force question still owns its prompt boundary.
+
+The bridge-free seed0017 witness is exact for all67 input slices across RNG,
+rendered screen and cursor, and its compatibility ledger is empty.  This is a
+public regression witness, not sealed-corpus evidence: the ownership entry
+remains **partial**, legacy scoring retains the named compatibility bridge, and
+unseen pet candidates, combat, terrain, interruption and divine outcomes stay
+open.  Lua owns none of this scheduling or prayer state.

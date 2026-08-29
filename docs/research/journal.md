@@ -93200,3 +93200,81 @@ full public gate, sealed evaluation, push, workflow, hidden judge, or
 publication ran.
 
 ---
+
+### [2026-08-29 12:12 EEST, journal block 3110] {#bridge-free #seed0017 #samurai #dog-move #prayer #source-turn #diagnosis #portfolio #process-safety}
+
+**Contract and authoritative witness:** resume the bridge-replacement order at
+Samurai pet turns.  Acceptance is a bridge-free seed0017 execution whose
+runtime ledger has zero hits and whose corridor, pet, prayer, RNG, screen, and
+continuation owners are live together.  Recovering the thirteen supplemental
+pet frames, suppressing the fail-loud error, or retaining any altar/seed/path
+table is not acceptance.  The public trace is a bounded regression witness,
+not hidden-set or sealed-corpus evidence.
+
+**Earliest boundary and measured baseline:** one owned invocation of
+`TELEPORT_BRIDGE_FREE=1 node frozen/ps_test_runner.mjs
+sessions/seed0017-samurai-altar-pray.session.json` exited normally after
+reporting0/3,465 RNG and0/67 screens.  Execution stops in `newgame()` at the
+named `samurai.altar-run-prayer` bridge before the first scored turn.  No
+matching verifier remains live.
+
+**Independent predictions:** (1) control flow: altar coordinates select the
+trace path before the generic scheduler; making compatibility flags legacy-
+only should expose live running.  (2) actor state: the pet may then diverge
+because movement credit, goal state, or hero-track state was previously
+replayed.  (3) run continuation: generic `continueRun()` may already own the
+corridor bends once the trace path is absent.  (4) prayer continuation: its
+three occupied turns may need separate source-ration admission even after the
+run becomes live.  The next discriminating probe is a bridge-free Samurai with
+all compatibility classifiers unreachable and `_samuraiLiveScheduler`
+enabled by role, followed by first-divergence comparison rather than screen
+patching.
+
+**Next blocker:** determine whether the first post-gate divergence belongs to
+hero run state, `scanMonsterMovement()`, `dog_move()`, or prayer occupation.
+No code change, full corpus, sealed evaluation, push, workflow, hidden judge,
+or publication ran for this diagnosis.
+
+---
+
+### [2026-08-29 12:20 EEST, journal block 3111] {#bridge-free #seed0017 #samurai #dog-move #prayer #source-turn #implementation #focused-regression #process-safety}
+
+**Witness and earliest live divergences:** making the Samurai altar classifier
+legacy-only and admitting the role to the source-ration scheduler removed the
+fail-loud bridge and ran end-to-end, initially reaching2,841/3,465 RNG and
+12/67 screens.  Bounded per-input comparison located the first mismatch at
+input9: dismissing the welcome incorrectly ran an eleven-call global
+maintenance tail.  Setting the new-game maintenance watermark to move1 made
+inputs0--24 exact, including all corridor runs, pet turns, hero/pet collision,
+RNG, screens, and cursors.  This falsifies hero-path replay and missing
+`dog_move()` state as the first live blocker for the represented path.
+
+**Prayer continuation diagnosis and decision:** the only remaining mismatches
+were inputs47--49.  RNG ownership was already correct, but ordinary `dopray()`
+invented an immediate opening pager and `finishPrayerOccupation()` merged the
+completion with the god response.  The pinned C source instead has
+`can_pray()` print the opening, `dopray()` install `nomul(-3)` without another
+read, `unmul()` print `gn.nomovemsg`, and only then call `prayer_done()`.  The
+generic port now preserves those three message owners.  Opening and completion
+share tty's pending topline; the later divine response triggers its pager.
+The debug-only force question retains its distinct opening acknowledgement.
+
+**Measured effect and bridge-free acceptance:** the bounded diagnostic now
+reports67 steps and0 mismatches for seed0017 across every per-input RNG slice,
+rendered screen and cursor.  `test/bridge_free.test.js` adds that same bounded
+witness and asserts ledger
+`{bridgeFree:true,totalHits:0,forbiddenHits:0,bridges:{}}`; the file passes5/5.
+Prayer units pass3/3.  Four adjacent controls pass4/4: both seed4500 forced-
+prayer/pet-prompt witnesses and both legacy seed0017 compatibility witnesses.
+No verifier remains live.
+
+**Ownership, limits, and next blocker:** the mechanical registry remains
+`partial`: one public bridge-free carrier now proves live run, pet, prayer and
+tty continuation together, but no sealed gate covers alternate pet candidates,
+combat, terrain, interruption or divine outcomes, and legacy scoring still
+retains the named bridge.  The next ordered coherent slice is Rogue actor
+scheduling; Priest passive projectiles and startup/object initialization remain
+after it.  No full corpus, public suite, sealed evaluation, push, workflow,
+hidden judge, supplemental-animation work, or publication ran.
+
+---
