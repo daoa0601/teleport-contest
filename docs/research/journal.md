@@ -95762,3 +95762,73 @@ callback against the smallest remaining monster-inventory carrier, keeping
 carrier attribution and post-placement familiar state as separate routes.
 
 ---
+
+### [2026-08-29 20:21 EEST, journal block 3153] {#bridge-free #object-timers #fig-transform #floor-carrier #dropx #place-object #timer-persistence #make-familiar #occupied-square #overdue #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** the next carrier portfolio compared
+a dropped timed figurine with monster-inventory callbacks. The live hero drop
+path exposed an earlier ownership defect before the callback itself:
+`cmd.js:dodrop()` removed the inventory link and inserted the object into the
+floor pile but never changed `object.where` from `inventory` to `floor`.
+`objectsInTimerGraph()` could still find the identity through that pile, so the
+claimed timer entered carried `enexto()` and pack prose rather than native
+floor placement. C's earliest boundary is `dropx()->place_object()`, which
+changes the carrier to `OBJ_FLOOR` while preserving the object's existing timer
+id and deadline.
+
+**Prediction portfolio and decisive evidence:** four floor outcomes were kept
+separate. A valid square after the hero moves away calls `make_familiar()` at
+that exact coordinate. A figurine still under the hero enters `makemon()` with
+`byyou == true`, so its `MM_IGNOREWATER` placement chooses an adjacent square.
+Obstructed terrain or an incompatible boulder fails
+`figurine_location_checks()` and owns `rnd(5000)` retry without construction.
+An occupied but otherwise legal square passes the location check, then
+`makemon()` fails and the outer callback consumes the figurine without retry.
+Visibility is independent: exact visible floor transformation owns prose and a
+repaint, while `timeout != moves` makes the same visible construction silent.
+Those branches made the dropped floor carrier the stronger next slice than
+approximating monster pack attribution.
+
+**Decision and implementation:** commit `5689551` routes ordinary object drops
+through shared `place_object()`, so a timed figurine becomes `floor` before
+`newsym()` without replacing its timer. The generic claimed figurine owner now
+accepts floor and hero inventory explicitly. Floor location validation models
+`isok`, obstructed/pass-wall terrain, and boulder/pass-wall/rock-throw policy;
+invalid locations schedule a relative retry and retain the floor identity.
+Legal non-hero squares call the direct constructor, while the hero square uses
+`makemonNear()` with `MM_IGNOREWATER` and preserves the source by-hero fact.
+Successful exact visible callbacks stage floor prose before extraction and
+repaint; overdue floor callbacks skip that presentation. Constructor failure
+extracts the object immediately. The shared good-position owner now honors
+`MM_IGNOREWATER` while retaining C's eel `rn2(13)` evaluation order.
+
+**Measured effect and regression:** the first focused run kept the prior eight
+cases green and failed all four new command-driven cases before drop because
+the minimal fixture had no `game.context`; `rhack()` correctly required it.
+Adding the missing empty command context, without changing engine behavior,
+made the rerun pass **12/12**. An additional under-hero adversarial control then
+made the final focused file pass **13/13**. The five new witnesses prove live
+drop timer preservation, exact same-square birth, under-hero adjacent birth,
+overdue silence, blocked-terrain retry, and occupied-square consumption. The
+bounded bridge-policy, egg, figurine, glob, lamp, Priest-startup, ordinary-room,
+and themed-room gate passes **106/106** with zero bridge hits. The audit remains
+clean at 117 files, 15 guarded modules, and 19 fixture modules. Every verifier
+was guarded, singular, owned until normal exit, and no full process was left
+running.
+
+**Falsified hypotheses, limit, and next blocker:** floor-pile membership alone
+does not define object carrier ownership; dropping a timed figurine does not
+cancel or replace its timer; a floor figurine under the hero does not construct
+on top of the hero; every floor failure does not retry; and overdue silence does
+not suppress actor construction or deletion. The ordinary floor owner remains
+partial for unseen exact transformation, boulder/pass-wall witnesses, named or
+special-locomotion prose, invisibility/mimic/hiding, minions, shapechangers,
+weaponed pets, unique/extinct limits, liquid death, throwing/forced-drop timer
+preservation, cached-level timing, and a sealed stratum. Monster inventory and
+manual application remain separate. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should inspect `mpickobj()->carry_obj_effects()` and
+the monster-inventory `fig_transform()` attribution path before choosing it
+over the smallest owned-egg/taming branch.
+
+---

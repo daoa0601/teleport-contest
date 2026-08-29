@@ -36423,10 +36423,67 @@ radius-four square proves that whole-map fallback wins before retry; a fully
 obstructed map proves both complete searches precede exactly one `rnd(5000)`
 deadline and leave inventory, actor count, and presentation unchanged.
 
-This carrier remains mechanically **partial**. Floor and monster inventory
-attribution, named forms, alternate locomotion prose, invisibility, mimic and
-hiding state, minions and shapechangers, immediate pet weapon setup,
-unique/extinct construction limits, liquid death, manual application,
-inventory-exit timer cancellation, all insertion paths, and a sealed stratum
-remain open. The completed retry path does not claim those post-placement
-families.
+This carried carrier remains mechanically **partial**. Floor ownership is
+tracked in the next section. Monster inventory attribution, named forms,
+alternate locomotion prose, invisibility, mimic and hiding state, minions and
+shapechangers, immediate pet weapon setup, unique/extinct construction limits,
+liquid death, manual application, throwing and forced-drop timer preservation,
+all insertion paths, and a sealed stratum remain open. The completed carried
+retry path does not claim those post-placement families.
+
+## 985. Dropped figurines keep timer identity but change callback ownership
+
+~~~mermaid
+flowchart TD
+    Carry["cursed figurine in hero inventory with FIG_TRANSFORM timer"] --> Drop["dropx removes inventory link"]
+    Drop --> Place["place_object sets OBJ_FLOOR and preserves timer id/deadline"]
+    Place --> Due["run_timers claims existing FIG_TRANSFORM"]
+    Due --> Location["get_obj_location plus figurine_location_checks"]
+    Location -->|blocked terrain or boulder| Retry["rnd(5000) relative retry; keep floor identity"]
+    Location -->|legal away from hero| Exact["make_familiar at exact floor square"]
+    Location -->|legal under hero| Adjacent["makemon byyou uses MM_IGNOREWATER enexto cores"]
+    Exact --> Made{"actor constructed?"}
+    Adjacent --> Made
+    Made -->|no: occupied or unavailable| Consume["extract and free figurine without retry"]
+    Made -->|yes| Silent{"deadline equals current moves and square visible?"}
+    Silent -->|yes| Line["see a figurine transform into a monster"]
+    Silent -->|no| NoLine["no floor transformation prose"]
+    Line --> Delete["extract figurine then repaint original floor square"]
+    NoLine --> Delete
+    Lua["Lua owns no drop or FIG_TRANSFORM callback"] -.-> Carry
+~~~
+
+The source timer belongs to the object, not to its inventory link. Native
+`dropx()` removes the carried link and `place_object()` changes `where` to
+`OBJ_FLOOR` without stopping or replacing `FIG_TRANSFORM`. JavaScript's drop
+command previously inserted the identity into a floor pile directly while
+leaving `where == inventory`; the timer queue could find that identity through
+the floor graph, but the callback misclassified it as carried and ran pack
+placement and prose. The live command now delegates to the shared floor-link
+owner, preserving the original timer id and deadline while changing carrier
+ownership before map projection.
+
+At callback time, floor placement has two different failure meanings. Invalid
+coordinates, obstructed terrain, and an incompatible boulder fail
+`figurine_location_checks()` and attach a new `rnd(5000)` deadline without
+moving or deleting the figurine. A valid square proceeds into
+`make_familiar()`: if an actor already occupies that square, construction
+fails and the figurine is consumed without retry. A figurine still under the
+hero takes native `makemon()`'s `byyou` branch and chooses an adjacent square
+with `MM_IGNOREWATER`; after the hero moves away, the same identity constructs
+at its exact floor coordinate.
+
+Presentation also changes with ownership. An exact, visible callback keeps the
+figurine linked through `You see a figurine transform into a wumpus!`, then
+deletes it and repaints the original object square. An overdue callback still
+constructs and disposes of the object but is silent even when that square is
+currently visible. The inventory carrier remains tactile or sighted regardless
+of overdue status, so the two presentation policies stay separate.
+
+This floor carrier remains mechanically **partial**. Unseen exact
+transformation, boulder/pass-wall variants, named and alternate-locomotion
+prose, invisibility, mimic and hiding state, minions and shapechangers,
+immediate pet weapon setup, unique/extinct limits, liquid death, throwing and
+forced-drop timer preservation, inactive cached-level timing, and a sealed
+stratum remain open. Monster inventory remains a separate carrier rather than
+an extension of floor attribution.
