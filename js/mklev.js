@@ -4042,9 +4042,15 @@ function wornMeltMonsterLifeSaver(monster) {
 
 function meltOccupantDeathGap(monster, state = game) {
     if (state !== game) return 'custom-state death projection';
-    if (wornMeltMonsterLifeSaver(monster)) return 'life-saving';
     if (Number.isInteger(monster.cham) && monster.cham >= 0)
         return 'shapechanging';
+    const lifeSaver = wornMeltMonsterLifeSaver(monster);
+    if (lifeSaver) {
+        if (monster.mtame || monster.pet) return 'pet life-saving';
+        if ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_GENOD)
+            return 'life-saving genocide failure';
+        return null;
+    }
     if (monster.mtame || monster.pet) return 'pet traits';
     if ((monster.m_ap_type ?? 0) !== 0) return 'mimic detachment';
     if (state.u?.ustuck === monster || state.u?.usteed === monster)
@@ -4182,6 +4188,54 @@ function floorBoulderAt(x, y, state = game) {
         object.otyp === BOULDER) || null;
 }
 
+function finishMeltIceBoulderOutcome(event, outcome, state = game) {
+    if (!outcome || outcome.boulderFinalized) return outcome;
+    if (outcome.pendingOccupantLifeSaving) {
+        throw new Error('melt-ice boulder life-saving is still pending');
+    }
+    const { x, y, boulder, fillsUp } = outcome;
+    let removedTrap = null;
+    let buriedFloorObjects = [];
+    if (fillsUp) {
+        removedTrap = state.level?.traps?.find(trap =>
+            trap.tx === x && trap.ty === y) || null;
+        if (removedTrap) {
+            const trapIndex = state.level.traps.indexOf(removedTrap);
+            if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
+        }
+        buriedFloorObjects = buryFloorObjectsAt(x, y, state);
+    }
+
+    stopAllObjectTimers(boulder);
+    boulder.where = 'gone';
+    boulder.buried = false;
+    boulder.ox = boulder.oy = 0;
+    const pendingBoulder = fillsUp ? null : floorBoulderAt(x, y, state);
+    event.pendingBoulder = pendingBoulder;
+    event.pendingBoulderOutcome = null;
+    event.boulderComplete = !pendingBoulder;
+    Object.assign(outcome, {
+        removedTrap, buriedFloorObjects, pendingBoulder,
+        boulderFinalized: true,
+    });
+    return outcome;
+}
+
+export function finishMeltIceBoulderLifeSaving(
+    event, outcome, resolution, state = game,
+) {
+    const pending = outcome?.pendingOccupantLifeSaving;
+    if (!pending || pending.monster !== resolution?.monster
+        || pending.amulet !== resolution?.amulet
+        || !resolution.survived || (pending.monster.mhp ?? 0) <= 0) {
+        throw new Error('invalid melt-ice monster life-saving resolution');
+    }
+    outcome.pendingOccupantLifeSaving = null;
+    outcome.occupantLifeSaving = resolution;
+    event.occupantLifeSaving = resolution;
+    return finishMeltIceBoulderOutcome(event, outcome, state);
+}
+
 // C refs: do.c:boulder_hits_pool() and dig.c:bury_objs().  This is one
 // resumable iteration after melt_ice()'s initial and "settles" messages have
 // returned.  Melted ICE can only expose ordinary POOL/MOAT here, so the
@@ -4190,6 +4244,7 @@ function floorBoulderAt(x, y, state = game) {
 export function runNextMeltIceBoulder(event, state = game) {
     if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
         || event.boulderComplete) return null;
+    if (event.pendingBoulderOutcome) return event.pendingBoulderOutcome;
     const { x, y } = event;
     const loc = state.level?.at?.(x, y);
     if (!loc || !IS_POOL(loc.typ)) {
@@ -4209,9 +4264,8 @@ export function runNextMeltIceBoulder(event, state = game) {
     const chance = rn2(10);
     const fillsUp = chance !== 0;
     const waterType = loc.typ;
-    let removedTrap = null;
-    let buriedFloorObjects = [];
     let occupantDeath = null;
+    let pendingOccupantLifeSaving = null;
     if (fillsUp) {
         loc.typ = ROOM;
         loc.flags = 0;
@@ -4219,33 +4273,34 @@ export function runNextMeltIceBoulder(event, state = game) {
         const occupant = event.occupant;
         if (occupant && (occupant.mhp ?? 1) > 0
             && !monsterInAir(occupant, state)) {
-            occupantDeath = resolveMeltMonsterDeath(occupant, state);
-            event.occupantDeath = occupantDeath;
+            const lifeSaver = wornMeltMonsterLifeSaver(occupant);
+            if (lifeSaver) {
+                occupant.mhp = 0;
+                pendingOccupantLifeSaving = {
+                    kind: 'melt-ice-occupant-life-saving',
+                    monster: occupant, amulet: lifeSaver,
+                };
+            } else {
+                occupantDeath = resolveMeltMonsterDeath(occupant, state);
+                event.occupantDeath = occupantDeath;
+            }
         }
-        removedTrap = state.level?.traps?.find(trap =>
-            trap.tx === x && trap.ty === y) || null;
-        if (removedTrap) {
-            const trapIndex = state.level.traps.indexOf(removedTrap);
-            if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
-        }
-        buriedFloorObjects = buryFloorObjectsAt(x, y, state);
     }
 
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.buried = false;
-    boulder.ox = boulder.oy = 0;
-    const pendingBoulder = fillsUp ? null : floorBoulderAt(x, y, state);
-    event.pendingBoulder = pendingBoulder;
-    event.boulderComplete = !pendingBoulder;
     const outcome = {
         kind: 'melt-ice-boulder', x, y, boulder, chance, fillsUp,
         waterType, waterBody: waterType === POOL ? 'pool' : 'moat',
-        removedTrap, buriedFloorObjects, pendingBoulder, occupantDeath,
+        removedTrap: null, buriedFloorObjects: [], pendingBoulder: boulder,
+        occupantDeath, pendingOccupantLifeSaving,
+        occupantLifeSaving: null, boulderFinalized: false,
     };
     if (!event.boulderOutcomes) event.boulderOutcomes = [];
     event.boulderOutcomes.push(outcome);
-    return outcome;
+    if (pendingOccupantLifeSaving) {
+        event.pendingBoulderOutcome = outcome;
+        return outcome;
+    }
+    return finishMeltIceBoulderOutcome(event, outcome, state);
 }
 
 // C refs: zap.c:melt_ice_away()/melt_ice(), trap.c:trap_ice_effects(),

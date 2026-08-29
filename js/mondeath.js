@@ -7,9 +7,13 @@ import { flush_screen, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
-import { MONSTER_NAME } from './monster_data.js';
+import {
+    MONSTER_ATTACKS, monsterIsNonliving, monsterTypeName,
+} from './monster_data.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import {
+    recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
 
 async function lifeSavingPage(message) {
     await pline(message);
@@ -24,29 +28,62 @@ async function lifeSavingPage(message) {
 // which_armor(mon, W_AMUL) is the eligibility boundary: carrying an amulet
 // without wearing it must never intercept monster death.
 export function wornMonsterLifeSaver(monster) {
+    const shapechanging = Number.isInteger(monster?.cham)
+        && monster.cham >= 0;
+    if (monsterIsNonliving(monster?.mnum) && !shapechanging) return null;
     return (monster?.minvent || monster?.inventory || []).find(object =>
         object.otyp === AMULET_OF_LIFE_SAVING
         && ((object.owornmask ?? 0) & W_AMUL));
+}
+
+function lifeSavingSubject(monster, spotted) {
+    if (!spotted) return 'It';
+    if (monster?.name) return monster.name;
+    return `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
+}
+
+function possessiveSubject(subject) {
+    if (subject === 'It') return 'Its';
+    return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
+}
+
+function monsterReconstitutesAfterLifeSaving(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum] || [])
+        .some(attack => attack[0] === 13 || attack[0] === 14);
 }
 
 // Run the source pre-detach revival transaction.  The fatal caller owns the
 // credited kill phrase and supplies it as the first pager; this owner consumes
 // the amulet and restores the actor before mondead() could detach it.
 export async function lifeSaveMonster(
-    monster, amulet, { creditedKill, retainCursor = false } = {},
+    monster, amulet, {
+        creditedKill, retainCursor = false,
+        visible = true, spotted = true,
+        continueLine = plineWithContinuation,
+        page = lifeSavingPage, line = pline,
+    } = {},
 ) {
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    const subject = `The ${name}`;
-    if (creditedKill) await plineWithContinuation(creditedKill);
-    await plineWithContinuation('But wait...');
-    await lifeSavingPage(`${game._pending_message}--More--`);
+    const subject = lifeSavingSubject(monster, spotted);
+    if (creditedKill) await continueLine(creditedKill);
+    if (visible) {
+        await continueLine('But wait...');
+        await page(`${game._pending_message}--More--`);
 
-    exerciseAttribute(4, true);
-    recordObjectKnowledge(amulet.otyp);
-    await lifeSavingPage(
-        `${subject}'s medallion begins to glow!--More--`,
-    );
-    await lifeSavingPage(`${subject} looks much better!--More--`);
+        const alreadyKnown = game._knownObjectTypes instanceof Set
+            && game._knownObjectTypes.has(amulet.otyp);
+        if (!alreadyKnown) exerciseAttribute(4, true);
+        recordObjectEncounter(amulet.otyp);
+        recordObjectKnowledge(amulet.otyp);
+        await page(
+            `${possessiveSubject(subject)} medallion begins to glow!--More--`,
+        );
+        if (spotted) {
+            const recovery = monsterReconstitutesAfterLifeSaving(monster)
+                ? 'reconstitutes' : 'looks much better';
+            await page(`${subject} ${recovery}!--More--`);
+        }
+        await line('The medallion crumbles to dust!');
+    }
 
     const inventory = monster.minvent || monster.inventory || [];
     const index = inventory.indexOf(amulet);
@@ -54,8 +91,12 @@ export async function lifeSaveMonster(
     amulet.owornmask = 0;
     amulet.worn = false;
     amulet.wornSlot = null;
+    amulet.where = 'gone';
+    amulet.ox = amulet.oy = 0;
+    amulet.ocarry = null;
     monster.minvent = inventory;
     monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~W_AMUL;
     checkMonsterGearNextTurn(monster);
     monster.dead = false;
@@ -65,7 +106,10 @@ export async function lifeSaveMonster(
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
     monster.mhp = monster.mhpmax;
-    await pline('The medallion crumbles to dust!');
     if (retainCursor)
         game._cursorOverride = [monster.mx - 1, monster.my + 1];
+    return {
+        kind: 'monster-life-saving', monster, amulet,
+        visible, spotted, survived: true,
+    };
 }

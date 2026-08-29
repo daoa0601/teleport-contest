@@ -18,6 +18,7 @@ import {
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     disturbBuriedZombieTimers, finishBuriedZombieTimer,
+    finishMeltIceBoulderLifeSaving,
     runClaimedBuriedZombieTimer, runClaimedMeltIceTimer,
     runClaimedObjectRotTimer, runNextMeltIceBoulder,
 } from './mklev.js';
@@ -43,8 +44,10 @@ import {
     see_monsters, see_objects, see_traps,
     show_glyph_cell, swallowed, transientObjectGlyph,
     _statusLine1, _statusLine2, canProjectMonster, canSpotMonster,
+    canSeeMonster,
     lastDirtyMapCursor, shieldeff,
 } from './display.js';
+import { lifeSaveMonster } from './mondeath.js';
 import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
     init_vision_globals,
@@ -2120,6 +2123,7 @@ export async function finishMeltIceTimer(event, options = {}) {
     const repaint = options.repaint ?? newsym;
     const wake = options.wake ?? wakeMonstersNearWithMessages;
     const disturb = options.disturb ?? disturbBuriedZombieTimers;
+    const saveMonster = options.lifeSaveMonster ?? lifeSaveMonster;
     const heroInWater = options.heroInWater ?? !!game.u?.uinwater;
 
     const message = meltIceTimerMessage(event, options);
@@ -2129,9 +2133,22 @@ export async function finishMeltIceTimer(event, options = {}) {
         const settles = meltIceBoulderSettleMessage(event, options);
         if (settles) await announce(settles);
     }
-    while (event.pendingBoulder) {
+    while (event.pendingBoulder || event.pendingBoulderOutcome) {
         const outcome = runNextMeltIceBoulder(event, game);
         if (!outcome) break;
+        if (outcome.pendingOccupantLifeSaving) {
+            const monster = outcome.pendingOccupantLifeSaving.monster;
+            const visible = options.visible ?? cansee(event.x, event.y);
+            const spotted = options.occupantSpotted
+                ?? canSeeMonster(monster, event.x, event.y);
+            const resolution = await saveMonster(
+                monster, outcome.pendingOccupantLifeSaving.amulet,
+                { visible, spotted },
+            );
+            finishMeltIceBoulderLifeSaving(
+                event, outcome, resolution, game,
+            );
+        }
         // boulder_hits_pool() repaints a filled square before reporting its
         // splash; a sinking boulder remains visually cached until the
         // melt_ice() post-loop newsym().

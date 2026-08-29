@@ -12,7 +12,7 @@ import {
     ROLLING_BOULDER_TRAP, ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE,
     SLP_GAS_TRAP, STRAT_WAITFORU,
     SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
-    MM_NOWAIT, NO_MINVENT, W_AMUL,
+    I_SPECIAL, MM_NOWAIT, NO_MINVENT, W_AMUL,
 } from '../js/const.js';
 import {
     buriedZombieTimerMessage, finishMeltIceTimer,
@@ -22,6 +22,7 @@ import {
 } from '../js/allmain.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
+import { plineWithContinuation } from '../js/display.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
@@ -31,6 +32,7 @@ import {
     runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
+import { lifeSaveMonster } from '../js/mondeath.js';
 import {
     AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, BOULDER, CHEST, CORPSE,
     LAND_MINE, OIL_LAMP, STATUE,
@@ -709,8 +711,8 @@ test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
         });
     });
 
-test('melt-ice boulder death rejects monster life-saving before mutation',
-    () => {
+test('melt-ice resumes monster life-saving before burial and splash',
+    async () => {
         themedState(4009, 8);
         const x = 10, y = 10;
         game.level.at(x, y).typ = ICE;
@@ -721,24 +723,286 @@ test('melt-ice boulder death rejects monster life-saving before mutation',
         const amulet = {
             otyp: AMULET_OF_LIFE_SAVING, o_id: 9961,
             contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+            worn: true,
         };
+        const statue = place_object({
+            otyp: STATUE, o_id: 9962, contents: [], timed: 0,
+        }, x, y);
         const nymph = {
-            mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8,
-            minvent: [amulet], inventory: [amulet],
+            mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8, m_lev: 3,
+            name: 'Naiad', minvent: [amulet], inventory: [amulet],
+            hasInventory: true, misc_worn_check: W_AMUL,
         };
         game.level.monsters.push(nymph);
         scheduleLevelTimer(
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
-        const claimed = claimNextDueObjectTimer(game, game.moves);
-        assert.throws(
-            () => runClaimedMeltIceTimer(claimed, game),
-            /occupant life-saving is not implemented/,
+        initRng(1n); // rn2(10)=5 fills the moat
+        enableRngLog();
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
         );
-        assert.equal(game.level.at(x, y).typ, ICE);
-        assert.equal(boulder.where, 'floor');
-        assert.equal(nymph.mhp, 8);
+        const phases = [];
+        await finishMeltIceTimer(event, {
+            visible: true, occupantSpotted: true,
+            heroAt: false, heroInWater: false,
+            announce: async message => {
+                phases.push({
+                    kind: 'message', message,
+                    hp: nymph.mhp, statueWhere: statue.where,
+                    boulderWhere: boulder.where, amuletWhere: amulet.where,
+                    rng: getRngLog().slice(),
+                });
+                return plineWithContinuation(message);
+            },
+            lifeSaveMonster: async (monster, saver, presentation) => {
+                const pending = runNextMeltIceBoulder(event, game);
+                assert.equal(pending, event.pendingBoulderOutcome);
+                phases.push({
+                    kind: 'life-saving', presentation,
+                    terrain: game.level.at(x, y).typ,
+                    hp: monster.mhp, statueWhere: statue.where,
+                    boulderWhere: boulder.where,
+                    amuletWhere: saver.where,
+                    rng: getRngLog().slice(),
+                });
+                return lifeSaveMonster(monster, saver, {
+                    ...presentation,
+                    page: async message => {
+                        phases.push({
+                            kind: 'life-saving-page', message,
+                            hp: monster.mhp, statueWhere: statue.where,
+                            boulderWhere: boulder.where,
+                            amuletWhere: saver.where,
+                            rng: getRngLog().slice(),
+                        });
+                        game._pending_message = '';
+                    },
+                    line: async message => {
+                        phases.push({
+                            kind: 'life-saving-line', message,
+                            hp: monster.mhp, statueWhere: statue.where,
+                            boulderWhere: boulder.where,
+                            amuletWhere: saver.where,
+                            rng: getRngLog().slice(),
+                        });
+                        game._pending_message = '';
+                    },
+                });
+            },
+            wake: async () => {}, disturb: () => {}, repaint: () => {},
+        });
+        const outcome = event.boulderOutcomes[0];
+
+        assert.deepEqual(phases.map(phase => phase.kind), [
+            'message', 'message', 'life-saving',
+            'life-saving-page', 'life-saving-page',
+            'life-saving-page', 'life-saving-line', 'message',
+        ]);
+        assert.equal(phases[0].message, 'Some ice melts away.');
+        assert.equal(phases[1].message, 'A boulder settles...');
+        assert.deepEqual(phases[1].rng, []);
+        assert.deepEqual(phases[2], {
+            kind: 'life-saving',
+            presentation: { visible: true, spotted: true },
+            terrain: ROOM, hp: 0, statueWhere: 'floor',
+            boulderWhere: 'free', amuletWhere: 'minvent',
+            rng: ['rn2(10)=5'],
+        });
+        assert.equal(phases[3].message,
+            'Some ice melts away.  A boulder settles...  But wait...--More--');
+        assert.equal(phases[3].hp, 0);
+        assert.equal(phases[3].statueWhere, 'floor');
+        assert.equal(phases[3].boulderWhere, 'free');
+        assert.equal(phases[3].amuletWhere, 'minvent');
+        assert.equal(phases[4].message,
+            "Naiad's medallion begins to glow!--More--");
+        assert.deepEqual(phases[4].rng, [
+            'rn2(10)=5', 'rn2(19)=11',
+        ]);
+        assert.equal(phases[5].message,
+            'Naiad looks much better!--More--');
+        assert.equal(phases[6].message,
+            'The medallion crumbles to dust!');
+        assert.equal(phases[6].hp, 0);
+        assert.equal(phases[6].statueWhere, 'floor');
+        assert.equal(phases[6].amuletWhere, 'minvent');
+        assert.equal(phases[7].message,
+            'There is a large splash as the boulder fills the moat.');
+        assert.equal(phases[7].hp, 10);
+        assert.equal(phases[7].statueWhere, 'buried');
+        assert.equal(phases[7].boulderWhere, 'gone');
+        assert.equal(phases[7].amuletWhere, 'gone');
+        assert.deepEqual(phases[7].rng, [
+            'rn2(10)=5', 'rn2(19)=11', 'rn2(100)=60',
+        ]);
+        assert.equal(outcome.occupantDeath, null);
+        assert.equal(outcome.occupantLifeSaving.monster, nymph);
+        assert.equal(nymph.dead, false);
+        assert.equal(nymph.mhp, 10);
+        assert.equal(nymph.mhpmax, 10);
+        assert.ok(game.level.monsters.includes(nymph));
+        assert.deepEqual(nymph.minvent, []);
+        assert.equal(nymph.hasInventory, false);
+        assert.equal(nymph.misc_worn_check, I_SPECIAL);
+        assert.equal(amulet.owornmask, 0);
+        assert.equal(statue.where, 'buried');
+        assert.equal(game._vanquishedCounts?.has(68) ?? false, false);
     });
+
+test('unseen melt-ice life-saving is silent and does not teach the amulet',
+    async () => {
+        themedState(4011, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        place_object({
+            otyp: BOULDER, o_id: 9963, contents: [], timed: 0,
+        }, x, y);
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 9964,
+            contents: [], timed: 0, where: 'minvent',
+            owornmask: W_AMUL, worn: true,
+        };
+        const nymph = {
+            mnum: 68, mx: x, my: y, mhp: 6, mhpmax: 6, m_lev: 3,
+            minvent: [amulet], inventory: [amulet],
+            misc_worn_check: W_AMUL,
+        };
+        game.level.monsters.push(nymph);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        initRng(1n);
+        enableRngLog();
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        );
+        const messages = [];
+        await finishMeltIceTimer(event, {
+            visible: false, heroAt: false, heroInWater: false, deaf: true,
+            announce: async message => messages.push(message),
+            wake: async () => {}, disturb: () => {}, repaint: () => {},
+        });
+
+        assert.deepEqual(messages, []);
+        assert.deepEqual(getRngLog(), ['rn2(10)=5']);
+        assert.equal(game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)
+            ?? false, false);
+        assert.equal(nymph.mhp, 10);
+        assert.equal(nymph.mhpmax, 10);
+        assert.equal(nymph.misc_worn_check, I_SPECIAL);
+        assert.equal(amulet.where, 'gone');
+        assert.equal(event.boulderOutcomes[0].occupantLifeSaving.visible,
+            false);
+    });
+
+test('known life-saving uses unseen-monster prose without Wisdom RNG',
+    async () => {
+        themedState(4014, 8);
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 99645,
+            contents: [], timed: 0, where: 'minvent',
+            owornmask: W_AMUL, worn: true,
+        };
+        const nymph = {
+            mnum: 68, mx: 10, my: 10, mhp: 0, mhpmax: 6, m_lev: 3,
+            minvis: 1, minvent: [amulet], inventory: [amulet],
+            misc_worn_check: W_AMUL,
+        };
+        game._knownObjectTypes = new Set([AMULET_OF_LIFE_SAVING]);
+        initRng(1n);
+        enableRngLog();
+        const pages = [];
+        const lines = [];
+        const result = await lifeSaveMonster(nymph, amulet, {
+            visible: true, spotted: false,
+            continueLine: async message => {
+                game._pending_message = message;
+            },
+            page: async message => {
+                pages.push(message);
+                game._pending_message = '';
+            },
+            line: async message => lines.push(message),
+        });
+
+        assert.deepEqual(pages, [
+            'But wait...--More--',
+            'Its medallion begins to glow!--More--',
+        ]);
+        assert.deepEqual(lines, ['The medallion crumbles to dust!']);
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(game._encounteredObjectTypes.has(
+            AMULET_OF_LIFE_SAVING), true);
+        assert.equal(result.spotted, false);
+        assert.equal(nymph.mhp, 10);
+        assert.equal(amulet.where, 'gone');
+    });
+
+test('melt-ice rejects genocided monster life-saving before mutation', () => {
+    themedState(4012, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    const boulder = place_object({
+        otyp: BOULDER, o_id: 9966, contents: [], timed: 0,
+    }, x, y);
+    const amulet = {
+        otyp: AMULET_OF_LIFE_SAVING, o_id: 9967,
+        contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+    };
+    const nymph = {
+        mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8,
+        minvent: [amulet], inventory: [amulet],
+    };
+    game.level.monsters.push(nymph);
+    game.mvitals = [];
+    game.mvitals[68] = { mvflags: G_GENOD };
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    assert.throws(
+        () => runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        ),
+        /occupant life-saving genocide failure is not implemented/,
+    );
+    assert.equal(game.level.at(x, y).typ, ICE);
+    assert.equal(boulder.where, 'floor');
+    assert.equal(nymph.mhp, 8);
+});
+
+test('melt-ice rejects pet life-saving before mutation', () => {
+    themedState(4013, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    const boulder = place_object({
+        otyp: BOULDER, o_id: 9968, contents: [], timed: 0,
+    }, x, y);
+    const amulet = {
+        otyp: AMULET_OF_LIFE_SAVING, o_id: 9969,
+        contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+    };
+    const pet = {
+        mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8, mtame: 5,
+        minvent: [amulet], inventory: [amulet],
+    };
+    game.level.monsters.push(pet);
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    assert.throws(
+        () => runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        ),
+        /occupant pet life-saving is not implemented/,
+    );
+    assert.equal(game.level.at(x, y).typ, ICE);
+    assert.equal(boulder.where, 'floor');
+    assert.equal(pet.mhp, 8);
+});
 
 test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
     themedState(4098, 8);
@@ -748,9 +1012,14 @@ test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
     place_object({
         otyp: BOULDER, o_id: 9965, contents: [], timed: 0,
     }, x, y);
+    const amulet = {
+        otyp: AMULET_OF_LIFE_SAVING, o_id: 99655,
+        contents: [], timed: 0, where: 'minvent',
+        owornmask: W_AMUL, worn: true,
+    };
     const skeleton = {
         mnum: 248, mx: x, my: y, mhp: 8, mhpmax: 8,
-        minvent: [], inventory: [],
+        minvent: [amulet], inventory: [amulet], misc_worn_check: W_AMUL,
     };
     game.level.monsters.push(skeleton);
     scheduleLevelTimer(
@@ -766,9 +1035,11 @@ test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
         'rn2(10)=3', 'rn2(3)=0',
     ]);
     assert.equal(outcome.occupantDeath.corpseCreated, false);
+    assert.ok(outcome.occupantDeath.releasedInventory.includes(amulet));
     assert.equal(skeleton.dead, true);
     assert.equal(game.level.monsters.includes(skeleton), false);
-    assert.equal(game.level.buriedObjects?.length ?? 0, 0);
+    assert.equal(amulet.where, 'buried');
+    assert.equal(game.level.buriedObjects?.length ?? 0, 1);
     assert.equal(game.level.at(x, y).typ, ROOM);
 });
 
