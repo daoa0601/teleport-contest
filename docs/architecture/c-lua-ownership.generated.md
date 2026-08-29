@@ -14,7 +14,7 @@ flowchart LR
     n_rng_core["Core and display RNG streams<br/>implemented"]
     n_startup_pre_mklev["Pre-mklev object, role, and dungeon initialization<br/>partial"]
     n_startup_artifacts["New-game artifact initialization<br/>implemented"]
-    n_startup_role_inventory["Role inventory, attributes, skills, and starting pet<br/>partial"]
+    n_startup_role_inventory["Role/race inventory, attributes, skills, and starting pet<br/>partial"]
     n_level_generation["C and Lua level construction<br/>partial"]
     n_turn_scheduler["Hero, monster, and global-turn scheduler<br/>partial"]
     n_samurai_pet_turns["Samurai pet turns, altar run, and prayer occupation<br/>partial"]
@@ -50,9 +50,9 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | Runtime entry and segment lifecycle | partial | js/jsmain.js<br/>js/allmain.js<br/>js/bridge_policy.js | top-level-fixtures<br/>session-shape.replayMoves | Save/restore, browser entry, and all role paths have not passed a sealed bridge-free gate. |
 | Core and display RNG streams | implemented | js/rng.js<br/>js/isaac64.js | seeded-replay.recorded-rnl | No open gap inside the live RNG wrapper scope; seeded replay helpers remain separately forbidden. |
-| Pre-mklev object, role, and dungeon initialization | partial | js/startup.js<br/>js/o_init.js<br/>js/dungeon.js<br/>js/artifacts.js<br/>js/roles.js | fastforward.pre-mklev | Artifact initialization is source-owned; remaining role_init state, fresh option/race combinations, and a sealed startup gate are still open. |
+| Pre-mklev object, role, and dungeon initialization | partial | js/startup.js<br/>js/o_init.js<br/>js/dungeon.js<br/>js/artifacts.js<br/>js/roles.js | fastforward.pre-mklev | Object-description and artifact initialization are source-owned; remaining role_init selection/pantheon permutations, dungeon option strata, and a sealed startup gate are still open. |
 | New-game artifact initialization | implemented | js/artifacts.js<br/>js/startup.js<br/>js/allmain.js<br/>js/roles.js | none | No open gap inside the new-game init_artifacts/hack_artifacts scope; artifact save/restore and unsupported runtime powers are tracked outside this entry. |
-| Role inventory, attributes, skills, and starting pet | partial | js/u_init.js<br/>js/allmain.js | fastforward.post-mklev | Role-specific inventory branches and cross-role pet state have not passed a bridge-free stratified gate. |
+| Role/race inventory, attributes, skills, and starting pet | partial | js/u_init.js<br/>js/allmain.js | fastforward.post-mklev | Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, and role-money order. Pauper handling, hidden gold/carry boost, remaining role/option strata, cross-role pet state, and a sealed stratified gate remain open. |
 | C and Lua level construction | partial | js/mklev.js<br/>js/dungeon.js<br/>js/lua_des.js | fastforward.mineralize<br/>seeded room-fill compatibility paths | Special-level operations, ordinary room fill, startup objects, and unseen Lua variants remain incomplete. |
 | Hero, monster, and global-turn scheduler | partial | js/allmain.js<br/>js/monmove.js | fastforward.turn<br/>fastforward.ranger-turn<br/>scheduler.default-replay-gap<br/>seeded role replay modules | Samurai, all five represented Rogue carriers, and the two represented Priest carriers have public bridge-free actor-rich witnesses; broader unseen actor/terrain branches and a sealed gate remain open. |
 | Samurai pet turns, altar run, and prayer occupation | partial | js/allmain.js<br/>js/monmove.js<br/>js/pray.js | legacy-only samurai.altar-run-prayer<br/>legacy-only bounded Samurai compatibility cadence | The represented bridge-free Samurai path uses live dog_move and prayer turns, but wider candidate, combat, interruption, terrain, and sealed-corpus coverage is absent; legacy scoring still retains its compatibility bridge. |

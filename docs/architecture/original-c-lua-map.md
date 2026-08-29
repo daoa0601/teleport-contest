@@ -35158,3 +35158,46 @@ bridge-free and Samurai skill controls remain green.  New-game artifact-table
 initialization is mechanically **implemented**; save/restore, unsupported
 artifact powers, remaining `role_init` state, and a sealed startup gate are
 separate open scopes.
+
+## 965. Racial startup is a source-ordered constructor phase
+
+~~~mermaid
+sequenceDiagram
+    participant Role as u_init_role
+    participant Know as object knowledge
+    participant Race as u_init_race
+    participant Inv as ini_inv / substitution
+    participant Mode as discover-mode wishing
+    participant Money as starting purse object
+    Role->>Inv: build complete role template and optional role item
+    Role->>Know: install explicit role and class preknowledge
+    Race->>Inv: substitute Elf, Orc, Dwarf, or Gnome equipment
+    Race->>Inv: add two random food objects for every non-Wizard Orc
+    Race->>Know: install Elf, Dwarf, or Orc racial preknowledge
+    Mode->>Inv: add one wand of wishing for every role when discover is active
+    Money->>Inv: allocate Tourist or Healer purse identity after race and mode
+~~~
+
+Pinned `u_init.c` makes racial startup a phase, not a Rogue special case.
+`u_init_role()` completes role inventory and explicit knowledge before
+`u_init_race()` adds racial inventory and knowledge. The JavaScript owner now
+uses that order for all roles and all five races. Dwarves and Orcs receive
+their complete source object-knowledge sets; every non-Wizard Orc receives
+`Xtra_food`; and Gnome Ranger bows/arrows become an equipped crossbow and
+quarrel stack through the same `ini_inv_obj_substitution()` table as Elf,
+Orc, and Dwarf equipment.
+
+The same phase boundary removes two option carriers from individual public
+roles. Discover mode now constructs its wand of wishing for all 13 roles
+after racial startup, and Tourist/Healer money is allocated afterward, as in
+`u_init_inventory_attrs()`. Re-running role initialization first clears the
+purse so a previous role cannot leak money. These changes do not add a Lua
+owner: Lua supplies no role/race inventory behavior.
+
+`test/startup_race.test.js` exercises source-wide invariants rather than a
+recorded session: Gnome equipment, Dwarf/Orc knowledge, non-Rogue Orc food,
+the Wizard negative control, every role under discover mode, constructor
+identity order, and purse reset. The registry remains **partial** because
+pauper/unprepared behavior, hidden starting gold and carry-attribute boost,
+remaining option strata, cross-role pet state, and the scheduled sealed gate
+are still open.

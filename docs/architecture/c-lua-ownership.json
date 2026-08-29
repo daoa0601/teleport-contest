@@ -52,7 +52,7 @@
       "bridgeIds": ["fastforward.pre-mklev"],
       "acceptanceWitnesses": ["test/bridge_free.test.js: startup executes without importing the fast-forward boundary and the mechanical audit proves every compatibility classifier is explicitly legacy-only", "test/artifact_startup.test.js: per-game artifact reset and all-role retargeting"],
       "lastSealedGate": null,
-      "openGap": "Artifact initialization is source-owned; remaining role_init state, fresh option/race combinations, and a sealed startup gate are still open."
+      "openGap": "Object-description and artifact initialization are source-owned; remaining role_init selection/pantheon permutations, dungeon option strata, and a sealed startup gate are still open."
     },
     {
       "id": "startup-artifacts",
@@ -73,20 +73,20 @@
     },
     {
       "id": "startup-role-inventory",
-      "label": "Role inventory, attributes, skills, and starting pet",
+      "label": "Role/race inventory, attributes, skills, and starting pet",
       "status": "partial",
       "source": {
         "cFiles": ["src/u_init.c", "src/dog.c"],
-        "cSymbols": ["u_init", "ini_inv", "u_init_inventory_attrs", "makedog"],
+        "cSymbols": ["u_init", "ini_inv", "ini_inv_obj_substitution", "u_init_role", "u_init_race", "u_init_inventory_attrs", "makedog"],
         "luaFiles": [],
         "luaSymbols": []
       },
       "javascriptOwners": ["js/u_init.js", "js/allmain.js"],
       "dependencies": ["startup-pre-mklev", "level-generation", "samurai-pet-turns"],
       "bridgeIds": ["fastforward.post-mklev"],
-      "acceptanceWitnesses": ["public fixture-disabled startup tests; not bridge-free generalization evidence"],
+      "acceptanceWitnesses": ["test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "Role-specific inventory branches and cross-role pet state have not passed a bridge-free stratified gate."
+      "openGap": "Role/race construction now owns substitutions, racial knowledge, Orc compensation, universal discover-mode wishing, and role-money order. Pauper handling, hidden gold/carry boost, remaining role/option strata, cross-role pet state, and a sealed stratified gate remain open."
     },
     {
       "id": "level-generation",

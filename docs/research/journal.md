@@ -93571,3 +93571,59 @@ startup-object constructor boundary without opening a sealed trace or
 optimizing public animation.  No push or publication ran.
 
 ---
+
+### [2026-08-29 13:32 EEST, journal block 3119] {#bridge-free #startup #u-init #race #inventory #discover-mode #money #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** without opening a new session, a
+line-by-line comparison of pinned `u_init.c:u_init_role()`, `u_init_race()`,
+`ini_inv_obj_substitution()`, and `u_init_inventory_attrs()` against
+`js/u_init.js` found the first missing constructor phase. JavaScript returned
+from racial startup for every non-Elf race. Consequently Dwarf and Orc
+preknowledge was absent, Orc `Xtra_food` existed only inside the public Rogue
+branch, and Gnome bow/arrow substitution did not exist. The same control-flow
+audit showed discover-mode wishing implemented only for Caveman, Tourist, and
+Samurai, with Tourist/Healer money allocated before racial startup rather than
+after it.
+
+**Prediction portfolio and decisive evidence:** (1) a Rogue-only compensation
+bug predicted non-Rogue Orc inventories would lack two food constructions;
+seed123 Ranger-Orc did. (2) a presentation-only hypothesis predicted the
+authoritative `_knownObjectTypes` set would still contain racial identities;
+it did not, falsifying that route. (3) a constructor-order hypothesis
+predicted fresh discover-mode roles would lack the wand or allocate it before
+racial objects; Wizard lacked it entirely and only three role branches
+contained the code. (4) a substitution-table hypothesis predicted Gnome
+Ranger would retain bow/arrows and fail to equip a crossbow; the focused
+startup produced exactly that baseline. Pinned C source discriminated all
+four without a public or sealed trace.
+
+**Decision and implementation:** make racial initialization one shared phase.
+Role inventory and explicit role/class knowledge now finish first; the full
+Elf/Dwarf/Orc knowledge sets, all four racial substitution maps, non-Wizard
+Orc food, and Gnome crossbow/quarrel equipment follow. Discover-mode wishing
+then applies to all 13 roles, followed by Tourist/Healer money. The
+initialization entry clears current and initial purse state before every run,
+so a reselected role cannot inherit gold. No fixture, `fastforward`, replay
+helper, `replayMoves` predicate, role-path classifier, or Lua compatibility
+owner was added.
+
+**Measured effect and regressions:** the new source-invariant file passes 6/6.
+The combined bridge-policy, artifact, and startup selection passes 18/18; its
+mechanical audit still reports no forbidden bridge reachability. The nearby
+character-selection/live-Rogue file passes 18/18, including exact represented
+chargen and Orc-Rogue regression witnesses. Every command exited normally;
+no yielded verifier, duplicate process, full Contest suite, corpus, sealed
+evaluation, score run, or animation check was started. Implementation commit
+`c970a16` contains only `object_data.js`, `u_init.js`, and the focused test.
+
+**Falsified hypotheses, limit, and next blocker:** the gap was not confined to
+Rogue, not merely a discoveries-menu projection, not caused by the object
+description shuffle, and did not require trace inspection. The
+role/race-inventory registry remains `partial`: pauper/unprepared handling,
+hidden starting gold, carry-attribute boost, remaining role/option strata,
+cross-role pet state, and the scheduled sealed gate remain open. Next inspect
+the first source-owned option boundary, beginning with pauper's inventory,
+knowledge, and skill contract, before returning to room fill. Do not run or
+publish a corpus measurement yet.
+
+---
