@@ -37441,3 +37441,75 @@ burdened throwers, special terrain and recoil, nonordinary targets,
 invisibility, water, oil, acid, polymorph, hero impact, shops, saddles,
 interactive naming, broader equipment and visibility variants, and a sealed
 stratum remain open.  Lua owns none of this state, movement, or vision graph.
+
+## 1003. Invisibility crosses permanent state, perception, and map memory
+
+```mermaid
+sequenceDiagram
+    participant Hit as potionhit
+    participant Spot as canspotmon
+    participant Invis as mon_set_minvis
+    participant Draw as newsym / see_wsegs
+    participant Memory as map_invisible
+    participant Wake as wakeup or clear sleep
+    participant Vapor as potionbreathe
+
+    Hit->>Spot: snapshot sawit before mutation
+    Hit->>Hit: snapshot old minvis for cursed anger
+    Hit->>Invis: set perminvis to not cursed
+    alt invisibility is not blocked
+        Invis->>Invis: minvis = perminvis
+        Invis->>Draw: repaint actor square and worm segments
+    end
+    Hit->>Spot: recompute canspotmon after mutation
+    alt spotted before, lost after, square visible
+        Hit->>Memory: remember and draw invisible I
+    else spotted before and potion cursed
+        Hit->>Hit: briefly transparent presentation
+    else unseen before and spotted after
+        Hit->>Hit: appears presentation
+    end
+    alt old minvis and cursed
+        Hit->>Wake: hostile wake policy
+    else ordinary invisibility transition
+        Hit->>Wake: clear ordinary sleep only
+    end
+    Hit->>Vapor: proximity admission after direct effect
+    Vapor->>Vapor: if sighted and not actually Invis, describe self glimpse
+```
+
+The direct effect has three independent inputs which cannot be collapsed into
+one visibility boolean.  `mon->perminvis` records the permanent property,
+`mon->minvis` is its effective projection after `invis_blkd`, and
+`canspotmon()` includes physical sight plus telepathy or detection.  A cursed
+potion is hostile only when `minvis` was already set before the mutation.  It
+can therefore reveal and anger an already-invisible monster, while a cursed
+potion on an already-visible monster merely clears the permanent property and
+uses the non-hostile sleep branch.
+
+Presentation is derived from two `canspotmon()` observations around
+`mon_set_minvis()`.  Losing the actor on a physically visible square records
+the persistent invisible-monster `I` through `map_invisible()` after the
+ordinary repaint.  A telepathically or detection-spotted target can remain
+spotted while becoming optically invisible and must not receive that marker.
+When invisibility is blocked, only `perminvis` changes: `minvis`, repaint, and
+map memory are unchanged.  JavaScript composes the existing live
+`canSpotMonster()`, `newsym()`, and `map_invisible()` owners rather than
+maintaining a projectile-specific visibility cache.
+
+`potionbreathe(POT_INVISIBILITY)` is a separate zero-RNG presentation owner.
+While the hero is neither blind nor effectively invisible, it says either that
+the hero could not see themself or—under See invisible—could see right through
+themself.  Timed and intrinsic property aliases feed that derived condition;
+the vapor never grants invisibility or changes a timeout.
+
+The shared owner is live through uncursed ordinary map contact and through
+swallowed contact, including a cursed swallowed bottle whose pre-contact slip
+gate is already source-owned.  Cursed and greased ordinary map transport is
+still deliberately rejected before detachment: a rerolled direction can
+change path eligibility, and neither pre-validation of every alternate route
+nor a complete mutation rollback exists.  Long-worm segment repaint, special
+targets and terrain, blind/burdened transport, shops and saddles, hero impact,
+interactive naming, fire-destruction call-site unification, remaining potion
+families, and a sealed stratum remain open.  Lua owns none of this perception
+or map-memory path.

@@ -97067,3 +97067,79 @@ permanent-state boundary against the still-unproved cursed/greased transport
 invariant.
 
 ---
+
+### [2026-08-30 01:01 EEST, journal block 3172] {#bridge-free #potionhit #potionbreathe #invisibility #mon-set-minvis #canspotmon #map-invisible #perception #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3171 left invisibility's
+map-memory/permanent-state boundary against mutation-safe cursed/greased map
+transport. Five new direct and vapor witnesses initially returned before
+bottle RNG, impact RNG, permanent/effective invisibility state, perception,
+map memory, wake policy, or hero vapor presentation, so the discriminating set
+was red **0/5**. The critical-debugging portfolio kept four routes independent:
+direct state only, direct plus presentation, the complete direct/map/vapor
+slice, and cursed/greased transport. State-only routes would accept an
+invisible actor whose map memory and sensory projection were wrong. Transport
+still lacks an equivalent-strength proof that every rerolled direction is
+eligible before detachment or that all post-detachment state can be rolled
+back. The complete invisibility ownership slice was selected.
+
+**Prediction and decisive C evidence:** `potion.c:potionhit()` snapshots
+`canspotmon(mon)` and the target's pre-effect `minvis`, then
+`worn.c:mon_set_minvis()` sets `perminvis = !cursed`. Only an unblocked property
+copies into `minvis` and calls `newsym()` plus long-worm repaint. Presentation
+recomputes `canspotmon()`: a spotted-to-unspotted transition on a visible
+square calls `map_invisible()`, a still-spotted cursed target briefly seems
+transparent, and an unspotted-to-spotted target appears. Hostile wake is
+selected only by old `minvis && cursed`; every other survivor merely clears
+ordinary sleep. `potionbreathe(POT_INVISIBILITY)` consumes no RNG and mutates
+no property. While the hero is sighted and not effectively invisible it
+describes either an unseen self or, with See invisible, a transparent self.
+
+**Decision and implementation:** commit `34f404f` broadens the shared impact
+owner to nineteen source-owned potion identities without fixture, replay,
+seed, session, or trace control flow. The direct owner now distinguishes
+`perminvis`, effective `minvis`, `invis_blkd`, pre-effect anger, before/after
+`canSpotMonster()`, `newsym()` repaint, persistent invisible-square memory, and
+the three source presentation branches. The vapor owner derives blindness,
+effective hero invisibility including blockers, and See-invisible aliases but
+does not grant a timeout or consume effect RNG. An uncursed ordinary map hit
+proves live `I` memory; a cursed swallowed hit proves the already-owned slip
+gate, reveal, anger, zero-RNG vapor, identity deletion, and zero bridge usage.
+Oil replaces invisibility as the unsupported pre-split and pre-RNG control.
+
+**False-acceptance corrections and adversarial audit:** target-square sight is
+not equivalent to `canspotmon()`, and `canseemon()` alone would miss telepathy
+and detection. A still-spotted invisible target must not receive an `I`
+marker. `invis_blkd` changes the permanent property without changing the
+effective projection or repainting. Cursed anger depends on old `minvis`, not
+on whether the actor becomes visible or whether the hero can spot it. Vapor
+does not make the hero invisible, and See invisible changes only its sentence.
+Separate direct controls prove spotted loss, unseen reveal, sensor-spotted
+cursed transparency, blocked projection, hostile versus non-hostile wake, and
+zero additional RNG.
+
+**Measured effect and process custody:** the acquisition, direct-impact,
+map-potion, and swallowed files pass **105/105**. Eight ambient-ogre, known
+monster-speed-potion, sleeping-potion flight, striking-wand,
+smoky-invisibility-potion, timed-blindness, clean Pri-loca, and live
+Fast-ration controls pass **8/8** with exact RNG/screens.
+`test/bridge_free.test.js` passes **8/8**, and the mechanical audit reports
+**125 audited files, 15 guarded modules, and 19 fixture modules**. Every
+`node --test` process was guarded, singular, and observed through normal exit;
+none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** invisibility is not one
+`minvis` assignment; visible-square sight is not actor perception; cursed
+invisibility does not always anger; and swallowed curse support does not prove
+cursed ordinary map transport. Cursed or greased map flight, alternate
+direction validation and rollback, blind or burdened throwers, special terrain
+and recoil, nonordinary and long-worm targets, water, oil, acid, polymorph,
+hero impact, shops, saddles, interactive naming, fire-destruction call-site
+unification, complete visibility variants, and a sealed stratum remain open.
+No full Contest suite, engine/public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should compare water's blessed/cursed target taxonomy against a
+mutation-safe cursed/greased transport design; neither may use public-session
+exactness as acceptance.
+
+---
