@@ -9,20 +9,21 @@ import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
     LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
     ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
-    SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB,
+    SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
+    MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
-    runThemeroomPostprocess, THEMEROOM_META,
+    makemonAt, runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
 import { BOULDER, CHEST, CORPSE, OIL_LAMP, STATUE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
-import { initRng } from '../js/rng.js';
+import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
@@ -525,6 +526,42 @@ test('Buried zombies own depth species and replace corpse rot timers', async () 
         }
         if (expanded.length)
             assert.ok(expanded.some(species => observed.has(species)));
+    }
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('NO_MINVENT skips weapon and inventory RNG without skipping birth', async () => {
+    const flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH;
+    for (const species of [239, 248]) { // kobold zombie, armed skeleton
+        const seed = 6000 + species;
+        themedState(seed, 7);
+        game.in_mklev = false;
+        game.level.at(10, 10).typ = ROOM;
+        enableRngLog();
+        const empty = await makemonAt(species, 10, 10, flags);
+        const emptyLog = getRngLog().slice();
+        assert.ok(empty);
+        assert.equal(empty.hasInventory, false);
+        assert.deepEqual(empty.minvent, []);
+        assert.deepEqual(empty.inventory, []);
+        assert.equal(empty.mstrategy, 0);
+
+        themedState(seed, 7);
+        game.in_mklev = false;
+        game.level.at(10, 10).typ = ROOM;
+        enableRngLog();
+        const ordinary = await makemonAt(
+            species, 10, 10,
+            MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH,
+        );
+        const ordinaryLog = getRngLog().slice();
+        assert.ok(ordinary);
+        assert.deepEqual(
+            ordinaryLog.slice(0, emptyLog.length), emptyLog,
+        );
+        assert.ok(ordinaryLog.length > emptyLog.length);
     }
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},

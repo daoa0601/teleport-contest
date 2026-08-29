@@ -37,7 +37,7 @@ import {
     M_AP_FURNITURE, M_AP_OBJECT,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL,
-    MM_NOCOUNTBIRTH, MM_NOMSG,
+    MM_NOCOUNTBIRTH, MM_NOMSG, NO_MINVENT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
 } from './const.js';
@@ -2413,6 +2413,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
 
     let monsterWeaponQuantity;
     let hasMonsterInventory = false;
+    const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
     const monsterInventory = [];
     const mongets = otyp => {
@@ -2480,18 +2481,22 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
         giveOffensiveMonsterItem();
     };
-    if (mndx === PM_VLAD_THE_IMPALER)
+    if (allowMonsterInventory && mndx === PM_VLAD_THE_IMPALER)
         mongets(CANDELABRUM_OF_INVOCATION);
     if (isQuestNemesis) {
         // makemon() gives MS_NEMESIS the Bell before its level-generation
         // sleep gate and normal weapon/inventory initialization.
-        mongets(BELL_OF_OPENING);
+        if (allowMonsterInventory) mongets(BELL_OF_OPENING);
         if (game.in_mklev && isNeutralDemon
             && !game.u?.uhave?.amulet && rn2(5)) {
             monsterSleeping = 1;
         }
     }
-    if (mndx === PM_VLAD_THE_IMPALER) {
+    // C makemon.c's allow_minvent gate surrounds m_initweap() but not birth
+    // state such as mimic appearance, sleep, peacefulness, or shapechanging.
+    if (!allowMonsterInventory) {
+        // The caller requires an empty initial inventory.
+    } else if (mndx === PM_VLAD_THE_IMPALER) {
         // Vlad is a vampire prince and extra-nasty, reducing the ordinary
         // armament table to rnd(8).  His fixed Candelabrum above exists
         // before this shared weapon/offensive-item tail.
@@ -3056,8 +3061,12 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
     }
 
-    if (mndx === PM_ARCH_PRIEST || mndx === PM_ALIGNED_CLERIC
-        || mndx === PM_HIGH_CLERIC) {
+    // m_initinv(), m_dowear(), and the domestic-saddle probe share the same
+    // allow_minvent gate.  NO_MINVENT must consume none of their RNG and must
+    // leave an empty minvent even for species with fixed starting objects.
+    if (allowMonsterInventory
+        && (mndx === PM_ARCH_PRIEST || mndx === PM_ALIGNED_CLERIC
+            || mndx === PM_HIGH_CLERIC)) {
         // C ref: makemon.c m_initinv(), Priest/Cleric quest-leader branch.
         mongets(rn2(7) ? ROBE
             : rn2(3) ? CLOAK_OF_PROTECTION : CLOAK_OF_MAGIC_RESISTANCE);
@@ -3065,18 +3074,18 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mkmonmoney(rn1(10, 20));
     }
 
-    if (MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
         // C ref: makemon.c m_initinv(), S_NYMPH.
         if (!rn2(2)) mongets(MIRROR);
         if (!rn2(2)) mongets(POT_OBJECT_DETECTION);
     }
-    if (mndx === PM_MINOTAUR) {
+    if (allowMonsterInventory && mndx === PM_MINOTAUR) {
         // C ref: makemon.c:m_initinv(), S_GIANT.  This probe belongs to the
         // explicit minotaur constructor, before the common defensive and
         // miscellaneous inventory reservoirs.
         if (!rn2(8) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
             mongets(WAN_DIGGING);
-    } else if (MONSTER_SYMBOL[mndx] === 34
+    } else if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 34
         && (genderFlags & M2_GIANT)) {
         // C ref: makemon.c m_initinv(), is_giant().  Each iteration chooses
         // one weighted gem/glass type, creates it without ordinary object
@@ -3093,13 +3102,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             hasMonsterInventory = true;
         }
     }
-    if (MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
         mkmonmoney(d(level_difficulty(), 30));
     }
-    if (MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
         if (rn2(7)) mongets(MUMMY_WRAPPING);
     }
-    if (MONSTER_SYMBOL[mndx] === 38) { // S_LICH
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 38) { // S_LICH
         if (mndx === 185 && !rn2(13)) { // PM_MASTER_LICH
             mongets(rn2(7) ? ATHAME : WAN_NOTHING);
         } else if (mndx === 186 && !rn2(3)) { // PM_ARCH_LICH
@@ -3113,7 +3122,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             hasMonsterInventory = true;
         }
     }
-    if (MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
         // C ref: makemon.c m_initinv(), S_GNOME.  During Mines generation
         // the candle chance is 1/20 (1/60 elsewhere).
         const dungeonName = game.dungeons?.[game.u?.uz?.dnum ?? 0]?.dname;
@@ -3129,7 +3138,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             candle.lamplit = !game.level.at(x, y)?.lit;
         }
     }
-    if (MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
+    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
         // C ref: makemon.c m_initinv().  The class switch evaluates the rare
         // Schrödinger-box probe before its PM_QUANTUM_MECHANIC species test,
         // so genetic engineers consume the same rn2(20) even though they can
@@ -3148,8 +3157,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
     }
 
-    if (mndx === 298 && !rn2(4)) mongets(SPEAR); // PM_ICE_DEVIL
-    if (mndx === PM_ASMODEUS) {
+    if (allowMonsterInventory && mndx === 298 && !rn2(4))
+        mongets(SPEAR); // PM_ICE_DEVIL
+    if (allowMonsterInventory && mndx === PM_ASMODEUS) {
         // C makemon.c:m_initinv(), S_DEMON.  Asmodeus has no weapon attack,
         // so his fixed cold/fire wands are inventory declarations rather
         // than m_initweap() gear and precede both common magic reservoirs.
@@ -3160,7 +3170,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // m_initinv() finishes with two level-gated reservoir rolls for every
     // monster.  The water demon wins the defensive-item check in this
     // witness and receives the selected create-monster scroll.
-    if (!skipCommonMonsterInventory) {
+    if (allowMonsterInventory && !skipCommonMonsterInventory) {
         const defensiveRoll = rn2(50);
         if (baseLevel > defensiveRoll) {
             const defensiveItem = randomDefensiveMonsterItem(mndx);
@@ -3175,7 +3185,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // C ref: makemon.c m_initinv().  Greedy monsters get a final gold gate
     // after the defensive and miscellaneous reservoirs.  Amount dice depend
     // on whether class-specific equipment already populated the inventory.
-    if ((genderFlags & M2_GREEDY)
+    if (allowMonsterInventory && (genderFlags & M2_GREEDY)
         && !monsterInventory.some(object => object.otyp === GOLD_PIECE)
         && !rn2(5)) {
         const amount = d(level_difficulty(), hasMonsterInventory ? 5 : 10);
@@ -3185,7 +3195,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     }
     // makemon()'s rare domestic-saddle check is likewise unconditional on
     // the random roll and short-circuits only after it fails.
-    rn2(100);
+    if (allowMonsterInventory) rn2(100);
     const classIndex = MONSTER_SYMBOL[mndx] || 0;
     // C makemon.c: during level creation, M1_CONCEAL actors hide under an
     // object already present on their square and eel-class actors hide in
