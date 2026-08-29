@@ -61,6 +61,7 @@ import {
 import { inTown } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { syncBlindness } from './senses.js';
+import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
@@ -953,18 +954,13 @@ function pickUpMonsterFloorObject(monster, state) {
     } else {
         [carriedObject] = pile.splice(index, 1);
     }
-    const inventory = monster.minvent || monster.inventory || [];
     // Generated minvent arrays are chronological in the JS projection.
     // Appending a later pickup lets relobj's reverse traversal reproduce C's
-    // newest-first minvent chain without corrupting the stored convention.
-    inventory.push(carriedObject);
-    monster.minvent = inventory;
-    monster.inventory = inventory;
+    // newest-first minvent chain. Shared mpickobj ownership attaches any
+    // carrying effect before linking the identity into that array.
+    addObjectToMonsterInventory(monster, carriedObject, state);
     monster.weaponCheck = NEED_WEAPON;
     checkMonsterGearNextTurn(monster);
-    carriedObject.ox = monster.mx;
-    carriedObject.oy = monster.my;
-    carriedObject.where = 'minvent';
     return carriedObject;
 }
 

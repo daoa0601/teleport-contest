@@ -1,13 +1,13 @@
-// figurine.js — Source-owned spontaneous transformation for ordinary floor
-// and hero-inventory figurine carriers. C refs: apply.c:fig_transform() and
-// dog.c:make_familiar()/initedog().
+// figurine.js — Source-owned spontaneous transformation for ordinary floor,
+// hero-inventory, and monster-inventory figurine carriers.
+// C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 
 import { currentAttribute } from './attrib.js';
 import {
     G_EXTINCT, G_GENOD, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE,
-    MM_NOMSG, NO_MINVENT, IS_OBSTRUCTED, W_NONPASSWALL, isok,
+    MM_NOMSG, NO_MINVENT, IS_OBSTRUCTED, IS_POOL, W_NONPASSWALL, isok,
 } from './const.js';
-import { newsym } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
 import { game } from './gstate.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, remove_object,
@@ -18,6 +18,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
+import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from './object_timers.js';
@@ -39,7 +40,7 @@ const PM_BLACK_LIGHT = 119;
 const PM_STALKER = 153;
 
 function ordinaryFigurineGap(figurine, state) {
-    if (figurine.where !== 'inventory' && figurine.where !== 'floor')
+    if (!['inventory', 'floor', 'minvent'].includes(figurine.where))
         return 'unsupported carrier';
     if (figurine.where === 'inventory' && state.u?.uswallow)
         return 'swallowed placement';
@@ -60,6 +61,10 @@ function ordinaryFigurineGap(figurine, state) {
         || (flags1 & M1_NOLIMBS) === M1_NOLIMBS
         || !(MONSTER_MOVE[mnum] > 0)) return 'nonstandard locomotion';
     if (MONSTER_HAS_WEAPON_ATTACK[mnum]) return 'immediate pet weapon setup';
+    if (figurine.where === 'minvent'
+        && !monsterCarryingFigurine(figurine, state)) {
+        return 'detached monster inventory';
+    }
     return null;
 }
 
@@ -110,8 +115,34 @@ function floorFigurinePosition(figurine, state) {
     return { x, y };
 }
 
+function monsterCarryingFigurine(figurine, state) {
+    return state.level?.monsters?.find(monster =>
+        (monster.minvent || monster.inventory || []).includes(figurine)
+    ) || null;
+}
+
+function possessive(noun) {
+    return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
+}
+
+function monsterCarrierDescription(monster, state) {
+    if (canSeeMonster(monster, monster.mx, monster.my)
+        && (!monster.wormno || cansee(monster.mx, monster.my))) {
+        const given = monster.name || monster.givenName;
+        const name = given || monsterTypeName(monster.mnum, !!monster.female);
+        const owner = given ? name : `${articleFor(name)} ${name}`;
+        return `${possessive(owner)} pack`;
+    }
+    return IS_POOL(state.level?.at?.(monster.mx, monster.my)?.typ)
+        ? 'empty water' : 'thin air';
+}
+
 function deleteFigurine(figurine, state) {
     if (figurine.where === 'floor') remove_object(figurine);
+    else if (figurine.where === 'minvent') {
+        const carrier = monsterCarryingFigurine(figurine, state);
+        if (carrier) removeObjectFromMonsterInventory(carrier, figurine);
+    }
     else {
         const index = (state.inventory || []).indexOf(figurine);
         if (index >= 0) state.inventory.splice(index, 1);
@@ -131,9 +162,16 @@ export async function runClaimedFigurineTimer(
     if (gap) throw new Error(`FIG_TRANSFORM ordinary owner excludes ${gap}`);
 
     const onFloor = figurine.where === 'floor';
+    const inMonsterInventory = figurine.where === 'minvent';
+    const monsterCarrier = inMonsterInventory
+        ? monsterCarryingFigurine(figurine, state) : null;
+    const carrier = onFloor ? 'floor'
+        : inMonsterInventory ? 'minvent' : 'inventory';
     const carrierPosition = onFloor
         ? floorFigurinePosition(figurine, state)
-        : { x: state.u.ux, y: state.u.uy };
+        : inMonsterInventory
+            ? { x: monsterCarrier.mx, y: monsterCarrier.my }
+            : { x: state.u.ux, y: state.u.uy };
     if (!carrierPosition) {
         const retryDelay = rnd(5000);
         const retryTimer = scheduleObjectTimer(
@@ -145,7 +183,7 @@ export async function runClaimedFigurineTimer(
             retryScheduled: true, retryDelay,
             retryDeadline: retryTimer.deadline,
             finishPending: false, message: null,
-            carrier: onFloor ? 'floor' : 'inventory',
+            carrier,
         };
     }
 
@@ -169,7 +207,7 @@ export async function runClaimedFigurineTimer(
             retryScheduled: true, retryDelay,
             retryDeadline: retryTimer.deadline,
             finishPending: false, message: null,
-            carrier: 'inventory',
+            carrier,
         };
     }
 
@@ -190,7 +228,7 @@ export async function runClaimedFigurineTimer(
         return {
             figurine, monster: null, transformed: false,
             finishPending: false, message: null,
-            carrier: onFloor ? 'floor' : 'inventory',
+            carrier,
         };
     }
 
@@ -216,6 +254,12 @@ export async function runClaimedFigurineTimer(
         ? (floorVisible && !overdue
             ? `You see a figurine transform into ${articleFor(name)} ${name}!`
             : null)
+        : inMonsterInventory
+            ? (cansee(position.x, position.y) && !overdue
+                ? `You see ${articleFor(name)} ${name} drop out of ${
+                    monsterCarrierDescription(monsterCarrier, state)
+                }!`
+                : null)
         : (blind
             ? 'You feel something drop from your pack!'
             : `You see ${articleFor(name)} ${name} drop out of your pack!`);
@@ -223,7 +267,7 @@ export async function runClaimedFigurineTimer(
         figurine, monster, chance, disposition,
         transformed: true, finishPending: true, message,
         overdue,
-        carrier: onFloor ? 'floor' : 'inventory',
+        carrier,
         x: onFloor ? carrierPosition.x : monster.mx,
         y: onFloor ? carrierPosition.y : monster.my,
         redraw: floorVisible && !overdue,

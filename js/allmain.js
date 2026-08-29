@@ -101,6 +101,7 @@ import {
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
 } from './figurine.js';
+import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
@@ -2666,15 +2667,11 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     object.ready = false;
     const index = game.inventory.indexOf(object);
     if (index >= 0) game.inventory.splice(index, 1);
-    const inventory = monster.minvent || monster.inventory || [];
     // Runtime monster inventories retain acquisition order.  Hero-kill
     // relobj walks this array backward, reproducing C's newest-first minvent
-    // chain; append newly stolen objects rather than mixing chain order into
-    // an otherwise chronological representation.
-    inventory.push(object);
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    object.where = 'minvent';
+    // chain. mpickobj() applies carrying effects before linking the stolen
+    // identity, which can replace a cursed figurine's existing deadline.
+    addObjectToMonsterInventory(monster, object, game);
     monster.mavenge = 1;
     findArmorClass(game);
 

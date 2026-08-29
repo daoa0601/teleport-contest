@@ -5,7 +5,7 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
-import { COLNO, G_GENOD, ROOM, ROWNO, STONE } from '../js/const.js';
+import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE } from '../js/const.js';
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
 } from '../js/figurine.js';
@@ -13,6 +13,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { FIGURINE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import {
@@ -120,6 +121,34 @@ async function dropFigurineThroughCommand(figurine) {
     return after;
 }
 
+function ordinaryMonsterCarrier({ x = 12, y = 10, invisible = false } = {}) {
+    const monster = {
+        m_id: 700,
+        mnum: PM_LEOCROTTA,
+        mx: x, my: y,
+        mhp: 30, mhpmax: 30,
+        female: false,
+        minvis: invisible ? 1 : 0,
+        mundetected: 0,
+        minvent: [],
+        inventory: [],
+        hasInventory: false,
+    };
+    game.level.monsters.push(monster);
+    return monster;
+}
+
+function transferFigurineToMonster(figurine, monster, timerSeed = 321) {
+    const prior = { ...figTimer(figurine) };
+    const index = game.inventory.indexOf(figurine);
+    if (index >= 0) game.inventory.splice(index, 1);
+    initRng(BigInt(timerSeed));
+    enableRngLog();
+    addObjectToMonsterInventory(monster, figurine, game);
+    const timer = figTimer(figurine);
+    return { prior, timer, timerLog: [...getRngLog()] };
+}
+
 test('only a viable cursed carried figurine receives a fresh timer', () => {
     freshFigurineState();
     const { figurine, timerLog } = carriedFigurine();
@@ -137,6 +166,113 @@ test('only a viable cursed carried figurine receives a fresh timer', () => {
     assert.equal(objectTimers(genocided).length, 0);
     assertNoBridgeUse();
 });
+
+test('monster acquisition replaces the timer before visible pack transform',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        const carrier = ordinaryMonsterCarrier();
+        const { prior, timer, timerLog } = transferFigurineToMonster(
+            figurine, carrier,
+        );
+        assert.equal(timerLog.length, 1);
+        assert.match(timerLog[0], /^rnd\(9000\)=\d+$/);
+        const timerRoll = Number(timerLog[0].match(/=(\d+)$/)[1]);
+        assert.notEqual(timer.id, prior.id);
+        assert.equal(timer.deadline, game.moves + timerRoll + 200);
+        assert.equal(figurine.where, 'minvent');
+        assert.equal(figurine.carrierMid, carrier.m_id);
+        assert.ok(carrier.minvent.includes(figurine));
+        assert.equal(carrier.hasInventory, true);
+
+        const event = await claimTransform(figurine, 1);
+        assert.equal(event.carrier, 'minvent');
+        assert.equal(event.message,
+            "You see a wumpus drop out of a leocrotta's pack!");
+        assert.ok(carrier.minvent.includes(figurine));
+
+        finishFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assert.equal(carrier.minvent.includes(figurine), false);
+        assert.equal(carrier.hasInventory, false);
+        assert.equal('carrierMid' in figurine, false);
+        assertNoBridgeUse();
+    });
+
+test('invisible monster carrier is attributed to thin air', async () => {
+    freshFigurineState();
+    const { figurine } = carriedFigurine();
+    const carrier = ordinaryMonsterCarrier({ invisible: true });
+    transferFigurineToMonster(figurine, carrier);
+
+    const event = await claimTransform(figurine, 1);
+    assert.equal(event.message, 'You see a wumpus drop out of thin air!');
+    assert.ok(carrier.minvent.includes(figurine));
+    finishFigurineTimer(event, game);
+    assert.equal(carrier.hasInventory, false);
+    assertNoBridgeUse();
+});
+
+test('invisible monster carrier in a pool is attributed to empty water',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        const carrier = ordinaryMonsterCarrier({ invisible: true });
+        game.level.at(carrier.mx, carrier.my).typ = POOL;
+        transferFigurineToMonster(figurine, carrier);
+
+        const event = await claimTransform(figurine, 1);
+        assert.equal(event.message,
+            'You see a wumpus drop out of empty water!');
+        finishFigurineTimer(event, game);
+        assert.equal(figurine.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('overdue monster-inventory transform stays silent until deletion',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        const carrier = ordinaryMonsterCarrier();
+        transferFigurineToMonster(figurine, carrier);
+
+        const event = await claimTransform(figurine, 1, 25);
+        assert.equal(event.transformed, true);
+        assert.equal(event.overdue, true);
+        assert.equal(event.message, null);
+        assert.ok(carrier.minvent.includes(figurine));
+        finishFigurineTimer(event, game);
+        assert.equal(carrier.minvent.includes(figurine), false);
+        assertNoBridgeUse();
+    });
+
+test('blocked monster-carried figurine retains its carrier for retry',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        const carrier = ordinaryMonsterCarrier();
+        transferFigurineToMonster(figurine, carrier);
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++)
+                game.level.at(x, y).typ = STONE;
+        }
+        game.level.at(carrier.mx, carrier.my).typ = ROOM;
+
+        const event = await claimTransform(figurine, 29);
+        const log = getRngLog();
+        assert.match(log.at(-1), /^rnd\(5000\)=\d+$/);
+        const retryRoll = Number(log.at(-1).match(/=(\d+)$/)[1]);
+        assert.equal(event.transformed, false);
+        assert.equal(event.retryScheduled, true);
+        assert.equal(event.retryDelay, retryRoll);
+        assert.equal(event.retryDeadline, game.moves + retryRoll);
+        assert.equal(event.message, null);
+        assert.equal(event.monster, null);
+        assert.equal(figurine.where, 'minvent');
+        assert.ok(carrier.minvent.includes(figurine));
+        assert.equal(figTimer(figurine).deadline, event.retryDeadline);
+        assertNoBridgeUse();
+    });
 
 test('cursed carried figurine creates a hostile actor before pack prose',
     async () => {
