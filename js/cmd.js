@@ -23,7 +23,9 @@ import {
     cansee, clearAreaCells, couldsee, visibleCellsFrom, vision_recalc, vision_reset,
     vision_reset_new_level,
 } from './vision.js';
-import { beginLampBurn, endLampBurn } from './light.js';
+import {
+    beginLampBurn, endLampBurn, transformMagicLampToOilLamp,
+} from './light.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
     dungeonFeatureSentenceAt,
@@ -7778,11 +7780,9 @@ async function dorub(cannedInvlet = null) {
         if ((object.spe || 0) > 0 && rn2(3) === 0) {
             // C performs the bones-safe lamp transformation before the
             // released monster can grant a fatal artifact wish.
-            object.otyp = OIL_LAMP;
-            object.name = 'oil lamp';
-            object.plural = 'oil lamps';
-            object.spe = 0;
-            object.age = 1000 + rn2(500);
+            transformMagicLampToOilLamp(
+                object, 1000 + rn2(500), game, game.moves ?? 0,
+            );
             await djinniFromLamp(object);
             if (!game._knownObjectTypes?.has(MAGIC_LAMP)) {
                 exerciseAttribute(4, true);
@@ -15021,17 +15021,18 @@ async function useMagicMarker() {
     }
 }
 
-function timedLampXname(object) {
+function lampXname(object) {
     if (object?.otyp === BRASS_LANTERN) return 'brass lantern';
     const typeKnown = object?.typeKnown
         || game._knownObjectTypes?.has(object?.otyp);
-    return typeKnown ? 'oil lamp' : 'lamp';
+    if (!typeKnown) return 'lamp';
+    return object?.otyp === MAGIC_LAMP ? 'magic lamp' : 'oil lamp';
 }
 
-// C ref: apply.c:use_lamp().  This owner is deliberately limited to the two
-// fuel-timed lamp types already implemented by light.js; magic lamps, candles,
-// and their non-equivalent lifecycle remain explicit gaps.
-async function useTimedLamp(object) {
+// C ref: apply.c:use_lamp().  Lamps share command presentation, but magic
+// lamps keep permanent untimed light while their djinni charge remains.
+// Candles and their non-equivalent quantity/flame lifecycle remain separate.
+async function useLamp(object) {
     const lamp = object.otyp === BRASS_LANTERN ? 'lantern' : 'lamp';
     if (object.lamplit) {
         await pline(`Your ${lamp} is now off.`);
@@ -15046,20 +15047,22 @@ async function useTimedLamp(object) {
         return;
     }
 
-    if ((object.age ?? 0) === 0) {
+    if ((object.age ?? 0) === 0
+        || (object.otyp === MAGIC_LAMP && (object.spe ?? 0) === 0)) {
         if (object.otyp === BRASS_LANTERN) {
             await pline(heroIsBlind(game)
                 ? 'Nothing seems to happen.'
                 : 'Your lantern is out of power.');
         } else {
-            await pline(`This ${timedLampXname(object)} has no oil.`);
+            await pline(`This ${lampXname(object)} has no oil.`);
         }
         game.context.move = 1;
         return;
     }
 
     if (object.cursed && rn2(2) === 0) {
-        if (object.otyp === OIL_LAMP && rn2(3) === 0) {
+        if ([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
+            && rn2(3) === 0) {
             const fingers = (game.uarmg || game.u?.uarmg)
                 ? 'gloves' : 'fingers';
             await pline(
@@ -15068,7 +15071,7 @@ async function useTimedLamp(object) {
             game.u.glibTurns = (game.u.glibTurns ?? 0) + d(2, 10);
         } else if (!heroIsBlind(game)) {
             await pline(
-                `The ${timedLampXname(object)} flickers for a moment, then dies.`,
+                `The ${lampXname(object)} flickers for a moment, then dies.`,
             );
         } else {
             await pline('Nothing seems to happen.');
@@ -15132,8 +15135,8 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
-            if ([OIL_LAMP, BRASS_LANTERN].includes(item.otyp)) {
-                await useTimedLamp(item);
+            if ([OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(item.otyp)) {
+                await useLamp(item);
                 return;
             }
             if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(item.otyp)) {

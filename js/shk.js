@@ -14,7 +14,8 @@ import { MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
 import { roomForRoomno } from './room.js';
 import { intemple, templeRoomAt } from './priest.js';
 import {
-    BRASS_LANTERN, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OIL_LAMP,
+    BRASS_LANTERN, MAGIC_LAMP, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES,
+    OIL_LAMP,
 } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_TOWN, recordAchievement } from './achievements.js';
@@ -376,17 +377,23 @@ export function shopObjectUnitCost(object, resident = null, state = game) {
 }
 
 // C refs: shk.c:check_unpaid()/check_unpaid_usage()/cost_per_charge().
-// Ordinary oil lamps and brass lanterns pay a usage fee only when switched
-// on while their resident shopkeeper is still operating the current shop.
+// Lamps pay a usage fee only when switched on while their resident shopkeeper
+// is still operating the current shop.  Magic-lamp lighting uses an ordinary
+// oil-lamp fee so its inexhaustible light does not identify it for free.
 // Prefix RNG is consumed before deaf/mute presentation, exactly as in C.
 export async function chargeUnpaidLampUse(object, state = game) {
     if (!object?.unpaid
-        || ![OIL_LAMP, BRASS_LANTERN].includes(object.otyp)) return null;
+        || ![OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(object.otyp)) {
+        return null;
+    }
     const resident = shopkeeperForHero(state);
     if (!resident) return null;
 
-    let amount = shopObjectUnitCost(object, resident, state);
-    if ((object.spe ?? 0) > 1) amount = Math.trunc(amount / 4);
+    let amount = object.otyp === MAGIC_LAMP
+        ? OBJECT_COST[OIL_LAMP]
+        : shopObjectUnitCost(object, resident, state);
+    if (object.otyp !== MAGIC_LAMP && (object.spe ?? 0) > 1)
+        amount = Math.trunc(amount / 4);
     if (amount <= 0) return null;
 
     const first = rn2(3) === 0 ? 'Hey!  ' : '';

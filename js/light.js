@@ -2,13 +2,14 @@
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { game } from './gstate.js';
-import { BRASS_LANTERN, OIL_LAMP } from './object_data.js';
+import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP } from './object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer,
     stopObjectTimer,
 } from './object_timers.js';
 
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
+const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
 
 function lampBreakpoint(age) {
     if (age > 150) return age - 150;
@@ -24,9 +25,13 @@ function lampBreakpoint(age) {
 export function beginLampBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !TIMED_LAMP_TYPES.has(object.otyp)
-        || (object.age ?? 0) <= 0)
-        return false;
+    if (!object || !LAMP_TYPES.has(object.otyp)) return false;
+    if (object.otyp === MAGIC_LAMP) {
+        object.lamplit = true;
+        state.vision_full_recalc = 1;
+        return true;
+    }
+    if ((object.age ?? 0) <= 0) return false;
     const turns = lampBreakpoint(object.age);
     object.lamplit = true;
     object.age -= turns;
@@ -46,6 +51,24 @@ export function beginOilLampBurn(
     return beginLampBurn(object, state, currentTurn);
 }
 
+// apply.c:dorub() performs this type change before the released djinni can
+// grant a fatal wish.  A lit magic lamp already has a light source but no
+// timer; once it becomes an oil lamp, begin_burn(..., TRUE) attaches the
+// ordinary fuel timer while preserving that light-source identity.
+export function transformMagicLampToOilLamp(
+    object, oilAge, state = game, currentTurn = state.moves ?? 0,
+) {
+    if (object?.otyp !== MAGIC_LAMP || !Number.isFinite(oilAge)
+        || oilAge <= 0) return false;
+    object.otyp = OIL_LAMP;
+    object.name = 'oil lamp';
+    object.plural = 'oil lamps';
+    object.spe = 0;
+    object.age = oilAge;
+    if (object.lamplit) beginLampBurn(object, state, currentTurn);
+    return true;
+}
+
 // timeout.c:end_burn(..., TRUE) reaches cleanup_burn() through stop_timer().
 // The object's stored age excludes the turns owned by its active timer, so a
 // manual switch-off must restore the still-unspent portion before darkening
@@ -54,8 +77,13 @@ export function beginOilLampBurn(
 export function endLampBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !TIMED_LAMP_TYPES.has(object.otyp) || !object.lamplit)
+    if (!object || !LAMP_TYPES.has(object.otyp) || !object.lamplit)
         return false;
+    if (object.otyp === MAGIC_LAMP) {
+        object.lamplit = false;
+        state.vision_full_recalc = 1;
+        return true;
+    }
     const timer = stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     if (!timer || !Number.isFinite(timer.deadline)) return false;
     object.age = (object.age ?? 0)
