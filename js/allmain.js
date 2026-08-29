@@ -28,7 +28,7 @@ import {
     wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
-import { artifactById } from './artifacts.js';
+import { artifactById, initializeArtifacts } from './artifacts.js';
 import {
     curseObjectState, unblessObjectState,
 } from './object_state.js';
@@ -6561,17 +6561,17 @@ export async function newgame() {
     const replayMoves = bridgeFree ? '' : (g.replayMoves || '');
     // Some level-generation boundaries depend on the command fixture but are
     // reached before the post-mklev path flags below can be derived.
-    g._knightCombatPath = g.urole?.key === 'knight'
+    g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
         && /^  ns#ride/.test(replayMoves);
-    g._monkNorthPath = g.urole?.key === 'monk'
+    g._monkNorthPath = !bridgeFree && g.urole?.key === 'monk'
         && /^  n:kkkhhhjjjlll\.ssh,ek/.test(replayMoves);
-    g._valkPitPath = g.urole?.key === 'valkyrie'
+    g._valkPitPath = !bridgeFree && g.urole?.key === 'valkyrie'
         && /^  nllllllllkkkllkk>/.test(replayMoves);
-    g._wizardBindPath = g.urole?.key === 'wizard'
+    g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
-    g._wizardPolyPath = g.urole?.key === 'wizard'
+    g._wizardPolyPath = !bridgeFree && g.urole?.key === 'wizard'
         && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
-    g._wizardQuaffPath = g.urole?.key === 'wizard'
+    g._wizardQuaffPath = !bridgeFree && g.urole?.key === 'wizard'
         && /^  nqhzc\.rjhlll/.test(replayMoves);
     g._priestExtcmdPath = !bridgeFree && g.urole?.key === 'priest'
         && /^  ns#pray/.test(replayMoves);
@@ -6580,6 +6580,10 @@ export async function newgame() {
     // Legacy mode retains the guarded fastforward name for compatibility.
     const handednessRoll = bridgeFree
         ? initializeSourceStartup() : fastforward_pre_mklev();
+    // The legacy RNG bridge substitutes for the pre-mklev call sequence, not
+    // for artifact state.  Keep the same no-RNG C initialization in both
+    // modes while bridge-free startup invokes it inside its source boundary.
+    if (!bridgeFree) initializeArtifacts(g);
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
         const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
@@ -6617,9 +6621,9 @@ export async function newgame() {
         && g.u?.ux === 25 && g.u?.uy === 15;
     if (bridgeFree && g.urole?.key === 'samurai')
         g._samuraiLiveScheduler = true;
-    g._touristExplorePath = g.urole?.key === 'tourist'
+    g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
-    g._rangerNamePath = g.urole?.key === 'ranger'
+    g._rangerNamePath = !bridgeFree && g.urole?.key === 'ranger'
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._rogueExplorePath = !bridgeFree && g.urole?.key === 'rogue'
         && g.u?.ux === 71 && g.u?.uy === 14;
@@ -6635,15 +6639,15 @@ export async function newgame() {
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
     g._rogueChargenPath = !bridgeFree && !!g._characterPickerUsed
         && g.urole?.key === 'rogue' && g.u?.ux === 36 && g.u?.uy === 7;
-    g._valkChatPath = g.urole?.key === 'valkyrie'
+    g._valkChatPath = !bridgeFree && g.urole?.key === 'valkyrie'
         && /#chat/.test(replayMoves);
     g._priestCastPath = !bridgeFree && g.urole?.key === 'priest'
         && /Z.*#turn/s.test(replayMoves);
-    g._healerNewmoonPath = g.urole?.key === 'healer'
+    g._healerNewmoonPath = !bridgeFree && g.urole?.key === 'healer'
         && /szf/.test(replayMoves);
-    g._knightPonyPath = g.urole?.key === 'knight'
+    g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
         && /^  sns#ride/.test(replayMoves);
-    g._knightCombatPath = g.urole?.key === 'knight'
+    g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
         && /^  ns#ride/.test(replayMoves);
 
     if (bridgeFree) {

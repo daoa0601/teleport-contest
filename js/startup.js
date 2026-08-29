@@ -5,6 +5,7 @@
 import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
+import { initializeArtifacts } from './artifacts.js';
 import { rn2, rnd } from './rng.js';
 
 // This boundary owns live operations and their state mutations.  It does not
@@ -28,6 +29,7 @@ export function initializeSourceStartup() {
     rn2(3);
     rn2(2);
     init_dungeons();
+    initializeArtifacts(game);
 
     // newpw() precedes the human racial point applied by u_init_misc().
     if (game.urole?.key === 'priest' || game.urole?.key === 'wizard')

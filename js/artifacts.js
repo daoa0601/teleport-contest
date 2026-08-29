@@ -41,10 +41,8 @@ const RAW_ARTIFACTS = [
         'The Sceptre of Might', 'mace', 1, 'caveman', true, true,
         'conflict',
     ],
-    [
-        'The Palantir of Westernesse', 'crystal ball', -1, null, true, true,
-        'taming',
-    ],
+    // The Palantir remains inside artilist.h's historical #if 0 block and is
+    // not part of NetHack 5.0's artifact enum or runtime table.
     [
         'The Staff of Aesculapius', 'quarterstaff', 0, 'healer', true, true,
         'healing',
@@ -138,14 +136,59 @@ export const ARTIFACTS = RAW_ARTIFACTS.map((
     wieldedProperties: SUPPORTED_WIELDED_PROPERTIES.get(name) || [],
 }));
 
-export function artifactByName(value) {
+function artifactList(state = game) {
+    return state._artifactRuntime instanceof Map
+        ? [...state._artifactRuntime.values()] : ARTIFACTS;
+}
+
+export function artifactByName(value, state = game) {
     const wanted = fuzzyArtifactName(value);
-    return ARTIFACTS.find(artifact =>
+    return artifactList(state).find(artifact =>
         fuzzyArtifactName(artifact.name) === wanted) || null;
 }
 
-export function artifactById(id) {
+export function artifactById(id, state = game) {
+    if (state._artifactRuntime instanceof Map)
+        return state._artifactRuntime.get(id) || null;
     return ARTIFACTS.find(artifact => artifact.id === id) || null;
+}
+
+// C artifact.c:init_artifacts()/hack_artifacts().  The static artilist is
+// copied per game because selected role/alignment can retarget gift and quest
+// artifacts.  Existence/discovery state is new-game state, not module state.
+export function initializeArtifacts(state = game) {
+    const role = state.urole?.key || null;
+    const alignment = state.initAlignment?.value ?? 0;
+    const runtime = new Map(ARTIFACTS.map(artifact => [artifact.id, {
+        ...artifact,
+        attack: artifact.attack ? { ...artifact.attack } : null,
+        wieldedProperties: [...artifact.wieldedProperties],
+    }]));
+
+    for (const artifact of runtime.values()) {
+        if (artifact.role === role && artifact.alignment !== null)
+            artifact.alignment = alignment;
+    }
+    const excalibur = [...runtime.values()].find(artifact =>
+        artifact.name === 'Excalibur');
+    if (excalibur && role !== 'knight') excalibur.role = null;
+
+    const questName = state.urole?.artifactName;
+    const questArtifact = questName
+        ? [...runtime.values()].find(artifact =>
+            fuzzyArtifactName(artifact.name) === fuzzyArtifactName(questName))
+        : null;
+    if (questArtifact) {
+        questArtifact.alignment = alignment;
+        questArtifact.role = role;
+    }
+
+    state._artifactRuntime = runtime;
+    state._artifactExists = new Set();
+    state._artifactDiscoveries = [];
+    state._artifactExistByBase = new Map();
+    state._artifactExistCount = 0;
+    return runtime;
 }
 
 function existenceSet() {

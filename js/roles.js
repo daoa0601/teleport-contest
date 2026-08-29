@@ -103,6 +103,7 @@ export const roles = [
       xlev: 10,
       initrecord: 0,
       petnum: 16,
+      artifactName: 'the Sceptre of Might',
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'healer', filecode: 'Hea', name: { m: 'Healer', f: 'Healer' }, mnum: 3,
       title: [
@@ -129,6 +130,7 @@ export const roles = [
       xlev: 20,
       initrecord: 10,
       petnum: -1,
+      artifactName: 'the Staff of Aesculapius',
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'knight', filecode: 'Kni', name: { m: 'Knight', f: 'Knight' }, mnum: 4,
       title: [
@@ -193,6 +195,7 @@ export const roles = [
       intrinsicFast: true,
       initrecord: 10,
       petnum: -1,
+      artifactName: 'the Eyes of the Overworld',
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'priest', filecode: 'Pri', name: { m: 'Priest', f: 'Priestess' }, mnum: 6,
       title: [
@@ -252,6 +255,7 @@ export const roles = [
       xlev: 12,
       initrecord: 10,
       petnum: 16,
+      artifactName: 'the Longbow of Diana',
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'rogue', filecode: 'Rog', name: { m: 'Rogue', f: 'Rogue' }, mnum: 8,
       title: [
@@ -277,6 +281,7 @@ export const roles = [
       xlev: 11,
       initrecord: 10,
       petnum: -1,
+      artifactName: 'the Master Key of Thievery',
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'samurai', filecode: 'Sam', name: { m: 'Samurai', f: 'Samurai' }, mnum: 9,
       title: [
@@ -306,6 +311,7 @@ export const roles = [
       intrinsicFast: true,
       initrecord: 10,
       petnum: 16,
+      artifactName: 'the Tsurugi of Muramasa',
       greeting: 'Konnichi wa', goodbye: 'Sayonara' },
     { key: 'tourist', filecode: 'Tou', name: { m: 'Tourist', f: 'Tourist' }, mnum: 10,
       title: [
@@ -324,6 +330,7 @@ export const roles = [
       xlev: 14,
       initrecord: 0,
       petnum: -1,
+      artifactName: 'the Platinum Yendorian Express Card',
       greeting: 'Aloha', goodbye: 'Aloha',
     },
     { key: 'valkyrie', filecode: 'Val', name: { m: 'Valkyrie', f: 'Valkyrie' }, mnum: 11,
@@ -350,6 +357,7 @@ export const roles = [
       xlev: 10,
       initrecord: 0,
       petnum: -1,
+      artifactName: 'the Orb of Fate',
       greeting: 'Velkommen', goodbye: 'Farvel' },
     { key: 'wizard', filecode: 'Wiz', name: { m: 'Wizard', f: 'Wizard' }, mnum: 12,
       title: [

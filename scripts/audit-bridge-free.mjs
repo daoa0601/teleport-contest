@@ -36,6 +36,24 @@ export function auditBridgeFreeSource() {
     if (directAllmainReads.length !== 1) {
         failures.push(`allmain.js: expected one guarded g.replayMoves read, found ${directAllmainReads.length}`);
     }
+    // Compatibility classifiers may remain for the legacy public-regression
+    // path, but bridge-free mode must make each one structurally unreachable
+    // rather than relying on an empty replay string or lucky coordinates.
+    const compatibilityClassifiers = [
+        '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
+        '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
+        '_priestExtcmdPath', '_samuraiAltarPath', '_touristExplorePath',
+        '_rangerNamePath', '_rogueExplorePath', '_rogueFriday13Path',
+        '_rogueOrcPath', '_rogueChargenPath', '_valkChatPath',
+        '_priestCastPath', '_healerNewmoonPath', '_knightPonyPath',
+    ];
+    for (const classifier of compatibilityClassifiers) {
+        const explicitLegacyGate = new RegExp(
+            `g\\.${classifier}\\s*=\\s*!bridgeFree\\s*&&`,
+        );
+        if (!explicitLegacyGate.test(allmain))
+            failures.push(`allmain.js: ${classifier} lacks an explicit legacy gate`);
+    }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');
