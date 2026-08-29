@@ -95,7 +95,9 @@ import { runClaimedObjectBurnTimer } from './light.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
-import { runClaimedFloorGlobTimer } from './glob.js';
+import {
+    finishInventoryGlobTimer, runClaimedGlobTimer,
+} from './glob.js';
 import {
     finishCarriedFigurineTimer, runClaimedCarriedFigurineTimer,
 } from './figurine.js';
@@ -2196,9 +2198,12 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         return finishEggHatchTimer(event, game, sourceTurn);
     }
     if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
-        const event = runClaimedFloorGlobTimer(claimed, game, sourceTurn);
+        const event = runClaimedGlobTimer(claimed, game, sourceTurn);
         if (event?.message) await queueTurnMessage(event.message);
-        return event;
+        const finished = finishInventoryGlobTimer(event, game, sourceTurn);
+        if (finished?.followupMessage)
+            await queueTurnMessage(finished.followupMessage);
+        return finished;
     }
     if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
         const event = await runClaimedCarriedFigurineTimer(

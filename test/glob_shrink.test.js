@@ -6,7 +6,10 @@ import {
 } from '../js/bridge_policy.js';
 import { ICE, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
-import { runClaimedFloorGlobTimer } from '../js/glob.js';
+import {
+    finishInventoryGlobTimer, runClaimedFloorGlobTimer,
+    runClaimedGlobTimer,
+} from '../js/glob.js';
 import { game, resetGame } from '../js/gstate.js';
 import { mksobj, place_object } from '../js/mklev.js';
 import {
@@ -181,21 +184,112 @@ test('overdue floor callback catches up arithmetically without RNG or prose',
         assertNoBridgeUse();
     });
 
-test('unsupported carried and icy floor carriers reject before mutation', () => {
+test('inventory threshold prose precedes reschedule and retains live mass', () => {
     freshGlobState(11);
-    const carried = mksobj(GLOB_OF_BLACK_PUDDING, true, false);
-    const carriedTimer = shrinkTimer(carried);
-    carried.where = 'inventory';
-    game.inventory = [carried];
-    game.moves = carriedTimer.deadline;
+    const glob = mksobj(GLOB_OF_BLACK_PUDDING, true, false);
+    glob.where = 'inventory';
+    glob.oeaten = 12;
+    game.inventory = [glob];
+    const timer = shrinkTimer(glob);
+    game.moves = timer.deadline;
+    enableRngLog();
+
+    const event = runClaimedGlobTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+    assert.equal(event.message,
+        'Your partly eaten glob of black pudding shrinks.');
+    assert.equal(glob.owt, 19);
+    assert.equal(glob.oeaten, 11);
+    assert.ok(game.inventory.includes(glob));
+    assert.equal(objectTimers(glob).length, 0);
+
+    finishInventoryGlobTimer(event, game, game.moves);
+    assert.ok(game.inventory.includes(glob));
+    assert.equal(shrinkTimer(glob).deadline >= game.moves + 23, true);
+    assert.equal(shrinkTimer(glob).deadline <= game.moves + 27, true);
+    assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
+    assert.equal(event.followupMessage, null);
+    assertNoBridgeUse();
+});
+
+test('inventory dissolution precedes deletion and then relieves capacity', () => {
+    freshGlobState(12);
+    game.u.acurr.a[0] = game.u.amax.a[0] = 3;
+    game.u.acurr.a[2] = game.u.amax.a[2] = 3;
+    const ballast = {
+        otyp: 0, oclass: 1, owt: 200, quan: 1,
+        quantity: 1, where: 'inventory',
+    };
+    const glob = mksobj(GLOB_OF_GRAY_OOZE, true, false);
+    glob.where = 'inventory';
+    glob.owt = 1;
+    game.inventory = [ballast, glob];
+    const timer = shrinkTimer(glob);
+    game.moves = timer.deadline;
+    enableRngLog();
+
+    const event = runClaimedGlobTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+    assert.equal(event.oldCapacity, 1);
+    assert.equal(event.message,
+        'Your glob of gray ooze dissolves completely.');
+    assert.equal(glob.owt, 0);
+    assert.ok(game.inventory.includes(glob));
+
+    finishInventoryGlobTimer(event, game, game.moves);
+    assert.equal(glob.where, 'gone');
+    assert.equal(game.inventory.includes(glob), false);
+    assert.equal(event.newCapacity, 0);
+    assert.equal(event.followupMessage,
+        'Your movements are now unencumbered.');
+    assert.deepEqual(getRngLog(), []);
+    assertNoBridgeUse();
+});
+
+test('active inventory eating skips shrink and starts a fresh attempt', () => {
+    freshGlobState(13);
+    const glob = mksobj(GLOB_OF_GREEN_SLIME, true, false);
+    glob.where = 'inventory';
+    game.inventory = [glob];
+    game.context.victual = { piece: glob };
+    const timer = shrinkTimer(glob);
+    game.moves = timer.deadline;
+    enableRngLog();
+
+    const event = runClaimedGlobTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+    assert.equal(event.skippedEating, true);
+    assert.equal(event.message, null);
+    assert.equal(glob.owt, 20);
+    assert.ok(shrinkTimer(glob).deadline >= game.moves + 23);
+    assert.ok(shrinkTimer(glob).deadline <= game.moves + 27);
+    assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
+    assertNoBridgeUse();
+});
+
+test('unsupported contained and icy floor carriers reject before mutation', () => {
+    freshGlobState(11);
+    const contained = mksobj(GLOB_OF_BLACK_PUDDING, true, false);
+    const containedTimer = shrinkTimer(contained);
+    const container = {
+        otyp: 217, oclass: 6, where: 'inventory',
+        quan: 1, quantity: 1, contents: [contained],
+    };
+    contained.where = 'contained';
+    contained.ocontainer = container;
+    game.inventory = [container];
+    game.moves = containedTimer.deadline;
     enableRngLog();
     assert.throws(
-        () => runClaimedFloorGlobTimer(
+        () => runClaimedGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         ),
-        /excludes carried, contained, buried, migrating, and monster-carried/,
+        /excludes contained, buried, migrating, and monster-carried/,
     );
-    assert.equal(carried.owt, 20);
+    assert.equal(contained.owt, 20);
     assert.deepEqual(getRngLog(), []);
 
     freshGlobState(12);

@@ -13,6 +13,9 @@ import {
 } from './object_timers.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
+import {
+    encumbranceMessage, nearCapacity,
+} from './weight.js';
 
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
@@ -39,7 +42,20 @@ function deleteFloorGlob(glob) {
     glob.ox = glob.oy = 0;
 }
 
-export function runClaimedFloorGlobTimer(
+function deleteInventoryGlob(glob, state) {
+    const index = (state.inventory || []).indexOf(glob);
+    if (index >= 0) state.inventory.splice(index, 1);
+    glob.where = 'gone';
+    glob.ox = glob.oy = 0;
+}
+
+function activelyEatingGlob(glob, state) {
+    const victual = state.context?.victual;
+    return victual?.piece === glob || victual?.object === glob
+        || state.context?.eatingObject === glob;
+}
+
+export function runClaimedGlobTimer(
     claimed, state = game, currentTurn = state.moves ?? 0,
 ) {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
@@ -48,15 +64,18 @@ export function runClaimedFloorGlobTimer(
     if (!glob?.globby || !isGlobType(glob.otyp)) {
         throw new Error('SHRINK_GLOB requires a live glob identity');
     }
-    // Keep the first carrier source-complete.  Each rejected location owns
-    // different ice, container-weight, inventory, eating, or migration state.
-    if (glob.where !== 'floor') {
+    const onFloor = glob.where === 'floor';
+    const inInventory = glob.where === 'inventory';
+    if (!onFloor && !inInventory) {
         throw new Error(
-            'SHRINK_GLOB floor owner excludes carried, contained, buried, migrating, and monster-carried globs',
+            'SHRINK_GLOB owner excludes contained, buried, migrating, and monster-carried globs',
         );
     }
-    const x = glob.ox, y = glob.oy;
-    if (state.level?.at(x, y)?.typ === ICE) {
+    if (inInventory && (glob.owornmask ?? 0))
+        throw new Error('SHRINK_GLOB inventory owner excludes worn cleanup');
+    const x = onFloor ? glob.ox : state.u?.ux;
+    const y = onFloor ? glob.oy : state.u?.uy;
+    if (onFloor && state.level?.at(x, y)?.typ === ICE) {
         throw new Error('SHRINK_GLOB floor owner excludes ice cadence');
     }
     if (!Number.isInteger(glob.owt) || glob.owt < 0)
@@ -67,7 +86,8 @@ export function runClaimedFloorGlobTimer(
         const delta = Math.trunc((currentTurn - deadline + 24) / 25);
         if (delta >= glob.owt) {
             glob.owt = 0;
-            deleteFloorGlob(glob);
+            if (onFloor) deleteFloorGlob(glob);
+            else deleteInventoryGlob(glob, state);
             return {
                 glob, x, y, overdue: true, delta,
                 gone: true, message: null,
@@ -82,8 +102,17 @@ export function runClaimedFloorGlobTimer(
         };
     }
 
+    if (activelyEatingGlob(glob, state)) {
+        scheduleNextGlobAttempt(glob, state, currentTurn);
+        return {
+            glob, x, y, overdue: false, skippedEating: true,
+            delta: 0, gone: false, message: null,
+        };
+    }
+
     const visible = cansee(x, y);
     const name = floorGlobName(glob);
+    const oldCapacity = inInventory ? nearCapacity(state) : null;
     const shrinkThreshold = glob.owt > 0 && glob.owt % 10 === 0;
     if (glob.owt > 0) {
         glob.owt--;
@@ -91,7 +120,18 @@ export function runClaimedFloorGlobTimer(
     }
     const gone = glob.owt === 0;
     let message = null;
-    if (gone) {
+    if (inInventory) {
+        if (shrinkThreshold || gone) {
+            message = `Your ${name} ${
+                gone ? 'dissolves completely' : 'shrinks'
+            }.`;
+        }
+        return {
+            glob, x, y, overdue: false, delta: 1,
+            shrinkThreshold, gone, message, oldCapacity,
+            inventoryFinishPending: true,
+        };
+    } else if (gone) {
         deleteFloorGlob(glob);
         if (visible) {
             newsym(x, y);
@@ -107,3 +147,22 @@ export function runClaimedFloorGlobTimer(
         shrinkThreshold, gone, message,
     };
 }
+
+export function finishInventoryGlobTimer(
+    event, state = game, currentTurn = state.moves ?? 0,
+) {
+    if (!event?.inventoryFinishPending || !event.glob) return event;
+    if (event.gone) deleteInventoryGlob(event.glob, state);
+    else scheduleNextGlobAttempt(event.glob, state, currentTurn);
+    const newCapacity = nearCapacity(state);
+    event.followupMessage = encumbranceMessage(
+        event.oldCapacity, newCapacity,
+    ) || null;
+    event.newCapacity = newCapacity;
+    event.inventoryFinishPending = false;
+    event.finished = true;
+    return event;
+}
+
+// Retain the focused floor API while the shared dispatcher uses both carriers.
+export const runClaimedFloorGlobTimer = runClaimedGlobTimer;
