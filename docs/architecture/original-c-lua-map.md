@@ -35013,3 +35013,51 @@ Friday-the-13th carrier reaches live execution but its first run stops after a
 distant squeaky-board sound instead of continuing before the next input; its
 save/restore complement and sealed strata are also unverified.  Lua owns none
 of these command, actor, trap, or continuation boundaries.
+
+## 962. Rogue rush keys and open-door stopping are command-table ownership
+
+~~~mermaid
+sequenceDiagram
+    participant Key as tty input
+    participant Cmd as cmd.c reset_commands/set_move_cmd
+    participant Loop as allmain.c moveloop_core
+    participant Look as hack.c lookaround
+    participant Move as hack.c domove_core
+    Key->>Cmd: Ctrl-direction resolves to MV_RUSH / run mode 3
+    Cmd->>Move: commit first timed square
+    loop positive multi
+        Loop->>Look: inspect live adjacent terrain and actors
+        Look-->>Loop: continue through corridor, stop before open doorway
+        Loop->>Move: commit next timed square
+    end
+    Move-->>Loop: doorway entry by mode 1 calls nomul; mode 3 never enters it
+    Loop-->>Key: request the next top-level command
+~~~
+
+The first Friday-the-13th mismatch was not caused by the distant squeaky-board
+sound.  A four-key prefix ended exactly where C ends the initial mode-1 run:
+the hero had entered the doorway at `(12,15)`, `domove_core()` had canceled
+positive multi, and the A-note topline was still pending.  The following form
+feed byte is Ctrl-L.  `cmd.c:reset_commands()` overwrites the ordinary redraw
+binding with `do_rush_east()` in non-numpad mode, but the JavaScript dispatcher
+only recognized Ctrl-J/newline.  All eight Ctrl-direction bindings now select
+their live direction and mode 3 without a role, coordinate, seed, or trace
+predicate.
+
+The next bounded comparison found one extra automatic square.  Pinned
+`hack.c:lookaround()` treats an open/doorless doorway as corridor-like only for
+mode 1; mode 3 stops before it.  The shared lookaround owner now preserves that
+distinction, while still turning a mode-1 run through an unambiguous bend and
+stopping before a visible front monster.  Its injectable state path uses the
+provided game graph rather than silently reading global visibility state.
+
+With RNG and cursor exact, the final screen-only gap exposed another legacy
+predicate: `sounds.c:dochat()` wall feedback was emitted only for named Rogue
+or Valkyrie traces.  Chat now derives statue and wall responses from the live
+target object/terrain, hearing, vision, and Hallucination state.  The
+Friday-combat carrier is exact at4,838/4,838 RNG and59/59 screens/cursors;
+the two-segment save/full-moon restore carrier is exact at4,804/4,804 RNG and
+99/99 screens/cursors.  Both have empty bridge ledgers.  Rogue remains
+**partial** only because alternate unseen actor, trap, binding, option and
+sealed strata have not been measured; the known bridge-free Rogue carriers no
+longer have a named compatibility-path gap.  Lua owns none of this boundary.

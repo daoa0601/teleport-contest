@@ -93366,3 +93366,85 @@ is the next Rogue blocker.  No full corpus, public suite, sealed evaluation,
 push, workflow, hidden judge, supplemental-animation work, or publication ran.
 
 ---
+
+### [2026-08-29 12:41 EEST, journal block 3114] {#bridge-free #rogue #seed0013 #run #squeaky-board #source-turn #diagnosis #portfolio #process-safety}
+
+**Contract and baseline:** continue the ordered Rogue slice with the first
+unclosed carrier, `seed0013-rogue-friday13-combat`.  Acceptance is all59 input
+boundaries under the live source-ration scheduler with zero bridge hits; the
+Shift-L run must survive a distant monster squeaky-board message and reach its
+source `lookaround()` stop without reading the next transcript byte early.
+Suppressing the sound, preserving the old coordinate path, replaying the
+missing actor calls, or accepting screen-only recovery are non-results.  One
+owned bridge-free runner exited normally at4,022/4,838 RNG,7/59 screens and
+16/59 cursors.  The first known mismatch remains input5 after input4's distant
+A-note message; no matching verifier remains live.
+
+**Independent mechanism families and predictions:** (1) run lifecycle: if
+`_runState` is already null at the next attempted input after the prefix, some
+message/actor branch has incorrectly called `stopRun()`.  (2) source
+`lookaround()`: if the run remains live but stops on its next call, a newly
+visible monster, trap, or corridor classification should identify the exact
+adjacent square that differs from C.  (3) source-ration ownership: if run state
+and route remain valid but the next `nhgetch()` occurs before another automatic
+square, the movement-credit loop returned to command input instead of resuming
+positive `multi`.  (4) tty cadence: if the run advances but the form-feed
+boundary is captured early, pending-message/runmode-delay state—not movement
+control—is the owner.  The cheapest discriminating probe is a four-key prefix
+ending at Shift-L, recording only run state, hero position/movement ration,
+next-input count and adjacent live state.
+
+**Source constraint and next blocker:** pinned `trap.c` confirms that the
+distant `trapeffect_sqky_board()` branch prints the sound and calls
+`wake_nearto()` but never calls `nomul()`; pinned `allmain.c` resumes positive
+`multi` through `lookaround()` before `rhack(0)`.  Therefore any live run
+cancellation must be justified by a later `lookaround()` observable, not by
+the sound itself.  No implementation, full corpus, public suite, sealed gate,
+push, workflow, hidden judge, or publication ran for this diagnosis.
+
+---
+
+### [2026-08-29 12:47 EEST, journal block 3115] {#bridge-free #rogue #seed0013 #run #control-direction #lookaround #chat #save-restore #implementation #focused-regression #process-safety}
+
+**Decisive evidence and corrected model:** the four-key prefix falsified the
+source-ration and tty-cadence theories.  At the next attempted input the hero
+was at `(12,15)`, the live mode-1 run was null, movement credit was12, and the
+A-note message was pending.  This is correct: `(12,15)` is a doorway and
+`domove_core()` calls `nomul(0)` after entering it.  The next transcript byte,
+form feed, is Ctrl-L; non-numpad `reset_commands()` binds it to
+`do_rush_east()`/mode3.  The dispatcher had implemented only Ctrl-J/newline.
+All eight Ctrl-direction codes now share the live rush owner without any role,
+coordinate, seed, or trace predicate.
+
+**Earliest post-parser divergence and fix:** Ctrl-L restored the exact first363
+RNG calls at input5 but added one16-call actor turn and moved one square too
+far.  The live map showed the hero entering the open doorway at `(33,15)`;
+pinned `lookaround()` stops mode3 before that doorway while mode1 alone treats
+it as corridor-like.  The shared lookaround implementation now distinguishes
+those modes for open doors and other interesting non-room features.  A focused
+test proves mode1 bend turning, visible-front-monster stopping, and mode3
+open-door stopping.  That test also exposed an injectable-state bug: the
+helper used global visibility rather than its supplied game graph; the shared
+visibility predicate now owns both paths.
+
+**Final screen owner and measured acceptance:** after RNG and all cursors were
+exact, the sole mismatch was input32: live `#chat` cleared its response while C
+printed `It's like talking to a wall.`  That response was still guarded by
+legacy Rogue/Valkyrie path flags.  `dochat()` now derives statue and wall
+responses from the live target object/terrain plus deaf, blind and
+Hallucination state.  The combat carrier passes at4,838/4,838 RNG and59/59
+screens/cursors; the paired two-segment save/full-moon restore carrier passes
+at4,804/4,804 RNG and99/99 screens/cursors.  `test/bridge_free.test.js` passes
+7/7 and asserts an empty ledger for both Friday carriers; the three focused
+lookaround tests pass3/3.  Every owned process exited and none remains live.
+
+**Limits and next ordered blocker:** all known Rogue compatibility carriers now
+execute live in bridge-free mode, including persistence, but they remain public
+regression witnesses rather than sealed generalization evidence.  Alternate
+actor, trap, key-binding and option strata are unmeasured, so mechanical Rogue
+ownership remains `partial`.  The next dependency-ordered bridge replacement
+is Priest passive projectiles and extended commands.  No full corpus, normal
+public suite, sealed evaluation, push, workflow, hidden judge,
+supplemental-animation work, or publication ran.
+
+---
