@@ -9,19 +9,24 @@ import { LOST_STOLEN, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
+import { beginLampBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { FIGURINE, SCR_BLANK_PAPER } from '../js/object_data.js';
+import {
+    FIGURINE, MAGIC_LAMP, OIL_LAMP, SCR_BLANK_PAPER,
+} from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { objectTimers } from '../js/object_timers.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { vision_reset_new_level } from '../js/vision.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
+const PM_TRAPPER = 99;
 
 function freshSwallowedState(mnum) {
     resetGame();
@@ -66,6 +71,7 @@ function freshSwallowedState(mnum) {
         }
     }
     game.in_mklev = false;
+    vision_reset_new_level();
     initRng(999n);
     init_objects();
     resetInputState();
@@ -162,5 +168,79 @@ test('swallowed split stack merges only after thrown ownership becomes stolen',
             ['rnd(2)', 'rnd(20)'],
         );
         assert.equal((game.level.objects || []).flat(2).length, 0);
+        assertNoBridgeUse();
+    });
+
+test('swallowed timed lamp links before snuffing and restores unused fuel',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        initRng(2305n);
+        const raw = mksobj(OIL_LAMP, true, false);
+        raw.age = 200;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const lamp = addInventoryItem(raw);
+        assert.equal(lamp.invlet, 'a');
+        assert.equal(lamp.oclass, 6);
+        assert.equal(beginLampBurn(lamp, game, game.moves), true);
+        assert.equal(lamp.age, 150);
+        assert.equal(objectTimers(lamp)[0].deadline, 90);
+
+        game.moves = 60;
+        initRng(2306n);
+        enableRngLog();
+        await throwThroughLiveCommand(lamp, 'j');
+
+        assert.equal(game.inventory.includes(lamp), false);
+        assert.strictEqual(engulfer.minvent[0], lamp);
+        assert.equal(lamp.where, 'minvent');
+        assert.equal(lamp.carrierMid, engulfer.m_id);
+        assert.equal(lamp.how_lost, LOST_STOLEN);
+        assert.equal(lamp.lamplit, false);
+        assert.equal(lamp.age, 180);
+        assert.deepEqual(objectTimers(lamp), []);
+        assert.equal(game.vision_full_recalc, 1);
+        assert.equal(game._pending_message,
+            'The oil lamp vanishes into the trapper.  The oil lamp goes out.');
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)'],
+        );
+        assertNoBridgeUse();
+    });
+
+test('blind swallowed contact silently snuffs an untimed magic lamp',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        game.u.blindTurns = 5;
+        initRng(2307n);
+        const raw = mksobj(MAGIC_LAMP, true, false);
+        raw.age = 40;
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const lamp = addInventoryItem(raw);
+        assert.equal(lamp.invlet, 'a');
+        assert.equal(lamp.oclass, 6);
+        assert.equal(beginLampBurn(lamp, game, game.moves), true);
+        assert.equal(lamp.lamplit, true);
+        assert.deepEqual(objectTimers(lamp), []);
+
+        initRng(2308n);
+        enableRngLog();
+        await throwThroughLiveCommand(lamp, 'k');
+
+        assert.strictEqual(engulfer.minvent[0], lamp);
+        assert.equal(lamp.where, 'minvent');
+        assert.equal(lamp.lamplit, false);
+        assert.equal(lamp.age, 40);
+        assert.deepEqual(objectTimers(lamp), []);
+        assert.equal(game._pending_message,
+            'The magic lamp vanishes into the trapper.');
+        assert.deepEqual(
+            getRngLog().map(entry => entry.replace(/=.*/, '')),
+            ['rnd(20)'],
+        );
         assertNoBridgeUse();
     });

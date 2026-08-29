@@ -5,19 +5,25 @@
 import { LOST_THROWN } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { endLampBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
+    OBJECT_SUBTYPE, OBJECT_WEIGHT, OIL_LAMP,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
+import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rn2, rnd } from './rng.js';
+import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 
 const PM_AIR_ELEMENTAL = 154;
 const AT_ENGL = 11;
 const AD_DGST = 26;
+const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
+const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
 
 const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
@@ -63,6 +69,23 @@ function containsUnpaidObject(object) {
     return (object.contents || []).some(containsUnpaidObject);
 }
 
+function hasEngulfAttack(monster) {
+    return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
+        attack[0] === AT_ENGL);
+}
+
+function supportedLitLamp(state, item, engulfer) {
+    if (!item.lamplit) return true;
+    if (!LAMP_TYPES.has(item.otyp) || item.artifact || item.oartifact
+        || !hasEngulfAttack(engulfer)) return false;
+    const timers = objectTimers(item);
+    if (item.otyp === MAGIC_LAMP) return timers.length === 0;
+    return timers.length === 1
+        && timers[0].kind === OBJECT_TIMER_KIND.BURN_OBJECT
+        && Number.isFinite(timers[0].deadline)
+        && timers[0].deadline >= (state.moves ?? 0);
+}
+
 function genericSwallowedEligibility(
     state, item, objectClass, selectedQuantity,
 ) {
@@ -70,8 +93,10 @@ function genericSwallowedEligibility(
     if (!engulfer) return null;
 
     // Weapon/gem damage, food/taming, potions, balls, boulders, venom,
-    // lit/shop objects, worn-state removal, and timed stack splitting own
-    // materially different continuations and remain explicit successors.
+    // shop objects, worn-state removal, unsupported burning objects, and
+    // timed stack splitting own materially different continuations and
+    // remain explicit successors.  The supported lamps below reuse the
+    // live burn-timer owner after mpickobj() has linked monster ownership.
     if ([2, 7, 8, 12, 13, 15, 17].includes(objectClass)
         || item.otyp === BOULDER
         || item === state.uball || item === state.u?.uball) return null;
@@ -80,7 +105,8 @@ function genericSwallowedEligibility(
     if (EQUIPMENT_SLOTS.some(slot =>
         state[slot] === item || state.u?.[slot] === item)
         || (item.owornmask ?? 0)) return null;
-    if (item.lamplit || containsUnpaidObject(item)) return null;
+    if (!supportedLitLamp(state, item, engulfer)
+        || containsUnpaidObject(item)) return null;
     if (selectedQuantity > 1
         && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
         return null;
@@ -176,9 +202,19 @@ export async function resolveGenericSwallowedThrow({
     await plineWithContinuation(
         `The ${thrownObjectName(thrown, state)} vanishes into ${destination}.`,
     );
+    const snuffLamp = thrown.lamplit && LAMP_TYPES.has(thrown.otyp)
+        && hasEngulfAttack(engulfer);
+    if (snuffLamp && !heroIsBlind(state)) {
+        await plineWithContinuation(
+            `The ${thrownObjectName(thrown, state)} goes out.`,
+        );
+    }
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },
     );
+    // steal.c:mpickobj() deliberately waits until add_to_minv() has linked
+    // the carrier before snuff_light_source() resolves that mobile light.
+    if (snuffLamp) endLampBurn(thrown, state, state.moves ?? 0);
     state.context.move = 1;
     return true;
 }
