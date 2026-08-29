@@ -6,6 +6,7 @@
 // wear, wield, drop, throw, pray, cast, and all other commands.
 
 import { game } from './gstate.js';
+import { useCompatibilityBridge } from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
 import {
@@ -58,7 +59,9 @@ import {
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { resolveGenericSwallowedThrow } from './swallowed_throw.js';
+import {
+    resolveGenericSwallowedThrow, resolveSurvivingSwallowedWeaponThrow,
+} from './swallowed_throw.js';
 import {
     objectStatePrefix, readObjectName, unseenObjectNoun,
     wishedObjectPresentation,
@@ -128,6 +131,8 @@ import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { strengthDamageBonus } from './weapon_damage.js';
+export { strengthDamageBonus } from './weapon_damage.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -15479,6 +15484,24 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // and suppresses dothrow()'s launcher warning.
     const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
 
+    if (await resolveSurvivingSwallowedWeaponThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        wakeMonster: wakeAttackedMonster,
+    })) return;
+    if (game.u?.uswallow
+        && (thrownObjectClass === 2
+            || (thrownObjectClass === 6
+                && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0))) {
+        // The legacy floor/projectile continuations below do not model
+        // thitmonst()->hmon() while engulfed. Make that pre-existing gap a
+        // named bridge so bridge-free execution cannot silently accept it.
+        useCompatibilityBridge('throw.swallowed-weapon-unsupported');
+    }
+
     if (await resolveGenericSwallowedThrow({
         state: game,
         item,
@@ -16860,20 +16883,6 @@ function meleeEncumbrancePenalty() {
         ['Overtaxed', 4], ['Overloaded', 5],
     ]).get(game.u?._encumbrance) || 0;
     return level ? level * 2 - 1 : 0;
-}
-
-// C weapon.c:dbon().  Strength values above 18 retain NetHack's internal
-// encoding (19 == 18/01, 93 == 18/75, 118 == 18/**), matching
-// display.js:formatStrength().
-export function strengthDamageBonus(strength) {
-    if (strength < 6) return -1;
-    if (strength < 16) return 0;
-    if (strength < 18) return 1;
-    if (strength === 18) return 2;
-    if (strength <= 93) return 3;
-    if (strength <= 108) return 4;
-    if (strength < 118) return 5;
-    return 6;
 }
 
 const M2_ALWAYS_HOSTILE = 0x00100000;

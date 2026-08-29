@@ -3,27 +3,43 @@
 // steal.c mpickobj().
 
 import { LOST_THROWN } from './const.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { endLampBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_SUBTYPE, OBJECT_WEIGHT, OIL_LAMP,
+    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL,
+    OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, OIL_LAMP,
 } from './object_data.js';
 import {
-    MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
+import {
+    recordWeaponPractice, weaponSkillDamageBonus,
+} from './skills.js';
 import { objectTypeKnown } from './shk.js';
+import {
+    maximumPhysicalWeaponDamage, rollPhysicalWeaponDamage,
+    strengthDamageBonus,
+} from './weapon_damage.js';
 
 const PM_AIR_ELEMENTAL = 154;
 const AT_ENGL = 11;
 const AD_DGST = 26;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
+const SILVER = 14;
+const IRON = 11;
+const LAUNCHER_SKILLS = new Set([20, 21, 22]);
+const AXE_NAMES = new Set(['axe', 'battle-axe']);
+const THROWING_WEAPON_NAMES = new Set([
+    'dagger', 'elven dagger', 'orcish dagger', 'silver dagger', 'athame',
+    'knife', 'crysknife', 'war hammer', 'aklys',
+]);
 
 const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
@@ -69,6 +85,19 @@ function containsUnpaidObject(object) {
     return (object.contents || []).some(containsUnpaidObject);
 }
 
+function itemIsEquipped(state, item) {
+    return EQUIPMENT_SLOTS.some(slot =>
+        state[slot] === item || state.u?.[slot] === item)
+        || !!(item.owornmask ?? 0);
+}
+
+function activeObjectTimerCount(item) {
+    return Math.max(
+        item.timed ?? 0,
+        Array.isArray(item.objectTimers) ? item.objectTimers.length : 0,
+    );
+}
+
 function hasEngulfAttack(monster) {
     return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
         attack[0] === AT_ENGL);
@@ -84,6 +113,68 @@ function supportedLitLamp(state, item, engulfer) {
         && timers[0].kind === OBJECT_TIMER_KIND.BURN_OBJECT
         && Number.isFinite(timers[0].deadline)
         && timers[0].deadline >= (state.moves ?? 0);
+}
+
+function monsterHasObjectPassive(monster) {
+    return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
+        attack[0] === 0 && (attack[1] || attack[2] || attack[3]));
+}
+
+function intendedThrowingWeapon(item) {
+    const skill = Math.abs(OBJECT_SUBTYPE[item.otyp] ?? 0);
+    return skill === 17 || THROWING_WEAPON_NAMES.has(OBJECT_NAMES[item.otyp]);
+}
+
+function survivingWeaponEligibility(
+    state, item, objectClass, selectedQuantity,
+) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer) return null;
+    const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
+    const weaponOrTool = objectClass === 2
+        || (objectClass === 6 && subtype !== 0);
+    const skill = Math.abs(subtype);
+    const material = OBJECT_MATERIAL[item.otyp] ?? 0;
+    const skillState = state.u?.weaponSkills?.[skill];
+
+    // This owner deliberately enters hmon()'s ordinary physical survivor
+    // path. Ammo/missiles, launchers, special material/target bonuses,
+    // poison, artifacts, passives, attitude changes, and engulfer death all
+    // retain separate fail-closed continuations.
+    if (!weaponOrTool || subtype <= 0 || LAUNCHER_SKILLS.has(skill)
+        || !skillState || !Number.isInteger(skillState.skill)
+        || material < IRON || material === SILVER
+        || AXE_NAMES.has(OBJECT_NAMES[item.otyp])
+        || item.blessed || item.opoisoned || item.oartifact || item.artifact
+        || item.lamplit || containsUnpaidObject(item)
+        || itemIsEquipped(state, item)
+        || activeObjectTimerCount(item) > 0
+        || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
+        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
+        || monsterHasObjectPassive(engulfer)
+        || state.u?.polymorphed || state.u?.upolyd
+        || state.u?.twoweap || state.twoweap) return null;
+    if (selectedQuantity > 1 && activeObjectTimerCount(item) > 0)
+        return null;
+
+    const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
+    if (baseMaximum <= 0) return null;
+    const maximumDamage = Math.max(
+        1,
+        baseMaximum
+            + (state.u?.udaminc ?? state.udaminc ?? 0)
+            + strengthDamageBonus(currentAttribute(0, state))
+            + weaponSkillDamageBonus(state, skill),
+    );
+    if (!Number.isFinite(engulfer.mhp) || engulfer.mhp <= maximumDamage)
+        return null;
+    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
+    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
+    if (currentHp < 10 && currentHp !== currentHpMax
+        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
+        return null;
+    }
+    return { engulfer, skill };
 }
 
 function genericSwallowedEligibility(
@@ -102,9 +193,7 @@ function genericSwallowedEligibility(
         || item === state.uball || item === state.u?.uball) return null;
     if (objectClass === 6 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0)
         return null; // is_weptool()
-    if (EQUIPMENT_SLOTS.some(slot =>
-        state[slot] === item || state.u?.[slot] === item)
-        || (item.owornmask ?? 0)) return null;
+    if (itemIsEquipped(state, item)) return null;
     if (!supportedLitLamp(state, item, engulfer)
         || containsUnpaidObject(item)) return null;
     if (selectedQuantity > 1
@@ -158,6 +247,61 @@ function detachThrownUnit(
     }
     thrown.how_lost = LOST_THROWN;
     return thrown;
+}
+
+export async function resolveSurvivingSwallowedWeaponThrow({
+    state = game,
+    item,
+    objectClass,
+    selectedQuantity,
+    splitObjectId,
+    wakeMonster,
+}) {
+    const eligible = survivingWeaponEligibility(
+        state, item, objectClass, selectedQuantity,
+    );
+    if (!eligible) return false;
+    const { engulfer, skill } = eligible;
+    const thrown = detachThrownUnit(
+        state, item, selectedQuantity, splitObjectId,
+    );
+
+    if ((thrown.cursed || thrown.greased) && rn2(7) === 0
+        && (thrown.greased || intendedThrowingWeapon(thrown))) {
+        await plineWithContinuation(
+            `The ${thrownObjectName(thrown, state)} slips as you throw it!`,
+        );
+        rn2(3);
+        rn2(3);
+    }
+
+    rnd(20); // thitmonst() consumes its guaranteed-hit dieroll first
+    const physicalDamage = rollPhysicalWeaponDamage(thrown, engulfer);
+    if (physicalDamage > 1) recordWeaponPractice(state, skill, 1);
+    const damage = Math.max(
+        1,
+        physicalDamage
+            + (state.u?.udaminc ?? state.udaminc ?? 0)
+            + strengthDamageBonus(currentAttribute(0, state))
+            + weaponSkillDamageBonus(state, skill),
+    );
+    engulfer.mhp -= damage;
+
+    const monsterName = engulfer.name
+        || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
+    await plineWithContinuation(
+        `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
+            damage > 4 ? '!' : '.'
+        }`,
+    );
+    await wakeMonster(engulfer);
+    exerciseAttribute(1, true, state);
+
+    addObjectToMonsterInventory(
+        engulfer, thrown, state, { atFront: true },
+    );
+    state.context.move = 1;
+    return true;
 }
 
 export async function resolveGenericSwallowedThrow({
