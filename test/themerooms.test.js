@@ -9,7 +9,7 @@ import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL,
     LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
     ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
-    THEMEROOM, WEB,
+    STATUE_TRAP, THEMEROOM, WEB,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
@@ -17,7 +17,7 @@ import {
     applyThemeroomFillByName, generateThemeroomByName, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
-import { BOULDER, CORPSE } from '../js/object_data.js';
+import { BOULDER, CORPSE, STATUE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
 import { initRng } from '../js/rng.js';
@@ -341,6 +341,49 @@ test('Trap room shuffles once and applies one trap type to its selection', async
     assert.ok(expectedTypes.has(game.level.traps[0].ttyp));
     assert.ok(game.level.traps.every(trap =>
         trap.ttyp === game.level.traps[0].ttyp));
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Massacre creates only source role and guardian corpses', async () => {
+    themedState(4030, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    assert.equal(await applyThemeroomFillByName(
+        game.level.rooms[0], 'Massacre', 12,
+    ), true);
+
+    const corpses = game.level.objects.flatMap(column =>
+        (column || []).flatMap(pile => pile || []),
+    ).filter(object => object.otyp === CORPSE);
+    assert.ok(corpses.length >= 5 && corpses.length <= 25);
+    const allowed = new Set([
+        382, 381, 378, 377, 376, 375, 374, 373, 372, 371, 370, 369,
+        343, 342, 341, 340, 339, 338, 337, 336, 335, 334, 333, 332, 331,
+    ]);
+    assert.ok(corpses.every(corpse => allowed.has(corpse.corpsenm)));
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Statuary composes loose statues and live statue traps', async () => {
+    themedState(4031, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    assert.equal(await applyThemeroomFillByName(
+        game.level.rooms[0], 'Statuary', 12,
+    ), true);
+
+    assert.ok(game.level.traps.length >= 1 && game.level.traps.length <= 3);
+    assert.ok(game.level.traps.every(trap => trap.ttyp === STATUE_TRAP));
+    for (const trap of game.level.traps) {
+        assert.ok(game.level.objects?.[trap.tx]?.[trap.ty]
+            ?.some(object => object.otyp === STATUE));
+    }
+    const statues = game.level.objects.flatMap(column =>
+        (column || []).flatMap(pile => pile || []),
+    ).filter(object => object.otyp === STATUE);
+    assert.ok(statues.length >= game.level.traps.length + 5);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

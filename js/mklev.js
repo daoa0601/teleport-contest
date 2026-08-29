@@ -14692,6 +14692,38 @@ async function fillCloudRoom(room) {
     createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
 }
 
+const MASSACRE_CORPSE_TYPES = [
+    // Source names are 12 role guardians followed by the 13 roles; the
+    // gendered priest/priestess and caveman/cavewoman aliases intentionally
+    // resolve to the same corpse species and therefore appear twice.
+    382, 381, 378, 377, 376, 375, 374, 373, 372, 371, 370, 369,
+    343, 342, 341, 340, 339, 338, 337, 337, 336, 335, 334, 333,
+    333, 332, 331,
+];
+
+function fillMassacre(room) {
+    const context = specialRoomContext(room);
+    let corpseType = MASSACRE_CORPSE_TYPES[rn2(MASSACRE_CORPSE_TYPES.length)];
+    const corpseCount = d(5, 5);
+    for (let count = 0; count < corpseCount; count++) {
+        if (rn2(100) < 10)
+            corpseType = MASSACRE_CORPSE_TYPES[
+                rn2(MASSACRE_CORPSE_TYPES.length)
+            ];
+        specialCorpseOf(context, corpseType);
+    }
+}
+
+async function fillStatuary(room) {
+    const context = specialRoomContext(room);
+    const statueCount = d(5, 5);
+    for (let count = 0; count < statueCount; count++)
+        specialObjectOfType(context, STATUE);
+    const trapCount = d(1, 3);
+    for (let count = 0; count < trapCount; count++)
+        await specialTrapOfType(context, STATUE_TRAP);
+}
+
 async function fillSpiderNest(room, difficulty) {
     const context = specialRoomContext(room);
     const selected = themeroomSelection(room).percentage(30);
@@ -14905,6 +14937,8 @@ async function applyThemeroomFill(room, fill, difficulty) {
     else if (fill.name === 'Trap room') await fillTrapRoom(room);
     else if (fill.name === 'Buried zombies')
         fillBuriedZombies(room, difficulty);
+    else if (fill.name === 'Massacre') fillMassacre(room);
+    else if (fill.name === 'Statuary') await fillStatuary(room);
     else if (fill.name === 'Ghost of an Adventurer')
         await fillGhostAdventurer(room);
     else if (fill.name === 'Temple of the gods') fillTempleOfGods(room);
