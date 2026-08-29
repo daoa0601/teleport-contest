@@ -35598,12 +35598,14 @@ every vision recalculation it projects a radius-three circle from the lamp;
 an off-hero source uses `clear_path()` for every candidate, while a carried
 source reuses the hero's `COULD_SEE` bitmap. The existing transient-monster
 light projection now shares this mobile-light map with top-level floor, hero,
-and monster oil lamps, so pickup and save/restore move the source through live
-object identity rather than a room fixture. Oil-lamp callbacks now share the
-generic object queue and its timer-id ordering. Threshold warning text, other
-burning object types, cleanup/reschedule variants, and inactive cached-level
-timing remain open, so Light source is mechanically `partial`, not
-`implemented`.
+and monster oil lamps and brass lanterns, so pickup and save/restore move the
+source through live object identity rather than a room fixture. Both timed lamp
+types share the generic object queue, timer-id ordering, exact breakpoint
+progression, overdue catch-up, and surviving object identity when fuel reaches
+zero. Threshold warning text, lamp command entry, potions of oil, candles, the
+candelabrum, artifact light, additional cleanup/reschedule variants, and
+inactive cached-level timing remain open, so Light source is mechanically
+`partial`, not `implemented`.
 
 Buried zombies has a complete construction transaction but an intentionally
 open runtime edge:
@@ -35670,7 +35672,7 @@ flowchart TD
     LevelStart["start_timer TIMER_LEVEL at x,y"] --> Id
     Id --> Queue["deadline ascending; equal deadline newest id first"]
     Queue --> Claim["run_timers removes and decrements before callback"]
-    Claim --> Burn["BURN_OBJECT: oil-lamp breakpoint"]
+    Claim --> Burn["BURN_OBJECT: oil-lamp or brass-lantern breakpoint"]
     Claim --> Corpse["ROT_CORPSE: corpse lifecycle"]
     Claim --> Organic["ROT_ORGANIC: unbox then remove container"]
     Claim --> Zombie["ZOMBIFY_MON: replace, revive, present, fill pit"]
@@ -35701,8 +35703,9 @@ pit retain their native state across tty suspension. Only then are the boulder
 and pit consumed and the remaining floor pile buried.
 
 Mechanical status is **partial**. The queue does not yet own `HATCH_EGG`,
-`FIG_TRANSFORM`, `SHRINK_GLOB`, non-oil burn variants, timer move/split/relink
-and coordinate-remap behavior, explicit terrain-mutation cancellation, exact
+`FIG_TRANSFORM`, `SHRINK_GLOB`, burn warning and command entry, potion/candle/
+candelabrum/artifact burn variants, timer move/split/relink and coordinate-
+remap behavior, explicit terrain-mutation cancellation, exact
 equal-time reconstruction for old saves which predate timer ids, inactive-level
 catch-up, or spot-time queries. Ice boulder-occupant, hero, unsafe-monster, and
 drawbridge continuations and inventory/worn corpse rot effects also remain
@@ -35958,3 +35961,54 @@ a nonblocking fountain mimic, and `M_AP_MONSTER` all pass without bridge hits.
 The blocker witness enters live-play visibility before recalculation because
 the themed-room fixture otherwise remains in `in_mklev`, where native-shaped
 visibility correctly defers its work.
+
+## 976. Timed lamps share fuel breakpoints and mobile-light identity
+
+~~~mermaid
+flowchart TD
+    Start["begin_burn on oil lamp or brass lantern"] --> Age{"fuel age"}
+    Age -->|above 150| B150["turns = age - 150"]
+    Age -->|101..150| B100["turns = age - 100"]
+    Age -->|51..100| B50["turns = age - 50"]
+    Age -->|26..50| B25["turns = age - 25"]
+    Age -->|1..25| B0["turns = age"]
+    B150 --> Commit["subtract turns; set lamplit; schedule BURN_OBJECT"]
+    B100 --> Commit
+    B50 --> Commit
+    B25 --> Commit
+    B0 --> Commit
+    Commit --> Light["do_light_sources projects radius-three mobile light"]
+    Commit --> Claim["run_timers claims callback before burn_object"]
+    Claim --> Away{"timeout equals current move?"}
+    Away -->|yes, stored age above zero| Start
+    Away -->|yes, stored age zero| Extinguish["clear lamplit and timer; retain object"]
+    Away -->|no, elapsed below stored age| Catchup["subtract elapsed and resume breakpoint"]
+    Away -->|no, elapsed reaches stored age| Extinguish
+    Catchup --> Start
+    Extinguish --> Dark["vision recalculation removes mobile light"]
+~~~
+
+`timeout.c:begin_burn()` gives oil lamps and brass lanterns the same fuel
+state machine and radius-three source. The active timer owns the turns between
+breakpoints; the object stores only the fuel which will remain when that timer
+fires. A 200-turn lantern therefore stores 150 and schedules 50 turns, then
+advances through stored values 100, 50, 25, and 0. One final callback at the
+zero breakpoint calls `end_burn()`. Unlike candles or burning oil potions, the
+lamp or lantern identity remains on its current object chain after extinction.
+
+The callback also distinguishes an exact current-level expiry from catch-up
+after time away. If elapsed time reaches the stored remainder, it extinguishes
+without replaying intermediate thresholds. Otherwise it subtracts elapsed time
+and resumes from the appropriate breakpoint. JavaScript now applies that same
+transaction to floor, hero-inventory, and monster-inventory identities found by
+the shared timer graph, and `vision_recalc()` projects or removes both lamp
+types from the same live location. Direct witnesses cover exact progression,
+overdue extinction, object survival, illumination appearance, and illumination
+removal with zero bridge hits.
+
+This is still a mechanically **partial** burn owner. Threshold warning prose,
+interactive lamp activation/extinguishing, cursed and underwater application,
+shop billing, potions of oil, candles, the Candelabrum of Invocation, artifact
+light, and inactive-level presentation are separate source transactions. Egg,
+figurine, and glob callbacks also remain separate timer owners; none is inferred
+from the shared lamp graph.

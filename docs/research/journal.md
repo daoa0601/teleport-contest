@@ -95151,3 +95151,68 @@ must select among those real remaining owners rather than reconstruct the
 falsified Ice-pit gap.
 
 ---
+
+### [2026-08-29 18:44 EEST, journal block 3144] {#bridge-free #object-timers #burn-object #oil-lamp #brass-lantern #mobile-light #overdue #critical-debugging-portfolio #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** after correcting the false Ice-pit
+gap, the remaining callback portfolio contained three new timer kinds and the
+partial `BURN_OBJECT` family. The earliest shared missing state inside the
+already-live timer graph was a brass lantern: native `begin_burn()` and
+`burn_object()` give it the same 150/100/50/25/0 fuel breakpoints and
+radius-three light as an oil lamp, but JavaScript rejected its claimed timer and
+`vision_recalc()` ignored its light. A restored or generated lit lantern could
+therefore lose its timer callback silently and never illuminate the map.
+
+**Prediction portfolio and decisive evidence:** four mechanisms remained
+independent. (1) `HATCH_EGG` requires parentage RNG, quantity selection,
+adjacent monster construction, extinction/genocide gates, taming, knowledge,
+location-specific presentation, stack weight, and a remainder timer. (2)
+`FIG_TRANSFORM` requires location retries, `make_familiar()`, visibility,
+mimic/invisibility/hiding state, carrier-specific prose, and object removal.
+(3) `SHRINK_GLOB` crosses floor, nested container, inventory, monster,
+migration, burial, ice, active eating, encumbrance, deletion, and catch-up.
+(4) Timed brass-lantern state reuses the oil-lamp breakpoint, timer, identity,
+and mobile-light graph without importing the non-equivalent candle or potion
+deletion rules. Source `timeout.c:begin_burn()/burn_object()` and
+`light.c:do_light_sources()` select the fourth owner; the other three retain
+larger exact lifecycle gaps rather than being approximated.
+
+**Decision and implementation:** commit `194c40a` introduces a shared timed-
+lamp owner for `OIL_LAMP` and `BRASS_LANTERN`, while retaining the narrow
+`beginOilLampBurn()` API used by the Lua Light source callback. Exact callbacks
+advance stored fuel through the native breakpoints and leave the light active
+at stored zero until the final claimed callback. Overdue callbacks either
+subtract elapsed time and resume from a breakpoint or extinguish immediately
+when elapsed time reaches the stored remainder. Extinction clears the timer and
+mobile light but preserves the lantern object. The vision owner now projects
+both lamp types from floor, hero inventory, or monster inventory with the same
+radius-three geometry.
+
+**Measured effect and regression:** the direct floor-lantern witness starts at
+200 fuel, stores 150 behind a 50-turn timer, advances through 100, 50, 25, and
+0, then extinguishes on the final callback without deleting the object. A dark
+room independently proves illumination appears after `begin_burn()` and
+disappears after final extinction. A restarted 30-fuel lantern proves overdue
+catch-up extinguishes and preserves identity. `test/themerooms.test.js` passes
+**54/54**; the combined bridge-policy, Priest-startup, ordinary-room, and
+themed-room gate passes **70/70**; four shared Wizard/death-ray life-saving
+carriers pass **4/4**; and five represented level-generation carriers pass
+**5/5**. Every verifier exited and every guard found no pre-existing suite or
+corpus process.
+
+**Falsified hypotheses, limit, and next blocker:** brass lanterns are not a
+different fuel or light-radius family, and reaching stored age zero is not the
+same as already having run the final extinction callback. Conversely, shared
+fuel state does not make candles, oil potions, the candelabrum, or artifact
+light equivalent: those can delete objects, change quantity or `spe`, use
+different radii, and own different presentation. This slice also does not claim
+threshold warning prose or interactive lamp application, including cursed,
+underwater, shop, blind, and carrier-specific branches. `HATCH_EGG`,
+`FIG_TRANSFORM`, `SHRINK_GLOB`, timer relocation/catch-up breadth, and the
+sealed stratum remain open. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next slice should compare ordinary lamp command entry against one
+complete new callback owner rather than relabel this mechanics-only expansion
+as complete `BURN_OBJECT` coverage.
+
+---
