@@ -96154,3 +96154,75 @@ portfolio should compare swallowed weapons against lit-object `mpickobj`
 snuffing and select the smaller dependency cone with an observable survivor.
 
 ---
+
+### [2026-08-29 21:49 EEST, journal block 3159] {#bridge-free #swallowed-throw #mpickobj #light #snuff-light-source #burn-object #timer #vision #critical-debugging-portfolio #test-slop #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after block 3158, the debugging
+portfolio compared the open swallowed-weapon arm with `mpickobj()` light
+snuffing. The weapon route immediately expands through `hmon()`, damage,
+passives, kill/expulsion, exercise, mulch, and survivor placement; the lamp
+route can reuse the already-live BURN timer owner. Two live `t`-command
+witnesses therefore selected a lit oil lamp and a lit magic lamp while held by
+a trapper. Before production changed, the generic swallowed owner rejected
+both lit objects, so `dothrow()` placed them on the adjacent floor. The earliest
+valid divergence was the eligibility decision before `rnd(20)`, contact,
+monster linkage, or burn cleanup.
+
+**Test-slop diagnosis and repair:** the first red witness instead appeared to
+hang before inventory selection. `beginLampBurn()` had correctly requested a
+vision recalculation; the focused swallowed fixture had constructed a
+`GameMap` without initializing Algorithm C's blocker tables, so the first
+throw prompt entered invalid vision state. This was isolated in singular,
+owned probes and every yielded probe was explicitly interrupted and confirmed
+gone. Adding `vision_reset_new_level()` to the focused fixture made the old
+production path fail immediately at the intended floor-versus-minvent
+assertion. That falsifies both a `dothrow()` input loop and a burn-timer loop;
+the hang was a missing test precondition, not a product behavior to paper over.
+
+**Prediction portfolio and decisive C evidence:** `steal.c:mpickobj()` tests
+`obj_sheds_light()` plus `attacktype(AT_ENGL)` before provenance repair. A
+sighted hero swallowed by that monster receives `Tobjnam(..., "go")`; a blind
+hero does not. The source then clears `no_charge`, repairs
+`LOST_THROWN` to `LOST_STOLEN`, runs carrying effects, and calls
+`add_to_minv()` before `snuff_light_source()` at the monster coordinate.
+`light.c` skips artifact light and calls `end_burn()`; `timeout.c` cancels a
+timed oil lamp or brass lantern and restores unused fuel, while a magic lamp
+darkens without a timer. The predicted timed result for age 200 at turn 40,
+deadline 90, and transfer at turn 60 is age 180 with no timer after linkage.
+
+**Decision and implementation:** commit `a5ddd21` extends the generic
+swallowed owner only for lit oil lamps, brass lanterns, and magic lamps with a
+source-valid timer shape and an actual engulf attack. It composes the sighted
+`goes out` line after contact, delegates provenance/effects/linkage to the
+shared monster acquisition boundary, then calls the existing live
+`endLampBurn()` owner. Blind contact skips only the message. Unsupported
+burning objects, artifact lights, invalid timer state, weapons, and every
+previous stronger branch remain fail-closed. No fixture, fast-forward, seeded
+replay helper, `replayMoves` control flow, or trace-specific condition was
+added.
+
+**Measured effect and regression:** the corrected old route was red **0/1** at
+the first monster-inventory identity assertion. The two source-shaped cases
+are green **2/2**: the timed oil lamp links to the trapper, restores fuel
+150 to 180, deletes its BURN timer, and composes contact plus snuff prose; the
+blind magic lamp links and darkens silently with age 40 unchanged. The focused
+swallowed, lamp-application, and monster-acquisition gate passes **22/22**.
+Each case asserts zero bridge use and the lamp cadence remains exactly one
+`rnd(20)`. All test commands were process-guarded, singular, and owned through
+exit; no Contest suite or corpus ran.
+
+**Falsified hypotheses, limit, and next blocker:** the apparent hang was not a
+production command loop; `mpickobj()` does not snuff before it links ownership;
+blindness does not keep the lamp lit; a timed lamp cannot merely clear
+`lamplit` without restoring the timer-owned fuel; and source ownership does not
+justify admitting every light-emitting object through the generic branch.
+Remaining swallowed gaps are weapons and weapon-tools, gems, gold,
+food/taming, potions, eggs/pies/venom, boulders and iron balls, attached/worn
+objects, candles and artifact light, shop billing, petrifying corpses,
+low-stamina drops, timed stack splitting, returning missiles, engulfer death,
+and exhaustive naming. No full Contest suite, engine/public corpus, sealed
+trace inspection, score, push, publication, official measurement, or animation
+work ran. The next portfolio should re-rank these remaining arms by coherent
+source dependency cone rather than public-session effect.
+
+---

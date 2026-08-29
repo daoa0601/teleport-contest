@@ -36730,11 +36730,68 @@ leaves the parent carried, changes the child to stolen provenance, and lets a
 matching purple-worm stack absorb it without creating a floor identity.
 
 This subsystem is mechanically **partial**. The accepted branch covers paid,
-unlit, unworn generic non-consuming objects, including ordinary tools, armor,
-rings, amulets, scrolls, spellbooks, wands, statues, and chains when they do
-not select a stronger source arm. Weapons and weapon-tools, gems, gold,
-food/taming, potions, eggs, pies, venom, boulders, iron balls, attached or worn
-objects, lit-object snuffing, shop billing, petrifying corpses, low-stamina
-drops, timed stack splitting, returning missiles, engulfer death, exhaustive
-naming, and a sealed stratum remain open. Fixture, fast-forward, seeded replay,
-and `replayMoves` control flow are absent from this path.
+unworn generic non-consuming objects, including ordinary tools, armor, rings,
+amulets, scrolls, spellbooks, wands, statues, and chains when they do not select
+a stronger source arm. Section 991 adds the lit oil-lamp, brass-lantern, and
+magic-lamp continuation without broadening that generic eligibility to other
+burning objects. Weapons and weapon-tools, gems, gold, food/taming, potions,
+eggs, pies, venom, boulders, iron balls, attached or worn objects, unsupported
+lights, shop billing, petrifying corpses, low-stamina drops, timed stack
+splitting, returning missiles, engulfer death, exhaustive naming, and a sealed
+stratum remain open. Fixture, fast-forward, seeded replay, and `replayMoves`
+control flow are absent from this path.
+
+## 991. Swallowed lamp acquisition links ownership before snuffing light
+
+~~~mermaid
+flowchart TD
+    Throw["section 990 live swallowed contact"] --> Lit{"supported lamp is lit?"}
+    Lit -->|"no"| Acquire["ordinary mpickobj acquisition"]
+    Lit -->|"yes"| Engulf{"carrier has AT_ENGL?"}
+    Engulf -->|"no"| Reject["remain outside this bounded owner"]
+    Engulf -->|"yes, sighted"| Message["Tobjnam: lamp goes out"]
+    Engulf -->|"yes, blind"| Silent["omit visual snuff message"]
+    Message --> Provenance["LOST_THROWN becomes LOST_STOLEN"]
+    Silent --> Provenance
+    Provenance --> Effects["carry_obj_effects"]
+    Effects --> Link["add_to_minv links carrier identity"]
+    Link --> Snuff["snuff_light_source at monster coordinate"]
+    Snuff --> Kind{"lamp type"}
+    Kind -->|"oil or brass"| Timer["end_burn stops BURN_OBJECT and restores unused fuel"]
+    Kind -->|"magic"| Untimed["end_burn darkens untimed source"]
+    Timer --> Vision["vision_full_recalc"]
+    Untimed --> Vision
+    Lua["Lua owns no runtime pickup or burn transition"] -.-> Throw
+~~~
+
+`steal.c:mpickobj()` detects a light-emitting object before changing its
+ownership, but deliberately defers `snuff_light_source()` until after
+`carry_obj_effects()` and `add_to_minv()`. That ordering is not cosmetic: the
+light registry resolves the object at the engulfer's current coordinates, and
+the timed-lamp cleanup restores `deadline - moves` fuel onto the now-carried
+identity. A magic lamp has no `BURN_OBJECT` timer and only loses its mobile
+light. `Blind` suppresses the visual `goes out` line, not the snuff operation.
+
+JavaScript preserves the same boundary by admitting only live oil lamps,
+brass lanterns, and magic lamps whose timer shape is valid. The swallowed
+owner emits contact and the sighted snuff line, calls the shared monster
+acquisition boundary, and only then delegates to `light.js:endLampBurn()`.
+The timed witness starts at age 200 on turn 40, stores age 150 behind a turn-90
+deadline, and is thrown on turn 60; after carrier linkage it is dark, untimed,
+and age 180. The blind magic-lamp witness links the same way, emits only the
+contact line, preserves age 40, and consumes no burn timer.
+
+The first red witness initially appeared to hang before object selection. The
+lamp start had correctly set `vision_full_recalc`, but the focused test map had
+never initialized Algorithm C's blocker tables. Initializing the new-level
+vision owner made the old production route fail immediately by placing the
+still-lit lamp on the floor, establishing a valid earliest-divergence witness
+without changing production semantics.
+
+This slice is mechanically **partial**. It owns supported lamps carried by the
+current engulfer, including sighted/blind presentation, link-before-snuff
+ordering, timer cancellation, unused-fuel restoration, and mobile-light
+invalidation. Candles, candelabrum state, potions of oil, artifact light,
+weapons that shed light, ordinary non-swallowed monster pickup, merge-light
+identity transfer, invalid or overdue timer recovery, shop billing, and a
+sealed stratum remain open.
