@@ -37272,3 +37272,51 @@ map flight, special terrain and recoil, nonordinary live map targets, broader
 equipment-derived resistance state, the remaining potion families, hero
 impact targets, shops, saddles, interactive naming, and a sealed stratum
 remain open.  Lua owns none of this effect graph.
+
+## 1000. Confusion and booze share resistance before hero timeout mutation
+
+```mermaid
+sequenceDiagram
+    participant Hit as potionhit
+    participant Resist as zap.c resist
+    participant Mon as monster state
+    participant Breath as potionbreathe
+    participant Hero as hero timeout
+
+    Hit->>Resist: potion attack level 6
+    Resist->>Resist: rn2(100 + 6 - defense level)
+    alt roll below species magic resistance
+        Resist-->>Hit: resisted, no mconf
+    else effect succeeds
+        Resist->>Mon: mconf = true
+    end
+    Hit->>Mon: hostile wakeup
+    Hit->>Breath: distance/proximity admission
+    alt hero was not confused
+        Breath->>Hero: publish somewhat dizzy
+    end
+    Breath->>Breath: rnd(5)
+    Breath->>Hero: increment HConfusion, cap at TIMEOUT
+```
+
+`potion.c:potionhit()` gives confusion and booze the same monster effect.
+After the common bottle and physical-chip transaction, `zap.c:resist()` uses
+potion attack level six, clamps the target's runtime level to one through
+fifty, and consumes one draw over `100 + 6 - defense_level`.  A zero-level
+player monster substitutes the hero's level; every other zero-level target
+uses one.  Only a failed resistance check sets `mconf`, but both outcomes
+retain ordinary hostile wake policy and exact identity consumption.
+
+The hero is an independent patient.  `potionbreathe()` says `You feel somewhat
+dizzy.` only when confusion was previously absent, then always consumes
+`rnd(5)`, adds that duration to the confusion timeout, and saturates at the
+24-bit `TIMEOUT` limit.  Beatitude does not fork either thrown effect.  Live
+map contact proves monster resistance precedes the proximity gate and hero
+duration draw; swallowed contact proves the same order at guaranteed distance
+zero.  Paralysis now remains the named fail-loud control before split or RNG.
+
+The subsystem remains mechanically **partial**.  Cursed and greased ordinary
+map flight, special terrain and recoil, nonordinary targets, paralysis,
+sleeping, speed, blindness, invisibility, water, oil, acid, polymorph, hero
+impact targets, shops, saddles, interactive naming, and a sealed stratum
+remain open.  Lua owns none of this effect graph.

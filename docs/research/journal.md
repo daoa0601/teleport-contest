@@ -96836,3 +96836,69 @@ portfolio should compare the shared confusion/booze effect family against a
 mutation-safe cursed/greased map transport plan.
 
 ---
+
+### [2026-08-30 00:17 EEST, journal block 3169] {#bridge-free #potionhit #potionbreathe #confusion #booze #resist #magic-resistance #timeout #player-monster #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3168 left the shared
+confusion/booze effect family versus mutation-safe cursed/greased map
+transport. Two direct monster witnesses, two direct vapor witnesses, one live
+map command, and one live swallowed command all stopped before their source
+effect, producing red **0/6**. The critical-debugging portfolio kept transport
+and effects independent. Transport still requires validating every rerolled
+direction before `splitobj()/freeinv()` or proving rollback across unsupported
+terrain. Confusion and booze instead share one complete `potionhit()` branch
+and one complete `potionbreathe()` branch inside the existing live lifecycle,
+so the two-type family was selected.
+
+**Prediction and decisive C evidence:** `potion.c:potionhit()` calls
+`zap.c:resist(mon, POTION_CLASS, 0, NOTELL)` for both types. Potion attack
+level is six; target defense is runtime `m_lev` clamped to one through fifty,
+except a zero-level player monster substitutes the hero's level. The call
+always pays `rn2(100 + 6 - defense_level)` and compares it to species magic
+resistance. Success leaves `mconf` unchanged; failure sets it, and both retain
+hostile wake policy. `potionbreathe()` prints `You feel somewhat dizzy.` only
+when confusion was absent, consumes `rnd(5)`, increments the existing timeout,
+and saturates at 24-bit `TIMEOUT`.
+
+**Decision and implementation:** commit `651016d` adds confusion and booze to
+the shared impact owner without fixture, replay, seed, or session control
+flow. One resistance helper owns potion attack level, runtime monster level,
+species magic resistance, and the player-monster fallback. One vapor branch
+owns clear-versus-existing presentation, duration RNG, timeout increment, and
+saturation. Map proximity and swallowed distance-zero callers compose the
+same direct-before-vapor order. Paralysis replaces confusion as the explicit
+unsupported pre-split and pre-RNG control.
+
+**Adversarial audit:** a zero-level Wizard monster with hero level twenty is a
+discriminating counterexample: its correct resistance range is 86, while a
+generic level-one fallback would use 105 and produce the opposite outcome for
+the selected seed. Separate direct controls prove successful and resisted
+effects without relying on absence of effect alone. Vapor controls distinguish
+the first-message transition from silent extension and prove saturation rather
+than unbounded addition. Live map and swallowed controls include the caller's
+mandatory hit roll and prove resistance occurs before proximity and duration
+RNG.
+
+**Measured effect and process custody:** all six red witnesses are green, and
+the player-monster counterexample is green. Acquisition, direct-impact,
+map-potion, and swallowed files pass **71/71**. Five ambient-ogre,
+sleeping-potion flight, striking-wand, smoky-invisibility-potion, and clean
+Pri-loca controls pass **5/5** with exact RNG/screens.
+`test/bridge_free.test.js` passes **8/8**, and the mechanical audit reports
+**125 audited files, 15 guarded modules, and 19 fixture modules**. Every
+`node --test` process was guarded, singular, and observed through normal exit;
+none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** confusion is not a direct
+boolean assignment without RNG; `NOTELL` suppresses resistance presentation,
+not the draw; a zero-level player monster does not use the ordinary level-one
+fallback; and an existing hero timeout does not suppress duration RNG. Cursed
+and greased ordinary map flight, special terrain and recoil, nonordinary
+targets, paralysis, sleeping, speed, blindness, invisibility, water, oil,
+acid, polymorph, hero impact, shops, saddles, interactive naming, and a sealed
+stratum remain open. No full Contest suite, engine/public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should compare the paralysis/sleeping helpless-state
+family against a mutation-safe cursed/greased transport plan.
+
+---
