@@ -14187,7 +14187,7 @@ async function makerooms() {
 
 // Themed room metadata — must match C's themerms.lua frequency table exactly.
 // Generated from themeroom_meta.js (31 rooms).
-const THEMEROOM_META = [
+export const THEMEROOM_META = [
     { name: 'default', frequency: 1000 },
     { name: 'Fake Delphi', frequency: 1 },
     { name: 'Room in a room', frequency: 1 },
@@ -14198,7 +14198,10 @@ const THEMEROOM_META = [
     { name: 'Room with both normal contents and themed fill', frequency: 2 },
     { name: 'Pillars', frequency: 1 },
     { name: 'Mausoleum', frequency: 1 },
-    { name: 'Random dungeon feature', frequency: 1 },
+    {
+        name: 'Random dungeon feature in the middle of an odd-sized room',
+        frequency: 1,
+    },
     { name: 'L-shaped', frequency: 1 },
     { name: 'L-shaped, rot 1', frequency: 1 },
     { name: 'L-shaped, rot 2', frequency: 1 },
@@ -14617,6 +14620,23 @@ function randomIrregularRoomPosition(room) {
     return null;
 }
 
+// Lua selection.room() returns the current room's interior as a selection.
+// Use room ownership rather than the bounding rectangle so irregular themed
+// maps do not admit holes or boundary tiles into source-owned callbacks.
+function themeroomSelection(room) {
+    const selection = new SpecialSelection();
+    const roomno = (room.roomnoidx ?? game.level.rooms.indexOf(room))
+        + ROOMOFFSET;
+    for (let x = room.lx; x <= room.hx; x++) {
+        for (let y = room.ly; y <= room.hy; y++) {
+            const loc = game.level.at(x, y);
+            if (loc && !loc.edge && loc.roomno === roomno)
+                selection.add(x, y);
+        }
+    }
+    return selection;
+}
+
 function pickThemeroomFill(room, difficulty) {
     let pick = null;
     let totalFrequency = 0;
@@ -14752,36 +14772,76 @@ function fillBuriedZombies(room) {
     }
 }
 
-// The ghost-adventurer themed fill makes a ghost, then independently tries
-// two pieces of former-adventurer equipment.  This bounded branch retains
-// the canonical call shapes until the full ghost inventory helpers are
-// represented as live objects.
-function fillGhostAdventurerValkSlice() {
-    rn2(36); // selection_rndcoord
-    rn2(2); // find_montype
-    rn2(3); // induced_align
-    nextIdent();
-    d(9, 8); // newmonhp
-    for (const range of [2, 7, 34, 50, 100, 100, 100, 100]) rn2(range);
+// C/Lua refs: themerms.lua "Ghost of an Adventurer", selvar.c
+// selection_rndcoord(), and sp_lev.c create_monster()/create_object().  This
+// is a live room callback: no seed, role, replay-move, or session carrier is
+// consulted to decide whether the ghost and equipment exist.
+async function fillGhostAdventurer(room) {
+    const coord = themeroomSelection(room).randomCoordinate(false);
+    if (!coord) return;
+    const context = specialRoomContext(room);
+    const x = coord.x - context.xstart;
+    const y = coord.y - context.ystart;
+    const ghost = await specialMonsterAt(
+        context, 287, x, y, { mmflags: MM_ASLEEP }, // PM_GHOST
+    );
+    if (ghost) {
+        ghost.msleeping = 1;
+        ghost.mstrategy = (ghost.mstrategy ?? 0) | STRAT_WAITFORU;
+        ghost.waiting = true;
+    }
 
-    rnd(1002); rnd(2);
-    for (const range of [6, 11, 10, 10, 100, 20, 100, 80, 80, 1000,
-        100, 100]) rn2(range);
-
-    rnd(1000); rnd(2);
-    for (const range of [10, 11, 10, 10, 40, 100, 80, 80, 1000,
-        100, 100]) rn2(range);
+    const notBlessed = object => {
+        if (object) object.blessed = false;
+        return object;
+    };
+    if (rn2(100) < 65)
+        notBlessed(specialObjectAt(context, DAGGER, x, y));
+    if (rn2(100) < 55)
+        notBlessed(specialObjectClassAt(context, WEAPON_CLASS, x, y));
+    if (rn2(100) < 45) {
+        notBlessed(specialObjectAt(context, BOW, x, y));
+        notBlessed(specialObjectAt(context, ARROW, x, y));
+    }
+    if (rn2(100) < 65)
+        notBlessed(specialObjectClassAt(context, ARMOR_CLASS, x, y));
+    if (rn2(100) < 20)
+        notBlessed(specialObjectClassAt(context, RING_CLASS, x, y));
+    if (rn2(100) < 20)
+        notBlessed(specialObjectClassAt(context, SCROLL_CLASS, x, y));
 }
 
 function fillTempleOfGods(room) {
-    for (let index = 0; index < 4; index++) {
+    for (let index = 0; index < 3; index++) {
         const x = somex(room), y = somey(room);
         const loc = game.level?.at(x, y);
         if (loc) loc.typ = ALTAR;
     }
 }
 
-function generateStaticThemedRoom(rows, fillx, filly, difficulty, prepare = null) {
+async function applyThemeroomFill(room, fill, difficulty) {
+    if (!fill) return false;
+    if (fill.name === 'Buried zombies') fillBuriedZombies(room, difficulty);
+    else if (fill.name === 'Ghost of an Adventurer')
+        await fillGhostAdventurer(room);
+    else if (fill.name === 'Temple of the gods') fillTempleOfGods(room);
+    else if (fill.name === 'Storeroom') await fillStoreroom(room);
+    else if (fill.name === 'Teleportation hub') fillTeleportationHub(room);
+    else return false;
+    return true;
+}
+
+// Named entrypoint used by source-invariant tests and by future direct
+// THEMERMFILL plumbing.  A declared but not-yet-ported fill returns false
+// instead of pretending that an empty callback is implemented.
+export async function applyThemeroomFillByName(room, name, difficulty) {
+    const fill = THEMEROOM_FILL_META.find(candidate => candidate.name === name);
+    return fill ? applyThemeroomFill(room, fill, difficulty) : false;
+}
+
+async function generateStaticThemedRoom(
+    rows, fillx, filly, difficulty, prepare = null,
+) {
     const placed = placeThemedMap(rows);
     if (!placed) return false;
     if (prepare) prepare(placed);
@@ -14796,11 +14856,7 @@ function generateStaticThemedRoom(rows, fillx, filly, difficulty, prepare = null
     if (!room) return false;
     if (themedFill) {
         const fill = pickThemeroomFill(room, difficulty);
-        if (fill?.name === 'Buried zombies') fillBuriedZombies(room);
-        else if (fill?.name === 'Ghost of an Adventurer'
-            && game._valkPitPath) fillGhostAdventurerValkSlice();
-        else if (fill?.name === 'Teleportation hub')
-            fillTeleportationHub(room);
+        await applyThemeroomFill(room, fill, difficulty);
     }
     game._hasStaticThemeroom = true;
     return true;
@@ -14969,6 +15025,41 @@ async function generateFakeDelphi() {
     return !!outer;
 }
 
+// C/Lua ref: themerms.lua "Room in a room".  The outer room receives
+// ordinary C fill; the child owns only its callback-created door.
+async function generateRoomInRoom() {
+    const outer = await buildSpecialRoom({
+        rtype: OROOM, filled: FILL_NORMAL,
+    }, null, async outerRoom => {
+        await buildSpecialRoom({
+            rtype: OROOM, filled: 0,
+        }, outerRoom, async innerRoom => {
+            createSpecialRoomDoor(innerRoom, 'random', 'all');
+        });
+    });
+    return !!outer;
+}
+
+// C/Lua ref: themerms.lua "Huge room with another room inside".  Width and
+// height expressions are evaluated before lspo_room() pays its chance draw.
+async function generateHugeRoomWithInnerRoom() {
+    const width = 11 + rn2(10);
+    const height = 8 + rn2(5);
+    const outer = await buildSpecialRoom({
+        rtype: OROOM, w: width, h: height, filled: FILL_NORMAL,
+    }, null, async outerRoom => {
+        if (rn2(100) >= 90) return;
+        await buildSpecialRoom({
+            rtype: OROOM, filled: FILL_NORMAL,
+        }, outerRoom, async innerRoom => {
+            createSpecialRoomDoor(innerRoom, 'random', 'all');
+            if (rn2(100) < 50)
+                createSpecialRoomDoor(innerRoom, 'random', 'all');
+        });
+    });
+    return !!outer;
+}
+
 // C/Lua ref: themerms.lua "Nesting rooms".  Each des.room callback runs
 // immediately after its parent is constructed, so dimensions, chance checks,
 // subroom placement, lighting, and door selection remain interleaved.
@@ -15013,53 +15104,166 @@ async function generateNestingRooms() {
     return !!outer;
 }
 
-// C ref: themerms.lua themerooms_generate()
-// Reservoir sampling picks one themed room. For seed8000 level 1,
-// 'ordinary' always wins (frequency 1000 vs others ~1-10).
-async function themerooms_generate(difficulty) {
-    let pick = null;
-    let total_frequency = 0;
-    for (const meta of THEMEROOM_META) {
-        if (!is_themeroom_eligible(meta, difficulty)) continue;
-        const this_frequency = meta.frequency || 1;
-        total_frequency += this_frequency;
-        if (this_frequency > 0 && rn2(total_frequency) < this_frequency) {
-            pick = meta;
+// C/Lua ref: themerms.lua "Mausoleum".  The central 1x1 unjoined child is
+// intentionally a themed room so later random-special conversion cannot turn
+// the tomb into a shop or temple.
+async function generateMausoleum() {
+    const width = 5 + rn2(3) * 2;
+    const height = 5 + rn2(3) * 2;
+    const outer = await buildSpecialRoom({
+        rtype: THEMEROOM, w: width, h: height, filled: 0,
+    }, null, async outerRoom => {
+        await buildSpecialRoom({
+            rtype: THEMEROOM,
+            x: Math.trunc((width - 1) / 2),
+            y: Math.trunc((height - 1) / 2),
+            w: 1, h: 1, joined: false, filled: 0,
+        }, outerRoom, async tomb => {
+            const context = specialRoomContext(tomb);
+            if (rn2(100) < 50) {
+                const classes = [39, 48, 38, 52];
+                for (let count = classes.length; count > 1; count--) {
+                    const index = rn2(count);
+                    [classes[count - 1], classes[index]]
+                        = [classes[index], classes[count - 1]];
+                }
+                const monster = await specialMonsterOfClass(
+                    context, classes[0],
+                );
+                if (monster)
+                    monster.mstrategy = (monster.mstrategy || 0)
+                        | STRAT_WAITFORU;
+            } else {
+                const human = mkclass(53, 0x0200); // S_HUMAN
+                if (human != null) specialCorpseOf(context, human);
+            }
+            if (rn2(100) < 20)
+                createSpecialRoomDoor(tomb, 'secret', 'all');
+        });
+    });
+    return !!outer;
+}
+
+async function generateOddRoomFeature() {
+    const width = 3 + rn2(3) * 2;
+    const height = 3 + rn2(3) * 2;
+    const room = await buildSpecialRoom({
+        rtype: OROOM, w: width, h: height, filled: FILL_NORMAL,
+    }, null, generatedRoom => {
+        const features = [CLOUD, LAVAPOOL, ICE, POOL, TREE];
+        for (let count = features.length; count > 1; count--) {
+            const index = rn2(count);
+            [features[count - 1], features[index]]
+                = [features[index], features[count - 1]];
         }
-    }
-    if (!pick) return false;
-    if (pick.name === 'Fake Delphi')
+        const center = game.level.at(
+            generatedRoom.lx + Math.trunc((width - 1) / 2),
+            generatedRoom.ly + Math.trunc((height - 1) / 2),
+        );
+        if (center) center.typ = features[0];
+    });
+    return !!room;
+}
+
+// C/Lua ref: themerms.lua "Twin businesses".  Lua evaluates every helper in
+// the placements table before selecting one layout, so all twelve direction
+// percentages belong to the constructor even though only two are retained.
+async function generateTwinBusinesses() {
+    const outer = await buildSpecialRoom({
+        rtype: THEMEROOM, w: 9, h: 5, filled: 0,
+    }, null, async outerRoom => {
+        const southeast = () => rn2(100) < 50 ? 'south' : 'east';
+        const northeast = () => rn2(100) < 50 ? 'north' : 'east';
+        const northwest = () => rn2(100) < 50 ? 'north' : 'west';
+        const southwest = () => rn2(100) < 50 ? 'south' : 'west';
+        const placements = [
+            { lx: 1, ly: 1, rx: 4, ry: 1, lwall: 'south', rwall: southeast() },
+            { lx: 1, ly: 2, rx: 4, ry: 2, lwall: 'north', rwall: northeast() },
+            { lx: 1, ly: 1, rx: 5, ry: 1, lwall: southeast(), rwall: southwest() },
+            { lx: 1, ly: 1, rx: 5, ry: 2, lwall: southeast(), rwall: northwest() },
+            { lx: 1, ly: 2, rx: 5, ry: 1, lwall: northeast(), rwall: southwest() },
+            { lx: 1, ly: 2, rx: 5, ry: 2, lwall: northeast(), rwall: northwest() },
+            { lx: 2, ly: 1, rx: 5, ry: 1, lwall: southwest(), rwall: 'south' },
+            { lx: 2, ly: 2, rx: 5, ry: 2, lwall: northwest(), rwall: 'north' },
+        ];
+
+        let leftType = SHOPBASE + 4; // weapon shop
+        let rightType = SHOPBASE + 1; // armor shop
+        if (rn2(100) < 50)
+            [leftType, rightType] = [rightType, leftType];
+        const placement = placements[rnd(placements.length) - 1];
+        const shopDoorState = () => rn2(100) < 1 ? 'locked'
+            : rn2(100) < 50 ? 'closed' : 'open';
+
+        await buildSpecialRoom({
+            rtype: leftType,
+            x: placement.lx, y: placement.ly,
+            w: 3, h: 3, filled: FILL_NORMAL, joined: false,
+        }, outerRoom, leftRoom => {
+            createSpecialRoomDoor(
+                leftRoom, shopDoorState(), placement.lwall,
+            );
+        });
+        await buildSpecialRoom({
+            rtype: rightType,
+            x: placement.rx, y: placement.ry,
+            w: 3, h: 3, filled: FILL_NORMAL, joined: false,
+        }, outerRoom, rightRoom => {
+            createSpecialRoomDoor(
+                rightRoom, shopDoorState(), placement.rwall,
+            );
+        });
+    });
+    return !!outer;
+}
+
+// C ref: themerms.lua themerooms_generate()
+// The named dispatcher is shared by the reservoir and source-invariant tests;
+// selecting a rare form never falls through to a generic rectangle.
+export async function generateThemeroomByName(name, difficulty) {
+    if (name === 'Fake Delphi')
         return generateFakeDelphi();
-    if (pick.name === 'Blocked center')
-        return generateBlockedCenter(difficulty);
-    if (pick.name === 'Nesting rooms')
+    if (name === 'Room in a room')
+        return generateRoomInRoom();
+    if (name === 'Huge room with another room inside')
+        return generateHugeRoomWithInnerRoom();
+    if (name === 'Nesting rooms')
         return generateNestingRooms();
-    if (pick.name === 'Water-surrounded vault')
+    if (name === 'Mausoleum')
+        return generateMausoleum();
+    if (name === 'Random dungeon feature in the middle of an odd-sized room')
+        return generateOddRoomFeature();
+    if (name === 'Twin businesses')
+        return generateTwinBusinesses();
+    if (name === 'Blocked center')
+        return generateBlockedCenter(difficulty);
+    if (name === 'Water-surrounded vault')
         return generateWaterSurroundedVault();
-    const staticRoom = STATIC_THEMED_ROOMS.get(pick.name);
+    const staticRoom = STATIC_THEMED_ROOMS.get(name);
     if (staticRoom)
         return generateStaticThemedRoom(...staticRoom, difficulty);
-    // For 'ordinary' rooms, create a standard room
-    // For themed rooms with dynamic dimensions, consume those rn2 calls first
-    const chance = 100;
-    if (pick.name !== 'ordinary') {
-        // Themed room — not expected for seed8000, but handle RNG correctly
-        rn2(100); // chance check (build_room)
-    }
+
+    const genericNames = new Set([
+        'default', 'Default room with themed fill',
+        'Unlit room with themed fill',
+        'Room with both normal contents and themed fill', 'Pillars',
+    ]);
+    if (!genericNames.has(name)) return false;
+    rn2(100); // build_room chance check, including chance=100
     // The Lua room directive owns retained room type and lighting as well as
     // its contents callback.  These three dynamic forms are THEMEROOMs; the
     // generic default and explicitly ordinary shapes remain OROOMs.
-    const keepsThemedType = pick.name === 'Default room with themed fill'
-        || pick.name === 'Unlit room with themed fill'
-        || pick.name === 'Room with both normal contents and themed fill'
-        || pick.name === 'Pillars';
-    const usesThemedFill = pick.name === 'Default room with themed fill'
-        || pick.name === 'Unlit room with themed fill'
-        || pick.name === 'Room with both normal contents and themed fill';
+    const keepsThemedType = name === 'Default room with themed fill'
+        || name === 'Unlit room with themed fill'
+        || name === 'Room with both normal contents and themed fill'
+        || name === 'Pillars';
+    const usesThemedFill = name === 'Default room with themed fill'
+        || name === 'Unlit room with themed fill'
+        || name === 'Room with both normal contents and themed fill';
     const roomType = keepsThemedType ? THEMEROOM : OROOM;
-    const roomLit = pick.name === 'Unlit room with themed fill' ? 0 : -1;
-    const roomWidth = pick.name === 'Pillars' ? 10 : -1;
-    const roomHeight = pick.name === 'Pillars' ? 10 : -1;
+    const roomLit = name === 'Unlit room with themed fill' ? 0 : -1;
+    const roomWidth = name === 'Pillars' ? 10 : -1;
+    const roomHeight = name === 'Pillars' ? 10 : -1;
     // All dynamic themed-room directives go through create_room for placement.
     const ok = create_room(
         -1, -1, roomWidth, roomHeight, -1, -1, roomType, roomLit,
@@ -15072,22 +15276,35 @@ async function themerooms_generate(difficulty) {
             // Lua's `filled=1` belongs to the ordinary default and the
             // explicitly combined normal-plus-themed variant.  The default
             // and unlit themed-fill rooms run only their contents callback.
-            aroom.needfill = pick.name === 'Pillars'
+            aroom.needfill = name === 'Pillars'
                 || (usesThemedFill
-                    && pick.name
+                    && name
                         !== 'Room with both normal contents and themed fill')
                 ? 0 : FILL_NORMAL;
-            if (pick.name === 'Pillars') fillPillarsThemedRoom(aroom);
+            if (name === 'Pillars') fillPillarsThemedRoom(aroom);
             if (usesThemedFill) {
                 const fill = pickThemeroomFill(aroom, difficulty);
-                if (fill?.name === 'Temple of the gods') fillTempleOfGods(aroom);
-                else if (fill?.name === 'Storeroom') await fillStoreroom(aroom);
-                else if (fill?.name === 'Teleportation hub')
-                    fillTeleportationHub(aroom);
+                await applyThemeroomFill(aroom, fill, difficulty);
             }
         }
     }
     return ok;
+}
+
+async function themerooms_generate(difficulty) {
+    let pick = null;
+    let total_frequency = 0;
+    for (const meta of THEMEROOM_META) {
+        if (!is_themeroom_eligible(meta, difficulty)) continue;
+        const this_frequency = meta.frequency || 1;
+        total_frequency += this_frequency;
+        if (this_frequency > 0 && rn2(total_frequency) < this_frequency) {
+            pick = meta;
+        }
+    }
+    return pick
+        ? generateThemeroomByName(pick.name, difficulty)
+        : false;
 }
 
 // C ref: sp_lev.c check_room()
