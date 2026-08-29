@@ -35612,7 +35612,7 @@ flowchart LR
     Replace --> Bury["bury_an_obj; resistance draw; buried chain"]
     Bury --> Stop["Lua stop_timer ROT_CORPSE"]
     Stop --> Deadline["Lua start_timer ZOMBIFY_MON at moves + 990..1010"]
-    Deadline -. "runtime still absent" .-> Dispatch["run_timers in timeout order"]
+    Deadline --> Dispatch["focused source-turn timer phase"]
     Dispatch --> Zombify["zombie_form then set_corpsenm"]
     Zombify --> Revive["revive_mon and makemon NO_MINVENT"]
     Revive --> Pit["buried zombie claws out through a pit"]
@@ -35634,12 +35634,21 @@ living corpsenm to its zombie form, reconstructs ordinary corpse timer state,
 and calls the revival graph. A buried zombie can require adjacent relocation,
 must be constructed with `NO_MINVENT`, removes the corpse only after successful
 creation, creates a pit, and emits visibility- or distance-dependent feedback.
-The shared monster constructor now honors `NO_MINVENT` around fixed starting
+The shared monster constructor honors `NO_MINVENT` around fixed starting
 objects, `m_initweap()`, `m_initinv()`, the common item reservoirs, greedy gold,
 and the domestic-saddle probe. It still preserves non-inventory birth state,
 including sleep, peacefulness, mimic appearance, and shapechanging. That
-removes a revival-constructor blocker without pretending the callback exists:
-the synchronous timeout position still precedes later per-turn RNG. Deferring
-zombification to an unrelated asynchronous tail would reorder the source turn.
-The ownership component therefore remains mechanically `partial` until that
-full runtime edge has a source-ordered owner and direct witness.
+removes the revival-constructor blocker. Global-turn maintenance now splits at
+the object-timer position, claims due zombies by deadline and insertion order,
+awaits living-to-zombie replacement and gender-preserving no-inventory birth,
+removes the corpse only on successful revival, creates the emergence pit, and
+then resumes ordinary corpse rot and property timeouts. This keeps callback RNG
+ahead of regeneration, ambient sounds, hunger, and exercise rather than moving
+it to an unrelated asynchronous tail.
+
+The ownership component remains mechanically `partial`. Oil-lamp burns and
+zombification still use focused dispatchers rather than one cross-type
+timeout/timer-id queue. `fill_pit()` boulder handling, blocked and genocided
+regression carriers, exhaustive occupied-square relocation, and every
+visibility/deafness continuation are not all directly witnessed. A successful
+empty-room emergence proves a real runtime edge, not the generic timer system.

@@ -94464,3 +94464,62 @@ global-turn transaction, remove the corpse on success, and create the visible
 or audible pit-emergence result.
 
 ---
+
+### [2026-08-29 15:55 EEST, journal block 3134] {#bridge-free #level-generation #buried-zombies #object-timers #revival #pit #source-turn #partial #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** after block 3133 made
+`NO_MINVENT` real, Buried zombies still stopped at a saved deadline.
+`allmain.js` ran its focused oil-lamp dispatcher and immediately continued to
+ordinary corpse rot and property timeouts; no owner claimed `zombifyAt`. Native
+`run_timers()` removes the due timer, calls `zombify_mon()`, and completes or
+reschedules revival before any later timeout, regeneration, ambient, hunger,
+or exercise work. The earliest remaining divergence was therefore the exact
+object-timer position inside the global-turn transaction.
+
+**Prediction portfolio and decisive evidence:** (1) an asynchronous
+end-of-turn callback predicted equivalent final state; every zombify and birth
+draw would instead move after later same-turn RNG. (2) deleting the corpse when
+the timer fired predicted simple cleanup; native `set_corpsenm()` first installs
+a zombie ROT_CORPSE timer and `revive_mon()` retains that corpse if digging or
+birth fails. (3) constructing the living species predicted `revive_mon()` did
+the conversion; `zombify_mon()` maps the living corpse to its zombie form
+before revival. (4) a pit at the burial coordinate predicted location stayed
+fixed; an occupied coordinate first uses `enexto()`, and the pit belongs to the
+successfully created monster's square. (5) a late message predicted presentation
+could be detached; visible clawing can itself suspend tty before `newsym()` and
+the rest of the source turn resumes.
+
+**Decision and implementation:** assign stable insertion order to each Lua
+ZOMBIFY_MON deadline and add a focused due-timer owner over the buried chain.
+Claiming removes the zombify timer, maps all eight living species, handles the
+genocide-to-rot branch, rebuilds zombie corpse rot state and weight, enforces
+ROOM/CORR/GRAVE plus no-existing-trap digging, preserves corpse gender, and
+uses the shared `NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH`
+constructor. Successful revival marks the actor revived, removes and clears the
+corpse, creates a pit, and returns presentation state. Split global-turn
+maintenance at this exact boundary so visible/nearby feedback can await tty,
+then resume ordinary floor rot and property timeouts. Implementation commit
+`d5caeab` contains the timer/revival owner, source-turn phase, and focused
+witness.
+
+**Measured effect and regression:** `test/themerooms.test.js` passes **22/22**.
+The new witness drives a freshly constructed deep-room corpse due, verifies
+the exact living-to-zombie map, retained gender, revived actor, empty inventory,
+corpse removal, co-located pit, and zero bridge hits. The combined bridge-policy,
+Priest startup, ordinary-room, and themed-room selection passes **38/38**. Five
+represented level carriers again pass for Storeroom, nesting rooms,
+secret-door orientation, clean Minetown-2, and Orcus ghost-town shops. The
+mechanical bridge audit remains green over 112 files. Every verifier exited
+and the post-run guard found no owned test tree.
+
+**Falsified hypotheses, limit, and next blocker:** an end-of-turn callback is
+not source-ordered, expiry is not unconditional corpse deletion, zombification
+does not revive the living species, occupied revival can move the pit, and tty
+feedback is part of the callback continuation. No full suite, public corpus,
+sealed trace, score, push, publication, official measurement, or animation work
+ran. Buried zombies remains `partial`: unify burn/zombify/rot under timer-id
+ordering, add blocked/genocided/occupied regression carriers, own `fill_pit()`
+boulder effects, and exercise visible, nearby-audible, deaf, and unseen
+continuations before promoting the callback or the generic timer system.
+
+---
