@@ -96981,3 +96981,89 @@ mutation-safe cursed/greased transport design; neither is justified by public
 session exactness.
 
 ---
+
+### [2026-08-30 00:50 EEST, journal block 3171] {#bridge-free #potionhit #potionbreathe #speed #blindness #mon-adjust-speed #make-blinded #movement-ration #vision-recalc #critical-debugging-portfolio #false-acceptance #focused-regression #partial #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3170 left the
+speed/blindness effect boundary versus mutation-safe cursed/greased transport.
+Nine direct and vapor witnesses initially returned before impact, duration,
+resistance, monster speed/sight, hero movement timeout, or vision ownership,
+so the discriminating set was red **0/9**. The critical-debugging portfolio
+kept speed-only, blindness-only, the paired downstream-state slice, and
+transport independent. Speed alone would omit the neighboring live vision
+maintenance boundary; blindness alone would omit movement allocation.
+Transport still depends on an equivalent-strength claim that every rerolled
+direction is eligible before detachment or that all unsupported post-detach
+state can be rolled back. Speed and blindness instead terminate in existing
+live scheduler owners, so the paired state-consumer slice was selected.
+
+**Prediction and decisive C evidence:** `mon_adjust_speed(mon, 1, obj)` turns
+`MSLOW` into normal permanent speed and every other permanent state into
+`MFAST`, then lets worn speed boots override effective `mspeed`. It announces
+only a spotted, mobile species whose effective speed changed. `potionhit()`
+marks speed non-hostile, so ordinary sleep clears without `wakeup()`. Speed
+vapor suppresses knee prose when any Fast source already exists, then always
+consumes `rnd(5)`, increments timed `Very_fast`, and exercises Dexterity.
+Blindness applies only to a monster with eyes which is not already permanently
+blind. It consumes two `rn2(32)` draws before potion-class resistance;
+resistance discards only the second duration, after which 64 plus the retained
+draws and old `mblinded` is capped at 127 and `mcansee` is cleared. Blindness
+vapor always consumes `rnd(5)`, increments the hero timeout, and runs
+`make_blinded()` without generic blindness prose. Darkness is announced only
+while initially sighted and aware; the Eyes of the Overworld produce the
+source dark-then-clear bracket while preserving the timeout.
+
+**Decision and implementation:** commit `9f2ea09` broadens the shared impact
+owner to eighteen source-owned potion identities without fixture, replay,
+seed, or session control flow. Direct speed now owns permanent versus effective
+speed, worn speed boots, visibility and immobility presentation, non-hostile
+sleep clearing, and the exact state consumed by `mcalcmove()`. Speed vapor
+owns timed `veryFastTurns`, Fast-source prose suppression, saturation, and
+positive Dexterity exercise consumed by hero movement rationing. Direct
+blindness owns eye/permanent-blind gates, both pre-resistance duration draws,
+resistance-weighted addition, cap, sight mutation, and hostile wake policy.
+Blindness vapor owns derived sight, Unaware and Eyes presentation, timeout
+saturation, and immediate live vision recalculation; global timeout maintenance
+continues to own expiry. Map proximity and swallowed distance-zero callers
+compose the same direct-before-vapor transaction. Invisibility remains the
+named fail-loud pre-split and pre-RNG control.
+
+**False-acceptance corrections and adversarial audit:** the first swallowed
+blindness target was a trapper. Its source species is eyeless, so skipping all
+monster-effect RNG was correct rather than evidence of a missing call; a
+purple worm now proves the susceptible path while the trapper remains an
+explicit direct immunity counterexample. The map speed witness expected a
+positive exercise delta, but its Dexterity is 18 and `rn2(19)=15` legitimately
+adds zero; the map witness now accepts movement state while a Dexterity-12
+direct witness requires `+1`. Finally, synchronous `vision_recalc(0)` consumes
+the dirty full-recalc flag, so the live swallowed witness requires committed
+blindness and a cleared flag, while an injected unit callback requires the
+pre-repaint flag and invocation. Separate controls cover speed boots, sleeping
+message suppression, intrinsic Fast, timeout saturation, magic-resistant
+blindness, permanent blindness, the Eyes, and Unaware state.
+
+**Measured effect and process custody:** all nine initial red witnesses plus
+the map, swallowed, equipment, immunity, awareness, and saturation
+counterexamples are green. The acquisition, direct-impact, map-potion, and
+swallowed files pass **98/98**. Eight ambient-ogre, known monster-speed-potion,
+sleeping-potion flight, striking-wand, smoky-invisibility-potion, timed
+blindness, clean Pri-loca, and live Fast-ration controls pass **8/8** with
+exact RNG/screens. `test/bridge_free.test.js` passes **8/8**, and the
+mechanical audit reports **125 audited files, 15 guarded modules, and 19
+fixture modules**. Every `node --test` process was guarded, singular, and
+observed through normal exit; none yielded or was abandoned.
+
+**Falsified hypotheses, limit, and next blocker:** speed is not a single
+`mspeed=MFAST` assignment; blindness resistance does not prevent both duration
+draws; an eyeless target is not a failed effect; and a dirty vision flag is not
+expected to survive synchronous recalculation. Cursed and greased ordinary map
+flight, blind or burdened throwers, special terrain and recoil, nonordinary
+targets, invisibility, water, oil, acid, polymorph, hero impact, shops,
+saddles, interactive naming, broader equipment/visibility state, and a sealed
+stratum remain open. No full Contest suite, engine/public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should compare invisibility's map-memory and
+permanent-state boundary against the still-unproved cursed/greased transport
+invariant.
+
+---

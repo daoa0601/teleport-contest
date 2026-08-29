@@ -37374,3 +37374,70 @@ terrain and recoil, nonordinary targets, speed, blindness, invisibility,
 water, oil, acid, polymorph, hero impact targets, shops, saddles, interactive
 naming, full observer knowledge consumption, and a sealed stratum remain open.
 Lua owns none of this effect or scheduler graph.
+
+## 1002. Speed and blindness commit state consumed by movement and vision maintenance
+
+```mermaid
+flowchart TD
+    A[potionhit common impact] --> B{direct type}
+    B -- speed --> C[mon_adjust_speed plus 1]
+    C --> D{permspeed was slow?}
+    D -- yes --> E[permspeed normal]
+    D -- no --> F[permspeed fast]
+    E --> G{worn speed boots?}
+    F --> G
+    G -- yes --> H[effective mspeed fast]
+    G -- no --> I[effective mspeed equals permspeed]
+    H --> J[mcalcmove consumes effective speed]
+    I --> J
+    B -- blindness and target has usable eyes --> K[rn2 32 then rn2 32]
+    K --> L[potion-class resistance draw]
+    L -- resisted --> M[64 plus first duration]
+    L -- failed --> N[64 plus both durations]
+    M --> O[add and cap mblinded; mcansee false]
+    N --> O
+    O --> P[m_calcdistress decrements and restores sight]
+    A --> Q[potionbreathe proximity admission]
+    Q -- speed --> R[rnd 5; increment Very_fast; exercise Dexterity]
+    R --> S[hero movement ration consumes Very_fast]
+    Q -- blindness --> T[rnd 5; increment BlindedTimeout]
+    T --> U[make_blinded equivalent and immediate vision recalculation]
+    U --> V[nh_timeout decrements and restores sight]
+```
+
+Speed changes two distinct source properties.  `mon_adjust_speed(mon, 1,
+obj)` promotes normal or fast permanent speed to `MFAST`, but removes
+`MSLOW` only to normal.  Worn speed boots then override effective `mspeed`
+back to `MFAST`.  Presentation requires an actually spotted, mobile species
+whose effective speed changed; a sleeping target suppresses that line, then
+the non-hostile potion branch clears ordinary sleep.  The resulting
+`permspeed`/`mspeed` feeds the existing `mcalcmove()` allocation rather than a
+throw-specific action bonus.  Hero vapor independently rolls one through five
+timed `Very_fast` turns, suppresses knee prose when any Fast source already
+exists, and exercises Dexterity before normal movement-ration scheduling uses
+the timeout.
+
+Blindness has an unusual resistance order.  A monster with eyes which is not
+already permanently blind consumes both `rn2(32)` duration draws before
+`resist(POTION_CLASS)`.  Resistance discards only the second already-consumed
+duration, so the added timer is either `64 + first` or `64 + first + second`,
+then existing `mblinded` is added and capped at 127.  Eyeless and permanently
+blind monsters skip all three effect draws but retain hostile wake policy.
+The live distress owner later decrements `mblinded` and restores `mcansee` at
+zero.
+
+Hero blindness vapor always rolls and saturates a one-through-five timeout.
+It announces darkness only while initially sighted and aware, commits derived
+blindness, and synchronously recalculates vision when sight actually toggles.
+The Eyes of the Overworld preserve sight without erasing the timeout, producing
+the source dark-then-clear bracket; Unaware suppresses both transition lines.
+The existing global timeout owner decrements this same `blindTurns` state and
+restores vision, so neither projectile caller maintains a private duration.
+
+The subsystem remains mechanically **partial**.  These effects are live for
+swallowed guaranteed contact and ordinary sighted map contact, including a
+selected proximity-vapor branch.  Cursed and greased transport, blind or
+burdened throwers, special terrain and recoil, nonordinary targets,
+invisibility, water, oil, acid, polymorph, hero impact, shops, saddles,
+interactive naming, broader equipment and visibility variants, and a sealed
+stratum remain open.  Lua owns none of this state, movement, or vision graph.
