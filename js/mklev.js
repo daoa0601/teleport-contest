@@ -38,7 +38,9 @@ import {
     M_AP_FURNITURE, M_AP_OBJECT,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL,
-    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT, G_GENOD,
+    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT,
+    G_GENOD, G_NOCORPSE,
+    W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
 } from './const.js';
@@ -77,6 +79,7 @@ import {
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
     MIRROR, POT_OBJECT_DETECTION, POT_BOOZE, APPLE, SHIELD_OF_REFLECTION,
     WAN_WISHING, SPE_BOOK_OF_THE_DEAD,
+    AMULET_OF_LIFE_SAVING,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
@@ -290,6 +293,8 @@ const PM_SANDESTIN = 301;
 const PM_CHAMELEON = 327;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD_OF_YENDOR = 285;
+const PM_DEATH = 311;
+const PM_FAMINE = 313;
 const PM_WIZARD = 343;
 const PM_LORD_CARNARVON = 344;
 const PM_PELIAS = 345;
@@ -300,9 +305,9 @@ const PM_APPRENTICE = 382;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
 const S_DEMON = 56;
+const G_UNIQ_MASK = 0x1000;
 const SCR_CREATE_MONSTER = 329;
 const AMULET_OF_REFLECTION = 208;
-const AMULET_OF_LIFE_SAVING = 202;
 const HELM_OF_BRILLIANCE = 96;
 const DIAMOND = 440;
 const RUBY = 441;
@@ -1336,6 +1341,9 @@ export function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
     // C ref: mkcorpstat() creates and initializes a statue, including its
     // random monster identity and possible container roll.
     const otmp = mksobj(objtyp, !!(flags & 0x08), false);
+    // mkobj.c records gender and historic-statue bits in the overloaded spe
+    // field after mksobj() initialization and before the species override.
+    otmp.spe = flags & 0x07;
     if (pm != null) {
         const oldCorpsenm = otmp.corpsenm;
         otmp.corpsenm = pm;
@@ -3978,15 +3986,170 @@ function unearthObjectsAt(x, y, state = game) {
     return unearthed;
 }
 
-function monsterSafelySurvivesMeltedIce(monster) {
+function meltLevelHasCeiling(state = game) {
+    const flags = state.level?.flags || {};
+    if (typeof flags.has_ceiling === 'boolean') return flags.has_ceiling;
+    return state === game
+        ? !(In_endgame(state.u?.uz) && !Is_earthlevel(state.u?.uz))
+        : !(flags.is_endgame && !flags.is_earthlevel);
+}
+
+function monsterInAir(monster, state = game) {
+    if (!monster) return false;
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    return !!(flags & 0x00000001) || symbol === 5 || symbol === 25
+        || !!(flags & 0x00000010)
+            && meltLevelHasCeiling(state) && !!monster.mundetected;
+}
+
+function monsterSafelySurvivesMeltedIce(monster, state = game) {
     if (!monster) return true;
     const name = MONSTER_NAME[monster.mnum];
     // minliquid() gives these two species separate split/rust transactions.
     if (name === 'gremlin' || name === 'iron golem') return false;
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    return !!(flags & (0x00000001 | 0x00000002 | 0x00000010
-        | 0x00000200 | 0x00000400)) || symbol === 5 || symbol === 25;
+    return monsterInAir(monster, state)
+        || !!(flags & (0x00000002 | 0x00000010
+            | 0x00000200 | 0x00000400));
+}
+
+const MELT_SPECIAL_CORPSE_NAMES = new Set([
+    'white unicorn', 'gray unicorn', 'black unicorn', 'long worm',
+    'vampire', 'vampire leader',
+    'gray ooze', 'brown pudding', 'green slime', 'black pudding',
+]);
+
+function meltSpecialDeathFamily(monster) {
+    const name = MONSTER_NAME[monster.mnum] || '';
+    return MELT_SPECIAL_CORPSE_NAMES.has(name)
+        || (name.endsWith(' dragon') && !name.startsWith('baby '))
+        || name.endsWith(' mummy') || name.endsWith(' zombie')
+        || name.endsWith(' golem')
+        || name === 'lich' || name.endsWith('lich')
+        || name === 'troll' || name.endsWith(' troll')
+        || (MONSTER_ATTACKS[monster.mnum] || [])
+            .some(attack => attack[0] === 14
+                || attack[1] === 22 || attack[1] === 35); // BOOM/SEDU/SSEX
+}
+
+function wornMeltMonsterLifeSaver(monster) {
+    if (monsterIsNonliving(monster.mnum)) return null;
+    return (monster.minvent || monster.inventory || []).find(object =>
+        object.otyp === AMULET_OF_LIFE_SAVING
+        && ((object.owornmask ?? 0) & W_AMUL)) || null;
+}
+
+function meltOccupantDeathGap(monster, state = game) {
+    if (state !== game) return 'custom-state death projection';
+    if (wornMeltMonsterLifeSaver(monster)) return 'life-saving';
+    if (Number.isInteger(monster.cham) && monster.cham >= 0)
+        return 'shapechanging';
+    if (monster.mtame || monster.pet) return 'pet traits';
+    if ((monster.m_ap_type ?? 0) !== 0) return 'mimic detachment';
+    if (state.u?.ustuck === monster || state.u?.usteed === monster)
+        return 'hero attachment';
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === monster.mx && candidate.ty === monster.my);
+    if (trap && is_pit(trap.ttyp)) return 'pit detachment';
+    if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
+        return 'unique monster bookkeeping';
+    if (monster.isgd || monster.iswiz || monster.isshk || monster.ispriest
+        || monster.wormno || monster.mleashed
+        || monster.isQuestLeader || monster.isQuestNemesis) {
+        return 'special monster detachment';
+    }
+    const leaderId = state.quest_status?.leader_m_id
+        ?? state.u?.quest_status?.leader_m_id;
+    if (leaderId != null && monster.m_id === leaderId)
+        return 'quest leader bookkeeping';
+    if (meltSpecialDeathFamily(monster)) return 'special corpse/death effects';
+    return null;
+}
+
+function recordMeltMonsterDeath(monster, state = game) {
+    if (!state._vanquishedCounts) state._vanquishedCounts = new Map();
+    const mnum = monster.mnum ?? -1;
+    const prior = state._vanquishedCounts.get(mnum) || {
+        mnum, name: MONSTER_NAME[mnum] || 'monster', count: 0,
+        difficulty: MONSTER_DIFFICULTY[mnum] ?? 0,
+    };
+    prior.count = Math.min(255, prior.count + 1);
+    state._vanquishedCounts.set(mnum, prior);
+}
+
+function releaseMeltMonsterInventory(monster, state = game) {
+    const x = monster.mx, y = monster.my;
+    const carried = monster.minvent?.length
+        ? monster.minvent : monster.inventory || monster.minvent || [];
+    const released = [];
+    for (let index = carried.length - 1; index >= 0; index--) {
+        const object = carried[index];
+        object.owornmask = 0;
+        object.worn = false;
+        object.wornSlot = null;
+        object.wielded = false;
+        object.alternate = false;
+        object.ready = false;
+        place_object(object, x, y);
+        stack_object(object, state);
+        released.push(object);
+    }
+    monster.minvent = [];
+    monster.inventory = monster.minvent;
+    monster.hasInventory = false;
+    monster.mw = null;
+    monster.misc_worn_check = 0;
+    return released;
+}
+
+function meltLevelSpecificNoCorpse(monster, state = game) {
+    const flags = state.level?.flags || {};
+    if (flags.rogue_level || flags.is_rogue_level
+        || flags.deathdrops === false) return true;
+    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
+    return !!(flags.graveyard && undead && rn2(3));
+}
+
+function createMeltMonsterCorpse(monster, state = game) {
+    if (meltLevelSpecificNoCorpse(monster, state)) return null;
+    const mnum = monster.mnum;
+    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
+            || mnum === PM_LIZARD) && !monster.mcloned)
+        || (mnum >= PM_ARCHAEOLOGIST && mnum <= PM_WIZARD)
+        || (mnum >= PM_DEATH && mnum <= PM_FAMINE);
+    const frequency = (MONSTER_GENO[mnum] ?? 0) & 0x7;
+    const range = 2 + Number(frequency < 2)
+        + Number((MONSTER_SIZE[mnum] ?? 2) === 0);
+    if (!guaranteed && rn2(range) !== 0) return null;
+    if ((MONSTER_GENO[mnum] ?? 0) & G_NOCORPSE) return null;
+
+    let flags = CORPSTAT_INIT;
+    if (monster.female) flags |= CORPSTAT_FEMALE;
+    else if (!((MONSTER_FLAGS2[mnum] ?? 0) & M2_NEUTER))
+        flags |= CORPSTAT_MALE;
+    const corpse = mkcorpstat(CORPSE, null, mnum,
+        monster.mx, monster.my, flags);
+    corpse.name = `${MONSTER_NAME[mnum] || 'monster'} corpse`;
+    if (monster.name) corpse.oname = monster.name;
+    return stack_object(corpse, state);
+}
+
+function resolveMeltMonsterDeath(monster, state = game) {
+    const gap = meltOccupantDeathGap(monster, state);
+    if (gap) throw new Error(`unsupported melt-ice occupant ${gap}`);
+    recordMeltMonsterDeath(monster, state);
+    const releasedInventory = releaseMeltMonsterInventory(monster, state);
+    monster.mhp = 0;
+    monster.dead = true;
+    monster.mundetected = 0;
+    state.level.monsters = state.level.monsters.filter(candidate =>
+        candidate !== monster);
+    const corpse = createMeltMonsterCorpse(monster, state);
+    return {
+        kind: 'melt-ice-occupant-death', monster,
+        releasedInventory, corpse, corpseCreated: !!corpse,
+    };
 }
 
 // C ref: hack.c:disturb_buried_zombies().  wake_nearto() shortens each
@@ -4048,10 +4211,17 @@ export function runNextMeltIceBoulder(event, state = game) {
     const waterType = loc.typ;
     let removedTrap = null;
     let buriedFloorObjects = [];
+    let occupantDeath = null;
     if (fillsUp) {
         loc.typ = ROOM;
         loc.flags = 0;
         loc.icedpool = 0;
+        const occupant = event.occupant;
+        if (occupant && (occupant.mhp ?? 1) > 0
+            && !monsterInAir(occupant, state)) {
+            occupantDeath = resolveMeltMonsterDeath(occupant, state);
+            event.occupantDeath = occupantDeath;
+        }
         removedTrap = state.level?.traps?.find(trap =>
             trap.tx === x && trap.ty === y) || null;
         if (removedTrap) {
@@ -4071,7 +4241,7 @@ export function runNextMeltIceBoulder(event, state = game) {
     const outcome = {
         kind: 'melt-ice-boulder', x, y, boulder, chance, fillsUp,
         waterType, waterBody: waterType === POOL ? 'pool' : 'moat',
-        removedTrap, buriedFloorObjects, pendingBoulder,
+        removedTrap, buriedFloorObjects, pendingBoulder, occupantDeath,
     };
     if (!event.boulderOutcomes) event.boulderOutcomes = [];
     event.boulderOutcomes.push(outcome);
@@ -4098,15 +4268,18 @@ export function runClaimedMeltIceTimer(claimed, state = game) {
         );
     }
     const occupant = levelMonsterAt(x, y);
-    if (boulder && occupant) {
-        throw new Error(
-            `melt-ice boulder occupant lifecycle is not implemented at ${x},${y}`,
-        );
-    }
-    if (occupant && !monsterSafelySurvivesMeltedIce(occupant)) {
+    if (occupant && !monsterSafelySurvivesMeltedIce(occupant, state)) {
         throw new Error(
             `melt-ice monster liquid lifecycle is not implemented at ${x},${y}`,
         );
+    }
+    if (boulder && occupant && !monsterInAir(occupant, state)) {
+        const gap = meltOccupantDeathGap(occupant, state);
+        if (gap) {
+            throw new Error(
+                `melt-ice boulder occupant ${gap} is not implemented at ${x},${y}`,
+            );
+        }
     }
 
     const icedpool = loc.icedpool ?? loc.flags ?? ICED_MOAT;

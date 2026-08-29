@@ -7,11 +7,12 @@ import {
 } from '../js/bridge_policy.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
-    G_GENOD, ICE, LANDMINE, MAXNROFROOMS, MOAT, OROOM, ROCKTRAP,
+    G_GENOD, ICE, LANDMINE, M_AP_OBJECT, MAXNROFROOMS, MOAT, OROOM, PIT,
+    ROCKTRAP,
     ROLLING_BOULDER_TRAP, ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE,
     SLP_GAS_TRAP, STRAT_WAITFORU,
     SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB, MM_NOCOUNTBIRTH, MM_NOMSG,
-    MM_NOWAIT, NO_MINVENT,
+    MM_NOWAIT, NO_MINVENT, W_AMUL,
 } from '../js/const.js';
 import {
     buriedZombieTimerMessage, finishMeltIceTimer,
@@ -31,7 +32,8 @@ import {
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
 import {
-    BOULDER, CHEST, CORPSE, LAND_MINE, OIL_LAMP, STATUE,
+    AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, BOULDER, CHEST, CORPSE,
+    LAND_MINE, OIL_LAMP, STATUE,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import {
@@ -544,28 +546,315 @@ test('boulder splash wake-up shortens adjacent buried-zombie timers', () => {
     assert.equal(corpse.timed, 1);
 });
 
-test('melt-ice still fails before mutation for a boulder occupant', () => {
+test('melt-ice boulder fill leaves an airborne occupant alive', () => {
     themedState(4007, 8);
     const x = 10, y = 10;
     game.level.at(x, y).typ = ICE;
     game.level.at(x, y).flags = 0;
-    const boulder = place_object({
+    place_object({
         otyp: BOULDER, o_id: 9940, contents: [], timed: 0,
     }, x, y);
-    game.level.monsters.push({ mnum: 106, mx: x, my: y, mhp: 10 });
+    const floater = {
+        mnum: 28, mx: x, my: y, mhp: 10, mhpmax: 10,
+        minvent: [], inventory: [],
+    };
+    game.level.monsters.push(floater);
     scheduleLevelTimer(
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
-    const claimed = claimNextDueObjectTimer(game, game.moves);
-    assert.throws(
-        () => runClaimedMeltIceTimer(claimed, game),
-        /boulder occupant lifecycle is not implemented/,
+    initRng(1n); // rn2(10)=5 fills the exposed moat
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
     );
-    assert.equal(game.level.at(x, y).typ, ICE);
-    assert.equal(boulder.where, 'floor');
+    const outcome = runNextMeltIceBoulder(event, game);
+    assert.equal(outcome.fillsUp, true);
+    assert.equal(outcome.occupantDeath, null);
+    assert.equal(floater.mhp, 10);
+    assert.equal(floater.dead, undefined);
+    assert.ok(game.level.monsters.includes(floater));
+    assert.equal(game.level.at(x, y).typ, ROOM);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });
+});
+
+test('melt-ice boulder fill kills a grounded clinger but not a ceiling hider',
+    () => {
+        for (const mundetected of [false, true]) {
+            themedState(mundetected ? 4072 : 4071, 8);
+            const x = 10, y = 10;
+            game.level.at(x, y).typ = ICE;
+            game.level.at(x, y).flags = 0;
+            place_object({
+                otyp: BOULDER, o_id: mundetected ? 9942 : 9941,
+                contents: [], timed: 0,
+            }, x, y);
+            const piercer = {
+                mnum: 78, mx: x, my: y, mhp: 10, mhpmax: 10,
+                mundetected, minvent: [], inventory: [],
+            };
+            game.level.monsters.push(piercer);
+            scheduleLevelTimer(
+                x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+            );
+            const claimed = claimNextDueObjectTimer(game, game.moves);
+            initRng(1n);
+            const event = runClaimedMeltIceTimer(claimed, game);
+            const outcome = runNextMeltIceBoulder(event, game);
+            assert.equal(outcome.fillsUp, true);
+            if (mundetected) {
+                assert.equal(outcome.occupantDeath, null);
+                assert.equal(piercer.mhp, 10);
+                assert.ok(game.level.monsters.includes(piercer));
+            } else {
+                assert.equal(outcome.occupantDeath.monster, piercer);
+                assert.equal(piercer.dead, true);
+                assert.equal(piercer.mhp, 0);
+                assert.equal(game.level.monsters.includes(piercer), false);
+            }
+        }
+    });
+
+test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
+    async () => {
+        themedState(4008, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        place_object({
+            otyp: BOULDER, o_id: 9950, contents: [], timed: 0,
+        }, x, y);
+        const bell = {
+            otyp: BELL_OF_OPENING, o_id: 9951, contents: [], timed: 0,
+            where: 'minvent', owornmask: W_AMUL,
+        };
+        const statue = {
+            otyp: STATUE, o_id: 9952, contents: [], timed: 0,
+            where: 'minvent', owornmask: 0,
+        };
+        const mold = {
+            mnum: 159, mx: x, my: y, mhp: 8, mhpmax: 8, m_lev: 1,
+            name: 'Mildew', minvent: [bell, statue], hasInventory: true,
+        };
+        mold.inventory = mold.minvent;
+        game.level.monsters.push(mold);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        initRng(2n); // rn2(10)=3 fills; rn2(3)=0 leaves a corpse
+        enableRngLog();
+        const event = runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        );
+        assert.deepEqual(getRngLog(), []);
+        const phases = [];
+        await finishMeltIceTimer(event, {
+            visible: true, heroAt: false, heroInWater: false,
+            announce: async message => phases.push({
+                message, rng: getRngLog().slice(),
+                occupantPresent: game.level.monsters.includes(mold),
+                inventoryCount: mold.minvent.length,
+                buriedCount: game.level.buriedObjects?.length ?? 0,
+            }),
+            wake: async () => {}, disturb: () => {}, repaint: () => {},
+        });
+        const outcome = event.boulderOutcomes[0];
+
+        assert.deepEqual(getRngLog().slice(0, 2), [
+            'rn2(10)=3', 'rn2(3)=0',
+        ]);
+        assert.deepEqual(phases.slice(0, 2), [
+            {
+                message: 'Some ice melts away.', rng: [],
+                occupantPresent: true, inventoryCount: 2, buriedCount: 0,
+            },
+            {
+                message: 'A boulder settles...', rng: [],
+                occupantPresent: true, inventoryCount: 2, buriedCount: 0,
+            },
+        ]);
+        assert.equal(phases[2].message,
+            'There is a large splash as the boulder fills the moat.');
+        assert.equal(phases[2].occupantPresent, false);
+        assert.equal(phases[2].inventoryCount, 0);
+        assert.ok(phases[2].buriedCount >= 2);
+        assert.deepEqual(phases[2].rng.slice(0, 2), [
+            'rn2(10)=3', 'rn2(3)=0',
+        ]);
+        assert.equal(outcome.fillsUp, true);
+        assert.equal(outcome.occupantDeath.monster, mold);
+        assert.equal(outcome.occupantDeath.corpseCreated, true);
+        assert.equal(mold.dead, true);
+        assert.equal(mold.mhp, 0);
+        assert.equal(game.level.monsters.includes(mold), false);
+        assert.deepEqual(mold.minvent, []);
+        assert.equal(game._vanquishedCounts.get(159).count, 1);
+
+        // Invocation tools resist bury_an_obj(0,0); the ordinary inventory
+        // object and newly created corpse are both in the post-death pile and
+        // are buried by the same boulder fill before the splash message.
+        assert.equal(bell.where, 'floor');
+        assert.equal(bell.owornmask, 0);
+        assert.ok(game.level.objects[x][y].includes(bell));
+        assert.equal(statue.where, 'buried');
+        const corpse = outcome.occupantDeath.corpse;
+        assert.equal(corpse.corpsenm, 159);
+        assert.equal(corpse.spe, 0); // brown mold is neuter
+        assert.equal(corpse.oname, 'Mildew');
+        assert.equal(corpse.where, 'buried');
+        assert.ok(outcome.buriedFloorObjects.includes(statue));
+        assert.ok(outcome.buriedFloorObjects.includes(corpse));
+        assert.deepEqual(getBridgeUsageLedger(), {
+            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+        });
+    });
+
+test('melt-ice boulder death rejects monster life-saving before mutation',
+    () => {
+        themedState(4009, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        const boulder = place_object({
+            otyp: BOULDER, o_id: 9960, contents: [], timed: 0,
+        }, x, y);
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 9961,
+            contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+        };
+        const nymph = {
+            mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8,
+            minvent: [amulet], inventory: [amulet],
+        };
+        game.level.monsters.push(nymph);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        const claimed = claimNextDueObjectTimer(game, game.moves);
+        assert.throws(
+            () => runClaimedMeltIceTimer(claimed, game),
+            /occupant life-saving is not implemented/,
+        );
+        assert.equal(game.level.at(x, y).typ, ICE);
+        assert.equal(boulder.where, 'floor');
+        assert.equal(nymph.mhp, 8);
+    });
+
+test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
+    themedState(4098, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    place_object({
+        otyp: BOULDER, o_id: 9965, contents: [], timed: 0,
+    }, x, y);
+    const skeleton = {
+        mnum: 248, mx: x, my: y, mhp: 8, mhpmax: 8,
+        minvent: [], inventory: [],
+    };
+    game.level.monsters.push(skeleton);
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    initRng(2n); // rn2(10)=3 fills; rn2(3)=0 reaches make_corpse
+    enableRngLog();
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
+    );
+    const outcome = runNextMeltIceBoulder(event, game);
+    assert.deepEqual(getRngLog().slice(0, 2), [
+        'rn2(10)=3', 'rn2(3)=0',
+    ]);
+    assert.equal(outcome.occupantDeath.corpseCreated, false);
+    assert.equal(skeleton.dead, true);
+    assert.equal(game.level.monsters.includes(skeleton), false);
+    assert.equal(game.level.buriedObjects?.length ?? 0, 0);
+    assert.equal(game.level.at(x, y).typ, ROOM);
+});
+
+test('melt-ice boulder death rejects special corpse effects before mutation',
+    () => {
+        themedState(4099, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        const boulder = place_object({
+            otyp: BOULDER, o_id: 9970, contents: [], timed: 0,
+        }, x, y);
+        const pudding = {
+            mnum: 209, mx: x, my: y, mhp: 8, mhpmax: 8,
+            minvent: [], inventory: [],
+        };
+        game.level.monsters.push(pudding);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        const claimed = claimNextDueObjectTimer(game, game.moves);
+        assert.throws(
+            () => runClaimedMeltIceTimer(claimed, game),
+            /occupant special corpse\/death effects is not implemented/,
+        );
+        assert.equal(game.level.at(x, y).typ, ICE);
+        assert.equal(boulder.where, 'floor');
+        assert.equal(pudding.mhp, 8);
+    });
+
+test('melt-ice boulder death rejects active mimic detachment before mutation',
+    () => {
+        themedState(4100, 8);
+        const x = 10, y = 10;
+        game.level.at(x, y).typ = ICE;
+        game.level.at(x, y).flags = 0;
+        const boulder = place_object({
+            otyp: BOULDER, o_id: 9975, contents: [], timed: 0,
+        }, x, y);
+        const mimic = {
+            mnum: 64, mx: x, my: y, mhp: 8, mhpmax: 8,
+            m_ap_type: M_AP_OBJECT, mappearance: STATUE,
+            minvent: [], inventory: [],
+        };
+        game.level.monsters.push(mimic);
+        scheduleLevelTimer(
+            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+        );
+        assert.throws(
+            () => runClaimedMeltIceTimer(
+                claimNextDueObjectTimer(game, game.moves), game,
+            ),
+            /occupant mimic detachment is not implemented/,
+        );
+        assert.equal(game.level.at(x, y).typ, ICE);
+        assert.equal(boulder.where, 'floor');
+        assert.equal(mimic.mhp, 8);
+    });
+
+test('melt-ice boulder death rejects pit detachment before mutation', () => {
+    themedState(4101, 8);
+    const x = 10, y = 10;
+    game.level.at(x, y).typ = ICE;
+    game.level.at(x, y).flags = 0;
+    const boulder = place_object({
+        otyp: BOULDER, o_id: 9976, contents: [], timed: 0,
+    }, x, y);
+    game.level.traps.push({ tx: x, ty: y, ttyp: PIT, tseen: 0 });
+    const piercer = {
+        mnum: 78, mx: x, my: y, mhp: 8, mhpmax: 8,
+        mtrapped: 1, minvent: [], inventory: [],
+    };
+    game.level.monsters.push(piercer);
+    scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
+    );
+    assert.throws(
+        () => runClaimedMeltIceTimer(
+            claimNextDueObjectTimer(game, game.moves), game,
+        ),
+        /occupant pit detachment is not implemented/,
+    );
+    assert.equal(game.level.at(x, y).typ, ICE);
+    assert.equal(boulder.where, 'floor');
+    assert.equal(piercer.mhp, 8);
+    assert.equal(piercer.mtrapped, 1);
 });
 
 test('Boulder room owns filtered boulders and rolling traps live', async () => {
