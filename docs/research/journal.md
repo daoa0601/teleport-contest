@@ -97344,3 +97344,49 @@ full Contest suite, corpus, scorer, sealed trace, push, publication, official
 measurement, or animation work occurred.
 
 ---
+
+### [2026-08-30 01:59 EEST, journal block 3176] {#test-quality #change-detector #production-instrumentation #fountain #monster-trap #monster-departure #bridge-free #focused-regression #process-safety}
+
+**Witness and diagnosis:** block 3175 separated the largest public replay
+carriers, then the remaining default-lane inventory exposed a second pattern:
+tests asserted ordered collaborator transcripts while production returned
+duplicate internal RNG-call arrays solely for those assertions. The fountain
+actor file had eleven tests organized around `calls.push(...)` sequences;
+`removeWishGrantingMonster()` and `triggerImmediateMonsterTrap()` exposed
+`result.calls` even though every runtime caller ignores that field. This made
+the test representation part of the production API without adding a game
+mechanic or a bridge-free invariant.
+
+**Independent contract and implementation:** fountain actor tests now assert
+created or absent actors, wake state, visible/blind messages, wish eligibility,
+trap outcomes, constructed survivor sets, and lazy hallucination-name
+eligibility. The dipped-coin tests assert the committed fountain bit, created
+quantity, message eligibility, Wisdom exercise, and repaint effects without
+pinning their callback list in source order. Web presentation separately
+asserts the emitted message and that unseen events do not resolve a potentially
+RNG-consuming subject. Wish departure and immediate trap entry retain injected
+RNG-range witnesses plus inventory, migration, trap, HP, and repaint state, but
+no longer return or assert a redundant production `calls` field.
+
+**Measured effect and adversarial check:** the batch removes **262 lines** and
+adds **208**, reducing the fountain actor test from 270 to 217 lines while
+preserving every named branch as an outcome contract. A guarded focused run of
+fountain actors, dipped coins, wish departure, immediate trap entry, web
+presentation, and all bridge-free policy/role checks passes **31/31** in
+**723 ms**. Syntax checks for both changed production modules and all five test
+files pass; `git diff --check` is clean. Runtime callers of both changed result
+objects were searched and none reads `calls`.
+
+**Falsified hypotheses, limits, and next blocker:** exact collaborator order is
+not required to prove the resulting fountain actor, message, wish, trap, or
+coin state; duplicate return instrumentation is not an acceptance API; and an
+unseen presentation branch can protect lazy RNG without recording the whole
+call sequence. This does not claim that all instrumentation is removable:
+monster scheduler `action.calls` still participates in a much broader replay
+and continuation surface and needs a separate ownership audit. Remaining
+high-confidence cleanup candidates are callback-count assertions in
+`potion_hit.test.js` and production scheduler call logs retained for replay
+compatibility. No full Contest suite, public regression lane, corpus, scorer,
+sealed trace, push, publication, official measurement, or animation work ran.
+
+---

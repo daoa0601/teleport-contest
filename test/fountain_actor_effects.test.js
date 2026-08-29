@@ -7,264 +7,211 @@ import {
     applyFountainSnakeActors,
 } from '../js/fountain_effects.js';
 
-test('water nymph orders birth, prose, wake, and immediate trap entry', async () => {
-    const calls = [];
+test('a created water nymph wakes and resolves its immediate trap', async () => {
     const monster = { msleeping: 1, trapped: true };
+    const messages = [];
     const result = await applyFountainNymphActor({
-        createMonster: async () => {
-            calls.push('create');
-            return monster;
-        },
-        announce: async message => calls.push(`announce:${message}`),
-        wakeMonster: actor => {
-            calls.push('wake');
-            actor.msleeping = 0;
-        },
-        trapAt: actor => {
-            calls.push('trap-at');
-            return actor.trapped;
-        },
-        triggerTrap: async () => {
-            calls.push('mintrap');
-            return 'caught';
-        },
+        createMonster: async () => monster,
+        announce: async message => messages.push(message),
+        trapAt: actor => actor.trapped,
+        triggerTrap: async () => 'caught',
     });
 
-    assert.deepEqual(calls, [
-        'create', 'announce:You attract a water nymph!',
-        'wake', 'trap-at', 'mintrap',
-    ]);
-    assert.equal(monster.msleeping, 0);
+    assert.equal(result.created, true);
+    assert.equal(result.monster, monster);
     assert.equal(result.trap, 'caught');
+    assert.equal(monster.msleeping, 0);
+    assert.deepEqual(messages, ['You attract a water nymph!']);
 });
 
-test('water nymph gone and failed-birth fallbacks skip wake and traps', async () => {
-    for (const entry of [
-        {
-            gone: true, blind: false,
-            expected: 'A large bubble rises to the surface and pops.',
-        },
-        {
-            gone: false, blind: true,
-            expected: 'You hear a loud pop.',
-        },
-    ]) {
-        const calls = [];
-        const result = await applyFountainNymphActor({
-            gone: entry.gone,
-            blind: entry.blind,
-            createMonster: async () => {
-                calls.push('create');
-                return null;
+test('water nymph fallback reports blindness without downstream work',
+    async () => {
+        for (const specimen of [
+            {
+                gone: true,
+                blind: false,
+                expected: 'A large bubble rises to the surface and pops.',
+                expectedCreations: 0,
             },
-            announce: async message => calls.push(`announce:${message}`),
-            wakeMonster: () => calls.push('wake'),
-            trapAt: () => { calls.push('trap-at'); return true; },
-            triggerTrap: async () => calls.push('mintrap'),
-        });
-        assert.deepEqual(calls, [
-            ...(entry.gone ? [] : ['create']),
-            `announce:${entry.expected}`,
-        ]);
-        assert.equal(result.created, false);
-        assert.equal(result.fallback, true);
-    }
-});
+            {
+                gone: false,
+                blind: true,
+                expected: 'You hear a loud pop.',
+                expectedCreations: 1,
+            },
+        ]) {
+            let creations = 0;
+            let traps = 0;
+            const messages = [];
+            const result = await applyFountainNymphActor({
+                gone: specimen.gone,
+                blind: specimen.blind,
+                createMonster: async () => { creations++; return null; },
+                announce: async message => messages.push(message),
+                trapAt: () => { traps++; return true; },
+            });
 
-test('water nymph resolves hallucinated naming only on sighted success', async () => {
+            assert.equal(result.created, false);
+            assert.equal(result.fallback, true);
+            assert.equal(result.message, specimen.expected);
+            assert.equal(creations, specimen.expectedCreations);
+            assert.equal(traps, 0);
+            assert.deepEqual(messages, [specimen.expected]);
+        }
+    });
+
+test('water nymph resolves a display identity only when sighted', async () => {
     for (const blind of [false, true]) {
-        const calls = [];
+        let nameResolutions = 0;
         const result = await applyFountainNymphActor({
             blind,
             createMonster: async () => ({}),
             nymphDescription: () => {
-                calls.push('display-name');
+                nameResolutions++;
                 return 'a grid bug';
             },
-            announce: async message => calls.push(message),
         });
-        assert.deepEqual(calls, blind
-            ? ['You hear a seductive voice.']
-            : ['display-name', 'You attract a grid bug!']);
-        assert.equal(result.created, true);
+
+        assert.equal(result.message, blind
+            ? 'You hear a seductive voice.'
+            : 'You attract a grid bug!');
+        assert.equal(nameResolutions, blind ? 0 : 1);
     }
 });
 
-test('water demon skips construction or wish RNG when gone', async () => {
-    const calls = [];
-    const result = await applyFountainDemonActor({
+test('water demon eligibility excludes gone and failed births', async () => {
+    let goneCreations = 0;
+    let goneRolls = 0;
+    const gone = await applyFountainDemonActor({
         gone: true,
-        createMonster: async () => calls.push('create'),
-        announce: async message => calls.push(`announce:${message}`),
-        random: () => { calls.push('rnd'); return 100; },
+        createMonster: async () => { goneCreations++; return {}; },
+        random: () => { goneRolls++; return 99; },
     });
+    assert.equal(gone.created, false);
+    assert.equal(gone.fallback, true);
+    assert.equal(gone.wishRoll, null);
+    assert.equal(gone.message,
+        'The fountain bubbles furiously for a moment, then calms.');
+    assert.equal(goneCreations, 0);
+    assert.equal(goneRolls, 0);
 
-    assert.deepEqual(calls, [
-        'announce:The fountain bubbles furiously for a moment, then calms.',
-    ]);
-    assert.equal(result.wishRoll, null);
+    let failedRolls = 0;
+    const failed = await applyFountainDemonActor({
+        createMonster: async () => null,
+        random: () => { failedRolls++; return 99; },
+    });
+    assert.equal(failed.created, false);
+    assert.equal(failed.fallback, false);
+    assert.equal(failed.message, '');
+    assert.equal(failedRolls, 0);
 });
 
-test('water demon failed birth produces no prose, wish roll, or trap work', async () => {
-    const calls = [];
-    const result = await applyFountainDemonActor({
-        createMonster: async () => { calls.push('create'); return null; },
-        announce: async () => calls.push('announce'),
-        random: () => { calls.push('rnd'); return 1; },
-        trapAt: () => { calls.push('trap-at'); return true; },
+test('a losing water demon roll leaves the actor and resolves its trap',
+    async () => {
+        const monster = { trapped: true };
+        let wishGrants = 0;
+        const result = await applyFountainDemonActor({
+            blind: true,
+            difficulty: 3,
+            createMonster: async () => monster,
+            random: range => {
+                assert.equal(range, 100);
+                return 83;
+            },
+            trapAt: actor => actor.trapped,
+            triggerTrap: async () => 'web',
+            grantWish: async () => { wishGrants++; },
+        });
+
+        assert.equal(result.created, true);
+        assert.equal(result.message, 'You feel the presence of evil.');
+        assert.equal(result.wishRoll, 83);
+        assert.equal(result.grantedWish, false);
+        assert.equal(result.trap, 'web');
+        assert.equal(wishGrants, 0);
     });
 
-    assert.deepEqual(calls, ['create']);
-    assert.equal(result.created, false);
-    assert.equal(result.fallback, false);
-});
+test('a winning water demon roll grants a wish instead of entering a trap',
+    async () => {
+        const monster = {};
+        let grantedMonster = null;
+        let trapChecks = 0;
+        const result = await applyFountainDemonActor({
+            difficulty: 1,
+            createMonster: async () => monster,
+            random: () => 82,
+            demonIndefiniteName: () => 'a grid bug',
+            demonPronouns: () => ({ possessive: 'its', pronoun: 'it' }),
+            grantWish: async actor => { grantedMonster = actor; },
+            trapAt: () => { trapChecks++; return true; },
+        });
 
-test('water demon rolls after prose, then enters a trap on failed wish', async () => {
-    const calls = [];
-    const monster = { trapped: true };
-    const result = await applyFountainDemonActor({
-        blind: true,
-        difficulty: 3,
-        createMonster: async () => { calls.push('create'); return monster; },
-        announce: async message => calls.push(`announce:${message}`),
-        demonIndefiniteName: () => {
-            calls.push('display-name');
-            return 'a grid bug';
-        },
-        demonPronouns: () => {
-            calls.push('pronouns');
-            return { possessive: 'its', pronoun: 'it' };
-        },
-        random: range => { calls.push(`rnd:${range}`); return 83; },
-        trapAt: () => { calls.push('trap-at'); return true; },
-        triggerTrap: async () => { calls.push('mintrap'); return 'web'; },
-        grantWish: async () => calls.push('wish'),
+        assert.equal(result.created, true);
+        assert.equal(result.message, 'You unleash a grid bug!');
+        assert.equal(result.wishRoll, 82);
+        assert.equal(result.grantedWish, true);
+        assert.equal(result.wishMessage,
+            'Grateful for its release, it grants you a wish!');
+        assert.equal(result.trap, null);
+        assert.equal(grantedMonster, monster);
+        assert.equal(trapChecks, 0);
     });
 
-    assert.deepEqual(calls, [
-        'create', 'announce:You feel the presence of evil.',
-        'rnd:100', 'trap-at', 'mintrap',
-    ]);
-    assert.equal(result.grantedWish, false);
-    assert.equal(result.trap, 'web');
-});
-
-test('water demon wish removes through grant owner without trap entry', async () => {
-    const calls = [];
-    const monster = {};
-    const result = await applyFountainDemonActor({
-        difficulty: 1,
-        createMonster: async () => { calls.push('create'); return monster; },
-        announce: async message => calls.push(`announce:${message}`),
-        demonIndefiniteName: () => {
-            calls.push('display-name');
-            return 'a grid bug';
-        },
-        demonPronouns: () => {
-            calls.push('pronouns');
-            return { possessive: 'its', pronoun: 'it' };
-        },
-        random: () => { calls.push('rnd'); return 82; },
-        grantWish: async actor => {
-            assert.equal(actor, monster);
-            calls.push('wish');
-        },
-        trapAt: () => { calls.push('trap-at'); return true; },
-    });
-
-    assert.deepEqual(calls, [
-        'create', 'display-name', 'announce:You unleash a grid bug!', 'rnd',
-        'pronouns',
-        'announce:Grateful for its release, it grants you a wish!', 'wish',
-    ]);
-    assert.equal(result.grantedWish, true);
-});
-
-test('water demon sighted losing roll resolves the name but not pronouns', async () => {
-    const calls = [];
-    const result = await applyFountainDemonActor({
-        createMonster: async () => ({}),
-        announce: async message => calls.push(`announce:${message}`),
-        demonIndefiniteName: () => {
-            calls.push('display-name');
-            return 'a grid bug';
-        },
-        demonPronouns: () => {
-            calls.push('pronouns');
-            return { possessive: 'its', pronoun: 'it' };
-        },
-        random: () => { calls.push('rnd'); return 1; },
-    });
-
-    assert.deepEqual(calls, [
-        'display-name', 'announce:You unleash a grid bug!', 'rnd',
-    ]);
-    assert.equal(result.grantedWish, false);
-});
-
-test('water snakes pay their count before G_GONE', async () => {
-    const calls = [];
+test('water snakes pay their count even when the species is gone', async () => {
+    let creations = 0;
     const result = await applyFountainSnakeActors({
         gone: true,
-        random: range => { calls.push(`rn2:${range}`); return 4; },
-        announce: async message => calls.push(`announce:${message}`),
-        createMonster: async () => calls.push('create'),
+        random: range => {
+            assert.equal(range, 5);
+            return 4;
+        },
+        createMonster: async () => { creations++; return {}; },
     });
 
-    assert.deepEqual(calls, [
-        'rn2:5',
-        'announce:The fountain bubbles furiously for a moment, then calms.',
-    ]);
     assert.equal(result.requested, 6);
     assert.deepEqual(result.created, []);
+    assert.equal(result.message,
+        'The fountain bubbles furiously for a moment, then calms.');
+    assert.equal(creations, 0);
 });
 
-test('water snakes trigger each trap before requesting the next birth', async () => {
-    const calls = [];
-    const monsters = [
-        { id: 0, trapped: true }, null, { id: 2, trapped: false },
-    ];
-    const result = await applyFountainSnakeActors({
-        blind: true,
-        hallucinating: true,
-        random: () => { calls.push('count'); return 1; },
-        hallucinatedPlural: () => { calls.push('hallu-name'); return 'bogons'; },
-        announce: async message => calls.push(`announce:${message}`),
-        createMonster: async index => {
-            calls.push(`create:${index}`);
-            return monsters[index];
-        },
-        trapAt: actor => {
-            calls.push(`trap-at:${actor.id}`);
-            return actor.trapped;
-        },
-        triggerTrap: async actor => {
-            calls.push(`mintrap:${actor.id}`);
-            return `trap-${actor.id}`;
-        },
+test('blind water snakes construct survivors and report completed traps',
+    async () => {
+        const first = { id: 0, trapped: true };
+        const third = { id: 2, trapped: false };
+        const monsters = [first, null, third];
+        let hallucinatedNames = 0;
+        const result = await applyFountainSnakeActors({
+            blind: true,
+            hallucinating: true,
+            random: () => 1,
+            hallucinatedPlural: () => { hallucinatedNames++; return 'bogons'; },
+            createMonster: async index => monsters[index],
+            trapAt: actor => actor.trapped,
+            triggerTrap: async actor => `trap-${actor.id}`,
+        });
+
+        assert.equal(result.requested, 3);
+        assert.deepEqual(result.created, [first, third]);
+        assert.deepEqual(result.traps, [{ monster: first, trap: 'trap-0' }]);
+        assert.equal(result.message, 'You hear something hissing!');
+        assert.equal(hallucinatedNames, 0);
     });
 
-    assert.deepEqual(calls, [
-        'count', 'announce:You hear something hissing!',
-        'create:0', 'trap-at:0', 'mintrap:0',
-        'create:1', 'create:2', 'trap-at:2',
-    ]);
-    assert.equal(calls.includes('hallu-name'), false);
-    assert.equal(result.created.length, 2);
-    assert.deepEqual(result.traps.map(entry => entry.trap), ['trap-0']);
-});
+test('sighted hallucinated snakes use their resolved plural identity',
+    async () => {
+        let nameResolutions = 0;
+        const result = await applyFountainSnakeActors({
+            hallucinating: true,
+            random: () => 0,
+            hallucinatedPlural: () => {
+                nameResolutions++;
+                return 'grid bugs';
+            },
+        });
 
-test('sighted hallucinated snakes resolve display identity lazily', async () => {
-    const calls = [];
-    const result = await applyFountainSnakeActors({
-        hallucinating: true,
-        random: () => 0,
-        hallucinatedPlural: () => { calls.push('hallu-name'); return 'grid bugs'; },
-        announce: async message => calls.push(message),
+        assert.equal(result.requested, 2);
+        assert.equal(result.message,
+            'An endless stream of grid bugs pours forth!');
+        assert.equal(nameResolutions, 1);
     });
-
-    assert.deepEqual(calls, [
-        'hallu-name', 'An endless stream of grid bugs pours forth!',
-    ]);
-    assert.equal(result.requested, 2);
-});

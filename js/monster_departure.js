@@ -50,19 +50,15 @@ export function removeWishGrantingMonster(monster, {
     preserveGlyph = false,
 } = {}) {
     if (!monster) {
-        return { removed: false, dropped: [], discarded: [], calls: [] };
+        return { removed: false, dropped: [], discarded: [] };
     }
 
     const x = monster.mx, y = monster.my;
     const dropped = [];
     const discarded = [];
-    const calls = [];
     for (const object of monster.minvent || monster.inventory || []) {
         const noRollResistance = resistsWithoutRoll(object);
-        if (!noRollResistance) {
-            random(100);
-            calls.push(100);
-        }
+        if (!noRollResistance) random(100);
         if (noRollResistance || currentQuestArtifact(object)) {
             clearMonsterCarriedState(object);
             dropped.push(dropObject(object, x, y, state));
@@ -85,5 +81,5 @@ export function removeWishGrantingMonster(monster, {
     state.level.monsters = (state.level.monsters || [])
         .filter(candidate => candidate !== monster);
     if (!preserveGlyph) repaint(x, y, state);
-    return { removed: true, dropped, discarded, calls, x, y };
+    return { removed: true, dropped, discarded, x, y };
 }

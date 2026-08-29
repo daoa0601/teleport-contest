@@ -45,7 +45,6 @@ test('wish departure probes ordinary and quest items but drops protected identit
     });
 
     assert.deepEqual(ranges, [100, 100]);
-    assert.deepEqual(result.calls, [100, 100]);
     assert.deepEqual(dropped, [invocation, quest]);
     assert.deepEqual(result.discarded, [ordinary]);
     assert.equal(quest.worn, false);
@@ -79,13 +78,12 @@ test('Rider corpses resist without RNG and ordinary removal repaints', () => {
     });
 
     assert.deepEqual(calls, []);
-    assert.deepEqual(result.calls, []);
     assert.deepEqual(dropped, [rider]);
     assert.deepEqual(repaints, [[12, 9]]);
 });
 
 test('null wish departure is a zero-work boundary', () => {
     assert.deepEqual(removeWishGrantingMonster(null), {
-        removed: false, dropped: [], discarded: [], calls: [],
+        removed: false, dropped: [], discarded: [],
     });
 });

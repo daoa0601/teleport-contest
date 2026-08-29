@@ -5874,7 +5874,7 @@ export function triggerImmediateMonsterTrap(
     const event = triggerMonsterTrap(
         monster, state, movement, random, rollDice, rollOne, calls,
     );
-    return { monster, movement, calls, event };
+    return { monster, movement, event };
 }
 
 function handleMonsterDoor(monster, state, movement, rollOne = rnd, calls = []) {

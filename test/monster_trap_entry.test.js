@@ -23,7 +23,6 @@ test('immediate mintrap entry is a zero-work boundary without a trap', () => {
 
     assert.equal(result.event, null);
     assert.equal(result.movement.trap, undefined);
-    assert.deepEqual(result.calls, []);
     assert.equal(result.movement.immediateTrap, true);
 });
 
@@ -38,7 +37,6 @@ test('immediate mintrap entry delegates web state to the existing engine', () =>
     assert.equal(result.movement.trap, result.event);
     assert.equal(monster.mtrapped, 1);
     assert.equal(trap.tseen, true);
-    assert.deepEqual(result.calls, []);
 });
 
 test('known-trap avoidance retains the injected RNG boundary', () => {
@@ -57,7 +55,6 @@ test('known-trap avoidance retains the injected RNG boundary', () => {
     assert.equal(result.event.kind, 'known-trap-avoided');
     assert.equal(monster.mtrapped ?? 0, 0);
     assert.deepEqual(ranges, [4]);
-    assert.deepEqual(result.calls, [4]);
 });
 
 test('visible bear trap returns the existing deferred-damage handoff', () => {
@@ -72,5 +69,4 @@ test('visible bear trap returns the existing deferred-damage handoff', () => {
     assert.equal(result.movement.deferredAfterBearTrapMessage, true);
     assert.equal(monster.mtrapped, 1);
     assert.equal(monster.mhp, 20);
-    assert.deepEqual(result.calls, []);
 });
