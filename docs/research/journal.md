@@ -96024,3 +96024,70 @@ identity, because both cross `mpickobj()` but only the former currently lacks
 its surrounding command transaction.
 
 ---
+
+### [2026-08-29 21:14 EEST, journal block 3157] {#bridge-free #object-merge #merged #mergable #add-to-minv #stackobj #obj-absorb #glob #timer-lifecycle #critical-debugging-portfolio #test-slop #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** the post-acquisition portfolio kept
+swallowed throws and merge/free identity independent. `swallowit()` is one
+missing command/contact transaction around `mpickobj()`. By contrast, every
+implemented `add_to_minv()` route already reaches `invent.c:merged()`, where a
+compatible existing stack survives and the incoming identity is extracted,
+has its timers stopped, and is freed. JavaScript always appended the incoming
+identity, so the earliest shared divergence was inside the common link itself,
+before any route-specific use, death drop, timer callback, or display.
+
+**Prediction portfolio and decisive evidence:** ordinary monster gold must
+retain the first minvent identity while combining quantity and coin weight. A
+real bullwhip `mpickobj()` must remove the wielded hero object, merge it into a
+compatible monster stack, and leave the incoming identity absent from every
+inventory and timer graph. Globs require the stronger `obj_absorb()` invariant:
+combine mass and weighted age, stop both old shrink timers, average their
+remaining delays with source rounding, schedule exactly one timer on the
+survivor, and consume no RNG. Floor `stackobj()` must choose the newly placed
+identity as survivor, the opposite of `add_to_minv()`.
+
+**Decision and implementation:** commit `12cb742` adds shared
+`js/object_merge.js`, moves `mergable()` policy out of the level generator,
+and makes both floor stacking and monster linkage call one survivor/free
+boundary. Ordinary stacks combine source-weighted age, quantity, ordinary or
+coin weight, name/knowledge and bypass state; incoming timers are stopped and
+the freed identity becomes `where == gone`. Globs combine mass and weighted
+age and reschedule one averaged `SHRINK_GLOB` deadline. Monster survivors keep
+their carrier link. This resolves a common dependency cone without pretending
+that the surrounding swallowed-throw transaction exists.
+
+**Test-slop diagnosis and repair:** the first expanded gate reported one
+failure in the pre-existing `mkgold allocates once, merges by identity, and
+repairs coin weight` test. Its mock level was only `{objects: []}`, so unchanged
+`place_object()` failed on the missing `level.at()` before any gold assertion.
+The exact test failed identically in a detached clean worktree at `000f391`,
+falsifying attribution to the merge change. Commit `4125551` replaces the
+incomplete mock with the real `GameMap`; the repaired witness passes **5/5**
+without weakening production.
+
+**Measured effect and regression:** monster acquisition expands from **8/8 to
+11/11** with direct gold, live bullwhip merge/free, and monster-glob timer
+absorption. The glob family passes **9/9**, including the new floor survivor
+and averaged-delay witness. The bounded bridge-policy, timer, acquisition,
+coin, pet-session, startup, room, and themed-room gate passes **190/190**.
+Existing unicorn, hero-gold, blocked-arrow parent-stack, clone-Wizard, and pet
+tty witnesses pass **5/5** with exact RNG and screens. The mechanical audit is
+clean at **119 files, 15 guarded modules, and 19 fixture modules**. All
+verifiers were guarded, singular, and owned through normal exit; the detached
+baseline worktree was removed.
+
+**Falsified hypotheses, limit, and next blocker:** a completed acquisition
+does not imply a new inventory node; floor and minvent merging do not choose
+the same survivor; deleting only the incoming array reference does not clear
+its timers; glob quantity arithmetic is not ordinary stack arithmetic; and a
+named green-looking test is not acceptance evidence if its fixture fails
+before the claimed behavior. Open merge gaps are unpaid `same_price()` and
+bill fixups, mail commands, lit light-source merging, hero `addinv`/worn-slot
+reconciliation, other carrier chains, pudding presentation, and exhaustive
+loss/knowledge variants. Swallowed arbitrary throws, other catch routes, and
+polymorph transfer remain separate. No full Contest suite, public corpus,
+sealed-trace inspection, score, push, publication, official measurement, or
+animation work ran. The next portfolio can now enter swallowed throws without
+carrying an equivalent-strength unknown at `add_to_minv()`.
+
+---

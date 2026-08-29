@@ -36584,8 +36584,9 @@ carrier coordinates. A direct cursed-figurine control proves that bare
 `add_to_minv` consumes no RNG and attaches no timer, while the separate
 monster-figurine witnesses protect the `mpickobj` effect.
 
-This subsystem is mechanically **partial**. Merge/free identity, the canonical
-chain traversal order across all consumers, mplayer and lawful-minion object
+This subsystem is mechanically **partial**. Stack merging is tracked in
+section 989. The canonical chain traversal order across all consumers,
+mplayer and lawful-minion object
 normalization, knowledge loss, light snuffing and candle burn, saddle/equipment
 continuations, migration persistence, and a sealed stratum remain open. Live
 command and movement acquisitions are tracked in the next section. The broad
@@ -36634,6 +36635,53 @@ depend on stale object coordinates.
 
 This subsystem is mechanically **partial**. Swallowed arbitrary throws, other
 thrown or kicked catches, shopkeeper projectile snatches, quest-leader
-retention, monster container rummaging, polymorph transfers, merge/free
-identity, knowledge loss, light snuffing and candle burn, equipment
+retention, monster container rummaging, polymorph transfers, knowledge loss,
+light snuffing and candle burn, equipment
 continuations, migration persistence, and a sealed stratum remain open.
+
+## 989. Merging selects one survivor and frees the incoming identity
+
+~~~mermaid
+flowchart TD
+    Floor["stackobj: newly placed floor identity"] --> Match{"mergable with older stack?"}
+    Minv["add_to_minv: incoming free identity"] --> Match
+    Match -->|no| Link["retain separate chain identity"]
+    Match -->|ordinary| Ordinary["weighted age, quantity, weight, name and knowledge"]
+    Match -->|glob| Glob["combine mass and weighted age"]
+    Glob --> Timers["average remaining SHRINK_GLOB delays"]
+    Timers --> Reschedule["schedule one survivor timer"]
+    Ordinary --> Stop["stop incoming timers"]
+    Stop --> Survivor["existing minvent or new floor identity survives"]
+    Reschedule --> Survivor
+    Survivor --> Free["remove incoming from graph; where=gone"]
+~~~
+
+Native `add_to_minv()` does not always add a chain node. It scans the existing
+monster inventory and calls `merged(&existing, &incoming)`; on compatibility,
+the existing object absorbs quantity and state while the incoming identity is
+extracted and freed. `stackobj()` reverses the survivor choice by passing the
+newly placed floor object as the first argument. JavaScript now preserves both
+survivor rules through one shared `object_merge.js` owner used by floor and
+monster-inventory callers.
+
+Ordinary stacks combine quantity, source-weighted age, ordinary or coin
+weight, names, knowledge, and bypass state, then stop all timers on the freed
+identity. Globs follow `obj_absorb()`: combined mass and weighted age remain on
+the survivor, both old shrink timers stop, their remaining delays are averaged
+with source rounding, and one new survivor timer is scheduled. The incoming
+identity leaves the object graph with `where == gone`; a monster survivor keeps
+its original `carrierMid`.
+
+The investigation also exposed a dormant acceptance witness. The committed
+`mkgold` identity test constructed `{objects: []}` instead of a real `GameMap`,
+so it failed inside unchanged `place_object()` before reaching any assertion.
+A detached clean-HEAD run reproduced that failure. The test now uses the real
+map contract and proves allocation count, survivor identity, quantity, and coin
+weight without relaxing production behavior.
+
+This subsystem is mechanically **partial**. Unpaid `same_price()` and bill
+fixups, mail-command identity, lit-object light-source merging, hero `addinv`
+and worn-slot reconciliation, contained/migrating/buried chains, pudding
+presentation, all `how_lost` and sensory knowledge combinations, and a sealed
+stratum remain open. Swallowed throws are still a separate absent command and
+monster-contact transaction; stack merging does not claim to implement it.
