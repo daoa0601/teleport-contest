@@ -12,7 +12,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
-    POT_INVISIBILITY, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
+    POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -377,9 +377,37 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         assertNoBridgeUse();
     });
 
-test('unsupported invisibility map potion fails before split or throw RNG', async () => {
+test('map invisibility contact hides the target and records its remembered square',
+    async () => {
+        const monster = freshMapPotionState(2);
+        monster.minvis = 0;
+        monster.perminvis = 0;
+        monster.invis_blkd = 0;
+        game.level.flags.hero_memory = true;
+        const potion = addKnownPotion(POT_INVISIBILITY);
+
+        initRng(3321n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=2', 'rnd(25)=6', 'rn2(7)=5', 'rn2(5)=1',
+            'rn2(9)=0',
+        ]);
+        assert.equal(monster.mhp, 11);
+        assert.equal(monster.perminvis, 1);
+        assert.equal(monster.minvis, 1);
+        assert.equal(
+            game.level.at(monster.mx, monster.my).remembered_glyph?.kind,
+            'invisible',
+        );
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('unsupported oil map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
-    const potion = addKnownPotion(POT_INVISIBILITY);
+    const potion = addKnownPotion(POT_OIL);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 

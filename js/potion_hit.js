@@ -5,15 +5,17 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd } from './const.js';
 import {
-    canSeeMonster, plineWithContinuation, shieldeff,
+    canSeeMonster, canSpotMonster, map_invisible, newsym,
+    plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
 import {
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
-    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
-    POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_RESTORE_ABILITY,
-    POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SPEED_BOOTS, TOWEL,
+    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
+    POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
+    POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED,
+    SPEED_BOOTS, TOWEL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
@@ -72,6 +74,7 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_SLEEPING,
     POT_SPEED,
     POT_BLINDNESS,
+    POT_INVISIBILITY,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -289,6 +292,21 @@ function heroIsUnaware(state) {
         || state._helplessReason === 'sleeping off a magical draught');
 }
 
+function heroIsInvisible(state) {
+    const hero = state.u || {};
+    const active = !!(hero.invisible || hero.invis
+        || (hero.invisibleTurns ?? 0) > 0);
+    const blocked = !!(hero.invisibilityBlocked || hero.invisBlocked
+        || hero.invis_blkd);
+    return active && !blocked;
+}
+
+function heroSeesInvisible(state) {
+    const hero = state.u || {};
+    return !!(hero.seeInvisible || hero.see_invisible
+        || (hero.seeInvisibleTurns ?? 0) > 0);
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -313,6 +331,7 @@ export async function applySupportedPotionVapor({
     let helplessDuration = null;
     let speedDuration = null;
     let blindnessDuration = null;
+    let invisibilityGlimpse = null;
     let sightToggled = false;
     let resisted = false;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
@@ -408,6 +427,14 @@ export async function applySupportedPotionVapor({
         }
         if (!blindNow && !unaware)
             await publish('Your vision clears.');
+    } else if (potion.otyp === POT_INVISIBILITY) {
+        if (!heroIsBlind(state) && !heroIsInvisible(state)) {
+            invisibilityGlimpse = heroSeesInvisible(state)
+                ? 'transparent' : 'unseen';
+            await publish(invisibilityGlimpse === 'transparent'
+                ? 'For an instant you could see right through yourself!'
+                : "For an instant you couldn't see yourself!");
+        }
     }
     return {
         received: true,
@@ -416,6 +443,7 @@ export async function applySupportedPotionVapor({
         helplessDuration,
         speedDuration,
         blindnessDuration,
+        invisibilityGlimpse,
         sightToggled,
         resisted,
     };
@@ -423,8 +451,49 @@ export async function applySupportedPotionVapor({
 
 async function applySupportedDirectEffect({
     state, monster, potion, targetVisible, targetSpotted, wakeMonster,
-    publish, showShield,
+    publish, showShield, spotMonster, repaintMonster, rememberInvisible,
 }) {
+    if (potion.otyp === POT_INVISIBILITY) {
+        const sawIt = !!spotMonster(monster);
+        const cursedPotion = !!potion.cursed;
+        const angered = !!monster.minvis && cursedPotion;
+
+        monster.perminvis = cursedPotion ? 0 : 1;
+        if (!monster.invis_blkd) {
+            monster.minvis = monster.perminvis;
+            await repaintMonster(monster);
+        }
+
+        const spottedAfter = !!spotMonster(monster);
+        let invisibilityMessage = null;
+        let rememberedInvisible = false;
+        if (sawIt && !spottedAfter) {
+            if (targetVisible) {
+                await rememberInvisible(monster);
+                rememberedInvisible = true;
+            }
+        } else if (sawIt && cursedPotion) {
+            invisibilityMessage = `${sentenceSubject(monster)} briefly seems `
+                + 'to be transparent.';
+            await publish(invisibilityMessage);
+        } else if (!sawIt && spottedAfter) {
+            invisibilityMessage = `${sentenceSubject(monster)} appears!`;
+            await publish(invisibilityMessage);
+        }
+
+        if (angered) await wakeMonster?.(monster);
+        else monster.msleeping = 0;
+        return {
+            angered,
+            healed: 0,
+            curedBlindness: false,
+            sawIt,
+            spottedAfter,
+            rememberedInvisible,
+            invisibilityMessage,
+        };
+    }
+
     if (potion.otyp === POT_PARALYSIS) {
         let paralyzed = false;
         let duration = 0;
@@ -629,6 +698,9 @@ export async function hitMonsterWithSupportedPotion({
     publish = plineWithContinuation,
     targetVisible = cansee(monster?.mx, monster?.my),
     targetSpotted = canSeeMonster(monster, monster?.mx, monster?.my),
+    spotMonster = target => canSpotMonster(target, target?.mx, target?.my),
+    repaintMonster = target => newsym(target.mx, target.my),
+    rememberInvisible = target => map_invisible(target.mx, target.my),
     showShield = target => shieldeff(target.mx, target.my, state),
     resolveVapor = false,
     distance = 0,
@@ -662,6 +734,9 @@ export async function hitMonsterWithSupportedPotion({
         state, monster, potion, targetVisible, targetSpotted, wakeMonster,
         publish,
         showShield,
+        spotMonster,
+        repaintMonster,
+        rememberInvisible,
     });
     let breathedVapor = false;
     let vaporEffect = null;

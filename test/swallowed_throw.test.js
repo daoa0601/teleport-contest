@@ -19,7 +19,7 @@ import {
     POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_PARALYSIS,
+    POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
@@ -717,29 +717,59 @@ test('swallowed blindness times engulfer sight before blinding the hero',
         assertNoBridgeUse();
     });
 
-test('unsupported invisibility potion fails before floor fallback or RNG',
+test('swallowed cursed invisibility reveals and angers an invisible engulfer',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.minvis = 1;
+        engulfer.perminvis = 1;
+        engulfer.invis_blkd = 0;
         const raw = mksobj(POT_INVISIBILITY, true, false);
-        raw.cursed = raw.blessed = false;
+        raw.cursed = true;
+        raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;
         const potion = addInventoryItem(raw);
 
         initRng(2511n);
         enableRngLog();
-        await assert.rejects(
-            throwThroughLiveCommand(potion, 'l'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId
-                    === 'throw.potion-impact-unsupported',
+        await throwThroughLiveCommand(
+            potion, 'l', [' ', ' ', ' ', ' '],
         );
 
-        assert.equal(engulfer.mhp, 40);
-        assert.deepEqual(game.inventory, [potion]);
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=4', 'rnd(20)=20', 'rn2(7)=2', 'rn2(5)=2',
+        ]);
+        assert.equal(engulfer.mhp, 39);
+        assert.equal(engulfer.perminvis, 0);
+        assert.equal(engulfer.minvis, 0);
+        assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
-        assert.deepEqual(getRngLog(), []);
+        assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
+        assertNoBridgeUse();
+    });
+
+test('unsupported oil potion fails before floor fallback or RNG', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const raw = mksobj(POT_OIL, true, false);
+    raw.cursed = raw.blessed = false;
+    raw.bknown = raw.dknown = raw.known = true;
+    raw.typeKnown = true;
+    const potion = addInventoryItem(raw);
+
+    initRng(2511n);
+    enableRngLog();
+    await assert.rejects(
+        throwThroughLiveCommand(potion, 'l'),
+        error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+            && error?.bridgeId === 'throw.potion-impact-unsupported',
+    );
+
+    assert.equal(engulfer.mhp, 40);
+    assert.deepEqual(game.inventory, [potion]);
+    assert.deepEqual(engulfer.minvent, []);
+    assert.deepEqual(getRngLog(), []);
+    assert.equal((game.level.objects || []).flat(2).length, 0);
     });
 
 test('swallowed healing family heals both monster and hero through vapor',

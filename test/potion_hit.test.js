@@ -6,7 +6,7 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
     LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
-    SPEED_BOOTS,
+    POT_INVISIBILITY, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -799,6 +799,176 @@ test('eyeless and permanently blind monsters skip blindness effect RNG',
         }
     });
 
+test('uncursed invisibility hides a spotted monster and records map memory',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            minvis: 0,
+            perminvis: 0,
+            invis_blkd: 0,
+            msleeping: 1,
+        };
+        const messages = [];
+        let repaintCount = 0;
+        let memoryCount = 0;
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_INVISIBILITY),
+            targetVisible: true,
+            spotMonster: target => !target.minvis,
+            repaintMonster: async () => { repaintCount++; },
+            rememberInvisible: async () => { memoryCount++; },
+            publish: async message => messages.push(message),
+            wakeMonster: async () => assert.fail('invisibility angered target'),
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.perminvis, 1);
+        assert.equal(monster.minvis, 1);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(repaintCount, 1);
+        assert.equal(memoryCount, 1);
+        assert.equal(result.directEffect.angered, false);
+        assert.deepEqual(messages, [
+            "The jar crashes on the purple worm's head and breaks into shards.",
+            'The potion of invisibility evaporates.',
+        ]);
+    });
+
+test('cursed invisibility reveals an unseen invisible monster and angers it',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            minvis: 1,
+            perminvis: 1,
+            invis_blkd: 0,
+            msleeping: 1,
+        };
+        const potion = potionObject(POT_INVISIBILITY);
+        potion.cursed = true;
+        const messages = [];
+        let wakeCount = 0;
+        let repaintCount = 0;
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            spotMonster: target => !target.minvis,
+            repaintMonster: async () => { repaintCount++; },
+            rememberInvisible: async () => assert.fail('visible target mapped'),
+            publish: async message => messages.push(message),
+            wakeMonster: async target => {
+                wakeCount++;
+                target.msleeping = 0;
+            },
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.perminvis, 0);
+        assert.equal(monster.minvis, 0);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(repaintCount, 1);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.angered, true);
+        assert.deepEqual(messages.slice(-1), ['The purple worm appears!']);
+    });
+
+test('cursed invisibility uses sensor-spotted transparency presentation',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            minvis: 1,
+            perminvis: 1,
+            invis_blkd: 0,
+        };
+        const potion = potionObject(POT_INVISIBILITY);
+        potion.cursed = true;
+        const messages = [];
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            spotMonster: () => true,
+            repaintMonster: async () => {},
+            rememberInvisible: async () => assert.fail('sensed target mapped'),
+            publish: async message => messages.push(message),
+            wakeMonster: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.minvis, 0);
+        assert.equal(result.directEffect.angered, true);
+        assert.deepEqual(messages.slice(-1), [
+            'The purple worm briefly seems to be transparent.',
+        ]);
+    });
+
+test('blocked invisibility changes only the permanent property', async () => {
+    resetGame();
+    game.u = { hallucinationTurns: 0 };
+    const monster = {
+        mnum: PM_PURPLE_WORM,
+        mx: 10,
+        my: 10,
+        mhp: 20,
+        mhpmax: 20,
+        minvis: 0,
+        perminvis: 0,
+        invis_blkd: 1,
+        msleeping: 1,
+    };
+
+    initRng(3200n);
+    enableRngLog();
+    const result = await hitMonsterWithSupportedPotion({
+        state: game,
+        monster,
+        potion: potionObject(POT_INVISIBILITY),
+        targetVisible: true,
+        spotMonster: () => true,
+        repaintMonster: async () => assert.fail('blocked target repainted'),
+        rememberInvisible: async () => assert.fail('blocked target mapped'),
+        publish: async () => {},
+        wakeMonster: async () => assert.fail('invisibility angered target'),
+    });
+
+    assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+    assert.equal(monster.perminvis, 1);
+    assert.equal(monster.minvis, 0);
+    assert.equal(monster.msleeping, 0);
+    assert.equal(result.directEffect.angered, false);
+});
+
 test('zero-level player monsters defend with the hero level', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0, ulevel: 20 };
@@ -1328,6 +1498,40 @@ test('blindness vapor saturates an already-blind timeout without repaint',
         assert.equal(game.blind, true);
         assert.equal(recalcCount, 0);
         assert.equal(result.sightToggled, false);
+    });
+
+test('invisibility vapor reports only the clear visible-self glimpse',
+    async () => {
+        const cases = [
+            {
+                hero: {},
+                messages: ["For an instant you couldn't see yourself!"],
+                glimpse: 'unseen',
+            },
+            {
+                hero: { seeInvisible: true },
+                messages: ['For an instant you could see right through yourself!'],
+                glimpse: 'transparent',
+            },
+            { hero: { blindTurns: 1 }, messages: [], glimpse: null },
+            { hero: { invisibleTurns: 1 }, messages: [], glimpse: null },
+        ];
+
+        for (const witness of cases) {
+            resetGame();
+            game.u = witness.hero;
+            const messages = [];
+            initRng(3200n);
+            enableRngLog();
+            const result = await applySupportedPotionVapor({
+                state: game,
+                potion: potionObject(POT_INVISIBILITY),
+                publish: async message => messages.push(message),
+            });
+            assert.deepEqual(getRngLog(), []);
+            assert.deepEqual(messages, witness.messages);
+            assert.equal(result.invisibilityGlimpse, witness.glimpse);
+        }
     });
 
 test('vapor respects breathless forms with and without eyes', async () => {
