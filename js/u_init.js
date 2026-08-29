@@ -10,9 +10,10 @@ import { armorSlotFor, findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
 import { COLNO, ROWNO } from './const.js';
 import {
-    ARROW, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD,
+    ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE,
+    SHORT_SWORD,
     LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF,
-    BULLWHIP, BOW, YUMI, SLING,
+    BULLWHIP, BOW, CROSSBOW, YUMI, SLING,
     HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET,
     LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
@@ -21,7 +22,8 @@ import {
     STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT,
     WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM,
-    CRAM_RATION, FOOD_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR,
+    CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE,
+    ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
     POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER,
@@ -34,8 +36,12 @@ import {
     OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, MAGIC_OBJECTS,
     ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER,
     ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD,
-    ELVEN_BOOTS, ELVEN_CLOAK, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD,
-    DWARVISH_IRON_HELM,
+    ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER,
+    ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL,
+    ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD,
+    DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK,
+    DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK,
+    DWARVISH_ROUNDSHIELD, CHAIN_MAIL,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -65,15 +71,19 @@ const PM_LICHEN = 158;
 // so presentation, equipment, and combat all observe the same concrete type.
 const INITIAL_RACE_SUBSTITUTIONS = new Map([
     [1, new Map([
-        [DAGGER, 35], [SPEAR, 28], [SHORT_SWORD, 47], [BOW, 84],
-        [ARROW, 19], [HELMET, 89], [CLOAK_OF_DISPLACEMENT, 139],
+        [DAGGER, ELVEN_DAGGER], [SPEAR, ELVEN_SPEAR],
+        [SHORT_SWORD, ELVEN_SHORT_SWORD], [BOW, ELVEN_BOW],
+        [ARROW, ELVEN_ARROW], [HELMET, ELVEN_LEATHER_HELM],
+        [CLOAK_OF_DISPLACEMENT, ELVEN_CLOAK],
         [CRAM_RATION, LEMBAS_WAFER],
     ])],
     [4, new Map([
-        [DAGGER, 36], [SPEAR, 29], [SHORT_SWORD, 48], [BOW, 85],
-        [ARROW, 20], [HELMET, 90], [SMALL_SHIELD, 155],
-        [RING_MAIL, 133], [128, 129], [CRAM_RATION, 264],
-        [LEMBAS_WAFER, 264],
+        [DAGGER, ORCISH_DAGGER], [SPEAR, ORCISH_SPEAR],
+        [SHORT_SWORD, ORCISH_SHORT_SWORD], [BOW, ORCISH_BOW],
+        [ARROW, ORCISH_ARROW], [HELMET, ORCISH_HELM],
+        [SMALL_SHIELD, ORCISH_SHIELD],
+        [RING_MAIL, ORCISH_RING_MAIL], [CHAIN_MAIL, ORCISH_CHAIN_MAIL],
+        [CRAM_RATION, TRIPE_RATION], [LEMBAS_WAFER, TRIPE_RATION],
     ])],
     [2, new Map([
         [SPEAR, DWARVISH_SPEAR],
@@ -81,11 +91,17 @@ const INITIAL_RACE_SUBSTITUTIONS = new Map([
         [HELMET, DWARVISH_IRON_HELM],
         [LEMBAS_WAFER, CRAM_RATION],
     ])],
+    [3, new Map([
+        [BOW, CROSSBOW], [ARROW, CROSSBOW_BOLT],
+    ])],
 ]);
-const DAGGER_TYPES = new Set([DAGGER, 35, 36]);
-const SPEAR_TYPES = new Set([SPEAR, ELVEN_SPEAR, 29, DWARVISH_SPEAR]);
+const DAGGER_TYPES = new Set([DAGGER, ELVEN_DAGGER, ORCISH_DAGGER]);
+const SPEAR_TYPES = new Set([
+    SPEAR, ELVEN_SPEAR, ORCISH_SPEAR, DWARVISH_SPEAR,
+]);
 const SHORT_SWORD_TYPES = new Set([
-    SHORT_SWORD, ELVEN_SHORT_SWORD, 48, DWARVISH_SHORT_SWORD,
+    SHORT_SWORD, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD,
+    DWARVISH_SHORT_SWORD,
 ]);
 
 const ARCHEOLOGIST_INVENTORY = [
@@ -777,6 +793,8 @@ function initializeRolePreknowledge(role) {
         knowsClass(ARMOR_CLASS, role);
     if (role === 'monk')
         recordObjectKnowledge(OBJECT_NAMES.indexOf('shuriken'));
+    if (role === 'priest')
+        recordObjectKnowledge(POT_WATER);
 }
 
 // C ref: u_init_skills_discoveries()->ini_inv_use_obj().  This runs after
@@ -924,8 +942,8 @@ function addStartingItem(raw) {
 }
 
 function useStartingItem(item) {
-    if (item.otyp === ARROW || item.otyp === YA || item.otyp === DART
-        || item.otyp === FLINT) {
+    if (item.otyp === ARROW || item.otyp === CROSSBOW_BOLT
+        || item.otyp === YA || item.otyp === DART || item.otyp === FLINT) {
         if (!game.uquiver) {
             game.uquiver = item;
             item.ready = true;
@@ -948,7 +966,8 @@ function useStartingItem(item) {
             game.uwep = item;
             item.wielded = true;
         }
-    } else if (item.otyp === BOW || item.otyp === SLING || item.otyp === LANCE) {
+    } else if (item.otyp === BOW || item.otyp === CROSSBOW
+        || item.otyp === SLING || item.otyp === LANCE) {
         game.uswapwep = item;
         item.alternate = true;
     } else if (item.otyp === PICK_AXE || item.otyp === TIN_OPENER) {
@@ -1160,16 +1179,51 @@ const ELF_PREKNOWN_OBJECTS = [
     ELVEN_BOOTS, ELVEN_CLOAK,
 ];
 
+const DWARF_PREKNOWN_OBJECTS = [
+    DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK,
+    DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK,
+    DWARVISH_ROUNDSHIELD,
+];
+
+const ORC_PREKNOWN_OBJECTS = [
+    ORCISH_SHORT_SWORD, ORCISH_ARROW, ORCISH_BOW, ORCISH_SPEAR,
+    ORCISH_DAGGER, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_HELM,
+    ORCISH_SHIELD, URUK_HAI_SHIELD, ORCISH_CLOAK,
+];
+
+const XTRA_FOOD_INVENTORY = [
+    { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS,
+        min: 2, max: 2, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
+const WISHING_INVENTORY = [
+    { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS,
+        min: 1, max: 1, bless: 0 },
+    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+];
+
 function uInitRaceInventoryAndKnowledge(role) {
-    if (game.urace?.mnum !== 1) return;
-    // u_init.c:u_init_race().  Non-warrior elves receive exactly one
-    // non-magical instrument; ROLL_FROM owns the selection draw before the
-    // chosen one-entry inventory template is constructed.
-    if (role === 'priest' || role === 'wizard') {
-        const instrument = ELF_INSTRUMENTS[rn2(ELF_INSTRUMENTS.length)];
-        iniInv(oneItem(instrument));
+    const race = game.urace?.mnum;
+    let preknown = [];
+    if (race === 1) {
+        // u_init.c:u_init_race().  Non-warrior elves receive exactly one
+        // non-magical instrument; ROLL_FROM owns the selection draw before
+        // the chosen one-entry inventory template is constructed.
+        if (role === 'priest' || role === 'wizard') {
+            const instrument = ELF_INSTRUMENTS[rn2(ELF_INSTRUMENTS.length)];
+            iniInv(oneItem(instrument));
+        }
+        preknown = ELF_PREKNOWN_OBJECTS;
+    } else if (race === 2) {
+        preknown = DWARF_PREKNOWN_OBJECTS;
+    } else if (race === 4) {
+        // C compensates every non-Wizard Orc after role inventory, not only
+        // the public Rogue carrier which originally exposed this branch.
+        if (role !== 'wizard') iniInv(XTRA_FOOD_INVENTORY);
+        preknown = ORC_PREKNOWN_OBJECTS;
     }
-    for (const otyp of ELF_PREKNOWN_OBJECTS)
+    for (const otyp of preknown)
         recordObjectKnowledge(otyp);
 }
 
@@ -1186,6 +1240,10 @@ export function uInitInventoryAttrs() {
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
     game.moves = 1;
     game.u.uhunger = 900;
+    // C resets u.umoney0 before the role switch so repeated character
+    // initialization cannot inherit another role's purse.
+    game._goldCount = 0;
+    game._initialGoldCount = 0;
     if (role === 'archeologist') {
         iniInv(ARCHEOLOGIST_INVENTORY);
         if (!rn2(10)) iniInv(oneItem(TIN_OPENER));
@@ -1197,50 +1255,19 @@ export function uInitInventoryAttrs() {
         if (!rn2(6)) iniInv(oneItem(OIL_LAMP, 1));
     } else if (role === 'caveman') {
         iniInv(CAVEMAN_INVENTORY);
-        if (game.flags?.explore) {
-            iniInv([
-                { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS, min: 1, max: 1, bless: 0 },
-                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
-            ]);
-        }
     } else if (role === 'rogue') {
         iniInv(ROGUE_INVENTORY);
         if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
-        // C ref: u_init.c u_init_role().  Orcs receive two random food-class
-        // objects after the role-specific loadout (and Rogue blindfold roll).
-        if (game.urace?.mnum === 4) {
-            iniInv([
-                { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS, min: 2, max: 2, bless: 0 },
-                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
-            ]);
-        }
     } else if (role === 'tourist') {
         game._goldCount = rnd(1000);
-        game._initialGoldCount = game._goldCount;
         iniInv(TOURIST_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(TIN_OPENER));
         else if (!rn2(25)) iniInv(oneItem(LEASH));
         else if (!rn2(25)) iniInv(oneItem(TOWEL));
         else if (!rn2(20)) iniInv(oneItem(MAGIC_MARKER, 19));
-        if (game.flags?.explore) {
-            iniInv([
-                { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS, min: 1, max: 1, bless: 0 },
-                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
-            ]);
-        }
-        // ini_inv(Money): its object is kept outside the lettered inventory.
-        rn2(1);
-        mksobj(GOLD_PIECE, true, false);
     } else if (role === 'samurai') {
-        game._goldCount = 0;
         iniInv(SAMURAI_INVENTORY);
         if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
-        if (game.flags?.explore) {
-            iniInv([
-                { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS, min: 1, max: 1, bless: 0 },
-                { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
-            ]);
-        }
     } else if (role === 'valkyrie') {
         iniInv(VALKYRIE_INVENTORY);
         if (!rn2(6)) iniInv(oneItem(OIL_LAMP, 1));
@@ -1252,8 +1279,6 @@ export function uInitInventoryAttrs() {
         game._goldCount = 1001 + rn2(1000);
         iniInv(HEALER_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(OIL_LAMP, 1));
-        rn2(1);
-        mksobj(GOLD_PIECE, true, false);
     } else if (role === 'knight') {
         iniInv(KNIGHT_INVENTORY);
         game.u.jumping = true;
@@ -1274,7 +1299,20 @@ export function uInitInventoryAttrs() {
     } else {
         iniInv(RANGER_INVENTORY);
     }
+    // C u_init_role() installs explicit role/class knowledge before
+    // u_init_race() adds race inventory and knowledge.
+    initializeRolePreknowledge(role);
     uInitRaceInventoryAndKnowledge(role);
+    // C applies discover-mode wishing inventory to every role after racial
+    // startup, then materializes role money.  Keeping these outside public
+    // role branches makes the constructor order option- and race-general.
+    if (game.flags?.explore) iniInv(WISHING_INVENTORY);
+    if (game._goldCount) {
+        game._initialGoldCount = game._goldCount;
+        // ini_inv(Money): its object is kept outside lettered inventory.
+        rn2(1);
+        mksobj(GOLD_PIECE, true, false);
+    }
     // C u_init_inventory_attrs(): any hero who starts with a learned spell
     // receives enough power to cast a level-one spell at least once.
     if (game.spells.length && (game.u.uenmax || 0) < 5)
@@ -1427,12 +1465,6 @@ export function uInitInventoryAttrs() {
             if (!discovery.preknown) recordObjectEncounter(discovery.otyp);
         }
     }
-    if (role === 'priest') {
-        // u_init_role() pre-discovers water before the later
-        // u_init_skills_discoveries() inventory pass marks it encountered.
-        recordObjectKnowledge(POT_WATER);
-    }
-    initializeRolePreknowledge(role);
     game.urole.rank = game.urole.title?.[0] || game.urole.name;
     // weapon.c:skill_init() snapshots the startup inventory here.  Later
     // wishes, pickups, drops, and weapon changes must not redefine which
