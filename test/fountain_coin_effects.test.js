@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     applyDippedCoinFate, dippedCoinMessage, resolveDippedCoinFate,
 } from '../js/fountain_effects.js';
+import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE } from '../js/object_data.js';
@@ -186,7 +187,7 @@ test('blind and looted fate29 applications skip unavailable work', () => {
 
 test('mkgold allocates once, merges by identity, and repairs coin weight', () => {
     resetGame();
-    game.level = { objects: [] };
+    game.level = new GameMap();
     initRng(4500n);
     enableRngLog();
 
