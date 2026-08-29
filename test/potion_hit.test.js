@@ -5,6 +5,7 @@ import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
+    POT_PARALYSIS, POT_SLEEPING,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -335,6 +336,248 @@ test('booze leaves a magic-resistant monster unconfused but still wakes it',
         assert.equal(potion.where, 'gone');
     });
 
+test('paralysis freezes a moving monster and clears its wait strategy',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            mfrozen: 0,
+            meating: 3,
+            mstrategy: 0x20000020,
+        };
+        let wakeCount = 0;
+
+        initRng(3002n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_PARALYSIS),
+            targetVisible: true,
+            publish: async () => {},
+            wakeMonster: async () => { wakeCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=4', 'rn2(5)=2', 'rnd(25)=18',
+        ]);
+        assert.equal(monster.mcanmove, 0);
+        assert.equal(monster.mfrozen, 18);
+        assert.equal(monster.meating, 0);
+        assert.equal(monster.mstrategy, 0x20);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.paralyzed, true);
+    });
+
+test('paralysis does not reroll or replace an existing frozen duration',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 0,
+            mfrozen: 9,
+            meating: 2,
+            mstrategy: 0x20000020,
+        };
+
+        initRng(3003n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_PARALYSIS),
+            targetVisible: false,
+            publish: async () => {},
+            wakeMonster: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=4', 'rn2(5)=2']);
+        assert.equal(monster.mcanmove, 0);
+        assert.equal(monster.mfrozen, 9);
+        assert.equal(monster.meating, 2);
+        assert.equal(monster.mstrategy, 0x20000020);
+        assert.equal(result.directEffect.paralyzed, false);
+    });
+
+test('sleeping potion pays duration then resistance and freezes a target',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            m_lev: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            mfrozen: 2,
+            meating: 4,
+            mstrategy: 0x20000020,
+        };
+        const messages = [];
+        let wakeCount = 0;
+
+        initRng(3050n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SLEEPING),
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async target => {
+                wakeCount++;
+                target.msleeping = 0;
+            },
+            showShield: async () => assert.fail('susceptible target shielded'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(105)=10',
+        ]);
+        assert.equal(monster.mcanmove, 0);
+        assert.equal(monster.mfrozen, 9);
+        assert.equal(monster.meating, 0);
+        assert.equal(monster.mstrategy, 0x20000020);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.slept, true);
+        assert.equal(messages.at(-1), 'The killer bee falls asleep.');
+    });
+
+test('sleep-resistant monster shields without a magic-resistance draw',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_ENERGY_VORTEX,
+            m_lev: 6,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            mfrozen: 0,
+        };
+        let shieldCount = 0;
+
+        initRng(3051n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SLEEPING),
+            targetVisible: true,
+            publish: async () => {},
+            wakeMonster: async () => {},
+            showShield: async target => {
+                shieldCount++;
+                assert.equal(target, monster);
+            },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=2', 'rn2(5)=1', 'rnd(12)=10',
+        ]);
+        assert.equal(monster.mcanmove, 1);
+        assert.equal(monster.mfrozen, 0);
+        assert.equal(shieldCount, 1);
+        assert.equal(result.directEffect.resisted, true);
+        assert.equal(result.directEffect.slept, false);
+    });
+
+test('magic-resistant sleep target pays its potion resistance draw and shields',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 48,
+            m_lev: 9,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            mfrozen: 0,
+        };
+        let shieldCount = 0;
+
+        initRng(3050n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SLEEPING),
+            targetVisible: true,
+            publish: async () => {},
+            wakeMonster: async () => {},
+            showShield: async () => { shieldCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(97)=54',
+        ]);
+        assert.equal(monster.mcanmove, 1);
+        assert.equal(monster.mfrozen, 0);
+        assert.equal(shieldCount, 1);
+        assert.equal(result.directEffect.resisted, true);
+        assert.equal(result.directEffect.slept, false);
+    });
+
+test('successful sleeping potion releases a non-engulfing monster grip',
+    async () => {
+        resetGame();
+        const monster = {
+            mnum: 1,
+            m_lev: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            mfrozen: 0,
+        };
+        game.u = {
+            hallucinationTurns: 0,
+            uswallow: 0,
+            ustuck: monster,
+        };
+        const messages = [];
+
+        initRng(3050n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SLEEPING),
+            targetVisible: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => {},
+            showShield: async () => assert.fail('susceptible target shielded'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(105)=10',
+        ]);
+        assert.equal(result.directEffect.slept, true);
+        assert.equal(game.u.ustuck, null);
+        assert.deepEqual(messages.slice(-2), [
+            'The killer bee falls asleep.',
+            "The killer bee's grip relaxes.",
+        ]);
+    });
+
 test('zero-level player monsters defend with the hero level', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0, ulevel: 20 };
@@ -578,6 +821,108 @@ test('booze vapor silently extends and caps an existing confusion timeout',
         assert.deepEqual(messages, []);
         assert.equal(game.u.confusionTurns, 0x00ffffff);
         assert.equal(result.confusionDuration, 4);
+    });
+
+test('paralysis vapor installs live helpless state and Dexterity exercise',
+    async () => {
+        resetGame();
+        game.u = {
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            amax: { a: [12, 12, 12, 12, 12, 12] },
+        };
+        const messages = [];
+
+        initRng(3011n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_PARALYSIS),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=5', 'rn2(2)=1']);
+        assert.deepEqual(messages, ['Something seems to be holding you.']);
+        assert.equal(game._helplessTurns, 5);
+        assert.equal(game._helplessReason, 'frozen by a potion');
+        assert.equal(game._helplessDoneMessage, 'You can move again.');
+        assert.equal(game.u._exercise[1], -1);
+        assert.equal(result.helplessDuration, 5);
+    });
+
+test('free action converts paralysis vapor into a zero-RNG momentary stiffen',
+    async () => {
+        resetGame();
+        game.u = { freeAction: true };
+        const messages = [];
+
+        initRng(3002n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_PARALYSIS),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(messages, ['You stiffen momentarily.']);
+        assert.equal(game._helplessTurns, undefined);
+        assert.equal(result.resisted, true);
+    });
+
+test('sleeping vapor installs its distinct helpless reason', async () => {
+    resetGame();
+    game.u = {
+        acurr: { a: [12, 12, 12, 12, 12, 12] },
+        amax: { a: [12, 12, 12, 12, 12, 12] },
+    };
+    const messages = [];
+
+    initRng(3001n);
+    enableRngLog();
+    const result = await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_SLEEPING),
+        publish: async message => messages.push(message),
+    });
+
+    assert.deepEqual(getRngLog(), ['rnd(5)=5', 'rn2(2)=0']);
+    assert.deepEqual(messages, ['You feel rather tired.']);
+    assert.equal(game._helplessTurns, 5);
+    assert.equal(game._helplessReason, 'sleeping off a magical draught');
+    assert.equal(game._helplessDoneMessage, 'You can move again.');
+    assert.equal(game.u._exercise[1], 0);
+    assert.equal(result.helplessDuration, 5);
+});
+
+test('sleep resistance teaches only eligible observers on the yawn path',
+    async () => {
+        resetGame();
+        game.u = {
+            ux: 10, uy: 10, sleepResistance: true,
+        };
+        game.level = {
+            monsters: [
+                { mnum: 1, mx: 11, my: 10, mhp: 4, seen_resistance: 1 },
+                { mnum: 1, mx: 12, my: 10, mhp: 0, seen_resistance: 2 },
+            ],
+        };
+        const messages = [];
+
+        initRng(3001n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_SLEEPING),
+            publish: async message => messages.push(message),
+            monsterCanSeeHero: monster => monster.mhp > 0,
+        });
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(messages, ['You yawn.']);
+        assert.equal(game._helplessTurns, undefined);
+        assert.equal(game.level.monsters[0].seen_resistance, 0x0009);
+        assert.equal(game.level.monsters[1].seen_resistance, 2);
+        assert.equal(result.resisted, true);
     });
 
 test('vapor respects breathless forms with and without eyes', async () => {

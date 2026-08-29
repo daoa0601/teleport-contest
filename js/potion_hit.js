@@ -2,15 +2,16 @@
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
 
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { TIMEOUT, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { heroHasFreeAction } from './armor.js';
+import { M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd } from './const.js';
+import { plineWithContinuation, shieldeff } from './display.js';
 import { game } from './gstate.js';
 import {
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BOOZE, POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
     POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_RESTORE_ABILITY,
-    POT_SICKNESS, TOWEL,
+    POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, TOWEL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
@@ -19,7 +20,7 @@ import {
 import { rnd, rn2 } from './rng.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { objectTypeKnown } from './shk.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 
 const PM_PESTILENCE = 312;
 const PM_ARCHEOLOGIST = 331;
@@ -28,7 +29,13 @@ const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
+const M1_SEE_INVIS = 0x01000000;
+const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
+const AT_HUGS = 7;
+const AT_ENGL = 11;
+const AD_WRAP = 18;
+const AD_STCK = 19;
 const AD_DISE = 33;
 const AD_PEST = 38;
 
@@ -55,6 +62,8 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_SICKNESS,
     POT_CONFUSION,
     POT_BOOZE,
+    POT_PARALYSIS,
+    POT_SLEEPING,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -64,6 +73,7 @@ const HEALING_POTION_TYPES = new Set([
     POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING,
 ]);
 const CONFUSION_POTION_TYPES = new Set([POT_CONFUSION, POT_BOOZE]);
+const HELPLESS_POTION_TYPES = new Set([POT_PARALYSIS, POT_SLEEPING]);
 
 const ORDINARY_BOTTLE_NAMES = [
     'bottle', 'phial', 'flagon', 'carafe', 'flask', 'jar', 'vial',
@@ -194,6 +204,61 @@ function monsterResistsPotion(monster, state = game) {
         < (MONSTER_MAGIC_RESISTANCE[mnum] ?? 0);
 }
 
+function monsterHasSleepDefense(monster) {
+    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
+        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+    return !!(resistanceBits & MR_SLEEP)
+        || !!monster?.sleepResistance
+        || !!monster?.sleep_resistance
+        || !!monster?.defendedSleep;
+}
+
+function heroFormSticks(state) {
+    const mnum = Number.isInteger(state.u?.umonnum)
+        ? state.u.umonnum
+        : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
+    if (!Number.isInteger(mnum)) return false;
+    const attacks = MONSTER_ATTACKS[mnum] || [];
+    const hasEngulf = attacks.some(attack => attack[0] === AT_ENGL);
+    return attacks.some(attack => attack[1] === AD_STCK
+        || (attack[1] === AD_WRAP && !hasEngulf)
+        || attack[0] === AT_HUGS);
+}
+
+function defaultMonsterCanSeeHero(monster, state) {
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) return false;
+    if (state.underwater || state.u?.uinwater) return false;
+    const heroInvisible = !!(state.u?.invisible || state.u?.invis
+        || (state.u?.invisibleTurns ?? 0) > 0);
+    if (heroInvisible
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
+        return false;
+    }
+    return couldsee(monster.mx, monster.my);
+}
+
+function teachVisibleMonstersSleepResistance(
+    state, monsterCanSeeHero = monster => defaultMonsterCanSeeHero(monster, state),
+) {
+    if (state.u?.uswallow) return 0;
+    let taught = 0;
+    for (const monster of state.level?.monsters || []) {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
+            || !monsterCanSeeHero(monster)) continue;
+        monster.seen_resistance = (monster.seen_resistance ?? 0)
+            | M_SEEN_SLEEP;
+        taught++;
+    }
+    return taught;
+}
+
+function installPotionHelplessness(state, duration, reason) {
+    state._helplessTurns = duration;
+    state._helplessReason = reason;
+    state._helplessDoneMessage = 'You can move again.';
+    exerciseAttribute(1, false, state);
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -201,6 +266,7 @@ export async function applySupportedPotionVapor({
     state = game,
     potion,
     publish = plineWithContinuation,
+    monsterCanSeeHero,
 }) {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
 
@@ -213,6 +279,8 @@ export async function applySupportedPotionVapor({
 
     let abilityStart = null;
     let confusionDuration = null;
+    let helplessDuration = null;
+    let resisted = false;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
@@ -247,13 +315,103 @@ export async function applySupportedPotionVapor({
             TIMEOUT,
             Math.max(0, hero.confusionTurns ?? 0) + confusionDuration,
         );
+    } else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
+        const freeAction = heroHasFreeAction(state);
+        const sleepResistance = !!(state.u?.sleepResistance
+            || state.u?.sleep_resistance);
+        const protectedFromEffect = freeAction
+            || (potion.otyp === POT_SLEEPING && sleepResistance);
+        if (protectedFromEffect) {
+            resisted = true;
+            await publish(potion.otyp === POT_PARALYSIS
+                ? 'You stiffen momentarily.' : 'You yawn.');
+            if (potion.otyp === POT_SLEEPING) {
+                teachVisibleMonstersSleepResistance(
+                    state, monsterCanSeeHero,
+                );
+            }
+        } else {
+            await publish(potion.otyp === POT_PARALYSIS
+                ? 'Something seems to be holding you.'
+                : 'You feel rather tired.');
+            helplessDuration = rnd(5);
+            installPotionHelplessness(
+                state,
+                helplessDuration,
+                potion.otyp === POT_PARALYSIS
+                    ? 'frozen by a potion'
+                    : 'sleeping off a magical draught',
+            );
+        }
     }
-    return { received: true, abilityStart, confusionDuration };
+    return {
+        received: true,
+        abilityStart,
+        confusionDuration,
+        helplessDuration,
+        resisted,
+    };
 }
 
 async function applySupportedDirectEffect({
-    state, monster, potion, targetVisible, wakeMonster, publish,
+    state, monster, potion, targetVisible, wakeMonster, publish, showShield,
 }) {
+    if (potion.otyp === POT_PARALYSIS) {
+        let paralyzed = false;
+        let duration = 0;
+        if (monster.mcanmove !== 0) {
+            duration = rnd(25);
+            monster.mcanmove = 0;
+            monster.mfrozen = Math.min(duration, 127);
+            monster.meating = 0;
+            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
+            paralyzed = true;
+        }
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            paralyzed,
+            duration,
+        };
+    }
+
+    if (potion.otyp === POT_SLEEPING) {
+        const duration = rnd(12);
+        const inherentOrDefended = monsterHasSleepDefense(monster);
+        const resisted = inherentOrDefended
+            || monsterResistsPotion(monster, state);
+        let slept = false;
+        if (resisted) {
+            await showShield?.(monster);
+        } else if (monster.mcanmove !== 0) {
+            monster.mcanmove = 0;
+            monster.mfrozen = Math.min(
+                duration + (monster.mfrozen ?? 0), 127,
+            );
+            monster.meating = 0;
+            slept = true;
+            await publish(targetVisible
+                ? `${sentenceSubject(monster)} falls asleep.`
+                : 'It falls asleep.');
+            if (monster === state.u?.ustuck && !state.u?.uswallow
+                && !heroFormSticks(state)) {
+                await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);
+                state.u.ustuck = null;
+            }
+        }
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            resisted,
+            slept,
+            duration,
+        };
+    }
+
     if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
         const resisted = monsterResistsPotion(monster, state);
         if (!resisted) monster.mconf = 1;
@@ -342,6 +500,7 @@ export async function hitMonsterWithSupportedPotion({
     wakeMonster,
     publish = plineWithContinuation,
     targetVisible = cansee(monster?.mx, monster?.my),
+    showShield = target => shieldeff(target.mx, target.my, state),
     resolveVapor = false,
     distance = 0,
 }) {
@@ -372,6 +531,7 @@ export async function hitMonsterWithSupportedPotion({
 
     const directEffect = await applySupportedDirectEffect({
         state, monster, potion, targetVisible, wakeMonster, publish,
+        showShield,
     });
     let breathedVapor = false;
     let vaporEffect = null;

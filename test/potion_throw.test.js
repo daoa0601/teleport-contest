@@ -12,7 +12,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
-    POT_PARALYSIS, POT_SICKNESS,
+    POT_INVISIBILITY, POT_PARALYSIS, POT_SICKNESS,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -322,9 +322,36 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         assertNoBridgeUse();
     });
 
-test('unsupported paralysis map potion fails before split or throw RNG', async () => {
+test('adjacent paralysis contact freezes monster and installs hero helplessness',
+    async () => {
+        const monster = freshMapPotionState(1);
+        monster.meating = 3;
+        monster.mstrategy = 0x20000000;
+        const potion = addKnownPotion(POT_PARALYSIS);
+
+        initRng(3011n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=5', 'rnd(25)=5', 'rn2(7)=3', 'rn2(5)=1',
+            'rnd(25)=2', 'rn2(9)=0', 'rnd(5)=3', 'rn2(2)=1',
+        ]);
+        assert.equal(monster.mhp, 11);
+        assert.equal(monster.mcanmove, 0);
+        assert.equal(monster.mfrozen, 2);
+        assert.equal(monster.meating, 0);
+        assert.equal(monster.mstrategy, 0);
+        assert.equal(game._helplessTurns, 3);
+        assert.equal(game._helplessReason, 'frozen by a potion');
+        assert.equal(game._helplessDoneMessage, 'You can move again.');
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('unsupported invisibility map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
-    const potion = addKnownPotion(POT_PARALYSIS);
+    const potion = addKnownPotion(POT_INVISIBILITY);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 

@@ -18,7 +18,8 @@ import {
     POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS,
+    POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_PARALYSIS,
+    POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -646,10 +647,44 @@ test('swallowed booze confuses the engulfer and hero in source order',
         assertNoBridgeUse();
     });
 
-test('unsupported paralysis potion fails before floor fallback or RNG',
+test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const raw = mksobj(POT_PARALYSIS, true, false);
+        engulfer.m_lev = 12;
+        engulfer.mfrozen = 0;
+        engulfer.meating = 3;
+        const raw = mksobj(POT_SLEEPING, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', [' ', ' ', ' ', ' '],
+        );
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=8', 'rn2(7)=5', 'rn2(5)=2', 'rnd(12)=8',
+            'rn2(94)=29', 'rnd(5)=1', 'rn2(2)=0',
+        ]);
+        assert.equal(engulfer.mhp, 39);
+        assert.equal(engulfer.mcanmove, 0);
+        assert.equal(engulfer.mfrozen, 8);
+        assert.equal(engulfer.meating, 0);
+        assert.equal(game._helplessTurns, 1);
+        assert.equal(game._helplessReason, 'sleeping off a magical draught');
+        assert.equal(game._helplessDoneMessage, 'You can move again.');
+        assert.deepEqual(game.inventory, []);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('unsupported invisibility potion fails before floor fallback or RNG',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const raw = mksobj(POT_INVISIBILITY, true, false);
         raw.cursed = raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;
