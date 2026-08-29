@@ -58,6 +58,7 @@ import {
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { resolveGenericSwallowedThrow } from './swallowed_throw.js';
 import {
     objectStatePrefix, readObjectName, unseenObjectNoun,
     wishedObjectPresentation,
@@ -15477,6 +15478,16 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // routing arrows and darts through this branch consumes the entire stack
     // and suppresses dothrow()'s launcher warning.
     const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
+
+    if (await resolveGenericSwallowedThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        wakeMonster: wakeAttackedMonster,
+    })) return;
+
     if (thrownObjectClass === 3) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
         const itemIndex = game.inventory.indexOf(item);

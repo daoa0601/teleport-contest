@@ -2,6 +2,9 @@
 // C refs: steal.c:mpickobj()/add_to_minv() and invent.c:carry_obj_effects().
 
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import {
+    LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
+} from './const.js';
 import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 
@@ -13,6 +16,17 @@ export function addObjectToMonsterInventory(
     monster, object, state = game, { atFront = false } = {},
 ) {
     if (!monster || !object) return null;
+    // steal.c:mpickobj() repairs hero-loss provenance before carrying
+    // effects or add_to_minv() can inspect merge compatibility.  A hostile
+    // swallower acquiring a thrown object therefore owns LOST_STOLEN, while
+    // a pet deliberately preserves the hero's thrown/dropped marker.
+    if (!monster.mtame) {
+        if (object.how_lost === LOST_THROWN)
+            object.how_lost = LOST_STOLEN;
+        else if (object.how_lost === LOST_DROPPED)
+            object.how_lost = LOST_NONE;
+    }
+    object.no_charge = false;
     attachCursedFigurineTimer(object, state);
     return linkObjectToMonsterInventory(
         monster, object, { atFront, state },
