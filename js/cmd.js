@@ -9028,15 +9028,22 @@ async function dopray() {
 
     const alignment = game.initAlignment?.name || 'neutral';
     const deity = game.urole?.gods?.[alignment] || 'your god';
-    const beginMessage = `You begin praying to ${deity}.--More--`;
-    await pline(beginMessage);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(beginMessage.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+    const beginMessage = `You begin praying to ${deity}.`;
+    const openingLine = game.flags?.debug
+        ? `${beginMessage}--More--` : beginMessage;
+    await pline(openingLine);
 
     if (game.flags?.debug) {
+        // C can_pray() emits the opening line before dopray() asks the
+        // wizard-only force question.  tty must expose that line before the
+        // next prompt, but ordinary prayer has no input boundary here: it
+        // enters nomul(-3) immediately and lets unmul() continue the same
+        // physical topline when prayer_done() runs.
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(openingLine.length, 0);
+        let key;
+        do key = await nhgetch();
+        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
         const force = await promptYesNo('Force the gods to be pleased? [yn] (n) ');
         game._prayerForced = force === 'y';
         if (game._prayerForced && game.u) {

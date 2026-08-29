@@ -6521,11 +6521,12 @@ function brightenCavemanCorridors(turn) {
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
+    const bridgeFree = bridgeFreeEnabled();
     // replayMoves is compatibility metadata, never source game state.  Keep
     // every session-shape classifier on the legacy side of this one gate so
     // bridge-free execution never reads the poisoned property installed by
     // NethackGame.start().
-    const replayMoves = bridgeFreeEnabled() ? '' : (g.replayMoves || '');
+    const replayMoves = bridgeFree ? '' : (g.replayMoves || '');
     // Some level-generation boundaries depend on the command fixture but are
     // reached before the post-mklev path flags below can be derived.
     g._knightCombatPath = g.urole?.key === 'knight'
@@ -6545,7 +6546,7 @@ export async function newgame() {
 
     // Bridge-free mode enters the source-owned startup boundary directly.
     // Legacy mode retains the guarded fastforward name for compatibility.
-    const handednessRoll = bridgeFreeEnabled()
+    const handednessRoll = bridgeFree
         ? initializeSourceStartup() : fastforward_pre_mklev();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
@@ -6573,8 +6574,10 @@ export async function newgame() {
     // to the hero rather than next to the level-generation origin.
     u_on_upstairs();
 
-    g._samuraiAltarPath = g.urole?.key === 'samurai'
+    g._samuraiAltarPath = !bridgeFree && g.urole?.key === 'samurai'
         && g.u?.ux === 25 && g.u?.uy === 15;
+    if (bridgeFree && g.urole?.key === 'samurai')
+        g._samuraiLiveScheduler = true;
     g._touristExplorePath = g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
     g._rangerNamePath = g.urole?.key === 'ranger'
@@ -6604,7 +6607,7 @@ export async function newgame() {
     g._knightCombatPath = g.urole?.key === 'knight'
         && /^  ns#ride/.test(replayMoves);
 
-    if (bridgeFreeEnabled()) {
+    if (bridgeFree) {
         const compatibilityPaths = [
             ['samurai.altar-run-prayer', g._samuraiAltarPath],
             ['tourist.explore-search', g._touristExplorePath],
@@ -6746,6 +6749,13 @@ export async function newgame() {
         g.u.uen = g.u.uenmax = g.u.uenpeak = g._startingPwMinimum;
         delete g._startingPwMinimum;
     }
+
+    // A new game begins with one complete hero movement ration.  No global
+    // turn has elapsed merely because the welcome/tutorial transaction has
+    // finished; the first time-taking command owns the first movemon and
+    // maintenance pass.  Compatibility paths historically hid this by
+    // skipping the generic maintenance block altogether.
+    if (bridgeFree) g._maintenanceMove = g.moves || 1;
 
     // Welcome is left pending until moveloop starts.  On tty, creation of
     // the default tutorial menu first exposes it as a --More-- boundary.

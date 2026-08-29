@@ -141,6 +141,12 @@ export async function finishPrayerOccupation(state = game) {
         return { outcome: 'pleased' };
     }
 
+    // C unmul() emits nomovemsg before invoking prayer_done().  Keep the
+    // completion as its own pline: tty can append it to can_pray()'s opening
+    // line, then a later divine response decides whether that combined
+    // topline needs acknowledgement.
+    await prayerContinuationLine(completion, state);
+
     state.u.ublesscnt = (state.u.ublesscnt || 0) + rnz(250);
     state.u.uluck = Math.max(-13, (state.u.uluck || 0) - 3);
 
@@ -162,26 +168,24 @@ export async function finishPrayerOccupation(state = game) {
 
     if (outcome <= 1) {
         await prayerContinuationLine(
-            `${completion}  You feel that ${deity} is displeased.`, state,
+            `You feel that ${deity} is displeased.`, state,
         );
     } else if (outcome <= 3) {
         rn2(4); // pray.c:godvoice() voice selector
-        await prayerMore(
-            `${completion}  The voice of ${deity} thunders: --More--`, state,
+        await prayerContinuationLine(
+            `The voice of ${deity} thunders:`, state,
         );
-        // C queues both deity sentences, applies adjattrib()/losexp(), and
-        // only then reaches tty's input boundary for the resulting overflow.
-        // Our combined second pager must therefore project the committed
-        // Wisdom/level state even though its follow-up prose comes later.
+        await prayerContinuationLine('"Thou art arrogant, mortal."', state);
+        await prayerContinuationLine(
+            '"Thou must relearn thy lessons!"', state,
+        );
         if (state.u?.acurr?.a) state.u.acurr.a[4]--;
         const loss = loseExperienceLevel(state);
-        await prayerMore(
-            '"Thou art arrogant, mortal."  "Thou must relearn thy lessons!"--More--',
-            state,
-        );
-        await prayerLine('You feel foolish!', state);
+        await prayerContinuationLine('You feel foolish!', state);
         if (loss.oldLevel > 1)
-            await prayerLine(`Goodbye level ${loss.oldLevel}.`, state);
+            await prayerContinuationLine(
+                `Goodbye level ${loss.oldLevel}.`, state,
+            );
     } else {
         // Cases 4+ delegate to curse, punishment, minion, and divine-zap
         // subsystems.  Preserve the exact selected boundary for the next
