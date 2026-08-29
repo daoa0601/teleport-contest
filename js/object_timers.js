@@ -8,6 +8,7 @@ export const OBJECT_TIMER_KIND = Object.freeze({
     ROT_CORPSE: 'rot-corpse',
     ZOMBIFY_MON: 'zombify-mon',
     BURN_OBJECT: 'burn-object',
+    HATCH_EGG: 'hatch-egg',
 });
 
 export const LEVEL_TIMER_KIND = Object.freeze({
@@ -23,6 +24,8 @@ const TIMER_FIELDS = new Map([
         { deadline: 'zombifyAt', order: 'zombifyOrder' }],
     [OBJECT_TIMER_KIND.BURN_OBJECT,
         { deadline: 'burnAt', order: 'burnOrder' }],
+    [OBJECT_TIMER_KIND.HATCH_EGG,
+        { deadline: 'hatchAt', order: 'hatchOrder' }],
 ]);
 
 function legacyTimerEntries(object) {

@@ -668,7 +668,10 @@ export function mksobj(otyp, init, artif) {
         // per-turn hatch trial beginning at age 151.
         for (let age = 151; age <= 200; age++) {
             if (rnd(age) > 150) {
-                otmp.hatchAt = (game.moves ?? 0) + age;
+                scheduleObjectTimer(
+                    otmp, OBJECT_TIMER_KIND.HATCH_EGG,
+                    (game.moves ?? 0) + age, game,
+                );
                 break;
             }
         }

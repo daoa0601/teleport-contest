@@ -93,6 +93,9 @@ import {
 import { syncBlindness, syncDeafness } from './senses.js';
 import { runClaimedObjectBurnTimer } from './light.js';
 import {
+    finishEggHatchTimer, runClaimedEggHatchTimer,
+} from './egg.js';
+import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
 } from './object_timers.js';
@@ -2180,6 +2183,13 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
     const kind = claimed.timer.kind;
     if (kind === OBJECT_TIMER_KIND.BURN_OBJECT) {
         return runClaimedObjectBurnTimer(claimed, game, sourceTurn);
+    }
+    if (kind === OBJECT_TIMER_KIND.HATCH_EGG) {
+        const event = await runClaimedEggHatchTimer(
+            claimed, game, sourceTurn,
+        );
+        if (event?.message) await queueTurnMessage(event.message);
+        return finishEggHatchTimer(event, game, sourceTurn);
     }
     if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedBuriedZombieTimer(
