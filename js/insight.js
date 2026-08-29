@@ -368,6 +368,16 @@ function killedCountPhrase(count) {
     return `${count} times`;
 }
 
+function rerollConductLine() {
+    const roleplay = game.u?.uroleplay || {};
+    if (!roleplay.reroll)
+        return ' Character rerolling was not enabled.';
+    if (!(roleplay.numrerolls || 0))
+        return ' Your character was not rerolled.';
+    return ` Your character was rerolled ${
+        killedCountPhrase(roleplay.numrerolls)}.`;
+}
+
 function paginateAttributeLines(lines) {
     const contentRows = 23;
     const count = Math.ceil(lines.length / contentRows);
@@ -828,8 +838,7 @@ function currentAchievementLines() {
 export function currentConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
-    if (!game.u?.uroleplay?.reroll)
-        lines.push(' Character rerolling was not enabled.');
+    lines.push(rerollConductLine());
     if (game.u?.uroleplay?.pauper) {
         lines.push((game.inventory || []).length
             ? ' You started without possessions.'
@@ -903,8 +912,7 @@ export async function doconduct() {
 export function finalConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
-    if (!game.u?.uroleplay?.reroll)
-        lines.push(' Character rerolling was not enabled.');
+    lines.push(rerollConductLine());
     if (game.u?.uroleplay?.pauper)
         lines.push(' You started out without possessions.');
     if (game.u?.uroleplay?.nudist)

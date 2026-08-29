@@ -3,7 +3,8 @@
 
 import { game } from './gstate.js';
 import {
-    bot, consumeHallucinatedMenuObjectGlyph, docrtRecalc, flush_screen, pline,
+    bot, consumeHallucinatedMenuObjectGlyph, docrtRecalc, flush_screen,
+    formatStrength, pline,
 } from './display.js';
 import { showChoiceWindow, showInventoryWindow } from './windows.js';
 import { nhgetch } from './input.js';
@@ -226,6 +227,74 @@ export function inventoryItemDescription(item) {
         description += ' (on left hand)';
     else if (item.worn) description += ' (being worn)';
     return description;
+}
+
+function rerollItemDescription(item) {
+    // invent.c:reroll_menu() brackets distant_name(doname) with
+    // override_ID.  Identify a temporary view rather than mutating the live
+    // object or discovery tables for a character which might be rejected.
+    return inventoryItemDescription({
+        ...item,
+        known: true,
+        typeKnown: true,
+        bknown: true,
+        dknown: true,
+        rknown: true,
+        chargesKnown: true,
+        overrideIdentified: true,
+    });
+}
+
+function rerollAttributeLine() {
+    const values = game.u?.acurr?.a || [];
+    return `St:${formatStrength(values[0])} Dx:${values[1] ?? '?'} Co:${values[2] ?? '?'} `
+        + `In:${values[3] ?? '?'} Wi:${values[4] ?? '?'} Ch:${values[5] ?? '?'}`;
+}
+
+async function rerollFallbackPrompt() {
+    const message = 'Reroll this character? [yn] (n) ';
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    for (;;) {
+        const key = await nhgetch();
+        const answer = String.fromCharCode(key).toLowerCase();
+        if (answer === 'y' || answer === 'n') return answer === 'y';
+        if ([27, 32, 10, 13].includes(key)) return false;
+    }
+}
+
+// C ref: invent.c:reroll_menu().  This menu is a startup transaction, not a
+// command: accepting another roll changes no turn state and keeps consuming
+// the live RNG stream from its current position.
+export async function rerollMenu() {
+    const acceptKey = game.flags?.lootabc ? 'a' : 'p';
+    const rerollKey = game.flags?.lootabc ? 'b' : 'r';
+    const entries = [
+        `${acceptKey} - start the game with this character`,
+        `${rerollKey} - reroll another character`,
+        '',
+        ...(game.inventory || []).map(rerollItemDescription),
+        '',
+        rerollAttributeLine(),
+    ];
+    const key = await showChoiceWindow({
+        title: 'Reroll this character?',
+        entries,
+        validKeys: [
+            acceptKey.charCodeAt(0), rerollKey.charCodeAt(0),
+            27, 32, 10, 13,
+        ],
+        restoreUnderlay: true,
+    });
+    const choice = String.fromCharCode(key);
+    const reroll = choice === rerollKey ? true
+        : choice === acceptKey ? false : await rerollFallbackPrompt();
+    if (reroll) {
+        game.u.uroleplay.numrerolls =
+            (game.u.uroleplay.numrerolls || 0) + 1;
+    }
+    return reroll;
 }
 
 function inventorySections(items = game.inventory || [], includeGold = true) {

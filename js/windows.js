@@ -204,10 +204,15 @@ export async function showTextMenuOverlay(lines, { validKeys = null } = {}) {
  * boundary and terminal layout.
  */
 export async function showChoiceWindow({
-    title, entries, left = null, validKeys = null,
+    title, entries, left = null, validKeys = null, restoreUnderlay = false,
 }) {
     const d = display();
     if (!d) return 27;
+
+    const underlay = restoreUnderlay
+        ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
+    const underlayCursor = restoreUnderlay
+        ? [d.cursorCol, d.cursorRow, d.cursorVisible] : null;
 
     const rows = [
         // tty menu prompts inherit `menu_headings`; the default is inverse.
@@ -232,6 +237,16 @@ export async function showChoiceWindow({
     let key;
     do key = await nhgetch();
     while (validKeys && !validKeys.includes(key));
+    if (underlay) {
+        for (let row = 0; row < d.rows; row++) {
+            for (let col = 0; col < d.cols; col++) {
+                const cell = underlay[row][col];
+                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            }
+        }
+        d.setCursor(underlayCursor[0], underlayCursor[1]);
+        d.cursorVisible = underlayCursor[2];
+    }
     return key;
 }
 

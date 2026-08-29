@@ -14,7 +14,9 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { aligns, races, roles } from '../js/roles.js';
-import { uInitInventoryAttrs, uInitMisc } from '../js/u_init.js';
+import {
+    finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
+} from '../js/u_init.js';
 
 const FOOD_CLASS = 7;
 
@@ -28,6 +30,7 @@ function start(roleKey, raceName, { explore = false, seed = 123n } = {}) {
     init_objects();
     uInitMisc(1);
     assert.equal(uInitInventoryAttrs(), true);
+    assert.equal(finishStartingDiscoveries(), true);
     return game;
 }
 

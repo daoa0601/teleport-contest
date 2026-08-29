@@ -1234,7 +1234,8 @@ function renderRequestMenuOptionsPage(page, selected) {
             !!game.u?.uroleplay?.nudist}]`;
         lines[14] = `     pauper                  [${
             !!game.u?.uroleplay?.pauper}]`;
-        lines[15] = '     reroll                  [false]';
+        lines[15] = `     reroll                  [${
+            !!game.u?.uroleplay?.reroll}]`;
         lines[16] = '     selectsaved             [true]';
         lines[17] = '     status_updates          [true]';
         lines[18] = `     tutorial                [${game.flags?.tutorial !== false}]`;

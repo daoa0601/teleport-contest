@@ -14,7 +14,9 @@ import { init_objects } from '../js/o_init.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import { aligns, races, roles } from '../js/roles.js';
-import { makedog, uInitInventoryAttrs, uInitMisc } from '../js/u_init.js';
+import {
+    finishStartingDiscoveries, makedog, uInitInventoryAttrs, uInitMisc,
+} from '../js/u_init.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
@@ -29,6 +31,7 @@ function start(roleKey, raceName = 'human', flags = { pauper: true }) {
     init_objects();
     uInitMisc(1);
     assert.equal(uInitInventoryAttrs(), true);
+    assert.equal(finishStartingDiscoveries(), true);
     return game;
 }
 

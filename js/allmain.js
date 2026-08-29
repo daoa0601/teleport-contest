@@ -178,7 +178,7 @@ import {
     settleShopkeepersAfterDeath, shopkeeperKillerName, shopkeeperName,
 } from './shk.js';
 import { visiblePriestName } from './priest.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { captureRunmodeDelay } from './runmode.js';
 
@@ -220,15 +220,17 @@ function putLine(col, row, text, attr = 0) {
         display.setCell(col + i, row, text[i], NO_COLOR, attr);
 }
 
-function putStatusLines() {
-    putLine(0, 22, _statusLine1().replace(/\x1b\[(\d+)C/g,
+function putStatusLines(snapshot = null) {
+    const line1 = snapshot?.[0] || _statusLine1();
+    const line2 = snapshot?.[1] || _statusLine2();
+    putLine(0, 22, line1.replace(/\x1b\[(\d+)C/g,
         (_match, count) => ' '.repeat(Number(count))));
-    putLine(0, 23, _statusLine2());
+    putLine(0, 23, line2);
 }
 
 // C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
 // creation story is laid out by the tty pager; role, rank, and god are live.
-async function showLegacy() {
+async function showLegacy(statusSnapshot = null) {
     // Loading quest.lua pulls in nhlib.lua and shuffles its three alignments.
     rn2(3);
     rn2(2);
@@ -284,7 +286,7 @@ async function showLegacy() {
     putLine(left, 15, outerLines[6]);
     putLine(left, 16, outerLines[7]);
     putLine(left, 17, outerLines[8]);
-    putStatusLines();
+    putStatusLines(statusSnapshot);
     d.setCursor(left + 8, 17);
     await nhgetch();
 }
@@ -6791,17 +6793,20 @@ export async function newgame() {
     await flush_screen(1);
     await bot();
 
-    if (g.flags?.legacy) await showLegacy();
-
-    // C calls u_init_skills_discoveries() after the first docrt()/bot().
-    // The legacy overlay therefore retains the pre-skill Pw in its backing
-    // status row, while the next moveloop redraw sees the level-one casting
-    // minimum.
-    if (realRoleStartup) finishStartingDiscoveries();
-    if (g._startingPwMinimum && (g.u.uenmax || 0) < g._startingPwMinimum) {
-        g.u.uen = g.u.uenmax = g.u.uenpeak = g._startingPwMinimum;
-        delete g._startingPwMinimum;
+    while (realRoleStartup && g.u?.uroleplay?.reroll
+        && await rerollMenu()) {
+        uInitInventoryAttrs();
+        await bot();
     }
+    const preSkillsStatus = [_statusLine1(), _statusLine2()];
+
+    // C applies equipment, spells, discoveries, skills, spell-power minimum,
+    // and AC only after the final candidate has been accepted.  It does not
+    // redraw bot() here, so the legacy overlay still retains the pre-skill
+    // status row underneath it.
+    if (realRoleStartup) finishStartingDiscoveries();
+
+    if (g.flags?.legacy) await showLegacy(preSkillsStatus);
 
     // A new game begins with one complete hero movement ration.  No global
     // turn has elapsed merely because the welcome/tutorial transaction has

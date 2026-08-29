@@ -26,7 +26,7 @@ import {
     ORANGE, PEAR,
     MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD,
     CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER,
-    POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_WATER,
+    POT_HEALING, POT_EXTRA_HEALING, POT_SICKNESS, POT_OIL, POT_WATER,
     SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
     SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER,
     SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION,
@@ -508,6 +508,8 @@ export function uInitMisc(handednessRoll) {
         pauper: !!g.flags?.pauper,
         nudist: configuredNudist
             ? !!g.flags.nudist : !!g.flags?.pauper,
+        reroll: !!g.flags?.reroll,
+        numrerolls: 0,
     };
     ensureQuestStatus(g);
     u.rightHanded = !!handednessRoll;
@@ -820,12 +822,34 @@ function initializeRolePreknowledge(role) {
 // appearance into encountered discoveries without changing their earlier
 // role-preknowledge position.
 export function finishStartingDiscoveries() {
+    if (game._startingEffectsApplied) return false;
     for (const item of game.inventory || []) {
-        if (!item._startingInventory || !OBJECT_DESCRIPTIONS[item.otyp])
-            continue;
-        recordObjectKnowledge(item.otyp);
-        recordObjectEncounter(item.otyp);
+        if (!item._startingInventory) continue;
+        if (OBJECT_DESCRIPTIONS[item.otyp]) {
+            recordObjectKnowledge(item.otyp);
+            recordObjectEncounter(item.otyp);
+        }
+        if (item.otyp === OIL_LAMP) {
+            recordObjectKnowledge(POT_OIL);
+            recordObjectEncounter(POT_OIL);
+        }
+        useStartingItem(item);
     }
+    if (game.urole?.key === 'wizard') {
+        for (const discovery of game.discoveries || []) {
+            recordObjectKnowledge(discovery.otyp);
+            if (!discovery.preknown) recordObjectEncounter(discovery.otyp);
+        }
+    }
+    ensureHeroSkills(game);
+    applyPauperPreknowledge(game.urole?.key);
+    if (game.spells.length && (game.u.uenmax || 0) < 5) {
+        game.u.uen = game.u.uenmax = game.u.uenpeak = 5;
+        game.u.ueninc[game.u.ulevel] = 5;
+    }
+    findArmorClass(game);
+    game._startingEffectsApplied = true;
+    return true;
 }
 
 export function inventoryItem(raw, presentation = null) {
@@ -1149,8 +1173,7 @@ function iniInv(table) {
         }
         if (trobj.bless !== UNDEF_BLESS) raw.blessed = !!trobj.bless;
 
-        const item = addStartingItem(raw);
-        useStartingItem(item);
+        addStartingItem(raw);
         if (stop) quan = 1;
         if (--quan) continue;
         index++;
@@ -1317,9 +1340,14 @@ export function uInitInventoryAttrs() {
     game.inventory = [];
     game._lastInvNr = 51;
     game.uwep = game.uswapwep = game.uquiver = null;
-    game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
+    game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg =
+        game.uarmh = game.uarmf = null;
     game.u.weaponSkills = null;
     game.u.skillRecord = [];
+    delete game.u.weapon_slots;
+    game.spells = [];
+    delete game._startingEffectsApplied;
+    delete game._startingPwMinimum;
     game.moves = 1;
     game.u.uhunger = 900;
     // C resets u.umoney0 before the role switch so repeated character
@@ -1396,10 +1424,6 @@ export function uInitInventoryAttrs() {
         rn2(1);
         mksobj(GOLD_PIECE, true, false);
     }
-    // C u_init_inventory_attrs(): any hero who starts with a learned spell
-    // receives enough power to cast a level-one spell at least once.
-    if (game.spells.length && (game.u.uenmax || 0) < 5)
-        game._startingPwMinimum = 5;
     initAttributes();
     // u.umoney0 is startup bookkeeping rather than the live purse. Include
     // recursively contained gold without moving it out of its container.
@@ -1544,21 +1568,8 @@ export function uInitInventoryAttrs() {
     ];
     if (role === 'wizard' && !game.u?.uroleplay?.pauper) {
         game.discoveries = wizardInitialDiscoveries();
-        // weapon.c:skill_based_spellbook_id() and ini_inv_use_obj() both
-        // feed o_init.c's authoritative object-knowledge table.  The legacy
-        // discoveries projection is only a menu view; naming code must see
-        // the same knowledge before the first command is processed.
-        for (const discovery of game.discoveries) {
-            recordObjectKnowledge(discovery.otyp);
-            if (!discovery.preknown) recordObjectEncounter(discovery.otyp);
-        }
     }
     game.urole.rank = game.urole.title?.[0] || game.urole.name;
-    // weapon.c:skill_init() snapshots the startup inventory here.  Later
-    // wishes, pickups, drops, and weapon changes must not redefine which
-    // classes began at Basic.
-    ensureHeroSkills(game);
-    applyPauperPreknowledge(role);
     return true;
 }
 
