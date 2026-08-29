@@ -278,6 +278,18 @@ function isMovementKey(ch) {
     return 'hjklyubn'.includes(ch);
 }
 
+// C cmd.c:reset_commands() overlays each non-numpad Ctrl-direction binding
+// onto its ordinary command (for example Ctrl-L replaces redraw with rush
+// east).  Carriage return is normalized by tty to Ctrl-J/rush south.
+const CONTROL_RUSH_DIRECTION = new Map([
+    [2, 'b'], [8, 'h'], [10, 'j'], [11, 'k'],
+    [12, 'l'], [14, 'n'], [21, 'u'], [25, 'y'],
+]);
+
+function controlRushDirection(key) {
+    return CONTROL_RUSH_DIRECTION.get(key === 13 ? 10 : key) || null;
+}
+
 // C getpos.c:truncate_to_map().  A diagonal that crosses one map edge loses
 // the same amount of motion on its other axis; independently clamping x and y
 // would incorrectly slide the cursor along the boundary.
@@ -644,6 +656,15 @@ export function findTravelDirection(state = game._runState, g = game) {
         || findGuessedTravelDirection(targetX, targetY, g);
 }
 
+function canSeeRunMonster(monster, x, y, g = game) {
+    if (g === game) return canSeeMonster(monster, x, y);
+    const visibleSquare = !g.viz_array
+        || !!(g.viz_array?.[y]?.[x] & 0x2);
+    return !g.blind && !(g.u?.blindTurns > 0) && visibleSquare
+        && (!monster.minvis || g.u?.seeInvisible || g.u?.see_invisible)
+        && !monster.mundetected;
+}
+
 function travelInterruptedByMonster(g = game) {
     return !!g.level?.monsters?.some(monster =>
         Math.abs(monster.mx - g.u.ux) <= 1
@@ -697,7 +718,7 @@ export function lookaroundRun(state = game._runState, g = game) {
             // front must reach domove()/attack_checks(), which remembers the
             // unseen occupant instead of silently ending the run.
             const visibleMonster = monster
-                && canSeeMonster(monster, monster.mx, monster.my);
+                && canSeeRunMonster(monster, monster.mx, monster.my, g);
             const visibleHostile = visibleMonster && !monster.pet
                 && !monster.mpeaceful;
             if (visibleMonster && (infront
@@ -714,17 +735,45 @@ export function lookaroundRun(state = game._runState, g = game) {
             let corridorLike = false;
             if (typ === DOOR) {
                 const closed = !!(loc.doormask & (D_CLOSED | D_LOCKED));
-                if (closed && x !== u.ux && y !== u.uy) continue;
-                corridorLike = true;
+                if (closed) {
+                    if (x !== u.ux && y !== u.uy) continue;
+                    if (state.mode !== 1) return false;
+                    corridorLike = true;
+                } else if (state.mode === 1) {
+                    corridorLike = true;
+                } else if (state.mode === 8 || monster) {
+                    continue;
+                } else if ((x === u.ux - state.dx
+                    && y !== u.uy + state.dy)
+                    || (y === u.uy - state.dy
+                        && x !== u.ux + state.dx)) {
+                    continue;
+                } else {
+                    // hack.c:lookaround() treats an open/doorless doorway as
+                    // interesting to run/rush modes 2 and 3.  Mode 1 alone
+                    // folds it into corridor turning.
+                    return false;
+                }
             } else if (typ === CORR) {
                 corridorLike = true;
             } else if (IS_POOL(typ) || IS_LAVA(typ)) {
                 continue;
             } else {
-                // For run mode 1, stairs, furniture, and other non-room
-                // locations participate in corridor routing (the C bcorr
-                // branch) instead of being "interesting" stop points.
-                corridorLike = true;
+                if (state.mode === 1) {
+                    // For run mode 1, stairs, furniture, and other non-room
+                    // locations participate in corridor routing (the C
+                    // bcorr branch) instead of being interesting stop points.
+                    corridorLike = true;
+                } else if (state.mode === 8 || monster) {
+                    continue;
+                } else if ((x === u.ux - state.dx
+                    && y !== u.uy + state.dy)
+                    || (y === u.uy - state.dy
+                        && x !== u.ux + state.dx)) {
+                    continue;
+                } else {
+                    return false;
+                }
             }
 
             if (!corridorLike || currentTyp === ROOM) continue;
@@ -1755,21 +1804,18 @@ export async function rhack(key) {
     } else if (ch === 'F') {
         await doforcefight();
     } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
-        || key === 10 || key === 13) {
-        // reset_commands() binds Ctrl-direction to rush.  ASCII newline is
-        // Ctrl-J, and the tty also normalizes carriage return to newline, so
-        // both replay bytes enter the same rush-south command.
-        const newlineRush = key === 10 || key === 13;
-        const direction = newlineRush ? 'j' : ch.toLowerCase();
+        || controlRushDirection(key)) {
+        const rushDirection = controlRushDirection(key);
+        const direction = rushDirection || ch.toLowerCase();
         if (ch === 'H' && game._touristExplorePath
             && game.u?.ux === 72 && game.u?.uy === 6) {
             await touristExploreRunWest();
             game.context.move = 1;
         } else {
-            const running = /[HJKLYUBN]/.test(ch) || newlineRush;
+            const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
             if (running) startRun(
                 DIR_DX[direction], DIR_DY[direction], game,
-                newlineRush ? 3 : 1,
+                rushDirection ? 3 : 1,
             );
             const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
             if (running && moved)
@@ -5751,9 +5797,37 @@ async function dochat() {
         if (monster?.pet && monster.meating)
             await pline('The saddled pony is eating noisily.');
         else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
-        else if (game._rogueFriday13Path || game._valkChatPath)
-            await pline("It's like talking to a wall.");
-        else game._pending_message = '';
+        else if (!monster) {
+            const statue = (game.level?.objects?.[x]?.[y] || [])
+                .find(object => object.otyp === STATUE);
+            const loc = game.level?.at(x, y);
+            const deaf = !!(game.deaf || game.u?.deaf);
+            const hallucinating = heroHallucinating();
+            if (statue && !game.blind) {
+                await pline('The statue seems not to notice you.');
+            } else if (!deaf && (IS_WALL(loc?.typ) || loc?.typ === SDOOR)
+                && (!game.blind || !!loc?.seenv)) {
+                if (!hallucinating) {
+                    await pline("It's like talking to a wall.");
+                } else {
+                    const wallTalk = [
+                        'gripes about its job.',
+                        'tells you a funny joke!',
+                        'insults your heritage!',
+                        'chuckles.',
+                        'guffaws merrily!',
+                        'deprecates your exploration efforts.',
+                        'suggests a stint of rehab...',
+                        "doesn't seem to be interested.",
+                    ];
+                    await pline(`The wall ${wallTalk[
+                        Math.min(rn2(10), wallTalk.length - 1)
+                    ]}`);
+                }
+            } else {
+                game._pending_message = '';
+            }
+        } else game._pending_message = '';
     }
     game.context.move = 0;
 }

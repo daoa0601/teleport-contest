@@ -16699,6 +16699,21 @@ test('lookaroundRun stops before a monster in front', () => {
     assert.equal(lookaroundRun(state, g), false);
 });
 
+test('lookaroundRun rush stops before an open doorway', () => {
+    const cells = new Map([
+        ['10,10', CORR],
+        ['11,10', DOOR],
+    ]);
+    const g = { u: { ux: 10, uy: 10 }, level: runLevel(cells) };
+
+    assert.equal(lookaroundRun({
+        dx: 1, dy: 0, mode: 3, lastStrTurn: 0,
+    }, g), false);
+    assert.equal(lookaroundRun({
+        dx: 1, dy: 0, mode: 1, lastStrTurn: 0,
+    }, g), true);
+});
+
 test('diagonal movement distinguishes doorless from intact doorways', () => {
     const room = { typ: ROOM, doormask: 0 };
     assert.equal(blocksDiagonalDoor(room, { typ: DOOR, doormask: 0 }), false);

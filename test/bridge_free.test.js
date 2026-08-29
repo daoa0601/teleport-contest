@@ -10,6 +10,7 @@ import { fastforward_pre_mklev } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
 import { replayRogueTurn } from '../js/rogue_explore.js';
 import { runSegment } from '../js/jsmain.js';
+import { InMemoryStorage } from '../js/storage.js';
 import {
     COLS_80, ROWS_24, decodeScreen, diffCell,
 } from '../frozen/screen-decode.mjs';
@@ -202,6 +203,7 @@ test('bridge-free Rogue owns chargen, pet traps, combat, and runs', async () => 
             'seed0077-rogue-chargen.session.json',
             'seed1500-rogue-explore-move.session.json',
             'seed0060-orc-rogue-kick-search.session.json',
+            'seed0013-rogue-friday13-combat.session.json',
         ]) {
             const session = JSON.parse(fs.readFileSync(
                 new URL(`../sessions/${filename}`, import.meta.url),
@@ -218,6 +220,29 @@ test('bridge-free Rogue owns chargen, pet traps, combat, and runs', async () => 
                 forbiddenHits: 0,
                 bridges: {},
             }, filename);
+        }
+    });
+});
+
+test('bridge-free Rogue save and restore retain live scheduler state', async () => {
+    await withBridgeFreeModeAsync(async () => {
+        const segments = JSON.parse(fs.readFileSync(
+            new URL(
+                '../sessions/seed0013-friday13-save-then-fullmoon-restore.session.json',
+                import.meta.url,
+            ),
+            'utf8',
+        )).segments;
+        const storage = new InMemoryStorage();
+        for (const segment of segments) {
+            const result = await runSegment({ ...segment, storage });
+            assertBoundedSessionParity(result, segment);
+            assert.deepEqual(result.getBridgeUsageLedger(), {
+                bridgeFree: true,
+                totalHits: 0,
+                forbiddenHits: 0,
+                bridges: {},
+            });
         }
     });
 });
