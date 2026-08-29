@@ -118,9 +118,9 @@
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
       "dependencies": ["rng-core", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance plus live Samurai and five live Rogue actor/scheduler and persistence carriers"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance plus live Samurai, five live Rogue actor/scheduler and persistence carriers, and two live Priest scheduler/projectile/command carriers"],
       "lastSealedGate": null,
-      "openGap": "Samurai and all five represented Rogue carriers have public bridge-free actor-rich witnesses; Priest, broader unseen actor/terrain branches, and a sealed gate remain open."
+      "openGap": "Samurai, all five represented Rogue carriers, and the two represented Priest carriers have public bridge-free actor-rich witnesses; broader unseen actor/terrain branches and a sealed gate remain open."
     },
     {
       "id": "samurai-pet-turns",
@@ -161,17 +161,17 @@
       "label": "Priest passive projectiles and extended commands",
       "status": "partial",
       "source": {
-        "cFiles": ["src/mthrowu.c", "src/dogmove.c", "src/cmd.c"],
-        "cSymbols": ["m_throw", "pet_ranged_attk", "doextcmd"],
+        "cFiles": ["src/allmain.c", "src/role.c", "src/pray.c", "src/mthrowu.c", "src/zap.c", "src/sounds.c", "src/cmd.c", "src/weapon.c", "src/dungeon.c", "src/insight.c", "src/livelog.c", "src/exper.c", "src/uhitm.c", "src/mon.c", "src/invent.c", "src/objnam.c"],
+        "cSymbols": ["moveloop_core", "role_init", "dopray", "prayer_done", "m_throw", "drop_throw", "obj_resists", "dochat", "doextcmd", "enhance_weapon_skill", "dooverview", "do_gamelog", "livelog_printf", "losexp", "first_weapon_hit", "xkilled", "look_here", "xname_flags"],
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/allmain.js", "js/cmd.js", "js/monmove.js", "js/priest_extcmd.js"],
+      "javascriptOwners": ["js/allmain.js", "js/cmd.js", "js/monmove.js", "js/pray.js", "js/invent.js", "js/exper.js", "js/end.js", "js/gamelog.js", "js/priest_extcmd.js"],
       "dependencies": ["turn-scheduler", "tty-display"],
-      "bridgeIds": ["priest.passive-projectile", "seeded-replay.priest-extcmd", "snapshot-painter.fixture-screen"],
-      "acceptanceWitnesses": ["live projectile unit witnesses plus public seed0106 regression"],
+      "bridgeIds": ["legacy-only priest.passive-projectile", "legacy-only seeded-replay.priest-extcmd", "legacy-only snapshot-painter.fixture-screen"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: seed0501 cast/read/turn and seed0106 prayer/projectile/extended-command RNG, screen, and cursor parity with zero bridge hits; public regressions only", "test/run_scheduler.test.js: seed0107 role-neutral skill-menu control"],
       "lastSealedGate": null,
-      "openGap": "Passive projectile timing and the extended-command sweep still cross recorded boundary replay and snapshot painting."
+      "openGap": "Both represented Priest carriers now use live source-ration, prayer, projectile lifecycle, command state, chronicle, overview, and naming in bridge-free mode; alternate ranged outcomes, pantheons, command histories, unseen actors/options, legacy bridge removal, and sealed strata remain unverified."
     },
     {
       "id": "tty-display",

@@ -93448,3 +93448,83 @@ public suite, sealed evaluation, push, workflow, hidden judge,
 supplemental-animation work, or publication ran.
 
 ---
+
+### [2026-08-29 12:50 EEST, journal block 3116] {#bridge-free #priest #seed0501 #seed0106 #pantheon #startup #diagnosis #portfolio #process-safety}
+
+**Contract and first live witness:** begin the third ordered bridge-replacement
+slice with Priest startup, cast/read/turn scheduling, passive projectiles, and
+the extended-command carrier.  Acceptance requires live state/RNG/tty owners
+and a zero bridge ledger; bypassing `_priestCastPath` while retaining recorded
+projectile calls or allowing `priest_extcmd.js` to paint boundaries is not
+acceptance.  One owned seed0501 bridge-free runner exited exact at2,238/2,238
+RNG and28/28 screens/cursors, proving that its represented cast, spellbook and
+turn lifecycle already needs neither named bridge nor dog-RNG replay.
+
+**Extended-sweep baseline and earliest divergence:** one owned seed0106
+bridge-free runner exited at2,584/4,194 RNG and10/267 screens/cursors.  Bounded
+comparison puts the first difference at startup input0, before any extended
+command: RNG is exact, but C prints `Your goddess Amaterasu Omikami` at column8
+while JavaScript prints `Your god ...` at column11.  The shorter line changes
+the legacy pager's common left margin.  This is a source startup ownership gap,
+not passive-projectile timing or snapshot painting.
+
+**Independent mechanism families and prediction:** (1) pantheon metadata:
+Priest copies the Samurai pantheon's three names but drops its
+`goddessAlignments`, predicting this exact noun and three-column shift with no
+RNG change.  (2) quest status: a wrong `godgend` projection would affect later
+quest substitutions but should not be needed if the role record itself retains
+the underscore/gender equivalent.  (3) tty layout: a fixed centering error
+would also fail seed0501, which is already exact, so it is falsified as the
+leading cause.  Copy pantheon deity-gender metadata with its names, then locate
+the next per-input RNG/screen divergence rather than changing pager geometry.
+No implementation, full corpus, normal suite, sealed gate, push, workflow,
+hidden judge, or publication ran for this diagnosis; no verifier remains live.
+
+---
+
+### [2026-08-29 13:12 EEST, journal block 3117] {#bridge-free #priest #seed0501 #seed0106 #pantheon #prayer #projectile #chronicle #commands #implementation #focused-regression #process-safety}
+
+**Successive earliest divergences and source decisions:** copying the borrowed
+pantheon's `goddessAlignments` closed input0 without changing RNG.  Admitting
+live quiet Priest to the shared movement ration then let the three-turn prayer
+occupation advance through actor/global turns.  The divine voice now uses
+`angrygods()`'s four-way source table and tty continuation order.  Live animal
+sound state fixed the second dog chat.  The first remaining RNG mismatch was
+the passive dart's deletion tail: after launch, flight, hit, damage, Strength
+exercise, and `rn2(3)` mulch selection, C still called
+`obj_resists(obj,0,0)`.  Paying that generic `rn2(100)` before deleting a
+broken ordinary projectile made all4,194 RNG calls exact; replay ranges and a
+Priest-specific extra draw were rejected.
+
+**State and command ownership:** later screen-only mismatches exposed shared
+mechanical gaps rather than a snapshot problem.  Fountain look/sit and
+mapseen overview now read live terrain memory; `#enhance` projects the role's
+initialized skill table instead of a Samurai page; extended-command
+autocomplete reaches chronicle, vanquished, genocided, and terrain; and a live
+game-log registry receives startup, prayer, experience-loss, first-weapon-hit,
+and first-kill events from their owners.  Cleric inventory naming now renders
+cursed water intrinsically as unholy water.  A focused Samurai control failed
+when the generic skill page initially called only Monk unarmed skill
+"martial arts"; pinned public behavior corrected the role-sensitive name for
+both Monk and Samurai before acceptance.
+
+**Measured effect and regression witnesses:** seed0501 remains exact at
+2,238/2,238 RNG and28/28 screens/cursors.  Seed0106 advanced from the recorded
+2,584/4,194 RNG and10/267-screen baseline to4,194/4,194 RNG and267/267
+screens/cursors in bridge-free mode; both ledgers are empty.  The bounded
+bridge-free file passes8/8, including both Priest carriers, and the focused
+seed0107 Samurai skill-menu control passes1/1.  Every verifier exited normally
+and no duplicate/full-suite process was launched.  The single missing
+supplemental animation frame was deliberately not optimized.
+
+**Falsified hypotheses, limit, and next blocker:** the Pantheon did not replace
+the Priest role, static pager geometry was not the owner, replay helpers were
+not needed for either known carrier, and the passive projectile did not end at
+mulch selection.  The Priest entry remains `partial`: alternate pantheons,
+actors, ranged hit/miss/resistance outcomes, command-history/options, legacy
+bridge removal, and sealed strata are unmeasured.  The next ordered coherent
+slice is startup/object initialization under fresh bridge-free configurations;
+do not run a full corpus, sealed evaluation, push, or publication until its
+scheduled audit gate authorizes one measurement.
+
+---

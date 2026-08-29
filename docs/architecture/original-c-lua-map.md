@@ -35061,3 +35061,56 @@ the two-segment save/full-moon restore carrier is exact at4,804/4,804 RNG and
 **partial** only because alternate unseen actor, trap, binding, option and
 sealed strata have not been measured; the known bridge-free Rogue carriers no
 longer have a named compatibility-path gap.  Lua owns none of this boundary.
+
+## 963. Priest source ownership joins prayer, projectiles, and live history
+
+~~~mermaid
+sequenceDiagram
+    participant Start as role.c/allmain.c startup
+    participant Loop as allmain.c source ration
+    participant Pray as pray.c prayer occupation
+    participant Actor as dogmove.c/mthrowu.c
+    participant Obj as zap.c object lifecycle
+    participant State as weapon/dungeon/livelog state
+    participant TTY as cmd/invent/tty projection
+    Start->>Start: borrow pantheon names and deity-gender metadata
+    Start->>State: initialize Priest inventory, skills, and dungeon-entry event
+    Pray->>Loop: spend action and install negative multi
+    loop newly allocated global turns
+        Loop->>Actor: scan current monsters and pet actions
+        Actor->>Obj: launch, hit, mulch, resist, delete or land projectile
+        Loop->>Pray: finish prayer and apply live experience/conduct effects
+    end
+    State->>TTY: enhance, overview, chronicle, vanquished, terrain, inventory
+    TTY-->>State: display only current skills, map memory, events, and BUC knowledge
+~~~
+
+Priest pantheon borrowing is metadata ownership, not role replacement.  The
+selected non-Priest role supplies both its deity names and the corresponding
+deity-gender alignment set; Priest inventory, skill maxima, title, conduct,
+and scheduler admission remain owned by the Priest role.  This distinction is
+visible at the first quest pager and later in the live `#enhance` table.
+
+The actor path now uses the shared source movement ration.  In the represented
+passive dart attack, `m_throw()` owns launch, flight, hit, damage, Strength
+exercise, and mulch selection.  A broken ordinary projectile still reaches
+`drop_throw()` -> `delobj()` -> `obj_resists(obj,0,0)`, so the otherwise
+doomed dart consumes its `rn2(100)` resistance decision before deletion.  That
+object-lifecycle call, rather than a Priest replay range, closes the complete
+4,194-call command-sweep RNG stream.
+
+Informational commands now project mechanical state instead of a static role
+page.  `#enhance` reads the initialized role skill table; `#overview` counts
+remembered or underfoot features without leaking unseen terrain; and
+`#chronicle` renders events published by startup, prayer, experience loss,
+first weapon hit, and first kill.  Cleric naming observes BUC state and names
+cursed water intrinsically as unholy water.  Animal chat, fountain look/sit,
+vanquished/genocided, and `#terrain` similarly share their ordinary command
+owners.  Lua supplies no runtime behavior in this slice.
+
+The bridge-free seed0501 cast/read/turn carrier is exact at 2,238/2,238 RNG
+and 28/28 screens/cursors.  Seed0106 is exact at 4,194/4,194 RNG and 267/267
+screens/cursors, with empty compatibility ledgers for both.  The registry
+remains **partial**: these are public regression witnesses, and alternate
+pantheons, actors, projectile outcomes, option/history states, legacy bridge
+removal, and the scheduled sealed-corpus gate remain open.
