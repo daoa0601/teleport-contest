@@ -35574,10 +35574,12 @@ The deferred clue builds a fresh whole-level ROOM selection, samples it in
 x-major order without removal, and burns text whose vector uses the source's
 intentional `chest.x - engraving.x - 1` horizontal offset. JavaScript now owns
 that construction and postprocess state without any fixture or replay carrier.
-It records the organic rot deadline but has no shared timer-queue dispatcher or
-`rot_organic()` callback yet, so this component remains mechanically
-`partial`; a passing construction witness is not being promoted into fake
-runtime acceptance.
+The chest's organic deadline now enters the shared object-timer queue;
+`rot_organic()` unboxes its contents into the buried chain before removing the
+container, and `rot_corpse()` removes floor corpses through the same ordered
+dispatcher. The component remains mechanically `partial`: protected contained
+objects are only an asserted source invariant, inventory/worn corpse effects
+are incomplete, and inactive cached-level timing has no direct witness.
 
 Light source also crosses construction into a shared runtime graph. Lua is
 eligible only for an unlit room, then creates an initialized oil lamp with
@@ -35595,9 +35597,11 @@ an off-hero source uses `clear_path()` for every candidate, while a carried
 source reuses the hero's `COULD_SEE` bitmap. The existing transient-monster
 light projection now shares this mobile-light map with top-level floor, hero,
 and monster oil lamps, so pickup and save/restore move the source through live
-object identity rather than a room fixture. Threshold warning text, other
-burning object types, and timer-id ordering in the generic queue remain open,
-so Light source is mechanically `partial`, not `implemented`.
+object identity rather than a room fixture. Oil-lamp callbacks now share the
+generic object queue and its timer-id ordering. Threshold warning text, other
+burning object types, cleanup/reschedule variants, and inactive cached-level
+timing remain open, so Light source is mechanically `partial`, not
+`implemented`.
 
 Buried zombies has a complete construction transaction but an intentionally
 open runtime edge:
@@ -35612,7 +35616,7 @@ flowchart LR
     Replace --> Bury["bury_an_obj; resistance draw; buried chain"]
     Bury --> Stop["Lua stop_timer ROT_CORPSE"]
     Stop --> Deadline["Lua start_timer ZOMBIFY_MON at moves + 990..1010"]
-    Deadline --> Dispatch["focused source-turn timer phase"]
+    Deadline --> Dispatch["generic ordered source-turn timer phase"]
     Dispatch --> Zombify["zombie_form then set_corpsenm"]
     Zombify --> Revive["revive_mon and makemon NO_MINVENT"]
     Revive --> Pit["buried zombie claws out through a pit"]
@@ -35639,16 +35643,59 @@ objects, `m_initweap()`, `m_initinv()`, the common item reservoirs, greedy gold,
 and the domestic-saddle probe. It still preserves non-inventory birth state,
 including sleep, peacefulness, mimic appearance, and shapechanging. That
 removes the revival-constructor blocker. Global-turn maintenance now splits at
-the object-timer position, claims due zombies by deadline and insertion order,
+the object-timer position, claims due zombies by deadline then newest-first
+equal-deadline timer id,
 awaits living-to-zombie replacement and gender-preserving no-inventory birth,
 removes the corpse only on successful revival, creates the emergence pit, and
 then resumes ordinary corpse rot and property timeouts. This keeps callback RNG
 ahead of regeneration, ambient sounds, hunger, and exercise rather than moving
 it to an unrelated asynchronous tail.
 
-The ownership component remains mechanically `partial`. Oil-lamp burns and
-zombification still use focused dispatchers rather than one cross-type
-timeout/timer-id queue. `fill_pit()` boulder handling, blocked and genocided
-regression carriers, exhaustive occupied-square relocation, and every
-visibility/deafness continuation are not all directly witnessed. A successful
-empty-room emergence proves a real runtime edge, not the generic timer system.
+The ownership component remains mechanically `partial`. The cross-type queue,
+blocked and genocided fallbacks, occupied-square relocation, visible and
+invisible feedback, and `fill_pit()` boulder consumption plus floor-pile burial
+now have direct bridge-free witnesses. Hero-occupied relocation, every
+terrain/species and special-corpse variant, full tty continuation capture,
+inactive cached-level timing, and a sealed stratum remain open. These explicit
+gaps prevent one successful callback family from becoming a general timer or
+held-out acceptance claim.
+
+## 972. Object timers are one ordered callback graph
+
+~~~mermaid
+flowchart TD
+    Start["start_timer on an object"] --> Id["allocate monotonic timer id"]
+    Id --> Queue["deadline ascending; equal deadline newest id first"]
+    Queue --> Claim["run_timers removes and decrements before callback"]
+    Claim --> Burn["BURN_OBJECT: oil-lamp breakpoint"]
+    Claim --> Corpse["ROT_CORPSE: corpse lifecycle"]
+    Claim --> Organic["ROT_ORGANIC: unbox then remove container"]
+    Claim --> Zombie["ZOMBIFY_MON: replace, revive, present, fill pit"]
+    Burn --> Later["later properties, regen, sounds, hunger, exercise"]
+    Corpse --> Later
+    Organic --> Later
+    Zombie --> Later
+~~~
+
+`timeout.c:insert_timer()` inserts a new timer before the first queued timer
+whose deadline is greater than or equal to it. Equal-deadline callbacks are
+therefore newest-first, not ordinary FIFO insertion order. `js/object_timers.js`
+now assigns a saveable monotonic id, discovers timers across the floor, buried
+chain, nested contents, hero inventory, and monster inventories, and claims one
+due callback at a time before dispatch. Legacy deadline fields remain mirrors
+for snapshot compatibility rather than independent scheduling owners.
+
+The callback phase remains inside source global-turn maintenance. Burn,
+zombify, corpse rot, and organic rot can therefore interleave by one queue
+rather than four module-local scans. Zombie presentation is a resumable edge:
+pit construction precedes visible or nearby-audible feedback, but
+`fill_pit()` runs after that feedback returns, so a boulder and the temporary
+pit retain their native state across tty suspension. Only then are the boulder
+and pit consumed and the remaining floor pile buried.
+
+Mechanical status is **partial**. The queue does not yet own `HATCH_EGG`,
+`FIG_TRANSFORM`, `SHRINK_GLOB`, `MELT_ICE_AWAY`, non-oil burn variants,
+timer move/split/relink behavior, exact equal-time reconstruction for old saves
+which predate timer ids, or cached inactive-level timers. Inventory/worn corpse
+rot side effects also remain incomplete. Those are source lifecycle gaps, not
+reasons to retain per-session replay carriers or inspect sealed traces early.

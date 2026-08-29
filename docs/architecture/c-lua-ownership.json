@@ -115,12 +115,12 @@
         "luaFiles": ["dat/themerms.lua", "dat/nhcore.lua", "dat/*.lua"],
         "luaSymbols": ["des.* operations", "themerooms_generate"]
       },
-      "javascriptOwners": ["js/mklev.js", "js/weight.js", "js/dungeon.js", "js/lua_des.js", "js/regions.js", "js/monmove.js", "js/light.js", "js/vision.js", "js/allmain.js"],
-      "dependencies": ["rng-core"],
+      "javascriptOwners": ["js/mklev.js", "js/weight.js", "js/dungeon.js", "js/lua_des.js", "js/regions.js", "js/monmove.js", "js/light.js", "js/object_timers.js", "js/vision.js", "js/allmain.js"],
+      "dependencies": ["rng-core", "object-timer-queue"],
       "bridgeIds": ["fastforward.mineralize", "seeded room-fill compatibility paths"],
       "acceptanceWitnesses": ["test/room_fill.test.js: direct fresh-seed ordinary-fill control flow, Amulet difficulty/spawn, giant-spider web, Rogue skip, grave burial, supply-container weight, object final weight, and zero bridge usage", "test/themerooms.test.js: exact 31-name Lua reservoir, named constructor reachability, structural rare-room witnesses, live Ghost, Cloud, Boulder, Spider, Garden, Trap, Massacre, Statuary, and partial Buried treasure, Buried zombies, and Light source fills, explicit unported-fill rejection, and zero bridge usage", "focused test/run_scheduler.test.js gas-region regressions: polymorphed hero vapor, moved and inactive fog actors, and visible-region projection", "focused test/run_scheduler.test.js level regressions: nesting rooms, ordinary graffiti, temple-before-fill, Arc-filb, Minetown, branch stairs, Tower object order, and Rogue level", "public fixture-disabled level witnesses; regression evidence only"],
       "lastSealedGate": null,
-      "openGap": "The ordinary-room orchestration and exact 31-name themed-room dispatch now have direct witnesses; Ghost, Cloud, Boulder, Spider, Garden, Trap, Massacre, and Statuary fills are live source callbacks. Buried treasure lacks the shared ROT_ORGANIC dispatcher; Buried zombies owns depth-sensitive construction plus a focused source-turn zombify/revival/pit edge, but not the generic cross-type timer queue or complete fill_pit and failure/message variants; Light source owns oil-lamp construction, mobile illumination, fuel breakpoints, and expiration but not warning text or the generic timer queue. Exact source ordering across all shapes, seven incomplete fill callbacks, many special-level operations, legacy seeded generation branches, incomplete monster/trap/special-object constructors, and a sealed gate remain open.",
+      "openGap": "The ordinary-room orchestration and exact 31-name themed-room dispatch now have direct witnesses; Ghost, Cloud, Boulder, Spider, Garden, Trap, Massacre, and Statuary fills are live source callbacks. Buried treasure now reaches ordered ROT_ORGANIC/ROT_CORPSE callbacks, Buried zombies reaches ordered revival/failure/fill-pit callbacks, and Light source shares that queue, but all three remain partial at their explicitly listed lifecycle gaps. Exact source ordering across all shapes, seven incomplete fill callbacks, many special-level operations, legacy seeded generation branches, incomplete monster/trap/special-object constructors, and a sealed gate remain open.",
       "components": [
         { "id": "themeroom-shapes", "label": "31-form themeroom reservoir and named shape dispatch", "status": "partial", "openGap": "All exact Lua names have live constructors and five formerly collapsed rare forms have structural witnesses; exhaustive source-call ordering and a sealed stratum remain unproved." },
         { "id": "fill-ice", "label": "Fill: Ice room", "status": "absent", "openGap": "Terrain conversion and per-square melt timers are not ported." },
@@ -129,16 +129,33 @@
         { "id": "fill-spider", "label": "Fill: Spider nest", "status": "implemented", "openGap": "No open gap inside this callback scope: web placement and the depth-sensitive resident-spider gate have direct zero-bridge witnesses." },
         { "id": "fill-trap", "label": "Fill: Trap room", "status": "implemented", "openGap": "No open gap inside this callback scope: one shuffled source trap type is applied over the filtered selection in Lua callback order." },
         { "id": "fill-garden", "label": "Fill: Garden", "status": "implemented", "openGap": "No open gap inside this callback scope: lit-room nymph/fountain population and deferred grown-selection tree/arboreal-door transformation have a direct zero-bridge witness." },
-        { "id": "fill-buried-treasure", "label": "Fill: Buried treasure", "status": "partial", "openGap": "Initialized-then-cleared chest contents, source-ordered burial draws, contained child objects and weight, retained coordinates, and the deferred directional burn engraving have a direct zero-bridge witness. The ROT_ORGANIC deadline is recorded, but the shared timer queue and rot_organic dispatch remain absent." },
-        { "id": "fill-buried-zombies", "label": "Fill: Buried zombies", "status": "partial", "openGap": "Depth-sensitive eligibility, per-corpse shuffle and dry placement, initialized corpse replacement, burial, ROT_CORPSE cancellation, absolute ordered ZOMBIFY_MON deadlines, focused source-turn dispatch, living-to-zombie replacement, gender-preserving NO_MINVENT revival, successful corpse removal, and pit creation have direct zero-bridge witnesses. The generic cross-type timer-id queue, fill_pit boulder effects, blocked and genocided regression carriers, exhaustive adjacent relocation, and every visibility/audio continuation remain open." },
+        { "id": "fill-buried-treasure", "label": "Fill: Buried treasure", "status": "partial", "openGap": "Initialized-then-cleared chest contents, source-ordered burial draws, contained child objects and weight, retained coordinates, deferred directional engraving, ordered ROT_ORGANIC callback, contained-child burial, and ROT_CORPSE removal have direct zero-bridge witnesses. Protected contained-object impossibility handling, worn/inventory corpse side effects, inactive cached-level timing, and a sealed stratum remain open." },
+        { "id": "fill-buried-zombies", "label": "Fill: Buried zombies", "status": "partial", "openGap": "Depth-sensitive construction, ordered ZOMBIFY_MON dispatch, living-to-zombie replacement, gender-preserving NO_MINVENT revival, blocked/genocided outcomes, occupied-square relocation, pit creation, visible/invisible/audible policy, and boulder fill_pit burial effects have direct zero-bridge witnesses. Hero-occupied relocation, all terrain/species and special corpse variants, full tty continuation capture, inactive cached-level timing, and a sealed stratum remain open." },
         { "id": "fill-massacre", "label": "Fill: Massacre", "status": "implemented", "openGap": "No open gap inside this callback scope: the 27-entry role/guardian reservoir, 5d5 population, per-corpse reselection, and live corpse construction have direct zero-bridge witnesses." },
         { "id": "fill-statuary", "label": "Fill: Statuary", "status": "implemented", "openGap": "No open gap inside this callback scope: 5d5 loose statues and 1d3 live statue traps delegate to shared source constructors under a direct zero-bridge witness." },
-        { "id": "fill-light-source", "label": "Fill: Light source", "status": "partial", "openGap": "The initialized lit oil lamp, source fuel breakpoints, saveable deadline state, global-turn expiration, and radius-three mobile illumination have a direct zero-bridge witness. Threshold warning text, other burning object types, timer-id ordering, and the generic timer queue remain open." },
+        { "id": "fill-light-source", "label": "Fill: Light source", "status": "partial", "openGap": "The initialized lit oil lamp, source fuel breakpoints, saveable deadline state, ordered generic timer dispatch, global-turn expiration, and radius-three mobile illumination have a direct zero-bridge witness. Threshold warning text, non-oil burning objects, cleanup/reschedule variants, inactive cached-level timing, and a sealed stratum remain open." },
         { "id": "fill-temple", "label": "Fill: Temple of the gods", "status": "partial", "openGap": "Three altar callbacks exist, but source alignment ownership and complete special-object semantics remain open." },
         { "id": "fill-ghost", "label": "Fill: Ghost of an Adventurer", "status": "implemented", "openGap": "No open gap inside this callback scope: live room selection, ghost state, colocated BUC-constrained equipment, and zero bridge usage have a direct witness." },
         { "id": "fill-storeroom", "label": "Fill: Storeroom", "status": "partial", "openGap": "Filtered chest/mimic construction exists; exhaustive source-order and sealed-stratum validation remain open." },
         { "id": "fill-teleportation-hub", "label": "Fill: Teleportation hub", "status": "partial", "openGap": "Deferred trap/destination construction exists; exhaustive source-order and sealed-stratum validation remain open." }
       ]
+    },
+    {
+      "id": "object-timer-queue",
+      "label": "Object timer queue and callbacks",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/timeout.c", "src/dig.c", "src/do.c", "src/zap.c", "src/trap.c", "src/light.c"],
+        "cSymbols": ["start_timer", "insert_timer", "run_timers", "rot_organic", "rot_corpse", "zombify_mon", "revive_mon", "revive_corpse", "fill_pit", "begin_burn", "burn_object"],
+        "luaFiles": ["dat/themerms.lua"],
+        "luaSymbols": ["nh.start_timer", "nh.stop_timer"]
+      },
+      "javascriptOwners": ["js/object_timers.js", "js/allmain.js", "js/mklev.js", "js/light.js"],
+      "dependencies": ["rng-core"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/themerooms.test.js: deadline ordering, newest-first equal-deadline ordering, oil burn, ROT_CORPSE, ROT_ORGANIC container unboxing, ZOMBIFY_MON success/failure/genocide/relocation/presentation/fill_pit variants, and zero bridge usage", "focused bridge-free subsystem gate: 45/45", "five represented level-generation carriers: 5/5"],
+      "lastSealedGate": null,
+      "openGap": "The live queue owns saveable per-object timers, source deadline ordering, newest-first equal-deadline ordering, claim-before-callback semantics, and four callback kinds. HATCH_EGG, FIG_TRANSFORM, SHRINK_GLOB, MELT_ICE_AWAY, non-oil BURN_OBJECT variants, timer move/split/relink semantics, exact pre-registry save tie reconstruction, inactive cached-level timers, complete inventory/worn corpse effects, and a sealed gate remain open."
     },
     {
       "id": "turn-scheduler",
@@ -151,7 +168,7 @@
         "luaSymbols": []
       },
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
-      "dependencies": ["rng-core", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
+      "dependencies": ["rng-core", "object-timer-queue", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
       "acceptanceWitnesses": ["test/bridge_free.test.js: no-actor quiet-role maintenance plus live Samurai, five live Rogue actor/scheduler and persistence carriers, and two live Priest scheduler/projectile/command carriers"],
       "lastSealedGate": null,

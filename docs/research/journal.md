@@ -94523,3 +94523,70 @@ boulder effects, and exercise visible, nearby-audible, deaf, and unseen
 continuations before promoting the callback or the generic timer system.
 
 ---
+
+### [2026-08-29 16:17 EEST, journal block 3135] {#bridge-free #object-timers #timeout-queue #buried-treasure #buried-zombies #light-source #rot #revival #fill-pit #correction #focused-regression #process-safety}
+
+**Witness, correction, and earliest source divergence:** following block 3134,
+the generic timer audit returned to `timeout.c:insert_timer()/run_timers()`
+before adding callback variants. Blocks 3132 and 3134 referred broadly to
+"insertion order," while the first focused JavaScript due-zombie sort was
+oldest-first for equal deadlines. Native `insert_timer()` inserts before the
+first element whose timeout is greater than or equal to the new timeout, so
+equal-time callbacks are actually newest-first. The earliest shared
+divergence was therefore queue order itself, before burn, rot, or zombify
+callback semantics. This entry corrects that ambiguity without rewriting the
+older conclusions.
+
+**Prediction portfolio and decisive evidence:** (1) independent module scans
+predicted oil burn, zombify, corpse rot, and organic rot could remain ordered
+by calling four dispatchers in a fixed sequence; native uses one timer list,
+so different kinds can interleave by deadline and timer id. (2) FIFO ties
+predicted lower ids should run first; the source `>=` insertion predicate proves
+the reverse. (3) an expired organic chest predicted container deletion alone;
+`rot_organic()` repeatedly `bury_an_obj()`s each child before freeing the
+container. (4) a successful buried revival predicted pit creation completed
+the callback; `revive_corpse()` presents visible or nearby-audible emergence
+and only then calls `fill_pit()`, whose boulder path consumes the trap and
+boulder and buries the remaining floor pile. (5) one successful emergence
+predicted the callback was closed; blocked digging retains the zombie corpse
+with a replacement ROT_CORPSE timer, genocide rots it directly, and an occupied
+square relocates the new actor before placing its pit.
+
+**Decision and implementation:** commit `a318dec` introduces
+`js/object_timers.js` as the saveable cross-type owner. It assigns monotonic
+ids, mirrors legacy fields, walks floor, buried, nested, hero, and monster
+object graphs, orders by earliest deadline then highest equal-time id, and
+claims timers before callback. Global-turn maintenance now dispatches
+BURN_OBJECT, ROT_CORPSE, ROT_ORGANIC, and ZOMBIFY_MON from that queue at the
+source timeout boundary. Corpse rot removes its live owner; organic rot unboxes
+children into burial state before removing the container. Zombification now
+witnesses blocked, genocided, and occupied variants, separates emergence
+presentation from post-message `fill_pit()`, consumes a filling boulder and
+temporary pit, and buries the remaining floor pile.
+
+**Implementation regressions and measured effect:** the first syntax check
+found a duplicate `POT_OIL` declaration after importing a constant already
+defined locally; the import was removed before any test process started. The
+next focused run exposed a stale test which mutated `zombifyAt` after the new
+authoritative timer array already existed; rescheduling through the public
+timer API corrected the witness rather than weakening the queue. No yielded
+or duplicate process survived either failure. The final themed-room selection
+passes **29/29**. The bridge-policy, Priest startup, ordinary-room, and
+themed-room focused gate passes **45/45**, including its mechanical bridge
+audit. Five represented level carriers pass **5/5** for Storeroom, nesting
+rooms, secret-door orientation, clean Minetown-2, and Orcus ghost-town shops.
+Every verifier exited and each pre-run guard found no owned test tree.
+
+**Falsified hypotheses, limit, and next blocker:** object timer kinds are not
+four independent scans; equal deadlines are not FIFO; organic container rot is
+not shell-only deletion; pit construction is not the end of buried-zombie
+presentation; and one happy-path birth cannot stand in for failure variants.
+The mechanical timer subsystem remains `partial`: HATCH_EGG, FIG_TRANSFORM,
+SHRINK_GLOB, MELT_ICE_AWAY, non-oil burn variants, timer move/split/relink,
+exact equal-time reconstruction for pre-id saves, inactive cached-level timers,
+complete inventory/worn corpse effects, and a sealed stratum remain open. No
+full suite, public corpus, sealed trace, score, push, publication, official
+measurement, or animation work ran. Next select one coherent unsupported timer
+family or cached-level lifecycle slice; do not reopen public-session tuning.
+
+---
