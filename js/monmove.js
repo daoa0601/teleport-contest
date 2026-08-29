@@ -59,6 +59,7 @@ import {
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { inTown } from './room.js';
+import { createHarmlessGasCloudSelection } from './regions.js';
 import { syncBlindness } from './senses.js';
 import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
@@ -1359,14 +1360,9 @@ function visibleRegionAt(state, x, y) {
 
 function createFogEveryturnRegion(state, x, y, random = rn2) {
     if (!state?.level || visibleRegionAt(state, x, y)) return null;
-    const region = {
-        kind: 'gas-cloud', visible: true, damage: 0,
-        ttl: 4 + random(3),
-        cells: [{ x, y }],
-    };
-    (state.level.regions ||= []).push(region);
-    if (state.level === game.level) vision_note_blocker_change(x, y);
-    return region;
+    return createHarmlessGasCloudSelection(
+        state, [{ x, y }], { ttl: 4 + random(3) },
+    );
 }
 
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
@@ -1425,12 +1421,26 @@ export function runLevelRegions(state) {
         // cloud maintains that region after its normal age decrement.  This
         // is independent of damage and prevents its harmless one-cell vapor
         // from repeatedly expiring and consuming a fresh rn1(3,4).
-        if (region.kind === 'gas-cloud' && region.ttl < 20
-            && (state.level.monsters || []).some(monster =>
-                !monster.dead && monster.mnum === PM_FOG_CLOUD
-                && region.cells?.some(cell => cell.x === monster.mx
-                    && cell.y === monster.my))) {
-            region.ttl += 5;
+        if (region.kind === 'gas-cloud') {
+            const contains = (x, y) => region.cells?.some(cell =>
+                cell.x === x && cell.y === y);
+            // region.c:run_regions() invokes inside_gas_cloud() for the hero
+            // first and then for every tracked monster.  Each fog-cloud
+            // occupant independently adds five while the current TTL is
+            // below 20; `some()` would undercount a populated Cloud room.
+            if ((state.u?.mtimedone ?? 0) > 0
+                && state.u?.umonnum === PM_FOG_CLOUD
+                && contains(state.u.ux, state.u.uy)
+                && region.ttl < 20) {
+                region.ttl += 5;
+            }
+            for (const monster of state.level.monsters || []) {
+                if (!monster.dead && monster.mnum === PM_FOG_CLOUD
+                    && contains(monster.mx, monster.my)
+                    && region.ttl < 20) {
+                    region.ttl += 5;
+                }
+            }
         }
     }
     return state.level.regions;

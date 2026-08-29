@@ -8,7 +8,7 @@ import {
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL,
     LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
-    ROOM, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
+    ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
     THEMEROOM, WEB,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -16,6 +16,7 @@ import { game, resetGame } from '../js/gstate.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName, THEMEROOM_META,
 } from '../js/mklev.js';
+import { runLevelRegions } from '../js/monmove.js';
 import { BOULDER, CORPSE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { init_rect } from '../js/rect.js';
@@ -263,6 +264,42 @@ test('Boulder room owns filtered boulders and rolling traps live', async () => {
     assert.ok(boulders.length + game.level.traps.length > 0);
     assert.ok(game.level.traps.every(trap =>
         trap.ttyp === ROLLING_BOULDER_TRAP));
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Cloud room persists its selection and ages once per fog occupant', async () => {
+    themedState(4020, 8);
+    assert.equal(await generateThemeroomByName('default', 8), true);
+    const room = game.level.rooms[0];
+    assert.equal(await applyThemeroomFillByName(room, 'Cloud room', 8), true);
+
+    assert.equal(game.level.regions.length, 1);
+    const region = game.level.regions[0];
+    assert.equal(region.kind, 'gas-cloud');
+    assert.equal(region.visible, true);
+    assert.equal(region.damage, 0);
+    assert.equal(region.ttl, -1);
+    assert.ok(region.cells.length > 0);
+    assert.ok(region.cells.every(cell => {
+        const loc = game.level.at(cell.x, cell.y);
+        return cell.x >= room.lx && cell.x <= room.hx
+            && cell.y >= room.ly && cell.y <= room.hy
+            && loc?.roomno === room.roomnoidx + ROOMOFFSET && !loc.edge;
+    }));
+
+    const fogs = game.level.monsters.filter(monster => monster.mnum === 106);
+    assert.equal(fogs.length, Math.trunc(region.cells.length / 4));
+    assert.ok(fogs.every(monster => monster.msleeping === 1
+        && region.cells.some(cell =>
+            cell.x === monster.mx && cell.y === monster.my)));
+
+    let expectedTtl = -1;
+    for (const _fog of fogs)
+        if (expectedTtl < 20) expectedTtl += 5;
+    runLevelRegions(game);
+    assert.equal(region.ttl, expectedTtl);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

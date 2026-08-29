@@ -44,6 +44,7 @@ export class GameMap {
         this.objects = [];
         this.monsters = [];
         this.traps = [];
+        this.regions = [];
         // C dungeon.h: special-level exclusion zones persist with the map.
         this.exclusionZones = [];
         this.flags = {

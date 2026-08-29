@@ -96,6 +96,7 @@ import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { setupElementalBubbles } from './elemental.js';
 import { roomForIndex } from './room.js';
+import { createHarmlessGasCloudSelection } from './regions.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 
@@ -14676,6 +14677,21 @@ async function fillBoulderRoom(room) {
     }
 }
 
+async function fillCloudRoom(room) {
+    const selection = themeroomSelection(room);
+    const cells = luaSelectionCoordinates(selection);
+    const context = specialRoomContext(room);
+    const fogCount = Math.trunc(selection.numPoints() / 4);
+    for (let count = 0; count < fogCount; count++) {
+        const fog = await specialExplicitMonster(context, PM_FOG_CLOUD);
+        if (fog) fog.msleeping = 1;
+    }
+    // des.gas_cloud({ selection = fog }) delegates to
+    // create_gas_cloud_selection(): the selected region is permanent until
+    // its fog-cloud occupants extend it into a finite TTL at runtime.
+    createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
+}
+
 async function fillSpiderNest(room, difficulty) {
     const context = specialRoomContext(room);
     const selected = themeroomSelection(room).percentage(30);
@@ -14882,7 +14898,8 @@ function fillTempleOfGods(room) {
 
 async function applyThemeroomFill(room, fill, difficulty) {
     if (!fill) return false;
-    if (fill.name === 'Boulder room') await fillBoulderRoom(room);
+    if (fill.name === 'Cloud room') await fillCloudRoom(room);
+    else if (fill.name === 'Boulder room') await fillBoulderRoom(room);
     else if (fill.name === 'Spider nest')
         await fillSpiderNest(room, difficulty);
     else if (fill.name === 'Trap room') await fillTrapRoom(room);
