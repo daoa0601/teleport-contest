@@ -6241,10 +6241,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
     }
     game._deferredMonsterTrapWakes = [];
-    game._lastQuietMonsterActions = actions.map(({ monster, calls, movement }) => ({
-        m_id: monster.m_id, mnum: monster.mnum, pet: !!monster.pet, calls,
-        movement,
-    }));
     delete game._statusAcOverride;
     // Erosion mutates worn armor during movemon(), but C does not run
     // find_ac() until the actor scan has finished.  Only after that boundary

@@ -97430,3 +97430,46 @@ suite, public regression lane, corpus, scorer, sealed trace, push, publication,
 official measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:04 EEST, journal block 3178] {#test-quality #production-instrumentation #monster-scheduler #last-quiet-actions #public-regression #bridge-free #architecture #focused-regression #process-safety}
+
+**Witness and ownership audit:** block 3177 left scheduler `action.calls` for a
+separate audit. The first ownership boundary was narrower: after every live
+monster scan, `allmain.js` copied every actor's call array and full movement
+object into `game._lastQuietMonsterActions`. Repository-wide reads proved that
+no gameplay, continuation, save/restore, bridge-free, or scoring owner consumed
+the snapshot. Its only tracked readers were four assertions in
+`pet_inventory_split.test.js` and three in `run_scheduler.test.js`, both now in
+the explicit public-regression lane. Eight additional reads survive only in an
+untracked, non-executed quarantine file.
+
+**Decision and implementation:** removed the persistent production snapshot
+and its seven tracked internal-state assertions. Compatibility tests retain
+their exact public RNG/screen/cursor comparisons and independent final map,
+monster, trap, inventory, and weapon state; the dart-trap test now locates the
+surviving gnome directly by species and position. Two test titles were narrowed
+to public replay claims where the deleted snapshot had been their only evidence
+for an internal phase. The C/Lua architecture map now records that the former
+snapshot was test-only observational instrumentation and never owned projectile
+or monster lifecycle.
+
+**Measured effect and adversarial check:** the batch removes **58 lines** and
+adds **7**. `git grep` finds zero tracked JavaScript/test references to
+`_lastQuietMonsterActions`; syntax and `git diff --check` pass. The guarded
+bridge-free policy plus live Samurai, Rogue, Rogue save/restore, Priest, and
+quiet-role smoke gate passes **8/8** in **493 ms** with zero forbidden bridge
+hits. The public-regression lane was not run and is not claimed green.
+
+**Falsified hypotheses, limits, and next blocker:** retaining a complete actor
+graph after a turn is not necessary for continuation, gameplay, or debugging
+once its only consumers are change-detector assertions; a mutable last-scan
+snapshot cannot establish an earlier input's mechanic; and public exactness can
+remain a compatibility witness without production exposing its decomposition.
+Per-action `calls` arrays still flow through resumable scheduler functions during
+the current transaction. They are no longer persisted globally, but removing
+them requires separating RNG execution from optional observation across roughly
+575 call-log references; that is a structural refactor, not a safe mechanical
+deletion. No full Contest suite, corpus, scorer, sealed trace, push,
+publication, official measurement, or animation work ran.
+
+---

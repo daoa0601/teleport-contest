@@ -19124,7 +19124,7 @@ test('seed0361 Soko zoo elf retains the winning offensive-item tail', async () =
     );
 });
 
-test('seed0361 Minend distant wizard retains phase-four AC setup', async () => {
+test('seed0361 Minend distant wizard public replay stays exact', async () => {
     const session = JSON.parse(fs.readFileSync(
         new URL('../sessions/seed0361-archeologist-tour.session.json',
             import.meta.url),
@@ -19168,13 +19168,6 @@ test('seed0361 Minend distant wizard retains phase-four AC setup', async () => {
         );
     }
 
-    const distantWizard = game._lastQuietMonsterActions.find(action =>
-        action.mnum === 167
-        && action.movement?.oldx === 50 && action.movement?.oldy === 7);
-    assert.equal(
-        distantWizard?.movement?.phaseFourArmorClassEvaluated,
-        true,
-    );
 });
 
 test('seed0361 Minend stays exact through three Grayswandir exchanges', async () => {
@@ -19252,13 +19245,6 @@ test('seed0361 Minend stays exact through three Grayswandir exchanges', async ()
         [2, 1, 4, 2],
     );
 
-    const stationaryLeader = game._lastQuietMonsterActions.find(action =>
-        action.mnum === 166
-        && action.movement?.oldx === 52 && action.movement?.oldy === 19);
-    assert.equal(
-        stationaryLeader?.movement?.phaseFourArmorClassEvaluated,
-        true,
-    );
 });
 
 test('seed0361 rejected Quest return preserves the materialization pager', async () => {
@@ -25805,16 +25791,6 @@ test('seed0360 Wiz-loca and filler generation preserve source order',
         assert.equal(result.getRngSlices()[780].length, 1752);
         assert.equal(result.getRngSlices()[784].length, 1854);
         assert.equal(result.getRngSlices()[787].length, 1691);
-        const stationaryVampireBatActions = (
-            game._lastQuietMonsterActions || []
-        ).filter(action =>
-            action.mnum === 129
-            && action.movement?.moved === false
-        );
-        assert.ok(stationaryVampireBatActions.length > 0);
-        assert.equal(stationaryVampireBatActions.every(action =>
-            action.movement?.phaseFourArmorClassEvaluated === true
-        ), true);
         const wizStartLevel = [
             game.level,
             ...[...(game._levelCache?.values?.() || [])].map(

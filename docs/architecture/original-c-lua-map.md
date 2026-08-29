@@ -22641,8 +22641,10 @@ JavaScript's equivalent owners are `cmd.js:domove()` for the persistent
 direction, `monmove.js` for the split/free projectile and ordinary
 `drop_throw()` completion, `mklev.js` for floor placement/merging, and
 `end.js:finishOrdinaryDeath()` for limbo-object cleanup before disclosure and
-bones creation.  `_lastQuietMonsterActions` is observational: a fatal return
-can bypass its refresh, so it cannot own the projectile's lifetime.
+bones creation.  The former `_lastQuietMonsterActions` snapshot was test-only
+observational instrumentation: a fatal return could bypass its refresh, no
+runtime consumer read it, and it has been removed.  It never owned the
+projectile's lifetime.
 
 ## 662. Fatal death truncates `fmon` iteration before later ration debits
 
