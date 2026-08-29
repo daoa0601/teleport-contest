@@ -12,7 +12,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import {
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
-    POT_INVISIBILITY, POT_PARALYSIS, POT_SICKNESS,
+    POT_INVISIBILITY, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -345,6 +345,34 @@ test('adjacent paralysis contact freezes monster and installs hero helplessness'
         assert.equal(game._helplessTurns, 3);
         assert.equal(game._helplessReason, 'frozen by a potion');
         assert.equal(game._helplessDoneMessage, 'You can move again.');
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('map speed contact accelerates monster before nearby hero movement timeout',
+    async () => {
+        const monster = freshMapPotionState(2);
+        monster.permspeed = 0;
+        monster.mspeed = 0;
+        game.u.fast = false;
+        game.u.veryFast = false;
+        game.u.veryFastTurns = 0;
+        const potion = addKnownPotion(POT_SPEED);
+
+        initRng(3321n);
+        enableRngLog();
+        await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ']);
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=2', 'rnd(25)=6', 'rn2(7)=5', 'rn2(5)=1',
+            'rn2(9)=0', 'rnd(5)=5', 'rn2(19)=15',
+        ]);
+        assert.equal(monster.mhp, 11);
+        assert.equal(monster.permspeed, 2);
+        assert.equal(monster.mspeed, 2);
+        assert.equal(game.u.veryFast, true);
+        assert.equal(game.u.veryFastTurns, 5);
+        assert.equal(game.u._exercise[1], 0);
         assert.equal(potion.where, 'gone');
         assertNoBridgeUse();
     });

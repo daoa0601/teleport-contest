@@ -4,23 +4,27 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd } from './const.js';
-import { plineWithContinuation, shieldeff } from './display.js';
+import {
+    canSeeMonster, plineWithContinuation, shieldeff,
+} from './display.js';
 import { game } from './gstate.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BOOZE, POT_CONFUSION,
+    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
     POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_RESTORE_ABILITY,
-    POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, TOWEL,
+    POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SPEED_BOOTS, TOWEL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, monsterTypeName,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_MOVE, MONSTER_RESISTS, monsterTypeName,
 } from './monster_data.js';
 import { rnd, rn2 } from './rng.js';
-import { syncBlindness, syncDeafness } from './senses.js';
+import {
+    heroIsBlind, syncBlindness, syncDeafness,
+} from './senses.js';
 import { objectTypeKnown } from './shk.js';
-import { cansee, couldsee } from './vision.js';
+import { cansee, couldsee, vision_recalc } from './vision.js';
 
 const PM_PESTILENCE = 312;
 const PM_ARCHEOLOGIST = 331;
@@ -32,6 +36,8 @@ const M2_PNAME = 0x00080000;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
+const MSLOW = 1;
+const MFAST = 2;
 const AT_HUGS = 7;
 const AT_ENGL = 11;
 const AD_WRAP = 18;
@@ -64,6 +70,8 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_BOOZE,
     POT_PARALYSIS,
     POT_SLEEPING,
+    POT_SPEED,
+    POT_BLINDNESS,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -259,6 +267,28 @@ function installPotionHelplessness(state, duration, reason) {
     exerciseAttribute(1, false, state);
 }
 
+function monsterWearsSpeedBoots(monster) {
+    return (monster?.minvent || monster?.inventory || []).some(object =>
+        object?.otyp === SPEED_BOOTS && (object.owornmask ?? 0) !== 0);
+}
+
+function monsterNaturalSpeed(monster) {
+    return Number.isFinite(monster?.mmove)
+        ? monster.mmove : MONSTER_MOVE[monster?.mnum] ?? 0;
+}
+
+function heroIsFast(state) {
+    return !!(state.u?.fast || state.u?.veryFast
+        || state.u?.veryFastFromArmor
+        || (state.u?.veryFastTurns ?? 0) > 0);
+}
+
+function heroIsUnaware(state) {
+    return !!(state.unaware || state.u?.unaware
+        || state._helplessReason === 'unconscious from rotten food'
+        || state._helplessReason === 'sleeping off a magical draught');
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -267,6 +297,7 @@ export async function applySupportedPotionVapor({
     potion,
     publish = plineWithContinuation,
     monsterCanSeeHero,
+    recalculateVision,
 }) {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
 
@@ -280,6 +311,9 @@ export async function applySupportedPotionVapor({
     let abilityStart = null;
     let confusionDuration = null;
     let helplessDuration = null;
+    let speedDuration = null;
+    let blindnessDuration = null;
+    let sightToggled = false;
     let resisted = false;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
@@ -343,18 +377,53 @@ export async function applySupportedPotionVapor({
                     : 'sleeping off a magical draught',
             );
         }
+    } else if (potion.otyp === POT_SPEED) {
+        const hero = state.u || (state.u = {});
+        if (!heroIsFast(state))
+            await publish('Your knees seem more flexible now.');
+        speedDuration = rnd(5);
+        hero.veryFastTurns = Math.min(
+            TIMEOUT,
+            Math.max(0, hero.veryFastTurns ?? 0) + speedDuration,
+        );
+        hero.veryFast = true;
+        exerciseAttribute(1, true, state);
+    } else if (potion.otyp === POT_BLINDNESS) {
+        const hero = state.u || (state.u = {});
+        const wasBlind = heroIsBlind(state);
+        const unaware = heroIsUnaware(state);
+        if (!wasBlind && !unaware)
+            await publish('It suddenly gets dark.');
+        blindnessDuration = rnd(5);
+        hero.blindTurns = Math.min(
+            TIMEOUT,
+            Math.max(0, hero.blindTurns ?? 0) + blindnessDuration,
+        );
+        const blindNow = syncBlindness(state);
+        sightToggled = wasBlind !== blindNow;
+        if (sightToggled) {
+            state.vision_full_recalc = 1;
+            if (recalculateVision) recalculateVision();
+            else if (state === game && state.level?.at) vision_recalc(0);
+        }
+        if (!blindNow && !unaware)
+            await publish('Your vision clears.');
     }
     return {
         received: true,
         abilityStart,
         confusionDuration,
         helplessDuration,
+        speedDuration,
+        blindnessDuration,
+        sightToggled,
         resisted,
     };
 }
 
 async function applySupportedDirectEffect({
-    state, monster, potion, targetVisible, wakeMonster, publish, showShield,
+    state, monster, potion, targetVisible, targetSpotted, wakeMonster,
+    publish, showShield,
 }) {
     if (potion.otyp === POT_PARALYSIS) {
         let paralyzed = false;
@@ -409,6 +478,65 @@ async function applySupportedDirectEffect({
             resisted,
             slept,
             duration,
+        };
+    }
+
+    if (potion.otyp === POT_SPEED) {
+        const oldSpeed = monster.mspeed ?? 0;
+        monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
+        monster.mspeed = monsterWearsSpeedBoots(monster)
+            ? MFAST : monster.permspeed;
+        const speedChanged = monster.mspeed !== oldSpeed;
+        let speedMessage = null;
+        if (targetSpotted && speedChanged && monsterNaturalSpeed(monster) !== 0
+            && !(monster.mfrozen ?? 0) && !monster.msleeping) {
+            const much = monster.mspeed + oldSpeed === MFAST + MSLOW
+                ? 'much ' : '';
+            speedMessage = `${sentenceSubject(monster)} is suddenly moving `
+                + `${much}faster.`;
+            await publish(speedMessage);
+        }
+        monster.msleeping = 0;
+        return {
+            angered: false,
+            healed: 0,
+            curedBlindness: false,
+            oldSpeed,
+            speed: monster.mspeed,
+            speedChanged,
+            speedMessage,
+        };
+    }
+
+    if (potion.otyp === POT_BLINDNESS) {
+        const hasEyes = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
+        const permanentlyBlind = (monster.mcansee === 0
+            || monster.mcansee === false) && !(monster.mblinded ?? 0);
+        const before = monster.mblinded ?? 0;
+        let resisted = false;
+        let blinded = false;
+        let blindnessDuration = 0;
+        if (hasEyes && !permanentlyBlind) {
+            const firstDuration = rn2(32);
+            const secondDuration = rn2(32);
+            resisted = monsterResistsPotion(monster, state);
+            blindnessDuration = 64 + firstDuration
+                + (resisted ? 0 : secondDuration);
+            monster.mblinded = Math.min(
+                127, before + blindnessDuration,
+            );
+            monster.mcansee = 0;
+            blinded = true;
+        }
+        await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            resisted,
+            blinded,
+            blindnessDuration,
+            blindnessAdded: (monster.mblinded ?? before) - before,
         };
     }
 
@@ -500,6 +628,7 @@ export async function hitMonsterWithSupportedPotion({
     wakeMonster,
     publish = plineWithContinuation,
     targetVisible = cansee(monster?.mx, monster?.my),
+    targetSpotted = canSeeMonster(monster, monster?.mx, monster?.my),
     showShield = target => shieldeff(target.mx, target.my, state),
     resolveVapor = false,
     distance = 0,
@@ -530,7 +659,8 @@ export async function hitMonsterWithSupportedPotion({
     }
 
     const directEffect = await applySupportedDirectEffect({
-        state, monster, potion, targetVisible, wakeMonster, publish,
+        state, monster, potion, targetVisible, targetSpotted, wakeMonster,
+        publish,
         showShield,
     });
     let breathedVapor = false;

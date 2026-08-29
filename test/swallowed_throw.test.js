@@ -15,7 +15,8 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
-    POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY,
+    POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
+    POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_PARALYSIS,
@@ -676,6 +677,41 @@ test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
         assert.equal(game._helplessTurns, 1);
         assert.equal(game._helplessReason, 'sleeping off a magical draught');
         assert.equal(game._helplessDoneMessage, 'You can move again.');
+        assert.deepEqual(game.inventory, []);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('swallowed blindness times engulfer sight before blinding the hero',
+    async () => {
+        const engulfer = freshSwallowedState(PM_PURPLE_WORM);
+        engulfer.m_lev = 12;
+        engulfer.mcansee = 1;
+        engulfer.mblinded = 0;
+        game.u.blindTurns = 0;
+        game.blind = false;
+        const raw = mksobj(POT_BLINDNESS, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(3300n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', [' ', ' ', ' ', ' '],
+        );
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=19', 'rn2(7)=3', 'rn2(5)=1',
+            'rn2(32)=30', 'rn2(32)=26', 'rn2(94)=37', 'rnd(5)=4',
+        ]);
+        assert.equal(engulfer.mhp, 39);
+        assert.equal(engulfer.mcansee, 0);
+        assert.equal(engulfer.mblinded, 120);
+        assert.equal(game.u.blindTurns, 4);
+        assert.equal(game.blind, true);
+        assert.equal(game.vision_full_recalc, 0);
         assert.deepEqual(game.inventory, []);
         assert.equal(potion.where, 'gone');
         assertNoBridgeUse();

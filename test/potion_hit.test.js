@@ -5,7 +5,8 @@ import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
-    POT_PARALYSIS, POT_SLEEPING,
+    LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
+    SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -578,6 +579,226 @@ test('successful sleeping potion releases a non-engulfing monster grip',
         ]);
     });
 
+test('speed potion makes an active normal-speed monster permanently fast',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            msleeping: 0,
+            mfrozen: 0,
+            permspeed: 0,
+            mspeed: 0,
+            minvent: [],
+        };
+        const messages = [];
+        let wakeCount = 0;
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SPEED),
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => { wakeCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.permspeed, 2);
+        assert.equal(monster.mspeed, 2);
+        assert.equal(wakeCount, 0);
+        assert.equal(result.directEffect.angered, false);
+        assert.deepEqual(messages.slice(-1), [
+            'The purple worm is suddenly moving faster.',
+        ]);
+    });
+
+test('worn speed boots keep effective speed fast while potion removes slow',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcanmove: 1,
+            msleeping: 0,
+            mfrozen: 0,
+            permspeed: 1,
+            mspeed: 2,
+            minvent: [{ otyp: SPEED_BOOTS, owornmask: 0x20 }],
+        };
+        const messages = [];
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SPEED),
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => assert.fail('speed angered target'),
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.permspeed, 0);
+        assert.equal(monster.mspeed, 2);
+        assert.equal(result.directEffect.speedChanged, false);
+        assert.deepEqual(messages.slice(-1), [
+            'The potion of speed evaporates.',
+        ]);
+    });
+
+test('speed potion silently wakes a sleeping monster without hostile wakeup',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: PM_PURPLE_WORM,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+            mfrozen: 0,
+            permspeed: 0,
+            mspeed: 0,
+            minvent: [],
+        };
+        const messages = [];
+
+        initRng(3200n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_SPEED),
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => assert.fail('speed angered target'),
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(monster.mspeed, 2);
+        assert.equal(result.directEffect.speedMessage, null);
+        assert.deepEqual(messages.slice(-1), [
+            'The potion of speed evaporates.',
+        ]);
+    });
+
+test('blindness pays both duration draws before failed monster resistance',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 1,
+            m_lev: 1,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcansee: 1,
+            mblinded: 10,
+        };
+
+        initRng(3202n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_BLINDNESS),
+            targetVisible: false,
+            publish: async () => {},
+            wakeMonster: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=5', 'rn2(5)=0', 'rn2(32)=5', 'rn2(32)=19',
+            'rn2(105)=37',
+        ]);
+        assert.equal(monster.mcansee, 0);
+        assert.equal(monster.mblinded, 98);
+        assert.equal(result.directEffect.resisted, false);
+        assert.equal(result.directEffect.blindnessAdded, 88);
+    });
+
+test('resisted blindness excludes only the second already-consumed duration',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 48,
+            m_lev: 9,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            mcansee: 1,
+            mblinded: 5,
+        };
+
+        initRng(3210n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_BLINDNESS),
+            targetVisible: false,
+            publish: async () => {},
+            wakeMonster: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=3', 'rn2(5)=3', 'rn2(32)=1', 'rn2(32)=3',
+            'rn2(97)=75',
+        ]);
+        assert.equal(monster.mcansee, 0);
+        assert.equal(monster.mblinded, 70);
+        assert.equal(result.directEffect.resisted, true);
+        assert.equal(result.directEffect.blindnessAdded, 65);
+    });
+
+test('eyeless and permanently blind monsters skip blindness effect RNG',
+    async () => {
+        for (const [mnum, mcansee, mblinded] of [
+            [PM_ENERGY_VORTEX, 1, 0],
+            [1, 0, 0],
+        ]) {
+            resetGame();
+            game.u = { hallucinationTurns: 0 };
+            const monster = {
+                mnum, mx: 10, my: 10, mhp: 20, mhpmax: 20,
+                mcansee, mblinded,
+            };
+            initRng(3202n);
+            enableRngLog();
+            const result = await hitMonsterWithSupportedPotion({
+                state: game,
+                monster,
+                potion: potionObject(POT_BLINDNESS),
+                targetVisible: false,
+                publish: async () => {},
+                wakeMonster: async () => {},
+            });
+            assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=0']);
+            assert.equal(result.directEffect.blinded, false);
+        }
+    });
+
 test('zero-level player monsters defend with the hero level', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0, ulevel: 20 };
@@ -923,6 +1144,190 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         assert.equal(game.level.monsters[0].seen_resistance, 0x0009);
         assert.equal(game.level.monsters[1].seen_resistance, 2);
         assert.equal(result.resisted, true);
+    });
+
+test('speed vapor installs timed very-fast movement and exercises Dexterity',
+    async () => {
+        resetGame();
+        game.u = {
+            fast: false,
+            veryFast: false,
+            veryFastTurns: 0,
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            amax: { a: [12, 12, 12, 12, 12, 12] },
+        };
+        const messages = [];
+
+        initRng(3220n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_SPEED),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=1', 'rn2(19)=18']);
+        assert.deepEqual(messages, ['Your knees seem more flexible now.']);
+        assert.equal(game.u.veryFast, true);
+        assert.equal(game.u.veryFastTurns, 1);
+        assert.equal(game.u._exercise[1], 1);
+        assert.equal(result.speedDuration, 1);
+    });
+
+test('existing intrinsic speed suppresses prose but not duration or exercise',
+    async () => {
+        resetGame();
+        game.u = {
+            fast: true,
+            veryFast: false,
+            veryFastTurns: 3,
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            amax: { a: [12, 12, 12, 12, 12, 12] },
+        };
+        const messages = [];
+
+        initRng(3220n);
+        enableRngLog();
+        await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_SPEED),
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=1', 'rn2(19)=18']);
+        assert.deepEqual(messages, []);
+        assert.equal(game.u.veryFast, true);
+        assert.equal(game.u.veryFastTurns, 4);
+        assert.equal(game.u._exercise[1], 1);
+    });
+
+test('speed vapor saturates the timed very-fast counter', async () => {
+    resetGame();
+    game.u = {
+        fast: true,
+        veryFast: true,
+        veryFastTurns: 0x00fffffe,
+        acurr: { a: [12, 12, 12, 12, 12, 12] },
+        amax: { a: [12, 12, 12, 12, 12, 12] },
+    };
+
+    initRng(3222n);
+    enableRngLog();
+    await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_SPEED),
+        publish: async () => {},
+    });
+
+    assert.deepEqual(getRngLog(), ['rnd(5)=4', 'rn2(19)=17']);
+    assert.equal(game.u.veryFastTurns, 0x00ffffff);
+    assert.equal(game.u._exercise[1], 1);
+});
+
+test('blindness vapor darkens sight immediately and extends the live timeout',
+    async () => {
+        resetGame();
+        game.u = { blindTurns: 0 };
+        game.blind = false;
+        const messages = [];
+        let recalcCount = 0;
+
+        initRng(3222n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_BLINDNESS),
+            publish: async message => messages.push(message),
+            recalculateVision: () => { recalcCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
+        assert.deepEqual(messages, ['It suddenly gets dark.']);
+        assert.equal(game.u.blindTurns, 4);
+        assert.equal(game.blind, true);
+        assert.equal(game.vision_full_recalc, 1);
+        assert.equal(recalcCount, 1);
+        assert.equal(result.blindnessDuration, 4);
+        assert.equal(result.sightToggled, true);
+    });
+
+test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
+    async () => {
+        resetGame();
+        game.u = { blindTurns: 0 };
+        game.ublindf = {
+            otyp: LENSES,
+            oartifact: 0,
+            oextra: { oname: 'The Eyes of the Overworld' },
+        };
+        const messages = [];
+        let recalcCount = 0;
+
+        initRng(3222n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_BLINDNESS),
+            publish: async message => messages.push(message),
+            recalculateVision: () => { recalcCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
+        assert.deepEqual(messages, [
+            'It suddenly gets dark.', 'Your vision clears.',
+        ]);
+        assert.equal(game.u.blindTurns, 4);
+        assert.equal(game.blind, false);
+        assert.equal(recalcCount, 0);
+        assert.equal(result.sightToggled, false);
+    });
+
+test('unaware blindness vapor mutates sight without transition prose',
+    async () => {
+        resetGame();
+        game.u = { blindTurns: 0, unaware: true };
+        game.blind = false;
+        const messages = [];
+        let recalcCount = 0;
+
+        initRng(3222n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_BLINDNESS),
+            publish: async message => messages.push(message),
+            recalculateVision: () => { recalcCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
+        assert.deepEqual(messages, []);
+        assert.equal(game.u.blindTurns, 4);
+        assert.equal(game.blind, true);
+        assert.equal(recalcCount, 1);
+        assert.equal(result.sightToggled, true);
+    });
+
+test('blindness vapor saturates an already-blind timeout without repaint',
+    async () => {
+        resetGame();
+        game.u = { blindTurns: 0x00fffffe };
+        game.blind = true;
+        let recalcCount = 0;
+
+        initRng(3222n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_BLINDNESS),
+            publish: async () => assert.fail('active blindness announced'),
+            recalculateVision: () => { recalcCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
+        assert.equal(game.u.blindTurns, 0x00ffffff);
+        assert.equal(game.blind, true);
+        assert.equal(recalcCount, 0);
+        assert.equal(result.sightToggled, false);
     });
 
 test('vapor respects breathless forms with and without eyes', async () => {
