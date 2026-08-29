@@ -36855,9 +36855,73 @@ is the direct witness for that boundary.
 
 This subsystem is mechanically **partial**. Ordinary daggers, a minimal
 pick-axe weapon-tool, a multi-die two-handed sword, and cursed throwing-weapon
-slip have direct live-command witnesses. Ammunition, missiles, launchers,
-silver and special target/material bonuses, axes, poison, artifacts, passives,
-peaceful or pet engulfer behavior, worm segments, wielded and returning
-weapons, billing, low-stamina drops, engulfer death, expulsion, corpse
-suppression, same-square autopickup, other physical-damage callers, and a
-sealed stratum remain open.
+slip have direct live-command witnesses. Section 993 continues a single
+ordinary ammunition or missile identity through mulching, object passives, and
+acquisition. Multishot, gem ammunition, boomerangs, silver and special
+target/material bonuses, axes, poison, artifacts, peaceful or pet engulfer
+behavior, worm segments, wielded and returning weapons, billing, low-stamina
+drops, engulfer death, expulsion, corpse suppression, same-square autopickup,
+other physical-damage callers, and a sealed stratum remain open.
+
+## 993. Projectile survival owns mulch and passive effects before acquisition
+
+~~~mermaid
+flowchart TD
+    Select["live swallowed t command selects one weapon-class projectile"] --> Kind{"projectile subtype"}
+    Kind -->|"matching launcher ammo"| Launched["dmgval plus launcher skill; no Strength"]
+    Kind -->|"unlaunched ammo"| Hand["rnd(2) plus Strength; no weapon skill"]
+    Kind -->|"dart or shuriken missile"| Missile["dmgval plus missile skill and Strength"]
+    Launched --> Hit["guaranteed rnd(20), HP, hit prose, wake"]
+    Hand --> Hit
+    Missile --> Hit
+    Hit --> Exercise["exercise Dexterity"]
+    Exercise --> Mulch{"should_mulch_missile"}
+    Mulch -->|"destroyed"| Gone["obfree: identity leaves every ownership graph"]
+    Mulch -->|"survives"| Passive["passive_obj: burn, acid, rust, corrosion, or drain"]
+    Passive --> Acquire["swallowit to mpickobj; LOST_STOLEN and minvent"]
+    Unsupported{"unresolved swallowed class?"} -->|"weapon/projectile"| WeaponBridge["throw.swallowed-weapon-unsupported"]
+    Unsupported -->|"other special object"| SpecialBridge["throw.swallowed-special-unsupported"]
+    WeaponBridge --> Stop["bridge-free failure before split, HP, or RNG"]
+    SpecialBridge --> Stop
+    Lua["Lua owns no projectile hit lifecycle"] -.-> Select
+~~~
+
+`dothrow.c:thitmonst()` sends both launcher ammunition and hand-thrown
+missiles through `uhitm.c:hmon()`, but their damage owners differ. A matching
+launcher lets the projectile use `dmgval()` and the launcher's weapon skill;
+`hmon_hitmon_dmg_recalc()` deliberately omits Strength. Ammunition thrown
+without its launcher takes the ranged-weapon branch for `rnd(2)`, uses no
+weapon skill, and retains Strength. Darts and shuriken use their own physical
+damage table, missile skill, and Strength. Every surviving target reaches the
+same post-hit order: hit prose and wake-up, Dexterity exercise,
+`should_mulch_missile()`, then `passive_obj()` only if the identity survived.
+`throwit()` calls `swallowit()` afterward, so monster acquisition is last.
+
+JavaScript moves the previously command-local mulching and passive-object
+implementations into `projectile.js`. Both map projectiles and swallowed
+projectiles now share the enchantment/erosion mulch probability, blessed and
+hard-projectile survival draws, explicit freed identity state, and the fire,
+acid, rust, corrosion, and disenchantment passive families. Independent map
+witnesses for launched-arrow mulch, enchanted-arrow survival, acid corrosion,
+hard-gem survival, and fire smouldering remained exact after the extraction.
+
+The swallowed caller accepts one ordinary guaranteed-survivor weapon-class
+identity. A dart witness distinguishes large-target `rnd(2)` damage from its
+small-target d3 table, then covers both zero-mulch acquisition and nonzero
+mulch deletion. A launched arrow proves launcher skill and Strength exclusion;
+a hand-thrown arrow proves `rnd(2)`, Strength, and no skill training. An ochre
+jelly proves that acid `passive_obj()` follows the successful mulch draw and
+precedes `mpickobj()` linkage.
+
+The dispatcher now blocks two false continuations. A multigen dart stack
+reaches `throw.swallowed-weapon-unsupported` before split or volley RNG, since
+its complete multishot loop is not yet owned. A potion reaches the new
+`throw.swallowed-special-unsupported` bridge before ordinary floor logic. The
+latter guard covers every unresolved swallowed class, preventing bridge-free
+mode from interpreting a map-coordinate fallback as engulfed behavior.
+
+This subsystem is mechanically **partial**. Multishot and multigen stacks,
+gem/sling ammunition, cross-caller volley consolidation, boomerang return,
+monster-moving blessed mulch, poison, silver/blessed target effects,
+artifacts, projectile-caused engulfer death, shop billing, exhaustive passive
+materials and carried presentation, and a sealed stratum remain open.

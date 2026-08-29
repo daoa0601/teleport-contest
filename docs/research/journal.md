@@ -96299,3 +96299,82 @@ must re-rank the remaining source arms and keep the named unsupported bridge
 closed until one complete continuation replaces it.
 
 ---
+
+### [2026-08-29 22:30 EEST, journal block 3161] {#bridge-free #swallowed-throw #projectile #ammunition #missile #mulch #passive-obj #hmon #mpickobj #critical-debugging-portfolio #fail-closed #focused-regression #partial #process-safety}
+
+**Contract, portfolio, and earliest divergence:** after block 3160, the
+portfolio compared projectile/ammunition continuation, `potionhit()`, generic
+food/taming, and projectile-caused engulfer death. Ammunition was selected
+because it preserves the live `thitmonst -> hmon -> damage -> skill ->
+exercise` spine and can consolidate already-live map-projectile mulching and
+`passive_obj()` owners. Potions bypass `hmon()` into an effects subsystem with
+no shared JavaScript owner; food can divert through `befriend_with_obj()` and
+`tamedog()` before generic contact; death requires the complete
+`xkilled -> mpickobj-before-detach -> unstuck/docrt -> relobj ->
+spoteffects/autopickup` transaction. Four single-projectile live-command
+witnesses initially reached `throw.swallowed-weapon-unsupported`, while a
+potion silently fell into ordinary floor logic. The pre-slice result was red
+**0/5** at those earliest control-flow boundaries.
+
+**Prediction and decisive C evidence:** `dothrow.c:thitmonst()` consumes its
+guaranteed `rnd(20)` before selecting weapon handling. Matching launcher ammo
+uses `dmgval()` and launcher skill while `hmon_hitmon_dmg_recalc()` suppresses
+Strength; unlaunched ammo uses `hmon_hitmon_weapon_ranged()` for `rnd(2)`, no
+skill, and retained Strength; darts and shuriken use physical dice, their own
+missile skill, and Strength. After a surviving hit, C wakes the engulfer and
+exercises Dexterity before `should_mulch_missile()`. Only a surviving identity
+reaches `passive_obj()`, and only after that does `throwit()` call
+`swallowit()->mpickobj()`. A nonzero mulch result must therefore free the
+projectile without floor or carrier ownership; an acid passive must precede
+monster linkage.
+
+**Decision and implementation:** commit `7b67e35` extracts the duplicated
+map-projectile mulch/free and passive-object implementation from `cmd.js` into
+the shared `projectile.js` owner, then composes that owner into
+`swallowed_throw.js`. A single ordinary guaranteed-survivor weapon-class dart,
+shuriken, arrow, ya, or bolt now selects launched versus unlaunched damage,
+the correct skill/Strength policy, training, hit/wake/exercise, mulch deletion,
+passive effects, and final monster acquisition from live state. The
+maximum-damage eligibility proof remains seed-independent. Silver, blessed,
+poisoned, artifact, returning, shop, special-carrier, multishot, gem-ammo, and
+death continuations remain outside the owner.
+
+**Adversarial corrections and fail-closed boundary:** the first implementation
+probe made the potion green but left four projectile cases at the weapon
+bridge. `mksobj()` had generated multigen dart/arrow stacks, so those were not
+the declared single-projectile witnesses; forcing quantity one exposed the
+actual continuation while a separate two-dart witness now proves multishot
+fails before split or volley RNG. The next probe was green **3/5**: both dart
+cases had predicted a small-target d3, but a trapper is large and C selects the
+dart's d2 table. Correcting the source prediction closed both without changing
+production. Independently, every unresolved swallowed nonweapon class now
+crosses `throw.swallowed-special-unsupported`; the potion witness proves the
+old floor fallback is unreachable in bridge-free mode before RNG, inventory,
+HP, or floor mutation.
+
+**Measured effect and regression:** the original five cases moved from red
+**0/5** to green **5/5**. Two adversarial cases are green: ochre-jelly acid
+corrosion follows a zero mulch draw before acquisition, and a multigen dart
+stack fails with zero RNG or mutation. The complete swallowed, lamp, and
+monster-acquisition family passes **34/34**. Five independent existing map
+controls remain green across launched-arrow mulch, enchanted-arrow survival,
+acid corrosion, hard-gem survival, and fire smouldering. The bridge-free gate
+passes **8/8** and the mechanical audit is clean at **122 files, 15 guarded
+modules, and 19 fixture modules**. All `node --test` invocations were preceded
+by the process guard, ran singularly, exited normally, and left no yielded
+process.
+
+**Falsified hypotheses, limit, and next blocker:** swallowed ammunition is not
+the ordinary generic-disappearance arm; launcher ammo must not inherit
+Strength; hand-thrown ammo must not inherit launcher skill; mulched identities
+cannot remain `where=free`; `passive_obj()` cannot precede the mulch decision;
+and a class-specific weapon bridge does not make other swallowed fallbacks
+fail closed. This slice does not infer multishot, gem/slings, boomerangs,
+poison/silver/blessing/artifact effects, projectile-caused death, potions,
+taming food, or expulsion/autopickup. No full Contest suite, engine/public
+corpus, sealed-trace inspection, score, push, publication, official
+measurement, or animation work ran. The next portfolio should compare the now
+better-supported projectile kill path against building the first shared
+`potionhit()` effect owner, with the complete source transaction as the unit.
+
+---
