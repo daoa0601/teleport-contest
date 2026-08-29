@@ -6,15 +6,16 @@ import {
     getBridgeUsageLedger, resetBridgeUsageLedger,
 } from '../js/bridge_policy.js';
 import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL,
+    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FILL_NORMAL, FOUNTAIN,
     LANDMINE, MAXNROFROOMS, OROOM, ROCKTRAP, ROLLING_BOULDER_TRAP,
     ROOM, ROOMOFFSET, RUST_TRAP, SHOPBASE, SLP_GAS_TRAP, STRAT_WAITFORU,
-    STATUE_TRAP, THEMEROOM, WEB,
+    SDOOR, STATUE_TRAP, THEMEROOM, TREE, WEB,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
-    applyThemeroomFillByName, generateThemeroomByName, THEMEROOM_META,
+    applyThemeroomFillByName, generateThemeroomByName,
+    runThemeroomPostprocess, THEMEROOM_META,
 } from '../js/mklev.js';
 import { runLevelRegions } from '../js/monmove.js';
 import { BOULDER, CORPSE, STATUE } from '../js/object_data.js';
@@ -322,6 +323,38 @@ test('Spider nest gates resident spiders by source difficulty', async () => {
     ), true);
     assert.ok(game.level.traps.every(trap => trap.ttyp === WEB));
     assert.equal(game.level.monsters.some(monster => monster.mnum === 96), true);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('Garden defers grown wall and arboreal secret-door ownership', async () => {
+    themedState(4021, 8);
+    assert.equal(await generateThemeroomByName('default', 8), true);
+    const room = game.level.rooms[0];
+    room.rlit = 1;
+    assert.equal(await applyThemeroomFillByName(room, 'Garden', 8), true);
+
+    const area = (room.hx - room.lx + 1) * (room.hy - room.ly + 1);
+    const nymphs = game.level.monsters.filter(monster => monster.mnum === 67);
+    assert.equal(nymphs.length, Math.trunc(area / 6));
+    assert.ok(nymphs.every(monster => monster.msleeping === 1));
+    const fountains = game.level.locations.flatMap(column => column)
+        .filter(loc => loc.typ === FOUNTAIN);
+    assert.ok(fountains.length <= nymphs.length);
+
+    const secret = game.level.at(room.lx - 1, room.ly);
+    secret.typ = SDOOR;
+    secret.arboreal_sdoor = 0;
+    await runThemeroomPostprocess();
+    assert.equal(secret.typ, SDOOR);
+    assert.equal(secret.arboreal_sdoor, 1);
+    let trees = 0;
+    for (let x = room.lx - 1; x <= room.hx + 1; x++)
+        for (let y = room.ly - 1; y <= room.hy + 1; y++)
+            if (game.level.at(x, y)?.typ === TREE) trees++;
+    assert.ok(trees > 0);
+    assert.equal(game._themeroomPostprocess.length, 0);
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

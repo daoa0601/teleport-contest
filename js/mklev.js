@@ -4888,6 +4888,16 @@ function specialObjectOfType(context, otyp) {
     return point ? mksobj_at(otyp, point.x, point.y, true, true) : null;
 }
 
+function specialFeatureOfType(context, typ) {
+    const point = specialRandomLocation(context, loc =>
+        SPACE_POS(loc.typ) && !IS_FURNITURE(loc.typ));
+    if (!point) return null;
+    const loc = game.level.at(point.x, point.y);
+    if (!loc || IS_FURNITURE(loc.typ)) return null;
+    loc.typ = typ;
+    return point;
+}
+
 function specialDoorAt(context, mask, x, y) {
     const doorX = context.xstart + x, doorY = context.ystart + y;
     const loc = game.level.at(doorX, doorY);
@@ -14692,6 +14702,21 @@ async function fillCloudRoom(room) {
     createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
 }
 
+async function fillGarden(room) {
+    const selection = themeroomSelection(room);
+    const context = specialRoomContext(room);
+    const population = Math.trunc(selection.numPoints() / 6);
+    for (let count = 0; count < population; count++) {
+        const nymph = await specialExplicitMonster(context, PM_WOOD_NYMPH);
+        if (nymph) nymph.msleeping = 1;
+        if (rn2(100) < 30) specialFeatureOfType(context, FOUNTAIN);
+    }
+    game._themeroomPostprocess.push({
+        kind: 'garden-walls',
+        cells: luaSelectionCoordinates(themeroomSelection(room)),
+    });
+}
+
 const MASSACRE_CORPSE_TYPES = [
     // Source names are 12 role guardians followed by the 13 roles; the
     // gendered priest/priestess and caveman/cavewoman aliases intentionally
@@ -14815,9 +14840,22 @@ function fillTeleportationHub(room) {
     }
 }
 
-async function runThemeroomPostprocess() {
+export async function runThemeroomPostprocess() {
     const callbacks = game._themeroomPostprocess || [];
     for (const callback of callbacks) {
+        if (callback.kind === 'garden-walls') {
+            const selection = new SpecialSelection();
+            for (const cell of callback.cells || [])
+                selection.add(cell.x, cell.y);
+            const grown = selection.grow();
+            grown.forEachXMajor((x, y) => {
+                const loc = game.level.at(x, y);
+                if (!loc) return;
+                if (IS_STWALL(loc.typ)) loc.typ = TREE;
+                else if (loc.typ === SDOOR) loc.arboreal_sdoor = 1;
+            });
+            continue;
+        }
         if (callback.kind !== 'teleportation-hub-trap') continue;
         const locations = new SpecialSelection();
         for (let x = 0; x < COLNO; x++) {
@@ -14931,6 +14969,7 @@ function fillTempleOfGods(room) {
 async function applyThemeroomFill(room, fill, difficulty) {
     if (!fill) return false;
     if (fill.name === 'Cloud room') await fillCloudRoom(room);
+    else if (fill.name === 'Garden') await fillGarden(room);
     else if (fill.name === 'Boulder room') await fillBoulderRoom(room);
     else if (fill.name === 'Spider nest')
         await fillSpiderNest(room, difficulty);
