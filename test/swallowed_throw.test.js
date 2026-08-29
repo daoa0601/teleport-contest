@@ -21,6 +21,7 @@ import {
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
+    POT_WATER,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -36,6 +37,7 @@ const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
 const PM_PURPLE_WORM = 115;
 const PM_TRAPPER = 99;
+const PM_JUIBLEX = 303;
 
 function freshSwallowedState(mnum) {
     resetGame();
@@ -747,6 +749,83 @@ test('swallowed cursed invisibility reveals and angers an invisible engulfer',
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
         assertNoBridgeUse();
+    });
+
+test('swallowed blessed water damages a demonic engulfer through the live owner',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = false;
+        raw.blessed = true;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=8', 'rn2(7)=5', 'rn2(5)=2', 'd(2,6)=8',
+        ]);
+        assert.equal(engulfer.mhp, 31);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('swallowed cursed water heals a demonic engulfer without angering it',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        engulfer.mhp = 20;
+        engulfer.msleeping = 1;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=4', 'rnd(20)=20', 'rn2(7)=2', 'rn2(5)=2',
+            'd(2,6)=12',
+        ]);
+        assert.equal(engulfer.mhp, 31);
+        assert.equal(engulfer.msleeping, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('fatal unique water target fails before swallowed potion mutation or RNG',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        engulfer.mhp = 13;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = false;
+        raw.blessed = true;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await assert.rejects(
+            throwThroughLiveCommand(potion, 'l'),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(potion.where, 'inventory');
+        assert.equal(engulfer.mhp, 13);
     });
 
 test('unsupported oil potion fails before floor fallback or RNG', async () => {

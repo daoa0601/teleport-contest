@@ -14,6 +14,7 @@ import { OBJECT_WEIGHT } from './object_data.js';
 import {
     applySupportedPotionVapor, destroyPotionIdentity,
     hitMonsterWithSupportedPotion, potionImpactObjectName,
+    maximumSupportedPotionFatalDamage, supportedPotionTargetGap,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
@@ -96,6 +97,7 @@ function traceOrdinaryPath(state, dx, dy, range, blocksMove) {
 
 function ordinaryEligibility({
     state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
+    canFinishKill, finishKill,
 }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -127,6 +129,17 @@ function ordinaryEligibility({
     const flight = traceOrdinaryPath(state, dx, dy, range, blocksMove);
     if (!flight || (flight.contact && !targetIsOrdinary(flight.contact)))
         return null;
+    if (flight.contact) {
+        if (supportedPotionTargetGap({
+            state, potion: item, monster: flight.contact,
+        })) return null;
+        const maximumFatalDamage = maximumSupportedPotionFatalDamage(
+            item, flight.contact,
+        );
+        if (maximumFatalDamage > 0
+            && flight.contact.mhp <= maximumFatalDamage
+            && (!finishKill || !canFinishKill?.(flight.contact))) return null;
+    }
     return { ...flight, range };
 }
 
@@ -171,10 +184,14 @@ export async function resolveMapPotionThrow({
     blocksMove,
     captureFlight,
     wakeMonster,
+    wakeNearby,
+    canFinishKill,
+    finishKill,
     publish = plineWithContinuation,
 }) {
     const eligible = ordinaryEligibility({
         state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
+        canFinishKill, finishKill,
     });
     if (!eligible) return false;
 
@@ -199,6 +216,8 @@ export async function resolveMapPotionThrow({
                 monster: eligible.contact,
                 potion: thrown,
                 wakeMonster,
+                wakeNearby,
+                finishKill,
                 publish,
                 targetVisible: cansee(
                     eligible.contact.mx, eligible.contact.my,

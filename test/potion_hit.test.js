@@ -6,7 +6,7 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
     LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
-    POT_INVISIBILITY, SPEED_BOOTS,
+    POT_INVISIBILITY, POT_WATER, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -969,6 +969,368 @@ test('blocked invisibility changes only the permanent property', async () => {
     assert.equal(result.directEffect.angered, false);
 });
 
+test('blessed water damages a demon after waking its audible neighborhood',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 289,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+        const messages = [];
+        const wakeEvents = [];
+
+        initRng(3400n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeNearby: async (x, y, radius) => {
+                wakeEvents.push(['nearby', x, y, radius, monster.mhp]);
+            },
+            wakeMonster: async target => {
+                wakeEvents.push(['target', target.mhp]);
+                target.msleeping = 0;
+            },
+            finishKill: async () => assert.fail('surviving demon killed'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=3', 'rn2(5)=1', 'd(2,6)=7',
+        ]);
+        assert.equal(monster.mhp, 12);
+        assert.deepEqual(wakeEvents, [
+            ['nearby', 10, 10, 80, 19], ['target', 12],
+        ]);
+        assert.deepEqual(messages.slice(-1), [
+            'The water demon shrieks in pain!',
+        ]);
+        assert.equal(result.directEffect.waterDamage, 7);
+        assert.equal(result.directEffect.angered, true);
+    });
+
+test('blessed water makes a silent undead writhe without radius wake',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 187,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+        const messages = [];
+
+        initRng(3401n);
+        enableRngLog();
+        await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeNearby: async () => assert.fail('silent mummy woke radius'),
+            wakeMonster: async () => {},
+            finishKill: async () => assert.fail('surviving mummy killed'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=4', 'rn2(5)=4', 'd(2,6)=2',
+        ]);
+        assert.equal(monster.mhp, 17);
+        assert.deepEqual(messages.slice(-1), [
+            'The kobold mummy writhes in pain!',
+        ]);
+    });
+
+test('cursed water heals a demon and clears sleep without hostile wake',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 289,
+            mx: 10,
+            my: 10,
+            mhp: 10,
+            mhpmax: 20,
+            msleeping: 1,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.cursed = true;
+        const messages = [];
+
+        initRng(3400n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeNearby: async () => assert.fail('unholy water woke radius'),
+            wakeMonster: async () => assert.fail('unholy water angered demon'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=3', 'rn2(5)=1', 'd(2,6)=7',
+        ]);
+        assert.equal(monster.mhp, 16);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(result.directEffect.waterHealing, 7);
+        assert.equal(result.directEffect.angered, false);
+        assert.deepEqual(messages.slice(-1), [
+            'The water demon looks healthier.',
+        ]);
+    });
+
+test('ordinary water leaves a susceptible target unchanged but hostile',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 289,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+        };
+        let wakeCount = 0;
+
+        initRng(3404n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_WATER),
+            targetVisible: false,
+            targetSpotted: false,
+            publish: async () => {},
+            wakeNearby: async () => assert.fail('plain water woke radius'),
+            wakeMonster: async () => { wakeCount++; },
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=6', 'rn2(5)=0']);
+        assert.equal(monster.mhp, 20);
+        assert.equal(wakeCount, 1);
+        assert.equal(result.directEffect.angered, true);
+        assert.equal(result.directEffect.waterDamage, 0);
+        assert.equal(result.directEffect.waterHealing, 0);
+    });
+
+test('blessed water rehumanizes a surviving beast were after damage',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 21,
+            mx: 10,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+        const transforms = [];
+
+        initRng(3400n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: false,
+            targetSpotted: false,
+            publish: async () => {},
+            wakeNearby: async () => {},
+            wakeMonster: async () => {},
+            transformWere: async target => {
+                transforms.push([target.mnum, target.mhp]);
+                target.mnum = 263;
+                return true;
+            },
+            finishKill: async () => assert.fail('surviving werewolf killed'),
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=3', 'rn2(5)=1', 'd(2,6)=7',
+        ]);
+        assert.deepEqual(transforms, [[21, 12]]);
+        assert.equal(monster.mnum, 263);
+        assert.equal(result.directEffect.transformedWere, true);
+    });
+
+test('cursed water transforms human were only without shape protection',
+    async () => {
+        for (const protectedHero of [false, true]) {
+            resetGame();
+            game.u = { protectionFromShapeChangers: protectedHero };
+            const monster = {
+                mnum: 263,
+                mx: 10,
+                my: 10,
+                mhp: 10,
+                mhpmax: 20,
+                msleeping: 1,
+            };
+            const potion = potionObject(POT_WATER);
+            potion.cursed = true;
+            let transformCount = 0;
+
+            initRng(3400n);
+            enableRngLog();
+            const result = await hitMonsterWithSupportedPotion({
+                state: game,
+                monster,
+                potion,
+                targetVisible: false,
+                targetSpotted: false,
+                publish: async () => {},
+                wakeMonster: async () => assert.fail('unholy water angered were'),
+                transformWere: async target => {
+                    transformCount++;
+                    target.mnum = 21;
+                    return true;
+                },
+            });
+
+            assert.deepEqual(getRngLog(), [
+                'rn2(7)=3', 'rn2(5)=1', 'd(2,6)=7',
+            ]);
+            assert.equal(monster.mhp, 16);
+            assert.equal(monster.msleeping, 0);
+            assert.equal(transformCount, protectedHero ? 0 : 1);
+            assert.equal(result.directEffect.transformedWere, !protectedHero);
+        }
+    });
+
+test('water splits a gremlin and uses the non-hostile wake branch',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 40,
+            mx: 10,
+            my: 10,
+            mhp: 12,
+            mhpmax: 12,
+            msleeping: 1,
+        };
+        const clone = { mnum: 40, mx: 11, my: 10, mhp: 5, mhpmax: 6 };
+        const messages = [];
+
+        initRng(3400n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion: potionObject(POT_WATER),
+            targetVisible: true,
+            targetSpotted: true,
+            publish: async message => messages.push(message),
+            wakeMonster: async () => assert.fail('water angered gremlin'),
+            splitMonster: async target => {
+                assert.equal(target.mhp, 11);
+                target.mhp = 6;
+                target.mhpmax = 6;
+                return clone;
+            },
+        });
+
+        assert.deepEqual(getRngLog(), ['rn2(7)=3', 'rn2(5)=1']);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(result.directEffect.splitClone, clone);
+        assert.equal(result.directEffect.angered, false);
+        assert.deepEqual(messages.slice(-1), ['The gremlin multiplies!']);
+    });
+
+test('water rusts an iron golem before hostile wake', async () => {
+    resetGame();
+    game.u = { hallucinationTurns: 0 };
+    const monster = {
+        mnum: 259,
+        mx: 10,
+        my: 10,
+        mhp: 20,
+        mhpmax: 20,
+    };
+    const messages = [];
+    let wakeHp = null;
+
+    initRng(3400n);
+    enableRngLog();
+    const result = await hitMonsterWithSupportedPotion({
+        state: game,
+        monster,
+        potion: potionObject(POT_WATER),
+        targetVisible: true,
+        targetSpotted: true,
+        publish: async message => messages.push(message),
+        wakeMonster: async target => { wakeHp = target.mhp; },
+        finishKill: async () => assert.fail('surviving golem killed'),
+    });
+
+    assert.deepEqual(getRngLog(), [
+        'rn2(7)=3', 'rn2(5)=1', 'd(1,6)=3',
+    ]);
+    assert.equal(monster.mhp, 16);
+    assert.equal(wakeHp, 16);
+    assert.equal(result.directEffect.waterDamage, 3);
+    assert.deepEqual(messages.slice(-1), ['The iron golem rusts.']);
+});
+
+test('fatal blessed water finishes the target before any hostile wake',
+    async () => {
+        resetGame();
+        game.u = { hallucinationTurns: 0 };
+        const monster = {
+            mnum: 289,
+            mx: 10,
+            my: 10,
+            mhp: 4,
+            mhpmax: 20,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+        let finishedHp = null;
+
+        initRng(3400n);
+        enableRngLog();
+        const result = await hitMonsterWithSupportedPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: false,
+            targetSpotted: false,
+            publish: async () => {},
+            wakeNearby: async () => {},
+            wakeMonster: async () => assert.fail('dead demon woken'),
+            finishKill: async target => { finishedHp = target.mhp; },
+        });
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=3', 'rn2(5)=1', 'd(2,6)=7',
+        ]);
+        assert.equal(monster.mhp, -4);
+        assert.equal(finishedHp, -4);
+        assert.equal(result.directEffect.killed, true);
+        assert.equal(potion.where, 'gone');
+    });
+
 test('zero-level player monsters defend with the hero level', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0, ulevel: 20 };
@@ -1533,6 +1895,26 @@ test('invisibility vapor reports only the clear visible-self glimpse',
             assert.equal(result.invisibilityGlimpse, witness.glimpse);
         }
     });
+
+test('water vapor is a received zero-RNG no-op', async () => {
+    resetGame();
+    game.u = { uhp: 7, uhpmax: 12 };
+    const messages = [];
+
+    initRng(3400n);
+    enableRngLog();
+    const result = await applySupportedPotionVapor({
+        state: game,
+        potion: potionObject(POT_WATER),
+        publish: async message => messages.push(message),
+    });
+
+    assert.deepEqual(getRngLog(), []);
+    assert.deepEqual(messages, []);
+    assert.equal(game.u.uhp, 7);
+    assert.equal(result.received, true);
+    assert.equal(result.waterEffect, null);
+});
 
 test('vapor respects breathless forms with and without eyes', async () => {
     resetGame();

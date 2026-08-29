@@ -22,7 +22,8 @@ import {
     shouldMulchMissile,
 } from './projectile.js';
 import {
-    hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES,
+    hitMonsterWithSupportedPotion, maximumSupportedPotionFatalDamage,
+    supportedPotionTargetGap, SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
 import {
@@ -291,7 +292,7 @@ function genericSwallowedEligibility(
 }
 
 function swallowedPotionEligibility(
-    state, item, objectClass, selectedQuantity,
+    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer || objectClass !== POTION_CLASS
@@ -320,6 +321,14 @@ function swallowedPotionEligibility(
         && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
         return null;
     }
+    if (supportedPotionTargetGap({
+        state, potion: item, monster: engulfer,
+    })) return null;
+    const maximumFatalDamage = maximumSupportedPotionFatalDamage(
+        item, engulfer,
+    );
+    if (maximumFatalDamage > 0 && engulfer.mhp <= maximumFatalDamage
+        && (!finishKill || !canFinishKill?.(engulfer))) return null;
     return engulfer;
 }
 
@@ -478,9 +487,12 @@ export async function resolveSwallowedPotionThrow({
     selectedQuantity,
     splitObjectId,
     wakeMonster,
+    wakeNearby,
+    canFinishKill,
+    finishKill,
 }) {
     const engulfer = swallowedPotionEligibility(
-        state, item, objectClass, selectedQuantity,
+        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
     );
     if (!engulfer) return false;
     const thrown = detachThrownUnit(
@@ -505,6 +517,8 @@ export async function resolveSwallowedPotionThrow({
         monster: engulfer,
         potion: thrown,
         wakeMonster,
+        wakeNearby,
+        finishKill,
         resolveVapor: true,
         distance: 0,
     });

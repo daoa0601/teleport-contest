@@ -17,7 +17,7 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_FLAGS3,
-    MONSTER_GENO, MONSTER_LEVEL, MONSTER_COLOR, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
@@ -34,7 +34,6 @@ import {
     OBJECT_SMALL_DAMAGE,
     OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
-    RIN_PROTECTION_FROM_SHAPE_CHANGERS,
     SCR_SCARE_MONSTER,
     SLIME_MOLD,
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
@@ -70,6 +69,10 @@ import {
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
+import {
+    heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
+    transformWereMonster,
+} from './were.js';
 import {
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
     ALLOW_SSM,
@@ -127,8 +130,6 @@ const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
 const MR_FIRE = 0x01;
 const MR_SLEEP = 0x04;
-const M2_WERE = 0x00000004;
-const M2_HUMAN = 0x00000008;
 const M2_WANDER = 0x00800000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
@@ -1442,39 +1443,21 @@ export function runLevelRegions(state) {
     return state.level.regions;
 }
 
-const COUNTER_WERE = new Map([
-    [15, 262], [262, 15], // werejackal <-> human werejackal
-    [21, 263], [263, 21], // werewolf <-> human werewolf
-    [91, 261], [261, 91], // wererat <-> human wererat
-]);
-const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
-    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
-
-function protectionFromShapeChangers(state = {}) {
-    if (state.u?.protectionFromShapeChangers
-        || state.protectionFromShapeChangers) return true;
-    return [state.uleft, state.uright, state.u?.uleft, state.u?.uright]
-        .some(object => object?.otyp === RIN_PROTECTION_FROM_SHAPE_CHANGERS
-            && object.worn !== false);
-}
-
 // C ref: calendar.c night(). Session timestamps use YYYYMMDDhhmmss.
 export function sessionIsNight(datetime) {
     const hour = Number(String(datetime || '').slice(8, 10));
     return Number.isInteger(hour) && (hour < 6 || hour > 21);
 }
 
-// C refs: were.c counter_were()/new_were()/were_change(). The visual and
-// equipment side effects of a successful transformation remain with the
-// future monster-equipment slice; this phase owns identity, movement, waking,
-// healing, and—most importantly for the scheduler—the conditional RNG draw.
+// C refs: were.c counter_were()/new_were()/were_change().  The shared owner
+// applies identity, movement, waking, and healing; this scheduler leaves its
+// repaint to the enclosing display boundary.  Armor breakage and forced
+// unwielding remain a named production admission gap.
 export function wereChange(monster, state = {}, random = rn2) {
-    const oldMnum = monster?.mnum;
-    const flags = MONSTER_FLAGS2[oldMnum] ?? 0;
-    if (!(flags & M2_WERE)) return false;
+    if (!isWereMonster(monster)) return false;
 
-    const protectedHero = protectionFromShapeChangers(state);
-    if (flags & M2_HUMAN) {
+    const protectedHero = heroHasProtectionFromShapeChangers(state);
+    if (isHumanWereMonster(monster)) {
         if (protectedHero) return false;
         const fullMoon = state.flags?.moonphase === 4;
         const denominator = sessionIsNight(state.datetime)
@@ -1484,22 +1467,7 @@ export function wereChange(monster, state = {}, random = rn2) {
         return false;
     }
 
-    const newMnum = COUNTER_WERE.get(oldMnum);
-    if (!Number.isInteger(newMnum)) return false;
-    monster.mnum = newMnum;
-    monster.mmove = MONSTER_MOVE[newMnum] ?? monster.mmove ?? 0;
-    monster.symbol = MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[newMnum] || 0] || '?';
-    monster.color = MONSTER_COLOR[newMnum];
-    if (monster.msleeping || monster.mfrozen || monster.mcanmove === 0) {
-        monster.msleeping = 0;
-        monster.mfrozen = 0;
-        monster.mcanmove = 1;
-    }
-    if (Number.isFinite(monster.mhp) && Number.isFinite(monster.mhpmax)) {
-        const healing = Math.trunc((monster.mhpmax - monster.mhp) / 4);
-        monster.mhp = Math.min(monster.mhpmax, monster.mhp + healing);
-    }
-    return true;
+    return transformWereMonster(monster, state, { repaint: false });
 }
 
 function vampireMayShiftOutOfSight(monster, state) {

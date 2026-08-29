@@ -13,6 +13,7 @@ import { mksobj } from '../js/mklev.js';
 import {
     POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
+    POT_WATER,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -434,6 +435,197 @@ test('cursed map potion pays a zero slip gate without rerouting its flight',
             game.level.at(monster.mx, monster.my).remembered_glyph?.kind,
             'invisible',
         );
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live blessed water damages a demon and wakes its source-radius neighbors',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 289,
+            mhp: 20,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const neighbor = {
+            m_id: 2710,
+            mnum: PM_PURPLE_WORM,
+            mx: 13,
+            my: 10,
+            mhp: 12,
+            mhpmax: 12,
+            msleeping: 1,
+            mstrategy: 0x60000000,
+            mpeaceful: 0,
+            mtame: 0,
+            minvent: [],
+            inventory: [],
+        };
+        game.level.monsters.push(neighbor);
+        const potion = addKnownPotion(POT_WATER);
+        potion.blessed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=13', 'rnd(25)=2', 'rn2(7)=4', 'rn2(5)=2',
+            'd(2,6)=7', 'rn2(9)=7',
+        ]);
+        assert.equal(monster.mhp, 12);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(neighbor.msleeping, 0);
+        assert.equal(neighbor.mstrategy, 0x40000000);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live cursed water heals a demon without taking the hostile wake branch',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 289,
+            mhp: 8,
+            mhpmax: 20,
+            msleeping: 1,
+        });
+        const potion = addKnownPotion(POT_WATER);
+        potion.cursed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=0', 'rnd(20)=2', 'rnd(25)=15', 'rn2(7)=3',
+            'rn2(5)=0', 'd(2,6)=6', 'rn2(9)=1',
+        ]);
+        assert.equal(monster.mhp, 14);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(monster.mpeaceful, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live water contact clones a hostile gremlin with split hit points',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 40,
+            mhp: 12,
+            mhpmax: 12,
+            msleeping: 1,
+        });
+        const potion = addKnownPotion(POT_WATER);
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        const clones = game.level.monsters.filter(candidate =>
+            candidate !== monster && candidate.mnum === 40);
+        assert.equal(clones.length, 1);
+        const [clone] = clones;
+        const rngLog = getRngLog();
+        assert.deepEqual(rngLog.slice(0, 4), [
+            'rnd(20)=13', 'rnd(25)=2', 'rn2(7)=4', 'rn2(5)=2',
+        ]);
+        assert.equal(rngLog.length, 51);
+        assert.deepEqual(rngLog.slice(-2), ['rnd(2)=2', 'rn2(9)=1']);
+        assert.equal(monster.mhp + clone.mhp, 11);
+        assert.equal(monster.mhpmax + clone.mhpmax, 12);
+        assert.equal(clone.mcloned, 1);
+        assert.deepEqual(clone.minvent, []);
+        assert.equal(monster.msleeping, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('live blessed water rehumanizes an unequipped beast were', async () => {
+    const monster = freshMapPotionState(2);
+    Object.assign(monster, {
+        mnum: 21,
+        mhp: 20,
+        mhpmax: 20,
+        movement: 18,
+        mmove: 18,
+    });
+    const potion = addKnownPotion(POT_WATER);
+    potion.blessed = true;
+
+    initRng(2702n);
+    enableRngLog();
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.deepEqual(getRngLog(), [
+        'rnd(20)=13', 'rnd(25)=2', 'rn2(7)=4', 'rn2(5)=2',
+        'd(2,6)=7', 'rn2(9)=7',
+    ]);
+    assert.equal(monster.mnum, 263);
+    assert.equal(monster.movement, 18);
+    assert.equal(monster.mhp, 14);
+    assert.equal(potion.where, 'gone');
+    assertNoBridgeUse();
+});
+
+test('were equipment and fatal iron-golem drops fail before map throw mutation',
+    async () => {
+        for (const specimen of [
+            { mnum: 21, mhp: 20, blessed: true, equipped: true },
+            { mnum: 259, mhp: 7, blessed: false, equipped: false },
+        ]) {
+            const monster = freshMapPotionState(2);
+            Object.assign(monster, {
+                mnum: specimen.mnum,
+                mhp: specimen.mhp,
+                mhpmax: 20,
+            });
+            if (specimen.equipped) {
+                monster.misc_worn_check = 1;
+                monster.minvent = [{ otyp: 0, owornmask: 1, worn: true }];
+                monster.inventory = monster.minvent;
+            }
+            const potion = addKnownPotion(POT_WATER);
+            potion.blessed = specimen.blessed;
+
+            initRng(2702n);
+            enableRngLog();
+            await assert.rejects(
+                throwEast(potion),
+                error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                    && error?.bridgeId === 'throw.potion-impact-unsupported',
+            );
+
+            assert.deepEqual(getRngLog(), []);
+            assert.deepEqual(game.inventory, [potion]);
+            assert.equal(potion.where, 'inventory');
+        }
+    });
+
+test('live fatal blessed water uses the ordinary map death continuation',
+    async () => {
+        const monster = freshMapPotionState(2);
+        Object.assign(monster, {
+            mnum: 289,
+            mhp: 2,
+            mhpmax: 20,
+        });
+        const potion = addKnownPotion(POT_WATER);
+        potion.blessed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(40).fill(' '));
+
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=13', 'rnd(25)=2', 'rn2(7)=4', 'rn2(5)=2',
+            'd(2,6)=7', 'rn2(6)=1', 'rn2(3)=1', 'rn2(9)=7',
+        ]);
+        assert.equal(monster.dead, true);
+        assert.equal(game.level.monsters.includes(monster), false);
+        assert.equal(game.u.uconduct.killer, 1);
         assert.equal(potion.where, 'gone');
         assertNoBridgeUse();
     });

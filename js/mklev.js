@@ -39,7 +39,7 @@ import {
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT,
-    G_GENOD, G_NOCORPSE,
+    G_EXTINCT, G_GENOD, G_NOCORPSE,
     W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
@@ -3418,6 +3418,52 @@ export function findMonsterNearPosition(
     ) || findMonsterNearPositionCore(
         mnum, centerX, centerY, false, ignoreWater,
     );
+}
+
+// C refs: potion.c:split_mon() and makemon.c:clone_mon().  This owner is
+// deliberately bounded to the hostile gremlin/mold caller used by water and
+// heat effects; peaceful/tame attitude reinitialization belongs to pet state.
+export function splitHostileMonster(monster, state = game) {
+    if (!monster || state !== game || monster.mpeaceful
+        || (monster.mtame ?? 0) > 0) return null;
+    if ((monster.mhp ?? 0) > (monster.mhpmax ?? monster.mhp ?? 0))
+        monster.mhp = monster.mhpmax;
+    if ((monster.mhp ?? 0) <= 1
+        || ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_EXTINCT)) {
+        return null;
+    }
+
+    const position = findMonsterNearPosition(
+        monster.mnum, monster.mx, monster.my,
+    );
+    if (!position) return null;
+
+    const clone = { ...monster };
+    clone.m_id = nextIdent();
+    clone.mx = position.x;
+    clone.my = position.y;
+    clone.mundetected = 0;
+    clone.mtrapped = 0;
+    clone.mcloned = 1;
+    clone.mleashed = 0;
+    clone.isshk = 0;
+    clone.isgd = 0;
+    clone.ispriest = 0;
+    clone.minvent = [];
+    clone.inventory = clone.minvent;
+    clone.hasInventory = false;
+    clone.mtrack = [];
+    clone._track = [];
+
+    clone.mhpmax = monster.mhpmax;
+    clone.mhp = Math.trunc(monster.mhp / 2);
+    monster.mhp -= clone.mhp;
+    clone.mhpmax = Math.trunc(monster.mhpmax / 2);
+    monster.mhpmax -= clone.mhpmax;
+
+    state.level.monsters.push(clone);
+    newsym(clone.mx, clone.my);
+    return clone;
 }
 
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().

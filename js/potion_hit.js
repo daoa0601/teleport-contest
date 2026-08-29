@@ -9,32 +9,46 @@ import {
     plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
+import { splitHostileMonster } from './mklev.js';
 import {
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
     POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
     POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED,
-    SPEED_BOOTS, TOWEL,
+    POT_WATER, SPEED_BOOTS, TOWEL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_MOVE, MONSTER_RESISTS, monsterTypeName,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_MOVE, MONSTER_RESISTS, MONSTER_SOUND,
+    monsterTypeName,
 } from './monster_data.js';
-import { rnd, rn2 } from './rng.js';
+import { d, rnd, rn2 } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
+import {
+    heroHasProtectionFromShapeChangers, transformWereMonster,
+} from './were.js';
 
 const PM_PESTILENCE = 312;
 const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
+const PM_GREMLIN = 40;
+const PM_IRON_GOLEM = 259;
+const PM_VAMPIRE = 226;
+const PM_VAMPIRE_LEADER = 227;
+const PM_VLAD_THE_IMPALER = 228;
 const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
+const M2_UNDEAD = 0x00000002;
+const M2_WERE = 0x00000004;
+const M2_HUMAN = 0x00000008;
+const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
@@ -75,6 +89,7 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_SPEED,
     POT_BLINDNESS,
     POT_INVISIBILITY,
+    POT_WATER,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -307,6 +322,83 @@ function heroSeesInvisible(state) {
         || (hero.seeInvisibleTurns ?? 0) > 0);
 }
 
+function monsterIsVampireShifter(monster) {
+    return [PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER]
+        .includes(monster?.cham);
+}
+
+function monsterHatesBlessings(monster) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    return !!(flags & (M2_UNDEAD | M2_DEMON))
+        || monsterIsVampireShifter(monster);
+}
+
+function monsterIsWere(monster) {
+    return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
+}
+
+function monsterIsHuman(monster) {
+    return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_HUMAN);
+}
+
+function heroBlocksShapeChange(state) {
+    return heroHasProtectionFromShapeChangers(state);
+}
+
+function monsterHasTransformEquipment(monster) {
+    if ((monster?.misc_worn_check ?? 0) !== 0
+        || monster?.weapon || monster?.wieldedWeapon) return true;
+    return (monster?.minvent || monster?.inventory || []).some(object =>
+        (object?.owornmask ?? 0) !== 0 || object?.worn || object?.wielded);
+}
+
+function waterWouldTransformWere(state, potion, monster) {
+    if (potion?.otyp !== POT_WATER || !monsterIsWere(monster)) return false;
+    if (potion.blessed) return !monsterIsHuman(monster);
+    return !!potion.cursed && monsterIsHuman(monster)
+        && !heroBlocksShapeChange(state);
+}
+
+// Includes the one-point bottle chip which precedes potionhit()'s water die.
+// A bottle chip alone cannot kill because C only applies it above one HP, so
+// non-damaging water identities return zero rather than one.
+export function maximumSupportedPotionFatalDamage(potion, monster) {
+    if (potion?.otyp !== POT_WATER) return 0;
+    if (monsterHatesBlessings(monster) || monsterIsWere(monster)) {
+        return potion.blessed ? 13 : 0;
+    }
+    if (monster?.mnum === PM_IRON_GOLEM) return 7;
+    return 0;
+}
+
+// Production callers ask this before splitobj()/freeinv() or throw RNG.  The
+// deterministic new_were() core is live, but mon_break_armor() and
+// possibly_unwield() are not; fatal iron golems likewise need make_corpse()'s
+// special iron-chain drops rather than the ordinary death continuation.
+export function supportedPotionTargetGap({ state = game, potion, monster }) {
+    if (waterWouldTransformWere(state, potion, monster)
+        && monsterHasTransformEquipment(monster)) {
+        return 'water-were-equipment';
+    }
+    if (potion?.otyp === POT_WATER && monster?.mnum === PM_IRON_GOLEM
+        && (monster.mhp ?? 0)
+            <= maximumSupportedPotionFatalDamage(potion, monster)) {
+        return 'water-iron-golem-fatality';
+    }
+    return null;
+}
+
+function waterEffectSubject(monster, targetSpotted) {
+    return targetSpotted ? sentenceSubject(monster) : 'It';
+}
+
+function wereTransformationNoun(monster) {
+    if (!monsterIsHuman(monster)) return 'human';
+    if (monster.mnum === 261) return 'rat';
+    if (monster.mnum === 262) return 'jackal';
+    return 'wolf';
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Naming is bounded by callers: dknown-but-unknown identities never enter
 // this owner because trycall() would start an interactive continuation.
@@ -332,6 +424,7 @@ export async function applySupportedPotionVapor({
     let speedDuration = null;
     let blindnessDuration = null;
     let invisibilityGlimpse = null;
+    let waterEffect = null;
     let sightToggled = false;
     let resisted = false;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
@@ -435,6 +528,10 @@ export async function applySupportedPotionVapor({
                 ? 'For an instant you could see right through yourself!'
                 : "For an instant you couldn't see yourself!");
         }
+    } else if (potion.otyp === POT_WATER) {
+        // potionbreathe() has no water case.  Admission and possible naming
+        // still occur in the caller, but hero state and gameplay RNG do not.
+        waterEffect = null;
     }
     return {
         received: true,
@@ -444,6 +541,7 @@ export async function applySupportedPotionVapor({
         speedDuration,
         blindnessDuration,
         invisibilityGlimpse,
+        waterEffect,
         sightToggled,
         resisted,
     };
@@ -452,7 +550,108 @@ export async function applySupportedPotionVapor({
 async function applySupportedDirectEffect({
     state, monster, potion, targetVisible, targetSpotted, wakeMonster,
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
+    wakeNearby, splitMonster, transformWere, finishKill,
 }) {
+    if (potion.otyp === POT_WATER) {
+        const affectedByHoliness = monsterHatesBlessings(monster)
+            || monsterIsWere(monster);
+        let angered = true;
+        let waterDamage = 0;
+        let waterHealing = 0;
+        let transformedWere = false;
+        let splitClone = null;
+        let killed = false;
+
+        if (affectedByHoliness) {
+            if (potion.blessed) {
+                const silent = (MONSTER_SOUND[monster.mnum] ?? 0) === 0;
+                await publish(`${waterEffectSubject(monster, targetSpotted)} ${
+                    silent ? 'writhes' : 'shrieks'
+                } in pain!`);
+                if (!silent) {
+                    if (!wakeNearby)
+                        throw new Error('water wake-radius owner unavailable');
+                    await wakeNearby(
+                        monster.mx,
+                        monster.my,
+                        (MONSTER_LEVEL[monster.mnum] ?? 0) * 10,
+                    );
+                }
+                waterDamage = d(2, 6);
+                monster.mhp -= waterDamage;
+                killed = monster.mhp <= 0;
+                if (killed) {
+                    if (!finishKill)
+                        throw new Error('water fatality owner unavailable');
+                    await finishKill(monster);
+                } else if (monsterIsWere(monster)
+                    && !monsterIsHuman(monster)) {
+                    if (!transformWere)
+                        throw new Error('water were-transform owner unavailable');
+                    if (targetSpotted && !heroHallucinates(state)) {
+                        await publish(`${sentenceSubject(monster)} changes into a ${
+                            wereTransformationNoun(monster)
+                        }.`);
+                    }
+                    transformedWere = !!(await transformWere(monster, state));
+                }
+            } else if (potion.cursed) {
+                angered = false;
+                if (targetSpotted)
+                    await publish(`${sentenceSubject(monster)} looks healthier.`);
+                waterHealing = d(2, 6);
+                monster.mhp = Math.min(
+                    monster.mhpmax ?? monster.mhp,
+                    monster.mhp + waterHealing,
+                );
+                if (monsterIsWere(monster) && monsterIsHuman(monster)
+                    && !heroBlocksShapeChange(state)) {
+                    if (!transformWere)
+                        throw new Error('water were-transform owner unavailable');
+                    if (targetSpotted && !heroHallucinates(state)) {
+                        await publish(`${sentenceSubject(monster)} changes into a ${
+                            wereTransformationNoun(monster)
+                        }.`);
+                    }
+                    transformedWere = !!(await transformWere(monster, state));
+                }
+            }
+        } else if (monster.mnum === PM_GREMLIN) {
+            angered = false;
+            if (!splitMonster)
+                throw new Error('water gremlin-split owner unavailable');
+            splitClone = await splitMonster(monster, state);
+            if (splitClone && targetSpotted)
+                await publish(`${sentenceSubject(monster)} multiplies!`);
+        } else if (monster.mnum === PM_IRON_GOLEM) {
+            if (targetSpotted)
+                await publish(`${sentenceSubject(monster)} rusts.`);
+            waterDamage = d(1, 6);
+            monster.mhp -= waterDamage;
+            killed = monster.mhp <= 0;
+            if (killed) {
+                if (!finishKill)
+                    throw new Error('water fatality owner unavailable');
+                await finishKill(monster);
+            }
+        }
+
+        if (!killed) {
+            if (angered) await wakeMonster?.(monster);
+            else monster.msleeping = 0;
+        }
+        return {
+            angered,
+            healed: waterHealing,
+            curedBlindness: false,
+            waterDamage,
+            waterHealing,
+            transformedWere,
+            splitClone,
+            killed,
+        };
+    }
+
     if (potion.otyp === POT_INVISIBILITY) {
         const sawIt = !!spotMonster(monster);
         const cursedPotion = !!potion.cursed;
@@ -701,6 +900,10 @@ export async function hitMonsterWithSupportedPotion({
     spotMonster = target => canSpotMonster(target, target?.mx, target?.my),
     repaintMonster = target => newsym(target.mx, target.my),
     rememberInvisible = target => map_invisible(target.mx, target.my),
+    wakeNearby,
+    splitMonster = target => splitHostileMonster(target, state),
+    transformWere = target => transformWereMonster(target, state),
+    finishKill,
     showShield = target => shieldeff(target.mx, target.my, state),
     resolveVapor = false,
     distance = 0,
@@ -737,6 +940,10 @@ export async function hitMonsterWithSupportedPotion({
         spotMonster,
         repaintMonster,
         rememberInvisible,
+        wakeNearby,
+        splitMonster,
+        transformWere,
+        finishKill,
     });
     let breathedVapor = false;
     let vaporEffect = null;

@@ -15341,9 +15341,11 @@ async function captureThrownObjectFlight(object, flightPath) {
 // ordinary room transaction here so a potentially fatal roll cannot detach an
 // object and then discover that life-saving, special death, punishment, shop,
 // or terrain ownership is still missing.
-function canFinishOrdinarySwallowedThrowKill(monster) {
-    if (!monster || game.u?.ustuck !== monster || !game.u?.uswallow)
-        return false;
+function canFinishOrdinaryThrownKill(monster, { swallowed = false } = {}) {
+    if (!monster) return false;
+    if (swallowed) {
+        if (game.u?.ustuck !== monster || !game.u?.uswallow) return false;
+    } else if (game.u?.uswallow || game.u?.ustuck) return false;
     const location = game.level?.at?.(monster.mx, monster.my);
     const leaderId = game.quest_status?.leader_m_id
         ?? game.u?.quest_status?.leader_m_id;
@@ -15359,7 +15361,8 @@ function canFinishOrdinarySwallowedThrowKill(monster) {
     });
     return location?.typ === ROOM
         && !game.level?.traps?.some(trap =>
-            trap.tx === monster.mx && trap.ty === monster.my)
+            (trap.tx ?? trap.x) === monster.mx
+                && (trap.ty ?? trap.y) === monster.my)
         && !game._shopRooms?.current
         && !game.uball && !game.u?.uball && !game.uchain && !game.u?.uchain
         && !game.u?.usteed
@@ -15378,10 +15381,31 @@ function canFinishOrdinarySwallowedThrowKill(monster) {
         && ordinaryPriorInventory;
 }
 
+function canFinishOrdinarySwallowedThrowKill(monster) {
+    return canFinishOrdinaryThrownKill(monster, { swallowed: true });
+}
+
+function canFinishOrdinaryMapPotionKill(monster) {
+    return canFinishOrdinaryThrownKill(monster);
+}
+
 async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         weaponHit: false,
         deathContext: { kind: 'swallowed-projectile', projectile },
+    });
+}
+
+async function finishOrdinarySwallowedPotionKill(monster) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        weaponHit: false,
+        deathContext: { kind: 'swallowed-potion' },
+    });
+}
+
+async function finishOrdinaryMapPotionKill(monster) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        weaponHit: false,
     });
 }
 
@@ -15578,6 +15602,9 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
+        wakeNearby: wakeMonstersNear,
+        canFinishKill: canFinishOrdinarySwallowedThrowKill,
+        finishKill: finishOrdinarySwallowedPotionKill,
     })) return;
     if (game.u?.uswallow && thrownObjectClass === 8)
         useCompatibilityBridge('throw.potion-impact-unsupported');
@@ -15608,6 +15635,9 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         blocksMove,
         captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
+        wakeNearby: wakeMonstersNear,
+        canFinishKill: canFinishOrdinaryMapPotionKill,
+        finishKill: finishOrdinaryMapPotionKill,
     })) return;
     if (!game.u?.uswallow && thrownObjectClass === 8)
         useCompatibilityBridge('throw.potion-impact-unsupported');
@@ -16867,9 +16897,10 @@ export async function finishHeroMonsterKill(monster, x, y, {
     weaponHit = !!game.uwep,
     deathContext = null,
 } = {}) {
-    if (deathContext && deathContext.kind !== 'swallowed-projectile')
+    const wasInside = deathContext?.kind === 'swallowed-projectile'
+        || deathContext?.kind === 'swallowed-potion';
+    if (deathContext && !wasInside)
         throw new Error(`unsupported monster death context ${deathContext.kind}`);
-    const wasInside = deathContext?.kind === 'swallowed-projectile';
     if (wasInside) monster.mhp = 0;
     // xkilled() snapshots visibility before mondead() detaches the actor.
     const deathWasSpotted = wasInside || canProjectMonster(
@@ -16893,7 +16924,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         );
     }
 
-    if (wasInside) {
+    if (deathContext?.kind === 'swallowed-projectile') {
         // xkilled() gives the killing missile to the engulfer after the kill
         // line but before mondead()->m_detach().  relobj() below must therefore
         // release the acquired identity with the rest of minvent rather than
@@ -16901,6 +16932,9 @@ export async function finishHeroMonsterKill(monster, x, y, {
         addObjectToMonsterInventory(
             monster, deathContext.projectile, game, { atFront: true },
         );
+    }
+
+    if (wasInside) {
 
         // mon_leaving_level()->unstuck() clears attachment first so docrt()'s
         // status is accurate, restores the shared map coordinate and sight,
