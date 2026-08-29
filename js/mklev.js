@@ -89,6 +89,7 @@ import {
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
     SPECIAL_PM, monsterIsNonliving,
 } from './monster_data.js';
+import { petLifeSavingGap } from './mondeath.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, pline } from './display.js';
 import { premap_detect } from './detect.js';
@@ -4048,8 +4049,11 @@ function meltOccupantDeathGap(
         return 'shapechanging';
     const lifeSaver = wornMeltMonsterLifeSaver(monster);
     if (lifeSaver && !afterFailedLifeSaving) {
-        if (monster.mtame || monster.pet) return 'pet life-saving';
-        if ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_GENOD) {
+        const genocided = !!((state.mvitals?.[monster.mnum]?.mvflags ?? 0)
+            & G_GENOD);
+        const petGap = petLifeSavingGap(monster, { genocided, state });
+        if (petGap) return `pet life-saving ${petGap}`;
+        if (genocided) {
             return meltOccupantDeathGap(
                 monster, state, { afterFailedLifeSaving: true },
             );

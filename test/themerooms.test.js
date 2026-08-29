@@ -977,6 +977,97 @@ test('unseen genocide-defeated life-saving remains silent and fatal',
             ?? false, false);
     });
 
+test('unseen tame life-saving repairs simple edog state before HP restoration',
+    async () => {
+        themedState(4016, 8);
+        game.moves = 200;
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 99647,
+            contents: [], timed: 0, where: 'minvent',
+            owornmask: W_AMUL, worn: true,
+        };
+        const edog = {
+            droptime: 12, dropdist: 8, apport: 7, whistletime: 5,
+            hungrytime: 100, ogoal: { x: 3, y: 4 }, abuse: 2,
+            revivals: 1, mhpmax_penalty: 2, killed_by_u: 0,
+        };
+        const hachi = {
+            mnum: 16, mx: 10, my: 10, mhp: 0, mhpmax: 6, m_lev: 3,
+            name: 'Hachi', mtame: 10, mpeaceful: 1, pet: true,
+            edog, mextra: { edog },
+            minvent: [amulet], inventory: [amulet],
+            misc_worn_check: W_AMUL,
+        };
+        initRng(1n); // wary_dog rn2(11)=10 retains tameness
+        enableRngLog();
+        const lines = [];
+        let repaints = 0;
+        const result = await lifeSaveMonster(hachi, amulet, {
+            visible: false, spotted: false, petSpotted: false,
+            continueLine: async message => lines.push(message),
+            page: async message => lines.push(message),
+            line: async message => lines.push(message),
+            repaint: () => { repaints++; },
+        });
+
+        assert.deepEqual(lines, []);
+        assert.deepEqual(getRngLog(), ['rn2(11)=10']);
+        assert.equal(repaints, 0);
+        assert.equal(result.survived, true);
+        assert.equal(hachi.mhpmax, 10);
+        assert.equal(hachi.mhp, 10);
+        assert.equal(hachi.mtame, 10);
+        assert.equal(hachi.mpeaceful, 1);
+        assert.equal(hachi.pet, true);
+        assert.equal(hachi.misc_worn_check, I_SPECIAL);
+        assert.equal(edog.mhpmax_penalty, 0);
+        assert.equal(edog.revivals, 2);
+        assert.equal(edog.killed_by_u, 0);
+        assert.equal(edog.abuse, 0);
+        assert.deepEqual(edog.ogoal, { x: -1, y: -1 });
+        assert.equal(edog.hungrytime, 700);
+        assert.equal(edog.droptime, 12);
+        assert.equal(edog.dropdist, 8);
+        assert.equal(edog.whistletime, 5);
+        assert.equal(edog.apport, 7);
+        assert.equal(amulet.where, 'gone');
+    });
+
+test('unsupported heavy-abuse pet life-saving fails before amulet mutation',
+    async () => {
+        themedState(4017, 8);
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 99648,
+            contents: [], timed: 0, where: 'minvent',
+            owornmask: W_AMUL, worn: true,
+        };
+        const pet = {
+            mnum: 16, mx: 10, my: 10, mhp: 0, mhpmax: 6, m_lev: 3,
+            mtame: 10, mpeaceful: 1, pet: true,
+            edog: {
+                hungrytime: 1000, ogoal: { x: -1, y: -1 },
+                abuse: 3, revivals: 0, mhpmax_penalty: 0,
+                killed_by_u: 0,
+            },
+            minvent: [amulet], inventory: [amulet],
+            misc_worn_check: W_AMUL,
+        };
+        initRng(1n);
+        enableRngLog();
+
+        await assert.rejects(
+            lifeSaveMonster(pet, amulet, {
+                visible: false, spotted: false, petSpotted: false,
+            }),
+            /unsupported monster life-saving heavy-abuse recovery/,
+        );
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(amulet.where, 'minvent');
+        assert.equal(amulet.owornmask, W_AMUL);
+        assert.deepEqual(pet.minvent, [amulet]);
+        assert.equal(pet.misc_worn_check, W_AMUL);
+    });
+
 test('genocide defeats melt-ice life-saving before death, burial, and splash',
     async () => {
     themedState(4012, 8);
@@ -1114,7 +1205,8 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
     });
 });
 
-test('melt-ice rejects pet life-saving before mutation', () => {
+test('melt-ice tame life-saving can end peaceful but no longer tame',
+    async () => {
     themedState(4013, 8);
     const x = 10, y = 10;
     game.level.at(x, y).typ = ICE;
@@ -1125,24 +1217,134 @@ test('melt-ice rejects pet life-saving before mutation', () => {
     const amulet = {
         otyp: AMULET_OF_LIFE_SAVING, o_id: 9969,
         contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+        worn: true,
+    };
+    const statue = place_object({
+        otyp: STATUE, o_id: 9971, contents: [], timed: 0,
+    }, x, y);
+    const edog = {
+        droptime: 0, dropdist: 10000, apport: 5, whistletime: 0,
+        hungrytime: 1000, ogoal: { x: -1, y: -1 }, abuse: 0,
+        revivals: 0, mhpmax_penalty: 0, killed_by_u: 0,
     };
     const pet = {
-        mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8, mtame: 5,
+        mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8, m_lev: 3,
+        name: 'Hachi', mtame: 5, mpeaceful: 1, pet: true,
+        edog, mextra: { edog },
         minvent: [amulet], inventory: [amulet],
+        hasInventory: true, misc_worn_check: W_AMUL,
     };
     game.level.monsters.push(pet);
     scheduleLevelTimer(
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
-    assert.throws(
-        () => runClaimedMeltIceTimer(
-            claimNextDueObjectTimer(game, game.moves), game,
-        ),
-        /occupant pet life-saving is not implemented/,
+    initRng(1n); // fill=5, Wisdom=11, tameness=0, peacefulness=1
+    enableRngLog();
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
     );
-    assert.equal(game.level.at(x, y).typ, ICE);
-    assert.equal(boulder.where, 'floor');
-    assert.equal(pet.mhp, 8);
+    const phases = [];
+    await finishMeltIceTimer(event, {
+        visible: true, occupantSpotted: true, occupantPetSpotted: true,
+        heroAt: false, heroInWater: false,
+        announce: async message => {
+            phases.push({
+                kind: 'message', message, hp: pet.mhp,
+                mtame: pet.mtame, peaceful: pet.mpeaceful,
+                pet: pet.pet, amuletWhere: amulet.where,
+                statueWhere: statue.where, boulderWhere: boulder.where,
+                rng: getRngLog().slice(),
+            });
+            return plineWithContinuation(message);
+        },
+        lifeSaveMonster: (monster, saver, presentation) =>
+            lifeSaveMonster(monster, saver, {
+                ...presentation,
+                page: async message => {
+                    phases.push({
+                        kind: 'life-saving-page', message, hp: monster.mhp,
+                        mtame: monster.mtame, pet: monster.pet,
+                        amuletWhere: saver.where, rng: getRngLog().slice(),
+                    });
+                    game._pending_message = '';
+                },
+                line: async message => {
+                    phases.push({
+                        kind: 'life-saving-line', message, hp: monster.mhp,
+                        mtame: monster.mtame, peaceful: monster.mpeaceful,
+                        pet: monster.pet, amuletWhere: saver.where,
+                        statueWhere: statue.where,
+                        boulderWhere: boulder.where,
+                        rng: getRngLog().slice(),
+                    });
+                    game._pending_message = '';
+                },
+                repaint: () => phases.push({
+                    kind: 'pet-repaint', hp: monster.mhp,
+                    mtame: monster.mtame, peaceful: monster.mpeaceful,
+                    pet: monster.pet, rng: getRngLog().slice(),
+                }),
+            }),
+        wake: async () => {}, disturb: () => {}, repaint: () => {},
+    });
+    const outcome = event.boulderOutcomes[0];
+
+    assert.deepEqual(phases.map(phase => phase.kind), [
+        'message', 'message',
+        'life-saving-page', 'life-saving-page', 'life-saving-page',
+        'life-saving-line', 'life-saving-line', 'pet-repaint', 'message',
+    ]);
+    assert.deepEqual(phases[1].rng, []);
+    assert.equal(phases[2].message,
+        'Some ice melts away.  A boulder settles...  But wait...--More--');
+    assert.equal(phases[2].hp, 0);
+    assert.equal(phases[5].message, 'The medallion crumbles to dust!');
+    assert.equal(phases[5].hp, 0);
+    assert.equal(phases[5].mtame, 5);
+    assert.equal(phases[5].amuletWhere, 'minvent');
+    assert.equal(phases[6].message, 'Hachi is no longer tame.');
+    assert.equal(phases[6].hp, 0);
+    assert.equal(phases[6].mtame, 0);
+    assert.equal(phases[6].peaceful, 1);
+    assert.equal(phases[6].pet, false);
+    assert.equal(phases[6].amuletWhere, 'gone');
+    assert.equal(phases[6].statueWhere, 'floor');
+    assert.equal(phases[6].boulderWhere, 'free');
+    assert.deepEqual(phases[6].rng, [
+        'rn2(10)=5', 'rn2(19)=11', 'rn2(6)=0', 'rn2(2)=1',
+    ]);
+    assert.equal(phases[7].hp, 0);
+    assert.equal(phases[7].mtame, 0);
+    assert.equal(phases[8].message,
+        'There is a large splash as the boulder fills the moat.');
+    assert.equal(phases[8].hp, 10);
+    assert.equal(phases[8].mtame, 0);
+    assert.equal(phases[8].pet, false);
+    assert.equal(phases[8].statueWhere, 'buried');
+    assert.equal(phases[8].boulderWhere, 'gone');
+    assert.deepEqual(getRngLog(), [
+        'rn2(10)=5', 'rn2(19)=11', 'rn2(6)=0', 'rn2(2)=1',
+        'rn2(100)=79',
+    ]);
+
+    assert.equal(outcome.occupantLifeSaving.survived, true);
+    assert.equal(outcome.occupantDeath, null);
+    assert.equal(pet.dead, false);
+    assert.equal(pet.mhp, 10);
+    assert.equal(pet.mhpmax, 10);
+    assert.equal(pet.mtame, 0);
+    assert.equal(pet.mpeaceful, 1);
+    assert.equal(pet.pet, false);
+    assert.equal(pet.misc_worn_check, I_SPECIAL);
+    assert.ok(game.level.monsters.includes(pet));
+    assert.equal(game._vanquishedCounts?.has(68) ?? false, false);
+    assert.equal(edog.revivals, 0);
+    assert.equal(edog.hungrytime, 1000);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(statue.where, 'buried');
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
 });
 
 test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {

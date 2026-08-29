@@ -2144,6 +2144,9 @@ export async function finishMeltIceTimer(event, options = {}) {
             const presentation = { visible, spotted };
             if (outcome.pendingOccupantLifeSaving.genocided)
                 presentation.genocided = true;
+            if (monster.mtame > 0)
+                presentation.petSpotted = options.occupantPetSpotted
+                    ?? canSpotMonster(monster);
             const resolution = await saveMonster(
                 monster, outcome.pendingOccupantLifeSaving.amulet,
                 presentation,

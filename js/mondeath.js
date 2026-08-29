@@ -3,7 +3,9 @@
 
 import { W_AMUL } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { flush_screen, pline, plineWithContinuation } from './display.js';
+import {
+    flush_screen, newsym, pline, plineWithContinuation,
+} from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
@@ -14,6 +16,7 @@ import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
 } from './object_knowledge.js';
+import { rn2 } from './rng.js';
 
 async function lifeSavingPage(message) {
     await pline(message);
@@ -58,6 +61,78 @@ function monsterReconstitutesAfterLifeSaving(monster) {
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
 
+function monsterPetRecord(monster) {
+    return monster?.edog || monster?.mextra?.edog || null;
+}
+
+// Keep the shared owner fail-loud for wary_dog() branches whose state or
+// presentation is not yet complete.  This same predicate is used by the ice
+// transaction before it mutates terrain.
+export function petLifeSavingGap(
+    monster, { genocided = false, state = game } = {},
+) {
+    if (!(monster?.mtame > 0)) return null;
+    if (genocided) return 'genocide-defeated pet death';
+    if (monster.isminion) return 'minion recovery';
+    const edog = monsterPetRecord(monster);
+    if (!edog || !edog.ogoal) return 'missing edog state';
+    if (monster.meating) return 'active eating';
+    if ((monster.m_ap_type ?? 0) !== 0) return 'active appearance';
+    if (edog.killed_by_u === 1 || (edog.abuse ?? 0) > 2)
+        return 'heavy-abuse recovery';
+    if (monster.mleashed) return 'leash release';
+    if (state.u?.usteed === monster) return 'steed dismount';
+    if (state.u?.ustuck === monster) return 'hero attachment';
+    return null;
+}
+
+async function waryDogAfterLifeSaving(
+    monster, {
+        wasDead = false, spotted = true,
+        line = pline, repaint = newsym, state = game,
+    } = {},
+) {
+    const edog = monsterPetRecord(monster);
+    monster.meating = 0;
+    const penalty = edog.mhpmax_penalty ?? 0;
+    if (penalty) {
+        monster.mhpmax = (monster.mhpmax ?? 0) + penalty;
+        monster.mhp = (monster.mhp ?? 0) + penalty;
+        edog.mhpmax_penalty = 0;
+    }
+
+    monster.mtame = rn2((monster.mtame ?? 0) + 1);
+    if (!monster.mtame)
+        monster.mpeaceful = rn2(2);
+
+    if (!monster.mtame) {
+        monster.pet = false;
+        if (!wasDead && spotted) {
+            const subject = lifeSavingSubject(monster, true);
+            const disposition = monster.mpeaceful
+                ? 'is no longer tame' : 'has become feral';
+            await line(`${subject} ${disposition}.`);
+        }
+        repaint(monster.mx, monster.my);
+        return;
+    }
+
+    monster.pet = true;
+    edog.revivals = (edog.revivals ?? 0) + 1;
+    edog.killed_by_u = 0;
+    edog.abuse = 0;
+    edog.ogoal.x = edog.ogoal.y = -1;
+    const hungerFloor = (state.moves ?? 0) + 500;
+    if (wasDead || (edog.hungrytime ?? 0) < hungerFloor)
+        edog.hungrytime = hungerFloor;
+    if (wasDead) {
+        edog.droptime = 0;
+        edog.dropdist = 10000;
+        edog.whistletime = 0;
+        edog.apport = 5;
+    }
+}
+
 // Run the source pre-detach revival transaction.  The fatal caller owns the
 // credited kill phrase and supplies it as the first pager; this owner consumes
 // the amulet and restores the actor before mondead() could detach it.
@@ -65,10 +140,14 @@ export async function lifeSaveMonster(
     monster, amulet, {
         creditedKill, retainCursor = false,
         visible = true, spotted = true, genocided = false,
+        petSpotted = spotted,
         continueLine = plineWithContinuation,
-        page = lifeSavingPage, line = pline,
+        page = lifeSavingPage, line = pline, repaint = newsym,
     } = {},
 ) {
+    const petGap = petLifeSavingGap(monster, { genocided, state: game });
+    if (petGap)
+        throw new Error(`unsupported monster life-saving ${petGap}`);
     const subject = lifeSavingSubject(monster, spotted);
     if (creditedKill) await continueLine(creditedKill);
     if (visible) {
@@ -108,6 +187,12 @@ export async function lifeSaveMonster(
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
+    if (monster.mtame > 0) {
+        await waryDogAfterLifeSaving(monster, {
+            wasDead: genocided, spotted: petSpotted,
+            line, repaint, state: game,
+        });
+    }
     monster.mhpmax = Math.max(
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
