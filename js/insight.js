@@ -815,6 +815,13 @@ export function currentConductLines() {
     const lines = ['Voluntary challenges:'];
     if (!game.u?.uroleplay?.reroll)
         lines.push(' Character rerolling was not enabled.');
+    if (game.u?.uroleplay?.pauper) {
+        lines.push((game.inventory || []).length
+            ? ' You started without possessions.'
+            : ' You are without possessions.');
+    }
+    if (game.u?.uroleplay?.nudist)
+        lines.push(' You have been faithfully nudist.');
     if (!(conduct.food || 0)) lines.push(' You have gone without food.');
     else if (!(conduct.unvegan || 0))
         lines.push(' You have followed a strict vegan diet.');
@@ -883,6 +890,10 @@ export function finalConductLines() {
     const lines = ['Voluntary challenges:'];
     if (!game.u?.uroleplay?.reroll)
         lines.push(' Character rerolling was not enabled.');
+    if (game.u?.uroleplay?.pauper)
+        lines.push(' You started out without possessions.');
+    if (game.u?.uroleplay?.nudist)
+        lines.push(' You were faithfully nudist.');
     if (!(conduct.food || 0)) lines.push(' You went without food.');
     else if (!(conduct.unvegan || 0)) lines.push(' You followed a strict vegan diet.');
     else if (!(conduct.unvegetarian || 0)) lines.push(' You were vegetarian.');

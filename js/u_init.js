@@ -498,6 +498,15 @@ export function uInitMisc(handednessRoll) {
     // C keeps converted/current and original alignment bases separately from
     // the live alignment record.  Quest readiness consumes all three.
     u.ualignbase = [u.ualign.type, u.ualign.type];
+    const configuredNudist = Object.prototype.hasOwnProperty.call(
+        g.flags || {}, 'nudist',
+    );
+    u.uroleplay = {
+        ...(u.uroleplay || {}),
+        pauper: !!g.flags?.pauper,
+        nudist: configuredNudist
+            ? !!g.flags.nudist : !!g.flags?.pauper,
+    };
     ensureQuestStatus(g);
     u.rightHanded = !!handednessRoll;
     // C initializes the hero with one ordinary action available.  Samurai
@@ -634,7 +643,7 @@ export function makedog() {
             killed_by_u: 0,
         },
     };
-    if (role === 'knight') {
+    if (role === 'knight' && !g.u?.uroleplay?.pauper) {
         pet.saddled = true;
         pet.saddle = mksobj(SADDLE, true, false);
     }
@@ -778,21 +787,28 @@ function knowsClass(oclass, role) {
 }
 
 function initializeRolePreknowledge(role) {
+    const pauper = !!game.u?.uroleplay?.pauper;
     if (role === 'archeologist') {
         // u_init_role() installs these before the later starting-inventory
         // encounter pass, so they are known rather than Ranger-style class
         // preknowledge inherited through a presentation fallback.
-        recordObjectKnowledge(SACK);
-        recordObjectKnowledge(TOUCHSTONE);
-    } else if (['barbarian', 'knight', 'samurai', 'valkyrie'].includes(role))
+        if (!pauper) {
+            recordObjectKnowledge(SACK);
+            recordObjectKnowledge(TOUCHSTONE);
+        }
+    } else if (!pauper
+        && ['barbarian', 'knight', 'samurai', 'valkyrie'].includes(role))
         knowsClass(WEAPON_CLASS, role);
-    else if (role === 'ranger' || role === 'rogue')
+    else if (!pauper && (role === 'ranger' || role === 'rogue'))
         knowsClass(WEAPON_CLASS, role);
 
-    if (['barbarian', 'knight', 'monk', 'samurai', 'valkyrie'].includes(role))
+    if (!pauper
+        && ['barbarian', 'knight', 'monk', 'samurai', 'valkyrie'].includes(role))
         knowsClass(ARMOR_CLASS, role);
-    if (role === 'monk')
+    if (!pauper && role === 'monk')
         recordObjectKnowledge(OBJECT_NAMES.indexOf('shuriken'));
+    // Priest water is the one u_init_role() preknowledge call which
+    // explicitly overrides pauper suppression.
     if (role === 'priest')
         recordObjectKnowledge(POT_WATER);
 }
@@ -1077,6 +1093,9 @@ function randomStartingItemAllowed(raw) {
 
 // Direct port of ini_inv() for fixed and class-generated inventory entries.
 function iniInv(table) {
+    // u_init.c:ini_inv() returns before trquan() or object construction.
+    // Role/race optional-choice RNG remains with each caller.
+    if (game.u?.uroleplay?.pauper) return;
     let index = 0;
     let quan = trquan(table[index]);
     while (table[index].cls) {
@@ -1099,6 +1118,14 @@ function iniInv(table) {
         if (substituted !== undefined) {
             raw.otyp = substituted;
             raw.owt = OBJECT_WEIGHT[substituted] ?? raw.owt;
+        }
+
+        // C creates and substitutes the object before enforcing nudist. On
+        // rejection it advances the template while retaining the current
+        // quantity counter; do not introduce a replacement trquan() draw.
+        if (game.u?.uroleplay?.nudist && raw.oclass === ARMOR_CLASS) {
+            index++;
+            continue;
         }
 
         raw.cursed = false;
@@ -1223,8 +1250,29 @@ function uInitRaceInventoryAndKnowledge(role) {
         if (role !== 'wizard') iniInv(XTRA_FOOD_INVENTORY);
         preknown = ORC_PREKNOWN_OBJECTS;
     }
-    for (const otyp of preknown)
-        recordObjectKnowledge(otyp);
+    if (!game.u?.uroleplay?.pauper) {
+        for (const otyp of preknown)
+            recordObjectKnowledge(otyp);
+    }
+}
+
+const PAUPER_PREKNOWLEDGE = new Map([
+    ['healer', SPE_HEALING],
+    ['priest', SPE_PROTECTION],
+    ['knight', SPE_PROTECTION],
+    ['monk', SPE_PROTECTION],
+    ['wizard', SPE_FORCE_BOLT],
+    ['archeologist', TOUCHSTONE],
+    ['caveman', FLINT],
+    ['rogue', SACK],
+    ['tourist', SACK],
+    ['samurai', FOOD_RATION],
+]);
+
+function applyPauperPreknowledge(role) {
+    if (!game.u?.uroleplay?.pauper) return;
+    const otyp = PAUPER_PREKNOWLEDGE.get(role);
+    if (otyp) recordObjectKnowledge(otyp);
 }
 
 export function uInitInventoryAttrs() {
@@ -1238,6 +1286,8 @@ export function uInitInventoryAttrs() {
     game._lastInvNr = 51;
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg = game.uarmh = null;
+    game.u.weaponSkills = null;
+    game.u.skillRecord = [];
     game.moves = 1;
     game.u.uhunger = 900;
     // C resets u.umoney0 before the role switch so repeated character
@@ -1307,6 +1357,7 @@ export function uInitInventoryAttrs() {
     // startup, then materializes role money.  Keeping these outside public
     // role branches makes the constructor order option- and race-general.
     if (game.flags?.explore) iniInv(WISHING_INVENTORY);
+    if (game.u?.uroleplay?.pauper) game._goldCount = 0;
     if (game._goldCount) {
         game._initialGoldCount = game._goldCount;
         // ini_inv(Money): its object is kept outside lettered inventory.
@@ -1318,7 +1369,8 @@ export function uInitInventoryAttrs() {
     if (game.spells.length && (game.u.uenmax || 0) < 5)
         game._startingPwMinimum = 5;
     initAttributes();
-    game.discoveries = role === 'archeologist' || role === 'barbarian'
+    game.discoveries = game.u?.uroleplay?.pauper ? []
+        : role === 'archeologist' || role === 'barbarian'
         ? [] : role === 'healer' ? [
         { class: 'Armor', name: 'pair of leather gloves', appearance: 'fencing gloves' },
         { class: 'Spellbooks', name: 'spellbook of healing', appearance: 'wrinkled' },
@@ -1454,7 +1506,7 @@ export function uInitInventoryAttrs() {
         { class: 'Weapons', name: 'yumi', appearance: 'long bow', preknown: true },
         { class: 'Armor', name: 'cloak of displacement', appearance: 'opera cloak' },
     ];
-    if (role === 'wizard') {
+    if (role === 'wizard' && !game.u?.uroleplay?.pauper) {
         game.discoveries = wizardInitialDiscoveries();
         // weapon.c:skill_based_spellbook_id() and ini_inv_use_obj() both
         // feed o_init.c's authoritative object-knowledge table.  The legacy
@@ -1470,6 +1522,7 @@ export function uInitInventoryAttrs() {
     // wishes, pickups, drops, and weapon changes must not redefine which
     // classes began at Basic.
     ensureHeroSkills(game);
+    applyPauperPreknowledge(role);
     return true;
 }
 

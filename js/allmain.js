@@ -239,15 +239,25 @@ async function showLegacy() {
     const deityNoun = game.urole?.goddessAlignments
         ?.includes(game.initAlignment?.name) || god === 'The Lady'
         ? 'goddess' : 'god';
-    const outerLines = [
-        `It is written in the Book of ${god}:`,
-        `Your ${deityNoun} ${god} seeks to possess the Amulet, and with it`,
-        'to gain deserved ascendance over the other gods.',
+    const pauper = !!game.u?.uroleplay?.pauper;
+    const closingLines = pauper ? [
+        `You, an untrained ${rank}, have been unable to adequately`,
+        `prepare to be the instrument of ${god}.  Nevertheless, you`,
+        'are destined to recover the Amulet for your deity, or die',
+        'in the attempt.  Your hour of destiny has come.  For the',
+        `sake of us all:  Go bravely with ${god}!`,
+    ] : [
         `You, a newly trained ${rank}, have been heralded`,
         `from birth as the instrument of ${god}.  You are destined`,
         'to recover the Amulet for your deity, or die in the',
         'attempt.  Your hour of destiny has come.  For the sake',
         `of us all:  Go bravely with ${god}!`,
+    ];
+    const outerLines = [
+        `It is written in the Book of ${god}:`,
+        `Your ${deityNoun} ${god} seeks to possess the Amulet, and with it`,
+        'to gain deserved ascendance over the other gods.',
+        ...closingLines,
         '--More--',
     ];
     const innerLines = [

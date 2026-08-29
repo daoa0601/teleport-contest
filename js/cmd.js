@@ -1229,8 +1229,10 @@ function renderRequestMenuOptionsPage(page, selected) {
         lines[10] = '     deaf                    [false]';
         lines[11] = `     legacy                  [${game.flags?.legacy !== false}]`;
         lines[12] = '     news                    [false]';
-        lines[13] = '     nudist                  [false]';
-        lines[14] = '     pauper                  [false]';
+        lines[13] = `     nudist                  [${
+            !!game.u?.uroleplay?.nudist}]`;
+        lines[14] = `     pauper                  [${
+            !!game.u?.uroleplay?.pauper}]`;
         lines[15] = '     reroll                  [false]';
         lines[16] = '     selectsaved             [true]';
         lines[17] = '     status_updates          [true]';

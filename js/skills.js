@@ -224,6 +224,18 @@ export function ensureHeroSkills(game) {
     if (game.urole?.key === 'knight' && skills[37].maxSkill)
         skills[37].skill = 2;
 
+    // u_init.c:pauper_reinit() removes every initially Basic-or-better
+    // proficiency while retaining the role's advancement ceiling.
+    if (game.u?.uroleplay?.pauper) {
+        for (const state of skills) {
+            if (state.skill > 1) {
+                state.skill = 1;
+                state.advance = 0;
+            }
+        }
+        game.u.weapon_slots = 2;
+    }
+
     for (let skill = 1; skill < skills.length; skill++) {
         const state = skills[skill];
         if (!state.skill) continue;

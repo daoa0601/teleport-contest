@@ -54,6 +54,13 @@ export function parseNethackrc(rc) {
                 if (lname === 'autopickup') result.flags.pickup = value;
                 else if (lname === 'color') result.flags.color = value;
                 else if (lname === 'legacy') result.flags.legacy = value;
+                else if (lname === 'pauper') {
+                    result.flags.pauper = value;
+                    // options.c applies this implication immediately, so a
+                    // later explicit !nudist may still override it.
+                    if (value) result.flags.nudist = true;
+                }
+                else if (lname === 'nudist') result.flags.nudist = value;
                 else if (lname === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
                 else if (lname === 'splash_screen') result.iflags.wc_splash_screen = value;
                 else if (lname === 'pushweapon') result.flags.pushweapon = value;
