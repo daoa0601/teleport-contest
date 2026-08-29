@@ -3398,8 +3398,10 @@ export async function makemonAt(mnum, x, y, flags = 0) {
 // C refs: teleport.c collect_coords()/enexto_core() and makemon.c makemon().
 // A monster requested on the hero's occupied square is placed on the first
 // viable coordinate from three independently shuffled square rings.
-export async function makemonNear(mnum, centerX, centerY, flags = 0) {
-    const requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy;
+export async function makemonNear(
+    mnum, centerX, centerY, flags = 0,
+    requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy,
+) {
     const candidates = [];
     for (let radius = 1; radius <= 3; radius++) {
         const ring = [];

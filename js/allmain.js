@@ -97,6 +97,9 @@ import {
 } from './egg.js';
 import { runClaimedFloorGlobTimer } from './glob.js';
 import {
+    finishCarriedFigurineTimer, runClaimedCarriedFigurineTimer,
+} from './figurine.js';
+import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
 } from './object_timers.js';
@@ -2196,6 +2199,13 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         const event = runClaimedFloorGlobTimer(claimed, game, sourceTurn);
         if (event?.message) await queueTurnMessage(event.message);
         return event;
+    }
+    if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
+        const event = await runClaimedCarriedFigurineTimer(
+            claimed, game, sourceTurn,
+        );
+        if (event?.message) await queueTurnMessage(event.message);
+        return finishCarriedFigurineTimer(event, game);
     }
     if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedBuriedZombieTimer(

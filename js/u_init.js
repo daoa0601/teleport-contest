@@ -50,6 +50,7 @@ import { ensureHeroSkills } from './skills.js';
 import { hiddenGold } from './gold.js';
 import { invWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -974,7 +975,9 @@ export function addInventoryItem(raw, presentation = null, observe = true) {
         return merge;
     }
     assignInventoryLetter(item);
+    item.where = 'inventory';
     game.inventory.push(item);
+    attachCursedFigurineTimer(item, game);
     return item;
 }
 

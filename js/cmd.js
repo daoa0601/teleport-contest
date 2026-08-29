@@ -56,6 +56,7 @@ import {
 import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     objectStatePrefix, readObjectName, unseenObjectNoun,
     wishedObjectPresentation,
@@ -4448,6 +4449,7 @@ function preparePickedInventoryObject(object) {
     }
     object.where = 'inventory';
     game.inventory.push(object);
+    attachCursedFigurineTimer(object, game);
     return {
         message: `${object.invlet} - ${pickupObjectDescription(object)}.`,
         comparisonLearned: false,
