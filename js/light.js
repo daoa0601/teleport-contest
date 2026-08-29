@@ -1,14 +1,16 @@
-// light.js — Mobile object light and the supported oil-lamp burn timer.
+// light.js — Mobile object light and the supported timed-lamp burn owner.
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { game } from './gstate.js';
-import { OIL_LAMP } from './object_data.js';
+import { BRASS_LANTERN, OIL_LAMP } from './object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer,
     stopObjectTimer,
 } from './object_timers.js';
 
-function oilLampBreakpoint(age) {
+const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
+
+function lampBreakpoint(age) {
     if (age > 150) return age - 150;
     if (age > 100) return age - 100;
     if (age > 50) return age - 50;
@@ -19,12 +21,13 @@ function oilLampBreakpoint(age) {
 // begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
-export function beginOilLampBurn(
+export function beginLampBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || object.otyp !== OIL_LAMP || (object.age ?? 0) <= 0)
+    if (!object || !TIMED_LAMP_TYPES.has(object.otyp)
+        || (object.age ?? 0) <= 0)
         return false;
-    const turns = oilLampBreakpoint(object.age);
+    const turns = lampBreakpoint(object.age);
     object.lamplit = true;
     object.age -= turns;
     scheduleObjectTimer(
@@ -34,37 +37,46 @@ export function beginOilLampBurn(
     return true;
 }
 
-function extinguishOilLamp(object, state) {
+// The themed-room callback historically used this narrow name.  Retain the
+// API while routing its source-identical lamp state through the shared owner.
+export function beginOilLampBurn(
+    object, state = game, currentTurn = state.moves ?? 0,
+) {
+    if (object?.otyp !== OIL_LAMP) return false;
+    return beginLampBurn(object, state, currentTurn);
+}
+
+function extinguishTimedLamp(object, state) {
     object.lamplit = false;
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }
 
 // C run_timers() removes the timer before burn_object() runs.  This focused
-// dispatcher owns oil-lamp fuel state; warning text and other timer function
-// types remain outside its deliberately narrow scope.
+// dispatcher owns oil-lamp and brass-lantern fuel state; warning text and
+// non-lamp burn types remain outside its deliberately narrow scope.
 export function runClaimedObjectBurnTimer(
     claimed, state = game, currentTurn = state.moves ?? 0,
 ) {
     const object = claimed?.object;
     const timeout = claimed?.timer?.deadline;
-    if (!object || object.otyp !== OIL_LAMP || !object.lamplit
+    if (!object || !TIMED_LAMP_TYPES.has(object.otyp) || !object.lamplit
         || !Number.isFinite(timeout)) return null;
     if (timeout !== currentTurn) {
         const elapsed = currentTurn - timeout;
         if (elapsed >= (object.age ?? 0)) {
             object.age = 0;
-            extinguishOilLamp(object, state);
+            extinguishTimedLamp(object, state);
             return { object, threshold: 0, overdue: true };
         } else {
             object.age -= elapsed;
-            beginOilLampBurn(object, state, currentTurn);
+            beginLampBurn(object, state, currentTurn);
             return { object, threshold: object.age, overdue: true };
         }
     }
     const threshold = object.age ?? 0;
-    if (threshold === 0) extinguishOilLamp(object, state);
-    else beginOilLampBurn(object, state, currentTurn);
+    if (threshold === 0) extinguishTimedLamp(object, state);
+    else beginLampBurn(object, state, currentTurn);
     return { object, threshold, overdue: false };
 }
 

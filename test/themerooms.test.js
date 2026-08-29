@@ -26,7 +26,7 @@ import {
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { plineWithContinuation } from '../js/display.js';
-import { runObjectBurnTimers } from '../js/light.js';
+import { beginLampBurn, runObjectBurnTimers } from '../js/light.js';
 import {
     applyThemeroomFillByName, generateThemeroomByName,
     disturbBuriedZombieTimers, makemonAt, mksobj, place_object,
@@ -37,7 +37,8 @@ import {
 import { runLevelRegions } from '../js/monmove.js';
 import { lifeSaveMonster } from '../js/mondeath.js';
 import {
-    AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, BOULDER, CHEST, CORPSE,
+    AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, BOULDER, BRASS_LANTERN,
+    CHEST, CORPSE,
     LAND_MINE, OIL_LAMP, STATUE,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -2319,6 +2320,62 @@ test('Light source creates a mobile oil-lamp light with live fuel breakpoints', 
     assert.equal(lamp.lamplit, false);
     assert.equal(lamp.burnAt, undefined);
     assert.equal(lamp.timed, 0);
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+});
+
+test('brass lantern shares live lamp breakpoints and mobile light', async () => {
+    themedState(4034, 12);
+    assert.equal(await generateThemeroomByName('default', 12), true);
+    const room = game.level.rooms[0];
+    room.rlit = 0;
+    for (let x = 1; x < game.level.locations.length; x++)
+        for (const loc of game.level.locations[x] || []) loc.lit = false;
+
+    const x = room.lx + 1, y = room.ly + 1;
+    const lantern = place_object({
+        otyp: BRASS_LANTERN, o_id: 9980, contents: [], timed: 0,
+        age: 200, spe: 1, lamplit: false,
+    }, x, y);
+    game.u.ux = Math.min(room.hx, x + 2);
+    game.u.uy = y;
+    game.in_mklev = false;
+    game.blind = false;
+
+    vision_reset_new_level();
+    vision_recalc(0);
+    assert.equal(cansee(x, y), false);
+    assert.equal(beginLampBurn(lantern, game, game.moves), true);
+    assert.equal(lantern.age, 150);
+    assert.equal(lantern.burnAt, game.moves + 50);
+    assert.equal(lantern.lamplit, true);
+    vision_recalc(0);
+    assert.equal(cansee(x, y), true);
+
+    for (const expectedAge of [100, 50, 25, 0]) {
+        const deadline = lantern.burnAt;
+        assert.equal(runObjectBurnTimers(game, deadline).length, 1);
+        assert.equal(lantern.age, expectedAge);
+        assert.equal(lantern.lamplit, true);
+    }
+    const finalDeadline = lantern.burnAt;
+    assert.equal(runObjectBurnTimers(game, finalDeadline).length, 1);
+    assert.equal(lantern.age, 0);
+    assert.equal(lantern.lamplit, false);
+    assert.equal(lantern.where, 'floor');
+    assert.equal(lantern.burnAt, undefined);
+    assert.equal(lantern.timed, 0);
+    vision_recalc(0);
+    assert.equal(cansee(x, y), false);
+
+    lantern.age = 30;
+    assert.equal(beginLampBurn(lantern, game, game.moves), true);
+    const overdue = runObjectBurnTimers(game, lantern.burnAt + 25)[0];
+    assert.equal(overdue.overdue, true);
+    assert.equal(lantern.age, 0);
+    assert.equal(lantern.lamplit, false);
+    assert.equal(lantern.where, 'floor');
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
     });

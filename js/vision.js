@@ -12,7 +12,7 @@ import {
     IS_WALL,
 } from './const.js';
 import { newsym } from './display.js';
-import { BOULDER, OIL_LAMP } from './object_data.js';
+import { BOULDER, BRASS_LANTERN, OIL_LAMP } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 
 const COULD_SEE = 0x1;
@@ -45,7 +45,8 @@ function mobileLightMap(level, couldSee) {
         sources.push({ x: game.u.ux, y: game.u.uy, range: 1 });
     }
     const addLamp = (object, x, y) => {
-        if (object?.lamplit && object.otyp === OIL_LAMP)
+        if (object?.lamplit
+            && (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN))
             sources.push({ x, y, range: 3 });
     };
     for (let x = 1; x < COLNO; x++)
