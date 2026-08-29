@@ -117,6 +117,7 @@ import {
     resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
+    resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     finishDeferredMonsterRollingBoulderPlacement,
     resumeDeferredMonsterRollingBoulderDeath,
@@ -2163,7 +2164,8 @@ function liveDebugSourceRation(state = game) {
 
 function usesSourceMovementRation(state = game) {
     return liveQuietKnight(state) || liveQuietMonk(state)
-        || liveQuietHealer(state) || liveQuietSamurai(state)
+        || liveQuietRogue(state) || liveQuietHealer(state)
+        || liveQuietSamurai(state)
         || liveDebugSourceRation(state);
 }
 
@@ -2192,12 +2194,11 @@ function addHeroMovementRation(state, amount) {
 function reluctantPetMessage(monster, movement) {
     const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
     const top = pile[0];
-    const objectName = top?.otyp === 265 && top?.corpsenm === 72
-        ? 'an orc corpse' : 'something';
-    if (monster?.mnum === 100) {
-        return `Your saddled pony steps reluctantly onto ${objectName}.`;
-    }
-    return `Your pet steps reluctantly onto ${objectName}.`;
+    const objectName = top ? distantMonsterObjectName(top) : 'something';
+    const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
+    return `Your ${quietMonsterName(monster)} ${
+        airborne ? 'flies reluctantly over' : 'steps reluctantly onto'
+    } ${objectName}.`;
 }
 
 function monsterBearTrapMessage(monster) {
@@ -2704,7 +2705,10 @@ function petCarriedObjectName(object) {
             discovery.otyp === object?.otyp);
     const appearance = game.objectDescriptions?.[object?.otyp]
         ?? OBJECT_DESCRIPTIONS[object?.otyp];
-    const trueName = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
+    const trueName = object?.otyp === CORPSE
+        && Number.isInteger(object?.corpsenm)
+        ? `${MONSTER_NAME[object.corpsenm] || 'monster'} corpse`
+        : OBJECT_NAMES[object?.otyp] || object?.name || 'object';
     let noun = typeKnown ? trueName : appearance || trueName;
     if (typeKnown) {
         if (objectClass === 4) noun = `ring of ${noun}`;
@@ -3873,8 +3877,33 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             // mintrap() message is what can force the reluctance line into a
             // tty --More-- before the destination is repainted.
             const message = reluctantPetMessage(monster, movement);
-            await queueTurnMessage(message);
+            const dismissal = await queueTurnMessage(message);
             newsym(movement.oldx, movement.oldy);
+            // If the reluctance line itself did not have to page an older
+            // topline, postmov() reaches mintrap() with the pet already
+            // projectable at its destination.  A trap hit/miss pline can
+            // then page the reluctance line while showing that live actor.
+            if ((dismissal === null || dismissal === undefined)
+                && movement.trap?.kind === 'projectile-trap') {
+                newsym(movement.x, movement.y);
+            }
+        }
+        if (movement?.trap?.kind === 'projectile-trap'
+            && movement.trap.visible
+            && movement.deferredAfterProjectileTrapMessage) {
+            const event = movement.trap;
+            const projectile = event.projectileType === DART
+                ? 'dart' : 'arrow';
+            const noun = event.pendingMissile?.opoisoned
+                ? `poisoned ${projectile}` : projectile;
+            const article = /^[aeiou]/i.test(noun) ? 'an' : 'a';
+            await queueTurnMessage(
+                `${visibleMonsterSubject(monster)} is ${
+                    event.hit ? 'hit' : 'almost hit'
+                } by ${article} ${noun}!`,
+            );
+            resumeDeferredMonsterProjectileTrap(action, game);
+            movement = action.movement;
         }
         if (movement?.trapEscape?.escaped && monsterIsSeen)
             await queueTurnMessage(monsterTrapEscapeMessage(monster));
@@ -6582,9 +6611,9 @@ export async function newgame() {
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
     g._rangerNamePath = g.urole?.key === 'ranger'
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
-    g._rogueExplorePath = g.urole?.key === 'rogue'
+    g._rogueExplorePath = !bridgeFree && g.urole?.key === 'rogue'
         && g.u?.ux === 71 && g.u?.uy === 14;
-    g._rogueFriday13Path = g.urole?.key === 'rogue'
+    g._rogueFriday13Path = !bridgeFree && g.urole?.key === 'rogue'
         && g.urace?.mnum === 0 && g.u?.ux === 9 && g.u?.uy === 15
         && g.level?.flags?.nsinks === 1 && g._hasStaticThemeroom;
     if (g._rogueFriday13Path) {
@@ -6592,10 +6621,10 @@ export async function newgame() {
         g._friday13ElapsedTurns = 46;
         g._rogueFriday13SavePath = /Sy$/.test(replayMoves);
     }
-    g._rogueOrcPath = g.urole?.key === 'rogue'
+    g._rogueOrcPath = !bridgeFree && g.urole?.key === 'rogue'
         && g.urace?.mnum === 4 && g.u?.ux === 5 && g.u?.uy === 12;
-    g._rogueChargenPath = !!g._characterPickerUsed && g.urole?.key === 'rogue'
-        && g.u?.ux === 36 && g.u?.uy === 7;
+    g._rogueChargenPath = !bridgeFree && !!g._characterPickerUsed
+        && g.urole?.key === 'rogue' && g.u?.ux === 36 && g.u?.uy === 7;
     g._valkChatPath = g.urole?.key === 'valkyrie'
         && /#chat/.test(replayMoves);
     g._priestCastPath = g.urole?.key === 'priest'
@@ -6839,8 +6868,8 @@ export async function moveloop_core() {
     // so some commands need a second monster/global round before input.
     const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
-    if ((liveQuietMonk(g) || liveQuietHealer(g) || liveQuietSamurai(g)
-        || liveDebugSourceRation(g))
+    if ((liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
+        || liveQuietSamurai(g) || liveDebugSourceRation(g))
         && g._heroTimePending) {
         const consumeInterruptedMultiAction = () => {
             if (!g._interruptedMultiActionDebt

@@ -461,19 +461,10 @@ export async function dolook({
             : 'There is a doorway here.');
     } else if (onUpstairs && game.u?.uz?.dnum === 0
         && game.u?.uz?.dlevel === 1) {
-        const message = game._rangerNamePath
-            || game._rogueChargenPath || game._valkChatPath || game._priestCastPath
-            || game._healerNewmoonPath || game._monkNorthPath
-            ? 'There is a staircase up out of the dungeon here.'
-            : 'There is a staircase up out of the dungeon here.--More--';
-        await pline(message);
-        if (!game._rangerNamePath && !game._rogueChargenPath
-            && !game._valkChatPath && !game._priestCastPath
-            && !game._healerNewmoonPath && !game._monkNorthPath) {
-            await flush_screen(1);
-            game.nhDisplay?.setCursor(message.length, 0);
-            await nhgetch();
-        }
+        // invent.c:look_here() emits the dungeon feature as an ordinary
+        // pline and returns ECMD_OK.  It does not add a role/session pager;
+        // any real tty continuation is owned by surrounding pending output.
+        await pline('There is a staircase up out of the dungeon here.');
     } else if (stairway) {
         await pline(stairwayFeatureSentenceAt(game.u?.ux, game.u?.uy));
     } else if (objects.length === 1 && describeObject) {

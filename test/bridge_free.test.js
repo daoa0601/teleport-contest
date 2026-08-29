@@ -195,3 +195,29 @@ test('bridge-free Samurai owns live pet, run, and prayer turns', async () => {
         });
     });
 });
+
+test('bridge-free Rogue owns chargen, pet traps, combat, and runs', async () => {
+    await withBridgeFreeModeAsync(async () => {
+        for (const filename of [
+            'seed0077-rogue-chargen.session.json',
+            'seed1500-rogue-explore-move.session.json',
+            'seed0060-orc-rogue-kick-search.session.json',
+        ]) {
+            const session = JSON.parse(fs.readFileSync(
+                new URL(`../sessions/${filename}`, import.meta.url),
+                'utf8',
+            )).segments[0];
+            const result = await runSegment({
+                ...session, storage: new Map(),
+            });
+
+            assertBoundedSessionParity(result, session);
+            assert.deepEqual(result.getBridgeUsageLedger(), {
+                bridgeFree: true,
+                totalHits: 0,
+                forbiddenHits: 0,
+                bridges: {},
+            }, filename);
+        }
+    });
+});

@@ -5096,7 +5096,21 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    await pline('You kick at empty space.');
+    // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
+    // an unremarkable floor kick is merely empty or strains a muscle.
+    exerciseAttribute(1, false);
+    const martial = ['monk', 'samurai'].includes(game.urole?.key)
+        || game.uarmf?.otyp === KICKING_BOOTS;
+    if (martial || currentAttribute(1) >= 16 || rn2(3) !== 0) {
+        await pline('You kick at empty space.');
+    } else {
+        await pline('Dumb move!  You strain a muscle.');
+        exerciseAttribute(0, false);
+        game.u._woundedLegSide = 'right';
+        game.u._woundedLegTurns = Math.max(
+            game.u._woundedLegTurns ?? 0, 5 + rnd(5),
+        );
+    }
     game.context.move = 1;
 }
 
@@ -14827,8 +14841,7 @@ async function doapply() {
                 game.context.move = 0;
                 return;
             }
-            if ((game._rogueExplorePath || game._rogueChargenPath)
-                && item.otyp === LOCK_PICK) {
+            if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
                 const direction = await promptKey('In what direction? ');
                 const directionKey = String.fromCharCode(direction).toLowerCase();
                 if (isMovementKey(directionKey)) {

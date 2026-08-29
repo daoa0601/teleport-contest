@@ -5156,6 +5156,53 @@ function placeAndStackTrapMissile(object, state, x, y) {
     return stack_object(object, state);
 }
 
+function finishMonsterProjectileTrap(
+    event, monster, state, movement, random, rollOne, calls,
+) {
+    if (!event || event.resolved) return event;
+    const missile = event.pendingMissile;
+    if (event.hit) {
+        const damageTable = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
+            ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
+        const damageSides = Math.max(
+            1, damageTable[event.projectileType] || 1,
+        );
+        let damage = rollOne(damageSides);
+        calls.push(`rnd(${damageSides})`);
+        damage += missile?.spe ?? 0;
+        if (damage < 0) damage = 0;
+        if (damage > 0) {
+            damage = Math.max(1, damage - Math.max(
+                missile?.oeroded ?? 0,
+                missile?.oeroded2 ?? 0,
+            ));
+        }
+        damage = Math.max(1, damage);
+        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+        event.damage = damage;
+        event.missileConsumed = true;
+        if (monster.mhp <= 0) {
+            detachDeadMonster(monster, state);
+            const corpse = createOrdinaryMonsterCorpse(
+                monster, state, random, calls,
+            );
+            event.death = { corpseCreated: !!corpse, corpse };
+            movement.actorDied = true;
+            movement.actionCompleted = true;
+        }
+    } else {
+        event.missile = placeAndStackTrapMissile(
+            missile, state, event.trap.tx, event.trap.ty,
+        );
+        event.missileConsumed = false;
+    }
+    delete event.pendingMissile;
+    event.monsterHpAfter = monster.mhp;
+    event.killed = monster.mhp <= 0;
+    event.resolved = true;
+    return event;
+}
+
 function migrateMonsterOffLevel(monster, state, trap, {
     kind, mode, confused = false,
 }) {
@@ -5492,14 +5539,13 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
         // trap.c:mintrap()->trapeffect_{arrow,dart}_trap()->thitm().  The
-        // visible branch can suspend on either the trap trigger or hit/miss
-        // line.  This source-shaped block owns the unseen transaction first;
-        // retain visible tty handling for an independently observed witness.
+        // visible hit/miss pline can suspend on an older topline after the
+        // missile constructor and to-hit roll, but before damage, death, or
+        // floor placement.  Preserve that split as an explicit continuation.
         const visible = !state?.blind && !(state?.u?.blindTurns > 0)
             && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
             && (!monster.minvis || state?.u?.seeInvisible
                 || state?.u?.see_invisible);
-        if (visible) return null;
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -5535,50 +5581,22 @@ function triggerMonsterTrap(
             + attackLevel + (missile.spe ?? 0);
         const hit = hitThreshold <= hitRoll;
         const monsterHpBefore = monster.mhp ?? 1;
-        let damage = 0;
-        let death = null;
-        let floorMissile = null;
-        if (hit) {
-            const damageTable = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
-                ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
-            const damageSides = Math.max(1,
-                damageTable[projectileType] || 1);
-            damage = rollOne(damageSides);
-            calls.push(`rnd(${damageSides})`);
-            damage += missile.spe ?? 0;
-            if (damage < 0) damage = 0;
-            if (damage > 0) {
-                damage = Math.max(1, damage - Math.max(
-                    missile.oeroded ?? 0,
-                    missile.oeroded2 ?? 0,
-                ));
-            }
-            // thitm() makes every non-harmless strike deal at least one even
-            // when negative enchantment made dmgval() return zero.
-            damage = Math.max(1, damage);
-            monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-            if (monster.mhp <= 0) {
-                detachDeadMonster(monster, state);
-                const corpse = createOrdinaryMonsterCorpse(
-                    monster, state, random, calls,
-                );
-                death = { corpseCreated: !!corpse, corpse };
-                movement.actorDied = true;
-                movement.actionCompleted = true;
-            }
-        } else {
-            floorMissile = placeAndStackTrapMissile(
-                missile, state, trap.tx, trap.ty,
-            );
-        }
         const event = {
-            kind: 'projectile-trap', trap, visible: false,
-            projectileType, missile: floorMissile,
-            missileConsumed: hit, hitRoll, hitThreshold, hit,
+            kind: 'projectile-trap', trap, visible,
+            projectileType, pendingMissile: missile,
+            missileConsumed: null, hitRoll, hitThreshold, hit,
             monsterHpBefore, monsterHpAfter: monster.mhp,
-            damage, killed: monster.mhp <= 0, death,
+            damage: 0, killed: false, death: null, resolved: false,
         };
         movement.trap = event;
+        if (visible) {
+            trap.tseen = true;
+            movement.deferredAfterProjectileTrapMessage = true;
+        } else {
+            finishMonsterProjectileTrap(
+                event, monster, state, movement, random, rollOne, calls,
+            );
+        }
         return event;
     }
     if (trap.ttyp === ROCKTRAP) {
@@ -8760,6 +8778,7 @@ function distantPhaseFourAttackSetup(
 // set_apparxy(), species probes, or candidate selection.
 function completeMovedMonsterAction(
     monster, movement, state, random, rollDice, rollOne, calls,
+    { trapAlreadyHandled = false } = {},
 ) {
     revealMonsterAfterLeavingHidingPlace(monster, movement, state);
     if (!movement.swallowedHold)
@@ -8775,11 +8794,12 @@ function completeMovedMonsterAction(
     }
     // dog_move() reports MMOVE_MOVED even when candidate selection leaves
     // a pet on its original square, so postmov() still rechecks a trap there.
-    if (!movement.swallowedHold
+    if (!trapAlreadyHandled && !movement.swallowedHold
         && (movement.moved || monster?.pet || monster?.mtame))
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
+    if (movement.deferredAfterProjectileTrapMessage) return movement;
     // postmov() maps both a trap-killed actor and an actor moved off-level to
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
@@ -8833,6 +8853,23 @@ function completeMovedMonsterAction(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
     return movement;
+}
+
+export function resumeDeferredMonsterProjectileTrap(
+    action, state, random = rn2, rollDice = d, rollOne = rnd,
+) {
+    const movement = action?.movement;
+    if (!movement?.deferredAfterProjectileTrapMessage) return action;
+    delete movement.deferredAfterProjectileTrapMessage;
+    finishMonsterProjectileTrap(
+        movement.trap, action.monster, state, movement,
+        random, rollOne, action.calls,
+    );
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        action.calls, { trapAlreadyHandled: true },
+    );
+    return action;
 }
 
 export function resumeDeferredMonsterDoor(
