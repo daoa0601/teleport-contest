@@ -36381,3 +36381,52 @@ visibility, placement failure breadth, extinction during a multi-hatch,
 timer-preserving species mutation, object move/split/relink semantics, and a
 sealed stratum remain open. Those paths are rejected before RNG rather than
 inferred from the unowned female-hero result.
+
+## 984. Carried figurine retry separates placement from familiar construction
+
+~~~mermaid
+flowchart TD
+    Claim["claim FIG_TRANSFORM for hero-inventory figurine"] --> Near1["enexto_core with GP_CHECKSCARY"]
+    Near1 --> Rings1["shuffle radius 1, 2, and 3 rings"]
+    Rings1 --> Nearby1{"goodpos accepts a near square?"}
+    Nearby1 -->|no| Whole1["reshuffle the whole map; skip already-tested near count"]
+    Whole1 --> Spot1{"goodpos accepts a farther square?"}
+    Spot1 -->|no| Near2["second full enexto_core without GP_CHECKSCARY"]
+    Near2 --> Rings2["repeat near and whole-map shuffles independently"]
+    Rings2 --> Spot2{"any legal coordinate?"}
+    Spot2 -->|no| Retry["start_timer rnd(5000); retain figurine"]
+    Nearby1 -->|yes| Make["make_familiar at selected coordinate"]
+    Spot1 -->|yes| Make
+    Spot2 -->|yes| Make
+    Make --> Born{"monster constructed?"}
+    Born -->|no| Consume["consume figurine without retry"]
+    Born -->|yes| Familiar["disposition, presentation, then deletion"]
+    Lua["Lua owns no figurine timer or placement branch"] -.-> Claim
+~~~
+
+Native `fig_transform()` distinguishes a failed `enexto()` from a failed
+`make_familiar()`. The former never reaches actor construction: it attaches a
+new relative one-through-5000-turn timer and leaves the figurine linked to its
+carrier. The latter falls through the callback's ordinary object disposal.
+JavaScript previously collapsed those outcomes because `makemonNear()` both
+selected a coordinate and constructed the actor, returning `null` for either
+failure.
+
+The shared placement owner now exposes coordinate selection independently.
+It mirrors `NEW_ENEXTO`: each core first shuffles and tests three expanding
+rings, then freshly collects and shuffles the entire map and skips the count
+already tested. A complete first pass uses `goodpos_onscary()`-shaped species
+screening; only its total failure performs an independent unrestricted pass.
+`makemonNear()` composes that selector with the ordinary constructor, while
+the figurine callback can reschedule before construction. A single legal
+radius-four square proves that whole-map fallback wins before retry; a fully
+obstructed map proves both complete searches precede exactly one `rnd(5000)`
+deadline and leave inventory, actor count, and presentation unchanged.
+
+This carrier remains mechanically **partial**. Floor and monster inventory
+attribution, named forms, alternate locomotion prose, invisibility, mimic and
+hiding state, minions and shapechangers, immediate pet weapon setup,
+unique/extinct construction limits, liquid death, manual application,
+inventory-exit timer cancellation, all insertion paths, and a sealed stratum
+remain open. The completed retry path does not claim those post-placement
+families.

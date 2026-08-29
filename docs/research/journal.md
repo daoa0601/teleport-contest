@@ -95696,3 +95696,69 @@ smallest remaining parentage-free egg carrier, whichever closes a real live
 control-flow gap without widening into special pet behavior.
 
 ---
+
+### [2026-08-29 20:10 EEST, journal block 3152] {#bridge-free #object-timers #fig-transform #enexto #collect-coords #goodpos #blocked-placement #retry #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** the next portfolio returned to the
+blocked carried-figurine path left open in block 3149. Native
+`apply.c:fig_transform()` first resolves a carried object's location, runs
+`enexto()`, and—when no coordinate exists—calls `start_timer(rnd(5000))` and
+returns with the figurine intact. JavaScript instead called a combined
+`makemonNear()` boundary and deleted the figurine whenever it returned null.
+That result conflated an `enexto()` failure, which must retry, with a later
+`make_familiar()`/`makemon()` failure, which does consume the object. The
+earliest divergence was therefore coordinate selection, before actor RNG,
+disposition, message, or deletion.
+
+**Prediction portfolio and decisive evidence:** the critical-debugging
+portfolio kept three superficially identical null results separate: (1) a
+legal coordinate outside the three near rings must be found by `NEW_ENEXTO`'s
+whole-map fallback; (2) total placement failure must run two complete search
+passes and then retain plus reschedule the figurine; and (3) construction
+failure after a valid coordinate must retain the existing consumption path.
+Source inspection falsified the earlier three-ring model. Each
+`enexto_core()` first shuffles radius-one, -two, and -three rings, then calls
+`collect_coords(..., maxradius=0)` again, reshuffling all map rings before
+skipping the already-tested near count. `enexto()` repeats that complete core
+without `GP_CHECKSCARY` only when the first core fails.
+
+**Decision and implementation:** commit `d9657cb` separates shared placement
+from construction. `findMonsterNearPosition()` now owns both independently
+shuffled `enexto_core()` passes, full-map fallback, and the source
+`goodpos_onscary()` species approximation for altars, scare scrolls,
+Elbereth, resistant species, Gehennom, and the end game. Existing
+`makemonNear()` composes that selector with `makemon()`. The carried figurine
+callback instead selects first: total failure consumes one final `rnd(5000)`,
+attaches a deadline relative to the callback turn, emits no presentation,
+creates no actor, and leaves the figurine in inventory. A selected coordinate
+then enters `makemonAt()`, preserving the distinct post-placement failure and
+consumption boundary.
+
+**Measured effect and regression:** the initial blocked-map witness passed as
+the seventh focused case. A second adversarial control then opened exactly one
+radius-four room and proved the whole-map fallback transforms there without a
+retry; the focused file passes **8/8**. The completely obstructed witness checks
+only bounded scalars and the final RNG call rather than comparing or formatting
+the 3,269-call transcript: two times the 45 near-ring shuffles plus the full-map
+ring shuffles, followed by exactly one `rnd(5000)`. The bounded bridge-policy,
+egg, figurine, glob, lamp, Priest-startup, ordinary-room, and themed-room gate
+passes **101/101** with zero bridge hits. The mechanical audit remains clean at
+117 files, 15 guarded modules, and 19 fixture modules. Each verifier was
+guarded, singular, owned until normal exit, and no duplicate suite was started.
+
+**Falsified hypotheses, limit, and next blocker:** `enexto()` is not limited to
+three rings; a null combined placement/construction result does not determine
+whether the figurine should be deleted; a blocked callback does not consume
+disposition RNG or present pack prose; and retry time is relative
+`rnd(5000)`, not a fresh attachment's `rnd(9000)+200`. The ordinary carried
+owner remains partial: floor and monster-inventory callbacks, named and
+special-locomotion prose, invisibility/mimic/hiding, minions, shapechangers,
+weaponed pets, unique/extinct construction limits, liquid death, manual
+application, timer cancellation on inventory exit, broader insertion paths,
+and a sealed stratum remain open. No full suite, public corpus, sealed-trace
+inspection, score, push, publication, official measurement, or animation work
+ran. The next portfolio should compare a dropped timed figurine's floor
+callback against the smallest remaining monster-inventory carrier, keeping
+carrier attribution and post-placement familiar state as separate routes.
+
+---
