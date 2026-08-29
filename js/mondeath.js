@@ -47,6 +47,12 @@ function possessiveSubject(subject) {
     return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
 }
 
+function ordinaryMonsterSubject(monster, spotted) {
+    if (monster?.name) return monster.name;
+    if (!spotted) return 'it';
+    return `the ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
+}
+
 function monsterReconstitutesAfterLifeSaving(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(attack => attack[0] === 13 || attack[0] === 14);
@@ -58,7 +64,7 @@ function monsterReconstitutesAfterLifeSaving(monster) {
 export async function lifeSaveMonster(
     monster, amulet, {
         creditedKill, retainCursor = false,
-        visible = true, spotted = true,
+        visible = true, spotted = true, genocided = false,
         continueLine = plineWithContinuation,
         page = lifeSavingPage, line = pline,
     } = {},
@@ -106,10 +112,17 @@ export async function lifeSaveMonster(
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
     monster.mhp = monster.mhpmax;
+    if (genocided) {
+        if (visible) {
+            const failedSubject = ordinaryMonsterSubject(monster, spotted);
+            await line(`Unfortunately, ${failedSubject} is still genocided...`);
+        }
+        monster.mhp = 0;
+    }
     if (retainCursor)
         game._cursorOverride = [monster.mx - 1, monster.my + 1];
     return {
         kind: 'monster-life-saving', monster, amulet,
-        visible, spotted, survived: true,
+        visible, spotted, genocided, survived: !genocided,
     };
 }

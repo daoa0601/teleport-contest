@@ -940,7 +940,45 @@ test('known life-saving uses unseen-monster prose without Wisdom RNG',
         assert.equal(amulet.where, 'gone');
     });
 
-test('melt-ice rejects genocided monster life-saving before mutation', () => {
+test('unseen genocide-defeated life-saving remains silent and fatal',
+    async () => {
+        themedState(4015, 8);
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING, o_id: 99646,
+            contents: [], timed: 0, where: 'minvent',
+            owornmask: W_AMUL, worn: true,
+        };
+        const nymph = {
+            mnum: 68, mx: 10, my: 10, mhp: 0, mhpmax: 6, m_lev: 3,
+            minvent: [amulet], inventory: [amulet],
+            misc_worn_check: W_AMUL,
+        };
+        initRng(1n);
+        enableRngLog();
+        const pages = [];
+        const lines = [];
+        const result = await lifeSaveMonster(nymph, amulet, {
+            visible: false, spotted: false, genocided: true,
+            continueLine: async message => lines.push(message),
+            page: async message => pages.push(message),
+            line: async message => lines.push(message),
+        });
+
+        assert.deepEqual(pages, []);
+        assert.deepEqual(lines, []);
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(result.survived, false);
+        assert.equal(result.genocided, true);
+        assert.equal(nymph.mhpmax, 10);
+        assert.equal(nymph.mhp, 0);
+        assert.equal(nymph.misc_worn_check, I_SPECIAL);
+        assert.equal(amulet.where, 'gone');
+        assert.equal(game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)
+            ?? false, false);
+    });
+
+test('genocide defeats melt-ice life-saving before death, burial, and splash',
+    async () => {
     themedState(4012, 8);
     const x = 10, y = 10;
     game.level.at(x, y).typ = ICE;
@@ -951,26 +989,129 @@ test('melt-ice rejects genocided monster life-saving before mutation', () => {
     const amulet = {
         otyp: AMULET_OF_LIFE_SAVING, o_id: 9967,
         contents: [], timed: 0, where: 'minvent', owornmask: W_AMUL,
+        worn: true,
     };
-    const nymph = {
-        mnum: 68, mx: x, my: y, mhp: 8, mhpmax: 8,
-        minvent: [amulet], inventory: [amulet],
+    const statue = place_object({
+        otyp: STATUE, o_id: 9970, contents: [], timed: 0,
+    }, x, y);
+    // A grounded wumpus is a clinger, so minliquid() leaves it alive in the
+    // exposed moat, but m_in_air() does not protect it from the boulder fill.
+    const wumpus = {
+        mnum: 84, mx: x, my: y, mhp: 8, mhpmax: 8, m_lev: 8,
+        name: 'Slink', minvent: [amulet], inventory: [amulet],
+        hasInventory: true, misc_worn_check: W_AMUL,
     };
-    game.level.monsters.push(nymph);
+    game.level.monsters.push(wumpus);
     game.mvitals = [];
-    game.mvitals[68] = { mvflags: G_GENOD };
+    game.mvitals[84] = { mvflags: G_GENOD };
     scheduleLevelTimer(
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
-    assert.throws(
-        () => runClaimedMeltIceTimer(
-            claimNextDueObjectTimer(game, game.moves), game,
-        ),
-        /occupant life-saving genocide failure is not implemented/,
+    initRng(1n); // rn2(10)=5, then Wisdom exercise rn2(19)=11
+    enableRngLog();
+    const event = runClaimedMeltIceTimer(
+        claimNextDueObjectTimer(game, game.moves), game,
     );
-    assert.equal(game.level.at(x, y).typ, ICE);
-    assert.equal(boulder.where, 'floor');
-    assert.equal(nymph.mhp, 8);
+    const phases = [];
+    await finishMeltIceTimer(event, {
+        visible: true, occupantSpotted: true,
+        heroAt: false, heroInWater: false,
+        announce: async message => {
+            phases.push({
+                kind: 'message', message, hp: wumpus.mhp,
+                present: game.level.monsters.includes(wumpus),
+                amuletWhere: amulet.where, statueWhere: statue.where,
+                boulderWhere: boulder.where, rng: getRngLog().slice(),
+            });
+            return plineWithContinuation(message);
+        },
+        lifeSaveMonster: (monster, saver, presentation) =>
+            lifeSaveMonster(monster, saver, {
+                ...presentation,
+                page: async message => {
+                    phases.push({
+                        kind: 'life-saving-page', message, hp: monster.mhp,
+                        present: game.level.monsters.includes(monster),
+                        amuletWhere: saver.where, statueWhere: statue.where,
+                        boulderWhere: boulder.where, rng: getRngLog().slice(),
+                    });
+                    game._pending_message = '';
+                },
+                line: async message => {
+                    phases.push({
+                        kind: 'life-saving-line', message, hp: monster.mhp,
+                        present: game.level.monsters.includes(monster),
+                        amuletWhere: saver.where, statueWhere: statue.where,
+                        boulderWhere: boulder.where, rng: getRngLog().slice(),
+                    });
+                    game._pending_message = '';
+                },
+            }),
+        wake: async () => {}, disturb: () => {}, repaint: () => {},
+    });
+    const outcome = event.boulderOutcomes[0];
+
+    assert.deepEqual(phases.map(phase => phase.kind), [
+        'message', 'message',
+        'life-saving-page', 'life-saving-page', 'life-saving-page',
+        'life-saving-line', 'life-saving-line', 'message',
+    ]);
+    assert.equal(phases[0].message, 'Some ice melts away.');
+    assert.equal(phases[1].message, 'A boulder settles...');
+    assert.deepEqual(phases[1].rng, []);
+    assert.equal(phases[2].message,
+        'Some ice melts away.  A boulder settles...  But wait...--More--');
+    assert.equal(phases[2].hp, 0);
+    assert.equal(phases[2].amuletWhere, 'minvent');
+    assert.equal(phases[2].statueWhere, 'floor');
+    assert.equal(phases[2].boulderWhere, 'free');
+    assert.deepEqual(phases[2].rng, ['rn2(10)=5']);
+    assert.equal(phases[3].message,
+        "Slink's medallion begins to glow!--More--");
+    assert.deepEqual(phases[3].rng, [
+        'rn2(10)=5', 'rn2(19)=11',
+    ]);
+    assert.equal(phases[4].message, 'Slink looks much better!--More--');
+    assert.equal(phases[5].message, 'The medallion crumbles to dust!');
+    assert.equal(phases[5].hp, 0);
+    assert.equal(phases[5].amuletWhere, 'minvent');
+    assert.equal(phases[6].message,
+        'Unfortunately, Slink is still genocided...');
+    assert.equal(phases[6].hp, 10);
+    assert.equal(phases[6].amuletWhere, 'gone');
+    assert.equal(phases[6].present, true);
+    assert.equal(phases[6].statueWhere, 'floor');
+    assert.deepEqual(phases[6].rng, [
+        'rn2(10)=5', 'rn2(19)=11',
+    ]);
+    assert.equal(phases[7].message,
+        'There is a large splash as the boulder fills the moat.');
+    assert.equal(phases[7].hp, 0);
+    assert.equal(phases[7].present, false);
+    assert.equal(phases[7].statueWhere, 'buried');
+    assert.equal(phases[7].boulderWhere, 'gone');
+    assert.deepEqual(getRngLog().slice(0, 2), [
+        'rn2(10)=5', 'rn2(19)=11',
+    ]);
+    assert.ok(phases[7].rng.length > phases[6].rng.length);
+
+    assert.equal(outcome.occupantLifeSaving.survived, false);
+    assert.equal(outcome.occupantLifeSaving.genocided, true);
+    assert.equal(outcome.occupantDeath.monster, wumpus);
+    assert.equal(outcome.occupantDeath.corpseCreated, true);
+    assert.equal(wumpus.dead, true);
+    assert.equal(wumpus.mhp, 0);
+    assert.equal(wumpus.mhpmax, 10);
+    assert.equal(game.level.monsters.includes(wumpus), false);
+    assert.equal(game._vanquishedCounts.get(84).count, 1);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(amulet.owornmask, 0);
+    assert.equal(statue.where, 'buried');
+    assert.equal(outcome.occupantDeath.corpse.where, 'buried');
+    assert.equal(outcome.occupantDeath.corpse.oname, 'Slink');
+    assert.deepEqual(getBridgeUsageLedger(), {
+        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
 });
 
 test('melt-ice rejects pet life-saving before mutation', () => {

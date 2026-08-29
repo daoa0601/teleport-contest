@@ -2141,9 +2141,12 @@ export async function finishMeltIceTimer(event, options = {}) {
             const visible = options.visible ?? cansee(event.x, event.y);
             const spotted = options.occupantSpotted
                 ?? canSeeMonster(monster, event.x, event.y);
+            const presentation = { visible, spotted };
+            if (outcome.pendingOccupantLifeSaving.genocided)
+                presentation.genocided = true;
             const resolution = await saveMonster(
                 monster, outcome.pendingOccupantLifeSaving.amulet,
-                { visible, spotted },
+                presentation,
             );
             finishMeltIceBoulderLifeSaving(
                 event, outcome, resolution, game,

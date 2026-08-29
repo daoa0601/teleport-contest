@@ -4040,15 +4040,20 @@ function wornMeltMonsterLifeSaver(monster) {
         && ((object.owornmask ?? 0) & W_AMUL)) || null;
 }
 
-function meltOccupantDeathGap(monster, state = game) {
+function meltOccupantDeathGap(
+    monster, state = game, { afterFailedLifeSaving = false } = {},
+) {
     if (state !== game) return 'custom-state death projection';
     if (Number.isInteger(monster.cham) && monster.cham >= 0)
         return 'shapechanging';
     const lifeSaver = wornMeltMonsterLifeSaver(monster);
-    if (lifeSaver) {
+    if (lifeSaver && !afterFailedLifeSaving) {
         if (monster.mtame || monster.pet) return 'pet life-saving';
-        if ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_GENOD)
-            return 'life-saving genocide failure';
+        if ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_GENOD) {
+            return meltOccupantDeathGap(
+                monster, state, { afterFailedLifeSaving: true },
+            );
+        }
         return null;
     }
     if (monster.mtame || monster.pet) return 'pet traits';
@@ -4227,12 +4232,23 @@ export function finishMeltIceBoulderLifeSaving(
     const pending = outcome?.pendingOccupantLifeSaving;
     if (!pending || pending.monster !== resolution?.monster
         || pending.amulet !== resolution?.amulet
-        || !resolution.survived || (pending.monster.mhp ?? 0) <= 0) {
+        || pending.genocided !== !!resolution.genocided
+        || resolution.survived !== !pending.genocided
+        || (resolution.survived
+            ? (pending.monster.mhp ?? 0) <= 0
+            : (pending.monster.mhp ?? 0) > 0)) {
         throw new Error('invalid melt-ice monster life-saving resolution');
     }
     outcome.pendingOccupantLifeSaving = null;
     outcome.occupantLifeSaving = resolution;
     event.occupantLifeSaving = resolution;
+    if (!resolution.survived) {
+        const occupantDeath = resolveMeltMonsterDeath(
+            pending.monster, state,
+        );
+        outcome.occupantDeath = occupantDeath;
+        event.occupantDeath = occupantDeath;
+    }
     return finishMeltIceBoulderOutcome(event, outcome, state);
 }
 
@@ -4279,6 +4295,8 @@ export function runNextMeltIceBoulder(event, state = game) {
                 pendingOccupantLifeSaving = {
                     kind: 'melt-ice-occupant-life-saving',
                     monster: occupant, amulet: lifeSaver,
+                    genocided: !!((state.mvitals?.[occupant.mnum]?.mvflags
+                        ?? 0) & G_GENOD),
                 };
             } else {
                 occupantDeath = resolveMeltMonsterDeath(occupant, state);
