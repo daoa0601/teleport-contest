@@ -116,6 +116,9 @@ import {
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
+import {
+    mergable as objectsMergable, mergeObjectStacks,
+} from './object_merge.js';
 import { vision_note_blocker_change } from './vision.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
@@ -1157,66 +1160,7 @@ export function place_object(otmp, x, y) {
 // newly placed object passed to stackobj(), while a compatible older identity
 // is extracted from the pile.
 export function mergable(otmp, obj, state = game) {
-    if (!otmp || !obj || otmp === obj || otmp.otyp !== obj.otyp
-        || otmp.nomerge || obj.nomerge || !OBJECT_MERGE[obj.otyp]) {
-        return false;
-    }
-    if (obj.oclass === COIN_CLASS) return true;
-    if (!!otmp.cursed !== !!obj.cursed
-        || !!otmp.blessed !== !!obj.blessed) return false;
-
-    const otmpLost = otmp.how_lost ?? 0;
-    const objLost = obj.how_lost ?? 0;
-    if (otmpLost === 4 || objLost === 4
-        || (otmpLost !== 0 && otmpLost !== objLost)) return false;
-    if (obj.globby || otmp.globby) return !!obj.globby && !!otmp.globby;
-
-    for (const field of [
-        'unpaid', 'no_charge', 'obroken', 'otrapped', 'lamplit', 'opoisoned',
-    ]) {
-        if (!!otmp[field] !== !!obj[field]) return false;
-    }
-    if ((otmp.spe ?? 0) !== (obj.spe ?? 0)) return false;
-    if (obj.oclass === FOOD_CLASS
-        && ((otmp.oeaten ?? 0) !== (obj.oeaten ?? 0)
-            || !!otmp.orotten !== !!obj.orotten)) return false;
-
-    const impairedSight = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0
-        || !!state?.u?.hallucinating
-        || (state?.u?.hallucinationTurns ?? 0) > 0;
-    const cleric = state?.urole?.key === 'priest';
-    if (!!otmp.dknown !== !!obj.dknown
-        || ((!!otmp.bknown !== !!obj.bknown)
-            && !cleric && impairedSight)
-        || (otmp.oeroded ?? 0) !== (obj.oeroded ?? 0)
-        || (otmp.oeroded2 ?? 0) !== (obj.oeroded2 ?? 0)
-        || !!otmp.greased !== !!obj.greased
-        || !!otmp.oerodeproof !== !!obj.oerodeproof
-        || ((!!otmp.rknown !== !!obj.rknown) && impairedSight)) {
-        return false;
-    }
-
-    if ([CORPSE, EGG, TIN].includes(obj.otyp)
-        && (otmp.corpsenm ?? -1) !== (obj.corpsenm ?? -1)) return false;
-    if (obj.otyp === EGG && (otmp.timed || obj.timed)) return false;
-    if ((obj.otyp === TALLOW_CANDLE || obj.otyp === WAX_CANDLE)
-        && Math.trunc((otmp.age ?? 0) / 25)
-            !== Math.trunc((obj.age ?? 0) / 25)) return false;
-    if (obj.otyp === POT_OIL && obj.lamplit) return false;
-
-    const hasAttachment = candidate => !!(
-        candidate.attachedMid || candidate.attachedMonster
-        || candidate.oextra?.omid || candidate.oextra?.omonst
-    );
-    if (hasAttachment(otmp) || hasAttachment(obj)) return false;
-
-    const otmpName = otmp.oextra?.oname ?? otmp.oname ?? '';
-    const objName = obj.oextra?.oname ?? obj.oname ?? '';
-    if ((otmpName && objName && otmpName !== objName)
-        || (obj.otyp === CORPSE && !!otmpName !== !!objName)) return false;
-    if ((otmp.oartifact ?? 0) !== (obj.oartifact ?? 0)) return false;
-    if (!!otmp.known !== !!obj.known && impairedSight) return false;
-    return true;
+    return objectsMergable(otmp, obj, state);
 }
 
 // C ref: invent.c:merged()/stackobj().  `obj` remains the live identity
@@ -1228,37 +1172,9 @@ export function stack_object(obj, state = game) {
         candidate !== obj && mergable(obj, candidate, state));
     if (!existing) return obj;
 
-    const objQuantity = obj.quan ?? obj.quantity ?? 1;
-    const existingQuantity = existing.quan ?? existing.quantity ?? 1;
-    const quantity = objQuantity + existingQuantity;
-    if (!obj.lamplit && !obj.globby) {
-        obj.age = Math.trunc(
-            (((obj.age ?? 0) * objQuantity)
-                + ((existing.age ?? 0) * existingQuantity)) / quantity,
-        );
-    }
-    if (!obj.globby) obj.quan = obj.quantity = quantity;
-    const unitWeight = OBJECT_WEIGHT[obj.otyp];
-    obj.owt = Number.isFinite(unitWeight)
-        ? unitWeight * quantity
-        : (obj.owt ?? 0) + (existing.owt ?? 0);
-
-    if (!obj.oextra?.oname && !obj.oname) {
-        if (existing.oextra?.oname) {
-            obj.oextra = {
-                ...(obj.oextra || {}), oname: existing.oextra.oname,
-            };
-        } else if (existing.oname) obj.oname = existing.oname;
-    }
-    if (!!obj.known !== !!existing.known) obj.known = true;
-    if (!!obj.rknown !== !!existing.rknown) obj.rknown = true;
-    if (!!obj.bknown !== !!existing.bknown) obj.bknown = true;
-
     const index = pile.indexOf(existing);
     if (index >= 0) pile.splice(index, 1);
-    existing.where = 'gone';
-    existing.ox = existing.oy = 0;
-    return obj;
+    return mergeObjectStacks(obj, existing, state) || obj;
 }
 
 // C ref: mkobj.c:remove_object().  Extract one floor-object identity while

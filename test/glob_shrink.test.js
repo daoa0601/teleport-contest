@@ -11,7 +11,7 @@ import {
     runClaimedGlobTimer,
 } from '../js/glob.js';
 import { game, resetGame } from '../js/gstate.js';
-import { mksobj, place_object } from '../js/mklev.js';
+import { mksobj, place_object, stack_object } from '../js/mklev.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME,
@@ -19,6 +19,7 @@ import {
 import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
+    scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import {
     enableRngLog, getRngLog, initRng,
@@ -109,6 +110,46 @@ test('fresh glob variants own identity, weight, species, and first timer', () =>
     }
     assertNoBridgeUse();
 });
+
+test('floor glob stacking absorbs the old identity and averages live delays',
+    () => {
+        freshGlobState(17);
+        const old = mksobj(GLOB_OF_GRAY_OOZE, true, false);
+        const placed = mksobj(GLOB_OF_GRAY_OOZE, true, false);
+        old.owt = 20;
+        placed.owt = 40;
+        old.age = 10;
+        placed.age = 25;
+        stopAllObjectTimers(old);
+        stopAllObjectTimers(placed);
+        scheduleObjectTimer(
+            old, OBJECT_TIMER_KIND.SHRINK_GLOB, 140, game,
+        );
+        scheduleObjectTimer(
+            placed, OBJECT_TIMER_KIND.SHRINK_GLOB, 240, game,
+        );
+        place_object(old, 12, 10);
+        place_object(placed, 12, 10);
+        enableRngLog();
+
+        const survivor = stack_object(placed, game);
+
+        assert.strictEqual(survivor, placed);
+        assert.deepEqual(game.level.objects[12][10], [placed]);
+        assert.equal(placed.owt, 60);
+        assert.equal(placed.age, 20);
+        assert.equal(old.where, 'gone');
+        assert.deepEqual(objectTimers(old), []);
+        assert.deepEqual(objectTimers(placed).map(timer => ({
+            kind: timer.kind,
+            deadline: timer.deadline,
+        })), [{
+            kind: OBJECT_TIMER_KIND.SHRINK_GLOB,
+            deadline: 190,
+        }]);
+        assert.deepEqual(getRngLog(), []);
+        assertNoBridgeUse();
+    });
 
 test('exact visible floor callback shrinks once and schedules a fresh attempt',
     () => {

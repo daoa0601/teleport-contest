@@ -3,6 +3,7 @@
 
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
 
 // Runtime monster inventories use acquisition order in JavaScript. Callers
 // which mirror a source head insertion can request the front explicitly.
@@ -13,7 +14,9 @@ export function addObjectToMonsterInventory(
 ) {
     if (!monster || !object) return null;
     attachCursedFigurineTimer(object, state);
-    return linkObjectToMonsterInventory(monster, object, { atFront });
+    return linkObjectToMonsterInventory(
+        monster, object, { atFront, state },
+    );
 }
 
 // add_to_minv() is also called directly for identities such as newly minted
@@ -21,10 +24,21 @@ export function addObjectToMonsterInventory(
 // carry_obj_effects(); keep it distinct so future carrying effects do not
 // silently consume RNG or mutate direct-link objects.
 export function linkObjectToMonsterInventory(
-    monster, object, { atFront = false } = {},
+    monster, object, { atFront = false, state = game } = {},
 ) {
     if (!monster || !object) return null;
     const inventory = monster.minvent || monster.inventory || [];
+    const existing = inventory.find(candidate =>
+        mergable(candidate, object, state));
+    if (existing) {
+        const survivor = mergeObjectStacks(existing, object, state);
+        monster.minvent = inventory;
+        monster.inventory = inventory;
+        monster.hasInventory = inventory.length > 0;
+        survivor.where = 'minvent';
+        survivor.carrierMid = monster.m_id ?? null;
+        return survivor;
+    }
     if (atFront) inventory.unshift(object);
     else inventory.push(object);
     monster.minvent = inventory;

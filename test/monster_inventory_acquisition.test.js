@@ -21,11 +21,14 @@ import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from '../js/monster_inventory.js';
 import {
-    DAGGER, FAKE_AMULET_OF_YENDOR, FIGURINE, GOLD_PIECE, MACE,
-    SPE_BOOK_OF_THE_DEAD, WAN_STRIKING,
+    DAGGER, FAKE_AMULET_OF_YENDOR, FIGURINE, GLOB_OF_GRAY_OOZE,
+    GOLD_PIECE, MACE, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
-import { objectTimers, objectsInTimerGraph } from '../js/object_timers.js';
+import {
+    OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
+    scheduleObjectTimer, stopAllObjectTimers,
+} from '../js/object_timers.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
@@ -353,5 +356,150 @@ test('clonewiz direct add_to_minv links its minted fake without effects',
             [0, 0],
         );
         assert.equal(action.movement.attack.deferredCloneWizard, false);
+        assertNoBridgeUse();
+    });
+
+test('direct add_to_minv merges monster gold into the first live identity',
+    () => {
+        freshInventoryState(2109);
+        const monster = {
+            m_id: 709,
+            mnum: PM_LEPRECHAUN,
+            mx: 12, my: 10,
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+        };
+        game.level.monsters.push(monster);
+        const first = mksobj(GOLD_PIECE, true, false);
+        first.quan = first.quantity = 75;
+        first.owt = 1;
+        const incoming = {
+            ...first,
+            o_id: 1709,
+            quan: 130,
+            quantity: 130,
+            owt: 1,
+            objectTimers: [],
+        };
+        linkObjectToMonsterInventory(monster, first);
+
+        const survivor = linkObjectToMonsterInventory(monster, incoming);
+
+        assert.strictEqual(survivor, first);
+        assert.deepEqual(monster.minvent, [first]);
+        assert.equal(first.quan, 205);
+        assert.equal(first.quantity, 205);
+        assert.equal(first.owt, 2);
+        assertMonsterOwns(monster, first);
+        assert.equal(incoming.where, 'gone');
+        assert.equal('carrierMid' in incoming, false);
+        assertNoBridgeUse();
+    });
+
+test('bullwhip mpickobj frees a compatible incoming weapon after merging',
+    () => {
+        freshInventoryState(2110);
+        const monster = {
+            m_id: 710,
+            mnum: 285,
+            mx: 12, my: 10,
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+        };
+        game.level.monsters.push(monster);
+        const survivor = mksobj(DAGGER, true, false);
+        survivor.blessed = survivor.cursed = false;
+        survivor.spe = 0;
+        survivor.quan = survivor.quantity = 2;
+        survivor.owt = 20;
+        linkObjectToMonsterInventory(monster, survivor);
+        const incoming = {
+            ...survivor,
+            o_id: 1710,
+            quan: 3,
+            quantity: 3,
+            owt: 30,
+            where: 'invent',
+            carrierMid: undefined,
+            objectTimers: [],
+            wielded: true,
+        };
+        game.inventory = [incoming];
+        game.uwep = incoming;
+        game.u.uwep = incoming;
+        const action = {
+            monster,
+            calls: [],
+            movement: {
+                usedMisc: {
+                    kind: 'bullwhip-disarm',
+                    target: incoming,
+                    whereTo: 3,
+                    deferredEffect: true,
+                },
+            },
+        };
+
+        finishDeferredMonsterMiscItem(action, game);
+
+        assert.deepEqual(monster.minvent, [survivor]);
+        assert.equal(survivor.quan, 5);
+        assert.equal(survivor.quantity, 5);
+        assert.equal(survivor.owt, 50);
+        assertMonsterOwns(monster, survivor);
+        assert.equal(incoming.where, 'gone');
+        assert.equal(incoming.wielded, false);
+        assert.deepEqual(objectTimers(incoming), []);
+        assertNoBridgeUse();
+    });
+
+test('monster glob absorption averages live shrink delays onto the survivor',
+    () => {
+        freshInventoryState(2111);
+        const monster = {
+            m_id: 711,
+            mnum: PM_LEPRECHAUN,
+            mx: 12, my: 10,
+            minvent: [],
+            inventory: [],
+            hasInventory: false,
+        };
+        game.level.monsters.push(monster);
+        const survivor = mksobj(GLOB_OF_GRAY_OOZE, true, false);
+        const incoming = mksobj(GLOB_OF_GRAY_OOZE, true, false);
+        survivor.owt = 20;
+        incoming.owt = 40;
+        survivor.age = 10;
+        incoming.age = 25;
+        stopAllObjectTimers(survivor);
+        stopAllObjectTimers(incoming);
+        scheduleObjectTimer(
+            survivor, OBJECT_TIMER_KIND.SHRINK_GLOB, 140, game,
+        );
+        scheduleObjectTimer(
+            incoming, OBJECT_TIMER_KIND.SHRINK_GLOB, 240, game,
+        );
+        linkObjectToMonsterInventory(monster, survivor);
+
+        const merged = addObjectToMonsterInventory(
+            monster, incoming, game,
+        );
+
+        assert.strictEqual(merged, survivor);
+        assert.deepEqual(monster.minvent, [survivor]);
+        assert.equal(survivor.owt, 60);
+        assert.equal(survivor.age, 20);
+        assert.deepEqual(objectTimers(survivor).map(timer => ({
+            kind: timer.kind,
+            deadline: timer.deadline,
+        })), [{
+            kind: OBJECT_TIMER_KIND.SHRINK_GLOB,
+            deadline: 190,
+        }]);
+        assert.equal(incoming.where, 'gone');
+        assert.deepEqual(objectTimers(incoming), []);
+        assertMonsterOwns(monster, survivor);
         assertNoBridgeUse();
     });
