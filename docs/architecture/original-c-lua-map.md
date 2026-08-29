@@ -35468,9 +35468,9 @@ flowchart TD
     Static --> Room
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
-    Pick --> Ghost["Ghost of an Adventurer: implemented live callback"]
+    Pick --> Live["Ghost, Boulder, Spider, Trap: implemented live callbacks"]
     Pick --> Partial["Buried zombies, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["ten callbacks: absent"]
+    Pick --> Absent["seven callbacks: absent"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35489,10 +35489,10 @@ Shape ownership must not be conflated with fill ownership. A selected static
 or dynamic room independently chooses among 15 fill callbacks. The shared
 dispatcher now makes this boundary explicit and returns false for a named
 callback which has not been ported instead of reporting an empty callback as
-implemented. The generated ownership registry records every fill separately:
-Ghost of an Adventurer is `implemented`; Buried zombies, Temple of the gods,
-Storeroom, and Teleportation hub are `partial`; the remaining ten are
-`absent`.
+implemented. The generated ownership registry records every fill separately.
+Ghost of an Adventurer, Boulder room, Spider nest, and Trap room are
+`implemented`; Buried zombies, Temple of the gods, Storeroom, and
+Teleportation hub are `partial`; the remaining seven are `absent`.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35504,7 +35504,19 @@ It consults no seed, role, move sequence, fixture, or replay flag. The same
 fill dispatcher is used by static-map and dynamically shaped themed rooms.
 
 The level-generation registry therefore remains **partial**. In addition to
-the fourteen incomplete fills, exact source ordering across all 31 shapes,
+the eleven incomplete fills, exact source ordering across all 31 shapes,
 remaining seeded generation branches, broader `sp_lev.c` operations, and the
 scheduled sealed corpus gate remain open. Public-session exactness is not an
 ownership status in this graph.
+
+The three selection-driven hazard callbacks share a narrower source graph.
+`selection:percentage(30)` filters in `selvar.c` x-major order, while Lua
+`selection:iterate()` visits retained cells row-major. Boulder room then
+chooses an actual boulder or rolling-boulder trap independently per cell.
+Spider nest constructs webs on every retained cell but evaluates the 80%
+resident-spider draw only when `nh.level_difficulty() > 8`; lower levels do
+not consume that draw. Trap room shuffles its eight-type reservoir once before
+filtering and applies only the first retained type to every callback. All
+three now use the shared object/trap constructors, including rolling launch
+state, explicit web spider suppression, and the ordinary special-trap victim
+gate; none owns a replay carrier.

@@ -93992,3 +93992,64 @@ branch encountered. Do not inspect a sealed trace or schedule publication
 before the acceptance gate authorizes it.
 
 ---
+
+### [2026-08-29 14:55 EEST, journal block 3126] {#bridge-free #level-generation #lua #themeroom-fills #selection #boulders #spiders #traps #implementation #focused-regression #process-safety}
+
+**Witness and earliest source divergence:** following block 3125's mechanical
+fill inventory, the next audit stayed in the pinned `themerms.lua` callback
+table rather than selecting a transcript. Boulder room, Spider nest, and Trap
+room all selected callbacks in Lua but JavaScript's shared dispatcher returned
+false and created no world state. The earliest common missing owner was the
+two-order selection transaction: `selection_filter_percent()` consumes one
+draw per room point in x-major order, then `selection:iterate()` invokes only
+retained callbacks in row-major order.
+
+**Prediction portfolio and decisive evidence:** (1) one generic random-trap
+loop predicted all three fills could share one type draw per cell; source
+falsified it because Boulder chooses object-versus-trap independently, Spider
+always chooses Web with an optional resident, and Trap shuffles once for the
+whole room. (2) an x-major callback hypothesis predicted filtering and
+construction could be fused; `selvar.c` and the Lua iterator expose different
+orders, so the selected coordinates must be retained between phases. (3) an
+unconditional Spider percentage hypothesis predicted one 80% draw at every
+depth; Lua's `spooders and percent(80)` short-circuits entirely through
+difficulty 8. (4) a web-is-just-a-trap hypothesis predicted the existing
+special trap helper was sufficient, but it always created a giant spider and
+could not represent `spider_on_web=false`. (5) a shallow object-only
+hypothesis for Boulder was falsified because rolling traps own launcher,
+boulder, and possible predecessor-victim state through the shared C
+constructor.
+
+**Decision and implementation:** preserve the filter and callback phases as
+separate source owners. Boulder room creates a real boulder or delegates a
+rolling-boulder trap at each retained cell. Spider nest delegates Web while
+passing the evaluated `spider_on_web` flag into the shared trap completion
+owner; only eligible true cases create the resident giant spider. Trap room
+performs the eight-entry Lua shuffle once, then delegates the selected arrow,
+dart, falling-rock, bear, land-mine, sleeping-gas, rust, or anti-magic type for
+every retained cell. Ice remains absent until a level melt-timer owner exists,
+and Cloud remains absent until persistent selection-backed gas regions have a
+proper constructor; neither was turned into an initialization-only fake pass.
+
+**Measured effect and regression:** the expanded direct themed-room selection
+passes **13/13**, including live boulder/trap state, Spider difficulty 8 versus
+9 resident behavior, a single Trap-room type, and zero compatibility hits.
+The combined bridge-policy, Priest startup, ordinary-room, and themed-room
+selection passes **29/29**. The same five represented level carriers pass for
+Storeroom, nesting rooms, secret-door orientation, clean Minetown-2, and Orcus
+ghost-town shops. The bridge-free audit remains green over 110 files. Every
+verifier exited and a post-run process check found no owned test tree.
+Implementation commit `b14947c` contains only the shared trap option, the three
+live callbacks, and focused witnesses.
+
+**Falsified hypotheses, limit, and next blocker:** selection filtering and Lua
+iteration are not the same order; Spider's 80% draw is not unconditional; one
+trap roll per cell is not Trap-room semantics; and constructing terrain or a
+region without its runtime owner would not close Ice or Cloud. No full suite,
+public corpus, sealed trace, score, push, publication, official measurement,
+or animation work ran. Eleven fill callbacks remain incomplete. Next add the
+persistent selection-backed gas-region owner needed by Cloud room, or, if its
+runtime lifecycle exposes a wider gap, redirect to a contained complete fill
+such as Massacre/Statuary rather than recording a partial result as accepted.
+
+---
