@@ -990,11 +990,28 @@ test('greased map potion remains fail-loud before split or throw RNG',
         assert.equal(floorObjects().length, 0);
     });
 
-test('unsupported oil map potion fails before split or throw RNG', async () => {
+test('live unlit oil breaks without evaporation and wakes its target', async () => {
+    const monster = freshMapPotionState(2);
+    monster.msleeping = 1;
+    const potion = addKnownPotion(POT_OIL);
+
+    initRng(2702n);
+    enableRngLog();
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.ok(monster.mhp <= 12 && monster.mhp >= 11);
+    assert.equal(monster.msleeping, 0);
+    assert.match(game._pending_message, /crashes on .* and breaks into shards/);
+    assert.doesNotMatch(game._pending_message, /evaporates/);
+    assert.equal(potion.where, 'gone');
+    assert.equal(floorObjects().includes(potion), false);
+    assertNoBridgeUse();
+});
+
+test('lamplit oil map potion fails before split or throw RNG', async () => {
     freshMapPotionState(2);
     const potion = addKnownPotion(POT_OIL);
-    potion.quan = potion.quantity = 2;
-    potion.owt *= 2;
+    potion.lamplit = true;
 
     initRng(2796n);
     enableRngLog();
@@ -1006,8 +1023,6 @@ test('unsupported oil map potion fails before split or throw RNG', async () => {
 
     assert.deepEqual(getRngLog(), []);
     assert.deepEqual(game.inventory, [potion]);
-    assert.equal(potion.quan, 2);
-    assert.equal(potion.quantity, 2);
     assert.equal(potion.where, 'inventory');
     assert.equal(floorObjects().length, 0);
 });

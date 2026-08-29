@@ -37700,3 +37700,35 @@ unique or life-saving targets, peaceful/tame/worm/saddle/shop targets, broader
 visibility variants, greased alternate flight, floor effects outside the
 ordinary room slice, and a sealed stratum remain open.  Lua owns none of this
 runtime effect graph.
+
+## 1007. Unlit oil breaks on contact but deliberately does not evaporate
+
+```mermaid
+flowchart LR
+    A[common potion crash and rn2 5 chip] --> B{POT_OIL?}
+    B -- yes --> C[skip evaporation line]
+    C --> D{lamplit?}
+    D -- yes --> E[explode_oil gap rejected before throw mutation]
+    D -- no --> F[no direct monster effect]
+    F --> G[ordinary hostile wake]
+    G --> H[potionbreathe has no oil effect]
+    H --> I[destroy thrown identity]
+```
+
+`potion.c:potionhit()` explicitly excludes `POT_OIL` from the common
+evaporation line.  Its direct-effect switch calls `explode_oil()` only for a
+lit identity; an unlit potion performs no additional monster mutation, then
+the common survivor tail calls hostile `wakeup()`.  The later proximity gate
+can still enter `potionbreathe()`, but oil has no vapor case, so it changes no
+hero state or gameplay RNG.  The broken potion is nevertheless freed by the
+common object lifecycle.
+
+The shared JavaScript impact owner now represents the complete unlit branch
+for visible map contact and unseen swallowed guaranteed contact: source crash
+presentation, optional one-point bottle chip, no evaporation, target wake,
+zero-effect vapor, exact identity destruction, no floor fallback, and zero
+bridge hits.  Both map and swallowed eligibility reject a `lamplit` identity
+before split, detachment, or throw RNG, retaining `explode_oil()` and its area
+damage, inventory, terrain, display, death-credit, and shop continuations as
+one explicit gap rather than approximating them with the unlit path.  Lua owns
+none of this runtime branch.

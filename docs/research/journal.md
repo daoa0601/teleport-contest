@@ -97627,3 +97627,38 @@ scorer, sealed-trace inspection, push, publication, official hidden
 measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 02:36 EEST, journal block 3182] {#bridge-free #oil #potionhit #non-evaporation #wake #vapor #lamplit #fail-before-mutation #behavioral-contract #architecture #focused-regression #process-safety}
+
+**Witness and earliest divergence:** after block 3181 committed acid, unlit oil
+still reached `throw.potion-impact-unsupported` before both map and swallowed
+contact.  Two live outcome witnesses were red **0/2** while their lamplit
+preflight controls already passed **2/2**.  Source `potion.c:potionhit()` makes
+oil distinct from inert potions: the common crash and bottle chip remain, but
+the evaporation line is skipped; only lamplit oil enters `explode_oil()`;
+unlit oil has no direct or vapor effect and the surviving target still reaches
+hostile wakeup.
+
+**Decision and implementation:** the shared impact owner now admits unlit oil,
+suppresses only its evaporation line, retains common wake and identity
+destruction, and treats oil vapor as a received no-op.  Existing side-effect-
+free eligibility continues to reject lamplit identities before split,
+detachment, or throw RNG, so the unsupported explosion/area lifecycle cannot
+partially commit.  The tests assert visible map crash versus unseen swallowed
+`Crash!`, no evaporation, optional bottle-chip HP only, target wake, consumed
+identity, no floor fallback, zero bridge use, and lamplit pre-mutation refusal;
+they do not assert callback order or a full RNG transcript.
+
+**Measured effect, falsified hypotheses, and limit:** live unlit map and
+swallowed oil plus both lamplit controls pass **4/4**; the complete focused
+behavioral and bridge-free gate passes **127/127** (**119/119** behavioral plus
+**8/8** bridge-free).  Oil is not an ordinary
+evaporating inert potion; zero direct effect does not mean zero hostile wake;
+and unseen swallowed presentation is not the visible monster-name line.  The
+subsystem remains **partial** at `explode_oil()` area damage, inventory and
+terrain fire effects, death credit, shop billing, special targets/terrain,
+greased alternate flight, broader visibility, and a sealed stratum.  No full
+Contest suite, public regression lane, corpus, scorer, sealed trace, push,
+publication, official hidden measurement, or animation work ran.
+
+---

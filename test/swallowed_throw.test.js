@@ -857,12 +857,40 @@ test('fatal unique water target fails before swallowed potion mutation or RNG',
         assert.equal(engulfer.mhp, 13);
     });
 
-test('unsupported oil potion fails before floor fallback or RNG', async () => {
+test('swallowed unlit oil breaks without evaporation or floor fallback',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.msleeping = 1;
+        const raw = mksobj(POT_OIL, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.ok(engulfer.mhp <= 40 && engulfer.mhp >= 39);
+        assert.equal(engulfer.msleeping, 0);
+        assert.equal(game._pending_message, 'Crash!');
+        assert.doesNotMatch(game._pending_message, /evaporates/);
+        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(engulfer.minvent, []);
+        assert.equal(potion.where, 'gone');
+        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assertNoBridgeUse();
+    });
+
+test('swallowed lamplit oil fails before mutation or RNG', async () => {
     const engulfer = freshSwallowedState(PM_TRAPPER);
     const raw = mksobj(POT_OIL, true, false);
     raw.cursed = raw.blessed = false;
     raw.bknown = raw.dknown = raw.known = true;
     raw.typeKnown = true;
+    raw.lamplit = true;
     const potion = addInventoryItem(raw);
 
     initRng(2511n);
@@ -878,7 +906,7 @@ test('unsupported oil potion fails before floor fallback or RNG', async () => {
     assert.deepEqual(engulfer.minvent, []);
     assert.deepEqual(getRngLog(), []);
     assert.equal((game.level.objects || []).flat(2).length, 0);
-    });
+});
 
 test('swallowed healing family heals both monster and hero through vapor',
     async () => {

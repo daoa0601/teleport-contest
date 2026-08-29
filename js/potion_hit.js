@@ -18,7 +18,8 @@ import {
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
     POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
-    POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED,
+    POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING,
+    POT_SPEED,
     POT_WATER, SPEED_BOOTS, TOWEL,
 } from './object_data.js';
 import {
@@ -98,6 +99,7 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_INVISIBILITY,
     POT_WATER,
     POT_ACID,
+    POT_OIL,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -584,6 +586,8 @@ export async function applySupportedPotionVapor({
         waterEffect = null;
     } else if (potion.otyp === POT_ACID) {
         exerciseAttribute(2, false, state);
+    } else if (potion.otyp === POT_OIL) {
+        // potionbreathe() has no oil case.
     }
     return {
         received: true,
@@ -604,6 +608,11 @@ async function applySupportedDirectEffect({
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
     wakeNearby, splitMonster, transformWere, finishKill,
 }) {
+    if (potion.otyp === POT_OIL) {
+        await wakeMonster?.(monster);
+        return { angered: true, healed: 0, curedBlindness: false };
+    }
+
     if (potion.otyp === POT_ACID) {
         const acidResistant = monsterHasAcidResistance(monster);
         const resisted = !acidResistant
@@ -1007,7 +1016,7 @@ export async function hitMonsterWithSupportedPotion({
     if (impactDamage) monster.mhp--;
 
     let evaporationMessage = null;
-    if (targetVisible) {
+    if (targetVisible && potion.otyp !== POT_OIL) {
         evaporationMessage = `The ${potionImpactObjectName(
             potion, state,
         )} evaporates.`;
