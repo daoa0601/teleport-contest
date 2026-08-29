@@ -95352,3 +95352,73 @@ three genuinely new timer callbacks on their smallest complete fresh-seed
 carrier rather than extending lamp presentation further.
 
 ---
+
+### [2026-08-29 19:28 EEST, journal block 3147] {#bridge-free #object-timers #hatch-egg #fresh-seed #floor-object #monster-construction #critical-debugging-portfolio #focused-regression #partial #process-safety}
+
+**Witness and earliest source divergence:** after completing the live lamp
+entry and light handoff, the callback portfolio compared `HATCH_EGG`,
+`FIG_TRANSFORM`, and `SHRINK_GLOB`. Fresh JavaScript egg construction already
+performed the native ages-151-through-200 hatch lottery, but retained its
+winner only as a raw `hatchAt` field. It never inserted `HATCH_EGG` into the
+shared object-timer queue, and generic dispatch had no callback owner. The
+earliest divergence was therefore constructor lifecycle, before any hatch
+message or later trace symptom: a fresh typed egg had inert deadline metadata
+instead of a claimable source event.
+
+**Prediction portfolio and decisive evidence:** three non-equivalent
+mechanisms remained live. Glob shrinking crosses floor, nested container,
+inventory, monster, migration, burial, ice, active eating, encumbrance, and
+catch-up owners. Figurine transformation crosses carried/floor placement,
+retry, `make_familiar()`, mimic/invisibility/hiding state, prose, and object
+removal. Egg construction already supplied fresh typed identities and the
+source callback offered a coherent visible-floor carrier: one deadline,
+`rnd(quantity)`, `big_to_little()`, adjacent `makemon()`, stack reduction,
+visibility-gated learning, and remainder scheduling or deletion. Direct
+inspection of `mkobj.c:mksobj()/set_corpsenm()`,
+`timeout.c:attach_egg_hatch_timeout()/hatch_egg()`, and
+`mondata.c:big_to_little()` selected that carrier without collapsing the other
+two callbacks or the egg inventory/taming graph into it.
+
+**Decision and implementation:** commit `f5c8d7d` adds a saveable
+`HATCH_EGG` kind to the shared queue and schedules the fresh-constructor
+lottery winner on the egg identity. The claimed callback accepts only an
+unowned floor stack, selects the source younger form, consumes
+`rnd(egg->quan)` before checking unique/genocided/extinct state, creates
+adjacent newborns with `NO_MINVENT | MM_NOMSG`, and reduces quantity before
+presentation. Exact-turn visible hatching reports the newborn; overdue
+hatching remains silent. A second stage runs only after tty accepts any prose:
+it teaches the adult egg type, attaches a short `rnd(12)` timer and recomputes
+weight for a remainder, or extracts and deletes the exhausted floor object and
+repaints. Species rejection or placement failure consumes the claimed attempt
+and leaves the egg unchanged and untimed. Inventory, monster-inventory, and
+`spe`-owned eggs throw before RNG or mutation rather than claiming absent
+taming and carrier-prose behavior.
+
+**Measured effect and regression:** two fresh seeds cover a single cave-spider
+hatch and a two-crocodile-egg stack whose newborn is a baby crocodile and whose
+remainder gets a bounded one-through-twelve-turn timer. Separate witnesses
+cover exact visible prose and learning, overdue silence without learning,
+genocide after construction consuming the callback only after `rnd(quantity)`,
+and fail-loud carried ownership before RNG. The new file passes **5/5**. The
+combined bridge-policy, floor-egg, lamp, Priest-startup, ordinary-room, and
+themed-room gate passes **82/82**, with zero bridge hits. The mechanical bridge
+audit reports 114 files audited, 15 guarded modules, and 19 fixture modules
+with `ok: true`. Each verifier was preceded by a live-process guard, ran as one
+owned process, and exited normally.
+
+**Falsified hypotheses, limit, and next blocker:** a hatch deadline is not
+passive save metadata; genocide/extinction is not checked before the stack-
+quantity draw; an adult egg does not necessarily birth its stored adult form;
+stack reduction does not wait until after prose; and an overdue hatch does not
+teach egg identity. Conversely, this does not make `HATCH_EGG` complete.
+Hero-inventory and monster-inventory carriers, owned-egg and male-parentage
+taming, dragon special handling, blind/hidden pack or carrier prose, broader
+placement failure and extinction-during-batch state, `set_corpsenm()` timer
+preservation, move/split/relink semantics, inactive cached-level catch-up, and
+a sealed stratum remain open. `FIG_TRANSFORM` and `SHRINK_GLOB` remain absent
+callback owners. No full suite, public corpus, sealed-trace inspection, score,
+push, publication, official measurement, or animation work ran. The next
+portfolio should compare a complete figurine carrier against a complete glob
+carrier, while retaining the explicit egg-carrier gaps.
+
+---

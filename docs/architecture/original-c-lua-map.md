@@ -36108,3 +36108,58 @@ usage billing for an unpaid djinni release is not implemented, and mute or
 species-silence shop presentation lacks a direct carrier. Candles, oil potions,
 the Candelabrum, artifact light, warning prose, inactive-level timing, and the
 three new timer callback families remain separate owners.
+
+## 979. Visible floor eggs own construction, hatch callback, and stack lifecycle
+
+~~~mermaid
+flowchart TD
+    Construct["mksobj creates a fresh typed egg"] --> Lottery["ages 151..200: rnd(age) greater than 150"]
+    Lottery -->|winner| Attach["attach HATCH_EGG at moves plus age"]
+    Lottery -->|none| Never["generic or nonwinning egg remains untimed"]
+    Attach --> Claim["run_timers claims deadline before callback"]
+    Claim --> Carrier{"unowned floor stack?"}
+    Carrier -->|no| Reject["fail loud: inventory, minventory, and own-egg owners remain open"]
+    Carrier -->|yes| Younger["big_to_little egg species"]
+    Younger --> Quantity["rnd current stack quantity"]
+    Quantity --> Viable{"unique, genocided, or extinct?"}
+    Viable -->|yes| Spent["no birth; claimed timer stays consumed"]
+    Viable -->|no| Birth["enexto plus makemon NO_MINVENT and MM_NOMSG"]
+    Birth --> Made{"at least one monster?"}
+    Made -->|no| Spent
+    Made -->|yes| Reduce["subtract successful hatch count from quantity"]
+    Reduce --> Seen{"exact deadline and hatch square visible?"}
+    Seen -->|yes| Prose["present hatch line"]
+    Seen -->|no| Finish["silent finish; do not learn egg type"]
+    Prose --> Learn["learn adult egg identity"]
+    Learn --> Finish
+    Finish --> Remainder{"quantity remains?"}
+    Remainder -->|yes| Short["attach moves plus rnd(12); recompute weight"]
+    Remainder -->|no| Delete["extract and free egg identity; repaint if visible"]
+~~~
+
+Native construction does not store hatch time as decorative metadata.
+`set_corpsenm()` enters `attach_egg_hatch_timeout()`, whose legacy probability
+loop chooses one relative deadline from ages 151 through 200 and inserts a
+real object timer. JavaScript now attaches the corresponding absolute deadline
+to the same fresh object identity, so generic timer claiming reaches a live
+`HATCH_EGG` callback instead of silently deleting an unknown timer kind.
+
+For the first complete carrier, the callback accepts only a visible-level,
+unowned floor egg. It computes `big_to_little()` before birth, consumes
+`rnd(egg->quan)` before the unique/genocide/extinction gate, creates adjacent
+monsters without starting inventory or birth prose, and subtracts only the
+successful hatch count. Presentation is a real lifecycle boundary: an exact-
+turn visible hatch reports the newborn before learning the adult egg identity;
+an overdue or unseen hatch remains silent and does not teach that identity.
+Only after presentation does a surviving stack acquire a short `rnd(12)`
+timer and new weight, or an exhausted stack leave the floor chain and repaint.
+Failure to create a monster, or a species already unavailable at callback
+time, consumes the claimed attempt and leaves the unchanged egg untimed.
+
+This owner is mechanically **partial**, not generic egg coverage. Hero-
+inventory and monster-inventory hatching require location-specific pack or
+carrier prose. `spe`-owned eggs and the male-parentage roll feed taming; carried
+dragon eggs have an additional tame path. Those branches, broader adjacent-
+placement and extinction-during-batch behavior, `set_corpsenm()` timer
+preservation, object move/split/relink semantics, inactive-level catch-up, and
+a sealed stratum remain open and are rejected rather than approximated.
