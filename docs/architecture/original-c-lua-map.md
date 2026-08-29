@@ -36007,8 +36007,8 @@ overdue extinction, object survival, illumination appearance, and illumination
 removal with zero bridge hits.
 
 This is still a mechanically **partial** burn owner. Threshold warning prose,
-magic lamps, potions of oil, candles, the Candelabrum of Invocation, artifact
-light, and inactive-level presentation are separate source transactions. Egg,
+potions of oil, candles, the Candelabrum of Invocation, artifact light, and
+inactive-level presentation are separate source transactions. Egg,
 figurine, and glob callbacks also remain separate timer owners; none is inferred
 from the shared lamp graph.
 
@@ -36054,9 +36054,57 @@ Wisdom exercise, commits debit, then reports the lamp on and starts its burn
 timer. Manual extinction retains object identity and returns the source-owned
 unspent fuel before mobile illumination is recalculated.
 
-This owner remains mechanically **partial**. Magic lamps share `use_lamp()`
-presentation but have permanent untimed light while charged and a distinct
-empty state. Candles, oil potions, the Candelabrum, artifact light, warning
-prose, inactive-level timing, and broader shop mute/species variants remain
-separate. The five direct command witnesses are bridge-free; no public-session
-exactness or supplemental-animation claim follows from them.
+This owner remains mechanically **partial**. Candles, oil potions, the
+Candelabrum, artifact light, warning prose, inactive-level timing, and broader
+shop mute/species variants remain separate. The timed-lamp command witnesses
+are bridge-free; no public-session exactness or supplemental-animation claim
+follows from them.
+
+## 978. Magic lamps own untimed light and lit release-to-oil handoff
+
+~~~mermaid
+flowchart TD
+    Apply["doapply selects magic lamp"] --> State{"lit / water / empty / cursed?"}
+    State -->|lit| Off["report off; clear permanent light; no timer"]
+    State -->|underwater| Refuse["not a diving lamp"]
+    State -->|age zero or spe zero| Empty["lamp has no oil"]
+    State -->|cursed failure| Curse["oil spill or flicker/nothing using oil-lamp RNG"]
+    State -->|ordinary success| Fee["normal-use unpaid fee = oil-lamp cost"]
+    Fee --> On["report on; set lamplit; no BURN_OBJECT timer"]
+    On --> Mobile["radius-three mobile light"]
+    On --> Rub["dorub release succeeds"]
+    Rub -. "alternate unpaid release fee remains open" .-> Gap["check_unpaid_usage altusage"]
+    Rub --> Convert["change type to oil lamp; spe = 0; age = rn1(500,1000)"]
+    Convert --> WasLit{"was magic lamp lit?"}
+    WasLit -->|yes| Timer["begin_burn already_lit; attach oil breakpoint timer"]
+    WasLit -->|no| DarkOil["ordinary unlit oil lamp"]
+    Timer --> SameLight["preserve existing light-source identity"]
+~~~
+
+Native `begin_burn()` treats a charged magic lamp differently from every
+fuel-timed lamp: it sets `lamplit` but schedules no timer, so its `age` is not
+decremented and arbitrarily many moves do not consume light. `end_burn()`
+correspondingly clears the source directly instead of entering
+`cleanup_burn()` and restoring a timer interval. The ordinary application
+preconditions still precede that split: lit state wins over underwater state,
+`age == 0` or `spe == 0` refuses, and cursed magic lamps share the oil lamp's
+second `rn2(3)` spill draw, `d(2,10)` glib state, and sight-sensitive failure
+presentation. Normal unpaid lighting deliberately charges the ordinary oil-
+lamp price rather than the magic lamp's market value, avoiding free
+identification of inexhaustible light.
+
+The release transition is the nonlocal invariant. `apply.c:dorub()` converts
+the lamp to `OIL_LAMP`, clears `spe`, assigns `rn1(500,1000)` fuel, and—only if
+the magic lamp was already lit—calls `begin_burn(..., TRUE)`. The light source
+already exists on that object identity, so the call attaches an oil-lamp
+breakpoint timer without creating a second source. A direct witness starts
+with untimed magic light, transforms it with 1200 fuel at move 40, and observes
+stored age 150 plus a move-1090 `BURN_OBJECT` deadline while the lamp remains
+lit. The established uninterrupted djinni/wish regression independently proves
+that the unlit transformation and downstream release graph remain unchanged.
+
+This is still **partial** around the broader rub/shop transaction: alternate
+usage billing for an unpaid djinni release is not implemented, and mute or
+species-silence shop presentation lacks a direct carrier. Candles, oil potions,
+the Candelabrum, artifact light, warning prose, inactive-level timing, and the
+three new timer callback families remain separate owners.

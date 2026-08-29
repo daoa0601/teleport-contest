@@ -95290,3 +95290,65 @@ publication, official measurement, or animation work ran. The next portfolio
 should compare the magic-lamp extension with one complete new callback owner.
 
 ---
+
+### [2026-08-29 19:13 EEST, journal block 3146] {#bridge-free #magic-lamp #untimed-light #dorub #djinni #timer-handoff #shop-usage #critical-debugging-portfolio #focused-regression #partial}
+
+**Witness and earliest source divergence:** the post-command-entry portfolio
+compared magic-lamp completion with `HATCH_EGG`, `FIG_TRANSFORM`, and
+`SHRINK_GLOB`. The three new callback kinds still require new actor placement,
+carrier, deletion, retry/catch-up, and presentation graphs. Magic lamps reach
+the already-owned `apply.c:use_lamp()` boundary but diverged at its first
+`begin_burn()` call: native magic light sets `lamplit` without a timer, while
+JavaScript still excluded `MAGIC_LAMP` from command application and mobile
+light entirely.
+
+**Prediction portfolio and decisive evidence:** the source distinguishes four
+predictions. Treating magic as an oil lamp predicts fuel decrement and a
+`BURN_OBJECT` deadline; `timeout.c:begin_burn()` falsifies that by setting
+`do_timer = FALSE`. Treating it as presentation-only predicts no map change;
+`light.c:do_light_sources()` gives it the same radius-three source. Treating
+djinni release as a simple type/name mutation predicts a lit transformed lamp
+with no timer; `apply.c:dorub()` instead calls `begin_burn(..., TRUE)` after
+changing it to oil. Treating shop cost as its item value predicts an identifying
+premium; `shk.c:cost_per_charge()` deliberately substitutes the ordinary oil-
+lamp price for normal magic-lamp lighting. Those mechanisms select a coherent
+magic-lamp slice while leaving the three independent callbacks untouched.
+
+**Decision and implementation:** commit `e01ded9` extends the live lamp owner
+to magic lamps. Charged application now owns on/off, underwater and empty
+preconditions, oil-family curse RNG and glib state, blind presentation, and
+normal unpaid usage fees. `beginLampBurn()` creates permanent untimed magic
+light; `endLampBurn()` clears it without timer cleanup; and `vision_recalc()`
+projects it from floor, hero inventory, or monster inventory with radius three.
+The djinni release mutation is factored into one source-shaped handoff: change
+to `OIL_LAMP`, clear `spe`, install new fuel, and if already lit schedule the
+oil breakpoint timer before the djinni can grant a fatal wish. Unlit releases
+remain timer-free.
+
+**Measured effect and regression:** the command/light witness file passes
+**7/7** with zero bridge hits. A dark corridor proves untimed magic light
+appears, survives through move 10,000 without a timer or age loss, and vanishes
+on manual off even underwater. A lit conversion with 1200 fuel at move 40
+retains `lamplit`, stores age 150, and acquires a move-1090 deadline. Further
+branches cover `spe == 0`, magic spill/flicker RNG, the fixed 10-zorkmid normal
+usage fee, and deaf fee behavior which still consumes both prefix draws and
+debit but skips prose and Wisdom exercise. The pre-existing uninterrupted
+djinni/wish regression remains **1/1**, the focused bridge-free subsystem gate
+remains **70/70**, and the mechanical bridge audit remains clean at 113 files.
+Every verifier was guarded, singly owned, and exited.
+
+**Falsified hypotheses, limit, and next blocker:** magic light is not a timed
+fuel variant, unchanged `age` is functional state rather than missing timer
+data, normal shop use is not charged at magic-lamp value, and a lit release
+cannot remain a timerless oil lamp. Conversely, this does not complete all
+`dorub()` billing: native successful release calls alternate
+`check_unpaid_usage(..., TRUE)`, which remains open for unpaid magic lamps.
+Mute/species-silence shop presentation, candles, oil potions, the Candelabrum,
+artifact light, warning prose, inactive-level timing, `HATCH_EGG`,
+`FIG_TRANSFORM`, `SHRINK_GLOB`, and a sealed stratum remain open. No full suite,
+public corpus, sealed-trace inspection, score, push, publication, official
+measurement, or animation work ran. The next portfolio should compare the
+three genuinely new timer callbacks on their smallest complete fresh-seed
+carrier rather than extending lamp presentation further.
+
+---
