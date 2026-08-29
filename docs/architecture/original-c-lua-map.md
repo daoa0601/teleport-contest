@@ -36925,3 +36925,67 @@ gem/sling ammunition, cross-caller volley consolidation, boomerang return,
 monster-moving blessed mulch, poison, silver/blessed target effects,
 artifacts, projectile-caused engulfer death, shop billing, exhaustive passive
 materials and carried presentation, and a sealed stratum remain open.
+
+## 994. A killing swallowed projectile becomes an arrival transaction
+
+~~~mermaid
+sequenceDiagram
+    participant Throw as dothrow/thitmonst
+    participant Hit as hmon
+    participant Kill as xkilled
+    participant Mon as mpickobj/mondead/m_detach
+    participant Hero as unstuck/docrt
+    participant Floor as relobj
+    participant Spot as spoteffects/pickup/look_here
+
+    Throw->>Hit: guaranteed hit, live damage
+    Hit->>Kill: engulfer HP reaches zero
+    Kill->>Kill: credited kill line may suspend tty
+    Kill->>Mon: mpickobj(killing projectile)
+    Mon->>Hero: clear ustuck/uswallow, restore square and vision
+    Hero->>Hero: docrt, then rnd(2) engulfer cooldown
+    Mon->>Floor: relobj drops acquired projectile
+    Kill->>Kill: rn2(6), but same-square hero suppresses extra object
+    Kill->>Kill: wasinside suppresses corpse
+    Kill->>Spot: spoteffects(TRUE)
+    alt autopickup enabled
+        Spot->>Hero: floor to inventory, clear how_lost
+    else autopickup disabled
+        Spot->>Hero: look_here describes same identity
+    end
+    Kill->>Hero: experience, alignment, then thitmonst exercise
+    Note over Throw,Floor: gt.thrownobj is cleared; no mulch or passive_obj
+~~~
+
+`mon.c:xkilled()` snapshots `wasinside` before the engulfer is detached.  Its
+credited kill message precedes object ownership: only after that tty boundary
+does it call `mpickobj()` on `gt.thrownobj`.  `mondead()->m_detach()` then
+enters `mon_leaving_level()->unstuck()`, which clears swallowed attachment,
+places the hero at the monster coordinate, reconstructs vision with `docrt()`,
+and consumes the `rnd(2)` re-engulf cooldown before `relobj()` releases the
+newly acquired projectile.  The shared-square coordinate suppresses the rare
+extra object even though its `rn2(6)` gate is still paid, and `wasinside`
+suppresses corpse construction entirely.
+
+The transaction is not finished when the monster disappears.  `xkilled()`
+calls `spoteffects(TRUE)` as a poor man's expulsion before luck, experience,
+and alignment cleanup.  JavaScript therefore passes a typed
+`swallowed-projectile` death context into the existing shared
+`finishHeroMonsterKill()` owner and rejoins the ordinary destination
+`finishDestinationSpotEffects()` boundary.  Autopickup moves the same killing
+identity back into hero inventory and clears `how_lost`; disabled autopickup
+leaves it on the death square for `look_here()`.  After the kill returns,
+`thitmonst()` exercises Dexterity but observes that the thrown object was
+already disposed of, so neither missile mulching nor `passive_obj()` runs.
+
+Potentially fatal rolls are classified before `freeinv()`, damage RNG, or HP
+mutation.  The live owner currently admits only an ordinary hostile,
+nonunique, nonshifting engulfer with empty prior inventory on an untrapped
+`ROOM`, outside shop, punishment, steed, life-saving, explosion, and special
+death state.  A worn monster life-saving amulet proves the negative boundary:
+it reaches `throw.swallowed-weapon-unsupported` with the hero object still in
+inventory and zero RNG.  This is mechanically **partial**.  Pre-existing
+monster inventory and stack order, special carried effects, life-saving and
+vampire revival, unique or role monsters, shops, traps and other terrain,
+punishment, alternate pickup/capacity variants, and a sealed stratum remain
+explicitly open.  Lua owns no part of this runtime death or arrival path.

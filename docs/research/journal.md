@@ -96378,3 +96378,70 @@ better-supported projectile kill path against building the first shared
 `potionhit()` effect owner, with the complete source transaction as the unit.
 
 ---
+
+### [2026-08-29 22:42 EEST, journal block 3162] {#bridge-free #swallowed-throw #projectile-kill #xkilled #unstuck #relobj #spoteffects #autopickup #look-here #critical-debugging-portfolio #fail-closed #focused-regression #partial #process-safety}
+
+**Witness, portfolio, and earliest divergence:** after block 3161, the
+portfolio compared the first `potionhit()` effect owner against the now-shared
+projectile-caused engulfer-death continuation. Death won because the survivor
+slice had already supplied live damage, projectile lifecycle, monster
+acquisition, shared `xkilled`, floor transfer, and destination-pickup owners;
+the required work was a cross-owner ordering transaction rather than a new
+effects subsystem. A one-HP trapper hit by either a single dart or dagger
+initially reached `throw.swallowed-weapon-unsupported`. Both positive witnesses
+were red **0/2** at that control-flow boundary, while a worn life-saving
+negative correctly remained fail-loud.
+
+**Prediction and decisive C evidence:** `mon.c:xkilled()` snapshots
+`wasinside`, publishes the credited kill, and only then gives `gt.thrownobj` to
+the engulfer with `mpickobj()`. `mondead()->m_detach()->mon_leaving_level()`
+calls `unstuck()` before `relobj()`: swallowed attachment clears, the hero is
+placed at the monster coordinate, `docrt()` reconstructs sight, and the
+engulfer pays `rnd(2)` before its inventory drops. `xkilled()` then pays the
+rare `rn2(6)` gate but suppresses extra treasure because the hero occupies the
+death square, suppresses the corpse because `wasinside`, and calls
+`spoteffects(TRUE)` before experience and alignment cleanup. Because
+`mpickobj()` clears `gt.thrownobj`, `thitmonst()` later exercises Dexterity but
+returns without mulch or `passive_obj()`.
+
+**Decision and implementation:** the shared swallowed weapon/projectile
+resolvers now classify every potentially fatal roll before object detachment,
+damage RNG, or HP mutation. The admitted source slice is an ordinary hostile,
+nonunique, nonshifting engulfer with empty prior inventory on an untrapped
+`ROOM`, outside shops, punishment, steed, explosion, life-saving, and special
+death state. On an actual kill, the resolver passes a typed
+`swallowed-projectile` context into `finishHeroMonsterKill()`. That owner keeps
+the kill-line tty boundary before acquisition, releases attachment and redraws
+before inventory, clears stale carrier links, stacks released objects, skips
+corpse construction, and rejoins the ordinary
+`finishDestinationSpotEffects()` owner. Enabled autopickup returns the same
+dart identity to hero inventory with `how_lost` cleared; disabled autopickup
+leaves the same dagger on the death square for `look_here()`.
+
+**Measured effect and regression:** the two positive witnesses moved from red
+**0/2** to green **2/2**; together with the worn life-saving fail-loud case the
+new gate is **3/3**. The full focused swallowed-throw file passes **18/18**.
+Five shared cold-ray, killing-arrow, and melee `xkilled` controls plus three
+Wizard death/inventory controls pass **8/8**, including existing carried-object
+release behavior. The bridge-free gate passes **8/8** and the mechanical audit
+is clean at **122 files, 15 guarded modules, and 19 fixture modules**. Every
+`node --test` invocation was preceded by the process guard, ran as the only
+verifier, exited normally, and left no yielded process.
+
+**Falsified hypotheses, limit, and next blocker:** a kill line alone is not an
+engulfer-death implementation; the killing missile cannot mulch, receive an
+object passive, or fall directly to the floor; expulsion is not complete at
+`ustuck = null`; corpse probability must not run for `wasinside`; and same-square
+pickup is part of the kill transaction rather than a later movement shortcut.
+The typed owner deliberately does not infer pre-existing minvent order or
+special carried effects, life-saving/vampire revival, unique and role
+monsters, shops, traps, non-room terrain, punishment, alternate pickup/capacity
+variants, or hero death during `spoteffects`. Those cases still reach the named
+weapon bridge before mutation. No full Contest suite, engine/public corpus,
+sealed-trace inspection, score, push, publication, official measurement, or
+animation work ran. The next coherent blocker is pre-existing engulfer
+inventory: reconcile JavaScript's chronological inventory projection with C's
+head-linked `mpickobj()->relobj()` order, then widen death only with direct
+object-identity and pickup-order witnesses.
+
+---
