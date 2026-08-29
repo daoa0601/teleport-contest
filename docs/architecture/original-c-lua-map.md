@@ -35469,8 +35469,7 @@ flowchart TD
     Rare --> Room
     Room --> Pick["independent 15-name themeroom_fills reservoir"]
     Pick --> Live["Ghost, Cloud, hazards, Garden, populations: implemented"]
-    Pick --> Partial["Buried treasure/zombies, Light, temple, storeroom, teleport hub: partial"]
-    Pick --> Absent["Ice room: absent"]
+    Pick --> Partial["Ice, Buried treasure/zombies, Light, temple, storeroom, teleport hub: partial"]
     Room --> CFill["needfill hands ordinary contents back to mklev.c owner"]
 ~~~
 
@@ -35493,7 +35492,9 @@ implemented. The generated ownership registry records every fill separately.
 Ghost of an Adventurer, Cloud room, Boulder room, Spider nest, Trap room,
 Garden, Massacre, and Statuary are `implemented`; Buried zombies, Temple of
 the gods, Storeroom, Teleportation hub, Buried treasure, and Light source are
-`partial`; Ice room is `absent`.
+`partial`. Ice room is now also `partial`: its ordinary timer-driven melt core
+is live, but liquid-occupant, boulder, drawbridge, and cached-level continuations
+remain explicit gaps.
 
 The ghost callback is the first bridge deletion in this graph. The former
 `fillGhostAdventurerValkSlice()` consumed a hard-coded RNG shape and ran only
@@ -35505,7 +35506,7 @@ It consults no seed, role, move sequence, fixture, or replay flag. The same
 fill dispatcher is used by static-map and dynamically shaped themed rooms.
 
 The level-generation registry therefore remains **partial**. In addition to
-the seven incomplete fills, exact source ordering across all 31 shapes,
+the seven partial fills, exact source ordering across all 31 shapes,
 remaining seeded generation branches, broader `sp_lev.c` operations, and the
 scheduled sealed corpus gate remain open. Public-session exactness is not an
 ownership status in this graph.
@@ -35664,38 +35665,94 @@ held-out acceptance claim.
 
 ~~~mermaid
 flowchart TD
-    Start["start_timer on an object"] --> Id["allocate monotonic timer id"]
+    ObjectStart["start_timer TIMER_OBJECT"] --> Id["allocate shared monotonic timer id"]
+    LevelStart["start_timer TIMER_LEVEL at x,y"] --> Id
     Id --> Queue["deadline ascending; equal deadline newest id first"]
     Queue --> Claim["run_timers removes and decrements before callback"]
     Claim --> Burn["BURN_OBJECT: oil-lamp breakpoint"]
     Claim --> Corpse["ROT_CORPSE: corpse lifecycle"]
     Claim --> Organic["ROT_ORGANIC: unbox then remove container"]
     Claim --> Zombie["ZOMBIFY_MON: replace, revive, present, fill pit"]
+    Claim --> Melt["MELT_ICE_AWAY: terrain, traps, objects, message"]
     Burn --> Later["later properties, regen, sounds, hunger, exercise"]
     Corpse --> Later
     Organic --> Later
     Zombie --> Later
+    Melt --> Later
 ~~~
 
 `timeout.c:insert_timer()` inserts a new timer before the first queued timer
 whose deadline is greater than or equal to it. Equal-deadline callbacks are
 therefore newest-first, not ordinary FIFO insertion order. `js/object_timers.js`
-now assigns a saveable monotonic id, discovers timers across the floor, buried
-chain, nested contents, hero inventory, and monster inventories, and claims one
-due callback at a time before dispatch. Legacy deadline fields remain mirrors
-for snapshot compatibility rather than independent scheduling owners.
+now assigns one saveable monotonic id domain to both object-attached and
+level-position timers. It discovers object timers across the floor, buried
+chain, nested contents, hero inventory, and monster inventories; positional
+timers remain with the saved level. The dispatcher claims one due callback at
+a time across both domains. Legacy deadline fields remain mirrors for snapshot
+compatibility rather than independent scheduling owners.
 
 The callback phase remains inside source global-turn maintenance. Burn,
-zombify, corpse rot, and organic rot can therefore interleave by one queue
-rather than four module-local scans. Zombie presentation is a resumable edge:
+zombify, corpse rot, organic rot, and ordinary ice melt can therefore interleave
+by one queue rather than module-local scans. Zombie presentation is a resumable edge:
 pit construction precedes visible or nearby-audible feedback, but
 `fill_pit()` runs after that feedback returns, so a boulder and the temporary
 pit retain their native state across tty suspension. Only then are the boulder
 and pit consumed and the remaining floor pile buried.
 
 Mechanical status is **partial**. The queue does not yet own `HATCH_EGG`,
-`FIG_TRANSFORM`, `SHRINK_GLOB`, `MELT_ICE_AWAY`, non-oil burn variants,
-timer move/split/relink behavior, exact equal-time reconstruction for old saves
-which predate timer ids, or cached inactive-level timers. Inventory/worn corpse
-rot side effects also remain incomplete. Those are source lifecycle gaps, not
-reasons to retain per-session replay carriers or inspect sealed traces early.
+`FIG_TRANSFORM`, `SHRINK_GLOB`, non-oil burn variants, timer move/split/relink
+and coordinate-remap behavior, explicit terrain-mutation cancellation, exact
+equal-time reconstruction for old saves which predate timer ids, inactive-level
+catch-up, or spot-time queries. Ice boulder/hero/unsafe-monster/drawbridge
+continuations and inventory/worn corpse rot effects also remain incomplete.
+Those are source lifecycle gaps, not reasons to retain per-session replay
+carriers or inspect sealed traces early.
+
+## 973. Ice rooms cross Lua construction and C level-position timers
+
+~~~mermaid
+flowchart TD
+    Fill["themerms.lua: Ice room"] --> Terrain["selection.room then des.terrain ICE"]
+    Terrain --> Gate{"percent(25)"}
+    Gate -->|no| Stable["permanent ICE"]
+    Gate -->|yes| Base["mintime = 1000 - difficulty*100"]
+    Base --> Iterate["selection iterate in Lua row-major order"]
+    Iterate --> Schedule["start_timer_at x,y MELT_ICE_AWAY with mintime+rn2(1000)"]
+    Schedule --> Shared["shared TIMER_OBJECT/TIMER_LEVEL ordered queue"]
+    Shared --> Claim["claim before callback"]
+    Claim --> Guard{"continuation mechanically owned?"}
+    Guard -->|boulder, hero, unsafe monster| Fail["fail before terrain mutation"]
+    Guard -->|ordinary| Melt["ICE to MOAT or POOL"]
+    Melt --> Trap["trap_ice_effects; mine/bear-trap object conversion"]
+    Trap --> Corpses["obj_ice_effects; halve thawed corpse age/time"]
+    Corpses --> Unearth["unearth objects; stop ROT_ORGANIC; delete engraving"]
+    Unearth --> Present["newsym and conditional Some ice melts away"]
+~~~
+
+The Lua callback first converts every retained room cell to `ICE`. It does not
+call `des.level_init({ icedpools=true })`, so ordinary themed-room locations
+retain a zero underlay and melt to `MOAT`; `POOL` is selected only when the
+location explicitly carries `ICED_POOL`. The 25% scheduling branch then owns
+one independent deadline draw per cell in Lua row-major callback order. These
+are `TIMER_LEVEL` entries saved with the level, but native `timeout.c` inserts
+them into the same global ordering as object timers. JavaScript mirrors that
+shared deadline/id order rather than giving ice a separate scan.
+
+The ordinary callback core now owns the first coherent `melt_ice()` slice.
+It changes terrain, releases trapped actors, turns landmines and bear traps
+through their initialized buried-object conversion before immediate unearthing,
+rescales floor-corpse rot age and remaining time when the corpse leaves ice,
+stops buried organic rot, restores buried objects to the floor, deletes the
+engraving, repaints, and emits the source conditional message. A focused
+save/restore witness proves that the positional timer state survives as level
+state, and an equal-deadline witness proves it interleaves with object timers by
+newest shared id.
+
+This owner is deliberately **partial**. `melt_ice()` can continue into boulder
+pool filling and burial, hero `spoteffects()` and drowning, or monster
+`minliquid()` including teleport/death and the gremlin and iron-golem special
+transactions. Drawbridge ice, timer coordinate remapping, explicit terrain
+replacement cancellation, inactive-level catch-up, and spot-time queries are
+also unowned. JavaScript rejects the boulder, hero, and unsafe-monster edges
+before mutating terrain, so a hidden carrier fails at the first honest missing
+owner instead of receiving a plausible but false acceptance state.

@@ -94590,3 +94590,71 @@ measurement, or animation work ran. Next select one coherent unsupported timer
 family or cached-level lifecycle slice; do not reopen public-session tuning.
 
 ---
+
+### [2026-08-29 16:38 EEST, journal block 3136] {#bridge-free #ice-room #level-timers #melt-ice #corpse-ice #trap-conversion #partial #focused-regression #process-safety}
+
+**Witness, correction, and earliest source divergence:** block 3135 named
+`MELT_ICE_AWAY` as a completely unsupported timer family. The source audit
+separates its storage class from its execution order: `themerms.lua` installs
+one `TIMER_LEVEL` entry per selected coordinate, saved with the level, while
+`timeout.c:insert_timer()/run_timers()` orders those entries in the same list
+as `TIMER_OBJECT`. The earliest shared divergence was therefore not merely a
+missing Ice-room terrain fill. JavaScript needed one cross-class timer-id and
+deadline order before the first live `melt_ice_away()` callback could be
+accepted.
+
+**Prediction portfolio and decisive evidence:** (1) a second level-timer scan
+predicted equivalent scheduling; equal-deadline native insertion crosses timer
+classes and executes the newest id first. (2) x-major timer creation predicted
+the selection traversal order; Lua `selection:iterate()` calls the callback in
+row-major order after `des.terrain()` has transformed the room. (3) ordinary
+Ice-room cells predicted a `POOL` underlay; this VM has no
+`des.level_init({ icedpools=true })`, so zero room flags reach the ordinary
+`MOAT` branch. (4) removing a landmine or bear trap predicted sufficient trap
+cleanup; `trap_ice_effects()` constructs the corresponding initialized object
+through a buried intermediate before `unearth_objs()` returns it to the floor.
+(5) changing terrain predicted corpse state would follow automatically;
+`obj_timer_checks()` explicitly stops and restarts `ROT_CORPSE`, halves the
+remaining time and transformed age when leaving ice, and assigns a new timer
+id. (6) a transient coordinate list predicted enough runtime state; native
+`TIMER_LEVEL` is saved with the level, so save/restore must retain the exact
+position, deadline, and insertion id.
+
+**Decision and implementation:** commit `b1aa008` gives object-attached and
+level-position timers one monotonic id domain and one claim-before-callback
+dispatcher. Ice-room construction now owns room-wide terrain conversion, the
+25% timer gate, difficulty-derived base time, and one row-major `rn2(1000)`
+deadline per cell. The ordinary melt callback owns ICE-to-MOAT/POOL mutation,
+trap release and mine/bear-trap conversion, floor-corpse thaw rescaling,
+buried-object unearthing, ROT_ORGANIC cancellation, engraving deletion,
+repaint, and the visible-or-hero-at message boundary. The map stores
+`icedpool` explicitly, and positional timers round-trip through the ordinary
+saved level. Boulder, hero, and unsafe/special-monster continuations fail before
+terrain mutation instead of fabricating a completed liquid transaction.
+
+**Measured effect and regression:** the final themed-room file passes
+**32/32**, including construction, save/restore, ordinary melt state, trap and
+corpse transformations, conditional feedback, shared equal-deadline ordering,
+the explicit boulder fail-loud witness, and zero bridge hits. The focused
+bridge-policy, Priest startup, ordinary-room, and themed-room gate passes
+**48/48**. After the final shared `GameMap` field was present, the five
+represented level carriers again pass **5/5** for Storeroom, nesting rooms,
+secret-door orientation, clean Minetown-2, and Orcus ghost-town shops. Every
+verifier exited; each pre-run guard found no owned full-suite or corpus tree.
+
+**Falsified hypotheses, limit, and next blocker:** level-position timers are
+not a separately ordered scan; Lua iteration is not the selection filter's
+x-major traversal; ordinary themed ice does not imply `ICED_POOL`; trap
+deletion is not equivalent to trap-object conversion; terrain mutation alone
+does not thaw corpse timers; and unsaved position deadlines are not a level
+lifecycle. Ice room and the generic timer graph remain `partial`: boulder pool
+filling/burial, hero liquid and `spoteffects()`, unsafe monster `minliquid()`
+including gremlin and iron-golem branches, drawbridge ice, timer-coordinate
+remapping, explicit terrain-replacement cancellation, inactive cached-level
+catch-up, spot-time queries, and a sealed stratum remain open. No full suite,
+public corpus, sealed trace, score, push, publication, official measurement,
+or animation work ran. The next coherent slice should start with the boulder
+pool/fill transaction or another complete timer family, not public replay
+tuning.
+
+---
