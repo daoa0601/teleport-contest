@@ -119,8 +119,8 @@ async function syntheticRecord({ inputPath, outputPath }) {
 test('sealed preparation is deterministic and its public manifest omits identities', async t => {
     const secret = Buffer.alloc(32, 0x31);
     const spec = smallSpec();
-    const rootA = path.join(await temporaryRoot(t), 'a');
-    const rootB = path.join(await temporaryRoot(t), 'b');
+    const rootA = path.join(await temporaryRoot(t), 'missing-parent', 'a');
+    const rootB = path.join(await temporaryRoot(t), 'another-missing-parent', 'b');
     const first = await prepareSealedCorpus({
         gateRoot: rootA, spec, gateId: 'deterministic-gate', secret, revisions: REVISIONS,
     });

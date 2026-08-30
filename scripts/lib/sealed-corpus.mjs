@@ -430,6 +430,7 @@ export async function prepareSealedCorpus({ gateRoot, spec, gateId, secret, revi
     if (fs.existsSync(root)) {
         throw new Error('gate root already exists; resampling is forbidden');
     }
+    await fsp.mkdir(path.dirname(root), { recursive: true, mode: PRIVATE_DIR_MODE });
     const stageRoot = `${root}.preparing-${process.pid}-${crypto.randomBytes(6).toString('hex')}`;
     try {
         await fsp.mkdir(stageRoot, { mode: PRIVATE_DIR_MODE });
