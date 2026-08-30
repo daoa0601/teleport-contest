@@ -38420,3 +38420,65 @@ actor and terrain states, successful fresh level transitions, longer
 persistence histories, and a sealed stratum.  Other role-specific replay
 modules remain separately mapped.  Lua owns dungeon data beneath destination
 construction, not a Valkyrie prefix exception.
+
+## 1019. Caveman turns and fire rejoin shared live owners
+
+```mermaid
+flowchart TD
+    A[hero command spends time] --> B[allmain.c movement-ration loop]
+    B --> C[movemon scans current fmon]
+    C --> D[dog_move reads current pet and floor objects]
+    D --> B
+
+    E[fire command] --> F[dothrow.c dofire reads uquiver]
+    F --> G{matching launcher wielded?}
+    G -- alternate slot --> H[wield.c doswapweapon]
+    H --> I[CQ_CANNED resumes fire after scheduler turn]
+    I --> J[throw_obj reads direction and current projectile state]
+    G -- yes --> J
+
+    K[turn-number RNG table] -. deleted .-> B
+    L[fixed pet, food, corridor, and message mutations] -. deleted .-> D
+    M[role-specific scripted f command] -. deleted .-> F
+    N[forced move 23/24 and shot replay] -. deleted .-> J
+```
+
+Pinned `allmain.c:moveloop_core()` does not give Cavemen a role-local turn
+engine.  The hero movement balance selects global allocations, `movemon()`
+visits the current monster chain, and `dog_move()` derives pet decisions from
+the live actor and floor-object graphs.  Pinned `dothrow.c:dofire()` likewise
+starts from `uquiver`.  With default `fireassist`, matching alternate ammo and
+launcher state schedules `wield.c:doswapweapon()` and then queues `dofire()`
+again; the intervening weapon action reaches the normal monster/global turn
+before the queued shot asks for its direction.
+
+The former JavaScript normal path selected a second world for Cavemen.  It
+replayed aggregate RNG by turn number, overwrote the pet with a 25-turn
+coordinate table, inserted or removed food at recorded squares, fabricated
+pickup/drop/swap prose, and repainted selected corridors.  A separate `f`
+dispatcher switched fixed objects, consumed three hard-coded pagers, forced
+`moves` to 23 and 24, replayed the volley and every projectile boundary, and
+relocated the pet again.  Bridge-free mode failed on fresh waits or fire before
+those paths could complete.
+
+The RNG module, fixed-world helpers, role dispatcher, forced counters, and all
+Caveman bridge IDs are now deleted.  Caveman is part of the shared source-
+ration and live-role predicates in both modes.  Shared `dofire()` implements
+alternate-slot fireassist through the existing canned-command queue, so the
+weapon swap and shot retain distinct scheduler transactions without consulting
+role, seed, coordinates, or unread command text.
+
+Fresh seed28001 performs four ordinary waits and compares bounded hero,
+movement, message, inventory, complete floor-object, and live-actor state
+between normal and bridge-free modes.  Fresh seed28002 compares startup with a
+real `f` command: the alternate sling becomes primary, the club becomes
+secondary, and the live quivered flint stack decreases after the queued shot.
+The tests intentionally do not encode a pet path, floor coordinates, RNG call
+list, shot count, projectile endpoint, or fixed prose.  Both pass with zero
+Caveman bridges, and the default behavioral gate passes 374/374.
+
+This subsystem remains partial.  Caveman's source multishot class bonus and
+complete multi-projectile sling loop, general inventory launcher search,
+autoquiver, polearm/whip fire modes, wider projectile contacts and terrain,
+alternate options, persistence, and sealed strata are still open.  Lua owns no
+runtime Caveman scheduler or projectile exception.

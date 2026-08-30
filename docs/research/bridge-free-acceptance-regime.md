@@ -52,16 +52,19 @@ contract:
 This is not a generalization result.  No sealed corpus exists yet, actor-rich
 compatibility paths intentionally fail loudly, and no official measurement was
 run for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
-and Priest alternate schedulers in favor of their existing live source-ration,
-command, prayer, and projectile paths.  Pre-mklev and all-role inventory startup
+Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
+ration, command, prayer, projectile, level-generation, and current-world actor
+paths.  Pre-mklev and all-role inventory startup
 now also have one live owner; their pre/post replay exports, exhaustive-role
 fallback, and unused mineralize transcript are deleted.  The next ordered
 replacement is the remaining seeded room-fill and role-turn compatibility
 paths.  Future Valkyrie `#chat` text no longer injects a post-generation
 boulder, and the pit prefix no longer selects fixed movement, depth-two room,
-detection, corpse, or actor replay.  Other named role paths remain.  Those
-later slices have focused fresh witnesses and selected public regressions, but
-still no sealed gate or hidden measurement.
+detection, corpse, or actor replay.  Caveman `f` now reaches shared fireassist
+through a scheduler-separated canned weapon-swap continuation; source
+multishot and the complete sling-volley loop remain explicitly partial.  Other
+named role paths remain.  Those later slices have focused fresh witnesses and
+selected public regressions, but still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

@@ -98856,3 +98856,67 @@ behavioral suite, corpus, scorer, public-regression lane, sealed trace, push,
 publication, hidden measurement, or animation work ran for this slice yet.
 
 ---
+
+### [2026-08-30 06:07 EEST, journal block 3210] {#bridge-free #caveman #actor-scheduler #fireassist #canned-command #replay-removal #fresh-seed #change-detector #critical-debugging-portfolio #architecture #process-safety}
+
+**Contract, portfolio, and independent red evidence:** the remaining Caveman
+surface decomposed into four competing mechanisms: turn-number RNG replay,
+fixed pet/floor/display mutations, a role-specific `f` command, and the shared
+live scheduler/projectile engine.  Success required waits and fire to derive
+state only from current actors, floor objects, equipment, quiver, direction,
+and movement credit.  Guarding the table, retaining fixed coordinates without
+its RNG, or routing a fresh seed through the same scripted dispatcher were
+explicit non-results.  Fresh non-public seed28001 with four waits failed only
+in bridge-free mode at `seeded-replay.caveman`.  Fresh seed28002 with a real
+fire command independently failed at the same forbidden owner.  Neither test
+reads a Contest session or copies pet coordinates, RNG calls, messages, shot
+count, or projectile endpoints.
+
+**Earliest divergence, source decision, and implementation:** the first timed
+Caveman turn after startup selected `replayCavemanTurn()` instead of
+`allmain.c:moveloop_core()`/`movemon()`/`dog_move()`; `f` selected
+`docavemanfire()` instead of `dothrow.c:dofire()`.  Deleted the aggregate turn
+and shot tables, 25-turn pet path, fabricated food pickup/drop and prose,
+corridor recoloring, forced move23/24 state, pet relocations, special command
+dispatcher, and `caveman_explore.js`.  Caveman now shares the live movement-
+ration and current-world actor transactions.  Shared `dofire()` now implements
+default-on alternate-launcher fireassist: `doswapweapon()` spends its source
+turn and the existing canned-command queue resumes fire after monster/global
+maintenance before reading the direction.  Weapon slot flags move with the
+same object identities.
+
+**Measured effect, falsified hypotheses, and open boundary:** both fresh
+behavioral discriminators pass **2/2** with equal normal/bridge-free world
+state and zero Caveman bridges.  The bridge-policy plus Caveman set passes
+**6/6**.  The bridge audit contracts from 124 to **123 production files** and
+from 10 to **9 guarded replay modules**, with 19 fixture modules unchanged.
+The scripted path was not harmless presentation: it owned turns, world
+objects, equipment, pet state, counters, and projectile execution.  The
+deleted replay module was not a useful test dependency, so obsolete assertions
+which required importing or listing it were removed; the surviving tests
+assert policy and behavior rather than production source shape.  Caveman
+multishot class bonus, the complete multi-object sling loop, launcher search,
+autoquiver, polearm/whip fire, wider projectile states, persistence, and sealed
+strata remain open.  No corpus, scorer, public-regression lane, trace
+inspection, push, publication, hidden measurement, or animation work ran.
+
+---
+
+### [2026-08-30 06:08 EEST, journal block 3211] {#caveman #behavioral-gate #bridge-audit #ownership #documentation #process-safety}
+
+**Post-implementation gate:** one guarded default behavioral run passed all
+**374/374** named tests and exited normally.  The focused Caveman and bridge
+policy set remains **6/6**.  Bridge-free source audit passes **123 production
+files, 9 guarded replay modules, and 19 fixture modules**.  The ownership
+registry now records Caveman actor/projectile state as `partial`, explicitly
+leaves multishot and broader fire modes open, and its generated map validates.
+
+**Process and evidence limit:** the verifier was one owned process, returned
+normally in 3.40 seconds, and no matching runner remains.  This was the default
+behavioral suite, not the engine-only public corpus or normal scorer, so
+`public-session-status.md` remains unchanged.  No public-regression lane,
+sealed gate, source-trace inspection, push, publication, official hidden
+measurement, or supplemental-animation work ran.  The coherent Caveman slice
+is ready for the requested production/test and documentation commit batches.
+
+---
