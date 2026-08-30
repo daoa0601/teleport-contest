@@ -17,8 +17,6 @@ import {
 import { uInitMisc } from '../js/u_init.js';
 import { cansee, couldsee } from '../js/vision.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function initializeSenses(flags) {
     resetGame();
@@ -106,7 +104,7 @@ test('Eyes block but do not erase the permanent blindness source', () => {
     assert.equal(state.u.permaBlind, true);
 });
 
-test('fresh bridge-free permanent-blind/deaf startup owns live perception', async () => {
+test('fresh permanent-blind/deaf startup owns live perception', async () => {
     await runSegment({
         seed: 9183,
         datetime: '20260829193000',

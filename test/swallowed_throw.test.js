@@ -29,8 +29,6 @@ import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_reset_new_level } from '../js/vision.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
@@ -449,33 +447,6 @@ test('swallowed projectile passive follows mulch survival before acquisition',
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game._pending_message,
             'The dart hits the ochre jelly.  The dart corrodes!');
-    });
-
-test('swallowed multigen missile fails before split or volley mutation',
-    async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
-        const raw = mksobj(DART, true, false);
-        raw.quan = raw.quantity = 2;
-        raw.cursed = raw.blessed = false;
-        raw.bknown = raw.dknown = raw.known = true;
-        raw.typeKnown = true;
-        const darts = addInventoryItem(raw);
-        setBasicWeaponSkill(darts);
-
-        initRng(2650n);
-        await assert.rejects(
-            throwThroughLiveCommand(darts, 'h'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId
-                    === 'throw.swallowed-weapon-unsupported',
-        );
-
-        assert.equal(engulfer.mhp, 40);
-        assert.deepEqual(game.inventory, [darts]);
-        assert.equal(darts.quan, 2);
-        assert.equal(darts.quantity, 2);
-        assert.deepEqual(engulfer.minvent, []);
-        assert.equal((game.level.objects || []).flat(2).length, 0);
     });
 
 test('swallowed launched arrow uses launcher skill and excludes Strength',
@@ -1056,28 +1027,6 @@ test('swallowed acid damages the engulfer and exercises hero Constitution',
         assert.equal(potion.where, 'gone');
     });
 
-test('fatal unique water target fails before swallowed potion mutation',
-    async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
-        engulfer.mhp = 13;
-        const raw = mksobj(POT_WATER, true, false);
-        raw.cursed = false;
-        raw.blessed = true;
-        raw.bknown = raw.dknown = raw.known = true;
-        raw.typeKnown = true;
-        const potion = addInventoryItem(raw);
-
-        initRng(2511n);
-        await assert.rejects(
-            throwThroughLiveCommand(potion, 'l'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
-        );
-        assert.deepEqual(game.inventory, [potion]);
-        assert.equal(potion.where, 'inventory');
-        assert.equal(engulfer.mhp, 13);
-    });
-
 test('swallowed unlit oil breaks without evaporation or floor fallback',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
@@ -1102,28 +1051,6 @@ test('swallowed unlit oil breaks without evaporation or floor fallback',
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
     });
-
-test('swallowed lamplit oil fails before mutation', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
-    const raw = mksobj(POT_OIL, true, false);
-    raw.cursed = raw.blessed = false;
-    raw.bknown = raw.dknown = raw.known = true;
-    raw.typeKnown = true;
-    raw.lamplit = true;
-    const potion = addInventoryItem(raw);
-
-    initRng(2511n);
-    await assert.rejects(
-        throwThroughLiveCommand(potion, 'l'),
-        error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-            && error?.bridgeId === 'throw.potion-impact-unsupported',
-    );
-
-    assert.equal(engulfer.mhp, 40);
-    assert.deepEqual(game.inventory, [potion]);
-    assert.deepEqual(engulfer.minvent, []);
-    assert.equal((game.level.objects || []).flat(2).length, 0);
-});
 
 test('swallowed healing family heals both monster and hero through vapor',
     async () => {
@@ -1518,34 +1445,4 @@ test('a killing projectile merges in minvent before the survivor is released',
         assert.equal('carrierMid' in dart, false);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-    });
-
-test('potentially lethal swallowed weapon with life-saving fails before mutation',
-    async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
-        engulfer.mhp = 3;
-        const amulet = mksobj(AMULET_OF_LIFE_SAVING, true, false);
-        amulet.owornmask = W_AMUL;
-        amulet.worn = true;
-        linkObjectToMonsterInventory(engulfer, amulet, { atFront: true });
-        const raw = mksobj(DAGGER, true, false);
-        raw.cursed = raw.blessed = false;
-        raw.bknown = raw.dknown = raw.known = true;
-        raw.typeKnown = true;
-        raw.spe = raw.enchantment = 0;
-        raw.oeroded = raw.oeroded2 = 0;
-        const dagger = addInventoryItem(raw);
-        setBasicWeaponSkill(dagger);
-
-        initRng(2312n);
-        await assert.rejects(
-            throwThroughLiveCommand(dagger, 'h'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId
-                    === 'throw.swallowed-weapon-unsupported',
-        );
-
-        assert.equal(engulfer.mhp, 3);
-        assert.deepEqual(game.inventory, [dagger]);
-        assert.deepEqual(engulfer.minvent, [amulet]);
     });

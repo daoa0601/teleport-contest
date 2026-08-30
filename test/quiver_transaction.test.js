@@ -10,8 +10,6 @@ import {
     freshWeaponArena, inventoryObject,
 } from './support/weapon-arena.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 test('explicit empty selection clears the live quiver without spending time',
     async () => {

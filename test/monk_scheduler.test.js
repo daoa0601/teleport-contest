@@ -7,7 +7,7 @@ import { pushKey } from '../js/input.js';
 import { CORPSE, MEATBALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -21,11 +21,11 @@ test('future Monk command text cannot teleport a fresh live hero', async () => {
     // Thirteen directional commands can change each coordinate by at most
     // thirteen cells in total.  The later eat selector is invalid for this
     // fresh inventory and may not synthesize a corpse or rewrite elapsed time.
-    const startup = await bridgeFreeRoleOutcome(monkInput({
+    const startup = await roleOutcome(monkInput({
         seed: 45003,
         moves: ' ',
     }));
-    const outcome = await bridgeFreeRoleOutcome(monkInput({
+    const outcome = await roleOutcome(monkInput({
         seed: 45003,
         moves: '  n:kkkhhhjjjlll.ssh,ek',
     }));

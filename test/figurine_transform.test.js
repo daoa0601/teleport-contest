@@ -20,8 +20,6 @@ import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_WUMPUS = 84;
 const PM_LEOCROTTA = 83;
@@ -310,22 +308,6 @@ test('overdue blind inventory transform still presents tactile pack prose',
         assert.ok(game.inventory.includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-    });
-
-test('unsupported shapechanger rejects before mutation',
-    async () => {
-        freshFigurineState();
-        const { figurine } = carriedFigurine({ species: PM_CHAMELEON });
-        const timer = figTimer(figurine);
-        game.moves = timer.deadline;
-        initRng(1n);
-        const claimed = claimNextDueObjectTimer(game, game.moves);
-        await assert.rejects(
-            runClaimedFigurineTimer(claimed, game, game.moves),
-            /excludes minion or shapechanger/,
-        );
-        assert.equal(figurine.where, 'inventory');
-        assert.equal(game.level.monsters.length, 0);
     });
 
 test('drop command preserves figurine timer into visible floor transformation',

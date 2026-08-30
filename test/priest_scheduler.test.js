@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 
 const priestInput = input => ({
@@ -13,10 +13,10 @@ const priestInput = input => ({
 
 test('fresh Priest prayer completes through live occupation turns',
     async () => {
-        const startup = await bridgeFreeRoleOutcome(priestInput({
+        const startup = await roleOutcome(priestInput({
             moves: ' ',
         }));
-        const prayed = await bridgeFreeRoleOutcome(priestInput({
+        const prayed = await roleOutcome(priestInput({
             moves: ' #pray\ny',
         }));
 

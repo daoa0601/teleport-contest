@@ -28,8 +28,6 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_LEPRECHAUN = 63;
 const PM_SHOPKEEPER = 271;

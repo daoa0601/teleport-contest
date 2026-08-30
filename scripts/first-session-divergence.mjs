@@ -16,7 +16,6 @@ if (!sessionArg) {
     process.exit(2);
 }
 
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 const { runSegment } = await import('../js/jsmain.js');
 
 const limit = Math.max(

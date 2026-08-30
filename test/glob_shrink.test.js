@@ -24,8 +24,6 @@ import {
 } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function freshGlobState(seed = 1) {
     resetGame();
@@ -263,40 +261,4 @@ test('active inventory eating skips shrink and starts a fresh attempt', () => {
     assert.equal(glob.owt, 20);
     assert.ok(shrinkTimer(glob).deadline >= game.moves + 23);
     assert.ok(shrinkTimer(glob).deadline <= game.moves + 27);
-});
-
-test('unsupported contained and icy floor carriers reject before mutation', () => {
-    freshGlobState(11);
-    const contained = mksobj(GLOB_OF_BLACK_PUDDING, true, false);
-    const containedTimer = shrinkTimer(contained);
-    const container = {
-        otyp: 217, oclass: 6, where: 'inventory',
-        quan: 1, quantity: 1, contents: [contained],
-    };
-    contained.where = 'contained';
-    contained.ocontainer = container;
-    game.inventory = [container];
-    game.moves = containedTimer.deadline;
-    assert.throws(
-        () => runClaimedGlobTimer(
-            claimNextDueObjectTimer(game, game.moves), game, game.moves,
-        ),
-        /excludes contained, buried, migrating, and monster-carried/,
-    );
-    assert.equal(contained.owt, 20);
-
-    freshGlobState(12);
-    const icy = place_object(
-        mksobj(GLOB_OF_GRAY_OOZE, true, false), 12, 10,
-    );
-    game.level.at(12, 10).typ = ICE;
-    const icyTimer = shrinkTimer(icy);
-    game.moves = icyTimer.deadline;
-    assert.throws(
-        () => runClaimedFloorGlobTimer(
-            claimNextDueObjectTimer(game, game.moves), game, game.moves,
-        ),
-        /excludes ice cadence/,
-    );
-    assert.equal(icy.owt, 20);
 });

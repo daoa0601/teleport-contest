@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 
 test('Archeologist intrinsic Searching runs inside live turn maintenance',
@@ -11,8 +11,8 @@ test('Archeologist intrinsic Searching runs inside live turn maintenance',
             seed: 31222,
             role: 'Archeologist', race: 'human', align: 'lawful',
         };
-        const startup = await bridgeFreeRoleOutcome({ ...input, moves: ' ' });
-        const afterTurns = await bridgeFreeRoleOutcome(input);
+        const startup = await roleOutcome({ ...input, moves: ' ' });
+        const afterTurns = await roleOutcome(input);
         const newlySeen = afterTurns.traps.filter(trap => {
             if (!trap.seen) return false;
             const prior = startup.traps.find(candidate =>
@@ -34,7 +34,7 @@ test('a live adjacent threat can refuse Barbarian rest without replay time',
         // On this independent generated start an actor becomes adjacent before
         // the fourth dot.  Source command safety refuses that ordinary wait;
         // a turn table would blindly consume the byte and advance anyway.
-        const world = await bridgeFreeRoleOutcome({
+        const world = await roleOutcome({
             seed: 31004,
             role: 'Barbarian', race: 'human', align: 'neutral',
         });

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 
 const rogueInput = input => ({
@@ -21,10 +21,10 @@ function actorOutcomes(world) {
 }
 
 async function assertQuietRogueTurns(input) {
-    const startup = await bridgeFreeRoleOutcome(rogueInput({
+    const startup = await roleOutcome(rogueInput({
         ...input, moves: ' ',
     }));
-    const afterTurns = await bridgeFreeRoleOutcome(rogueInput({
+    const afterTurns = await roleOutcome(rogueInput({
         ...input, moves: ' ....',
     }));
 

@@ -12,8 +12,6 @@ import {
     finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
 } from '../js/u_init.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function screenText(encoded) {
     return decodeScreen(encoded).map(row =>
@@ -63,7 +61,7 @@ test('disposable candidates defer equipment, spells, discoveries, and skills', (
     assert.equal(finishStartingDiscoveries(), false);
 });
 
-test('fresh bridge-free startup rerolls once and accepts the final candidate', async () => {
+test('fresh startup rerolls once and accepts the final candidate', async () => {
     const result = await runSegment({
         seed: 8272,
         datetime: '20260829162500',

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 
 function samuraiInput(moves) {
@@ -16,8 +16,8 @@ function samuraiInput(moves) {
 
 test('fresh Samurai prayer completes through live occupation turns',
     async () => {
-        const startup = await bridgeFreeRoleOutcome(samuraiInput(' '));
-        const prayed = await bridgeFreeRoleOutcome(
+        const startup = await roleOutcome(samuraiInput(' '));
+        const prayed = await roleOutcome(
             samuraiInput(' #pray\ny'),
         );
 

@@ -12,8 +12,6 @@ import {
 } from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_SHOPKEEPER = 271;
 const PM_GUARD = 272;

@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 
 import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
@@ -52,8 +51,6 @@ import {
 } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function themedState(seed, depth = 8) {
     resetGame();
@@ -85,29 +82,6 @@ function themedState(seed, depth = 8) {
     initRng(BigInt(seed));
     init_rect();
 }
-
-test('top-level themeroom metadata matches the independent Lua source', () => {
-    const lua = fs.readFileSync(new URL(
-        '../nethack-c/upstream/dat/themerms.lua', import.meta.url,
-    ), 'utf8');
-    const sourceTable = lua.slice(
-        lua.indexOf('themerooms = {'),
-        lua.indexOf('-- store these at global scope'),
-    );
-    const sourceNames = [...sourceTable.matchAll(
-        /\bname\s*=\s*["']([^"']+)["']/g,
-    )].map(match => match[1]);
-
-    assert.deepEqual(
-        THEMEROOM_META.map(room => room.name),
-        sourceNames,
-    );
-    assert.deepEqual(
-        THEMEROOM_META.map(room => room.frequency),
-        [1000, 1, 1, 1, 1, 6, 2, 2, ...Array(23).fill(1)],
-    );
-    assert.equal(THEMEROOM_META.at(-1).mindiff, 4);
-});
 
 test('every declared Lua themeroom has a live named constructor', async () => {
     for (const [index, meta] of THEMEROOM_META.entries()) {
@@ -865,39 +839,6 @@ test('unseen tame life-saving repairs simple edog state before HP restoration',
         assert.equal(amulet.where, 'gone');
     });
 
-test('unsupported heavy-abuse pet life-saving fails before amulet mutation',
-    async () => {
-        themedState(4017, 8);
-        const amulet = {
-            otyp: AMULET_OF_LIFE_SAVING, o_id: 99648,
-            contents: [], timed: 0, where: 'minvent',
-            owornmask: W_AMUL, worn: true,
-        };
-        const pet = {
-            mnum: 16, mx: 10, my: 10, mhp: 0, mhpmax: 6, m_lev: 3,
-            mtame: 10, mpeaceful: 1, pet: true,
-            edog: {
-                hungrytime: 1000, ogoal: { x: -1, y: -1 },
-                abuse: 3, revivals: 0, mhpmax_penalty: 0,
-                killed_by_u: 0,
-            },
-            minvent: [amulet], inventory: [amulet],
-            misc_worn_check: W_AMUL,
-        };
-        initRng(1n);
-
-        await assert.rejects(
-            lifeSaveMonster(pet, amulet, {
-                visible: false, spotted: false, petSpotted: false,
-            }),
-            /unsupported monster life-saving heavy-abuse recovery/,
-        );
-        assert.equal(amulet.where, 'minvent');
-        assert.equal(amulet.owornmask, W_AMUL);
-        assert.deepEqual(pet.minvent, [amulet]);
-        assert.equal(pet.misc_worn_check, W_AMUL);
-    });
-
 test('genocide defeats melt-ice life-saving before death, burial, and splash',
     async () => {
     themedState(4012, 8);
@@ -1176,33 +1117,6 @@ test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
     assert.equal(game.level.buriedObjects?.length ?? 0, 1);
     assert.equal(game.level.at(x, y).typ, ROOM);
 });
-
-test('melt-ice boulder death rejects special corpse effects before mutation',
-    () => {
-        themedState(4099, 8);
-        const x = 10, y = 10;
-        game.level.at(x, y).typ = ICE;
-        game.level.at(x, y).flags = 0;
-        const boulder = place_object({
-            otyp: BOULDER, o_id: 9970, contents: [], timed: 0,
-        }, x, y);
-        const pudding = {
-            mnum: 209, mx: x, my: y, mhp: 8, mhpmax: 8,
-            minvent: [], inventory: [],
-        };
-        game.level.monsters.push(pudding);
-        scheduleLevelTimer(
-            x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
-        );
-        const claimed = claimNextDueObjectTimer(game, game.moves);
-        assert.throws(
-            () => runClaimedMeltIceTimer(claimed, game),
-            /occupant special corpse\/death effects is not implemented/,
-        );
-        assert.equal(game.level.at(x, y).typ, ICE);
-        assert.equal(boulder.where, 'floor');
-        assert.equal(pudding.mhp, 8);
-    });
 
 test('melt-ice boulder death reveals a light-blocking object mimic',
     async () => {

@@ -18,8 +18,6 @@ import {
     finishStartingDiscoveries, makedog, uInitInventoryAttrs, uInitMisc,
 } from '../js/u_init.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function start(roleKey, raceName = 'human', flags = { pauper: true }) {
     resetGame();
@@ -157,7 +155,7 @@ test('conduct disclosure projects pauper and implied nudist state', () => {
     assert.ok(finalConductLines().includes(' You were faithfully nudist.'));
 });
 
-test('fresh bridge-free pauper startup uses the untrained legacy page', async () => {
+test('fresh pauper startup uses the untrained legacy page', async () => {
     const result = await runSegment({
         seed: 123,
         datetime: '20260829134500',

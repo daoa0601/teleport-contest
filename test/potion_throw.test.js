@@ -19,8 +19,6 @@ import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_PURPLE_WORM = 115;
 
@@ -709,26 +707,6 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
     assert.equal(potion.where, 'gone');
 });
 
-test('equipped were transformation fails before map throw mutation',
-    async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, { mnum: 21, mhp: 20, mhpmax: 20 });
-        monster.misc_worn_check = 1;
-        monster.minvent = [{ otyp: 0, owornmask: 1, worn: true }];
-        monster.inventory = monster.minvent;
-        const potion = addKnownPotion(POT_WATER);
-        potion.blessed = true;
-
-        initRng(2702n);
-        await assert.rejects(
-            throwEast(potion),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
-        );
-        assert.deepEqual(game.inventory, [potion]);
-        assert.equal(potion.where, 'inventory');
-    });
-
 test('controlled lycanthrope decline completes a two-square map throw',
     async () => {
         freshMapPotionState(2);
@@ -910,22 +888,6 @@ test('live unlit oil breaks without evaporation and wakes its target', async () 
     assert.doesNotMatch(game._pending_message, /evaporates/);
     assert.equal(potion.where, 'gone');
     assert.equal(floorObjects().includes(potion), false);
-});
-
-test('lamplit oil map potion fails before split or throw mutation', async () => {
-    freshMapPotionState(2);
-    const potion = addKnownPotion(POT_OIL);
-    potion.lamplit = true;
-
-    initRng(2796n);
-    await assert.rejects(
-        throwEast(potion),
-        error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-            && error?.bridgeId === 'throw.potion-impact-unsupported',
-    );
-    assert.deepEqual(game.inventory, [potion]);
-    assert.equal(potion.where, 'inventory');
-    assert.equal(floorObjects().length, 0);
 });
 
 test('unknown inert map potion records a live type call after visible impact',

@@ -38,42 +38,26 @@ function floorObjectState() {
 }
 
 async function cavemanOutcome({ seed, moves, pushweapon = true }) {
-    const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
-    const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
-    process.env.TELEPORT_BRIDGE_FREE = '1';
-    process.env.TELEPORT_DISABLE_FIXTURES = '1';
+    let error = null;
     try {
-        let error = null;
-        try {
-            await runSegment({
-                seed,
-                datetime: '20260830130000',
-                nethackrc: cavemanConfig({ pushweapon }),
-                moves,
-            });
-        } catch (caught) {
-            error = {
-                code: caught?.code,
-                bridgeId: caught?.bridgeId,
-            };
-        }
-        return {
-            error,
-            world: {
-                inventory: (game.inventory || []).map(objectState),
-                primary: game.uwep?.otyp ?? null,
-                alternate: game.uswapwep?.otyp ?? null,
-                floorObjects: floorObjectState(),
-            },
-        };
-    } finally {
-        if (previousBridgeFree == null)
-            delete process.env.TELEPORT_BRIDGE_FREE;
-        else process.env.TELEPORT_BRIDGE_FREE = previousBridgeFree;
-        if (previousFixtures == null)
-            delete process.env.TELEPORT_DISABLE_FIXTURES;
-        else process.env.TELEPORT_DISABLE_FIXTURES = previousFixtures;
+        await runSegment({
+            seed,
+            datetime: '20260830130000',
+            nethackrc: cavemanConfig({ pushweapon }),
+            moves,
+        });
+    } catch (caught) {
+        error = { code: caught?.code, message: caught?.message };
     }
+    return {
+        error,
+        world: {
+            inventory: (game.inventory || []).map(objectState),
+            primary: game.uwep?.otyp ?? null,
+            alternate: game.uswapwep?.otyp ?? null,
+            floorObjects: floorObjectState(),
+        },
+    };
 }
 
 test('Caveman fire uses live quiver and fireassist state', async () => {

@@ -76,15 +76,15 @@ test('quaffing commits a potion effect, consumption, and elapsed action',
 
 test('future Wizard commands cannot suppress current live turns', async () => {
     // This independently generated seed deliberately collides with the old
-    // replayMoves prefix.  Its physical commands must spend time, move the
+    // recorded-command prefix. Its physical commands must spend time, move the
     // hero and current actors, and discharge a live carried wand; no expected
     // transcript, screen, coordinate path, or exact call order is copied.
     const seed = 48392;
     const startup = await freshRoleOutcome(wizardInput({
-        seed, moves: '', bridgeFree: false,
+        seed, moves: '',
     }));
     const outcome = await freshRoleOutcome(wizardInput({
-        seed, moves: '  nqhzc.rjhlll', bridgeFree: false,
+        seed, moves: '  nqhzc.rjhlll',
     }));
 
     assert.equal(startup.error, null);
@@ -104,10 +104,10 @@ test('a custom inventory binding dispatches a live item action', async () => {
     // action must detach exactly one carried potion and spend source time.
     const seed = 48601;
     const startup = await freshRoleOutcome(boundWizardInput({
-        seed, moves: ' ', bridgeFree: false,
+        seed, moves: ' ',
     }));
     const outcome = await freshRoleOutcome(boundWizardInput({
-        seed, moves: ' vftl', bridgeFree: false,
+        seed, moves: ' vftl',
     }));
     const selectedType = startup.world.inventory[5].type;
     const countType = (world, type) => world.inventory
@@ -130,12 +130,11 @@ test('bound-option Wizard still performs a live debug level teleport',
         // the requested depth; a bind-option classifier cannot swallow it.
         const seed = 48601;
         const startup = await freshRoleOutcome(boundWizardInput({
-            seed, moves: ' ', bridgeFree: false,
+            seed, moves: ' ',
         }));
         const outcome = await freshRoleOutcome(boundWizardInput({
             seed,
             moves: ` ${String.fromCharCode(22)}2\n`,
-            bridgeFree: false,
         }));
 
         assert.equal(startup.error, null);
@@ -153,7 +152,6 @@ test('debug level menu builds the selected live special level', async () => {
     const outcome = await freshRoleOutcome(boundWizardInput({
         seed: 48602,
         moves: ` ${String.fromCharCode(22)}?\ne`,
-        bridgeFree: false,
     }));
 
     assert.equal(outcome.error, null);
@@ -172,7 +170,6 @@ test('request-menu prefix sends debug level teleport directly to live choices',
         const outcome = await freshRoleOutcome(boundWizardInput({
             seed: 48602,
             moves: ` m${String.fromCharCode(22)}e`,
-            bridgeFree: true,
         }));
 
         assert.equal(outcome.error, null);

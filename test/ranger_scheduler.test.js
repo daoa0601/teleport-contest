@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { ARROW, BOW, DAGGER } from '../js/object_data.js';
 import {
-    bridgeFreeRoleOutcome, freshRoleOutcome,
+    roleOutcome, freshRoleOutcome,
 } from './support/role-outcome.js';
 
 const rangerInput = input => ({
@@ -21,9 +21,9 @@ test('fresh Ranger fireassist swaps, resumes, and shoots live arrows',
         // cannot satisfy the inventory and actor-state oracle.
         const seed = 43333;
         const startup = await freshRoleOutcome(rangerInput({
-            seed, moves: ' ', bridgeFree: true,
+            seed, moves: ' ',
         }));
-        const world = await bridgeFreeRoleOutcome(rangerInput({
+        const world = await roleOutcome(rangerInput({
             seed, moves: ' f l ',
         }));
 

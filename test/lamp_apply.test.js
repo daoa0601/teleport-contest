@@ -16,8 +16,6 @@ import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function lampObject(otyp, overrides = {}) {
     const names = new Map([

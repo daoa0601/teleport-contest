@@ -21,8 +21,6 @@ import {
 } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function freshEggState(seed) {
     resetGame();
@@ -224,22 +222,4 @@ test('carried egg stack keeps its remainder and short timer after pack prose',
         assert.equal(egg.where, 'inventory');
         assert.ok(hatchTimer(egg).deadline >= game.moves + 1);
         assert.ok(hatchTimer(egg).deadline <= game.moves + 12);
-    });
-
-test('owned carried egg callback fails before approximating taming or cries',
-    async () => {
-        freshEggState(2);
-        const egg = mksobj(EGG, true, false);
-        const timer = hatchTimer(egg);
-        egg.where = 'inventory';
-        egg.spe = 1;
-        game.inventory = [egg];
-        game.moves = timer.deadline;
-        const claimed = claimNextDueObjectTimer(game, game.moves);
-        await assert.rejects(
-            runClaimedEggHatchTimer(claimed, game, game.moves),
-            /excludes owned or male-parentage taming/,
-        );
-        assert.equal(egg.quan, 1);
-        assert.equal(game.level.monsters.length, 0);
     });

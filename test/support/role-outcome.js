@@ -55,68 +55,50 @@ function trapState() {
 
 export async function freshRoleOutcome({
     role, race, align, gender = 'female', name = 'Generalizer', seed,
-    bridgeFree, moves = ' ....', datetime = '20260830100000',
+    moves = ' ....', datetime = '20260830100000',
     extraOptions = [], extraLines = [],
 }) {
-    const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
-    const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
-    if (bridgeFree) process.env.TELEPORT_BRIDGE_FREE = '1';
-    else delete process.env.TELEPORT_BRIDGE_FREE;
-    process.env.TELEPORT_DISABLE_FIXTURES = '1';
+    let error = null;
     try {
-        let error = null;
-        try {
-            await runSegment({
-                seed,
-                datetime,
-                nethackrc: roleConfig({
-                    name, role, race, gender, align, extraOptions,
-                    extraLines,
-                }),
-                moves,
-            });
-        } catch (caught) {
-            error = { code: caught?.code, bridgeId: caught?.bridgeId };
-        }
-        return {
-            error,
-            world: {
-                hero: [game.u?.ux, game.u?.uy],
-                depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
-                rooms: game.level?.nroom ?? game.level?.rooms?.length ?? 0,
-                prototype: game._activeSpecialLevel?.prototype
-                    ?? game._specialLevelPrototype ?? null,
-                gnosticConduct: game.u?.uconduct?.gnostic ?? 0,
-                moves: game.moves,
-                heroMovement: game.u?.umovement,
-                helplessTurns: game._helplessTurns ?? 0,
-                message: game._pending_message,
-                primary: game.uwep?.otyp ?? null,
-                alternate: game.uswapwep?.otyp ?? null,
-                quiver: game.uquiver?.otyp ?? null,
-                actors: actorState(),
-                traps: trapState(),
-                inventory: (game.inventory || []).map(objectState),
-            },
-        };
-    } finally {
-        if (previousBridgeFree == null)
-            delete process.env.TELEPORT_BRIDGE_FREE;
-        else process.env.TELEPORT_BRIDGE_FREE = previousBridgeFree;
-        if (previousFixtures == null)
-            delete process.env.TELEPORT_DISABLE_FIXTURES;
-        else process.env.TELEPORT_DISABLE_FIXTURES = previousFixtures;
+        await runSegment({
+            seed,
+            datetime,
+            nethackrc: roleConfig({
+                name, role, race, gender, align, extraOptions,
+                extraLines,
+            }),
+            moves,
+        });
+    } catch (caught) {
+        error = { code: caught?.code, message: caught?.message };
     }
+    return {
+        error,
+        world: {
+            hero: [game.u?.ux, game.u?.uy],
+            depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
+            rooms: game.level?.nroom ?? game.level?.rooms?.length ?? 0,
+            prototype: game._activeSpecialLevel?.prototype
+                ?? game._specialLevelPrototype ?? null,
+            gnosticConduct: game.u?.uconduct?.gnostic ?? 0,
+            moves: game.moves,
+            heroMovement: game.u?.umovement,
+            helplessTurns: game._helplessTurns ?? 0,
+            message: game._pending_message,
+            primary: game.uwep?.otyp ?? null,
+            alternate: game.uswapwep?.otyp ?? null,
+            quiver: game.uquiver?.otyp ?? null,
+            actors: actorState(),
+            traps: trapState(),
+            inventory: (game.inventory || []).map(objectState),
+        },
+    };
 }
 
-export async function bridgeFreeRoleOutcome(input, label = null) {
+export async function roleOutcome(input, label = null) {
     const witness = label
         ?? `${input.role}/${input.race}/${input.align}/seed${input.seed}`;
-    const result = await freshRoleOutcome({ ...input, bridgeFree: true });
-
-    // Bridge-free mode throws at the attempted compatibility boundary.  The
-    // absence of that exception is the policy precondition; mirroring the
-    // ledger's internal representation would add a second, mechanical oracle.
-    assert.equal(result.error, null, `${witness} bridge-free execution`);
+    const result = await freshRoleOutcome(input);
+    assert.equal(result.error, null, `${witness} execution`);
     return result.world;
 }

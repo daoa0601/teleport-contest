@@ -18,8 +18,6 @@ import {
     inventoryWeight, invWeight, objectWeight, weightCapacity,
 } from '../js/weight.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function coin(quantity) {
     return { otyp: GOLD_PIECE, oclass: 12, quan: quantity };
@@ -167,7 +165,7 @@ test('all role startups leave source bookkeeping and capacity coherent', () => {
     }
 });
 
-test('fresh bridge-free carry startup reaches a live turn with zero bridges', async () => {
+test('fresh carry startup reaches a live turn with zero bridges', async () => {
     const result = await runSegment({
         seed: 8201,
         datetime: '20260829135000',

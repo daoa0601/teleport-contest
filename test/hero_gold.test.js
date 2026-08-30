@@ -14,8 +14,6 @@ import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { settleCarriedShopBillItem } from '../js/shk.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 function carriedGold(amount, id = null) {
     const gold = mksobj(GOLD_PIECE, false, false);

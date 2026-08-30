@@ -17,8 +17,6 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 
-process.env.TELEPORT_BRIDGE_FREE = '1';
-process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
 const PM_GIANT_SPIDER = 96;
 

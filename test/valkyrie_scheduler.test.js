@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
 import {
-    bridgeFreeRoleOutcome,
+    roleOutcome,
 } from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -54,11 +54,11 @@ test('save-blocked chat text cannot replace elapsed Valkyrie waits',
         // The save request blocks before the trailing bytes are commands.
         // Four preceding dots therefore keep the hero still while live actors
         // receive four ordinary turn allocations.
-        const startup = await bridgeFreeRoleOutcome(valkyrieInput({
+        const startup = await roleOutcome(valkyrieInput({
             seed: 27001,
             moves: ' ',
         }));
-        const afterTurns = await bridgeFreeRoleOutcome(valkyrieInput({
+        const afterTurns = await roleOutcome(valkyrieInput({
             seed: 27001,
             moves: ' ....Syny#chat',
         }));

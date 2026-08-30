@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { WAN_SLEEP } from '../js/object_data.js';
 import {
-    bridgeFreeRoleOutcome, freshRoleOutcome,
+    roleOutcome, freshRoleOutcome,
 } from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -30,11 +30,11 @@ test('a save-blocked suffix cannot alter elapsed Healer waits', async () => {
     // may not choose startup, actor movement, global maintenance, or any
     // other current-world owner.  The seed is generated and independent of
     // the old new-moon recording.
-    const startup = await bridgeFreeRoleOutcome(healerInput({
+    const startup = await roleOutcome(healerInput({
         seed: 44001,
         moves: ' ',
     }));
-    const world = await bridgeFreeRoleOutcome(healerInput({
+    const world = await roleOutcome(healerInput({
         seed: 44001,
         moves: ' ....Sszf',
     }));
@@ -52,9 +52,9 @@ test('a self-zapped sleep wand advances live helpless turns', async () => {
     // wake message.  A fixed bulk RNG replay cannot satisfy the live world.
     const seed = 44007;
     const startup = await freshRoleOutcome(healerInput({
-        seed, moves: ' ', bridgeFree: true,
+        seed, moves: ' ',
     }));
-    const world = await bridgeFreeRoleOutcome(healerInput({
+    const world = await roleOutcome(healerInput({
         seed, moves: ' zf.',
     }));
     const initialWand = startup.world.inventory.find(object =>
@@ -76,7 +76,7 @@ test('minimum self-sleep wakes on the first live global turn', async () => {
     // This generated seed selects rnd(50) == 1.  C increments negative
     // multi after that first global allocation, so the hero wakes at move 2;
     // requiring an extra turn would be an off-by-one scheduler error.
-    const world = await bridgeFreeRoleOutcome(healerInput({
+    const world = await roleOutcome(healerInput({
         seed: 44001,
         moves: ' zf.',
     }));

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    bridgeFreeRoleOutcome, freshRoleOutcome,
+    roleOutcome, freshRoleOutcome,
 } from './support/role-outcome.js';
 
 const touristInput = input => ({
@@ -15,7 +15,6 @@ test('the former explore coordinate schedules current actors', async () => {
     const input = moves => touristInput({
         seed: 48567,
         moves,
-        bridgeFree: false,
         extraOptions: ['playmode:explore'],
     });
     const startup = (await freshRoleOutcome(input('  '))).world;
@@ -33,8 +32,8 @@ test('counted Tourist search spends one live scheduler turn per repetition',
             seed: 47230,
             moves,
         });
-        const startup = await bridgeFreeRoleOutcome(input(' '));
-        const searched = await bridgeFreeRoleOutcome(input(' 10s'));
+        const startup = await roleOutcome(input(' '));
+        const searched = await roleOutcome(input(' 10s'));
 
         assert.deepEqual(searched.hero, startup.hero);
         assert.equal(searched.moves, startup.moves + 10);
