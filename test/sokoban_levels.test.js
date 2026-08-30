@@ -40,9 +40,9 @@ test('both Sokoban level 2 layouts build their live puzzle', async () => {
 
         assert.equal(game.level.flags.sokoban_rules, true);
         assert.equal(game.level.flags.noteleport, true);
-        assert.equal(game.level.flags.premapped, true);
+        assert.ok(game.level.locations.flat().some(loc => loc.premapped));
         assert.equal(stairCount(), 2);
-        assert.ok(boulders.length >= boulderCount);
+        assert.equal(boulders.length, boulderCount);
         assert.equal(holes.length, holeCount);
         assert.equal(rolling.length, 1);
     }

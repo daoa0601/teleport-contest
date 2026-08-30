@@ -253,7 +253,6 @@ const POT_BLINDNESS = 300;
 const POT_PARALYSIS = 301;
 const POT_SLEEPING = 314;
 const POT_ACID = 320;
-const SCR_EARTH = 340;
 const PM_SHOPKEEPER = 271;
 const PM_GUARD = 272;
 const PM_HORNED_DEVIL = 291;
@@ -263,7 +262,6 @@ const PM_YEENOGHU = 304;
 const PM_ORCUS = 305;
 const PM_DISPATER = 307;
 const PM_ASMODEUS = 309;
-const PM_GIANT_MIMIC = 66;
 const PM_GIANT_SPIDER = 96;
 const PM_MINOTAUR = 177;
 const PM_ETTIN = 174;
@@ -341,7 +339,6 @@ const S_ANGEL = 27;
 const S_VAMPIRE = 48;
 const S_HUMAN = 53;
 const SCR_CREATE_MONSTER = 329;
-const AMULET_OF_REFLECTION = 208;
 const HELM_OF_BRILLIANCE = 96;
 const DIAMOND = 440;
 const RUBY = 441;
@@ -3735,7 +3732,7 @@ export async function summonNastyMonsters(
 }
 
 // maketrap stub
-async function maketrap(x, y, typ, options = undefined) {
+async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than
     // floor traps and must not occupy the coordinate for later lregions.
@@ -3841,10 +3838,9 @@ async function maketrap(x, y, typ, options = undefined) {
         trap.tnote = available.length
             ? available[rn2(available.length)] : rn2(12);
     } else if (typ === ROLLING_BOULDER_TRAP
-        && options?.launchAtTrigger) {
-        // Lua may request a rolling-boulder trap without a viable launcher.
-        // sp_lev records the trigger itself as both endpoints and consumes no
-        // random-launch or boulder-construction RNG in that case.
+        && game.level.flags.sokoban_rules) {
+        // Sokoban has no rolling-boulder launchers. The trap stays in place
+        // without creating another boulder.
         trap.launch = { x, y };
         trap.launch2 = { x, y };
     } else if (typ === ROLLING_BOULDER_TRAP) {
@@ -5786,8 +5782,13 @@ function flipSpecialLevel(flp) {
     if (game.level.dnstair) game.level.dnstair = transform(
         game.level.dnstair.x, game.level.dnstair.y, false);
     for (const trap of game.level.traps || []) {
+        const flipTrap = inArea(trap.tx, trap.ty);
         const point = transform(trap.tx, trap.ty);
         trap.tx = point.x; trap.ty = point.y;
+        if (flipTrap && trap.ttyp === ROLLING_BOULDER_TRAP) {
+            trap.launch = transform(trap.launch.x, trap.launch.y, false);
+            trap.launch2 = transform(trap.launch2.x, trap.launch2.y, false);
+        }
     }
     const movedObjects = [];
     for (let x = 0; x < COLNO; x++) {
@@ -6282,16 +6283,6 @@ function specialNonPasswall(context) {
     }
 }
 
-function specialMonsterGenerationExclusion(context, x1, y1, x2, y2) {
-    game.level.exclusionZones.push({
-        type: 'monster-generation',
-        lx: context.xstart + Math.min(x1, x2),
-        ly: context.ystart + Math.min(y1, y2),
-        hx: context.xstart + Math.max(x1, x2),
-        hy: context.ystart + Math.max(y1, y2),
-    });
-}
-
 function specialMonsterRandomLocation(context, mndx) {
     const nativeHumidity = (loc, x, y) =>
         specialMonsterLocationAcceptable(mndx, loc, x, y);
@@ -6436,7 +6427,7 @@ async function specialTrapOfType(context, typ) {
 
 async function specialTrapAt(context, typ, x, y, options = undefined) {
     const trap = await maketrap(
-        context.xstart + x, context.ystart + y, typ, options,
+        context.xstart + x, context.ystart + y, typ,
     );
     return finishSpecialTrapConstruction(trap, options);
 }
@@ -10522,6 +10513,29 @@ async function createLuaTrap(context, { trapType, point }) {
         : specialTrapOfType(context, trapType);
 }
 
+function createLuaExclusion(context, options) {
+    const validTypes = new Set([
+        'teleport', 'teleport-up', 'teleport-down', 'monster-generation',
+    ]);
+    const type = options.type ?? 'teleport';
+    if (!validTypes.has(type))
+        throw new Error(`unsupported Lua exclusion ${type}`);
+    const region = regionCoordinates(
+        context, options.region, options.region_islev,
+    );
+    game.level.exclusionZones.push({ type, ...region });
+}
+
+function solidifyLuaMap(mappedCells) {
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const location = game.level.at(x, y);
+            if (IS_STWALL(location?.typ) && !mappedCells.has(x, y))
+                location.wall_info |= W_NONDIGGABLE | W_NONPASSWALL;
+        }
+    }
+}
+
 function flipLuaRegions(active) {
     for (const field of [
         'upTeleportRegion', 'upTeleportExclude',
@@ -10540,6 +10554,7 @@ async function generateLuaSpecialLevel(active) {
     let luaState = null;
     const containers = [];
     const mappedContexts = [];
+    let mappedCells = new SpecialSelection();
     active.allowFlips = 3;
     game.level.flags.is_special = true;
     const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
@@ -10581,6 +10596,8 @@ async function generateLuaSpecialLevel(active) {
                 origin,
             );
             mappedContexts.push(mapContext);
+            const mapSelection = specialMapSelection(mapContext, rows);
+            mappedCells = mappedCells.union(mapSelection);
             context = mapContext;
             active.context = context;
             if (typeof value !== 'string' && value.contents) {
@@ -10595,7 +10612,7 @@ async function generateLuaSpecialLevel(active) {
                     active.context = context;
                 }
             }
-            return specialMapSelection(mapContext, rows);
+            return mapSelection;
         },
         terrain: (selection, character) => {
             const type = mapCharacterType(character);
@@ -10717,6 +10734,7 @@ async function generateLuaSpecialLevel(active) {
             }
             else throw new Error(`unsupported Lua level region ${options.type}`);
         },
+        exclusion: options => createLuaExclusion(context, options),
         mazeWalk: async options => {
             const directions = ['north', 'south', 'east', 'west'];
             const direction = options.dir === 'random'
@@ -10755,6 +10773,7 @@ async function generateLuaSpecialLevel(active) {
     if (!game.level.flags.corrmaze)
         wallification(1, 0, COLNO - 1, ROWNO - 1);
     flipSpecialLevelRandom(active.allowFlips);
+    if (active.solidify) solidifyLuaMap(mappedCells);
     flipLuaRegions(active);
 }
 
@@ -12162,488 +12181,28 @@ async function generateSpecialAndFixup(generator, active) {
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
     // underlying terrain even though the live level cell was updated.
-    if (game.level?.flags?.premapped) premap_detect();
+    if (active?.premapped) premap_detect();
     await fixupMedusa(active);
 }
 
-const SOKO1_1_MAP = [
-    '--------------------------',
-    '|........................|',
-    '|.......|---------------.|',
-    '-------.------         |.|',
-    ' |...........|         |.|',
-    ' |...........|         |.|',
-    '--------.-----         |.|',
-    '|............|         |.|',
-    '|............|         |.|',
-    '-----.--------   ------|.|',
-    ' |..........|  --|.....|.|',
-    ' |..........|  |.+.....|.|',
-    ' |.........|-  |-|.....|.|',
-    '-------.----   |.+.....+.|',
-    '|........|     |-|.....|--',
-    '|........|     |.+.....|  ',
-    '|...|-----     --|.....|  ',
-    '-----            -------  ',
-];
-
-const SOKO1_1_BOULDERS = [
-    [3, 5], [5, 5], [7, 5], [9, 5], [11, 5],
-    [4, 7], [4, 8], [6, 7], [9, 7], [11, 7],
-    [3, 12], [4, 10], [5, 12], [6, 10], [7, 11], [8, 10], [9, 12],
-    [3, 14],
-];
-
-const SOKO1_2_MAP = [
-    '  ------------------------',
-    '  |......................|',
-    '  |..-------------------.|',
-    '----.|    -----        |.|',
-    '|..|.--  --...|        |.|',
-    '|.....|--|....|        |.|',
-    '|.....|..|....|        |.|',
-    '--....|......--        |.|',
-    ' |.......|...|   ------|.|',
-    ' |....|..|...| --|.....|.|',
-    ' |....|--|...| |.+.....|.|',
-    ' |.......|..-- |-|.....|.|',
-    ' ----....|.--  |.+.....+.|',
-    '    ---.--.|   |-|.....|--',
-    '     |.....|   |.+.....|',
-    '     |..|..|   --|.....|',
-    '     -------     -------',
-];
-
-const SOKO1_2_BOULDERS = [
-    [4, 4],
-    [2, 6], [3, 6], [4, 7], [5, 7], [2, 8], [5, 8],
-    [3, 9], [4, 9], [3, 10], [5, 10], [6, 12],
-    [7, 14],
-    [11, 5], [12, 6], [10, 7], [11, 7], [10, 8], [12, 9], [11, 10],
-];
-
-const SOKO1_1_LAYOUT = {
-    map: SOKO1_1_MAP,
-    stair: [1, 1],
-    boulders: SOKO1_1_BOULDERS,
-    traps: [
-        [HOLE, 7, 1], [ROLLING_BOULDER_TRAP, 8, 1],
-        ...Array.from({ length: 15 }, (_, index) => [HOLE, 9 + index, 1]),
-    ],
-    doors: [
-        [D_LOCKED, 23, 13],
-        [D_CLOSED, 17, 11],
-        [D_CLOSED, 17, 13],
-        [D_CLOSED, 17, 15],
-    ],
-    zooSeed: [18, 10],
-    rewardLocations: [[16, 11], [16, 13], [16, 15]],
-    bagChance: 75,
-};
-
-const SOKO1_2_LAYOUT = {
-    map: SOKO1_2_MAP,
-    stair: [6, 15],
-    boulders: SOKO1_2_BOULDERS,
-    traps: [
-        [ROLLING_BOULDER_TRAP, 5, 1],
-        ...Array.from({ length: 18 }, (_, index) => [HOLE, 6 + index, 1]),
-    ],
-    doors: [
-        [D_LOCKED, 23, 12],
-        [D_CLOSED, 17, 10],
-        [D_CLOSED, 17, 12],
-        [D_CLOSED, 17, 14],
-    ],
-    zooSeed: [18, 9],
-    rewardLocations: [[16, 10], [16, 12], [16, 14]],
-    bagChance: 25,
-};
-
-async function placeSokobanTrapAt(context, type, x, y) {
-    await maketrap(
-        context.xstart + x,
-        context.ystart + y,
-        type,
-        type === ROLLING_BOULDER_TRAP
-            ? { launchAtTrigger: true } : undefined,
-    );
-    // l_create_trap() reaches the same shallow-level victim gate as ordinary
-    // mktrap(); absolute Sokoban depth exceeds rnd(4), but the roll is still
-    // evaluated first.
-    rnd(4);
-}
-
-async function generateSoko1(active, layout) {
-    // Lua sources: dat/soko1-1.lua and dat/soko1-2.lua.  Their maps and
-    // coordinates differ, but their constructor and finalization graph is
-    // identical and stays owned here in source order.
-    const context = loadSpecialAsciiMap(layout.map, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.sokoban_rules = true;
-    game.level.flags.premapped = true;
-    for (let dx = 0; dx < context.width; dx++)
-        for (let dy = 0; dy < context.height; dy++)
-            game.level.at(context.xstart + dx, context.ystart + dy).lit = true;
-    specialStairAt(context, ...layout.stair, false);
-    specialNonDiggable(context);
-    specialNonPasswall(context);
-    for (const [x, y] of layout.boulders)
-        specialObjectAt(context, BOULDER, x, y);
-
-    for (const [type, x, y] of layout.traps)
-        await placeSokobanTrapAt(context, type, x, y);
-
-    await specialExplicitMonster(context, PM_GIANT_MIMIC,
-        { kind: 'object', otyp: BOULDER });
-    await specialExplicitMonster(context, PM_GIANT_MIMIC,
-        { kind: 'object', otyp: BOULDER });
-
-    for (let index = 0; index < 4; index++)
-        specialObjectOfClass(context, FOOD_CLASS);
-    specialObjectOfClass(context, RING_CLASS);
-    specialObjectOfClass(context, WAND_CLASS);
-
-    for (const [mask, x, y] of layout.doors)
-        specialDoorAt(context, mask, x, y);
-    const zooRoom = specialIrregularRoom(
-        context, ...layout.zooSeed, ZOO, true, 1,
-    );
-
-    const [rewardX, rewardY] = layout.rewardLocations[
-        rn2(layout.rewardLocations.length)
-    ];
-    const absoluteRewardX = context.xstart + rewardX;
-    const absoluteRewardY = context.ystart + rewardY;
-    const rewardType = rn2(100) < layout.bagChance
-        ? BAG_OF_HOLDING : AMULET_OF_REFLECTION;
-    const reward = mksobj_at(rewardType, absoluteRewardX, absoluteRewardY,
-        true, true);
-    reward.cursed = false;
-    reward.achievement = true;
-    reward.nomerge = true;
-    active.sokobanPrize = rewardType;
-    make_engr_at(absoluteRewardX, absoluteRewardY, 'Elbereth', null, 0, BURN);
-    const scareScroll = mksobj_at(SCR_SCARE_MONSTER,
-        absoluteRewardX, absoluteRewardY, true, true);
-    scareScroll.blessed = false;
-    scareScroll.cursed = true;
-
-    // lspo_finalize_level() performs several deterministic topology passes,
-    // then resolves both allowed Sokoban orientation flips before deferred
-    // special-room filling.
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    await fillZooRoom(zooRoom);
-}
-
-async function generateSoko11(active) {
-    return generateSoko1(active, SOKO1_1_LAYOUT);
-}
-
-async function generateSoko12(active) {
-    return generateSoko1(active, SOKO1_2_LAYOUT);
-}
-
-const SOKO2_1_MAP = [
-    '--------------------',
-    '|........|...|.....|',
-    '|.....-..|.-.|.....|',
-    '|..|.....|...|.....|',
-    '|-.|..-..|.-.|.....|',
-    '|...--.......|.....|',
-    '|...|...-...-|.....|',
-    '|...|..|...--|.....|',
-    '|-..|..|----------+|',
-    '|..................|',
-    '|...|..|------------',
-    '--------',
-];
-
-const SOKO2_1_LAYOUT = {
-    map: SOKO2_1_MAP,
-    stairs: [[false, 6, 10], [true, 16, 4]],
-    doors: [[D_LOCKED, 18, 8]],
-    boulders: [
-        [2, 2], [3, 2],
-        [5, 3], [7, 3], [7, 2], [8, 2],
-        [10, 3], [11, 3],
-        [2, 7], [2, 8], [3, 9],
-        [5, 7], [6, 6],
-    ],
-    traps: [
-        [ROLLING_BOULDER_TRAP, 7, 9],
-        ...Array.from({ length: 10 }, (_, index) => [HOLE, 8 + index, 9]),
-    ],
-};
-
-const SOKO2_2_MAP = [
-    '  --------',
-    '--|.|....|',
-    '|........|----------',
-    '|.-...-..|.|.......|',
-    '|...-......|.......|',
-    '|.-....|...|.......|',
-    '|....-.--.-|.......|',
-    '|..........|.......|',
-    '|.--...|...|.......---',
-    '|....-.|---|.......+.|',
-    '--|....|------------.|',
-    '  |................+.|',
-    '  --------------------',
-];
-
-const SOKO2_2_LAYOUT = {
-    map: SOKO2_2_MAP,
-    stairs: [[false, 6, 11], [true, 15, 6]],
-    doors: [
-        [D_LOCKED, 19, 9],
-        [D_LOCKED, 19, 11],
-    ],
-    boulders: [
-        [4, 2], [4, 3], [5, 3], [7, 3], [8, 3],
-        [2, 4], [3, 4], [5, 5], [6, 6], [9, 6],
-        [3, 7], [4, 7], [7, 7], [6, 9], [5, 10], [5, 11],
-    ],
-    monsterGenerationExclusions: [[6, 11, 18, 11]],
-    traps: [
-        [ROLLING_BOULDER_TRAP, 7, 11],
-        ...Array.from({ length: 11 }, (_, index) => [HOLE, 8 + index, 11]),
-    ],
-};
-
-const SOKO3_1_MAP = [
-    '-----------       -----------',
-    '|....|....|--     |.........|',
-    '|....|......|     |.........|',
-    '|.........|--     |.........|',
-    '|....|....|       |.........|',
-    '|-.---------      |.........|',
-    '|....|.....|      |.........|',
-    '|....|.....|      |.........|',
-    '|..........|      |.........|',
-    '|....|.....|---------------+|',
-    '|....|......................|',
-    '-----------------------------',
-];
-
-const SOKO3_2_MAP = [
-    ' ----          -----------',
-    '-|..|-------   |.........|',
-    '|..........|   |.........|',
-    '|..-----.-.|   |.........|',
-    '|..|...|...|   |.........|',
-    '|.........-|   |.........|',
-    '|.......|..|   |.........|',
-    '|.----..--.|   |.........|',
-    '|........|.--  |.........|',
-    '|.---.-.....------------+|',
-    '|...|...-................|',
-    '|.........----------------',
-    '----|..|..|               ',
-    '    -------               ',
-];
-
-const SOKO3_1_LAYOUT = {
-    map: SOKO3_1_MAP,
-    stairs: [[false, 11, 2], [true, 23, 4]],
-    doors: [[D_LOCKED, 27, 9]],
-    boulders: [
-        [3, 2], [4, 2],
-        [6, 2], [6, 3], [7, 2],
-        [3, 6], [2, 7], [3, 7], [3, 8],
-        [2, 9], [3, 9], [4, 9],
-        [6, 7], [6, 9], [8, 7], [8, 10],
-        [9, 8], [9, 9], [10, 7], [10, 10],
-    ],
-    monsterGenerationExclusions: [[11, 10, 27, 10]],
-    traps: [
-        [ROLLING_BOULDER_TRAP, 11, 10],
-        ...Array.from({ length: 15 }, (_, index) => [HOLE, 12 + index, 10]),
-    ],
-};
-
-const SOKO3_2_LAYOUT = {
-    map: SOKO3_2_MAP,
-    stairs: [[false, 3, 1], [true, 20, 4]],
-    doors: [[D_LOCKED, 24, 9]],
-    boulders: [
-        [2, 3], [8, 3], [9, 4],
-        [2, 5], [4, 5], [9, 5],
-        [2, 6], [5, 6], [6, 7],
-        [3, 8], [7, 8],
-        [5, 9], [10, 9],
-        [7, 10], [10, 10], [3, 11],
-    ],
-    monsterGenerationExclusions: [[11, 10, 24, 10]],
-    traps: [
-        [ROLLING_BOULDER_TRAP, 11, 10],
-        ...Array.from({ length: 12 }, (_, index) => [HOLE, 12 + index, 10]),
-    ],
-};
-
-const SOKO4_1_MAP = [
-    '------  -----',
-    '|....|  |...|',
-    '|....----...|',
-    '|...........|',
-    '|..|-|.|-|..|',
-    '---------|.---',
-    '|......|.....|',
-    '|..----|.....|',
-    '--.|   |.....|',
-    ' |.|---|.....|',
-    ' |...........|',
-    ' |..|---------',
-    ' ----',
-];
-
-const SOKO4_1_LAYOUT = {
-    map: SOKO4_1_MAP,
-    hardfloor: true,
-    branchRegion: [6, 4, 6, 4],
-    stairs: [[true, 6, 6]],
-    boulders: [
-        [2, 2], [2, 3],
-        [10, 2], [9, 3], [10, 4],
-        [8, 7], [9, 8], [9, 9], [8, 10], [10, 10],
-    ],
-    monsterGenerationExclusions: [[1, 6, 7, 11]],
-    traps: [
-        [PIT, 4, 6],
-        [PIT, 2, 6], [PIT, 2, 7], [PIT, 2, 8],
-        [ROLLING_BOULDER_TRAP, 2, 9],
-        [PIT, 2, 10], [PIT, 3, 10], [PIT, 4, 10],
-        [PIT, 5, 10], [PIT, 6, 10],
-        [ROLLING_BOULDER_TRAP, 7, 10],
-    ],
-    fixedObjects: [
-        [SCR_EARTH, 2, 11],
-        [SCR_EARTH, 3, 11],
-    ],
-};
-
-const SOKO4_2_MAP = [
-    '-------- ------',
-    '|.|....|-|....|',
-    '|.|-..........|',
-    '|.||....|.....|',
-    '|.||....|.....|',
-    '|.|-----|.-----',
-    '|.|    |......|',
-    '|.-----|......|',
-    '|.............|',
-    '|..|---|......|',
-    '----   --------',
-];
-
-const SOKO4_2_LAYOUT = {
-    map: SOKO4_2_MAP,
-    hardfloor: true,
-    branchRegion: [3, 1, 3, 1],
-    stairs: [[true, 1, 1]],
-    boulders: [
-        [5, 2], [6, 2], [6, 3], [7, 3],
-        [9, 5], [10, 3], [11, 2], [12, 3],
-        [7, 8], [8, 8], [9, 8], [10, 8],
-    ],
-    monsterGenerationExclusions: [
-        [1, 1, 1, 9],
-        [1, 8, 7, 9],
-    ],
-    traps: [
-        [PIT, 1, 2], [PIT, 1, 3], [PIT, 1, 4],
-        [PIT, 1, 5], [PIT, 1, 6],
-        [ROLLING_BOULDER_TRAP, 1, 7],
-        [PIT, 1, 8], [PIT, 2, 8], [PIT, 3, 8],
-        [PIT, 4, 8], [PIT, 5, 8],
-        [ROLLING_BOULDER_TRAP, 6, 8],
-    ],
-    fixedObjects: [
-        [SCR_EARTH, 1, 9],
-        [SCR_EARTH, 2, 9],
-    ],
-};
-
-async function generateSokobanPuzzle(active, layout) {
-    // Lua sources: intermediate Sokoban floors share a fixed operation graph;
-    // layout data owns only their map and coordinates.
-    const context = loadSpecialAsciiMap(layout.map, active.defaultLit);
-    active.context = context;
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.sokoban_rules = true;
-    game.level.flags.premapped = true;
-    if (layout.hardfloor) game.level.flags.hardfloor = true;
-
-    if (layout.branchRegion) {
-        active.explicitBranchRegion = absoluteSpecialRegion(
-            context, ...layout.branchRegion,
+async function generateSokobanLevel(active) {
+    if (!/^soko[1-4]$/.test(active?.prototype)
+        || active?.variant < 1 || active?.variant > 2) {
+        throw new RangeError(
+            `unknown Sokoban level ${active?.prototype}-${active?.variant}`,
         );
     }
-    for (const [up, x, y] of layout.stairs)
-        specialStairAt(context, x, y, up);
-    for (const [mask, x, y] of layout.doors || [])
-        specialDoorAt(context, mask, x, y);
-    for (let dx = 0; dx < context.width; dx++)
-        for (let dy = 0; dy < context.height; dy++)
-            game.level.at(context.xstart + dx, context.ystart + dy).lit = true;
-    specialNonDiggable(context);
-    specialNonPasswall(context);
-
-    for (const [x, y] of layout.boulders)
-        specialObjectAt(context, BOULDER, x, y);
-    for (const [x1, y1, x2, y2]
-        of layout.monsterGenerationExclusions || []) {
-        specialMonsterGenerationExclusion(context, x1, y1, x2, y2);
-    }
-    for (const [type, x, y] of layout.traps)
-        await placeSokobanTrapAt(context, type, x, y);
-    for (const [otyp, x, y] of layout.fixedObjects || [])
-        specialObjectAt(context, otyp, x, y);
-    for (let index = 0; index < 4; index++)
-        specialObjectOfClass(context, FOOD_CLASS);
-    specialObjectOfClass(context, RING_CLASS);
-    specialObjectOfClass(context, WAND_CLASS);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
+    active.file = `${active.prototype}-${active.variant}.lua`;
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    for (const room of game.level.rooms.slice(0, game.level.nroom))
+        await fillSpecialRoom(room);
 }
-
-const SOKO2_LAYOUTS = Object.freeze([
-    null, SOKO2_1_LAYOUT, SOKO2_2_LAYOUT,
-]);
 
 export async function generateSokobanLevel2(active) {
-    const layout = SOKO2_LAYOUTS[active?.variant];
-    if (!layout) {
-        throw new RangeError(`unknown Sokoban level 2 layout ${active?.variant}`);
+    if (active?.prototype !== 'soko2') {
+        throw new RangeError(`unknown Sokoban level 2 ${active?.prototype}`);
     }
-    await generateSpecialAndFixup(
-        current => generateSokobanPuzzle(current, layout), active,
-    );
-}
-
-async function generateSoko31(active) {
-    return generateSokobanPuzzle(active, SOKO3_1_LAYOUT);
-}
-
-async function generateSoko32(active) {
-    return generateSokobanPuzzle(active, SOKO3_2_LAYOUT);
-}
-
-async function generateSoko41(active) {
-    return generateSokobanPuzzle(active, SOKO4_1_LAYOUT);
-}
-
-async function generateSoko42(active) {
-    return generateSokobanPuzzle(active, SOKO4_2_LAYOUT);
+    await generateSokobanLevel(active);
 }
 
 // Lua source: dat/tut-1.lua.  Unlike ordinary generation, this level is a
@@ -13004,6 +12563,7 @@ async function makelevel() {
         const variant = variants > 1 ? rnd(variants) : 1;
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'minend'
+            || prototype.startsWith('soko')
             || prototype === 'medusa'
             || prototype === 'castle'
             || prototype === 'knox'
@@ -13146,38 +12706,8 @@ async function makelevel() {
             await generateAstralLevel(g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'soko1' && variant === 1) {
-            await generateSpecialAndFixup(generateSoko11,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko1' && variant === 2) {
-            await generateSpecialAndFixup(generateSoko12,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko2') {
-            await generateSokobanLevel2(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko3' && variant === 1) {
-            await generateSpecialAndFixup(generateSoko31,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko3' && variant === 2) {
-            await generateSpecialAndFixup(generateSoko32,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko4' && variant === 1) {
-            await generateSpecialAndFixup(generateSoko41,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'soko4' && variant === 2) {
-            await generateSpecialAndFixup(generateSoko42,
-                g._activeSpecialLevel);
+        if (prototype.startsWith('soko')) {
+            await generateSokobanLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'tut-1') {

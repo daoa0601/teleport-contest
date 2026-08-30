@@ -407,6 +407,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
             tableOptions(value),
         ),
         levregion: value => operations.levelRegion(tableOptions(value)),
+        exclusion: value => operations.exclusion(tableOptions(value)),
         mazewalk: (value, y, direction) => operations.mazeWalk(
             mazeWalkOptions(value, y, direction),
         ),
