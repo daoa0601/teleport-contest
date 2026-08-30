@@ -123,11 +123,7 @@ class LuaFunction {
     }
 
     invoke(args) {
-        const environment = new Environment(this.closure);
-        const parameters = this.expression.parameters;
-        for (let index = 0; index < parameters.length; index++)
-            environment.define(parameters[index], args[index] ?? null);
-        environment.define('...', new LuaValues(args.slice(parameters.length)));
+        const environment = this.environment(args);
         try {
             this.state.executeBlock(this.expression.body, environment);
         } catch (signal) {
@@ -136,6 +132,27 @@ class LuaFunction {
             throw signal;
         }
         return new LuaValues();
+    }
+
+    async invokeAsync(args) {
+        const environment = this.environment(args);
+        try {
+            await this.state.executeBlockAsync(this.expression.body, environment);
+        } catch (signal) {
+            if (signal instanceof ReturnSignal)
+                return new LuaValues(signal.values);
+            throw signal;
+        }
+        return new LuaValues();
+    }
+
+    environment(args) {
+        const environment = new Environment(this.closure);
+        const parameters = this.expression.parameters;
+        for (let index = 0; index < parameters.length; index++)
+            environment.define(parameters[index], args[index] ?? null);
+        environment.define('...', new LuaValues(args.slice(parameters.length)));
+        return environment;
     }
 }
 
@@ -215,6 +232,66 @@ function formatLuaString(format, args) {
     });
 }
 
+function unaryValue(operator, value) {
+    if (operator === 'not') return !truthy(value);
+    if (value instanceof LuaUserdata) {
+        const method = value.metamethod({
+            '-': '__unm', '~': '__bnot', '#': '__len',
+        }[operator]);
+        if (method) return method(value);
+    }
+    if (operator === '-') return -Number(value);
+    if (operator === '~') return ~Number(value);
+    if (operator === '#') {
+        if (value instanceof LuaTable) return value.length();
+        if (typeof value === 'string') return value.length;
+        throw new TypeError('attempt to get length of unsupported value');
+    }
+    throw new Error(`Unsupported Lua unary operator ${operator}`);
+}
+
+function binaryValue(operator, left, right) {
+    const metamethodName = {
+        '==': '__eq', '~=': '__eq', '<': '__lt', '<=': '__le',
+        '..': '__concat', '+': '__add', '-': '__sub', '*': '__mul',
+        '/': '__div', '//': '__idiv', '%': '__mod', '^': '__pow',
+        '&': '__band', '|': '__bor', '~': '__bxor',
+        '<<': '__shl', '>>': '__shr',
+    }[operator];
+    const metamethod = left instanceof LuaUserdata
+        ? left.metamethod(metamethodName)
+        : right instanceof LuaUserdata
+            ? right.metamethod(metamethodName) : null;
+    if (metamethod) {
+        const result = metamethod(left, right);
+        return operator === '~=' ? !truthy(result) : result;
+    }
+
+    switch (operator) {
+    case '==': return left === right;
+    case '~=': return left !== right;
+    case '<': return left < right;
+    case '>': return left > right;
+    case '<=': return left <= right;
+    case '>=': return left >= right;
+    case '..': return luaString(left) + luaString(right);
+    case '+': return Number(left) + Number(right);
+    case '-': return Number(left) - Number(right);
+    case '*': return Number(left) * Number(right);
+    case '/': return Number(left) / Number(right);
+    case '//': return Math.floor(Number(left) / Number(right));
+    case '%': return Number(left)
+        - Math.floor(Number(left) / Number(right)) * Number(right);
+    case '^': return Number(left) ** Number(right);
+    case '&': return Number(left) & Number(right);
+    case '|': return Number(left) | Number(right);
+    case '~': return Number(left) ^ Number(right);
+    case '<<': return Number(left) << Number(right);
+    case '>>': return Number(left) >> Number(right);
+    default: throw new Error(`Unsupported Lua binary operator ${operator}`);
+    }
+}
+
 export class LuaState {
     constructor(bindings = {}) {
         this.destroyed = false;
@@ -273,6 +350,12 @@ export class LuaState {
         this.executeBlock(chunk.body, this.globals);
     }
 
+    async executeAsync(source, filename = '<lua>') {
+        if (this.destroyed) throw new Error('Lua state has been destroyed');
+        const chunk = parseLua(source, filename);
+        await this.executeBlockAsync(chunk.body, this.globals);
+    }
+
     destroy() {
         this.destroyed = true;
         this.globals = null;
@@ -300,10 +383,35 @@ export class LuaState {
         return new LuaValues(result === undefined ? [] : [result]);
     }
 
+    async callValueAsync(callable, args) {
+        callable = first(callable);
+        let result;
+        if (callable instanceof LuaFunction)
+            result = await callable.invokeAsync(args);
+        else if (typeof callable === 'function') result = await callable(...args);
+        else throw new TypeError(`attempt to call a ${luaType(callable)} value`);
+        if (result instanceof LuaValues) return result;
+        return new LuaValues(result === undefined ? [] : [result]);
+    }
+
     evaluateList(expressions, environment) {
         const values = [];
         for (let index = 0; index < expressions.length; index++) {
             const value = this.evaluate(expressions[index], environment);
+            if (index === expressions.length - 1 && value instanceof LuaValues)
+                values.push(...value.values);
+            else
+                values.push(first(value));
+        }
+        return values;
+    }
+
+    async evaluateListAsync(expressions, environment) {
+        const values = [];
+        for (let index = 0; index < expressions.length; index++) {
+            const value = await this.evaluateAsync(
+                expressions[index], environment,
+            );
             if (index === expressions.length - 1 && value instanceof LuaValues)
                 values.push(...value.values);
             else
@@ -324,9 +432,160 @@ export class LuaState {
         );
     }
 
+    async assignAsync(target, value, environment) {
+        if (target.type === 'Name') {
+            environment.assign(target.name, value);
+            return;
+        }
+        setIndex(
+            await this.evaluateAsync(target.target, environment),
+            await this.evaluateAsync(target.key, environment),
+            value,
+        );
+    }
+
     executeBlock(statements, environment) {
         for (const statement of statements)
             this.executeStatement(statement, environment);
+    }
+
+    async executeBlockAsync(statements, environment) {
+        for (const statement of statements)
+            await this.executeStatementAsync(statement, environment);
+    }
+
+    async executeStatementAsync(statement, environment) {
+        switch (statement.type) {
+        case 'Local': {
+            const values = await this.evaluateListAsync(
+                statement.expressions, environment,
+            );
+            for (let index = 0; index < statement.names.length; index++)
+                environment.define(statement.names[index], values[index] ?? null);
+            return;
+        }
+        case 'LocalFunction': {
+            environment.define(statement.name, null);
+            environment.assign(statement.name,
+                new LuaFunction(this, statement.expression, environment));
+            return;
+        }
+        case 'Assign': {
+            const values = await this.evaluateListAsync(
+                statement.expressions, environment,
+            );
+            for (let index = 0; index < statement.targets.length; index++)
+                await this.assignAsync(
+                    statement.targets[index], values[index] ?? null, environment,
+                );
+            return;
+        }
+        case 'CallStatement':
+            await this.evaluateAsync(statement.call, environment);
+            return;
+        case 'If': {
+            for (const clause of statement.clauses) {
+                if (!truthy(await this.evaluateAsync(
+                    clause.condition, environment,
+                ))) continue;
+                await this.executeBlockAsync(
+                    clause.body, new Environment(environment),
+                );
+                return;
+            }
+            await this.executeBlockAsync(
+                statement.otherwise, new Environment(environment),
+            );
+            return;
+        }
+        case 'ForNumeric': {
+            const start = Number(first(await this.evaluateAsync(
+                statement.start, environment,
+            )));
+            const stop = Number(first(await this.evaluateAsync(
+                statement.stop, environment,
+            )));
+            const step = Number(first(await this.evaluateAsync(
+                statement.step, environment,
+            )));
+            if (step === 0) throw new Error('Lua numeric for step is zero');
+            const loop = new Environment(environment);
+            for (let value = start;
+                step > 0 ? value <= stop : value >= stop;
+                value += step) {
+                loop.define(statement.name, value);
+                try {
+                    await this.executeBlockAsync(
+                        statement.body, new Environment(loop),
+                    );
+                } catch (signal) {
+                    if (signal instanceof BreakSignal) break;
+                    throw signal;
+                }
+            }
+            return;
+        }
+        case 'ForGeneric': {
+            const source = (await this.evaluateListAsync(
+                statement.expressions, environment,
+            ))[0];
+            if (!(source instanceof LuaIterator))
+                throw new TypeError('generic for expects an iterator');
+            for (const row of source.rows) {
+                const loop = new Environment(environment);
+                for (let index = 0; index < statement.names.length; index++)
+                    loop.define(statement.names[index], row[index] ?? null);
+                try {
+                    await this.executeBlockAsync(statement.body, loop);
+                } catch (signal) {
+                    if (signal instanceof BreakSignal) break;
+                    throw signal;
+                }
+            }
+            return;
+        }
+        case 'While':
+            while (truthy(await this.evaluateAsync(
+                statement.condition, environment,
+            ))) {
+                try {
+                    await this.executeBlockAsync(
+                        statement.body, new Environment(environment),
+                    );
+                } catch (signal) {
+                    if (signal instanceof BreakSignal) break;
+                    throw signal;
+                }
+            }
+            return;
+        case 'Repeat':
+            for (;;) {
+                const iteration = new Environment(environment);
+                try {
+                    await this.executeBlockAsync(statement.body, iteration);
+                } catch (signal) {
+                    if (signal instanceof BreakSignal) break;
+                    throw signal;
+                }
+                if (truthy(await this.evaluateAsync(
+                    statement.condition, iteration,
+                ))) break;
+            }
+            return;
+        case 'Do':
+            await this.executeBlockAsync(
+                statement.body, new Environment(environment),
+            );
+            return;
+        case 'Return':
+            throw new ReturnSignal(await this.evaluateListAsync(
+                statement.expressions, environment,
+            ));
+        case 'Break':
+            throw new BreakSignal();
+        default:
+            throw new Error(`Unsupported Lua statement ${statement.type}`);
+        }
     }
 
     executeStatement(statement, environment) {
@@ -493,23 +752,98 @@ export class LuaState {
         }
     }
 
+    async evaluateAsync(expression, environment) {
+        switch (expression.type) {
+        case 'Literal':
+            return expression.value;
+        case 'Name':
+            return environment.get(expression.name);
+        case 'Vararg':
+            return environment.get('...') || new LuaValues();
+        case 'Group':
+            return first(await this.evaluateAsync(
+                expression.expression, environment,
+            ));
+        case 'Function':
+            return new LuaFunction(this, expression, environment);
+        case 'Table': {
+            const table = new LuaTable();
+            let nextIndex = 1;
+            for (let index = 0; index < expression.fields.length; index++) {
+                const field = expression.fields[index];
+                if (field.key) {
+                    table.set(
+                        first(await this.evaluateAsync(field.key, environment)),
+                        first(await this.evaluateAsync(field.value, environment)),
+                    );
+                    continue;
+                }
+                const value = await this.evaluateAsync(field.value, environment);
+                if (index === expression.fields.length - 1
+                    && value instanceof LuaValues) {
+                    for (const entry of value.values) table.set(nextIndex++, entry);
+                } else {
+                    table.set(nextIndex++, first(value));
+                }
+            }
+            return table;
+        }
+        case 'Index':
+            return getIndex(
+                await this.evaluateAsync(expression.target, environment),
+                await this.evaluateAsync(expression.key, environment),
+            );
+        case 'Call': {
+            const callable = await this.evaluateAsync(
+                expression.callee, environment,
+            );
+            const args = await this.evaluateListAsync(
+                expression.args, environment,
+            );
+            return this.callValueAsync(callable, args);
+        }
+        case 'MethodCall': {
+            const target = first(await this.evaluateAsync(
+                expression.target, environment,
+            ));
+            const callable = getIndex(target, expression.method);
+            const args = [target, ...await this.evaluateListAsync(
+                expression.args, environment,
+            )];
+            return this.callValueAsync(callable, args);
+        }
+        case 'Unary':
+            return unaryValue(
+                expression.operator,
+                first(await this.evaluateAsync(
+                    expression.expression, environment,
+                )),
+            );
+        case 'Binary': {
+            const left = first(await this.evaluateAsync(
+                expression.left, environment,
+            ));
+            if (expression.operator === 'and')
+                return truthy(left) ? first(await this.evaluateAsync(
+                    expression.right, environment,
+                )) : left;
+            if (expression.operator === 'or')
+                return truthy(left) ? left : first(await this.evaluateAsync(
+                    expression.right, environment,
+                ));
+            const right = first(await this.evaluateAsync(
+                expression.right, environment,
+            ));
+            return binaryValue(expression.operator, left, right);
+        }
+        default:
+            throw new Error(`Unsupported Lua expression ${expression.type}`);
+        }
+    }
+
     evaluateUnary(expression, environment) {
         const value = first(this.evaluate(expression.expression, environment));
-        if (expression.operator === 'not') return !truthy(value);
-        if (value instanceof LuaUserdata) {
-            const method = value.metamethod({
-                '-': '__unm', '~': '__bnot', '#': '__len',
-            }[expression.operator]);
-            if (method) return method(value);
-        }
-        if (expression.operator === '-') return -Number(value);
-        if (expression.operator === '~') return ~Number(value);
-        if (expression.operator === '#') {
-            if (value instanceof LuaTable) return value.length();
-            if (typeof value === 'string') return value.length;
-            throw new TypeError('attempt to get length of unsupported value');
-        }
-        throw new Error(`Unsupported Lua unary operator ${expression.operator}`);
+        return unaryValue(expression.operator, value);
     }
 
     evaluateBinary(expression, environment) {
@@ -520,45 +854,7 @@ export class LuaState {
         if (operator === 'or')
             return truthy(left) ? left : first(this.evaluate(expression.right, environment));
         const right = first(this.evaluate(expression.right, environment));
-        const metamethodName = {
-            '==': '__eq', '~=': '__eq', '<': '__lt', '<=': '__le',
-            '..': '__concat', '+': '__add', '-': '__sub', '*': '__mul',
-            '/': '__div', '//': '__idiv', '%': '__mod', '^': '__pow',
-            '&': '__band', '|': '__bor', '~': '__bxor',
-            '<<': '__shl', '>>': '__shr',
-        }[operator];
-        const metamethod = left instanceof LuaUserdata
-            ? left.metamethod(metamethodName)
-            : right instanceof LuaUserdata
-                ? right.metamethod(metamethodName) : null;
-        if (metamethod) {
-            const result = metamethod(left, right);
-            return operator === '~=' ? !truthy(result) : result;
-        }
-
-        switch (operator) {
-        case '==': return left === right;
-        case '~=': return left !== right;
-        case '<': return left < right;
-        case '>': return left > right;
-        case '<=': return left <= right;
-        case '>=': return left >= right;
-        case '..': return luaString(left) + luaString(right);
-        case '+': return Number(left) + Number(right);
-        case '-': return Number(left) - Number(right);
-        case '*': return Number(left) * Number(right);
-        case '/': return Number(left) / Number(right);
-        case '//': return Math.floor(Number(left) / Number(right));
-        case '%': return Number(left)
-            - Math.floor(Number(left) / Number(right)) * Number(right);
-        case '^': return Number(left) ** Number(right);
-        case '&': return Number(left) & Number(right);
-        case '|': return Number(left) | Number(right);
-        case '~': return Number(left) ^ Number(right);
-        case '<<': return Number(left) << Number(right);
-        case '>>': return Number(left) >> Number(right);
-        default: throw new Error(`Unsupported Lua binary operator ${operator}`);
-        }
+        return binaryValue(operator, left, right);
     }
 }
 
