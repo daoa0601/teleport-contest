@@ -5,9 +5,11 @@ import { runSegment } from '../../js/jsmain.js';
 
 export function roleConfig({
     name = 'Generalizer', role, race, gender = 'female', align,
+    extraOptions = [],
 }) {
     return [
         `OPTIONS=name:${name},role:${role},race:${race},gender:${gender},align:${align}`,
+        ...extraOptions.map(option => `OPTIONS=${option}`),
         'OPTIONS=!autopickup,!legacy,!tutorial,!splash_screen',
         'OPTIONS=pushweapon,showexp,time,color,suppress_alert:3.3.1',
         'OPTIONS=symset:DECgraphics',
@@ -53,6 +55,7 @@ function trapState() {
 export async function freshRoleOutcome({
     role, race, align, gender = 'female', name = 'Generalizer', seed,
     bridgeFree, moves = ' ....', datetime = '20260830100000',
+    extraOptions = [],
 }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
@@ -66,7 +69,7 @@ export async function freshRoleOutcome({
                 seed,
                 datetime,
                 nethackrc: roleConfig({
-                    name, role, race, gender, align,
+                    name, role, race, gender, align, extraOptions,
                 }),
                 moves,
             });

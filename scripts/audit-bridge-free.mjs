@@ -41,7 +41,6 @@ export function auditBridgeFreeSource() {
     // rather than relying on an empty replay string or lucky coordinates.
     const compatibilityClassifiers = [
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
-        '_touristExplorePath',
     ];
     for (const classifier of compatibilityClassifiers) {
         const explicitLegacyGate = new RegExp(
@@ -81,6 +80,23 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('knight_ride.js'))
         failures.push('knight_ride.js: legacy Knight replay module still exists');
+    const forbiddenTouristReplayTokens = [
+        '_touristExplorePath', '_touristLateSearches',
+        'TOURIST_SOUTHEAST_CAT_RNG', 'TOURIST_EXPLORE_RUN_RNG',
+        'touristMonsterActionRng', 'touristExploreRunRng',
+        'touristExploreRunWest', 'touristExploreCountedSearch',
+        'replayExploreSearchToMore', 'replayExploreSearchAfterMore',
+        'replayExploreLateSearch', 'seeded-replay.tourist-explore',
+        'tourist.explore-search',
+    ];
+    for (const token of forbiddenTouristReplayTokens) {
+        for (const [file, source] of sources) {
+            if (source.includes(token))
+                failures.push(`${file}: legacy Tourist replay token ${token}`);
+        }
+    }
+    if (sources.has('tourist_explore.js'))
+        failures.push('tourist_explore.js: legacy Tourist replay module still exists');
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,

@@ -2180,7 +2180,7 @@ function liveQuietValkyrie(state = game) {
 }
 
 function liveQuietTourist(state = game) {
-    return state.urole?.key === 'tourist' && !state._touristExplorePath;
+    return state.urole?.key === 'tourist';
 }
 
 // Archeologist and Barbarian have no role/session-specific turn owner.  They
@@ -2203,7 +2203,7 @@ function usesSourceMovementRation(state = game) {
         || liveQuietRogue(state) || liveQuietHealer(state)
         || liveQuietRanger(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
-        || liveQuietCaveman(state)
+        || liveQuietCaveman(state) || liveQuietTourist(state)
         || liveDebugSourceRation(state);
 }
 
@@ -6122,55 +6122,6 @@ function valkyrieDogSearchRng() {
         rn2(range);
 }
 
-// The south-east kitten start can bank enough movement for two steps during
-// each of these early hero turns.  These are the dog_goal()/dog_move() call
-// shapes for that geometry; the shared once-per-turn maintenance remains
-// state-derived in initialTurnMaintenanceRng().
-const TOURIST_SOUTHEAST_CAT_RNG = [
-    [5, 4, 100, 8, 100, 8, 100, 8, 5, 5, 100, 8, 100, 8, 100, 8, 100, 5],
-    [5, 100, 20, 100, 8, 100, 100, 100, 5, 5, 5, 5, 4, 100, 8, 100,
-        100, 1, 100, 5],
-    [5, 4, 100, 8, 100, 8, 100, 8, 1, 5, 5, 20, 5, 5, 5, 5, 4, 100,
-        8, 100, 100, 1, 2, 5],
-];
-
-function touristMonsterActionRng(action) {
-    const pet = game.startingPet;
-    if (!pet || game.u?.ux !== 47 || game.u?.uy !== 18) return false;
-    const ranges = TOURIST_SOUTHEAST_CAT_RNG[action - 1];
-    if (!ranges) return false;
-    for (const range of ranges) rn2(range);
-
-    const positions = [[49, 16], [48, 18], [46, 18]];
-    const position = positions[action - 1];
-    const oldx = pet.mx, oldy = pet.my;
-    pet.mx = position[0]; pet.my = position[1];
-    newsym(oldx, oldy);
-    newsym(pet.mx, pet.my);
-    return true;
-}
-
-// This north-east room run advances three squares across two elapsed turns.
-// The call shapes come from dog_goal()/dog_move() and the ordinary per-turn
-// maintenance routines; values remain supplied by the live seeded PRNG.
-const TOURIST_EXPLORE_RUN_RNG = [
-    ['rn2', 5], ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rn2', 100],
-    ['rn2', 100], ['rn2', 1], ['rn2', 2], ['rn2', 5], ['rn2', 5],
-    ['rn2', 5], ['rn2', 12], ['rn2', 12], ['rn2', 12], ['rn2', 70],
-    ['rn2', 300], ['rn2', 20], ['rn2', 70], ['rn2', 5], ['rn2', 5],
-    ['rn2', 5], ['rn2', 32], ['rn2', 5], ['rn2', 5], ['rn2', 100],
-    ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rn2', 100], ['rnd', 5],
-    ['rn2', 5], ['rn2', 12], ['rn2', 12], ['rn2', 12], ['rn2', 70],
-    ['rn2', 300], ['rn2', 20], ['rn2', 70],
-];
-
-function touristExploreRunRng() {
-    for (const [kind, range] of TOURIST_EXPLORE_RUN_RNG) {
-        if (kind === 'rnd') rnd(range);
-        else rn2(range);
-    }
-}
-
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -6222,11 +6173,8 @@ export async function newgame() {
 
     if (g.urole?.key === 'samurai')
         g._samuraiLiveScheduler = true;
-    g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
-        && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
     if (bridgeFree) {
         const compatibilityPaths = [
-            ['tourist.explore-search', g._touristExplorePath],
             ['wizard.bind', g._wizardBindPath],
         ];
         for (const [bridgeId, selected] of compatibilityPaths) {
@@ -6235,14 +6183,6 @@ export async function newgame() {
     }
     makedog();
     uInitInventoryAttrs();
-    if (g._touristExplorePath) {
-        g.discoveries = [
-            { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'GHOTI' },
-            { class: 'Potions', name: 'potion of extra healing', appearance: 'sky blue' },
-            { class: 'Wands', name: 'wand of wishing', appearance: 'ebony' },
-        ];
-    }
-
     // Initial display
     init_vision_globals();
     vision_reset();
@@ -6329,7 +6269,7 @@ export async function moveloop_core() {
         || liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
         || liveQuietRanger(g)
         || liveQuietPriest(g) || liveQuietSamurai(g)
-        || liveQuietCaveman(g)
+        || liveQuietCaveman(g) || liveQuietTourist(g)
         || liveDebugSourceRation(g))
         && g._heroTimePending) {
         const consumeInterruptedMultiAction = () => {
@@ -6472,9 +6412,8 @@ export async function moveloop_core() {
             // owners. No turn number selects a second pet or world mutator.
             || liveQuietCaveman(g)
             // Ordinary Valkyries and Tourists have no native role-specific
-            // pet transcript.  Keep their explicitly bounded compatibility
-            // paths isolated, but drive every other actor from live fmon,
-            // floor-object, edog, and candidate state.
+            // pet transcript. Drive every actor from live fmon, floor-object,
+            // edog, and candidate state.
             || liveQuietValkyrie(g)
             || liveQuietTourist(g)
             // Delayed armor completion is the first seed5006 boundary where
@@ -6527,8 +6466,6 @@ export async function moveloop_core() {
             // do not enter role/session-specific pet replay or act while the
             // hero traverses the instructional rooms.
             initialTurnMaintenanceRng();
-        } else if (g.urole?.key === 'tourist' && stepNum === 1) {
-            initialTurnMaintenanceRng();
         } else if (g.urole?.key === 'valkyrie') {
             if (stepNum === 1) initialTurnMaintenanceRng();
             else if (stepNum === 2) {
@@ -6551,14 +6488,8 @@ export async function moveloop_core() {
             replayWizardBindMaintenance(stepNum);
         } else if (g.urole?.key === 'wizard' && stepNum === 1) {
             initialTurnMaintenanceRng();
-        } else if (g._touristExplorePath && stepNum === 2) {
-            touristExploreRunRng();
-            g.moves = 4;
-        } else if (g.urole?.key === 'tourist'
-            && touristMonsterActionRng(stepNum - 1)) {
-            initialTurnMaintenanceRng();
         } else if (liveBaseRole(g) || liveQuietKnight(g)
-            || liveQuietRanger(g)
+            || liveQuietRanger(g) || liveQuietTourist(g)
             || liveQuietSamurai(g) || liveQuietCaveman(g)
             || (bridgeFreeEnabled() && liveQuietRole)) {
             // A quiet source-owned role with no full-ration actor still owns

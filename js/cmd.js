@@ -1821,22 +1821,16 @@ export async function rhack(key) {
         || controlRushDirection(key)) {
         const rushDirection = controlRushDirection(key);
         const direction = rushDirection || ch.toLowerCase();
-        if (ch === 'H' && game._touristExplorePath
-            && game.u?.ux === 72 && game.u?.uy === 6) {
-            await touristExploreRunWest();
-            game.context.move = 1;
-        } else {
-            const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
-            if (running) startRun(
-                DIR_DX[direction], DIR_DY[direction], game,
-                rushDirection ? 3 : 1,
-            );
-            const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
-            if (running && moved)
-                await captureRunmodeDelay(game, !!game._runState);
-            game.context.move = moved ? 1 : 0;
-            if (running && !moved) stopRun();
-        }
+        const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
+        if (running) startRun(
+            DIR_DX[direction], DIR_DY[direction], game,
+            rushDirection ? 3 : 1,
+        );
+        const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
+        if (running && moved)
+            await captureRunmodeDelay(game, !!game._runState);
+        game.context.move = moved ? 1 : 0;
+        if (running && !moved) stopRun();
     } else if (ch === 'm') {
         // `m` is both request-menu and move-without-pickup.  Movement is the
         // live owner here: parse the next key inside the same command, so tty
@@ -5013,37 +5007,6 @@ async function getAdjacentLocation(prompt, errorMessage, x, y) {
         return null;
     }
     return target;
-}
-
-async function touristExploreRunWest() {
-    const u = game.u;
-    const pet = game.startingPet;
-    const jackal = game.level?.monsters?.find(monster => monster.mnum === 12);
-    const changed = [[u.ux, u.uy], [pet?.mx, pet?.my], [jackal?.mx, jackal?.my]];
-    u.ux0 = u.ux; u.uy0 = u.uy;
-    u.ux = 70; u.uy = 6;
-    if (pet) { pet.mx = 71; pet.my = 6; }
-    if (jackal) { jackal.mx = 74; jackal.my = 6; }
-    for (const [x, y] of changed) if (x != null && y != null) newsym(x, y);
-    vision_recalc(1);
-    newsym(u.ux, u.uy);
-    if (pet) newsym(pet.mx, pet.my);
-    if (jackal) newsym(jackal.mx, jackal.my);
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x <= 68; x++) {
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            loc.remembered_glyph = null;
-            loc.disp_ch = ' ';
-        }
-    }
-    const corridor = game.level?.at(69, 6);
-    if (corridor) {
-        corridor.disp_ch = '#';
-        corridor.disp_color = CLR_WHITE;
-        corridor.disp_decgfx = false;
-        corridor.remembered_glyph = { ch: '#', color: CLR_WHITE, decgfx: false };
-    }
 }
 
 function currentSkillPages() {

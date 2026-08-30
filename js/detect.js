@@ -2,9 +2,8 @@
 // C ref: detect.c — dosearch(), dosearch0().
 
 import { game } from './gstate.js';
-import { nhgetch } from './input.js';
 import {
-    canSpotMonster, feel_location, flush_screen, map_background, map_invisible,
+    canSpotMonster, feel_location, map_background, map_invisible,
     map_object, map_trap, newsym, pline,
 } from './display.js';
 import {
@@ -15,23 +14,9 @@ import {
 import { BOULDER } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
 import {
-    replayExploreSearchToMore,
-    replayExploreSearchAfterMore,
-    replayExploreLateSearch,
-} from './tourist_explore.js';
-import {
     commandSafetyPrevention, threateningMonsterNearby,
 } from './do.js';
 import { vision_note_blocker_change } from './vision.js';
-import { captureRunmodeDelay } from './runmode.js';
-
-function placeMonster(monster, x, y) {
-    if (!monster) return;
-    const oldx = monster.mx, oldy = monster.my;
-    monster.mx = x; monster.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
-}
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -55,45 +40,6 @@ export function premap_detect() {
         }
     }
     for (const trap of game.level?.traps || []) map_trap(trap, true);
-}
-
-async function touristExploreCountedSearch() {
-    const pet = game.startingPet;
-    const jackal = game.level?.monsters?.find(monster => monster.mnum === 12);
-    replayExploreSearchToMore();
-    game.moves = 6;
-    placeMonster(jackal, 72, 6);
-    placeMonster(pet, 72, 7);
-
-    const message = 'The little dog misses the jackal.  The little dog bites the jackal.--More--';
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-
-    await replayExploreSearchAfterMore({
-        onKill: async () => {
-            if (jackal) {
-                const oldx = jackal.mx, oldy = jackal.my;
-                game.level.monsters = game.level.monsters.filter(
-                    monster => monster !== jackal,
-                );
-                newsym(oldx, oldy);
-            }
-            await pline('The jackal is killed!');
-        },
-        onTurn: async turn => {
-            game.moves = 6 + turn;
-            if (turn === 8) placeMonster(pet, 71, 6);
-            else if (turn === 15) placeMonster(pet, 71, 7);
-            await captureRunmodeDelay(game, true, game.moves);
-        },
-    });
-    game.moves = 24;
-    placeMonster(pet, 71, 6);
-    game.context.move = 0;
 }
 
 function exerciseWisdom() {
@@ -264,27 +210,10 @@ async function preventUnsafeSearch(force = false) {
     });
 }
 
-// An ordinary unsuccessful search still consumes time.  Specialized public
-// witnesses above remain bounded until their actor paths converge on this
-// shared source implementation.
+// An ordinary unsuccessful search still consumes time. Counted searches
+// repeat this same owner across complete scheduler turns rather than changing
+// behavior for a role, coordinate, or command transcript.
 export async function dosearch(force = false) {
-    if (game._touristExplorePath && game._commandCount === 20
-        && (game.moves || 1) === 4) {
-        game._commandCount = 0;
-        await touristExploreCountedSearch();
-        return;
-    }
-    if (game._touristExplorePath && (game.moves || 1) >= 24) {
-        const index = (game._touristLateSearches || 0);
-        if (index < 2) {
-            replayExploreLateSearch(index);
-            game._touristLateSearches = index + 1;
-            game.moves = (game.moves || 1) + 1;
-            placeMonster(game.startingPet, index === 0 ? 72 : 71, 7);
-            game.context.move = 0;
-            return;
-        }
-    }
     if (await preventUnsafeSearch(force)) return false;
     game._commandCount = 0;
     const found = await searchAdjacentSecrets();
