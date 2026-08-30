@@ -121,6 +121,9 @@ function objectOptions(id, x, y) {
         ?? point(luaArgument(x), luaArgument(y));
     const corpseMonster = options.montype == null
         ? null : String(options.montype);
+    const spinachTin = typeof options.id === 'string'
+        && options.id.toLowerCase() === 'tin'
+        && corpseMonster?.toLowerCase() === 'spinach';
     const corpseMonsterClass = corpseMonster?.length === 1
         ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
     if (corpseMonster?.length === 1 && corpseMonsterClass < 1)
@@ -132,9 +135,10 @@ function objectOptions(id, x, y) {
             ? objectClassForSymbol(options.class) : null,
         objectType: options.id
             ? objectTypeForName(options.id, options.class) : null,
-        monsterType: corpseMonster && corpseMonster.length > 1
+        monsterType: corpseMonster && corpseMonster.length > 1 && !spinachTin
             ? monsterTypeForName(corpseMonster).type : null,
         monsterClass: corpseMonsterClass,
+        spinachTin,
     };
 }
 

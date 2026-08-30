@@ -59,9 +59,14 @@ export function createSelectionApi(context, invoke = null) {
     };
     const clone = self => wrap(selectionValue(self).clone());
     const numpoints = self => selectionValue(self).numPoints();
-    const negate = self => wrap(selectionValue(self).negate());
+    const negate = self => wrap(self == null
+        ? new SpecialSelection().negate()
+        : selectionValue(self).negate());
     const percentage = (self, percent) => wrap(
         selectionValue(self).percentage(percent),
+    );
+    const filterMapchar = (self, character, lit = -2) => wrap(
+        selectionValue(self).filterMapCharacter(String(character), lit),
     );
     const grow = (self, direction = 'all') => wrap(
         selectionValue(self).grow(direction),
@@ -100,6 +105,7 @@ export function createSelectionApi(context, invoke = null) {
         numpoints,
         negate,
         percentage,
+        filter_mapchar: filterMapchar,
         grow,
         rndcoord,
         bounds,
@@ -116,7 +122,17 @@ export function createSelectionApi(context, invoke = null) {
         __band: (left, right) => wrap(
             selectionValue(left).intersect(selectionValue(right)),
         ),
+        __bxor: (left, right) => wrap(
+            selectionValue(left).xor(selectionValue(right)),
+        ),
         __bnot: value => wrap(selectionValue(value).negate()),
+        __unm: value => wrap(selectionValue(value).negate()),
+        __add: (left, right) => wrap(
+            selectionValue(left).union(selectionValue(right)),
+        ),
+        __sub: (left, right) => wrap(
+            selectionValue(left).subtract(selectionValue(right)),
+        ),
     };
     const currentContext = () => {
         const value = typeof context === 'function' ? context() : context;

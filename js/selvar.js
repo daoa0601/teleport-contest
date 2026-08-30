@@ -592,9 +592,30 @@ export class SpecialSelection {
         ));
     }
 
+    xor(other) {
+        return new SpecialSelection(selection_xor(
+            this.selection, other.selection,
+        ));
+    }
+
+    subtract(other) {
+        return new SpecialSelection(selection_sub(
+            this.selection, other.selection,
+        ));
+    }
+
     percentage(percent) {
         return new SpecialSelection(selection_filter_percent(
             this.selection, percent,
+        ));
+    }
+
+    filterMapCharacter(character, lit = -2) {
+        const terrain = mapCharacterType(character);
+        if (terrain == null)
+            throw new Error(`unknown map character ${character}`);
+        return new SpecialSelection(selection_filter_mapchar(
+            this.selection, terrain, lit,
         ));
     }
 

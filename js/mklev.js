@@ -36,7 +36,8 @@ import {
     IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold,
     Is_rogue_level,
     SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, FILL_LVFLAGS,
-    ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DBWALL,
+    ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL,
+    DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL,
     ICED_POOL, ICED_MOAT,
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     TREE, AIR, CLOUD,
@@ -5171,6 +5172,10 @@ function setLevelTerrainType(x, y, typ) {
     if (!loc) return false;
     loc.typ = typ;
     if (IS_LAVA(typ)) loc.lit = true;
+    if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
+        loc.icedpool = game._activeSpecialLevel.icedPools
+            ? ICED_POOL : ICED_MOAT;
+    }
     return true;
 }
 
@@ -6011,7 +6016,9 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
             } else if (row[dx] === 'F') loc.typ = IRONBARS;
             else if (row[dx] === 'B') loc.typ = CROSSWALL;
             else if (row[dx] === 'P') loc.typ = POOL;
-            else if (row[dx] === 'I') loc.typ = ICE;
+            else if (row[dx] === 'I') setLevelTerrainType(
+                context.xstart + dx, context.ystart + dy, ICE,
+            );
             else if (row[dx] === '{') loc.typ = FOUNTAIN;
             else if (row[dx] === '}') loc.typ = MOAT;
             else if (row[dx] === 'W') loc.typ = WATER;
@@ -6463,6 +6470,7 @@ function mineFillerMinesField({
     smoothed = true,
     joined = true,
     walled = true,
+    icedPools = false,
 }) {
     const width = COLNO - 2;
     const height = ROWNO - 1;
@@ -6617,6 +6625,8 @@ function mineFillerMinesField({
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level.at(x, y);
             if (loc.typ === LAVAPOOL) loc.lit = true;
+            else if (loc.typ === ICE)
+                loc.icedpool = icedPools ? ICED_POOL : ICED_MOAT;
         }
     }
     if (walled && joined) {
@@ -6827,7 +6837,7 @@ export async function generateMinetown(active) {
 }
 
 function isLuaQuestPrototype(prototype) {
-    return /^(Arc|Bar|Kni|Pri|Wiz)-(strt|loca|goal|fila|filb)$/.test(prototype);
+    return /^[A-Z][a-z]{2}-(strt|loca|goal|fila|filb)$/.test(prototype);
 }
 
 async function generateLuaQuestLevel(active) {
@@ -7017,6 +7027,7 @@ function fillSpecialLevel(options, active) {
             smoothed: options.smoothed ?? false,
             joined: options.joined ?? false,
             walled: options.walled ?? false,
+            icedPools: !!active.icedPools,
         });
         active.defaultLit = lit;
         return {
@@ -7093,6 +7104,7 @@ function setLuaLevelFlags(active, flags) {
         else if (flag === 'nodeathdrops') game.level.flags.deathdrops = false;
         else if (flag === 'fumaroles') game.level.flags.fumaroles = true;
         else if (flag === 'stormy') game.level.flags.stormy = true;
+        else if (flag === 'icedpools') active.icedPools = true;
         else if (flag !== 'shroud')
             throw new Error(`unknown Lua level flag ${flag}`);
     }
@@ -7442,6 +7454,10 @@ async function createLuaObject(
         object.blessed = false;
     }
     if (Number.isInteger(options.spe)) object.spe = options.spe;
+    if (options.spinachTin) {
+        object.corpsenm = -1;
+        object.spe = 1;
+    }
     if (options.eroded) {
         if (options.eroded < 0) {
             object.oerodeproof = true;

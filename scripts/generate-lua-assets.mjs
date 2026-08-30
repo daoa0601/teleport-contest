@@ -36,6 +36,22 @@ const names = [
     'Wiz-fila.lua', 'Wiz-filb.lua',
     'Kni-strt.lua', 'Kni-loca.lua', 'Kni-goal.lua',
     'Kni-fila.lua', 'Kni-filb.lua',
+    'Cav-strt.lua', 'Cav-loca.lua', 'Cav-goal.lua',
+    'Cav-fila.lua', 'Cav-filb.lua',
+    'Hea-strt.lua', 'Hea-loca.lua', 'Hea-goal.lua',
+    'Hea-fila.lua', 'Hea-filb.lua',
+    'Mon-strt.lua', 'Mon-loca.lua', 'Mon-goal.lua',
+    'Mon-fila.lua', 'Mon-filb.lua',
+    'Ran-strt.lua', 'Ran-loca.lua', 'Ran-goal.lua',
+    'Ran-fila.lua', 'Ran-filb.lua',
+    'Rog-strt.lua', 'Rog-loca.lua', 'Rog-goal.lua',
+    'Rog-fila.lua', 'Rog-filb.lua',
+    'Sam-strt.lua', 'Sam-loca.lua', 'Sam-goal.lua',
+    'Sam-fila.lua', 'Sam-filb.lua',
+    'Tou-strt.lua', 'Tou-loca.lua', 'Tou-goal.lua',
+    'Tou-fila.lua', 'Tou-filb.lua',
+    'Val-strt.lua', 'Val-loca.lua', 'Val-goal.lua',
+    'Val-fila.lua', 'Val-filb.lua',
 ];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [
