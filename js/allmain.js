@@ -33,7 +33,7 @@ import {
     wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
-import { artifactById, initializeArtifacts } from './artifacts.js';
+import { artifactById } from './artifacts.js';
 import {
     curseObjectState, unblessObjectState,
 } from './object_state.js';
@@ -53,7 +53,6 @@ import {
     init_vision_globals,
 } from './vision.js';
 import {
-    fastforward_pre_mklev, fastforward_post_mklev,
     fastforward_step, fastforward_ranger_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
@@ -6320,14 +6319,7 @@ export async function newgame() {
         && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
     g._wizardQuaffPath = !bridgeFree && g.urole?.key === 'wizard'
         && /^  nqhzc\.rjhlll/.test(replayMoves);
-    // Bridge-free mode enters the source-owned startup boundary directly.
-    // Legacy mode retains the guarded fastforward name for compatibility.
-    const handednessRoll = bridgeFree
-        ? initializeSourceStartup() : fastforward_pre_mklev();
-    // The legacy RNG bridge substitutes for the pre-mklev call sequence, not
-    // for artifact state.  Keep the same no-RNG C initialization in both
-    // modes while bridge-free startup invokes it inside its source boundary.
-    if (!bridgeFree) initializeArtifacts(g);
+    const handednessRoll = initializeSourceStartup();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
         const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
@@ -6406,77 +6398,14 @@ export async function newgame() {
         }];
     }
 
-    const realRoleStartup = g.urole?.key === 'archeologist'
-        || g.urole?.key === 'barbarian'
-        || g.urole?.key === 'caveman' || g.urole?.key === 'ranger'
-        || g.urole?.key === 'rogue' || g.urole?.key === 'healer'
-        || g.urole?.key === 'samurai' || g.urole?.key === 'tourist'
-        || g.urole?.key === 'valkyrie' || g.urole?.key === 'priest'
-        || g.urole?.key === 'knight' || g.urole?.key === 'monk'
-        || g.urole?.key === 'wizard';
-    if (realRoleStartup) {
-        makedog();
-        uInitInventoryAttrs();
-        if (g._touristExplorePath) {
-            g.discoveries = [
-                { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'GHOTI' },
-                { class: 'Potions', name: 'potion of extra healing', appearance: 'sky blue' },
-                { class: 'Wands', name: 'wand of wishing', appearance: 'ebony' },
-            ];
-        }
-    } else {
-        // Roles not ported yet retain the starter replay until their real
-        // inventory tables are translated.
-        if (!bridgeFreeEnabled()) fastforward_post_mklev();
-    }
-
-    // Roles whose inventory tables have not been ported yet keep the old
-    // starter state so their command paths remain executable.
-    if (!realRoleStartup) {
-    g._goldCount = 757;
-    g.u.ulevel = 1;
-    g.u.uhp = 10; g.u.uhpmax = 10;
-    g.u.uen = 2; g.u.uenmax = 2;
-    g.u.uac = 10; g.u.uexp = 0;
-    g.u.ualign = { type: 0, record: 0 };
-    g.u.acurr = { a: [9, 14, 12, 11, 16, 16] };
-    g.u.amax = { a: [9, 14, 12, 11, 16, 16] };
-    g.u.rightHanded = false;
-    g.moves = 1;
-    g.urole = {
-        key: 'tourist',
-        name: { m: 'Tourist', f: 'Tourist' },
-        rank: { m: 'Rambler', f: 'Rambler' },
-        gods: { lawful: 'Blind Io', neutral: 'The Lady', chaotic: 'Offler' },
-        greeting: 'Aloha',
-    };
-    g.urace = { noun: 'human', adj: 'human' };
-    g.flags.female = true;
-    g.plname = g.plname || 'Contestant';
-
-    // C ref: u_init.c Tourist starting inventory after its seeded quantity,
-    // enchantment, and charge rolls.  The object model is consumed by the
-    // generic invent.c-style renderer rather than replayed as screen text.
-    g.inventory = [
-        { invlet: 'a', class: 'Weapons', quantity: 27, name: 'dart', plural: 'darts', enchantment: 2, ready: true },
-        { invlet: 'b', class: 'Comestibles', quantity: 6, name: 'food ration', plural: 'food rations', buc: 'uncursed' },
-        { invlet: 'c', class: 'Comestibles', quantity: 1, name: 'apple', buc: 'uncursed' },
-        { invlet: 'd', class: 'Comestibles', quantity: 2, name: 'fortune cookie', plural: 'fortune cookies', buc: 'uncursed' },
-        { invlet: 'e', class: 'Comestibles', quantity: 1, name: 'clove of garlic', buc: 'uncursed' },
-        { invlet: 'f', class: 'Comestibles', quantity: 1, name: 'slime mold', buc: 'uncursed' },
-        { invlet: 'g', class: 'Comestibles', quantity: 2, name: 'tin of lichen', plural: 'tins of lichen', buc: 'uncursed' },
-        { invlet: 'h', class: 'Potions', quantity: 2, name: 'potion of extra healing', plural: 'potions of extra healing', buc: 'uncursed' },
-        { invlet: 'i', class: 'Scrolls', quantity: 4, name: 'scroll of magic mapping', plural: 'scrolls of magic mapping', buc: 'uncursed' },
-        { invlet: 'j', class: 'Armor', quantity: 1, name: 'Hawaiian shirt', buc: 'uncursed', enchantment: 0, worn: true },
-        { invlet: 'k', class: 'Tools', quantity: 1, name: 'expensive camera', charges: { recharged: 0, current: 34 } },
-        { invlet: 'l', class: 'Tools', quantity: 1, name: 'credit card', buc: 'uncursed' },
-    ];
-    g._lastInvNr = 11;
-    g.discoveries = [
-        { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'ANDOVA BEGARIN' },
-        { class: 'Potions', name: 'potion of extra healing', appearance: 'murky' },
-    ];
-    g.spells = [];
+    makedog();
+    uInitInventoryAttrs();
+    if (g._touristExplorePath) {
+        g.discoveries = [
+            { class: 'Scrolls', name: 'scroll of magic mapping', appearance: 'GHOTI' },
+            { class: 'Potions', name: 'potion of extra healing', appearance: 'sky blue' },
+            { class: 'Wands', name: 'wand of wishing', appearance: 'ebony' },
+        ];
     }
 
     // Initial display
@@ -6488,8 +6417,7 @@ export async function newgame() {
     await flush_screen(1);
     await bot();
 
-    while (realRoleStartup && g.u?.uroleplay?.reroll
-        && await rerollMenu()) {
+    while (g.u?.uroleplay?.reroll && await rerollMenu()) {
         uInitInventoryAttrs();
         await bot();
     }
@@ -6499,7 +6427,7 @@ export async function newgame() {
     // and AC only after the final candidate has been accepted.  It does not
     // redraw bot() here, so the legacy overlay still retains the pre-skill
     // status row underneath it.
-    if (realRoleStartup) finishStartingDiscoveries();
+    finishStartingDiscoveries();
 
     if (g.flags?.legacy) await showLegacy(preSkillsStatus);
 
@@ -6508,9 +6436,7 @@ export async function newgame() {
     // finished; the first time-taking command owns the first movemon and
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
-    if (bridgeFree || g.urole?.key === 'samurai'
-        || g.urole?.key === 'rogue')
-        g._maintenanceMove = g.moves || 1;
+    g._maintenanceMove = g.moves || 1;
 
     // allmain.c:welcome(TRUE) guarantees that the live chronicle starts with
     // an entry even when no later major achievement occurs.

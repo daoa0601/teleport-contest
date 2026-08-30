@@ -5,7 +5,7 @@ import {
     CompatibilityBridgeError, getBridgeUsageLedger, installReplayMovesGuard,
     resetBridgeUsageLedger, useCompatibilityBridge,
 } from '../js/bridge_policy.js';
-import { fastforward_pre_mklev } from '../js/fastforward.js';
+import { fastforward_step } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
 import { replayCavemanTurn } from '../js/caveman_explore.js';
 import { runSegment } from '../js/jsmain.js';
@@ -66,7 +66,7 @@ test('replayMoves is poisoned and known replay boundaries are guarded', () => {
                 installReplayMovesGuard(state);
                 return state.replayMoves;
             },
-            () => fastforward_pre_mklev(),
+            () => fastforward_step(1),
             () => replayCavemanTurn(2),
             () => paintFixtureScreen('', null, {}),
         ]) {

@@ -109,6 +109,18 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('priest_extcmd.js'))
         failures.push('priest_extcmd.js: legacy Priest replay module still exists');
+    const forbiddenStartupReplayTokens = [
+        'fastforward_pre_mklev', 'fastforward_post_mklev',
+        'fastforward_fill_mineralize', 'fastforward.pre-mklev',
+        'fastforward.post-mklev', 'fastforward.mineralize',
+        'realRoleStartup',
+    ];
+    for (const token of forbiddenStartupReplayTokens) {
+        for (const file of ['allmain.js', 'fastforward.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy startup replay token ${token}`);
+        }
+    }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');
