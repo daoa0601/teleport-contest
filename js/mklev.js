@@ -7577,20 +7577,17 @@ async function ensureWaysOut() {
     }
 }
 
-async function generateLuaSpecialLevel(active) {
+function createLuaLevelSession() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
     };
+    let active = null;
     let context = wholeLevel;
     let luaState = null;
     const containers = [];
     const monsterInventories = [];
     const mappedContexts = [];
     let mappedCells = new SpecialSelection();
-    active.allowFlips = 3;
-    game.level.flags.is_special = true;
-    const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
-    game.level.flags.temperature = currentDungeon?.flags?.hellish ? 1 : 0;
     const invokeObjectContents = async (callback, object) => {
         containers.push(object);
         try {
@@ -7838,32 +7835,58 @@ async function generateLuaSpecialLevel(active) {
         () => context,
         (callable, args) => luaState.callValueAsync(callable, args),
     );
-    await currentLuaLifecycle().executeSpecial(
-        game, active.file,
-        {
-            nh: {
-                is_genocided: name => {
-                    const target = String(name).toLowerCase();
-                    const mndx = MONSTER_NAME.findIndex(candidate =>
-                        candidate?.toLowerCase() === target);
-                    return mndx >= 0
-                        && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
-                },
+    const bindings = {
+        nh: {
+            is_genocided: name => {
+                const target = String(name).toLowerCase();
+                const mndx = MONSTER_NAME.findIndex(candidate =>
+                    candidate?.toLowerCase() === target);
+                return mndx >= 0
+                    && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
             },
-            des: createDesBindings(operations, selectionApi.wrap),
-            selection: selectionApi.bindings,
         },
-        state => {
+        des: createDesBindings(operations, selectionApi.wrap),
+        selection: selectionApi.bindings,
+    };
+    return {
+        bindings,
+        beginLevel(nextActive, { special = true } = {}) {
+            active = nextActive;
+            context = wholeLevel;
+            containers.length = 0;
+            monsterInventories.length = 0;
+            mappedContexts.length = 0;
+            mappedCells = new SpecialSelection();
+            active.allowFlips = 3;
+            if (!special) return;
+            game.level.flags.is_special = true;
+            const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
+            game.level.flags.temperature = currentDungeon?.flags?.hellish
+                ? 1 : 0;
+        },
+        bindState(state) {
             luaState = state;
             active.align = luaTableToArray(state.getGlobal('align'));
         },
+        async finishSpecialLevel() {
+            if (active.checkInaccessibles) await ensureWaysOut();
+            if (!game.level.flags.corrmaze)
+                wallification(1, 0, COLNO - 1, ROWNO - 1);
+            flipSpecialLevelRandom(active.allowFlips);
+            if (active.solidify) solidifyLuaMap(mappedCells);
+            flipLuaRegions(active);
+        },
+    };
+}
+
+async function generateLuaSpecialLevel(active) {
+    const session = createLuaLevelSession();
+    session.beginLevel(active);
+    await currentLuaLifecycle().executeSpecial(
+        game, active.file, session.bindings,
+        state => session.bindState(state),
     );
-    if (active.checkInaccessibles) await ensureWaysOut();
-    if (!game.level.flags.corrmaze)
-        wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(active.allowFlips);
-    if (active.solidify) solidifyLuaMap(mappedCells);
-    flipLuaRegions(active);
+    await session.finishSpecialLevel();
 }
 
 async function specialRandomMonsterAt(context, x, y, {
