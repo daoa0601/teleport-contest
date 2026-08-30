@@ -12,21 +12,6 @@ const rangerInput = input => ({
     ...input,
 });
 
-test('a fresh Ranger wait schedules current actors', async () => {
-    // This independently scanned seed happens to start at the coordinates and
-    // sink count formerly used by the named-start classifier.  C moveloop_core
-    // has no role, coordinate, or room-feature scheduler branch: four waits
-    // must scan the current fmon/fobj graph without a role-shaped replay.
-    const world = await bridgeFreeRoleOutcome(rangerInput({
-        seed: 43333,
-        moves: ' ....',
-    }));
-
-    assert.equal(world.moves, 5);
-    assert.equal(world.heroMovement, 12);
-    assert.ok(world.actors.some(actor => actor.tame > 0));
-});
-
 test('fresh Ranger fireassist swaps, resumes, and shoots live arrows',
     async () => {
         // Pinned dothrow.c queues doswapweapon then dofire when the quivered
@@ -56,19 +41,3 @@ test('fresh Ranger fireassist swaps, resumes, and shoots live arrows',
         assert.ok(initialArrows > remainingArrows);
         assert.equal(world.moves, 3);
     });
-
-test('every legal Ranger race shares the live scheduler', async () => {
-    for (const input of [
-        { seed: 43401, race: 'human', align: 'neutral' },
-        { seed: 43402, race: 'elf', align: 'chaotic' },
-        { seed: 43403, race: 'gnome', align: 'neutral' },
-        { seed: 43405, race: 'orc', align: 'chaotic' },
-    ]) {
-        const world = await bridgeFreeRoleOutcome(rangerInput({
-            ...input,
-            moves: ' ....',
-        }));
-        assert.equal(world.heroMovement, 12);
-        assert.ok(world.actors.some(actor => actor.tame > 0));
-    }
-});

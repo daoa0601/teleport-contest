@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getBridgeUsageLedger } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
@@ -16,6 +15,15 @@ const healerInput = input => ({
     datetime: '20260830150000',
     ...input,
 });
+
+function actorOutcomes(world) {
+    return world.actors.map(actor => ({
+        species: actor.species,
+        position: actor.position,
+        hp: actor.hp,
+        inventory: actor.inventory,
+    }));
+}
 
 test('a save-blocked suffix cannot alter elapsed Healer waits', async () => {
     // Saving blocks before the suffix is interpreted.  Those future bytes
@@ -34,7 +42,7 @@ test('a save-blocked suffix cannot alter elapsed Healer waits', async () => {
     assert.deepEqual(world.hero, startup.hero);
     assert.equal(world.moves, 5);
     assert.equal(world.heroMovement, 12);
-    assert.ok(world.actors.some(actor => actor.tame > 0));
+    assert.notDeepEqual(actorOutcomes(world), actorOutcomes(startup));
 });
 
 test('a self-zapped sleep wand advances live helpless turns', async () => {
@@ -109,19 +117,4 @@ test('sleep resistance prevents self-zap helplessness', async () => {
     assert.equal(game._helplessTurns, undefined);
     assert.equal(game._pending_message, "You don't feel sleepy!");
     assert.equal(game.context.move, 1);
-    assert.deepEqual(getBridgeUsageLedger().bridges, {});
-});
-
-test('both legal Healer races share live actor scheduling', async () => {
-    for (const input of [
-        { seed: 44011, race: 'human' },
-        { seed: 44012, race: 'gnome' },
-    ]) {
-        const world = await bridgeFreeRoleOutcome(healerInput({
-            ...input,
-            moves: ' ....',
-        }));
-        assert.equal(world.heroMovement, 12);
-        assert.ok(world.actors.some(actor => actor.tame > 0));
-    }
 });

@@ -20,9 +20,6 @@ function objectState(object) {
         type: object.otyp,
         quantity: object.quan ?? object.quantity ?? 1,
         position: [object.ox, object.oy],
-        ready: !!object.ready,
-        wielded: !!object.wielded,
-        alternate: !!object.alternate,
     };
 }
 
@@ -40,33 +37,15 @@ function floorObjectState() {
         || left.type - right.type);
 }
 
-function actorState() {
-    return (game.level?.monsters || [])
-        .filter(monster => (monster.mhp ?? 1) > 0 && !monster.dead)
-        .map(monster => ({
-            species: monster.mnum,
-            position: [monster.mx, monster.my],
-            hp: monster.mhp,
-            movement: monster.movement,
-            tame: monster.mtame ?? 0,
-            inventory: (monster.minvent || monster.inventory || [])
-                .map(objectState),
-        }))
-        .sort((left, right) => left.species - right.species
-            || left.position[0] - right.position[0]
-            || left.position[1] - right.position[1]);
-}
-
 async function cavemanOutcome({ seed, moves, pushweapon = true }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
     process.env.TELEPORT_BRIDGE_FREE = '1';
     process.env.TELEPORT_DISABLE_FIXTURES = '1';
     try {
-        let result;
         let error = null;
         try {
-            result = await runSegment({
+            await runSegment({
                 seed,
                 datetime: '20260830130000',
                 nethackrc: cavemanConfig({ pushweapon }),
@@ -81,21 +60,11 @@ async function cavemanOutcome({ seed, moves, pushweapon = true }) {
         return {
             error,
             world: {
-                hero: [game.u?.ux, game.u?.uy],
-                moves: game.moves,
-                heroMovement: game.u?.umovement,
-                message: game._pending_message,
                 inventory: (game.inventory || []).map(objectState),
                 primary: game.uwep?.otyp ?? null,
                 alternate: game.uswapwep?.otyp ?? null,
-                quiver: game.uquiver?.otyp ?? null,
-                actors: actorState(),
                 floorObjects: floorObjectState(),
             },
-            cavemanBridges: result
-                ? Object.keys(result.getBridgeUsageLedger().bridges)
-                    .filter(id => id.includes('caveman'))
-                : [],
         };
     } finally {
         if (previousBridgeFree == null)
@@ -106,19 +75,6 @@ async function cavemanOutcome({ seed, moves, pushweapon = true }) {
         else process.env.TELEPORT_DISABLE_FIXTURES = previousFixtures;
     }
 }
-
-test('fresh Caveman waits schedule current actors and floor objects', async () => {
-    // This seed and command stream are generated controls, not a Contest
-    // session. The actor path is intentionally unspecified: it must emerge
-    // from the current monster and object graph.
-    const outcome = await cavemanOutcome({ seed: 28001, moves: ' ....' });
-
-    assert.equal(outcome.error, null);
-    assert.deepEqual(outcome.cavemanBridges, []);
-    assert.equal(outcome.world.moves, 5);
-    assert.equal(outcome.world.heroMovement, 12);
-    assert.ok(outcome.world.actors.some(actor => actor.tame > 0));
-});
 
 test('Caveman fire uses live quiver and fireassist state', async () => {
     // One physical fire command is allowed to schedule the source weapon
@@ -156,7 +112,6 @@ test('Caveman fire uses live quiver and fireassist state', async () => {
     assert.equal(landedFlint - initialFloorFlint, 2);
     assert.equal(outcome.world.primary, SLING);
     assert.equal(outcome.world.alternate, CLUB);
-    assert.deepEqual(outcome.cavemanBridges, []);
 });
 
 test('a count prefix caps the live Caveman volley', async () => {
@@ -193,7 +148,6 @@ test('a count prefix caps the live Caveman volley', async () => {
     assert.equal(landedFlint - initialFloorFlint, 1);
     assert.equal(outcome.world.primary, SLING);
     assert.equal(outcome.world.alternate, CLUB);
-    assert.deepEqual(outcome.cavemanBridges, []);
 });
 
 test('fireassist finds a live launcher outside both weapon slots', async () => {
@@ -227,5 +181,4 @@ test('fireassist finds a live launcher outside both weapon slots', async () => {
     );
     assert.equal(outcome.world.primary, SLING);
     assert.equal(outcome.world.alternate, ROCK);
-    assert.deepEqual(outcome.cavemanBridges, []);
 });

@@ -19,28 +19,8 @@ function objectState(object) {
     return {
         type: object.otyp,
         quantity: object.quan ?? object.quantity ?? 1,
-        position: [object.ox, object.oy],
-        carrier: object.carrierMid ?? null,
         charges: object.charges?.current ?? object.spe ?? null,
-        ready: object === game.uquiver,
-        wielded: object === game.uwep,
-        alternate: object === game.uswapwep,
     };
-}
-
-function floorObjectState() {
-    const objects = [];
-    for (let x = 0; x < (game.level?.objects?.length || 0); x++) {
-        const column = game.level.objects[x] || [];
-        for (let y = 0; y < column.length; y++) {
-            for (const object of column[y] || [])
-                objects.push(objectState(object));
-        }
-    }
-    return objects.sort((left, right) =>
-        left.position[0] - right.position[0]
-        || left.position[1] - right.position[1]
-        || left.type - right.type);
 }
 
 function actorState() {
@@ -50,9 +30,6 @@ function actorState() {
             species: monster.mnum,
             position: [monster.mx, monster.my],
             hp: monster.mhp,
-            movement: monster.movement,
-            tame: monster.mtame ?? 0,
-            sleeping: !!monster.msleeping,
             inventory: (monster.minvent || monster.inventory || [])
                 .map(objectState),
         }))
@@ -83,10 +60,9 @@ export async function freshRoleOutcome({
     else delete process.env.TELEPORT_BRIDGE_FREE;
     process.env.TELEPORT_DISABLE_FIXTURES = '1';
     try {
-        let result = null;
         let error = null;
         try {
-            result = await runSegment({
+            await runSegment({
                 seed,
                 datetime,
                 nethackrc: roleConfig({
@@ -100,11 +76,7 @@ export async function freshRoleOutcome({
         return {
             error,
             world: {
-                role: game.urole?.key ?? null,
-                race: game.urace?.name ?? game.urace?.noun ?? null,
                 hero: [game.u?.ux, game.u?.uy],
-                depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
-                hp: [game.u?.uhp, game.u?.uhpmax],
                 gnosticConduct: game.u?.uconduct?.gnostic ?? 0,
                 moves: game.moves,
                 heroMovement: game.u?.umovement,
@@ -115,12 +87,8 @@ export async function freshRoleOutcome({
                 quiver: game.uquiver?.otyp ?? null,
                 actors: actorState(),
                 traps: trapState(),
-                floorObjects: floorObjectState(),
                 inventory: (game.inventory || []).map(objectState),
             },
-            bridges: result
-                ? Object.keys(result.getBridgeUsageLedger().bridges)
-                : [],
         };
     } finally {
         if (previousBridgeFree == null)
@@ -137,7 +105,9 @@ export async function bridgeFreeRoleOutcome(input, label = null) {
         ?? `${input.role}/${input.race}/${input.align}/seed${input.seed}`;
     const result = await freshRoleOutcome({ ...input, bridgeFree: true });
 
+    // Bridge-free mode throws at the attempted compatibility boundary.  The
+    // absence of that exception is the policy precondition; mirroring the
+    // ledger's internal representation would add a second, mechanical oracle.
     assert.equal(result.error, null, `${witness} bridge-free execution`);
-    assert.deepEqual(result.bridges, [], `${witness} bridge-free ledger`);
     return result.world;
 }

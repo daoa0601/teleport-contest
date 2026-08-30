@@ -37,6 +37,25 @@ const FORBIDDEN_BEHAVIORAL_PATTERNS = [
         id: 'test-self-discovery-oracle',
         pattern: /\bresult\.files\.(?:includes|some)\s*\(/g,
     },
+    {
+        id: 'production-source-text-oracle',
+        pattern: /readFileSync\s*\(\s*new URL\(\s*['"`]\.\.\/js\//g,
+    },
+    {
+        id: 'source-checksum-oracle',
+        pattern: /assert\.(?:deepEqual|equal)\(\s*source\w*\s*,\s*(?:EXPECTED|expected)\w*/g,
+    },
+];
+
+const FORBIDDEN_SCHEDULER_PATTERNS = [
+    {
+        id: 'bridge-ledger-mechanics-oracle',
+        pattern: /\bgetBridgeUsageLedger\b|\.bridges\b/g,
+    },
+    {
+        id: 'pet-existence-only-oracle',
+        pattern: /\.actors\.some\(\s*actor\s*=>\s*actor\.tame\s*>\s*0\s*\)/g,
+    },
 ];
 
 export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
@@ -54,6 +73,17 @@ export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
             for (const match of source.matchAll(pattern)) {
                 const line = source.slice(0, match.index).split('\n').length;
                 failures.push({ id, file: filename, line, text: lines[line - 1] });
+            }
+        }
+        if (filename.endsWith('_scheduler.test.js')) {
+            for (const { id, pattern } of FORBIDDEN_SCHEDULER_PATTERNS) {
+                pattern.lastIndex = 0;
+                for (const match of source.matchAll(pattern)) {
+                    const line = source.slice(0, match.index).split('\n').length;
+                    failures.push({
+                        id, file: filename, line, text: lines[line - 1],
+                    });
+                }
             }
         }
     }
@@ -75,7 +105,8 @@ if (process.argv[1] && path.resolve(process.argv[1])
         console.log(
             `Behavioral lane audit passed: ${result.files.length} files, `
             + 'no recorded-session, public-parity, mock/spy, or '
-            + 'same-implementation/call-transcript dependencies.',
+            + 'same-implementation/source-checksum/call-transcript '
+            + 'dependencies; scheduler tests use outcome oracles.',
         );
     }
 }

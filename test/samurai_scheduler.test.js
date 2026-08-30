@@ -1,51 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game } from '../js/gstate.js';
-import { runSegment } from '../js/jsmain.js';
+import {
+    bridgeFreeRoleOutcome,
+} from './support/role-outcome.js';
 
-function freshSamuraiSegment(moves = ' .') {
-    return runSegment({
+function samuraiInput(moves) {
+    return {
         seed: 8123,
         datetime: '20260830044000',
-        nethackrc: [
-            'OPTIONS=name:Generalizer,role:Samurai,race:human,gender:female,align:lawful',
-            'OPTIONS=!autopickup,!legacy,!tutorial,!splash_screen',
-            'OPTIONS=pushweapon,showexp,time,color,suppress_alert:3.3.1',
-            'OPTIONS=symset:DECgraphics',
-            '',
-        ].join('\n'),
+        role: 'Samurai', race: 'human', gender: 'female', align: 'lawful',
         moves,
-    });
+    };
 }
-
-test('fresh Samurai wait uses shared hero and pet source scheduling',
-    async () => {
-        const result = await freshSamuraiSegment();
-
-        assert.equal(game.urole?.key, 'samurai');
-        assert.equal(game.moves, 2);
-        assert.equal(game.u?.umovement, 12);
-        assert.equal(game.startingPet?.mnum, 16);
-        assert.equal(game.startingPet?.movement, 12);
-        assert.equal(
-            result.getBridgeUsageLedger().bridges['fastforward.turn'],
-            undefined,
-        );
-    });
 
 test('fresh Samurai prayer completes through live occupation turns',
     async () => {
-        const result = await freshSamuraiSegment(' #pray\ny');
-
-        assert.equal(game.u?.uconduct?.gnostic, 1);
-        assert.equal(game.moves, 4);
-        assert.equal(
-            game._pending_message,
-            'You begin praying to Amaterasu Omikami.  You finish your prayer.',
+        const startup = await bridgeFreeRoleOutcome(samuraiInput(' '));
+        const prayed = await bridgeFreeRoleOutcome(
+            samuraiInput(' #pray\ny'),
         );
+
+        assert.equal(prayed.gnosticConduct, startup.gnosticConduct + 1);
+        assert.equal(prayed.moves, startup.moves + 3);
         assert.equal(
-            result.getBridgeUsageLedger().bridges['fastforward.turn'],
-            undefined,
+            prayed.message,
+            'You begin praying to Amaterasu Omikami.  You finish your prayer.',
         );
     });

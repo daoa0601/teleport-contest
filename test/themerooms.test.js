@@ -58,40 +58,6 @@ import { objectWeight } from '../js/weight.js';
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
-const EXPECTED_THEMEROOMS = [
-    'default',
-    'Fake Delphi',
-    'Room in a room',
-    'Huge room with another room inside',
-    'Nesting rooms',
-    'Default room with themed fill',
-    'Unlit room with themed fill',
-    'Room with both normal contents and themed fill',
-    'Pillars',
-    'Mausoleum',
-    'Random dungeon feature in the middle of an odd-sized room',
-    'L-shaped',
-    'L-shaped, rot 1',
-    'L-shaped, rot 2',
-    'L-shaped, rot 3',
-    'Blocked center',
-    'Circular, small',
-    'Circular, medium',
-    'Circular, big',
-    'T-shaped',
-    'T-shaped, rot 1',
-    'T-shaped, rot 2',
-    'T-shaped, rot 3',
-    'S-shaped',
-    'S-shaped, rot 1',
-    'Z-shaped',
-    'Z-shaped, rot 1',
-    'Cross',
-    'Four-leaf clover',
-    'Water-surrounded vault',
-    'Twin businesses',
-];
-
 function themedState(seed, depth = 8) {
     resetGame();
     game.u = {
@@ -124,7 +90,7 @@ function themedState(seed, depth = 8) {
     resetBridgeUsageLedger();
 }
 
-test('top-level Lua themeroom metadata retains every exact source name', () => {
+test('top-level themeroom metadata matches the independent Lua source', () => {
     const lua = fs.readFileSync(new URL(
         '../nethack-c/upstream/dat/themerms.lua', import.meta.url,
     ), 'utf8');
@@ -136,7 +102,6 @@ test('top-level Lua themeroom metadata retains every exact source name', () => {
         /\bname\s*=\s*["']([^"']+)["']/g,
     )].map(match => match[1]);
 
-    assert.deepEqual(sourceNames, EXPECTED_THEMEROOMS);
     assert.deepEqual(
         THEMEROOM_META.map(room => room.name),
         sourceNames,

@@ -11,6 +11,15 @@ const valkyrieInput = input => ({
     ...input,
 });
 
+function actorOutcomes(world) {
+    return world.actors.map(actor => ({
+        species: actor.species,
+        position: actor.position,
+        hp: actor.hp,
+        inventory: actor.inventory,
+    }));
+}
+
 test('save-blocked chat text cannot replace elapsed Valkyrie waits',
     async () => {
         // The save request blocks before the trailing bytes are commands.
@@ -28,5 +37,7 @@ test('save-blocked chat text cannot replace elapsed Valkyrie waits',
         assert.deepEqual(afterTurns.hero, startup.hero);
         assert.equal(afterTurns.moves, startup.moves + 4);
         assert.equal(afterTurns.heroMovement, 12);
-        assert.ok(afterTurns.actors.some(actor => actor.tame > 0));
+        assert.notDeepEqual(
+            actorOutcomes(afterTurns), actorOutcomes(startup),
+        );
     });

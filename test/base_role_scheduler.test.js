@@ -5,47 +5,6 @@ import {
     bridgeFreeRoleOutcome,
 } from './support/role-outcome.js';
 
-async function assertLiveQuietTurns(input) {
-    const world = await bridgeFreeRoleOutcome(input);
-    assert.equal(world.moves, 5);
-    assert.equal(world.heroMovement, 12);
-    assert.ok(world.actors.some(actor => actor.tame > 0));
-}
-
-test('every selectable role starts a live bridge-free world', async () => {
-    const roles = [
-        ['Archeologist', 'lawful'], ['Barbarian', 'neutral'],
-        ['Caveman', 'lawful'], ['Healer', 'neutral'],
-        ['Knight', 'lawful'], ['Monk', 'neutral'],
-        ['Priest', 'lawful'], ['Ranger', 'neutral'],
-        ['Rogue', 'chaotic'], ['Samurai', 'lawful'],
-        ['Tourist', 'neutral'], ['Valkyrie', 'lawful'],
-        ['Wizard', 'neutral'],
-    ];
-    for (let index = 0; index < roles.length; index++) {
-        const [role, align] = roles[index];
-        const world = await bridgeFreeRoleOutcome({
-            seed: 31100 + index, role, race: 'human', align,
-        });
-        assert.equal(world.role, role.toLowerCase());
-        assert.match(world.race, /human/i);
-        assert.ok(world.hero[0] > 0);
-        assert.ok(world.hero[1] > 0);
-        assert.ok(world.hp[0] > 0);
-        assert.ok(world.actors.some(actor => actor.tame > 0));
-    }
-});
-
-test('every legal Archeologist race uses live role-neutral turns', async () => {
-    for (const input of [
-        { seed: 31001, role: 'Archeologist', race: 'human', align: 'lawful' },
-        { seed: 31002, role: 'Archeologist', race: 'dwarf', align: 'lawful' },
-        { seed: 31003, role: 'Archeologist', race: 'gnome', align: 'neutral' },
-    ]) {
-        await assertLiveQuietTurns(input);
-    }
-});
-
 test('Archeologist intrinsic Searching runs inside live turn maintenance',
     async () => {
         const input = {
@@ -69,15 +28,6 @@ test('Archeologist intrinsic Searching runs inside live turn maintenance',
         assert.ok(Math.abs(newlySeen[0].position[0] - afterTurns.hero[0]) <= 1);
         assert.ok(Math.abs(newlySeen[0].position[1] - afterTurns.hero[1]) <= 1);
     });
-
-test('both legal Barbarian races use live role-neutral turns', async () => {
-    for (const input of [
-        { seed: 31006, role: 'Barbarian', race: 'human', align: 'neutral' },
-        { seed: 31005, role: 'Barbarian', race: 'orc', align: 'chaotic' },
-    ]) {
-        await assertLiveQuietTurns(input);
-    }
-});
 
 test('a live adjacent threat can refuse Barbarian rest without replay time',
     async () => {

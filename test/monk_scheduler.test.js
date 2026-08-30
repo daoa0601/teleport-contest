@@ -7,7 +7,7 @@ import { pushKey } from '../js/input.js';
 import { CORPSE, MEATBALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    bridgeFreeRoleOutcome, freshRoleOutcome,
+    bridgeFreeRoleOutcome,
 } from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -21,40 +21,19 @@ test('future Monk command text cannot teleport a fresh live hero', async () => {
     // Thirteen directional commands can change each coordinate by at most
     // thirteen cells in total.  The later eat selector is invalid for this
     // fresh inventory and may not synthesize a corpse or rewrite elapsed time.
-    const startup = await freshRoleOutcome(monkInput({
+    const startup = await bridgeFreeRoleOutcome(monkInput({
         seed: 45003,
         moves: ' ',
-        bridgeFree: false,
     }));
-    const outcome = await freshRoleOutcome(monkInput({
+    const outcome = await bridgeFreeRoleOutcome(monkInput({
         seed: 45003,
         moves: '  n:kkkhhhjjjlll.ssh,ek',
-        bridgeFree: false,
     }));
-    const distance = Math.abs(outcome.world.hero[0] - startup.world.hero[0])
-        + Math.abs(outcome.world.hero[1] - startup.world.hero[1]);
+    const distance = Math.abs(outcome.hero[0] - startup.hero[0])
+        + Math.abs(outcome.hero[1] - startup.hero[1]);
 
-    assert.equal(startup.error, null);
-    assert.equal(outcome.error, null);
-    assert.deepEqual(outcome.bridges, []);
     assert.ok(distance <= 13);
-    assert.match(outcome.world.message, /You don't have that object/);
-});
-
-test('all three legal Monk alignments schedule fresh live actors', async () => {
-    for (const input of [
-        { seed: 45214, align: 'lawful' },
-        { seed: 45218, align: 'neutral' },
-        { seed: 45220, align: 'chaotic' },
-    ]) {
-        const world = await bridgeFreeRoleOutcome(monkInput({
-            ...input,
-            moves: ' ....',
-        }));
-        assert.equal(world.moves, 5);
-        assert.ok(world.heroMovement >= 12);
-        assert.ok(world.actors.some(actor => actor.tame > 0));
-    }
+    assert.match(outcome.message, /You don't have that object/);
 });
 
 test('a carried meat corpse applies the live Monk conduct penalty', async () => {

@@ -11,6 +11,15 @@ const rogueInput = input => ({
     ...input,
 });
 
+function actorOutcomes(world) {
+    return world.actors.map(actor => ({
+        species: actor.species,
+        position: actor.position,
+        hp: actor.hp,
+        inventory: actor.inventory,
+    }));
+}
+
 async function assertQuietRogueTurns(input) {
     const startup = await bridgeFreeRoleOutcome(rogueInput({
         ...input, moves: ' ',
@@ -23,7 +32,7 @@ async function assertQuietRogueTurns(input) {
     assert.equal(afterTurns.moves, startup.moves + 4);
     assert.equal(afterTurns.heroMovement, 12);
     assert.equal(afterTurns.message, '');
-    assert.ok(afterTurns.actors.some(actor => actor.tame > 0));
+    assert.notDeepEqual(actorOutcomes(afterTurns), actorOutcomes(startup));
 }
 
 test('fresh human Rogue waits leave the hero still while actors take turns',
