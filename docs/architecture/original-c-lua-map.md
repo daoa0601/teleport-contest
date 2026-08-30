@@ -38437,8 +38437,14 @@ flowchart TD
     C --> D[dog_move reads current pet and floor objects]
     D --> B
 
-    E[fire command] --> F[dothrow.c dofire reads uquiver]
-    F --> G{matching launcher wielded?}
+    E[fire command] --> F{uquiver already populated?}
+    F -- no and autoquiver --> AQ[dothrow.c autoquiver scans live inventory]
+    AQ --> AP[current ammo > missile > alternate ammo > miscellaneous]
+    F -- no manual fallback --> AM[wield.c doquiver_core fire selection]
+    AP --> AR[setuqwep without an extra turn]
+    AM --> AR
+    F -- yes --> G{matching launcher wielded?}
+    AR --> G
     G -- alternate slot --> H[wield.c doswapweapon]
     H --> I[CQ_CANNED resumes fire after scheduler turn]
     G -- inventory search --> Q[dothrow.c find_launcher]
@@ -38476,6 +38482,19 @@ fallback, and the first known blessed or uncursed match wins.  With
 `doswapweapon()`; `dowield()` then installs the selected launcher by its live
 inventory letter before the final canned fire.  Each timed weapon action
 crosses the ordinary actor/global scheduler.
+
+When `uquiver` is empty, `dothrow.c:autoquiver()` is a separate inventory
+policy, not a generic throwable-object search.  It excludes every worn,
+artifact, or visually unknown identity and skips unknown non-rock gems.  Its
+final precedence is ammo for the current launcher, ordinary missiles, ammo for
+the alternate launcher, then miscellaneous throwing weapons; several buckets
+retain the last eligible inventory object rather than the first.  Rocks are
+always eligible once seen, while flint and glass require type knowledge.
+`setuqwep()` readies the chosen identity without spending another turn and the
+same `f` command continues into launcher assistance and flight.  If automatic
+selection is disabled or finds nothing, `doquiver_core("fire")` performs an
+ordinary manual selection; an unheld surviving stack remains the live quiver
+identity after its first shot.
 
 The former JavaScript normal path selected a second world for Cavemen.  It
 replayed aggregate RNG by turn number, overwrote the pet with a 25-turn
@@ -38528,18 +38547,24 @@ the scheduler-separated fireassist continuation.  The test encodes those
 world deltas but no pet
 path, floor coordinate, later RNG transcript, projectile endpoint, helper
 call, or fixed prose.  Both fresh invariants pass with zero Caveman bridges,
-and fresh seed28100 first uses ordinary commands with `pushweapon` disabled to move
-the sling outside both weapon slots.  Fireassist then discovers that inventory
+and fresh seed28100 first uses ordinary commands with `pushweapon` disabled to
+move the sling outside both weapon slots.  Fireassist then discovers that inventory
 identity, moves the old primary to the alternate slot, wields the sling, and
 fires the readied flint.  A separate live arena rejects a known-cursed sling
 and prefers a later known-safe match over an earlier unknown fallback.  Those
 tests assert only final slot, inventory, floor-identity, and bridge state.  The
-default behavioral gate passes 378/378.
+autoquiver arena then proves that a later current-sling flint outranks an
+earlier rock and dart, while a second arena proves a missile outranks
+alternate-sling flint and excludes unseen or artifact darts.  Manual
+empty-quiver fire leaves the surviving selected dart stack readied.  These are
+world-state outcomes rather than candidate-helper or prompt-call assertions.
+The default behavioral gate passes 381/381.
 
 This subsystem remains partial.  Hurtle/death interruption within a volley,
 welded/touch/artifact and unknown-cursed wield failure continuations, stacked
-readied-object wield prompts, autoquiver, polearm/whip and return-weapon fire
-modes, swallowed sling ammunition, water-wall/sink and other projectile
-contacts and terrain, non-sling multishot and count-prefix families, alternate
-options, persistence, and sealed strata are still open.  Lua owns no runtime
-Caveman scheduler or projectile exception.
+primary/alternate readied-object splitting and prompts, explicit quiver
+clearing and gold, polearm/whip and return-weapon fire modes, swallowed sling
+ammunition, water-wall/sink and other projectile contacts and terrain,
+non-sling multishot and count-prefix families, alternate options, persistence,
+and sealed strata are still open.  Lua owns no runtime Caveman scheduler or
+projectile exception.

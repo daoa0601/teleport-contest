@@ -68,8 +68,11 @@ fireassist continuation and caps the matching-sling volley after that source
 roll.  Fireassist now also searches the live inventory in source order,
 honors known-cursed versus known-safe/unknown launcher precedence, and keeps
 the pushweapon swap and wield as scheduler-separated canned actions.  Wield
-failure continuations, non-sling count families, interruption, and broader
-fire modes remain explicitly partial.  Other named role paths remain.  Those
+failure continuations remain partial.  Empty-quiver fire now also uses live
+source-ordered autoquiver buckets, or ordinary manual selection when the
+option is off or no automatic candidate exists; manual worn-stack prompts,
+non-sling count families, interruption, and broader fire modes remain
+explicitly partial.  Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
 

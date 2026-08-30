@@ -99103,3 +99103,68 @@ official hidden measurement, so `public-session-status.md` remains unchanged
 and publication remains unauthorized.
 
 ---
+
+### [2026-08-30 06:48 EEST, journal block 3218] {#bridge-free #autoquiver #manual-quiver #dofire #weapon-slots #object-knowledge #behavioral-witness #c-source #change-detector #critical-debugging-portfolio #architecture #implementation #process-safety}
+
+**Contract and independent portfolio:** block3216 left autoquiver open.  Pinned
+`dothrow.c:autoquiver()` is not first-match selection: it excludes worn,
+artifact, and visually unknown identities; treats seen rock differently from
+type-known flint/glass and other gems; maintains current-launcher ammo,
+missile, alternate-launcher ammo, and miscellaneous buckets with distinct
+overwrite rules; and chooses them in that order.  `setuqwep()` consumes no
+extra turn before the same fire command continues.  When the option is off or
+no candidate exists, `wield.c:doquiver_core("fire")` manually readies the
+selected identity before throwing it.  Selecting any throwable, preferring
+alternate ammo before a missile, or throwing a manual selection without
+committing the quiver slot were explicit non-results.
+
+**Independent red evidence and earliest divergences:** in a live room arena,
+an empty-quiver sling user carries darts and type-known flint.  Before this
+slice, `f` entered the generic throw picker, terminated on the bounded control
+input, and left `uquiver` null instead of selecting and firing flint.  A second
+arena with `autoquiver` off manually selects a three-dart stack; one dart flew,
+but the surviving two remained unready and `uquiver` was again null.  Both
+failures occurred at slot ownership before any endpoint or later transcript.
+The tests assert selected identity, remaining quantities, weapon slots, and
+floor settlement—not helper calls, prompt text, candidate arrays, screens,
+RNG transcripts, or public-session outcomes.
+
+**Implementation, adversarial evidence, and architecture decision:** new
+`js/quiver.js` owns source object classification, four-bucket scan/precedence,
+knowledge and artifact/worn exclusions, `ready_ok` suggestions, and quiver slot
+mutation; `cmd.js` retains the user prompt and `dofire` continuation.  This
+avoids adding another policy block to the oversized dispatcher.  Current-
+sling ammo now fires immediately and remains readied when its stack survives.
+An adversarial arena proves that the later flint wins its current-ammo bucket
+over an earlier rock and still outranks darts.  Another proves ordinary darts
+outrank alternate-sling flint while unseen and artifact dart stacks remain
+untouched.  Manual fire preserves its surviving selected stack.  Together
+with launcher and Caveman controls, the focused portfolio passes **9/9**.
+
+**Remaining boundary:** manual primary/alternate stack split and confirmation,
+explicit `-` quiver clearing, gold, welded/touch/artifact failure
+continuations, polearm/whip and return-weapon modes, mid-volley interruption,
+broader contacts, persistence, and sealed strata remain open.  No corpus,
+scorer, public-regression lane, sealed trace, push, publication, hidden
+measurement, or supplemental-animation work ran.
+
+---
+
+### [2026-08-30 06:49 EEST, journal block 3219] {#autoquiver #manual-quiver #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** after extracting the dedicated quiver owner, one guarded
+default behavioral process passed **381/381** named tests in 3.9 seconds and
+exited normally.  The behavioral-lane audit remains green across **44 files**
+with no recorded-session, public-parity, mock/spy, or call-transcript
+dependencies.  Bridge audit passes across **124 production files, 9 guarded
+replay modules, and 19 fixture modules**; no matching runner remains.
+
+**Ownership and evidence limit:** the registry and C/Lua map now move ordinary
+autoquiver selection and unheld manual fire selection into the still-`partial`
+live owner, while retaining the slot/failure and broader fire cases named in
+block3218 as explicit gaps.  This is local bridge-free behavioral evidence,
+not an engine-only corpus, public scorer, sealed gate, or official hidden
+measurement, so `public-session-status.md` remains unchanged and publication
+remains unauthorized.
+
+---
