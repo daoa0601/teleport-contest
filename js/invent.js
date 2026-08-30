@@ -13,7 +13,6 @@ import {
     FOUNTAIN, GRAVE, ICE, IRONBARS, LAVAPOOL, LAVAWALL,
     MOAT, POOL, SINK, THRONE, TREE,
 } from './const.js';
-import { NO_COLOR } from './terminal.js';
 import {
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_CHARGED,
     OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION,
@@ -445,28 +444,6 @@ export async function selectInventoryObject({
     return key;
 }
 
-// C's look-here list is a temporary tty overlay rather than a full-screen
-// menu.  Keep the live map and status visible underneath it.
-export async function showKnightFloorObjects() {
-    game._pending_message = '';
-    await flush_screen(1);
-    const display = game.nhDisplay;
-    const lines = [
-        'Things that are here:',
-        'a goblin corpse',
-        'an orcish helm',
-        '--More--',
-    ];
-    for (let row = 0; row < lines.length; row++) {
-        for (let col = 41; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-        for (let index = 0; index < lines[row].length; index++)
-            display.setCell(41 + index, row, lines[row][index], NO_COLOR, 0);
-    }
-    display.setCursor(49, 3);
-    return nhgetch();
-}
-
 function stairwayAt(x, y) {
     for (let stairway = game.stairs; stairway; stairway = stairway.next)
         if (stairway.sx === x && stairway.sy === y) return stairway;
@@ -541,11 +518,7 @@ export async function dolook({
     const dungeonFeature = dungeonFeatureSentenceAt(
         game.u?.ux, game.u?.uy,
     );
-    if (game._knightCombatPath
-        && objects.some(object => object.name === 'goblin corpse')) {
-        game.context.move = 0;
-        await showKnightFloorObjects();
-    } else if (objects.length > 1 && showPile) {
+    if (objects.length > 1 && showPile) {
         // invent.c:look_here() owns which floor chain is inspected; the
         // command layer currently owns the shared doname-with-price window
         // used by arrival, autopickup, and explicit look.  Pass that

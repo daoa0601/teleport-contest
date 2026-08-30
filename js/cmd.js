@@ -35,7 +35,7 @@ import {
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
     dungeonFeatureSentenceAt,
-    observeBucForNaming, selectInventoryObject, showKnightFloorObjects,
+    observeBucForNaming, selectInventoryObject,
 } from './invent.js';
 import {
     continueSpellbookStudy, docast, dovspell, studyBook,
@@ -91,7 +91,7 @@ import {
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
-    WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM, BOULDER, ROCK,
+    WAN_SLEEP, GOLD_PIECE, CORPSE, SADDLE, BOULDER, ROCK,
     ARROW, BOW, DART,
     LONG_SWORD,
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
@@ -233,14 +233,6 @@ import {
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
-import {
-    replayKnightFirstDismount, replayKnightSecondDismountOpening,
-    replayKnightPonyMiss, replayKnightPonyBite,
-    replayKnightZombieDeathTurn,
-    replayKnightCombatRun, replayKnightCombatSouth,
-    replayKnightCombatEast, replayKnightCombatKill,
-    replayKnightCombatLanding, replayKnightPostDismount,
-} from './knight_ride.js';
 import {
     BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
@@ -1823,11 +1815,7 @@ export async function rhack(key) {
         return;
     }
 
-    if (game._knightCombatPath && game.u?.usteed
-        && (ch === 'L' || isMovementKey(ch))
-        && await knightCombatMovement(ch)) {
-        return;
-    } else if (ch === 'F') {
+    if (ch === 'F') {
         await doforcefight();
     } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
         || controlRushDirection(key)) {
@@ -8379,226 +8367,91 @@ async function doforce() {
     game.context.move = 1;
 }
 
-function knightCombatPosition(x, y) {
-    const u = game.u;
-    const oldx = u.ux, oldy = u.uy;
-    u.ux0 = oldx; u.uy0 = oldy;
-    u.ux = x; u.uy = y;
-    if (u.usteed) {
-        u.usteed.mx = x;
-        u.usteed.my = y;
-    }
-    newsym(oldx, oldy);
-    vision_recalc(1);
-    newsym(x, y);
+function steedSaddle(steed) {
+    if (steed?.saddle) return steed.saddle;
+    return (steed?.minvent || steed?.inventory || []).find(object =>
+        object.otyp === SADDLE && ((object.owornmask ?? W_SADDLE) & W_SADDLE));
 }
 
-function hideKnightCombatCell(x, y) {
-    const loc = game.level?.at(x, y);
-    if (!loc) return;
-    loc.remembered_glyph = null;
-    loc.disp_ch = ' ';
-    loc.disp_color = NO_COLOR;
-    loc.disp_decgfx = false;
-}
-
-function knightCombatFloorObjects() {
-    const x = 34, y = 8;
-    if (!game.level.objects[x]) game.level.objects[x] = [];
-    const existing = game.level.objects[x][y] || [];
-    const unrelated = existing.filter(object =>
-        object.name !== 'goblin corpse' && object.name !== 'orcish helm');
-    game.level.objects[x][y] = [
-        {
-            otyp: CORPSE, oclass: 7, corpsenm: 70,
-            name: 'goblin corpse', quantity: 1, quan: 1,
-            ox: x, oy: y, color: NO_COLOR,
-        },
-        {
-            otyp: ORCISH_HELM, oclass: 3,
-            name: 'orcish helm', quantity: 1, quan: 1,
-            ox: x, oy: y,
-        },
-        ...unrelated,
+function voluntaryDismountSpot(x, y, steed) {
+    // C steed.c:landing_spot() walks W, NW, N, NE, E, SE, S, SW and
+    // reservoir-selects among equally close legal squares.  Its first pass
+    // avoids known traps and boulders, then relaxes those constraints.
+    const offsets = [
+        [-1, 0], [-1, -1], [0, -1], [1, -1],
+        [1, 0], [1, 1], [0, 1], [-1, 1],
     ];
-}
-
-function knightCombatFinishCommand(moves) {
-    game.moves = moves;
-    game._maintenanceMove = moves;
-    game.context.move = 0;
-}
-
-async function knightCombatMovement(ch) {
-    const runIndex = game._knightCombatRuns || 0;
-    if (ch === 'L' && runIndex < 2) {
-        replayKnightCombatRun(runIndex);
-        const destination = runIndex === 0 ? 26 : 32;
-        const startX = game.u.ux;
-        let sourceTurn = game.moves || 1;
-        for (let x = startX + 1; x <= destination; x++) {
-            if (x > startX + 1) {
-                sourceTurn++;
-                // allmain.c performs the first cadence check immediately
-                // before the next automatic domove().
-                await captureRunmodeDelay(game, true, sourceTurn);
+    for (let pass = 0; pass < 3; pass++) {
+        let viable = 0;
+        let selected = null;
+        let minimumDistance = Infinity;
+        for (const [dx, dy] of offsets) {
+            const candidateX = x + dx, candidateY = y + dy;
+            if (blocksMove(candidateX, candidateY)) continue;
+            if (game.level?.monsters?.some(monster => monster !== steed
+                && monster.mx === candidateX && monster.my === candidateY)) {
+                continue;
             }
-            knightCombatPosition(x, 7);
-            // hack.c:domove() performs the second check after committing the
-            // square.  The final doorway ends this bounded run before that
-            // check can emit a frame.
-            await captureRunmodeDelay(game, x < destination, sourceTurn);
+            viable++;
+            const distance = dx * dx + dy * dy;
+            const competes = distance < minimumDistance
+                || (distance === minimumDistance && rn2(viable) === 0);
+            if (!competes) continue;
+            const knownTrap = game.level?.traps?.some(trap => trap.tseen
+                && (trap.tx ?? trap.x) === candidateX
+                && (trap.ty ?? trap.y) === candidateY);
+            const boulder = (game.level?.objects?.[candidateX]?.[candidateY] || [])
+                .some(object => object.otyp === BOULDER);
+            if ((pass === 0 && knownTrap) || (pass <= 1 && boulder)) continue;
+            selected = [candidateX, candidateY];
+            minimumDistance = distance;
         }
-        game._knightCombatRuns = runIndex + 1;
-        if (runIndex === 1) {
-            const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
-            if (goblin) {
-                const oldx = goblin.mx, oldy = goblin.my;
-                goblin.mx = 34; goblin.my = 8;
-                goblin.symbol = 'o';
-                goblin.color = NO_COLOR;
-                newsym(oldx, oldy);
-                newsym(goblin.mx, goblin.my);
-            }
-            const lichen = game.level?.monsters?.find(monster => monster.mnum === 158);
-            if (lichen) {
-                const oldx = lichen.mx, oldy = lichen.my;
-                lichen.mx = 0; lichen.my = 0;
-                const loc = game.level?.at(oldx, oldy);
-                const glyph = loc ? terrain_glyph(loc, oldx, oldy) : null;
-                if (loc && glyph) {
-                    loc.disp_ch = glyph.ch;
-                    loc.disp_color = glyph.color;
-                    loc.disp_decgfx = glyph.dec;
-                    loc.remembered_glyph = { ...glyph, decgfx: glyph.dec };
-                }
-            }
-            hideKnightCombatCell(33, 6);
-            hideKnightCombatCell(33, 7);
-            for (const name of ['apple', 'carrot']) {
-                const item = game.inventory?.find(candidate => candidate.name === name);
-                if (item) item.quantity = item.quan = 11;
-            }
-            game.flags.pickup = false;
-        }
-        knightCombatFinishCommand(runIndex === 0 ? 8 : 14);
-        return true;
+        if (selected) return selected;
     }
-    if (runIndex < 2 || ch === 'L') return false;
-
-    const action = game._knightCombatMoves || 0;
-    game._knightCombatMoves = action + 1;
-    if (action === 5 && ch === 'j') {
-        replayKnightCombatSouth();
-        knightCombatPosition(32, 8);
-        hideKnightCombatCell(33, 6);
-        hideKnightCombatCell(33, 7);
-        hideKnightCombatCell(33, 9);
-        knightCombatFinishCommand(15);
-    } else if (action === 7 && ch === 'l') {
-        replayKnightCombatEast();
-        knightCombatPosition(33, 8);
-        hideKnightCombatCell(33, 6);
-        knightCombatFinishCommand(16);
-    } else if (action === 8 && ch === 'l') {
-        replayKnightCombatKill();
-        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
-        if (goblin) {
-            game.level.monsters = game.level.monsters.filter(monster => monster !== goblin);
-            newsym(goblin.mx, goblin.my);
-        }
-        knightCombatFloorObjects();
-        game.u.uexp = 6;
-        newsym(34, 8);
-        await pline('You kill the goblin!');
-        knightCombatFinishCommand(17);
-    } else {
-        game.context.move = 0;
-    }
-    return true;
+    return null;
 }
 
-// C refs: steed.c doride(), mount_steed().  A failed mount is zero-time;
-// success moves the hero onto the steed's square and removes the steed from
-// the ordinary monster chain until dismounting.
+// C refs: steed.c doride(), mount_steed(), landing_spot(), and
+// dismount_steed().  Mount failures are zero-time; successful mount and
+// voluntary dismount preserve one live monster identity across its carrier
+// transition between fmon and u.usteed.
 async function doride() {
     const u = game.u;
     if (u?.usteed) {
         const steed = u.usteed;
-        if (game._knightCombatPath) {
-            replayKnightCombatLanding();
-            const oldx = u.ux, oldy = u.uy;
-            u.usteed = null;
-            steed.mx = oldx;
-            steed.my = oldy;
-            if (!game.level.monsters.includes(steed))
-                game.level.monsters.push(steed);
-            u.ux0 = oldx; u.uy0 = oldy;
-            u.ux = oldx + 1;
-            vision_recalc(1);
-            newsym(oldx, oldy);
-            newsym(u.ux, u.uy);
-            await promptKey("You've been through the dungeon on a pony with no name.--More--");
-            await showKnightFloorObjects();
-            replayKnightPostDismount();
-            game._pending_message = '';
-            knightCombatFinishCommand(17);
+        const saddle = steedSaddle(steed);
+        if (saddle?.cursed) {
+            saddle.bknown = true;
+            await pline("You can't.  The saddle seems to be cursed.");
+            game.context.move = 1;
             return;
         }
-        const dismountIndex = game._knightDismounts || 0;
-        if (game._knightPonyPath && !dismountIndex)
-            replayKnightFirstDismount();
-        game._knightDismounts = dismountIndex + 1;
-        u.usteed = null;
-        if (!game.level.monsters.includes(steed)) game.level.monsters.push(steed);
-        if (game._knightPonyPath && dismountIndex === 1) {
-            const oldx = u.ux, oldy = u.uy;
-            steed.mx = oldx;
-            steed.my = oldy;
-            u.ux = oldx - 1;
-            newsym(oldx, oldy);
-            newsym(u.ux, u.uy);
-            replayKnightSecondDismountOpening();
-            await promptKey("You've been through the dungeon on a pony with no name.--More--");
-            replayKnightPonyMiss();
-            await promptKey('The saddled pony misses the kobold zombie.--More--');
-            replayKnightPonyBite();
-            await promptKey('The saddled pony bites the kobold zombie.--More--');
-            replayKnightZombieDeathTurn();
-            const zombie = game.level.monsters.find(mon => mon.symbol === 'Z');
-            if (zombie) {
-                game.level.monsters = game.level.monsters.filter(mon => mon !== zombie);
-                newsym(zombie.mx, zombie.my);
-            }
-            const steedOldx = steed.mx, steedOldy = steed.my;
-            steed.mx = u.ux;
-            steed.my = u.uy + 1;
-            newsym(steedOldx, steedOldy);
-            newsym(steed.mx, steed.my);
-            await pline('The kobold zombie is destroyed!');
-            game.context.move = 0;
-            return;
-        }
-        // Voluntary dismount prefers an orthogonal square.  The bounded
-        // Knight fixtures both have the northern square available.
         const oldx = u.ux, oldy = u.uy;
+        const landing = voluntaryDismountSpot(oldx, oldy, steed);
+        if (!landing) {
+            await pline("You can't.  There isn't anywhere for you to stand.");
+            game.context.move = 1;
+            return;
+        }
+        u.usteed = null;
         steed.mx = oldx;
         steed.my = oldy;
-        if (!blocksMove(oldx, oldy - 1)
-            && !game.level.monsters.some(mon => mon !== steed
-                && mon.mx === oldx && mon.my === oldy - 1)) {
-            u.uy = oldy - 1;
-        } else if (!blocksMove(oldx - 1, oldy)) {
-            u.ux = oldx - 1;
-        }
+        if (!game.level.monsters.includes(steed))
+            game.level.monsters.push(steed);
+        u.ux0 = oldx;
+        u.uy0 = oldy;
+        [u.ux, u.uy] = landing;
         newsym(oldx, oldy);
+        vision_recalc(1);
         newsym(u.ux, u.uy);
         await pline("You've been through the dungeon on a pony with no name.");
         game.context.move = 1;
         return;
     }
 
-    const direction = String.fromCharCode(await promptKey('In what direction? '));
+    const direction = String.fromCharCode(
+        await promptKey('In what direction? '),
+    ).toLowerCase();
     if (!isMovementKey(direction)) {
         game._pending_message = '';
         game.context.move = 0;
@@ -8606,32 +8459,39 @@ async function doride() {
     }
     const x = u.ux + DIR_DX[direction];
     const y = u.uy + DIR_DY[direction];
-    const steed = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
-    if (!steed || !steed.saddled) {
+    const steed = game.level?.monsters?.find(monster =>
+        monster.mx === x && monster.my === y);
+    if (!steed) {
         await pline('I see nobody there.');
         game.context.move = 0;
         return;
     }
-
-    if (u.ulevel + (steed.mtame || 0) < rnd(20)) {
-        const damage = 10 + rn2(5);
-        u.uhp = Math.max(0, (u.uhp || 0) - damage);
-        if (!u.uhp && game._knightPonyPath) {
-            await promptKey('You slip while trying to get on the saddled pony.--More--');
-            rn2(1);
-            await promptKey('You die...--More--');
-            await promptKey('Do you want your possessions identified? [ynq] (n) ');
-        } else {
-            await pline('You slip while trying to get on the saddled pony.');
-        }
+    const steedName = monsterInstanceDisplayName(steed);
+    if (!steed.saddled && !steedSaddle(steed)) {
+        await pline(`The ${steedName} is not saddled.`);
+        game.context.move = 0;
+        return;
+    }
+    if (!(steed.mtame > 0) || steed.isminion) {
+        await pline(`I think the ${steedName} would mind.`);
         game.context.move = 0;
         return;
     }
 
-    await pline('You mount the saddled pony.');
-    game.level.monsters = game.level.monsters.filter(mon => mon !== steed);
-    u.ux0 = u.ux; u.uy0 = u.uy;
-    u.ux = steed.mx; u.uy = steed.my;
+    if (u.ulevel + steed.mtame < rnd(20)) {
+        const damage = 10 + rn2(5);
+        u.uhp = Math.max(0, (u.uhp || 0) - damage);
+        await pline(`You slip while trying to get on the saddled ${steedName}.`);
+        game.context.move = 0;
+        return;
+    }
+
+    await pline(`You mount the saddled ${steedName}.`);
+    game.level.monsters = game.level.monsters.filter(monster => monster !== steed);
+    u.ux0 = u.ux;
+    u.uy0 = u.uy;
+    u.ux = steed.mx;
+    u.uy = steed.my;
     u.usteed = steed;
     newsym(u.ux0, u.uy0);
     vision_recalc(1);

@@ -40,10 +40,8 @@ export function auditBridgeFreeSource() {
     // path, but bridge-free mode must make each one structurally unreachable
     // rather than relying on an empty replay string or lucky coordinates.
     const compatibilityClassifiers = [
-        '_knightCombatPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
-        '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
         const explicitLegacyGate = new RegExp(
@@ -65,6 +63,24 @@ export function auditBridgeFreeSource() {
                 failures.push(`${file}: legacy Samurai replay token ${token}`);
         }
     }
+    const forbiddenKnightReplayTokens = [
+        '_knightCombatPath', '_knightPonyPath', '_knightCombatRuns',
+        '_knightCombatMoves', '_knightCombatSearches', '_knightDismounts',
+        'replayKnight', 'knightCombatPosition', 'hideKnightCombatCell',
+        'knightCombatFloorObjects', 'knightCombatFinishCommand',
+        'knightCombatMovement', 'showKnightFloorObjects',
+        'seeded-replay.knight-maintenance',
+        'seeded-replay.knight-dismount',
+        'seeded-replay.knight-combat',
+    ];
+    for (const token of forbiddenKnightReplayTokens) {
+        for (const [file, source] of sources) {
+            if (source.includes(token))
+                failures.push(`${file}: legacy Knight replay token ${token}`);
+        }
+    }
+    if (sources.has('knight_ride.js'))
+        failures.push('knight_ride.js: legacy Knight replay module still exists');
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,

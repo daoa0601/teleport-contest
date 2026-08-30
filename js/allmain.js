@@ -80,7 +80,6 @@ import {
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel,
 } from './const.js';
-import { replayKnightMaintenance } from './knight_ride.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
     setInitialArmorClass, finishStartingDiscoveries,
@@ -435,8 +434,6 @@ async function askTutorial() {
     putLine(21, 3, 'n - No, just start play');
     putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
     putLine(21, 6, '(end)');
-    if (game._knightCombatPath)
-        putLine(17, 6, '---');
     putStatusLines();
     d.setCursor(27, 6);
     let key = await nhgetch();
@@ -2147,8 +2144,7 @@ async function drainQueuedHelplessRecoveryMessage() {
 }
 
 function liveQuietKnight(state = game) {
-    return state.urole?.key === 'knight'
-        && !state._knightPonyPath && !state._knightCombatPath;
+    return state.urole?.key === 'knight';
 }
 
 function liveQuietMonk(state = game) {
@@ -6184,10 +6180,6 @@ export async function newgame() {
     // bridge-free execution never reads the poisoned property installed by
     // NethackGame.start().
     const replayMoves = bridgeFree ? '' : (g.replayMoves || '');
-    // Some level-generation boundaries depend on the command fixture but are
-    // reached before the post-mklev path flags below can be derived.
-    g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
-        && /^  ns#ride/.test(replayMoves);
     g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
     g._wizardPolyPath = !bridgeFree && g.urole?.key === 'wizard'
@@ -6232,15 +6224,9 @@ export async function newgame() {
         g._samuraiLiveScheduler = true;
     g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
-    g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
-        && /^  sns#ride/.test(replayMoves);
-    g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
-        && /^  ns#ride/.test(replayMoves);
-
     if (bridgeFree) {
         const compatibilityPaths = [
             ['tourist.explore-search', g._touristExplorePath],
-            ['knight.pony', g._knightPonyPath],
             ['wizard.bind', g._wizardBindPath],
         ];
         for (const [bridgeId, selected] of compatibilityPaths) {
@@ -6459,8 +6445,7 @@ export async function moveloop_core() {
     // `moves`; they must not repeat monster movement or consume more RNG.
     if (g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
-        const liveQuietRole = (g.urole?.key === 'knight'
-                && !g._knightPonyPath && !g._knightCombatPath)
+        const liveQuietRole = liveQuietKnight(g)
             || liveBaseRole(g)
             || (g.urole?.key === 'wizard' && !g._wizardBindPath)
             || g.urole?.key === 'monk'
@@ -6566,47 +6551,13 @@ export async function moveloop_core() {
             replayWizardBindMaintenance(stepNum);
         } else if (g.urole?.key === 'wizard' && stepNum === 1) {
             initialTurnMaintenanceRng();
-        } else if (g.urole?.key === 'knight') {
-            if (!g._knightPonyPath && !g._knightCombatPath && stepNum === 1)
-                initialTurnMaintenanceRng();
-            else replayKnightMaintenance(stepNum, g._knightCombatPath);
-            const zombie = g.level?.monsters?.find(mon => mon.symbol === 'Z');
-            if (g._knightPonyPath && stepNum === 3 && zombie) {
-                g.u.uhp = Math.min(g.u.uhpmax, (g.u.uhp || 0) + 1);
-                const oldx = zombie.mx, oldy = zombie.my;
-                zombie.mx = 63;
-                zombie.my = 4;
-                newsym(oldx, oldy);
-                newsym(63, 4);
-            }
-            if (g._knightPonyPath && stepNum === 4 && g.startingPet) {
-                const oldx = g.startingPet.mx, oldy = g.startingPet.my;
-                g.startingPet.mx = 61;
-                g.startingPet.my = 2;
-                newsym(oldx, oldy);
-                newsym(61, 2);
-                if (zombie) {
-                    const zx = zombie.mx, zy = zombie.my;
-                    zombie.mx = 62;
-                    zombie.my = 3;
-                    newsym(zx, zy);
-                    newsym(62, 3);
-                }
-            }
-            if (g._knightPonyPath && stepNum === 6 && g.startingPet) {
-                const oldx = g.startingPet.mx, oldy = g.startingPet.my;
-                g.startingPet.mx = 60;
-                g.startingPet.my = 2;
-                newsym(oldx, oldy);
-                newsym(60, 2);
-            }
         } else if (g._touristExplorePath && stepNum === 2) {
             touristExploreRunRng();
             g.moves = 4;
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
-        } else if (liveBaseRole(g)
+        } else if (liveBaseRole(g) || liveQuietKnight(g)
             || liveQuietRanger(g)
             || liveQuietSamurai(g) || liveQuietCaveman(g)
             || (bridgeFreeEnabled() && liveQuietRole)) {
