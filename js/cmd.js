@@ -17386,8 +17386,28 @@ async function wakeAttackedMonster(monster) {
     await respondPeacefulBystanders(monster);
 }
 
-async function attackHostileMonster(monster, x, y) {
+async function attackHostileMonster(monster, x, y, {
+    secondaryStrike = false,
+} = {}) {
     game._heroMeleeThisCommand = true;
+    const primaryStrike = !secondaryStrike;
+    const attackWeapon = secondaryStrike
+        ? (game.uswapwep || game.u?.uswapwep || null)
+        : (game.uwep || game.u?.uwep || null);
+    const twoWeaponActive = !!(game.u?.twoweap || game.twoweap)
+        && !!(game.uwep || game.u?.uwep)
+        && !!(game.uswapwep || game.u?.uswapwep);
+    const mortalityBeforeStrike = game.u?.umortality ?? 0;
+    const targetStillAvailableForOffhand = () => primaryStrike
+        && twoWeaponActive
+        && (game.multi ?? game._multi ?? 0) >= 0
+        && (game.u?.umortality ?? 0) === mortalityBeforeStrike
+        && (monster.mhp ?? 0) > 0
+        && monster.mx === x && monster.my === y
+        && (game.level?.monsters || []).includes(monster);
+    const finishStrike = () => targetStillAvailableForOffhand()
+        ? attackHostileMonster(monster, x, y, { secondaryStrike: true })
+        : true;
     const hallucinating = !!(game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0);
     const displayedMonsterName = () => hallucinating
@@ -17406,9 +17426,11 @@ async function attackHostileMonster(monster, x, y) {
         if (!hallucinating && monster.name) return displayedMonsterName();
         return `the ${displayedMonsterName()}`;
     };
-    getHungry(); // hack.c:do_attack() charges the same metabolism as moveloop.
+    // hack.c:do_attack() charges metabolism once for the complete attack;
+    // hitum() then owns both primary and off-hand attempts.
+    if (primaryStrike) getHungry();
 
-    const bareHanded = !game.uwep;
+    const bareHanded = !attackWeapon;
     const martialArtist = bareHanded
         && ['monk', 'samurai'].includes(game.urole?.key);
     // weapon.c:skill_init() starts roles whose bare-handed maximum exceeds
@@ -17421,13 +17443,13 @@ async function attackHostileMonster(monster, x, y) {
     // before Strength exercise.  The message is an ordinary topline owner:
     // it composes with the hit/miss line and only a later message may force
     // that pair through --More--.
-    if (game._unweapon) {
+    if (primaryStrike && game._unweapon) {
         game._unweapon = false;
         if (game.flags?.verbose !== false) {
-            if (game.uwep) {
+            if (attackWeapon) {
                 await pline(
                     `You begin bashing monsters with ${
-                        inventoryItemDescription(game.uwep)
+                        inventoryItemDescription(attackWeapon)
                     }.`,
                 );
             } else {
@@ -17442,7 +17464,7 @@ async function attackHostileMonster(monster, x, y) {
         }
     }
 
-    exerciseAttribute(0, true); // exercise(A_STR, TRUE)
+    if (primaryStrike) exerciseAttribute(0, true); // exercise(A_STR, TRUE)
     // uhitm.c find_roll_to_hit() checks role conduct before rolling the
     // attack die.  A lawful Knight striking a helpless, non-undead target
     // gets the caitiff message even when the subsequent attack misses.
@@ -17450,7 +17472,7 @@ async function attackHostileMonster(monster, x, y) {
         || (monster.mfrozen ?? 0) > 0);
     const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
     let caitiffMessage = false;
-    if (game.urole?.key === 'knight'
+    if (primaryStrike && game.urole?.key === 'knight'
         && (game.u?.ualign?.type ?? 0) > 0
         && (game.u?.ualign?.record ?? 0) > -10
         && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x00000002)
@@ -17464,8 +17486,8 @@ async function attackHostileMonster(monster, x, y) {
     }
     // weapon.c:hitval() asks the wielded artifact for its special accuracy
     // before hitum() rolls the ordinary d20.
-    const artifactHitBonus = game.uwep
-        ? artifactToHitBonus(game.uwep, monster)
+    const artifactHitBonus = attackWeapon
+        ? artifactToHitBonus(attackWeapon, monster)
         : 0;
     const dieroll = rnd(20);
     // uhitm.c:find_roll_to_hit() begins with abon(), target AC, intrinsic
@@ -17494,17 +17516,17 @@ async function attackHostileMonster(monster, x, y) {
     } else if (bareHanded) {
         const skillSteps = Math.max(bareHandedSkill, 1) - 1;
         threshold += Math.trunc((skillSteps + 2) / 2);
-    } else if (game.uwep) {
+    } else if (attackWeapon) {
         // hitval() adds weapon enchantment and oc_hitbon, then
         // weapon_hit_bonus() projects the current skill.  A weapon acquired
         // after skill_init() does not become Basic merely by being wielded.
         const weaponSkill = Math.abs(
-            OBJECT_SUBTYPE[game.uwep.otyp] || 0,
+            OBJECT_SUBTYPE[attackWeapon.otyp] || 0,
         );
-        threshold += (game.uwep.spe ?? game.uwep.enchantment ?? 0)
-            + (game.uwep.hitbon ?? game.uwep.oc_hitbon
-                ?? OBJECT_HIT_BONUS[game.uwep.otyp] ?? 0)
-            + (game.uwep.skillHitBonus ?? 0)
+        threshold += (attackWeapon.spe ?? attackWeapon.enchantment ?? 0)
+            + (attackWeapon.hitbon ?? attackWeapon.oc_hitbon
+                ?? OBJECT_HIT_BONUS[attackWeapon.otyp] ?? 0)
+            + (attackWeapon.skillHitBonus ?? 0)
             + artifactHitBonus
             + weaponSkillHitBonus(game, weaponSkill);
     }
@@ -17518,20 +17540,20 @@ async function attackHostileMonster(monster, x, y) {
         // hitum() reaches passive().  Keeping the passive draw after the
         // messages also preserves tty suspension if either pline blocks.
         if (!helpless) await wakeAttackedShopkeeper(monster);
-        // passive() selects the first AT_NONE slot after every primary hitum
-        // attempt, including an ordinary miss.
-        passiveContact(monster, true);
-        return true;
+        // hitum() invokes passive() after every primary attempt, including a
+        // miss.  The second attempt invokes it only when that strike hits.
+        if (primaryStrike) passiveContact(monster, true);
+        return finishStrike();
     }
 
-    exerciseAttribute(1, true); // exercise(A_DEX, TRUE)
-    if (game.uwep) {
+    if (primaryStrike) exerciseAttribute(1, true); // exercise(A_DEX, TRUE)
+    if (attackWeapon) {
         if (!game.u.uconduct) game.u.uconduct = {};
         const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
         game.u.uconduct.weaphit = (game.u.uconduct.weaphit || 0) + 1;
         if (firstWeaponHit) {
-            const weaponName = game.uwep.name
-                || OBJECT_NAMES[game.uwep.otyp] || 'weapon';
+            const weaponName = attackWeapon.name
+                || OBJECT_NAMES[attackWeapon.otyp] || 'weapon';
             recordGameLogEvent(
                 `hit with a wielded weapon (${weaponName}) for the first time`,
             );
@@ -17541,23 +17563,24 @@ async function attackHostileMonster(monster, x, y) {
     // Weapon large-damage dice therefore apply to tigers, horses, and other
     // ordinary Large targets as well as Huge and Gigantic monsters.
     const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
-    const weaponDamageRange = game.uwep
+    const weaponDamageRange = attackWeapon
         ? (targetIsLarge ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)
-            [game.uwep.otyp]
+            [attackWeapon.otyp]
         : 0;
     let damage = bareHanded ? rnd(martialArtist ? 4 : 2)
         : Math.max(0, rnd(weaponDamageRange || 4)
-            + (game.uwep?.spe ?? 0));
+            + (attackWeapon?.spe ?? 0));
     // hmon_hitmon_weapon_melee() decides whether to train from dmgval()
     // before artifact_hit() adjusts damage.  Grayswandir's PHYS(5, 0) then
     // adds that base damage again before Strength and ring bonuses.
     const trainsWeapon = !bareHanded && damage > 1;
     if (!bareHanded) {
-        damage += artifactDamageBonus(game.uwep, monster, damage);
+        damage += artifactDamageBonus(attackWeapon, monster, damage);
     }
     if (trainsWeapon) {
         recordWeaponPractice(
-            game, Math.abs(OBJECT_SUBTYPE[game.uwep?.otyp] || 0), 1,
+            game, twoWeaponActive ? 36
+                : Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0), 1,
         );
     }
     if (bareHanded) {
@@ -17579,11 +17602,17 @@ async function attackHostileMonster(monster, x, y) {
     // uses the ordinary hero path.
     const polymorphed = !!(game.u?.polymorphed || game.u?.upolyd);
     const weaponSkillDamage = bareHanded ? 0 : weaponSkillDamageBonus(
-        game, Math.abs(OBJECT_SUBTYPE[game.uwep?.otyp] || 0),
+        game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
     );
+    const ordinaryStrengthDamage = polymorphed ? 0
+        : strengthDamageBonus(currentAttribute(0));
+    const strengthDamage = twoWeaponActive
+        ? Math.sign(ordinaryStrengthDamage) * Math.trunc(
+            (3 * Math.abs(ordinaryStrengthDamage) + 2) / 4,
+        )
+        : ordinaryStrengthDamage;
     damage += (game.u?.udaminc ?? game.udaminc ?? 0)
-        + (polymorphed ? 0
-            : strengthDamageBonus(currentAttribute(0)))
+        + strengthDamage
         + weaponSkillDamage;
     damage = Math.max(1, damage);
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
@@ -17644,7 +17673,7 @@ async function attackHostileMonster(monster, x, y) {
         // completed.  known_hitum() then checks whether the wounded survivor
         // flees, followed by passive().  Keeping this tail after both pager
         // boundaries also assigns its RNG to the same input as the C engine.
-        if (!bareHanded && damage > 1) {
+        if (!bareHanded && damage > 1 && !twoWeaponActive) {
             rn2(3);
             rn2(6);
         }
@@ -17655,7 +17684,7 @@ async function attackHostileMonster(monster, x, y) {
             monster.mflee = 1;
         }
         passiveContact(monster, true);
-        return true;
+        return finishStrike();
     }
 
     // C hmon_hitmon_pet()->abuse_dog() runs even when this blow kills the
@@ -18198,24 +18227,6 @@ async function domove(dx, dy, explicitAttempt = true) {
             return true;
         if (await markUnseenMonsterBeforeAttack(monster, newx, newy))
             return true;
-        if (game.urole?.key === 'samurai' && monster.mnum === 158) {
-            rn2(20); rn2(19);
-            rnd(20); rn2(3); rnd(20); rnd(6); rn2(6); rn2(2); rnd(2);
-            for (const range of [3, 4, 5, 7, 8, 11, 15, 16, 21]) rn2(range);
-            game.level.monsters = game.level.monsters.filter(mon => mon !== monster);
-            const corpse = {
-                otyp: 265, oclass: 7, corpsenm: monster.mnum,
-                name: 'lichen corpse', quantity: 1, quan: 1,
-                ox: newx, oy: newy, color: 10,
-            };
-            if (!game.level.objects[newx]) game.level.objects[newx] = [];
-            if (!game.level.objects[newx][newy]) game.level.objects[newx][newy] = [];
-            game.level.objects[newx][newy].unshift(corpse);
-            game.u.uexp = 4;
-            await pline('You miss the lichen.  You kill the lichen!');
-            newsym(newx, newy);
-            return true;
-        }
         return attackHostileMonster(monster, newx, newy);
     }
 
@@ -18311,14 +18322,6 @@ async function domove(dx, dy, explicitAttempt = true) {
         vision_reset();
         vision_recalc(1);
         newsym(newx, newy);
-        if (game.urole?.key === 'samurai' && newx === 43 && newy === 18) {
-            for (const y of [17, 19]) {
-                const edge = game.level?.at(43, y);
-                if (!edge) continue;
-                edge.remembered_glyph = null;
-                edge.disp_ch = ' ';
-            }
-        }
         return false;
     }
 

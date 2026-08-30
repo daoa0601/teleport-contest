@@ -67,6 +67,15 @@ export function auditBridgeFreeSource() {
                 failures.push(`${file}: legacy Samurai replay token ${token}`);
         }
     }
+    const cmd = sources.get('cmd.js');
+    const forbiddenSamuraiTracePredicates = [
+        /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,
+        /urole\?\.key === ['"]samurai['"]\s*&&\s*newx === 43\s*&&\s*newy === 18/,
+    ];
+    for (const predicate of forbiddenSamuraiTracePredicates) {
+        if (predicate.test(cmd))
+            failures.push(`cmd.js: trace-shaped Samurai predicate ${predicate}`);
+    }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');

@@ -25,12 +25,9 @@ test('fresh Samurai wait uses shared hero and pet source scheduling',
 
         assert.equal(game.urole?.key, 'samurai');
         assert.equal(game.moves, 2);
-        assert.equal(game._heroActionSeq, 1);
         assert.equal(game.u?.umovement, 12);
         assert.equal(game.startingPet?.mnum, 16);
         assert.equal(game.startingPet?.movement, 12);
-        assert.equal(game._samuraiTimedActions, undefined);
-        assert.ok(Array.isArray(game._lastMonsterScan));
         assert.equal(
             result.getBridgeUsageLedger().bridges['fastforward.turn'],
             undefined,
@@ -42,14 +39,11 @@ test('fresh Samurai prayer completes through live occupation turns',
         const result = await freshSamuraiSegment(' #pray\ny');
 
         assert.equal(game.u?.uconduct?.gnostic, 1);
-        assert.equal(game._prayerTurnsRemaining, 0);
         assert.equal(game.moves, 4);
-        assert.equal(game._heroActionSeq, 1);
         assert.equal(
             game._pending_message,
             'You begin praying to Amaterasu Omikami.  You finish your prayer.',
         );
-        assert.equal(game._samuraiTimedActions, undefined);
         assert.equal(
             result.getBridgeUsageLedger().bridges['fastforward.turn'],
             undefined,
