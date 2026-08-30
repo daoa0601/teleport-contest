@@ -5377,6 +5377,53 @@ function specialSelectionFillRect(context, x1, y1, x2, y2) {
     return selection;
 }
 
+function specialSelectionLine(context, x1, y1, x2, y2) {
+    const selection = new SpecialSelection();
+    let x = context.xstart + x1;
+    let y = context.ystart + y1;
+    const targetX = context.xstart + x2;
+    const targetY = context.ystart + y2;
+    const dx = Math.abs(targetX - x);
+    const dy = Math.abs(targetY - y);
+    const sx = x < targetX ? 1 : -1;
+    const sy = y < targetY ? 1 : -1;
+    let error = dx - dy;
+    for (;;) {
+        selection.add(x, y);
+        if (x === targetX && y === targetY) break;
+        const doubled = 2 * error;
+        if (doubled > -dy) {
+            error -= dy;
+            x += sx;
+        }
+        if (doubled < dx) {
+            error += dx;
+            y += sy;
+        }
+    }
+    return selection;
+}
+
+function specialSelectionRect(context, x1, y1, x2, y2) {
+    return specialSelectionLine(context, x1, y1, x2, y1)
+        .union(specialSelectionLine(context, x1, y2, x2, y2))
+        .union(specialSelectionLine(context, x1, y1, x1, y2))
+        .union(specialSelectionLine(context, x2, y1, x2, y2));
+}
+
+function specialSelectionOfTerrain(context, typ) {
+    const selection = new SpecialSelection();
+    for (let x = 0; x < context.width; x++) {
+        for (let y = 0; y < context.height; y++) {
+            if (game.level.at(context.xstart + x, context.ystart + y)?.typ
+                === typ) {
+                selection.add(context.xstart + x, context.ystart + y);
+            }
+        }
+    }
+    return selection;
+}
+
 function specialSelectionRandomPoint(context) {
     return new SpecialSelection().add(
         context.xstart + rn2(context.width),
@@ -5425,6 +5472,18 @@ function specialSelectionTerrain(selection, typ) {
     selection.forEachXMajor((x, y) => {
         if (!setLevelTerrainType(x, y, typ)) return;
         if (typ === IRONBARS || typ === HWALL)
+            game.level.at(x, y).horizontal = true;
+    });
+}
+
+function replaceSpecialSelectionTerrain(
+    selection, fromType, toType, chance = 100,
+) {
+    selection.forEachXMajor((x, y) => {
+        const loc = game.level.at(x, y);
+        if (loc?.typ !== fromType || rn2(100) >= chance) return;
+        setLevelTerrainType(x, y, toType);
+        if (toType === IRONBARS || toType === HWALL)
             game.level.at(x, y).horizontal = true;
     });
 }
@@ -5676,10 +5735,38 @@ function createSpecialMaze(corridorWidth = -1, wallThickness = -1,
         startX, startY, passageType, mazeXMax, mazeYMax,
     );
 
-    // Hell filler variants exercised here do not request dead-end removal.
-    // Keep the argument explicit so later variants cannot silently collapse
-    // that policy into the walker.
-    void removeDeadEnds;
+    if (removeDeadEnds) {
+        const directions = [
+            [0, -1], [1, 0], [0, 1], [-1, 0],
+        ];
+        const inMaze = (x, y) => x >= 2 && y >= 2
+            && x < mazeXMax && y < mazeYMax && isok(x, y);
+        for (let x = 2; x < mazeXMax; x++) {
+            for (let y = 2; y < mazeYMax; y++) {
+                if (!(x % 2) || !(y % 2)
+                    || !SPACE_POS(game.level.at(x, y)?.typ)) continue;
+                const openings = [];
+                let blockedOrEdge = 0;
+                for (const [dx, dy] of directions) {
+                    const nearX = x + dx, nearY = y + dy;
+                    const farX = x + 2 * dx, farY = y + 2 * dy;
+                    if (!inMaze(nearX, nearY) || !inMaze(farX, farY)) {
+                        blockedOrEdge++;
+                        continue;
+                    }
+                    if (!SPACE_POS(game.level.at(nearX, nearY)?.typ)
+                        && SPACE_POS(game.level.at(farX, farY)?.typ)) {
+                        openings.push([nearX, nearY]);
+                        blockedOrEdge++;
+                    }
+                }
+                if (blockedOrEdge >= 3 && openings.length) {
+                    const [openX, openY] = openings[rn2(openings.length)];
+                    game.level.at(openX, openY).typ = passageType;
+                }
+            }
+        }
+    }
 
     if (scale > 2) {
         const saved = Array.from({ length: COLNO }, (_, x) =>
@@ -5735,34 +5822,6 @@ function specialMonsterLocationAcceptable(mndx, loc, x = -1, y = -1,
     if ((flags & 0x00000008) || symbol === 54)
         return IS_OBSTRUCTED(loc.typ);
     return false;
-}
-
-function loadBigrm2Map(defaultLit) {
-    const context = centeredSpecialMap(75, 18);
-    for (let x = 0; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            game.level.at(x, y).lit = defaultLit;
-        }
-    }
-    for (let dy = 0; dy < context.height; dy++) {
-        for (let dx = 0; dx < context.width; dx++) {
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            const top = dy === 0, bottom = dy === context.height - 1;
-            const left = dx === 0, right = dx === context.width - 1;
-            if (top && left) loc.typ = TLCORNER;
-            else if (top && right) loc.typ = TRCORNER;
-            else if (bottom && left) loc.typ = BLCORNER;
-            else if (bottom && right) loc.typ = BRCORNER;
-            else if (top || bottom) loc.typ = HWALL;
-            else if (left || right) loc.typ = VWALL;
-            else {
-                loc.typ = ROOM;
-                loc.lit = true;
-            }
-            loc.horizontal = top || bottom;
-        }
-    }
-    return context;
 }
 
 function specialStair(context, up) {
@@ -6230,6 +6289,8 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
             } else if (row[dx] === 'F') loc.typ = IRONBARS;
             else if (row[dx] === 'B') loc.typ = CROSSWALL;
             else if (row[dx] === 'P') loc.typ = POOL;
+            else if (row[dx] === 'I') loc.typ = ICE;
+            else if (row[dx] === '{') loc.typ = FOUNTAIN;
             else if (row[dx] === '}') loc.typ = MOAT;
             else if (row[dx] === 'W') loc.typ = WATER;
             else if (row[dx] === 'A') {
@@ -6565,9 +6626,6 @@ async function specialTrapAt(context, typ, x, y, options = undefined) {
     return finishSpecialTrapConstruction(trap, options);
 }
 
-// Lua source: dat/bigrm-2.lua.  This runner deliberately stays at the script
-// level: map data and operation ordering live here; RNG and entity semantics
-// remain in the shared operations and constructors above.
 function specialRandomTrapType(inHell = false) {
     const level = level_difficulty();
     const noTeleport = !!game.level?.flags?.noteleport;
@@ -9868,23 +9926,355 @@ async function generateWizardLocate(active) {
     flipSpecialLevelRandom(3);
 }
 
-async function generateBigrm2(active) {
-    const context = loadBigrm2Map(active.defaultLit);
+function beginMappedBigRoom(active, rows, origin = null) {
+    const context = loadSpecialAsciiMap(rows, active.defaultLit, origin);
     game.level.flags.is_special = true;
     game.level.flags.is_maze_lev = true;
+    active.context = context;
+    return context;
+}
 
-    const darknessChoice = rn2(4); // Lua math.random(0, 3)
-    // Choices 0..2 alter lighting (and may add ice).  Seed0116 chooses 3;
-    // retain the choice in level state until those selection operations are
-    // implemented and witnessed by another session.
-    active.darknessChoice = darknessChoice;
-
+async function finishMappedBigRoom(
+    context, {
+        trapType = null, wallify = true, nonDiggable = true,
+    } = {},
+) {
     specialStair(context, true);
     specialStair(context, false);
+    if (nonDiggable) specialNonDiggable(context);
+    for (let count = 0; count < 15; count++) specialObject(context);
+    for (let count = 0; count < 6; count++) {
+        if (trapType == null) await specialTrap(context);
+        else await specialTrapOfType(context, trapType);
+    }
+    for (let count = 0; count < 28; count++) await specialMonster(context);
+    if (wallify) wallification(1, 0, COLNO - 1, ROWNO - 1);
+}
+
+const BIGRM_1_MAP = [
+    '---------------------------------------------------------------------------',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '|.........................................................................|',
+    '---------------------------------------------------------------------------',
+];
+
+async function generateBigrm1(active) {
+    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
+    if (rn2(100) < 80) {
+        const terrains = [HWALL, IRONBARS, LAVAPOOL, TREE, CLOUD];
+        const terrain = terrains[rn2(terrains.length)];
+        const choice = rn2(6);
+        if (choice === 0) {
+            specialSelectionTerrain(
+                specialSelectionLine(context, 10, 8, 65, 8), terrain,
+            );
+        } else if (choice === 1) {
+            specialSelectionTerrain(
+                specialSelectionLine(context, 15, 4, 15, 13)
+                    .union(specialSelectionLine(context, 59, 4, 59, 13)),
+                terrain,
+            );
+        } else if (choice === 2) {
+            specialSelectionTerrain(
+                specialSelectionLine(context, 10, 8, 64, 8)
+                    .union(specialSelectionLine(context, 37, 3, 37, 14)),
+                terrain,
+            );
+        } else if (choice === 3) {
+            specialSelectionTerrain(
+                specialSelectionRect(context, 4, 4, 70, 13), terrain,
+            );
+            specialSelectionTerrain(
+                specialSelectionLine(context, 25, 4, 50, 4)
+                    .union(specialSelectionLine(context, 25, 13, 50, 13)),
+                ROOM,
+            );
+        } else if (choice === 4) {
+            specialSelectionTerrain(
+                specialSelectionFillRect(context, 5, 5, 69, 12), terrain,
+            );
+            for (let index = 0; index < 8; index++) {
+                const x = 6 + index * 8;
+                const y = 5 + (index % 2);
+                specialSelectionTerrain(
+                    specialSelectionFillRect(context, x, y, x + 6, y + 6),
+                    ROOM,
+                );
+            }
+        }
+    }
+    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
+    await finishMappedBigRoom(context);
+}
+
+const BIGRM_5_MAP = [
+    '                            ------------------                            ',
+    '                    ---------................---------                    ',
+    '              -------................................-------              ',
+    '         ------............................................------         ',
+    '      ----......................................................----      ',
+    '    ---............................................................---    ',
+    '  ---................................................................---  ',
+    '---....................................................................---',
+    '|........................................................................|',
+    '|........................................................................|',
+    '|........................................................................|',
+    '---....................................................................---',
+    '  ---................................................................---  ',
+    '    ---............................................................---    ',
+    '      ----......................................................----      ',
+    '         ------............................................------         ',
+    '              -------................................-------              ',
+    '                    ---------................---------                    ',
+    '                            ------------------                            ',
+];
+
+async function generateBigrm5(active) {
+    const context = beginMappedBigRoom(active, BIGRM_5_MAP);
+    if (rn2(100) < 25) {
+        const selected = specialSelectionOfTerrain(context, ROOM)
+            .percentage(2).grow();
+        const terrain = rn2(100) < 50 ? ICE : CLOUD;
+        replaceSpecialSelectionTerrain(selected, ROOM, terrain);
+    }
+    setSpecialRegionLighting(context, 0, 0, 72, 18, true);
+    await finishMappedBigRoom(context);
+}
+
+const BIGRM_6_MAP = [
+    '     ---------         ---------         ---------         ---------     ',
+    '   ---.......---     ---.......---     ---.......---     ---.......---   ',
+    '  --...........--   --...........--   --...........--   --...........--  ',
+    ' --.............-- --.............-- --.............-- --.............-- ',
+    ' -...............- -...............- -...............- -...............- ',
+    '--...............---...............---...............---...............--',
+    '|.................-.................-.................-.................|',
+    '|........T.................T.................T.................T........|',
+    '|.......................................................................|',
+    '|......T.{.....................................................{.T......|',
+    '|.......................................................................|',
+    '|........T.................T.................T.................T........|',
+    '|.................-.................-.................-.................|',
+    '--...............---...............---...............---...............--',
+    ' -...............- -...............- -...............- -...............- ',
+    ' --.............-- --.............-- --.............-- --.............-- ',
+    '  --...........--   --...........--   --...........--   --...........--  ',
+    '   ---.......---     ---.......---     ---.......---     ---.......---   ',
+    '     ---------         ---------         ---------         ---------     ',
+];
+
+async function generateBigrm6(active) {
+    const context = beginMappedBigRoom(active, BIGRM_6_MAP);
+    setSpecialRegionLighting(context, 1, 1, 72, 17, true);
+    await finishMappedBigRoom(context);
+}
+
+const BIGRM_9_MAP = [
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}................................}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}............................................}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}......................................................}}}}}}}}}}',
+    '}}}}}}}............................................................}}}}}}}',
+    '}}}}}.......................LLLLLLLLLLLLLLLLLL.......................}}}}}',
+    '}}}....................LLLLLLLLLLLLLLLLLLLLLLLLLLL.....................}}}',
+    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
+    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
+    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
+    '}}}....................LLLLLLLLLLLLLLLLLLLLLLLLLLL.....................}}}',
+    '}}}}}.......................LLLLLLLLLLLLLLLLLL.......................}}}}}',
+    '}}}}}}}............................................................}}}}}}}',
+    '}}}}}}}}}}......................................................}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}............................................}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}................................}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+];
+
+async function generateBigrm9(active) {
+    const context = beginMappedBigRoom(active, BIGRM_9_MAP);
+    setSpecialRegionLighting(context, 0, 0, 73, 18, false);
+    setSpecialRegionLighting(context, 26, 4, 47, 14, true);
+    setSpecialRegionLighting(context, 21, 5, 51, 13, true);
+    setSpecialRegionLighting(context, 19, 6, 54, 12, true);
+    await finishMappedBigRoom(context);
+}
+
+const BIGRM_10_MAP = [
+    '.......................................................................',
+    '.......................................................................',
+    '.......................................................................',
+    '.......................................................................',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '...CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC...',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '...CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC...',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '...CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC...',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '...CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC...',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '...CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC...',
+    '...C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C...',
+    '.......................................................................',
+    '.......................................................................',
+    '.......................................................................',
+    '.......................................................................',
+];
+
+async function generateBigrm10(active) {
+    const context = beginMappedBigRoom(active, BIGRM_10_MAP);
+    if (rn2(100) < 40) {
+        const terrains = [LAVAPOOL, MOAT, TREE, HWALL, IRONBARS];
+        const terrain = terrains[rn2(terrains.length)];
+        replaceSpecialTerrain(
+            context, 0, 0, 70, 18, CLOUD, ROOM, 5,
+        );
+        replaceSpecialTerrain(
+            context, 0, 0, 70, 18, CLOUD, terrain, 100,
+        );
+    }
+    setSpecialRegionLighting(context, 0, 0, 70, 18, true);
+
+    const wholeMap = absoluteSpecialRegion(context, 0, 0, 70, 18);
+    const fogMaze = absoluteSpecialRegion(context, 2, 3, 68, 15);
+    active.downTeleportRegion = wholeMap;
+    active.downTeleportExclude = fogMaze;
+
+    for (let count = 0; count < 15; count++) specialObject(context);
+    for (let count = 0; count < 6; count++) await specialTrap(context);
+    for (let count = 0; count < 28; count++) await specialMonster(context);
+    specialMazeWalk(context, 4, 2, 'south', ROOM);
+
+    active.explicitUpStairRegion = {
+        ...wholeMap,
+        nlx: fogMaze.lx, nly: fogMaze.ly,
+        nhx: fogMaze.hx, nhy: fogMaze.hy,
+    };
+    specialStair(context, false);
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+}
+
+async function generateBigrm11(active) {
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    const corridorWidth = 3 + rn2(3);
+    const leaveDeadEnds = rn2(100) < 50;
+    createSpecialMaze(corridorWidth, 1, !leaveDeadEnds);
+    const context = { xstart: 0, ystart: 0, width: 76, height: 19 };
+    active.context = context;
+
+    setSpecialRegionLighting(context, 0, 0, 75, 18, true);
     specialNonDiggable();
-    for (let i = 0; i < 15; i++) specialObject(context);
-    for (let i = 0; i < 6; i++) await specialTrap(context);
-    for (let i = 0; i < 28; i++) await specialMonster(context);
+
+    const replaceWalls = selection => selection.forEachLua((x, y) => {
+        setLevelTerrainType(x, y, ROOM);
+        specialObjectAt(context, BOULDER, x, y, { named: true });
+    });
+    replaceWalls(
+        specialSelectionMatch('.w.')
+            .union(specialSelectionMatch('.\nw\n.')),
+    );
+    replaceWalls(specialSelectionMatch('.w.'));
+
+    await finishMappedBigRoom(context, {
+        trapType: ROLLING_BOULDER_TRAP,
+        nonDiggable: false,
+    });
+}
+
+function placeBigrm13Pillar(context, x, y) {
+    const left = context.xstart + x;
+    const top = context.ystart + y;
+    for (let dx = 0; dx < 3; dx++) {
+        setLevelTerrainType(left + dx, top, HWALL);
+        setLevelTerrainType(left + dx, top + 2, HWALL);
+        game.level.at(left + dx, top).horizontal = true;
+        game.level.at(left + dx, top + 2).horizontal = true;
+    }
+    setLevelTerrainType(left, top + 1, VWALL);
+    setLevelTerrainType(left + 1, top + 1, STONE);
+    setLevelTerrainType(left + 2, top + 1, VWALL);
+}
+
+async function generateBigrm13(active) {
+    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
+    const filter = rn2(8);
+    for (let y = 0; y < 3; y++) {
+        for (let x = 0; x < 7; x++) {
+            const selected = filter === 0
+                || (filter === 1 && x % 2 === 1)
+                || (filter === 2 && (x + y) % 2 === 0)
+                || (filter === 3 && y % 2 === 1)
+                || (filter === 4 && y % 2 === 0)
+                || (filter === 5 && rn2(2) === 0)
+                || (filter === 6 && (x / 3) % 2 === y % 2)
+                || (filter === 7 && Math.trunc((x + 1) / 3) === y);
+            if (selected)
+                placeBigrm13Pillar(context, 12 + x * 9, 4 + y * 5);
+        }
+    }
+    setSpecialRegionLighting(context, 0, 0, 75, 18, true);
+    wallifyMap(
+        context.xstart - 1,
+        context.ystart - 1,
+        context.xstart + context.width + 1,
+        context.ystart + context.height + 1,
+    );
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    await finishMappedBigRoom(context, { wallify: false });
+}
+
+async function generateBigrm2(active) {
+    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
+    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
+
+    let darkness = null;
+    switch (rn2(4)) {
+    case 0:
+        darkness = specialSelectionFillRect(context, 1, 7, 22, 9)
+            .union(specialSelectionFillRect(context, 24, 1, 50, 5))
+            .union(specialSelectionFillRect(context, 24, 11, 50, 16))
+            .union(specialSelectionFillRect(context, 52, 7, 73, 9));
+        break;
+    case 1:
+        darkness = specialSelectionFillRect(context, 24, 1, 50, 16);
+        break;
+    case 2:
+        darkness = specialSelectionFillRect(context, 1, 1, 22, 16)
+            .union(specialSelectionFillRect(context, 52, 1, 73, 16));
+        break;
+    default:
+        break;
+    }
+
+    if (darkness) {
+        darkness.forEachXMajor((x, y) => {
+            const loc = game.level.at(x, y);
+            if (loc) loc.lit = false;
+        });
+        if (rn2(100) < 25) {
+            replaceSpecialSelectionTerrain(
+                darkness.grow(), ROOM, ICE,
+            );
+        }
+    }
+
+    await finishMappedBigRoom(context);
 }
 
 const BIGRM_3_MAP = [
@@ -10260,6 +10650,22 @@ async function generateBigrm12(active) {
 
     // noflipy clears FlipY but leaves the horizontal FlipX draw.
     flipSpecialLevelRandom(2);
+}
+
+const BIG_ROOM_GENERATORS = Object.freeze([
+    null,
+    generateBigrm1, generateBigrm2, generateBigrm3, generateBigrm4,
+    generateBigrm5, generateBigrm6, generateBigrm7, generateBigrm8,
+    generateBigrm9, generateBigrm10, generateBigrm11, generateBigrm12,
+    generateBigrm13,
+]);
+
+export async function generateBigRoom(active) {
+    const generator = BIG_ROOM_GENERATORS[active?.variant];
+    if (!generator) {
+        throw new RangeError(`unknown Big Room variant ${active?.variant}`);
+    }
+    await generateSpecialAndFixup(generator, active);
 }
 
 const MEDUSA_1_MAP = [
@@ -12654,8 +13060,15 @@ async function fixupSpecialBranch(active) {
 
 async function generateSpecialAndFixup(generator, active) {
     await generator(active);
-    game.level.upTeleportRegion = active?.upTeleportRegion || null;
-    game.level.downTeleportRegion = active?.downTeleportRegion || null;
+    const arrivalRegion = (region, exclude) => region
+        ? { ...region, ...(exclude ? { exclude: { ...exclude } } : {}) }
+        : null;
+    game.level.upTeleportRegion = arrivalRegion(
+        active?.upTeleportRegion, active?.upTeleportExclude,
+    );
+    game.level.downTeleportRegion = arrivalRegion(
+        active?.downTeleportRegion, active?.downTeleportExclude,
+    );
     // mkmaze.c:fixup_special() must allocate and initially paint Air/Water
     // bubbles before named portals and arrival regions are materialized.
     if (active?.elementalBubbles) setupElementalBubbles();
@@ -13741,34 +14154,8 @@ async function makelevel() {
                 await fillSpecialRoom(room);
             return;
         }
-        if (prototype === 'bigrm' && variant === 2) {
-            await generateSpecialAndFixup(generateBigrm2,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm' && variant === 3) {
-            await generateSpecialAndFixup(generateBigrm3,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm' && variant === 4) {
-            await generateSpecialAndFixup(generateBigrm4,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm' && variant === 7) {
-            await generateSpecialAndFixup(generateBigrm7,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm' && variant === 8) {
-            await generateSpecialAndFixup(generateBigrm8,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm' && variant === 12) {
-            await generateSpecialAndFixup(generateBigrm12,
-                g._activeSpecialLevel);
+        if (prototype === 'bigrm') {
+            await generateBigRoom(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'medusa' && variant === 1) {

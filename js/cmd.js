@@ -3328,23 +3328,26 @@ function randomArrivalCellOk(x, y) {
 // C refs: dungeon.c u_on_rndspot(), mkmaze.c place_lregion().  Ordinary
 // numeric level teleport uses the whole map; a special level can replace it
 // with the direction-specific updest/dndest saved by fixup_special().
-function placeHeroAtRandomArrival(region = null) {
+export function placeHeroAtRandomArrival(region = null) {
     const lx = Math.max(1, region?.lx ?? 1);
     const hx = Math.min(COLNO - 1, region?.hx ?? COLNO - 1);
     const ly = Math.max(0, region?.ly ?? 0);
     const hy = Math.min(ROWNO - 1, region?.hy ?? ROWNO - 1);
+    const excluded = (x, y) => region?.exclude
+        && x >= region.exclude.lx && x <= region.exclude.hx
+        && y >= region.exclude.ly && y <= region.exclude.hy;
     let x = lx, y = ly;
     for (let attempt = 0; attempt < 200; attempt++) {
         x = rn2(hx - lx + 1) + lx;
         y = rn2(hy - ly + 1) + ly;
-        if (!randomArrivalCellOk(x, y)) continue;
+        if (excluded(x, y) || !randomArrivalCellOk(x, y)) continue;
         game.u.ux = game.u.ux0 = x;
         game.u.uy = game.u.uy0 = y;
         return { x, y };
     }
     for (x = lx; x <= hx; x++) {
         for (y = ly; y <= hy; y++) {
-            if (!randomArrivalCellOk(x, y)) continue;
+            if (excluded(x, y) || !randomArrivalCellOk(x, y)) continue;
             game.u.ux = game.u.ux0 = x;
             game.u.uy = game.u.uy0 = y;
             return { x, y };
