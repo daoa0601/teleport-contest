@@ -39338,7 +39338,59 @@ oracle copies an RNG list, scheduler call order, or public trace.
 
 This owner remains `partial` for broader speed combinations, multi-turn
 interruptions, actor/terrain interactions, region and timer breadth, options,
-save/restore, and sealed strata.  Recorded-RNL compatibility remains guarded
-under the RNG owner.  The managed default gate passes 462/462 across 53
-behavioral files; the bridge audit covers 118 production files, 1 guarded
-replay module, and 19 fixture modules.
+save/restore, and sealed strata.  Recorded-RNL compatibility is now isolated
+under the top-level fixture gate rather than the live RNG owner.  The current
+managed default gate passes 463/463 across 54 behavioral files; the bridge
+audit covers 119 JavaScript files, 0 guarded replay exporters, and 19 top-level
+fixture modules.
+
+## 1032. Live RNL and recorded fixture consumption are separate graphs
+
+```mermaid
+flowchart LR
+    Live["live mechanics"] --> RNL["rng.js rnl(x)"]
+    RNL --> Base["ISAAC core base draw"]
+    RNL --> Luck["current uluck adjustment and nested draw"]
+    Luck --> Result["state-derived gameplay result"]
+
+    Normal["legacy fixture-enabled entry"] --> Dynamic["dynamic session_fixtures import"]
+    Dynamic --> Fixture["guarded *_fixture.js module"]
+    Fixture --> Compat["session_fixture_rng recorded-RNL consumption"]
+    Compat --> Snapshot["public RNG/screen regression only"]
+
+    BridgeFree["TELEPORT_BRIDGE_FREE=1"] -. "does not import" .-> Dynamic
+    CoreReplay["rng.js replayRecordedRnl"] -. deleted .-> RNL
+```
+
+Pinned `rng.c:rnl()` owns one base draw, an adjustment derived from current
+Luck, the optional nested draw, and a clamped gameplay result.  JavaScript's
+live `rnl()` already implemented that source rule.  The remaining guarded
+surface was a different operation: `rng.js:replayRecordedRnl()` accepted a
+preselected result from a public fixture token, advanced the hidden base draw,
+and reconstructed the recorder-visible log without current Luck state.  Eight
+top-level fixture modules called it; no live mechanic did.
+
+That compatibility consumer now lives in `session_fixture_rng.js`.  It is
+reachable only after `jsmain` dynamically enters the legacy fixture router,
+whose top-level bridge guard precedes every fixture runner.  `rng.js` no longer
+imports bridge policy, exports a recorded-result function, or names the old
+bridge ID.  The source audit rejects either core token and rejects any import
+of the fixture helper from a file that is not a guarded `*_fixture.js` module.
+The generic replay-exporter audit consequently finds zero guarded exporters in
+the live graph.  The fixture graph remains a frozen public regression carrier,
+not mechanics or generalization evidence.
+
+The fresh live witness resets the same ISAAC seed under neutral, positive, and
+negative Luck.  Its outcomes must move downward for positive Luck and upward
+for negative Luck while staying within `rnl(20)` bounds.  Temporarily
+neutralizing the adjustment makes that relation fail without consulting an
+RNG transcript.  A fixture-only smoke run separately exercised 308 recorded
+boundaries and 13,878 calls after extraction; it is labeled compatibility, not
+acceptance.
+
+The represented core RNG wrapper is `implemented`; downstream mechanics which
+call it retain their own partial ownership.  No sealed corpus or official
+hidden measurement has run, and no inference from the preserved fixture output
+is made.  The managed default gate passes 463/463 across 54 behavioral files;
+the bridge audit covers 119 JavaScript files, 0 guarded replay exporters, and
+19 top-level fixture modules.

@@ -39,7 +39,7 @@ contract:
   startup neither imports their modules nor decodes their trace payloads;
 - `replayMoves` is installed as a poisoned property and production code no
   longer reads it;
-- seeded replay and snapshot-painter boundaries record a
+- top-level fixture and snapshot-painter boundaries record a
   bounded bridge ID/call site and throw if reached;
 - `getBridgeUsageLedger()` exposes per-segment runtime evidence;
 - `scripts/audit-bridge-free.mjs` mechanically audits the centralized fixture
@@ -49,9 +49,10 @@ contract:
 - `docs/architecture/c-lua-ownership.json` is the validated four-state
   ownership source, with a generated graph and summary.
 
-This is not a generalization result.  No sealed corpus exists yet, recorded-RNL
-compatibility intentionally fails loudly, and no official measurement was run
-for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
+This is not a generalization result.  No sealed corpus exists yet, the legacy
+fixture graph remains available outside bridge-free mode, and no official
+measurement was run for this checkpoint.  Subsequent local slices removed the
+Samurai, Rogue,
 Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
 ration, command, prayer, projectile, level-generation, and current-world actor
 paths.  Pre-mklev and all-role inventory startup
@@ -155,9 +156,12 @@ pet/RNG maintenance, screen/RNG painter, and replay module are deleted.  The
 default fast-forward gap is now deleted too: every legal role uses the shared
 source movement-ration scheduler, including petless and Burdened Valkyrie
 states, and a no-actor turn runs real global maintenance rather than a fixed
-RNG transcript.  Only recorded-RNL compatibility remains guarded.  These
-later slices have focused fresh witnesses and selected public regressions, but
-still no sealed gate or hidden measurement.
+RNG transcript.  Recorded-RNL compatibility is also gone from the live RNG
+module: it now exists only inside the dynamically gated top-level fixture
+graph, whose imports are mechanically restricted to `*_fixture.js` modules.
+The bridge audit therefore finds zero guarded replay exporters in the live
+JavaScript graph.  These later slices have focused fresh witnesses and selected
+public regressions, but still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

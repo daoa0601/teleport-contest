@@ -100381,3 +100381,49 @@ trace, push, publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 11:26 EEST, journal block 3249] {#rng #rnl #fixture-boundary #bridge-isolation #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and dependency split:** block 3248 was test-
+acceptance cleanup, not production mechanics.  The remaining guarded module
+was then traced from callers rather than treated as a live `rnl()` defect.
+`rng.js:replayRecordedRnl()` had no live caller: eight top-level public fixture
+modules used it to consume a hidden base draw and install a preselected recorder
+result.  Live projectile, detection, movement, and command owners already call
+ordinary `rnl()`, which derives its result from current ISAAC and Luck state.
+The critical portfolio therefore separated core semantics from fixture
+compatibility instead of deleting frozen public witnesses or pretending their
+stored results were game mechanics.
+
+**Red audit and implementation:** the strengthened source audit first failed
+on the recorded helper and `seeded-replay.recorded-rnl` bridge ID inside
+`rng.js`.  Commit `f3a3c66` removes the bridge-policy import, helper, and ID
+from the live RNG module.  `session_fixture_rng.js` now owns recorded-RNL
+consumption inside the already dynamically gated fixture graph; all eight
+callers are `*_fixture.js` modules.  The audit rejects either old token in
+`rng.js` and rejects any fixture-helper import outside that top-level fixture
+module class.  A 308-boundary Monk fixture smoke run exercised 13,878 recorded
+calls after extraction, but is explicitly compatibility evidence only.
+
+**Independent live witness and mutation:** `test/rng.test.js` resets the same
+ISAAC seed with neutral, positive, and negative Luck and observes only live
+`rnl(20)` results.  Positive Luck must bias below the neutral outcome; negative
+Luck must bias above it; all results stay in range.  Temporarily replacing the
+current-Luck adjustment with zero made the witness fail at the first relation.
+Restoring the source adjustment returned it to green.  No RNG log, copied call
+list, fixture token, or helper invocation is an oracle.
+
+**Measured effect, ownership, and limits:** one managed `npm test` invocation
+passed **463/463** behavioral tests across **54** lane-audited files.  The
+bridge audit now reports **119 JavaScript files audited, 0 guarded replay
+exporters, and 19 top-level fixture modules**.  All owned processes exited and
+no matching runner remains.  `rng-core` has no live bridge ID; the fixture
+consumer is outside that owner and remains reachable only in legacy fixture-
+enabled mode.  This closes the enumerated live replay-exporter frontier but is
+not a generalization result: no sealed corpus gate or official hidden
+measurement has run, and wider downstream random mechanics retain their own
+partial statuses.  No corpus, scorer, public-regression lane, push,
+publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---
