@@ -100533,3 +100533,29 @@ evaluation, trace release, public regression, push, hidden measurement, or
 animation work ran; the game ownership map and public status are unchanged.
 
 ---
+
+### [2026-08-30 12:07 EEST, journal block 3252] {#sealed-corpus #gate-preparation #atomic-parent #regression-test #correction #no-corpus}
+
+**Earliest failure and prediction:** the attestation-path correction reached
+the atomic preparation boundary, where `mkdir()` attempted to create
+`<gate>.preparing-*` before its ignored `.sealed-corpus/` parent existed.  The
+prediction was purely lifecycle-level: create only the custody parent first,
+then retain the existing exclusive target check and staged rename.  No session
+recipe or commitment had been computed when the parent lookup failed.
+
+**Implementation and adversarial evidence:** commit `38656c7` creates the
+parent recursively with mode `0700` before the exclusive staging directory.
+The deterministic preparation test now uses two nonexistent nested parents,
+so it exercises the failure rather than inheriting a pre-created temporary
+directory.  All **10/10** sealed-gate tests pass, including deterministic
+manifests, tamper rejection, interruption resume, one-shot disclosure, and
+process-group cleanup.
+
+**Measured effect and next blocker:** the real gate root is still absent, the
+same 32-byte secret remains the sole private artifact, and no identity or trace
+was generated or inspected.  Commit and relevant-tree checks are clean again.
+Retry the same preparation once; any further failure must be classified before
+recording.  No scorer, evaluation, trace release, public regression, push,
+hidden measurement, or game-ownership change occurred.
+
+---
