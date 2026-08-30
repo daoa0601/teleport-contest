@@ -263,8 +263,6 @@ const PM_YEENOGHU = 304;
 const PM_ORCUS = 305;
 const PM_DISPATER = 307;
 const PM_ASMODEUS = 309;
-const PM_JUIBLEX = 303;
-const PM_LEMURE = 53;
 const PM_GIANT_MIMIC = 66;
 const PM_GIANT_SPIDER = 96;
 const PM_MINOTAUR = 177;
@@ -364,7 +362,6 @@ const PM_ROCK_TROLL = 222;
 const PM_GIANT_EEL = 319;
 const PM_WUMPUS = 84;
 const PM_LONG_WORM = 114;
-const PM_JELLYFISH = 316;
 const PM_SHARK = 318;
 const PM_BLACK_LIGHT = 119;
 const PM_STALKER = 153;
@@ -10376,6 +10373,18 @@ function specialMapRows(source) {
 
 function fillSpecialLevel(options, active) {
     active.levelInitialized = true;
+    if (options.style === 'swamp') {
+        const foreground = mapCharacterType(options.fg ?? '.');
+        const background = mapCharacterType(options.bg ?? '}');
+        if (foreground === undefined || background === undefined)
+            throw new Error('unknown Lua swamp terrain');
+        const lit = !!options.lit;
+        fillSpecialSwamp(foreground, background, lit);
+        active.defaultLit = lit;
+        return {
+            xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+        };
+    }
     if (options.style === 'mazegrid') {
         const type = mapCharacterType(options.bg ?? '-');
         if (type === undefined)
@@ -10472,10 +10481,17 @@ function createLuaFeature(context, { type, point }) {
         const loc = game.level.at(
             context.xstart + point.x, context.ystart + point.y,
         );
-        if (loc) loc.typ = featureType;
+        if (loc) {
+            loc.typ = featureType;
+            if (featureType === FOUNTAIN) game.level.flags.nfountains++;
+            else if (featureType === SINK) game.level.flags.nsinks++;
+        }
         return;
     }
-    specialFeatureOfType(context, featureType);
+    if (specialFeatureOfType(context, featureType)) {
+        if (featureType === FOUNTAIN) game.level.flags.nfountains++;
+        else if (featureType === SINK) game.level.flags.nsinks++;
+    }
 }
 
 function createLuaAltar(context, options) {
@@ -10672,6 +10688,12 @@ async function createLuaMonster(context, options) {
         monster = point
             ? await specialRandomMonsterAt(context, point.x, point.y)
             : await specialMonster(context);
+    }
+    if (monster && options.appear_as === 'ter:fountain') {
+        monster.m_ap_type = M_AP_FURNITURE;
+        monster.mappearance = FOUNTAIN;
+    } else if (monster && options.appear_as) {
+        throw new Error(`unsupported Lua monster appearance ${options.appear_as}`);
     }
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
@@ -12050,36 +12072,6 @@ function lightSpecialArea(context, x1, y1, x2, y2, lit) {
     }
 }
 
-const JUIBLEX_STAIR_MAP = [
-    'xxxxxxxx',
-    'xx...xxx',
-    'xxx...xx',
-    'xxxx.xxx',
-    'xxxxxxxx',
-];
-
-const JUIBLEX_LAIR_MAP = [
-    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxx',
-    'xxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxx',
-    'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxxx}}}xxxxxxxxxxxxxxx}}}}}xxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxx}}}}}xxxxxxxxxxxxx}.....}xxx',
-    'xxxxxxxxxxxxxxxxxxxxxx}}...}}xxxxxxxxxxx}..P.P..}xx',
-    'xxxxxxxxxxxxxxxxxxxxx}}..P..}}xxxxxxxxxxx}.....}xxx',
-    'xxxxxxxxxxxxxxxxxxxxx}}.P.P.}}xxxxxxxxxxxx}...}xxxx',
-    'xxxxxxxxxxxxxxxxxxxxx}}..P..}}xxxxxxxxxxxx}...}xxxx',
-    'xxxxxxxxxxxxxxxxxxxxxx}}...}}xxxxxxxxxxxxxx}}}xxxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxx}}}}}xxxxxxxxxxxxxxxxxxxxxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxxx}}}xxxxxxxxxxxxxxxxxxxxxxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxx',
-    'xxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxx',
-    'xxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxx',
-    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-];
-
-
 function fillSpecialSolid(filling = STONE, lit = false) {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
@@ -12132,159 +12124,6 @@ function fillSpecialSwamp(fg = ROOM, bg = MOAT, lit = false) {
         }
     }
 }
-
-async function juiblexMimicAt(context, x, y) {
-    const mimic = await specialMonsterAt(
-        context, PM_GIANT_MIMIC, x, y,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_GIANT_MIMIC) },
-    );
-    if (mimic) {
-        mimic.m_ap_type = M_AP_FURNITURE;
-        // The JavaScript terrain namespace is the persistent equivalent of
-        // C's S_fountain cmap appearance.
-        mimic.mappearance = FOUNTAIN;
-    }
-    return mimic;
-}
-
-async function generateJuiblex(active) {
-    // Lua source: dat/juiblex.lua.
-    fillSpecialSwamp(ROOM, MOAT, false);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.shortsighted = true;
-    game.level.flags.corrmaze = false;
-    game.level.flags.temperature = 0;
-
-    const downFragment = loadSpecialAsciiMap(
-        JUIBLEX_STAIR_MAP, false,
-        leftBottomSpecialMap(
-            JUIBLEX_STAIR_MAP[0].length, JUIBLEX_STAIR_MAP.length,
-        ),
-    );
-    specialObjectOfType(downFragment, BOULDER);
-
-    const upFragment = loadSpecialAsciiMap(
-        JUIBLEX_STAIR_MAP, false,
-        rightTopSpecialMap(
-            JUIBLEX_STAIR_MAP[0].length, JUIBLEX_STAIR_MAP.length,
-        ),
-    );
-    specialObjectOfType(upFragment, BOULDER);
-
-    const lair = loadSpecialAsciiMap(JUIBLEX_LAIR_MAP, false);
-    const monsterClasses = [10, 2, 42, 32]; // j, b, P, F
-    for (let i = monsterClasses.length; i > 1; i--) {
-        const j = rn2(i);
-        [monsterClasses[i - 1], monsterClasses[j]] =
-            [monsterClasses[j], monsterClasses[i - 1]];
-    }
-
-    specialRectangularRoom(
-        lair, 0, 0, 50, 17, SWAMP, false, FILL_LVFLAGS,
-    );
-    const lairExclude = absoluteSpecialRegion(lair, 0, 0, 50, 17);
-    active.explicitDownStairRegion = {
-        lx: 1, ly: 0, hx: 11, hy: 20,
-        nlx: lairExclude.lx, nly: lairExclude.ly,
-        nhx: lairExclude.hx, nhy: lairExclude.hy,
-    };
-    active.explicitUpStairRegion = {
-        lx: 69, ly: 0, hx: 79, hy: 20,
-        nlx: lairExclude.lx, nly: lairExclude.ly,
-        nhx: lairExclude.hx, nhy: lairExclude.hy,
-    };
-    active.explicitBranchRegion = { lx: 1, ly: 0, hx: 11, hy: 20 };
-    active.explicitBranchExclude = { ...lairExclude };
-    active.upTeleportRegion = {
-        lx: 1, ly: 0, hx: 11, hy: 20,
-        nlx: lairExclude.lx, nly: lairExclude.ly,
-        nhx: lairExclude.hx, nhy: lairExclude.hy,
-    };
-    active.downTeleportRegion = {
-        lx: 69, ly: 0, hx: 79, hy: 20,
-        nlx: lairExclude.lx, nly: lairExclude.ly,
-        nhx: lairExclude.hx, nhy: lairExclude.hy,
-    };
-
-    const places = [[4, 2], [4, 15], [46, 2], [46, 15]];
-    const takePlace = () => places.splice(rn2(places.length), 1)[0];
-    const fountainPoint = takePlace();
-    const fountain = game.level.at(
-        lair.xstart + fountainPoint[0],
-        lair.ystart + fountainPoint[1],
-    );
-    if (fountain) {
-        fountain.typ = FOUNTAIN;
-        game.level.flags.nfountains++;
-    }
-    for (let count = 0; count < 3; count++) {
-        const point = takePlace();
-        await juiblexMimicAt(lair, point[0], point[1]);
-    }
-
-    await specialMonsterAt(
-        lair, PM_JUIBLEX, 25, 8,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_JUIBLEX) },
-    );
-    for (const x of [43, 44, 45]) {
-        await specialMonsterAt(
-            lair, PM_LEMURE, x, 8,
-            { randomGender: namedMonsterNeedsGenderDraw(PM_LEMURE) },
-        );
-    }
-
-    for (const [objectClass, x, y] of [
-        [GEM_CLASS, 43, 6], [GEM_CLASS, 45, 6],
-        [POTION_CLASS, 43, 9], [POTION_CLASS, 44, 9],
-        [POTION_CLASS, 45, 9],
-    ]) specialObjectClassAt(lair, objectClass, x, y);
-
-    for (const [monsterClass, x, y] of [
-        [monsterClasses[3], 25, 6],
-        [monsterClasses[0], 24, 7],
-        [monsterClasses[1], 26, 7],
-        [monsterClasses[2], 23, 8],
-        [monsterClasses[2], 27, 8],
-        [monsterClasses[1], 24, 9],
-        [monsterClasses[0], 26, 9],
-        [monsterClasses[3], 25, 10],
-    ]) await specialMonsterClassAt(lair, monsterClass, x, y);
-
-    for (const [monsterClass, count] of [
-        [10, 4], [42, 4], [2, 3], [32, 3], [13, 2],
-    ]) {
-        for (let index = 0; index < count; index++)
-            await specialMonsterOfClass(lair, monsterClass);
-    }
-    for (let count = 0; count < 2; count++) {
-        await specialExplicitMonster(
-            lair, PM_JELLYFISH, null,
-            { randomGender: namedMonsterNeedsGenderDraw(PM_JELLYFISH) },
-        );
-    }
-
-    for (const objectClass of [
-        POTION_CLASS, POTION_CLASS, POTION_CLASS,
-        FOOD_CLASS, FOOD_CLASS, FOOD_CLASS,
-    ]) specialObjectOfClass(lair, objectClass);
-    specialObjectOfType(lair, BOULDER);
-
-    for (const trapType of [
-        SLP_GAS_TRAP, SLP_GAS_TRAP,
-        ANTI_MAGIC, ANTI_MAGIC,
-        MAGIC_TRAP, MAGIC_TRAP,
-    ]) await specialTrapOfType(lair, trapType);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    active.context = { ...lair };
-    active.fragments = {
-        down: { ...downFragment },
-        up: { ...upFragment },
-        lair: { ...lair },
-    };
-}
-
 
 async function generateWizardLevel(active) {
     active.file = `${active.prototype}.lua`;
@@ -14274,7 +14113,8 @@ async function makelevel() {
             || prototype === 'wizard3'
             || prototype === 'asmodeus'
             || prototype === 'baalz'
-            || prototype === 'orcus';
+            || prototype === 'orcus'
+            || prototype === 'juiblex';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {
@@ -14339,8 +14179,9 @@ async function makelevel() {
             return;
         }
         if (prototype === 'juiblex') {
-            await generateSpecialAndFixup(generateJuiblex,
-                g._activeSpecialLevel);
+            await generateSpecialAndFixup(
+                generateLuaSpecialLevel, g._activeSpecialLevel,
+            );
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
             return;
