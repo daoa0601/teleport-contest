@@ -7,7 +7,7 @@
 import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
-import { nextIdent } from './ident.js';
+import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsDeaf } from './senses.js';
 import { MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
@@ -274,9 +274,9 @@ export function carriedShopBill(resident, state = game) {
 export function settleCarriedShopBillItem(resident, item, state = game) {
     const { entry, object, price } = item || {};
     if (!resident?.eshk || !entry || !object || price <= 0
-        || (state._goldCount || 0) < price) return false;
-    if (state._goldCount > price) nextIdent();
-    state._goldCount -= price;
+        || heroGoldAmount(state) < price) return false;
+    const paid = detachHeroGold(state, price);
+    if (paid) paid.where = 'gone';
     resident.gold = (resident.gold || 0) + price;
     object.unpaid = false;
     resident.eshk.bill = (resident.eshk.bill || [])

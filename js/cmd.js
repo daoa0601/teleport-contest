@@ -171,6 +171,10 @@ import {
 } from './weight.js';
 import { hiddenGold } from './gold.js';
 import {
+    addHeroGoldObject, detachHeroGold, ensureHeroGoldObject,
+    heroGoldAmount, setHeroGoldAmount, syncHeroGoldCache,
+} from './hero_gold.js';
+import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
 } from './senses.js';
 import {
@@ -4297,10 +4301,13 @@ function collectFloorPickupMessages(pile, selected) {
     for (const object of selected) {
         if (object.otyp === GOLD_PIECE) {
             const quantity = objectQuantity(object);
-            const previous = game._goldCount || 0;
-            game._goldCount = previous + quantity;
-            const total = previous ? ` (${game._goldCount} in total)` : '';
-            messages.push(`$ - ${pickupObjectDescription(object)}${total}.`);
+            const pickedView = {
+                ...object, quan: quantity, quantity,
+            };
+            const previous = heroGoldAmount(game);
+            addHeroGoldObject(game, object);
+            const total = previous ? ` (${heroGoldAmount(game)} in total)` : '';
+            messages.push(`$ - ${pickupObjectDescription(pickedView)}${total}.`);
         } else {
             const transaction = addShopObjectToBill(object);
             if (transaction) {
@@ -4408,7 +4415,7 @@ async function pickupFloorObject() {
 }
 
 async function doWalletQuery() {
-    const purse = game._goldCount || 0;
+    const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, false);
     if (game.flags?.verbose !== false) {
         let message = purse
@@ -5738,8 +5745,8 @@ export async function makeWish({
 
     if (result.isGold) {
         const quantity = result.object.quan ?? 1;
-        const previousGold = game._goldCount || 0;
-        game._goldCount = previousGold + quantity;
+        const previousGold = heroGoldAmount(game);
+        addHeroGoldObject(game, result.object);
         const goldName = quantity === 1
             ? 'a gold piece' : `${quantity} gold pieces`;
         // invent.c:prinv() suppresses xprname()'s dot when the received
@@ -6891,7 +6898,8 @@ function transferContainedObjects(container, selections) {
         if (selection.kind === 'gold') {
             for (const object of selection.objects)
                 container.contents = container.contents.filter(item => item !== object);
-            game._goldCount = (game._goldCount || 0) + selection.amount;
+            for (const object of selection.objects)
+                addHeroGoldObject(game, object);
             messages.push(`$ - ${selection.amount} gold pieces.`);
             continue;
         }
@@ -7690,11 +7698,11 @@ async function dipFountain(object, loc) {
         );
         game._pending_message = '';
 
-        const wallet = Math.max(0, Math.trunc(game._goldCount ?? 0));
+        const wallet = heroGoldAmount(game);
         if (wallet > 10) {
             const loss = Math.trunc(someGold(wallet) / 10);
             game._statusGoldOverride = wallet;
-            game._goldCount = Math.max(0, wallet - loss);
+            setHeroGoldAmount(game, wallet - loss);
             await pline('You lost some of your gold in the fountain!');
             loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
             exerciseAttribute(4, false);
@@ -10591,7 +10599,7 @@ async function promptInventoryObject(prompt, eligible, {
         if (allowNone && letter === '-') return {
             cancelled: false, object: null, gold: false, none: true, count,
         };
-        if (allowGold && letter === '$' && (game._goldCount || 0) > 0)
+        if (allowGold && letter === '$' && heroGoldAmount(game) > 0)
             return {
                 cancelled: false, object: null, gold: true, none: false,
                 count,
@@ -10614,13 +10622,15 @@ async function promptInventoryObject(prompt, eligible, {
 
 async function dodrop() {
     const inventory = game.inventory || [];
-    const walletGold = game._goldCount || 0;
+    const walletGold = heroGoldAmount(game);
     if (!inventory.length && !walletGold) {
         await pline("You don't have anything to drop.");
         game.context.move = 0;
         return;
     }
-    const letters = inventory.map(object => object.invlet).join('');
+    const letters = inventory
+        .filter(object => object.otyp !== GOLD_PIECE && object.oclass !== 12)
+        .map(object => object.invlet).join('');
     const prompt = `What do you want to drop? [${walletGold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
     const selection = await promptInventoryObject(prompt, inventory, {
         allowGold: true,
@@ -10630,20 +10640,20 @@ async function dodrop() {
         return;
     }
     game._pending_message = '';
-    if (selection.gold && walletGold) {
-        const gold = {
-            otyp: GOLD_PIECE, oclass: 12,
-            quan: walletGold, quantity: walletGold,
-            name: 'gold piece', plural: 'gold pieces',
-            ox: game.u.ux, oy: game.u.uy, where: 'floor',
-        };
+    const selectedGold = selection.gold
+        || selection.object?.otyp === GOLD_PIECE
+        || selection.object?.oclass === 12;
+    if (selectedGold && walletGold) {
+        const gold = detachHeroGold(game);
+        gold.ox = game.u.ux;
+        gold.oy = game.u.uy;
+        gold.where = 'floor';
         game._fobjSerial = (game._fobjSerial || 0) + 1;
         gold._fobjOrder = game._fobjSerial;
         if (!game.level.objects[gold.ox]) game.level.objects[gold.ox] = [];
         if (!game.level.objects[gold.ox][gold.oy])
             game.level.objects[gold.ox][gold.oy] = [];
         game.level.objects[gold.ox][gold.oy].unshift(gold);
-        game._goldCount = 0;
         newsym(gold.ox, gold.oy);
         // C do.c:drop() suppresses the ordinary floor-drop line when
         // `!verbose`.  The inventory prompt has already been cleared, so
@@ -12734,7 +12744,7 @@ function tombstoneLine(value) {
 }
 
 function deathSummaryValues() {
-    const visibleGold = game._goldCount || 0;
+    const visibleGold = heroGoldAmount(game);
     const gold = visibleGold + hiddenGold(game, true);
     const initialGold = game._initialGoldCount || 0;
     const gain = Math.max(0, gold - initialGold);
@@ -12835,10 +12845,8 @@ async function finishDeathWithBones() {
     if (writeBones) {
         // Gold remains the logical head of gi.invent. Every item then passes
         // drop_upon_death()'s curse and nearby-monster reservoir gates.
-        const dropped = [
-            { otyp: GOLD_PIECE, quan: game._goldCount || 0 },
-            ...(game.inventory || []),
-        ];
+        ensureHeroGoldObject(game);
+        const dropped = [...(game.inventory || [])];
         for (const object of dropped) {
             if (rn2(5)) object.cursed = true;
             rn2(8);
@@ -12853,6 +12861,7 @@ async function finishDeathWithBones() {
             game.level.objects[deathX][deathY].unshift(object);
         }
         game.inventory = [];
+        syncHeroGoldCache(game);
 
         game.in_mklev = true;
         const ghost = await makemonAt(
@@ -14079,7 +14088,7 @@ async function selectBagObjectClasses(underlay) {
         paintInventoryOverlayLine(left, 16,
             'X - Items of unknown Bless/Curse status');
         paintInventoryOverlayLine(left, 17,
-            `P - Just picked up: ${game._goldCount || 0} gold pieces`);
+            `P - Just picked up: ${heroGoldAmount(game)} gold pieces`);
         paintInventoryOverlayLine(left, 18, '(end)');
         game.nhDisplay?.setCursor(left + 6, 18);
         const key = await nhgetch();
@@ -14135,16 +14144,14 @@ async function useCarriedBag(container, underlay) {
 
     let message = '';
     if (action === 'i') {
-        const amount = game._goldCount || 0;
+        const amount = heroGoldAmount(game);
         const choseCoins = await selectBagObjectClasses(underlay);
         if (choseCoins && amount
             && await selectBagGold('Put in what?', amount, underlay)) {
-            container.contents.push({
-                otyp: GOLD_PIECE, oclass: 12,
-                quan: amount, quantity: amount,
-                name: 'gold piece', where: 'contained', container,
-            });
-            game._goldCount = 0;
+            const gold = detachHeroGold(game);
+            gold.where = 'contained';
+            gold.container = container;
+            container.contents.push(gold);
             game._vaultHiddenGold = amount;
             message = `You put ${amount} gold pieces into the bag.`;
         }
@@ -14153,7 +14160,7 @@ async function useCarriedBag(container, underlay) {
         const amount = objectQuantity(gold);
         if (gold && await selectBagGold('Take out what?', amount, underlay)) {
             container.contents = container.contents.filter(object => object !== gold);
-            game._goldCount = (game._goldCount || 0) + amount;
+            addHeroGoldObject(game, gold);
             game._vaultHiddenGold = Math.max(
                 0, (game._vaultHiddenGold || 0) - amount,
             );
@@ -14793,6 +14800,9 @@ function hasFreeBasicInventoryLetter() {
 }
 
 async function doquiverCore(verb) {
+    // Legacy saves and older harnesses may still carry only the compatibility
+    // amount.  A mutating inventory command materializes its source identity.
+    ensureHeroGoldObject(game);
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
         game.context.move = 0;
@@ -14829,12 +14839,6 @@ async function doquiverCore(verb) {
         return { item: null, spentTime: false, cancelled: true };
     }
 
-    if (item === game.uquiver) {
-        await pline('That ammunition is already readied!');
-        game.context.move = 0;
-        return { item, spentTime: false, cancelled: false };
-    }
-
     if (isWeldedPrimary(item)) {
         const wasKnown = !!item.bknown;
         item.bknown = true;
@@ -14848,6 +14852,26 @@ async function doquiverCore(verb) {
 
     const requestedCount = selection.count;
     const initialQuantity = item.quantity ?? item.quan ?? 1;
+    const partialCount = requestedCount !== null
+        && requestedCount < initialQuantity;
+    if (item === game.uquiver) {
+        // getobj() performs the requested split before doquiver_core notices
+        // that its parent is already quivered; unsplitobj() restores the
+        // stack, but the child identity draw remains observable.
+        if (partialCount && splittableForQuiver(item)) nextIdent();
+        await pline('That ammunition is already readied!');
+        game.context.move = 0;
+        return { item, spentTime: false, cancelled: false };
+    }
+    const selectedClass = item.oclass || objectClassForType(item.otyp);
+    if (partialCount && selectedClass === 12) {
+        // Gold is split by getobj(), then immediately unsplit because the
+        // quiver may not hold only part of the purse.
+        nextIdent();
+        await pline("You can't ready only part of your gold.");
+        game.context.move = 0;
+        return { item: null, spentTime: false, cancelled: false };
+    }
     if (requestedCount !== null && requestedCount < initialQuantity
         && splittableForQuiver(item)) {
         item = splitStackForQuiver(item, requestedCount);
@@ -15180,6 +15204,7 @@ async function dothrow(
         : Math.max(0, suppliedShotLimit || 0);
     game._commandCount = 0;
     if (!capabilityChecked && !await okToThrow()) return;
+    ensureHeroGoldObject(game);
 
     // getobj("throw") changes its suggested class when the primary weapon is
     // a sling: ordinary weapons become downplayed and GEM_CLASS sling ammo is
@@ -15192,7 +15217,7 @@ async function dothrow(
             === (wieldingSling ? 13 : 2)
         && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1));
     const inventoryLetters = throwables.map(item => item.invlet).join('');
-    const letters = `${(game._goldCount || 0) > 0 ? '$' : ''}${inventoryLetters}`;
+    const letters = `${heroGoldAmount(game) > 0 ? '$' : ''}${inventoryLetters}`;
     const prompt = letters
         ? `What do you want to throw? [${letters} or ?*] `
         : 'What do you want to throw? [*] ';
@@ -15309,6 +15334,7 @@ async function dothrow(
         splitObjectId = nextIdent(); // splitobj()
         item.quantity = selectedQuantity - 1;
         item.quan = item.quantity;
+        if (thrownObjectClass === 12) syncHeroGoldCache(game);
     }
     const adjacentMonster = game.level?.monsters?.find(candidate =>
         !candidate.dead && (candidate.mhp ?? 1) > 0
@@ -16443,7 +16469,9 @@ async function dothrow(
         } else {
             const index = game.inventory.indexOf(item);
             if (index >= 0) game.inventory.splice(index, 1);
+            if (game.uquiver === item) setQuiverObject(null, game);
         }
+        if (thrownObjectClass === 12) syncHeroGoldCache(game);
         let x = game.u.ux, y = game.u.uy;
         const nx = x + DIR_DX[direction], ny = y + DIR_DY[direction];
         if (!blocksMove(nx, ny)) {

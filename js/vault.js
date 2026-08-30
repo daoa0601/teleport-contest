@@ -13,6 +13,7 @@ import {
 import { makemonAt } from './mklev.js';
 import { couldsee } from './vision.js';
 import { hiddenGold } from './gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
@@ -223,7 +224,7 @@ function clearFakeCorridor(guard, force = false, state = game) {
 }
 
 function guardGoldState(state = game) {
-    return (state._goldCount || 0) + hiddenGold(state, true);
+    return heroGoldAmount(state) + hiddenGold(state, true);
 }
 
 function vaultGuardNextSquare(guard, state = game) {
@@ -401,7 +402,7 @@ export async function continueVaultGuardArrival(state = game) {
             '"Most likely all your gold was stolen from this vault."',
         );
         await pline('"Please drop that gold and follow me."');
-    } else if (game._goldCount) {
+    } else if (heroGoldAmount(game)) {
         guard._egd.dropgoldcnt++;
         await morePrompt('"I don\'t know you."');
         await morePrompt(

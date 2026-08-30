@@ -19,6 +19,7 @@ import {
     ensureHeroSkills, SKILL_LEVEL_NAMES, SKILL_NAMES,
 } from './skills.js';
 import { hiddenGold } from './gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import {
     blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
 } from './senses.js';
@@ -43,7 +44,7 @@ function nextExperienceLevel(level) {
 }
 
 export function goldInsightLines(final, indent = '  ') {
-    const purse = game._goldCount || 0;
+    const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, final);
     let wallet = purse
         ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} zorkmid${

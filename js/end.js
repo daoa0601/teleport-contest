@@ -15,6 +15,7 @@ import { rebasePrayerAfterLifeSaving } from './pray.js';
 import { depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import {
     ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME, isok,
 } from './const.js';
@@ -308,7 +309,7 @@ function deepestVisitedDepth() {
 }
 
 function deathSummaryValues() {
-    const visibleGold = game._goldCount || 0;
+    const visibleGold = heroGoldAmount(game);
     const gold = visibleGold + hiddenGold(game, true);
     const initialGold = game._initialGoldCount || 0;
     const gain = Math.max(0, gold - initialGold);

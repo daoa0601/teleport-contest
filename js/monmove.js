@@ -10,6 +10,7 @@ import {
     heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced,
 } from './armor.js';
 import { nextIdent } from './ident.js';
+import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     map_invisible, newsym, randomDisplayMonsterName,
     randomDisplayMonsterSubject, swallowed, unmap_invisible,
@@ -2676,10 +2677,10 @@ function dogGoal(monster, state, random, calls) {
         if (onStairs) {
             appr = 1;
         } else {
-            // NetHack keeps carried gold as the `$` head of gi.invent.  The JS
-            // wallet intentionally stores its amount separately, but
-            // dog_goal() still screens it before inventory letter a.
-            const carried = (state?._goldCount ?? 0) > 0
+            // NetHack keeps carried gold as the `$` head of gi.invent.  The
+            // fallback exists only for a legacy restored aggregate which has
+            // not yet been materialized by a mutating command.
+            const carried = !heroGoldObject(state) && heroGoldAmount(state) > 0
                 ? [{ otyp: GOLD_PIECE, oclass: 12, cursed: false },
                     ...(state?.inventory || [])]
                 : state?.inventory || [];

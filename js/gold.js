@@ -2,6 +2,7 @@
 // C refs: vault.c:hidden_gold(), shk.c:contained_gold().
 
 import { GOLD_PIECE } from './object_data.js';
+import { heroGoldAmount } from './hero_gold.js';
 
 function quantity(object) {
     return object?.quan ?? object?.quantity ?? 0;
@@ -34,5 +35,5 @@ export function hiddenGold(state, evenIfUnknown = true) {
 }
 
 export function carriedGold(state, evenIfUnknown = true) {
-    return (state?._goldCount || 0) + hiddenGold(state, evenIfUnknown);
+    return heroGoldAmount(state) + hiddenGold(state, evenIfUnknown);
 }

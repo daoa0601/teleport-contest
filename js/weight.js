@@ -9,6 +9,7 @@ import {
 } from './monster_data.js';
 import { Is_airlevel } from './const.js';
 import { currentAttribute } from './attrib.js';
+import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
@@ -83,13 +84,10 @@ export function inventoryWeight(state) {
             return total + Math.trunc((quantity(object) + 50) / 100);
         return total + objectWeight(object);
     }, 0);
-    // The JS port keeps purse gold in `_goldCount` rather than a COIN_CLASS
-    // inventory object.  It still contributes the same rounded stack weight
-    // to source inv_weight(); avoid double counting if a restored state does
-    // contain an explicit coin object.
-    const hasCoinObject = inventory.some(object => object.oclass === 12);
-    const purseWeight = hasCoinObject ? 0
-        : Math.trunc(((state._goldCount ?? 0) + 50) / 100);
+    // Canonical states carry one `$` object.  The fallback keeps older saved
+    // aggregate states readable until restoration materializes that identity.
+    const purseWeight = heroGoldObject(state) ? 0
+        : Math.trunc((heroGoldAmount(state) + 50) / 100);
     return objectWeightTotal + purseWeight;
 }
 

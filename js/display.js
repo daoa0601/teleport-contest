@@ -41,6 +41,7 @@ import {
 } from './random_text_data.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { heroGoldAmount } from './hero_gold.js';
 
 const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
     '+', '/', '$', '*', '`', '0', '_', '.'];
@@ -1462,7 +1463,7 @@ export function _statusLine2() {
     const displayedAc = game._statusAcOverride
         ?? game._statusProjectedAc ?? u.uac ?? 10;
     const displayedGold = game._statusGoldOverride
-        ?? game._goldCount ?? 0;
+        ?? heroGoldAmount(game);
     let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp || 0}) Pw:${u.uen || 0}(${u.uenmax || 0}) AC:${displayedAc}`;
     if (polymorphed) {
         line += ` HD:${MONSTER_LEVEL[u.umonnum] ?? 0}`;

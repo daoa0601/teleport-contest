@@ -15,7 +15,7 @@ import {
 } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import {
-    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, OBJECT_CHARGED,
+    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_CHARGED,
     OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION,
     OBJECT_SUBTYPE,
 } from './object_data.js';
@@ -23,6 +23,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { unseenObjectNoun } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
 import { objectTypeCallNoun } from './object_call.js';
+import { heroGoldAmount } from './hero_gold.js';
 
 const CLASS_ORDER = [
     'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
@@ -300,10 +301,12 @@ export async function rerollMenu() {
 
 function inventorySections(items = game.inventory || [], includeGold = true) {
     const grouped = new Map();
-    if (includeGold && (game._goldCount || 0) > 0) {
-        grouped.set('Coins', [`$ - ${game._goldCount} gold pieces`]);
+    const gold = heroGoldAmount(game);
+    if (includeGold && gold > 0) {
+        grouped.set('Coins', [`$ - ${gold} gold pieces`]);
     }
     for (const item of items) {
+        if (item.otyp === GOLD_PIECE || item.oclass === 12) continue;
         consumeHallucinatedMenuObjectGlyph(item);
         const fallbackClass = {
             2: 'Weapons', 3: 'Armor', 4: 'Rings', 6: 'Tools',
@@ -432,8 +435,9 @@ export async function selectInventoryObject({
 } = {}) {
     game._pending_message = '';
     game.nhDisplay?.clearRow(0);
-    const keys = `${includeGold && (game._goldCount || 0) > 0 ? '$' : ''}`
-        + items.map(item => item.invlet).join('');
+    const keys = `${includeGold && heroGoldAmount(game) > 0 ? '$' : ''}`
+        + items.filter(item => item.otyp !== GOLD_PIECE && item.oclass !== 12)
+            .map(item => item.invlet).join('');
     const key = await showInventoryWindow(inventorySections(items, includeGold), {
         selectableKeys: keys, loopUntilValid,
     });

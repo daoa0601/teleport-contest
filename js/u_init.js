@@ -48,6 +48,9 @@ import {
 } from './object_knowledge.js';
 import { ensureHeroSkills } from './skills.js';
 import { hiddenGold } from './gold.js';
+import {
+    addHeroGoldObject, heroGoldAmount, setHeroGoldAmount,
+} from './hero_gold.js';
 import { invWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
@@ -546,7 +549,7 @@ export function uInitMisc(handednessRoll) {
     u.deafTurns = 0;
     syncBlindness(g);
     syncDeafness(g);
-    g._goldCount = 0;
+    setHeroGoldAmount(g, 0);
     g.inventory = [];
     g._lastInvNr = 51;
     g.discoveries = [];
@@ -1352,6 +1355,7 @@ export function uInitInventoryAttrs() {
         && role !== 'priest' && role !== 'healer' && role !== 'knight'
         && role !== 'monk' && role !== 'wizard') return false;
     game.inventory = [];
+    setHeroGoldAmount(game, 0);
     game._lastInvNr = 51;
     game.uwep = game.uswapwep = game.uquiver = null;
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg =
@@ -1366,8 +1370,8 @@ export function uInitInventoryAttrs() {
     game.u.uhunger = 900;
     // C resets u.umoney0 before the role switch so repeated character
     // initialization cannot inherit another role's purse.
-    game._goldCount = 0;
     game._initialGoldCount = 0;
+    let startingGold = 0;
     if (role === 'archeologist') {
         iniInv(ARCHEOLOGIST_INVENTORY);
         if (!rn2(10)) iniInv(oneItem(TIN_OPENER));
@@ -1383,7 +1387,7 @@ export function uInitInventoryAttrs() {
         iniInv(ROGUE_INVENTORY);
         if (!rn2(5)) iniInv(oneItem(BLINDFOLD));
     } else if (role === 'tourist') {
-        game._goldCount = rnd(1000);
+        startingGold = rnd(1000);
         iniInv(TOURIST_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(TIN_OPENER));
         else if (!rn2(25)) iniInv(oneItem(LEASH));
@@ -1400,7 +1404,7 @@ export function uInitInventoryAttrs() {
         if (!rn2(5)) iniInv(oneItem(MAGIC_MARKER, 19));
         else if (!rn2(10)) iniInv(oneItem(OIL_LAMP, 1));
     } else if (role === 'healer') {
-        game._goldCount = 1001 + rn2(1000);
+        startingGold = 1001 + rn2(1000);
         iniInv(HEALER_INVENTORY);
         if (!rn2(25)) iniInv(oneItem(OIL_LAMP, 1));
     } else if (role === 'knight') {
@@ -1431,17 +1435,20 @@ export function uInitInventoryAttrs() {
     // startup, then materializes role money.  Keeping these outside public
     // role branches makes the constructor order option- and race-general.
     if (game.flags?.explore) iniInv(WISHING_INVENTORY);
-    if (game.u?.uroleplay?.pauper) game._goldCount = 0;
-    if (game._goldCount) {
-        game._initialGoldCount = game._goldCount;
-        // ini_inv(Money): its object is kept outside lettered inventory.
+    if (game.u?.uroleplay?.pauper) startingGold = 0;
+    if (startingGold) {
+        game._initialGoldCount = startingGold;
+        // ini_inv(Money): construct the `$` object after lettered role/race
+        // inventory, then link that identity at the logical inventory head.
         rn2(1);
-        mksobj(GOLD_PIECE, true, false);
+        const gold = mksobj(GOLD_PIECE, true, false);
+        gold.quan = gold.quantity = startingGold;
+        addHeroGoldObject(game, gold);
     }
     initAttributes();
     // u.umoney0 is startup bookkeeping rather than the live purse. Include
     // recursively contained gold without moving it out of its container.
-    game._initialGoldCount = (game._goldCount || 0) + hiddenGold(game, true);
+    game._initialGoldCount = heroGoldAmount(game) + hiddenGold(game, true);
     uInitCarryAttrBoost(game);
     game.discoveries = game.u?.uroleplay?.pauper ? []
         : role === 'archeologist' || role === 'barbarian'
