@@ -88,7 +88,7 @@ import {
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
     MIRROR, POT_OBJECT_DETECTION, APPLE, SHIELD_OF_REFLECTION,
     SPE_BOOK_OF_THE_DEAD,
-    AMULET_OF_LIFE_SAVING,
+    AMULET_OF_LIFE_SAVING, SADDLE,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
@@ -114,6 +114,7 @@ import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
+import { putSaddleOnMonster } from './steed.js';
 import { roomForIndex } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginOilLampBurn } from './light.js';
@@ -265,9 +266,6 @@ const PM_ARCH_PRIEST = 350;
 const PM_ACOLYTE = 375;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_WRAITH = 230;
-const PM_QUASIT = 54;
-const PM_OCHRE_JELLY = 58;
-const PM_IXOTH = 361;
 const PM_DWARF = 44;
 const PM_WOOD_NYMPH = 67;
 const PM_MORDOR_ORC = 74;
@@ -6458,29 +6456,6 @@ function setSpecialRegionLighting(context, x1, y1, x2, y2, lit) {
     }
 }
 
-const KNI_GOAL_MAP = [
-    '....PPPP..PPP..',
-    '.PPPPP...PP..     ..........     .................................',
-    '..PPPPP...P..    ...........    ...................................',
-    '..PPP.......   ...........    ......................................',
-    '...PPP.......    .........     ...............   .....................',
-    '...........    ............    ............     ......................',
-    '............   .............      .......     .....................',
-    '..............................            .........................',
-    '...............................   ..................................',
-    '.............................    ....................................',
-    '.........    ......................................................',
-    '.....PP...    .....................................................',
-    '.....PPP....    ....................................................',
-    '......PPP....   ..............   ....................................',
-    '.......PPP....  .............    .....................................',
-    '........PP...    ............    ......................................',
-    '...PPP........     ..........     ..................................',
-    '..PPPPP........     ..........     ..............................',
-    '....PPPPP......       .........     ..........................',
-    '.......PPPP...',
-].map(row => row.padEnd(76, ' '));
-
 function mineFillerMinesField({
     lit,
     foreground = ROOM,
@@ -6693,72 +6668,6 @@ async function generateMineFiller(active, lit) {
     wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
-async function generateKnightGoal(active) {
-    const context = loadSpecialAsciiMap(KNI_GOAL_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            game.level.at(context.xstart + dx, context.ystart + dy).lit
-                = dx <= 14;
-        }
-    }
-    specialStairAt(context, 3, 8, true);
-    specialNonDiggable(context);
-
-    const mirror = specialObjectAt(
-        context, MIRROR, 50, 6, { named: true },
-    );
-    if (mirror) {
-        mirror.blessed = true;
-        mirror.cursed = false;
-        mirror.spe = 0;
-        mirror.oerodeproof = true;
-        mirror.artifact = true;
-        mirror.oartifact = true;
-        mirror.questArtifact = true;
-        mirror.oextra = {
-            ...(mirror.oextra || {}),
-            oname: 'The Magic Mirror of Merlin',
-        };
-        game._artifactExistCount = (game._artifactExistCount ?? 0) + 1;
-    }
-    for (let x = 33; x <= 35; x++)
-        for (let y = 1; y <= 5; y++)
-            specialRandomObjectAt(context, x, y);
-    for (let count = 0; count < 6; count++) specialObject(context);
-
-    await specialTrapAt(context, SPIKED_PIT, 13, 7);
-    await specialTrapAt(context, SPIKED_PIT, 12, 8);
-    await specialTrapAt(context, SPIKED_PIT, 12, 9);
-    for (let count = 0; count < 5; count++) await specialTrap(context);
-
-    const ixoth = await specialMonsterAt(
-        context, PM_IXOTH, 50, 6, { randomGender: false },
-    );
-    if (ixoth) ixoth.mpeaceful = 0;
-    for (let count = 0; count < 16; count++) {
-        const quasit = await specialExplicitMonster(context, PM_QUASIT);
-        if (quasit) quasit.mpeaceful = 0;
-    }
-    for (let count = 0; count < 2; count++) {
-        const imp = await specialMonsterOfClass(context, 9); // S_IMP
-        if (imp) imp.mpeaceful = 0;
-    }
-    for (let count = 0; count < 8; count++) {
-        const jelly = await specialExplicitMonster(
-            context, PM_OCHRE_JELLY,
-        );
-        if (jelly) jelly.mpeaceful = 0;
-    }
-    const jelly = await specialMonsterOfClass(context, 10); // S_JELLY
-    if (jelly) jelly.mpeaceful = 0;
-
-    flipSpecialLevelRandom(3);
-}
-
 export async function generateVladsTowerLevel(active) {
     if (!/^tower[1-3]$/.test(active?.prototype))
         throw new RangeError(`unknown Vlad tower level ${active?.prototype}`);
@@ -6918,7 +6827,7 @@ export async function generateMinetown(active) {
 }
 
 function isLuaQuestPrototype(prototype) {
-    return /^(Arc|Bar|Pri|Wiz)-(strt|loca|goal|fila|filb)$/.test(prototype);
+    return /^(Arc|Bar|Kni|Pri|Wiz)-(strt|loca|goal|fila|filb)$/.test(prototype);
 }
 
 async function generateLuaQuestLevel(active) {
@@ -7603,7 +7512,9 @@ async function createLuaObject(
         parentContainer.owt = objectWeight(parentContainer);
     } else if (parentMonster) {
         removeFloorObject(object);
-        addObjectToMonsterInventory(parentMonster, object, game);
+        if (object.otyp !== SADDLE
+            || !putSaddleOnMonster(object, parentMonster))
+            addObjectToMonsterInventory(parentMonster, object, game);
     }
     if (options.contents && typeof options.contents === 'object')
         await invokeContents(options.contents, object);
@@ -10078,11 +9989,6 @@ async function makelevel() {
         }
         if (isLuaQuestPrototype(prototype)) {
             await generateLuaQuestLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Kni-goal') {
-            await generateSpecialAndFixup(generateKnightGoal,
-                g._activeSpecialLevel);
             return;
         }
         if (/^tower[1-3]$/.test(prototype)) {

@@ -54,6 +54,7 @@ import {
 import { invWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { putSaddleOnMonster } from './steed.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -663,8 +664,7 @@ export function makedog() {
         },
     };
     if (role === 'knight' && !g.u?.uroleplay?.pauper) {
-        pet.saddled = true;
-        pet.saddle = mksobj(SADDLE, true, false);
+        putSaddleOnMonster(mksobj(SADDLE, true, false), pet);
     }
     if (!g.level.monsters) g.level.monsters = [];
     g.level.monsters.push(pet);
