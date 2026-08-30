@@ -990,7 +990,7 @@ test('four-HP gremlin throw retains the low-stamina fail-before-mutation gap',
         assert.equal(potion.where, 'inventory');
     });
 
-test('controlled lycanthrope vapor prompt fails before swallowed mutation',
+test('controlled lycanthrope acceptance completes swallowed mutation',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfState();
@@ -1007,16 +1007,16 @@ test('controlled lycanthrope vapor prompt fails before swallowed mutation',
 
         initRng(2511n);
         enableRngLog();
-        await assert.rejects(
-            throwThroughLiveCommand(potion, 'l'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        await throwThroughLiveCommand(
+            potion, 'l', ['y'],
         );
 
-        assert.deepEqual(getRngLog(), []);
-        assert.deepEqual(game.inventory, [potion]);
-        assert.equal(game.u.umonnum, PM_ARCHEOLOGIST);
-        assert.equal(potion.where, 'inventory');
+        assert.deepEqual(game.inventory, []);
+        assert.equal(game.u.umonnum, PM_WEREWOLF);
+        assert.equal(game.were_changes, 1);
+        assert.equal(game.u.uconduct.polyselfs, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
     });
 
 test('stun bypasses the lycanthrope control prompt and permits transformation',

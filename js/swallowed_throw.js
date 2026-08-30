@@ -23,7 +23,7 @@ import {
 } from './projectile.js';
 import {
     hitMonsterWithSupportedPotion, maximumSupportedPotionFatalDamage,
-    supportedPotionHeroVaporGap, supportedPotionTargetGap,
+    supportedPotionTargetGap,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsPolymorphed } from './polyself.js';
@@ -317,7 +317,6 @@ function swallowedPotionEligibility(
     if (supportedPotionTargetGap({
         state, potion: item, monster: engulfer,
     })) return null;
-    if (supportedPotionHeroVaporGap({ state, potion: item })) return null;
     const maximumFatalDamage = maximumSupportedPotionFatalDamage(
         item, engulfer,
     );

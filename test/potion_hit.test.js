@@ -7,12 +7,14 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
     LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
-    POT_INVISIBILITY, POT_WATER, SPEED_BOOTS,
+    POT_INVISIBILITY, POT_WATER, RIN_POLYMORPH_CONTROL, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
     hitMonsterWithSupportedPotion,
 } from '../js/potion_hit.js';
+import { pushKey, pushKeys, resetInputState } from '../js/input.js';
+import { parseNethackrc } from '../js/options.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 
 const PM_ENERGY_VORTEX = 109;
@@ -33,6 +35,7 @@ function potionObject(otyp) {
 
 function installDirectWereHero({ beast = false } = {}) {
     resetGame();
+    resetInputState();
     game.level = new GameMap();
     game.inventory = [];
     game.flags = { female: false };
@@ -52,6 +55,13 @@ function installDirectWereHero({ beast = false } = {}) {
         macurr: { a: Array(6).fill(12) },
         mamax: { a: Array(6).fill(12) },
     };
+}
+
+function installPolymorphControl() {
+    const ring = {
+        otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
+    };
+    game.u.uright = game.uright = ring;
 }
 
 test('visible inert potion impact names a headed monster and evaporates',
@@ -1537,6 +1547,175 @@ test('blessed water vapor returns a werewolf hero to human form', async () => {
     assert.equal(game.u.mh, 0);
     assert.equal(game.u.mhmax, 0);
 });
+
+test('controlled cursed vapor accepts change despite a nearby threat',
+    async () => {
+        installDirectWereHero();
+        installPolymorphControl();
+        game.u.detectMonsters = true;
+        game.level.monsters = [{
+            mnum: PM_PURPLE_WORM,
+            mx: 11, my: 10,
+            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
+        }];
+        const potion = potionObject(POT_WATER);
+        potion.cursed = true;
+
+        pushKey('y');
+        initRng(3410n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+
+        assert.equal(result.waterEffect.kind, 'transformed');
+        assert.equal(game.u.umonnum, 21);
+        assert.equal(game.were_changes, 1);
+        assert.equal(game.u.uconduct.polyselfs, 1);
+    });
+
+test('controlled cursed vapor rejection preserves the human form and RNG',
+    async () => {
+        installDirectWereHero();
+        installPolymorphControl();
+        const potion = potionObject(POT_WATER);
+        potion.cursed = true;
+
+        pushKey('n');
+        initRng(3411n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(result.waterEffect.kind, 'declined');
+        assert.equal(game.u.umonnum, 331);
+        assert.equal(game.were_changes ?? 0, 0);
+        assert.equal(game.u.uconduct?.polyselfs ?? 0, 0);
+    });
+
+test('controlled blessed vapor keeps or leaves beast form by answer polarity',
+    async () => {
+        for (const witness of [
+            { answer: 'y', kind: 'remained', mnum: 21, messages: [] },
+            {
+                answer: 'n', kind: 'rehumanized', mnum: 331,
+                messages: ['You return to human form!'],
+            },
+        ]) {
+            installDirectWereHero({ beast: true });
+            installPolymorphControl();
+            const potion = potionObject(POT_WATER);
+            potion.blessed = true;
+            const messages = [];
+
+            pushKey(witness.answer);
+            initRng(3412n);
+            enableRngLog();
+            const result = await applySupportedPotionVapor({
+                state: game,
+                potion,
+                publish: async message => messages.push(message),
+            });
+
+            assert.deepEqual(getRngLog(), []);
+            assert.equal(result.waterEffect.kind, witness.kind);
+            assert.equal(game.u.umonnum, witness.mnum);
+            assert.deepEqual(messages, witness.messages);
+        }
+    });
+
+test('a nearby threat blocks controlled blessed vapor before prompting',
+    async () => {
+        installDirectWereHero({ beast: true });
+        installPolymorphControl();
+        game.u.mtimedone = 0;
+        game.u.detectMonsters = true;
+        game.level.monsters = [{
+            mnum: PM_PURPLE_WORM,
+            mx: 11, my: 10,
+            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
+        }];
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+
+        initRng(3414n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+
+        assert.match(getRngLog()[0], /^rn2\(200\)=/);
+        assert.equal(getRngLog().length, 1);
+        assert.equal(result.waterEffect.kind, 'duration-restored');
+        assert.equal(game.u.umonnum, 21);
+        assert.ok(game.u.mtimedone >= 200 && game.u.mtimedone <= 399);
+    });
+
+test('were-change paranoia rejects y but accepts a committed yes line',
+    async () => {
+        const outcomes = [
+            { keys: ['y', '\n'], kind: 'declined', mnum: 331 },
+            { keys: ['y', 'e', 's', '\n'], kind: 'transformed', mnum: 21 },
+        ];
+        for (const witness of outcomes) {
+            installDirectWereHero();
+            installPolymorphControl();
+            game.flags = {
+                ...game.flags,
+                ...parseNethackrc(
+                    'OPTIONS=paranoid_confirmation:Were-change',
+                ).flags,
+            };
+            const potion = potionObject(POT_WATER);
+            potion.cursed = true;
+
+            pushKeys(witness.keys);
+            initRng(3413n);
+            enableRngLog();
+            const result = await applySupportedPotionVapor({
+                state: game, potion, publish: async () => {},
+            });
+
+            assert.equal(result.waterEffect.kind, witness.kind);
+            assert.equal(game.u.umonnum, witness.mnum);
+        }
+    });
+
+test('global paranoia rejects a short n and repeats until committed no',
+    async () => {
+        installDirectWereHero();
+        installPolymorphControl();
+        game.flags = {
+            ...game.flags,
+            ...parseNethackrc(
+                'OPTIONS=paranoid_confirmation:Confirm Were-change',
+            ).flags,
+        };
+        const potion = potionObject(POT_WATER);
+        potion.cursed = true;
+        const inputPrompts = [];
+        game._preNhgetchHook = () => {
+            inputPrompts.push(game._pending_message);
+        };
+
+        pushKeys(['n', '\n', 'n', 'o', '\n']);
+        initRng(3415n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+        delete game._preNhgetchHook;
+
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(result.waterEffect.kind, 'declined');
+        assert.equal(game.u.umonnum, 331);
+        assert.ok(inputPrompts.some(prompt =>
+            prompt.startsWith(
+                '"Yes" or "No": Do you want to change into a wolf?',
+            )));
+    });
 
 test('a spotted adjacent threat suppresses cursed-water were change',
     async () => {

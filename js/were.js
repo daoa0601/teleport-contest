@@ -12,9 +12,11 @@ import {
     AMULET_OF_UNCHANGING, RIN_POLYMORPH_CONTROL,
     RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
+import { PARANOID_WERECHANGE } from './const.js';
 import {
     heroIsPolymorphed, polymonHero, rehumanizeHero,
 } from './polyself.js';
+import { paranoidQuery } from './query.js';
 import { rn2 } from './rng.js';
 import { vision_recalc } from './vision.js';
 
@@ -72,21 +74,17 @@ function controllableWereChange(state) {
         && !heroIsStunned(state) && !heroIsUnaware(state);
 }
 
-export function heroWaterVaporGap(state = game, potion = {}) {
-    const u = state.u || {};
-    const beast = lycanthropeBeastMnum(state);
-    if (beast === null || heroIsUnchanging(state)) return null;
+function beastFormName(beast) {
+    return (MONSTER_NAME[beast] || 'creature').replace(/^were/u, '');
+}
 
-    if (potion.cursed && !heroIsPolymorphed(state)
-        && u.umonnum !== beast && controllableWereChange(state)) {
-        return 'hero-lycanthrope-control-prompt';
-    }
-    if (potion.blessed && u.umonnum === beast
-        && !threateningMonsterNearby(state)
-        && controllableWereChange(state)) {
-        return 'hero-lycanthrope-control-prompt';
-    }
-    return null;
+async function queryControlledWereChange(state, prompt) {
+    const paranoiaBits = state.flags?.paranoia_bits ?? 0;
+    return paranoidQuery(
+        !!(paranoiaBits & PARANOID_WERECHANGE),
+        prompt,
+        paranoiaBits,
+    );
 }
 
 export async function applyHeroWaterVaporChange({
@@ -94,8 +92,6 @@ export async function applyHeroWaterVaporChange({
     potion,
     publish = plineWithContinuation,
 } = {}) {
-    const gap = heroWaterVaporGap(state, potion);
-    if (gap) throw new Error(`unsupported water-vapor branch: ${gap}`);
     const u = state.u || {};
     if (u.umonnum === PM_GREMLIN) {
         const clone = await splitHeroMonsterForm(state);
@@ -109,9 +105,18 @@ export async function applyHeroWaterVaporChange({
     const beast = lycanthropeBeastMnum(state);
     if (beast === null) return { kind: 'ordinary', changed: false };
 
-    const nearbyThreat = threateningMonsterNearby(state);
     if (potion?.blessed && u.umonnum === beast) {
-        if (!heroIsUnchanging(state) && !nearbyThreat) {
+        const unchanging = heroIsUnchanging(state);
+        const nearbyThreat = !unchanging
+            && threateningMonsterNearby(state);
+        const controllable = controllableWereChange(state);
+        let remain = false;
+        if (!unchanging && !nearbyThreat && controllable) {
+            remain = await queryControlledWereChange(
+                state, 'Remain in beast form?',
+            );
+        }
+        if (!unchanging && !nearbyThreat && (!controllable || !remain)) {
             const restored = rehumanizeHero(state);
             if (restored.regainedSight && state === game) vision_recalc(0);
             if (restored.changed) {
@@ -130,13 +135,25 @@ export async function applyHeroWaterVaporChange({
                 duration: u.mtimedone,
             };
         }
-        return { kind: 'blocked', changed: false };
+        return {
+            kind: remain ? 'remained' : 'blocked', changed: false,
+        };
     }
 
     if (potion?.cursed && !heroIsPolymorphed(state)
         && u.umonnum !== beast) {
-        if (heroIsUnchanging(state) || nearbyThreat)
+        if (heroIsUnchanging(state))
             return { kind: 'blocked', changed: false };
+        if (controllableWereChange(state)) {
+            const name = beastFormName(beast);
+            const article = /^[aeiou]/iu.test(name) ? 'an' : 'a';
+            const accepted = await queryControlledWereChange(
+                state, `Do you want to change into ${article} ${name}?`,
+            );
+            if (!accepted) return { kind: 'declined', changed: false };
+        } else if (threateningMonsterNearby(state)) {
+            return { kind: 'blocked', changed: false };
+        }
         if (state !== game)
             throw new Error('hero polymon owner requires live game state');
         state.were_changes = (state.were_changes ?? 0) + 1;

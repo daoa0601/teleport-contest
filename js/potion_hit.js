@@ -35,7 +35,7 @@ import { objectTypeKnown } from './shk.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
     applyHeroWaterVaporChange, heroHasProtectionFromShapeChangers,
-    heroWaterVaporGap, transformWereMonster,
+    transformWereMonster,
 } from './were.js';
 
 const PM_PESTILENCE = 312;
@@ -417,13 +417,6 @@ export function supportedPotionTargetGap({ state = game, potion, monster }) {
         return 'water-were-equipment';
     }
     return null;
-}
-
-export function supportedPotionHeroVaporGap({ state = game, potion }) {
-    if (potion?.otyp !== POT_WATER) return null;
-    const profile = heroVaporProfile(state);
-    if (!profile.canReceive || heroHasVaporShield(state)) return null;
-    return heroWaterVaporGap(state, potion);
 }
 
 function waterEffectSubject(monster, targetSpotted) {

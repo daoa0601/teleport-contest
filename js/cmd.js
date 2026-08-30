@@ -9,6 +9,8 @@ import { game } from './gstate.js';
 import { useCompatibilityBridge } from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
+import { getLine, promptYesNo } from './query.js';
+export { getLine, promptYesNo } from './query.js';
 import {
     newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation,
     docrt, docrtRecalc, bot, cls,
@@ -6098,65 +6100,6 @@ async function gainLevelAbilities(oldLevel, newLevel) {
     }
 }
 
-export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch),
-    { suppressStatus = false } = {}) {
-    let value = '';
-    let renderedRows = 1;
-    const clearEditorRows = () => {
-        for (let row = 0; row < renderedRows; row++)
-            game.nhDisplay?.clearRow(row);
-    };
-    const renderEditor = () => {
-        const line = `${prompt} ${value}`;
-        clearEditorRows();
-        const width = 79; // tty safe margin; column79 remains wrap sentinel
-        renderedRows = Math.max(1, Math.ceil(line.length / width));
-        for (let row = 0; row < renderedRows; row++) {
-            game.nhDisplay?.putstr(
-                0, row, line.slice(row * width, (row + 1) * width),
-                NO_COLOR,
-            );
-        }
-        const length = line.length;
-        const cursorRow = length ? Math.floor((length - 1) / width) : 0;
-        const cursorX = length ? ((length - 1) % width) + 1 : 0;
-        game.nhDisplay?.setCursor(cursorX, cursorRow);
-    };
-    const finish = result => {
-        // C tty_getlin() clears WIN_MESSAGE after accepting or cancelling
-        // the editor.  A following producer owns a fresh topline; if the
-        // operation is intentionally silent, the prompt must not survive as
-        // though it were an ordinary pline message.
-        game._pending_message = '';
-        game._retained_message = '';
-        clearEditorRows();
-        return result;
-    };
-    const clearSuppressedStatus = () => {
-        if (!suppressStatus) return;
-        game.nhDisplay?.clearRow(22);
-        game.nhDisplay?.clearRow(23);
-    };
-    await pline(prompt);
-    await flush_screen(1);
-    clearSuppressedStatus();
-    renderEditor();
-    for (;;) {
-        const key = await nhgetch();
-        if (key === 27) return finish(null);
-        if (key === 10 || key === 13) return finish(value);
-        if (key === 8 || key === 127) value = value.slice(0, -1);
-        else {
-            const ch = String.fromCharCode(key);
-            if (value.length < 80 && accepts(ch, key)) value += ch;
-        }
-        game._pending_message = `${prompt} ${value}`;
-        await flush_screen(1);
-        clearSuppressedStatus();
-        renderEditor();
-    }
-}
-
 function indefiniteArticle(text) {
     return /^[aeiou]/i.test(text) ? 'an' : 'a';
 }
@@ -10261,39 +10204,6 @@ async function promptKey(message, cursorOffset = 0) {
     // tty_nhgetch() leaves the cursor immediately after a top-line prompt.
     game.nhDisplay?.setCursor(message.length + cursorOffset, 0);
     return nhgetch();
-}
-
-function placeToplinePromptCursor(position) {
-    const display = game.nhDisplay;
-    const columns = display?.cols ?? COLNO;
-    if (position > columns - 1)
-        display?.setCursor(position - (columns - 1), 1);
-    else
-        display?.setCursor(position, 0);
-}
-
-// C refs: cmd.c:yn_function(), win/tty/topl.c:tty_yn_function().  A tty
-// yes/no prompt owns input until it receives an allowed answer; quitchars use
-// the displayed default.  Once resolved, the prompt no longer participates in
-// the next ordinary pline's continuation budget.
-export async function promptYesNo(
-    message, defaultAnswer = 'n', cursorOffset = 0,
-) {
-    // Core yn_function() overrides a stopped ordinary topline.  Once the
-    // modal query has taken ownership, subsequent source messages may resume.
-    game._suppressMessagesUntilInput = false;
-    await pline(message);
-    await flush_screen(1);
-    placeToplinePromptCursor(message.length + cursorOffset);
-    for (;;) {
-        const key = await nhgetch();
-        const answer = String.fromCharCode(key).toLowerCase();
-        if (answer !== 'y' && answer !== 'n'
-            && ![27, 32, 10, 13].includes(key)) continue;
-        game._pending_message = '';
-        game._retained_message = '';
-        return answer === 'y' || answer === 'n' ? answer : defaultAnswer;
-    }
 }
 
 async function promptYnq(message, defaultAnswer = 'q') {

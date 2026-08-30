@@ -932,7 +932,7 @@ test('equipped were transformation fails before map throw mutation',
         assert.equal(potion.where, 'inventory');
     });
 
-test('controlled lycanthrope vapor fails before a two-square map throw',
+test('controlled lycanthrope decline completes a two-square map throw',
     async () => {
         freshMapPotionState(2);
         Object.assign(game.u, {
@@ -947,16 +947,17 @@ test('controlled lycanthrope vapor fails before a two-square map throw',
 
         initRng(2702n);
         enableRngLog();
-        await assert.rejects(
-            throwEast(potion),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
-        );
+        await throwEast(potion, [' ', 'n']);
 
-        assert.deepEqual(getRngLog(), []);
-        assert.deepEqual(game.inventory, [potion]);
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=0', 'rnd(20)=2', 'rnd(25)=15',
+            'rn2(7)=3', 'rn2(5)=0', 'rn2(9)=3',
+        ]);
+        assert.deepEqual(game.inventory, []);
         assert.equal(game.u.umonnum, 331);
-        assert.equal(potion.where, 'inventory');
+        assert.equal(game.were_changes ?? 0, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
     });
 
 test('three-square water contact bypasses unreachable hero-vapor prompts',

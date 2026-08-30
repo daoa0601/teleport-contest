@@ -2,12 +2,74 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import {
+    PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
+    PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
+    PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
+    PARANOID_WERECHANGE,
+} from './const.js';
+
+const DEFAULT_PARANOIA_BITS = PARANOID_PRAY | PARANOID_SWIM | PARANOID_TRAP;
+const PARANOIA_OPTION_BITS = new Map([
+    ['confirm', PARANOID_CONFIRM], ['paranoia', PARANOID_CONFIRM],
+    ['quit', PARANOID_QUIT], ['explore', PARANOID_QUIT],
+    ['die', PARANOID_DIE], ['death', PARANOID_DIE],
+    ['bones', PARANOID_BONES],
+    ['attack', PARANOID_HIT], ['hit', PARANOID_HIT],
+    ['pray', PARANOID_PRAY],
+    ['remove', PARANOID_REMOVE], ['takeoff', PARANOID_REMOVE],
+    ['wand-break', PARANOID_BREAKWAND],
+    ['break-wand', PARANOID_BREAKWAND],
+    ['were-change', PARANOID_WERECHANGE],
+    ['werechange', PARANOID_WERECHANGE],
+    ['eat', PARANOID_EATING], ['continue', PARANOID_EATING],
+    ['swim', PARANOID_SWIM], ['trap', PARANOID_TRAP],
+    ['autoall', PARANOID_AUTOALL],
+]);
+
+function updateParanoiaBits(current, rawValue) {
+    const value = rawValue.trim();
+    let bits = current;
+    let mode = 'replace';
+    let fields = value;
+    if (fields.startsWith('+') || fields.startsWith('-')) {
+        mode = fields[0] === '+' ? 'add' : 'remove';
+        fields = fields.slice(1).trim();
+    } else {
+        bits = 0;
+    }
+    for (let field of fields.split(/\s+/)) {
+        if (!field) continue;
+        let remove = mode === 'remove';
+        if (field.startsWith('!')) {
+            field = field.slice(1);
+            if (mode !== 'remove') remove = true;
+        }
+        const name = field.toLowerCase();
+        if (name === 'none') {
+            if (mode === 'replace') bits = 0;
+            continue;
+        }
+        if (name === 'all') {
+            const all = [...new Set(PARANOIA_OPTION_BITS.values())]
+                .reduce((mask, bit) => mask | bit, 0);
+            bits = remove ? bits & ~all : bits | all;
+            continue;
+        }
+        const bit = PARANOIA_OPTION_BITS.get(name);
+        if (bit !== undefined)
+            bits = remove ? bits & ~bit : bits | bit;
+    }
+    return bits;
+}
 
 export function parseNethackrc(rc) {
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
         flags: {}, iflags: {},
     };
+    let paranoiaBits = DEFAULT_PARANOIA_BITS;
+    let paranoiaSeen = false;
     if (!rc) return result;
 
     for (const rawLine of rc.split('\n')) {
@@ -45,6 +107,12 @@ export function parseNethackrc(rc) {
                 else if (key === 'symset') result.symset = val;
                 else if (key === 'suppress_alert') result.flags.suppress_alert = val;
                 else if (key === 'msg_window') result.iflags.prevmsg_window = val;
+                else if (key === 'paranoid_confirmation'
+                    || key === 'paranoid_confirm') {
+                    paranoiaBits = updateParanoiaBits(paranoiaBits, val);
+                    paranoiaSeen = true;
+                    result.flags.paranoia_bits = paranoiaBits;
+                }
                 else result.flags[key] = val;
             } else {
                 // Boolean flag
@@ -71,9 +139,16 @@ export function parseNethackrc(rc) {
                 else if (lname === 'showexp') result.flags.showexp = value;
                 else if (lname === 'time') result.flags.time = value;
                 else if (lname === 'verbose') result.flags.verbose = value;
+                else if ((lname === 'paranoid_confirmation'
+                    || lname === 'paranoid_confirm') && negated) {
+                    paranoiaBits = 0;
+                    paranoiaSeen = true;
+                    result.flags.paranoia_bits = paranoiaBits;
+                }
                 else result.flags[lname] = value;
             }
         }
     }
+    if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
     return result;
 }
