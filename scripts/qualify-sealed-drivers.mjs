@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 // This is deliberately unsealed: it uses a published constant key, records
-// one disposable C session per adaptive scenario, exposes no trace content,
-// and deletes every result. Its only claim is that each semantic driver can
-// find and select its named live dungeon-menu destination.
+// one disposable C session per adaptive or stateful scenario, exposes no
+// trace content, and deletes every result. Its only claim is that semantic
+// drivers can select their live destinations and save/restore can complete.
 
 import fsp from 'node:fs/promises';
 import os from 'node:os';
@@ -29,7 +29,8 @@ async function main() {
     });
     const byScenario = new Map();
     for (const session of plan.sessions) {
-        if (!session.document.segments.some(segment => segment.driver)) continue;
+        if (session.document.segments.length < 2
+            && !session.document.segments.some(segment => segment.driver)) continue;
         if (!byScenario.has(session.strata.scenarioFamily)) {
             byScenario.set(session.strata.scenarioFamily, session);
         }
@@ -64,7 +65,7 @@ async function main() {
         await fsp.rm(tmpRoot, { recursive: true, force: true });
     }
     process.stdout.write(
-        `Qualified ${byScenario.size} adaptive scenario drivers against the C recorder.\n`,
+        `Qualified ${byScenario.size} adaptive/stateful scenarios against the C recorder.\n`,
     );
 }
 
