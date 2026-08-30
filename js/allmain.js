@@ -58,7 +58,7 @@ import {
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
-    ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOULDER, BOW, CLUB, CORPSE, CROSSBOW,
+    ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOW, CLUB, CORPSE, CROSSBOW,
     CROSSBOW_BOLT, CRYSTAL_BALL, DAGGER, DART,
     ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK,
     ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD,
@@ -2178,8 +2178,7 @@ function liveQuietSamurai(state = game) {
 }
 
 function liveQuietValkyrie(state = game) {
-    return state.urole?.key === 'valkyrie'
-        && !state._valkPitPath && !state._valkChatPath;
+    return state.urole?.key === 'valkyrie' && !state._valkPitPath;
 }
 
 function liveQuietTourist(state = game) {
@@ -6359,8 +6358,6 @@ export async function newgame() {
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
     g._rangerNamePath = !bridgeFree && g.urole?.key === 'ranger'
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
-    g._valkChatPath = !bridgeFree && g.urole?.key === 'valkyrie'
-        && /#chat/.test(replayMoves);
     g._healerNewmoonPath = !bridgeFree && g.urole?.key === 'healer'
         && /szf/.test(replayMoves);
     g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
@@ -6372,7 +6369,6 @@ export async function newgame() {
         const compatibilityPaths = [
             ['tourist.explore-search', g._touristExplorePath],
             ['ranger.named-start', g._rangerNamePath],
-            ['valkyrie.chat', g._valkChatPath],
             ['healer.newmoon', g._healerNewmoonPath],
             ['knight.pony', g._knightPonyPath],
             ['wizard.bind', g._wizardBindPath],
@@ -6381,23 +6377,6 @@ export async function newgame() {
             if (selected) useCompatibilityBridge(bridgeId);
         }
     }
-    if (g._valkChatPath) {
-        // The C room-fill order leaves this generated boulder in the
-        // upstairs room.  Preserve that state until room filling itself is
-        // fully driven by C's pointer-order traversal.
-        const x = 26, y = 17;
-        if (!g.level.objects[x]) g.level.objects[x] = [];
-        g.level.objects[x][y] = [{
-            otyp: BOULDER, oclass: 14, ox: x, oy: y, quan: 1,
-            color: CLR_BRIGHT_BLUE,
-            // Bounded room-fill bridge: this placeholder reconstructs the
-            // recorded object glyph but is not a fully registered C object
-            // and must not alter Algorithm-C blocker tables.  Remove this
-            // exception when ordinary room object placement owns the state.
-            visionBlocker: false,
-        }];
-    }
-
     makedog();
     uInitInventoryAttrs();
     if (g._touristExplorePath) {

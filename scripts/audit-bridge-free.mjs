@@ -43,7 +43,7 @@ export function auditBridgeFreeSource() {
         '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
-        '_rangerNamePath', '_valkChatPath',
+        '_rangerNamePath',
         '_healerNewmoonPath', '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
@@ -120,6 +120,10 @@ export function auditBridgeFreeSource() {
             if (sources.get(file)?.includes(token))
                 failures.push(`${file}: legacy startup replay token ${token}`);
         }
+    }
+    for (const token of ['_valkChatPath', 'valkyrie.chat']) {
+        if (allmain.includes(token))
+            failures.push(`allmain.js: legacy Valkyrie chat token ${token}`);
     }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
