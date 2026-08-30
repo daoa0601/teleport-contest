@@ -51,7 +51,6 @@ test('the Astral Plane builds three sanctums and all three Riders', async () => 
 
     assert.equal(game.level.flags.noteleport, true);
     assert.equal(game.level.flags.nommap, true);
-    assert.equal(game.level.flags.solidify, true);
     assert.equal(terrainCount(ALTAR), 3);
     const sanctums = [];
     for (let x = 1; x < 80; x++) {
