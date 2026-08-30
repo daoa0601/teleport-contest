@@ -5,7 +5,7 @@ import { runSegment } from '../../js/jsmain.js';
 
 export function roleConfig({
     name = 'Generalizer', role, race, gender = 'female', align,
-    extraOptions = [],
+    extraOptions = [], extraLines = [],
 }) {
     return [
         `OPTIONS=name:${name},role:${role},race:${race},gender:${gender},align:${align}`,
@@ -13,6 +13,7 @@ export function roleConfig({
         'OPTIONS=!autopickup,!legacy,!tutorial,!splash_screen',
         'OPTIONS=pushweapon,showexp,time,color,suppress_alert:3.3.1',
         'OPTIONS=symset:DECgraphics',
+        ...extraLines,
         '',
     ].join('\n');
 }
@@ -55,7 +56,7 @@ function trapState() {
 export async function freshRoleOutcome({
     role, race, align, gender = 'female', name = 'Generalizer', seed,
     bridgeFree, moves = ' ....', datetime = '20260830100000',
-    extraOptions = [],
+    extraOptions = [], extraLines = [],
 }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
@@ -70,6 +71,7 @@ export async function freshRoleOutcome({
                 datetime,
                 nethackrc: roleConfig({
                     name, role, race, gender, align, extraOptions,
+                    extraLines,
                 }),
                 moves,
             });
@@ -80,6 +82,10 @@ export async function freshRoleOutcome({
             error,
             world: {
                 hero: [game.u?.ux, game.u?.uy],
+                depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
+                rooms: game.level?.nroom ?? game.level?.rooms?.length ?? 0,
+                prototype: game._activeSpecialLevel?.prototype
+                    ?? game._specialLevelPrototype ?? null,
                 gnosticConduct: game.u?.uconduct?.gnostic ?? 0,
                 moves: game.moves,
                 heroMovement: game.u?.umovement,

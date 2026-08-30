@@ -16,6 +16,12 @@ const wizardInput = input => ({
     ...input,
 });
 
+const boundWizardInput = input => wizardInput({
+    extraOptions: ['playmode:debug'],
+    extraLines: ['BIND=v:inventory'],
+    ...input,
+});
+
 test('debug wishing creates a live charged polymorph wand', async () => {
     // Pinned wizcmds.c:wiz_wish() delegates to makewish().  The committed
     // line must create and carry a real object while leaving command time at
@@ -90,4 +96,70 @@ test('future Wizard commands cannot suppress current live turns', async () => {
         before.charges > 0 && outcome.world.inventory.some(after =>
             after.type === before.type
             && after.charges === before.charges - 1)));
+});
+
+test('a custom inventory binding dispatches a live item action', async () => {
+    // Pinned options.c:parsebindings()/cmd.c:bind_key() replaces the ordinary
+    // v command with inventory. Selecting the live f identity and its throw
+    // action must detach exactly one carried potion and spend source time.
+    const seed = 48601;
+    const startup = await freshRoleOutcome(boundWizardInput({
+        seed, moves: ' ', bridgeFree: false,
+    }));
+    const outcome = await freshRoleOutcome(boundWizardInput({
+        seed, moves: ' vftl', bridgeFree: false,
+    }));
+    const selectedType = startup.world.inventory[5].type;
+    const countType = (world, type) => world.inventory
+        .filter(object => object.type === type)
+        .reduce((total, object) => total + object.quantity, 0);
+
+    assert.equal(startup.error, null);
+    assert.equal(outcome.error, null);
+    assert.equal(
+        countType(outcome.world, selectedType),
+        countType(startup.world, selectedType) - 1,
+    );
+    assert.ok(outcome.world.moves > startup.world.moves);
+});
+
+test('bound-option Wizard still performs a live debug level teleport',
+    async () => {
+        // BIND=v:inventory changes only the lowercase v command. Ctrl-V must
+        // still run wiz_level_tele(), replace the current level, and arrive at
+        // the requested depth; a bind-option classifier cannot swallow it.
+        const seed = 48601;
+        const startup = await freshRoleOutcome(boundWizardInput({
+            seed, moves: ' ', bridgeFree: false,
+        }));
+        const outcome = await freshRoleOutcome(boundWizardInput({
+            seed,
+            moves: ` ${String.fromCharCode(22)}2\n`,
+            bridgeFree: false,
+        }));
+
+        assert.equal(startup.error, null);
+        assert.equal(outcome.error, null);
+        assert.deepEqual(startup.world.depth, [0, 1]);
+        assert.deepEqual(outcome.world.depth, [0, 2]);
+        assert.ok(outcome.world.rooms > 0);
+        assert.notDeepEqual(outcome.world.hero, startup.world.hero);
+    });
+
+test('debug level menu builds the selected live special level', async () => {
+    // Pinned dungeon.c:print_dungeon(TRUE) returns the selected special-level
+    // identity to level_tele(); deferred_goto() must build that destination,
+    // not replay the menu boundary or a recorded level-generation call list.
+    const outcome = await freshRoleOutcome(boundWizardInput({
+        seed: 48602,
+        moves: ` ${String.fromCharCode(22)}?\ne`,
+        bridgeFree: false,
+    }));
+
+    assert.equal(outcome.error, null);
+    assert.deepEqual(outcome.world.depth, [0, 11]);
+    assert.equal(outcome.world.prototype, 'bigrm');
+    assert.ok(outcome.world.rooms > 0);
+    assert.ok(outcome.world.hero[0] > 0);
+    assert.ok(outcome.world.hero[1] >= 0);
 });

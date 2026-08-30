@@ -7,7 +7,7 @@
 
 import { game } from './gstate.js';
 import { nextIdent } from './ident.js';
-import { GameMap, makeLocation } from './game.js';
+import { GameMap } from './game.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import {
@@ -4995,75 +4995,7 @@ export async function mklev() {
     await makelevel();
     recount_level_features();
     level_finalize_topology();
-    normalizeWizardBindStartRoom();
     g.in_mklev = false;
-}
-
-function normalizeWizardBindStartRoom() {
-    if (!game._wizardBindPath || (game.u?.uz?.dlevel ?? 1) !== 1) return;
-    const room = game.level?.rooms?.find(candidate => candidate
-        && candidate.lx === 60 && candidate.hx === 66
-        && candidate.ly === 2 && candidate.hy === 3);
-    if (!room) return;
-
-    const dx = -1, dy = 1;
-    const xlo = room.lx - 1, xhi = room.hx + 1;
-    const ylo = room.ly - 1, yhi = room.hy + 1;
-    const cells = [];
-    const objects = [];
-    for (let x = xlo; x <= xhi; x++) {
-        for (let y = ylo; y <= yhi; y++) {
-            cells.push({ x, y, loc: { ...game.level.at(x, y) } });
-            const stack = game.level.objects?.[x]?.[y];
-            if (stack?.length) objects.push({ x, y, stack });
-        }
-    }
-    for (let x = xlo; x <= xhi; x++) {
-        for (let y = ylo; y <= yhi; y++) {
-            game.level.locations[x][y] = makeLocation();
-            if (game.level.objects?.[x]) game.level.objects[x][y] = undefined;
-        }
-    }
-    for (const { x, y, loc } of cells)
-        game.level.locations[x + dx][y + dy] = loc;
-    for (const { x, y, stack } of objects) {
-        const nx = x + dx, ny = y + dy;
-        if (!game.level.objects[nx]) game.level.objects[nx] = [];
-        game.level.objects[nx][ny] = stack;
-        for (const object of stack) { object.ox = nx; object.oy = ny; }
-    }
-
-    room.lx += dx; room.hx += dx;
-    room.ly += dy; room.hy += dy;
-    for (const door of game.level.doors || []) {
-        if (door.x >= xlo && door.x <= xhi && door.y >= ylo && door.y <= yhi) {
-            door.x += dx; door.y += dy;
-        }
-    }
-    for (const monster of game.level.monsters || []) {
-        if (monster.mx >= xlo && monster.mx <= xhi
-            && monster.my >= ylo && monster.my <= yhi) {
-            monster.mx += dx; monster.my += dy;
-        }
-    }
-    for (const trap of game.level.traps || []) {
-        if (trap.tx >= xlo && trap.tx <= xhi && trap.ty >= ylo && trap.ty <= yhi) {
-            trap.tx += dx; trap.ty += dy;
-        }
-    }
-    for (let stair = game.stairs; stair; stair = stair.next) {
-        if (stair.sx >= xlo && stair.sx <= xhi
-            && stair.sy >= ylo && stair.sy <= yhi) {
-            stair.sx += dx; stair.sy += dy;
-        }
-    }
-    for (const name of ['upstair', 'dnstair']) {
-        const stair = game.level[name];
-        if (stair?.x >= xlo && stair.x <= xhi
-            && stair.y >= ylo && stair.y <= yhi) {
-            stair.x += dx; stair.y += dy;
-        }
-    }
 }
 
 function recount_level_features() {
@@ -17313,19 +17245,7 @@ function generate_stairs_find_room() {
             if (generate_stairs_room_good(g.level.rooms[i], phase))
                 candidates.push(i);
         if (candidates.length > 0) {
-            const wizardFirstStair = game._wizardBindPath
-                && candidates.length === 7 && !game._wizardBindStairPicked;
-            const wizardBranch = game._wizardBindPath
-                && game._wizardBindStairPicked && !game._wizardBindBranchPicked
-                && candidates.length === 6;
-            const count = wizardFirstStair ? 6
-                : wizardBranch ? 5 : candidates.length;
-            const pick = rn2(count);
-            if (wizardFirstStair) game._wizardBindStairPicked = true;
-            if (wizardBranch) game._wizardBindBranchPicked = true;
-            const candidateIndex = (wizardFirstStair || wizardBranch) && pick >= 3
-                ? pick + 1 : pick;
-            return g.level.rooms[candidates[candidateIndex]];
+            return g.level.rooms[candidates[rn2(candidates.length)]];
         }
     }
     return g.level.rooms[rn2(g.level.nroom)];

@@ -310,6 +310,32 @@ function controlRushDirection(key) {
     return CONTROL_RUSH_DIRECTION.get(key === 13 ? 10 : key) || null;
 }
 
+// C options.c:parsebindings()/cmd.c:bind_key().  Configuration stores source
+// command names; remapping them to the corresponding ordinary dispatcher key
+// keeps custom and default invocations on the same state machine.
+const BOUND_COMMAND_KEYS = new Map([
+    ['apply', 'a'], ['attributes', String.fromCharCode(24)],
+    ['cast', 'Z'], ['close', 'c'], ['discoveries', '\\'], ['down', '>'],
+    ['drop', 'd'], ['eat', 'e'], ['fire', 'f'], ['forcefight', 'F'],
+    ['inventory', 'i'], ['kick', String.fromCharCode(4)], ['look', ':'],
+    ['open', 'o'], ['options', 'O'], ['pickup', ','], ['puton', 'P'],
+    ['quaff', 'q'], ['quiver', 'Q'], ['read', 'r'], ['remove', 'R'],
+    ['search', 's'], ['swapweapon', 'x'], ['takeoff', 'T'], ['throw', 't'],
+    ['twoweapon', 'X'], ['up', '<'], ['wait', '.'], ['wear', 'W'],
+    ['wield', 'w'], ['zap', 'z'],
+]);
+
+function remapConfiguredCommand(key) {
+    const command = game.commandBindings?.[key];
+    if (!command) return { key, disabled: false };
+    if (command === 'nothing') return { key, disabled: true };
+    const mapped = BOUND_COMMAND_KEYS.get(command);
+    return {
+        key: mapped ? mapped.charCodeAt(0) : key,
+        disabled: false,
+    };
+}
+
 // C getpos.c:truncate_to_map().  A diagonal that crosses one map edge loses
 // the same amount of motion on its other axis; independently clamping x and y
 // would incorrectly slide the cursor along the boundary.
@@ -1732,6 +1758,8 @@ export async function rhack(key) {
         key = await nhgetch();
         delete game._cursorOverride;
     }
+    const configured = remapConfiguredCommand(key);
+    key = configured.key;
     // Status rows beneath a tty pager remain physically unchanged even when
     // the suspended command has already mutated the wallet.  The next real
     // top-level command read makes that state eligible for a fresh botl.
@@ -1749,6 +1777,11 @@ export async function rhack(key) {
     // now; any message produced below remains visible at the next boundary.
     game._pending_message = '';
     game._retained_message = '';
+
+    if (configured.disabled) {
+        game.context.move = 0;
+        return;
+    }
 
     // C cmd.c:rhack() pops CQ_CANNED before parse() asks tty for another
     // byte.  Tool commands use this to resume the original operation after
@@ -1774,19 +1807,6 @@ export async function rhack(key) {
         return;
     }
 
-    // The remaining Wizard bind fixture enters a passive menu-navigation
-    // phase after its first debug level teleport.  Its special-level owner is
-    // still a bounded compatibility path; all other Wizard commands dispatch
-    // through the live command state machines below.
-    if (game._wizardBindPath && game._wizardBindPassive) {
-        game.context.move = 0;
-        return;
-    }
-    if (game._wizardBindPath && key === 22) { // Ctrl-V: debug level teleport
-        game._wizardBindPassive = true;
-        game.context.move = 0;
-        return;
-    }
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
         await wizLevelTeleport();
         return;

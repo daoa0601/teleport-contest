@@ -34,17 +34,9 @@ export function auditBridgeFreeSource() {
     const allmain = sources.get('allmain.js');
     if (allmain.includes('replayMoves'))
         failures.push('allmain.js: production initialization reads replayMoves');
-    // Compatibility classifiers may remain for the legacy public-regression
-    // path, but bridge-free mode must make each one structurally unreachable
-    // rather than relying on an empty replay string or lucky coordinates.
-    const compatibilityClassifiers = ['_wizardBindPath'];
-    for (const classifier of compatibilityClassifiers) {
-        const explicitLegacyGate = new RegExp(
-            `g\\.${classifier}\\s*=\\s*!bridgeFree\\s*&&`,
-        );
-        if (!explicitLegacyGate.test(allmain))
-            failures.push(`allmain.js: ${classifier} lacks an explicit legacy gate`);
-    }
+    // Session-shaped production classifiers are forbidden outright.  The
+    // subsystem token audits below preserve the exact retired families while
+    // the replayMoves file allowlist blocks newly named variants.
     const forbiddenSamuraiReplayTokens = [
         'SAMURAI_DOG_RNG', 'SAMURAI_NORTH_ROOM_DOG_RNG',
         'SAMURAI_ALTAR_PATH_RNG', 'SAMURAI_ALTAR_HERO_PATHS',
@@ -109,6 +101,23 @@ export function auditBridgeFreeSource() {
         if (sources.has(file))
             failures.push(`${file}: legacy Wizard command replay module still exists`);
     }
+    const forbiddenWizardBindReplayTokens = [
+        '_wizardBindPath', '_wizardBindPassive',
+        'paintWizardBindScreen', 'replayWizardBindBoundary',
+        'replayWizardBindMaintenance', 'placeWizardBindPet',
+        'seeded-replay.wizard-bind',
+        'seeded-replay.wizard-bind-maintenance', 'wizard.bind',
+        'normalizeWizardBindStartRoom', '_wizardBindStairPicked',
+        '_wizardBindBranchPicked',
+    ];
+    for (const token of forbiddenWizardBindReplayTokens) {
+        for (const [file, source] of sources) {
+            if (source.includes(token))
+                failures.push(`${file}: legacy Wizard bind replay token ${token}`);
+        }
+    }
+    if (sources.has('wizard_bind.js'))
+        failures.push('wizard_bind.js: legacy Wizard bind replay module still exists');
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,
@@ -261,9 +270,6 @@ export function auditBridgeFreeSource() {
     const fixtureScreen = sources.get('fixture_screen.js');
     if (!fixtureScreen.includes("useCompatibilityBridge('snapshot-painter.fixture-screen')"))
         failures.push('fixture_screen.js: snapshot painter lacks a runtime bridge guard');
-    if (!allmain.includes("useCompatibilityBridge('seeded-replay.wizard-bind-maintenance')"))
-        failures.push('allmain.js: internal Wizard replay lacks a runtime bridge guard');
-
     return {
         failures,
         filesAudited: files.length,

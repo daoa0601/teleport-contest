@@ -2184,7 +2184,7 @@ function liveQuietTourist(state = game) {
 }
 
 function liveQuietWizard(state = game) {
-    return state.urole?.key === 'wizard' && !state._wizardBindPath;
+    return state.urole?.key === 'wizard';
 }
 
 // Archeologist and Barbarian have no role/session-specific turn owner.  They
@@ -6066,56 +6066,6 @@ function monsterScanHasVisits(monsterScan) {
     return !!monsterScan?.visits?.some(visits => visits.length);
 }
 
-function placeWizardBindPet(x, y) {
-    const pet = game.startingPet;
-    if (!pet) return;
-    const oldx = pet.mx, oldy = pet.my;
-    pet.mx = x; pet.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
-}
-
-function replayWizardBindMaintenance(turn) {
-    useCompatibilityBridge('seeded-replay.wizard-bind-maintenance');
-    if (turn === 1) {
-        initialTurnMaintenanceRng();
-        return;
-    }
-    if (turn === 2) {
-        rn2(5); rn2(4); rn2(100); rn2(1);
-        rn2(5); rn2(5); rn2(5);
-        for (let i = 0; i < 4; i++) rn2(12);
-        rn2(70); rn2(200); rn2(20); rn2(82);
-        placeWizardBindPet(59, 3);
-        return;
-    }
-    if (turn === 3) {
-        rn2(5); rn2(4); rn2(100); rn2(100); rn2(1); rnd(5);
-        rn2(5); rn2(5); rn2(20); rn2(5);
-        for (let i = 0; i < 4; i++) rn2(12);
-        rn2(70); rn2(200); rn2(20); rn2(82);
-        placeWizardBindPet(60, 4);
-        return;
-    }
-    if (turn === 4) {
-        rn2(5); rn2(4); rn2(100); rn2(1);
-        rn2(5); rn2(5); rn2(20); rn2(5);
-        rn2(5); rn2(4); rn2(100); rn2(100); rn2(1); rnd(5); rn2(5);
-        for (let i = 0; i < 4; i++) rn2(12);
-        rn2(70); rn2(200); rn2(20); rn2(82);
-        placeWizardBindPet(60, 4);
-        return;
-    }
-    if (turn === 5) {
-        rn2(5); rn2(4); rn2(100); rn2(1);
-        rn2(12); rn2(12); rn2(12);
-        rn2(5); rn2(5); rn2(12); rn2(5);
-        for (let i = 0; i < 4; i++) rn2(12);
-        rn2(70); rn2(200); rn2(20); rn2(82);
-        placeWizardBindPet(59, 3);
-    }
-}
-
 // C refs: dogmove.c dog_move(), monmove.c dochugw().  In the compact
 // Valkyrie start room the dog evaluates the stair square and adjacent food
 // goals twice without changing position before the second search turn.
@@ -6127,12 +6077,6 @@ function valkyrieDogSearchRng() {
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
-    const bridgeFree = bridgeFreeEnabled();
-    // The remaining compatibility classifier depends only on the explicit
-    // bind option.  Future command bytes are not game state and are never
-    // read by production initialization or scheduling.
-    g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
-        && /BIND=v:inventory/.test(g.nethackrc || '');
     const handednessRoll = initializeSourceStartup();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
@@ -6169,14 +6113,6 @@ export async function newgame() {
 
     if (g.urole?.key === 'samurai')
         g._samuraiLiveScheduler = true;
-    if (bridgeFree) {
-        const compatibilityPaths = [
-            ['wizard.bind', g._wizardBindPath],
-        ];
-        for (const [bridgeId, selected] of compatibilityPaths) {
-            if (selected) useCompatibilityBridge(bridgeId);
-        }
-    }
     makedog();
     uInitInventoryAttrs();
     // Initial display
@@ -6443,8 +6379,6 @@ export async function moveloop_core() {
             initialTurnMaintenanceRng();
         } else if (liveQuietPriest(g) && stepNum === 1) {
             initialTurnMaintenanceRng();
-        } else if (g._wizardBindPath && stepNum <= 5) {
-            replayWizardBindMaintenance(stepNum);
         } else if (g.urole?.key === 'wizard' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (liveBaseRole(g) || liveQuietKnight(g)

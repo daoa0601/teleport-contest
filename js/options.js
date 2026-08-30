@@ -63,10 +63,61 @@ function updateParanoiaBits(current, rawValue) {
     return bits;
 }
 
+function splitBindingList(value) {
+    const fields = [];
+    let current = '';
+    let quote = null;
+    let escaped = false;
+    for (const ch of value) {
+        if (escaped) {
+            current += ch;
+            escaped = false;
+        } else if (ch === '\\') {
+            current += ch;
+            escaped = true;
+        } else if (quote) {
+            current += ch;
+            if (ch === quote) quote = null;
+        } else if (ch === '"' || ch === "'") {
+            current += ch;
+            quote = ch;
+        } else if (ch === ',') {
+            fields.push(current);
+            current = '';
+        } else {
+            current += ch;
+        }
+    }
+    fields.push(current);
+    return fields;
+}
+
+function bindingKeyCode(value) {
+    let key = value.trim();
+    if ((key.startsWith("'") && key.endsWith("'"))
+        || (key.startsWith('"') && key.endsWith('"'))) {
+        key = key.slice(1, -1);
+    }
+    if (/^\\.$/.test(key)) key = key.slice(1);
+    if (key.length === 1) return key.charCodeAt(0);
+    if (/^\^.$/.test(key))
+        return key[1].toUpperCase().charCodeAt(0) & 0x1f;
+    const control = key.match(/^(?:C|CTRL)-(.)$/i);
+    if (control)
+        return control[1].toUpperCase().charCodeAt(0) & 0x1f;
+    const meta = key.match(/^(?:M|META)-(.)$/i);
+    if (meta) return meta[1].charCodeAt(0) | 0x80;
+    const named = {
+        space: 32, esc: 27, escape: 27, enter: 13, return: 13,
+        tab: 9, backspace: 8, delete: 127,
+    }[key.toLowerCase()];
+    return named ?? null;
+}
+
 export function parseNethackrc(rc) {
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
-        flags: {}, iflags: {},
+        flags: {}, iflags: {}, bindings: {},
     };
     let paranoiaBits = DEFAULT_PARANOIA_BITS;
     let paranoiaSeen = false;
@@ -75,6 +126,19 @@ export function parseNethackrc(rc) {
     for (const rawLine of rc.split('\n')) {
         const line = rawLine.trim();
         if (!line || line.startsWith('#')) continue;
+
+        const bindMatch = line.match(/^(?:BIND|BINDINGS)=(.+)$/i);
+        if (bindMatch) {
+            for (const field of splitBindingList(bindMatch[1])) {
+                const separator = field.indexOf(':');
+                if (separator < 0) continue;
+                const code = bindingKeyCode(field.slice(0, separator));
+                const command = field.slice(separator + 1).trim().toLowerCase();
+                if (code !== null && command)
+                    result.bindings[code] = command;
+            }
+            continue;
+        }
 
         const optMatch = line.match(/^OPTIONS=(.+)/i);
         if (!optMatch) continue;

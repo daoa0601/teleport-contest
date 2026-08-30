@@ -13,7 +13,6 @@ import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { nhgetch } from './input.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
-import { paintWizardBindScreen, replayWizardBindBoundary } from './wizard_bind.js';
 import { parseNethackrc } from './options.js';
 import {
     findRole, findRace, findAlignment, findGender,
@@ -329,6 +328,7 @@ export class NethackGame {
             ...opts.flags,
         };
         g.iflags = { ...opts.iflags };
+        g.commandBindings = { ...opts.bindings };
         g.symset = opts.symset || null;
         if (opts.preferred_pet) g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set) g.tutorial_set_in_config = true;
@@ -988,12 +988,6 @@ export class NethackGame {
         const nhGame = this;
         game._preNhgetchHook = async () => {
             const keyIdx = nhGame._nhgetchCount++;
-            if (game._wizardBindPath && [20, 25, 35, 36].includes(keyIdx))
-                replayWizardBindBoundary(keyIdx);
-            if (game._wizardBindPath) {
-                game._preserveLeadingStyledBlanks = true;
-                paintWizardBindScreen(keyIdx, game.nhDisplay);
-            }
             // Capture RNG slice since last capture
             const fullLog = getRngLog() || [];
             const slice = fullLog.slice(nhGame._lastRngIdx);
