@@ -476,10 +476,7 @@ export function stairwayFeatureSentenceAt(x, y) {
     return stairway ? `There is a ${stairwayDescription(stairway)} here.` : '';
 }
 
-// C ref: invent.c:dfeature_at()/look_here().  This is intentionally the
-// witnessed subset of dfeature_at(), not a speculative catalogue: callers
-// can compose the returned terrain sentence with the same one/many-object
-// transaction used for stairs.
+// C ref: invent.c:dfeature_at()/look_here().
 export function dungeonFeatureSentenceAt(x, y) {
     const loc = game.level?.at?.(x, y);
     if (loc?.typ === DOOR) {

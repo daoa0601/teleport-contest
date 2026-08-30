@@ -154,8 +154,8 @@ function weaponInsightLines() {
 
     // weapon.c:weapon_descr() normally projects the P_* skill name rather
     // than the object's material/base name: silver saber is simply "saber",
-    // and katana is "long sword".  The special mattock/hook/aklys labels are
-    // retained by OBJECT_SUBTYPE as their witnessed slices are ported.
+    // and katana is "long sword". OBJECT_SUBTYPE supplies the special
+    // mattock, hook, and aklys labels.
     const weaponType = OBJECT_SUBTYPE[game.uwep.otyp];
     const weaponSkill = SKILL_NAMES[weaponType]
         || game.uwep.name.replace(/^(?:orcish|elven|dwarvish|silver) /, '');
@@ -592,9 +592,8 @@ function finalAttributePages() {
     const weaponSkill = weaponName === 'scalpel' ? 'knife'
         : weaponName.replace(/^(?:orcish|elven|dwarvish) /, '');
 
-    // Existing ordinary-death witnesses use the fixed two-page tty layout
-    // below.  Tutorial disclosure has a shorter source stream (no calendar
-    // records) and is compacted by tty, so it takes the dense path afterward.
+    // Ordinary deaths use two fixed tty pages. Tutorial disclosure omits the
+    // calendar lines and uses the shorter layout below.
     if (!game._tutorialActive) {
         const page1 = Array(24).fill('');
         page1[0] = `${game.displayName || game.plname} the ${roleName}'s attributes:`;

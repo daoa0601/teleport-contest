@@ -25,8 +25,7 @@ export function projectileKind(object) {
     return null;
 }
 
-// C frees a mulched projectile. JavaScript witnesses can retain a reference,
-// so make its removal from every ownership graph explicit.
+// C frees a mulched projectile. Remove it from every JavaScript object list.
 export function destroyMulchedProjectile(object) {
     if (!object) return;
     object.where = 'gone';

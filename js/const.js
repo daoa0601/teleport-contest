@@ -463,8 +463,7 @@ export const DUNGEON_ALIGN_BY_DNUM = {
     [TUTORIAL]: A_CHAOTIC,
 };
 
-// Build-specific constants: hand-pinned for deterministic replay.
-// These come from date.h and change every C rebuild, so the generator skips them.
+// These values come from the pinned source tree's generated date.h.
 export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 export const BUILD_TIME = (1777786037);
 // nomakedefs.copyright_banner_c — build-specific version string
@@ -479,7 +478,6 @@ export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built Sun May  
 // - include only const-style expressions (no runtime/lowercase identifiers)
 // - preserve include dependency order and in-header declaration order
 // - emit only when dependencies are resolvable at this marker location
-// - non-emittable blacklist count: 16
 
 // Platform fallback constants (Ubuntu/ncurses-style defaults)
 // FROM_LEFT_1ST_BUTTON_PRESSED fallback
@@ -497,8 +495,6 @@ export const A_RIGHTLINE = 0;
 // A_UNDERLINE fallback disabled in web renderer
 export const A_ITALIC = 0;
 
-// Added direct exports: 1229
-// Deferred unresolved const-style macros: 40
 // ===== align.h =====
 export const A_COALIGNED = 1;
 export const A_OPALIGNED = (-1);
@@ -1922,7 +1918,7 @@ export const DISMOUNT_BONES = 6;
 export const DISMOUNT_GENERIC = 7;
 
 // Vault guard constants (src/vault.c)
-// Runtime fields: guard timers and guard activity/witness bits.
+// Runtime fields for vault guard timing and activity.
 export const VAULT_GUARD_TIME = 30;
 export const GD_EATGOLD = 0x01;
 export const GD_DESTROYGOLD = 0x02;
@@ -2718,10 +2714,6 @@ export const AKLYS_LIM = BOLT_LIM / 2;
 // - include only const-style expressions (no runtime/lowercase identifiers)
 // - preserve include dependency order and in-header declaration order
 // - emit only when dependencies are resolvable at this marker location
-// - non-emittable blacklist count: 16
-
-// Added direct exports: 35
-// Deferred unresolved const-style macros: 5
 // ===== prop.h =====
 export const LEFT_RING = W_RINGL;
 export const RIGHT_RING = W_RINGR;
@@ -2769,88 +2761,6 @@ export const MORECOLOR = CLR_ORANGE;
 export const STAT_UP_COLOR = CLR_GREEN;
 export const STAT_DOWN_COLOR = CLR_RED;
 
-export const DEFERRED_HEADER_CONST_MACROS = Object.freeze([
-    "SYM_OFF_O (hack.h)",
-    "SYM_OFF_M (hack.h)",
-    "SYM_OFF_W (hack.h)",
-    "SYM_OFF_X (hack.h)",
-    "SYM_MAX (hack.h)",
-]);
-
-export const DEFERRED_HEADER_CONST_MACRO_DETAILS = Object.freeze([
-    Object.freeze({
-        name: "SYM_OFF_O",
-        source: "hack.h",
-        missingDeps: Object.freeze(["MAXPCHARS"]),
-        rootMissingDeps: Object.freeze(["MAXPCHARS"]),
-        expr: "(SYM_OFF_P + MAXPCHARS)",
-    }),
-    Object.freeze({
-        name: "SYM_OFF_M",
-        source: "hack.h",
-        missingDeps: Object.freeze(["MAXOCLASSES", "SYM_OFF_O"]),
-        rootMissingDeps: Object.freeze(["MAXOCLASSES", "MAXPCHARS"]),
-        expr: "(SYM_OFF_O + MAXOCLASSES)",
-    }),
-    Object.freeze({
-        name: "SYM_OFF_W",
-        source: "hack.h",
-        missingDeps: Object.freeze(["MAXMCLASSES", "SYM_OFF_M"]),
-        rootMissingDeps: Object.freeze(["MAXMCLASSES", "MAXOCLASSES", "MAXPCHARS"]),
-        expr: "(SYM_OFF_M + MAXMCLASSES)",
-    }),
-    Object.freeze({
-        name: "SYM_OFF_X",
-        source: "hack.h",
-        missingDeps: Object.freeze(["SYM_OFF_W"]),
-        rootMissingDeps: Object.freeze(["MAXMCLASSES", "MAXOCLASSES", "MAXPCHARS"]),
-        expr: "(SYM_OFF_W + WARNCOUNT)",
-    }),
-    Object.freeze({
-        name: "SYM_MAX",
-        source: "hack.h",
-        missingDeps: Object.freeze(["SYM_OFF_X"]),
-        rootMissingDeps: Object.freeze(["MAXMCLASSES", "MAXOCLASSES", "MAXPCHARS"]),
-        expr: "(SYM_OFF_X + MAXOTHER)",
-    }),
-]);
-
-export const DEFERRED_HEADER_CONST_ROOT_BLOCKERS = Object.freeze([
-    Object.freeze({
-        name: "MAXPCHARS",
-        count: 5,
-        ownerHint: "symbols.js",
-    }),
-    Object.freeze({
-        name: "MAXOCLASSES",
-        count: 4,
-        ownerHint: "objects.js",
-    }),
-    Object.freeze({
-        name: "MAXMCLASSES",
-        count: 3,
-        ownerHint: "symbols.js",
-    }),
-]);
-
-export const HEADER_MACRO_NON_EMITTABLE = Object.freeze([
-    "B: objects.h alias; owned by objects.js with objclass.h direction constants",
-    "BUILD_DATE: build-time string from date.h; hand-pinned for deterministic replay",
-    "BUILD_TIME: build-time integer from date.h; hand-pinned for deterministic replay",
-    "COPYRIGHT_BANNER_C: build-specific version string from date.h; hand-pinned for deterministic replay",
-    "DLBFILE: platform/filesystem path constant; not used in web runtime",
-    "DUMPLOG_FILE: platform/filesystem path template; not used in web runtime",
-    "HACKDIR: platform/filesystem path constant; not used in web runtime",
-    "NROFARTIFACTS: owned by artifacts.js (derived from AFTER_LAST_ARTIFACT)",
-    "N_DIRS_Z: kept manual with direction arrays and DIR_* ordering contract",
-    "P: objects.h alias; owned by objects.js with objclass.h direction constants",
-    "PAPER: objects.h alias; owned by objects.js material constants",
-    "S: objects.h alias; owned by objects.js with objclass.h direction constants",
-    "SHOP_WALL_DMG: depends on runtime ACURRSTR (not a pure constant)",
-    "SOUNDLIBONLY: macro alias to UNUSED (compile-time annotation)",
-    "UNDEFINED_PTR: C pointer sentinel (NULL), not meaningful as JS const",
-    "VOICEONLY: macro alias to UNUSED (compile-time annotation)",
-]);
 // AUTO-IMPORT-END: CONST_ALL_HEADERS_POST
 
 // permonst.h constants (blacklisted header, manually maintained)

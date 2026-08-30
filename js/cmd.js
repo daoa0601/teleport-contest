@@ -3093,10 +3093,8 @@ async function ordinaryDescend() {
     game.u.ux = newPosition.x;
     game.u.uy = newPosition.y;
     restoreCachedHeroTrack(cached);
-    // The destination starts with zero movement on every generated monster.
-    // Its first maintenance cycle must still allocate a fresh ration before
-    // the next command; the pre-transition compatibility replay only enters
-    // the live scheduler when an actor was already eligible.
+    // Monsters on the destination start with no movement. The next cycle
+    // must allocate their first movement ration before reading a command.
     game._ordinaryDescentLive = true;
     game._pending_message = '';
     game.context.move = 1;
@@ -4498,10 +4496,7 @@ export function wakeMonstersNear(x, y, distance) {
     }
 }
 
-// C mon.c:wake_nearto_core() publishes wake_msg() before clearing each
-// indeterminate sleeper.  Keep the message-capable continuation separate
-// until the other synchronous wakeMonstersNear() callers have their own
-// native pager witnesses.
+// C mon.c:wake_nearto_core() prints wake_msg() before clearing each sleeper.
 export async function wakeMonstersNearWithMessages(x, y, distance) {
     for (const monster of game.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
@@ -4568,9 +4563,7 @@ async function kickLiveMonster(monster, x, y) {
 
     await pline(`You kick ${target}.`);
     const evasionProbe = rn2(clumsy ? 3 : 4);
-    // The witnessed nonzero probe proceeds directly to kickdmg().  Preserve
-    // the gate structurally; blocking/jumping presentation will be completed
-    // when a live session first selects that branch.
+    // TODO: show blocking and jumping when this evasion check succeeds.
     if (evasionProbe === 0) {
         const thickSkinned = !!((MONSTER_FLAGS1[monster.mnum] ?? 0)
             & M1_THICK_HIDE);
@@ -5237,9 +5230,8 @@ async function dochat() {
             return;
         }
         if (monster?.mnum === PM_WATER_NYMPH) {
-            // sounds.c:domonnoise(MS_SEDUCE).  This female Valkyrie/female
-            // nymph witness selects swval zero without RNG, then returns
-            // ECMD_TIME so the ordinary monster scan follows.
+            // sounds.c:domonnoise(MS_SEDUCE) returns ECMD_TIME, so ordinary
+            // monster movement follows this line.
             await pline('The water nymph cajoles you.');
             game.context.move = 1;
             return;
@@ -5504,10 +5496,8 @@ export async function makeWish({
     const result = readObjectName(value ?? '', {
         wizardWish: allowWizardTerrain,
     });
-    // C objnam.c:readobjnam() gives ordinary objects priority, then routes an
-    // otherwise unclassified Wizard request through wizterrainwish().  Keep
-    // these accepted terrain slices deliberately narrow; other furniture,
-    // trap, wall, liquid, and door wishes retain their own source witnesses.
+    // C objnam.c:readobjnam() gives objects priority, then sends an unknown
+    // Wizard request to wizterrainwish().
     const wizardTerrain = allowWizardTerrain
         ? (value ?? '').trim().toLowerCase() : '';
     const wizardTerrainSpec = {
@@ -5548,9 +5538,8 @@ export async function makeWish({
         addHeroGoldObject(game, result.object);
         const goldName = quantity === 1
             ? 'a gold piece' : `${quantity} gold pieces`;
-        // invent.c:prinv() suppresses xprname()'s dot when the received
-        // quantity merged into a larger existing coin stack.  This witness
-        // runs with non-verbose inventory, so there is no total suffix either.
+        // invent.c:prinv() omits the dot when the coins merge into an existing
+        // stack. Non-verbose inventory also omits the total.
         await pline(`$ - ${goldName}${previousGold > 0 ? '' : '.'}`);
         game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
         game.context.move = 0;
@@ -5713,11 +5702,8 @@ async function wizGenesis() {
         return;
     }
 
-    // read.c:create_particular_parse() removes state modifiers, normalizes
-    // spaces, then recognizes a leading disposition before monster lookup.
-    // Keep this slice intentionally narrow: sleeping and peaceful have native
-    // observer-policy witnesses; the other modifiers retain separate state
-    // and presentation contracts.
+    // read.c:create_particular_parse() removes state modifiers and normalizes
+    // spaces before looking up the monster.
     const sleepingPattern = /(^|\s)sleeping\s+/iu;
     const sleeping = sleepingPattern.test(value);
     const stateStrippedName = sleeping
@@ -5780,8 +5766,7 @@ async function wizGenesis() {
             delete monster.malign;
         }
         // create_particular_creation() applies requested sleep after makemon
-        // has announced the actor.  The JS constructor returns without those
-        // presentation boundaries, so replay them here in source order.
+        // announces the actor.
         if (sleeping) monster.msleeping = 1;
         newsym(monster.mx, monster.my);
         const hallucinating = heroHallucinating();
@@ -6434,9 +6419,7 @@ async function dotip() {
             game.context.move = 0;
             return;
         }
-        // The spill and alternate-selection branches are deliberately left
-        // with their own source owner; neither is crossed by this cancellation
-        // witness.
+        // TODO: implement spilling and choosing another container.
         game.context.move = answer === 'y' ? 1 : 0;
         return;
     }
@@ -7164,9 +7147,8 @@ async function dooffer() {
         return;
     }
 
-    // floorfood(), sacrifice valuation, altar conversion, divine reward, and
-    // high-altar ascension form the next pray.c owner once a witnessed altar
-    // transaction reaches this boundary.
+    // TODO: implement sacrifice valuation, altar conversion, rewards, and
+    // high-altar ascension.
     await pline('Nothing happens.');
     game.context.move = 1;
 }
@@ -7279,11 +7261,9 @@ async function domonability() {
     game.context.move = 0;
 }
 
-// C ref: invent.c:doorganize()/doorganize_core().  The current witness moves
-// one non-stack object to an unused letter.  Splitting, collecting, merging,
-// swapping, gold repair, and used-letter menu selection remain sibling
-// transactions and must not be inferred from this simple identity-preserving
-// move.
+// C ref: invent.c:doorganize()/doorganize_core().
+// TODO: add splitting, collecting, merging, swapping, gold repair, and the
+// used-letter menu.
 async function doadjust() {
     const inventory = (game.inventory || [])
         .filter(object => object.invlet)
@@ -7370,10 +7350,7 @@ async function dowipe() {
     game.context.move = 1;
 }
 
-// C ref: pray.c:doturn().  The first live Knight witness has no eligible
-// undead within the squared bolt range, so this owns the command's
-// role/deity/conduct, exercise, and negative-multi transaction.  Target
-// resistance/flee/kill effects remain downstream of the range filter.
+// C ref: pray.c:doturn().
 async function doturn() {
     const role = game.urole?.key;
     if (role !== 'priest' && role !== 'knight') {
@@ -7384,8 +7361,7 @@ async function doturn() {
             game.context.move = 0;
             return;
         }
-        // The known-spell fallback belongs to spell.c:spelleffects().  Do not
-        // misrepresent it as the role power before that path has a witness.
+        // TODO: cast the known turn-undead spell through spelleffects().
         await pline("You don't know how to turn undead!");
         game.context.move = 0;
         return;
@@ -8322,8 +8298,7 @@ async function doforce() {
         ? artifactById(weapon.oartifact) : null;
     const weaponName = `${OBJECT_NAMES[weapon.otyp] || weapon.name || 'weapon'}`
         + (artifact ? ` named ${artifact.name}` : '');
-    // This witness uses a blunt war hammer.  Blade forcing has a distinct
-    // per-turn breakage transaction and remains represented separately.
+    // TODO: apply the blade breakage check on each forcing turn.
     const picktyp = false;
     await pline(`You start bashing it with your ${weaponName}.`);
     game._occupation = {
@@ -8834,9 +8809,7 @@ function travelPositionDescription(x, y) {
     const description = wizardPositionDescription(x, y);
     if (x === game.u?.ux && y === game.u?.uy) return description;
     const loc = game.level?.at?.(x, y);
-    // hack.c:is_valid_travelpt() rejects an unexplored stone projection
-    // before running its path search.  This is the Wizard witness reached by
-    // Return's eight-row getpos rush.
+    // hack.c:is_valid_travelpt() rejects unexplored stone before searching.
     const unexploredProjection = description === 'unexplored area'
         && !loc?.seenv;
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
@@ -9387,8 +9360,7 @@ async function dowhatis() {
     game.context.move = 0;
 }
 
-// C pager.c:dohelp().  Keep the complete source menu even though this witness
-// selects only `e`; the menu geometry and accelerators are shared behavior.
+// C pager.c:dohelp().
 async function dohelp() {
     const entries = [
         'a - About NetHack (version information).',
@@ -9565,8 +9537,7 @@ async function putOnAccessoryObject(object) {
         if (game.u) game.u.uamul = object;
         object.worn = true;
         object.wornSlot = 'uamul';
-        // do_wear.c:Amulet_on(AMULET_OF_RESTFUL_SLEEP).  Preserve the
-        // timeout even though this short witness dies before it expires.
+        // do_wear.c:Amulet_on(AMULET_OF_RESTFUL_SLEEP).
         if (object.otyp === 204) {
             const timeout = rnd(98) + 2;
             const oldTimeout = game.u?._sleepyTimeout || 0;
@@ -10557,9 +10528,8 @@ async function showFloorPile(
         ...objects.map(pricedFloorObjectDescription),
         '--More--',
     ];
-    // tty menu windows reserve one blank column after their widest rendered
-    // line, then right-align the whole window.  Most public piles therefore
-    // begin at 41, while this 39-character weighted-ball line begins at 40.
+    // Tty menus leave one blank column after the widest line and align the
+    // window to the right.
     const left = Math.max(0, Math.min(41,
         display.cols - Math.max(...lines.map(line => line.length)) - 1));
     for (let row = 0; row < lines.length; row++) {
@@ -10610,9 +10580,8 @@ async function triggerTeleportTrap(trap) {
     trap.tseen = true;
     stopRun();
 
-    // The general reusable teleport branch uses tele()'s whole-level
-    // candidate shuffle.  Keep this source branch explicit until that shared
-    // selector is ported; this witness is the once-only vault branch.
+    // TODO: use tele() for ordinary teleport traps. A once-only trap sends the
+    // hero to a vault.
     const vault = trap.once
         ? game.level?.rooms?.find(room => room?.rtype === VAULT) : null;
     if (!vault) return false;
@@ -10866,11 +10835,8 @@ async function triggerRollingBoulderTrap(trap) {
             }
         }
 
-        // launch_obj() has additional monster, rolling-landmine, teleport,
-        // pit/hole, bars, and boulder-chain branches.  None is present in the
-        // accepted hero-path witness; retain the coordinate traversal and
-        // object identity here so those branches can be added at this owner
-        // rather than patched into movement or transcript presentation.
+        // TODO: handle monsters, landmines, teleports, pits, bars, and other
+        // boulders along the launch path.
     }
 
     if (transient) newsym(transient.x, transient.y);
@@ -11220,9 +11186,7 @@ async function readLightScroll(scroll) {
     exerciseAttribute(4, true);
     const on = !scroll.cursed;
     const radius = scroll.blessed ? 9 : 5;
-    // do_clear_area() refreshes a dirty visibility matrix before consulting
-    // couldsee(); the corridor cells at the edge of this witness depend on
-    // that ordering.
+    // do_clear_area() refreshes visibility before consulting couldsee().
     vision_recalc(0);
     for (const { x, y } of visibleCellsFrom(game.u.ux, game.u.uy, radius)) {
         const loc = game.level?.at?.(x, y);
@@ -11528,10 +11492,8 @@ async function readTeleportationScroll(scroll) {
         break;
     }
 
-    // C finishes the scroll effect before pline() needs to collect the pager
-    // dismissal.  The public boundary therefore shows the disappearance over
-    // the new map and owns the effect's RNG, while the following space owns
-    // the elapsed monster/global turn.
+    // C moves the hero before waiting for the teleport message to be
+    // dismissed. The turn continues only after that input.
     await flush_screen(1);
     game.nhDisplay?.setCursor(disappearance.length, 0);
     await nhgetch();
@@ -11967,9 +11929,7 @@ function normalCorpseMeal(corpse, corpseName) {
         };
     }
 
-    // The normal fresh-corpse witnesses do not enter rottenfood().  Keep the
-    // gate in source order so ordinary fresh corpses own the same call and so
-    // the exceptional branch has an explicit state marker for its later port.
+    // Keep the rottenfood() check before the normal corpse meal effects.
     const rotten = !neverRots && (corpse.orotten || rn2(7) === 0);
     if (rotten) {
         const effect = rottenFoodEffect();
@@ -13487,9 +13447,7 @@ async function zapFireRay(direction) {
     for (const cell of beamCells.values()) newsym(cell.x, cell.y);
 }
 
-// C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().  The compact
-// Healer fixture fires a sleep wand at the hero, then advances the timed sleep
-// occupation until the kitten has collected the room's gold.
+// C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().
 async function dozap() {
     if (heroHasNoHands(game)) {
         await pline("You aren't able to zap anything in your current form.");
@@ -13885,9 +13843,8 @@ function generatedImprovisedNotes() {
     return jingle;
 }
 
-// C refs: music.c do_play_instrument()/do_improvisation().  This slice owns
-// the ordinary leather drum; the other instruments retain their downstream
-// branches until their distinct prompts and magical effects are witnessed.
+// C refs: music.c do_play_instrument()/do_improvisation().
+// TODO: implement the other instruments and their magical effects.
 async function playLeatherDrum(item) {
     rn2(2); // mode selection, even for an unimpaired hero
     await plineWithContinuation(`You start playing your ${item.name}.`);
@@ -14115,9 +14072,7 @@ async function doopen() {
         return;
     }
 
-    // rnl(20) is equivalent to rn2(20) at zero Luck.  The live Wizard
-    // witness has neutral Luck; keep the gate here until the shared rnl owner
-    // is reached by a nonzero-Luck open attempt.
+    // TODO: replace rn2(20) with rnl(20) so Luck affects this check.
     if (rn2(20) < Math.trunc((currentAttribute(0)
         + (game.u?.acurr?.a?.[1] ?? 10)
         + (game.u?.acurr?.a?.[2] ?? 10)) / 3)) {
@@ -15391,10 +15346,8 @@ async function dothrow(
                 return;
             }
 
-            // Accepted hit-side envelope: ordinary arrow damage against a
-            // visible surviving tame animal, then pet response and mulch.
-            // Death, passives, artifacts, poison, and non-pet anger remain
-            // later thitmonst/hmon slices rather than replay conditions.
+            // TODO: add death, passive attacks, artifacts, poison, and anger
+            // for non-pets to this projectile hit path.
             const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
             const damageRange = targetIsLarge
                 ? (OBJECT_LARGE_DAMAGE[thrown.otyp] ?? 6)
@@ -15824,9 +15777,8 @@ async function dothrow(
                     );
                 }
                 if (accepted) {
-                    // dothrow.c:gem_accept()->mpickobj().  Ownership and
-                    // carrying effects commit before the acceptance prose
-                    // and the unicorn's subsequent relocation.
+                    // dothrow.c:gem_accept()->mpickobj() gives the gem to the
+                    // unicorn before printing the result and relocating it.
                     addObjectToMonsterInventory(
                         contact, thrownMineral, game,
                     );
@@ -15835,9 +15787,8 @@ async function dothrow(
                     ? `${subject}${policy} accepts your gift.`
                     : `${subject}${policy}`);
 
-                // teleport.c:rloc() runs after acceptance prose has been
-                // installed.  A later vanish pline forces that prose's pager;
-                // only its acknowledgement returns to the turn scheduler.
+                // teleport.c:rloc() runs after the acceptance message. A
+                // later vanish message waits for that first message.
                 const actorWasSeen = canProjectMonster(
                     contact, contact.mx, contact.my,
                 );
@@ -15909,11 +15860,8 @@ async function dothrow(
                 return;
             }
 
-            // dothrow.c:thitmonst()->tmiss().  ROCK is GEM_CLASS sling ammo:
-            // omon_adj contributes its ordinary hit value, then lack of a
-            // matching launcher applies the unlaunched-ammo penalty.  The
-            // accepted adjacent tame edge is a miss; hit/damage ownership is
-            // intentionally left for its own selected native witness.
+            // dothrow.c:thitmonst()->tmiss(). ROCK is sling ammunition, but
+            // throwing it without a sling applies the unlaunched-ammo penalty.
             const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
             const dexterity = currentAttribute(1);
             let threshold = -1 + luck + findMonsterArmorClass(contact)
@@ -16134,10 +16082,8 @@ async function dothrow(
     }
 
     if (thrownObjectClass !== 2 && item.otyp !== CARROT) {
-        // dothrow.c removes a directly selected generic object from
-        // inventory (or splits one unit from its stack) before drop_throw().
-        // The current punishment-scroll witness immediately meets the north
-        // wall, so the projectile lands back on the hero's square.
+        // dothrow.c removes the object from inventory, or splits one unit from
+        // its stack, before drop_throw().
         let thrown = item;
         if (selectedQuantity > 1) {
             thrown = {
@@ -16813,9 +16759,8 @@ function maybeGenericHumanoidGasp(observer) {
         : { text: `${name} exclaims "${exclamation}"`, needPunctuation: false };
 }
 
-// C mon.c:peacefuls_respond(), ordinary humanoid branch. Watch arrest,
-// shop/priest/quest exceptions, and conditional own-language gasps retain
-// separate native witnesses and do not enter this owner yet.
+// C mon.c:peacefuls_respond(), ordinary humanoid branch.
+// TODO: add watch arrests, special NPC responses, and own-language gasps.
 async function respondGenericHumanoidPeacefulBystander(observer) {
     if (!genericHumanoidObserverSupported(observer)) return false;
 
@@ -17170,9 +17115,8 @@ async function attackHostileMonster(monster, x, y, {
         : 0;
     const dieroll = rnd(20);
     // uhitm.c:find_roll_to_hit() begins with abon(), target AC, intrinsic
-    // accuracy, compressed Luck, and experience level.  Publish that common
-    // threshold before role, burden, and weapon adjustments so every species
-    // consumes the same owner rather than accumulating witness cutoffs.
+    // accuracy, compressed Luck, and experience level, then applies role,
+    // burden, and weapon adjustments.
     const monsterAc = Number.isFinite(monster.mac) ? monster.mac
         : Number.isFinite(monster.ac) ? monster.ac
             : MONSTER_EXPERIENCE_META[monster.mnum]?.[0] ?? 10;
@@ -17270,9 +17214,8 @@ async function attackHostileMonster(monster, x, y, {
         damage += Math.trunc(
             ((trained + 1) * (martialArtist ? 3 : 1)) / 2,
         );
-        // uhitm.c evaluates this rare stagger gate before subtracting HP.
-        // Its knockback branch remains for a later low-roll witness; the
-        // source draw itself belongs to every qualifying unarmed strike.
+        // uhitm.c checks for an unarmed stagger before subtracting HP.
+        // TODO: apply the knockback when this roll succeeds.
         if (!game.uarm && !game.uarms && damage > 1) rnd(100);
     }
     // uhitm.c:hmon_hitmon_dmg_recalc() applies intrinsic/ring damage and
@@ -17427,10 +17370,8 @@ async function markUnseenMonsterBeforeAttack(monster, x, y) {
     );
     map_invisible(x, y);
 
-    // mon.c:wakeup() has no visible or random tail for the current awake,
-    // hostile target.  Preserve its common wake state here; mimic reveal,
-    // peaceful response, and sleeping growl remain owned by later witnessed
-    // slices rather than being approximated at this boundary.
+    // mon.c:wakeup() clears sleep here.
+    // TODO: add mimic reveal, peaceful response, and the sleeping growl.
     monster.msleeping = 0;
     return true;
 }

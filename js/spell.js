@@ -69,9 +69,8 @@ function spellbookDelay({ level, otyp }) {
 }
 
 function aggravateMonsters(g = game) {
-    // C wizard.c:aggravate().  Failed spellbook comprehension owns this
-    // common wake-up boundary; later monster movement must consume the
-    // resulting live state rather than a replay-specific actor patch.
+    // C wizard.c:aggravate(). Failed spellbook comprehension wakes every
+    // living monster before later movement.
     for (const monster of g.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
         monster.mstrategy = (monster.mstrategy ?? 0)
@@ -160,9 +159,8 @@ export async function studyBook(book, g = game) {
         tooHard = rnd(20) > readAbility;
     }
     if (tooHard) {
-        // C spell.c:cursed_book().  The name describes the bad-effect
-        // transaction; an ordinary book which fails its comprehension roll
-        // reaches it too.  Case one is the bounded live witness.
+        // C spell.c:cursed_book(). An ordinary book can reach the same bad
+        // effect after a failed comprehension roll.
         const badEffect = rn2(details.level);
         if (badEffect === 1) {
             await pline('You feel threatened.');

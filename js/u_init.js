@@ -644,9 +644,7 @@ export function makedog() {
             : role === 'samurai' ? 'Hachi' : '',
         pet: true,
         mtrack: [],
-        // C dog.c initedog(): this state belongs to the pet, not to replay
-        // logic in the scheduler. More dog inventory/nutrition fields can be
-        // added here without changing the movement owner.
+        // C dog.c initedog(): initialize the pet's training and hunger state.
         edog: {
             droptime: 0,
             dropdist: 10000,
@@ -1317,8 +1315,7 @@ function uInitRaceInventoryAndKnowledge(role) {
     } else if (race === 2) {
         preknown = DWARF_PREKNOWN_OBJECTS;
     } else if (race === 4) {
-        // C compensates every non-Wizard Orc after role inventory, not only
-        // the public Rogue carrier which originally exposed this branch.
+        // C gives every non-Wizard Orc an extra food ration after role gear.
         if (role !== 'wizard') iniInv(XTRA_FOOD_INVENTORY);
         preknown = ORC_PREKNOWN_OBJECTS;
     }
@@ -1431,9 +1428,7 @@ export function uInitInventoryAttrs() {
     // u_init_race() adds race inventory and knowledge.
     initializeRolePreknowledge(role);
     uInitRaceInventoryAndKnowledge(role);
-    // C applies discover-mode wishing inventory to every role after racial
-    // startup, then materializes role money.  Keeping these outside public
-    // role branches makes the constructor order option- and race-general.
+    // C adds discover-mode wishes after race gear, then creates role money.
     if (game.flags?.explore) iniInv(WISHING_INVENTORY);
     if (game.u?.uroleplay?.pauper) startingGold = 0;
     if (startingGold) {

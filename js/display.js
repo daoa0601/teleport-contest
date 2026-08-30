@@ -462,9 +462,8 @@ export function terrain_glyph(loc, x, y) {
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
     // C mapglyph() selects a branch-specific wall glyph family.  This source
-    // tree's wallcolors[] keeps Sokoban at CLR_GRAY, which tty serializes as
-    // the ordinary foreground; preserve the separately witnessed Mines and
-    // Gehennom colors.
+    // tree's wallcolors[] keeps Sokoban at CLR_GRAY, while Mines and Gehennom
+    // use their branch colors.
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;

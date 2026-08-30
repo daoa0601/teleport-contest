@@ -37,10 +37,8 @@ function isCurrentBranchLevel() {
             && branch?.end2?.dlevel === here.dlevel));
 }
 
-// C ref: bones.c:can_make_bones().  The ordinary low-level death witness
-// reaches the depth reservoir and rejects bones; creation and saving remain
-// downstream of the returned boolean.  Keep the draw in the fatal caller so
-// it precedes the death tty pager just as really_done() does.
+// C ref: bones.c:can_make_bones(). The fatal caller performs this check before
+// showing the death pages.
 export function probeCanMakeBones(random = rn2) {
     if (game.flags?.bones === false
         || game.level?.flags?.no_bones
@@ -88,9 +86,7 @@ async function createOrdinaryBones() {
         }`;
     }
 
-    // The inventory array retains gi.invent head-to-tail order.  This
-    // witness has no adjacent object-liking monster, so a successful
-    // one-in-eight recipient gate still falls back to the death square.
+    // The inventory array retains gi.invent head-to-tail order.
     while ((game.inventory || []).length) {
         const object = game.inventory.shift();
         object.owornmask = 0;

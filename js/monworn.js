@@ -51,9 +51,8 @@ function monsterCanDress(monster, creation) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
     if (size < MZ_SMALL || (flags & (M1_NOHANDS | M1_ANIMAL))) return false;
-    // Creation is the one source exception for skeletons and mummies.  They
-    // currently have no witnessed generated armor in the JS graph; retain the
-    // exception without letting other mindless monsters dress later.
+    // Creation is the source exception for skeletons and mummies. Other
+    // mindless monsters cannot dress themselves later.
     if ((flags & M1_MINDLESS) && !creation) return false;
     return true;
 }

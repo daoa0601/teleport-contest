@@ -844,11 +844,8 @@ function mksobj_init(otmp, artif) {
         } else if (otyp === TIN) {
             otmp.corpsenm = -1;
             if (rn2(6)) {
-                // mkobj.c retries up to 200 times until the randomly selected
-                // corpse has nutrition and permits a corpse.  Castle's first
-                // storeroom witnesses a rejected reservoir result before the
-                // accepted tin filling, so a one-shot approximation shifts
-                // every later Lua operation.
+                // mkobj.c retries up to 200 times until the selected corpse
+                // has nutrition and is allowed to leave a corpse.
                 for (let tries = 200; tries > 0; tries--) {
                     const mndx = undeadToCorpse(rndmonnum());
                     const nutrition = MONSTER_BODY_META[mndx]?.[1] ?? 0;
@@ -1412,8 +1409,7 @@ function rndmonnumReservoir(minAdjustment = 0, maxAdjustment = 0) {
         } else if (geno & 0x0400) continue; // G_HELL
         let weight = geno & 0x0007;
         // C align_shift(): a special level's fixed alignment changes the
-        // reservoir ranges even when the selected species is immediately
-        // overridden (the tutorial's explicit lichen corpse is one witness).
+        // selection weights before the caller can replace the species.
         const levelAlign = rndmonstAlignment();
         const monsterAlign = MONSTER_ALIGNMENT[mndx] || 0;
         if (levelAlign === 'law')
@@ -2810,8 +2806,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         giveOffensiveMonsterItem();
     } else if (mndx === PM_CHIEFTAIN) {
         // C ref: makemon.c m_initweap(), the armed MS_GUARDIAN tier used by
-        // chieftains, pages, roshi, and warriors.  Bar-strt is the first
-        // witness for its complete armor and optional bow/arrow graph.
+        // chieftains, pages, roshi, and warriors.
         mongets(rn2(3) ? LONG_SWORD : SHORT_SWORD);
         mongets(rn2(3) ? CHAIN_MAIL : LEATHER_ARMOR);
         if (rn2(2)) mongets(rn2(2) ? LOW_BOOTS : HIGH_BOOTS);
@@ -3174,9 +3169,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mongets(WAN_FIRE);
     }
 
-    // m_initinv() finishes with two level-gated reservoir rolls for every
-    // monster.  The water demon wins the defensive-item check in this
-    // witness and receives the selected create-monster scroll.
+    // m_initinv() finishes with level-gated defensive and miscellaneous item
+    // choices for every monster.
     if (allowMonsterInventory && !skipCommonMonsterInventory) {
         const defensiveRoll = rn2(50);
         if (baseLevel > defensiveRoll) {
@@ -3595,10 +3589,8 @@ export async function summonNastyMonsters(
         game.u?.uz?.dnum ?? 0
     ]?.flags?.hellish;
 
-    // wizard.c:nasty() occasionally delegates to demon.c:msummon().  Keep
-    // that branch explicit rather than pretending that an ordinary nasty
-    // creation has equivalent semantics.  The common spell-cast branch below
-    // is the one exercised by the current Sanctum witness.
+    // wizard.c:nasty() occasionally delegates to demon.c:msummon().  The
+    // caller handles that different summoning path.
     if (!rn2(10) && inHell) {
         return {
             count: 0,
@@ -6748,8 +6740,7 @@ function morgueMonsterType() {
     const roll = rn2(100);
     const hitDice = rn2(level_difficulty());
     if (hitDice > 10 && roll < 10) {
-        // The non-Hell neutral-demon branch is rare; retain an explicit
-        // fallback until a Pri-loca witness reaches ndemon(A_NONE).
+        // Non-Hell morgues may choose a neutral demon.
         return mkclass(56, 0);
     }
     if (hitDice > 8 && roll > 85) return mkclass(48, 0);
@@ -9036,10 +9027,8 @@ async function makelevel() {
     // Place dungeon branch
     if (branchp) await place_branch(branchp);
 
-    // Choose one of the ordinary rooms for any level-specific bonus item,
-    // then populate every ordinary room.  The choice must use the current
-    // layout's room count; replaying a fixed count immediately diverges for
-    // any seed which generated a different number of rooms.
+    // Choose one ordinary room for a level-specific bonus item, then fill all
+    // ordinary rooms.  The choice uses the rooms on this level.
     const fillableRooms = g.level.rooms
         .slice(0, g.level.nroom)
         .filter(room => room

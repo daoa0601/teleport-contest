@@ -50,10 +50,8 @@ export function heroIsDisplaced(state = game) {
         || (state?.u?.displacedTurns ?? 0) > 0;
 }
 
-// C youprop.h:Drain_resistance includes both intrinsic sources and the
-// extrinsic property installed by setworn().  Derive the zero-delay shield
-// source from the authoritative worn slot so removal, polymorph breakage, and
-// fixture restoration cannot leave a stale boolean behind.
+// C youprop.h:Drain_resistance includes both intrinsic sources and the shield
+// currently installed by setworn().
 export function heroHasDrainResistance(state = game) {
     const hero = state?.u || {};
     const shield = state?.uarms || hero.uarms;

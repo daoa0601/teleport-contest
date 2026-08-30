@@ -40,9 +40,8 @@ export function rn2(x) {
     return val;
 }
 
-// C ref: rn2_on_display_rng().  Deliberately absent from the public gameplay
-// RNG log: recorder sessions score the core stream separately from cosmetic
-// hallucination choices.
+// C ref: rn2_on_display_rng(). Cosmetic choices use a separate RNG stream and
+// do not appear in the core RNG log.
 export function rn2Display(x) {
     if (x <= 0) return 0;
     return Number(isaac64_next_uint64(game.displayCtx) % BigInt(x));
@@ -79,9 +78,8 @@ export function rnl(x) {
 // C ref: d(n, x) — roll n dice of x sides
 export function d(n, x) {
     let sum = 0;
-    // NetHack's recorder treats d(N,X) as one public call even though it
-    // advances the generator N times; using rnd() here would expose N nested
-    // log entries and shift every subsequent positional comparison.
+    // d(N,X) is one logged operation even though it advances the generator N
+    // times. Calling rnd() here would add nested log entries.
     for (let i = 0; i < n; i++) sum += RND(x) + 1;
     if (_rngLogEnabled) _rngLog.push(`d(${n},${x})=${sum}`);
     return sum;

@@ -1102,8 +1102,7 @@ export async function hitMonsterWithSupportedPotion({
     };
 }
 
-// Retain the narrow API for direct inert witnesses while all production
-// callers use the complete supported-family owner.
+// Narrow entry point for potion types with no effect on monsters.
 export async function hitMonsterWithInertPotion(options) {
     if (!INERT_MONSTER_POTION_TYPES.has(options?.potion?.otyp)) return null;
     return hitMonsterWithSupportedPotion(options);

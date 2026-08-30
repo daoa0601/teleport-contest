@@ -253,7 +253,7 @@ export async function showChoiceWindow({
 /**
  * Display a PICK_ANY tty menu.  Sections contain
  * `{ heading, items: [{ key, text, value }] }`; selected rows are redrawn
- * with `+` while every keypress remains a distinct public input boundary.
+ * with `+` and each keypress is returned separately.
  */
 export async function showMultiSelectWindow({
     title, sections, left = null, omitHeadings = false, introLines = [],

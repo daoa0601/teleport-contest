@@ -614,9 +614,8 @@ function randomMonsterCoordinate() {
         if (!(game.viz_array?.[y]?.[x] & 0x2)
             && randomMonsterGoodPos(x, y)) return { x, y };
     }
-    // The source scans from the last random offset if all fifty attempts
-    // fail. This ordinary witness succeeds earlier; retain a deterministic
-    // map fallback so a trigger still produces state rather than padding.
+    // If all fifty attempts fail, the source scans the map from the last
+    // sampled position.
     for (let dx = 0; dx < COLNO - 1; dx++) {
         for (let dy = 0; dy < ROWNO - 1; dy++) {
             const nx = ((dx + x) % (COLNO - 1)) + 1;
@@ -1019,9 +1018,7 @@ function ambientFeatureSounds(flags) {
         appendTurnMessage(messages[rn2(2)]);
     }
     if (flags.has_court && rn2(200) === 0) {
-        // Court speech depends on the live throne-room resident.  Retain the
-        // ordered trigger here; the actor-specific prose is added with its
-        // first engine-only witness.
+        // TODO: choose the throne-room resident and print the matching sound.
     }
     if (flags.has_swamp && rn2(200) === 0) {
         const messages = ['You hear mosquitoes!', 'You smell marsh gas!'];
@@ -2528,9 +2525,8 @@ async function resolveDeferredHeroPoison(action, monster, attack) {
     }
 
     if (outcome === 0 && attack.poisonAttribute !== 5) {
-        // poisoned(): the rare severe branch begins with the same 6+4d6
-        // roll.  Preserve its source order; fuller max-HP/dual-attribute
-        // recovery remains a named continuation when a witness reaches it.
+        // poisoned(): the severe branch begins with the same 6+4d6 roll.
+        // TODO: apply its maximum-HP and attribute effects.
         const damage = 6 + recordContactDice(action, 4, 6);
         if ((game.u.uhp ?? 1) <= damage) {
             game.u.uhp = 0;
@@ -3258,14 +3254,12 @@ async function waitForCurrentMonsterMore(fallbackMessage = '') {
 }
 
 // C refs: mhitu.c mattacku()/summonmu()/hitmu() and uhitm.c
-// mhitm_knockback().  The water demon is the first ordinary multi-attack
-// monster reached by a public witness.  Its tty messages are transaction
-// boundaries: the bite's damage is rolled before its message asks for
-// --More--, while that bite's knockback checks happen after the acknowledgement.
+// mhitm_knockback(). The bite damage is rolled before its message, while its
+// knockback checks happen after the player dismisses that message.
 async function waterDemonAdjacentAttack(monster) {
     const calls = [];
     rn2(5); calls.push(5); // first distfleeck()
-    rn2(16); calls.push(16); // summonmu(); no summon in this witness
+    rn2(16); calls.push(16); // summonmu() does not summon
 
     const daggerStack = (monster.minvent || monster.inventory || [])
         .find(object => object.otyp === DAGGER);
@@ -6303,14 +6297,11 @@ export async function moveloop_core() {
         } else if (g._tutorialActive) {
             // tut-1's three actors are created with STRAT_WAITFORU.  They
             // receive ordinary movement allocations every global turn but
-            // do not enter role/session-specific pet replay or act while the
-            // hero traverses the instructional rooms.
+            // do not act while the hero traverses the instructional rooms.
             initialTurnMaintenanceRng();
         } else {
-            // A turn with no full-ration actor still executes the ordinary C
-            // global maintenance transaction.  The deleted fallback replayed
-            // a fixed RNG transcript and therefore skipped state transitions
-            // such as negative-multi recovery.
+            // A turn with no full-ration actor still executes ordinary global
+            // maintenance, including recovery from negative multi.
             initialTurnMaintenanceRng();
         }
         g._maintenanceMove = g.moves || 1;

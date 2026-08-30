@@ -124,9 +124,8 @@ export async function finishPrayerOccupation(state = game) {
             `You feel that ${deity} is ${disposition}.`,
             state,
         );
-        // Off-altar pleased() chooses action rn1(Luck + 2, 1), capped at
-        // action three.  Every positive action repairs the current major
-        // trouble; this witness reaches TROUBLE_HIT.
+        // Off-altar pleased() chooses an action from Luck, capped at three.
+        // Every positive action repairs the current major trouble.
         rn2(Math.max(1, (state.u?.uluck ?? 0) + 2));
         await fixCriticalPrayerHp(state);
         if (state.u) state.u.ublesscnt = rnz(350);

@@ -672,9 +672,7 @@ export async function polyselfControlledNewman() {
     const oldLevel = u.ulevel ?? 1;
     let newLevel = oldLevel + rn2(5) - 2;
     if (newLevel < 1) {
-        // The witnessed controlled branch cannot die here.  Keep this
-        // unsupported death edge explicit rather than fabricating a healthy
-        // level-one result.
+        // TODO: finish the fatal newman() path.
         await pline("Your new form doesn't seem healthy enough to survive.");
         return { transformed: false, died: true };
     }
@@ -740,9 +738,7 @@ export async function polyselfControlledNewman() {
     };
 }
 
-// The first live witness is ordinary, uncontrolled random polymorph.  This
-// ports that source branch through a legal ordinary monster result; newman()
-// and controlled selection remain separate architecture blocks.
+// Ordinary uncontrolled polymorph into a legal monster form.
 export async function polyselfRandomOrdinary() {
     const constitution = game.u?.acurr?.a?.[2] ?? 10;
     if (rn2(20) > constitution) {

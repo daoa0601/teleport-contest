@@ -145,10 +145,8 @@ function serializeCapture(term) {
         }
 
         let firstCol = firstGlyph;
-        // Inverse-video and underlined blanks paint pixels and therefore
-        // participate in tty's row bounds just like glyphs.  This is a
-        // terminal invariant, not a fixture/menu mode; dropping a leading
-        // styled blank changes the decoded 80x24 cell grid.
+        // Inverse-video and underlined blanks occupy terminal cells just like
+        // visible glyphs, so leading styled blanks affect the row bounds.
         const leadingStyleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
         const styled = cells.findIndex((cell, col) =>
             col < firstGlyph && cell.ch === ' '

@@ -72,9 +72,7 @@ function oneShotSpecialRoomAt(state, x, y) {
 async function enterOneShotSpecialRoom({ room }) {
     switch (room.rtype) {
     case MORGUE:
-        // C's midnight branch depends on the fixed session timestamp.  The
-        // first observed contract is the ordinary daytime line; retain the
-        // source branch here so a midnight witness has one explicit owner.
+        // C chooses the morgue message from the game's recorded hour.
         if (Number(String(game.datetime || '').slice(8, 10)) === 0)
             await plineWithContinuation('Run away!  Run away!');
         else

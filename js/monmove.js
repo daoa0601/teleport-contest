@@ -808,14 +808,12 @@ function monsterWantsFloorObject(monster, object) {
     const oclass = floorObjectClass(object);
     // Unicorns are a source-level exception before searches_for_item(): they
     // ignore every non-gem object, including otherwise useful containers and
-    // potions.  (Mineral gem-class objects are filtered by the fuller
-    // material policy; the live boundary here is an ordinary sack.)
+    // potions. Mineral gem-class objects are filtered by material elsewhere.
     if ([101, 102, 103].includes(monster.mnum) && oclass !== GEM_CLASS)
         return false;
     // C muse.c:searches_for_item() gives every intelligent, non-animal
-    // monster a small set of survival/useful-object goals independent of its
-    // species' COLLECT or MAGIC flags.  The live witnesses are a quantum
-    // mechanic pursuing healing and elves preferring a nearer unlocked sack.
+    // monster a small set of useful objects independent of its species'
+    // COLLECT or MAGIC flags.
     if (!(flags1 & (M1_MINDLESS | M1_ANIMAL))
         && (MONSTER_SEARCH_POTIONS.has(object.otyp)
             || MONSTER_SEARCH_SCROLLS.has(object.otyp)
@@ -1202,9 +1200,7 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
             monster.mhpmax,
             (monster.mhp ?? 1) + increase,
         );
-        // The accepted natural priest advances from level 15 to 16, below
-        // the high-priest transformation threshold.  Form-changing growth
-        // retains its own future witness rather than being guessed here.
+        // TODO: apply species changes when growth crosses their thresholds.
         monster.m_lev = Math.min(49, (monster.m_lev ?? 0) + 1);
         misc.increase = increase;
         misc.effectApplied = true;
@@ -1729,8 +1725,7 @@ function monAllowFlags(monster, state) {
     // monster enters the selected square.
     if (monsterCanTunnel(monster, state)) flags |= ALLOW_DIG;
     // C mon.c:mon_allowflags() grants this independently of wall passage.
-    // Engulfers carrying the hero need a narrower hero-form check; until that
-    // boundary is witnessed, do not let such an actor squeeze through bars.
+    // TODO: handle bar passage by an engulfer carrying the hero.
     if (monster !== state?.u?.ustuck && monsterPassesBars(monster))
         flags |= ALLOW_BARS;
     // A unicorn which can escape by teleporting refuses every square directly
@@ -2173,9 +2168,7 @@ function applyHeroPassiveAfterContact(
                 state.u.mhmax = state.u.mh;
         }
     } else if (damageType !== AD_PHYS) {
-        // Other passive effect families remain explicit future owners.  They
-        // still consume the shared damage/gate prefix without inventing an
-        // effect from the current cold-form witness.
+        // TODO: apply the remaining non-physical passive effects.
         damage = 0;
     }
 
@@ -2440,8 +2433,7 @@ function petCouldReachItem(monster, x, y, state) {
         && !(speciesFlags & M1_SWIM)) return false;
     const pile = state?.level?.objects?.[x]?.[y] || [];
     if (pile.some(item => item.otyp === BOULDER)) return false;
-    // The current pet witnesses neither like lava nor throw rocks.  Those
-    // species gates belong here when their first trace reaches this owner.
+    // TODO: account for lava-loving pets and rock throwers.
     return true;
 }
 
@@ -2493,10 +2485,8 @@ function couldSeeFromHero(state, x, y) {
     return !!(state.viz_array?.[y]?.[x] & 0x1);
 }
 
-// C monmove.c:watch_on_duty().  The selected warning branch continues into
-// ordinary actor movement; this slice owns its source-ordered eligibility and
-// RNG gate.  Lock-picking/digging messages and guard hostility remain a
-// separate effect boundary for the first witness which selects a warning.
+// C monmove.c:watch_on_duty(). A warning does not consume the watchman's move.
+// TODO: add lock-picking and digging warnings, including guard hostility.
 function watchOnDutyRng(monster, state, random, calls) {
     if ((monster?.mnum !== PM_WATCHMAN
             && monster?.mnum !== PM_WATCH_CAPTAIN)
@@ -2832,9 +2822,7 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
     const carryAmount = fetchableClass
         ? monsterCarryAmount(monster, object) : 0;
     if (carryAmount > 0 && !object.cursed) {
-        // C dog_invent(): can_carry/could_reach_item are true for the live
-        // ordinary corpse witness. The pickup gate is still observable when
-        // it rejects the object and leaves the floor chain unchanged.
+        // C dog_invent(): a failed pickup leaves the floor pile unchanged.
         const apport = Math.max(1, monster.edog?.apport ?? 1);
         if (recordRandom(random, calls, 20) < apport + 3) {
             const approach = recordRandom(random, calls, Math.max(1, udist));
@@ -2933,9 +2921,7 @@ function finishPetMonsterKill(
     aggressor.mhp = Math.min(
         aggressor.mhpmax, (aggressor.mhp ?? 1) + currentIncrease,
     );
-    // grow_up() can raise stronger pets; the current level-zero zombie
-    // witness increases the kitten's maximum HP without crossing its level
-    // threshold.
+    // grow_up() can also raise the pet's level when it crosses the threshold.
     return {
         corpseCreated: !!corpse, corpse, growth: maxIncrease,
         currentIncrease, aggressor,
@@ -2967,10 +2953,8 @@ function createOrdinaryMonsterCorpse(defender, state, random, calls) {
         // as its temporary identity, this override must rebuild the ordinary
         // corpse timer before grow_up().
         const corpse = mkcorpstat(CORPSE, null, corpseForm, x, y, 8);
-        // C make_corpse() does not leave a zombie corpse.  It converts the
-        // undead species back to its living form and backdates the corpse by
-        // TAINT_AGE + 1, making it poisonous to a pet immediately.  The
-        // first live witness is PM_KOBOLD_ZOMBIE -> PM_KOBOLD.
+        // C make_corpse() converts zombies and mummies back to their living
+        // corpse form and backdates it past TAINT_AGE.
         corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
         const sourceMove = Math.max(1, (state?.moves ?? 1)
             - Number(state?.urole?.key === 'wizard'));
@@ -3278,10 +3262,8 @@ function petRangedTargetScan(pet, state, rollOne, calls) {
 }
 
 function petAttacksHero(pet, state, random, rollDice, rollOne, calls) {
-    // PM_PONY: AT_KICK 1d6 followed by AT_BITE 1d2.  mattacku() raises the
-    // to-hit die from rnd(20) to rnd(21) for the second attack.  This compact
-    // owner is enough for the live Conflict witness; later attack effects can
-    // extend the same result list without changing the movement transaction.
+    // PM_PONY: AT_KICK 1d6 followed by AT_BITE 1d2. mattacku() raises the
+    // to-hit die from rnd(20) to rnd(21) for the second attack.
     const attacks = [
         { type: 'kick', die: 20, damn: 1, damd: 6 },
         { type: 'bite', die: 21, damn: 1, damd: 2 },
@@ -3298,8 +3280,7 @@ function petAttacksHero(pet, state, random, rollDice, rollOne, calls) {
         if (hit) {
             damage = rollDice(attack.damn, attack.damd);
             calls.push(`d(${attack.damn},${attack.damd})`);
-            // Shared physical knockback eligibility checks run even though
-            // neither a kick nor a bite can move this hero in the witness.
+            // Physical attacks check knockback after rolling damage.
             recordRandom(random, calls, 3);
             recordRandom(random, calls, 6);
             damage = reduceHeroContactDamage(
@@ -3445,9 +3426,8 @@ function movePet(
             && recordRandom(random, calls, 13 * uncursedCount)) continue;
 
         // C dog_move(): only distant, unleashed pets probabilistically avoid
-        // recent locations.  `uncursedCount` is the source `k` for ordinary
-        // edog state, so both the range and the track-age cutoff come from the
-        // live candidate set rather than a fixed replay table.
+        // recent locations. `uncursedCount` is the source `k`, so it controls
+        // both the random range and the track-age cutoff.
         if (!monster.mleashed
             && distmin(oldx, oldy, state?.u?.ux ?? goal.x,
                 state?.u?.uy ?? goal.y) > 5) {
@@ -5093,8 +5073,7 @@ function trapAtMonster(monster, state) {
 // C ref: trap.c mintrap()/trapeffect_bear_trap().  An actor already held by
 // a bear trap gets its 1-in-40 escape attempt at the start of m_move(); one
 // which has just selected a destination triggers that square from postmov().
-// Dice are injectable separately because d(2,4) is one public recorder call,
-// not two rn2(4) calls.
+// Keep d(2,4) as one dice operation rather than two visible rn2(4) calls.
 function releaseFromMonsterTrap(monster, state, random, calls) {
     const trap = trapAtMonster(monster, state);
     if (!trap) {
@@ -5212,10 +5191,7 @@ function triggerMonsterTrap(
         // migrate_to_level() removes the actor from fmon and stores its
         // destination out of map before postmov() can return to dochug(), so
         // there is no trailing distfleeck() draw for this action.
-        //
-        // The current witness is an ordinary hostile.  Leash refusal and the
-        // endgame elemental/Amulet gate remain owned by teleport_pet() and
-        // are deliberately not approximated here.
+        // TODO: handle leashes and the endgame Amulet restriction for pets.
         if (monster.pet || (monster.mtame ?? 0) > 0) return null;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
@@ -5351,9 +5327,7 @@ function triggerMonsterTrap(
             movement.trap = event;
             return event;
         }
-        // teleport_pet() can release an uncursed leash before migration.
-        // That interactive leash branch has no public witness; preserve its
-        // current state rather than silently severing a live leash here.
+        // TODO: offer to release an uncursed leash before migration.
         if (monster.mleashed) return null;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
@@ -5450,11 +5424,8 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        // The JS scheduler snapshots the current actor scan up front, while
-        // C's linked-list iterator has already passed the nearby actors in
-        // this witness.  Preserve wake_nearto() as a scan-boundary effect so
-        // it changes the next monster allocation without retroactively
-        // adding actors to this one.
+        // The scheduler scans a fixed actor list. Defer wake_nearto() so it
+        // affects the next scan without adding actors to the current one.
         if (!state._deferredMonsterTrapWakes)
             state._deferredMonsterTrapWakes = [];
         state._deferredMonsterTrapWakes.push({
@@ -5648,10 +5619,8 @@ function triggerMonsterTrap(
             return event;
         }
 
-        // A selected explosion continues through scatter, pit conversion,
-        // thitm(), recursive pit damage, and fill_pit().  Keep that unobserved
-        // stateful branch explicit instead of approximating it with the
-        // non-trigger witness.
+        // TODO: continue the explosion through scatter, pit conversion,
+        // thitm(), recursive pit damage, and fill_pit().
         const event = {
             kind: 'landmine-explosion-pending', trap,
             rawDamage, damage, bodyWeight, triggerRoll, triggerWeight,
@@ -5688,8 +5657,7 @@ function triggerMonsterTrap(
         }
 
         // trap.c:burnarmor() samples equipment slots until erosion succeeds.
-        // Case 1 (cloak/suit/shirt) terminates even when all three are empty;
-        // the empty-inventory lich witness consequently owns 4,0,1.
+        // The cloak/suit/shirt case terminates even when all three are empty.
         let burnArmorReturnedTrue = false;
         for (;;) {
             const slot = recordRandom(random, calls, 5);
@@ -6879,10 +6847,7 @@ function resolveEnergyVortexDrainSlot(
     };
 }
 
-// Resume gulpmu() after the urgent initial engulf line has been dismissed.
-// The first public owner is an ice vortex: it establishes swallowed state,
-// rolls the duration, applies the first cold-effect gate, and leaves message
-// projection to allmain's tty transaction.
+// Resume gulpmu() after the player dismisses the initial engulf message.
 export function resumeDeferredHeroEngulf(
     action, state, random = rn2, rollOne = rnd, rollDice = d,
 ) {
@@ -8734,9 +8699,9 @@ function distantPhaseFourAttackSetup(
 }
 
 // Complete the portion of m_move()/postmov()/dochug() which follows an
-// ordinary hostile or pet destination choice.  Message-producing movement
-// branches can return before this helper and resume here without replaying
-// set_apparxy(), species probes, or candidate selection.
+// ordinary hostile or pet destination choice. Message-producing movement
+// can resume here without repeating set_apparxy(), species checks, or path
+// selection.
 function completeMovedMonsterAction(
     monster, movement, state, random, rollDice, rollOne, calls,
     { trapAlreadyHandled = false } = {},
@@ -8885,9 +8850,8 @@ export function quietMonsterActionRng(
         // monmove.c:dochug() erodes text beneath every awake, mobile actor
         // before confusion/fleeing checks and the first set_apparxy().
         wipeEngravingAt(monster.mx, monster.my, 1, false, state?.level);
-        // Status recovery and the fleeing teleport/courage probes belong to
-        // phase one.  A tty suspension inside a later covetous relocation
-        // must not replay any of them when the same actor resumes.
+        // Status recovery and fleeing checks happen before movement. Do not
+        // repeat them when a message pauses a later covetous relocation.
         if (monster.mconf && recordRandom(random, calls, 50) === 0)
             monster.mconf = 0;
         if (monster.mstun && recordRandom(random, calls, 10) === 0)
@@ -9106,9 +9070,7 @@ export function quietMonsterActionRng(
             movement = moveVaultGuard(monster, state, random, calls);
         } else {
             // C dochug(): Conflict gives every ordinary hostile its own
-            // resistance check before m_move(), even when no adjacent actor
-            // is available to fight.  Generated monsters during a long
-            // travel are the first witness with several such actors alive.
+            // resistance check before m_move(), even with nothing to attack.
             movement = moveHostile(
                 monster, state, random, rollDice, rollOne, calls,
             );
@@ -9223,9 +9185,7 @@ export function resumeDeferredMonsterStrikingWand(
                     continue;
                 }
                 recordRandom(random, action.calls, 100);
-                // All currently witnessed false-target floor objects are
-                // non-artifact and non-breakable; break ownership remains a
-                // successor boundary when a zero or artifact case appears.
+                // TODO: break eligible floor objects after a failed resist.
                 pileAffected = true;
             }
             if (pileAffected) remaining--;

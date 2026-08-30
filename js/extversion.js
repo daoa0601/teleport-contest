@@ -52,9 +52,8 @@ const VERSION_PAGE_2 = [
 
 export async function doextversion() {
     // version.c substitutes :LUAVERSION:/:LUACOPYRIGHT: lazily. The first
-    // get_lua_version() opens a sandboxed Lua state, whose nhlib setup owns
-    // the same two alignment-shuffle calls observed by the C runtime-info
-    // witness. Later disclosures reuse the populated runtime strings.
+    // get_lua_version() opens a Lua state and loads nhlib; later calls reuse
+    // the resulting strings.
     if (!game._runtimeVersionInfoInitialized) {
         rn2(3);
         rn2(2);
