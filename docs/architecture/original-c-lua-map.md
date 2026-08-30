@@ -38438,16 +38438,23 @@ flowchart TD
     D --> B
 
     E[fire command] --> F{uquiver already populated?}
+    EQ[Q quiver command] --> AM[shared wield.c doquiver_core]
     F -- no and autoquiver --> AQ[dothrow.c autoquiver scans live inventory]
     AQ --> AP[current ammo > missile > alternate ammo > miscellaneous]
-    F -- no manual fallback --> AM[wield.c doquiver_core fire selection]
+    F -- no manual fallback --> AM
     AP --> AR[setuqwep without an extra turn]
-    AM --> AS{selected identity in a weapon slot?}
+    AM --> AX{selection class}
+    AX -- explicit - --> AC[clear quiver zero-time]
+    AX -- armor accessory saddle --> AD[reject before slot mutation]
+    AX -- welded primary --> AE[reveal BUC; only first discovery timed]
+    AX -- direct count --> AU[splitobj and finish_splitting]
+    AX -- ordinary --> AS{selected identity in a weapon slot?}
+    AU --> AR
     AS -- no --> AR
     AS -- yes --> AT{ready N-1 or ready all?}
-    AT -- N-1 --> AU[splitobj and finish_splitting preserve parent slot]
+    AT -- N-1 and free letter --> AF[split and preserve parent slot]
     AT -- all --> AV[setuwep or setuswapwep and untwoweapon]
-    AU --> AR
+    AF --> AR
     AV --> AR
     F -- yes --> G{matching launcher wielded?}
     AR --> G
@@ -38509,6 +38516,20 @@ The split path itself is zero-time.  Moving the whole primary costs a turn;
 moving the whole alternate costs a turn only when it was the active offhand.
 That selection-time result survives a later cancelled direction rather than
 being overwritten by `dothrow()` cancellation.
+
+`wield.c:dowieldquiver()` delegates the `Q` command to the same
+`doquiver_core("ready")`; it is not a Ranger-only arrow operation.  Both
+entry points now use one JavaScript owner.  `invent.c:getobj()` retains a
+direct positive count through the nested picker, rejects an excessive count
+without escaping to the outer command, and splits the requested quantity
+before weapon-slot confirmation.  `splittable()` prevents that split for a
+cursed loadstone or welded primary.  The implicit `N-1` offer is suppressed
+when all 52 basic inventory letters are occupied, while ready-all remains
+available.  Explicit `-` clears `W_QUIVER`; armor, accessory, and saddle masks
+are rejected; and `welded()` makes a previously unknown curse known and timed
+without removing the primary.  A repeated known-welded refusal is zero-time.
+This replaces the former `Q` picker which advertised only object type 18 and
+accepted other identities through a separate permissive state mutation.
 
 The former JavaScript normal path selected a second world for Cavemen.  It
 replayed aggregate RNG by turn number, overwrote the pet with a 25-turn
@@ -38576,15 +38597,20 @@ assert new versus retained object identity, quantities, slot ownership,
 quiver ownership, two-weapon state, and the primary/active-offhand/inactive-
 alternate turn-cost boundary even when direction is cancelled.  They do not
 assert prompt text, helper calls, canned-queue shape, or source-line order.
-The focused Caveman/weapon-slot portfolio passes 14/14 and the default
-behavioral gate passes 386/386.
+The `doquiver_core` portfolio adds explicit clearing, real mask rejection,
+known/unknown welding, valid and excessive counted selection, cursed-loadstone
+non-splitting, declined confirmation, and the full-letter capacity boundary.
+Together with the Caveman and weapon-slot controls it passes 23/23.  These
+tests assert identity, quantity, BUC knowledge, slot masks, two-weapon state,
+elapsed turns, and bridge use rather than prompt snapshots, collaborator
+calls, or private queue shape.  The default behavioral gate passes 395/395.
 
 This subsystem remains partial.  Hurtle/death interruption within a volley,
-welded known/unknown, touch/artifact, and unknown-cursed wield failure
-continuations, full-inventory or inventory-letter-exhausted splitting,
-explicit counted `getobj()` splits, explicit quiver clearing and gold, worn
-armor/accessory/saddle selection, polearm/whip and return-weapon fire modes,
-swallowed sling ammunition, water-wall/sink and other projectile contacts and
-terrain, non-sling multishot and count-prefix families, alternate options,
-persistence, and sealed strata are still open.  Lua owns no runtime Caveman
-scheduler or projectile exception.
+wallet-backed gold selection, partial-gold refusal and coin flight; menu-
+supplied counts; exact multiple-overflow `#` identity and reassignment breadth;
+welded `reset_remarm()` occupation cancellation and presentation breadth;
+touch/artifact and unknown-cursed launcher-wield failure continuations;
+polearm/whip and return-weapon fire modes; swallowed sling ammunition;
+water-wall/sink and other projectile contacts and terrain; non-sling multishot
+and count-prefix families; alternate options; persistence; and sealed strata
+are still open.  Lua owns no runtime Caveman scheduler or projectile exception.

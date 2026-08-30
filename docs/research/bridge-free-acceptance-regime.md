@@ -74,8 +74,13 @@ option is off or no automatic candidate exists.  Manual selection of a primary
 or alternate stack now follows the source split-versus-ready-all transaction:
 partial selection creates a new quiver identity while retaining one item in
 the weapon slot, and moving the whole primary or active offhand preserves its
-turn cost even if direction input is later cancelled.  Full-inventory,
-welded, gold, and explicit-quiver-clearing continuations, non-sling count
+turn cost even if direction input is later cancelled.  `Q` and the empty-
+quiver `f` fallback now share that same live `doquiver_core` owner instead of
+using a Ranger-only arrow picker.  The shared transaction owns explicit
+clearing, direct counted splits, the 52-letter implicit-split boundary,
+armor/accessory/saddle rejection, cursed-loadstone non-splitting, and the
+known-versus-newly-discovered welded-primary time distinction.  Wallet-backed
+gold, menu-supplied counts and exact overflow-letter breadth, non-sling count
 families, interruption, and broader fire modes remain explicitly partial.
 Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but

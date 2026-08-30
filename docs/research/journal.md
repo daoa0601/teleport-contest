@@ -99234,3 +99234,78 @@ corpus, public scorer, sealed gate, or official hidden measurement;
 unauthorized.
 
 ---
+
+### [2026-08-30 07:12 EEST, journal block 3222] {#bridge-free #doquiver-core #quiver-command #getobj #welded #loadstone #inventory-capacity #worn-mask #behavioral-witness #change-detector #critical-debugging-portfolio #implementation #process-safety}
+
+**Contract and independent portfolio:** block3220 left clearing, counted
+selection, capacity, welding, worn-mask, and gold branches open.  Pinned
+`wield.c:dowieldquiver()` and empty-quiver `dothrow.c:dofire()` both delegate
+to one `doquiver_core`; a role-specific `Q` implementation is not a source
+owner.  `invent.c:getobj()` keeps a positive direct count inside the nested
+request, retries an excessive count, and splits before slot confirmation.
+`splittable()` excludes a cursed loadstone and welded primary.  The implicit
+`N-1` offer requires a free one of 52 basic inventory letters.  Explicit `-`
+clears `W_QUIVER`; armor/accessory/saddle masks reject before slot mutation;
+and `welded()` reveals an unknown curse with one elapsed turn while a repeated
+known refusal is zero-time.  Wallet-gold representation, permissive worn-state
+flags, blanket cursed-object welding, and always splitting a stack were kept
+as distinct mechanisms rather than folded into the slot-confirmation fix.
+
+**Red evidence and earliest divergences:** the seven opening witnesses all
+failed independently.  `-` retained the old quiver identity; an object with
+`W_ARMOR` became quivered; unknown and known cursed primary clubs both entered
+two slots without BUC discovery; direct `2a` left a four-dart primary unchanged;
+declining a one-item primary still readied it; and a full 52-letter inventory
+left the same three-dart identity simultaneously wielded and quivered.  Those
+are state divergences before projectile direction, RNG, actor scheduling, or
+screen output.  No test asserts prompt text, source lines, helper calls,
+canned-queue order, or a recorded/public result.
+
+**Implementation, adversarial effect, and test cleanup:** the Ranger-only
+object-type-18 `Q` picker is deleted.  `Q` and the manual `f` fallback now use
+one live JavaScript `doquiver_core` transaction.  The shared inventory request
+parses and validates direct counts without exiting its nested command; quiver
+mutation owns real `W_QUIVER` masks; selection owns explicit clearing,
+counted child identities, worn-mask refusal, all-letter capacity policy,
+cursed-loadstone non-splitting, and the known/unknown welded time boundary.
+The adversarial excessive-count and cursed-loadstone controls pass.  The first
+neighbor run also exposed that older weapon tests used magic `1/2/4` values as
+weapon slots even though those are C armor bits.  Those fixtures now use
+`W_WEP`, `W_SWAPWEP`, and `W_QUIVER`; production was not weakened to tolerate
+an impossible test representation.  A shared weapon-arena helper removes the
+duplicated setup.  The combined source-state portfolio passes **23/23**.
+
+**Falsified alternatives and next blocker:** a permissive `item.worn` flag is
+not equivalent to source masks; every cursed object is not welded; a cursed
+loadstone is not splittable; and copying wallet gold into a temporary quiver
+proxy would create a compatibility bridge because C owns gold as an inventory
+object while JavaScript owns `_goldCount` as aggregate wallet state.  The next
+representation-level blocker is to give wallet gold one source-owned object
+lifecycle covering full selection, partial-count refusal, quivering, single-
+coin detachment, flight, settlement, and display without double counting.
+Menu-supplied counts, multiple overflow `#` identities, special fire modes,
+welded `reset_remarm()` occupation cancellation and presentation breadth,
+interruption, persistence, and sealed strata also remain.  No corpus, scorer,
+public-regression lane, sealed trace, push, publication, hidden measurement,
+or supplemental-animation work ran.
+
+---
+
+### [2026-08-30 07:13 EEST, journal block 3223] {#doquiver-core #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** one guarded default behavioral process passed **395/395**
+named tests and exited normally in 4.2 seconds.  The behavioral-lane audit is
+green across **45 files** with no recorded-session, public-parity, mock/spy,
+or call-transcript dependencies.  Bridge audit remains green at **124
+production files, 9 guarded replay modules, and 19 fixture modules**.  The
+ownership generator is current and no matching runner remains.
+
+**Ownership and evidence limit:** the registry and C/Lua map now replace the
+separate `Q` path with shared `doquiver_core` ownership and record only the
+direct-count, mask, welding, non-splitting, capacity, clearing, identity, and
+timing branches witnessed in block3222.  Wallet gold and the other named gaps
+remain `partial`.  This gate is local bridge-free behavioral evidence, not an
+engine-only corpus, public scorer, sealed gate, or official hidden measurement;
+`public-session-status.md` is unchanged and publication remains unauthorized.
+
+---
