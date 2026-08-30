@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+// Recorded public-session drift witness; not behavioral acceptance.
+
 import { runSegment } from '../js/jsmain.js';
 import { game } from '../js/gstate.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';

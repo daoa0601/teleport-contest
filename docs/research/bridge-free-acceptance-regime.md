@@ -176,6 +176,15 @@ files stay in that lane until any useful source-independent contracts are
 extracted into focused behavioral tests. A green compatibility lane must never
 be reported as bridge-free acceptance.
 
+`scripts/audit-test-lanes.mjs` enforces the first structural boundary: a
+default-lane `.test.js` file may not read a recorded `sessions/*.session.json`
+input or import the public RNG-parity helpers. Exact bridge-free replays,
+character-selection traces, Priest/Race startup traces, and the trap-victim
+trace therefore use `.public-regression.js`; only the fresh quiet-role runtime
+and fail-loud policy checks remain in `bridge_free.test.js`. This audit prevents
+known traces from inflating the behavioral count, but it is not a substitute
+for semantic review of mocks, result objects, or internal call-order assertions.
+
 ## Explicit non-results
 
 The following do not satisfy this regime:

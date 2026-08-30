@@ -97880,3 +97880,53 @@ public suite, scorer, sealed trace, push, publication, official hidden
 measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 03:16 EEST, journal block 3187] {#test-quality #change-detector #fake-acceptance #public-regression #bridge-free #test-lane-audit #structural-quarantine #process-safety}
+
+**Witness and earliest risk:** the user's checksum and mock-order examples
+sharpened the oracle rule: a mechanical test must derive from C/Lua behavior,
+an observable game outcome, or an independent policy—not from the JavaScript
+implementation's own decomposition.  A semantic audit found that the default
+lane still contained five recorded-trace dependencies.  Four files read public
+session JSON directly, and `bridge_free.test.js` compared exact public Samurai,
+Rogue, and Priest RNG, screens, and cursors.  Consequently a passing default
+lane could count compatibility replays as both behavioral correctness and
+bridge-free generalization.
+
+**Decision and implementation:** the four session-driven files are now
+structural `.public-regression.js` witnesses.  Exact actor-rich parity was split
+from `bridge_free.test.js` into `bridge_free.public-regression.js`; the default
+file retains only fail-loud bridge policy, source audit, and a fresh quiet-role
+runtime with zero bridge hits.  `scripts/audit-test-lanes.mjs` and
+`test/test_lane_policy.test.js` now reject any `.test.js` that reads a recorded
+session or imports the public parity helpers.  The explicit public script lists
+the twelve tracked compatibility files and deliberately does not discover the
+three user-owned untracked regression files.  Ownership witnesses now name the
+public bridge-free replay lane rather than presenting those traces as
+behavioral acceptance.
+
+**Measured effect and adversarial check:** the default lane falls from **40
+files / 381 named tests** to **37 files / 357 named tests**; the removed green
+count was compatibility evidence, not lost game coverage.  The guarded policy
+and fresh-runtime set passes **5/5**, and guarded `npm test` exits green across
+all **357** named behavioral tests in **2.6 seconds**.  The lane audit reports
+zero recorded-session or public-parity dependencies, all twelve configured
+public files exist, ownership generation/checking, JavaScript syntax, JSON
+parsing, and `git diff --check` pass.  No duplicate verifier was launched and
+the owned runner exited normally.
+
+**Falsified hypotheses, limits, and next blocker:** filename quarantine alone
+was not enough while exact public parity remained inside a file named
+`bridge_free.test.js`; zero forbidden bridge hits and exact known-session parity
+are distinct claims; and a domain assertion appended after a trace checksum
+does not make that whole test independent.  The new audit catches known trace
+dependencies mechanically, not every semantic change detector.  Source-derived
+RNG order can remain legitimate because RNG is scored game state, while mock
+call order or internal result structure still requires case-by-case replacement
+with world, actor, inventory, timer, or presentation outcomes.  The small
+Priest/Race/trap assertions remain compatibility-only until extracted into
+fresh source-owned witnesses.  No public regression lane, full Contest corpus,
+scorer, sealed trace, push, publication, official hidden measurement, or
+animation work ran.
+
+---
