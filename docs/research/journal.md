@@ -98433,3 +98433,48 @@ implementation blocker remains the next ordered role fallback or a broader
 source-owned melee/door slice, not recovery of a public-only metric.
 
 ---
+
+### [2026-08-30 05:12 EEST, journal block 3199] {#test-quality #change-detector #mock-order #fountain #monster-trap #melt-ice #behavioral-lane #negative-coverage #process-safety}
+
+**Semantic audit and decisive classification:** after block3198, the default
+lane still contained three files that instantiated production reducers with
+`createMonster`, `announce`, `triggerTrap`, `placeGem`, `repaint`, and similar
+test collaborators, then asserted returned bookkeeping plus callback effects.
+Two coin-application tests did the same with `createGold`, Wisdom, liquid-name,
+and repaint counters.  One melt-ice test recorded a `timeline[]` of messages,
+`wake_nearto`, buried-zombie disturbance, `newsym`, and the RNG snapshot at
+each callback.  These were transformations of JavaScript decomposition: an
+incorrect disconnected live caller could pass all of them.
+
+**Decision and test-surface effect:** deleted the nine fountain-actor, two
+fountain-gem, two web-presenter, two coin-callback, and one internal melt-ice
+timeline tests rather than calling their green count coverage.  Retained the
+independently derived fountain coin amount/blindness/looted formulas, live
+`mkgold` floor identity and merge state, and melt-ice world-state tests whose
+contracts are terrain, actor, inventory, timer, corpse, life-saving, or tty
+outcomes.  The default lane therefore drops from **381 tests / 41 files** to
+**365 tests / 38 files**.  This is removal of sixteen false or redundant
+acceptance claims, not a game-mechanics regression.
+
+**Mechanical guard and measured gate:** `audit-test-lanes.mjs` now also rejects
+mock/spy APIs and named `calls`, `callOrder`, or `invocations` collectors in
+default tests.  It deliberately does not claim to detect renamed collectors or
+every dependency-callback checksum; semantic review remains required.  The
+focused fountain/formula/themeroom/policy run passes **58/58**.  One guarded
+default behavioral run passes all **365/365** tests and exits normally.  The
+lane audit passes **38** files, the bridge audit passes **129/15/19**, ownership
+generation/checking and JSON parsing pass, and diff hygiene is clean.
+
+**Falsified hypotheses and next blocker:** verifying a reducer's own result
+object in addition to its callback sequence did not make the test independent;
+throwing from an unexpected mock only proved the current branch decomposition;
+and retaining a test because it was fast did not justify counting it as
+acceptance.  Direct potion reducers and callback-rich continuation tests remain
+a semantic-audit surface; their state/effect assertions are not automatically
+invalid, but any pure collaborator transcript should be deleted or replaced by
+a live world outcome.  The three user-owned untracked public-regression files
+remain unstaged.  No full Contest corpus, configured public-regression lane,
+normal scorer, sealed trace, push, publication, official hidden measurement,
+or animation work ran.
+
+---
