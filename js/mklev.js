@@ -28,7 +28,7 @@ import {
     TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM,
     SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED,
     SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE,
-    HEADSTONE, ENGRAVE, BURN, MARK, DUST,
+    HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD,
     DIR_N, DIR_S, DIR_E, DIR_W, DIR_180,
     XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT,
     IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_POOL,
@@ -86,7 +86,7 @@ import {
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
     MIRROR, POT_OBJECT_DETECTION, POT_BOOZE, APPLE, SHIELD_OF_REFLECTION,
-    WAN_WISHING, SPE_BOOK_OF_THE_DEAD,
+    SPE_BOOK_OF_THE_DEAD,
     AMULET_OF_LIFE_SAVING,
 } from './object_data.js';
 import {
@@ -362,7 +362,6 @@ const PM_ROCK_TROLL = 222;
 const PM_GIANT_EEL = 319;
 const PM_WUMPUS = 84;
 const PM_LONG_WORM = 114;
-const PM_SHARK = 318;
 const PM_BLACK_LIGHT = 119;
 const PM_STALKER = 153;
 const PM_BLACK_PUDDING = 209;
@@ -10600,12 +10599,18 @@ function specialRoomAt(x, y, roomType) {
             && y >= room.ly && y <= room.hy) ?? null;
 }
 
+function luaCoordinate(options) {
+    if (Array.isArray(options.coord))
+        return { x: options.coord[0], y: options.coord[1] };
+    if (Number.isInteger(options.coord?.x)
+        && Number.isInteger(options.coord?.y)) return options.coord;
+    if (Number.isInteger(options.x) && Number.isInteger(options.y))
+        return { x: options.x, y: options.y };
+    return null;
+}
+
 async function createLuaAltar(context, options) {
-    const coordinate = Array.isArray(options.coord)
-        ? { x: options.coord[0], y: options.coord[1] }
-        : Number.isInteger(options.x) && Number.isInteger(options.y)
-            ? { x: options.x, y: options.y }
-            : null;
+    const coordinate = luaCoordinate(options);
     const point = coordinate
         ? {
             x: context.xstart + coordinate.x,
@@ -10648,6 +10653,7 @@ function createLuaRoomRegion(context, options) {
         morgue: MORGUE,
         barracks: BARRACKS,
         court: COURT,
+        throne: COURT,
         swamp: SWAMP,
         temple: TEMPLE,
         shop: SHOPBASE,
@@ -10704,6 +10710,55 @@ function createLuaDoor(context, { state, point, wall = 'all' }) {
     return specialDoorAt(context, masks[state], point.x, point.y);
 }
 
+function createLuaDrawbridge(context, options) {
+    const coordinate = luaCoordinate(options);
+    if (!coordinate)
+        throw new TypeError('des.drawbridge requires coordinates');
+    const directions = {
+        north: DB_NORTH, south: DB_SOUTH,
+        east: DB_EAST, west: DB_WEST,
+    };
+    const direction = options.dir === 'random' || options.dir == null
+        ? [DB_NORTH, DB_SOUTH, DB_WEST, DB_EAST][rn2(4)]
+        : directions[options.dir];
+    if (direction == null)
+        throw new Error(`unknown Lua drawbridge direction ${options.dir}`);
+    const open = options.state === 'random' || options.state == null
+        ? !rn2(2) : options.state === 'open';
+    if (!['open', 'closed', 'random', undefined].includes(options.state))
+        throw new Error(`unknown Lua drawbridge state ${options.state}`);
+    makeSpecialDrawbridge(
+        context, coordinate.x, coordinate.y, direction, open,
+    );
+}
+
+function createLuaEngraving(context, options) {
+    const point = options.point
+        ? {
+            x: context.xstart + options.point.x,
+            y: context.ystart + options.point.y,
+        }
+        : specialRandomLocation(context);
+    if (!point) return null;
+    const types = {
+        dust: DUST,
+        engrave: ENGRAVE,
+        burn: BURN,
+        mark: MARK,
+        blood: ENGR_BLOOD,
+    };
+    const type = types[options.type];
+    if (type == null)
+        throw new Error(`unknown Lua engraving type ${options.type}`);
+    return make_engr_at(
+        point.x, point.y, options.text, null, 0, type,
+        {
+            nowipeout: options.degrade === false,
+            guardobjects: !!options.guardobjects,
+        },
+    );
+}
+
 async function createLuaObject(
     context, options, parentContainer, invokeContents,
 ) {
@@ -10743,6 +10798,9 @@ async function createLuaObject(
         object.cursed = true;
     }
     if (Number.isInteger(options.spe)) object.spe = options.spe;
+    if (Object.hasOwn(options, 'trapped'))
+        object.otrapped = !!options.trapped;
+    if (Object.hasOwn(options, 'locked')) object.olocked = !!options.locked;
     if (options.monsterType != null)
         set_corpsenm(object, options.monsterType);
     if (object.otyp === STATUE || object.otyp === CORPSE) {
@@ -10956,6 +11014,8 @@ async function generateLuaSpecialLevel(active) {
             );
         },
         door: options => createLuaDoor(context, options),
+        drawbridge: options => createLuaDrawbridge(context, options),
+        engraving: options => createLuaEngraving(context, options),
         feature: options => createLuaFeature(context, options),
         altar: options => createLuaAltar(context, options),
         nonDiggable: selection => selection
@@ -11790,7 +11850,7 @@ function addHellTeleportExclusion(context, x1, y1, x2, y2) {
     });
 }
 
-function makeHellDrawbridge(context, x, y, direction) {
+function makeSpecialDrawbridge(context, x, y, direction, open = false) {
     const bridgeX = context.xstart + x;
     const bridgeY = context.ystart + y;
     const bridge = game.level.at(bridgeX, bridgeY);
@@ -11801,14 +11861,15 @@ function makeHellDrawbridge(context, x, y, direction) {
         [DB_EAST]: [1, 0], [DB_WEST]: [-1, 0],
     };
     const [dx, dy] = offsets[direction];
-    bridge.typ = DRAWBRIDGE_UP;
+    bridge.typ = open ? DRAWBRIDGE_DOWN : DRAWBRIDGE_UP;
     bridge.horizontal = direction === DB_EAST || direction === DB_WEST;
     bridge.drawbridgemask = direction | under;
     const wall = game.level.at(bridgeX + dx, bridgeY + dy);
     if (wall) {
-        wall.typ = DBWALL;
+        wall.typ = open ? DOOR : DBWALL;
+        if (open) wall.doormask = D_NODOOR;
         wall.horizontal = direction === DB_NORTH || direction === DB_SOUTH;
-        wall.wall_info |= W_NONDIGGABLE;
+        if (!open) wall.wall_info |= W_NONDIGGABLE;
     }
 }
 
@@ -11848,7 +11909,7 @@ async function generateHellPrefab(prefab, coldHell) {
         ]);
         const bridgeCount = rnd(bridges.length);
         for (let index = 0; index < bridgeCount; index++)
-            makeHellDrawbridge(context, ...bridges[index]);
+            makeSpecialDrawbridge(context, ...bridges[index]);
         const monsterClass = luaShuffle([34, 46, S_HUMAN])[0];
         for (let count = 3 + rnd(5); count > 0; count--)
             await specialMonsterClassAt(context, monsterClass, 6, 5);
@@ -13019,26 +13080,6 @@ function luaShuffle(values) {
     return values;
 }
 
-const CASTLE_MAP = [
-    '}}}}}}}}}.............................................}}}}}}}}}',
-    '}-------}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}-------}',
-    '}|.....|-----------------------------------------------|.....|}',
-    '}|.....+...............................................+.....|}',
-    '}-------------------------------+-----------------------------}',
-    '}}}}}}|........|..........+...........|.......S.S.......|}}}}}}',
-    '.....}|........|..........|...........|.......|.|.......|}.....',
-    '.....}|........------------...........---------S---------}.....',
-    '.....}|...{....+..........+.........\\.S.................+......',
-    '.....}|........------------...........---------S---------}.....',
-    '.....}|........|..........|...........|.......|.|.......|}.....',
-    '}}}}}}|........|..........+...........|.......S.S.......|}}}}}}',
-    '}-------------------------------+-----------------------------}',
-    '}|.....+...............................................+.....|}',
-    '}|.....|-----------------------------------------------|.....|}',
-    '}-------}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}-------}',
-    '}}}}}}}}}.............................................}}}}}}}}}',
-];
-
 function fillSpecialMazeGrid(filling = HWALL) {
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
@@ -13068,186 +13109,6 @@ function lightCastleSelection(context, x1, y1, x2, y2, lit) {
             if (loc) loc.lit = lit;
         }
     }
-}
-
-async function generateCastle(active) {
-    // castle.lua begins with LVLINIT_MAZEGRID.  That initializer never
-    // evaluates its random-light field; its first random script operation is
-    // the four-element object-class shuffle after des.map().
-    fillSpecialMazeGrid(HWALL);
-    const context = loadSpecialAsciiMap(CASTLE_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-
-    const objectClasses = luaShuffle([
-        ARMOR_CLASS, WEAPON_CLASS, GEM_CLASS, FOOD_CLASS,
-    ]);
-    const towerSelection = new SpecialSelection();
-    for (const [x, y] of [[4, 2], [58, 2], [4, 14], [58, 14]])
-        towerSelection.add(context.xstart + x, context.ystart + y);
-    const monsterClasses = luaShuffle([38, 40, 31, 34, 39, 41, 44, 46, 50, 52]);
-
-    active.downTeleportRegion = {
-        lx: 1, ly: 0, hx: 10, hy: 20,
-        nlx: 1, nly: 1, nhx: 61, nhy: 15,
-    };
-    active.upTeleportRegion = {
-        lx: 69, ly: 0, hx: 79, hy: 20,
-        nlx: 1, nly: 1, nhx: 61, nhy: 15,
-    };
-    active.explicitUpStairRegion = {
-        lx: 1, ly: 0, hx: 10, hy: 20,
-        nlx: 0, nly: 0, nhx: 62, nhy: 16,
-    };
-
-    const fountain = game.level.at(
-        context.xstart + 10, context.ystart + 8,
-    );
-    fountain.typ = FOUNTAIN;
-    game.level.flags.nfountains++;
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 7, 3], [D_CLOSED, 55, 3],
-        [D_LOCKED, 32, 4], [D_LOCKED, 26, 5],
-        [D_LOCKED, 46, 5], [D_LOCKED, 48, 5],
-        [D_LOCKED, 47, 7], [D_CLOSED, 15, 8],
-        [D_CLOSED, 26, 8], [D_LOCKED, 38, 8],
-        [D_LOCKED, 56, 8], [D_LOCKED, 47, 9],
-        [D_LOCKED, 26, 11], [D_LOCKED, 46, 11],
-        [D_LOCKED, 48, 11], [D_LOCKED, 32, 12],
-        [D_CLOSED, 7, 13], [D_CLOSED, 55, 13],
-    ]) specialDoorAt(context, mask, x, y);
-
-    const bridgeX = context.xstart + 5;
-    const bridgeY = context.ystart + 8;
-    const bridge = game.level.at(bridgeX, bridgeY);
-    const bridgeWall = game.level.at(bridgeX + 1, bridgeY);
-    bridge.typ = DRAWBRIDGE_UP;
-    bridge.horizontal = true;
-    bridge.drawbridgemask = DB_EAST;
-    bridgeWall.typ = DBWALL;
-    bridgeWall.horizontal = false;
-    bridgeWall.wall_info |= W_NONDIGGABLE;
-
-    const storerooms = [
-        [39, 5], [49, 5], [39, 10], [49, 10],
-    ];
-    for (let roomIndex = 0; roomIndex < storerooms.length; roomIndex++) {
-        const [startX, startY] = storerooms[roomIndex];
-        for (let y = startY; y <= startY + 1; y++)
-            for (let x = startX; x <= startX + 6; x++)
-                specialObjectClassAt(
-                    context, objectClasses[roomIndex], x, y,
-                );
-    }
-
-    const tower = towerSelection.randomCoordinate(true);
-    const chest = mksobj_at(CHEST, tower.x, tower.y, true, true);
-    chest.otrapped = false;
-    chest.olocked = true;
-    chest.contents = [];
-    for (const otyp of [WAN_WISHING, POT_GAIN_LEVEL]) {
-        const point = specialRandomLocation(context);
-        const object = mksobj_at(otyp, point.x, point.y, true, true);
-        addSpecialContainerObject(chest, object);
-    }
-    make_engr_at(tower.x, tower.y, 'Elbereth', null, 0, BURN);
-    const scareScroll = mksobj_at(
-        SCR_SCARE_MONSTER, tower.x, tower.y, true, true,
-    );
-    scareScroll.blessed = false;
-    scareScroll.cursed = true;
-
-    mksobj_at(
-        CHEST, context.xstart + 37, context.ystart + 8, true, true,
-    );
-
-    for (const x of [40, 44, 48, 52, 55])
-        await specialTrapAt(context, TRAPDOOR, x, 8);
-
-    for (const [mndx, x, y] of [
-        [PM_SOLDIER, 8, 6], [PM_SOLDIER, 9, 5],
-        [PM_SOLDIER, 11, 5], [PM_SOLDIER, 12, 6],
-        [PM_SOLDIER, 8, 10], [PM_SOLDIER, 9, 11],
-        [PM_SOLDIER, 11, 11], [PM_SOLDIER, 12, 10],
-        [PM_LIEUTENANT, 9, 8],
-        [PM_SOLDIER, 3, 2], [PM_SOLDIER, 5, 2],
-        [PM_SOLDIER, 57, 2], [PM_SOLDIER, 59, 2],
-        [PM_SOLDIER, 3, 14], [PM_SOLDIER, 5, 14],
-        [PM_SOLDIER, 57, 14], [PM_SOLDIER, 59, 14],
-    ]) await specialMonsterAt(context, mndx, x, y);
-
-    for (const [x, y] of [[47, 5], [47, 6], [47, 10], [47, 11]])
-        await specialMonsterClassAt(context, 30, x, y);
-
-    for (const [mndx, x, y] of [
-        [PM_GIANT_EEL, 5, 7], [PM_GIANT_EEL, 5, 9],
-        [PM_GIANT_EEL, 57, 7], [PM_GIANT_EEL, 57, 9],
-        [PM_SHARK, 5, 0], [PM_SHARK, 5, 16],
-        [PM_SHARK, 57, 0], [PM_SHARK, 57, 16],
-    ]) await specialMonsterAt(context, mndx, x, y);
-
-    const throneMonsters = [
-        [9, 27, 5], [0, 30, 5], [1, 33, 5], [2, 36, 5],
-        [3, 28, 6], [4, 31, 6], [5, 34, 6], [6, 37, 6],
-        [7, 27, 7], [8, 30, 7], [9, 33, 7], [0, 36, 7],
-        [1, 28, 8], [2, 31, 8], [3, 34, 8], [4, 27, 9],
-        [5, 30, 9], [6, 33, 9], [7, 36, 9], [8, 28, 10],
-        [9, 31, 10], [0, 34, 10], [1, 37, 10], [2, 27, 11],
-        [3, 30, 11], [4, 33, 11], [5, 36, 11],
-    ];
-    for (const [classIndex, x, y] of throneMonsters)
-        await specialMonsterClassAt(
-            context, monsterClasses[classIndex], x, y,
-        );
-
-    // Both Lua calls use the legacy three-argument form, whose default
-    // `stocked=1` invokes fill_empty_maze() immediately after each walk.
-    specialMazeWalk(context, 0, 10, 'west');
-    await fillEmptySpecialMaze(context);
-    specialMazeWalk(context, 62, 6, 'east');
-    await fillEmptySpecialMaze(context);
-    specialNonDiggable(context);
-
-    lightCastleSelection(context, 0, 0, 62, 16, false);
-    lightCastleSelection(context, 0, 5, 5, 11, true);
-    lightCastleSelection(context, 57, 5, 62, 11, true);
-    specialRectangularRoom(
-        context, 27, 5, 37, 11, COURT, true, FILL_LVFLAGS,
-    );
-    lightCastleSelection(context, 7, 5, 14, 11, true);
-    for (const region of [
-        [39, 5, 45, 6], [39, 10, 45, 11],
-        [49, 5, 55, 6], [49, 10, 55, 11],
-        [2, 2, 6, 3], [56, 2, 60, 3],
-        [2, 13, 6, 14], [56, 13, 60, 14],
-    ]) lightCastleSelection(context, ...region, true);
-    specialRectangularRoom(
-        context, 16, 5, 25, 6, BARRACKS, true, FILL_NORMAL,
-    );
-    specialRectangularRoom(
-        context, 16, 10, 25, 11, BARRACKS, true, FILL_NORMAL,
-    );
-    for (const region of [
-        [8, 3, 54, 3], [8, 13, 54, 13],
-        [16, 8, 25, 8], [39, 8, 55, 8],
-        [47, 5, 47, 6], [47, 10, 47, 11],
-    ]) lightCastleSelection(context, ...region, false);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(2);
-    active.downTeleportRegion = flipSpecialRegion(
-        active.downTeleportRegion,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.explicitUpStairRegion = flipSpecialRegion(
-        active.explicitUpStairRegion,
-    );
-
-    active.castleTower = tower;
-    active.castleMonsterClasses = monsterClasses;
 }
 
 const KNOX_MAP = [
@@ -13659,6 +13520,7 @@ async function makelevel() {
         const variant = variants > 1 ? rnd(variants) : 1;
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'medusa'
+            || prototype === 'castle'
             || prototype === 'fakewiz1'
             || prototype === 'fakewiz2'
             || prototype === 'wizard1'
@@ -13721,7 +13583,7 @@ async function makelevel() {
         g._specialLevelPrototype = null;
 
         if (prototype === 'castle') {
-            await generateSpecialAndFixup(generateCastle,
+            await generateSpecialAndFixup(generateLuaSpecialLevel,
                 g._activeSpecialLevel);
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);

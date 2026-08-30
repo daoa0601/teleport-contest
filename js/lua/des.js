@@ -231,6 +231,25 @@ function mazeWalkOptions(value, y, direction) {
     };
 }
 
+function engravingOptions(value, type, text) {
+    if (type != null) {
+        return {
+            point: point(luaArgument(value)),
+            type: String(type),
+            text: String(text),
+            degrade: true,
+            guardobjects: false,
+        };
+    }
+    const options = tableOptions(value);
+    return {
+        ...options,
+        point: point(options.coord) ?? point(options.x, options.y),
+        type: String(options.type ?? 'engrave'),
+        text: String(options.text),
+    };
+}
+
 export function mapOrigin(options, width, height, levelInitialized) {
     const coordinate = Array.isArray(options.coord)
         ? options.coord : [options.x, options.y];
@@ -319,6 +338,10 @@ export function createDesBindings(operations, wrapSelection = value => value) {
             stairOptions(direction, x, y),
         ),
         door: (state, x, y) => operations.door(doorOptions(state, x, y)),
+        drawbridge: value => operations.drawbridge(tableOptions(value)),
+        engraving: (value, type, text) => operations.engraving(
+            engravingOptions(value, type, text),
+        ),
         feature: (type, x, y) => operations.feature({
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),
