@@ -118,6 +118,18 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('wizard_bind.js'))
         failures.push('wizard_bind.js: legacy Wizard bind replay module still exists');
+    const forbiddenDefaultSchedulerReplayTokens = [
+        'fastforward_step', 'fastforward.turn',
+        'scheduler.default-replay-gap',
+    ];
+    for (const token of forbiddenDefaultSchedulerReplayTokens) {
+        for (const [file, source] of sources) {
+            if (source.includes(token))
+                failures.push(`${file}: legacy default scheduler replay token ${token}`);
+        }
+    }
+    if (sources.has('fastforward.js'))
+        failures.push('fastforward.js: legacy default scheduler replay module still exists');
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,

@@ -1,7 +1,6 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 //
-// Uses fastforward.js for pre/post-mklev RNG parity on seed8000.
 // Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
@@ -52,9 +51,6 @@ import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
     init_vision_globals,
 } from './vision.js';
-import {
-    fastforward_step,
-} from './fastforward.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
@@ -2207,19 +2203,14 @@ function usesSourceMovementRation(state = game) {
         || liveQuietRogue(state) || liveQuietHealer(state)
         || liveQuietRanger(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
-        || liveQuietCaveman(state) || liveQuietTourist(state)
+        || liveQuietCaveman(state) || liveQuietValkyrie(state)
+        || liveQuietTourist(state)
         || liveQuietWizard(state)
         || liveDebugSourceRation(state);
 }
 
-// Generic live-role scans still allocate real monster/global turns even
-// before their hero movement-ration accounting has been generalized.  Their
-// negative-multi recovery messages therefore need the same asynchronous tty
-// owner as source-ration roles; bounded fast-forward paths keep the legacy
-// synchronous append behavior.
 function usesQueuedHelplessRecovery(state = game) {
-    return usesSourceMovementRation(state)
-        || liveQuietValkyrie(state);
+    return usesSourceMovementRation(state);
 }
 
 // allmain.c:u_calc_moveamt() clamps a negative movement balance after every
@@ -6066,14 +6057,6 @@ function monsterScanHasVisits(monsterScan) {
     return !!monsterScan?.visits?.some(visits => visits.length);
 }
 
-// C refs: dogmove.c dog_move(), monmove.c dochugw().  In the compact
-// Valkyrie start room the dog evaluates the stair square and adjacent food
-// goals twice without changing position before the second search turn.
-function valkyrieDogSearchRng() {
-    for (const range of [5, 100, 1, 2, 5, 5, 5, 5, 5, 5, 100, 1, 5])
-        rn2(range);
-}
-
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -6311,12 +6294,10 @@ export async function moveloop_core() {
     // zero-time commands can re-enter the command prompt without advancing
     // `moves`; they must not repeat monster movement or consume more RNG.
     if (g._maintenanceMove !== (g.moves || 1)) {
-        const stepNum = (g.moves || 1) - 1;
-        // Source-ration roles share one actor/global maintenance boundary.
-        // Valkyrie already owns live actor scans but has not yet moved onto
-        // the source movement-ration accounting predicate.
-        const liveQuietRole = usesSourceMovementRation(g)
-            || liveQuietValkyrie(g);
+        // Every legal role shares one source-owned actor/global maintenance
+        // boundary.  Role identity may change mechanics inside that boundary,
+        // but it does not select a recorded turn transcript.
+        const liveQuietRole = usesSourceMovementRation(g);
         let monsterScan = null;
         if (g._monsterMovementInitialized || liveQuietRole) {
             monsterScan = scanMonsterMovement(
@@ -6361,36 +6342,13 @@ export async function moveloop_core() {
             // do not enter role/session-specific pet replay or act while the
             // hero traverses the instructional rooms.
             initialTurnMaintenanceRng();
-        } else if (g.urole?.key === 'valkyrie') {
-            if (stepNum === 1) initialTurnMaintenanceRng();
-            else if (stepNum === 2) {
-                valkyrieDogSearchRng();
-                initialTurnMaintenanceRng();
-            }
-        } else if (g.urole?.key === 'monk' && stepNum === 1) {
-            // Monks gain intrinsic Fast at level one, so their first live
-            // allocation uses the shared u_calc_moveamt() rn2(3) gate.
+        } else {
+            // A turn with no full-ration actor still executes the ordinary C
+            // global maintenance transaction.  The deleted fallback replayed
+            // a fixed RNG transcript and therefore skipped state transitions
+            // such as negative-multi recovery.
             initialTurnMaintenanceRng();
-        } else if (liveQuietHealer(g) && stepNum === 1) {
-            // The first elapsed Healer turn has no prior monster movement
-            // ration to scan, but it still runs the complete source global
-            // maintenance pass.  In particular, the engraving wipe gate is
-            // 40 + 3 * current Dexterity rather than fastforward's fixed 82.
-            initialTurnMaintenanceRng();
-        } else if (liveQuietPriest(g) && stepNum === 1) {
-            initialTurnMaintenanceRng();
-        } else if (g.urole?.key === 'wizard' && stepNum === 1) {
-            initialTurnMaintenanceRng();
-        } else if (liveBaseRole(g) || liveQuietKnight(g)
-            || liveQuietRanger(g) || liveQuietTourist(g)
-            || liveQuietSamurai(g) || liveQuietCaveman(g)
-            || (bridgeFreeEnabled() && liveQuietRole)) {
-            // A quiet source-owned role with no full-ration actor still owns
-            // the global maintenance pass.  The legacy fallback padded this
-            // boundary with the Tourist transcript even when no actor moved.
-            initialTurnMaintenanceRng();
-        } else if (!bridgeFreeEnabled()) fastforward_step(stepNum);
-        else useCompatibilityBridge('scheduler.default-replay-gap');
+        }
         g._maintenanceMove = g.moves || 1;
     }
 

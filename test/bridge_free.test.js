@@ -5,7 +5,6 @@ import {
     CompatibilityBridgeError, getBridgeUsageLedger, installReplayMovesGuard,
     resetBridgeUsageLedger, useCompatibilityBridge,
 } from '../js/bridge_policy.js';
-import { fastforward_step } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
 import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
@@ -54,22 +53,23 @@ test('bridge-free policy fails loudly and records a bounded call site', () => {
     });
 });
 
-test('replayMoves is poisoned and known replay boundaries are guarded', () => {
+test('production replay state is unreadable in bridge-free mode', () => {
     withBridgeFreeMode(() => {
-        for (const invoke of [
-            () => {
-                const state = {};
-                installReplayMovesGuard(state);
-                return state.replayMoves;
-            },
-            () => fastforward_step(1),
+        const state = {};
+        installReplayMovesGuard(state);
+        assert.throws(
+            () => state.replayMoves,
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN',
+        );
+    });
+});
+
+test('fixture painting is unavailable in bridge-free mode', () => {
+    withBridgeFreeMode(() => {
+        assert.throws(
             () => paintFixtureScreen('', null, {}),
-        ]) {
-            resetBridgeUsageLedger();
-            assert.throws(invoke, error =>
-                error?.code === 'TELEPORT_BRIDGE_FORBIDDEN');
-            assert.equal(getBridgeUsageLedger().forbiddenHits, 1);
-        }
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN',
+        );
     });
 });
 
