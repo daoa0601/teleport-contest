@@ -91,6 +91,15 @@ test('bigrm-9 applies the nested light regions from Lua', async () => {
     assert.equal(at(30, 9).lit, true);
 });
 
+test('bigrm-12 keeps its tall map in bounds and permits horizontal flip',
+    async () => {
+        const active = await buildBigRoom(12);
+
+        assert.equal(active.context.ystart, 1);
+        assert.equal(active.context.height, 19);
+        assert.equal(active.allowFlips, 2);
+    });
+
 test('the fog maze keeps arrivals and its up stair outside the fog', async () => {
     await buildBigRoom(10);
     assert.ok(terrainCount(CLOUD) > 300);

@@ -10536,6 +10536,12 @@ async function generateLuaSpecialLevel(active) {
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(context),
+        wallify: () => wallifyMap(
+            context.xstart - 1,
+            context.ystart - 1,
+            context.xstart + context.width + 1,
+            context.ystart + context.height + 1,
+        ),
         object: () => specialObject(context),
         trap: () => specialTrap(context),
         monster: options => options && Number.isInteger(options.x)
@@ -10719,114 +10725,17 @@ async function specialRandomMonsterAt(context, x, y) {
         : makemon(null, absoluteX, absoluteY, 0);
 }
 
-const BIGRM_12_MAP = [
-    '',
-    '         .......................           .......................',
-    '        .........................         .........................',
-    '       ...........................       ...........................',
-    '      .............................     .............................',
-    '     ........PPPPPPPPPPPPPPP........   ........LLLLLLLLLLLLLLL........',
-    '    ........PPPPPPPPPPPPPPPPP........ ........LLLLLLLLLLLLLLLLL........',
-    '   ........PPPWWWWWWWWWWWWWPPP...............LLLZZZZZZZZZZZZZLLL........',
-    '  ........PPPWWWWWWWWWWWWWWWPPP.............LLLZZZZZZZZZZZZZZZLLL........',
-    ' ........PPPWWWWWWWWWWWWWWWWWPPP...........LLLZZZZZZZZZZZZZZZZZLLL........',
-    '  ........PPPWWWWWWWWWWWWWWWPPP.............LLLZZZZZZZZZZZZZZZLLL........',
-    '   ........PPPWWWWWWWWWWWWWPPP...............LLLZZZZZZZZZZZZZLLL........',
-    '    ........PPPPPPPPPPPPPPPPP........ ........LLLLLLLLLLLLLLLLL........',
-    '     ........PPPPPPPPPPPPPPP........   ........LLLLLLLLLLLLLLL........',
-    '      .............................     .............................',
-    '       ...........................       ...........................',
-    '        .........................         .........................',
-    '         .......................           .......................',
-    '',
-].map(row => row.padEnd(75, ' '));
-
-function replaceBigrm12Terrain(context, from, to) {
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            if (loc?.typ !== from || rn2(100) >= 100) continue;
-            loc.typ = to;
-            if (to === HWALL) loc.horizontal = true;
-        }
-    }
-}
-
-async function generateBigrm12(active) {
-    // Like Big Room 7, the centered odd maze origin would put a 19-row map
-    // beyond ROWNO.  lspo_map() retries two rows higher at y=1.
-    const context = loadSpecialAsciiMap(
-        BIGRM_12_MAP, active.defaultLit, { xstart: 3, ystart: 1 },
-    );
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.context = context;
-
-    // Lua source: dat/bigrm-12.lua.  The nested percent calls only occur when
-    // their outer branch succeeds; replace_terrain's default 100% chance is
-    // still independently sampled for every matching terrain cell.
-    if (rn2(100) < 20) {
-        if (rn2(100) < 50)
-            replaceBigrm12Terrain(context, WATER, HWALL);
-        if (rn2(100) < 50)
-            replaceBigrm12Terrain(context, LAVAWALL, HWALL);
-    }
-    if (rn2(100) < 25) {
-        replaceBigrm12Terrain(context, POOL, ROOM);
-        if (rn2(100) < 75)
-            replaceBigrm12Terrain(context, WATER, POOL);
-    }
-    if (rn2(100) < 25) {
-        replaceBigrm12Terrain(context, LAVAPOOL, ROOM);
-        if (rn2(100) < 75)
-            replaceBigrm12Terrain(context, LAVAWALL, LAVAPOOL);
-    }
-    if (rn2(100) < 20) {
-        if (rn2(100) < 50) {
-            replaceBigrm12Terrain(context, POOL, LAVAPOOL);
-            replaceBigrm12Terrain(context, WATER, LAVAWALL);
-        } else {
-            replaceBigrm12Terrain(context, LAVAPOOL, POOL);
-            replaceBigrm12Terrain(context, LAVAWALL, WATER);
-        }
-    }
-
-    // selection.area(0,0,75,19) intentionally extends one row/column beyond
-    // the 75x19 map.  Only valid level cells are touched.
-    for (let dx = 0; dx <= 75; dx++) {
-        for (let dy = 0; dy <= 19; dy++) {
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            if (loc) loc.lit = true;
-        }
-    }
-    specialNonDiggable();
-    wallifyMap(
-        context.xstart - 1,
-        context.ystart - 1,
-        context.xstart + context.width + 1,
-        context.ystart + context.height + 1,
-    );
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    specialStair(context, true);
-    specialStair(context, false);
-    for (let i = 0; i < 15; i++) specialObject(context);
-    for (let i = 0; i < 6; i++) await specialTrap(context);
-    for (let i = 0; i < 28; i++) await specialMonster(context);
-
-    // noflipy clears FlipY but leaves the horizontal FlipX draw.
-    flipSpecialLevelRandom(2);
-}
-
 const BIG_ROOM_GENERATORS = Object.freeze([
     null,
     null, null, null, null,
     null, null, null, null,
-    null, generateBigrm10, generateBigrm11, generateBigrm12,
+    null, generateBigrm10, generateBigrm11, null,
     generateBigrm13,
 ]);
 
 export async function generateBigRoom(active) {
-    if (active?.variant >= 1 && active?.variant <= 9) {
+    if ((active?.variant >= 1 && active?.variant <= 9)
+        || active?.variant === 12) {
         await generateSpecialAndFixup(generateLuaSpecialLevel, active);
         return;
     }
@@ -15705,7 +15614,8 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm' && variant <= 9;
+        const luaOwnedSpecial = prototype === 'bigrm'
+            && (variant <= 9 || variant === 12);
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

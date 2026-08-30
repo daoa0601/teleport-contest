@@ -35,6 +35,7 @@ export function createDesBindings(operations) {
         non_diggable: selection => operations.nonDiggable(
             selection == null ? null : unwrapSelection(selection),
         ),
+        wallify: () => operations.wallify(),
         object: (...args) => operations.object(...args),
         trap: (...args) => operations.trap(...args),
         monster: (...args) => operations.monster(...args.map(luaArgument)),
