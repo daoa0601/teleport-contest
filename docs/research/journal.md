@@ -99940,3 +99940,51 @@ public-regression lane, sealed trace, push, publication, hidden measurement, or
 animation work ran; `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 09:52 EEST, journal block 3241] {#test-quality #change-detector #bridge-ledger #mechanical-oracle #support-modules #codemod-correction #behavioral-gate #process-safety}
+
+**Previous-turn classification and next weak pattern:** block 3240 was
+test-quality progress: weak scheduler and source-checksum oracles were removed,
+mutation-sensitive actor outcomes replaced pet existence, and their false map
+claims were corrected.  The next repeated mechanical pattern was bridge-ledger
+bookkeeping inside mechanics tests.  Bridge-free mode already throws at an
+attempted compatibility boundary; 137 repeated `assertNoBridgeUse()` calls, 36
+direct zero-ledger snapshots, seven local helper definitions, and nine reset
+calls could therefore fail on instrumentation shape without proving an egg,
+figurine, glob, lamp, projectile, inventory, startup, room, or timer behavior.
+
+**Prediction and decision:** keep ledger fields and call-site counts only in
+`bridge_free.test.js`, where they are the policy contract.  In every mechanics
+test, successful bridge-free execution is a fail-loud precondition and the
+oracle must be the independently specified state transition.  The unsupported
+swallowed life-saving weapon control continues to assert the thrown bridge ID,
+unchanged HP/inventories, and zero RNG; its second assertion over ledger totals
+and per-ID counts is redundant.  Delete those checks and resets from all test
+entrypoints and shared arenas, then make the lane audit scan support modules as
+well as entrypoints and forbid ledger access outside the dedicated policy file.
+
+**Implementation, correction, and measured effect:** commit `5eb5262` deletes
+**363 lines** and adds **33** across 21 test/audit files.  The first managed
+default run found a syntax failure in `themerooms.test.js`: the mechanical
+rewrite matched a zero-ledger assertion with a third diagnostic argument and
+also removed the enclosing loop closure.  The process exited; a single focused
+TAP run localized `Unexpected end of input`, the closure was restored, and the
+53-test themeroom portfolio passed.  A subsequent guarded `npm test` invocation
+passed all **444/444** behavioral tests in 4.3 seconds.  The lane audit now
+covers **50 test entrypoints and 4 support modules**; the bridge audit remains
+**124 production files, 7 guarded replay modules, and 19 fixture modules**.
+Every owned process exited and no matching runner remains.
+
+**Falsified hypotheses and next blocker:** repeating the zero-ledger object in
+many files did not increase mechanics coverage, resetting private counters did
+not isolate game state, and the thrown bridge ID was sufficient for the one
+fail-loud unsupported boundary.  The codemod itself was not accepted on a clean
+diff; the real parser/test gate caught its overreach.  Explicit ledger-shaped
+change detectors are now confined to their policy owner, but the scanner still
+cannot determine whether an exact RNG list came from pinned C or was copied
+from current JavaScript.  That semantic provenance review remains the next test
+cleanup slice before Knight work resumes.  No corpus, scorer, public-regression
+lane, sealed trace, push, publication, hidden measurement, or animation work
+ran; `public-session-status.md` is unchanged.
+
+---
