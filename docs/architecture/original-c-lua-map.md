@@ -38442,7 +38442,13 @@ flowchart TD
     AQ --> AP[current ammo > missile > alternate ammo > miscellaneous]
     F -- no manual fallback --> AM[wield.c doquiver_core fire selection]
     AP --> AR[setuqwep without an extra turn]
-    AM --> AR
+    AM --> AS{selected identity in a weapon slot?}
+    AS -- no --> AR
+    AS -- yes --> AT{ready N-1 or ready all?}
+    AT -- N-1 --> AU[splitobj and finish_splitting preserve parent slot]
+    AT -- all --> AV[setuwep or setuswapwep and untwoweapon]
+    AU --> AR
+    AV --> AR
     F -- yes --> G{matching launcher wielded?}
     AR --> G
     G -- alternate slot --> H[wield.c doswapweapon]
@@ -38494,7 +38500,15 @@ always eligible once seen, while flint and glass require type knowledge.
 same `f` command continues into launcher assistance and flight.  If automatic
 selection is disabled or finds nothing, `doquiver_core("fire")` performs an
 ordinary manual selection; an unheld surviving stack remains the live quiver
-identity after its first shot.
+identity after its first shot.  A selected primary or alternate stack instead
+uses nested `ynq()` decisions.  Choosing `N-1` calls `splitobj()` and
+`finish_splitting()`, so a new child identity becomes the quiver while one item
+with the original identity stays in its weapon slot.  Choosing the whole stack
+clears that slot before `setuqwep()` and calls `untwoweapon()` when necessary.
+The split path itself is zero-time.  Moving the whole primary costs a turn;
+moving the whole alternate costs a turn only when it was the active offhand.
+That selection-time result survives a later cancelled direction rather than
+being overwritten by `dothrow()` cancellation.
 
 The former JavaScript normal path selected a second world for Cavemen.  It
 replayed aggregate RNG by turn number, overwrote the pet with a 25-turn
@@ -38556,15 +38570,21 @@ tests assert only final slot, inventory, floor-identity, and bridge state.  The
 autoquiver arena then proves that a later current-sling flint outranks an
 earlier rock and dart, while a second arena proves a missile outranks
 alternate-sling flint and excludes unseen or artifact darts.  Manual
-empty-quiver fire leaves the surviving selected dart stack readied.  These are
-world-state outcomes rather than candidate-helper or prompt-call assertions.
-The default behavioral gate passes 381/381.
+empty-quiver fire leaves the surviving selected dart stack readied.  Additional
+primary and alternate arenas distinguish the `N-1` split from ready-all: they
+assert new versus retained object identity, quantities, slot ownership,
+quiver ownership, two-weapon state, and the primary/active-offhand/inactive-
+alternate turn-cost boundary even when direction is cancelled.  They do not
+assert prompt text, helper calls, canned-queue shape, or source-line order.
+The focused Caveman/weapon-slot portfolio passes 14/14 and the default
+behavioral gate passes 386/386.
 
 This subsystem remains partial.  Hurtle/death interruption within a volley,
-welded/touch/artifact and unknown-cursed wield failure continuations, stacked
-primary/alternate readied-object splitting and prompts, explicit quiver
-clearing and gold, polearm/whip and return-weapon fire modes, swallowed sling
-ammunition, water-wall/sink and other projectile contacts and terrain,
-non-sling multishot and count-prefix families, alternate options, persistence,
-and sealed strata are still open.  Lua owns no runtime Caveman scheduler or
-projectile exception.
+welded known/unknown, touch/artifact, and unknown-cursed wield failure
+continuations, full-inventory or inventory-letter-exhausted splitting,
+explicit counted `getobj()` splits, explicit quiver clearing and gold, worn
+armor/accessory/saddle selection, polearm/whip and return-weapon fire modes,
+swallowed sling ammunition, water-wall/sink and other projectile contacts and
+terrain, non-sling multishot and count-prefix families, alternate options,
+persistence, and sealed strata are still open.  Lua owns no runtime Caveman
+scheduler or projectile exception.

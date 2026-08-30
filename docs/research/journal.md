@@ -99168,3 +99168,69 @@ measurement, so `public-session-status.md` remains unchanged and publication
 remains unauthorized.
 
 ---
+
+### [2026-08-30 06:58 EEST, journal block 3220] {#bridge-free #manual-fire #doquiver-core #splitobj #weapon-slots #turn-cost #behavioral-witness #change-detector #critical-debugging-portfolio #implementation #process-safety}
+
+**Contract and hypothesis portfolio:** block3218 left primary/alternate stack
+selection open.  Pinned `wield.c:doquiver_core()` does not reject an identity
+merely because it occupies a weapon slot.  For a stack of `N > 1`, its first
+`ynq()` offers `N-1`: acceptance calls `splitobj()` and `finish_splitting()`,
+leaves one item with the original identity in the primary or alternate slot,
+and readies the distinct child identity.  Rejection reaches a second `ynq()`
+for the whole stack.  That path clears the primary or alternate slot and ends
+active two-weapon mode before `setuqwep()`.  A primary move costs a turn; an
+alternate move costs a turn only when it was the active offhand; and this cost
+must survive a later cancelled direction.  A blanket worn-object rejection,
+in-place quantity edit, always-timed alternate move, and canceled-direction
+time reset were independent competing failures.
+
+**Independent red evidence and earliest divergences:** the first fresh arena
+selected three wielded darts and accepted `N-1`; before implementation the
+original stack remained quantity **3** instead of **1**.  The ready-all arena
+rejected `N-1` and accepted the whole stack; the original identity incorrectly
+remained primary instead of becoming quivered.  A corresponding alternate
+arena failed at the same first quantity boundary.  These tests assert only
+inventory identities and quantities, weapon/quiver slots, two-weapon state,
+and elapsed time.  They do not assert exact prompt text, helper calls, canned-
+queue shape, source lines, RNG transcripts, screens, or public outcomes.
+
+**Implementation, adversarial effect, and falsified alternatives:** shared
+manual fire now uses one `ynq` input owner for the nested transaction.  Partial
+selection creates a new inventory identity, recomputes parent/child quantities
+and weights, removes every worn flag from the child, and preserves the parent
+identity and slot.  Ready-all clears the selected slot, ends active two-weapon
+mode, and records the source time boundary before live fire continuation.
+Fireassist now resumes alternate-launcher swaps through the same canned source-
+turn queue used by other launcher paths.  Primary split, primary ready-all,
+alternate split, active-offhand ready-all, and an inactive-alternate zero-time
+control pass together with the Caveman controls at **14/14**.  This falsifies
+both the old rejection and a coarse always-spend-time repair.
+
+**Next blocker and evidence limit:** inventory-letter exhaustion/full inventory,
+explicit counted `getobj()` splitting, welded known/unknown and touch/artifact
+failure, explicit `-` quiver clearing, gold, worn armor/accessory/saddle
+selection, polearm/whip and return modes, interruption, persistence, and sealed
+strata remain open.  No corpus, scorer, public-regression lane, sealed trace,
+push, publication, hidden measurement, or supplemental-animation work ran.
+
+---
+
+### [2026-08-30 06:59 EEST, journal block 3221] {#manual-fire #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** after the focused red-to-green portfolio, one guarded default
+behavioral process passed **386/386** named tests and exited normally in 3.7
+seconds.  The behavioral-lane audit remains green across **44 files** with no
+recorded-session, public-parity, mock/spy, or call-transcript dependencies.
+Bridge audit remains green at **124 production files, 9 guarded replay modules,
+and 19 fixture modules**; no matching runner remains.
+
+**Ownership and evidence limit:** the registry and C/Lua map now move the
+ordinary primary/alternate split-versus-ready-all transaction and its turn-cost
+boundary into the still-`partial` live owner, while retaining the explicit
+failure, inventory-capacity, alternate-fire-mode, persistence, and sealed gaps
+from block3220.  This gate is local behavioral evidence, not an engine-only
+corpus, public scorer, sealed gate, or official hidden measurement;
+`public-session-status.md` remains unchanged and publication remains
+unauthorized.
+
+---

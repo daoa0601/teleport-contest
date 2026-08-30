@@ -70,9 +70,14 @@ honors known-cursed versus known-safe/unknown launcher precedence, and keeps
 the pushweapon swap and wield as scheduler-separated canned actions.  Wield
 failure continuations remain partial.  Empty-quiver fire now also uses live
 source-ordered autoquiver buckets, or ordinary manual selection when the
-option is off or no automatic candidate exists; manual worn-stack prompts,
-non-sling count families, interruption, and broader fire modes remain
-explicitly partial.  Other named role paths remain.  Those
+option is off or no automatic candidate exists.  Manual selection of a primary
+or alternate stack now follows the source split-versus-ready-all transaction:
+partial selection creates a new quiver identity while retaining one item in
+the weapon slot, and moving the whole primary or active offhand preserves its
+turn cost even if direction input is later cancelled.  Full-inventory,
+welded, gold, and explicit-quiver-clearing continuations, non-sling count
+families, interruption, and broader fire modes remain explicitly partial.
+Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
 
