@@ -98566,3 +98566,80 @@ coherent Rogue slice to be committed locally; Priest remains the next ordered
 bridge-removal target.
 
 ---
+
+### [2026-08-30 05:33 EEST, journal block 3202] {#bridge-free #priest #extended-command #passive-projectile #replay-removal #fresh-seed #change-detector #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Contract, portfolio, and earliest divergence:** the ordered Priest slice
+required raw commands, timed turns, pets, passive projectiles, prayer, spell,
+and tty state to have the same live owners in normal and bridge-free modes.
+Public exactness or retaining a legacy-only replay did not satisfy the
+contract.  The investigation kept the pre-mklev extended-command selector and
+the post-mklev cast/turn selector independent.  The first selected
+`priest_extcmd.js`, replayed a large encoded RNG transcript, painted one of 136
+stored screens at every input boundary, and caused `rhack()` to swallow all
+keys.  The second used future `Z...#turn` bytes to choose aggregate pet-search
+RNG, suppress ordinary first-turn ownership, and overwrite the pet at fixed
+coordinates.
+
+**Independent red evidence:** fresh seed23501 was generated without reading a
+public trace.  A command stream matching the old extended-command selector
+recorded `seeded-replay.priest-extcmd` in normal mode but no Priest bridge in
+bridge-free mode.  A second stream performed four waits before a save prompt,
+with unused later bytes containing `Z` and `#turn`.  Before removal, both modes
+reached move 5 at hero `(39,4)` and the same prompt, but normal mode moved the pet
+from the live `(41,4)` result to hard-coded `(39,8)` and also changed two
+unrelated monsters' positions and movement credit.  The focused behavioral
+tests were **0/2**.  This is an observable future-input causality defect, not a
+mock-call or helper-order mismatch.
+
+**Source decision and implementation:** pinned `cmd.c:rhack()` and
+`doextcmd()` dispatch the current key; `allmain.c:moveloop_core()` schedules the
+current actor graph from live movement credit; `dogmove.c`, `mthrowu.c`,
+`pray.c`, and `spell.c` own pet, projectile, prayer, turn-undead, and spell
+state.  None branches on the full future input string.  Both classifiers and
+all downstream owners were therefore deleted together: the command swallow,
+input-hook replay/paint calls, aggregate pet RNG, hard-coded pet positions,
+maintenance override, both bridge IDs, and `priest_extcmd.js` with its encoded
+RNG and screen payloads.  Every Priest now satisfies the same live source-
+ration predicate in both modes.
+
+**Measured effect, falsified hypotheses, and residual risk:** the fresh tests
+now pass **2/2** and the combined Priest/bridge-policy set passes **6/6**.  The
+bridge audit passes **125 production files, 11 replay/fast-forward modules, and
+19 fixture modules**.  A managed bridge-free run of the two public seed0501 and
+seed0106 Priest carriers remains exact with zero bridge hits; this is explicitly
+a compatibility regression, not sealed or hidden evidence.  A legacy guard was
+not harmless because future bytes changed earlier world state; the cast path
+was not just a screen adapter; and exact public bridge-free behavior showed the
+live path already subsumed the removed replay.  Alternate projectiles,
+pantheons, command histories, actors/options, persistence, dungeon branches,
+and sealed strata remain open.  No full corpus, scorer, configured full public-
+regression lane, sealed trace, push, publication, hidden measurement, or
+animation work ran.  The next ordered bridge slice is startup, role inventory,
+object initialization, and room fill.
+
+---
+
+### [2026-08-30 05:36 EEST, journal block 3203] {#priest #behavioral-gate #bridge-audit #test-lanes #ownership #change-detector #process-safety}
+
+**Post-implementation gate:** one guarded default behavioral run passed all
+**369/369** named tests across **40** files and exited normally.  The new Priest
+tests contribute two live-world invariants rather than replay transcript or
+collaborator-order checks.  The behavioral-lane audit passes all 40 files with
+no recorded-session, public-parity, mock/spy, or named call-transcript
+dependency.  The bridge audit passes **125 production files, 11 guarded
+replay/fast-forward modules, and 19 fixture modules**.  Ownership generation and
+checking, registry JSON parsing, changed JavaScript syntax, and diff hygiene all
+pass.
+
+**Process and evidence limit:** the full behavioral verifier was the only
+matching test process, was owned through normal exit, and the post-run guard is
+empty.  The selected two-session Priest public regression was separately owned
+to normal exit and is not counted as behavioral acceptance.  No full engine-
+only corpus or normal scorer ran, so `public-session-status.md` remains
+unchanged.  No configured full public-regression lane, sealed corpus, trace
+inspection, push, publication, official hidden measurement, or animation work
+ran.  This coherent Priest slice is ready for batched local commits; startup,
+role inventory, object initialization, and room fill remain next.
+
+---

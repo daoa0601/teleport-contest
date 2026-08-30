@@ -51,11 +51,12 @@ contract:
 
 This is not a generalization result.  No sealed corpus exists yet, actor-rich
 compatibility paths intentionally fail loudly, and no official measurement was
-run for this checkpoint.  Subsequent local slices removed the Samurai and Rogue
-alternate schedulers in favor of their existing live source-ration paths; the
-next ordered bridge replacement is Priest passive projectiles and extended
-commands.  Those later slices have focused fresh witnesses and selected public
-regressions, but still no sealed gate or hidden measurement.
+run for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
+and Priest alternate schedulers in favor of their existing live source-ration,
+command, prayer, and projectile paths.  The next ordered replacement is
+startup, role-inventory, object-initialization, and room-fill replay.  Those
+later slices have focused fresh witnesses and selected public regressions, but
+still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

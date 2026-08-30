@@ -578,12 +578,12 @@
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/allmain.js", "js/cmd.js", "js/monmove.js", "js/pray.js", "js/invent.js", "js/exper.js", "js/end.js", "js/gamelog.js", "js/priest_extcmd.js"],
+      "javascriptOwners": ["js/allmain.js", "js/cmd.js", "js/monmove.js", "js/pray.js", "js/invent.js", "js/exper.js", "js/end.js", "js/gamelog.js"],
       "dependencies": ["turn-scheduler", "tty-display"],
-      "bridgeIds": ["legacy-only priest.passive-projectile", "legacy-only seeded-replay.priest-extcmd", "legacy-only snapshot-painter.fixture-screen"],
-      "acceptanceWitnesses": ["test/bridge_free.public-regression.js: seed0501 cast/read/turn and seed0106 prayer/projectile/extended-command RNG, screen, and cursor parity with zero bridge hits; public regressions only", "test/run_scheduler.public-regression.js: seed0107 role-neutral skill-menu control"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/priest_scheduler.test.js: fresh non-public seed23501 proves command text cannot select a replay engine or retroactively rewrite the pet and unrelated monsters during four earlier wait turns; normal and bridge-free modes end with equal live world state and no Priest bridge hit", "scripts/audit-bridge-free.mjs: rejects both removed Priest classifiers, pet/RNG replay helpers, replay/snapshot boundary exports, bridge IDs, and the deleted priest_extcmd.js module", "test/bridge_free.public-regression.js: seed0501 cast/read/turn and seed0106 prayer/projectile/extended-command RNG, screen, and cursor parity with zero bridge hits; public regressions only", "test/run_scheduler.public-regression.js: seed0107 role-neutral skill-menu control"],
       "lastSealedGate": null,
-      "openGap": "Both represented Priest carriers now use live source-ration, prayer, projectile lifecycle, command state, chronicle, overview, and naming in bridge-free mode; alternate ranged outcomes, pantheons, command histories, unseen actors/options, legacy bridge removal, and sealed strata remain unverified."
+      "openGap": "Normal and bridge-free Priest execution now share the live source-ration, prayer, projectile lifecycle, extended-command, command state, chronicle, overview, and naming owners. Both replayMoves classifiers, the command-swallow path, hard-coded pet positions, aggregate RNG, 136 stored screens, and priest_extcmd.js are deleted. Alternate ranged outcomes, pantheons, command histories, unseen actors/options, save/restore, dungeon branches, and sealed strata remain unverified."
     },
     {
       "id": "tty-display",

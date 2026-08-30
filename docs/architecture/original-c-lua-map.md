@@ -38199,3 +38199,62 @@ known compatibility behavior; it does not substitute for a sealed or official
 hidden measurement.  Alternate unseen actors, trap kinds, command bindings,
 options, dungeon branches, long persistence histories, and sealed strata keep
 the registry entry partial.  Lua owns none of this runtime scheduling path.
+
+## 1015. Priest command text no longer selects a replay world
+
+```mermaid
+flowchart TD
+    A[raw tty key] --> B[cmd.c rhack and doextcmd]
+    B --> C{time-consuming command?}
+    C -- no --> A
+    C -- yes --> D[allmain.c movement-ration scheduler]
+    D --> E[dog_move and dochug read current actors and floor]
+    E --> F[mthrowu m_throw and drop_throw own passive projectiles]
+    F --> G[pray.c and spell.c own prayer, turn, and casting state]
+    G --> A
+
+    H[replayMoves prefix classifier] -. deleted .-> B
+    I[Z then later turn classifier] -. deleted .-> D
+    J[hard-coded pet coordinates and aggregate RNG] -. deleted .-> E
+    K[136 stored screens plus swallowed commands] -. deleted .-> A
+```
+
+Pinned `cmd.c:rhack()` and `doextcmd()` interpret the command currently read;
+they do not inspect future input to choose another command processor.  Timed
+commands then enter `allmain.c:moveloop_core()`, which schedules the current
+monster chain and pet from live movement credit and world state.
+`mthrowu.c:m_throw()`/`drop_throw()`, `pray.c`, and `spell.c` retain projectile,
+prayer, turn-undead, and casting ownership.  None of these boundaries selects
+behavior from the hero role plus a recorded command substring.
+
+The former JavaScript normal mode did exactly that twice.  A raw prefix matching
+`ns#pray` selected `priest_extcmd.js`, whose input hook replayed a large encoded
+RNG transcript, painted one of 136 stored screens, and made `rhack()` swallow
+every remaining key as zero-time.  A separate future-input `Z...#turn`
+classifier bypassed ordinary first-turn ownership, replayed pet-search ranges,
+and overwrote the starting pet at `(40,7)` and then `(39,8)`.  The latter flag
+could change earlier wait turns based only on command bytes that had not yet
+been interpreted.
+
+Both classifiers and every downstream alternate owner are deleted.  Normal and
+bridge-free Priest runs now use the same existing live command, movement-ration,
+actor, projectile, prayer, spell, persistence, and tty owners.  The deleted
+`priest_extcmd.js` removes the encoded RNG corpus and stored-screen painter from
+the Priest production graph; the shared `fixture_screen.js` remains only for
+other explicitly guarded compatibility carriers.
+
+A fresh seed23501 discriminator does not read a recorded session.  Its first
+command stream exercises the old extended-command selector and now reaches the
+same live world in both modes with no Priest bridge.  Its second stream performs
+four waits before a save prompt while later unused bytes contain `Z` and
+`#turn`.  Before removal, those future bytes moved the pet from `(41,4)` to
+`(39,8)` and changed two unrelated monsters' positions and movement credit.
+Now both modes preserve the same live actor graph.  The tests assert final
+world state rather than helper order or a copied RNG transcript.  A mechanical
+audit independently rejects reintroduction of the removed classifier, helper,
+bridge, and module names.
+
+The two existing seed0501 and seed0106 bridge-free public carriers remain exact
+as lower-tier regressions.  Alternate ranged outcomes, pantheons, unseen actor
+graphs, option families, longer persistence histories, dungeon branches, and a
+sealed stratum remain partial.  Lua owns none of this runtime slice.
