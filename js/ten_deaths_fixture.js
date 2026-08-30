@@ -2,8 +2,9 @@
 
 import {
     initRng, enableRngLog, getRngLog, rn2, rnd, d,
-    replayRecordedRnl, pushRngLogEntry,
+    pushRngLogEntry,
 } from './rng.js';
+import { consumeRecordedRnl } from './session_fixture_rng.js';
 import { decodeFixtureSnapshots } from './fixture_screen.js';
 
 const FIXTURES = [
@@ -111,7 +112,7 @@ function replaySpec(spec) {
             else if (kind === 'r') rnd(Number(token.slice(1)));
             else if (kind === 'L') {
                 const [range, nestedRange, value] = token.slice(1).split('x').map(Number);
-                replayRecordedRnl(range, nestedRange, value);
+                consumeRecordedRnl(range, nestedRange, value);
             } else if (kind === 'd') {
                 const [dice, sides] = token.slice(1).split('x').map(Number);
                 d(dice, sides);
@@ -151,4 +152,3 @@ export function runTenDeathsFixture(index, seed) {
         getAnimationFramesByStep: () => screens.map(() => []),
     };
 }
-

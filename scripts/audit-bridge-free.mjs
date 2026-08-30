@@ -130,6 +130,21 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('fastforward.js'))
         failures.push('fastforward.js: legacy default scheduler replay module still exists');
+    const rngSource = sources.get('rng.js') || '';
+    for (const token of [
+        'replayRecordedRnl', 'seeded-replay.recorded-rnl',
+    ]) {
+        if (rngSource.includes(token))
+            failures.push(`rng.js: fixture-only recorded RNL token ${token}`);
+    }
+    for (const [file, source] of sources) {
+        if (!source.includes("from './session_fixture_rng.js'")) continue;
+        if (!file.endsWith('_fixture.js')) {
+            failures.push(
+                `${file}: fixture RNG helper escaped the top-level fixture graph`,
+            );
+        }
+    }
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,
