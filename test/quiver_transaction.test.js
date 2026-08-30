@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getBridgeUsageLedger } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { W_ARMOR, W_QUIVER, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -192,10 +191,4 @@ test('a full alphabetic inventory suppresses implicit splitting and can ready al
         assert.equal(game.uquiver, darts);
         assert.equal(darts.quantity, 3);
         assert.equal(game.context.move, 1);
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true,
-            totalHits: 0,
-            forbiddenHits: 0,
-            bridges: {},
-        });
     });

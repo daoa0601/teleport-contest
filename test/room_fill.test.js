@@ -2,9 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
-import {
     ALTAR, FILL_NORMAL, FOUNTAIN, GRAVE, OROOM, ROOM, ROOMOFFSET,
     SINK, WEB,
 } from '../js/const.js';
@@ -67,7 +64,6 @@ function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
     initRng(999n);
     init_objects();
     initRng(BigInt(seed));
-    resetBridgeUsageLedger();
     return room;
 }
 
@@ -188,7 +184,4 @@ test('supply chest commits final contained weight and no bridge usage', async ()
         && object.contents?.length > 0);
     assert.ok(supplyChest);
     assert.equal(supplyChest.owt, objectWeight(supplyChest));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });

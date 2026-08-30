@@ -1,4 +1,3 @@
-import { resetBridgeUsageLedger } from '../../js/bridge_policy.js';
 import { ROOM } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { game, resetGame } from '../../js/gstate.js';
@@ -52,7 +51,6 @@ export function freshWeaponArena() {
     game.uwep = game.uswapwep = game.uquiver = null;
     game.animationFrame = async () => {};
     resetInputState();
-    resetBridgeUsageLedger();
     initRng(28101n);
     return level;
 }

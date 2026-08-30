@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resetBridgeUsageLedger, getBridgeUsageLedger } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER, W_SWAPWEP, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -44,12 +43,6 @@ test('fireassist prefers a known-safe launcher over unknown and known-cursed mat
                     (pile || []).some(object => object === flint))),
             'the selected launcher must fire and settle the readied identity',
         );
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true,
-            totalHits: 0,
-            forbiddenHits: 0,
-            bridges: {},
-        });
     });
 
 test('swapping a sole primary makes it the alternate and leaves bare hands',

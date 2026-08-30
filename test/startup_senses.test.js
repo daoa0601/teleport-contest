@@ -107,7 +107,7 @@ test('Eyes block but do not erase the permanent blindness source', () => {
 });
 
 test('fresh bridge-free permanent-blind/deaf startup owns live perception', async () => {
-    const result = await runSegment({
+    await runSegment({
         seed: 9183,
         datetime: '20260829193000',
         nethackrc: [
@@ -125,7 +125,4 @@ test('fresh bridge-free permanent-blind/deaf startup owns live perception', asyn
     const adjacentX = game.u.ux < 79 ? game.u.ux + 1 : game.u.ux - 1;
     assert.equal(couldsee(adjacentX, game.u.uy), true);
     assert.equal(cansee(adjacentX, game.u.uy), false);
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });

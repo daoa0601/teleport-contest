@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE } from '../js/const.js';
 import {
@@ -65,7 +62,6 @@ function freshFigurineState() {
     initRng(999n);
     init_objects();
     resetInputState();
-    resetBridgeUsageLedger();
 }
 
 function carriedFigurine({
@@ -92,11 +88,6 @@ function figTimer(figurine) {
     return timers[0];
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 async function claimTransform(figurine, seed, overdue = 0) {
     const timer = figTimer(figurine);
@@ -164,7 +155,6 @@ test('only a viable cursed carried figurine receives a fresh timer', () => {
     game.mvitals[PM_LEOCROTTA] = { mvflags: G_GENOD };
     const genocided = carriedFigurine({ species: PM_LEOCROTTA }).figurine;
     assert.equal(objectTimers(genocided).length, 0);
-    assertNoBridgeUse();
 });
 
 test('monster acquisition replaces the timer before visible pack transform',
@@ -196,7 +186,6 @@ test('monster acquisition replaces the timer before visible pack transform',
         assert.equal(carrier.minvent.includes(figurine), false);
         assert.equal(carrier.hasInventory, false);
         assert.equal('carrierMid' in figurine, false);
-        assertNoBridgeUse();
     });
 
 test('invisible monster carrier is attributed to thin air', async () => {
@@ -210,7 +199,6 @@ test('invisible monster carrier is attributed to thin air', async () => {
     assert.ok(carrier.minvent.includes(figurine));
     finishFigurineTimer(event, game);
     assert.equal(carrier.hasInventory, false);
-    assertNoBridgeUse();
 });
 
 test('invisible monster carrier in a pool is attributed to empty water',
@@ -226,7 +214,6 @@ test('invisible monster carrier in a pool is attributed to empty water',
             'You see a wumpus drop out of empty water!');
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('overdue monster-inventory transform stays silent until deletion',
@@ -243,7 +230,6 @@ test('overdue monster-inventory transform stays silent until deletion',
         assert.ok(carrier.minvent.includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(carrier.minvent.includes(figurine), false);
-        assertNoBridgeUse();
     });
 
 test('blocked monster-carried figurine retains its carrier for retry',
@@ -271,7 +257,6 @@ test('blocked monster-carried figurine retains its carrier for retry',
         assert.equal(figurine.where, 'minvent');
         assert.ok(carrier.minvent.includes(figurine));
         assert.equal(figTimer(figurine).deadline, event.retryDeadline);
-        assertNoBridgeUse();
     });
 
 test('cursed carried figurine creates a hostile actor before pack prose',
@@ -291,7 +276,6 @@ test('cursed carried figurine creates a hostile actor before pack prose',
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assert.equal(game.inventory.includes(figurine), false);
-        assertNoBridgeUse();
     });
 
 test('zero disposition initializes a complete non-domestic figurine pet',
@@ -309,7 +293,6 @@ test('zero disposition initializes a complete non-domestic figurine pet',
         assert.equal(event.monster.edog.hungrytime, game.moves + 1000);
         assert.equal(game.u.uconduct.pets, 1);
         finishFigurineTimer(event, game);
-        assertNoBridgeUse();
     });
 
 test('one disposition preserves the familiar birth attitude without taming',
@@ -325,7 +308,6 @@ test('one disposition preserves the familiar birth attitude without taming',
         assert.equal(event.monster.mtame, 0);
         assert.equal(event.monster.pet, false);
         finishFigurineTimer(event, game);
-        assertNoBridgeUse();
     });
 
 test('overdue blind inventory transform still presents tactile pack prose',
@@ -339,7 +321,6 @@ test('overdue blind inventory transform still presents tactile pack prose',
         assert.ok(game.inventory.includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('unsupported shapechanger rejects before transform RNG or mutation',
@@ -358,7 +339,6 @@ test('unsupported shapechanger rejects before transform RNG or mutation',
         assert.deepEqual(getRngLog(), []);
         assert.equal(figurine.where, 'inventory');
         assert.equal(game.level.monsters.length, 0);
-        assertNoBridgeUse();
     });
 
 test('drop command preserves figurine timer into visible floor transformation',
@@ -381,7 +361,6 @@ test('drop command preserves figurine timer into visible floor transformation',
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assert.equal(game.level.objects[x][y].includes(figurine), false);
-        assertNoBridgeUse();
     });
 
 test('floor figurine under hero uses makemon adjacent placement',
@@ -404,7 +383,6 @@ test('floor figurine under hero uses makemon adjacent placement',
         ), 1);
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('overdue visible floor transformation is silent before object deletion',
@@ -424,7 +402,6 @@ test('overdue visible floor transformation is silent before object deletion',
         assert.ok(game.level.objects[x][y].includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('obstructed floor figurine retains its square and schedules one retry',
@@ -450,7 +427,6 @@ test('obstructed floor figurine retains its square and schedules one retry',
         assert.equal(figurine.oy, y);
         assert.ok(game.level.objects[x][y].includes(figurine));
         assert.equal(figTimer(figurine).deadline, event.retryDeadline);
-        assertNoBridgeUse();
     });
 
 test('occupied floor square consumes figurine as construction failure',
@@ -474,7 +450,6 @@ test('occupied floor square consumes figurine as construction failure',
         assert.equal(figurine.where, 'gone');
         assert.equal(game.level.objects[x][y].includes(figurine), false);
         assert.equal(game.level.monsters.length, 1);
-        assertNoBridgeUse();
     });
 
 test('carried figurine uses whole-map enexto fallback before retrying',
@@ -497,7 +472,6 @@ test('carried figurine uses whole-map enexto fallback before retrying',
         assert.ok(game.inventory.includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('blocked carried figurine retains identity and schedules rnd(5000) retry',
@@ -534,5 +508,4 @@ test('blocked carried figurine retains identity and schedules rnd(5000) retry',
         assert.ok(game.inventory.includes(figurine));
         assert.equal(figurine.where, 'inventory');
         assert.equal(figTimer(figurine).deadline, event.retryDeadline);
-        assertNoBridgeUse();
     });

@@ -7,8 +7,8 @@ import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    assertNoBridgeUse, carriedGold, fireQuiveredGold, floorAt,
-    floorObjects, liveMonster, readyGold, throwGold,
+    carriedGold, fireQuiveredGold, floorAt, floorObjects, liveMonster,
+    readyGold, throwGold,
 } from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -45,7 +45,6 @@ test('f fires one quivered coin through the ordinary strength range',
         assert.deepEqual([coin.ox, coin.oy], [15, 10]);
         assert.equal(floorAt(level, 15, 10).includes(coin), true);
         assert.equal(game.context.move, 1);
-        assertNoBridgeUse();
     });
 
 test('t selects the same one-coin quivered path rather than whole-purse gold',

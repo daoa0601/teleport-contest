@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
 import { ICE, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import {
@@ -63,14 +60,8 @@ function freshGlobState(seed = 1) {
     initRng(999n);
     init_objects();
     initRng(BigInt(seed));
-    resetBridgeUsageLedger();
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 function shrinkTimer(glob) {
     const timers = objectTimers(glob);
@@ -108,7 +99,6 @@ test('fresh glob variants own identity, weight, species, and first timer', () =>
         assert.match(getRngLog()[index], /^rnd\(2\)=[12]$/);
         assert.match(getRngLog()[index + 1], /^rn2\(5\)=[0-4]$/);
     }
-    assertNoBridgeUse();
 });
 
 test('floor glob stacking absorbs the old identity and averages live delays',
@@ -148,7 +138,6 @@ test('floor glob stacking absorbs the old identity and averages live delays',
             deadline: 190,
         }]);
         assert.deepEqual(getRngLog(), []);
-        assertNoBridgeUse();
     });
 
 test('exact visible floor callback shrinks once and schedules a fresh attempt',
@@ -176,7 +165,6 @@ test('exact visible floor callback shrinks once and schedules a fresh attempt',
         assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
         const roll = Number(getRngLog()[0].at(-1));
         assert.equal(next.deadline, game.moves + 23 + roll);
-        assertNoBridgeUse();
     });
 
 test('visible final floor shrink deletes the glob before fade prose', () => {
@@ -199,7 +187,6 @@ test('visible final floor shrink deletes the glob before fade prose', () => {
     assert.equal(game.level.objects[12][10].includes(glob), false);
     assert.equal(objectTimers(glob).length, 0);
     assert.deepEqual(getRngLog(), []);
-    assertNoBridgeUse();
 });
 
 test('overdue floor callback catches up arithmetically without RNG or prose',
@@ -222,7 +209,6 @@ test('overdue floor callback catches up arithmetically without RNG or prose',
         assert.equal(glob.owt, 18);
         assert.equal(shrinkTimer(glob).deadline, game.moves + 23);
         assert.deepEqual(getRngLog(), []);
-        assertNoBridgeUse();
     });
 
 test('inventory threshold prose precedes reschedule and retains live mass', () => {
@@ -251,7 +237,6 @@ test('inventory threshold prose precedes reschedule and retains live mass', () =
     assert.equal(shrinkTimer(glob).deadline <= game.moves + 27, true);
     assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
     assert.equal(event.followupMessage, null);
-    assertNoBridgeUse();
 });
 
 test('inventory dissolution precedes deletion and then relieves capacity', () => {
@@ -286,7 +271,6 @@ test('inventory dissolution precedes deletion and then relieves capacity', () =>
     assert.equal(event.followupMessage,
         'Your movements are now unencumbered.');
     assert.deepEqual(getRngLog(), []);
-    assertNoBridgeUse();
 });
 
 test('active inventory eating skips shrink and starts a fresh attempt', () => {
@@ -308,7 +292,6 @@ test('active inventory eating skips shrink and starts a fresh attempt', () => {
     assert.ok(shrinkTimer(glob).deadline >= game.moves + 23);
     assert.ok(shrinkTimer(glob).deadline <= game.moves + 27);
     assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
-    assertNoBridgeUse();
 });
 
 test('unsupported contained and icy floor carriers reject before mutation', () => {
@@ -349,5 +332,4 @@ test('unsupported contained and icy floor carriers reject before mutation', () =
     );
     assert.equal(icy.owt, 20);
     assert.deepEqual(getRngLog(), []);
-    assertNoBridgeUse();
 });

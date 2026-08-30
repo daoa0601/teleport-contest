@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -75,7 +72,6 @@ function freshLampState(object, seed = 1n) {
     initRng(seed);
     enableRngLog();
     resetInputState();
-    resetBridgeUsageLedger();
     return object;
 }
 
@@ -84,11 +80,6 @@ async function applyInventoryA() {
     await rhack('a'.charCodeAt(0));
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 function installLightingShop(lamp) {
     const room = {
@@ -146,7 +137,6 @@ test('applying a timed lamp starts it and manual off restores unspent fuel',
         assert.equal(lamp.lamplit, false);
         assert.equal(lamp.age, 180);
         assert.deepEqual(objectTimers(lamp), []);
-        assertNoBridgeUse();
     });
 
 test('lit lamps switch off before underwater rejection is considered',
@@ -161,7 +151,6 @@ test('lit lamps switch off before underwater rejection is considered',
         assert.equal(lantern.lamplit, false);
         assert.equal(lantern.age, 190);
         assert.deepEqual(objectTimers(lantern), []);
-        assertNoBridgeUse();
     });
 
 test('magic lamp keeps untimed mobile light until explicitly switched off',
@@ -195,7 +184,6 @@ test('magic lamp keeps untimed mobile light until explicitly switched off',
         assert.deepEqual(objectTimers(lamp), []);
         vision_recalc(0);
         assert.equal(cansee(12, 10), false);
-        assertNoBridgeUse();
     });
 
 test('lit magic-lamp release changes type and acquires an oil burn timer',
@@ -218,7 +206,6 @@ test('lit magic-lamp release changes type and acquires an oil burn timer',
         assert.deepEqual(objectTimers(lamp).map(timer => [
             timer.kind, timer.deadline,
         ]), [[OBJECT_TIMER_KIND.BURN_OBJECT, 1090]]);
-        assertNoBridgeUse();
     });
 
 test('unlit underwater and empty lamps refuse without creating timers',
@@ -253,7 +240,6 @@ test('unlit underwater and empty lamps refuse without creating timers',
         assert.equal(game._pending_message, 'This magic lamp has no oil.');
         assert.equal(magic.lamplit, false);
         assert.deepEqual(objectTimers(magic), []);
-        assertNoBridgeUse();
     });
 
 test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
@@ -316,7 +302,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         assert.equal(game._pending_message, 'Your lamp is now on.');
         assert.deepEqual(getRngLog(), ['rn2(2)=1']);
         assert.equal(lamp.lamplit, true);
-        assertNoBridgeUse();
     });
 
 test('unpaid timed and magic lamps charge source-order usage fees',
@@ -361,5 +346,4 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.deepEqual(getRngLog().map(call => call.replace(/=.*/, '')), [
             'rn2(3)', 'rn2(3)',
         ]);
-        assertNoBridgeUse();
     });

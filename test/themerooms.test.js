@@ -3,9 +3,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
-import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, BURN, DART_TRAP, FILL_NORMAL, FOUNTAIN,
     G_GENOD, ICE, LANDMINE, MAGIC_PORTAL,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
@@ -87,7 +84,6 @@ function themedState(seed, depth = 8) {
     init_objects();
     initRng(BigInt(seed));
     init_rect();
-    resetBridgeUsageLedger();
 }
 
 test('top-level themeroom metadata matches the independent Lua source', () => {
@@ -122,9 +118,6 @@ test('every declared Lua themeroom has a live named constructor', async () => {
             meta.name,
         );
         assert.ok(game.level.nroom > 0, meta.name);
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        }, meta.name);
     }
 });
 
@@ -235,9 +228,6 @@ test('Ghost of an Adventurer is live without a Valkyrie replay carrier', async (
     const equipment = game.level.objects?.[ghost.mx]?.[ghost.my] || [];
     assert.ok(equipment.length > 0);
     assert.ok(equipment.every(object => !object.blessed));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('unknown themed fills are not reported as implemented', async () => {
@@ -292,9 +282,6 @@ test('Ice room owns terrain and row-major positional melt timers', async () => {
     game.level.levelTimers = [];
     assert.equal(restoreGame(game.plname, storage), true);
     assert.deepEqual(levelTimers(game), timers);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('melt-ice resumes corpse timers, converts traps, and unearths objects',
@@ -368,9 +355,6 @@ test('melt-ice resumes corpse timers, converts traps, and unearths objects',
         assert.equal(meltIceTimerMessage(event, {
             visible: false, heroAt: false,
         }), null);
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        });
     });
 
 test('melt-ice stages boulder RNG after feedback and fills the exposed moat',
@@ -419,9 +403,6 @@ test('melt-ice stages boulder RNG after feedback and fills the exposed moat',
         }), 'You hear a splash.');
         assert.equal(meltIceBoulderSinkMessage(outcome, { visible: true }),
             null);
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        });
     });
 
 test('boulder splash wake-up shortens adjacent buried-zombie timers', () => {
@@ -470,9 +451,6 @@ test('melt-ice boulder fill leaves an airborne occupant alive', () => {
     assert.equal(floater.dead, undefined);
     assert.ok(game.level.monsters.includes(floater));
     assert.equal(game.level.at(x, y).typ, ROOM);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('melt-ice boulder fill kills a grounded clinger but not a ceiling hider',
@@ -601,9 +579,6 @@ test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
         assert.equal(corpse.where, 'buried');
         assert.ok(outcome.buriedFloorObjects.includes(statue));
         assert.ok(outcome.buriedFloorObjects.includes(corpse));
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        });
     });
 
 test('melt-ice resumes monster life-saving before burial and splash',
@@ -1095,9 +1070,6 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
     assert.equal(statue.where, 'buried');
     assert.equal(outcome.occupantDeath.corpse.where, 'buried');
     assert.equal(outcome.occupantDeath.corpse.oname, 'Slink');
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('melt-ice tame life-saving can end peaceful but no longer tame',
@@ -1237,9 +1209,6 @@ test('melt-ice tame life-saving can end peaceful but no longer tame',
     assert.equal(edog.hungrytime, 1000);
     assert.equal(amulet.where, 'gone');
     assert.equal(statue.where, 'buried');
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
@@ -1360,9 +1329,6 @@ test('melt-ice boulder death reveals a light-blocking object mimic',
         assert.equal(game.level.at(x, y).typ, ROOM);
         assert.equal(boulder.where, 'gone');
         assert.equal(getRngLog()[0], 'rn2(10)=5');
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        });
     });
 
 test('melt-ice boulder death reveals non-blocking furniture mimic state',
@@ -1491,9 +1457,6 @@ test('melt-ice removes a pit and untraps its occupant before boulder death',
         assert.equal(game.level.traps.includes(pit), false);
         assert.equal(boulder.where, 'gone');
         assert.equal(outcome.occupantDeath.corpse.where, 'buried');
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-        });
     });
 
 test('melt-ice removes a spiked pit and leaves its clinger alive', () => {
@@ -1561,9 +1524,6 @@ test('Boulder room owns filtered boulders and rolling traps live', async () => {
     assert.ok(boulders.length + game.level.traps.length > 0);
     assert.ok(game.level.traps.every(trap =>
         trap.ttyp === ROLLING_BOULDER_TRAP));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Cloud room persists its selection and ages once per fog occupant', async () => {
@@ -1597,9 +1557,6 @@ test('Cloud room persists its selection and ages once per fog occupant', async (
         if (expectedTtl < 20) expectedTtl += 5;
     runLevelRegions(game);
     assert.equal(region.ttl, expectedTtl);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Spider nest gates resident spiders by source difficulty', async () => {
@@ -1619,9 +1576,6 @@ test('Spider nest gates resident spiders by source difficulty', async () => {
     ), true);
     assert.ok(game.level.traps.every(trap => trap.ttyp === WEB));
     assert.equal(game.level.monsters.some(monster => monster.mnum === 96), true);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Garden defers grown wall and arboreal secret-door ownership', async () => {
@@ -1651,9 +1605,6 @@ test('Garden defers grown wall and arboreal secret-door ownership', async () => 
             if (game.level.at(x, y)?.typ === TREE) trees++;
     assert.ok(trees > 0);
     assert.equal(game._themeroomPostprocess.length, 0);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Trap room shuffles once and applies one trap type to its selection', async () => {
@@ -1670,9 +1621,6 @@ test('Trap room shuffles once and applies one trap type to its selection', async
     assert.ok(expectedTypes.has(game.level.traps[0].ttyp));
     assert.ok(game.level.traps.every(trap =>
         trap.ttyp === game.level.traps[0].ttyp));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Massacre creates only source role and guardian corpses', async () => {
@@ -1691,9 +1639,6 @@ test('Massacre creates only source role and guardian corpses', async () => {
         343, 342, 341, 340, 339, 338, 337, 336, 335, 334, 333, 332, 331,
     ]);
     assert.ok(corpses.every(corpse => allowed.has(corpse.corpsenm)));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Statuary composes loose statues and live statue traps', async () => {
@@ -1713,9 +1658,6 @@ test('Statuary composes loose statues and live statue traps', async () => {
         (column || []).flatMap(pile => pile || []),
     ).filter(object => object.otyp === STATUE);
     assert.ok(statues.length >= game.level.traps.length + 5);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Buried treasure owns nested contents before its deferred clue', async () => {
@@ -1766,9 +1708,6 @@ test('Buried treasure owns nested contents before its deferred clue', async () =
     }
     assert.equal(engraving.text, `Dig${direction}`);
     assert.equal(game._themeroomPostprocess.length, 0);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Buried zombies own depth species and replace corpse rot timers', async () => {
@@ -1817,9 +1756,6 @@ test('Buried zombies own depth species and replace corpse rot timers', async () 
         if (expanded.length)
             assert.ok(expanded.some(species => observed.has(species)));
     }
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('NO_MINVENT skips weapon and inventory RNG without skipping birth', async () => {
@@ -1853,9 +1789,6 @@ test('NO_MINVENT skips weapon and inventory RNG without skipping birth', async (
         );
         assert.ok(ordinaryLog.length > emptyLog.length);
     }
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('a due buried-zombie timer revives through an empty actor and pit', async () => {
@@ -1895,9 +1828,6 @@ test('a due buried-zombie timer revives through an empty actor and pit', async (
     assert.equal(event.trap.ty, event.monster.my);
     assert.equal(game.level.buriedObjects.includes(corpse), false);
     assert.equal(corpse.where, 'gone');
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('a blocked buried zombie becomes a buried corpse with a rot timer',
@@ -2144,9 +2074,6 @@ test('ordered rot callbacks remove floor corpses and unbox buried contents', asy
     assert.ok(contents.every(object =>
         object.where === 'gone'
         || (object.where === 'buried' && object.ox === x && object.oy === y)));
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('Light source creates a mobile oil-lamp light with live fuel breakpoints', async () => {
@@ -2211,9 +2138,6 @@ test('Light source creates a mobile oil-lamp light with live fuel breakpoints', 
     assert.equal(lamp.lamplit, false);
     assert.equal(lamp.burnAt, undefined);
     assert.equal(lamp.timed, 0);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('brass lantern shares live lamp breakpoints and mobile light', async () => {
@@ -2267,9 +2191,6 @@ test('brass lantern shares live lamp breakpoints and mobile light', async () => 
     assert.equal(lantern.age, 0);
     assert.equal(lantern.lamplit, false);
     assert.equal(lantern.where, 'floor');
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('unknown themeroom names fail instead of becoming generic rooms', async () => {

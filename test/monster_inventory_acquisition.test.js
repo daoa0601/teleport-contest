@@ -2,9 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
-import {
     MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, ROOM,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -73,7 +70,6 @@ function freshInventoryState(seed = 1) {
     initRng(999n);
     init_objects();
     initRng(BigInt(seed));
-    resetBridgeUsageLedger();
 }
 
 function assertMonsterOwns(monster, object) {
@@ -82,11 +78,6 @@ function assertMonsterOwns(monster, object) {
     assert.ok(monster.minvent.includes(object));
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 test('makemon startup inventory links every identity to the final actor',
     async () => {
@@ -103,7 +94,6 @@ test('makemon startup inventory links every identity to the final actor',
             assertMonsterOwns(monster, object);
         const graph = objectsInTimerGraph(game);
         assert.ok(monster.minvent.every(object => graph.includes(object)));
-        assertNoBridgeUse();
     });
 
 test('ambient m_initinv links direct monster money without carrying effects',
@@ -128,7 +118,6 @@ test('ambient m_initinv links direct monster money without carrying effects',
         assert.equal(monster.minvent[0].otyp, GOLD_PIECE);
         assertMonsterOwns(monster, monster.minvent[0]);
         assert.equal(monster.hasInventory, true);
-        assertNoBridgeUse();
     });
 
 test('direct add_to_minv linkage does not invent carrying effects', () => {
@@ -155,7 +144,6 @@ test('direct add_to_minv linkage does not invent carrying effects', () => {
     assert.deepEqual(getRngLog(), []);
     assert.deepEqual(objectTimers(figurine), []);
     assertMonsterOwns(monster, figurine);
-    assertNoBridgeUse();
 });
 
 test('ordinary add_to_minv head-links each unmerged identity by default', () => {
@@ -179,7 +167,6 @@ test('ordinary add_to_minv head-links each unmerged identity by default', () => 
     assert.strictEqual(monster.inventory, monster.minvent);
     assertMonsterOwns(monster, newest);
     assertMonsterOwns(monster, oldest);
-    assertNoBridgeUse();
 });
 
 test('special-level inventory transfer removes floor ownership and head-links',
@@ -208,7 +195,6 @@ test('special-level inventory transfer removes floor ownership and head-links',
         assert.strictEqual(monster.inventory, monster.minvent);
         assertMonsterOwns(monster, object);
         assert.equal((game.level.objects || []).flat(2).includes(object), false);
-        assertNoBridgeUse();
     });
 
 test('pet mpickobj ownership survives the complete pickup and release cycle',
@@ -262,7 +248,6 @@ test('pet mpickobj ownership survives the complete pickup and release cycle',
         assert.equal(dagger.where, 'floor');
         assert.equal('carrierMid' in dagger, false);
         assert.ok(game.level.objects[pet.mx][pet.my].includes(dagger));
-        assertNoBridgeUse();
     });
 
 test('covetous ground tactics head-link the source artifact through mpickobj',
@@ -301,7 +286,6 @@ test('covetous ground tactics head-link the source artifact through mpickobj',
         assert.equal(book.carrierMid, wizard.m_id);
         assert.deepEqual([book.ox, book.oy], [16, 12]);
         assert.equal(game.level.objects[16][12].includes(book), false);
-        assertNoBridgeUse();
     });
 
 test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
@@ -341,7 +325,6 @@ test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
     assert.equal(game.u.uwep, null);
         assertMonsterOwns(monster, dagger);
         assert.deepEqual([dagger.ox, dagger.oy], [0, 0]);
-    assertNoBridgeUse();
 });
 
 test('clonewiz direct add_to_minv links its minted fake without effects',
@@ -380,7 +363,6 @@ test('clonewiz direct add_to_minv links its minted fake without effects',
             [0, 0],
         );
         assert.equal(action.movement.attack.deferredCloneWizard, false);
-        assertNoBridgeUse();
     });
 
 test('direct add_to_minv merges monster gold into the first live identity',
@@ -418,7 +400,6 @@ test('direct add_to_minv merges monster gold into the first live identity',
         assertMonsterOwns(monster, first);
         assert.equal(incoming.where, 'gone');
         assert.equal('carrierMid' in incoming, false);
-        assertNoBridgeUse();
     });
 
 test('bullwhip mpickobj frees a compatible incoming weapon after merging',
@@ -476,7 +457,6 @@ test('bullwhip mpickobj frees a compatible incoming weapon after merging',
         assert.equal(incoming.where, 'gone');
         assert.equal(incoming.wielded, false);
         assert.deepEqual(objectTimers(incoming), []);
-        assertNoBridgeUse();
     });
 
 test('monster glob absorption averages live shrink delays onto the survivor',
@@ -525,5 +505,4 @@ test('monster glob absorption averages live shrink delays onto the survivor',
         assert.equal(incoming.where, 'gone');
         assert.deepEqual(objectTimers(incoming), []);
         assertMonsterOwns(monster, survivor);
-        assertNoBridgeUse();
     });

@@ -49,20 +49,28 @@ const FORBIDDEN_BEHAVIORAL_PATTERNS = [
 
 const FORBIDDEN_SCHEDULER_PATTERNS = [
     {
-        id: 'bridge-ledger-mechanics-oracle',
-        pattern: /\bgetBridgeUsageLedger\b|\.bridges\b/g,
-    },
-    {
         id: 'pet-existence-only-oracle',
         pattern: /\.actors\.some\(\s*actor\s*=>\s*actor\.tame\s*>\s*0\s*\)/g,
     },
 ];
 
+const FORBIDDEN_MECHANICS_PATTERNS = [
+    {
+        id: 'bridge-ledger-mechanics-oracle',
+        pattern: /\b(?:getBridgeUsageLedger|resetBridgeUsageLedger|assertNoBridgeUse)\b/g,
+    },
+];
+
 export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
     const testDir = path.join(repoRoot, 'test');
-    const files = fs.readdirSync(testDir)
+    const entrypoints = fs.readdirSync(testDir)
         .filter(filename => filename.endsWith('.test.js'))
         .sort();
+    const supportFiles = fs.readdirSync(path.join(testDir, 'support'))
+        .filter(filename => filename.endsWith('.js'))
+        .sort()
+        .map(filename => path.join('support', filename));
+    const files = [...entrypoints, ...supportFiles];
     const failures = [];
 
     for (const filename of files) {
@@ -86,9 +94,20 @@ export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
                 }
             }
         }
+        if (filename !== 'bridge_free.test.js') {
+            for (const { id, pattern } of FORBIDDEN_MECHANICS_PATTERNS) {
+                pattern.lastIndex = 0;
+                for (const match of source.matchAll(pattern)) {
+                    const line = source.slice(0, match.index).split('\n').length;
+                    failures.push({
+                        id, file: filename, line, text: lines[line - 1],
+                    });
+                }
+            }
+        }
     }
 
-    return { files, failures };
+    return { files, entrypoints, supportFiles, failures };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1])
@@ -103,10 +122,12 @@ if (process.argv[1] && path.resolve(process.argv[1])
         process.exitCode = 1;
     } else {
         console.log(
-            `Behavioral lane audit passed: ${result.files.length} files, `
+            `Behavioral lane audit passed: ${result.entrypoints.length} `
+            + `test files and ${result.supportFiles.length} support modules, `
             + 'no recorded-session, public-parity, mock/spy, or '
             + 'same-implementation/source-checksum/call-transcript '
-            + 'dependencies; scheduler tests use outcome oracles.',
+            + 'dependencies; mechanics tests do not recheck bridge-ledger '
+            + 'bookkeeping, and scheduler tests use outcome oracles.',
         );
     }
 }

@@ -8,8 +8,7 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    assertNoBridgeUse, carriedGold, floorAt, floorObjects, liveMonster,
-    looseGold, throwGold,
+    carriedGold, floorAt, floorObjects, liveMonster, looseGold, throwGold,
 } from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -39,7 +38,6 @@ test('direct throw moves the whole purse through its strength-weight range',
         assert.equal(floorObjects(level).filter(object =>
             object.otyp === GOLD_PIECE).length, 1);
         assert.equal(game.context.move, 1);
-        assertNoBridgeUse();
     });
 
 test('an adjacent blocked cell leaves the whole thrown purse at the hero',

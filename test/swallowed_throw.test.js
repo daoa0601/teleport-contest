@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { LOST_STOLEN, ROOM, W_AMUL } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -91,15 +88,9 @@ function freshSwallowedState(mnum) {
     initRng(999n);
     init_objects();
     resetInputState();
-    resetBridgeUsageLedger();
     return engulfer;
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 function installHumanWerewolfState() {
     game.urole = { key: 'archeologist', mnum: 0 };
@@ -175,7 +166,6 @@ test('swallowed live throw transfers a cursed figurine and replaces its timer',
         assert.match(getRngLog()[1], /^rnd\(20\)=\d+$/);
         assert.match(getRngLog()[2], /^rnd\(9000\)=\d+$/);
         assert.equal(getRngLog().length, 3);
-        assertNoBridgeUse();
     });
 
 test('swallowed split stack merges only after thrown ownership becomes stolen',
@@ -219,7 +209,6 @@ test('swallowed split stack merges only after thrown ownership becomes stolen',
             ['rnd(2)', 'rnd(20)'],
         );
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed timed lamp links before snuffing and restores unused fuel',
@@ -258,7 +247,6 @@ test('swallowed timed lamp links before snuffing and restores unused fuel',
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)'],
         );
-        assertNoBridgeUse();
     });
 
 test('blind swallowed contact silently snuffs an untimed magic lamp',
@@ -293,7 +281,6 @@ test('blind swallowed contact silently snuffs an untimed magic lamp',
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)'],
         );
-        assertNoBridgeUse();
     });
 
 test('swallowed ordinary weapon damages, trains, and transfers after contact',
@@ -327,7 +314,6 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
             'rnd(20)=3', 'rnd(3)=3', 'rn2(19)=16',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
@@ -360,7 +346,6 @@ test('swallowed weapon-tool preserves minimal-damage skill cadence',
             'rnd(20)=12', 'rnd(3)=1', 'rn2(19)=11',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed multi-die weapon uses the shared physical damage owner',
@@ -391,7 +376,6 @@ test('swallowed multi-die weapon uses the shared physical damage owner',
             'rnd(20)=9', 'rnd(6)=4', 'd(2,6)=8', 'rn2(19)=8',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('cursed swallowed throwing weapon rerolls direction before damage',
@@ -425,7 +409,6 @@ test('cursed swallowed throwing weapon rerolls direction before damage',
         assert.equal(game.u.dy, -1);
         assert.equal(game.u.dz, 0);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed dart survives mulch and transfers after live missile damage',
@@ -457,7 +440,6 @@ test('swallowed dart survives mulch and transfers after live missile damage',
             'rnd(20)=5', 'rnd(2)=2', 'rn2(19)=14', 'rn2(3)=0',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed dart mulch removes the detached identity after damage',
@@ -487,7 +469,6 @@ test('swallowed dart mulch removes the detached identity after damage',
             'rnd(20)=20', 'rnd(2)=2', 'rn2(19)=14', 'rn2(3)=2',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed projectile passive follows mulch survival before acquisition',
@@ -518,7 +499,6 @@ test('swallowed projectile passive follows mulch survival before acquisition',
             'rnd(20)=19', 'rnd(3)=3', 'rn2(19)=7',
             'rn2(3)=0', 'rn2(6)=0',
         ]);
-        assertNoBridgeUse();
     });
 
 test('swallowed multigen missile fails before split or volley RNG',
@@ -588,7 +568,6 @@ test('swallowed launched arrow uses launcher skill and excludes Strength',
         assert.deepEqual(getRngLog(), [
             'rnd(20)=5', 'rnd(6)=4', 'rn2(19)=14', 'rn2(3)=0',
         ]);
-        assertNoBridgeUse();
     });
 
 test('swallowed hand-thrown arrow uses ranged damage and Strength without skill',
@@ -619,7 +598,6 @@ test('swallowed hand-thrown arrow uses ranged damage and Strength without skill'
         assert.deepEqual(getRngLog(), [
             'rnd(20)=5', 'rnd(2)=2', 'rn2(19)=14', 'rn2(3)=0',
         ]);
-        assertNoBridgeUse();
     });
 
 test('swallowed sickness harms the engulfer and hero in source order',
@@ -645,7 +623,6 @@ test('swallowed sickness harms the engulfer and hero in source order',
         ]);
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed booze confuses the engulfer and hero in source order',
@@ -676,7 +653,6 @@ test('swallowed booze confuses the engulfer and hero in source order',
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
         assert.equal(game._pending_message, 'Crash!  You feel somewhat dizzy.');
-        assertNoBridgeUse();
     });
 
 test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
@@ -710,7 +686,6 @@ test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
         assert.equal(game._helplessDoneMessage, 'You can move again.');
         assert.deepEqual(game.inventory, []);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('swallowed blindness times engulfer sight before blinding the hero',
@@ -745,7 +720,6 @@ test('swallowed blindness times engulfer sight before blinding the hero',
         assert.equal(game.vision_full_recalc, 0);
         assert.deepEqual(game.inventory, []);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('swallowed cursed invisibility reveals and angers an invisible engulfer',
@@ -777,7 +751,6 @@ test('swallowed cursed invisibility reveals and angers an invisible engulfer',
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed blessed water damages a demonic engulfer through the live owner',
@@ -801,7 +774,6 @@ test('swallowed blessed water damages a demonic engulfer through the live owner'
         ]);
         assert.equal(engulfer.mhp, 31);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('swallowed cursed water heals a demonic engulfer without angering it',
@@ -829,7 +801,6 @@ test('swallowed cursed water heals a demonic engulfer without angering it',
         assert.equal(engulfer.mhp, 31);
         assert.equal(engulfer.msleeping, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
@@ -857,7 +828,6 @@ test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
         assert.equal(game.u.uconduct.polyselfs, 1);
         assert.equal(game.were_changes, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
@@ -885,7 +855,6 @@ test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
         assert.equal(game.u.mtimedone, 0);
         assert.equal(game.u.uconduct.polyselfs ?? 0, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('gremlin hero water vapor creates a named tame clone and splits form HP',
@@ -933,7 +902,6 @@ test('gremlin hero water vapor creates a named tame clone and splits form HP',
         assert.equal(game.u.uconduct.pets, 1);
         assert.equal(potion.where, 'gone');
         assert.match(game._pending_message, /You multiply!$/);
-        assertNoBridgeUse();
     });
 
 test('one-HP gremlin vapor consumes water without constructing a clone',
@@ -966,7 +934,6 @@ test('one-HP gremlin vapor consumes water without constructing a clone',
         assert.equal(game.u.uconduct.pets ?? 0, 0);
         assert.equal(potion.where, 'gone');
         assert.doesNotMatch(game._pending_message, /multiply/);
-        assertNoBridgeUse();
     });
 
 test('four-HP gremlin throw is not a stamina drop while unencumbered',
@@ -1001,7 +968,6 @@ test('four-HP gremlin throw is not a stamina drop while unencumbered',
         assert.doesNotMatch(
             game._pending_message || '', /so little stamina/,
         );
-        assertNoBridgeUse();
     });
 
 test('overtaxed throw rejects before object and direction input', async () => {
@@ -1019,7 +985,6 @@ test('overtaxed throw rejects before object and direction input', async () => {
         "You can't do that while carrying so much stuff.",
     );
     assert.equal(game.context.move, 0);
-    assertNoBridgeUse();
 });
 
 test('burdened low-HP hero throws without the Stressed stamina branch',
@@ -1049,7 +1014,6 @@ test('burdened low-HP hero throws without the Stressed stamina branch',
         assert.doesNotMatch(
             game._pending_message || '', /so little stamina/,
         );
-        assertNoBridgeUse();
     });
 
 test('stressed low-HP hero drops then completes swallowed potion contact',
@@ -1086,7 +1050,6 @@ test('stressed low-HP hero drops then completes swallowed potion contact',
         assert.equal(game.u.dy, 0);
         assert.equal(game.u.dz, 1);
         assert.equal(engulfer.msleeping, 0);
-        assertNoBridgeUse();
     });
 
 test('stressed four-HP gremlin drops without physical exercise then contacts',
@@ -1130,7 +1093,6 @@ test('stressed four-HP gremlin drops without physical exercise then contacts',
         assert.equal(game.u.dx, 0);
         assert.equal(game.u.dy, 0);
         assert.equal(game.u.dz, 1);
-        assertNoBridgeUse();
     });
 
 test('controlled lycanthrope acceptance completes swallowed mutation',
@@ -1159,7 +1121,6 @@ test('controlled lycanthrope acceptance completes swallowed mutation',
         assert.equal(game.were_changes, 1);
         assert.equal(game.u.uconduct.polyselfs, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('stun bypasses the lycanthrope control prompt and permits transformation',
@@ -1189,7 +1150,6 @@ test('stun bypasses the lycanthrope control prompt and permits transformation',
         assert.equal(game.u.uconduct.polyselfs, 1);
         assert.equal(game.were_changes, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('swallowed acid damages the engulfer and exercises hero Constitution',
@@ -1218,7 +1178,6 @@ test('swallowed acid damages the engulfer and exercises hero Constitution',
         assert.equal(game.u.uhp, 40);
         assert.equal(game.u._exercise[2], -1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('fatal unique water target fails before swallowed potion mutation or RNG',
@@ -1270,7 +1229,6 @@ test('swallowed unlit oil breaks without evaporation or floor fallback',
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('swallowed lamplit oil fails before mutation or RNG', async () => {
@@ -1353,7 +1311,6 @@ test('swallowed healing family heals both monster and hero through vapor',
             assert.equal(game.u.blindTurns, 0);
             assert.equal(game.u.deafTurns, 0);
             assert.equal(potion.where, 'gone');
-            assertNoBridgeUse();
         }
     });
 
@@ -1380,7 +1337,6 @@ test('swallowed blessed gain ability restores every reduced base attribute',
         assert.equal(engulfer.mhp, engulfer.mhpmax);
         assert.deepEqual(game.u.acurr.a, [11, 12, 10, 12, 9, 12]);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('cursed restore ability vapor smells but cannot restore attributes',
@@ -1408,7 +1364,6 @@ test('cursed restore ability vapor smells but cannot restore attributes',
         assert.equal(game._pending_message,
             'Crash!  Ulch!  That potion smells terrible!');
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('all monster-inert potions crash unseen, chip, and disappear live',
@@ -1451,7 +1406,6 @@ test('all monster-inert potions crash unseen, chip, and disappear live',
             assert.equal(potion.oy, 0);
             assert.equal(game._pending_message, 'Crash!');
             assert.equal((game.level.objects || []).flat(2).length, 0);
-            assertNoBridgeUse();
         }
     });
 
@@ -1478,7 +1432,6 @@ test('unseen swallowed bottle selection remains hallucination-sensitive',
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
         assert.equal(game._pending_message, 'Crash!');
-        assertNoBridgeUse();
     });
 
 test('swallowed inert potion stack splits one consumed identity', async () => {
@@ -1504,7 +1457,6 @@ test('swallowed inert potion stack splits one consumed identity', async () => {
     assert.equal(potion.where, 'inventory');
     assert.deepEqual(engulfer.minvent, []);
     assert.equal((game.level.objects || []).flat(2).length, 0);
-    assertNoBridgeUse();
 });
 
 test('dknown unknown swallowed potion records a live type call after impact',
@@ -1555,7 +1507,6 @@ test('dknown unknown swallowed potion records a live type call after impact',
             'rnd(20)=7', 'rn2(7)=5', 'rn2(5)=2',
         ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
-        assertNoBridgeUse();
     });
 
 test('unseen unknown inert potion needs no naming continuation', async () => {
@@ -1579,7 +1530,6 @@ test('unseen unknown inert potion needs no naming continuation', async () => {
     assert.deepEqual(engulfer.minvent, []);
     assert.equal(potion.where, 'gone');
     assert.equal(game._pending_message, 'Crash!');
-    assertNoBridgeUse();
 });
 
 test('greased inert potion slips before its swallowed impact transaction',
@@ -1609,7 +1559,6 @@ test('greased inert potion slips before its swallowed impact transaction',
         assert.equal(game.u.dx, 0);
         assert.equal(game.u.dy, 0);
         assert.equal(game.u.dz, 1);
-        assertNoBridgeUse();
     });
 
 test('a killing swallowed dart is acquired, dropped, and autopicked before cleanup',
@@ -1656,7 +1605,6 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
         );
-        assertNoBridgeUse();
     });
 
 test('a killing swallowed weapon remains on the death square without autopickup',
@@ -1688,7 +1636,6 @@ test('a killing swallowed weapon remains on the death square without autopickup'
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)', 'rnd(3)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
         );
-        assertNoBridgeUse();
     });
 
 test('a killing projectile releases prior minvent ahead of itself into autopickup',
@@ -1731,7 +1678,6 @@ test('a killing projectile releases prior minvent ahead of itself into autopicku
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
         );
-        assertNoBridgeUse();
     });
 
 test('a killing projectile merges in minvent before the survivor is released',
@@ -1778,7 +1724,6 @@ test('a killing projectile merges in minvent before the survivor is released',
             getRngLog().map(entry => entry.replace(/=.*/, '')),
             ['rnd(20)', 'rnd(2)', 'rnd(2)', 'rn2(6)', 'rn2(19)'],
         );
-        assertNoBridgeUse();
     });
 
 test('potentially lethal swallowed weapon with life-saving fails before mutation',
@@ -1811,12 +1756,4 @@ test('potentially lethal swallowed weapon with life-saving fails before mutation
         assert.deepEqual(game.inventory, [dagger]);
         assert.deepEqual(engulfer.minvent, [amulet]);
         assert.deepEqual(getRngLog(), []);
-        const ledger = getBridgeUsageLedger();
-        assert.equal(ledger.bridgeFree, true);
-        assert.equal(ledger.totalHits, 1);
-        assert.equal(ledger.forbiddenHits, 1);
-        assert.equal(
-            ledger.bridges['throw.swallowed-weapon-unsupported'].count,
-            1,
-        );
     });

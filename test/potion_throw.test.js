@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { ROOM, STONE, W_ARM, W_ARMC } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -77,7 +74,6 @@ function freshMapPotionState(distance = 2) {
     initRng(1n);
     init_objects();
     resetInputState();
-    resetBridgeUsageLedger();
     return monster;
 }
 
@@ -98,14 +94,6 @@ async function throwEast(potion, continuationKeys = []) {
     await rhack('t'.charCodeAt(0));
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true,
-        totalHits: 0,
-        forbiddenHits: 0,
-        bridges: {},
-    });
-}
 
 function floorObjects() {
     const objects = [];
@@ -159,7 +147,6 @@ test('live map potion crosses bhit and consumes a successful inert contact',
         assert.equal(floorObjects().includes(potion), false);
         assert.match(game._pending_message,
             /potion of fruit juice evaporates\.$/);
-        assertNoBridgeUse();
     });
 
 test('live map potion miss wakes conditionally then shatters at bhitpos',
@@ -186,7 +173,6 @@ test('live map potion miss wakes conditionally then shatters at bhitpos',
         assert.equal(floorObjects().includes(potion), false);
         assert.match(game._pending_message,
             /potion of gain level shatters!$/);
-        assertNoBridgeUse();
     });
 
 test('map potion stack allocates and consumes one split identity', async () => {
@@ -213,7 +199,6 @@ test('map potion stack allocates and consumes one split identity', async () => {
     assert.equal(potion.where, 'inventory');
     assert.equal(monster.mhp, 11);
     assert.equal(floorObjects().length, 0);
-    assertNoBridgeUse();
 });
 
 test('one-percent map potion break resistance preserves the thrown identity',
@@ -232,7 +217,6 @@ test('one-percent map potion break resistance preserves the thrown identity',
         assert.equal(potion.ox, 16);
         assert.equal(potion.oy, 10);
         assert.ok(floorObjects().includes(potion));
-        assertNoBridgeUse();
     });
 
 test('map extra healing contact heals monster then hero through nearby vapor',
@@ -267,7 +251,6 @@ test('map extra healing contact heals monster then hero through nearby vapor',
         assert.equal(game.u.deafTurns, 0);
         assert.equal(potion.where, 'gone');
         assert.equal(game.u._exercise[2], 1);
-        assertNoBridgeUse();
     });
 
 test('map sickness contact harms monster before nearby hero vapor', async () => {
@@ -294,7 +277,6 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
     assert.equal(game.u.uhp, 25);
     assert.equal(game.u._exercise[2], -1);
     assert.equal(potion.where, 'gone');
-    assertNoBridgeUse();
 });
 
 test('map confusion contact pays resistance before nearby hero vapor', async () => {
@@ -324,7 +306,6 @@ test('map confusion contact pays resistance before nearby hero vapor', async () 
     assert.equal(game.u.confusionTurns, 1);
     assert.equal(potion.where, 'gone');
     assert.match(game._pending_message, /You feel somewhat dizzy\.$/);
-    assertNoBridgeUse();
 });
 
 test('adjacent hard-floor break applies healing vapor without monster contact',
@@ -347,7 +328,6 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         assert.equal(potion.where, 'gone');
         assert.equal(floorObjects().length, 0);
         assert.match(game._pending_message, /You smell a peculiar odor\.\.\.$/);
-        assertNoBridgeUse();
     });
 
 test('adjacent paralysis contact freezes monster and installs hero helplessness',
@@ -374,7 +354,6 @@ test('adjacent paralysis contact freezes monster and installs hero helplessness'
         assert.equal(game._helplessReason, 'frozen by a potion');
         assert.equal(game._helplessDoneMessage, 'You can move again.');
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('map speed contact accelerates monster before nearby hero movement timeout',
@@ -404,7 +383,6 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         assert.equal(game.u.veryFastTurns, 5);
         assert.equal(game.u._exercise[1], 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('map invisibility contact hides the target and records its remembered square',
@@ -432,7 +410,6 @@ test('map invisibility contact hides the target and records its remembered squar
             'invisible',
         );
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('cursed map potion pays a zero slip gate without rerouting its flight',
@@ -467,7 +444,6 @@ test('cursed map potion pays a zero slip gate without rerouting its flight',
             'invisible',
         );
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live acid-resistant target skips resistance, pain, and radius damage',
@@ -497,7 +473,6 @@ test('live acid-resistant target skips resistance, pain, and radius damage',
         assert.equal(monster.msleeping, 0);
         assert.equal(neighbor.msleeping, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live worn acid-protection armor grants resistance before potion MR',
@@ -538,7 +513,6 @@ test('live worn acid-protection armor grants resistance before potion MR',
             assert.equal(monster.msleeping, 0);
             assert.strictEqual(monster.minvent[0], armor);
             assert.equal(potion.where, 'gone');
-            assertNoBridgeUse();
         }
     });
 
@@ -571,7 +545,6 @@ test('live magic-resistant acid target pays resistance without radius damage',
         assert.equal(monster.msleeping, 0);
         assert.equal(neighbor.msleeping, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live acid damage wakes the audible source radius before survival',
@@ -608,7 +581,6 @@ test('live acid damage wakes the audible source radius before survival',
         assert.equal(neighbor.mstrategy, 0x40000000);
         assert.match(game._pending_message, /shrieks in pain!/);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live acid damages a silent target without radius wake', async () => {
@@ -632,7 +604,6 @@ test('live acid damages a silent target without radius wake', async () => {
     assert.equal(neighbor.msleeping, 1);
     assert.match(game._pending_message, /writhes in pain!/);
     assert.equal(potion.where, 'gone');
-    assertNoBridgeUse();
 });
 
 test('live blessed and cursed acid use their distinct source damage dice',
@@ -664,7 +635,6 @@ test('live blessed and cursed acid use their distinct source damage dice',
             assert.equal(monster.mhp,
                 40 - chip - Number(damageEntry.split('=')[1]));
             assert.equal(potion.where, 'gone');
-            assertNoBridgeUse();
         }
     });
 
@@ -685,7 +655,6 @@ test('live fatal acid crosses the ordinary map death continuation', async () => 
     assert.equal(game.level.monsters.includes(monster), false);
     assert.equal(game.u.uconduct.killer, 1);
     assert.equal(potion.where, 'gone');
-    assertNoBridgeUse();
 });
 
 test('live blessed water damages a demon and wakes its source-radius neighbors',
@@ -716,7 +685,6 @@ test('live blessed water damages a demon and wakes its source-radius neighbors',
         assert.equal(neighbor.msleeping, 0);
         assert.equal(neighbor.mstrategy, 0x40000000);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live cursed water heals a demon without taking the hostile wake branch',
@@ -743,7 +711,6 @@ test('live cursed water heals a demon without taking the hostile wake branch',
         assert.equal(monster.msleeping, 0);
         assert.equal(monster.mpeaceful, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live blessed water damages silent undead without waking its neighbors',
@@ -767,7 +734,6 @@ test('live blessed water damages silent undead without waking its neighbors',
         assert.equal(monster.msleeping, 0);
         assert.equal(neighbor.msleeping, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live cursed water changes a human were only without shape protection',
@@ -792,7 +758,6 @@ test('live cursed water changes a human were only without shape protection',
             assert.ok(monster.mhp > 9);
             assert.equal(monster.msleeping, 0);
             assert.equal(potion.where, 'gone');
-            assertNoBridgeUse();
         }
     });
 
@@ -816,7 +781,6 @@ test('live ordinary water rusts a surviving iron golem', async () => {
     assert.equal(monster.msleeping, 0);
     assert.match(game._pending_message, /iron golem rusts\./);
     assert.equal(potion.where, 'gone');
-    assertNoBridgeUse();
 });
 
 test('live water contact clones a hostile gremlin with split hit points',
@@ -850,7 +814,6 @@ test('live water contact clones a hostile gremlin with split hit points',
         assert.deepEqual(clone.minvent, []);
         assert.equal(monster.msleeping, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('two-square water vapor can multiply a live gremlin hero', async () => {
@@ -880,7 +843,6 @@ test('two-square water vapor can multiply a live gremlin hero', async () => {
     assert.equal(game.u.uconduct.pets, 1);
     assert.equal(potion.where, 'gone');
     assert.match(game._pending_message, /You multiply!$/);
-    assertNoBridgeUse();
 });
 
 test('live blessed water rehumanizes an unequipped beast were', async () => {
@@ -907,7 +869,6 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
     assert.equal(monster.movement, 18);
     assert.equal(monster.mhp, 14);
     assert.equal(potion.where, 'gone');
-    assertNoBridgeUse();
 });
 
 test('equipped were transformation fails before map throw mutation',
@@ -958,7 +919,6 @@ test('controlled lycanthrope decline completes a two-square map throw',
         assert.equal(game.u.umonnum, 331);
         assert.equal(game.were_changes ?? 0, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('three-square water contact bypasses unreachable hero-vapor prompts',
@@ -982,7 +942,6 @@ test('three-square water contact bypasses unreachable hero-vapor prompts',
         assert.equal(game.u.umonnum, 331);
         assert.equal(game.u.mtimedone ?? 0, 0);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live fatal iron-golem water creates source special chain drops',
@@ -1020,7 +979,6 @@ test('live fatal iron-golem water creates source special chain drops',
         }
         assert.equal(game.u.uconduct.killer, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('live fatal blessed water uses the ordinary map death continuation',
@@ -1046,7 +1004,6 @@ test('live fatal blessed water uses the ordinary map death continuation',
         assert.equal(game.level.monsters.includes(monster), false);
         assert.equal(game.u.uconduct.killer, 1);
         assert.equal(potion.where, 'gone');
-        assertNoBridgeUse();
     });
 
 test('greased map potion reroutes live flight after stack detachment',
@@ -1088,7 +1045,6 @@ test('greased map potion reroutes live flight after stack detachment',
         assert.match(
             game._pending_message || '', /potion of invisibility shatters!$/,
         );
-        assertNoBridgeUse();
     });
 
 test('greased map potion can reroute vertically through live hitfloor',
@@ -1132,7 +1088,6 @@ test('greased map potion can reroute vertically through live hitfloor',
             game._pending_message,
             "For an instant you couldn't see yourself!",
         );
-        assertNoBridgeUse();
     });
 
 test('live unlit oil breaks without evaporation and wakes its target', async () => {
@@ -1150,7 +1105,6 @@ test('live unlit oil breaks without evaporation and wakes its target', async () 
     assert.doesNotMatch(game._pending_message, /evaporates/);
     assert.equal(potion.where, 'gone');
     assert.equal(floorObjects().includes(potion), false);
-    assertNoBridgeUse();
 });
 
 test('lamplit oil map potion fails before split or throw RNG', async () => {
@@ -1218,5 +1172,4 @@ test('unknown inert map potion records a live type call after visible impact',
                 || message.startsWith(`Call a ${appearance} potion:`),
         ));
         assert.equal(floorObjects().length, 0);
-        assertNoBridgeUse();
     });

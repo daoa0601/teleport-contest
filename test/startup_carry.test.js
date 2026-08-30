@@ -185,7 +185,4 @@ test('fresh bridge-free carry startup reaches a live turn with zero bridges', as
         game._initialGoldCount,
         (game._goldCount || 0) + hiddenGold(game, true),
     );
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });

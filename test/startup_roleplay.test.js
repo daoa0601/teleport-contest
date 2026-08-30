@@ -174,7 +174,4 @@ test('fresh bridge-free pauper startup uses the untrained legacy page', async ()
     assert.deepEqual(game.inventory, []);
     assert.deepEqual([...game._knownObjectTypes], [SPE_FORCE_BOLT]);
     assert.equal(game.u.weapon_slots, 2);
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });

@@ -2,9 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    getBridgeUsageLedger, resetBridgeUsageLedger,
-} from '../js/bridge_policy.js';
-import {
     G_GENOD, MV_KNOWS_EGG, ROOM,
 } from '../js/const.js';
 import {
@@ -64,14 +61,8 @@ function freshEggState(seed) {
     initRng(999n);
     init_objects();
     initRng(BigInt(seed));
-    resetBridgeUsageLedger();
 }
 
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
-}
 
 function hatchTimer(egg) {
     const timers = objectTimers(egg);
@@ -108,7 +99,6 @@ test('fresh floor egg hatches visibly, teaches its type, and is deleted',
         assert.equal(game.level.objects[12][10].includes(egg), false);
         assert.equal(objectTimers(egg).length, 0);
         assert.ok(game.mvitals[94].mvflags & MV_KNOWS_EGG);
-        assertNoBridgeUse();
     });
 
 test('floor egg stack hatches a younger form and schedules its remainder',
@@ -138,7 +128,6 @@ test('floor egg stack hatches a younger form and schedules its remainder',
         assert.ok(remainder.deadline <= game.moves + 12);
         assert.ok(game.level.monsters.some(monster => monster.mnum === 325));
         assert.ok(game.mvitals[328].mvflags & MV_KNOWS_EGG);
-        assertNoBridgeUse();
     });
 
 test('overdue floor hatching is silent and does not teach egg identity',
@@ -157,7 +146,6 @@ test('overdue floor hatching is silent and does not teach egg identity',
         finishEggHatchTimer(event, game, game.moves);
         assert.equal(egg.where, 'gone');
         assert.equal((game.mvitals[94]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
-        assertNoBridgeUse();
     });
 
 test('genocide consumes the hatch attempt but leaves the egg untimed',
@@ -180,7 +168,6 @@ test('genocide consumes the hatch attempt but leaves the egg untimed',
         assert.equal(objectTimers(egg).length, 0);
         assert.equal(game.level.monsters.some(monster => monster.mnum === 94),
             false);
-        assertNoBridgeUse();
     });
 
 test('unowned carried egg hatches beside a female hero before pack deletion',
@@ -206,7 +193,6 @@ test('unowned carried egg hatches beside a female hero before pack deletion',
         assert.equal(egg.where, 'gone');
         assert.equal(game.inventory.includes(egg), false);
         assert.ok(game.mvitals[94].mvflags & MV_KNOWS_EGG);
-        assertNoBridgeUse();
     });
 
 test('blind carried hatching uses tactile prose and does not teach identity',
@@ -228,7 +214,6 @@ test('blind carried hatching uses tactile prose and does not teach identity',
             'You feel something drop from your pack!');
         finishEggHatchTimer(event, game, game.moves);
         assert.equal((game.mvitals[94]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
-        assertNoBridgeUse();
     });
 
 test('carried egg stack keeps its remainder and short timer after pack prose',
@@ -254,7 +239,6 @@ test('carried egg stack keeps its remainder and short timer after pack prose',
         assert.equal(egg.where, 'inventory');
         assert.ok(hatchTimer(egg).deadline >= game.moves + 1);
         assert.ok(hatchTimer(egg).deadline <= game.moves + 12);
-        assertNoBridgeUse();
     });
 
 test('owned carried egg callback fails before approximating taming or cries',
@@ -276,5 +260,4 @@ test('owned carried egg callback fails before approximating taming or cries',
         assert.deepEqual(getRngLog(), []);
         assert.equal(egg.quan, 1);
         assert.equal(game.level.monsters.length, 0);
-        assertNoBridgeUse();
     });

@@ -1,6 +1,3 @@
-import assert from 'node:assert/strict';
-
-import { getBridgeUsageLedger } from '../../js/bridge_policy.js';
 import { rhack } from '../../js/cmd.js';
 import { game } from '../../js/gstate.js';
 import { addHeroGoldObject } from '../../js/hero_gold.js';
@@ -60,13 +57,4 @@ export async function throwGold(direction = 'l') {
 export async function fireQuiveredGold(direction = 'l') {
     pushKey(direction);
     await rhack('f'.charCodeAt(0));
-}
-
-export function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true,
-        totalHits: 0,
-        forbiddenHits: 0,
-        bridges: {},
-    });
 }

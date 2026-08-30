@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getBridgeUsageLedger } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -60,12 +59,6 @@ test('picking up more gold merges to one live purse identity', async () => {
     assert.equal(floorGold.quantity, 0);
     assert.equal(game._goldCount, 18);
     assert.equal(game.context.move, 1);
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true,
-        totalHits: 0,
-        forbiddenHits: 0,
-        bridges: {},
-    });
 });
 
 test('dropping the purse moves the same identity to the floor', async () => {

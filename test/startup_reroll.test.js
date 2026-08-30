@@ -92,9 +92,6 @@ test('fresh bridge-free startup rerolls once and accepts the final candidate', a
     assert.ok(currentConductLines().includes(
         ' Your character was rerolled once.',
     ));
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('closing the menu uses the source yes-no fallback without spending a turn', async () => {
@@ -116,9 +113,6 @@ test('closing the menu uses the source yes-no fallback without spending a turn',
     assert.ok(currentConductLines().includes(
         ' Your character was not rerolled.',
     ));
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
 
 test('lootabc assigns automatic menu letters without changing reroll state', async () => {
@@ -138,7 +132,4 @@ test('lootabc assigns automatic menu letters without changing reroll state', asy
     assert.match(screens[0], /b - reroll another character/);
     assert.match(screens[1], /a - start the game with this character/);
     assert.equal(game.u.uroleplay.numrerolls, 1);
-    assert.deepEqual(result.getBridgeUsageLedger(), {
-        bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
-    });
 });
