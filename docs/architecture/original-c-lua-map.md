@@ -39394,3 +39394,52 @@ hidden measurement has run, and no inference from the preserved fixture output
 is made.  The managed default gate passes 463/463 across 54 behavioral files;
 the bridge audit covers 119 JavaScript files, 0 guarded replay exporters, and
 19 top-level fixture modules.
+
+## 1033. Request-menu prefix and level teleport share one command owner
+
+```mermaid
+sequenceDiagram
+    participant Input as tty input
+    participant Dispatch as cmd.c rhack / JS rhack
+    participant Prefix as do_reqmenu / menuRequested
+    participant Tele as wiz_level_tele / level_tele
+    participant Menu as dungeon.c print_dungeon(TRUE)
+    participant Level as deferred_goto / live level generation
+
+    Input->>Dispatch: m
+    Dispatch->>Prefix: retain CMD_M_PREFIX for next command
+    Input->>Dispatch: Ctrl-V
+    Dispatch->>Prefix: command accepts CMD_M_PREFIX
+    Prefix->>Tele: menu requested
+    Note over Tele: skip numeric get-line editor
+    Tele->>Menu: build current selectable dungeon graph
+    Input->>Menu: current accelerator
+    Menu->>Level: selected dnum, dlevel, prototype
+```
+
+Pinned `cmd.c:rhack()` does not restrict `m` to directional movement.  The
+prefix remains active when the next command's table entry carries
+`CMD_M_PREFIX`; Ctrl-V's `wiz_level_tele` entry does.  `do_reqmenu()` sets
+`iflags.menu_requested`, and `teleport.c:level_tele()` consumes that flag by
+jumping directly to `print_dungeon(TRUE)`.  No numeric get-line boundary is
+created.  The selected live accelerator then hands a destination identity to
+the ordinary scheduled level transition.
+
+JavaScript already used `m` for movement-without-pickup, options, search, and
+wait, but rejected every other next key with a movement-prefix warning.  The
+first sealed gate exposed this at the earliest shared boundary in independent
+Big Room and Medusa samples: C displayed the dungeon menu while JavaScript
+printed the warning, then treated the menu accelerator as an unrelated
+command.  `rhack()` now recognizes debug Ctrl-V inside that same prefix
+transaction and calls `wizLevelTeleport({ menuRequested: true })`; the level
+teleport owner bypasses `getLine()` and reuses the existing live menu,
+destination, and generation path.
+
+A fresh bridge-free witness selects Big Room through `m Ctrl-V` and asserts
+the resulting live depth, prototype, rooms, and hero placement.  Disabling
+only the request-menu handoff leaves the hero at depth one and defeats that
+witness.  After repair, the two authorized sealed locators advance beyond
+dispatch: their next earliest mismatches are Big Room and Medusa construction
+RNG/terrain, so no claim of special-level completeness is made.  Gate
+`phase1-generalization-20260830-01` remains frozen at 51/157 and is not
+rescored after this change.

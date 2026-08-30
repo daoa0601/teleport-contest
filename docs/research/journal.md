@@ -100613,3 +100613,92 @@ and official hidden measurement remain unrun.  No animation optimization or
 production change occurred during this gate.
 
 ---
+
+### [2026-08-30 12:14 EEST, journal block 3254] {#sealed-corpus #authorized-sample #first-divergence #request-menu #ctrl-v #portfolio #diagnosis}
+
+**Authorized sample and custody:** after block 3253 froze and logged the
+aggregate, the release command opened exactly the eight keyed failures named by
+the precommitted policy--one per selected command family, eight total.  No
+ninth trace, private plan member, or unreleased filename was inspected.  Each
+authorized trace was compared in bridge-free mode with a bounded per-input
+locator which stopped output at the first two mismatching boundaries.
+
+**Independent mechanism portfolio:** the eight failures split rather than
+converged on one symptom.  Samples 02, 05, and 07 expose welcome/tutorial tty
+wrapping or acknowledgement timing; sample 04 has an earlier Wizard-orc
+startup attribute/RNG split; sample 06 stays exact until the final movement
+allocation changes Dexterity and an `rn2(76)` range to `rn2(73)`; sample 08
+diverges when a pool warning changes how later prayer bytes are consumed.
+Samples 01 and 03 independently type `m Ctrl-V` for the C wizard
+request-menu form of level teleport.  JavaScript instead emits
+`The 'm' prefix should be followed by a movement command.`, then treats the
+live menu accelerator as an ordinary eat or other command.  Sample 01 is exact
+through the prefix boundary and then misses all 3,170 Big Room construction
+calls; sample 03 has an independent startup RNG split but reaches the same
+command-front-end failure.
+
+**Source prediction and decision:** pinned `cmd.c:rhack()` accepts `m` for any
+command carrying `CMD_M_PREFIX`; Ctrl-V's `wiz_level_tele` entry has that flag.
+`do_reqmenu()` sets `iflags.menu_requested`, and `teleport.c:level_tele()` jumps
+directly to `print_dungeon(TRUE)` without opening the numeric get-line editor.
+The JavaScript `m` branch currently admits movement, options, search, and wait
+only.  Add Ctrl-V as the same live `wizLevelTeleport()` owner with an explicit
+request-menu parameter; do not special-case the released seed, menu letter, or
+prototype.  A fresh world-state witness must select a special destination via
+`m Ctrl-V`, and a dispatch mutation must defeat it.
+
+**Falsified alternatives and next blocker:** fixed numeric depth cannot model
+this C prefix, and feeding `?` through the ordinary line editor would add a
+boundary C deliberately skips.  Deep Big Room/Medusa RNG work is downstream
+until the shared command reaches destination generation.  Welcome wrapping,
+startup attributes, movement allocation, and prayer/pool tty remain live but
+independent; do not mix them into this slice.  Implement and audit the common
+request-menu handoff, rerun only the focused behavioral witness and the two
+authorized locators, then update Wizard ownership/map.  No corpus rescore,
+public suite, push, or animation work is authorized by this diagnosis.
+
+---
+
+### [2026-08-30 12:17 EEST, journal block 3255] {#request-menu #ctrl-v #implementation #sealed-sample #mutation-probe #ownership #architecture}
+
+**Implementation and source boundary:** commit `d8fe3ac` extends the existing
+`m` prefix transaction by one source-advertised command.  When the suspended
+next key is debug Ctrl-V, `rhack()` calls the ordinary live level-teleport owner
+with `menuRequested: true`; `wizLevelTeleport()` consequently skips `getLine()`
+and enters the current dungeon menu.  Numeric Ctrl-V, direct `?` menu input,
+movement-without-pickup, options, search, and wait retain their existing paths.
+No role, seed, datetime, option, accelerator, prototype, or future-input
+classifier was added.
+
+**Independent and adversarial evidence:** the fresh bridge-free seed48602
+witness types physical `m Ctrl-V e`, reaches depth 11, owns the live `bigrm`
+prototype, rooms, and hero placement, and passes with the six neighboring
+Wizard command tests.  Temporarily setting only the handoff parameter false
+left the hero at depth one and failed the new witness; the source value was
+restored.  The behavioral-lane and bridge audits remain green at 55 files and
+119/0/19.  One managed default gate passes **474/474** behavioral tests; its
+owned process exited and no matching verifier remains.
+
+**Authorized sealed effect and next divergence:** sample 01 was exact through
+the prefix before the change.  It now reaches the Big Room transition and
+first differs inside destination construction at call index 4 of a
+2,667-versus-3,170-call slice (`rn2(2)` versus C `rn2(3)`), with C's pool-room
+terrain absent from the JavaScript map.  Sample 03 retains its independent
+startup split at boundary zero, but `m Ctrl-V h` now reaches Medusa; that
+boundary first differs at construction call index 5 of
+3,064-versus-4,350 calls.  This falsifies command dispatch as the remaining
+named-world cause and localizes the next coherent slice to common
+branch/special-level construction, not a menu replay.
+
+**Ownership and evidence limit:** `wizard-command-scheduling` remains
+`partial`, records gate `phase1-generalization-20260830-01`, and now names
+request-menu Ctrl-V as represented while keeping deep destination generation,
+tty pagination, bindings breadth, persistence, and wider debug commands open.
+Architecture section 1033 records the C/JavaScript handoff and the generated
+ownership view is refreshed.  The frozen gate remains **51/157** and was not
+rescored.  No public suite, push, official hidden measurement, or animation
+work ran.  The next source blocker is the earliest shared Big Room/Medusa
+generation call, while the other six authorized failure mechanisms remain
+separate.
+
+---
