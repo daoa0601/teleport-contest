@@ -38856,9 +38856,70 @@ only observable world state, not helper calls, source text, RNG transcripts, or
 mock order.
 
 This owner remains `partial`.  Explicit normal-mode compatibility classifiers
-still retain `fastforward.turn`, `fastforward.ranger-turn`,
-`scheduler.default-replay-gap`, and seeded role modules for represented legacy
-paths.  Wider actor, terrain, interruption, option, persistence, and sealed
+still retain `fastforward.turn`, `scheduler.default-replay-gap`, and seeded
+role modules for represented legacy paths.  Wider actor, terrain, interruption,
+option, persistence, and sealed
 strata are also open.  The focused live-scheduler portfolio passes 20/20; the
 managed default gate passes 443/443 with 49 lane-audited files and a clean
 126-production-file, 9-guarded-module, 19-fixture-module bridge audit.
+
+## 1024. Ranger coordinates no longer select a second game engine
+
+```mermaid
+flowchart TD
+    Start["fresh Ranger start"] --> Timed["timed command"]
+    Timed --> Ration["source hero movement ration"]
+    Ration --> Scan["movemon scans current fmon and fobj"]
+    Scan --> Goal["dog_goal and dog_move use live floor and actors"]
+    Goal --> Maintain["global maintenance"]
+
+    Fire["f with quivered arrows"] --> Match{"alternate bow matches ammo?"}
+    Match -- yes --> Queue["CQ_CANNED: doswapweapon, dofire"]
+    Queue --> Swap["timed live weapon swap"]
+    Swap --> Scan
+    Maintain --> Resume["resume dofire"]
+    Resume --> Volley["throw_obj selects multishot, splits live arrows"]
+    Volley --> Contact["current terrain and actor contact"]
+
+    Predicate["role + ux=28 + uy=7 + one sink"] -. deleted .-> Replay["fixed pet positions and RNG"]
+    FireReplay["dedicated Ranger pager/fire handler"] -. deleted .-> Queue
+```
+
+Pinned `allmain.c:moveloop_core()` does not select a scheduler from role,
+coordinates, or room features.  Pinned `dothrow.c:dofire()` likewise inspects
+the live quiver and weapon slots: matching alternate ammo queues
+`doswapweapon` followed by `dofire`, the swap spends its own action, and the
+physical fire command resumes afterward through `CQ_CANNED` before
+`throw_obj()` owns volley selection and projectile state.
+
+The removed JavaScript boundary violated both contracts.  A normal-mode Ranger
+at `(28,7)` on a one-sink level selected hard-coded pet positions and bounded
+RNG; its `f` handler directly rewrote weapon slots, paid a fixed call list, read
+a direction, and then returned without firing.  Bridge-free mode happened to
+use the current-state owners, so the execution mode—not the world—determined
+whether an arrow existed or an actor was hit.
+
+Fresh seed 43333 was found by scanning generated starts rather than reading a
+recorded session.  It independently collides with the old predicate.  Before
+the change, four normal waits left the pet at `(26,10)` with zero movement,
+while bridge-free execution left it at `(27,7)` with 24 movement.  The same
+fresh `f` control made normal mode stop after the swap with 59 quivered arrows;
+bridge-free mode resumed, detached two arrows, affected the adjacent live pet,
+and completed the next source turn.  Those are the earliest state divergences,
+not later screen or aggregate-RNG symptoms.
+
+All Ranger starts now use the source movement ration and current
+`fmon`/`fobj` scheduler.  `f` always reaches shared fireassist, and the old
+coordinate/sink classifier, fixed pet/RNG routine, dedicated Ranger pager/fire
+handler, and `fastforward_ranger_step()` exporter are deleted and mechanically
+forbidden.  Three state-only Ranger witnesses cover the fresh collision,
+fireassist inventory/weapon/actor effects, and all four legal races without
+asserting source lines, collaborator calls, screens, or RNG transcripts.
+
+This owner remains `partial`.  General projectile gaps include mid-volley
+interruption, alternate launcher failure continuations, non-bow multishot
+families, special terrain/floor effects, persistence, options, and sealed
+strata.  Other explicitly classified Healer, Knight, Monk, Tourist, and Wizard
+compatibility paths also remain.  The focused neighboring portfolio passes
+22/22; the managed default gate passes 446/446 with 50 lane-audited files and
+a clean 126-production-file, 9-guarded-module, 19-fixture-module bridge audit.

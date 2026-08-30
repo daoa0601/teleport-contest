@@ -107,9 +107,15 @@ policy.  Air/levitation recoil, special floor/level shipping and shop
 settlement, complete shopkeeper mollification, presentation breadth,
 menu-supplied counts and exact overflow-letter breadth, non-sling count
 families, interruption, and broader fire modes remain explicitly partial.
-Explicit normal-mode compatibility classifiers remain.  Those later slices
-have focused fresh witnesses and selected public regressions, but still no
-sealed gate or hidden measurement.
+Ranger's final named-start exception is also deleted.  A fresh generated start
+which collides with its former coordinate/sink predicate now uses the current
+`fmon`/`fobj` graph and source movement ration in both modes, as do all four
+legal Ranger races.  `f` no longer selects a dedicated Ranger pager/RNG path:
+the shared `dofire` owner queues the alternate-bow swap, resumes through the
+canned-command queue, and detaches live quivered arrows.  Explicit normal-mode
+compatibility classifiers for other paths remain.  These later slices have
+focused fresh witnesses and selected public regressions, but still no sealed
+gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

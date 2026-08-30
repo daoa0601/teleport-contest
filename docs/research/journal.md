@@ -99599,3 +99599,68 @@ corpus, scorer, public-regression lane, sealed trace, push, publication, hidden
 measurement, or animation work ran; `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 08:37 EEST, journal block 3232] {#ranger #diagnosis #fresh-seed #scheduler #fireassist #critical-portfolio}
+
+**Previous-turn classification and portfolio:** the base-role scheduler turn
+was progress: authoritative code, tests, ownership, and source map changed, and
+the next action narrowed from generic role scheduling to explicit compatibility
+families.  For Ranger, the critical-debugging portfolio kept three mechanisms
+independent: startup selection by coordinate/room state, monster/global turn
+ownership, and the launcher/fire continuation.  Attractive non-results were a
+new seed-specific table, accepting cross-mode divergence because the old path
+was public-exact, or testing only the weapon-slot rewrite without proving that
+an arrow left inventory.
+
+**Fresh witness, earliest divergences, and prediction:** scanning generated
+Ranger starts found seed 43333 at `(28,7)` with one sink, independently
+colliding with the old named-start predicate.  Four normal waits put the pet at
+`(26,10)` with zero movement; bridge-free current-state scheduling put it at
+`(27,7)` with 24 movement.  On `f`, normal mode rewrote dagger/bow slots, paid
+its fixed replay, read the direction, and stopped at turn 2 with all 59
+quivered arrows.  Bridge-free mode used live fireassist, detached two arrows,
+mutated the adjacent actor, and completed turn 3.  Pinned C predicts one owner:
+`moveloop_core()` has no coordinate/role scheduler branch, while `dofire()`
+queues `doswapweapon` then `dofire` and resumes into `throw_obj()`.
+
+**Red evidence and decision:** the first Ranger portfolio passed only the
+four-race controls; both selector-collision tests failed at the predicted
+world-state boundaries.  Delete the selector, fixed pet/RNG lists, Ranger
+fastforward exporter, and dedicated pager/fire handler together.  Do not use
+the recorded named session or a screen/RNG transcript as the acceptance oracle.
+
+---
+
+### [2026-08-30 08:37 EEST, journal block 3233] {#ranger #implementation #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** every Ranger race now participates in
+the source hero movement ration and current `fmon`/`fobj` actor scan.
+`rhack('f')` always delegates to shared `dofire`; its existing canned queue
+spends the alternate-launcher swap turn, resumes fire, and hands live arrow
+quantities and actors to projectile ownership.  The `_rangerNamePath`
+coordinate/sink classifier, `rangerNameMonsterActionRng()`, fixed pet mutation,
+`fastforward_ranger_step()`, `dorangerfire()`, and its pager helper are deleted.
+The bridge audit now mechanically rejects all of those tokens.
+
+**Behavioral evidence and adversarial audit:** three state-only witnesses pass
+3/3: seed43333 four-wait normal/bridge-free worlds now agree, its live fire
+continuation agrees through weapon slots, arrow quantity, actor state, floor,
+turn, and message state, and fresh human/elf/gnome/orc starts share the live
+scheduler.  The first source-ration implementation exposed a real integration
+gap—Ranger was added to action debit but not to the pending-time consumer,
+leaving `moves == 1` and negative movement.  Adding it to the same early
+source loop fixed the ownership pair; no test expectation was weakened.  The
+neighboring base-role/Caveman/Ranger/weapon-slot portfolio passes **22/22**.
+
+**Gates, next blocker, and evidence limit:** one owned default behavioral suite
+passed **446/446** and exited normally in 4.8 seconds.  The lane audit passes
+**50 files** with no recorded-session, public-parity, mock/spy, or call-
+transcript dependency.  Bridge audit remains **126 production files, 9 guarded
+replay modules, and 19 fixture modules**; syntax and diff checks pass, and no
+matching runner remains.  Explicit Healer, Knight, Monk, Tourist, Wizard, and
+other seeded compatibility paths plus wider actor, terrain, interruption,
+options, persistence, and sealed strata remain open.  No corpus, scorer,
+public-regression lane, sealed trace, push, publication, hidden measurement,
+or animation work ran; `public-session-status.md` is unchanged.
+
+---
