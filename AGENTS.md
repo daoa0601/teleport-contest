@@ -1,37 +1,26 @@
 # Teleport contest working agreement
 
-## Current acceptance priority
+## Goal
 
-Read `docs/research/bridge-free-acceptance-regime.md` before planning new port
-work.  Public-session exactness and supplemental animation are frozen as
-regression witnesses; do not choose work because it improves either metric.
-In particular, do not finish the remaining public animation frames while they
-are owned by trace-specific compatibility bridges.
+Port the complete game mechanics from the pinned NetHack C and Lua sources.
+The JavaScript implementation is the source of truth for what has been ported.
+Do not add session fixtures, recorded-answer playback, seed-specific behavior,
+screen snapshots, fast-forward tables, or control flow based on a known trace.
 
-The next acceptance target is a genuinely bridge-free execution mode: no
-top-level fixtures, `fastforward`, seeded replay helpers, or production control
-flow based on `replayMoves`.  Generalization claims require that mode plus a
-scheduled sealed-corpus gate.  Do not inspect individual sealed traces between
-gates.  Replace bridges by coherent source-owned subsystem slices, maintain the
-mechanical C/Lua ownership registry, and publish only after the regime's audit
-gate authorizes one measurement.
+Work from the earliest shared C/JavaScript difference and implement the whole
+owning mechanic: state changes, random calls, turn order, display, and resumed
+input. Public sessions are examples, not specifications.
 
-## Parity journal
+## Tests
 
-Before changing parity-sensitive code, read `docs/research/journal.md`,
-`docs/research/public-session-status.md`, and
-`docs/heldout-debug-ledger.md`.
+Tests must describe observable game behavior from the C/Lua rules. Do not test
+mock call order, private callback sequences, source text, generated reports,
+recorded RNG transcripts, or exact copies of implementation data. Delete a
+test if changing a correct implementation would break it without changing
+game behavior.
 
-Append a timestamped entry to `docs/research/journal.md` after every material
-diagnosis, implementation slice, regression result, leaderboard observation,
-or priority change. Keep entries newest-at-bottom and use the journal's
-template. Record the witness, earliest divergence, prediction, evidence,
-decision, measured effect, falsified hypotheses, and next blocker. Never erase
-or rewrite an older conclusion; append a correction that links back to it.
-
-Update `docs/research/public-session-status.md` after each full engine-only
-corpus run. Update `docs/architecture/original-c-lua-map.md` whenever the
-understood ownership or call boundary changes.
+Prefer a small test for the mechanic being changed. Run the full test command
+once only when a coherent implementation batch is ready.
 
 ## Test process safety
 
@@ -47,9 +36,8 @@ or superseded, explicitly terminate that exact session and its child process
 tree, then confirm that the processes are gone. Do not treat partial output or
 a yielded command as a completed test result.
 
-Prefer focused witnesses while iterating. Reserve a full corpus for an
-explicit evidence gate, run it as one managed process, and stop to investigate
-sustained abnormal memory growth rather than starting another verifier.
+Prefer focused tests while iterating. Stop to investigate sustained abnormal
+memory growth rather than starting another verifier.
 
 Do not diagnose large RNG transcripts with one `assert.deepEqual()` over the
 complete flattened log. Node's assertion formatter can retain and render the
@@ -58,21 +46,8 @@ Compare per-input slices, stop at the first differing call, and print only a
 small bounded neighborhood plus the two slice lengths. Treat any existing
 whole-log assertion as an unsafe acceptance check until it is converted.
 
-## Evidence gates
+## Publishing
 
-Fixture-on scoring is a public-regression gate, not evidence of
-generalization.  The existing fixture-disabled command below disables only
-top-level fixtures; it is still allowed to execute `fastforward`, replay
-helpers, and `replayMoves` branches, so it is also not bridge-free evidence:
-
-```sh
-TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions
-```
-
-Before publishing, run the full engine-only suite and then the normal public
-suite. `frozen/score.sh` overlays `frozen/terminal.js` and `frozen/storage.js`
-onto `js/`; restore those generated copies before committing.
-
-Prefer the earliest shared C/Lua divergence over later transcript symptoms.
-Use exact-session replays only as regression witnesses, and label any bounded
-behavior bridge explicitly in the journal.
+Before publishing, run the behavior tests once. If `frozen/score.sh` is used,
+remember that it copies `frozen/terminal.js` and `frozen/storage.js` into
+`js/`; restore those generated copies before committing.
