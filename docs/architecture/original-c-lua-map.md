@@ -39047,3 +39047,65 @@ terrain, actor, run, search, pickup, and kick families, tty continuation
 breadth, persistence, and a sealed stratum remain open.  The managed default
 gate passes 444/444 across 50 behavioral files; the bridge audit now covers
 124 production files, 7 guarded replay modules, and 19 fixture modules.
+
+## 1027. Knight riding and turns use current source-owned state
+
+```mermaid
+flowchart TD
+    Input["physical Knight command"] --> Dispatch["cmd.c rhack / JavaScript rhack"]
+    Dispatch --> Ride{"#ride while mounted?"}
+    Ride -- no --> Target["adjacent current fmon identity"]
+    Target --> Checks["live saddle, tame/non-minion, mount chance"]
+    Checks --> Mount["remove same identity from fmon; install u.usteed"]
+    Ride -- yes --> Landing["steed.c landing_spot candidate scan"]
+    Landing --> Dismount["restore same identity to fmon; move hero to live landing"]
+
+    Dispatch --> Chat["sounds.c dochat / domonnoise from current edog state"]
+    Dispatch --> Prayer["pray.c dopray / prayer_done occupation"]
+    Dispatch --> Time["allmain.c source movement-ration loop"]
+    Time --> Actors["current movemon / dog_move scan"]
+
+    Future["future ns#ride or sns#ride prefix"] -. deleted .-> Replay["fixed RNG, positions, corpses, searches, turns"]
+    Replay -. deleted .-> Parallel["Knight-only movement and look-here engine"]
+```
+
+Pinned `steed.c:doride()` delegates an unmounted attempt to
+`mount_steed()`.  A missing target, missing saddle, or unsuitable live monster
+returns without spending time; a successful mount moves the hero onto that
+monster, removes the monster from `fmon`, and retains it as `u.usteed`.
+Voluntary dismount calls `landing_spot()` before changing ownership.  That
+function visits W, NW, N, NE, E, SE, S, SW, prefers minimum squared distance,
+reservoir-selects equal candidates, and progressively relaxes known-trap and
+boulder avoidance.  `dismount_steed()` then restores the same steed at the
+hero's former square and moves the hero to the selected landing.  Pinned
+`sounds.c:domonnoise(MS_NEIGH)` chooses neigh, whinny, or whicker from current
+tameness and hunger; prayer and actor turns use the same owners as other roles.
+
+The deleted JavaScript path instead classified two complete future command
+prefixes during `newgame()`.  `knight_ride.js` and branches in `allmain.js`,
+`cmd.js`, `detect.js`, and `invent.js` replayed aggregate RNG, assigned fixed
+hero/pet/zombie/goblin positions, fabricated a corpse and helm, forced turns,
+short-circuited mounted movement and searches, and painted a dedicated floor
+overlay.  A fresh seed could therefore enter the public carrier without any
+of those world preconditions.
+
+`js/cmd.js` now owns a current-state riding transaction.  A fresh arena proves
+mount/dismount carrier identity, zero-time unsaddled and untamed refusal, and
+current-state pony chat.  Fresh seed 46010 keeps the hero stationary while
+current actors change across four waits, and fresh seed 46007 collides with
+the former `ns#ride` prefix but remains within the physical displacement and
+turn bound.  Temporarily bypassing the tame check makes the refusal witness
+fail on HP/state; temporarily no-oping Knight actor execution makes the actor
+transition witness fail.  These are behavioral mutants, not helper/call-order
+or bridge-ledger checks.
+
+This owner remains mechanically `partial`.  Hallucination, wounded legs,
+burden, blindness and mimic visibility, swallowing/stuck/trapped/punished
+states, long worms, full `test_move()` and form rules, petrification, monster
+traps, underwater restrictions, armor/levitation/fumbling/slippery-saddle
+checks, fatal-slip control flow, named/hallucinated/cursed-saddle presentation,
+stealth and leg transitions, engulfer/water/lava/overcrowding dismounts,
+complete mounted combat and jousting, save/restore, wider options and terrain,
+and a sealed stratum remain open.  The managed default gate passes 451/451
+across 51 behavioral files; the bridge audit covers 123 production files, 6
+guarded replay modules, and 19 fixture modules.

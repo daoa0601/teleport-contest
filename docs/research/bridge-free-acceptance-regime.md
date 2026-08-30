@@ -127,8 +127,14 @@ coordinates, fabricated corpse, forced turn counts, search/kick/pickup/eating
 branches, trace-only colors, and seeded RNG module.  All three legal alignments
 use live actor scheduling; carried and floor corpse meals share live conduct,
 Monk guilt/alignment abuse, timed eating, and object removal.  Explicit
-normal-mode compatibility classifiers for Knight, Tourist, Wizard, and other
-paths remain.  These later
+Knight riding classifiers and their parallel engine are now deleted as well.
+Fresh Knight commands use current actor scheduling, prayer, chat, movement,
+search, look-here, combat, and riding state in both modes; mount and voluntary
+dismount preserve one live pony identity and fresh former-prefix input remains
+within its physical command bound.  The represented riding rules remain
+partial at the mechanically recorded form, impairment, terrain, trap,
+overcrowding, mounted-combat, and persistence gaps.  Explicit normal-mode
+compatibility classifiers for Tourist, Wizard, and other paths remain.  These later
 slices have focused fresh witnesses and selected public regressions, but still
 no sealed gate or hidden measurement.
 

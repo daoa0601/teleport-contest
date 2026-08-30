@@ -99988,3 +99988,98 @@ lane, sealed trace, push, publication, hidden measurement, or animation work
 ran; `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 10:12 EEST, journal block 3242] {#test-quality #rng #provenance #change-detector #diagnosis #critical-portfolio #process-safety}
+
+**Previous-turn classification and witness inventory:** block 3241 was test-
+quality progress: mechanical bridge-ledger assertions were removed from every
+mechanics test and retained only in the policy owner.  The remaining semantic
+risk was that exact RNG assertions might merely copy the JavaScript
+implementation.  A bounded block-level inventory found **169 RNG-bearing test
+blocks across 13 files**: egg hatch, figurine transform, fountain coins, glob
+shrink, hero clone, lamp apply, monster departure, monster inventory
+acquisition, potion hit/throw, room fill, swallowed throw, and themed rooms.
+
+**Independent mechanisms, evidence, and decision:** none of the 169 blocks
+used RNG as its sole oracle.  Every block also required an object carrier,
+actor identity, HP/status change, timer, message boundary, or fail-before-
+mutation state transition.  The RNG stream is itself externally graded, and
+the subsystem groups already cite pinned C/Lua owners and journal provenance.
+The critical-debugging portfolio therefore kept exact PRNG progression as a
+separate external behavior contract rather than deleting it by syntax.  The
+scan cannot prove that every individual expected call was transcribed from C
+rather than current JavaScript, so per-case provenance remains a review risk;
+it found no RNG-only checksum whose deletion was justified.  No production or
+test file changed in this diagnosis.
+
+**Falsified hypothesis and next blocker:** exact RNG syntax did not imply a
+mechanical oracle in this repository; the differentiator was whether an
+independent world transition would still fail under a wrong implementation.
+With the repeated mechanical patterns removed or bounded, the next concrete
+surface was Knight's two future-input classifiers and parallel riding engine.
+No corpus, scorer, public-regression lane, sealed trace, push, publication,
+hidden measurement, or animation work ran; `public-session-status.md` is
+unchanged.
+
+---
+
+### [2026-08-30 10:12 EEST, journal block 3243] {#knight #riding #scheduler #future-input #bridge-removal #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Earliest divergence, source prediction, and red evidence:** Knight startup
+selected `_knightPonyPath` from `^  sns#ride` and `_knightCombatPath` from
+`^  ns#ride` before those bytes executed.  `knight_ride.js` plus branches in
+`allmain.js`, `cmd.js`, `detect.js`, and `invent.js` replayed three seeded
+bridge families, fixed hero/pet/zombie/goblin positions, fabricated a corpse
+and helm, forced turns and searches, and replaced mounted movement and look-
+here with a second engine.  The strengthened source audit failed on **27**
+legacy tokens/modules.  Direct current-state riding witnesses exposed two
+earlier mechanics defects independent of replay: an unsaddled live pony said
+`I see nobody there`, and an untamed saddled pony reached the slip branch and
+reduced a 12-HP hero to zero instead of refusing before mutation.
+
+**Implementation and ownership effect:** commit `aaa8257` deletes the two
+classifiers, every fixed Knight scheduler/search/movement/look branch, all
+three bridge IDs, and `knight_ride.js`.  Every Knight command stream now uses
+the current movement-ration, `fmon`/`dog_move`, maintenance, prayer, chat,
+movement, combat, search, and look-here owners in both execution modes.
+`doride()` validates the live saddle and tame non-minion; successful mount and
+voluntary dismount preserve one pony identity across `fmon` and `u.usteed`.
+The landing owner follows C's eight-candidate order, minimum-distance choice,
+trap/boulder relaxation, and equal-distance reservoir selection.  The source
+batch adds 287 lines and deletes 520; the bridge audit drops from 124/7/19 to
+**123 production files, 6 guarded replay modules, and 19 fixtures**.
+
+**Behavioral and adversarial evidence:** seven Knight tests require identity
+carrier transitions, zero-time unsaddled and untamed refusal, current tame/
+hunger chat, prayer conduct plus occupation completion, stationary-hero actor
+state change, and a fresh seed46007 former-prefix displacement/turn bound.
+Temporarily bypassing the tame check made the untamed test fail on HP/state;
+temporarily returning before Knight actor execution made the actor test fail
+because current actors stayed unchanged.  Restoring both mutations returned
+the seven-test portfolio to green.  One managed `npm test` invocation passed
+all **451/451** behavioral tests across **51** lane-audited files; syntax,
+bridge, lane, ownership generation, and diff checks pass.
+
+**Process incident and correction:** the first focused mount witness yielded
+because its unit arena had not initialized the vision buffers before
+`vision_recalc(1)`.  The exact 95137/95141 runner tree was terminated and
+confirmed gone; subsequent yielded localization sessions were each owned and
+interrupted before another run.  Sampling localized the hot synchronous
+boundary to vision recalculation, `vision_reset_new_level()` fixed the arena,
+and the same test then exited in 77 ms.  RSS stayed approximately 43/73 MB;
+no duplicate runner or unowned cell remained.  This was a test-harness defect,
+not a game fix or accepted timeout.
+
+**Falsified hypotheses, limits, and next blocker:** public fixed RNG,
+coordinates, objects, turns, and overlays were not required for live Knight
+mechanics.  Message-only assertions were insufficient: the untamed failure
+was caught by unchanged HP, identity, position, and time; actor scheduling was
+caught by a world transition under a stationary hero.  The mechanical owner
+remains `partial` at form/impairment/capacity/visibility/terrain/trap checks,
+fatal slip, complex dismount, mounted combat/jousting, persistence, options,
+and sealed strata.  Tourist and Wizard remain the explicit classifier
+frontier.  No corpus, scorer, public-regression lane, sealed trace, push,
+publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---
