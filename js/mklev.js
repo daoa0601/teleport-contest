@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { createDesBindings } from './lua/des.js';
 import { createSelectionBindings } from './lua/selection.js';
-import { luaTableToArray } from './lua/runtime.js';
+import { luaTableToArray, objectToLuaTable } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
@@ -10505,16 +10505,41 @@ function createLuaFeature(context, type, x = null, y = null) {
 
 async function generateLuaSpecialLevel(active) {
     let context = null;
+    let luaState = null;
     active.allowFlips = 3;
     game.level.flags.is_special = true;
     const operations = {
         levelInit: options => fillSpecialLevel(options, active),
         levelFlags: flags => setLuaLevelFlags(active, flags),
-        map: source => {
+        map: async value => {
+            if (typeof value === 'string') {
+                context = loadSpecialAsciiMap(
+                    specialMapRows(value), active.defaultLit,
+                );
+                active.context = context;
+                return;
+            }
+            if (!context || !Array.isArray(value.coord))
+                throw new Error('nested Lua map requires coord');
+            const parent = context;
             context = loadSpecialAsciiMap(
-                specialMapRows(source), active.defaultLit,
+                specialMapRows(value.map), !!value.lit,
+                {
+                    xstart: parent.xstart + value.coord[0],
+                    ystart: parent.ystart + value.coord[1],
+                },
             );
-            active.context = context;
+            try {
+                if (value.contents) {
+                    await luaState.callValueAsync(value.contents, [
+                        objectToLuaTable({
+                            width: context.width, height: context.height,
+                        }),
+                    ]);
+                }
+            } finally {
+                context = parent;
+            }
         },
         terrain: (selection, character) => {
             const type = mapCharacterType(character);
@@ -10556,6 +10581,7 @@ async function generateLuaSpecialLevel(active) {
             selection: createSelectionBindings(() => context),
         },
         state => {
+            luaState = state;
             active.align = luaTableToArray(state.getGlobal('align'));
         },
     );
@@ -10563,27 +10589,6 @@ async function generateLuaSpecialLevel(active) {
         wallification(1, 0, COLNO - 1, ROWNO - 1);
     flipSpecialLevelRandom(active.allowFlips);
 }
-
-const BIGRM_RECTANGULAR_MAP = [
-    '---------------------------------------------------------------------------',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '---------------------------------------------------------------------------',
-];
 
 const BIGRM_10_MAP = [
     '.......................................................................',
@@ -10668,48 +10673,6 @@ async function generateBigrm11(active) {
     });
 }
 
-function placeBigrm13Pillar(context, x, y) {
-    const left = context.xstart + x;
-    const top = context.ystart + y;
-    for (let dx = 0; dx < 3; dx++) {
-        setLevelTerrainType(left + dx, top, HWALL);
-        setLevelTerrainType(left + dx, top + 2, HWALL);
-        game.level.at(left + dx, top).horizontal = true;
-        game.level.at(left + dx, top + 2).horizontal = true;
-    }
-    setLevelTerrainType(left, top + 1, VWALL);
-    setLevelTerrainType(left + 1, top + 1, STONE);
-    setLevelTerrainType(left + 2, top + 1, VWALL);
-}
-
-async function generateBigrm13(active) {
-    const context = beginMappedBigRoom(active, BIGRM_RECTANGULAR_MAP);
-    const filter = rn2(8);
-    for (let y = 0; y < 3; y++) {
-        for (let x = 0; x < 7; x++) {
-            const selected = filter === 0
-                || (filter === 1 && x % 2 === 1)
-                || (filter === 2 && (x + y) % 2 === 0)
-                || (filter === 3 && y % 2 === 1)
-                || (filter === 4 && y % 2 === 0)
-                || (filter === 5 && rn2(2) === 0)
-                || (filter === 6 && (x / 3) % 2 === y % 2)
-                || (filter === 7 && Math.trunc((x + 1) / 3) === y);
-            if (selected)
-                placeBigrm13Pillar(context, 12 + x * 9, 4 + y * 5);
-        }
-    }
-    setSpecialRegionLighting(context, 0, 0, 75, 18, true);
-    wallifyMap(
-        context.xstart - 1,
-        context.ystart - 1,
-        context.xstart + context.width + 1,
-        context.ystart + context.height + 1,
-    );
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    await finishMappedBigRoom(context, { wallify: false });
-}
-
 async function specialRandomMonsterAt(context, x, y) {
     // A coordinate-only des.monster() resolves random alignment before
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
@@ -10730,12 +10693,12 @@ const BIG_ROOM_GENERATORS = Object.freeze([
     null, null, null, null,
     null, null, null, null,
     null, generateBigrm10, generateBigrm11, null,
-    generateBigrm13,
+    null,
 ]);
 
 export async function generateBigRoom(active) {
     if ((active?.variant >= 1 && active?.variant <= 9)
-        || active?.variant === 12) {
+        || active?.variant === 12 || active?.variant === 13) {
         await generateSpecialAndFixup(generateLuaSpecialLevel, active);
         return;
     }
@@ -15615,7 +15578,7 @@ async function makelevel() {
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
         const luaOwnedSpecial = prototype === 'bigrm'
-            && (variant <= 9 || variant === 12);
+            && (variant <= 9 || variant >= 12);
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

@@ -15,7 +15,9 @@ export function createDesBindings(operations) {
     return {
         level_init: options => operations.levelInit(tableOptions(options)),
         level_flags: (...flags) => operations.levelFlags(flags),
-        map: source => operations.map(String(source)),
+        map: value => operations.map(
+            value instanceof LuaTable ? tableOptions(value) : String(value),
+        ),
         terrain: (selection, terrain) => operations.terrain(
             unwrapSelection(selection), String(terrain),
         ),
