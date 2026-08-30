@@ -100,9 +100,12 @@ export async function freshRoleOutcome({
         return {
             error,
             world: {
+                role: game.urole?.key ?? null,
+                race: game.urace?.name ?? game.urace?.noun ?? null,
                 hero: [game.u?.ux, game.u?.uy],
                 depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
                 hp: [game.u?.uhp, game.u?.uhpmax],
+                gnosticConduct: game.u?.uconduct?.gnostic ?? 0,
                 moves: game.moves,
                 heroMovement: game.u?.umovement,
                 helplessTurns: game._helplessTurns ?? 0,
@@ -129,24 +132,12 @@ export async function freshRoleOutcome({
     }
 }
 
-export async function outcomesAcrossModes(input, label = null) {
+export async function bridgeFreeRoleOutcome(input, label = null) {
     const witness = label
         ?? `${input.role}/${input.race}/${input.align}/seed${input.seed}`;
-    const normal = await freshRoleOutcome({ ...input, bridgeFree: false });
-    const bridgeFree = await freshRoleOutcome({
-        ...input, bridgeFree: true,
-    });
+    const result = await freshRoleOutcome({ ...input, bridgeFree: true });
 
-    assert.equal(normal.error, null, `${witness} normal execution`);
-    assert.equal(
-        bridgeFree.error, null, `${witness} bridge-free execution`,
-    );
-    assert.deepEqual(normal.bridges, [], `${witness} normal bridge ledger`);
-    assert.deepEqual(
-        bridgeFree.bridges, [], `${witness} bridge-free bridge ledger`,
-    );
-    assert.deepEqual(
-        normal.world, bridgeFree.world, `${witness} cross-mode world`,
-    );
-    return normal.world;
+    assert.equal(result.error, null, `${witness} bridge-free execution`);
+    assert.deepEqual(result.bridges, [], `${witness} bridge-free ledger`);
+    return result.world;
 }

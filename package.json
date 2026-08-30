@@ -4,11 +4,12 @@
   "description": "The Teleport Coding Challenge — Port NetHack C to JavaScript",
   "type": "module",
   "scripts": {
-    "test": "npm run test:behavior",
+    "test": "npm run audit:test-lanes && npm run audit:bridge-free && npm run test:behavior",
     "test:behavior": "node --test --test-concurrency=1 --test-reporter=dot $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
     "test:public-regression": "node --test --test-concurrency=1 --test-reporter=dot test/bridge_free.public-regression.js test/character_selection.public-regression.js test/epitaph.public-regression.js test/fountain_snake_integration.public-regression.js test/monster_contact_tty.public-regression.js test/pet_inventory_split.public-regression.js test/priest_startup.public-regression.js test/race_initialization.public-regression.js test/run_scheduler.public-regression.js test/seed4500_full_session.public-regression.js test/trap_victim.public-regression.js test/wizard_water_transition.public-regression.js",
     "score": "bash frozen/score.sh",
     "score:engine": "TELEPORT_DISABLE_FIXTURES=1 node frozen/ps_test_runner.mjs sessions",
+    "audit:test-lanes": "node scripts/audit-test-lanes.mjs",
     "audit:bridge-free": "node scripts/audit-bridge-free.mjs",
     "ownership:generate": "node scripts/generate-ownership-map.mjs",
     "ownership:check": "node scripts/generate-ownership-map.mjs --check",

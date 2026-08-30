@@ -25,6 +25,18 @@ const FORBIDDEN_BEHAVIORAL_PATTERNS = [
         id: 'call-transcript-collector',
         pattern: /\b(?:const|let)\s+(?:calls|callOrder|invocations)\s*=\s*\[\]/g,
     },
+    {
+        id: 'same-implementation-mode-oracle',
+        pattern: /\b(?:outcomesAcrossModes|assertLiveAcrossModes)\b/g,
+    },
+    {
+        id: 'same-implementation-world-comparison',
+        pattern: /assert\.deepEqual\(\s*(?:normal|legacy)\.world\s*,\s*bridgeFree\.world/g,
+    },
+    {
+        id: 'test-self-discovery-oracle',
+        pattern: /\bresult\.files\.(?:includes|some)\s*\(/g,
+    },
 ];
 
 export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
@@ -63,7 +75,7 @@ if (process.argv[1] && path.resolve(process.argv[1])
         console.log(
             `Behavioral lane audit passed: ${result.files.length} files, `
             + 'no recorded-session, public-parity, mock/spy, or '
-            + 'call-transcript dependencies.',
+            + 'same-implementation/call-transcript dependencies.',
         );
     }
 }

@@ -2,17 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    outcomesAcrossModes,
+    bridgeFreeRoleOutcome,
 } from './support/role-outcome.js';
 
-async function assertLiveAcrossModes(input) {
-    const world = await outcomesAcrossModes(input);
+async function assertLiveQuietTurns(input) {
+    const world = await bridgeFreeRoleOutcome(input);
     assert.equal(world.moves, 5);
     assert.equal(world.heroMovement, 12);
     assert.ok(world.actors.some(actor => actor.tame > 0));
 }
 
-test('every selectable role has fresh bridge-free live turns', async () => {
+test('every selectable role starts a live bridge-free world', async () => {
     const roles = [
         ['Archeologist', 'lawful'], ['Barbarian', 'neutral'],
         ['Caveman', 'lawful'], ['Healer', 'neutral'],
@@ -24,9 +24,15 @@ test('every selectable role has fresh bridge-free live turns', async () => {
     ];
     for (let index = 0; index < roles.length; index++) {
         const [role, align] = roles[index];
-        await outcomesAcrossModes({
+        const world = await bridgeFreeRoleOutcome({
             seed: 31100 + index, role, race: 'human', align,
         });
+        assert.equal(world.role, role.toLowerCase());
+        assert.match(world.race, /human/i);
+        assert.ok(world.hero[0] > 0);
+        assert.ok(world.hero[1] > 0);
+        assert.ok(world.hp[0] > 0);
+        assert.ok(world.actors.some(actor => actor.tame > 0));
     }
 });
 
@@ -36,7 +42,7 @@ test('every legal Archeologist race uses live role-neutral turns', async () => {
         { seed: 31002, role: 'Archeologist', race: 'dwarf', align: 'lawful' },
         { seed: 31003, role: 'Archeologist', race: 'gnome', align: 'neutral' },
     ]) {
-        await assertLiveAcrossModes(input);
+        await assertLiveQuietTurns(input);
     }
 });
 
@@ -46,8 +52,8 @@ test('Archeologist intrinsic Searching runs inside live turn maintenance',
             seed: 31222,
             role: 'Archeologist', race: 'human', align: 'lawful',
         };
-        const startup = await outcomesAcrossModes({ ...input, moves: ' ' });
-        const afterTurns = await outcomesAcrossModes(input);
+        const startup = await bridgeFreeRoleOutcome({ ...input, moves: ' ' });
+        const afterTurns = await bridgeFreeRoleOutcome(input);
         const newlySeen = afterTurns.traps.filter(trap => {
             if (!trap.seen) return false;
             const prior = startup.traps.find(candidate =>
@@ -69,7 +75,7 @@ test('both legal Barbarian races use live role-neutral turns', async () => {
         { seed: 31006, role: 'Barbarian', race: 'human', align: 'neutral' },
         { seed: 31005, role: 'Barbarian', race: 'orc', align: 'chaotic' },
     ]) {
-        await assertLiveAcrossModes(input);
+        await assertLiveQuietTurns(input);
     }
 });
 
@@ -78,7 +84,7 @@ test('a live adjacent threat can refuse Barbarian rest without replay time',
         // On this independent generated start an actor becomes adjacent before
         // the fourth dot.  Source command safety refuses that ordinary wait;
         // a turn table would blindly consume the byte and advance anyway.
-        const world = await outcomesAcrossModes({
+        const world = await bridgeFreeRoleOutcome({
             seed: 31004,
             role: 'Barbarian', race: 'human', align: 'neutral',
         });

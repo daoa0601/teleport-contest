@@ -7,8 +7,8 @@ import {
 } from '../js/bridge_policy.js';
 import { fastforward_step } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
+import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { auditBridgeFreeSource } from '../scripts/audit-bridge-free.mjs';
 
 function withBridgeFreeMode(callback) {
     const previous = process.env.TELEPORT_BRIDGE_FREE;
@@ -42,18 +42,15 @@ test('bridge-free policy fails loudly and records a bounded call site', () => {
                 && error.bridgeId === 'test.seeded-replay'
                 && error.callSite.includes('bridge_free.test.js'),
         );
-        assert.deepEqual(getBridgeUsageLedger(), {
-            bridgeFree: true,
-            totalHits: 1,
-            forbiddenHits: 1,
-            bridges: {
-                'test.seeded-replay': {
-                    count: 1,
-                    firstCallSite: getBridgeUsageLedger()
-                        .bridges['test.seeded-replay'].firstCallSite,
-                },
-            },
-        });
+        const ledger = getBridgeUsageLedger();
+        assert.equal(ledger.bridgeFree, true);
+        assert.equal(ledger.totalHits, 1);
+        assert.equal(ledger.forbiddenHits, 1);
+        assert.equal(ledger.bridges['test.seeded-replay'].count, 1);
+        assert.match(
+            ledger.bridges['test.seeded-replay'].firstCallSite,
+            /bridge_free\.test\.js/,
+        );
     });
 });
 
@@ -76,14 +73,9 @@ test('replayMoves is poisoned and known replay boundaries are guarded', () => {
     });
 });
 
-test('bridge-free source policy accepts the production graph', () => {
-    const result = auditBridgeFreeSource();
-    assert.deepEqual(result.failures, []);
-});
-
 test('bridge-free entry executes a live quiet-role turn with zero bridge hits', async () => {
     await withBridgeFreeModeAsync(async () => {
-        const game = await runSegment({
+        const result = await runSegment({
             seed: 8000,
             datetime: '20260401090000',
             nethackrc: [
@@ -95,9 +87,12 @@ test('bridge-free entry executes a live quiet-role turn with zero bridge hits', 
             ].join('\n'),
             moves: '.',
         });
-        assert.ok(game.getScreens().length > 0);
-        assert.ok(game.getRngLog().length > 0);
-        assert.deepEqual(game.getBridgeUsageLedger(), {
+        assert.equal(game.urole?.key, 'tourist');
+        assert.equal(game.moves, 2);
+        assert.equal(game.u?.umovement, 12);
+        assert.ok(game.u?.ux > 0);
+        assert.ok(game.u?.uy > 0);
+        assert.deepEqual(result.getBridgeUsageLedger(), {
             bridgeFree: true,
             totalHits: 0,
             forbiddenHits: 0,

@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { WAN_SLEEP } from '../js/object_data.js';
 import {
-    freshRoleOutcome, outcomesAcrossModes,
+    bridgeFreeRoleOutcome, freshRoleOutcome,
 } from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -17,16 +17,21 @@ const healerInput = input => ({
     ...input,
 });
 
-test('future szf text cannot select a fresh Healer scheduler', async () => {
+test('a save-blocked suffix cannot alter elapsed Healer waits', async () => {
     // Saving blocks before the suffix is interpreted.  Those future bytes
     // may not choose startup, actor movement, global maintenance, or any
     // other current-world owner.  The seed is generated and independent of
     // the old new-moon recording.
-    const world = await outcomesAcrossModes(healerInput({
+    const startup = await bridgeFreeRoleOutcome(healerInput({
+        seed: 44001,
+        moves: ' ',
+    }));
+    const world = await bridgeFreeRoleOutcome(healerInput({
         seed: 44001,
         moves: ' ....Sszf',
     }));
 
+    assert.deepEqual(world.hero, startup.hero);
     assert.equal(world.moves, 5);
     assert.equal(world.heroMovement, 12);
     assert.ok(world.actors.some(actor => actor.tame > 0));
@@ -41,7 +46,7 @@ test('a self-zapped sleep wand advances live helpless turns', async () => {
     const startup = await freshRoleOutcome(healerInput({
         seed, moves: ' ', bridgeFree: true,
     }));
-    const world = await outcomesAcrossModes(healerInput({
+    const world = await bridgeFreeRoleOutcome(healerInput({
         seed, moves: ' zf.',
     }));
     const initialWand = startup.world.inventory.find(object =>
@@ -63,7 +68,7 @@ test('minimum self-sleep wakes on the first live global turn', async () => {
     // This generated seed selects rnd(50) == 1.  C increments negative
     // multi after that first global allocation, so the hero wakes at move 2;
     // requiring an extra turn would be an off-by-one scheduler error.
-    const world = await outcomesAcrossModes(healerInput({
+    const world = await bridgeFreeRoleOutcome(healerInput({
         seed: 44001,
         moves: ' zf.',
     }));
@@ -112,7 +117,7 @@ test('both legal Healer races share live actor scheduling', async () => {
         { seed: 44011, race: 'human' },
         { seed: 44012, race: 'gnome' },
     ]) {
-        const world = await outcomesAcrossModes(healerInput({
+        const world = await bridgeFreeRoleOutcome(healerInput({
             ...input,
             moves: ' ....',
         }));

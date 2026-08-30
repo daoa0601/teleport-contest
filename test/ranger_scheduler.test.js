@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { ARROW, BOW, DAGGER } from '../js/object_data.js';
 import {
-    freshRoleOutcome, outcomesAcrossModes,
+    bridgeFreeRoleOutcome, freshRoleOutcome,
 } from './support/role-outcome.js';
 
 const rangerInput = input => ({
@@ -12,12 +12,12 @@ const rangerInput = input => ({
     ...input,
 });
 
-test('a fresh coordinate-collision Ranger uses current actors', async () => {
+test('a fresh Ranger wait schedules current actors', async () => {
     // This independently scanned seed happens to start at the coordinates and
     // sink count formerly used by the named-start classifier.  C moveloop_core
     // has no role, coordinate, or room-feature scheduler branch: four waits
-    // must scan the same current fmon/fobj graph in every execution mode.
-    const world = await outcomesAcrossModes(rangerInput({
+    // must scan the current fmon/fobj graph without a role-shaped replay.
+    const world = await bridgeFreeRoleOutcome(rangerInput({
         seed: 43333,
         moves: ' ....',
     }));
@@ -38,7 +38,7 @@ test('fresh Ranger fireassist swaps, resumes, and shoots live arrows',
         const startup = await freshRoleOutcome(rangerInput({
             seed, moves: ' ', bridgeFree: true,
         }));
-        const world = await outcomesAcrossModes(rangerInput({
+        const world = await bridgeFreeRoleOutcome(rangerInput({
             seed, moves: ' f l ',
         }));
 
@@ -64,7 +64,7 @@ test('every legal Ranger race shares the live scheduler', async () => {
         { seed: 43403, race: 'gnome', align: 'neutral' },
         { seed: 43405, race: 'orc', align: 'chaotic' },
     ]) {
-        const world = await outcomesAcrossModes(rangerInput({
+        const world = await bridgeFreeRoleOutcome(rangerInput({
             ...input,
             moves: ' ....',
         }));

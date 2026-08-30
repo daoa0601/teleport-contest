@@ -57,11 +57,10 @@ function actorState() {
             || left.position[1] - right.position[1]);
 }
 
-async function cavemanOutcome({ seed, moves, bridgeFree, pushweapon = true }) {
+async function cavemanOutcome({ seed, moves, pushweapon = true }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
-    if (bridgeFree) process.env.TELEPORT_BRIDGE_FREE = '1';
-    else delete process.env.TELEPORT_BRIDGE_FREE;
+    process.env.TELEPORT_BRIDGE_FREE = '1';
     process.env.TELEPORT_DISABLE_FIXTURES = '1';
     try {
         let result;
@@ -108,22 +107,17 @@ async function cavemanOutcome({ seed, moves, bridgeFree, pushweapon = true }) {
     }
 }
 
-test('fresh Caveman waits use current actors and floor objects', async () => {
+test('fresh Caveman waits schedule current actors and floor objects', async () => {
     // This seed and command stream are generated controls, not a Contest
     // session. The actor path is intentionally unspecified: it must emerge
-    // from the current monster and object graph in both execution modes.
-    const input = { seed: 28001, moves: ' ....' };
-    const normal = await cavemanOutcome({ ...input, bridgeFree: false });
-    const bridgeFree = await cavemanOutcome({
-        ...input, bridgeFree: true,
-    });
+    // from the current monster and object graph.
+    const outcome = await cavemanOutcome({ seed: 28001, moves: ' ....' });
 
-    assert.equal(normal.error, null);
-    assert.equal(bridgeFree.error, null);
-    assert.deepEqual(normal.cavemanBridges, []);
-    assert.deepEqual(normal.world, bridgeFree.world);
-    assert.equal(normal.world.moves, 5);
-    assert.ok(normal.world.actors.some(actor => actor.tame > 0));
+    assert.equal(outcome.error, null);
+    assert.deepEqual(outcome.cavemanBridges, []);
+    assert.equal(outcome.world.moves, 5);
+    assert.equal(outcome.world.heroMovement, 12);
+    assert.ok(outcome.world.actors.some(actor => actor.tame > 0));
 });
 
 test('Caveman fire uses live quiver and fireassist state', async () => {
@@ -135,23 +129,23 @@ test('Caveman fire uses live quiver and fireassist state', async () => {
     // low-tech bonus raises the maximum to two, and the source rnd(2) is 2.
     const seed = 28003;
     const startup = await cavemanOutcome({
-        seed, moves: ' ', bridgeFree: true,
+        seed, moves: ' ',
     });
-    const bridgeFree = await cavemanOutcome({
-        seed, moves: ' f l', bridgeFree: true,
+    const outcome = await cavemanOutcome({
+        seed, moves: ' f l',
     });
 
     assert.equal(startup.error, null);
-    assert.equal(bridgeFree.error, null);
+    assert.equal(outcome.error, null);
 
     const initialFlint = startup.world.inventory.find(object =>
         object.type === FLINT);
-    const remainingFlint = bridgeFree.world.inventory.find(object =>
+    const remainingFlint = outcome.world.inventory.find(object =>
         object.type === FLINT);
     const initialFloorFlint = startup.world.floorObjects
         .filter(object => object.type === FLINT)
         .reduce((total, object) => total + object.quantity, 0);
-    const landedFlint = bridgeFree.world.floorObjects
+    const landedFlint = outcome.world.floorObjects
         .filter(object => object.type === FLINT)
         .reduce((total, object) => total + object.quantity, 0);
     assert.ok(initialFlint);
@@ -160,15 +154,9 @@ test('Caveman fire uses live quiver and fireassist state', async () => {
         2,
     );
     assert.equal(landedFlint - initialFloorFlint, 2);
-    assert.equal(bridgeFree.world.primary, SLING);
-    assert.equal(bridgeFree.world.alternate, CLUB);
-    assert.deepEqual(bridgeFree.cavemanBridges, []);
-
-    const normal = await cavemanOutcome({
-        seed, moves: ' f l', bridgeFree: false,
-    });
-    assert.equal(normal.error, null);
-    assert.deepEqual(normal.world, bridgeFree.world);
+    assert.equal(outcome.world.primary, SLING);
+    assert.equal(outcome.world.alternate, CLUB);
+    assert.deepEqual(outcome.cavemanBridges, []);
 });
 
 test('a count prefix caps the live Caveman volley', async () => {
@@ -177,23 +165,23 @@ test('a count prefix caps the live Caveman volley', async () => {
     // limit survives the fireassist weapon-swap turn and caps the volley at 1.
     const seed = 28003;
     const startup = await cavemanOutcome({
-        seed, moves: ' ', bridgeFree: true,
+        seed, moves: ' ',
     });
-    const bridgeFree = await cavemanOutcome({
-        seed, moves: ' 1f l', bridgeFree: true,
+    const outcome = await cavemanOutcome({
+        seed, moves: ' 1f l',
     });
 
     assert.equal(startup.error, null);
-    assert.equal(bridgeFree.error, null);
+    assert.equal(outcome.error, null);
 
     const initialFlint = startup.world.inventory.find(object =>
         object.type === FLINT);
-    const remainingFlint = bridgeFree.world.inventory.find(object =>
+    const remainingFlint = outcome.world.inventory.find(object =>
         object.type === FLINT);
     const initialFloorFlint = startup.world.floorObjects
         .filter(object => object.type === FLINT)
         .reduce((total, object) => total + object.quantity, 0);
-    const landedFlint = bridgeFree.world.floorObjects
+    const landedFlint = outcome.world.floorObjects
         .filter(object => object.type === FLINT)
         .reduce((total, object) => total + object.quantity, 0);
 
@@ -203,15 +191,9 @@ test('a count prefix caps the live Caveman volley', async () => {
         1,
     );
     assert.equal(landedFlint - initialFloorFlint, 1);
-    assert.equal(bridgeFree.world.primary, SLING);
-    assert.equal(bridgeFree.world.alternate, CLUB);
-    assert.deepEqual(bridgeFree.cavemanBridges, []);
-
-    const normal = await cavemanOutcome({
-        seed, moves: ' 1f l', bridgeFree: false,
-    });
-    assert.equal(normal.error, null);
-    assert.deepEqual(normal.world, bridgeFree.world);
+    assert.equal(outcome.world.primary, SLING);
+    assert.equal(outcome.world.alternate, CLUB);
+    assert.deepEqual(outcome.cavemanBridges, []);
 });
 
 test('fireassist finds a live launcher outside both weapon slots', async () => {
@@ -228,33 +210,22 @@ test('fireassist finds a live launcher outside both weapon slots', async () => {
     const startup = await cavemanOutcome({
         seed: input.seed,
         moves: ' ',
-        bridgeFree: true,
         pushweapon: input.pushweapon,
     });
-    const bridgeFree = await cavemanOutcome({
-        ...input,
-        bridgeFree: true,
-    });
+    const outcome = await cavemanOutcome(input);
 
     assert.equal(startup.error, null);
-    assert.equal(bridgeFree.error, null);
+    assert.equal(outcome.error, null);
     const initialFlint = startup.world.inventory.find(object =>
         object.type === FLINT);
-    const remainingFlint = bridgeFree.world.inventory.find(object =>
+    const remainingFlint = outcome.world.inventory.find(object =>
         object.type === FLINT);
     assert.ok(initialFlint);
     assert.ok(
         initialFlint.quantity > (remainingFlint?.quantity ?? 0),
         'the discovered launcher must fire the readied flint',
     );
-    assert.equal(bridgeFree.world.primary, SLING);
-    assert.equal(bridgeFree.world.alternate, ROCK);
-    assert.deepEqual(bridgeFree.cavemanBridges, []);
-
-    const normal = await cavemanOutcome({
-        ...input,
-        bridgeFree: false,
-    });
-    assert.equal(normal.error, null);
-    assert.deepEqual(normal.world, bridgeFree.world);
+    assert.equal(outcome.world.primary, SLING);
+    assert.equal(outcome.world.alternate, ROCK);
+    assert.deepEqual(outcome.cavemanBridges, []);
 });
