@@ -13579,6 +13579,41 @@ const SOKO2_1_LAYOUT = {
     ],
 };
 
+const SOKO2_2_MAP = [
+    '  --------',
+    '--|.|....|',
+    '|........|----------',
+    '|.-...-..|.|.......|',
+    '|...-......|.......|',
+    '|.-....|...|.......|',
+    '|....-.--.-|.......|',
+    '|..........|.......|',
+    '|.--...|...|.......---',
+    '|....-.|---|.......+.|',
+    '--|....|------------.|',
+    '  |................+.|',
+    '  --------------------',
+];
+
+const SOKO2_2_LAYOUT = {
+    map: SOKO2_2_MAP,
+    stairs: [[false, 6, 11], [true, 15, 6]],
+    doors: [
+        [D_LOCKED, 19, 9],
+        [D_LOCKED, 19, 11],
+    ],
+    boulders: [
+        [4, 2], [4, 3], [5, 3], [7, 3], [8, 3],
+        [2, 4], [3, 4], [5, 5], [6, 6], [9, 6],
+        [3, 7], [4, 7], [7, 7], [6, 9], [5, 10], [5, 11],
+    ],
+    monsterGenerationExclusions: [[6, 11, 18, 11]],
+    traps: [
+        [ROLLING_BOULDER_TRAP, 7, 11],
+        ...Array.from({ length: 11 }, (_, index) => [HOLE, 8 + index, 11]),
+    ],
+};
+
 const SOKO3_1_MAP = [
     '-----------       -----------',
     '|....|....|--     |.........|',
@@ -13781,8 +13816,18 @@ async function generateSokobanPuzzle(active, layout) {
     );
 }
 
-async function generateSoko21(active) {
-    return generateSokobanPuzzle(active, SOKO2_1_LAYOUT);
+const SOKO2_LAYOUTS = Object.freeze([
+    null, SOKO2_1_LAYOUT, SOKO2_2_LAYOUT,
+]);
+
+export async function generateSokobanLevel2(active) {
+    const layout = SOKO2_LAYOUTS[active?.variant];
+    if (!layout) {
+        throw new RangeError(`unknown Sokoban level 2 layout ${active?.variant}`);
+    }
+    await generateSpecialAndFixup(
+        current => generateSokobanPuzzle(current, layout), active,
+    );
 }
 
 async function generateSoko31(active) {
@@ -14479,9 +14524,8 @@ async function makelevel() {
                 g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'soko2' && variant === 1) {
-            await generateSpecialAndFixup(generateSoko21,
-                g._activeSpecialLevel);
+        if (prototype === 'soko2') {
+            await generateSokobanLevel2(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'soko3' && variant === 1) {
