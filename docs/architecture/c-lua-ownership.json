@@ -496,9 +496,9 @@
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
       "dependencies": ["rng-core", "object-timer-queue", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: fresh quiet-role maintenance advances a live Tourist turn with zero bridge hits", "test/bridge_free.public-regression.js: known Samurai, Rogue, and Priest session replays remain exact with zero bridge hits; public regression only"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: fresh quiet-role maintenance advances a live Tourist turn with zero bridge hits", "test/samurai_scheduler.test.js: a fresh non-public Samurai wait increments source hero_seq, allocates the pet and hero movement ration, enters the live monster scan, and never reaches fastforward.turn", "test/bridge_free.public-regression.js: known Samurai, Rogue, and Priest session replays remain exact with zero bridge hits; public regression only"],
       "lastSealedGate": null,
-      "openGap": "Samurai, all five represented Rogue carriers, and the two represented Priest carriers have public bridge-free actor-rich witnesses; broader unseen actor/terrain branches and a sealed gate remain open."
+      "openGap": "Fresh-seed Samurai wait/prayer and the represented Samurai, Rogue, and Priest carriers use live actor/global scheduling. Other normal-mode roles still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open."
     },
     {
       "id": "samurai-pet-turns",
@@ -512,10 +512,10 @@
       },
       "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/pray.js"],
       "dependencies": ["turn-scheduler", "startup-role-inventory"],
-      "bridgeIds": ["legacy-only samurai.altar-run-prayer", "legacy-only bounded Samurai compatibility cadence"],
-      "acceptanceWitnesses": ["test/bridge_free.public-regression.js: seed0017 pet, run, prayer, RNG, screen, and cursor parity with zero bridge hits; public regression only"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/samurai_scheduler.test.js: a fresh seed in normal runner mode sends wait and #pray through the shared hero-ration, pet-scan, global-maintenance, negative-multi, and prayer_done owners without fastforward.turn or a Samurai replay counter", "scripts/audit-bridge-free.mjs: mechanically rejects the removed Samurai RNG tables, coordinate tables, replay functions, altar classifier, prayer transcript, and timed-action counter", "test/bridge_free.public-regression.js: seed0017 pet, run, prayer, RNG, screen, and cursor parity with zero bridge hits; public regression only"],
       "lastSealedGate": null,
-      "openGap": "The represented bridge-free Samurai path uses live dog_move and prayer turns, but wider candidate, combat, interruption, terrain, and sealed-corpus coverage is absent; legacy scoring still retains its compatibility bridge."
+      "openGap": "Samurai now uses the shared source movement-ration, live fmon/dog_move scan, once-per-turn maintenance, hero_seq, negative-multi, and prayer_done continuation in both bridge-free and normal runner modes. The aggregate Samurai RNG ranges, hard-coded hero/pet path tables, altar classifier, timed-action counter, and prayer transcript are deleted. Role-and-coordinate-specific lichen combat and doorway-memory branches in cmd.js remain trace-shaped debt outside this scheduler slice; wider candidates, combat, terrain, interruption, divine outcomes, save/restore, and a sealed stratum remain open."
     },
     {
       "id": "rogue-actor-scheduling",

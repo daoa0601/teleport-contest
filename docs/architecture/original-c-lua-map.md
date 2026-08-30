@@ -38012,3 +38012,53 @@ The naming transaction explicitly threads the active game state through
 `object_call.js` into `object_knowledge.js`.  This prevents a carrier evaluated
 against an isolated state from reading that state while accidentally recording
 the call or discovery on the process-global singleton.
+
+## 1012. Samurai scheduling no longer has a transcript-shaped second owner
+
+```mermaid
+flowchart TD
+    A[Samurai timed command] --> B[debit u.umovement by NORMAL_SPEED]
+    B --> C[movemon scans current fmon]
+    C --> D[dog_move reads current pet, goals, candidates, inventory]
+    D --> E{hero has a full ration?}
+    E -- no --> F[allocate live monster and hero movement]
+    F --> G[run once-per-turn maintenance]
+    G --> C
+    E -- yes --> H[increment hero_seq]
+    H --> I{prayer negative multi active?}
+    I -- yes --> J[advance one tick per newly allocated turn]
+    J --> K[unmul completion then prayer_done]
+    I -- no --> L[next command]
+    M[Samurai RNG ranges and coordinate tables] -. deleted .-> C
+    N[altar-specific prayer transcript] -. deleted .-> J
+```
+
+`allmain.c:moveloop_core()` does not have a role-specific Samurai scheduler.
+Every timed action debits the hero's movement, lets `movemon()` exhaust current
+monster rations, allocates a new global turn only when both sides are out of
+movement, and increments `hero_seq` after the elapsed-time transaction.  A tame
+starting dog reaches `dogmove.c:dog_move()` from the same current `fmon`, floor,
+goal, inventory, track, and candidate state as every other pet.
+
+The former JavaScript owner duplicated that transaction with three aggregate
+RNG tables, two hard-coded hero/pet coordinate maps, a Samurai altar classifier,
+and a per-action replay counter.  `cmd.js` also had a second `dopray()` which
+paid a recorded range list and painted the completion directly.  Those owners
+are deleted.  Normal and bridge-free Samurai execution now share the existing
+live movement-ration, monster-scan, maintenance, negative-multi, `unmul()`, and
+`prayer_done()` path.  The new-game maintenance watermark is initialized in
+both modes so dismissing the welcome cannot allocate a phantom turn.
+
+A fresh non-public seed distinguishes the mechanism: one wait advances
+`hero_seq`, leaves live hero and pet movement credit, records a real monster
+scan, and has no `fastforward.turn` hit.  A fresh `#pray` spends one hero action,
+advances three global turns, increments gnostic conduct, and emits the combined
+opening/completion through the live occupation.  A mechanical audit rejects
+reintroduction of every deleted Samurai replay token.  The existing seed0017
+bridge-free exact session and two normal-mode boundaries remain green only as
+lower-tier public regressions.
+
+Samurai is still partial.  Role-and-coordinate-specific lichen combat and
+doorway-memory branches remain in `cmd.js`, and wider pet candidates, combat,
+terrain, interruption, divine outcomes, save/restore, and sealed strata have
+not yet been accepted.  Lua owns none of this scheduler or prayer runtime.

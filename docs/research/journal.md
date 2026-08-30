@@ -97663,6 +97663,7 @@ publication, official hidden measurement, or animation work ran.
 
 ---
 
+
 ### [2026-08-30 02:44 EEST, journal block 3183] {#test-quality #change-detector #public-regression #behavioral-lane #structural-quarantine #fake-acceptance #ownership-registry #process-safety}
 
 **Contract, witness, and earliest risk:** the user's mechanical-test example
@@ -98267,5 +98268,77 @@ did not prove `docall_xname()` appearance semantics.  Both gaps are now closed
 without adding mock-order assertions.  The source gaps listed in block 3193
 remain open.  No corpus, scorer, public-regression lane, sealed trace, push,
 publication, official hidden measurement, or animation work ran.
+
+---
+
+### [2026-08-30 04:44 EEST, journal block 3195] {#bridge-free #samurai #moveloop-core #dog-move #prayer #hero-seq #fastforward #replay-removal #change-detector #architecture #focused-regression #process-safety}
+
+**Contract, inventory, and earliest false green:** the next ordered acceptance
+slice was Samurai scheduling.  Production still contained three aggregate RNG
+tables, hard-coded hero and pet paths, an altar-coordinate classifier, a timed-
+action replay counter, and a separate prayer transcript even though the
+bridge-free seed0017 path had already proved the shared live scheduler.  A
+fresh normal-mode seed initially looked plausible at the output/RNG level, but
+`hero_seq` remained absent, `_samuraiTimedActions` incremented, and both wait
+and prayer hit `fastforward.turn`.  That was checksum-style compatibility: the
+recorded ranges reproduced calls without executing C's owning transaction.
+
+**Prediction and decisive C evidence:** `allmain.c:moveloop_core()` debits
+`u.umovement`, exhausts `movemon()`, allocates monster and hero rations only
+when both are out of movement, performs once-per-turn work, and increments
+`hero_seq` after the complete timed action.  `dogmove.c:dog_move()` consumes the
+current pet, `edog`, goals, floor graph, candidates, track, and inventory; it
+does not accept a role/action call list.  `pray.c:dopray()` increments gnostic
+conduct and installs `nomul(-3)`, `nomovemsg`, and `prayer_done`; each newly
+allocated global turn advances that occupation.  Therefore the live owner
+should work identically in normal and bridge-free Samurai modes, while removing
+only the tables should expose any residual generic fast-forward tail.
+
+**Red discriminators and implementation:** the first focused run failed **2/5**:
+the mechanical audit named eleven surviving Samurai replay tokens, and the
+fresh wait lacked `hero_seq`.  After deleting the tables/classifier/replay
+counter/prayer branch, both outcomes crashed on one stale
+`boundedSamuraiCompatibility` maintenance guard.  Removing it exposed a second
+red result: wait and prayer still hit `fastforward.turn`.  Samurai now enters
+the shared source-ration scan in every mode, new game initializes its
+maintenance watermark, and its no-full-ration tail uses live maintenance.  The
+audit rejects all deleted Samurai tokens.  Production shrank by more than three
+hundred lines without adding a replay helper, coordinate table, or role-specific
+RNG list.
+
+**Behavioral and regression effect:** the fresh wait now advances move1 to
+move2, increments `hero_seq` to1, leaves live hero/pet movement credit, records
+a real monster scan, and has no `fastforward.turn` entry.  Fresh `#pray`
+increments gnostic conduct, completes three occupation turns at move4, and
+emits the live Amaterasu opening/completion without a Samurai counter or turn
+bridge.  The two fresh outcomes plus four bridge-policy controls pass **6/6**.
+One managed default behavioral run passes **378/378** tests across **39** files.
+The bridge-free seed0017 exact regression remains **1/1** and the two selected
+normal seed0017 run/prayer boundaries remain **2/2**; these are explicitly
+lower-tier frozen regressions, not acceptance evidence.
+
+**Falsified hypotheses, limits, and next blocker:** identical aggregate RNG did
+not prove scheduler ownership; deleting the named Samurai tables alone did not
+remove the generic `fastforward.turn` fallback; and welcome dismissal is not a
+global turn.  Role-and-coordinate-specific lichen combat and doorway-memory
+branches remain in `cmd.js` outside this scheduler slice.  Wider candidates,
+combat, terrain, interruption, divine outcomes, save/restore, other roles'
+turn fallbacks, and the sealed stratum remain open.  No full Contest corpus,
+scorer, complete public-regression lane, sealed trace, push, publication,
+official hidden measurement, or animation work ran.
+
+---
+
+### [2026-08-30 04:46 EEST, journal block 3196] {#samurai #bridge-audit #test-lanes #ownership #process-safety}
+
+**Post-implementation structural gate:** after ownership regeneration, the
+bridge audit passes across **129 production files, 15 guarded modules, and 19
+fixture modules**.  The behavioral-lane audit passes **39** files with no
+recorded-session or public-parity dependency.  Ownership generation/checking,
+registry JSON, changed JavaScript syntax, forbidden-Samurai-token search, and
+diff hygiene all pass.  The selected test processes were singular, guarded,
+and owned to normal exit.  No additional corpus, scorer, push, publication, or
+hidden measurement ran; the next source debt remains block3195's trace-shaped
+Samurai lichen/door branches or the next ordered role fallback.
 
 ---
