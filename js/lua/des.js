@@ -119,6 +119,12 @@ function objectOptions(id, x, y) {
     const location = point(options.coord)
         ?? point(options.x, options.y)
         ?? point(luaArgument(x), luaArgument(y));
+    const corpseMonster = options.montype == null
+        ? null : String(options.montype);
+    const corpseMonsterClass = corpseMonster?.length === 1
+        ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
+    if (corpseMonster?.length === 1 && corpseMonsterClass < 1)
+        throw new Error(`unknown Lua monster class ${corpseMonster}`);
     return {
         ...options,
         point: location,
@@ -126,8 +132,9 @@ function objectOptions(id, x, y) {
             ? objectClassForSymbol(options.class) : null,
         objectType: options.id
             ? objectTypeForName(options.id, options.class) : null,
-        monsterType: options.montype
-            ? monsterTypeForName(options.montype).type : null,
+        monsterType: corpseMonster && corpseMonster.length > 1
+            ? monsterTypeForName(corpseMonster).type : null,
+        monsterClass: corpseMonsterClass,
     };
 }
 
@@ -379,6 +386,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
             : operations.region(
                 unwrapSelection(selection), String(lighting),
             ),
+        room: value => operations.room(tableOptions(value)),
         stair: (direction, x, y) => operations.stair(
             stairOptions(direction, x, y),
         ),
@@ -408,6 +416,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
         ),
         levregion: value => operations.levelRegion(tableOptions(value)),
         exclusion: value => operations.exclusion(tableOptions(value)),
+        random_corridors: () => operations.randomCorridors(),
         mazewalk: (value, y, direction) => operations.mazeWalk(
             mazeWalkOptions(value, y, direction),
         ),

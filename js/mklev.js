@@ -149,6 +149,7 @@ const AMULET_CLASS = 5;
 const TOOL_CLASS = 6;
 const M2_DOMESTIC = 0x00400000;
 const G_NOGEN = 0x0200;
+const G_IGNORE = 0x8000;
 const MAXMONNO = 120;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
@@ -285,7 +286,6 @@ const PM_GNOME_LEADER = 166;
 const PM_GNOMISH_WIZARD = 167;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
-const PM_ORACLE = 274;
 const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
@@ -1341,8 +1341,6 @@ function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
     const G_HELL = 0x0400;
     const G_NOHELL = 0x0800;
     const G_UNIQ = 0x1000;
-    const G_NOGEN = 0x0200;
-    const G_IGNORE = 0x8000;
     const S_LICH = 38;
     const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
     const inHell = !!currentDungeon?.flags?.hellish;
@@ -8883,116 +8881,11 @@ export async function generateMinetown(active) {
     }
 }
 
-function oracleInducedAlignment() {
-    // The Oracle level descriptor is neutral. induced_align(80) first probes
-    // that descriptor and only falls back to a random dungeon alignment for
-    // the upper 20 percent of rolls.
-    if (rn2(100) >= 80) rn2(3);
-}
-
-async function oracleRandomMonster(room) {
-    oracleInducedAlignment();
-    const context = specialRoomContext(room);
-    const point = specialRandomLocation(context);
-    if (!point) return null;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === point.x && monster.my === point.y);
-    return occupied
-        ? makemonNear(null, point.x, point.y)
-        : makemon(null, point.x, point.y, 0);
-}
-
-function oracleRandomObject(room) {
-    const point = specialRandomLocation(specialRoomContext(room));
-    return point ? mkobj_at(RANDOM_CLASS, point.x, point.y, true) : null;
-}
-
-function oracleRandomStair(room, up) {
-    const point = specialRandomLocation(
-        specialRoomContext(room),
-        loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE,
-    );
-    if (point) mkstairs(point.x, point.y, up, room);
-}
-
-async function oracleRandomTrap(room) {
-    // des.trap() uses the room-only free-location path, then delegates the
-    // random trap type and victim roll to the shared constructors.
-    await specialTrap(specialRoomContext(room));
-}
-
-async function generateOracle(active) {
-    // Lua source: dat/oracle.lua. This is a room-form special level: there is
-    // no des.level_init() lighting draw before the first build_room().
-    game.level.flags.is_special = true;
-    active.monsterAlignment = 'neutral';
-
-    const outer = await buildSpecialRoom({
-        rtype: OROOM, lit: 1, x: 3, y: 3,
-        xalign: 3, yalign: 3, w: 11, h: 9,
-    }, null, async room => {
-        for (const [x, y] of [
-            [0, 0], [0, 8], [10, 0], [10, 8],
-            [5, 1], [5, 7], [2, 4], [8, 4],
-        ]) {
-            // Lua resolves montype="C" before create_object(). The STATUE
-            // constructor still chooses its own initial monster, which is
-            // then replaced by the requested centaur-class identity.
-            const mndx = mkclass(29, 0x0200 | 0x8000);
-            const statue = mksobj_at(
-                STATUE, room.lx + x, room.ly + y, true, true,
-            );
-            set_corpsenm(statue, mndx);
-            statue.spe = 0x04; // CORPSTAT_HISTORIC
-        }
-
-        await buildSpecialRoom({
-            rtype: DELPHI, lit: 1, x: 4, y: 3, w: 3, h: 3,
-        }, room, async delphi => {
-            for (const [x, y] of [[0, 1], [1, 0], [1, 2], [2, 1]]) {
-                const fountain = game.level.at(delphi.lx + x, delphi.ly + y);
-                if (fountain) fountain.typ = FOUNTAIN;
-            }
-            game.level.flags.nfountains += 4;
-
-            oracleInducedAlignment();
-            await makemon(PM_ORACLE, delphi.lx + 1, delphi.ly + 1, 0);
-            createSpecialRoomDoor(delphi, 'nodoor', 'all');
-        });
-
-        await oracleRandomMonster(room);
-        await oracleRandomMonster(room);
-    });
-    active.context = outer ? specialRoomContext(outer) : null;
-
-    await buildSpecialRoom({}, null, async room => {
-        oracleRandomStair(room, true);
-        oracleRandomObject(room);
-    });
-    await buildSpecialRoom({}, null, async room => {
-        oracleRandomStair(room, false);
-        oracleRandomObject(room);
-        await oracleRandomTrap(room);
-        await oracleRandomMonster(room);
-        await oracleRandomMonster(room);
-    });
-    await buildSpecialRoom({}, null, async room => {
-        oracleRandomObject(room);
-        oracleRandomObject(room);
-        await oracleRandomMonster(room);
-    });
-    await buildSpecialRoom({}, null, async room => {
-        oracleRandomObject(room);
-        await oracleRandomTrap(room);
-        await oracleRandomMonster(room);
-    });
-    await buildSpecialRoom({}, null, async room => {
-        oracleRandomObject(room);
-        await oracleRandomTrap(room);
-        await oracleRandomMonster(room);
-    });
-
-    makecorridors();
+export async function generateOracleLevel(active) {
+    if (active?.prototype !== 'oracle')
+        throw new RangeError(`unknown Oracle level ${active?.prototype}`);
+    active.file = 'oracle.lua';
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 function specialRectangularRoom(context, x1, y1, x2, y2, rtype, lit,
@@ -9926,12 +9819,7 @@ function luaRoomLighting(value) {
         && rn2(77) !== 0;
 }
 
-function createLuaRoomRegion(context, options) {
-    const region = Array.isArray(options.region)
-        ? options.region
-        : [options.x1, options.y1, options.x2, options.y2];
-    if (!region.every(Number.isInteger))
-        throw new TypeError('des.region requires four coordinates');
+function luaRoomType(name = 'ordinary') {
     const roomTypes = {
         ordinary: OROOM,
         zoo: ZOO,
@@ -9942,11 +9830,22 @@ function createLuaRoomRegion(context, options) {
         throne: COURT,
         swamp: SWAMP,
         temple: TEMPLE,
+        delphi: DELPHI,
         shop: SHOPBASE,
     };
-    const roomType = roomTypes[options.type ?? 'ordinary'];
+    const roomType = roomTypes[name];
     if (roomType == null)
-        throw new Error(`unsupported Lua room type ${options.type}`);
+        throw new Error(`unsupported Lua room type ${name}`);
+    return roomType;
+}
+
+function createLuaRoomRegion(context, options) {
+    const region = Array.isArray(options.region)
+        ? options.region
+        : [options.x1, options.y1, options.x2, options.y2];
+    if (!region.every(Number.isInteger))
+        throw new TypeError('des.region requires four coordinates');
+    const roomType = luaRoomType(options.type);
     const lit = luaRoomLighting(options.lit ?? -1);
     if (roomType === OROOM && !options.irregular && !options.arrival_room) {
         lightSpecialArea(context, ...region, lit);
@@ -9963,6 +9862,27 @@ function createLuaRoomRegion(context, options) {
         );
     if (room && options.arrival_room) room.arrival_room = true;
     return room;
+}
+
+function luaRoomSpec(options) {
+    const coordinate = luaCoordinate(options);
+    const xalign = {
+        left: 1, 'half-left': 2, center: 3, 'half-right': 4, right: 5,
+        none: -1, random: -1,
+    }[options.xalign ?? 'random'];
+    const yalign = {
+        top: 1, center: 3, bottom: 5, none: -1, random: -1,
+    }[options.yalign ?? 'random'];
+    if (xalign == null || yalign == null)
+        throw new Error('unsupported Lua room alignment');
+    return {
+        ...options,
+        x: coordinate?.x ?? -1,
+        y: coordinate?.y ?? -1,
+        rtype: luaRoomType(options.type),
+        xalign,
+        yalign,
+    };
 }
 
 function createLuaStair(context, { direction, point }) {
@@ -10108,6 +10028,10 @@ async function createLuaObject(
     if (Object.hasOwn(options, 'locked')) object.olocked = !!options.locked;
     if (options.monsterType != null)
         set_corpsenm(object, options.monsterType);
+    else if (options.monsterClass != null)
+        set_corpsenm(object, mkclass(
+            options.monsterClass, G_NOGEN | G_IGNORE,
+        ));
     if (object.otyp === STATUE || object.otyp === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0)
@@ -10381,6 +10305,28 @@ async function generateLuaSpecialLevel(active) {
             addDoorsToSpecialRoom(room);
             return room;
         },
+        room: async options => {
+            const parent = context;
+            const room = await buildSpecialRoom(
+                luaRoomSpec(options), context._room ?? null,
+                options.contents ? async builtRoom => {
+                    context = specialRoomContext(builtRoom);
+                    try {
+                        await luaState.callValueAsync(options.contents, [
+                            objectToLuaTable({
+                                x: builtRoom.lx, y: builtRoom.ly,
+                                width: builtRoom.hx - builtRoom.lx + 1,
+                                height: builtRoom.hy - builtRoom.ly + 1,
+                            }),
+                        ]);
+                    } finally {
+                        context = parent;
+                    }
+                } : null,
+            );
+            context = parent;
+            return room;
+        },
         stair: options => createLuaStair(context, options),
         ladder: options => {
             const up = options.direction === 'up';
@@ -10462,6 +10408,7 @@ async function generateLuaSpecialLevel(active) {
             else throw new Error(`unsupported Lua level region ${options.type}`);
         },
         exclusion: options => createLuaExclusion(context, options),
+        randomCorridors: () => makecorridors(),
         mazeWalk: async options => {
             const directions = ['north', 'south', 'east', 'west'];
             const direction = options.dir === 'random'
@@ -12301,6 +12248,7 @@ async function makelevel() {
             || prototype === 'minend'
             || prototype.startsWith('soko')
             || /^tower[1-3]$/.test(prototype)
+            || prototype === 'oracle'
             || prototype === 'medusa'
             || prototype === 'castle'
             || prototype === 'knox'
@@ -12549,8 +12497,7 @@ async function makelevel() {
             return;
         }
         if (prototype === 'oracle') {
-            await generateSpecialAndFixup(generateOracle,
-                g._activeSpecialLevel);
+            await generateOracleLevel(g._activeSpecialLevel);
             return;
         }
     }
