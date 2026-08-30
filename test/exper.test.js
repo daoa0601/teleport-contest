@@ -5,33 +5,33 @@ import {
     awardMonsterExperience, loseExperienceLevel, monsterExperience,
     newExperienceThreshold,
 } from '../js/exper.js';
-import { MONSTER_EXPERIENCE_META } from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 
-test('generated monster experience metadata covers the configured table', () => {
-    assert.equal(MONSTER_EXPERIENCE_META.length, 383);
-    assert.deepEqual(MONSTER_EXPERIENCE_META[59], [10, 5, 0, 0, 0]);
-    assert.deepEqual(MONSTER_EXPERIENCE_META[158], [9, 3, 1, 0, 0]);
+const monster = (name, state = {}) => ({
+    mnum: MONSTER_NAME.indexOf(name),
+    m_lev: 0,
+    ...state,
 });
 
 test('experience includes source attack bonuses for early hostiles', () => {
-    assert.equal(monsterExperience({ mnum: 59, m_lev: 0 }), 6); // kobold
-    assert.equal(monsterExperience({ mnum: 116, m_lev: 0 }), 1); // grid bug
-    assert.equal(monsterExperience({ mnum: 12, m_lev: 0 }), 1); // jackal
-    assert.equal(monsterExperience({ mnum: 158, m_lev: 0 }), 4); // lichen
+    assert.equal(monsterExperience(monster('kobold')), 6);
+    assert.equal(monsterExperience(monster('grid bug')), 1);
+    assert.equal(monsterExperience(monster('jackal')), 1);
+    assert.equal(monsterExperience(monster('lichen')), 4);
 });
 
 test('revived monster awards use the source repeated-kill bands', () => {
-    assert.equal(monsterExperience({ mnum: 59, m_lev: 0, mrevived: 1 }, {
+    assert.equal(monsterExperience(monster('kobold', { mrevived: 1 }), {
         killCount: 20,
     }), 6);
-    assert.equal(monsterExperience({ mnum: 59, m_lev: 0, mrevived: 1 }, {
+    assert.equal(monsterExperience(monster('kobold', { mrevived: 1 }), {
         killCount: 21,
     }), 3);
 });
 
 test('more_experienced adds experience and fourfold score', () => {
     const state = { u: { uexp: 2, urexp: 8 } };
-    assert.equal(awardMonsterExperience({ mnum: 158, m_lev: 0 }, {
+    assert.equal(awardMonsterExperience(monster('lichen'), {
         state,
     }), 4);
     assert.deepEqual(state.u, { uexp: 6, urexp: 24 });

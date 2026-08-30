@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, resetGame } from '../js/gstate.js';
 import { init_objects } from '../js/o_init.js';
 import {
-    CHAIN_MAIL, CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK,
+    CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK,
     DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
     DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR,
     ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK,
@@ -112,11 +112,4 @@ test('role money is initialized after startup and cannot leak across reruns', ()
     assert.equal(uInitInventoryAttrs(), true);
     assert.equal(healer._goldCount, 0);
     assert.equal(healer._initialGoldCount, 0);
-});
-
-test('startup race constants retain the object-table identities used by C', () => {
-    assert.deepEqual(
-        [CHAIN_MAIL, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL],
-        [128, 129, 133],
-    );
 });

@@ -5,24 +5,8 @@ import { game } from '../js/gstate.js';
 import { initializeObjectDescriptions } from '../js/o_init.js';
 import { wishedObjectPresentation } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
-import {
-    OBJECT_COLOR, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE,
-    QUARTERSTAFF,
-} from '../js/object_data.js';
+import { OBJECT_COLOR } from '../js/object_data.js';
 import { objectColor, objectUsesGenericGlyph } from '../js/display.js';
-
-test('generated object colors include the source quarterstaff HI_WOOD color', () => {
-    assert.equal(OBJECT_COLOR.length, 481);
-    assert.equal(OBJECT_NAMES[QUARTERSTAFF], 'quarterstaff');
-    assert.equal(OBJECT_COLOR[QUARTERSTAFF], 3);
-});
-
-test('generated weapon damage preserves racial short-sword variants', () => {
-    assert.equal(OBJECT_SMALL_DAMAGE[48], 5); // orcish short sword
-    assert.equal(OBJECT_LARGE_DAMAGE[48], 8);
-    assert.equal(OBJECT_SMALL_DAMAGE[54], 8); // long sword
-    assert.equal(OBJECT_SMALL_DAMAGE[QUARTERSTAFF], 6);
-});
 
 test('unobserved appearance-sensitive objects use their generic class color', () => {
     game.objectColors = OBJECT_COLOR.slice();

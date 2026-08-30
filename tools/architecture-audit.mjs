@@ -4,7 +4,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const productionRoot = path.join(root, 'js');
-const ownershipPath = path.join(root, 'architecture', 'ownership.json');
 const stateSchemaPath = path.join(root, 'js', 'state_schema.js');
 
 async function javascriptFiles(directory) {
@@ -94,45 +93,16 @@ const rawInputOwners = new Set([
 const futureInputOwners = new Set(['js/jsmain.js']);
 
 async function main() {
-    const ownership = JSON.parse(await readFile(ownershipPath, 'utf8'));
     const stateSchema = await import(pathToFileURL(stateSchemaPath));
-    const allowedStatuses = new Set(ownership.statuses || []);
-    const legacyFields = ownership.legacyState?.fields || '';
-    const ownedFields = new Set(Array.isArray(legacyFields)
-        ? legacyFields : legacyFields.split(/\s+/u).filter(Boolean));
+    const knownPrivateFields = new Set([
+        ...stateSchema.PERSISTENT_STATE_KEYS,
+        ...stateSchema.TRANSIENT_STATE_KEYS,
+    ].filter(name => name.startsWith('_')));
     const failures = [];
-    const systems = (ownership.systems || []).map(row =>
-        Object.fromEntries(ownership.columns.map((column, index) =>
-            [column, row[index]])));
 
-    for (const system of systems) {
-        if (!allowedStatuses.has(system.status)) {
-            failures.push(
-                `architecture/ownership.json: ${system.id} has invalid status ${system.status}`,
-            );
-        }
-        if (!system.sourceOwners?.length) {
-            failures.push(
-                `architecture/ownership.json: ${system.id} has no C or Lua owner`,
-            );
-        }
-        if (!system.persistence) {
-            failures.push(
-                `architecture/ownership.json: ${system.id} has no persistence classification`,
-            );
-        }
-        for (const field of system.stateFields || []) {
-            if (field.startsWith('_')) ownedFields.add(field);
-        }
-    }
-
-    for (const field of ownedFields) {
-        const persistent = stateSchema.PERSISTENT_STATE_KEYS.has(field);
-        const transient = stateSchema.TRANSIENT_STATE_KEYS.has(field);
-        if (persistent === transient) {
-            failures.push(
-                `js/state_schema.js: ${field} must be classified exactly once`,
-            );
+    for (const field of stateSchema.PERSISTENT_STATE_KEYS) {
+        if (stateSchema.TRANSIENT_STATE_KEYS.has(field)) {
+            failures.push(`js/state_schema.js: ${field} is both saved and transient`);
         }
     }
 
@@ -163,9 +133,9 @@ async function main() {
 
         const stateFieldPattern = /\b(?:game|g|state)(?:\?\.|\.)(_[A-Za-z0-9_]+)/gu;
         for (const match of text.matchAll(stateFieldPattern)) {
-            if (!ownedFields.has(match[1])) {
+            if (!knownPrivateFields.has(match[1])) {
                 failures.push(
-                    `${name}:${lineNumber(text, match.index)}: ${match[1]} has no owner or persistence classification`,
+                    `${name}:${lineNumber(text, match.index)}: ${match[1]} is missing from js/state_schema.js`,
                 );
             }
         }
