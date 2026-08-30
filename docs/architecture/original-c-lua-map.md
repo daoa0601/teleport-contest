@@ -38258,3 +38258,59 @@ The two existing seed0501 and seed0106 bridge-free public carriers remain exact
 as lower-tier regressions.  Alternate ranged outcomes, pantheons, unseen actor
 graphs, option families, longer persistence histories, dungeon branches, and a
 sealed stratum remain partial.  Lua owns none of this runtime slice.
+
+## 1016. Startup has one live owner for every selectable role
+
+```mermaid
+flowchart TD
+    A[allmain.c newgame] --> B[o_init.c init_objects]
+    B --> C[role.c role_init and Priest pantheon]
+    C --> D[dungeon.c plus dungeon.lua init_dungeons]
+    D --> E[artifact.c init_artifacts]
+    E --> F[u_init.c u_init_misc]
+    F --> G[mklev and u_on_upstairs]
+    G --> H[dog.c makedog]
+    H --> I[u_init_role and u_init_race]
+    I --> J[ini_inv and carry-attribute adjustment]
+    J --> K[final equipment, discoveries, spells, and skills]
+
+    L[fastforward pre-mklev wrapper] -. deleted .-> B
+    M[unreachable post-mklev RNG transcript] -. deleted .-> I
+    N[unreachable fixed Tourist object graph] -. deleted .-> J
+    O[unused 1,448-call mineralize transcript] -. deleted .-> G
+```
+
+Pinned `allmain.c:newgame()` has one startup sequence.  `init_objects()`, role
+and pantheon selection, Lua-backed dungeon initialization, artifact reset,
+`u_init_misc()`, level construction, pet creation, role/race inventory, carry
+adjustment, and final skill/discovery installation do not choose an alternate
+owner from a diagnostic mode.  The 13 selectable roles are all entries in the
+same `u_init()` family; there is no fourteenth unported role which should be
+rewritten as a fixed Tourist.
+
+JavaScript already had live owners for that complete represented sequence, but
+normal mode wrapped the pre-level call in `fastforward_pre_mklev()` and then
+reset artifact state a second time.  An exhaustive 13-role boolean guarded the
+live pet/inventory path; its `else` retained an unreachable 124-call post-level
+RNG transcript and a hand-built Tourist inventory/attribute graph.  The same
+module also retained an uncalled 1,448-call fill/mineralize transcript.  Those
+three replay exports, the duplicate artifact reset, the exhaustive predicate,
+and its fallback graph are deleted.  `fastforward.js` now contains only the two
+explicit role-turn debts still recorded by the turn-scheduler registry.
+
+The fresh all-role discriminator runs every selectable role once in normal and
+bridge-free modes on different non-public seeds.  Before removal, all 13 live
+worlds already matched but every normal run recorded
+`fastforward.pre-mklev`; that proved the wrapper was redundant rather than an
+essential compatibility implementation.  After removal, role, race,
+alignment, gods, position, level, attributes, movement, inventory including
+contained objects, pet state, discoveries, and turn state match in both modes
+with no pre/post/mineralize bridge.  This oracle is an observable startup-world
+invariant; it does not copy an RNG transcript or assert helper order.
+
+The startup entries remain partial because alternate legal races, genders,
+alignments, option families, dungeon configurations, longer pet combinations,
+and a sealed stratum are not exhausted.  Seeded room-fill compatibility paths
+and role-turn replays remain separate mapped debts.  Lua owns dungeon data and
+special-level construction beneath the live initialization boundary; it does
+not own a replay alternative.

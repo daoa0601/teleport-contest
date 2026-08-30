@@ -98643,3 +98643,77 @@ ran.  This coherent Priest slice is ready for batched local commits; startup,
 role inventory, object initialization, and room fill remain next.
 
 ---
+
+### [2026-08-30 05:41 EEST, journal block 3204] {#bridge-free #startup #role-inventory #object-initialization #mineralize #replay-removal #fresh-seed #change-detector #architecture #focused-regression #process-safety}
+
+**Contract, inventory, and prediction:** after the Priest slice, the next
+ordered boundary was startup.  Success required every selectable role to enter
+the same live object, role/pantheon, dungeon, artifact, hero, pet, inventory,
+attribute, discovery, and skill owners in normal and bridge-free modes.  A
+wrapper which happened to call live code, an unreachable fallback retained for
+an imaginary role, or an uncalled aggregate transcript were not accepted as
+coverage.  Static inventory found that all 13 roles already satisfied the
+`realRoleStartup` predicate, while `fastforward_post_mklev()` and the fixed
+Tourist fallback were reachable only from its impossible `else`.
+`fastforward_fill_mineralize()` had no production caller.
+
+**Independent red evidence and earliest divergence:** a fresh all-role
+metamorphic witness runs each of the 13 selectable roles on a distinct
+non-public seed.  It compares observable role, race, alignment, gods, position,
+level, attributes, movement, inventory including contained objects, pet,
+discoveries, and turn state between normal and bridge-free modes.  All13
+worlds already matched, falsifying the idea that normal startup needed a
+different implementation, but every normal run recorded
+`fastforward.pre-mklev`; the test was red with all 13 role names.  The witness
+does not inspect a public session, copy a complete RNG transcript, mock a
+collaborator, or assert helper order.
+
+**Source decision and implementation:** pinned `allmain.c:newgame()` enters
+`init_objects`, `role_init`, Lua-backed `init_dungeons`, `init_artifacts`,
+`u_init_misc`, level construction, `makedog`, `u_init_role`, `u_init_race`,
+`ini_inv`, carry adjustment, and final discoveries/equipment/skills as one
+sequence.  It has no mode or fallback role owner.  Normal and bridge-free now
+call `initializeSourceStartup()` directly, artifact initialization occurs once,
+and every selected role unconditionally enters live pet/inventory and final
+discovery construction.  Deleted the exhaustive role predicate, unreachable
+124-call post-level transcript, fixed Tourist graph, pre-level wrapper, and
+uncalled 1,448-call fill/mineralize transcript.  `fastforward.js` retains only
+the two mapped role-turn debts.
+
+**Measured effect, falsified hypotheses, and next blocker:** the all-role
+witness now passes **1/1** and the combined startup/artifact/race/reroll/
+roleplay/sensory set passes **34/34**.  Together with bridge-policy controls the
+new witness passes **5/5**; the bridge audit passes **125 production files, 11
+guarded replay modules, and 19 fixture modules**.  A bridge label around live
+code was not harmless acceptance because it preserved a false second owner;
+the exhaustive role predicate did not document partial coverage because it
+covered the entire selectable set; and uncalled aggregate traces were liability,
+not tests or implementations.  Alternate legal race/gender/alignment, dungeon
+option, and pet strata plus a sealed gate remain open.  Seeded room-fill and
+remaining role-turn compatibility paths are the next mapped debts.  No full
+behavioral suite, corpus, scorer, public-regression lane, sealed trace, push,
+publication, hidden measurement, or animation work ran for this slice yet.
+
+---
+
+### [2026-08-30 05:43 EEST, journal block 3205] {#startup #behavioral-gate #bridge-audit #test-lanes #ownership #process-safety}
+
+**Post-implementation gate:** one guarded default behavioral run passed all
+**370/370** named tests across **41** files and exited normally.  The focused
+startup/source-owner set remains **34/34**, and the all-role plus bridge-policy
+set remains **5/5**.  The bridge audit passes **125 production files, 11
+guarded role-turn replay modules, and 19 fixture modules**; the behavioral-lane
+audit passes all 41 default files with no recorded-session, public-parity,
+mock/spy, or named call-transcript dependency.  Ownership generation/checking,
+registry JSON, changed JavaScript syntax, and diff hygiene pass.
+
+**Process and evidence limit:** the full behavioral verifier was singular,
+owned to normal exit, and the post-run process guard is empty.  Removing startup
+replays did not authorize a public score recovery exercise.  No full engine-
+only corpus, scorer, public-regression lane, sealed corpus or trace inspection,
+push, publication, official hidden measurement, or animation work ran.
+`public-session-status.md` remains unchanged.  This startup slice is ready for
+the requested batched local commits; seeded room-fill and remaining role-turn
+compatibility paths remain next.
+
+---

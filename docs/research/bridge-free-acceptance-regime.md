@@ -53,10 +53,12 @@ This is not a generalization result.  No sealed corpus exists yet, actor-rich
 compatibility paths intentionally fail loudly, and no official measurement was
 run for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
 and Priest alternate schedulers in favor of their existing live source-ration,
-command, prayer, and projectile paths.  The next ordered replacement is
-startup, role-inventory, object-initialization, and room-fill replay.  Those
-later slices have focused fresh witnesses and selected public regressions, but
-still no sealed gate or hidden measurement.
+command, prayer, and projectile paths.  Pre-mklev and all-role inventory startup
+now also have one live owner; their pre/post replay exports, exhaustive-role
+fallback, and unused mineralize transcript are deleted.  The next ordered
+replacement is the remaining seeded room-fill and role-turn compatibility
+paths.  Those later slices have focused fresh witnesses and selected public
+regressions, but still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 
