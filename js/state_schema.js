@@ -7,15 +7,15 @@ const persistentNames = `
     Luck _activeSpecialLevel _armorClassDirty _artifactDiscoveries _artifactExistByBase _artifactExistCount _artifactExists
     _artifactRuntime _blindFromMonsterForm _bonesEncountered _bonesSaved _bubbleTraversalUp _canMakeBones _characterPickerUsed
     _commandCount _deathKiller _deathShopSettlement _deepestLevel _encounteredObjectTypes _encumbranceLevel _farMonsterNoise
-    _fobjSerial _genocidedMonsters _goldCount _hasStaticThemeroom _helplessAfter _helplessDoneMessage _helplessReason
+    _fobjSerial _genocidedMonsters _goldCount _helplessAfter _helplessDoneMessage _helplessReason
     _helplessRunmodeDelayPending _helplessTurns _heroActionSeq _heroTrack _initialGoldCount _initialPwBonus _kickedLoc
     _knownObjectTypes _lastBoulderPushMove _lastDemigodAggravation _lastDemigodNasty _lastInvNr _lastPushedBoulder _lastRandomMonsterGeneration
-    _last_message _levelAnnotations _levelCache _lifeSavedCount _luathemes_loaded _maintenanceMove _monsterMovementInitialized
+    _last_message _levelAnnotations _levelCache _lifeSavedCount _maintenanceMove _monsterMovementInitialized
     _monsterNoiseTime _moveloopStarted _nextAttribCheck _nextIdent _nextObjectTimerId _nextObjectTimerOrder _objectCallNames
     _objectDiscoveryOrder _objectPriceQuotes _optionsInitialized _overviewRecords _prayerAlignment _prayerCompletionMessage _prayerDeity
     _prayerForced _prayerLastTickMove _prayerOpeningMessage _prayerTurnsRemaining _preserveLeadingStyledBlanks _prevDecorType _priestPantheonIndex
     _questExpulsionPending _restoredBones _rndmonstAlignment _rndmonstAlignmentMove _runtimeVersionInfoInitialized _shopRooms _specialLevelPrototype
-    _specialRooms _startingEffectsApplied _startingPwMinimum _stethoscopeSeq _templeRooms _themeroomPostprocess _tipSwimShown
+    _specialRooms _startingEffectsApplied _startingPwMinimum _stethoscopeSeq _templeRooms _tipSwimShown
     _travelTipShown _tributeBookstock _tutorialActive _tutorialDeclined _tutorialState _unresolvedDemigodIntervention _unweapon
     _useInitialMaintenance _vanquishedCounts _vaultGuard _vaultHiddenGold _wailmsg advance aggravateMonster
     aggravate_monster air_level antimagic astral_level blind branches castleTune

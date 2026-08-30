@@ -114,10 +114,26 @@ export class LuaLifecycle {
         }
     }
 
-    themedState(gameState, dungeonNumber) {
-        if (!this.themed.has(dungeonNumber))
-            this.themed.set(dungeonNumber, this.createState(gameState));
-        return this.themed.get(dungeonNumber);
+    getThemedState(gameState, dungeonNumber) {
+        const entry = this.themed.get(dungeonNumber);
+        return entry?.gameState === gameState ? entry.state : null;
+    }
+
+    createThemedState(
+        gameState, dungeonNumber, filename, bindings = {}, beforeExecute = null,
+    ) {
+        this.themed.get(dungeonNumber)?.state?.destroy();
+        const state = this.createSpecialState(gameState, bindings);
+        const source = LUA_SOURCES[filename];
+        if (!source) throw new Error(`Lua source is not packaged: ${filename}`);
+        beforeExecute?.(state);
+        state.execute(source, filename);
+        this.themed.set(dungeonNumber, { gameState, state });
+        return state;
+    }
+
+    refreshUser(state, gameState) {
+        state.setGlobal('u', bindingsFor(gameState).u);
     }
 
     syncVariables(gameState) {
@@ -130,7 +146,7 @@ export class LuaLifecycle {
     destroy() {
         this.core?.destroy();
         this.core = null;
-        for (const state of this.themed.values()) state.destroy();
+        for (const entry of this.themed.values()) entry.state.destroy();
         this.themed.clear();
     }
 }

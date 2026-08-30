@@ -375,6 +375,19 @@ export class LuaState {
             match: luaStringMatch,
         });
         this.globals.define('table', {
+            insert: (target, position, value = undefined) => {
+                if (!(target instanceof LuaTable))
+                    throw new TypeError('table.insert expects a Lua table');
+                let index = position;
+                let inserted = value;
+                if (value === undefined) {
+                    index = target.length() + 1;
+                    inserted = position;
+                }
+                for (let current = target.length(); current >= index; current--)
+                    target.set(current + 1, target.get(current));
+                target.set(index, inserted);
+            },
             unpack: table => {
                 if (!(table instanceof LuaTable))
                     throw new TypeError('table.unpack expects a Lua table');

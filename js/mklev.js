@@ -8,10 +8,12 @@
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
-    createDesBindings, mapOrigin, regionCoordinates,
+    createDesBindings, mapOrigin, objectTypeForName, regionCoordinates,
 } from './lua/des.js';
 import { createSelectionApi } from './lua/selection.js';
-import { luaTableToArray, objectToLuaTable } from './lua/runtime.js';
+import {
+    LuaUserdata, luaTableToArray, objectToLuaTable,
+} from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
@@ -137,7 +139,6 @@ import {
     match_maptyps,
     mapCharacterType,
     specialSelectionFillRect,
-    specialSelectionFloodFill,
     specialSelectionMatch,
 } from './selvar.js';
 
@@ -263,13 +264,11 @@ const PM_ACOLYTE = 375;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_WRAITH = 230;
 const PM_DWARF = 44;
-const PM_WOOD_NYMPH = 67;
 const PM_MORDOR_ORC = 74;
 const PM_URUK_HAI = 75;
 const PM_ORC_SHAMAN = 76;
 const PM_ORC_CAPTAIN = 77;
 const PM_GNOME = 165;
-const PM_GNOME_LEADER = 166;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const PM_SOLDIER = 277;
@@ -390,7 +389,6 @@ const MAGIC_PORTAL = 17;
 const WEB = 18;
 const STATUE_TRAP = 19;
 const MAGIC_TRAP = 20;
-const ANTI_MAGIC = 21;
 const POLY_TRAP = 22;
 const VIBRATING_SQUARE = 23;
 const TRAPPED_DOOR = 24;
@@ -3978,43 +3976,55 @@ function buryContainedObject(object, container, x, y, state = game) {
     return true;
 }
 
+function buryFloorObject(object, state = game) {
+    if (!object || object.where !== 'floor' || objectResists(object, 0, 0))
+        return false;
+
+    const x = object.ox;
+    const y = object.oy;
+    const pile = state.level?.objects?.[x]?.[y];
+    const index = pile?.indexOf(object) ?? -1;
+    if (index >= 0) pile.splice(index, 1);
+
+    if (object.lamplit && object.otyp !== POT_OIL) {
+        object.lamplit = false;
+        stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+        state.vision_full_recalc = 1;
+    }
+
+    const underIce = state.level?.at?.(x, y)?.typ === ICE;
+    if ((object.otyp === ROCK && !underIce) || object.otyp === BOULDER) {
+        stopAllObjectTimers(object);
+        object.where = 'gone';
+        object.buried = false;
+        object.ox = object.oy = 0;
+        return null;
+    }
+
+    if (object.otyp !== CORPSE
+        && (underIce
+            ? object.oclass === POTION_CLASS
+            : (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8)
+        && !objectResists(object, 5, 95)) {
+        scheduleObjectTimer(
+            object, OBJECT_TIMER_KIND.ROT_ORGANIC,
+            (underIce ? 0 : 250) + rnd(250) + (state.moves ?? 0), state,
+        );
+    }
+
+    object.where = 'buried';
+    object.buried = true;
+    if (!state.level.buriedObjects) state.level.buriedObjects = [];
+    state.level.buriedObjects.unshift(object);
+    updateCorpseIceTimer(object, x, y, underIce, state);
+    return true;
+}
+
 function buryFloorObjectsAt(x, y, state = game) {
     const buried = [];
     const pile = state.level?.objects?.[x]?.[y];
     for (const object of [...(pile || [])]) {
-        // C bury_an_obj() leaves invocation artifacts and Rider corpses on
-        // the floor.  objectResists(,0,0) owns that non-random special case.
-        if (objectResists(object, 0, 0)) continue;
-        const index = pile.indexOf(object);
-        if (index >= 0) pile.splice(index, 1);
-
-        if (object.lamplit && object.otyp !== POT_OIL) {
-            object.lamplit = false;
-            stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
-            state.vision_full_recalc = 1;
-        }
-        if (object.otyp === ROCK || object.otyp === BOULDER) {
-            stopAllObjectTimers(object);
-            object.where = 'gone';
-            object.buried = false;
-            object.ox = object.oy = 0;
-            continue;
-        }
-        if (object.otyp !== CORPSE
-            && (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8
-            && !objectResists(object, 5, 95)) {
-            scheduleObjectTimer(
-                object, OBJECT_TIMER_KIND.ROT_ORGANIC,
-                (state.moves ?? 0) + 250 + rnd(250), state,
-            );
-        }
-        object.where = 'buried';
-        object.buried = true;
-        object.ox = x;
-        object.oy = y;
-        if (!state.level.buriedObjects) state.level.buriedObjects = [];
-        state.level.buriedObjects.unshift(object);
-        buried.push(object);
+        if (buryFloorObject(object, state) === true) buried.push(object);
     }
     return buried;
 }
@@ -5161,6 +5171,10 @@ function specialRandomLocation(context, acceptable = loc => SPACE_POS(loc.typ),
 function setLevelTerrainType(x, y, typ) {
     const loc = game.level?.at?.(x, y);
     if (!loc) return false;
+    if (loc.typ === SDOOR && typ === AIR) {
+        loc.arboreal_sdoor = 1;
+        return true;
+    }
     loc.typ = typ;
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
@@ -7038,6 +7052,7 @@ function luaRoomType(name = 'ordinary') {
         swamp: SWAMP,
         temple: TEMPLE,
         delphi: DELPHI,
+        themed: THEMEROOM,
         shop: SHOPBASE,
         'armor shop': SHOPBASE + 1,
         'scroll shop': SHOPBASE + 2,
@@ -7055,6 +7070,32 @@ function luaRoomType(name = 'ordinary') {
     if (roomType == null)
         throw new Error(`unsupported Lua room type ${name}`);
     return roomType;
+}
+
+function luaRoomTable(room) {
+    const names = new Map([
+        [OROOM, 'ordinary'], [THEMEROOM, 'themed'], [COURT, 'throne'],
+        [SWAMP, 'swamp'], [VAULT, 'vault'], [BEEHIVE, 'beehive'],
+        [MORGUE, 'morgue'], [BARRACKS, 'barracks'], [ZOO, 'zoo'],
+        [DELPHI, 'delphi'], [TEMPLE, 'temple'], [ANTHOLE, 'anthole'],
+        [COCKNEST, 'cocknest'], [LEPREHALL, 'leprehall'],
+    ]);
+    const shopNames = [
+        'shop', 'armor shop', 'scroll shop', 'potion shop', 'weapon shop',
+        'food shop', 'ring shop', 'wand shop', 'tool shop', 'book shop',
+        'health food shop', 'candle shop',
+    ];
+    const type = room.rtype >= SHOPBASE
+        ? shopNames[room.rtype - SHOPBASE] : names.get(room.rtype);
+    return objectToLuaTable({
+        width: room.hx - room.lx + 1,
+        height: room.hy - room.ly + 1,
+        region: { x1: room.lx, y1: room.ly, x2: room.hx, y2: room.hy },
+        lit: !!room.rlit,
+        irregular: !!room.irregular,
+        needjoining: !!room.needjoining,
+        type: type ?? 'ordinary',
+    });
 }
 
 function createLuaRoomRegion(context, options) {
@@ -7320,7 +7361,11 @@ async function createLuaObject(
         if (object.otyp !== SADDLE
             || !putSaddleOnMonster(object, parentMonster))
             addObjectToMonsterInventory(parentMonster, object, game);
+    } else {
+        if (options.lit) beginOilLampBurn(object);
+        if (options.buried && buryFloorObject(object) === null) object = null;
     }
+    if (!object) return null;
     if (options.contents && typeof options.contents === 'object')
         await invokeContents(options.contents, object);
     return object;
@@ -7452,12 +7497,24 @@ async function createLuaTrap(context, options) {
         victim: options.victim !== false,
         spiderOnWeb: options.spider_on_web !== false,
     };
-    if (trapType == null) return specialTrap(context, construction);
-    return point
-        ? specialTrapAt(
+    let trap;
+    if (trapType == null) {
+        trap = await specialTrap(context, construction);
+    } else if (point) {
+        trap = await specialTrapAt(
             context, trapType, point.x, point.y, construction,
-        )
-        : specialTrapOfType(context, trapType, construction);
+        );
+    } else {
+        trap = await specialTrapOfType(context, trapType, construction);
+    }
+    const teleportDestination = luaCoordinate({ coord: options.teledest });
+    if (trap && teleportDestination) {
+        trap.teledest = {
+            x: context.xstart + teleportDestination.x,
+            y: context.ystart + teleportDestination.y,
+        };
+    }
+    return trap;
 }
 
 function createLuaExclusion(context, options) {
@@ -7577,6 +7634,40 @@ async function ensureWaysOut() {
     }
 }
 
+function luaObjectValue(object) {
+    if (!object) return null;
+    const rawObject = value => value instanceof LuaUserdata
+        ? value.value : value;
+    return new LuaUserdata(object, {
+        __index: {
+            addcontent: (self, value) => addSpecialContainerObject(
+                rawObject(self), rawObject(value),
+            ),
+            class: self => objectToLuaTable({
+                material: OBJECT_MATERIAL[rawObject(self).otyp] === 19
+                    ? 'glass' : 'other',
+            }),
+            start_timer: (self, kind, timeout) => scheduleObjectTimer(
+                rawObject(self), String(kind),
+                (game.moves ?? 0) + Number(timeout), game,
+            ),
+            stop_timer: (self, kind) => stopObjectTimer(
+                rawObject(self), String(kind),
+            ),
+            totable: self => objectToLuaTable({
+                ox: rawObject(self).ox,
+                oy: rawObject(self).oy,
+            }),
+        },
+    });
+}
+
+function newLuaObject(name) {
+    const type = objectTypeForName(String(name));
+    rn2((OBJECT_PROB[type] || 0) + 1);
+    return luaObjectValue(mksobj(type, true, false));
+}
+
 function createLuaLevelSession() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
@@ -7588,10 +7679,11 @@ function createLuaLevelSession() {
     const monsterInventories = [];
     const mappedContexts = [];
     let mappedCells = new SpecialSelection();
+    let roomFailed = false;
     const invokeObjectContents = async (callback, object) => {
         containers.push(object);
         try {
-            await luaState.callValueAsync(callback, []);
+            await luaState.callValueAsync(callback, [luaObjectValue(object)]);
         } finally {
             containers.pop();
         }
@@ -7619,16 +7711,31 @@ function createLuaLevelSession() {
                 typeof value === 'string' ? value : value.map,
             );
             const width = Math.max(...rows.map(row => row.length));
-            const origin = typeof value === 'string'
-                ? centeredSpecialMap(width, rows.length)
-                : mapOrigin(
-                    value, width, rows.length, active.levelInitialized,
+            const unplacedThemedMap = active.prototype === 'themerms'
+                && typeof value !== 'string'
+                && value.x == null && value.y == null
+                && value.coord == null
+                && value.halign == null && value.valign == null;
+            let mapContext;
+            if (unplacedThemedMap) {
+                mapContext = placeThemedMap(rows);
+                if (!mapContext) {
+                    roomFailed = true;
+                    return new SpecialSelection();
+                }
+            } else {
+                const origin = typeof value === 'string'
+                    ? centeredSpecialMap(width, rows.length)
+                    : mapOrigin(
+                        value, width, rows.length, active.levelInitialized,
+                    );
+                mapContext = loadSpecialAsciiMap(
+                    rows,
+                    typeof value === 'string'
+                        ? active.defaultLit : !!value.lit,
+                    origin,
                 );
-            const mapContext = loadSpecialAsciiMap(
-                rows,
-                typeof value === 'string' ? active.defaultLit : !!value.lit,
-                origin,
-            );
+            }
             mappedContexts.push(mapContext);
             const mapSelection = specialMapSelection(mapContext, rows);
             mappedCells = mappedCells.union(mapSelection);
@@ -7672,17 +7779,14 @@ function createLuaLevelSession() {
             });
         },
         roomRegion: async options => {
+            if (roomFailed) return null;
             const room = createLuaRoomRegion(context, options);
             if (!room || !options.contents) return room;
             const parent = context;
             context = specialRoomContext(room);
             try {
                 await luaState.callValueAsync(options.contents, [
-                    objectToLuaTable({
-                        x: room.lx, y: room.ly,
-                        width: room.hx - room.lx + 1,
-                        height: room.hy - room.ly + 1,
-                    }),
+                    luaRoomTable(room),
                 ]);
             } finally {
                 context = parent;
@@ -7691,6 +7795,7 @@ function createLuaLevelSession() {
             return room;
         },
         room: async options => {
+            if (roomFailed) return null;
             const parent = context;
             const room = await buildSpecialRoom(
                 luaRoomSpec(options), context._room ?? null,
@@ -7698,17 +7803,14 @@ function createLuaLevelSession() {
                     context = specialRoomContext(builtRoom);
                     try {
                         await luaState.callValueAsync(options.contents, [
-                            objectToLuaTable({
-                                x: builtRoom.lx, y: builtRoom.ly,
-                                width: builtRoom.hx - builtRoom.lx + 1,
-                                height: builtRoom.hy - builtRoom.ly + 1,
-                            }),
+                            luaRoomTable(builtRoom),
                         ]);
                     } finally {
                         context = parent;
                     }
                 } : null,
             );
+            if (!room && active.prototype === 'themerms') roomFailed = true;
             context = parent;
             return room;
         },
@@ -7793,6 +7895,9 @@ function createLuaLevelSession() {
             else throw new Error(`unsupported Lua level region ${options.type}`);
         },
         exclusion: options => createLuaExclusion(context, options),
+        gasCloud: options => createHarmlessGasCloudSelection(
+            game, luaSelectionCoordinates(options.selection), { ttl: -1 },
+        ),
         randomCorridors: () => makecorridors(),
         mazeWalk: async options => {
             const directions = ['north', 'south', 'east', 'west'];
@@ -7805,13 +7910,13 @@ function createLuaLevelSession() {
             if (options.stocked)
                 await fillEmptySpecialMaze(context, mappedContexts);
         },
-        object: options => createLuaObject(
+        object: async options => luaObjectValue(await createLuaObject(
             context,
             options,
             containers.at(-1) ?? null,
             monsterInventories.at(-1) ?? null,
             invokeObjectContents,
-        ),
+        )),
         trap: options => createLuaTrap(context, options),
         monster: async options => {
             const monster = await createLuaMonster(context, options);
@@ -7837,6 +7942,10 @@ function createLuaLevelSession() {
     );
     const bindings = {
         nh: {
+            debug_themerm: () => null,
+            impossible: message => {
+                throw new Error(String(message));
+            },
             is_genocided: name => {
                 const target = String(name).toLowerCase();
                 const mndx = MONSTER_NAME.findIndex(candidate =>
@@ -7844,8 +7953,21 @@ function createLuaLevelSession() {
                 return mndx >= 0
                     && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
             },
+            level_difficulty: () => level_difficulty(),
+            start_timer_at: (x, y, kind, timeout) => {
+                const timerKind = String(kind) === 'melt-ice'
+                    ? LEVEL_TIMER_KIND.MELT_ICE_AWAY : String(kind);
+                return scheduleLevelTimer(
+                    context.xstart + Number(x),
+                    context.ystart + Number(y),
+                    timerKind,
+                    (game.moves ?? 0) + Number(timeout),
+                    game,
+                );
+            },
         },
         des: createDesBindings(operations, selectionApi.wrap),
+        obj: { new: name => newLuaObject(name) },
         selection: selectionApi.bindings,
     };
     return {
@@ -7857,6 +7979,7 @@ function createLuaLevelSession() {
             monsterInventories.length = 0;
             mappedContexts.length = 0;
             mappedCells = new SpecialSelection();
+            roomFailed = false;
             active.allowFlips = 3;
             if (!special) return;
             game.level.flags.is_special = true;
@@ -7867,6 +7990,13 @@ function createLuaLevelSession() {
         bindState(state) {
             luaState = state;
             active.align = luaTableToArray(state.getGlobal('align'));
+        },
+        beginRoom() {
+            roomFailed = false;
+            context = wholeLevel;
+        },
+        roomFailed() {
+            return roomFailed;
         },
         async finishSpecialLevel() {
             if (active.checkInaccessibles) await ensureWaysOut();
@@ -7887,6 +8017,39 @@ async function generateLuaSpecialLevel(active) {
         state => session.bindState(state),
     );
     await session.finishSpecialLevel();
+}
+
+const themedLuaSessions = new WeakMap();
+const activeThemes = new WeakMap();
+
+async function beginLuaThemerooms() {
+    const lifecycle = currentLuaLifecycle();
+    const dungeonNumber = game.u?.uz?.dnum ?? 0;
+    let state = lifecycle.getThemedState(game, dungeonNumber);
+    let session = state ? themedLuaSessions.get(state) : null;
+    const active = { prototype: 'themerms', file: 'themerms.lua' };
+
+    if (!session) {
+        session = createLuaLevelSession();
+        session.beginLevel(active, { special: false });
+        state = lifecycle.createThemedState(
+            game, dungeonNumber, 'themerms.lua', session.bindings,
+            created => session.bindState(created),
+        );
+        themedLuaSessions.set(state, session);
+    } else {
+        lifecycle.refreshUser(state, game);
+        session.beginLevel(active, { special: false });
+    }
+
+    activeThemes.set(game, { state, session });
+    await state.callValueAsync(state.getGlobal('pre_themerooms_generate'), []);
+}
+
+async function callLuaThemerooms(name, args = []) {
+    const state = activeThemes.get(game)?.state;
+    if (!state) throw new Error('themed rooms are not active');
+    return state.callValueAsync(state.getGlobal(name), args);
 }
 
 async function specialRandomMonsterAt(context, x, y, {
@@ -8554,7 +8717,6 @@ async function makelevel() {
     const g = game;
     oinit();
     clear_level_structures();
-    g._themeroomPostprocess = [];
     // dungeon.lua supplies Rogue through the named-level descriptor.  The JS
     // dungeon loader does not yet materialize C's global rogue_level d_level,
     // so bind that canonical identity when the descriptor reaches makelevel.
@@ -8816,19 +8978,7 @@ async function makelevel() {
     }
 
     // Regular level generation
-    // C ref: mklev.c:382-388 — load themerms.lua for themed rooms
-    // nhlib.lua shuffle when loading themerms.lua (first level of branch)
-    const dnum = g.u?.uz?.dnum ?? 0;
-    if (!g._luathemes_loaded) g._luathemes_loaded = {};
-    if (!g._luathemes_loaded[dnum]) {
-        const themedAlign = ['law', 'neutral', 'chaos'];
-        for (let i = themedAlign.length; i > 1; i--) {
-            const j = rn2(i);
-            [themedAlign[i - 1], themedAlign[j]] = [themedAlign[j], themedAlign[i - 1]];
-        }
-        g._luathemes_loaded[dnum] = true;
-    }
-
+    await beginLuaThemerooms();
     await makerooms();
 
     if (g.level.nroom <= 0) return;
@@ -8912,9 +9062,7 @@ async function makelevel() {
     for (const croom of g.level.rooms.slice(0, g.level.nroom))
         await fillSpecialRoom(croom);
 
-    // C ref: themerooms_post_level_generate().  Deferred theme callbacks run
-    // after all room contents and before whole-level wallification.
-    await runThemeroomPostprocess();
+    await callLuaThemerooms('post_level_generate');
     // A loaded theme interpreter always wallifies the complete level, not
     // only rooms created from des.map().  Dynamic terrain callbacks such as
     // "Pillars" rely on this pass for their internal wall spines.
@@ -9858,7 +10006,6 @@ async function makerogueghost() {
 async function makerooms() {
     const g = game;
     let tried_vault = false;
-    const difficulty = depth_of_level(g.u?.uz);
     let themeroom_tries = 0;
 
     while (g.level.nroom < (MAXNROFROOMS - 1) && rnd_rect()) {
@@ -9870,9 +10017,8 @@ async function makerooms() {
                 if (g.level.rooms[g.level.nroom]) g.level.rooms[g.level.nroom].hx = -1;
             }
         } else {
-            // Themed room selection (reservoir sampling)
             g.in_mk_themerooms = true;
-            const generated = await themerooms_generate(difficulty);
+            const generated = await themerooms_generate();
             g.in_mk_themerooms = false;
             if (!generated) {
                 if (themeroom_tries++ > 10
@@ -9882,318 +10028,8 @@ async function makerooms() {
         }
     }
     g.in_mk_themerooms = false;
+    await callLuaThemerooms('post_themerooms_generate');
 }
-
-// Themed room metadata — must match C's themerms.lua frequency table exactly.
-// Generated from themeroom_meta.js (31 rooms).
-export const THEMEROOM_META = [
-    { name: 'default', frequency: 1000 },
-    { name: 'Fake Delphi', frequency: 1 },
-    { name: 'Room in a room', frequency: 1 },
-    { name: 'Huge room with another room inside', frequency: 1 },
-    { name: 'Nesting rooms', frequency: 1 },
-    { name: 'Default room with themed fill', frequency: 6 },
-    { name: 'Unlit room with themed fill', frequency: 2 },
-    { name: 'Room with both normal contents and themed fill', frequency: 2 },
-    { name: 'Pillars', frequency: 1 },
-    { name: 'Mausoleum', frequency: 1 },
-    {
-        name: 'Random dungeon feature in the middle of an odd-sized room',
-        frequency: 1,
-    },
-    { name: 'L-shaped', frequency: 1 },
-    { name: 'L-shaped, rot 1', frequency: 1 },
-    { name: 'L-shaped, rot 2', frequency: 1 },
-    { name: 'L-shaped, rot 3', frequency: 1 },
-    { name: 'Blocked center', frequency: 1 },
-    { name: 'Circular, small', frequency: 1 },
-    { name: 'Circular, medium', frequency: 1 },
-    { name: 'Circular, big', frequency: 1 },
-    { name: 'T-shaped', frequency: 1 },
-    { name: 'T-shaped, rot 1', frequency: 1 },
-    { name: 'T-shaped, rot 2', frequency: 1 },
-    { name: 'T-shaped, rot 3', frequency: 1 },
-    { name: 'S-shaped', frequency: 1 },
-    { name: 'S-shaped, rot 1', frequency: 1 },
-    { name: 'Z-shaped', frequency: 1 },
-    { name: 'Z-shaped, rot 1', frequency: 1 },
-    { name: 'Cross', frequency: 1 },
-    { name: 'Four-leaf clover', frequency: 1 },
-    { name: 'Water-surrounded vault', frequency: 1 },
-    { name: 'Twin businesses', frequency: 1, mindiff: 4 },
-];
-
-// C ref: themerms.lua "Four-leaf clover".  Static themed maps use 'x' as
-// see-through terrain: those cells neither participate in collision checks
-// nor overwrite the level beneath them.
-const FOUR_LEAF_CLOVER_MAP = [
-    '-----x-----',
-    '|...|x|...|',
-    '|...---...|',
-    '|.........|',
-    '---.....---',
-    'xx|.....|xx',
-    '---.....---',
-    '|.........|',
-    '|...---...|',
-    '|...|x|...|',
-    '-----x-----',
-];
-
-const WATER_SURROUNDED_VAULT_MAP = [
-    '}}}}}}',
-    '}----}',
-    '}|..|}',
-    '}|..|}',
-    '}----}',
-    '}}}}}}',
-];
-
-const L_SHAPED_MAP = [
-    '-----xxx',
-    '|...|xxx',
-    '|...|xxx',
-    '|...----',
-    '|......|',
-    '|......|',
-    '|......|',
-    '--------',
-];
-
-const BLOCKED_CENTER_MAP = [
-    '-----------',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '|...LLL...|',
-    '|...LLL...|',
-    '|...LLL...|',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '-----------',
-];
-
-const L_SHAPED_ROT_1_MAP = [
-    'xxx-----',
-    'xxx|...|',
-    'xxx|...|',
-    '----...|',
-    '|......|',
-    '|......|',
-    '|......|',
-    '--------',
-];
-
-const L_SHAPED_ROT_2_MAP = [
-    '--------',
-    '|......|',
-    '|......|',
-    '|......|',
-    '----...|',
-    'xxx|...|',
-    'xxx|...|',
-    'xxx-----',
-];
-
-const L_SHAPED_ROT_3_MAP = [
-    '--------',
-    '|......|',
-    '|......|',
-    '|......|',
-    '|...----',
-    '|...|xxx',
-    '|...|xxx',
-    '-----xxx',
-];
-
-const CIRCULAR_SMALL_MAP = [
-    'xx---xx',
-    'x--.--x',
-    '--...--',
-    '|.....|',
-    '--...--',
-    'x--.--x',
-    'xx---xx',
-];
-
-const CIRCULAR_MEDIUM_MAP = [
-    'xx-----xx',
-    'x--...--x',
-    '--.....--',
-    '|.......|',
-    '|.......|',
-    '|.......|',
-    '--.....--',
-    'x--...--x',
-    'xx-----xx',
-];
-
-const CIRCULAR_BIG_MAP = [
-    'xxx-----xxx',
-    'x---...---x',
-    'x-.......-x',
-    '--.......--',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '--.......--',
-    'x-.......-x',
-    'x---...---x',
-    'xxx-----xxx',
-];
-
-const T_SHAPED_MAP = [
-    'xxx-----xxx',
-    'xxx|...|xxx',
-    'xxx|...|xxx',
-    '----...----',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '-----------',
-];
-
-const T_SHAPED_ROT_1_MAP = [
-    '-----xxx',
-    '|...|xxx',
-    '|...|xxx',
-    '|...----',
-    '|......|',
-    '|......|',
-    '|......|',
-    '|...----',
-    '|...|xxx',
-    '|...|xxx',
-    '-----xxx',
-];
-
-const T_SHAPED_ROT_2_MAP = [
-    '-----------',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '----...----',
-    'xxx|...|xxx',
-    'xxx|...|xxx',
-    'xxx-----xxx',
-];
-
-const T_SHAPED_ROT_3_MAP = [
-    'xxx-----',
-    'xxx|...|',
-    'xxx|...|',
-    '----...|',
-    '|......|',
-    '|......|',
-    '|......|',
-    '----...|',
-    'xxx|...|',
-    'xxx|...|',
-    'xxx-----',
-];
-
-const S_SHAPED_ROT_1_MAP = [
-    'xxx--------',
-    'xxx|......|',
-    'xxx|......|',
-    '----......|',
-    '|......----',
-    '|......|xxx',
-    '|......|xxx',
-    '--------xxx',
-];
-
-const Z_SHAPED_ROT_1_MAP = [
-    '--------xxx',
-    '|......|xxx',
-    '|......|xxx',
-    '|......----',
-    '----......|',
-    'xxx|......|',
-    'xxx|......|',
-    'xxx--------',
-];
-
-const CROSS_MAP = [
-    'xxx-----xxx',
-    'xxx|...|xxx',
-    'xxx|...|xxx',
-    '----...----',
-    '|.........|',
-    '|.........|',
-    '|.........|',
-    '----...----',
-    'xxx|...|xxx',
-    'xxx|...|xxx',
-    'xxx-----xxx',
-];
-
-const S_SHAPED_MAP = [
-    '-----xxx',
-    '|...|xxx',
-    '|...|xxx',
-    '|...----',
-    '|......|',
-    '|......|',
-    '|......|',
-    '----...|',
-    'xxx|...|',
-    'xxx|...|',
-    'xxx-----',
-];
-
-const Z_SHAPED_MAP = [
-    'xxx-----',
-    'xxx|...|',
-    'xxx|...|',
-    '----...|',
-    '|......|',
-    '|......|',
-    '|......|',
-    '|...----',
-    '|...|xxx',
-    '|...|xxx',
-    '-----xxx',
-];
-
-const STATIC_THEMED_ROOMS = new Map([
-    ['L-shaped', [L_SHAPED_MAP, 1, 1]],
-    ['L-shaped, rot 1', [L_SHAPED_ROT_1_MAP, 5, 1]],
-    ['L-shaped, rot 2', [L_SHAPED_ROT_2_MAP, 1, 1]],
-    ['L-shaped, rot 3', [L_SHAPED_ROT_3_MAP, 1, 1]],
-    ['Circular, small', [CIRCULAR_SMALL_MAP, 3, 3]],
-    ['Circular, medium', [CIRCULAR_MEDIUM_MAP, 4, 4]],
-    ['Circular, big', [CIRCULAR_BIG_MAP, 5, 5]],
-    ['T-shaped', [T_SHAPED_MAP, 5, 5]],
-    ['T-shaped, rot 1', [T_SHAPED_ROT_1_MAP, 2, 2]],
-    ['T-shaped, rot 2', [T_SHAPED_ROT_2_MAP, 2, 2]],
-    ['T-shaped, rot 3', [T_SHAPED_ROT_3_MAP, 5, 5]],
-    ['S-shaped', [S_SHAPED_MAP, 2, 2]],
-    ['S-shaped, rot 1', [S_SHAPED_ROT_1_MAP, 5, 5]],
-    ['Z-shaped', [Z_SHAPED_MAP, 5, 5]],
-    ['Z-shaped, rot 1', [Z_SHAPED_ROT_1_MAP, 2, 2]],
-    ['Cross', [CROSS_MAP, 6, 6]],
-    ['Four-leaf clover', [FOUR_LEAF_CLOVER_MAP, 6, 6]],
-]);
-
-const THEMEROOM_FILL_META = [
-    { name: 'Ice room' },
-    { name: 'Cloud room' },
-    { name: 'Boulder room', mindiff: 4 },
-    { name: 'Spider nest' },
-    { name: 'Trap room' },
-    { name: 'Garden', eligible: room => !!room.rlit },
-    { name: 'Buried treasure' },
-    { name: 'Buried zombies' },
-    { name: 'Massacre' },
-    { name: 'Statuary' },
-    { name: 'Light source', eligible: room => !room.rlit },
-    { name: 'Temple of the gods' },
-    { name: 'Ghost of an Adventurer' },
-    { name: 'Storeroom' },
-    { name: 'Teleportation hub' },
-];
 
 function themedMapTerrain(ch) {
     if (ch === '.') return ROOM;
@@ -10258,1000 +10094,21 @@ function placeThemedMap(rows) {
     return { xstart, ystart, width, height };
 }
 
-// C ref: mkmap.c flood_fill_rm(..., anyroom=TRUE) plus lspo_region().
-function createIrregularThemedRegion(x, y, rtype, lit, needfill = FILL_NORMAL) {
-    const roomIndex = game.level.nroom;
-    const roomno = roomIndex + ROOMOFFSET;
-    const terrain = game.level.at(x, y)?.typ;
-    if (terrain !== ROOM) return null;
-
-    const pending = [[x, y]];
-    const seen = new Set();
-    let minx = x, maxx = x, miny = y, maxy = y;
-    game.smeq[roomIndex] = roomIndex;
-    while (pending.length) {
-        const [cx, cy] = pending.pop();
-        const key = `${cx},${cy}`;
-        if (seen.has(key)) continue;
-        const loc = game.level.at(cx, cy);
-        if (!loc || loc.typ !== terrain || loc.roomno === roomno) continue;
-        seen.add(key);
-        loc.roomno = roomno;
-        loc.lit = !!lit;
-        minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
-        miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
-
-        for (let ax = cx - 1; ax <= cx + 1; ax++) {
-            for (let ay = cy - 1; ay <= cy + 1; ay++) {
-                const adjacent = game.level.at(ax, ay);
-                if (!adjacent || !(IS_WALL(adjacent.typ)
-                    || IS_DOOR(adjacent.typ) || adjacent.typ === SDOOR)) continue;
-                adjacent.edge = true;
-                if (lit) adjacent.lit = true;
-                adjacent.roomno = adjacent.roomno && adjacent.roomno !== roomno
-                    ? SHARED : roomno;
-            }
-        }
-        pending.push([cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]);
-    }
-
-    add_room(minx, miny, maxx, maxy, false, rtype, true);
-    const room = game.level.rooms[roomIndex];
-    room.rlit = lit ? 1 : 0;
-    room.irregular = true;
-    room.needjoining = true;
-    room.needfill = needfill;
-    return room;
-}
-
-function randomIrregularRoomPosition(room) {
-    const roomno = (room.roomnoidx ?? game.level.rooms.indexOf(room)) + ROOMOFFSET;
-    for (let tries = 0; tries < 100; tries++) {
-        const x = somex(room), y = somey(room);
-        const loc = game.level.at(x, y);
-        if (loc && !loc.edge && loc.roomno === roomno) return { x, y };
-    }
-    for (let x = room.lx; x <= room.hx; x++)
-        for (let y = room.ly; y <= room.hy; y++) {
-            const loc = game.level.at(x, y);
-            if (loc && !loc.edge && loc.roomno === roomno) return { x, y };
-        }
-    return null;
-}
-
-// Lua selection.room() returns the current room's interior as a selection.
-// Use room ownership rather than the bounding rectangle so irregular themed
-// maps do not admit holes or boundary tiles into source-owned callbacks.
-function themeroomSelection(room) {
-    const selection = new SpecialSelection();
-    const roomno = (room.roomnoidx ?? game.level.rooms.indexOf(room))
-        + ROOMOFFSET;
-    for (let x = room.lx; x <= room.hx; x++) {
-        for (let y = room.ly; y <= room.hy; y++) {
-            const loc = game.level.at(x, y);
-            if (loc && !loc.edge && loc.roomno === roomno)
-                selection.add(x, y);
-        }
-    }
-    return selection;
-}
-
 function luaSelectionCoordinates(selection) {
     const coordinates = [];
     selection.forEachLua((x, y) => coordinates.push({ x, y }));
     return coordinates;
 }
 
-function pickThemeroomFill(room, difficulty) {
-    let pick = null;
-    let totalFrequency = 0;
-    for (const meta of THEMEROOM_FILL_META) {
-        if (meta.mindiff != null && difficulty < meta.mindiff) continue;
-        if (meta.maxdiff != null && difficulty > meta.maxdiff) continue;
-        if (meta.eligible && !meta.eligible(room)) continue;
-        totalFrequency++;
-        if (rn2(totalFrequency) < 1) pick = meta;
-    }
-    return pick;
-}
-
-// C/Lua refs: themerms.lua selection-driven hazard fills, selvar.c
-// selection_filter_percent(), and sp_lev.c create_object()/create_trap().
-// percentage() owns its x-major filter draws; selection:iterate() then invokes
-// the retained callbacks in row-major Lua order.
-function fillIceRoom(room, difficulty = level_difficulty()) {
-    const ice = themeroomSelection(room);
-    // des.terrain(selection, "I") routes through sel_set_ter(). The themed
-    // room VM has no des.level_init({ icedpools=true }), so the existing ROOM
-    // flags remain the melt-underlay and ordinary zero flags melt to MOAT.
-    specialSelectionTerrain(ice, ICE);
-    for (const { x, y } of luaSelectionCoordinates(ice)) {
-        const loc = game.level.at(x, y);
-        loc.icedpool = loc.flags ?? 0;
-    }
-    if (rn2(100) < 25) {
-        const minTime = 1000 - difficulty * 100;
-        for (const { x, y } of luaSelectionCoordinates(ice)) {
-            scheduleLevelTimer(
-                x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY,
-                (game.moves ?? 0) + minTime + rn2(1000), game,
-            );
-        }
-    }
-}
-
-async function fillBoulderRoom(room) {
-    const context = specialRoomContext(room);
-    const selected = themeroomSelection(room).percentage(30);
-    for (const coord of luaSelectionCoordinates(selected)) {
-        const x = coord.x - context.xstart;
-        const y = coord.y - context.ystart;
-        if (rn2(100) < 50)
-            specialObjectAt(context, BOULDER, x, y);
-        else
-            await specialTrapAt(context, ROLLING_BOULDER_TRAP, x, y);
-    }
-}
-
-async function fillCloudRoom(room) {
-    const selection = themeroomSelection(room);
-    const cells = luaSelectionCoordinates(selection);
-    const context = specialRoomContext(room);
-    const fogCount = Math.trunc(selection.numPoints() / 4);
-    for (let count = 0; count < fogCount; count++) {
-        const fog = await specialExplicitMonster(context, PM_FOG_CLOUD);
-        if (fog) fog.msleeping = 1;
-    }
-    // des.gas_cloud({ selection = fog }) delegates to
-    // create_gas_cloud_selection(): the selected region is permanent until
-    // its fog-cloud occupants extend it into a finite TTL at runtime.
-    createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
-}
-
-async function fillGarden(room) {
-    const selection = themeroomSelection(room);
-    const context = specialRoomContext(room);
-    const population = Math.trunc(selection.numPoints() / 6);
-    for (let count = 0; count < population; count++) {
-        const nymph = await specialExplicitMonster(context, PM_WOOD_NYMPH);
-        if (nymph) nymph.msleeping = 1;
-        if (rn2(100) < 30) specialFeatureOfType(context, FOUNTAIN);
-    }
-    game._themeroomPostprocess.push({
-        kind: 'garden-walls',
-        cells: luaSelectionCoordinates(themeroomSelection(room)),
-    });
-}
-
-const MASSACRE_CORPSE_TYPES = [
-    // Source names are 12 role guardians followed by the 13 roles; the
-    // gendered priest/priestess and caveman/cavewoman aliases intentionally
-    // resolve to the same corpse species and therefore appear twice.
-    382, 381, 378, 377, 376, 375, 374, 373, 372, 371, 370, 369,
-    343, 342, 341, 340, 339, 338, 337, 337, 336, 335, 334, 333,
-    333, 332, 331,
-];
-
-function fillMassacre(room) {
-    const context = specialRoomContext(room);
-    let corpseType = MASSACRE_CORPSE_TYPES[rn2(MASSACRE_CORPSE_TYPES.length)];
-    const corpseCount = d(5, 5);
-    for (let count = 0; count < corpseCount; count++) {
-        if (rn2(100) < 10)
-            corpseType = MASSACRE_CORPSE_TYPES[
-                rn2(MASSACRE_CORPSE_TYPES.length)
-            ];
-        specialCorpseOf(context, corpseType);
-    }
-}
-
-async function fillStatuary(room) {
-    const context = specialRoomContext(room);
-    const statueCount = d(5, 5);
-    for (let count = 0; count < statueCount; count++)
-        specialObjectOfType(context, STATUE);
-    const trapCount = d(1, 3);
-    for (let count = 0; count < trapCount; count++)
-        await specialTrapOfType(context, STATUE_TRAP);
-}
-
-// C/Lua refs: themerms.lua "Buried treasure", sp_lev.c create_object(),
-// dig.c bury_an_obj(), and zap.c obj_resists().  create_object() buries the
-// initialized chest before Lua enters its contents callback.  Keep that
-// ordering explicit: the burial draws precede d(3,4) and every child object.
-function fillBuriedTreasure(room) {
-    const context = specialRoomContext(room);
-    const chest = specialObjectOfType(context, CHEST);
-    if (!chest) return;
-    const x = chest.ox, y = chest.oy;
-
-    // A Lua `contents` function clears mkbox_cnts() only after the complete
-    // initialized chest constructor (and all of its RNG) has run.
-    chest.contents = [];
-
-    // bury_an_obj(): the first ordinary-object resistance test always draws
-    // and cannot save a non-artifact chest.  A wooden chest then gets a
-    // second 5% resistance test before its ROT_ORGANIC timer is scheduled.
-    rn2(100);
-    if (rn2(100) >= 5) {
-        scheduleObjectTimer(
-            chest, OBJECT_TIMER_KIND.ROT_ORGANIC,
-            (game.moves ?? 0) + 250 + rnd(250), game,
-        );
-    }
-    addBuriedObject(chest, x, y);
-
-    // otmp:totable() observes the retained burial coordinates.  Queueing the
-    // callback itself is RNG-free and occurs before the child-count dice.
-    game._themeroomPostprocess.push({
-        kind: 'buried-treasure-engraving',
-        x,
-        y,
-    });
-
-    const contentCount = d(3, 4);
-    for (let count = 0; count < contentCount; count++) {
-        // Nested des.object() still samples a dry room coordinate and builds
-        // a floor object before create_object() moves it into the container.
-        const object = specialObject(context);
-        addSpecialContainerObject(chest, object);
-        chest.owt = objectWeight(chest);
-    }
-}
-
-// C/Lua refs: themerms.lua "Light source" and timeout.c begin_burn().
-// The initialized oil lamp keeps its constructor-selected fuel, then lit=true
-// schedules the first source breakpoint and registers mobile illumination.
-function fillLightSource(room) {
-    const lamp = specialObjectOfType(specialRoomContext(room), OIL_LAMP);
-    if (lamp) beginOilLampBurn(lamp);
-}
-
-async function fillSpiderNest(room, difficulty) {
-    const context = specialRoomContext(room);
-    const selected = themeroomSelection(room).percentage(30);
-    const spidersEligible = difficulty > 8;
-    for (const coord of luaSelectionCoordinates(selected)) {
-        const spiderOnWeb = spidersEligible && rn2(100) < 80;
-        await specialTrapAt(
-            context, WEB,
-            coord.x - context.xstart,
-            coord.y - context.ystart,
-            { spiderOnWeb },
-        );
-    }
-}
-
-async function fillTrapRoom(room) {
-    const traps = [
-        ARROW_TRAP, DART_TRAP, ROCKTRAP, BEAR_TRAP,
-        LANDMINE, SLP_GAS_TRAP, RUST_TRAP, ANTI_MAGIC,
-    ];
-    for (let count = traps.length; count > 1; count--) {
-        const index = rn2(count);
-        [traps[count - 1], traps[index]] = [traps[index], traps[count - 1]];
-    }
-    const context = specialRoomContext(room);
-    const selected = themeroomSelection(room).percentage(30);
-    for (const coord of luaSelectionCoordinates(selected)) {
-        await specialTrapAt(
-            context, traps[0],
-            coord.x - context.xstart,
-            coord.y - context.ystart,
-        );
-    }
-}
-
-// C/Lua refs: themerms.lua "Storeroom", selvar.c
-// selection_filter_percent(), and sp_lev.c create_monster()/create_object().
-// The filtered coordinates only control how many callbacks run: the Lua
-// callback omits x/y for both directives, so each entity chooses a fresh
-// random coordinate in the current room.
-async function fillStoreroom(room) {
-    const selected = [];
-    for (let x = room.lx; x <= room.hx; x++) {
-        for (let y = room.ly; y <= room.hy; y++) {
-            if (rn2(100) < 30) selected.push({ x, y });
-        }
-    }
-
-    const context = {
-        xstart: room.lx,
-        ystart: room.ly,
-        width: room.hx - room.lx + 1,
-        height: room.hy - room.ly + 1,
-        _room: room,
-    };
-    for (const _selectedPoint of selected) {
-        if (rn2(100) < 25) {
-            const point = specialRandomLocation(context);
-            if (point)
-                mksobj_at(CHEST, point.x, point.y, true, false);
-        } else {
-            const monster = await specialMonsterOfClass(context, S_MIMIC);
-            if (monster) {
-                monster.m_ap_type = M_AP_OBJECT;
-                monster.mappearance = CHEST;
-            }
-        }
-    }
-}
-
-// C/Lua ref: themerms.lua "Teleportation hub".  Source points are selected
-// during the fill callback, but destinations and traps are deferred until
-// every room has been filled.
-function fillTeleportationHub(room) {
-    const locations = new SpecialSelection();
-    for (let x = room.lx; x <= room.hx; x++) {
-        for (let y = room.ly; y <= room.hy; y++) {
-            if (game.level.at(x, y)?.typ === ROOM) locations.add(x, y);
-        }
-    }
-    const count = 2 + rn2(3);
-    for (let index = 0; index < count; index++) {
-        const coord = locations.randomCoordinate(true);
-        if (!coord) continue;
-        game._themeroomPostprocess.push({
-            kind: 'teleportation-hub-trap',
-            coord,
-        });
-    }
-}
-
-export async function runThemeroomPostprocess() {
-    const callbacks = game._themeroomPostprocess || [];
-    for (const callback of callbacks) {
-        if (callback.kind === 'garden-walls') {
-            const selection = new SpecialSelection();
-            for (const cell of callback.cells || [])
-                selection.add(cell.x, cell.y);
-            const grown = selection.grow();
-            grown.forEachXMajor((x, y) => {
-                const loc = game.level.at(x, y);
-                if (!loc) return;
-                if (IS_STWALL(loc.typ)) loc.typ = TREE;
-                else if (loc.typ === SDOOR) loc.arboreal_sdoor = 1;
-            });
-            continue;
-        }
-        if (callback.kind === 'buried-treasure-engraving') {
-            const floors = new SpecialSelection();
-            for (let x = 0; x < COLNO; x++) {
-                for (let y = 0; y < ROWNO; y++) {
-                    if (game.level.at(x, y)?.typ === ROOM) floors.add(x, y);
-                }
-            }
-            const pos = floors.randomCoordinate(false);
-            if (!pos) continue;
-            const tx = callback.x - pos.x - 1;
-            const ty = callback.y - pos.y;
-            let direction = '';
-            if (tx === 0 && ty === 0) direction = ' here';
-            else {
-                if (tx)
-                    direction += ` ${Math.abs(tx)} ${tx > 0 ? 'east' : 'west'}`;
-                if (ty)
-                    direction += ` ${Math.abs(ty)} ${ty > 0 ? 'south' : 'north'}`;
-            }
-            makeEngravingAt(
-                pos.x, pos.y, `Dig${direction}`, null, 0, BURN,
-            );
-            continue;
-        }
-        if (callback.kind !== 'teleportation-hub-trap') continue;
-        const locations = new SpecialSelection();
-        for (let x = 0; x < COLNO; x++) {
-            for (let y = 0; y < ROWNO; y++) {
-                if (game.level.at(x, y)?.typ === ROOM) locations.add(x, y);
-            }
-        }
-        let destination = null;
-        while (locations.numPoints()) {
-            const candidate = locations.randomCoordinate(true);
-            if (candidate.x !== callback.coord.x
-                && candidate.y !== callback.coord.y) {
-                destination = candidate;
-                break;
-            }
-        }
-        const trap = await maketrap(
-            callback.coord.x, callback.coord.y, TELEP_TRAP,
-        );
-        if (trap) {
-            // des.trap() routes explicit coordinates through mklev.c:mktrap(),
-            // so the shared in-mklev predecessor gate still runs before the
-            // Lua-provided destination is installed.
-            await finishSpecialTrapConstruction(trap);
-            trap.tseen = true;
-            if (destination) trap.teledest = destination;
-        }
-    }
-    game._themeroomPostprocess = [];
-}
-
-function fillBuriedZombies(room, difficulty = level_difficulty()) {
-    // Monster indices in the NetHack 5.0 mons[] table.  themerms.lua expands
-    // this reservoir at the same two level_difficulty() thresholds before
-    // entering the per-corpse shuffle loop.
-    const zombifiable = [59, 165, 72, 44]; // kobold, gnome, orc, dwarf
-    if (difficulty > 3) zombifiable.push(264, 260); // elf, human
-    if (difficulty > 6) zombifiable.push(174, 169); // ettin, giant
-    const count = Math.floor(((room.hx - room.lx + 1)
-        * (room.hy - room.ly + 1)) / 2);
-    if (!game.level.buriedObjects) game.level.buriedObjects = [];
-    for (let corpseIndex = 0; corpseIndex < count; corpseIndex++) {
-        for (let i = zombifiable.length; i > 1; i--) {
-            const j = rn2(i);
-            [zombifiable[i - 1], zombifiable[j]]
-                = [zombifiable[j], zombifiable[i - 1]];
-        }
-        const pos = randomIrregularRoomPosition(room);
-        if (!pos) return;
-        const corpse = mksobj_at(CORPSE, pos.x, pos.y, true, false);
-        set_corpsenm(corpse, zombifiable[0]);
-
-        // bury_an_obj() calls obj_resists() before moving the object from the
-        // floor chain.  Ordinary corpses cannot resist, but the RNG call is
-        // unconditional and therefore part of the replay contract.
-        rn2(100);
-        addBuriedObject(corpse, pos.x, pos.y);
-
-        // create_object() returns to Lua only after burial.  The callback then
-        // stops the ROT_CORPSE timer installed by set_corpsenm() and replaces
-        // it with an absolute ZOMBIFY_MON deadline from math.random(990,1010).
-        stopObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE);
-        scheduleObjectTimer(
-            corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON,
-            (game.moves ?? 0) + 990 + rn2(21), game,
-        );
-    }
-}
-
-// C/Lua refs: themerms.lua "Ghost of an Adventurer", selvar.c
-// selection_rndcoord(), and sp_lev.c create_monster()/create_object().  This
-// is a live room callback: no seed, role, replay-move, or session carrier is
-// consulted to decide whether the ghost and equipment exist.
-async function fillGhostAdventurer(room) {
-    const coord = themeroomSelection(room).randomCoordinate(false);
-    if (!coord) return;
-    const context = specialRoomContext(room);
-    const x = coord.x - context.xstart;
-    const y = coord.y - context.ystart;
-    const ghost = await specialMonsterAt(
-        context, 287, x, y, { mmflags: MM_ASLEEP }, // PM_GHOST
-    );
-    if (ghost) {
-        ghost.msleeping = 1;
-        ghost.mstrategy = (ghost.mstrategy ?? 0) | STRAT_WAITFORU;
-        ghost.waiting = true;
-    }
-
-    const notBlessed = object => {
-        if (object) object.blessed = false;
-        return object;
-    };
-    if (rn2(100) < 65)
-        notBlessed(specialObjectAt(context, DAGGER, x, y));
-    if (rn2(100) < 55)
-        notBlessed(specialObjectClassAt(context, WEAPON_CLASS, x, y));
-    if (rn2(100) < 45) {
-        notBlessed(specialObjectAt(context, BOW, x, y));
-        notBlessed(specialObjectAt(context, ARROW, x, y));
-    }
-    if (rn2(100) < 65)
-        notBlessed(specialObjectClassAt(context, ARMOR_CLASS, x, y));
-    if (rn2(100) < 20)
-        notBlessed(specialObjectClassAt(context, RING_CLASS, x, y));
-    if (rn2(100) < 20)
-        notBlessed(specialObjectClassAt(context, SCROLL_CLASS, x, y));
-}
-
-function fillTempleOfGods(room) {
-    for (let index = 0; index < 3; index++) {
-        const x = somex(room), y = somey(room);
-        const loc = game.level?.at(x, y);
-        if (loc) loc.typ = ALTAR;
-    }
-}
-
-async function applyThemeroomFill(room, fill, difficulty) {
-    if (!fill) return false;
-    if (fill.name === 'Ice room') fillIceRoom(room, difficulty);
-    else if (fill.name === 'Cloud room') await fillCloudRoom(room);
-    else if (fill.name === 'Garden') await fillGarden(room);
-    else if (fill.name === 'Boulder room') await fillBoulderRoom(room);
-    else if (fill.name === 'Spider nest')
-        await fillSpiderNest(room, difficulty);
-    else if (fill.name === 'Trap room') await fillTrapRoom(room);
-    else if (fill.name === 'Buried treasure') fillBuriedTreasure(room);
-    else if (fill.name === 'Buried zombies')
-        fillBuriedZombies(room, difficulty);
-    else if (fill.name === 'Massacre') fillMassacre(room);
-    else if (fill.name === 'Statuary') await fillStatuary(room);
-    else if (fill.name === 'Light source') fillLightSource(room);
-    else if (fill.name === 'Ghost of an Adventurer')
-        await fillGhostAdventurer(room);
-    else if (fill.name === 'Temple of the gods') fillTempleOfGods(room);
-    else if (fill.name === 'Storeroom') await fillStoreroom(room);
-    else if (fill.name === 'Teleportation hub') fillTeleportationHub(room);
-    else return false;
-    return true;
-}
-
-// Named entrypoint used by source-invariant tests and by future direct
-// THEMERMFILL plumbing.  A declared but not-yet-ported fill returns false
-// instead of pretending that an empty callback is implemented.
-export async function applyThemeroomFillByName(room, name, difficulty) {
-    const fill = THEMEROOM_FILL_META.find(candidate => candidate.name === name);
-    return fill ? applyThemeroomFill(room, fill, difficulty) : false;
-}
-
-async function generateStaticThemedRoom(
-    rows, fillx, filly, difficulty, prepare = null,
-) {
-    const placed = placeThemedMap(rows);
-    if (!placed) return false;
-    if (prepare) prepare(placed);
-
-    // themerms.lua filler_region(6,6): 30% chance to choose a themed fill.
-    const themedFill = rn2(100) < 30;
-    const lit = litstate_rnd(-1);
-    const room = createIrregularThemedRegion(
-        placed.xstart + fillx, placed.ystart + filly,
-        themedFill ? THEMEROOM : OROOM, lit, FILL_NORMAL,
-    );
-    if (!room) return false;
-    if (themedFill) {
-        const fill = pickThemeroomFill(room, difficulty);
-        await applyThemeroomFill(room, fill, difficulty);
-    }
-    game._hasStaticThemeroom = true;
-    return true;
-}
-
-// C/Lua refs: themerms.lua "Water-surrounded vault", sp_lev.c lspo_map(),
-// create_object(), create_monster(), and lspo_exclusion().  The map, contents,
-// and exclusion form one callback; falling back to an ordinary room after the
-// reservoir has selected this entry changes the complete remaining level.
-async function generateWaterSurroundedVault() {
-    const placed = placeThemedMap(WATER_SURROUNDED_VAULT_MAP);
-    if (!placed) return false;
-
-    const lit = litstate_rnd(-1);
-    const room = createIrregularThemedRegion(
-        placed.xstart + 3, placed.ystart + 3,
-        THEMEROOM, lit, 0,
-    );
-    if (!room) return false;
-    room.needjoining = false;
-
-    const context = {
-        xstart: placed.xstart,
-        ystart: placed.ystart,
-        width: placed.width,
-        height: placed.height,
-        _room: room,
-    };
-    const chestSpots = [
-        [2, 2], [3, 2], [2, 3], [3, 3],
-    ];
-    for (let count = chestSpots.length; count > 1; count--) {
-        const index = rn2(count);
-        [chestSpots[count - 1], chestSpots[index]]
-            = [chestSpots[index], chestSpots[count - 1]];
-    }
-
-    const escapeTypes = [
-        SCR_TELEPORTATION, 194, WAN_TELEPORTATION, WAN_DIGGING,
-    ];
-    const escapeType = escapeTypes[rn2(escapeTypes.length)];
-    // obj.new("...") routes even an exact named object through
-    // rnd_otyp_by_namedesc(probability + xtra_prob).
-    rn2((OBJECT_PROB[escapeType] || 0) + 1);
-    const escapeObject = mksobj(escapeType, true, false);
-
-    const [firstX, firstY] = chestSpots[0];
-    const firstChest = mksobj_at(
-        CHEST, context.xstart + firstX, context.ystart + firstY,
-        true, false,
-    );
-    if (OBJECT_MATERIAL[escapeType] === 19) firstChest.olocked = false;
-    addSpecialContainerObject(firstChest, escapeObject);
-
-    for (let index = 1; index < chestSpots.length; index++) {
-        const [x, y] = chestSpots[index];
-        mksobj_at(
-            CHEST, context.xstart + x, context.ystart + y,
-            true, false,
-        );
-    }
-
-    const nastyUndead = [247, 245, 227];
-    for (let count = nastyUndead.length; count > 1; count--) {
-        const index = rn2(count);
-        [nastyUndead[count - 1], nastyUndead[index]]
-            = [nastyUndead[index], nastyUndead[count - 1]];
-    }
-    const explicitlyMale = nastyUndead[0] === 227;
-    const monster = await specialMonsterAt(
-        context, nastyUndead[0], 2, 2,
-        { randomGender: !explicitlyMale },
-    );
-    if (monster && explicitlyMale) monster.female = false;
-
-    game.level.exclusionZones.push({
-        type: 'teleport',
-        lx: context.xstart + 2,
-        ly: context.ystart + 2,
-        hx: context.xstart + 3,
-        hy: context.ystart + 3,
-    });
-    game._hasStaticThemeroom = true;
-    return true;
-}
-
-function generateBlockedCenter(difficulty) {
-    return generateStaticThemedRoom(
-        BLOCKED_CENTER_MAP, 1, 1, difficulty,
-        placed => {
-            if (rn2(100) >= 30) return;
-            // Lua shuffles { horizontal wall, pool } before selecting its
-            // first element.  Preserve both the draw and its terrain effect.
-            const terrain = rn2(2) === 0 ? POOL : HWALL;
-            for (let row = 4; row <= 6; row++) {
-                for (let col = 4; col <= 6; col++) {
-                    const loc = game.level.at(placed.xstart + col,
-                        placed.ystart + row);
-                    if (loc?.typ === LAVAPOOL && rn2(100) < 100)
-                        loc.typ = terrain;
-                }
-            }
-        },
-    );
-}
-
-// C/Lua ref: themerms.lua "Pillars".  The room is placed through the
-// ordinary sp_lev create_room transaction first; its contents callback then
-// shuffles one terrain choice to use for all four 2x2 pillar blocks.
-function fillPillarsThemedRoom(room) {
-    const terrains = [
-        HWALL, HWALL, HWALL, HWALL, LAVAPOOL, POOL, TREE,
-    ];
-    for (let i = terrains.length; i > 1; i--) {
-        const j = rn2(i);
-        [terrains[i - 1], terrains[j]] = [terrains[j], terrains[i - 1]];
-    }
-    const terrain = terrains[0];
-    const width = room.hx - room.lx + 1;
-    const height = room.hy - room.ly + 1;
-    for (let blockX = 0; blockX < Math.floor(width / 4); blockX++) {
-        for (let blockY = 0; blockY < Math.floor(height / 4); blockY++) {
-            for (let dx = 2; dx <= 3; dx++) {
-                for (let dy = 2; dy <= 3; dy++) {
-                    const loc = game.level.at(
-                        room.lx + blockX * 4 + dx,
-                        room.ly + blockY * 4 + dy,
-                    );
-                    if (!loc) continue;
-                    loc.typ = terrain;
-                    if (terrain === HWALL) loc.horizontal = true;
-                    if (terrain === LAVAPOOL) loc.lit = true;
-                }
-            }
-        }
-    }
-}
-
-function is_themeroom_eligible(room, difficulty) {
-    if (room.mindiff != null && difficulty < room.mindiff) return false;
-    if (room.maxdiff != null && difficulty > room.maxdiff) return false;
-    return true;
-}
-
-// C/Lua ref: themerms.lua "Fake Delphi".  The outer fixed-size room owns
-// ordinary filling; its contents callback creates the fixed-position child
-// before the parent room closes, and the child callback adds one random door.
-async function generateFakeDelphi() {
-    const outer = await buildSpecialRoom({
-        rtype: OROOM,
-        w: 11,
-        h: 9,
-        filled: FILL_NORMAL,
-    }, null, async outerRoom => {
-        await buildSpecialRoom({
-            rtype: OROOM,
-            x: 4,
-            y: 3,
-            w: 3,
-            h: 3,
-            filled: FILL_NORMAL,
-        }, outerRoom, async innerRoom => {
-            createSpecialRoomDoor(innerRoom, 'random', 'all');
-        });
-    });
-    return !!outer;
-}
-
-// C/Lua ref: themerms.lua "Room in a room".  The outer room receives
-// ordinary C fill; the child owns only its callback-created door.
-async function generateRoomInRoom() {
-    const outer = await buildSpecialRoom({
-        rtype: OROOM, filled: FILL_NORMAL,
-    }, null, async outerRoom => {
-        await buildSpecialRoom({
-            rtype: OROOM, filled: 0,
-        }, outerRoom, async innerRoom => {
-            createSpecialRoomDoor(innerRoom, 'random', 'all');
-        });
-    });
-    return !!outer;
-}
-
-// C/Lua ref: themerms.lua "Huge room with another room inside".  Width and
-// height expressions are evaluated before lspo_room() pays its chance draw.
-async function generateHugeRoomWithInnerRoom() {
-    const width = 11 + rn2(10);
-    const height = 8 + rn2(5);
-    const outer = await buildSpecialRoom({
-        rtype: OROOM, w: width, h: height, filled: FILL_NORMAL,
-    }, null, async outerRoom => {
-        if (rn2(100) >= 90) return;
-        await buildSpecialRoom({
-            rtype: OROOM, filled: FILL_NORMAL,
-        }, outerRoom, async innerRoom => {
-            createSpecialRoomDoor(innerRoom, 'random', 'all');
-            if (rn2(100) < 50)
-                createSpecialRoomDoor(innerRoom, 'random', 'all');
-        });
-    });
-    return !!outer;
-}
-
-// C/Lua ref: themerms.lua "Nesting rooms".  Each des.room callback runs
-// immediately after its parent is constructed, so dimensions, chance checks,
-// subroom placement, lighting, and door selection remain interleaved.
-async function generateNestingRooms() {
-    const outerWidth = 9 + rn2(4);
-    const outerHeight = 9 + rn2(4);
-    const outer = await buildSpecialRoom({
-        rtype: OROOM,
-        w: outerWidth,
-        h: outerHeight,
-        filled: FILL_NORMAL,
-    }, null, async outerRoom => {
-        const width = outerRoom.hx - outerRoom.lx + 1;
-        const height = outerRoom.hy - outerRoom.ly + 1;
-        const innerWidthFloor = Math.floor(width / 2);
-        const innerHeightFloor = Math.floor(height / 2);
-        const innerWidth = innerWidthFloor
-            + rn2((width - 2) - innerWidthFloor + 1);
-        const innerHeight = innerHeightFloor
-            + rn2((height - 2) - innerHeightFloor + 1);
-        await buildSpecialRoom({
-            rtype: OROOM,
-            w: innerWidth,
-            h: innerHeight,
-            filled: FILL_NORMAL,
-        }, outerRoom, async innerRoom => {
-            if (rn2(100) < 90) {
-                await buildSpecialRoom({
-                    rtype: OROOM,
-                    filled: FILL_NORMAL,
-                }, innerRoom, async coreRoom => {
-                    createSpecialRoomDoor(coreRoom, 'random', 'all');
-                    if (rn2(100) < 15)
-                        createSpecialRoomDoor(coreRoom, 'random', 'all');
-                });
-            }
-            createSpecialRoomDoor(innerRoom, 'random', 'all');
-            if (rn2(100) < 15)
-                createSpecialRoomDoor(innerRoom, 'random', 'all');
-        });
-    });
-    return !!outer;
-}
-
-// C/Lua ref: themerms.lua "Mausoleum".  The central 1x1 unjoined child is
-// intentionally a themed room so later random-special conversion cannot turn
-// the tomb into a shop or temple.
-async function generateMausoleum() {
-    const width = 5 + rn2(3) * 2;
-    const height = 5 + rn2(3) * 2;
-    const outer = await buildSpecialRoom({
-        rtype: THEMEROOM, w: width, h: height, filled: 0,
-    }, null, async outerRoom => {
-        await buildSpecialRoom({
-            rtype: THEMEROOM,
-            x: Math.trunc((width - 1) / 2),
-            y: Math.trunc((height - 1) / 2),
-            w: 1, h: 1, joined: false, filled: 0,
-        }, outerRoom, async tomb => {
-            const context = specialRoomContext(tomb);
-            if (rn2(100) < 50) {
-                const classes = [39, 48, 38, 52];
-                for (let count = classes.length; count > 1; count--) {
-                    const index = rn2(count);
-                    [classes[count - 1], classes[index]]
-                        = [classes[index], classes[count - 1]];
-                }
-                const monster = await specialMonsterOfClass(
-                    context, classes[0],
-                );
-                if (monster)
-                    monster.mstrategy = (monster.mstrategy || 0)
-                        | STRAT_WAITFORU;
-            } else {
-                const human = mkclass(53, 0x0200); // S_HUMAN
-                if (human != null) specialCorpseOf(context, human);
-            }
-            if (rn2(100) < 20)
-                createSpecialRoomDoor(tomb, 'secret', 'all');
-        });
-    });
-    return !!outer;
-}
-
-async function generateOddRoomFeature() {
-    const width = 3 + rn2(3) * 2;
-    const height = 3 + rn2(3) * 2;
-    const room = await buildSpecialRoom({
-        rtype: OROOM, w: width, h: height, filled: FILL_NORMAL,
-    }, null, generatedRoom => {
-        const features = [CLOUD, LAVAPOOL, ICE, POOL, TREE];
-        for (let count = features.length; count > 1; count--) {
-            const index = rn2(count);
-            [features[count - 1], features[index]]
-                = [features[index], features[count - 1]];
-        }
-        const center = game.level.at(
-            generatedRoom.lx + Math.trunc((width - 1) / 2),
-            generatedRoom.ly + Math.trunc((height - 1) / 2),
-        );
-        if (center) center.typ = features[0];
-    });
-    return !!room;
-}
-
-// C/Lua ref: themerms.lua "Twin businesses".  Lua evaluates every helper in
-// the placements table before selecting one layout, so all twelve direction
-// percentages belong to the constructor even though only two are retained.
-async function generateTwinBusinesses() {
-    const outer = await buildSpecialRoom({
-        rtype: THEMEROOM, w: 9, h: 5, filled: 0,
-    }, null, async outerRoom => {
-        const southeast = () => rn2(100) < 50 ? 'south' : 'east';
-        const northeast = () => rn2(100) < 50 ? 'north' : 'east';
-        const northwest = () => rn2(100) < 50 ? 'north' : 'west';
-        const southwest = () => rn2(100) < 50 ? 'south' : 'west';
-        const placements = [
-            { lx: 1, ly: 1, rx: 4, ry: 1, lwall: 'south', rwall: southeast() },
-            { lx: 1, ly: 2, rx: 4, ry: 2, lwall: 'north', rwall: northeast() },
-            { lx: 1, ly: 1, rx: 5, ry: 1, lwall: southeast(), rwall: southwest() },
-            { lx: 1, ly: 1, rx: 5, ry: 2, lwall: southeast(), rwall: northwest() },
-            { lx: 1, ly: 2, rx: 5, ry: 1, lwall: northeast(), rwall: southwest() },
-            { lx: 1, ly: 2, rx: 5, ry: 2, lwall: northeast(), rwall: northwest() },
-            { lx: 2, ly: 1, rx: 5, ry: 1, lwall: southwest(), rwall: 'south' },
-            { lx: 2, ly: 2, rx: 5, ry: 2, lwall: northwest(), rwall: 'north' },
-        ];
-
-        let leftType = SHOPBASE + 4; // weapon shop
-        let rightType = SHOPBASE + 1; // armor shop
-        if (rn2(100) < 50)
-            [leftType, rightType] = [rightType, leftType];
-        const placement = placements[rnd(placements.length) - 1];
-        const shopDoorState = () => rn2(100) < 1 ? 'locked'
-            : rn2(100) < 50 ? 'closed' : 'open';
-
-        await buildSpecialRoom({
-            rtype: leftType,
-            x: placement.lx, y: placement.ly,
-            w: 3, h: 3, filled: FILL_NORMAL, joined: false,
-        }, outerRoom, leftRoom => {
-            createSpecialRoomDoor(
-                leftRoom, shopDoorState(), placement.lwall,
-            );
-        });
-        await buildSpecialRoom({
-            rtype: rightType,
-            x: placement.rx, y: placement.ry,
-            w: 3, h: 3, filled: FILL_NORMAL, joined: false,
-        }, outerRoom, rightRoom => {
-            createSpecialRoomDoor(
-                rightRoom, shopDoorState(), placement.rwall,
-            );
-        });
-    });
-    return !!outer;
-}
-
-// C ref: themerms.lua themerooms_generate()
-// The named dispatcher is shared by the reservoir and source-invariant tests;
-// selecting a rare form never falls through to a generic rectangle.
-export async function generateThemeroomByName(name, difficulty) {
-    if (name === 'Fake Delphi')
-        return generateFakeDelphi();
-    if (name === 'Room in a room')
-        return generateRoomInRoom();
-    if (name === 'Huge room with another room inside')
-        return generateHugeRoomWithInnerRoom();
-    if (name === 'Nesting rooms')
-        return generateNestingRooms();
-    if (name === 'Mausoleum')
-        return generateMausoleum();
-    if (name === 'Random dungeon feature in the middle of an odd-sized room')
-        return generateOddRoomFeature();
-    if (name === 'Twin businesses')
-        return generateTwinBusinesses();
-    if (name === 'Blocked center')
-        return generateBlockedCenter(difficulty);
-    if (name === 'Water-surrounded vault')
-        return generateWaterSurroundedVault();
-    const staticRoom = STATIC_THEMED_ROOMS.get(name);
-    if (staticRoom)
-        return generateStaticThemedRoom(...staticRoom, difficulty);
-
-    const genericNames = new Set([
-        'default', 'Default room with themed fill',
-        'Unlit room with themed fill',
-        'Room with both normal contents and themed fill', 'Pillars',
-    ]);
-    if (!genericNames.has(name)) return false;
-    rn2(100); // build_room chance check, including chance=100
-    // The Lua room directive owns retained room type and lighting as well as
-    // its contents callback.  These three dynamic forms are THEMEROOMs; the
-    // generic default and explicitly ordinary shapes remain OROOMs.
-    const keepsThemedType = name === 'Default room with themed fill'
-        || name === 'Unlit room with themed fill'
-        || name === 'Room with both normal contents and themed fill'
-        || name === 'Pillars';
-    const usesThemedFill = name === 'Default room with themed fill'
-        || name === 'Unlit room with themed fill'
-        || name === 'Room with both normal contents and themed fill';
-    const roomType = keepsThemedType ? THEMEROOM : OROOM;
-    const roomLit = name === 'Unlit room with themed fill' ? 0 : -1;
-    const roomWidth = name === 'Pillars' ? 10 : -1;
-    const roomHeight = name === 'Pillars' ? 10 : -1;
-    // All dynamic themed-room directives go through create_room for placement.
-    const ok = create_room(
-        -1, -1, roomWidth, roomHeight, -1, -1, roomType, roomLit,
-    );
-    if (ok) {
-        // C ref: sp_lev.c:2824 — build_room calls topologize after create_room
-        const aroom = game.level.rooms[game.level.nroom - 1];
-        if (aroom) {
-            topologize(aroom);
-            // Lua's `filled=1` belongs to the ordinary default and the
-            // explicitly combined normal-plus-themed variant.  The default
-            // and unlit themed-fill rooms run only their contents callback.
-            aroom.needfill = name === 'Pillars'
-                || (usesThemedFill
-                    && name
-                        !== 'Room with both normal contents and themed fill')
-                ? 0 : FILL_NORMAL;
-            if (name === 'Pillars') fillPillarsThemedRoom(aroom);
-            if (usesThemedFill) {
-                const fill = pickThemeroomFill(aroom, difficulty);
-                await applyThemeroomFill(aroom, fill, difficulty);
-            }
-        }
-    }
-    return ok;
-}
-
-async function themerooms_generate(difficulty) {
-    let pick = null;
-    let total_frequency = 0;
-    for (const meta of THEMEROOM_META) {
-        if (!is_themeroom_eligible(meta, difficulty)) continue;
-        const this_frequency = meta.frequency || 1;
-        total_frequency += this_frequency;
-        if (this_frequency > 0 && rn2(total_frequency) < this_frequency) {
-            pick = meta;
-        }
-    }
-    return pick
-        ? generateThemeroomByName(pick.name, difficulty)
-        : false;
+async function themerooms_generate() {
+    const session = activeThemes.get(game)?.session;
+    session?.beginRoom();
+    const roomsBefore = game.level.nroom;
+    const subroomsBefore = game.level.nsubroom;
+    await callLuaThemerooms('themerooms_generate');
+    if (session?.roomFailed()) return false;
+    return game.level.nroom !== roomsBefore
+        || game.level.nsubroom !== subroomsBefore;
 }
 
 // C ref: sp_lev.c check_room()

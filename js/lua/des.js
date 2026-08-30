@@ -81,7 +81,7 @@ function objectClassForSymbol(symbol) {
     return objectClass;
 }
 
-function objectTypeForName(name, classSymbol = null) {
+export function objectTypeForName(name, classSymbol = null) {
     const prefixes = [
         ['ring of ', 4],
         ['potion of ', 8],
@@ -427,6 +427,13 @@ export function createDesBindings(operations, wrapSelection = value => value) {
         ),
         levregion: value => operations.levelRegion(tableOptions(value)),
         exclusion: value => operations.exclusion(tableOptions(value)),
+        gas_cloud: value => {
+            const options = tableOptions(value);
+            return operations.gasCloud({
+                ...options,
+                selection: unwrapSelection(options.selection),
+            });
+        },
         random_corridors: () => operations.randomCorridors(),
         mazewalk: (value, y, direction) => operations.mazeWalk(
             mazeWalkOptions(value, y, direction),

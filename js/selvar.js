@@ -513,7 +513,8 @@ export function selection_size_description(selection) {
 export function selection_from_mkroom(room = null) {
     const selection = selection_new();
     if (!room) return selection;
-    const roomIndex = game.level?.rooms?.indexOf(room) ?? -1;
+    const roomIndex = room.roomnoidx
+        ?? game.level?.rooms?.indexOf(room) ?? -1;
     const roomNumber = roomIndex + ROOMOFFSET;
     for (let y = room.ly; y <= room.hy; y++) {
         for (let x = room.lx; x <= room.hx; x++) {

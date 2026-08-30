@@ -7,6 +7,7 @@ import {
     specialSelectionRandLine,
     specialSelectionRandomPoint,
     specialSelectionRect,
+    selection_from_mkroom,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 
@@ -159,6 +160,9 @@ export function createSelectionApi(context, invoke = null) {
             specialSelectionFloodFill(currentContext(), x, y, diagonals),
         ),
         match: fragment => wrap(specialSelectionMatch(String(fragment))),
+        room: () => wrap(new SpecialSelection(
+            selection_from_mkroom(currentContext()._room),
+        )),
     };
     return { bindings, wrap };
 }
