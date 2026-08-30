@@ -255,7 +255,7 @@ import {
     In_endgame, Is_airlevel, Is_rogue_level,
     W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    WT_TOOMUCH_DIAGONAL, P_BOW,
+    WT_TOOMUCH_DIAGONAL, P_BOW, P_SLING, P_SKILLED, P_EXPERT,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -14859,6 +14859,36 @@ async function finishOrdinaryMapPotionKill(monster) {
     });
 }
 
+// C dothrow.c:throw_obj() chooses one action-level volley count before the
+// first splitobj().  This helper is complete for matching sling ammunition:
+// skill and weak-multishot policy plus the only role bonuses which apply to a
+// sling (Cave Dweller and Ranger). Bow/crossbow and stackable-weapon families
+// retain their existing owners.
+function matchingSlingVolleyCount(item, selectedQuantity) {
+    if (selectedQuantity <= 1
+        || OBJECT_SUBTYPE[item.otyp] !== -P_SLING
+        || OBJECT_SUBTYPE[game.uwep?.otyp] !== P_SLING
+        || game.u?.confused
+        || (game.u?.confusionTurns ?? 0) > 0
+        || (game.u?.stunnedTurns ?? 0) > 0
+        || game.u?.stunned) return 1;
+
+    const role = game.urole?.key;
+    const fumbling = !!(game.u?.fumbling
+        || (game.u?.fumblingTurns ?? 0) > 0);
+    const weakMultishot = ['wizard', 'priest', 'healer', 'tourist']
+        .includes(role)
+        || fumbling
+        || (game.u?.acurr?.a?.[1] ?? 10) <= 6;
+    const level = ensureHeroSkills(game)?.[P_SLING]?.skill ?? 0;
+    let maximum = 1;
+    if (level >= P_EXPERT) maximum++;
+    if (level >= P_SKILLED && !weakMultishot) maximum++;
+    if (role === 'caveman' || role === 'ranger') maximum++;
+
+    return Math.min(rnd(maximum), selectedQuantity);
+}
+
 async function dothrow(selectedItem = null, capabilityChecked = false) {
     if (!capabilityChecked && !await okToThrow()) return;
 
@@ -14964,6 +14994,11 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         && OBJECT_SUBTYPE[game.uwep?.otyp] === P_BOW;
     const launchedArrow = matchingBow;
     const handThrownArrow = bowAmmo && !matchingBow;
+    const matchingSlingGem = !game.u?.uswallow
+        && wieldingSling && thrownObjectClass === 13
+        && OBJECT_SUBTYPE[item.otyp] === -P_SLING;
+    const slingVolleyCount = matchingSlingGem
+        ? matchingSlingVolleyCount(item, selectedQuantity) : 1;
 
     // Tourist darts get their role multishot roll even when the result can
     // only be one projectile.  A Ranger using a matching bow selects one
@@ -14978,6 +15013,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     let splitObjectId = null;
     if (!game.u?.uswallow && thrownObjectClass !== 8
         && !launchedArrow && !handThrownArrow
+        && !matchingSlingGem
         && selectedQuantity > 1) {
         splitObjectId = nextIdent(); // splitobj()
         item.quantity = selectedQuantity - 1;
@@ -15490,8 +15526,6 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // TOUCHSTONE bypasses should_mulch_missile().  A wielded sling excludes a
     // non-MINERAL gem from gift handling before ordinary accuracy.
     const mineralProjectile = item.otyp === ROCK || item.otyp === TOUCHSTONE;
-    const matchingSlingGem = wieldingSling && thrownObjectClass === 13
-        && OBJECT_SUBTYPE[item.otyp] === -OBJECT_SUBTYPE[game.uwep.otyp];
     const adjacentUnicornNonMineralGem = thrownObjectClass === 13
         && OBJECT_MATERIAL[item.otyp] !== MAT_MINERAL
         && adjacentMonster
@@ -15516,8 +15550,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         ?.at?.(game.u.ux + dx, game.u.uy + dy)?.typ;
     if (supportedGemProjectile
         && (mineralFirstTyp === POOL || mineralFirstTyp === ROOM
+            || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
             || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS
             || IS_WALL(mineralFirstTyp))) {
+        if (matchingSlingGem && slingVolleyCount > 1) {
+            const plural = item.plural
+                || `${item.name || OBJECT_NAMES[item.otyp] || 'stone'}s`;
+            await pline(`You shoot ${slingVolleyCount} ${plural}.`);
+        }
+        const resolveGemShot = async () => {
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
         let range = Math.max(
             1,
@@ -15540,7 +15581,38 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         }
 
         let thrownMineral = item;
-        if (selectedQuantity > 1) {
+        if (matchingSlingGem) {
+            const liveQuantity = item.quantity ?? item.quan ?? 1;
+            if (liveQuantity > 1) {
+                const objectId = nextIdent(); // splitobj() for this shot
+                item.quantity = liveQuantity - 1;
+                item.quan = item.quantity;
+                item.owt = unitWeight * item.quantity;
+                thrownMineral = {
+                    ...item,
+                    o_id: objectId,
+                    quantity: 1,
+                    quan: 1,
+                    owt: unitWeight,
+                    owornmask: 0,
+                    ready: false,
+                    timed: false,
+                    lamplit: false,
+                    where: 'free',
+                    how_lost: LOST_THROWN,
+                };
+            } else {
+                const itemIndex = game.inventory.indexOf(item);
+                if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
+                if (game.uwep === item) game.uwep = null;
+                if (game.uswapwep === item) game.uswapwep = null;
+                if (game.uquiver === item) game.uquiver = null;
+                item.owornmask = 0;
+                item.ready = false;
+                item.where = 'free';
+                item.how_lost = LOST_THROWN;
+            }
+        } else if (selectedQuantity > 1) {
             item.owt = unitWeight * (item.quantity ?? item.quan ?? 1);
             thrownMineral = {
                 ...item,
@@ -15997,6 +16069,25 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         await settleThrownShopObject(thrownMineral, x, y);
         stack_object(thrownMineral);
         newsym(x, y);
+        game.context.move = 1;
+        return;
+        };
+
+        const volleyCount = matchingSlingGem ? slingVolleyCount : 1;
+        for (let shot = 0; shot < volleyCount; shot++) {
+            const previousCapacity = game._encumbranceLevel
+                ?? nearCapacity(game);
+            await resolveGemShot();
+            const currentCapacity = nearCapacity(game);
+            const capacityMessage = encumbranceMessage(
+                previousCapacity, currentCapacity,
+            );
+            if (capacityMessage)
+                await plineWithContinuation(capacityMessage);
+            game._encumbranceLevel = currentCapacity;
+            game.u._encumbrance = encumbranceLabel(currentCapacity);
+            if (game.program_state?.gameover) break;
+        }
         game.context.move = 1;
         return;
     }

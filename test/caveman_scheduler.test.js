@@ -128,9 +128,12 @@ test('fresh Caveman waits use current actors and floor objects', async () => {
 
 test('Caveman fire uses live quiver and fireassist state', async () => {
     // One physical fire command is allowed to schedule the source weapon
-    // swap before it consumes the direction. No test value encodes the
-    // number of shots, endpoint, RNG calls, pet path, or rendered prose.
-    const seed = 28002;
+    // swap before it consumes the direction. The shot count below comes from
+    // pinned C; no endpoint, later RNG calls, pet path, or prose is encoded.
+    // Pinned dothrow.c selects two shots for this fresh seed: a level-one
+    // Caveman has Basic sling skill (no proficiency bonus), the role's
+    // low-tech bonus raises the maximum to two, and the source rnd(2) is 2.
+    const seed = 28003;
     const startup = await cavemanOutcome({
         seed, moves: ' ', bridgeFree: true,
     });
@@ -145,8 +148,18 @@ test('Caveman fire uses live quiver and fireassist state', async () => {
         object.type === FLINT);
     const remainingFlint = bridgeFree.world.inventory.find(object =>
         object.type === FLINT);
+    const initialFloorFlint = startup.world.floorObjects
+        .filter(object => object.type === FLINT)
+        .reduce((total, object) => total + object.quantity, 0);
+    const landedFlint = bridgeFree.world.floorObjects
+        .filter(object => object.type === FLINT)
+        .reduce((total, object) => total + object.quantity, 0);
     assert.ok(initialFlint);
-    assert.ok((remainingFlint?.quantity ?? 0) < initialFlint.quantity);
+    assert.equal(
+        initialFlint.quantity - (remainingFlint?.quantity ?? 0),
+        2,
+    );
+    assert.equal(landedFlint - initialFloorFlint, 2);
     assert.equal(bridgeFree.world.primary, SLING);
     assert.equal(bridgeFree.world.alternate, CLUB);
     assert.deepEqual(bridgeFree.cavemanBridges, []);
