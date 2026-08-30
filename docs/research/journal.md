@@ -99732,3 +99732,24 @@ hidden measurement, or animation work ran; `public-session-status.md` is
 unchanged.
 
 ---
+
+### [2026-08-30 08:56 EEST, journal block 3236] {#healer #minimum-duration #adversarial-boundary #behavioral-gate #process-safety}
+
+**Adversarial correction:** the multi-turn seed44007 witness did not bound the
+minimum negative-`multi` duration.  Fresh seed44001 selects `rnd(50) == 1`;
+source `moveloop_core()` advances that `-1` to zero after the first live global
+turn, so the correct result is wakeup at move 2 rather than an extra helpless
+turn.  A fifth state-only Healer witness now requires equal normal/bridge-free
+worlds, cleared helplessness, a complete movement ration, and the composed hit
+plus wake message at that boundary.
+
+**Measured effect and evidence limit:** the Healer file passes **5/5**.  A
+second owned default behavioral gate passes **451/451** and exits normally in
+4.7 seconds.  Lane and bridge audits remain respectively **51 clean files**
+and **125 production files, 8 guarded replay modules, 19 fixture modules**;
+no matching runner remains.  This strengthens the same source slice and does
+not change its open gaps.  No corpus, scorer, public-regression lane, sealed
+trace, push, publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---
