@@ -1908,8 +1908,6 @@ export async function rhack(key) {
         await performSearchCommand();
     } else if (key === 4) { // Ctrl-D
         await dokick();
-    } else if (ch === 'f' && game._rangerNamePath) {
-        await dorangerfire();
     } else if (ch === 'f') {
         await dofire();
     } else if (/^[0-9]$/.test(ch)) {
@@ -5076,16 +5074,6 @@ async function doname() {
     game.context.move = 0;
 }
 
-async function rangerMore(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    let key = await nhgetch();
-    while (key !== 27 && key !== 32 && key !== 10 && key !== 13)
-        key = await nhgetch();
-    return key;
-}
-
 // C refs: cmd.c:getdir(), help_dir(), and show_direction_keys().  Direction
 // acquisition is shared by commands such as fire, loot, apply, and force;
 // keep the tty help page independent from any one caller.
@@ -5104,27 +5092,6 @@ function directionAssistPage() {
     lines[13] = '(Suppress this message with !cmdassist in config file.)';
     lines[23] = '--More--';
     return { lines, cursor: [8, 23] };
-}
-
-async function dorangerfire() {
-    const bow = game.inventory?.find(item => item.name === 'bow');
-    const dagger = game.inventory?.find(item => item.name === 'dagger');
-    game.uwep = bow;
-    game.uswapwep = dagger;
-    await rangerMore('b - a +1 bow (weapon in right hand).--More--');
-
-    // Swapping to the launcher consumes the first turn before fire asks for
-    // a direction.  This seed has one hostile monster, Sirius, and a sink.
-    rn2(12); rn2(12); rn2(70); rn2(300); rn2(20); rn2(73);
-    game.moves = 2;
-    game._maintenanceMove = 2;
-
-    const key = await promptKey('In what direction? ');
-    if (!isMovementKey(String.fromCharCode(key).toLowerCase()))
-        await showTextPages([directionAssistPage()]);
-    game._pending_message = '';
-    await restoreCommandMap();
-    game.context.move = 0;
 }
 
 function monsterBeside(x, y) {

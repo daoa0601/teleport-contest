@@ -53,7 +53,7 @@ import {
     init_vision_globals,
 } from './vision.js';
 import {
-    fastforward_step, fastforward_ranger_step,
+    fastforward_step,
 } from './fastforward.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -2165,7 +2165,7 @@ function liveQuietHealer(state = game) {
 }
 
 function liveQuietRanger(state = game) {
-    return state.urole?.key === 'ranger' && !state._rangerNamePath;
+    return state.urole?.key === 'ranger';
 }
 
 function liveQuietPriest(state = game) {
@@ -2206,6 +2206,7 @@ function usesSourceMovementRation(state = game) {
     return liveBaseRole(state)
         || liveQuietKnight(state) || liveQuietMonk(state)
         || liveQuietRogue(state) || liveQuietHealer(state)
+        || liveQuietRanger(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
         || liveQuietCaveman(state)
         || liveDebugSourceRation(state);
@@ -6191,25 +6192,6 @@ function touristExploreRunRng() {
     }
 }
 
-function rangerNameMonsterActionRng(turn) {
-    const calls = turn === 2 ? [
-        ['rn2', 5], ['rn2', 100], ['rn2', 8], ['rn2', 4], ['rn2', 1],
-        ['rnd', 5], ['rn2', 5], ['rn2', 5], ['rn2', 100], ['rn2', 8],
-        ['rn2', 1], ['rn2', 5],
-    ] : turn === 3 ? [
-        ['rn2', 5], ['rn2', 100], ['rn2', 8], ['rn2', 100], ['rnd', 5],
-        ['rn2', 5], ['rn2', 5], ['rn2', 100], ['rn2', 100], ['rn2', 100],
-        ['rn2', 8], ['rn2', 100], ['rn2', 5],
-    ] : null;
-    if (!calls) return false;
-    for (const [kind, range] of calls) {
-        if (kind === 'rnd') rnd(range);
-        else rn2(range);
-    }
-    initialTurnMaintenanceRng();
-    return true;
-}
-
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -6269,8 +6251,6 @@ export async function newgame() {
         g._samuraiLiveScheduler = true;
     g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
-    g._rangerNamePath = !bridgeFree && g.urole?.key === 'ranger'
-        && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._healerNewmoonPath = !bridgeFree && g.urole?.key === 'healer'
         && /szf/.test(replayMoves);
     g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
@@ -6281,7 +6261,6 @@ export async function newgame() {
     if (bridgeFree) {
         const compatibilityPaths = [
             ['tourist.explore-search', g._touristExplorePath],
-            ['ranger.named-start', g._rangerNamePath],
             ['healer.newmoon', g._healerNewmoonPath],
             ['knight.pony', g._knightPonyPath],
             ['wizard.bind', g._wizardBindPath],
@@ -6384,6 +6363,7 @@ export async function moveloop_core() {
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
     if ((liveBaseRole(g)
         || liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
+        || liveQuietRanger(g)
         || liveQuietPriest(g) || liveQuietSamurai(g)
         || liveQuietCaveman(g)
         || liveDebugSourceRation(g))
@@ -6584,25 +6564,6 @@ export async function moveloop_core() {
             // do not enter role/session-specific pet replay or act while the
             // hero traverses the instructional rooms.
             initialTurnMaintenanceRng();
-        } else if (g.urole?.key === 'ranger') {
-            let petMoved = false;
-            if (stepNum === 1) initialTurnMaintenanceRng();
-            else if (g._rangerNamePath)
-                petMoved = rangerNameMonsterActionRng(stepNum);
-            else if (bridgeFreeEnabled()) initialTurnMaintenanceRng();
-            else petMoved = fastforward_ranger_step(stepNum);
-            if (petMoved && g.startingPet) {
-                const { mx, my } = g.startingPet;
-                if (g._rangerNamePath) {
-                    const position = stepNum === 2 ? [28, 8] : [26, 10];
-                    [g.startingPet.mx, g.startingPet.my] = position;
-                } else {
-                    g.startingPet.mx = mx + 1;
-                    g.startingPet.my = my + 1;
-                }
-                newsym(mx, my);
-                newsym(g.startingPet.mx, g.startingPet.my);
-            }
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g.urole?.key === 'valkyrie') {
@@ -6670,6 +6631,7 @@ export async function moveloop_core() {
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
         } else if (liveBaseRole(g)
+            || liveQuietRanger(g)
             || liveQuietSamurai(g) || liveQuietCaveman(g)
             || (bridgeFreeEnabled() && liveQuietRole)) {
             // A quiet source-owned role with no full-ration actor still owns

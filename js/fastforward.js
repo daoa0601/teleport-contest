@@ -24,29 +24,3 @@ export function fastforward_step(stepNum) {
     ];
     if (stepNum > 0 && stepNum <= steps.length) steps[stepNum - 1]();
 }
-
-// Ranger compatibility turns remain explicit until their named-start path is
-// replaced by the shared monster scheduler.
-export function fastforward_ranger_step(stepNum) {
-    useCompatibilityBridge('fastforward.ranger-turn');
-    if (stepNum === 1) {
-        rn2(12); rn2(12); rn2(12); rn2(12);
-        rn2(70); rn2(20); rn2(73);
-    } else if (stepNum === 2) {
-        rn2(5); rn2(100); rn2(8); rn2(100); rn2(8); rn2(1);
-        rn2(5); rn2(4); rn2(5); rn2(5); rn2(4); rn2(3); rn2(3);
-        rn2(5); rn2(4); rn2(5); rn2(5); rn2(5); rn2(5); rn2(5);
-        rn2(5); rn2(5); rn2(5); rn2(5); rn2(4); rn2(5); rn2(5); rn2(5);
-        rn2(100); rn2(8); rn2(100); rn2(8); rn2(1); rn2(5);
-        rn2(12); rn2(12); rn2(12); rn2(12);
-        rn2(70); rn2(20); rn2(73);
-    } else if (stepNum === 3) {
-        rn2(5); rn2(100); rn2(8); rn2(100); rn2(8); rn2(1);
-        rn2(5); rn2(5); rn2(32); rn2(5); rn2(4); rn2(5); rn2(5);
-        rn2(5); rn2(4); rn2(5); rn2(5); rn2(5); rn2(5); rn2(20); rn2(5);
-        rn2(12); rn2(12); rn2(12); rn2(12);
-        rn2(70); rn2(20); rn2(73);
-        return true;
-    }
-    return false;
-}

@@ -43,7 +43,6 @@ export function auditBridgeFreeSource() {
         '_knightCombatPath', '_monkNorthPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
-        '_rangerNamePath',
         '_healerNewmoonPath', '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
@@ -137,6 +136,17 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('valk_pit.js'))
         failures.push('valk_pit.js: legacy Valkyrie replay module still exists');
+    const forbiddenRangerReplayTokens = [
+        '_rangerNamePath', 'rangerNameMonsterActionRng',
+        'fastforward_ranger_step', 'fastforward.ranger-turn',
+        'ranger.named-start', 'dorangerfire', 'rangerMore',
+    ];
+    for (const token of forbiddenRangerReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'fastforward.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Ranger replay token ${token}`);
+        }
+    }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');
