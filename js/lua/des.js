@@ -290,6 +290,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
     return {
         level_init: options => operations.levelInit(tableOptions(options)),
         level_flags: (...flags) => operations.levelFlags(flags),
+        message: value => operations.message(String(value)),
         map: async value => wrapSelection(await operations.map(
             value instanceof LuaTable ? tableOptions(value) : String(value),
         )),

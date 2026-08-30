@@ -25,6 +25,16 @@ function floorObjects() {
     return (game.level.objects || []).flat(2).filter(Boolean);
 }
 
+function firstBubbleCell(bubble) {
+    for (let dy = 0; dy < bubble.height; dy++) {
+        for (let dx = 0; dx < bubble.width; dx++) {
+            if (bubble.rows[dy] & (1 << dx))
+                return { x: bubble.x + dx, y: bubble.y + dy };
+        }
+    }
+    throw new Error('bubble has no occupied cells');
+}
+
 test('the Astral Plane builds three sanctums and all three Riders', async () => {
     const active = freshSpecialLevel({
         prototype: 'astral', variant: 1, seed: 1913, depth: 1,
@@ -113,7 +123,7 @@ test('the Plane of Water builds moving air bubbles and its Astral portal',
         bubble.y = 5;
         bubble.dx = 1;
         bubble.dy = 0;
-        const carriedCell = { x: bubble.x, y: bubble.y };
+        const carriedCell = firstBubbleCell(bubble);
         const portal = game.level.traps[0];
         portal.tx = carriedCell.x;
         portal.ty = carriedCell.y;

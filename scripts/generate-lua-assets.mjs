@@ -15,6 +15,7 @@ const names = [
     'fakewiz1.lua', 'fakewiz2.lua',
     'wizard1.lua', 'wizard2.lua', 'wizard3.lua',
     'asmodeus.lua', 'baalz.lua', 'orcus.lua', 'juiblex.lua',
+    'earth.lua', 'air.lua', 'fire.lua', 'water.lua',
 ];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [

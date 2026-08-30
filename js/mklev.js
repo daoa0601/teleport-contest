@@ -10441,6 +10441,8 @@ function setLuaLevelFlags(active, flags) {
         else if (flag === 'cold') game.level.flags.temperature = -1;
         else if (flag === 'nomongen') game.level.flags.rndmongen = false;
         else if (flag === 'nodeathdrops') game.level.flags.deathdrops = false;
+        else if (flag === 'fumaroles') game.level.flags.fumaroles = true;
+        else if (flag === 'stormy') game.level.flags.stormy = true;
         else if (flag !== 'shroud')
             throw new Error(`unknown Lua level flag ${flag}`);
     }
@@ -10746,6 +10748,10 @@ async function generateLuaSpecialLevel(active) {
             }
         },
         levelFlags: flags => setLuaLevelFlags(active, flags),
+        message: value => {
+            if (!active.specialMessages) active.specialMessages = [];
+            active.specialMessages.push(value);
+        },
         map: async value => {
             const rows = specialMapRows(
                 typeof value === 'string' ? value : value.map,
@@ -11210,165 +11216,24 @@ async function generateSanctum(active) {
     flipSpecialLevelRandom(3);
 }
 
-const EARTH_MAP = [
-    '',
-    '  ...',
-    ' ....                ..',
-    ' .....             ...                                      ..',
-    '  ....              ....                                     ...',
-    '   ....              ...                ....                 ...      .',
-    '    ..                ..              .......                 .      ..',
-    '                                      ..  ...                        .',
-    '              .                      ..    .                         ...',
-    '             ..  ..                  .     ..                         .',
-    '            ..   ...                        .',
-    '            ...   ...',
-    '              .. ...                                 ..',
-    '               ....                                 ..',
-    '                          ..                                       ...',
-    '                         ..                                       .....',
-    '  ...                                                              ...',
-    ' ....',
-    '   ..',
-    '',
-].map(row => row.padEnd(76, ' '));
-
-const EARTH_MONSTERS = [
-    ['elven monarch', 67, 16], ['minotaur', 67, 14],
-    ['earth elemental', 52, 13, false],
-    ['earth elemental', 53, 13, false],
-    ['rock troll', 53, 12], ['stone giant', 54, 12],
-    ['pit viper', 70, 5], ['barbed devil', 69, 6],
-    ['stone giant', 69, 8], ['stone golem', 71, 8],
-    ['pit fiend', 70, 9], ['earth elemental', 70, 8, false],
-    ['earth elemental', 60, 3, false], ['stone giant', 61, 4],
-    ['earth elemental', 62, 4, false],
-    ['earth elemental', 61, 5, false],
-    ['scorpion', 62, 5], ['rock piercer', 63, 5],
-    ['umber hulk', 40, 5], ['dust vortex', 42, 5],
-    ['rock troll', 38, 6], ['earth elemental', 39, 6, false],
-    ['earth elemental', 41, 6, false],
-    ['earth elemental', 38, 7, false], ['stone giant', 39, 7],
-    ['earth elemental', 43, 7, false], ['stone golem', 37, 8],
-    ['pit viper', 43, 8], ['pit viper', 43, 9],
-    ['rock troll', 44, 10], ['earth elemental', 2, 1, false],
-    ['earth elemental', 3, 1, false], ['stone golem', 1, 2],
-    ['earth elemental', 2, 2, false], ['rock troll', 4, 3],
-    ['rock troll', 3, 3], ['pit fiend', 3, 4],
-    ['earth elemental', 4, 5, false], ['pit viper', 5, 6],
-    ['earth elemental', 21, 2, false],
-    ['earth elemental', 21, 3, false], ['minotaur', 21, 4],
-    ['earth elemental', 21, 5, false], ['rock troll', 22, 5],
-    ['earth elemental', 22, 6, false],
-    ['earth elemental', 23, 6, false], ['pit viper', 14, 8],
-    ['barbed devil', 14, 9], ['earth elemental', 13, 10, false],
-    ['rock troll', 12, 11], ['earth elemental', 14, 12, false],
-    ['earth elemental', 15, 13, false], ['stone giant', 17, 13],
-    ['stone golem', 18, 13], ['pit fiend', 18, 12],
-    ['earth elemental', 18, 11, false],
-    ['earth elemental', 18, 10, false], ['barbed devil', 2, 16],
-    ['earth elemental', 3, 16, false], ['rock troll', 2, 17],
-    ['earth elemental', 4, 17, false],
-    ['earth elemental', 4, 18, false],
-];
-
-async function generateEarth(active) {
-    const context = loadSpecialAsciiMap(EARTH_MAP, false);
-    active.context = { ...context };
-    active.specialMessages = [
-        'Well done, mortal!',
-        'But now thou must face the final Test...',
-        'Prove thyself worthy or perish!',
-    ];
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.shortsighted = true;
-
-    replaceSpecialSelectionTerrain(
-        specialSelectionFillRect(context, 0, 0, 75, 19),
-        STONE, ROOM, 5,
-    );
-    const arrival = absoluteSpecialRegion(context, 69, 16, 69, 16);
-    active.upTeleportRegion = { ...arrival };
-    active.downTeleportRegion = { ...arrival };
-    active.explicitPortalRegion = absoluteSpecialRegion(
-        context, 0, 0, 75, 19,
-    );
-    active.explicitPortalExclude = absoluteSpecialRegion(
-        context, 65, 13, 75, 19,
-    );
-    active.portalDestinationName = 'air';
-
-    for (const [name, x, y, peaceful = null] of EARTH_MONSTERS) {
-        const mndx = monsterIndexByName(name);
-        await specialMonsterAt(context, mndx, x, y, {
-            randomGender: namedMonsterNeedsGenderDraw(mndx), peaceful,
-        });
-    }
-    specialObjectOfType(context, BOULDER);
-
-    flipSpecialLevelRandom(3);
-    for (const field of [
-        'upTeleportRegion', 'downTeleportRegion',
-        'explicitPortalRegion', 'explicitPortalExclude',
-    ]) active[field] = flipSpecialRegion(active[field]);
-}
-
-const WATER_MAP = Array(20).fill('W'.repeat(80));
-
-async function generateWater(active) {
-    const context = loadSpecialAsciiMap(WATER_MAP, false);
-    active.context = { ...context };
-    active.specialMessages = [
-        'You find yourself suspended in an air bubble surrounded by water.',
-    ];
-    active.elementalBubbles = true;
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.shortsighted = true;
-    game.level.flags.waterlevel = true;
-
-    const arrival = absoluteSpecialRegion(context, 0, 0, 25, 19);
-    active.upTeleportRegion = { ...arrival };
-    active.downTeleportRegion = { ...arrival };
-    active.explicitPortalRegion = absoluteSpecialRegion(
-        context, 51, 0, 75, 19,
-    );
-    active.portalDestinationName = 'astral';
-
-    for (const [name, count] of [
-        ['giant eel', 8], ['electric eel', 8], ['kraken', 9],
-        ['shark', 4], ['piranha', 4], ['jellyfish', 4],
-    ]) {
-        const mndx = monsterIndexByName(name);
-        for (let index = 0; index < count; index++)
-            await specialExplicitMonster(context, mndx);
-    }
-    for (let count = 0; count < 4; count++)
-        await specialMonsterOfClass(context, 57);
-    const waterElemental = monsterIndexByName('water elemental');
-    for (let count = 0; count < 19; count++) {
-        await specialExplicitMonster(
-            context, waterElemental, null, { peaceful: false },
-        );
-    }
-
-    flipSpecialLevelRandom(3);
-    for (const field of [
-        'upTeleportRegion', 'downTeleportRegion', 'explicitPortalRegion',
-    ]) active[field] = flipSpecialRegion(active[field]);
+async function generateElementalPlane(active) {
+    active.file = `${active.prototype}.lua`;
+    if (active.prototype === 'air' || active.prototype === 'water')
+        active.elementalBubbles = true;
+    if (active.prototype === 'water') game.level.flags.waterlevel = true;
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 export async function generateEarthLevel(active) {
-    await generateSpecialAndFixup(generateEarth, active);
+    if (active?.prototype !== 'earth')
+        throw new RangeError(`unknown earth level ${active?.prototype}`);
+    await generateElementalPlane(active);
 }
 
 export async function generateWaterLevel(active) {
-    await generateSpecialAndFixup(generateWater, active);
+    if (active?.prototype !== 'water')
+        throw new RangeError(`unknown water level ${active?.prototype}`);
+    await generateElementalPlane(active);
 }
 
 const ASTRAL_MAP = [
@@ -11629,160 +11494,6 @@ async function generateAstral(active) {
 
 export async function generateAstralLevel(active) {
     await generateSpecialAndFixup(generateAstral, active);
-}
-
-// Lua source: dat/fire.lua.  This is a full 79x21 map, so sp_lev.c anchors it
-// at absolute (1,0) after its centered-origin overflow correction.
-const FIRE_MAP = [
-    'LL.............LL..............L...LL.........LL.................LL...........L',
-    'LL....LLLLLLLL............L...L.............LL....LLL.......................LL.',
-    'L....LL...................L......................LLLL................LL........',
-    '.....L.............LLLL...LL....LL...............LLLLL.............LLL.........',
-    '.L.LLLL..............LL....L.....LLL..............LLLL..............LLLL......L',
-    'LL..........LLLL...LLLL...LLL....LLL......L........LLLL....LL........LLL......L',
-    'LL........LLLLLLL...LL.....L......L......LL.........LL......LL........LL...L...',
-    'L.........LL..LLL..LL......LL......LLLL..L.........LL......LLL............LL...',
-    '......L..LL....LLLLL.................LLLLLLL.......L......LL............LLLLLL.',
-    '......L..L.....LL.LLLL.......L............L........LLLLL.LL......LL.........LL.',
-    '......LL........L...LL......LL.............LLL.....L...LLL.......LLL.........L.',
-    '.L.....LLLLLL........L.......LLL.............L....LL...L.LLL......LLLLLLL......',
-    'LL..........LLLL............LL.L.............L....L...LL.........LLL..LLL......',
-    '.L...........................LLLLL...........LL...L...L........LLLL..LLLLLL...L',
-    '.L.....LLLL.............LL....LL.......LLL...LL.......L..LLL....LLLLLLL.......L',
-    '.........LLL.........LLLLLLLLLLL......LLLLL...L...........LL...LL...LL.........',
-    '...........LL.......LL.........LL.......LLL....L..LLL....LL.........LL.........',
-    '............LLLLLLLLL...........LL....LLL.......LLLLL.....LL........LL.........',
-    '.LL...............L.............LLLLLL............LL...LLLL.........LL.......L.',
-    'LL.....L..........................LL....................LL..................LLL',
-    'L.....LLL......................LLLLL.........L.........LLLLLLLL..............LL',
-];
-
-const FIRE_MONSTERS = [
-    [146, null], [302, null], [155, false], [155, false],
-    [111, null], [26, null],
-    [172, null], [293, null], [26, null], [257, null],
-    [300, null], [155, false],
-    [155, false], [26, null], [155, false], [155, false],
-    [97, null], [172, null],
-    [26, null], [107, null], [111, null], [155, false],
-    [155, false], [155, false], [26, null], [155, false],
-    [257, null], [218, null], [218, null], [111, null],
-    [155, false], [155, false], [172, null], [155, false],
-    [111, null], [111, null], [300, null], [155, false],
-    [218, null],
-    [329, false], [329, false], [177, null], [329, false],
-    [110, null], [329, false], [329, false],
-    [172, null], [293, null], [155, false], [111, null],
-    [155, false], [155, false], [26, null], [172, null],
-    [300, null], [155, false], [155, false],
-    [293, null], [329, false], [110, null], [329, false],
-    [329, false],
-];
-
-async function generateFire(active) {
-    const context = loadSpecialAsciiMap(FIRE_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.shortsighted = true;
-    game.level.flags.temperature = 1;
-    game.level.flags.fumaroles = true;
-
-    // teleport_region is retained for goto_level(); the following named
-    // levregion is materialized by fixup_special() after the complete Lua
-    // population graph.
-    const arrival = absoluteSpecialRegion(context, 71, 16, 71, 16);
-    active.upTeleportRegion = { ...arrival };
-    active.downTeleportRegion = { ...arrival };
-    active.explicitPortalRegion = absoluteSpecialRegion(
-        context, 0, 0, 78, 19,
-    );
-    active.explicitPortalExclude = absoluteSpecialRegion(
-        context, 67, 13, 78, 19,
-    );
-    active.portalDestinationName = 'water';
-
-    for (let count = 0; count < 40; count++)
-        await specialTrapOfType(context, FIRE_TRAP);
-    for (const [mndx, peaceful] of FIRE_MONSTERS)
-        await specialExplicitMonster(
-            context, mndx, null, { peaceful },
-        );
-    for (let count = 0; count < 5; count++)
-        specialObjectOfType(context, BOULDER);
-
-    // sp_lev.c finalizes a loaded special map before fixup_special() places
-    // named level regions.  The terrain and populated entities are flipped
-    // here; the delayed arrival and portal rectangles must follow the same
-    // transform so their later placement remains source-shaped.
-    flipSpecialLevelRandom(3);
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.explicitPortalRegion = flipSpecialRegion(
-        active.explicitPortalRegion,
-    );
-    active.explicitPortalExclude = flipSpecialRegion(
-        active.explicitPortalExclude,
-    );
-}
-
-const AIR_MAP = Array.from({ length: 20 }, () => 'A'.repeat(76));
-
-async function generateAir(active) {
-    const context = loadSpecialAsciiMap(AIR_MAP, true);
-    active.context = { ...context };
-    active.specialMessages = [
-        'What a strange feeling!',
-        'You notice that there is no gravity here.',
-    ];
-    active.elementalBubbles = true;
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.shortsighted = true;
-    game.level.flags.stormy = true;
-
-    // air.lua declares these as whole-level coordinates rather than
-    // map-relative coordinates. They are delayed levregion metadata and
-    // participate in final special-level reflection before placement.
-    active.upTeleportRegion = { lx: 1, ly: 0, hx: 24, hy: 20 };
-    active.upTeleportExclude = { lx: 25, ly: 0, hx: 79, hy: 20 };
-    active.downTeleportRegion = { lx: 56, ly: 0, hx: 79, hy: 20 };
-    active.downTeleportExclude = { lx: 1, ly: 0, hx: 55, hy: 20 };
-    active.explicitPortalRegion = { lx: 57, ly: 1, hx: 78, hy: 19 };
-    active.portalDestinationName = 'fire';
-
-    for (let count = 0; count < 11; count++)
-        await specialExplicitMonster(context, 154, null, { peaceful: false });
-    for (let count = 0; count < 3; count++)
-        await specialExplicitMonster(context, 28, null, { peaceful: false });
-    for (let count = 0; count < 3; count++)
-        await specialExplicitMonster(context, 118, null, { peaceful: false });
-    await specialExplicitMonster(context, 121);
-    for (let count = 0; count < 5; count++)
-        await specialMonsterOfClass(context, 30);
-    for (let count = 0; count < 3; count++)
-        await specialMonsterOfClass(context, 31);
-    for (let count = 0; count < 2; count++)
-        await specialMonsterOfClass(context, 36);
-    for (let count = 0; count < 3; count++)
-        await specialExplicitMonster(context, 315, null, { peaceful: false });
-    for (let count = 0; count < 9; count++)
-        await specialExplicitMonster(context, 106, null, { peaceful: false });
-    for (let count = 0; count < 5; count++)
-        await specialExplicitMonster(context, 109, null, { peaceful: false });
-    for (let count = 0; count < 5; count++)
-        await specialExplicitMonster(context, 110, null, { peaceful: false });
-
-    flipSpecialLevelRandom(3);
-    for (const field of [
-        'upTeleportRegion', 'upTeleportExclude',
-        'downTeleportRegion', 'downTeleportExclude',
-        'explicitPortalRegion',
-    ]) active[field] = flipSpecialRegion(active[field]);
 }
 
 const VALLEY_MAP = [
@@ -14114,7 +13825,11 @@ async function makelevel() {
             || prototype === 'asmodeus'
             || prototype === 'baalz'
             || prototype === 'orcus'
-            || prototype === 'juiblex';
+            || prototype === 'juiblex'
+            || prototype === 'earth'
+            || prototype === 'air'
+            || prototype === 'fire'
+            || prototype === 'water';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {
@@ -14231,22 +13946,8 @@ async function makelevel() {
                 await fillSpecialRoom(room);
             return;
         }
-        if (prototype === 'fire') {
-            await generateSpecialAndFixup(generateFire,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'air') {
-            await generateSpecialAndFixup(generateAir,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'earth') {
-            await generateEarthLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'water') {
-            await generateWaterLevel(g._activeSpecialLevel);
+        if (['earth', 'air', 'fire', 'water'].includes(prototype)) {
+            await generateElementalPlane(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'astral') {
