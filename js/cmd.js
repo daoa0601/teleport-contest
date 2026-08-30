@@ -1757,6 +1757,16 @@ export async function rhack(key) {
         await dorub(cannedCommand.invlet);
         return;
     }
+    if (cannedCommand?.kind === 'swap-weapon') {
+        game._pending_message = previousMessage;
+        await doswapweapon();
+        return;
+    }
+    if (cannedCommand?.kind === 'wield') {
+        game._pending_message = previousMessage;
+        await dowield(cannedCommand.invlet);
+        return;
+    }
     if (cannedCommand?.kind === 'fire') {
         game._pending_message = previousMessage;
         await dofire(cannedCommand.shotLimit ?? 0);
@@ -5266,8 +5276,24 @@ async function doswapweapon() {
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
     if (!oldSecondary) {
-        await pline('You have no secondary weapon readied.');
-        game.context.move = 0;
+        game.u.twoweap = false;
+        if (!oldPrimary) {
+            await pline('You are already bare handed.');
+            game.context.move = 0;
+            return;
+        }
+        oldPrimary.wielded = false;
+        oldPrimary.alternate = true;
+        game.uwep = null;
+        if (game.u) game.u.uwep = null;
+        game.uswapwep = oldPrimary;
+        if (game.u) game.u.uswapwep = oldPrimary;
+        await pline('You are bare handed.');
+        await plineWithContinuation(
+            `${oldPrimary.invlet} - ${
+                inventoryItemDescription(oldPrimary)}.`,
+        );
+        game.context.move = 1;
         return;
     }
 
@@ -10211,7 +10237,7 @@ async function putOnArmorObject(object) {
 // C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
-async function dowield() {
+async function dowield(cannedInvlet = null) {
     const weapons = (game.inventory || []).filter(object =>
         object.class === 'Weapons' || object.oclass === 2
         || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0))
@@ -10222,9 +10248,18 @@ async function dowield() {
     const letters = weapons.map(object => object.invlet).join('');
     const prompt = `What do you want to wield? [- ${
         compactInventoryLetters(letters)} or ?*] `;
-    const selection = await promptInventoryObject(
-        prompt, game.inventory || [], { allowNone: true, allowMenu: true },
-    );
+    const selection = cannedInvlet === null
+        ? await promptInventoryObject(
+            prompt, game.inventory || [], {
+                allowNone: true, allowMenu: true,
+            },
+        )
+        : {
+            cancelled: false,
+            none: false,
+            object: (game.inventory || []).find(candidate =>
+                candidate.invlet === cannedInvlet),
+        };
     if (selection.cancelled) {
         game.context.move = 0;
         return;
@@ -10246,6 +10281,10 @@ async function dowield() {
     }
 
     const object = selection.object;
+    if (!object) {
+        game.context.move = 0;
+        return;
+    }
     if (object === game.uwep) {
         await pline('You are already wielding that!');
         game.context.move = 0;
@@ -14747,14 +14786,43 @@ async function dofire(cannedShotLimit = null) {
         const alternate = game.uswapwep || game.u?.uswapwep || null;
         const fireassist = game.flags?.fireassist !== false;
         if (fireassist && !matchingLauncher(game.uwep)
-            && matchingLauncher(alternate)
-            && !(alternate.cursed && alternate.bknown)) {
+            && matchingLauncher(alternate)) {
             await doswapweapon();
             if (game.uwep === alternate) {
                 game._cannedCommands ||= [];
                 game._cannedCommands.push({ kind: 'fire', shotLimit });
             }
             return;
+        }
+        if (fireassist && !matchingLauncher(game.uwep)) {
+            // dothrow.c:find_launcher() scans the live inventory chain.  A
+            // known cursed launcher is ineligible; the first known blessed
+            // or uncursed match wins immediately, while only the first
+            // unknown-BUC match is retained as a fallback.
+            let unknownLauncher = null;
+            let inventoryLauncher = null;
+            for (const candidate of game.inventory || []) {
+                if (candidate.cursed && candidate.bknown) continue;
+                if (!matchingLauncher(candidate)) continue;
+                if (candidate.bknown) {
+                    inventoryLauncher = candidate;
+                    break;
+                }
+                if (!unknownLauncher) unknownLauncher = candidate;
+            }
+            inventoryLauncher ||= unknownLauncher;
+            if (inventoryLauncher) {
+                game._cannedCommands ||= [];
+                if (game.uwep && !game.flags?.pushweapon) {
+                    game._cannedCommands.push({ kind: 'swap-weapon' });
+                }
+                game._cannedCommands.push({
+                    kind: 'wield', invlet: inventoryLauncher.invlet,
+                });
+                game._cannedCommands.push({ kind: 'fire', shotLimit });
+                game.context.move = 0;
+                return;
+            }
         }
         await dothrow(game.uquiver, true, shotLimit);
         return;

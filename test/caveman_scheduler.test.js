@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { CLUB, FLINT, SLING } from '../js/object_data.js';
+import { CLUB, FLINT, ROCK, SLING } from '../js/object_data.js';
 
-function cavemanConfig() {
+function cavemanConfig({ pushweapon = true } = {}) {
     return [
         'OPTIONS=name:Generalizer,role:Caveman,race:human,gender:male,align:lawful',
         'OPTIONS=!autopickup,!legacy,!tutorial,!splash_screen',
-        'OPTIONS=pushweapon,showexp,time,color,suppress_alert:3.3.1',
+        `OPTIONS=${pushweapon ? '' : '!'}pushweapon,showexp,time,color,suppress_alert:3.3.1`,
         'OPTIONS=symset:DECgraphics',
         '',
     ].join('\n');
@@ -57,7 +57,7 @@ function actorState() {
             || left.position[1] - right.position[1]);
 }
 
-async function cavemanOutcome({ seed, moves, bridgeFree }) {
+async function cavemanOutcome({ seed, moves, bridgeFree, pushweapon = true }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
     if (bridgeFree) process.env.TELEPORT_BRIDGE_FREE = '1';
@@ -70,7 +70,7 @@ async function cavemanOutcome({ seed, moves, bridgeFree }) {
             result = await runSegment({
                 seed,
                 datetime: '20260830130000',
-                nethackrc: cavemanConfig(),
+                nethackrc: cavemanConfig({ pushweapon }),
                 moves,
             });
         } catch (caught) {
@@ -209,6 +209,51 @@ test('a count prefix caps the live Caveman volley', async () => {
 
     const normal = await cavemanOutcome({
         seed, moves: ' 1f l', bridgeFree: false,
+    });
+    assert.equal(normal.error, null);
+    assert.deepEqual(normal.world, bridgeFree.world);
+});
+
+test('fireassist finds a live launcher outside both weapon slots', async () => {
+    // These ordinary commands first swap to the sling, then wield the rock
+    // stack with pushweapon disabled.  That leaves the sling in inventory,
+    // the club alternate, and matching flint readied.  Source find_launcher()
+    // must discover and wield that live sling before the shot; no fixed slot,
+    // launcher letter, queue shape, endpoint, or screen is the oracle.
+    const input = {
+        seed: 28100,
+        moves: ' x wdf l',
+        pushweapon: false,
+    };
+    const startup = await cavemanOutcome({
+        seed: input.seed,
+        moves: ' ',
+        bridgeFree: true,
+        pushweapon: input.pushweapon,
+    });
+    const bridgeFree = await cavemanOutcome({
+        ...input,
+        bridgeFree: true,
+    });
+
+    assert.equal(startup.error, null);
+    assert.equal(bridgeFree.error, null);
+    const initialFlint = startup.world.inventory.find(object =>
+        object.type === FLINT);
+    const remainingFlint = bridgeFree.world.inventory.find(object =>
+        object.type === FLINT);
+    assert.ok(initialFlint);
+    assert.ok(
+        initialFlint.quantity > (remainingFlint?.quantity ?? 0),
+        'the discovered launcher must fire the readied flint',
+    );
+    assert.equal(bridgeFree.world.primary, SLING);
+    assert.equal(bridgeFree.world.alternate, ROCK);
+    assert.deepEqual(bridgeFree.cavemanBridges, []);
+
+    const normal = await cavemanOutcome({
+        ...input,
+        bridgeFree: false,
     });
     assert.equal(normal.error, null);
     assert.deepEqual(normal.world, bridgeFree.world);
