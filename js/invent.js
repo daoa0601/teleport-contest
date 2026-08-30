@@ -22,6 +22,7 @@ import {
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { unseenObjectNoun } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
+import { objectTypeCallNoun } from './object_call.js';
 
 const CLASS_ORDER = [
     'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
@@ -182,7 +183,7 @@ export function inventoryItemDescription(item) {
         : holyWater ? waterName
         : typeKnown && item.otyp === 296 ? identifiedTinName(item)
         : typeKnown ? knownObjectName(item)
-        : callName ? `${item.name} called ${callName}`
+        : callName ? `${objectTypeCallNoun(item)} called ${callName}`
         : item.name === 'object' && item.otyp === 314
             ? 'white potion' : item.name;
     let noun = quantity === 1 ? baseName

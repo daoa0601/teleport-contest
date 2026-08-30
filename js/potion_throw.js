@@ -19,7 +19,6 @@ import {
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { objectTypeKnown } from './shk.js';
 import { detachThrownUnit } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
@@ -128,7 +127,6 @@ function ordinaryEligibility({
         || item.oartifact || item.artifact || equipped(state, item)
         || containsUnpaidObject(item) || activeTimerCount(item) > 0
         || (item.contents?.length ?? 0) > 0
-        || (item.dknown !== false && !objectTypeKnown(item, state))
         || heroIsBlind(state)
         || state.underwater || state.u?.uinwater
         || state.u?.levitating || state.u?.levitation || state.levitating

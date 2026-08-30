@@ -30,7 +30,6 @@ import { heroIsBlind } from './senses.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus,
 } from './skills.js';
-import { objectTypeKnown } from './shk.js';
 import {
     maximumPhysicalWeaponDamage, rollPhysicalWeaponDamage,
     strengthDamageBonus,
@@ -267,8 +266,7 @@ function swallowedPotionEligibility(
         || containsUnpaidObject(item)
         || item.lamplit || item.oartifact || item.artifact
         || activeObjectTimerCount(item) > 0
-        || (item.contents?.length ?? 0) > 0
-        || (item.dknown !== false && !objectTypeKnown(item, state))) {
+        || (item.contents?.length ?? 0) > 0) {
         return null;
     }
 

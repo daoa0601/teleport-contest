@@ -9,6 +9,7 @@ import { ROOM, STONE, W_ARM, W_ARMC } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
+import { inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mklev.js';
 import {
     CORPSE, IRON_CHAIN,
@@ -1171,23 +1172,51 @@ test('lamplit oil map potion fails before split or throw RNG', async () => {
     assert.equal(floorObjects().length, 0);
 });
 
-test('unknown inert map potion fails before interactive trycall debt',
+test('unknown inert map potion records a live type call after visible impact',
     async () => {
-        freshMapPotionState(2);
+        const monster = freshMapPotionState(2);
         const potion = addKnownPotion(POT_GAIN_LEVEL);
         potion.typeKnown = potion.known = false;
         game._knownObjectTypes?.delete(potion.otyp);
+        const siblingRaw = mksobj(POT_GAIN_LEVEL, true, false);
+        siblingRaw.cursed = false;
+        siblingRaw.blessed = true;
+        siblingRaw.bknown = siblingRaw.dknown = true;
+        siblingRaw.known = siblingRaw.typeKnown = false;
+        const sibling = addInventoryItem(siblingRaw);
+        const appearance = game.objectDescriptions[potion.otyp];
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
 
         initRng(2797n);
         enableRngLog();
-        await assert.rejects(
-            throwEast(potion),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
-        );
+        try {
+            await throwEast(potion, [
+                ...Array(20).fill(' '), ...'mystery', '\n',
+            ]);
+        } finally {
+            delete game._preNhgetchHook;
+        }
 
-        assert.deepEqual(getRngLog(), []);
-        assert.deepEqual(game.inventory, [potion]);
-        assert.equal(potion.where, 'inventory');
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=18', 'rnd(25)=1', 'rn2(7)=4', 'rn2(5)=1',
+            'rn2(9)=5',
+        ]);
+        assert.equal(monster.mhp, 11);
+        assert.deepEqual(game.inventory, [sibling]);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game._objectCallNames[POT_GAIN_LEVEL], 'mystery');
+        assert.ok(
+            inventoryItemDescription(sibling).includes(
+                `${appearance} potion called mystery`,
+            ),
+        );
+        assert.ok(inputBoundaries.some(message =>
+            message.startsWith(`Call an ${appearance} potion:`)
+                || message.startsWith(`Call a ${appearance} potion:`),
+        ));
         assert.equal(floorObjects().length, 0);
+        assertNoBridgeUse();
     });

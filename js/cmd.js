@@ -12,6 +12,9 @@ import { nhgetch } from './input.js';
 import { getLine, promptYesNo } from './query.js';
 export { getLine, promptYesNo } from './query.js';
 import {
+    objectTypeCallNoun, tryCallObjectType,
+} from './object_call.js';
+import {
     newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation,
     docrt, docrtRecalc, bot, cls,
     terrain_glyph, canSeeMonster, canProjectMonster, canSpotMonster,
@@ -2051,22 +2054,6 @@ function consumeOneInventoryObject(object) {
     if (index >= 0) game.inventory.splice(index, 1);
 }
 
-async function callUnknownPotion(potion) {
-    if (game._knownObjectTypes?.has(potion.otyp)
-        || game._objectCallNames?.[potion.otyp]) return;
-    const appearance = potion.name || 'potion';
-    const callName = await getLine(
-        `Call a ${appearance}:`,
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    if (callName?.trim()) {
-        recordObjectCall(potion.otyp, callName.trim());
-    }
-    // getlin() clears its editable top line when the enclosing
-    // time-consuming command commits and returns to moveloop.
-    game._pending_message = '';
-}
-
 async function doquaff() {
     const loc = game.level?.at(game.u?.ux, game.u?.uy);
     if (loc?.typ === FOUNTAIN) {
@@ -2114,7 +2101,7 @@ async function doquaff() {
                 + (potion.diluted || potion.odiluted ? 5 : 10)
                 * (2 + blessing);
 
-            await callUnknownPotion(potion);
+            await tryCallObjectType(potion);
     } else if (potion.otyp === POT_SICKNESS && potion.blessed) {
             // C potion.c:peffect_sickness().  The first pline fills tty's
             // topline and suspends before the blessed qualification.  The
@@ -2277,7 +2264,7 @@ async function doquaff() {
                 `Ooph!  This tastes like ${potion.diluted || potion.odiluted
                     ? 'watered down ' : ''}liquid fire!--More--`,
             );
-            await callUnknownPotion(potion);
+            await tryCallObjectType(potion);
     }
     consumeOneInventoryObject(potion);
     game._capacityDirty = true;
@@ -5490,7 +5477,7 @@ async function doname() {
             } else {
                 const perceivedName = objectTypeKnown(object)
                     ? OBJECT_NAMES[object.otyp] || object.name || 'thing'
-                    : object.name || 'thing';
+                    : objectTypeCallNoun(object);
                 const value = await getLine(
                     `Call ${indefiniteArticle(perceivedName)} ${perceivedName}:`,
                     (_ch, key) => key >= 32 && key < 127,

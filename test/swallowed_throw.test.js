@@ -9,6 +9,7 @@ import { LOST_STOLEN, ROOM, W_AMUL } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
+import { inventoryItemDescription } from '../js/invent.js';
 import { beginLampBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -1506,7 +1507,7 @@ test('swallowed inert potion stack splits one consumed identity', async () => {
     assertNoBridgeUse();
 });
 
-test('dknown unknown inert potion remains fail-loud before call prompt debt',
+test('dknown unknown swallowed potion records a live type call after impact',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         const raw = mksobj(POT_FRUIT_JUICE, true, false);
@@ -1515,21 +1516,46 @@ test('dknown unknown inert potion remains fail-loud before call prompt debt',
         raw.bknown = raw.dknown = true;
         raw.known = raw.typeKnown = false;
         const potion = addInventoryItem(raw);
+        const siblingRaw = mksobj(POT_FRUIT_JUICE, true, false);
+        siblingRaw.cursed = false;
+        siblingRaw.blessed = true;
+        siblingRaw.bknown = siblingRaw.dknown = true;
+        siblingRaw.known = siblingRaw.typeKnown = false;
+        const sibling = addInventoryItem(siblingRaw);
+        const appearance = game.objectDescriptions[potion.otyp];
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
 
         initRng(2522n);
         enableRngLog();
-        await assert.rejects(
-            throwThroughLiveCommand(potion, 'l'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId
-                    === 'throw.potion-impact-unsupported',
-        );
+        try {
+            await throwThroughLiveCommand(potion, 'l', [
+                ...Array(20).fill(' '), ...'mystery', '\n',
+            ]);
+        } finally {
+            delete game._preNhgetchHook;
+        }
 
-        assert.equal(engulfer.mhp, 40);
-        assert.deepEqual(game.inventory, [potion]);
-        assert.deepEqual(engulfer.minvent, []);
-        assert.deepEqual(getRngLog(), []);
+        assert.equal(engulfer.mhp, 39);
+        assert.deepEqual(game.inventory, [sibling]);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game._objectCallNames[POT_FRUIT_JUICE], 'mystery');
+        assert.ok(
+            inventoryItemDescription(sibling).includes(
+                `${appearance} potion called mystery`,
+            ),
+        );
+        assert.ok(inputBoundaries.some(message =>
+            message.startsWith(`Call an ${appearance} potion:`)
+                || message.startsWith(`Call a ${appearance} potion:`),
+        ));
+        assert.deepEqual(getRngLog(), [
+            'rnd(20)=7', 'rn2(7)=5', 'rn2(5)=2',
+        ]);
         assert.equal((game.level.objects || []).flat(2).length, 0);
+        assertNoBridgeUse();
     });
 
 test('unseen unknown inert potion needs no naming continuation', async () => {

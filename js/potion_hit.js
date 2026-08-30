@@ -12,6 +12,10 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import { splitHostileMonster } from './mklev.js';
+import { tryCallObjectType } from './object_call.js';
+import {
+    recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
 import {
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE,
     POT_CONFUSION,
@@ -145,7 +149,11 @@ export function potionImpactObjectName(potion, state = game) {
     let noun;
     if (objectTypeKnown(potion, state)) noun = `potion of ${trueName}`;
     else if (potion?.dknown === false) noun = 'potion';
-    else noun = `${appearance || 'unknown'} potion`;
+    else {
+        noun = `${appearance || 'unknown'} potion`;
+        const callName = state._objectCallNames?.[potion?.otyp];
+        if (callName) noun += ` called ${callName}`;
+    }
     const individualName = potion?.oextra?.oname || potion?.oname;
     return individualName ? `${noun} named ${individualName}` : noun;
 }
@@ -452,9 +460,23 @@ function wereTransformationNoun(monster) {
     return 'wolf';
 }
 
+async function finishPotionVaporKnowledge(state, potion, identifiesType) {
+    if (potion.dknown === false) return null;
+    if (identifiesType) {
+        if (!objectTypeKnown(potion, state)) {
+            // makeknown()->discover_object(..., credit_hero=TRUE)
+            exerciseAttribute(4, true, state);
+            recordObjectKnowledge(potion.otyp, state);
+            recordObjectEncounter(potion.otyp, state);
+        }
+        return { identified: true, prompted: false };
+    }
+    return await tryCallObjectType(potion, state);
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
-// Naming is bounded by callers: dknown-but-unknown identities never enter
-// this owner because trycall() would start an interactive continuation.
+// Its final knowledge transaction either identifies an unambiguous effect or
+// asks for a type-wide call name before the caller frees the potion identity.
 export async function applySupportedPotionVapor({
     state = game,
     potion,
@@ -468,7 +490,10 @@ export async function applySupportedPotionVapor({
     if (!profile.canReceive) return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');
-        return { received: true, shielded: true };
+        const typeCall = await finishPotionVaporKnowledge(
+            state, potion, false,
+        );
+        return { received: true, shielded: true, typeCall };
     }
 
     let abilityStart = null;
@@ -480,6 +505,7 @@ export async function applySupportedPotionVapor({
     let waterEffect = null;
     let sightToggled = false;
     let resisted = false;
+    let identifiesType = false;
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
@@ -515,6 +541,7 @@ export async function applySupportedPotionVapor({
             Math.max(0, hero.confusionTurns ?? 0) + confusionDuration,
         );
     } else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
+        identifiesType = true;
         const freeAction = heroHasFreeAction(state);
         const sleepResistance = !!(state.u?.sleepResistance
             || state.u?.sleep_resistance);
@@ -557,6 +584,7 @@ export async function applySupportedPotionVapor({
         const hero = state.u || (state.u = {});
         const wasBlind = heroIsBlind(state);
         const unaware = heroIsUnaware(state);
+        identifiesType = !wasBlind && !unaware;
         if (!wasBlind && !unaware)
             await publish('It suddenly gets dark.');
         blindnessDuration = rnd(5);
@@ -575,6 +603,7 @@ export async function applySupportedPotionVapor({
             await publish('Your vision clears.');
     } else if (potion.otyp === POT_INVISIBILITY) {
         if (!heroIsBlind(state) && !heroIsInvisible(state)) {
+            identifiesType = true;
             invisibilityGlimpse = heroSeesInvisible(state)
                 ? 'transparent' : 'unseen';
             await publish(invisibilityGlimpse === 'transparent'
@@ -590,6 +619,9 @@ export async function applySupportedPotionVapor({
     } else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
+    const typeCall = await finishPotionVaporKnowledge(
+        state, potion, identifiesType,
+    );
     return {
         received: true,
         abilityStart,
@@ -601,6 +633,8 @@ export async function applySupportedPotionVapor({
         waterEffect,
         sightToggled,
         resisted,
+        identifiesType,
+        typeCall,
     };
 }
 
@@ -1052,6 +1086,9 @@ export async function hitMonsterWithSupportedPotion({
             breathedVapor = vaporEffect?.received !== false;
         }
     }
+    let typeCall = vaporEffect?.typeCall || null;
+    if (!breathedVapor && targetVisible)
+        typeCall = await tryCallObjectType(potion, state);
     destroyPotionIdentity(potion);
     return {
         bottleName,
@@ -1061,6 +1098,7 @@ export async function hitMonsterWithSupportedPotion({
         directEffect,
         breathedVapor,
         vaporEffect,
+        typeCall,
     };
 }
 

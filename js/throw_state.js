@@ -39,6 +39,11 @@ export function thrownObjectName(object, state = game) {
     else if (oclass === 11) noun = `${appearance || 'unknown'} wand`;
     else noun = appearance || trueName;
 
+    if (!known && object.dknown !== false) {
+        const callName = state._objectCallNames?.[object.otyp];
+        if (callName) noun += ` called ${callName}`;
+    }
+
     const individualName = object.oextra?.oname || object.oname;
     return individualName ? `${noun} named ${individualName}` : noun;
 }

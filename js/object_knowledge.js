@@ -39,35 +39,35 @@ export function objectClassForType(otyp) {
     return 0;
 }
 
-function rememberType(otyp) {
+function rememberType(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < 1) return;
-    if (!Array.isArray(game._objectDiscoveryOrder))
-        game._objectDiscoveryOrder = [];
-    if (!game._objectDiscoveryOrder.includes(otyp))
-        game._objectDiscoveryOrder.push(otyp);
+    if (!Array.isArray(state._objectDiscoveryOrder))
+        state._objectDiscoveryOrder = [];
+    if (!state._objectDiscoveryOrder.includes(otyp))
+        state._objectDiscoveryOrder.push(otyp);
 }
 
-export function recordObjectEncounter(otyp) {
+export function recordObjectEncounter(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < 1) return;
-    rememberType(otyp);
-    if (!(game._encounteredObjectTypes instanceof Set))
-        game._encounteredObjectTypes = new Set();
-    game._encounteredObjectTypes.add(otyp);
+    rememberType(otyp, state);
+    if (!(state._encounteredObjectTypes instanceof Set))
+        state._encounteredObjectTypes = new Set();
+    state._encounteredObjectTypes.add(otyp);
 }
 
-export function recordObjectKnowledge(otyp) {
+export function recordObjectKnowledge(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < 1) return;
-    rememberType(otyp);
-    if (!(game._knownObjectTypes instanceof Set))
-        game._knownObjectTypes = new Set();
-    game._knownObjectTypes.add(otyp);
+    rememberType(otyp, state);
+    if (!(state._knownObjectTypes instanceof Set))
+        state._knownObjectTypes = new Set();
+    state._knownObjectTypes.add(otyp);
 }
 
-export function recordObjectCall(otyp, name) {
+export function recordObjectCall(otyp, name, state = game) {
     if (!Number.isInteger(otyp) || otyp < 1 || !name) return;
-    rememberType(otyp);
-    if (!game._objectCallNames) game._objectCallNames = {};
-    game._objectCallNames[otyp] = name;
+    rememberType(otyp, state);
+    if (!state._objectCallNames) state._objectCallNames = {};
+    state._objectCallNames[otyp] = name;
 }
 
 export function recordObjectPriceQuote(otyp, price, kind = 'buy') {

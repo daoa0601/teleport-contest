@@ -95,6 +95,37 @@ test('visible inert potion impact names a headed monster and evaporates',
         assert.deepEqual(potion.objectTimers, []);
     });
 
+test('an existing potion call name suppresses trycall and remains visible',
+    async () => {
+        resetGame();
+        resetInputState();
+        game.u = { hallucinationTurns: 0 };
+        game._knownObjectTypes = new Set();
+        game._objectCallNames = { [POT_FRUIT_JUICE]: 'mystery' };
+        const monster = {
+            mnum: PM_PURPLE_WORM, mx: 10, my: 10, mhp: 8, mhpmax: 8,
+        };
+        const potion = potionObject(POT_FRUIT_JUICE);
+        potion.typeKnown = false;
+        const messages = [];
+
+        initRng(2601n);
+        enableRngLog();
+        const result = await hitMonsterWithInertPotion({
+            state: game,
+            monster,
+            potion,
+            targetVisible: true,
+            publish: async message => messages.push(message),
+        });
+
+        assert.match(messages[1], /potion called mystery evaporates\.$/);
+        assert.equal(result.typeCall.prompted, false);
+        assert.equal(game._objectCallNames[POT_FRUIT_JUICE], 'mystery');
+        assert.equal(potion.where, 'gone');
+        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
+    });
+
 test('hallucinated inert potion impact names a visible headless monster',
     async () => {
         resetGame();
@@ -1213,6 +1244,41 @@ test('paralysis vapor installs live helpless state and Dexterity exercise',
         assert.equal(game._helplessDoneMessage, 'You can move again.');
         assert.equal(game.u._exercise[1], -1);
         assert.equal(result.helplessDuration, 5);
+    });
+
+test('paralysis vapor identifies an unknown type instead of asking to call it',
+    async () => {
+        resetGame();
+        resetInputState();
+        game._knownObjectTypes = new Set();
+        game._encounteredObjectTypes = new Set();
+        game._objectDiscoveryOrder = [];
+        game._objectCallNames = {};
+        game.u = {
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            amax: { a: [12, 12, 12, 12, 12, 12] },
+        };
+        const potion = potionObject(POT_PARALYSIS);
+        potion.typeKnown = false;
+        const messages = [];
+
+        initRng(3011n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game,
+            potion,
+            publish: async message => messages.push(message),
+        });
+
+        assert.deepEqual(messages, ['Something seems to be holding you.']);
+        assert.equal(result.identifiesType, true);
+        assert.equal(result.typeCall.prompted, false);
+        assert.equal(game._knownObjectTypes.has(POT_PARALYSIS), true);
+        assert.equal(game._encounteredObjectTypes.has(POT_PARALYSIS), true);
+        assert.equal(game._objectCallNames[POT_PARALYSIS], undefined);
+        assert.deepEqual(getRngLog().map(entry => entry.split('=')[0]), [
+            'rnd(5)', 'rn2(2)', 'rn2(19)',
+        ]);
     });
 
 test('free action converts paralysis vapor into a zero-RNG momentary stiffen',
