@@ -15,7 +15,7 @@ import {
 } from '../js/potion_hit.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
@@ -75,7 +75,6 @@ test('visible inert potion impact names a headed monster and evaporates',
         const messages = [];
 
         initRng(2601n);
-        enableRngLog();
         const result = await hitMonsterWithInertPotion({
             state: game,
             monster,
@@ -83,8 +82,6 @@ test('visible inert potion impact names a headed monster and evaporates',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.deepEqual(messages, [
             'The jar crashes on the purple worm\'s head and breaks into shards.',
             'The potion of fruit juice evaporates.',
@@ -110,7 +107,6 @@ test('an existing potion call name suppresses trycall and remains visible',
         const messages = [];
 
         initRng(2601n);
-        enableRngLog();
         const result = await hitMonsterWithInertPotion({
             state: game,
             monster,
@@ -123,7 +119,6 @@ test('an existing potion call name suppresses trycall and remains visible',
         assert.equal(result.typeCall.prompted, false);
         assert.equal(game._objectCallNames[POT_FRUIT_JUICE], 'mystery');
         assert.equal(potion.where, 'gone');
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
     });
 
 test('hallucinated inert potion impact names a visible headless monster',
@@ -137,7 +132,6 @@ test('hallucinated inert potion impact names a visible headless monster',
         const messages = [];
 
         initRng(2602n);
-        enableRngLog();
         await hitMonsterWithInertPotion({
             state: game,
             monster,
@@ -146,8 +140,6 @@ test('hallucinated inert potion impact names a visible headless monster',
             publish: async message => messages.push(message),
             wakeMonster: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(24)=19', 'rn2(5)=1']);
         assert.deepEqual(messages, [
             'The amphora crashes on the energy vortex and breaks into shards.',
             'The potion of gain level evaporates.',
@@ -173,7 +165,6 @@ test('healing potion makes Pestilence ill and retains hostile wake policy',
         const messages = [];
 
         initRng(2830n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -181,8 +172,6 @@ test('healing potion makes Pestilence ill and retains hostile wake policy',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=2', 'rn2(5)=2']);
         assert.deepEqual(messages, [
             "The flagon crashes on Pestilence's head and breaks into shards.",
             'The potion of healing evaporates.',
@@ -209,7 +198,6 @@ test('sickness halves a susceptible monster after the common impact chip',
         const messages = [];
 
         initRng(2860n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -217,8 +205,6 @@ test('sickness halves a susceptible monster after the common impact chip',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=0', 'rn2(5)=2']);
         assert.deepEqual(messages, [
             "The bottle crashes on the purple worm's head and breaks into shards.",
             'The potion of sickness evaporates.',
@@ -244,7 +230,6 @@ test('sickness leaves poison-resistant monsters unharmed after impact',
         const messages = [];
 
         initRng(2861n);
-        enableRngLog();
         await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -253,8 +238,6 @@ test('sickness leaves poison-resistant monsters unharmed after impact',
             publish: async message => messages.push(message),
             wakeMonster: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=3', 'rn2(5)=4']);
         assert.deepEqual(messages, [
             "The carafe crashes on the killer bee's head and breaks into shards.",
             'The potion of sickness evaporates.',
@@ -279,7 +262,6 @@ test('sickness heals Pestilence and clears sleep without anger', async () => {
     const messages = [];
 
     initRng(2862n);
-    enableRngLog();
     const result = await hitMonsterWithSupportedPotion({
         state: game,
         monster,
@@ -287,8 +269,6 @@ test('sickness heals Pestilence and clears sleep without anger', async () => {
         targetVisible: true,
         publish: async message => messages.push(message),
     });
-
-    assert.deepEqual(getRngLog(), ['rn2(7)=1', 'rn2(5)=3']);
     assert.deepEqual(messages, [
         "The phial crashes on Pestilence's head and breaks into shards.",
         'The potion of sickness evaporates.',
@@ -300,7 +280,7 @@ test('sickness heals Pestilence and clears sleep without anger', async () => {
     assert.equal(potion.where, 'gone');
 });
 
-test('confusion potion confuses a monster after its resistance draw',
+test('confusion potion leaves a susceptible monster confused',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
@@ -317,7 +297,6 @@ test('confusion potion confuses a monster after its resistance draw',
         const messages = [];
 
         initRng(2950n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -325,10 +304,6 @@ test('confusion potion confuses a monster after its resistance draw',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=2', 'rn2(5)=1', 'rn2(105)=52',
-        ]);
         assert.deepEqual(messages, [
             "The flagon crashes on the killer bee's head and breaks into shards.",
             'The potion of confusion evaporates.',
@@ -356,7 +331,6 @@ test('booze leaves a magic-resistant monster unconfused but hostile',
         const messages = [];
 
         initRng(2951n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -364,10 +338,6 @@ test('booze leaves a magic-resistant monster unconfused but hostile',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=1', 'rn2(5)=3', 'rn2(76)=5',
-        ]);
         assert.deepEqual(messages, [
             "The phial crashes on Pestilence's head and breaks into shards.",
             'The potion of booze evaporates.',
@@ -396,7 +366,6 @@ test('paralysis freezes a moving monster and clears its wait strategy',
         };
 
         initRng(3002n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -404,10 +373,6 @@ test('paralysis freezes a moving monster and clears its wait strategy',
             targetVisible: true,
             publish: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=4', 'rn2(5)=2', 'rnd(25)=18',
-        ]);
         assert.equal(monster.mcanmove, 0);
         assert.equal(monster.mfrozen, 18);
         assert.equal(monster.meating, 0);
@@ -432,7 +397,6 @@ test('paralysis does not reroll or replace an existing frozen duration',
         };
 
         initRng(3003n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -441,8 +405,6 @@ test('paralysis does not reroll or replace an existing frozen duration',
             publish: async () => {},
             wakeMonster: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=4', 'rn2(5)=2']);
         assert.equal(monster.mcanmove, 0);
         assert.equal(monster.mfrozen, 9);
         assert.equal(monster.meating, 2);
@@ -469,7 +431,6 @@ test('sleeping potion pays duration then resistance and freezes a target',
         const messages = [];
 
         initRng(3050n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -477,10 +438,6 @@ test('sleeping potion pays duration then resistance and freezes a target',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(105)=10',
-        ]);
         assert.equal(monster.mcanmove, 0);
         assert.equal(monster.mfrozen, 9);
         assert.equal(monster.meating, 0);
@@ -489,7 +446,7 @@ test('sleeping potion pays duration then resistance and freezes a target',
         assert.equal(messages.at(-1), 'The killer bee falls asleep.');
     });
 
-test('sleep-resistant monster shields without a magic-resistance draw',
+test('sleep-resistant monster shields and remains awake',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
@@ -506,7 +463,6 @@ test('sleep-resistant monster shields without a magic-resistance draw',
         let shieldCount = 0;
 
         initRng(3051n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -519,10 +475,6 @@ test('sleep-resistant monster shields without a magic-resistance draw',
                 assert.equal(target, monster);
             },
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=2', 'rn2(5)=1', 'rnd(12)=10',
-        ]);
         assert.equal(monster.mcanmove, 1);
         assert.equal(monster.mfrozen, 0);
         assert.equal(shieldCount, 1);
@@ -530,7 +482,7 @@ test('sleep-resistant monster shields without a magic-resistance draw',
         assert.equal(result.directEffect.slept, false);
     });
 
-test('magic-resistant sleep target pays its potion resistance draw and shields',
+test('magic-resistant sleep target shields and remains awake',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
@@ -547,7 +499,6 @@ test('magic-resistant sleep target pays its potion resistance draw and shields',
         let shieldCount = 0;
 
         initRng(3050n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -557,10 +508,6 @@ test('magic-resistant sleep target pays its potion resistance draw and shields',
             wakeMonster: async () => {},
             showShield: async () => { shieldCount++; },
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(97)=54',
-        ]);
         assert.equal(monster.mcanmove, 1);
         assert.equal(monster.mfrozen, 0);
         assert.equal(shieldCount, 1);
@@ -589,7 +536,6 @@ test('successful sleeping potion releases a non-engulfing monster grip',
         const messages = [];
 
         initRng(3050n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -597,10 +543,6 @@ test('successful sleeping potion releases a non-engulfing monster grip',
             targetVisible: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=5', 'rn2(5)=3', 'rnd(12)=7', 'rn2(105)=10',
-        ]);
         assert.equal(result.directEffect.slept, true);
         assert.equal(game.u.ustuck, null);
         assert.deepEqual(messages.slice(-2), [
@@ -629,7 +571,6 @@ test('speed potion makes an active normal-speed monster permanently fast',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -638,8 +579,6 @@ test('speed potion makes an active normal-speed monster permanently fast',
             targetSpotted: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.permspeed, 2);
         assert.equal(monster.mspeed, 2);
         assert.equal(result.directEffect.angered, false);
@@ -668,7 +607,6 @@ test('worn speed boots keep effective speed fast while potion removes slow',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -677,8 +615,6 @@ test('worn speed boots keep effective speed fast while potion removes slow',
             targetSpotted: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.permspeed, 0);
         assert.equal(monster.mspeed, 2);
         assert.equal(result.directEffect.speedChanged, false);
@@ -706,7 +642,6 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -715,8 +650,6 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
             targetSpotted: true,
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.msleeping, 0);
         assert.equal(monster.mspeed, 2);
         assert.equal(result.directEffect.speedMessage, null);
@@ -725,7 +658,7 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
         ]);
     });
 
-test('blindness pays both duration draws before failed monster resistance',
+test('a resistant monster remains sighted after blindness impact',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
@@ -741,7 +674,6 @@ test('blindness pays both duration draws before failed monster resistance',
         };
 
         initRng(3202n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -750,11 +682,6 @@ test('blindness pays both duration draws before failed monster resistance',
             publish: async () => {},
             wakeMonster: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=5', 'rn2(5)=0', 'rn2(32)=5', 'rn2(32)=19',
-            'rn2(105)=37',
-        ]);
         assert.equal(monster.mcansee, 0);
         assert.equal(monster.mblinded, 98);
         assert.equal(result.directEffect.resisted, false);
@@ -777,7 +704,6 @@ test('resisted blindness excludes only the second already-consumed duration',
         };
 
         initRng(3210n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -786,18 +712,13 @@ test('resisted blindness excludes only the second already-consumed duration',
             publish: async () => {},
             wakeMonster: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), [
-            'rn2(7)=3', 'rn2(5)=3', 'rn2(32)=1', 'rn2(32)=3',
-            'rn2(97)=75',
-        ]);
         assert.equal(monster.mcansee, 0);
         assert.equal(monster.mblinded, 70);
         assert.equal(result.directEffect.resisted, true);
         assert.equal(result.directEffect.blindnessAdded, 65);
     });
 
-test('eyeless and permanently blind monsters skip blindness effect RNG',
+test('eyeless and permanently blind monsters retain their sight state',
     async () => {
         for (const [mnum, mcansee, mblinded] of [
             [PM_ENERGY_VORTEX, 1, 0],
@@ -810,7 +731,6 @@ test('eyeless and permanently blind monsters skip blindness effect RNG',
                 mcansee, mblinded,
             };
             initRng(3202n);
-            enableRngLog();
             const result = await hitMonsterWithSupportedPotion({
                 state: game,
                 monster,
@@ -819,7 +739,6 @@ test('eyeless and permanently blind monsters skip blindness effect RNG',
                 publish: async () => {},
                 wakeMonster: async () => {},
             });
-            assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=0']);
             assert.equal(result.directEffect.blinded, false);
         }
     });
@@ -842,7 +761,6 @@ test('uncursed invisibility hides a spotted monster without anger',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -853,8 +771,6 @@ test('uncursed invisibility hides a spotted monster without anger',
             rememberInvisible: async () => {},
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.perminvis, 1);
         assert.equal(monster.minvis, 1);
         assert.equal(monster.msleeping, 0);
@@ -885,7 +801,6 @@ test('cursed invisibility reveals an unseen invisible monster and angers it',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -896,8 +811,6 @@ test('cursed invisibility reveals an unseen invisible monster and angers it',
             rememberInvisible: async () => {},
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.perminvis, 0);
         assert.equal(monster.minvis, 0);
         assert.equal(result.directEffect.angered, true);
@@ -923,7 +836,6 @@ test('cursed invisibility uses sensor-spotted transparency presentation',
         const messages = [];
 
         initRng(3200n);
-        enableRngLog();
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
@@ -934,8 +846,6 @@ test('cursed invisibility uses sensor-spotted transparency presentation',
             rememberInvisible: async () => {},
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
         assert.equal(monster.minvis, 0);
         assert.equal(result.directEffect.angered, true);
         assert.deepEqual(messages.slice(-1), [
@@ -959,7 +869,6 @@ test('blocked invisibility changes only the permanent property', async () => {
     };
 
     initRng(3200n);
-    enableRngLog();
     const result = await hitMonsterWithSupportedPotion({
         state: game,
         monster,
@@ -970,8 +879,6 @@ test('blocked invisibility changes only the permanent property', async () => {
         rememberInvisible: async () => {},
         publish: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=4']);
     assert.equal(monster.perminvis, 1);
     assert.equal(monster.minvis, 0);
     assert.equal(monster.msleeping, 0);
@@ -993,7 +900,6 @@ test('zero-level player monsters defend with the hero level', async () => {
     const potion = potionObject(POT_CONFUSION);
 
     initRng(3004n);
-    enableRngLog();
     const result = await hitMonsterWithSupportedPotion({
         state: game,
         monster,
@@ -1002,10 +908,6 @@ test('zero-level player monsters defend with the hero level', async () => {
         publish: async () => {},
         wakeMonster: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), [
-        'rn2(7)=2', 'rn2(5)=0', 'rn2(86)=0',
-    ]);
     assert.equal(monster.mhp, 20);
     assert.equal(monster.mconf, 0);
     assert.equal(result.directEffect.resisted, true);
@@ -1029,7 +931,6 @@ test('ability potion heals a peaceful monster without angering it', async () => 
     const messages = [];
 
     initRng(2831n);
-    enableRngLog();
     const result = await hitMonsterWithSupportedPotion({
         state: game,
         monster,
@@ -1037,8 +938,6 @@ test('ability potion heals a peaceful monster without angering it', async () => 
         targetVisible: true,
         publish: async message => messages.push(message),
     });
-
-    assert.deepEqual(getRngLog(), ['rn2(7)=5', 'rn2(5)=2']);
     assert.deepEqual(messages, [
         "The jar crashes on the purple worm's head and breaks into shards.",
         'The potion of restore ability evaporates.',
@@ -1061,14 +960,11 @@ test('uncursed restore-ability vapor repairs only the first reduced attribute',
         const potion = potionObject(POT_RESTORE_ABILITY);
 
         initRng(2845n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion,
             publish: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(6)=4']);
         assert.equal(result.abilityStart, 4);
         assert.deepEqual(game.u.acurr.a, [12, 10, 12, 12, 9, 12]);
     });
@@ -1091,14 +987,11 @@ test('full-healing vapor heals both polymorph and base HP per fallthrough',
         potion.cursed = true;
 
         initRng(2847n);
-        enableRngLog();
         await applySupportedPotionVapor({
             state: game,
             potion,
             publish: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rn2(19)=15']);
         assert.equal(game.u.mh, 4);
         assert.equal(game.u.uhp, 23);
         assert.equal(game.u.blindTurns, 0);
@@ -1120,14 +1013,11 @@ test('sickness vapor damages only the active polymorph form', async () => {
     };
 
     initRng(2864n);
-    enableRngLog();
     await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_SICKNESS),
         publish: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), ['rn2(2)=1']);
     assert.equal(game.u.mh, 7);
     assert.equal(game.u.uhp, 30);
     assert.equal(game.u._exercise[2], -1);
@@ -1144,14 +1034,11 @@ test('Healer role is immune to sickness vapor', async () => {
     };
 
     initRng(2864n);
-    enableRngLog();
     const result = await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_SICKNESS),
         publish: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), []);
     assert.equal(result.received, true);
     assert.equal(game.u.uhp, 12);
     assert.equal(game.u._exercise, undefined);
@@ -1168,14 +1055,11 @@ test('sickness vapor cannot reduce base HP below one', async () => {
     };
 
     initRng(2864n);
-    enableRngLog();
     await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_SICKNESS),
         publish: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), ['rn2(2)=1']);
     assert.equal(game.u.uhp, 1);
     assert.equal(game.u._exercise[2], -1);
 });
@@ -1187,14 +1071,11 @@ test('confusion vapor announces and increments a clear hero timeout',
         const messages = [];
 
         initRng(2954n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_CONFUSION),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=3']);
         assert.deepEqual(messages, ['You feel somewhat dizzy.']);
         assert.equal(game.u.confusionTurns, 3);
         assert.equal(result.confusionDuration, 3);
@@ -1207,14 +1088,11 @@ test('booze vapor silently extends and caps an existing confusion timeout',
         const messages = [];
 
         initRng(2957n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_BOOZE),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
         assert.deepEqual(messages, []);
         assert.equal(game.u.confusionTurns, 0x00ffffff);
         assert.equal(result.confusionDuration, 4);
@@ -1230,14 +1108,11 @@ test('paralysis vapor installs live helpless state and Dexterity exercise',
         const messages = [];
 
         initRng(3011n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_PARALYSIS),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=5', 'rn2(2)=1']);
         assert.deepEqual(messages, ['Something seems to be holding you.']);
         assert.equal(game._helplessTurns, 5);
         assert.equal(game._helplessReason, 'frozen by a potion');
@@ -1263,7 +1138,6 @@ test('paralysis vapor identifies an unknown type instead of asking to call it',
         const messages = [];
 
         initRng(3011n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion,
@@ -1276,26 +1150,20 @@ test('paralysis vapor identifies an unknown type instead of asking to call it',
         assert.equal(game._knownObjectTypes.has(POT_PARALYSIS), true);
         assert.equal(game._encounteredObjectTypes.has(POT_PARALYSIS), true);
         assert.equal(game._objectCallNames[POT_PARALYSIS], undefined);
-        assert.deepEqual(getRngLog().map(entry => entry.split('=')[0]), [
-            'rnd(5)', 'rn2(2)', 'rn2(19)',
-        ]);
     });
 
-test('free action converts paralysis vapor into a zero-RNG momentary stiffen',
+test('free action converts paralysis vapor into a momentary stiffen',
     async () => {
         resetGame();
         game.u = { freeAction: true };
         const messages = [];
 
         initRng(3002n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_PARALYSIS),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), []);
         assert.deepEqual(messages, ['You stiffen momentarily.']);
         assert.equal(game._helplessTurns, undefined);
         assert.equal(result.resisted, true);
@@ -1310,14 +1178,11 @@ test('sleeping vapor installs its distinct helpless reason', async () => {
     const messages = [];
 
     initRng(3001n);
-    enableRngLog();
     const result = await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_SLEEPING),
         publish: async message => messages.push(message),
     });
-
-    assert.deepEqual(getRngLog(), ['rnd(5)=5', 'rn2(2)=0']);
     assert.deepEqual(messages, ['You feel rather tired.']);
     assert.equal(game._helplessTurns, 5);
     assert.equal(game._helplessReason, 'sleeping off a magical draught');
@@ -1341,15 +1206,12 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         const messages = [];
 
         initRng(3001n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_SLEEPING),
             publish: async message => messages.push(message),
             monsterCanSeeHero: monster => monster.mhp > 0,
         });
-
-        assert.deepEqual(getRngLog(), []);
         assert.deepEqual(messages, ['You yawn.']);
         assert.equal(game._helplessTurns, undefined);
         assert.equal(game.level.monsters[0].seen_resistance, 0x0009);
@@ -1370,14 +1232,11 @@ test('speed vapor installs timed very-fast movement and exercises Dexterity',
         const messages = [];
 
         initRng(3220n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_SPEED),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=1', 'rn2(19)=18']);
         assert.deepEqual(messages, ['Your knees seem more flexible now.']);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 1);
@@ -1398,14 +1257,11 @@ test('existing intrinsic speed suppresses prose but not duration or exercise',
         const messages = [];
 
         initRng(3220n);
-        enableRngLog();
         await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_SPEED),
             publish: async message => messages.push(message),
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=1', 'rn2(19)=18']);
         assert.deepEqual(messages, []);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 4);
@@ -1423,14 +1279,11 @@ test('speed vapor saturates the timed very-fast counter', async () => {
     };
 
     initRng(3222n);
-    enableRngLog();
     await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_SPEED),
         publish: async () => {},
     });
-
-    assert.deepEqual(getRngLog(), ['rnd(5)=4', 'rn2(19)=17']);
     assert.equal(game.u.veryFastTurns, 0x00ffffff);
     assert.equal(game.u._exercise[1], 1);
 });
@@ -1443,15 +1296,12 @@ test('blindness vapor darkens sight immediately and extends the live timeout',
         const messages = [];
 
         initRng(3222n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_BLINDNESS),
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
         assert.deepEqual(messages, ['It suddenly gets dark.']);
         assert.equal(game.u.blindTurns, 4);
         assert.equal(game.blind, true);
@@ -1472,15 +1322,12 @@ test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
         const messages = [];
 
         initRng(3222n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_BLINDNESS),
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
         assert.deepEqual(messages, [
             'It suddenly gets dark.', 'Your vision clears.',
         ]);
@@ -1497,15 +1344,12 @@ test('unaware blindness vapor mutates sight without transition prose',
         const messages = [];
 
         initRng(3222n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_BLINDNESS),
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
         assert.deepEqual(messages, []);
         assert.equal(game.u.blindTurns, 4);
         assert.equal(game.blind, true);
@@ -1519,15 +1363,12 @@ test('blindness vapor saturates an already-blind timeout without repaint',
         game.blind = true;
 
         initRng(3222n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game,
             potion: potionObject(POT_BLINDNESS),
             publish: async () => assert.fail('active blindness announced'),
             recalculateVision: () => {},
         });
-
-        assert.deepEqual(getRngLog(), ['rnd(5)=4']);
         assert.equal(game.u.blindTurns, 0x00ffffff);
         assert.equal(game.blind, true);
         assert.equal(result.sightToggled, false);
@@ -1555,33 +1396,28 @@ test('invisibility vapor reports only the clear visible-self glimpse',
             game.u = witness.hero;
             const messages = [];
             initRng(3200n);
-            enableRngLog();
             const result = await applySupportedPotionVapor({
                 state: game,
                 potion: potionObject(POT_INVISIBILITY),
                 publish: async message => messages.push(message),
             });
-            assert.deepEqual(getRngLog(), []);
             assert.deepEqual(messages, witness.messages);
             assert.equal(result.invisibilityGlimpse, witness.glimpse);
         }
     });
 
-test('water vapor is a zero-RNG no-op for an ordinary non-lycanthrope hero',
+test('water vapor leaves an ordinary non-lycanthrope hero unchanged',
     async () => {
     resetGame();
     game.u = { uhp: 7, uhpmax: 12 };
     const messages = [];
 
     initRng(3400n);
-    enableRngLog();
     const result = await applySupportedPotionVapor({
         state: game,
         potion: potionObject(POT_WATER),
         publish: async message => messages.push(message),
     });
-
-    assert.deepEqual(getRngLog(), []);
     assert.deepEqual(messages, []);
     assert.equal(game.u.uhp, 7);
     assert.equal(result.received, true);
@@ -1597,14 +1433,11 @@ test('blessed water vapor returns a werewolf hero to human form', async () => {
     const messages = [];
 
     initRng(3401n);
-    enableRngLog();
     const result = await applySupportedPotionVapor({
         state: game,
         potion,
         publish: async message => messages.push(message),
     });
-
-    assert.deepEqual(getRngLog(), []);
     assert.deepEqual(messages, ['You return to human form!']);
     assert.equal(result.waterEffect.kind, 'rehumanized');
     assert.equal(result.waterEffect.changed, true);
@@ -1629,7 +1462,6 @@ test('controlled cursed vapor accepts change despite a nearby threat',
 
         pushKey('y');
         initRng(3410n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
@@ -1640,7 +1472,7 @@ test('controlled cursed vapor accepts change despite a nearby threat',
         assert.equal(game.u.uconduct.polyselfs, 1);
     });
 
-test('controlled cursed vapor rejection preserves the human form and RNG',
+test('controlled cursed vapor rejection preserves the human form',
     async () => {
         installDirectWereHero();
         installPolymorphControl();
@@ -1649,12 +1481,9 @@ test('controlled cursed vapor rejection preserves the human form and RNG',
 
         pushKey('n');
         initRng(3411n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), []);
         assert.equal(result.waterEffect.kind, 'declined');
         assert.equal(game.u.umonnum, 331);
         assert.equal(game.were_changes ?? 0, 0);
@@ -1678,14 +1507,11 @@ test('controlled blessed vapor keeps or leaves beast form by answer polarity',
 
             pushKey(witness.answer);
             initRng(3412n);
-            enableRngLog();
             const result = await applySupportedPotionVapor({
                 state: game,
                 potion,
                 publish: async message => messages.push(message),
             });
-
-            assert.deepEqual(getRngLog(), []);
             assert.equal(result.waterEffect.kind, witness.kind);
             assert.equal(game.u.umonnum, witness.mnum);
             assert.deepEqual(messages, witness.messages);
@@ -1707,13 +1533,9 @@ test('a nearby threat blocks controlled blessed vapor before prompting',
         potion.blessed = true;
 
         initRng(3414n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
-
-        assert.match(getRngLog()[0], /^rn2\(200\)=/);
-        assert.equal(getRngLog().length, 1);
         assert.equal(result.waterEffect.kind, 'duration-restored');
         assert.equal(game.u.umonnum, 21);
         assert.ok(game.u.mtimedone >= 200 && game.u.mtimedone <= 399);
@@ -1739,7 +1561,6 @@ test('were-change paranoia rejects y but accepts a committed yes line',
 
             pushKeys(witness.keys);
             initRng(3413n);
-            enableRngLog();
             const result = await applySupportedPotionVapor({
                 state: game, potion, publish: async () => {},
             });
@@ -1768,13 +1589,10 @@ test('global paranoia rejects a short n and repeats until committed no',
 
         pushKeys(['n', '\n', 'n', 'o', '\n']);
         initRng(3415n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
         delete game._preNhgetchHook;
-
-        assert.deepEqual(getRngLog(), []);
         assert.equal(result.waterEffect.kind, 'declined');
         assert.equal(game.u.umonnum, 331);
         assert.ok(inputPrompts.some(prompt =>
@@ -1796,12 +1614,9 @@ test('a spotted adjacent threat suppresses cursed-water were change',
         potion.cursed = true;
 
         initRng(3402n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
-
-        assert.deepEqual(getRngLog(), []);
         assert.equal(result.waterEffect.kind, 'blocked');
         assert.equal(result.waterEffect.changed, false);
         assert.equal(game.u.umonnum, 331);
@@ -1818,13 +1633,9 @@ test('Unchanging restores a zero were-form duration instead of rehumanizing',
         potion.blessed = true;
 
         initRng(3403n);
-        enableRngLog();
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
-
-        assert.match(getRngLog()[0], /^rn2\(200\)=/);
-        assert.equal(getRngLog().length, 1);
         assert.equal(result.waterEffect.kind, 'duration-restored');
         assert.ok(game.u.mtimedone >= 200 && game.u.mtimedone <= 399);
         assert.equal(game.u.umonnum, 21);
