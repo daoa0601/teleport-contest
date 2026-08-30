@@ -3,75 +3,28 @@ import assert from 'node:assert/strict';
 
 import { resetBridgeUsageLedger, getBridgeUsageLedger } from '../js/bridge_policy.js';
 import { rhack } from '../js/cmd.js';
-import { ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKey, resetInputState } from '../js/input.js';
+import { W_QUIVER, W_SWAPWEP, W_WEP } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { CLUB, DART, FLINT, ROCK, SLING } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
-import { installLiveCommandHero } from './support/live-command-state.js';
+import {
+    freshWeaponArena, inventoryObject,
+} from './support/weapon-arena.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
-
-function inventoryObject(otyp, invlet, overrides = {}) {
-    const names = new Map([
-        [CLUB, ['club', 'clubs', 2]],
-        [DART, ['dart', 'darts', 2]],
-        [SLING, ['sling', 'slings', 2]],
-        [FLINT, ['flint stone', 'flint stones', 13]],
-        [ROCK, ['rock', 'rocks', 13]],
-    ]);
-    const [name, plural, oclass] = names.get(otyp);
-    return {
-        otyp, invlet, name, plural, oclass,
-        quan: 1, quantity: 1,
-        where: 'inventory',
-        cursed: false, blessed: false, bknown: true, dknown: true,
-        worn: false, wielded: false, alternate: false, ready: false,
-        owornmask: 0,
-        contents: [], objectTimers: [], timed: 0,
-        ...overrides,
-    };
-}
-
-function freshWeaponArena() {
-    resetGame();
-    const level = new GameMap();
-    for (let x = 8; x <= 18; x++) {
-        for (let y = 8; y <= 12; y++) {
-            Object.assign(level.at(x, y), {
-                typ: ROOM, lit: true, waslit: true, seenv: 255,
-            });
-        }
-    }
-    installLiveCommandHero({ role: 'caveman', level, x: 10, y: 10 });
-    game.flags = {
-        fireassist: true,
-        pushweapon: true,
-        verbose: true,
-        pickup: false,
-    };
-    game.inventory = [];
-    game.uwep = game.uswapwep = game.uquiver = null;
-    game.animationFrame = async () => {};
-    resetInputState();
-    resetBridgeUsageLedger();
-    initRng(28101n);
-    return level;
-}
 
 test('fireassist prefers a known-safe launcher over unknown and known-cursed matches',
     async () => {
         const level = freshWeaponArena();
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const unknown = inventoryObject(SLING, 'b', { bknown: false });
         const knownCursed = inventoryObject(SLING, 'c', { cursed: true });
         const knownSafe = inventoryObject(SLING, 'd');
         const flint = inventoryObject(FLINT, 'e', {
-            ready: true, owornmask: 4,
+            ready: true, owornmask: W_QUIVER,
         });
         game.inventory = [club, unknown, knownCursed, knownSafe, flint];
         game.uwep = club;
@@ -103,7 +56,7 @@ test('swapping a sole primary makes it the alternate and leaves bare hands',
     async () => {
         freshWeaponArena();
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         game.inventory = [club];
         game.uwep = club;
@@ -123,7 +76,7 @@ test('autoquiver prefers current-launcher ammo and fires it immediately',
         freshWeaponArena();
         game.flags.autoquiver = true;
         const sling = inventoryObject(SLING, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const darts = inventoryObject(DART, 'b', {
             quan: 3, quantity: 3,
@@ -160,7 +113,7 @@ test('manual empty-quiver fire keeps the surviving selected stack readied',
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const darts = inventoryObject(DART, 'b', {
             quan: 3, quantity: 3,
@@ -184,10 +137,10 @@ test('autoquiver excludes hidden and artifact objects and ranks missiles over al
         game.flags.autoquiver = true;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const sling = inventoryObject(SLING, 'b', {
-            alternate: true, owornmask: 2,
+            alternate: true, owornmask: W_SWAPWEP,
         });
         const flint = inventoryObject(FLINT, 'c', {
             quan: 3, quantity: 3, typeKnown: true,
@@ -228,7 +181,7 @@ test('manual fire splits all but one wielded projectile into a new quiver identi
         const darts = inventoryObject(DART, 'a', {
             o_id: 28110,
             quan: 3, quantity: 3,
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         game.inventory = [darts];
         game.uwep = darts;
@@ -257,7 +210,7 @@ test('moving the whole primary stack to the quiver spends time even when fire is
         const darts = inventoryObject(DART, 'a', {
             o_id: 28111,
             quan: 3, quantity: 3,
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         game.inventory = [darts];
         game.uwep = darts;
@@ -282,12 +235,12 @@ test('manual fire splits an alternate stack without replacing its parent slot',
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const darts = inventoryObject(DART, 'b', {
             o_id: 28112,
             quan: 3, quantity: 3,
-            alternate: true, owornmask: 2,
+            alternate: true, owornmask: W_SWAPWEP,
         });
         game.inventory = [club, darts];
         game.uwep = club;
@@ -316,12 +269,12 @@ test('moving the whole offhand stack ends two-weapon mode and preserves cancella
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const darts = inventoryObject(DART, 'b', {
             o_id: 28113,
             quan: 3, quantity: 3,
-            alternate: true, owornmask: 2,
+            alternate: true, owornmask: W_SWAPWEP,
         });
         game.inventory = [club, darts];
         game.uwep = club;
@@ -350,12 +303,12 @@ test('moving an unused alternate stack remains zero-time when the later fire is 
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
-            wielded: true, owornmask: 1,
+            wielded: true, owornmask: W_WEP,
         });
         const darts = inventoryObject(DART, 'b', {
             o_id: 28114,
             quan: 3, quantity: 3,
-            alternate: true, owornmask: 2,
+            alternate: true, owornmask: W_SWAPWEP,
         });
         game.inventory = [club, darts];
         game.uwep = club;

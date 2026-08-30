@@ -277,6 +277,7 @@ export const FLINT = 473;
 export const ROCK = 474;
 export const BOULDER = 475;
 export const STATUE = 476;
+export const HEAVY_IRON_BALL = 477;
 export const IRON_CHAIN = 478;
 export const BLINDING_VENOM = 479;
 export const ACID_VENOM = 480;

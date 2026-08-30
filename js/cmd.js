@@ -90,7 +90,7 @@ import {
     CREAM_PIE, EGG, SLIME_MOLD, TIN,
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
-    STETHOSCOPE,
+    STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
     WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM, BOULDER, ROCK,
     ARROW, BOW, DART,
     LONG_SWORD,
@@ -258,6 +258,7 @@ import {
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_rogue_level,
+    W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
     WT_TOOMUCH_DIAGONAL, P_BOW, P_SLING, P_SKILLED, P_EXPERT,
@@ -10542,16 +10543,27 @@ function compactInventoryLetters(letters) {
 // pager and retry without escaping to top-level command dispatch.
 async function promptInventoryObject(prompt, eligible, {
     allowGold = false, allowNone = false, allowMenu = false,
-    retainPromptOnCancel = false,
+    allowCount = false, retainPromptOnCancel = false,
 } = {}) {
     let key = await promptKey(prompt);
+    let count = null;
     for (;;) {
+        if (allowCount && key >= 48 && key <= 57) {
+            let digits = '';
+            do {
+                digits += String.fromCharCode(key);
+                key = await nhgetch();
+            } while (key >= 48 && key <= 57);
+            const parsed = Number.parseInt(digits, 10);
+            count = parsed > 0 ? parsed : null;
+        }
         const cancelled = key === 27 || key === 32
             || (retainPromptOnCancel && (key === 10 || key === 13));
         if (cancelled) {
             if (!retainPromptOnCancel) await pline('Never mind.');
             return {
                 cancelled: true, object: null, gold: false, none: false,
+                count: null,
             };
         }
         if (allowMenu && (key === 63 || key === 42)) {
@@ -10562,15 +10574,27 @@ async function promptInventoryObject(prompt, eligible, {
         }
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
-        if (object) return {
-            cancelled: false, object, gold: false, none: false,
-        };
+        if (object) {
+            const quantity = object.quantity ?? object.quan ?? 1;
+            if (count !== null && count > quantity) {
+                await pline(
+                    `You don't have that many!  You have only ${quantity}.`,
+                );
+                key = await promptKey(prompt);
+                count = null;
+                continue;
+            }
+            return {
+                cancelled: false, object, gold: false, none: false, count,
+            };
+        }
         if (allowNone && letter === '-') return {
-            cancelled: false, object: null, gold: false, none: true,
+            cancelled: false, object: null, gold: false, none: true, count,
         };
         if (allowGold && letter === '$' && (game._goldCount || 0) > 0)
             return {
                 cancelled: false, object: null, gold: true, none: false,
+                count,
             };
 
         const invalid = "You don't have that object.--More--";
@@ -10584,6 +10608,7 @@ async function promptInventoryObject(prompt, eligible, {
         await flush_screen(1);
         game.nhDisplay?.setCursor(prompt.length, 0);
         key = await nhgetch();
+        count = null;
     }
 }
 
@@ -14712,36 +14737,11 @@ async function doapply() {
     }
 }
 
-// C refs: dowieldquiver(), ready_weapon().  This implements the inventory-
-// driven Ranger path while preserving NetHack's nested input boundaries.
+// C refs: dowieldquiver(), doquiver_core().  Q and empty-quiver fire share
+// one live inventory transaction; neither role nor recorded input selects a
+// different readiness implementation.
 async function doready() {
-    const choices = (game.inventory || [])
-        .filter(item => item.otyp === 18)
-        .map(item => item.invlet)
-        .join('');
-    const key = await promptKey(`What do you want to ready? [- ${choices} or ?*] `);
-    const letter = String.fromCharCode(key);
-    const item = game.inventory?.find(candidate => candidate.invlet === letter);
-    if (!item) {
-        game.context.move = 0;
-        game._pending_message = '';
-        return;
-    }
-
-    if (item === game.uswapwep) {
-        const answer = await promptKey('That is your alternate weapon.  Ready it instead? [ynq] (q) ');
-        if (String.fromCharCode(answer).toLowerCase() !== 'y') {
-            game.context.move = 0;
-            game._pending_message = '';
-            return;
-        }
-    }
-
-    if (game.uquiver) game.uquiver.ready = false;
-    game.uquiver = item;
-    item.ready = true;
-    await pline(`${item.invlet} - a ${item.enchantment >= 0 ? '+' : ''}${item.enchantment} ${item.name} (at the ready).`);
-    game.context.move = 0;
+    await doquiverCore('ready');
 }
 
 function splitStackForQuiver(item, count) {
@@ -14766,35 +14766,101 @@ function splitStackForQuiver(item, count) {
         where: 'inventory',
     };
     assignInventoryLetter(child);
+    if (!child.invlet) child.invlet = '#';
     game.inventory.push(child);
     return child;
 }
 
-async function chooseManualFireQuiver() {
+function isWeldedPrimary(item) {
+    if (item !== game.uwep || !item?.cursed) return false;
+    const objectClass = item.oclass || objectClassForType(item.otyp);
+    const weaponTool = objectClass === 6
+        && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0;
+    return objectClass === 2 || weaponTool
+        || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(item.otyp);
+}
+
+function splittableForQuiver(item) {
+    return !(item?.otyp === LOADSTONE && item.cursed)
+        && !isWeldedPrimary(item);
+}
+
+function hasFreeBasicInventoryLetter() {
+    const basicLetters = new Set((game.inventory || [])
+        .map(item => item.invlet)
+        .filter(letter => /^[a-zA-Z]$/.test(letter || '')));
+    return basicLetters.size < 52;
+}
+
+async function doquiverCore(verb) {
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
         game.context.move = 0;
-        return null;
+        return { item: null, spentTime: false, cancelled: false };
     }
     const letters = (game.inventory || [])
         .filter(item => readySuggestion(item, game))
         .map(item => item.invlet)
         .join('');
-    const prompt = `What do you want to fire? [- ${
+    const prompt = `What do you want to ${verb}? [- ${
         compactInventoryLetters(letters)} or ?*] `;
     const selection = await promptInventoryObject(
-        prompt, game.inventory || [], { allowNone: true, allowMenu: true },
+        prompt, game.inventory || [], {
+            allowNone: true, allowMenu: true, allowCount: true,
+        },
     );
-    if (selection.cancelled || selection.none || !selection.object) {
+    if (selection.cancelled) {
         game.context.move = 0;
-        return null;
+        return { item: null, spentTime: false, cancelled: true };
+    }
+    if (selection.none) {
+        if (game.uquiver) {
+            await pline('You now have no ammunition readied.');
+            setQuiverObject(null, game);
+        } else {
+            await pline('You already have no ammunition readied!');
+        }
+        game.context.move = 0;
+        return { item: null, spentTime: false, cancelled: false };
     }
     let item = selection.object;
-    if (item.worn && item !== game.uwep && item !== game.uswapwep) {
-        await pline('You cannot fire that!');
+    if (!item) {
         game.context.move = 0;
-        return null;
+        return { item: null, spentTime: false, cancelled: true };
     }
+
+    if (item === game.uquiver) {
+        await pline('That ammunition is already readied!');
+        game.context.move = 0;
+        return { item, spentTime: false, cancelled: false };
+    }
+
+    if (isWeldedPrimary(item)) {
+        const wasKnown = !!item.bknown;
+        item.bknown = true;
+        const hand = item.bimanual ? 'hands' : 'hand';
+        await pline(`${inventoryItemDescription(item)} is welded to your ${hand}!`);
+        game.context.move = wasKnown ? 0 : 1;
+        return {
+            item: null, spentTime: !wasKnown, cancelled: false,
+        };
+    }
+
+    const requestedCount = selection.count;
+    const initialQuantity = item.quantity ?? item.quan ?? 1;
+    if (requestedCount !== null && requestedCount < initialQuantity
+        && splittableForQuiver(item)) {
+        item = splitStackForQuiver(item, requestedCount);
+    }
+
+    const incompatibleMask = W_ARMOR | W_ACCESSORY | W_SADDLE;
+    if (((item.owornmask ?? 0) & incompatibleMask)
+        || (item.worn && item !== game.uwep && item !== game.uswapwep)) {
+        await pline(`You cannot ${verb} that!`);
+        game.context.move = 0;
+        return { item: null, spentTime: false, cancelled: false };
+    }
+
     const primary = item === game.uwep;
     const alternate = item === game.uswapwep;
     const wasTwoweap = !!game.u?.twoweap;
@@ -14802,17 +14868,19 @@ async function chooseManualFireQuiver() {
     if (primary || alternate) {
         const quantity = item.quantity ?? item.quan ?? 1;
         let readyAll = true;
-        if (quantity > 1) {
+        if (quantity > 1 && hasFreeBasicInventoryLetter()
+            && splittableForQuiver(item)) {
+            const plural = item.plural || makePlural(item.name || 'object');
             const slotDescription = primary
-                ? `You are wielding ${quantity} ${item.plural}.`
+                ? `You are wielding ${quantity} ${plural}.`
                 : `${wasTwoweap ? 'You are dual wielding'
-                    : 'Your alternate weapon is'} ${quantity} ${item.plural}.`;
+                    : 'Your alternate weapon is'} ${quantity} ${plural}.`;
             const partial = await promptYesNoQuit(
                 `${slotDescription}  Ready ${quantity - 1} of them? [ynq] (q) `,
             );
             if (partial === 'q') {
                 game.context.move = 0;
-                return null;
+                return { item: null, spentTime: false, cancelled: false };
             }
             if (partial === 'y') {
                 item = splitStackForQuiver(item, quantity - 1);
@@ -14825,31 +14893,34 @@ async function chooseManualFireQuiver() {
             );
             if (answer !== 'y') {
                 game.context.move = 0;
-                return null;
+                return { item: null, spentTime: false, cancelled: false };
             }
             if (primary) {
                 game.uwep = null;
                 if (game.u) game.u.uwep = null;
                 item.wielded = false;
+                item.owornmask = (item.owornmask ?? 0) & ~W_WEP;
                 spentTime = true;
             } else {
                 game.uswapwep = null;
                 if (game.u) game.u.uswapwep = null;
                 item.alternate = false;
+                item.owornmask = (item.owornmask ?? 0) & ~W_SWAPWEP;
                 spentTime = wasTwoweap;
             }
-            item.owornmask = 0;
             if (game.u) game.u.twoweap = false;
         }
     }
     const wasReady = item.ready;
     item.ready = false;
-    await pline(
-        `You ready: ${item.invlet} - ${inventoryItemDescription(item)}.`,
-    );
+    const description = inventoryItemDescription(item);
+    await pline(verb === 'fire'
+        ? `You ready: ${item.invlet} - ${description}.`
+        : `${item.invlet} - ${description} (at the ready).`);
     item.ready = wasReady;
     setQuiverObject(item, game);
-    return { item, spentTime };
+    game.context.move = spentTime ? 1 : 0;
+    return { item, spentTime, cancelled: false };
 }
 
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
@@ -14907,7 +14978,7 @@ async function dofire(cannedShotLimit = null) {
             await pline('You have no ammunition readied.');
         }
         if (!fireObject) {
-            const selection = await chooseManualFireQuiver();
+            const selection = await doquiverCore('fire');
             fireObject = selection?.item || null;
             quiverSelectionSpentTime = !!selection?.spentTime;
         }

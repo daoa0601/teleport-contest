@@ -4,7 +4,7 @@
 
 import {
     P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART,
-    P_SHORT_SWORD, P_SLING, P_SPEAR,
+    P_SHORT_SWORD, P_SLING, P_SPEAR, W_QUIVER,
 } from './const.js';
 import {
     AKLYS, FLINT, OBJECT_DIR, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK,
@@ -50,10 +50,15 @@ function isThrowingWeapon(item) {
 }
 
 export function setQuiverObject(item, state) {
-    if (state.uquiver && state.uquiver !== item)
+    if (state.uquiver && state.uquiver !== item) {
         state.uquiver.ready = false;
+        state.uquiver.owornmask = (state.uquiver.owornmask ?? 0) & ~W_QUIVER;
+    }
     state.uquiver = item || null;
-    if (item) item.ready = true;
+    if (item) {
+        item.ready = true;
+        item.owornmask = (item.owornmask ?? 0) | W_QUIVER;
+    }
 }
 
 // The four buckets deliberately have different overwrite policies and final
