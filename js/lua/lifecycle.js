@@ -8,6 +8,8 @@ import {
 } from './runtime.js';
 
 function bindingsFor(gameState, additionalBindings = {}) {
+    const { nh: additionalNh = {}, ...remainingBindings }
+        = additionalBindings;
     return {
         nh: {
             rn2: range => rn2(range),
@@ -17,6 +19,7 @@ function bindingsFor(gameState, additionalBindings = {}) {
             pline: () => null,
             text: () => null,
             eckey: command => command,
+            ...additionalNh,
         },
         nhc: { COLNO, ROWNO },
         u: {
@@ -26,7 +29,7 @@ function bindingsFor(gameState, additionalBindings = {}) {
         des: {},
         selection: {},
         obj: {},
-        ...additionalBindings,
+        ...remainingBindings,
     };
 }
 

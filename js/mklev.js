@@ -185,7 +185,6 @@ const BOW = 83;
 const CROSSBOW = 88;
 const PLATE_MAIL = 121;
 const CRYSTAL_PLATE_MAIL = 122;
-const WATER_WALKING_BOOTS = 167;
 const DENTED_POT = 95;
 const BANDED_MAIL = 125;
 const STUDDED_LEATHER_ARMOR = 131;
@@ -198,13 +197,6 @@ const TIN_WHISTLE = 245;
 const RIN_LEVITATION = 183;
 const SCR_REMOVE_CURSE = 327;
 const SPE_LIGHT = 372;
-const SPE_CONE_OF_COLD = 369;
-const SPE_CLAIRVOYANCE = 385;
-const SPE_CHARM_MONSTER = 387;
-const SPE_INVISIBILITY = 393;
-const SPE_POLYMORPH = 399;
-const SPE_CREATE_FAMILIAR = 401;
-const SPE_STONE_TO_FLESH = 405;
 const WAN_LIGHT = 410;
 const POT_OIL = 321;
 const WAN_SECRET_DOOR_DETECTION = 411;
@@ -303,8 +295,6 @@ const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
 const PM_WOLF = 20;
-const PM_WINTER_WOLF = 24;
-const PM_HELL_HOUND_PUP = 25;
 const PM_FLOATING_EYE = 28;
 const PM_FOG_CLOUD = 106;
 const PM_FIRE_ELEMENTAL = 155;
@@ -6080,39 +6070,6 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
     return context;
 }
 
-function loadHalfLeftSpecialAsciiMap(rows, defaultLit) {
-    const width = Math.max(...rows.map(row => row.length));
-    const context = halfLeftSpecialMap(width, rows.length);
-    for (let dy = 0; dy < rows.length; dy++) {
-        const row = rows[dy].padEnd(width, ' ');
-        for (let dx = 0; dx < width; dx++) {
-            if (row[dx] === 'x') continue;
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            loc.lit = defaultLit;
-            loc.horizontal = row[dx] === '-';
-            if (row[dx] === '.') loc.typ = ROOM;
-            else if (row[dx] === '-') loc.typ = HWALL;
-            else if (row[dx] === '|') loc.typ = VWALL;
-            else if (row[dx] === '+') {
-                loc.typ = DOOR;
-                loc.doormask = D_NODOOR;
-            } else if (row[dx] === 'S') {
-                loc.typ = SDOOR;
-                loc.doormask = D_CLOSED;
-            } else loc.typ = STONE;
-        }
-    }
-    for (let dy = 0; dy < rows.length; dy++) {
-        const row = rows[dy].padEnd(width, ' ');
-        for (let dx = 0; dx < width; dx++) {
-            if (row[dx] !== '+' && row[dx] !== 'S') continue;
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            specialDoorAt(context, loc.doormask, dx, dy);
-        }
-    }
-    return context;
-}
-
 function specialStairAt(context, x, y, up) {
     mkstairs(context.xstart + x, context.ystart + y, up, null);
 }
@@ -7779,257 +7736,11 @@ async function generateKnightGoal(active) {
     flipSpecialLevelRandom(3);
 }
 
-const TOWER1_MAP = [
-    '  --- --- ---  ',
-    '  |.| |.| |.|  ',
-    '---S---S---S---',
-    '|.......+.+...|',
-    '---+-----.-----',
-    '  |...\\.|.+.|  ',
-    '---+-----.-----',
-    '|.......+.+...|',
-    '---S---S---S---',
-    '  |.| |.| |.|  ',
-    '  --- --- ---  ',
-];
-
-const TOWER2_MAP = [
-    '  --- --- ---  ',
-    '  |.| |.| |.|  ',
-    '---S---S---S---',
-    '|.S.........S.|',
-    '---.------+----',
-    '  |......|..|  ',
-    '--------.------',
-    '|.S......+..S.|',
-    '---S---S---S---',
-    '  |.| |.| |.|  ',
-    '  --- --- ---  ',
-];
-
-const TOWER3_MAP = [
-    '    --- --- ---    ',
-    '    |.| |.| |.|    ',
-    '  ---S---S---S---  ',
-    '  |.S.........S.|  ',
-    '-----.........-----',
-    '|...|.........+...|',
-    '|.---.........---.|',
-    '|.|.S.........S.|.|',
-    '|.---S---S---S---.|',
-    '|...|.|.|.|.|.|...|',
-    '---.---.---.---.---',
-    '  |.............|  ',
-    '  ---------------  ',
-];
-
-function restoreWaitingVampire(monster, name = null) {
-    if (!monster) return monster;
-    // sp_lev.c applies STRAT_WAITFORU after makemon(); if birth selected an
-    // alternate vampire shape, newcham() returns it to the requested base.
-    // That return resolves the base form's gender and hit points anew.
-    rn2(10); // mgender_from_permonst()
-    const baseLevel = adjustedMonsterLevel(PM_VAMPIRE_LEADER);
-    let baseHp = d(baseLevel, 8);
-    if (baseHp === Math.max(1, baseLevel)) baseHp++;
-    monster.mnum = PM_VAMPIRE_LEADER;
-    monster.cham = PM_VAMPIRE_LEADER;
-    monster.m_lev = baseLevel;
-    monster.mhp = monster.mhpmax = baseHp;
-    monster.mmove = MONSTER_MOVE[PM_VAMPIRE_LEADER] ?? monster.mmove;
-    monster.symbol = 'V';
-    monster.color = MONSTER_COLOR[PM_VAMPIRE_LEADER];
-    monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
-    monster.waiting = true;
-    monster.name = name;
-    return monster;
-}
-
-function towerCandleChest(context, chestX, chestY, candleType, minimum = 4) {
-    const chest = specialObjectAt(context, CHEST, chestX, chestY);
-    // Lua `contents` replaces the initialized random contents only after the
-    // chest constructor has consumed its complete mkbox_cnts() graph.
-    chest.contents = [];
-    const quantity = minimum + rn2(5);
-    const point = specialRandomLocation(context);
-    if (!point) return chest;
-    const candle = mksobj_at(candleType, point.x, point.y, true, true);
-    candle.quan = candle.quantity = quantity;
-    addSpecialContainerObject(chest, candle);
-    return chest;
-}
-
-function towerSingleItemChest(context, chestX, chestY, itemType) {
-    const chest = specialObjectAt(context, CHEST, chestX, chestY);
-    chest.contents = [];
-    const point = specialRandomLocation(context);
-    if (!point) return chest;
-    const item = mksobj_at(itemType, point.x, point.y, true, true);
-    addSpecialContainerObject(chest, item);
-    return chest;
-}
-
-function finalizeTowerMap(context, active) {
-    specialNonDiggable(context);
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    if (active.explicitBranchRegion) {
-        active.explicitBranchRegion = flipSpecialRegion(
-            active.explicitBranchRegion,
-        );
-    }
-
-    // solidify_map() protects only walls outside the explicit Lua fragment;
-    // mapped tower walls already received non-diggable from the script.
-    for (let x = 0; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            if (x >= context.xstart && x < context.xstart + context.width
-                && y >= context.ystart && y < context.ystart + context.height)
-                continue;
-            const loc = game.level.at(x, y);
-            if (IS_STWALL(loc.typ))
-                loc.wall_info |= W_NONDIGGABLE | W_NONPASSWALL;
-        }
-    }
-}
-
-async function generateTower1(active) {
-    // The solid-fill initializer samples its ambient light, but table-form
-    // des.map() defaults `lit` to false and rewrites the inserted fragment.
-    const context = loadHalfLeftSpecialAsciiMap(TOWER1_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.solidify = true;
-
-    const niches = luaShuffle([
-        [3, 1], [3, 9], [7, 1], [7, 9], [11, 1], [11, 9],
-    ]);
-    active.niches = niches.map(point => [...point]);
-
-    specialStairAt(context, 11, 5, false);
-    await specialMonsterAt(
-        context, PM_VLAD_THE_IMPALER, 6, 5,
-        { randomGender: false },
-    );
-    for (let index = 0; index < 3; index++) {
-        const [x, y] = niches[index];
-        await specialMonsterClassAt(context, 48, x, y); // S_VAMPIRE
-    }
-    for (let index = 3; index < 6; index++) {
-        const [x, y] = niches[index];
-        const bride = await specialMonsterAt(
-            context, PM_VAMPIRE_LEADER, x, y,
-            { randomGender: false },
-        );
-        restoreWaitingVampire(
-            bride, ['Madame', 'Marquise', 'Countess'][index - 3],
-        );
-    }
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 8, 3], [D_CLOSED, 10, 3], [D_CLOSED, 3, 4],
-        [D_LOCKED, 10, 5], [D_LOCKED, 8, 7], [D_LOCKED, 10, 7],
-        [D_CLOSED, 3, 6],
-    ]) specialDoorAt(context, mask, x, y);
-
-    specialObjectAt(context, CHEST, 7, 5);
-    specialObjectAt(context, CHEST, ...niches[5]);
-    specialObjectAt(context, CHEST, ...niches[0]);
-    specialObjectAt(context, CHEST, ...niches[1]);
-    specialObjectAt(context, CHEST, ...niches[2]);
-    towerCandleChest(context, ...niches[3], WAX_CANDLE);
-    towerCandleChest(context, ...niches[4], TALLOW_CANDLE);
-
-    finalizeTowerMap(context, active);
-}
-
-async function generateTower2(active) {
-    const context = loadHalfLeftSpecialAsciiMap(TOWER2_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.solidify = true;
-
-    const niches = luaShuffle([
-        [3, 1], [7, 1], [11, 1], [1, 3], [13, 3],
-        [1, 7], [13, 7], [3, 9], [7, 9], [11, 9],
-    ]);
-    active.niches = niches.map(point => [...point]);
-
-    specialStairAt(context, 11, 5, true);
-    specialStairAt(context, 3, 7, false);
-    specialDoorAt(context, D_LOCKED, 10, 4);
-    specialDoorAt(context, D_LOCKED, 9, 7);
-
-    await specialMonsterClassAt(context, S_DEMON, ...niches[9]);
-    await specialMonsterClassAt(context, S_DEMON, ...niches[0]);
-    await specialMonsterAt(context, PM_HELL_HOUND_PUP, ...niches[1]);
-    await specialMonsterAt(context, PM_HELL_HOUND_PUP, ...niches[2]);
-    await specialMonsterAt(context, PM_WINTER_WOLF, ...niches[3]);
-
-    towerSingleItemChest(
-        context, ...niches[4], AMULET_OF_LIFE_SAVING,
-    );
-    towerSingleItemChest(
-        context, ...niches[5], AMULET_OF_STRANGULATION,
-    );
-    specialObjectAt(context, WATER_WALKING_BOOTS, ...niches[6]);
-    specialObjectAt(context, CRYSTAL_PLATE_MAIL, ...niches[7]);
-
-    const spellbooks = luaShuffle([
-        SPE_INVISIBILITY, SPE_CONE_OF_COLD, SPE_CREATE_FAMILIAR,
-        SPE_CLAIRVOYANCE, SPE_CHARM_MONSTER, SPE_STONE_TO_FLESH,
-        SPE_POLYMORPH,
-    ]);
-    active.spellbooks = [...spellbooks];
-    specialObjectAt(context, spellbooks[0], ...niches[8]);
-
-    finalizeTowerMap(context, active);
-}
-
-async function generateTower3(active) {
-    const context = loadHalfLeftSpecialAsciiMap(TOWER3_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.solidify = true;
-
-    const places = [
-        [5, 1], [9, 1], [13, 1], [3, 3], [15, 3],
-        [3, 7], [15, 7], [5, 9], [9, 9], [13, 9],
-    ];
-    active.places = places.map(point => [...point]);
-    active.explicitBranchRegion = absoluteSpecialRegion(
-        context, 2, 5, 2, 5,
-    );
-
-    specialStairAt(context, 5, 7, true);
-    specialDoorAt(context, D_LOCKED, 14, 5);
-    await specialMonsterClassAt(context, 30, 13, 5); // S_DRAGON
-    await specialRandomMonsterAt(context, 12, 4);
-    await specialRandomMonsterAt(context, 12, 6);
-    for (let count = 0; count < 6; count++)
-        await specialMonster(context);
-
-    for (const [otyp, placeIndex] of [
-        [LONG_SWORD, 3],
-        [LOCK_PICK, 0],
-        [ELVEN_CLOAK, 1],
-        [BLINDFOLD, 2],
-    ]) {
-        const [x, y] = places[placeIndex];
-        specialObjectAt(context, otyp, x, y);
-        await specialTrapAtRandom(context, x, y);
-    }
-
-    finalizeTowerMap(context, active);
+export async function generateVladsTowerLevel(active) {
+    if (!/^tower[1-3]$/.test(active?.prototype))
+        throw new RangeError(`unknown Vlad tower level ${active?.prototype}`);
+    active.file = `${active.prototype}.lua`;
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 export async function generateMinesEnd(active) {
@@ -10407,6 +10118,11 @@ async function createLuaObject(
             ...(object.oextra || {}), oname: String(options.name),
         };
     }
+    if (Number.isInteger(options.quantity) && options.quantity > 0
+        && OBJECT_MERGE[object.otyp]) {
+        object.quan = object.quantity = options.quantity;
+        object.owt = objectWeight(object);
+    }
     if (options.achievement) {
         object.achievement = true;
         object.nomerge = true;
@@ -10501,6 +10217,17 @@ async function createLuaMonster(context, options) {
             });
     }
     applyLuaMonsterAppearance(monster, options.appearance);
+    if (monster && options.name != null)
+        monster.name = String(options.name);
+    if (monster && options.waiting) {
+        monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
+        monster.waiting = true;
+        if (monster.cham === PM_VAMPIRE_LEADER
+            && monster.mnum !== PM_VAMPIRE_LEADER
+            && options.appearance?.kind !== 'monster') {
+            shapechangeMonster(monster, PM_VAMPIRE_LEADER);
+        }
+    }
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     return monster;
@@ -10762,6 +10489,15 @@ async function generateLuaSpecialLevel(active) {
     await currentLuaLifecycle().executeSpecial(
         game, active.file,
         {
+            nh: {
+                is_genocided: name => {
+                    const target = String(name).toLowerCase();
+                    const mndx = MONSTER_NAME.findIndex(candidate =>
+                        candidate?.toLowerCase() === target);
+                    return mndx >= 0
+                        && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
+                },
+            },
             des: createDesBindings(operations, selectionApi.wrap),
             selection: selectionApi.bindings,
         },
@@ -12564,6 +12300,7 @@ async function makelevel() {
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'minend'
             || prototype.startsWith('soko')
+            || /^tower[1-3]$/.test(prototype)
             || prototype === 'medusa'
             || prototype === 'castle'
             || prototype === 'knox'
@@ -12785,19 +12522,8 @@ async function makelevel() {
                 g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'tower1') {
-            await generateSpecialAndFixup(generateTower1,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'tower2') {
-            await generateSpecialAndFixup(generateTower2,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'tower3') {
-            await generateSpecialAndFixup(generateTower3,
-                g._activeSpecialLevel);
+        if (/^tower[1-3]$/.test(prototype)) {
+            await generateVladsTowerLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'Arc-fila' || prototype === 'Arc-filb') {
