@@ -42,7 +42,7 @@ export function auditBridgeFreeSource() {
     const compatibilityClassifiers = [
         '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
-        '_priestExtcmdPath', '_samuraiAltarPath', '_touristExplorePath',
+        '_priestExtcmdPath', '_touristExplorePath',
         '_rangerNamePath', '_rogueExplorePath', '_rogueFriday13Path',
         '_rogueOrcPath', '_rogueChargenPath', '_valkChatPath',
         '_priestCastPath', '_healerNewmoonPath', '_knightPonyPath',
@@ -53,6 +53,19 @@ export function auditBridgeFreeSource() {
         );
         if (!explicitLegacyGate.test(allmain))
             failures.push(`allmain.js: ${classifier} lacks an explicit legacy gate`);
+    }
+    const forbiddenSamuraiReplayTokens = [
+        'SAMURAI_DOG_RNG', 'SAMURAI_NORTH_ROOM_DOG_RNG',
+        'SAMURAI_ALTAR_PATH_RNG', 'SAMURAI_ALTAR_HERO_PATHS',
+        'SAMURAI_ALTAR_PET_POSITIONS', 'samuraiMonsterActionRng',
+        'samuraiAltarActionRng', '_samuraiTimedActions',
+        '_samuraiAltarPath', 'SAMURAI_ALTAR_PRAYER_TURN_RNG',
+    ];
+    for (const token of forbiddenSamuraiReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Samurai replay token ${token}`);
+        }
     }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))

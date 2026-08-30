@@ -2388,9 +2388,7 @@ function liveQuietPriest(state = game) {
 }
 
 function liveQuietSamurai(state = game) {
-    return state.urole?.key === 'samurai' && !state._samuraiAltarPath
-        && (state._samuraiLiveScheduler
-            || state._delayedAction?.kind === 'remove');
+    return state.urole?.key === 'samurai';
 }
 
 function liveQuietValkyrie(state = game) {
@@ -6362,262 +6360,6 @@ function placePriestPet(stepNum) {
     newsym(...next);
 }
 
-// Dog movement is the first live monster-turn path exercised by the Samurai
-// session.  These are the call shapes inside dog_goal()/dog_move() for each
-// successive time-taking action; global-turn allocation remains state-derived
-// below.  Keeping this boundary isolated lets the individual dog routines be
-// replaced incrementally without entangling the hero movement scheduler.
-const SAMURAI_DOG_RNG = [
-    [],
-    [5, 100, 8, 4, 5],
-    [5, 100, 8, 4, 5],
-    [5, 100, 8, 4, 1, 5],
-    [5, 100, 8, 12, 12, 12, 100, 12, 12, 12, 5],
-    [5, 100, 12, 12, 12, 12, 5],
-    [5, 100, 20, 12, 12, 12, 5, 5, 100, 20, 12, 12, 5],
-    [5, 100, 100, 1, 24, 12, 28, 12, 32, 1, 5],
-    [],
-    [5, 100, 12, 8, 5, 5, 100, 12, 16, 12, 20, 5],
-    [5, 100, 3, 12, 100, 12, 12, 12, 24, 32, 5],
-    [5, 100, 4, 12, 12, 20, 12, 5],
-    [5, 100, 4, 12, 12, 12, 24, 5, 5, 100, 4, 1, 32, 2, 12, 28, 100, 12, 24, 12, 5],
-    [5, 100, 4, 12, 16, 8, 5],
-    [5, 100, 4, 12, 8, 16, 5],
-    [5, 100, 4, 12, 5],
-    [],
-    [5, 100, 100, 4, 3, 12, 3, 12, 3, 12, 5],
-];
-
-// In the small north-east start room the dog has a different candidate set:
-// it can see the hero across the upstairs and then steps diagonally beside
-// him.  This is the dog_goal()/dog_move() call shape for that geometry.
-const SAMURAI_NORTH_ROOM_DOG_RNG = [
-    [],
-    [5, 100, 4, 1, 5, 5, 5],
-    [5, 100, 100, 100, 100, 100, 1, 2, 5, 5, 4, 1, 5],
-    [5, 100, 4, 1, 5, 5, 32, 5, 5, 100, 100, 100, 100, 100, 100,
-        1, 2, 3, 4, 5, 6, 7, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 32, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 24,
-        5, 5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8,
-        5, 5, 100, 4, 3, 12, 3, 12, 12, 12, 12, 5],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 12, 5, 5,
-        100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 5],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 5, 5, 100, 100, 100,
-        100, 100, 100, 1, 2, 3, 4, 5],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 12, 5,
-        5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5],
-    [5, 100, 4, 3, 12, 5],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 5],
-    [],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 5, 5, 20, 5],
-    [5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8,
-        5, 5, 16, 5, 5, 100, 4, 100, 100, 100, 100, 100, 1, 2, 3, 4,
-        5, 5],
-];
-
-// The long corridor beside the level-one altar exercises multi-turn running:
-// one uppercase movement command can advance several hero and monster turns
-// before tty asks for another key.  Each entry is the aggregate monmove and
-// once-per-turn call shape for one time-taking command in that geometry.
-const SAMURAI_ALTAR_PATH_RNG = [
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 4, 1, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
-        5, 4, 1, 5, 5, 16, 5, 5, 32, 5, 5, 16, 5, 5, 100, 100, 100,
-        100, 100, 1, 2, 3, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20,
-        94, 5, 5, 5, 24, 5, 5, 32, 5, 5, 16, 5],
-    [5, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 31, 5, 3, 12,
-        3, 12, 3, 5, 5, 20, 5, 5, 20, 5, 5, 8, 5, 5, 3, 12, 5, 12,
-        12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 3, 12, 12, 5, 5,
-        12, 5, 5, 20, 5, 5, 8, 5, 5, 100, 100, 100, 100, 100, 1, 5,
-        12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 3, 12, 5, 5,
-        20, 5, 5, 8, 5, 5, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400,
-        200, 20, 94, 5, 12, 5, 5, 12, 5, 5, 20, 5, 5, 8, 5, 12, 12,
-        12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 12, 5, 5, 20, 5, 5, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400,
-        200, 20, 19, 94, 5, 100, 12, 5, 5, 16, 5, 5, 8, 5, 5, 20, 5,
-        5, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 5, 100,
-        12, 12, 5, 5, 12, 5, 5, 8, 5, 5, 20, 5, 5, 8, 5, 5, 100,
-        100, 100, 100, 100, 100, 1, 2, 5, 12, 12, 12, 12, 12, 70, 3,
-        400, 200, 20, 94, 5, 100, 12, 12, 5, 5, 8, 5, 5, 8, 5, 5, 24,
-        5, 5, 8, 5, 5, 100, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3,
-        400, 200, 20, 94, 5, 100, 12, 12, 5, 5, 16, 5, 5, 8, 5, 5,
-        100, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
-        5, 100, 12, 12, 5, 5, 8, 5, 5, 16, 12, 5, 5, 8, 5, 5, 100,
-        12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 12, 5, 5, 24, 16, 5, 5, 8, 5],
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 3, 12, 12, 5, 5, 20, 5, 5, 8, 5, 5, 100, 100, 100,
-        100, 100, 100, 1, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 3, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5],
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 12, 12, 12, 5, 5, 12, 5, 5, 8, 5, 5, 100, 8, 3, 12,
-        5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5],
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 19, 94],
-    [5, 100, 8, 3, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5, 12, 12, 12,
-        12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 16, 5, 5, 8, 5],
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 12, 12, 12, 5, 5, 16, 5, 5, 8, 5],
-    [5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 12, 5, 5, 8, 5, 5, 100,
-        12, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 5, 5, 8, 5, 5, 16,
-        5, 5, 16, 8, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 5, 5, 16, 5, 5, 24, 5,
-        5, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94, 31],
-    [5, 100, 100, 100, 100, 100, 100, 1, 2, 3, 5, 5, 8, 5, 5, 12,
-        5, 5, 12, 5],
-    [12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94],
-];
-
-const SAMURAI_ALTAR_HERO_PATHS = {
-    1: [[26, 15], [27, 15], [28, 15], [29, 15]],
-    2: [[30, 15], [30, 14], [30, 13], [30, 12], [30, 11], [30, 10]],
-    3: [[29, 10], [29, 9], [29, 8], [29, 7], [29, 6], [29, 5]],
-    4: [[29, 6]], 5: [[29, 7]], 6: [[29, 8]],
-    13: [[29, 7]], 14: [[29, 6]], 15: [[29, 5]],
-};
-
-const SAMURAI_ALTAR_PET_POSITIONS = {
-    1: [28, 15], 2: [30, 11], 3: [29, 7], 4: [29, 7], 5: [29, 6],
-    6: [30, 10], 14: [31, 5], 15: [32, 5],
-    16: [30, 5], 17: [29, 6], 18: [30, 5], 19: [30, 10],
-};
-
-const RUN_DIRECTIONS_CLOCKWISE = [
-    [1, 0], [1, 1], [0, 1], [-1, 1],
-    [-1, 0], [-1, -1], [0, -1], [1, -1],
-];
-
-function retainRunHeadingAcrossBridge(oldx, oldy, x, y) {
-    const state = game._runState;
-    if (!state || state.mode === 8) return;
-    const dx = Math.sign(x - oldx);
-    const dy = Math.sign(y - oldy);
-    if (!dx && !dy) return;
-    const previous = RUN_DIRECTIONS_CLOCKWISE.findIndex(
-        ([px, py]) => px === state.dx && py === state.dy,
-    );
-    const next = RUN_DIRECTIONS_CLOCKWISE.findIndex(
-        ([nx, ny]) => nx === dx && ny === dy,
-    );
-    if (previous < 0 || next < 0 || previous === next) return;
-    let turn = next - previous;
-    if (turn > 4) turn -= 8;
-    if (turn < -4) turn += 8;
-    const accumulated = (state.lastStrTurn || 0) + turn;
-    if (turn >= -2 && turn <= 2
-        && accumulated >= -2 && accumulated <= 2) {
-        state.dx = dx;
-        state.dy = dy;
-        state.lastStrTurn = accumulated;
-    }
-}
-
-async function samuraiAltarActionRng(action) {
-    const ranges = SAMURAI_ALTAR_PATH_RNG[action - 1];
-    for (const range of ranges || []) rn2(range);
-    game.moves = (game.moves || 1)
-        + (ranges || []).filter(range => range === 70).length;
-
-    const heroPath = SAMURAI_ALTAR_HERO_PATHS[action] || [];
-    for (let index = 0; index < heroPath.length; index++) {
-        const [x, y] = heroPath[index];
-        const oldx = game.u.ux, oldy = game.u.uy;
-        const sameCell = oldx === x && oldy === y;
-        retainRunHeadingAcrossBridge(oldx, oldy, x, y);
-        game.u.ux0 = oldx; game.u.uy0 = oldy;
-        game.u.ux = x; game.u.uy = y;
-        newsym(oldx, oldy);
-        vision_recalc(1);
-        newsym(x, y);
-        if (game._runState?.mode !== 8
-            && game.level?.at(x, y)?.typ === DOOR) {
-            stopRun(game);
-            break;
-        }
-        if (game._runState) {
-            // The generic run owner has already supplied the first command's
-            // post frame (and, for later bounded actions, the eventual final
-            // frame).  This bridge owns the skipped automatic pre/post pairs.
-            await captureRunmodeDelay(game, true, game.moves || 0);
-            if (!sameCell && index < heroPath.length - 1)
-                await captureRunmodeDelay(game, true, game.moves || 0);
-        }
-    }
-
-    const pet = game.startingPet;
-    const petPosition = SAMURAI_ALTAR_PET_POSITIONS[action];
-    if (pet && petPosition) {
-        const oldx = pet.mx, oldy = pet.my;
-        pet.mx = petPosition[0]; pet.my = petPosition[1];
-        newsym(oldx, oldy);
-        newsym(pet.mx, pet.my);
-    }
-    if (action >= 3) {
-        // Running only glimpses the east side of this doorway; the outer
-        // corner and wall cells remain outside the hero's remembered LOS.
-        for (const [x, y] of [[31, 2], [31, 3], [30, 4], [30, 6]]) {
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            loc.remembered_glyph = null;
-            loc.disp_ch = ' ';
-        }
-    }
-}
-
-async function samuraiMonsterActionRng(action) {
-    if (game._samuraiAltarPath) {
-        await samuraiAltarActionRng(action);
-        return;
-    }
-    if (game._samuraiNorthRoomPath == null)
-        game._samuraiNorthRoomPath = (game.u?.uy ?? 99) < 10;
-    const actionRanges = game._samuraiNorthRoomPath
-        ? SAMURAI_NORTH_ROOM_DOG_RNG[action - 1]
-        : SAMURAI_DOG_RNG[action - 1];
-    for (const range of actionRanges || []) rn2(range);
-
-    const pet = game.startingPet;
-    const positions = game._samuraiNorthRoomPath ? {
-        2: [59, 4], 3: [59, 3], 4: [61, 2], 5: [60, 3],
-        6: [60, 4], 7: [60, 3], 8: [60, 2], 9: [61, 3],
-        10: [61, 2], 11: [62, 2], 12: [61, 3], 13: [62, 2],
-        14: [62, 3], 15: [62, 2], 16: [62, 3], 17: [62, 2],
-        18: [62, 3], 19: [61, 4], 20: [61, 4], 21: [60, 3],
-        22: [59, 3],
-    } : {
-        2: [51, 16], 3: [50, 16], 4: [50, 15],
-        5: [51, 16], 6: [52, 16], 7: [53, 16],
-    };
-    const position = positions[action];
-    if (pet && position) {
-        const oldx = pet.mx, oldy = pet.my;
-        pet.mx = position[0]; pet.my = position[1];
-        newsym(oldx, oldy);
-        newsym(pet.mx, pet.my);
-    }
-    if (action === 10) {
-        // The square immediately above this horizontal doorway has not yet
-        // been seen; keep it dark until crossing the threshold expands LOS.
-        for (const y of [17, 19]) {
-            const loc = game.level?.at(43, y);
-            if (!loc) continue;
-            loc.remembered_glyph = null;
-            loc.disp_ch = ' ';
-        }
-    }
-}
-
 // The south-east kitten start can bank enough movement for two steps during
 // each of these early hero turns.  These are the dog_goal()/dog_move() call
 // shapes for that geometry; the shared once-per-turn maintenance remains
@@ -6851,9 +6593,7 @@ export async function newgame() {
     // to the hero rather than next to the level-generation origin.
     u_on_upstairs();
 
-    g._samuraiAltarPath = !bridgeFree && g.urole?.key === 'samurai'
-        && g.u?.ux === 25 && g.u?.uy === 15;
-    if (bridgeFree && g.urole?.key === 'samurai')
+    if (g.urole?.key === 'samurai')
         g._samuraiLiveScheduler = true;
     g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
@@ -6886,7 +6626,6 @@ export async function newgame() {
 
     if (bridgeFree) {
         const compatibilityPaths = [
-            ['samurai.altar-run-prayer', g._samuraiAltarPath],
             ['tourist.explore-search', g._touristExplorePath],
             ['ranger.named-start', g._rangerNamePath],
             ['rogue.explore', g._rogueExplorePath],
@@ -7035,7 +6774,8 @@ export async function newgame() {
     // finished; the first time-taking command owns the first movemon and
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
-    if (bridgeFree) g._maintenanceMove = g.moves || 1;
+    if (bridgeFree || g.urole?.key === 'samurai')
+        g._maintenanceMove = g.moves || 1;
 
     // allmain.c:welcome(TRUE) guarantees that the live chronicle starts with
     // an entry even when no later major achievement occurs.
@@ -7081,32 +6821,6 @@ export async function moveloop_core() {
         g._encumbranceLevel = current;
         g.u._encumbrance = encumbranceLabel(current);
         g._capacityDirty = false;
-    }
-
-    // Port the movement-ration boundary for the real Samurai startup.  C
-    // subtracts one action after a time-taking command, then only starts a
-    // new global turn when the hero has less than NORMAL_SPEED remaining.
-    // This is why intrinsic Fast can give a command without a monster turn.
-    // Once an ordinary Samurai starts a multi-turn armor removal, current
-    // fmon state replaces the bounded early-game compatibility transcript and
-    // remains authoritative for all later turns in that life.
-    if (liveQuietSamurai(g)) g._samuraiLiveScheduler = true;
-    const boundedSamuraiCompatibility = g.urole?.key === 'samurai'
-        && !liveQuietSamurai(g);
-    if (boundedSamuraiCompatibility && g.context?.move) {
-        const action = (g._samuraiTimedActions || 0) + 1;
-        g._samuraiTimedActions = action;
-        await samuraiMonsterActionRng(action);
-        if (!g._samuraiAltarPath) {
-            g.u.umovement = (g.u.umovement ?? 12) - 12;
-            if (g.u.umovement < 12) {
-                addHeroMovementRation(g, initialTurnMaintenanceRng(
-                    (g.moves || 1) + 1,
-                ));
-                g.moves = (g.moves || 1) + 1;
-            }
-        }
-        g.context.move = 0;
     }
 
     if (g._rogueOrcPath && g.context?.move) {
@@ -7238,8 +6952,7 @@ export async function moveloop_core() {
     // C's turn maintenance runs once per elapsed turn.  Menus and other
     // zero-time commands can re-enter the command prompt without advancing
     // `moves`; they must not repeat monster movement or consume more RNG.
-    if (!boundedSamuraiCompatibility && !g._rogueOrcPath
-        && g._maintenanceMove !== (g.moves || 1)) {
+    if (!g._rogueOrcPath && g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
         const liveQuietRole = (g.urole?.key === 'knight'
                 && !g._knightPonyPath && !g._knightCombatPath)
@@ -7435,7 +7148,8 @@ export async function moveloop_core() {
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
-        } else if (bridgeFreeEnabled() && liveQuietRole) {
+        } else if (liveQuietSamurai(g)
+            || (bridgeFreeEnabled() && liveQuietRole)) {
             // A quiet source-owned role with no full-ration actor still owns
             // the global maintenance pass.  The legacy fallback padded this
             // boundary with the Tourist transcript even when no actor moved.
@@ -7674,13 +7388,7 @@ export async function moveloop_core() {
     await rhack(0);
 
     // Advance turn
-    // Reevaluate the Samurai boundary after rhack(): a command such as
-    // delayed armor removal can be the event which promotes this life from
-    // its bounded startup transcript to the live source-ration scheduler.
-    const postCommandBoundedSamurai = g.urole?.key === 'samurai'
-        && !liveQuietSamurai(g);
-    if (g.context?.move && !postCommandBoundedSamurai
-        && !g._rogueOrcPath) {
+    if (g.context?.move && !g._rogueOrcPath) {
         // C allmain.c increments hero_seq once for every time-taking hero
         // action.  It is not the same as `moves`: intrinsic speed can permit
         // multiple actions during one global turn.  Stethoscope's one-free-

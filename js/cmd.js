@@ -9201,14 +9201,6 @@ async function doride() {
     game.context.move = 1;
 }
 
-const SAMURAI_ALTAR_PRAYER_TURN_RNG = [
-    5, 100, 12, 12, 12, 5, 12, 12, 12, 12, 12, 70, 3, 400, 200, 20, 94,
-    5, 100, 12, 12, 12, 5, 5, 8, 5, 5, 8, 5, 5, 8, 5, 12, 12, 12, 12,
-    12, 70, 3, 400, 200, 20, 94, 5, 100, 100, 100, 100, 100, 100, 1, 2,
-    3, 5, 5, 12, 5, 5, 8, 5, 5, 16, 5, 5, 100, 12, 12, 5, 12, 12, 12,
-    12, 12, 70, 3, 400, 200, 20, 94,
-];
-
 async function dopray() {
     const answer = await promptYesNo('Are you sure you want to pray? [yn] (n) ');
     if (answer !== 'y') {
@@ -9221,26 +9213,6 @@ async function dopray() {
     game.u.uconduct.gnostic = (game.u.uconduct.gnostic || 0) + 1;
     if (firstPrayer)
         recordGameLogEvent('rejected atheism with a prayer');
-
-    if (game._samuraiAltarPath) {
-        for (const range of SAMURAI_ALTAR_PRAYER_TURN_RNG) rn2(range);
-        game.moves = (game.moves || 1)
-            + SAMURAI_ALTAR_PRAYER_TURN_RNG.filter(range => range === 70).length;
-        rnz(250);
-        rn2(4);
-        await pline('You begin praying to Amaterasu Omikami.');
-        for (let turn = 0; turn < 3; turn++) {
-            await captureRunmodeDelay(
-                game, true, game.moves || 0,
-                { preservePhysicalTopline: true },
-            );
-        }
-        await promptKey('You begin praying to Amaterasu Omikami.  You finish your prayer.--More--');
-        rnz(300);
-        await pline('You feel that Amaterasu Omikami is displeased.');
-        game.context.move = 0;
-        return;
-    }
 
     const alignment = game.initAlignment?.name || 'neutral';
     const deity = game.urole?.gods?.[alignment] || 'your god';
