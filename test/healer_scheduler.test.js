@@ -59,6 +59,24 @@ test('a self-zapped sleep wand advances live helpless turns', async () => {
     assert.match(world.message, /You wake up\.$/);
 });
 
+test('minimum self-sleep wakes on the first live global turn', async () => {
+    // This generated seed selects rnd(50) == 1.  C increments negative
+    // multi after that first global allocation, so the hero wakes at move 2;
+    // requiring an extra turn would be an off-by-one scheduler error.
+    const world = await outcomesAcrossModes(healerInput({
+        seed: 44001,
+        moves: ' zf.',
+    }));
+
+    assert.equal(world.moves, 2);
+    assert.equal(world.heroMovement, 12);
+    assert.equal(world.helplessTurns, 0);
+    assert.match(
+        world.message,
+        /The sleep ray hits you!.*You wake up\.$/,
+    );
+});
+
 test('sleep resistance prevents self-zap helplessness', async () => {
     freshWeaponArena();
     game.urole = { key: 'healer' };
