@@ -98180,3 +98180,92 @@ open.  No public regression lane, full Contest corpus, scorer, sealed trace,
 push, publication, official hidden measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 04:28 EEST, journal block 3193] {#bridge-free #potionhit #potionbreathe #trycall #docall #makeknown #object-knowledge #tty #change-detector #fake-acceptance #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and classification:** block 3192 left both
+seen-unknown potion carriers green only because they required
+`throw.potion-impact-unsupported` before detachment.  Rewritten as live map and
+swallowed outcomes, they failed **0/2** at that bridge before hit, bottle, chip,
+vapor-probability, input, or identity lifecycle state.  The tests were fake
+acceptance: C does not reject an unknown potion; it finishes the observable
+interaction and then offers a type call when the effect did not identify it.
+
+**Prediction and decisive C evidence:** `do.c:trycall()` delegates to
+`do_name.c:docall()` only when `oc_name_known` and `oc_uname` are both absent.
+`docall_xname()` removes quantity, beatitude, dilution, and individual naming,
+then builds the prompt from the shuffled appearance.  `name_from_player()`
+normalizes whitespace and truncates to `PL_PSIZ-1`; `discover_object()` stores
+the answer on the type before the caller frees the consumed identity.  In
+`potion.c:potionhit()`, received vapor delegates this decision to
+`potionbreathe()`.  Paralysis and sleeping always set `kn`; eligible
+invisibility and blindness do so when perception changes.  Those branches call
+`makeknown()` and exercise Wisdom.  Other vapor effects call `trycall()`;
+without vapor, only a seen impact does so.
+
+**Decision and implementation:** new shared `object_call.js` owns shuffled-
+appearance nouns, article selection, the live line editor, PL_PSIZ
+normalization, type-wide call recording, encounter discovery, and existing-
+name suppression.  Quaffing and explicit inventory `#call` now reuse it.
+`potion_hit.js` performs makeknown-versus-trycall after effect resolution and
+before `destroyPotionIdentity()`, while map and swallowed eligibility no longer
+reject seen unknown types.  Inventory, future impact, and thrown-object naming
+render the resulting called name.  The mechanical registry now tracks this as
+its own partial C/Lua ownership node rather than burying it in potion prose.
+
+**Behavioral acceptance and measured effect:** the swallowed live command pays
+`rnd(20)`, bottle `rn2(7)`, and chip `rn2(5)`, records `mystery`, destroys the
+thrown fruit-juice potion, and immediately renders a blessed sibling as a
+called potion.  The map live command pays hit, bottle, chip, and failed-vapor
+selection RNG before the same editor and lifecycle outcome.  A direct unknown
+paralysis-vapor control proves makeknown, encounter state, and Wisdom exercise
+without input; an existing call-name control proves prompt suppression and
+later evaporation presentation.  These four discriminators pass **4/4**.  The
+complete potion-impact, map, swallowed, and hero-clone gate passes **148/148**.
+One guarded default behavioral run passes all **376** named tests across
+**38** files and exits normally.  The bridge audit covers **129 files, 15
+guarded modules, and 19 fixture modules**; ownership generation/checking, JSON,
+syntax, behavioral-lane audit, and `git diff --check` pass.
+
+**Falsified hypotheses, limits, and next blocker:** `trycall()` is not an
+admission guard; a call name is not attached to the consumed bottle; not every
+unknown vapor prompts because `kn` may formally identify it; a visible impact
+does not ask before source RNG/effects; and raw JavaScript inventory names are
+not authoritative shuffled-appearance nouns.  Renaming/clearing through every
+`#call` carrier, floor/discovery-list and from-sink prompts, non-potion
+automatic callers, save/restore breadth, long wrapped lines, map low-stamina,
+lamplit-oil explosion, equipped were transformations, special fatalities/life-
+saving, and the sealed stratum remain open.  No public regression lane, full
+Contest corpus, scorer, sealed trace, push, publication, official hidden
+measurement, or animation work ran.
+
+---
+
+### [2026-08-30 04:32 EEST, journal block 3194] {#bridge-free #trycall #state-ownership #adversarial-review #change-detector #focused-regression #process-safety}
+
+**Witness, prediction, and adversarial finding:** the first implementation of
+the shared type-call helper accepted an explicit `state` for type knowledge and
+appearance lookup, but `recordObjectCall()` and `recordObjectEncounter()` still
+wrote through the global `game`.  Current live carriers use that singleton, so
+the 148 focused outcomes could remain green while an isolated-state carrier
+split the read and write sides of one transaction.  The prediction was that
+this was a genuine false-green boundary rather than a C behavior difference.
+
+**Decision and measured effect:** `object_knowledge.js` now accepts the active
+state for discovery order, encounters, formal knowledge, and call names; both
+`object_call.js` and `potion_hit.js` pass their evaluated state through.  The
+map and swallowed call witnesses now also require the session's shuffled potion
+appearance in both the prompt and the surviving sibling description, so a
+generic raw-name renderer cannot satisfy them.  The complete focused gate still
+passes **148/148** and one guarded default behavioral run still passes all
+**376** tests across **38** files.  Bridge audit (**129/15/19**), lane audit,
+ownership generation/check, JSON and JavaScript syntax, and diff hygiene pass.
+
+**Falsified hypotheses and next blocker:** passing carrier outcomes did not by
+itself prove coherent state ownership; generic `potion called mystery` matching
+did not prove `docall_xname()` appearance semantics.  Both gaps are now closed
+without adding mock-order assertions.  The source gaps listed in block 3193
+remain open.  No corpus, scorer, public-regression lane, sealed trace, push,
+publication, official hidden measurement, or animation work ran.
+
+---

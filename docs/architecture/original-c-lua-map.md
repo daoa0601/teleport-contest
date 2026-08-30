@@ -37948,3 +37948,67 @@ terrain, special target, shop, or other unowned continuation remain explicit
 gaps.  Lamplit oil is separate because `breakobj()` delegates to the area
 explosion transaction rather than ordinary potion vapor.  Lua owns none of
 this runtime map-flight branch.
+
+## 1011. Potion impact resolves knowledge before freeing the identity
+
+```mermaid
+flowchart TD
+    A[throw_obj detaches potion] --> B[potionhit direct effect]
+    B --> C{vapor reaches hero?}
+    C -- yes --> D[potionbreathe effect]
+    D --> E{effect sets kn?}
+    E -- yes --> F[makeknown type and exercise Wisdom]
+    E -- no --> G[trycall]
+    C -- no, visible impact --> G
+    C -- no, unseen impact --> H[no naming transaction]
+    G --> I{type already known or called?}
+    I -- yes --> J[retain existing type state]
+    I -- no --> K[docall_xname from shuffled appearance]
+    K --> L[getlin Call prompt]
+    L --> M{nonempty normalized name?}
+    M -- yes --> N[record type-wide call and discovery]
+    M -- no --> O[leave type unnamed]
+    F --> P[destroy thrown identity]
+    J --> P
+    N --> P
+    O --> P
+    H --> P
+    N --> Q[sibling inventory and later impact say called name]
+```
+
+`do.c:trycall()` is not a preflight admission check.  It runs only when a
+type is neither formally known nor already called, delegating to
+`do_name.c:docall()` after the event which made the naming opportunity
+reachable.  `docall_xname()` removes quantity, beatitude, dilution, and an
+individual name, then builds the prompt from the shuffled appearance.  The
+line is whitespace-normalized and truncated to `PL_PSIZ-1`; a committed name
+is attached to the object type through `discover_object()`, not to the
+consumed identity.
+
+`potion.c:potionhit()` has two routes to this boundary.  If nearby vapor is
+received, `potionbreathe()` owns the knowledge decision.  Paralysis and
+sleeping always set `kn`; invisibility does so when the hero gets the visible
+self-glimpse, and blindness does so when sight initially changes.  Those
+branches call `makeknown()` and exercise Wisdom.  Other vapor effects reach
+`trycall()`.  When vapor is not selected, a seen impact calls `trycall()`
+directly; an unseen impact does not.  Only after that continuation returns may
+the caller free the bottle identity.
+
+The shared JavaScript `object_call.js` owner now serves thrown impact, quaff,
+and explicit inventory `#call` callers.  Map and swallowed live-command
+witnesses consume the actual hit, bottle, chip, and vapor-probability RNG
+before displaying the editor.  Each destroys the thrown potion after the
+answer while a separately carried sibling immediately displays `called
+mystery`.  A direct paralysis-vapor control proves the opposite `makeknown`
+branch and its Wisdom exercise without consuming input.  An existing call-name
+control proves later impact presentation and prompt suppression.
+
+Floor/discovery-list calling, renaming or clearing an existing call across all
+menu carriers, from-sink prompts, non-potion automatic callers, and exhaustive
+save/restore and tty-wrapping variants remain partial.  Lua owns none of this
+runtime naming path.
+
+The naming transaction explicitly threads the active game state through
+`object_call.js` into `object_knowledge.js`.  This prevents a carrier evaluated
+against an isolated state from reading that state while accidentally recording
+the call or discovery on the process-global singleton.
