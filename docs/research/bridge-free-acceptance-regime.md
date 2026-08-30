@@ -58,9 +58,10 @@ now also have one live owner; their pre/post replay exports, exhaustive-role
 fallback, and unused mineralize transcript are deleted.  The next ordered
 replacement is the remaining seeded room-fill and role-turn compatibility
 paths.  Future Valkyrie `#chat` text no longer injects a post-generation
-boulder or selects a second actor scheduler; the Valkyrie pit and other named
-role paths remain.  Those later slices have focused fresh witnesses and
-selected public regressions, but still no sealed gate or hidden measurement.
+boulder, and the pit prefix no longer selects fixed movement, depth-two room,
+detection, corpse, or actor replay.  Other named role paths remain.  Those
+later slices have focused fresh witnesses and selected public regressions, but
+still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

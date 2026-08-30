@@ -532,7 +532,7 @@
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
       "acceptanceWitnesses": ["test/bridge_free.test.js: fresh quiet-role maintenance advances a live Tourist turn with zero bridge hits", "test/samurai_scheduler.test.js: a fresh non-public Samurai wait allocates the pet and hero movement ration and never reaches fastforward.turn", "test/rogue_scheduler.test.js: independently generated human and Orc Rogue starts produce identical four-wait actor/world outcomes in normal and bridge-free modes with no Rogue bridge hits", "test/valkyrie_scheduler.test.js: a fresh Valkyrie executes four live turns identically in normal and bridge-free modes even when unused future input contains #chat, with zero bridge hits", "test/bridge_free.public-regression.js: known Samurai, Rogue, and Priest session replays remain exact with zero bridge hits; public regression only"],
       "lastSealedGate": null,
-      "openGap": "Fresh-seed Samurai wait/prayer plus the represented Samurai, Rogue, Priest, and ordinary non-pit Valkyrie carriers use live actor/global scheduling in both modes. Other normal-mode roles and the Valkyrie pit path still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open."
+      "openGap": "Fresh-seed Samurai wait/prayer plus the represented Samurai, Rogue, Priest, and Valkyrie carriers use live actor/global scheduling in both modes. Other normal-mode roles still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open."
     },
     {
       "id": "samurai-pet-turns",
@@ -595,12 +595,12 @@
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/allmain.js", "js/mklev.js", "js/monmove.js", "js/cmd.js", "js/detect.js", "js/valk_pit.js"],
+      "javascriptOwners": ["js/allmain.js", "js/mklev.js", "js/monmove.js", "js/cmd.js", "js/detect.js"],
       "dependencies": ["turn-scheduler", "level-generation", "startup-role-inventory"],
-      "bridgeIds": ["legacy-only seeded-replay.valkyrie-pit"],
-      "acceptanceWitnesses": ["test/valkyrie_scheduler.test.js: fresh non-public seed27001 performs four waits before a save suspension while unused future input contains #chat; normal and bridge-free modes preserve equal generated objects, hero, actor positions/HP/movement, turn, and message state with zero bridge hits", "scripts/audit-bridge-free.mjs: rejects the removed Valkyrie chat classifier and bridge ID"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/valkyrie_scheduler.test.js: fresh non-public seed27001 performs four waits before a save suspension while unused future input contains #chat; normal and bridge-free modes preserve equal generated objects, hero, actor positions/HP/movement, turn, and message state with zero bridge hits", "test/valkyrie_scheduler.test.js: fresh non-public seed27002 uses the former pit-selector command prefix; current terrain and ordinary command/descent ownership produce equal normal/bridge-free hero, depth, turn, message, complete object graph, and actor state with zero bridges", "scripts/audit-bridge-free.mjs: rejects the removed Valkyrie chat/pit classifiers, bridge IDs, fixed path/corpse/turn helpers, mklev exceptions, and deleted replay module"],
       "lastSealedGate": null,
-      "openGap": "Future #chat text no longer injects a post-mklev boulder or excludes Valkyrie from the live actor scheduler. Ordinary non-pit Valkyries share generated room state and source movement ownership in both modes. The Valkyrie pit/level-transition replay, alternate races/options, wider actor and terrain states, save/restore histories, and a sealed stratum remain open."
+      "openGap": "All Valkyrie command streams now share live generated room/branch state, ordinary movement/descent/search, source actor scheduling, and current-world detection in both modes. The future-chat and pit classifiers; post-mklev boulder; fixed hero/pet paths; fabricated corpse/death/pagers; aggregate RNG; depth-two branch/room-range exceptions; counters; and valk_pit.js are deleted. Alternate races/options, wider actor and terrain states, successful fresh level transitions, save/restore histories, and a sealed stratum remain open."
     },
     {
       "id": "tty-display",

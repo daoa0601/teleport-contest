@@ -38364,3 +38364,59 @@ still owns seeded replay, role-specific commands, detection mutations, and
 depth-two room/stair selection.  Alternate races, options, terrain, actor
 graphs, persistence histories, and a sealed stratum also remain open.  Lua owns
 no alternate chat or scheduler path.
+
+## 1018. Valkyrie pit commands return to current-world ownership
+
+```mermaid
+flowchart TD
+    A[rhack reads current movement/search/descent] --> B[domove or dosearch]
+    B --> C[moveloop_core scans live actors]
+    A --> D{hero stands on downstairs?}
+    D -- no --> E[You cannot go down here; zero time]
+    D -- yes --> F[goto_level and destination mklev]
+    F --> G[place_branch and fill current room set]
+    G --> C
+
+    H[role plus recorded command prefix] -. deleted .-> I[fixed hero/pet path]
+    H -. deleted .-> J[aggregate turn and arrival RNG]
+    H -. deleted .-> K[depth-two branch and room-count exceptions]
+    H -. deleted .-> L[fabricated pet death and corpse]
+```
+
+Pinned `cmd.c`, `hack.c`, `detect.c`, and `do.c` interpret movement, search,
+wait, and descent against current terrain and actor state.  `dodown()` refuses
+descent unless the hero occupies a downstairs; a valid transition enters
+`goto_level()`, whose destination `mklev()` places the current dungeon branch
+and selects bonus-room filling from the actual room count.  None of these
+owners accepts a hero role or full command prefix.
+
+The former JavaScript path replaced that graph end to end.  A raw
+`nllllllllkkkllkk>` prefix selected fixed level-one and level-two hero/pet
+coordinates, synthetic messages, movement/turn counters, four search
+continuations, fabricated descent and display restoration, a hard-coded pet
+pit death and corpse, aggregate RNG for every represented turn, and three
+depth-two `mklev()` exceptions for room selection, branch placement, and bonus
+fill range.  It could announce descent on a fresh map where the hero was not on
+stairs.
+
+The classifier, every command/detection/level-generation branch, the aggregate
+tables, and `valk_pit.js` are deleted together.  All Valkyries now use the
+shared live movement ration, current actor graph, ordinary search, terrain-
+checked descent, destination level construction, branch placement, and actual
+fillable-room count in normal and bridge-free modes.
+
+Fresh seed27002 distinguishes the mechanism without reading a recorded
+session.  Before removal, the selector moved the hero from the live `(63,12)`
+result to fixed `(52,16)`, advanced move 9 to move 16, relocated the pet and an
+unrelated monster, and displayed `You descend the stairs.--More--`; the live
+world correctly retained depth one and said `You can't go down here.`  After
+removal, the complete bounded hero/depth/turn/message, floor-object, and actor
+summaries agree across modes with zero bridge hits.  The test does not demand
+that this fresh seed reproduce the old public journey; it demands that current
+terrain own the commands.
+
+The Valkyrie registry entry remains partial for alternate races/options, wider
+actor and terrain states, successful fresh level transitions, longer
+persistence histories, and a sealed stratum.  Other role-specific replay
+modules remain separately mapped.  Lua owns dungeon data beneath destination
+construction, not a Valkyrie prefix exception.

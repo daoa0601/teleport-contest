@@ -98696,6 +98696,27 @@ publication, hidden measurement, or animation work ran for this slice yet.
 
 ---
 
+### [2026-08-30 05:54 EEST, journal block 3209] {#valkyrie #pit #behavioral-gate #bridge-audit #test-lanes #ownership #process-safety}
+
+**Post-implementation gate:** one guarded default behavioral run passed all
+**372/372** named tests across **42** files and exited normally.  The two fresh
+Valkyrie invariants plus bridge policy remain **6/6**.  The bridge audit passes
+**124 production files, 10 guarded replay modules, and 19 fixture modules**;
+the behavioral-lane audit passes all 42 default files without recorded-session,
+public-parity, mock/spy, or named call-transcript dependencies.  Ownership
+generation/checking, registry JSON, changed JavaScript syntax, and diff hygiene
+pass.
+
+**Process and evidence limit:** the default verifier was singular, owned to
+normal exit, and the post-run guard is empty.  No full engine-only corpus,
+scorer, public-regression lane, sealed corpus or trace inspection, push,
+publication, official hidden measurement, or animation work ran.
+`public-session-status.md` remains unchanged.  The coherent Valkyrie pit slice
+is ready for the requested batched local commits; the next target returns to
+the remaining named role replay portfolio.
+
+---
+
 ### [2026-08-30 05:43 EEST, journal block 3205] {#startup #behavioral-gate #bridge-audit #test-lanes #ownership #process-safety}
 
 **Post-implementation gate:** one guarded default behavioral run passed all
@@ -98784,5 +98805,54 @@ publication, official hidden measurement, or animation work ran.
 `public-session-status.md` remains unchanged.  The Valkyrie chat slice is ready
 for batched local commits; the separately mapped Valkyrie pit/level-transition
 owner remains the next role-local target.
+
+---
+
+### [2026-08-30 05:53 EEST, journal block 3208] {#bridge-free #valkyrie #pit #level-transition #room-fill #actor-scheduler #replay-removal #fresh-seed #critical-debugging-portfolio #architecture #process-safety}
+
+**Contract and decomposed owner:** after block3207, the remaining Valkyrie pit
+path still combined four mechanisms: fixed command interpretation and hero/pet
+paths, aggregate actor/global-turn RNG, depth-two `mklev()` branch/room
+exceptions, and search/wait/descent/detection state fabrication.  Success
+required the same current terrain, actor graph, ordinary command dispatcher,
+level transition, and room-fill owners in normal and bridge-free modes.
+Deleting only `valk_pit.js`, retaining the classifier, or forcing the public
+descent on an unrelated fresh map were explicit non-results.
+
+**Independent red evidence and earliest divergence:** fresh non-public
+seed27002 uses the former selector prefix without loading a session.  Before
+removal, normal mode sent the first movement into `valkPitLevelOneMovement()`;
+by the final `>` it had moved the hero to fixed `(52,16)`, advanced to move 16,
+relocated the pet and another monster, changed one floor-object location, and
+displayed `You descend the stairs.--More--`.  Bridge-free mode interpreted the
+same bytes against the generated map, ended at `(63,12)` on move 9, and correctly
+reported `You can't go down here.` because there was no downstairs under the
+hero.  Both remained at depth one, proving the replay fabricated even the
+opening transition pager before a destination commit.  The expanded Valkyrie
+test was **1/2**.
+
+**Source evidence and implementation:** pinned `cmd.c`/`hack.c`/`detect.c`
+dispatch current movement and search; `do.c:dodown()` checks current stairs and
+enters `goto_level()` only on success; destination `mklev.c` places the current
+branch and chooses bonus filling from the actual fillable-room count;
+`allmain.c:moveloop_core()` schedules the current `fmon` graph.  Deleted the
+prefix classifier, fixed level-one/two paths, movement/search/wait counters,
+synthetic messages, fabricated descent/display swap, pet death/corpse, all
+aggregate turn/arrival RNG, detection override, depth-two branch and room-range
+exceptions, bridge ID, and `valk_pit.js`.  The audit rejects every removed
+token and module name.
+
+**Measured effect, falsified hypotheses, and next blocker:** both fresh
+Valkyrie invariants now pass **2/2**, and together with bridge policy pass
+**6/6**.  Normal and bridge-free seed27002 now retain equal bounded hero,
+depth, turn, message, complete floor-object, and actor state with zero bridge
+hits.  The bridge audit contracts to **124 production files, 10 guarded replay
+modules, and 19 fixture modules**.  The public path was not evidence of a valid
+generic descent; depth-two `rn2(4)` was not a room-fill rule; and a scripted pet
+corpse was not a monster/trap lifecycle implementation.  Alternate
+races/options, wider terrain/actors, successful fresh transitions, persistence,
+and sealed strata remain open.  Other named role replays are next.  No full
+behavioral suite, corpus, scorer, public-regression lane, sealed trace, push,
+publication, hidden measurement, or animation work ran for this slice yet.
 
 ---
