@@ -100210,3 +100210,68 @@ publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 10:50 EEST, journal block 3246] {#wizard #bindings #level-teleport #special-level #scheduler #bridge-removal #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and mechanism portfolio:** block 3245 was
+production progress: the Wizard polymorph/quaff future-input engines were
+deleted and ordinary Wizard commands moved onto live transactions and source
+turns.  The guarded frontier then separated into the Wizard bind carrier,
+`fastforward.turn`, and recorded-RNL compatibility.  Bind crossed three source
+owners which had to remain distinct: configuration-time `parsebindings()` /
+`bind_key()`, Ctrl-V `wiz_level_tele()` / `level_tele()`, and destination
+construction through dungeon layout and special-level generation.  The
+critical-debugging portfolio selected those three as one command-to-destination
+slice and left default scheduler replay and recorded RNL for later gates.
+
+**Earliest divergences, prediction, and red evidence:** JavaScript did not
+parse `BIND` or `BINDINGS` at all.  Instead, the literal
+`BIND=v:inventory` line selected `_wizardBindPath` during startup.  That flag
+shifted one generated room and its contents, changed two stair candidate
+ranges, replayed fixed pet positions and maintenance RNG for turns 1--5,
+swallowed Ctrl-V and every later key as zero-time, and painted a stored screen
+plus boundary RNG from `wizard_bind.js`.  A fresh custom-binding witness left
+both copies of its selected potion in inventory; a fresh Ctrl-V witness stayed
+on depth 1 rather than replacing the level with depth 2.  The strengthened
+audit independently failed on **19** classifier, state flag, mutation, replay,
+bridge, painter, and module surfaces.
+
+**Implementation and ownership effect:** commit `e77d041` parses `BIND` and
+`BINDINGS` lines into command metadata, including ordinary, control, meta, and
+named key forms.  Supported command names remap at the common `rhack()` entry,
+so custom and default keys reach the same state machine.  All Wizards now use
+the source-ration/current-actor owner.  The classifier, passive key swallow,
+fixed room relocation, stair-range exceptions, pet/RNG maintenance, capture
+hook, and `wizard_bind.js` are deleted.  Ctrl-V reaches the existing live
+level-teleport transaction, which consumes the current dungeon menu and builds
+the selected destination rather than replaying its creation.
+
+**Independent and adversarial evidence:** fresh seed48601 binds lowercase `v`
+to inventory, selects the current `f` identity, throws exactly one potion, and
+spends source time.  With that same option, Ctrl-V requests depth 2 and arrives
+on a newly generated nonempty level.  Fresh seed48602 uses the live dungeon
+menu and choice `e` to build the `bigrm` special prototype at depth 11.  None
+asserts a recorded screen, fixed room coordinates, exact RNG list, or helper
+call.  Temporarily bypassing binding remap made the potion carrier fail;
+disabling Ctrl-V made both destination witnesses fail; nulling the selected
+prototype made the special-level witness fail.  All mutations were restored;
+51 neighboring scheduler/startup tests passed.
+
+**Measured effect, falsified hypotheses, and next blocker:** one managed
+`npm test` invocation passed all **459/459** behavioral tests across **53**
+lane-audited files.  The bridge audit drops from 120/3/19 to **119 production
+files, 2 guarded replay modules, and 19 fixture modules**: `fastforward.js`
+and the recorded-RNL compatibility exporter in `rng.js`.  The owned process
+exited and no matching runner remains.  A custom key binding did not require a
+session classifier; special-level generation did not require stored RNG or
+screens; and option presence did not justify changing room or stair sampling.
+No role, seed, coordinate, option, or future-input production classifier now
+remains.  Binding command/parameter breadth, other debug destinations and tty,
+persistence, and sealed strata remain partial.  The next production blocker is
+the default `fastforward.turn` / `scheduler.default-replay-gap` owner, which
+must be replaced by state-derived scheduling before recorded-RNL fixture
+compatibility is considered.  No corpus, scorer, public-regression lane,
+sealed trace, push, publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---

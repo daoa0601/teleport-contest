@@ -39227,3 +39227,63 @@ save/restore, and sealed strata remain open.  The explicit Wizard bind option
 still owns a guarded compatibility path and is not claimed here.  The managed
 default gate passes 456/456 across 53 behavioral files; the bridge audit covers
 120 production files, 3 guarded replay modules, and 19 fixture modules.
+
+## 1030. Wizard bindings and level teleport follow live configuration and destination state
+
+```mermaid
+flowchart TD
+    Config["BIND / BINDINGS configuration"] --> Parse["options.c parsebindings / JS parseNethackrc"]
+    Parse --> Map["key code to command-name metadata"]
+    Map --> Dispatch["cmd.c bind_key / shared JS rhack dispatcher"]
+    Dispatch --> Inventory["current inventory and item action"]
+
+    CtrlV["Ctrl-V in debug mode"] --> LevelTele["wiz_level_tele / level_tele"]
+    LevelTele --> Choice{"numeric line or dungeon menu?"}
+    Choice --> Schedule["schedule_goto / gotoLevel destination"]
+    Schedule --> Build["current dungeon and special-level generation"]
+    Build --> Arrival["new level identity, hero placement, actors, terrain"]
+
+    Option["presence of BIND=v:inventory"] -. deleted .-> Classifier["Wizard bind alternate engine"]
+    Classifier -. deleted .-> Mutations["shifted room and stair samples, fixed pet/RNG turns"]
+    Classifier -. deleted .-> Painter["stored screens and boundary RNG"]
+```
+
+Pinned `options.c:parsebindings()` resolves a configured key and delegates the
+command name to `bind_key()`.  The binding changes only command dispatch; it
+does not alter level generation, actor scheduling, or the meaning of other key
+codes.  JavaScript now retains the same separation: `parseNethackrc()` records
+ordinary, control, meta, and named key forms, and `rhack()` remaps supported
+command names into the existing live dispatcher.  A custom inventory key
+therefore selects current carried identities and reaches the same item-action
+transaction as the default `i` key.
+
+Pinned `wizcmds.c:wiz_level_tele()` delegates to
+`teleport.c:level_tele()`.  Numeric input resolves a dungeon depth directly;
+`?` consumes `dungeon.c:print_dungeon(TRUE)` and returns the chosen special or
+branch destination.  The command schedules the transition, then destination
+construction owns current dungeon layout, special-level prototype, map,
+objects, and actors.  The option table and future input never choose a second
+generator.
+
+The deleted JavaScript bind path violated each boundary.  Merely containing
+`BIND=v:inventory` selected `_wizardBindPath`, moved one generated start room
+and everything inside it, changed two stair reservoirs, forced early pet
+coordinates and aggregate maintenance RNG, swallowed Ctrl-V and later input,
+and painted `wizard_bind.js` snapshots.  The option itself was never parsed.
+Those classifier, room/stair, scheduler, dispatcher, capture, bridge, and
+module surfaces are now absent.
+
+Fresh seed48601 proves both halves of the corrected transaction: lowercase
+`v` opens live inventory and throws one selected potion, while Ctrl-V with the
+same configuration builds and enters numeric depth 2.  Fresh seed48602 selects
+menu choice `e` and constructs the `bigrm` prototype at depth 11.  Binding,
+Ctrl-V, and prototype-handoff mutants independently defeat these world-state
+witnesses.  No recorded screen, fixed coordinate, exact RNG transcript, or
+helper call is an oracle.
+
+This owner remains `partial` for unsupported binding command names and
+parameters, quoted/separator edge cases, wider debug destinations and dungeon
+menus, tty pagination, destination effects, options, persistence, and sealed
+strata.  No production role/session classifier remains.  The managed default
+gate passes 459/459 across 53 behavioral files; the bridge audit covers 119
+production files, 2 guarded replay modules, and 19 fixture modules.
