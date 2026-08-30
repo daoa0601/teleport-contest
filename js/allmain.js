@@ -2188,6 +2188,14 @@ function liveQuietTourist(state = game) {
     return state.urole?.key === 'tourist' && !state._touristExplorePath;
 }
 
+// Archeologist and Barbarian have no role/session-specific turn owner.  They
+// share the ordinary movement-ration and fmon scan for every legal race and
+// command stream; role identity belongs to startup and mechanics, not to the
+// scheduler selection boundary.
+function liveBaseRole(state = game) {
+    return ['archeologist', 'barbarian'].includes(state.urole?.key);
+}
+
 function liveDebugSourceRation(state = game) {
     return !!state.flags?.debug
         && ((state.u?.ulevel ?? 1) > 1
@@ -2195,7 +2203,8 @@ function liveDebugSourceRation(state = game) {
 }
 
 function usesSourceMovementRation(state = game) {
-    return liveQuietKnight(state) || liveQuietMonk(state)
+    return liveBaseRole(state)
+        || liveQuietKnight(state) || liveQuietMonk(state)
         || liveQuietRogue(state) || liveQuietHealer(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
         || liveQuietCaveman(state)
@@ -6373,7 +6382,8 @@ export async function moveloop_core() {
     // so some commands need a second monster/global round before input.
     const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
-    if ((liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
+    if ((liveBaseRole(g)
+        || liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
         || liveQuietPriest(g) || liveQuietSamurai(g)
         || liveQuietCaveman(g)
         || liveDebugSourceRation(g))
@@ -6493,6 +6503,7 @@ export async function moveloop_core() {
         const stepNum = (g.moves || 1) - 1;
         const liveQuietRole = (g.urole?.key === 'knight'
                 && !g._knightPonyPath && !g._knightCombatPath)
+            || liveBaseRole(g)
             || (g.urole?.key === 'wizard' && !g._wizardBindPath)
             || g.urole?.key === 'monk'
             // Wizard levelchange can promote any role before its first live
@@ -6658,7 +6669,8 @@ export async function moveloop_core() {
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
-        } else if (liveQuietSamurai(g) || liveQuietCaveman(g)
+        } else if (liveBaseRole(g)
+            || liveQuietSamurai(g) || liveQuietCaveman(g)
             || (bridgeFreeEnabled() && liveQuietRole)) {
             // A quiet source-owned role with no full-ration actor still owns
             // the global maintenance pass.  The legacy fallback padded this
