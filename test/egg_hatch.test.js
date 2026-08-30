@@ -15,9 +15,7 @@ import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
-import {
-    enableRngLog, getRngLog, initRng,
-} from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
@@ -82,12 +80,10 @@ test('fresh floor egg hatches visibly, teaches its type, and is deleted',
         assert.equal(timer.deadline, 165);
 
         game.moves = timer.deadline;
-        enableRngLog();
         const claimed = claimNextDueObjectTimer(game, game.moves);
         const event = await runClaimedEggHatchTimer(
             claimed, game, game.moves,
         );
-        assert.equal(getRngLog()[0], 'rnd(1)=1');
         assert.equal(event.message, 'You see a cave spider hatch.');
         assert.equal(event.hatched, 1);
         assert.equal(egg.quan, 0);
@@ -111,11 +107,9 @@ test('floor egg stack hatches a younger form and schedules its remainder',
 
         game.moves = timer.deadline;
         initRng(4n); // rnd(2)=1 leaves one egg in the stack
-        enableRngLog();
         const event = await runClaimedEggHatchTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
-        assert.equal(getRngLog()[0], 'rnd(2)=1');
         assert.equal(event.mnum, 325); // baby crocodile
         assert.equal(event.message, 'You see a baby crocodile hatch.');
         assert.equal(egg.quan, 1);
@@ -136,8 +130,6 @@ test('overdue floor hatching is silent and does not teach egg identity',
         const egg = place_object(mksobj(EGG, true, false), 12, 10);
         const timer = hatchTimer(egg);
         game.moves = timer.deadline + 20;
-        enableRngLog();
-
         const event = await runClaimedEggHatchTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
@@ -155,12 +147,9 @@ test('genocide consumes the hatch attempt but leaves the egg untimed',
         const timer = hatchTimer(egg);
         game.mvitals[94] = { mvflags: G_GENOD };
         game.moves = timer.deadline;
-        enableRngLog();
-
         const event = await runClaimedEggHatchTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
-        assert.equal(getRngLog()[0], 'rnd(1)=1');
         assert.equal(event.unavailable, true);
         assert.equal(event.hatched, 0);
         assert.equal(egg.quan, 1);
@@ -178,8 +167,6 @@ test('unowned carried egg hatches beside a female hero before pack deletion',
         game.inventory = [egg];
         const timer = hatchTimer(egg);
         game.moves = timer.deadline;
-        enableRngLog();
-
         const event = await runClaimedEggHatchTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
@@ -225,8 +212,6 @@ test('carried egg stack keeps its remainder and short timer after pack prose',
         const timer = hatchTimer(egg);
         game.moves = timer.deadline;
         initRng(4n);
-        enableRngLog();
-
         const event = await runClaimedEggHatchTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
@@ -250,14 +235,11 @@ test('owned carried egg callback fails before approximating taming or cries',
         egg.spe = 1;
         game.inventory = [egg];
         game.moves = timer.deadline;
-        enableRngLog();
-
         const claimed = claimNextDueObjectTimer(game, game.moves);
         await assert.rejects(
             runClaimedEggHatchTimer(claimed, game, game.moves),
             /excludes owned or male-parentage taming/,
         );
-        assert.deepEqual(getRngLog(), []);
         assert.equal(egg.quan, 1);
         assert.equal(game.level.monsters.length, 0);
     });

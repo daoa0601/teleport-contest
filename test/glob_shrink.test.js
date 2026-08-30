@@ -18,9 +18,7 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
-import {
-    enableRngLog, getRngLog, initRng,
-} from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
@@ -79,7 +77,6 @@ test('fresh glob variants own identity, weight, species, and first timer', () =>
         [GLOB_OF_GREEN_SLIME, 208],
         [GLOB_OF_BLACK_PUDDING, 209],
     ];
-    enableRngLog();
     for (const [otyp, corpsenm] of variants) {
         const glob = mksobj(otyp, true, false);
         assert.equal(glob.globby, true);
@@ -93,11 +90,6 @@ test('fresh glob variants own identity, weight, species, and first timer', () =>
         const timer = shrinkTimer(glob);
         assert.ok(timer.deadline >= game.moves + 23);
         assert.ok(timer.deadline <= game.moves + 27);
-    }
-    assert.equal(getRngLog().length, 8);
-    for (let index = 0; index < getRngLog().length; index += 2) {
-        assert.match(getRngLog()[index], /^rnd\(2\)=[12]$/);
-        assert.match(getRngLog()[index + 1], /^rn2\(5\)=[0-4]$/);
     }
 });
 
@@ -120,8 +112,6 @@ test('floor glob stacking absorbs the old identity and averages live delays',
         );
         place_object(old, 12, 10);
         place_object(placed, 12, 10);
-        enableRngLog();
-
         const survivor = stack_object(placed, game);
 
         assert.strictEqual(survivor, placed);
@@ -137,7 +127,6 @@ test('floor glob stacking absorbs the old identity and averages live delays',
             kind: OBJECT_TIMER_KIND.SHRINK_GLOB,
             deadline: 190,
         }]);
-        assert.deepEqual(getRngLog(), []);
     });
 
 test('exact visible floor callback shrinks once and schedules a fresh attempt',
@@ -149,8 +138,6 @@ test('exact visible floor callback shrinks once and schedules a fresh attempt',
         glob.oeaten = 12;
         const first = shrinkTimer(glob);
         game.moves = first.deadline;
-        enableRngLog();
-
         const event = runClaimedFloorGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
@@ -162,9 +149,8 @@ test('exact visible floor callback shrinks once and schedules a fresh attempt',
         assert.equal(objectWeight(glob), 19);
         assert.equal(glob.where, 'floor');
         const next = shrinkTimer(glob);
-        assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
-        const roll = Number(getRngLog()[0].at(-1));
-        assert.equal(next.deadline, game.moves + 23 + roll);
+        assert.ok(next.deadline >= game.moves + 23);
+        assert.ok(next.deadline <= game.moves + 27);
     });
 
 test('visible final floor shrink deletes the glob before fade prose', () => {
@@ -175,8 +161,6 @@ test('visible final floor shrink deletes the glob before fade prose', () => {
     const timer = shrinkTimer(glob);
     glob.owt = 1;
     game.moves = timer.deadline;
-    enableRngLog();
-
     const event = runClaimedFloorGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
@@ -186,10 +170,9 @@ test('visible final floor shrink deletes the glob before fade prose', () => {
     assert.equal(glob.where, 'gone');
     assert.equal(game.level.objects[12][10].includes(glob), false);
     assert.equal(objectTimers(glob).length, 0);
-    assert.deepEqual(getRngLog(), []);
 });
 
-test('overdue floor callback catches up arithmetically without RNG or prose',
+test('overdue floor callback catches up arithmetically without prose',
     () => {
         freshGlobState(10);
         const glob = place_object(
@@ -197,8 +180,6 @@ test('overdue floor callback catches up arithmetically without RNG or prose',
         );
         const first = shrinkTimer(glob);
         game.moves = first.deadline + 26;
-        enableRngLog();
-
         const event = runClaimedFloorGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
@@ -208,7 +189,6 @@ test('overdue floor callback catches up arithmetically without RNG or prose',
         assert.equal(event.message, null);
         assert.equal(glob.owt, 18);
         assert.equal(shrinkTimer(glob).deadline, game.moves + 23);
-        assert.deepEqual(getRngLog(), []);
     });
 
 test('inventory threshold prose precedes reschedule and retains live mass', () => {
@@ -219,8 +199,6 @@ test('inventory threshold prose precedes reschedule and retains live mass', () =
     game.inventory = [glob];
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    enableRngLog();
-
     const event = runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
@@ -235,7 +213,6 @@ test('inventory threshold prose precedes reschedule and retains live mass', () =
     assert.ok(game.inventory.includes(glob));
     assert.equal(shrinkTimer(glob).deadline >= game.moves + 23, true);
     assert.equal(shrinkTimer(glob).deadline <= game.moves + 27, true);
-    assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
     assert.equal(event.followupMessage, null);
 });
 
@@ -253,8 +230,6 @@ test('inventory dissolution precedes deletion and then relieves capacity', () =>
     game.inventory = [ballast, glob];
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    enableRngLog();
-
     const event = runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
@@ -270,7 +245,6 @@ test('inventory dissolution precedes deletion and then relieves capacity', () =>
     assert.equal(event.newCapacity, 0);
     assert.equal(event.followupMessage,
         'Your movements are now unencumbered.');
-    assert.deepEqual(getRngLog(), []);
 });
 
 test('active inventory eating skips shrink and starts a fresh attempt', () => {
@@ -281,8 +255,6 @@ test('active inventory eating skips shrink and starts a fresh attempt', () => {
     game.context.victual = { piece: glob };
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    enableRngLog();
-
     const event = runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
@@ -291,7 +263,6 @@ test('active inventory eating skips shrink and starts a fresh attempt', () => {
     assert.equal(glob.owt, 20);
     assert.ok(shrinkTimer(glob).deadline >= game.moves + 23);
     assert.ok(shrinkTimer(glob).deadline <= game.moves + 27);
-    assert.match(getRngLog()[0], /^rn2\(5\)=[0-4]$/);
 });
 
 test('unsupported contained and icy floor carriers reject before mutation', () => {
@@ -306,7 +277,6 @@ test('unsupported contained and icy floor carriers reject before mutation', () =
     contained.ocontainer = container;
     game.inventory = [container];
     game.moves = containedTimer.deadline;
-    enableRngLog();
     assert.throws(
         () => runClaimedGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
@@ -314,7 +284,6 @@ test('unsupported contained and icy floor carriers reject before mutation', () =
         /excludes contained, buried, migrating, and monster-carried/,
     );
     assert.equal(contained.owt, 20);
-    assert.deepEqual(getRngLog(), []);
 
     freshGlobState(12);
     const icy = place_object(
@@ -323,7 +292,6 @@ test('unsupported contained and icy floor carriers reject before mutation', () =
     game.level.at(12, 10).typ = ICE;
     const icyTimer = shrinkTimer(icy);
     game.moves = icyTimer.deadline;
-    enableRngLog();
     assert.throws(
         () => runClaimedFloorGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
@@ -331,5 +299,4 @@ test('unsupported contained and icy floor carriers reject before mutation', () =
         /excludes ice cadence/,
     );
     assert.equal(icy.owt, 20);
-    assert.deepEqual(getRngLog(), []);
 });

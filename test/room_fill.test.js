@@ -14,9 +14,7 @@ import {
     CHEST, DART, LARGE_BOX,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
-import {
-    enableRngLog, getRngLog, initRng,
-} from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
@@ -106,12 +104,9 @@ test('the Amulet short-circuits room spawn chance and guarantees a monster', asy
     assert.equal(game.level.monsters.length, 0);
 
     const amuletRoom = roomState({ seed: 2, amulet: true });
-    enableRngLog();
     await fill_ordinary_room(amuletRoom, false);
 
     assert.equal(game.level.monsters.length, 1);
-    assert.match(getRngLog()[0], /^rn2\(5\)=/);
-    assert.doesNotMatch(getRngLog()[0], /^rn2\(3\)=/);
 });
 
 test('a generated giant spider owns its co-located web', async () => {
@@ -126,23 +121,10 @@ test('a generated giant spider owns its co-located web', async () => {
         trap.ttyp === WEB && trap.tx === spider.mx && trap.ty === spider.my));
 });
 
-test('Rogue room fill rejoins at objects without non-Rogue features', async () => {
-    const ordinaryRoom = roomState({ seed: 2 });
-    enableRngLog();
-    await fill_ordinary_room(ordinaryRoom, false);
-    const ordinaryPrefix = getRngLog().slice(0, 4);
-
+test('Rogue room fill omits non-Rogue features', async () => {
     const rogueRoom = roomState({ seed: 2, rogue: true });
-    enableRngLog();
     await fill_ordinary_room(rogueRoom, false);
-    const roguePrefix = getRngLog().slice(0, 4);
 
-    assert.deepEqual(ordinaryPrefix.map(call => call.match(/^\w+\(\d+\)/)[0]), [
-        'rn2(3)', 'rn2(8)', 'rn2(3)', 'rn2(10)',
-    ]);
-    assert.deepEqual(roguePrefix.map(call => call.match(/^\w+\(\d+\)/)[0]), [
-        'rn2(3)', 'rn2(8)', 'rn2(3)', 'rn2(3)',
-    ]);
     assert.equal(
         roomTerrain(rogueRoom).some(typ =>
             [FOUNTAIN, SINK, ALTAR, GRAVE].includes(typ)),

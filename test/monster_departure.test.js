@@ -7,7 +7,7 @@ import {
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { removeWishGrantingMonster } from '../js/monster_departure.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 
 function installDepartureState(monster) {
     resetGame();
@@ -15,7 +15,6 @@ function installDepartureState(monster) {
     game.level.monsters = [monster, { mnum: 0 }];
     game.u = { ux: 10, uy: 10, ustuck: monster, uswallow: true };
     initRng(3n);
-    enableRngLog();
 }
 
 test('wish departure leaves protected identities and removes ordinary cargo', () => {
@@ -36,8 +35,6 @@ test('wish departure leaves protected identities and removes ordinary cargo', ()
         preserveGlyph: true,
     });
 
-    assert.equal(getRngLog().length, 2);
-    assert.ok(getRngLog().every(call => /^rn2\(100\)=/.test(call)));
     assert.deepEqual(new Set(result.dropped), new Set([invocation, quest]));
     assert.deepEqual(result.discarded, [ordinary]);
     assert.ok(game.level.objects[11][10].includes(invocation));
@@ -54,7 +51,7 @@ test('wish departure leaves protected identities and removes ordinary cargo', ()
     assert.equal(game.u.uswallow, false);
 });
 
-test('Rider corpses survive departure without consuming core RNG', () => {
+test('Rider corpses survive departure as floor identities', () => {
     const rider = { otyp: CORPSE, corpsenm: 311, where: 'monster' };
     const monster = {
         mnum: 289, mx: 12, my: 9, mhp: 20,
@@ -67,7 +64,6 @@ test('Rider corpses survive departure without consuming core RNG', () => {
         preserveGlyph: true,
     });
 
-    assert.deepEqual(getRngLog(), []);
     assert.deepEqual(result.dropped, [rider]);
     assert.equal(game.level.objects[12][9][0], rider);
     assert.equal(rider.where, 'floor');

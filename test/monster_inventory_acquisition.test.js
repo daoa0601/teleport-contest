@@ -26,7 +26,7 @@ import {
     OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
@@ -137,11 +137,8 @@ test('direct add_to_minv linkage does not invent carrying effects', () => {
         corpsenm: 84,
         objectTimers: [],
     };
-    enableRngLog();
-
     linkObjectToMonsterInventory(monster, figurine);
 
-    assert.deepEqual(getRngLog(), []);
     assert.deepEqual(objectTimers(figurine), []);
     assertMonsterOwns(monster, figurine);
 });

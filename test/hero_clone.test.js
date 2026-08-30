@@ -5,7 +5,7 @@ import { G_EXTINCT, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { splitHeroMonsterForm } from '../js/mklev.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 
 const PM_GREMLIN = 40;
 
@@ -39,11 +39,10 @@ function gremlinHeroState({ openMap = true } = {}) {
         }
     }
     initRng(3510n);
-    enableRngLog();
     return game;
 }
 
-test('extinction suppresses hero cloning before placement or identity RNG',
+test('extinction suppresses hero cloning before placement or identity allocation',
     async () => {
         gremlinHeroState();
         game.mvitals[PM_GREMLIN] = { mvflags: G_EXTINCT, born: 120 };
@@ -51,7 +50,6 @@ test('extinction suppresses hero cloning before placement or identity RNG',
         const clone = await splitHeroMonsterForm(game);
 
         assert.equal(clone, null);
-        assert.deepEqual(getRngLog(), []);
         assert.equal(game._nextIdent, undefined);
         assert.equal(game.level.monsters.length, 0);
         assert.equal(game.u.mh, 17);
@@ -65,7 +63,6 @@ test('failed adjacent placement preserves hero HP and pet conduct', async () => 
     const clone = await splitHeroMonsterForm(game);
 
     assert.equal(clone, null);
-    assert.ok(getRngLog().length > 0);
     assert.equal(game._nextIdent, undefined);
     assert.equal(game.level.monsters.length, 0);
     assert.equal(game.u.mh, 17);

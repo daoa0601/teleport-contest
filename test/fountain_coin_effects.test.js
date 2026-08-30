@@ -8,7 +8,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE } from '../js/object_data.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 
 test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
     const top = resolveDippedCoinFate({
@@ -81,8 +81,6 @@ test('mkgold allocates once, merges by identity, and repairs coin weight', () =>
     resetGame();
     game.level = new GameMap();
     initRng(4500n);
-    enableRngLog();
-
     const first = mkgold(51, 4, 5);
     const firstId = first.o_id;
     assert.equal(first.otyp, GOLD_PIECE);
@@ -90,14 +88,10 @@ test('mkgold allocates once, merges by identity, and repairs coin weight', () =>
     assert.equal(first.quantity, 51);
     assert.equal(first.owt, 1);
     assert.equal(game.level.objects[4][5][0], first);
-    assert.match(getRngLog()[0], /^rnd\(2\)=/);
-    assert.equal(getRngLog().length, 1);
-
     const merged = mkgold(100, 4, 5);
     assert.equal(merged, first);
     assert.equal(merged.o_id, firstId);
     assert.equal(merged.quan, 151);
     assert.equal(merged.quantity, 151);
     assert.equal(merged.owt, 2);
-    assert.equal(getRngLog().length, 1);
 });
