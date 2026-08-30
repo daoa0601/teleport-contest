@@ -61,10 +61,12 @@ replacement is the remaining seeded room-fill and role-turn compatibility
 paths.  Future Valkyrie `#chat` text no longer injects a post-generation
 boulder, and the pit prefix no longer selects fixed movement, depth-two room,
 detection, corpse, or actor replay.  Caveman `f` now reaches shared fireassist
-through a scheduler-separated canned weapon-swap continuation; source
-multishot and the complete sling-volley loop remain explicitly partial.  Other
-named role paths remain.  Those later slices have focused fresh witnesses and
-selected public regressions, but still no sealed gate or hidden measurement.
+through a scheduler-separated canned weapon-swap continuation.  Matching-sling
+fire now selects the source action-level multishot count before independently
+splitting and settling each projectile; count limits, interruption and broader
+fire modes remain explicitly partial.  Other named role paths remain.  Those
+later slices have focused fresh witnesses and selected public regressions, but
+still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

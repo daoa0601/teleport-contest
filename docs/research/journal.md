@@ -98920,3 +98920,65 @@ measurement, or supplemental-animation work ran.  The coherent Caveman slice
 is ready for the requested production/test and documentation commit batches.
 
 ---
+
+### [2026-08-30 06:20 EEST, journal block 3212] {#bridge-free #caveman #dofire #multishot #sling #splitobj #projectile-identity #fresh-seed #c-source #behavioral-witness #implementation #process-safety}
+
+**Contract and source boundary:** block3210 removed the Caveman replay owner
+but explicitly left live multishot open.  Pinned `dothrow.c:throw_obj()` chooses
+one action-level count before the first `splitobj()`: a matching launcher and
+stack with no Confusion/Stun admits proficiency and class bonuses, calls one
+`rnd(maximum)`, then splits, detaches, flies, settles, stacks, and checks
+encumbrance once per projectile.  For a level-one Caveman with Basic sling,
+the proficiency contribution is zero and the Cave Dweller low-tech bonus makes
+the maximum two.  Decrementing a stack twice without two identities, replaying
+the old public shot count, or looping one already-landed object were explicit
+non-results.
+
+**Independent red witness and earliest divergence:** fresh non-public
+seed28003 uses the same real fireassist command as block3210.  Its source first
+volley roll is `rnd(2)=2`.  Before this slice, the live JavaScript path removed
+and landed only one flint, so the behavioral test failed **1 != 2** at the
+inventory delta; no pet path, coordinate, later RNG transcript, screen, cursor,
+helper call, or public session participates in the oracle.  This identifies the
+earliest missing operation as the action-level count before `nextIdent()`, not
+the later floor stack or actor maintenance.
+
+**Implementation, effect, and falsified alternatives:** matching map sling
+ammunition now computes the C weak-multishot policy from live skill, role,
+Dexterity, Fumbling, Confusion and Stun state; Caveman and Ranger supply the two
+sling-applicable class bonuses.  The selected count precedes every identity
+draw.  Each shot then splits or detaches one live unit, traverses the current
+map/contact path, settles and stacks that identity, and performs the post-shot
+capacity transition before the next unit.  Seed28003 now removes and lands two
+flints, conserves object quantity, produces equal normal/bridge-free worlds,
+and leaves zero Caveman bridges.  A single quantity patch was therefore
+falsified as insufficient; `splitobj()` RNG and independent floor/contact
+ownership are observable downstream.
+
+**Next blocker and evidence limit:** count-prefix limiting, mid-volley
+hurtle/death interruption, inventory-wide launcher search, autoquiver,
+polearm/whip fire, swallowed sling ammunition, water-wall/sink and other map
+contacts, persistence, and sealed strata remain open.  No public session,
+engine-only corpus, normal scorer, sealed trace, push, publication, hidden
+measurement, or supplemental-animation work ran.
+
+---
+
+### [2026-08-30 06:21 EEST, journal block 3213] {#caveman #multishot #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** the focused fresh Caveman file passes **2/2**.  One guarded
+default behavioral process then passed **374/374** named tests in 3.61 seconds
+and exited normally.  The test-lane audit remains green across **43 files**
+with no recorded-session, public-parity, mock/spy, or named call-transcript
+dependencies.  Bridge audit remains green at **123 production files, 9 guarded
+replay modules, and 19 fixture modules**; no matching runner remains.
+
+**Ownership and non-result boundary:** the C/Lua registry and map now move
+ordinary map matching-sling multishot into the live partial owner and remove it
+from the open gap.  The status stays `partial` for the interruption, selection,
+special-terrain, swallowed, option, persistence, and sealed cases named in
+block3212.  This gate is behavioral evidence for the coherent slice, not a
+public-corpus or hidden generalization measurement; `public-session-status.md`
+is unchanged and no publication is authorized.
+
+---
