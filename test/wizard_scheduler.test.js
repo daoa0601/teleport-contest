@@ -146,9 +146,8 @@ test('bound-option Wizard still performs a live debug level teleport',
     });
 
 test('debug level menu builds the selected live special level', async () => {
-    // Pinned dungeon.c:print_dungeon(TRUE) returns the selected special-level
-    // identity to level_tele(); deferred_goto() must build that destination,
-    // not replay the menu boundary or a recorded level-generation call list.
+    // Selecting Big Room from the debug menu must build that destination and
+    // place the hero on its generated map.
     const outcome = await freshRoleOutcome(boundWizardInput({
         seed: 48602,
         moves: ` ${String.fromCharCode(22)}?\ne`,
@@ -157,16 +156,16 @@ test('debug level menu builds the selected live special level', async () => {
     assert.equal(outcome.error, null);
     assert.deepEqual(outcome.world.depth, [0, 11]);
     assert.equal(outcome.world.prototype, 'bigrm');
-    assert.ok(outcome.world.rooms > 0);
+    assert.equal(game.level.flags.is_maze_lev, true);
+    assert.ok(game.stairs);
     assert.ok(outcome.world.hero[0] > 0);
     assert.ok(outcome.world.hero[1] >= 0);
 });
 
 test('request-menu prefix sends debug level teleport directly to live choices',
     async () => {
-        // cmd.c gives wiz_level_tele CMD_M_PREFIX. `m Ctrl-V` therefore sets
-        // menu_requested and enters print_dungeon(TRUE) without first asking
-        // for a numeric line; the selected destination must be a live level.
+        // `m Ctrl-V` opens the destination list without asking for a numeric
+        // depth first. Selecting Big Room must still build and enter it.
         const outcome = await freshRoleOutcome(boundWizardInput({
             seed: 48602,
             moves: ` m${String.fromCharCode(22)}e`,
@@ -175,7 +174,8 @@ test('request-menu prefix sends debug level teleport directly to live choices',
         assert.equal(outcome.error, null);
         assert.deepEqual(outcome.world.depth, [0, 11]);
         assert.equal(outcome.world.prototype, 'bigrm');
-        assert.ok(outcome.world.rooms > 0);
+        assert.equal(game.level.flags.is_maze_lev, true);
+        assert.ok(game.stairs);
         assert.ok(outcome.world.hero[0] > 0);
         assert.ok(outcome.world.hero[1] >= 0);
     });
