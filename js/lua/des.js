@@ -15,6 +15,13 @@ export function createDesBindings(operations) {
         terrain: (selection, terrain) => operations.terrain(
             unwrapSelection(selection), String(terrain),
         ),
+        replace_terrain: value => {
+            const options = tableOptions(value);
+            return operations.replaceTerrain({
+                ...options,
+                selection: unwrapSelection(options.selection),
+            });
+        },
         region: (selection, lighting) => operations.region(
             unwrapSelection(selection), String(lighting),
         ),

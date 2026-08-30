@@ -10483,6 +10483,15 @@ async function generateLuaSpecialLevel(active) {
                 throw new Error(`unknown Lua terrain ${character}`);
             specialSelectionTerrain(selection, type);
         },
+        replaceTerrain: options => {
+            const fromType = mapCharacterType(options.fromterrain);
+            const toType = mapCharacterType(options.toterrain);
+            if (fromType === undefined || toType === undefined)
+                throw new Error('unknown Lua replacement terrain');
+            replaceSpecialSelectionTerrain(
+                options.selection, fromType, toType, options.chance ?? 100,
+            );
+        },
         region: (selection, lighting) => {
             const lit = lighting === 'lit';
             const area = lit ? selection.grow() : selection;
@@ -10751,44 +10760,6 @@ async function generateBigrm13(active) {
     );
     wallification(1, 0, COLNO - 1, ROWNO - 1);
     await finishMappedBigRoom(context, { wallify: false });
-}
-
-async function generateBigrm2(active) {
-    const context = beginMappedBigRoom(active, BIGRM_RECTANGULAR_MAP);
-    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
-
-    let darkness = null;
-    switch (rn2(4)) {
-    case 0:
-        darkness = specialSelectionFillRect(context, 1, 7, 22, 9)
-            .union(specialSelectionFillRect(context, 24, 1, 50, 5))
-            .union(specialSelectionFillRect(context, 24, 11, 50, 16))
-            .union(specialSelectionFillRect(context, 52, 7, 73, 9));
-        break;
-    case 1:
-        darkness = specialSelectionFillRect(context, 24, 1, 50, 16);
-        break;
-    case 2:
-        darkness = specialSelectionFillRect(context, 1, 1, 22, 16)
-            .union(specialSelectionFillRect(context, 52, 1, 73, 16));
-        break;
-    default:
-        break;
-    }
-
-    if (darkness) {
-        darkness.forEachXMajor((x, y) => {
-            const loc = game.level.at(x, y);
-            if (loc) loc.lit = false;
-        });
-        if (rn2(100) < 25) {
-            replaceSpecialSelectionTerrain(
-                darkness.grow(), ROOM, ICE,
-            );
-        }
-    }
-
-    await finishMappedBigRoom(context);
 }
 
 const BIGRM_3_MAP = [
@@ -11168,14 +11139,14 @@ async function generateBigrm12(active) {
 
 const BIG_ROOM_GENERATORS = Object.freeze([
     null,
-    null, generateBigrm2, generateBigrm3, generateBigrm4,
+    null, null, generateBigrm3, generateBigrm4,
     generateBigrm5, generateBigrm6, generateBigrm7, generateBigrm8,
     generateBigrm9, generateBigrm10, generateBigrm11, generateBigrm12,
     generateBigrm13,
 ]);
 
 export async function generateBigRoom(active) {
-    if (active?.variant === 1) {
+    if (active?.variant === 1 || active?.variant === 2) {
         await generateSpecialAndFixup(generateLuaSpecialLevel, active);
         return;
     }
@@ -16054,7 +16025,8 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm' && variant === 1;
+        const luaOwnedSpecial = prototype === 'bigrm'
+            && (variant === 1 || variant === 2);
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

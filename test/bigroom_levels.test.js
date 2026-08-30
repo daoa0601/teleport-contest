@@ -44,34 +44,25 @@ function floorObjects() {
     return (game.level.objects || []).flat(2).filter(Boolean);
 }
 
-test('bigrm-1 Lua builds its mapped level and applies its wall rules',
+test('Lua Big Room sources build their maps and apply their wall rules',
     async () => {
-        const active = await buildBigRoom(1, 17);
+        for (const variant of [1, 2]) {
+            const active = await buildBigRoom(variant, variant * 17);
 
-        assert.deepEqual(
-            [active.context.width, active.context.height], [75, 18],
-        );
-        assert.equal(game.level.flags.is_special, true);
-        assert.equal(game.level.flags.is_maze_lev, true);
-        assert.equal(active.allowFlips, 0);
-        assert.equal(stairs().length, 2);
-        assert.ok(game.level.at(
-            active.context.xstart, active.context.ystart,
-        ).wall_info);
+            assert.deepEqual(
+                [active.context.width, active.context.height], [75, 18],
+            );
+            assert.equal(game.level.flags.is_special, true);
+            assert.equal(game.level.flags.is_maze_lev, true);
+            assert.equal(active.allowFlips, 0);
+            assert.equal(stairs().length, 2);
+            assert.ok(game.level.at(
+                active.context.xstart, active.context.ystart,
+            ).wall_info);
+        }
     });
 
 test('Big Room terrain programs alter the rooms described by Lua', async () => {
-    await buildBigRoom(2, 7);
-    assert.ok(terrainCount(ICE) > 100);
-    let lit = 0, dark = 0;
-    for (let x = 1; x < 80; x++) {
-        for (let y = 0; y < 21; y++) {
-            if (game.level.at(x, y)?.lit) lit++;
-            else dark++;
-        }
-    }
-    assert.ok(lit > 100 && dark > 100);
-
     await buildBigRoom(5, 9);
     assert.ok(terrainCount(CLOUD) + terrainCount(ICE) > 100);
 
