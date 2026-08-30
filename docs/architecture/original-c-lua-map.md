@@ -37830,8 +37830,71 @@ A three-square contact cannot call `potionbreathe()` and remains live without
 asking even with polymorph control.  `dothrow.c` also distinguishes the
 polymorphed low-stamina threshold (`mh < 5`) from the ordinary threshold
 (`uhp < 10`); a five-HP gremlin can throw and later clamp to one HP inside
-`split_mon()`, while the four-HP drop-from-grasp presentation remains fail-loud.
+`split_mon()`.  A four-HP gremlin remains admitted while unencumbered; when
+Stressed, the live drop-from-grasp branch rewrites direction and swallowed
+contact still reaches this same vapor continuation.
 The remaining explicit gaps are in-game editing for the broader paranoia
-option surface, that low-stamina continuation, broader scary-square nuances
+option surface, the ordinary-map low-stamina floor continuation, broader scary-square nuances
 inside `monster_nearby()`, an external live carrier for blessed beast-form
 vapor, and the sealed stratum.  Lua owns none of this runtime form graph.
+
+## 1009. Throw preflight and stamina rewrite direction before swallowed contact
+
+```mermaid
+flowchart TD
+    A[dothrow command] --> B{check_capacity at EXT_ENCUMBER?}
+    B -- yes --> C[reject before object and direction input]
+    B -- no --> D[getobj then getdir]
+    D --> E[persist u.dx u.dy u.dz]
+    E --> F[splitobj or freeinv]
+    F --> G{cursed or greased slip succeeds?}
+    G -- yes --> H[message and reroll persistent direction]
+    G -- no --> I[keep requested direction]
+    H --> J{calc_capacity with thrown weight above SLT_ENCUMBER}
+    I --> J
+    J -- no --> K[normal throw direction]
+    J -- yes --> L{low active HP, not full, object above twice HP, not Air}
+    L -- no --> K
+    L -- yes --> M[stamina message]
+    M --> N{polymorphed?}
+    N -- no --> O[exercise Constitution down]
+    N -- yes --> P[physical exercise suppressed]
+    O --> Q[rewrite direction to down]
+    P --> Q
+    K --> R{swallowed?}
+    Q --> R
+    R -- yes --> S[contact engulfer regardless of rewritten dz]
+    R -- no --> T[map flight or hitfloor continuation]
+```
+
+`dothrow.c:ok_to_throw()` calls `check_capacity()` before selection, so an
+Extremely encumbered or Overtaxed hero cannot consume an object key, direction
+key, or throw RNG.  Once `throw_obj()` accepts a direction, C stores it in
+`u.dx/u.dy/u.dz` before detaching the selected identity.  `throwit()` then
+evaluates cursed/greased slip first; a successful slip mutates that persistent
+direction, including the vertical fallback when both rerolled horizontal axes
+are zero.
+
+The stamina predicate is not merely low HP plus a heavy object.  It reconstructs
+the pre-detachment load with `calc_capacity(obj->owt)`, requires a result above
+`SLT_ENCUMBER`, distinguishes `uhp < 10` from polymorphed `mh < 5`, rejects full
+HP and objects no heavier than twice current HP, and excludes the Air level.
+Only then does it publish the drop-from-grasp message, exercise Constitution
+for a non-polymorphed hero, and rewrite the direction to down.  `exercise()`
+suppresses physical-attribute exercise while polymorphed, so that case also
+has a different RNG boundary.
+
+The order around `u.uswallow` is decisive: `throwit()` checks swallowed contact
+before its later downward `hitfloor()` branch.  A Stressed swallowed hero
+therefore still hits the engulfer after the direction becomes down.  The shared
+JavaScript `throw_state.js` owner now composes this state machine into generic,
+weapon, projectile, and potion swallowed carriers.  Direct live-command
+witnesses distinguish Overtaxed rejection, unencumbered admission, the
+Burdened off-by-one boundary, Stressed human exercise, polymorphed exercise
+suppression, slip direction, object lifecycle, and eventual engulfer contact.
+They replace the former test which accepted a named bridge rejection as the
+expected result for a valid unencumbered four-HP gremlin throw.
+
+Ordinary-map low-stamina `hitfloor()` remains partial: its breakage, soft
+terrain, altar, shipping, shop, and Air-level continuations have not been
+claimed.  Lua owns none of this runtime throw path.

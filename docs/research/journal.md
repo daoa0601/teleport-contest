@@ -98072,3 +98072,61 @@ sealed trace, push, publication, official hidden measurement, or animation
 work ran.
 
 ---
+
+### [2026-08-30 04:00 EEST, journal block 3191] {#bridge-free #throwit #capacity #low-stamina #swallowed #direction #exercise #change-detector #fake-acceptance #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3190 left the four-HP
+gremlin as an expected `throw.potion-impact-unsupported` rejection.  That test
+was a change detector for the port's missing branch, not a behavioral oracle:
+it asserted empty RNG, unchanged inventory, and the bridge id for a source-valid
+unencumbered throw.  Fresh live-command witnesses first failed at two distinct
+boundaries: both unencumbered and Stressed polymorphed throws hit the bridge,
+while an Overtaxed throw incorrectly proceeded to object input.  The debugging
+portfolio kept command capacity, post-detachment capacity reconstruction, HP
+threshold, object weight, slip direction, physical exercise, swallowed contact,
+and ordinary floor contact as separate hypotheses.
+
+**Prediction and decisive C evidence:** `dothrow.c:ok_to_throw()` calls
+`check_capacity()` before object selection.  Inside `throwit()`, the stamina
+branch requires `calc_capacity(obj->owt) > SLT_ENCUMBER`, active non-downward
+direction, low but non-full active HP, object weight above twice that HP, and a
+non-Air level.  It uses `uhp < 10` for a human and `mh < 5` while polymorphed.
+The object has already left inventory, so the extra weight reconstructs the
+pre-detachment load.  Cursed/greased slip runs first and can alter whether the
+stamina predicate remains directionally active.  Human success calls
+`exercise(A_CON,FALSE)`; polymorph suppresses physical exercise.  Finally,
+`u.uswallow` contact is checked before the later `u.dz` floor branch, so
+"drops from your grasp" does not mean the thrown identity misses an engulfer.
+
+**Decision and implementation:** `cmd.js` now rejects excessive action
+capacity before selector input and persists the requested source direction
+before detachment.  New shared owner `throw_state.js` implements source-shaped
+thrown naming, cursed/greased slip direction, capacity-stratified stamina,
+human Constitution exercise, polymorph exercise suppression, and the downward
+direction rewrite.  All four swallowed carrier families compose it after
+split/free ownership and before hit/contact.  The old four-HP bridge-acceptance
+test now proves the valid unencumbered potion is consumed and reaches gremlin
+vapor; new outcomes distinguish Burdened from Stressed, command rejection from
+contact, and human from polymorphed exercise without mocking collaborator calls.
+
+**Measured effect and process custody:** the seven focused capacity/direction
+witnesses pass **7/7**; the complete swallowed-throw file passes **50/50**; and
+the potion-impact, map, swallowed, and hero-clone gate passes **145/145**.
+One guarded default behavioral run passes all **373** named tests across
+**38** files and exits normally.  The behavioral-lane audit still reports no
+recorded-session or public-parity dependencies.  The bridge audit passes over
+**128 files, 15 guarded modules, and 19 fixture modules**.  No duplicate or
+abandoned test runner was present.
+
+**Falsified hypotheses, limits, and next blocker:** low HP plus object weight is
+not sufficient without Stressed-or-worse load; Burdened does not satisfy the
+strict `> SLT_ENCUMBER` condition; a downward rewrite while swallowed does not
+take the floor continuation; polymorphed physical exercise does not consume
+the human `rn2(2)` draw; and a fail-before bridge assertion is not acceptable
+coverage of a source-valid interaction.  The ordinary-map low-stamina
+`hitfloor()` continuation remains deliberately open, including Air, soft
+terrain, breakage, altar, shipping, and shop state.  No public regression lane,
+full Contest corpus, scorer, sealed trace, push, publication, official hidden
+measurement, or animation work ran.
+
+---
