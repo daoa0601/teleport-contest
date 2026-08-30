@@ -100275,3 +100275,60 @@ sealed trace, push, publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 11:04 EEST, journal block 3247] {#turn-scheduler #valkyrie #fastforward #bridge-removal #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and mechanism portfolio:** block 3246 was
+production progress: Wizard bindings and live level teleport removed the last
+role/session classifier.  The remaining guarded frontier separated into the
+default turn replay and recorded-RNL compatibility.  The critical-debugging
+portfolio traced the default's only caller rather than treating all bridge IDs
+as equivalent.  Every legal role except Valkyrie already used the shared
+movement-ration owner; Valkyrie used live actor scans but could still fall into
+`fastforward_step()` when no active actor selected its special cases.
+
+**Earliest divergence, source prediction, and red evidence:** pinned
+`allmain.c:moveloop_core()` couples current-actor exhaustion, global
+maintenance, negative `multi`, hunger, timers, and current-speed/burden
+movement allocation.  `fastforward_step()` instead selected one of twelve
+fixed RNG call lists by turn number.  In a controlled petless arena, quaffing
+a live paralysis potion advanced the first two maintenance turns but then
+entered the fixed transcript: after 60 scheduler cycles the hero still had 30
+helpless turns and never returned to input.  The strengthened source audit
+independently failed on the module, exporter, both bridge IDs, and call site.
+
+**Implementation and ownership effect:** commit `ad686b3` adds Valkyrie to
+the single source movement-ration predicate, removes its fixed early dog-search
+RNG table, makes a quiet no-actor turn execute ordinary state-derived global
+maintenance, and deletes the mode-dependent default.  `js/fastforward.js`,
+its import, `fastforward.turn`, and `scheduler.default-replay-gap` are absent.
+The remaining guarded production replay surface is recorded-RNL compatibility
+in `rng.js`, owned separately from scheduling.  The bridge-free policy tests
+also replace one combined implementation-boundary loop with separate replay-
+property and fixture-painter contracts.
+
+**Independent behavioral and adversarial evidence:** the petless paralysis
+witness now reaches input with helplessness zero and the live recovery message.
+A second witness derives carrying capacity from current Strength and
+Constitution: a 600-unit payload makes the Valkyrie Burdened, so one wait needs
+two nine-point global allocations, advances `moves` by two, and consumes two
+hunger points.  Temporarily removing Valkyrie from source-ration ownership made
+that witness fail at `moves == 2` rather than the required 3; restoring the
+entry returned it to green.  This mechanics portfolio asserts state effects,
+not an RNG transcript, private scheduler log, public screen, or helper call.
+
+**Measured effect, falsified hypotheses, and next blocker:** 42 focused
+scheduler/policy tests passed.  One managed `npm test` invocation passed all
+**462/462** behavioral tests across **53** lane-audited files.  The bridge audit
+drops from 119/2/19 to **118 production files, 1 guarded replay module, and 19
+fixture modules**.  The owned processes exited and no matching runner remains.
+Pet presence was not required for source scheduling; fixed RNG calls were not
+equivalent to global maintenance; and bridge-free-only failure was not an
+acceptable substitute for one normal/bridge-free owner.  Wider speed,
+interruption, actor/terrain, region/timer, options, persistence, and sealed
+strata remain open.  The next bridge blocker is recorded-RNL compatibility.
+No corpus, scorer, public-regression lane, sealed trace, push, publication,
+hidden measurement, or animation work ran; `public-session-status.md` is
+unchanged.
+
+---

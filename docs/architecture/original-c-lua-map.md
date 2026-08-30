@@ -39287,3 +39287,58 @@ menus, tty pagination, destination effects, options, persistence, and sealed
 strata.  No production role/session classifier remains.  The managed default
 gate passes 459/459 across 53 behavioral files; the bridge audit covers 119
 production files, 2 guarded replay modules, and 19 fixture modules.
+
+## 1031. The default scheduler has one state-derived owner
+
+```mermaid
+flowchart TD
+    Action["time-taking hero command"] --> Debit["subtract 12 hero movement"]
+    Debit --> Scan["scan current fmon movement in source order"]
+    Scan --> Enough{"hero movement at least 12?"}
+    Enough -- no --> Global["allocate one real global turn"]
+    Global --> State["monster distress, timers, hunger, negative multi, regions"]
+    State --> Ration["u_calc_moveamt from speed and current burden"]
+    Ration --> Scan
+    Enough -- yes --> Input["return to ordinary input"]
+
+    Fixed["fastforward_step fixed RNG transcript"] -. deleted .-> Global
+    Gap["scheduler.default-replay-gap"] -. deleted .-> Global
+```
+
+Pinned `allmain.c:moveloop_core()` does not have a role-selected default turn
+transcript.  After a timed command it repeatedly scans the current monster
+list, allocates a global turn only after movable actors are exhausted, runs
+world maintenance, and grants the hero a movement amount derived from current
+speed and carrying capacity.  Negative `multi`, timers, hunger, regions, and
+other state transitions belong to that same allocation.  A Burdened hero
+receiving nine movement points therefore needs two allocations after spending
+a complete 12-point action.
+
+The deleted `fastforward_step()` encoded twelve position-indexed RNG call
+lists.  A petless Valkyrie could fall into that table after the first special
+cases: `moves` and RNG advanced, but negative `multi` did not, so a paralysis
+state never recovered.  Bridge-free mode reached a different forbidden
+`scheduler.default-replay-gap`, which meant normal and bridge-free execution
+did not even share one incomplete owner.
+
+Every legal role now enters `usesSourceMovementRation()`.  A quiet no-actor
+turn runs the ordinary global-maintenance transaction; role identity can
+change mechanics within it but cannot select a stored transcript.  The
+`fastforward.js` module, import, fixed Valkyrie dog-search calls, bridge IDs,
+and mode-dependent default are absent.  The source audit rejects their
+reintroduction.
+
+Two independent state witnesses cover different failure modes.  A live
+paralysis potion in a petless arena must eventually clear helplessness and
+emit recovery.  Separately, a 600-unit payload on a Strength-10,
+Constitution-10 Valkyrie makes one wait consume two nine-point global
+allocations before input returns.  Removing Valkyrie from source-ration
+ownership changes that second result from two world turns to one.  Neither
+oracle copies an RNG list, scheduler call order, or public trace.
+
+This owner remains `partial` for broader speed combinations, multi-turn
+interruptions, actor/terrain interactions, region and timer breadth, options,
+save/restore, and sealed strata.  Recorded-RNL compatibility remains guarded
+under the RNG owner.  The managed default gate passes 462/462 across 53
+behavioral files; the bridge audit covers 118 production files, 1 guarded
+replay module, and 19 fixture modules.

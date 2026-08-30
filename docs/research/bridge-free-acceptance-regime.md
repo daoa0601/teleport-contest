@@ -37,9 +37,9 @@ contract:
 
 - top-level fixtures are behind a legacy-only dynamic router, so bridge-free
   startup neither imports their modules nor decodes their trace payloads;
-- `replayMoves` is installed as a poisoned property and the one legacy
-  classifier reads it only outside bridge-free mode;
-- fast-forward, seeded replay, and snapshot-painter boundaries record a
+- `replayMoves` is installed as a poisoned property and production code no
+  longer reads it;
+- seeded replay and snapshot-painter boundaries record a
   bounded bridge ID/call site and throw if reached;
 - `getBridgeUsageLedger()` exposes per-segment runtime evidence;
 - `scripts/audit-bridge-free.mjs` mechanically audits the centralized fixture
@@ -49,9 +49,9 @@ contract:
 - `docs/architecture/c-lua-ownership.json` is the validated four-state
   ownership source, with a generated graph and summary.
 
-This is not a generalization result.  No sealed corpus exists yet, actor-rich
-compatibility paths intentionally fail loudly, and no official measurement was
-run for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
+This is not a generalization result.  No sealed corpus exists yet, recorded-RNL
+compatibility intentionally fails loudly, and no official measurement was run
+for this checkpoint.  Subsequent local slices removed the Samurai, Rogue,
 Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
 ration, command, prayer, projectile, level-generation, and current-world actor
 paths.  Pre-mklev and all-role inventory startup
@@ -152,7 +152,10 @@ command metadata, custom inventory dispatch reaches a live item action, and
 Ctrl-V reaches numeric and menu-selected live level transitions, including a
 fresh special-level build.  Its classifier, fixed room/stair mutations,
 pet/RNG maintenance, screen/RNG painter, and replay module are deleted.  The
-default fast-forward gap and recorded-RNL compatibility remain guarded.  These
+default fast-forward gap is now deleted too: every legal role uses the shared
+source movement-ration scheduler, including petless and Burdened Valkyrie
+states, and a no-actor turn runs real global maintenance rather than a fixed
+RNG transcript.  Only recorded-RNL compatibility remains guarded.  These
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
 
@@ -165,7 +168,7 @@ Add one explicit execution mode (provisional interface:
 In bridge-free mode:
 
 - top-level session fixtures and fixture-return paths are disabled;
-- `js/fastforward.js` and every fast-forward call are unreachable;
+- `js/fastforward.js` and every fast-forward call are absent;
 - seeded RNG replay tables/helpers are unreachable;
 - screen-snapshot painters and boundary replay helpers are unreachable;
 - production behavior may not branch on `replayMoves`, session identity,
