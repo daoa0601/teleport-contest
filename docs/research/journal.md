@@ -99753,3 +99753,57 @@ trace, push, publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 09:07 EEST, journal block 3237] {#test-quality #change-detector #fake-acceptance #bridge-free #role-scheduler #correction #critical-portfolio #process-safety}
+
+**Previous-turn classification and material correction:** the Healer slice was
+production progress, but its acceptance claim was overstated.  Blocks 3201,
+3203, 3207, 3211, 3231, 3233, 3235, and 3236 treated exact
+normal-versus-bridge-free world equality as behavioral evidence.  Both sides
+execute this JavaScript implementation, so an equally wrong scheduler can pass
+the comparison.  The earliest unmistakable checksum was
+`startup_single_owner.test.js`, which serialized the entire startup world from
+both modes; `test_lane_policy.test.js` also asserted that its own filename had
+been discovered.  Those are mechanical change detectors, not independent game
+oracles.
+
+**Portfolio, prediction, and decision:** the critical-debugging portfolio kept
+three mechanisms separate: source/command-derived world outcomes, runtime
+bridge rejection, and static architecture policy.  Only the first is
+behavioral evidence.  Delete the two tests whose only oracle was implementation
+agreement or self-discovery; remove every whole-world normal/bridge-free
+comparison from base, Caveman, Rogue, Priest, Valkyrie, Ranger, and Healer
+scheduler tests; and run the lane and bridge scanners explicitly as audits
+before the behavioral process.  Retain C-derived projectile quantities,
+helpless-turn boundaries, prayer conduct, trap revelation, and command-derived
+stationary-hero/live-actor outcomes.  Do not mechanically delete exact RNG
+checks when pinned C supplies the independent deterministic contract.
+
+**Implementation and measured effect:** commit `3b23c33` removes **554 lines**
+and adds **183** across the test-policy batch.  The shared role helper now runs
+one bridge-free world and reports its observable state instead of comparing two
+modes.  Priest prayer now proves conduct, elapsed occupation turns, movement,
+and completion; Rogue and Valkyrie waits prove stationary hero time plus live
+actors; Caveman, Ranger, Healer, and base-role files retain their independently
+derived state boundaries.  The audit rejects the removed helper/comparison and
+self-discovery patterns.  The focused scheduler/policy portfolio passes
+**26/26**.  One guarded `npm test` invocation ran the two audits and then one
+serial behavioral process; all **446/446** remaining behavioral tests passed in
+4.4 seconds.  The lane audit covers **49 files** and the bridge audit reports
+**125 production files, 8 guarded replay modules, and 19 fixture modules**.
+The owned process exited and no matching runner remains.
+
+**Falsified hypotheses, ownership, and next blocker:** agreement between two
+configuration modes is not an oracle for correctness; a static policy scanner
+does not become behavioral by wrapping it in `node:test`; and deleting five
+green tests did not remove five game mechanics.  The mechanical ownership
+registry now cites the all-role live startup witness and explicit bridge audit
+instead of the deleted startup checksum.  Remaining RNG-rich behavioral files
+still require semantic case-by-case review, because C-derived RNG can be scored
+behavior while JavaScript-derived call shape is not.  After that bounded review,
+the next explicit bridge family remains Monk; no new Monk port work was mixed
+into this cleanup.  No corpus, scorer, public-regression lane, sealed trace,
+push, publication, official hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---

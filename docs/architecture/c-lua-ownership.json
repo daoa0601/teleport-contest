@@ -33,7 +33,7 @@
       "javascriptOwners": ["js/rng.js", "js/isaac64.js"],
       "dependencies": [],
       "bridgeIds": ["seeded-replay.recorded-rnl"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: live quiet-role turn advances RNG with zero bridge hits"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: live quiet-role turn spends source time with zero bridge hits"],
       "lastSealedGate": null,
       "openGap": "No open gap inside the live RNG wrapper scope; seeded replay helpers remain separately forbidden."
     },
@@ -50,7 +50,7 @@
       "javascriptOwners": ["js/startup.js", "js/o_init.js", "js/dungeon.js", "js/artifacts.js", "js/roles.js"],
       "dependencies": ["rng-core", "startup-artifacts", "level-generation"],
       "bridgeIds": [],
-      "acceptanceWitnesses": ["test/startup_single_owner.test.js: all 13 selectable roles on fresh seeds produce equal role, race, alignment, gods, hero attributes, inventory, pet, discovery, position, movement, and turn state in normal and bridge-free modes with no pre/post/mineralize startup bridge", "scripts/audit-bridge-free.mjs: rejects removed pre-mklev, post-mklev, mineralize, and exhaustive-role fallback tokens", "test/bridge_free.test.js: startup executes without importing a fast-forward boundary and the mechanical audit proves every remaining compatibility classifier is explicitly legacy-only", "test/artifact_startup.test.js: per-game artifact reset and all-role retargeting"],
+      "acceptanceWitnesses": ["test/base_role_scheduler.test.js: all 13 selectable roles construct a live bridge-free hero, race, and tame starting actor on fresh seeds", "scripts/audit-bridge-free.mjs: rejects removed pre-mklev, post-mklev, mineralize, and exhaustive-role fallback tokens", "test/bridge_free.test.js: a fresh Tourist startup and quiet turn complete with zero bridge hits", "test/artifact_startup.test.js: per-game artifact reset and all-role retargeting"],
       "lastSealedGate": null,
       "openGap": "Object-description, artifact initialization, role/pantheon initialization, dungeon initialization, and handedness/initial-power inputs are live and have one owner in normal and bridge-free modes. Alternate legal race/gender/alignment and dungeon-option strata plus a sealed startup gate remain open."
     },
@@ -84,7 +84,7 @@
       "javascriptOwners": ["js/u_init.js", "js/allmain.js", "js/invent.js", "js/windows.js", "js/options.js", "js/skills.js", "js/gold.js", "js/weight.js", "js/insight.js", "js/cmd.js", "js/vault.js", "js/end.js"],
       "dependencies": ["startup-pre-mklev", "level-generation", "samurai-pet-turns"],
       "bridgeIds": [],
-      "acceptanceWitnesses": ["test/startup_single_owner.test.js: all 13 selectable roles have equal fresh normal/bridge-free inventory, attributes, pet, discoveries, and world startup state with no startup bridge", "test/startup_reroll.test.js: disposable candidate isolation, deferred final effects, live default and lootabc menus, cancel fallback, reroll count/conduct, and fresh zero-bridge starts", "test/startup_carry.test.js: recursive contained-gold knowledge, container and bag weight, Strength-then-Constitution carry boost, all-role startup invariant, and fresh bridge-free Tourist turn", "test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
+      "acceptanceWitnesses": ["test/base_role_scheduler.test.js: all 13 selectable roles construct a live bridge-free hero, race, and tame starting actor on fresh seeds", "test/startup_reroll.test.js: disposable candidate isolation, deferred final effects, live default and lootabc menus, cancel fallback, reroll count/conduct, and fresh zero-bridge starts", "test/startup_carry.test.js: recursive contained-gold knowledge, container and bag weight, Strength-then-Constitution carry boost, all-role startup invariant, and fresh bridge-free Tourist turn", "test/startup_roleplay.test.js: all-role pauper inventory, skills, selective knowledge, race suppression, nudist armor, Knight saddle, conduct, and fresh bridge-free legacy startup", "test/startup_race.test.js: all-race substitutions and knowledge, non-Rogue Orc compensation, all-role discover-mode wishing, source constructor order, and role-money reset", "public fixture-disabled startup tests; regression evidence only"],
       "lastSealedGate": null,
       "openGap": "All selectable roles now enter makedog, role/race inventory, attributes, discoveries, skills, equipment, and candidate finalization in both modes; the unreachable Tourist fallback graph and post-mklev replay are deleted. Substitution and racial knowledge, Orc compensation, discover-mode wishing, role-money order, recursive gold/weight, carry boost, pauper/nudist, rerolls, and permanent sensory initialization have focused witnesses. Non-human cross-role pet combinations, broader options, and a sealed stratified gate remain open."
     },

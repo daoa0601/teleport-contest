@@ -231,12 +231,13 @@ Evidence lower in the hierarchy cannot establish a claim from a higher level.
 
 ## Test independence and lanes
 
-`npm test` is the default behavioral lane. A test belongs there only when its
+`npm test` is the composite local gate: it runs the structural audits and then
+`npm run test:behavior`. A test belongs in that behavioral lane only when its
 oracle is independent of the JavaScript implementation: a C/Lua rule, a live
-command and observable state transition, a cross-owner invariant, a fail-before-
-mutation boundary, or a mechanical bridge-free constraint. Mock call order,
-callback argument sequences, private scheduling logs, and values copied from
-the implementation are not acceptance contracts by themselves.
+command and observable state transition, a cross-owner invariant, or a fail-
+before-mutation boundary. Mock call order, callback argument sequences, private
+scheduling logs, same-implementation mode comparisons, self-discovery checks,
+and values copied from the implementation are not acceptance contracts.
 
 `npm run test:public-regression` is the explicit compatibility lane for tests
 derived from recorded public sessions. Exact RNG, screen, and cursor equality
@@ -249,8 +250,10 @@ be reported as bridge-free acceptance.
 `scripts/audit-test-lanes.mjs` enforces the first structural boundary: a
 default-lane `.test.js` file may not read a recorded `sessions/*.session.json`
 input, import the public RNG-parity helpers, use a mock/spy API, or introduce a
-named `calls`/`callOrder`/`invocations` transcript collector. Exact bridge-free
-replays, character-selection traces, Priest/Race startup traces, and the
+named `calls`/`callOrder`/`invocations` transcript collector. It also rejects
+the known whole-world normal/bridge-free self-oracle and test self-discovery
+patterns. Exact bridge-free replays, character-selection traces, Priest/Race
+startup traces, and the
 trap-victim trace therefore use `.public-regression.js`; only the fresh
 quiet-role runtime and fail-loud policy checks remain in
 `bridge_free.test.js`. This audit prevents known traces and the most explicit
