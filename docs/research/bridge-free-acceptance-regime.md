@@ -1,7 +1,7 @@
 # Bridge-free acceptance regime
 
 Status: adopted 2026-08-24; bridge-free runtime and sealed-gate infrastructure
-implemented locally, sealed corpus execution and evaluation not started.
+implemented locally; first sealed aggregate frozen 2026-08-30.
 
 This regime supersedes public-session and supplemental-animation optimization
 as the development acceptance target.  The current public checkpoint remains a
@@ -199,6 +199,25 @@ This checkpoint is explicitly a non-result.  No private key, actual manifest,
 C corpus, JavaScript aggregate, failure sample, public scorer, push, or hidden
 measurement was created or run.  The complete operator boundary is documented
 in `sealed-corpus/README.md`.
+
+### Enforcement checkpoint 3: first sealed aggregate
+
+Gate `phase1-generalization-20260830-01` committed 157 C sessions against
+repository `a2f3d6a`, pinned C tree `16ff591`, and corpus commitment
+`8e034112...bdcdc4`.  The one-shot bridge-free evaluator froze result hash
+`ad7b5411...f68d3c` with no runtime errors:
+
+- 51/157 exact sessions (32.48%);
+- 432,269/579,100 PRNG calls (74.64%);
+- 1,025/1,381 screens/cursors (74.22%).
+
+The result establishes real generalization beyond the public fixtures, but
+also falsifies broad-port completion.  Caveman is 14/14 and prayer is 5/6;
+Archeologist is 0/18, Barbarian 0/8, Samurai 0/6, inventory 0/6, and all six
+named branch/special-layout scenario groups are 0/4.  Exact per-session traces
+remained sealed while this aggregate was frozen.  The precommitted keyed
+failure sample may be released only after journal block 3253 records the full
+result hash and decision; the corpus cannot be rescored.
 
 ## 1. Genuinely bridge-free mode
 

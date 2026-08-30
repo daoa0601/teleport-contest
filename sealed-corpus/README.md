@@ -1,7 +1,8 @@
 # Sealed corpus gate
 
-Status: infrastructure and unsealed driver qualification are implemented. No
-real gate has been prepared, recorded, evaluated, or opened.
+Status: infrastructure and unsealed driver qualification are implemented. The
+first real 157-session gate was prepared, recorded, and aggregate-evaluated on
+2026-08-30; its authorized failing sample has not yet been opened.
 
 This directory contains the public corpus specification only. Actual gate
 artifacts live under the ignored `.sealed-corpus/` root. The generator and

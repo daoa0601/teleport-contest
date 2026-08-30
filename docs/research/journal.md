@@ -100559,3 +100559,57 @@ recording.  No scorer, evaluation, trace release, public regression, push,
 hidden measurement, or game-ownership change occurred.
 
 ---
+
+### [2026-08-30 12:12 EEST, journal block 3253] {#sealed-corpus #first-gate #aggregate #generalization #bridge-free #frozen-result #failure-sample-decision #process-safety}
+
+**Gate identity and custody witness:** the scheduled gate
+`phase1-generalization-20260830-01` prepared exactly once from the preserved
+32-byte secret at clean repository commit `a2f3d6a`, pinned C tree
+`16ff59115315917b93185d026aeefea06db9b0f4`, manifest SHA-256
+`36a8f5a7fe0585b193abb91bdc3adfe930172cc1a3f5c007ca70d8cacce58795`,
+and corpus commitment
+`8e0341123b490f4d7d97837e5b72a14c309c55b72dff39619d32a76170bdcdc4`.
+The recorder completed 157/157 inputs sequentially in one owned process,
+created 157 mode-restricted traces, froze its signed receipt, removed its lock,
+and left no child process.  No private plan, filename, identity, or trace was
+read before evaluation.
+
+**Frozen aggregate and authoritative effect:** the one-shot evaluator forced
+`TELEPORT_BRIDGE_FREE=1`, disabled fixtures, ran 157 sequential isolated
+workers, reported zero runtime errors, deleted its resume state, and froze:
+
+- **51/157 exact sessions (32.48%)**;
+- **432,269/579,100 PRNG calls (74.64%)**;
+- **1,025/1,381 screens/cursors (74.22%)**.
+
+`sealed-gate-result-sha256: ad7b5411835e52435e08d46dcb008bb0bcb4a802b984644711b3e1f679f68d3c`
+
+This is the first evidence layer strong enough to support unseen-input
+generalization.  It also contradicts completion: Caveman is **14/14**, prayer
+**5/6**, shallow numeric transition **3/4**, and debug wish/use **3/4**, while
+Archeologist is **0/18**, Barbarian **0/8**, Samurai **0/6**, inventory
+**0/6**, and Minetown, Medusa, Gehennom, Big Room, Sokoban, and Quest layout
+families are each **0/4**.  Normal playmode retains 339,259/352,498 RNG calls
+but only 45/125 exact sessions; debug mode's named-world generation accounts
+for most of the larger RNG deficit.
+
+**Portfolio update, falsifications, and release decision:** fixture removal
+does generalize substantially--the earlier official 0/44 held-out exact result
+is not the current local ceiling--but 44/44 public exactness did not imply
+role, inventory, branch, persistence, or special-level completeness.  The
+aggregate separates at least three live mechanism families: startup/role
+initialization gaps, tty/command outcome gaps with nearly exact RNG, and deep
+C/Lua generation gaps with large RNG loss.  They must not be collapsed into a
+single replay fix.  Because the result is frozen, logged above, non-rescorable,
+and broad enough to require earliest-boundary localization, authorize only the
+precommitted keyed failing sample: at most one failure per command family and
+eight total.  Do not open any other trace or regenerate this corpus.
+
+**Next blocker and remaining gate work:** release that fixed sample once,
+inventory only its authorized members, and use earliest C/JavaScript
+divergences to choose one coherent source subsystem slice.  Public engine-only
+and normal regression gates, overlay restoration, publication audit, push,
+and official hidden measurement remain unrun.  No animation optimization or
+production change occurred during this gate.
+
+---
