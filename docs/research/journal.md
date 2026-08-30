@@ -99040,3 +99040,66 @@ publication, official hidden measurement, or animation work is authorized by
 this result.
 
 ---
+
+### [2026-08-30 06:38 EEST, journal block 3216] {#bridge-free #fireassist #find-launcher #weapon-slots #pushweapon #canned-command #fresh-seed #behavioral-witness #c-source #change-detector #critical-debugging-portfolio #implementation #process-safety}
+
+**Contract and independent portfolio:** block3215 left inventory-wide launcher
+selection open.  The mechanisms were kept separate: an alternate-slot-only
+dispatcher, a first-match inventory scan, C's BUC-aware `find_launcher()`
+selection, and the `pushweapon`-dependent swap/wield schedule.  Pinned
+`dothrow.c` skips known-cursed inventory launchers, retains only the first
+unknown-BUC match as fallback, returns the first known blessed or uncursed
+match, and—when a primary is wielded with `pushweapon` off—queues
+`doswapweapon`, `dowield(letter)`, then `dofire`.  Treating the inventory
+launcher as already wielded, selecting the first compatible object, or
+collapsing all actions into the original fire command were explicit
+non-results.
+
+**Fresh red witness and earliest divergence:** fresh non-public seed28100 uses
+only ordinary commands to swap to the starting sling, wield the rock stack
+with `pushweapon` disabled, and thereby leave the sling outside both weapon
+slots while flint remains readied.  Its subsequent real fire command originally
+failed at the first observable owner: the primary remained the rock and no
+flint was fired.  The assertion reported `the discovered launcher must fire
+the readied flint`; it does not inspect a helper, canned queue, source line,
+letter choice, endpoint, screen, RNG transcript, or public session.
+
+**Implementation, adversarial evidence, and decision:** shared `dofire()` now
+scans the live inventory in source order and schedules live swap, wield, and
+fire commands.  `dowield()` accepts the same queued inventory letter through
+its ordinary state transition, and `doswapweapon()` now gives a sole primary
+the alternate slot while making the hero bare handed.  Seed28100 reaches a
+live sling primary, rock alternate, and reduced quiver in equal normal and
+bridge-free worlds.  A separate live arena puts an unknown sling before a
+known-cursed and a known-safe sling; the known-safe identity is wielded and the
+same readied flint identity settles on the map.  This falsifies both
+alternate-only and first-match repairs.  The focused behavioral portfolio
+passes **6/6** with zero bridge use.
+
+**Remaining boundary:** welded/touch/artifact and unknown-cursed wield failure
+continuations, quivered-stack wield prompts, autoquiver, polearm/whip and
+return-weapon modes, mid-volley interruption, broader projectile contacts,
+persistence, and sealed strata remain open.  No corpus, scorer, public-
+regression lane, sealed trace, push, publication, hidden measurement, or
+supplemental-animation work ran.
+
+---
+
+### [2026-08-30 06:39 EEST, journal block 3217] {#fireassist #weapon-slots #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** one guarded default behavioral process passed **378/378**
+named tests and exited normally in 4.0 seconds.  The behavioral-lane audit is
+green across **44 files** with no recorded-session, public-parity, mock/spy, or
+call-transcript dependencies.  Bridge audit remains green at **123 production
+files, 9 guarded replay modules, and 19 fixture modules**; no matching runner
+remains.
+
+**Ownership and evidence limit:** the registry and C/Lua map now move ordinary
+inventory launcher selection, BUC precedence, pushweapon scheduling, and the
+sole-primary swap into the live still-`partial` owner.  The failure and broader
+fire modes named in block3216 remain explicit gaps.  This is local independent
+bridge-free evidence, not an engine-only corpus, public scorer, sealed gate, or
+official hidden measurement, so `public-session-status.md` remains unchanged
+and publication remains unauthorized.
+
+---

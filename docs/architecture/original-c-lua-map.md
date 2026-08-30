@@ -13631,6 +13631,13 @@ path owns `pushweapon`.  `invent.js` only renders the resulting state,
 including plural `(alternate weapons; not wielded)` grammar.  No Lua level
 script participates in this runtime equipment transaction.
 
+The empty-secondary case is still a slot exchange, not an immediate rejection.
+With a sole primary, `ready_weapon(NULL)` spends the action becoming bare
+handed and `setuswapwep(oldwep)` installs that same identity as alternate.  A
+fully empty swap remains zero-time and merely reports that the hero is already
+bare handed.  These state transitions are shared by direct `x` and fireassist's
+pre-wield canned action.
+
 ## 390. Fatal status projection distinguishes exact zero from overkill
 
 Damage state and tty status projection are related but not interchangeable:
@@ -38434,6 +38441,15 @@ flowchart TD
     F --> G{matching launcher wielded?}
     G -- alternate slot --> H[wield.c doswapweapon]
     H --> I[CQ_CANNED resumes fire after scheduler turn]
+    G -- inventory search --> Q[dothrow.c find_launcher]
+    Q --> R{candidate BUC knowledge}
+    R -- known cursed --> Q
+    R -- first unknown --> S[retain fallback]
+    R -- first known safe --> T[select immediately]
+    S --> U[optional doswapweapon when pushweapon is off]
+    T --> U
+    U --> V[canned dowield by live inventory letter]
+    V --> I
     I --> J[throw_obj reads direction and current projectile state]
     G -- yes --> J
     J --> O[one action-level multishot roll]
@@ -38452,7 +38468,14 @@ the live actor and floor-object graphs.  Pinned `dothrow.c:dofire()` likewise
 starts from `uquiver`.  With default `fireassist`, matching alternate ammo and
 launcher state schedules `wield.c:doswapweapon()` and then queues `dofire()`
 again; the intervening weapon action reaches the normal monster/global turn
-before the queued shot asks for its direction.
+before the queued shot asks for its direction.  If neither weapon slot
+matches, `find_launcher()` scans the current inventory chain: known-cursed
+objects are skipped, the first unknown-BUC match is retained only as a
+fallback, and the first known blessed or uncursed match wins.  With
+`pushweapon` disabled, a wielded primary is first moved through
+`doswapweapon()`; `dowield()` then installs the selected launcher by its live
+inventory letter before the final canned fire.  Each timed weapon action
+crosses the ordinary actor/global scheduler.
 
 The former JavaScript normal path selected a second world for Cavemen.  It
 replayed aggregate RNG by turn number, overwrote the pet with a 25-turn
@@ -38466,9 +38489,9 @@ those paths could complete.
 The RNG module, fixed-world helpers, role dispatcher, forced counters, and all
 Caveman bridge IDs are now deleted.  Caveman is part of the shared source-
 ration and live-role predicates in both modes.  Shared `dofire()` implements
-alternate-slot fireassist through the existing canned-command queue, so the
-weapon swap and shot retain distinct scheduler transactions without consulting
-role, seed, coordinates, or unread command text.
+alternate-slot and inventory-search fireassist through the existing canned-
+command queue, so swap, wield, and shot retain distinct scheduler transactions
+without consulting role, seed, coordinates, or unread command text.
 
 Pinned `throw_obj()` chooses the complete volley before the first object is
 split.  For matching sling ammunition it admits stacks only while the hero is
@@ -38505,11 +38528,18 @@ the scheduler-separated fireassist continuation.  The test encodes those
 world deltas but no pet
 path, floor coordinate, later RNG transcript, projectile endpoint, helper
 call, or fixed prose.  Both fresh invariants pass with zero Caveman bridges,
-and the default behavioral gate passes 375/375.
+and fresh seed28100 first uses ordinary commands with `pushweapon` disabled to move
+the sling outside both weapon slots.  Fireassist then discovers that inventory
+identity, moves the old primary to the alternate slot, wields the sling, and
+fires the readied flint.  A separate live arena rejects a known-cursed sling
+and prefers a later known-safe match over an earlier unknown fallback.  Those
+tests assert only final slot, inventory, floor-identity, and bridge state.  The
+default behavioral gate passes 378/378.
 
 This subsystem remains partial.  Hurtle/death interruption within a volley,
-general inventory launcher search, autoquiver, polearm/whip fire modes,
-swallowed sling ammunition, water-wall/sink and other projectile contacts and
-terrain, non-sling multishot and count-prefix families, alternate options,
-persistence, and sealed strata are still open.  Lua owns no runtime Caveman
-scheduler or projectile exception.
+welded/touch/artifact and unknown-cursed wield failure continuations, stacked
+readied-object wield prompts, autoquiver, polearm/whip and return-weapon fire
+modes, swallowed sling ammunition, water-wall/sink and other projectile
+contacts and terrain, non-sling multishot and count-prefix families, alternate
+options, persistence, and sealed strata are still open.  Lua owns no runtime
+Caveman scheduler or projectile exception.
