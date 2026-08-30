@@ -2,6 +2,7 @@ import {
     SpecialSelection,
     specialSelectionFillRect,
     specialSelectionLine,
+    specialSelectionMatch,
     specialSelectionRect,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
@@ -66,6 +67,7 @@ export function createSelectionBindings(context) {
         area: (x1, y1, x2, y2) => wrap(specialSelectionFillRect(
             currentContext(), x1, y1, x2, y2,
         )),
+        match: fragment => wrap(specialSelectionMatch(String(fragment))),
     };
 }
 

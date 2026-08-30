@@ -46,7 +46,7 @@ function floorObjects() {
 
 test('Lua Big Room sources build their maps and apply their wall rules',
     async () => {
-        for (const variant of [1, 2]) {
+        for (const variant of [1, 2, 3]) {
             const active = await buildBigRoom(variant, variant * 17);
 
             assert.deepEqual(

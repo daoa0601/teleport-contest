@@ -10506,7 +10506,10 @@ async function generateLuaSpecialLevel(active) {
             : specialNonDiggable(context),
         object: () => specialObject(context),
         trap: () => specialTrap(context),
-        monster: () => specialMonster(context),
+        monster: options => options && Number.isInteger(options.x)
+            && Number.isInteger(options.y)
+            ? specialRandomMonsterAt(context, options.x, options.y)
+            : specialMonster(context),
     };
     await currentLuaLifecycle().executeSpecial(
         game, active.file,
@@ -10762,34 +10765,6 @@ async function generateBigrm13(active) {
     await finishMappedBigRoom(context, { wallify: false });
 }
 
-const BIGRM_3_MAP = [
-    '---------------------------------------------------------------------------',
-    '|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|..............---.......................................---..............|',
-    '|...............|.........................................|...............|',
-    '|.....|.|.|.|.|---|.|.|.|.|...................|.|.|.|.|.|---|.|.|.|.|.....|',
-    '|.....|--------   --------|...................|----------   --------|.....|',
-    '|.....|.|.|.|.|---|.|.|.|.|...................|.|.|.|.|.|---|.|.|.|.|.....|',
-    '|...............|.........................................|...............|',
-    '|..............---.......................................---..............|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.........................................................................|',
-    '|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|.|',
-    '---------------------------------------------------------------------------',
-];
-
-const BIGRM_3_MONSTERS = [
-    [1, 1], [13, 1], [25, 1], [37, 1], [49, 1], [61, 1], [73, 1],
-    [7, 7], [13, 7], [25, 7], [37, 7], [49, 7], [61, 7], [67, 7],
-    [7, 9], [13, 9], [25, 9], [37, 9], [49, 9], [61, 9], [67, 9],
-    [1, 16], [13, 16], [25, 16], [37, 16], [49, 16], [61, 16], [73, 16],
-];
-
 async function specialRandomMonsterAt(context, x, y) {
     // A coordinate-only des.monster() resolves random alignment before
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
@@ -10803,57 +10778,6 @@ async function specialRandomMonsterAt(context, x, y) {
     return occupied
         ? makemonNear(null, absoluteX, absoluteY)
         : makemon(null, absoluteX, absoluteY, 0);
-}
-
-async function generateBigrm3(active) {
-    const context = loadSpecialAsciiMap(BIGRM_3_MAP, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.context = context;
-
-    // des.region(selection.area(1,1,73,16), "lit").  The selection overload
-    // grows a lit selection one square in every direction before applying it,
-    // so the enclosing walls are illuminated from the room side too.
-    for (let x = 0; x <= 74; x++) {
-        for (let y = 0; y <= 17; y++)
-            game.level.at(context.xstart + x, context.ystart + y).lit = true;
-    }
-
-    if (rn2(100) < 66) { // nhlib percent(66)
-        const terrains = [IRONBARS, TREE, WATER, LAVAWALL];
-        const choice = rn2(terrains.length);
-        const selected = [];
-        // selection.match("[.w.]"): transparent, ROOM, wall, ROOM,
-        // transparent.  Evaluate the whole selection before mutating it.
-        for (let x = 1; x < context.width - 1; x++) {
-            for (let y = 0; y < context.height; y++) {
-                const absoluteX = context.xstart + x;
-                const absoluteY = context.ystart + y;
-                const loc = game.level.at(absoluteX, absoluteY);
-                if (IS_WALL(loc?.typ)
-                    && game.level.at(absoluteX - 1, absoluteY)?.typ === ROOM
-                    && game.level.at(absoluteX + 1, absoluteY)?.typ === ROOM) {
-                    selected.push({ x: absoluteX, y: absoluteY });
-                }
-            }
-        }
-        for (const point of selected)
-            game.level.at(point.x, point.y).typ = terrains[choice];
-        active.wallTerrainChoice = choice;
-        active.wallReplacementCount = selected.length;
-    }
-
-    specialStair(context, true);
-    specialStair(context, false);
-    specialNonDiggable();
-    for (let i = 0; i < 15; i++) specialObject(context);
-    for (let i = 0; i < 6; i++) await specialTrap(context);
-    for (const [x, y] of BIGRM_3_MONSTERS)
-        await specialRandomMonsterAt(context, x, y);
-
-    // sp_lev.c:load_special() resolves generic '-'/'|' map glyphs after the
-    // Lua script is complete and before fixup_special() places the branch.
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
 const BIGRM_4_MAP = [
@@ -11139,14 +11063,14 @@ async function generateBigrm12(active) {
 
 const BIG_ROOM_GENERATORS = Object.freeze([
     null,
-    null, null, generateBigrm3, generateBigrm4,
+    null, null, null, generateBigrm4,
     generateBigrm5, generateBigrm6, generateBigrm7, generateBigrm8,
     generateBigrm9, generateBigrm10, generateBigrm11, generateBigrm12,
     generateBigrm13,
 ]);
 
 export async function generateBigRoom(active) {
-    if (active?.variant === 1 || active?.variant === 2) {
+    if (active?.variant >= 1 && active?.variant <= 3) {
         await generateSpecialAndFixup(generateLuaSpecialLevel, active);
         return;
     }
@@ -16025,8 +15949,7 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm'
-            && (variant === 1 || variant === 2);
+        const luaOwnedSpecial = prototype === 'bigrm' && variant <= 3;
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

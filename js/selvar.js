@@ -706,6 +706,8 @@ const MAP_CHAR_TYPES = {
     T: TREE,
     F: IRONBARS,
     x: MAX_TYPE,
+    '[': MAX_TYPE,
+    ']': MAX_TYPE,
     B: CROSSWALL,
     w: MATCH_WALL,
 };

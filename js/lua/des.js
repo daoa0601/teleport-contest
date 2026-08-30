@@ -7,6 +7,10 @@ function tableOptions(value) {
     return luaValueToJs(value);
 }
 
+function luaArgument(value) {
+    return value instanceof LuaTable ? luaValueToJs(value) : value;
+}
+
 export function createDesBindings(operations) {
     return {
         level_init: options => operations.levelInit(tableOptions(options)),
@@ -31,6 +35,6 @@ export function createDesBindings(operations) {
         ),
         object: (...args) => operations.object(...args),
         trap: (...args) => operations.trap(...args),
-        monster: (...args) => operations.monster(...args),
+        monster: (...args) => operations.monster(...args.map(luaArgument)),
     };
 }
