@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    applyDippedCoinFate, dippedCoinMessage, resolveDippedCoinFate,
+    dippedCoinMessage, resolveDippedCoinFate,
 } from '../js/fountain_effects.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
@@ -75,108 +75,6 @@ test('looted and adjacent fountain fates perform no coin work', () => {
         dippedCoinMessage('water'),
         'Far below you, you see coins glistening in the water.',
     );
-});
-
-test('fate29 creates coins and commits its fountain state', () => {
-    const loc = { looted: 0 };
-    const world = {
-        floorGold: [], liquidResolutions: 0,
-        wisdomExercises: 0, repaints: 0,
-    };
-    const effect = applyDippedCoinFate({
-        fate: 29,
-        loc,
-        dungeonLevels: 5,
-        dungeonLevel: 2,
-        random(range) {
-            assert.equal(range, 8);
-            return 4;
-        },
-        createGold(quantity) {
-            world.floorGold.push(quantity);
-        },
-        liquidName() {
-            world.liquidResolutions++;
-            return 'water';
-        },
-        exerciseWisdom() {
-            world.wisdomExercises++;
-        },
-        repaint() {
-            world.repaints++;
-        },
-    });
-
-    assert.deepEqual(effect, {
-        handled: true,
-        createsCoins: true,
-        quantity: 9,
-        showMessage: true,
-        message: 'Far below you, you see coins glistening in the water.',
-    });
-    assert.equal(loc.looted & 1, 1);
-    assert.deepEqual(world, {
-        floorGold: [9], liquidResolutions: 1,
-        wisdomExercises: 1, repaints: 1,
-    });
-});
-
-test('blind and looted fate29 applications skip unavailable work', () => {
-    const blindWorld = {
-        floorGold: [], liquidResolutions: 0,
-        wisdomExercises: 0, repaints: 0,
-    };
-    const blind = applyDippedCoinFate({
-        fate: 29,
-        loc: { looted: 0 },
-        blind: true,
-        random: () => 1,
-        createGold(quantity) {
-            blindWorld.floorGold.push(quantity);
-        },
-        liquidName() {
-            blindWorld.liquidResolutions++;
-            return 'water';
-        },
-        exerciseWisdom() {
-            blindWorld.wisdomExercises++;
-        },
-        repaint() {
-            blindWorld.repaints++;
-        },
-    });
-    assert.equal(blind.message, '');
-    assert.deepEqual(blindWorld, {
-        floorGold: [6], liquidResolutions: 0,
-        wisdomExercises: 1, repaints: 1,
-    });
-
-    const looted = applyDippedCoinFate({
-        fate: 29,
-        loc: { looted: 1 },
-        random() {
-            throw new Error('looted fountain must not roll');
-        },
-        createGold() {
-            throw new Error('looted fountain must not create coins');
-        },
-        liquidName() {
-            throw new Error('looted fountain must not resolve liquid text');
-        },
-        exerciseWisdom() {
-            throw new Error('looted fountain must not exercise Wisdom');
-        },
-        repaint() {
-            throw new Error('looted fountain must not repaint');
-        },
-    });
-    assert.deepEqual(looted, {
-        handled: true,
-        createsCoins: false,
-        quantity: 0,
-        showMessage: false,
-        message: '',
-    });
 });
 
 test('mkgold allocates once, merges by identity, and repairs coin weight', () => {

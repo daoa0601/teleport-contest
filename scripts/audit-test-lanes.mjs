@@ -17,6 +17,14 @@ const FORBIDDEN_BEHAVIORAL_PATTERNS = [
         id: 'public-parity-helper',
         pattern: /\b(?:assertRngSliceExact|expectedRngSlice)\b/g,
     },
+    {
+        id: 'mock-or-spy-api',
+        pattern: /\b(?:mock|spyOn|stub)\s*(?:\.|\()/g,
+    },
+    {
+        id: 'call-transcript-collector',
+        pattern: /\b(?:const|let)\s+(?:calls|callOrder|invocations)\s*=\s*\[\]/g,
+    },
 ];
 
 export function auditBehavioralTestLane(repoRoot = REPO_ROOT) {
@@ -54,7 +62,8 @@ if (process.argv[1] && path.resolve(process.argv[1])
     } else {
         console.log(
             `Behavioral lane audit passed: ${result.files.length} files, `
-            + 'no recorded-session or public-parity dependencies.',
+            + 'no recorded-session, public-parity, mock/spy, or '
+            + 'call-transcript dependencies.',
         );
     }
 }
