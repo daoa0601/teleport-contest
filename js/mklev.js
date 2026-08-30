@@ -109,6 +109,7 @@ import { engravingAt, makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { artifactByName, nameArtifact } from './artifacts.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
@@ -262,7 +263,6 @@ const PM_ALIGNED_CLERIC = 275;
 const PM_HIGH_CLERIC = 276;
 const PM_ARCH_PRIEST = 350;
 const PM_ACOLYTE = 375;
-const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_WRAITH = 230;
 const PM_QUASIT = 54;
@@ -306,7 +306,6 @@ const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_WIZARD = 343;
-const PM_LORD_CARNARVON = 344;
 const PM_PELIAS = 345;
 const PM_NEFERET_THE_GREEN = 356;
 const PM_STUDENT = 369;
@@ -6202,6 +6201,8 @@ function discardSpecialMonsterInventory(monster) {
     monster.minvent = [];
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
+    monster.misc_worn_check = 0;
+    monster.mw = null;
 }
 
 export function giveSpecialMonsterObject(context, monster, otyp, spe) {
@@ -6451,75 +6452,6 @@ async function specialMonster(context, {
     return monster;
 }
 
-const ARC_START_MAP = [
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-    '....................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.................',
-    '....................}-------------------------------------}.................',
-    '....................}|..S......+.................+.......|}.................',
-    '....................}-S---------------+----------|.......|}.................',
-    '....................}|.|...............|.......+.|.......|}.................',
-    '....................}|.|...............---------.---------}.................',
-    '....................}|.S.\\.............+.................+..................',
-    '....................}|.|...............---------.---------}.................',
-    '....................}|.|...............|.......+.|.......|}.................',
-    '....................}-S---------------+----------|.......|}.................',
-    '....................}|..S......+.................+.......|}.................',
-    '....................}-------------------------------------}.................',
-    '....................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.................',
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-];
-
-const ARC_LOCA_MAP = [
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-    '........................-------------------------------.....................',
-    '........................|....|.S......................|.....................',
-    '........................|....|.|.|+------------------.|.....................',
-    '........................|....|.|.|.|.........|......|.|.....................',
-    '........................|....|.|.|.|.........|......|.|.....................',
-    '........................|---+-.|.|.|..---....+......|.|.....................',
-    '........................|....|.|.|.---|.|....|......|.|.....................',
-    '........................|....S.|.|.+..S.|--S-----S--|.|.....................',
-    '........................|....|.|.|.---|.|....|......+.|.....................',
-    '........................|---+-.|.|.|..---....|.------.|.....................',
-    '........................|....|.|.|.|.........|.|....+.|.....................',
-    '........................|....|.|.|.|.........|+|....|-|.....................',
-    '........................|....|.|.|------------+------.S.....................',
-    '........................|....|.S......................|.....................',
-    '........................-------------------------------.....................',
-    '............................................................................',
-    '............................................................................',
-];
-
-const ARC_GOAL_MAP = [
-    '                                                                            ',
-    '                                  ---------                                 ',
-    '                                  |..|.|..|                                 ',
-    '                       -----------|..S.S..|-----------                      ',
-    '                       |.|........|+-|.|-+|........|.|                      ',
-    '                       |.S........S..|.|..S........S.|                      ',
-    '                       |.|........|..|.|..|........|.|                      ',
-    '                    ------------------+------------------                   ',
-    '                    |..|..........|.......|..........|..|                   ',
-    '                    |..|..........+.......|..........S..|                   ',
-    '                    |..S..........|.......+..........|..|                   ',
-    '                    |..|..........|.......|..........|..|                   ',
-    '                    ------------------+------------------                   ',
-    '                       |.|........|..|.|..|........|.|                      ',
-    '                       |.S........S..|.|..S........S.|                      ',
-    '                       |.|........|+-|.|-+|........|.|                      ',
-    '                       -----------|..S.S..|-----------                      ',
-    '                                  |..|.|..|                                 ',
-    '                                  ---------                                 ',
-    '                                                                            ',
-];
-
 function setSpecialRegionLighting(context, x1, y1, x2, y2, lit) {
     // sp_lev.c's two-argument des.region(selection, "lit") grows the cloned
     // selection one cell in every direction before applying light.  "unlit"
@@ -6555,284 +6487,6 @@ async function finalizeExplicitQuestBranch(active) {
         portal.dst = { ...(onEnd1 ? branch.end2 : branch.end1) };
     }
     game.made_branch = true;
-}
-
-async function generateArcheologistStart(active) {
-    // Lua source: dat/Arc-strt.lua.  Keep the file-level operation order
-    // visible: static terrain and lighting, fixed actors and their explicit
-    // inventory, random traps, then the besieging monster classes.
-    const context = loadSpecialAsciiMap(ARC_START_MAP, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, true);
-    for (const [x1, y1, x2, y2, lit] of [
-        [22, 6, 23, 6, false],
-        [25, 6, 30, 6, false],
-        [32, 6, 48, 6, false],
-        [50, 6, 56, 8, true],
-        [40, 8, 46, 8, false],
-        [22, 8, 22, 12, false],
-        [24, 8, 38, 12, false],
-        [48, 8, 48, 8, true],
-        [40, 10, 56, 10, true],
-        [48, 12, 48, 12, true],
-        [40, 12, 46, 12, false],
-        [50, 12, 56, 14, true],
-        [22, 14, 23, 14, false],
-        [25, 14, 30, 14, false],
-        [32, 14, 48, 14, false],
-    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, lit);
-
-    specialStairAt(context, 55, 7, false);
-    active.branchRegion = {
-        x: context.xstart + 63,
-        y: context.ystart + 6,
-    };
-    for (const [mask, x, y] of [
-        [D_CLOSED, 22, 7],
-        [D_CLOSED, 38, 7],
-        [D_LOCKED, 47, 8],
-        [D_LOCKED, 23, 10],
-        [D_LOCKED, 39, 10],
-        [D_LOCKED, 57, 10],
-        [D_LOCKED, 47, 12],
-        [D_CLOSED, 22, 13],
-        [D_CLOSED, 38, 13],
-        [D_LOCKED, 24, 14],
-        [D_CLOSED, 31, 14],
-        [D_LOCKED, 49, 14],
-    ]) specialDoorAt(context, mask, x, y);
-
-    const leader = await specialMonsterAt(
-        context, PM_LORD_CARNARVON, 25, 10,
-        { randomGender: false },
-    );
-    if (leader) {
-        discardSpecialMonsterInventory(leader);
-        giveSpecialMonsterObject(context, leader, FEDORA, 5);
-        giveSpecialMonsterObject(context, leader, BULLWHIP, 4);
-    }
-    specialObjectAt(context, CHEST, 25, 10);
-
-    for (const [x, y] of [
-        [26, 9], [27, 9], [28, 9],
-        [26, 10], [28, 10],
-        [26, 11], [27, 11], [28, 11],
-    ]) await specialMonsterAt(context, PM_STUDENT, x, y);
-    for (const [x, y] of [[50, 6], [50, 14]])
-        await specialMonsterAt(context, PM_WATCHMAN, x, y);
-    for (const [x, y] of [[20, 10], [45, 4], [33, 16]])
-        await specialMonsterAt(context, PM_GIANT_EEL, x, y);
-
-    specialNonDiggable(context);
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-
-    for (const [monsterClass, x, y] of [
-        [45, 60, 9], [39, 60, 10], [45, 60, 11],
-        [45, 60, 12], [39, 60, 13], [45, 61, 10],
-        [45, 61, 11], [45, 61, 12], [45, 30, 3],
-        [39, 20, 17], [45, 67, 2], [45, 10, 19],
-    ]) await specialMonsterClassAt(context, monsterClass, x, y);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    await finalizeExplicitQuestBranch(active);
-}
-
-async function generateArcheologistLocate(active) {
-    // Lua source: dat/Arc-loca.lua.  The script is a fixed full-width map
-    // whose unpositioned entities all delegate through get_location() before
-    // their ordinary object, trap, or monster constructors.
-    const context = loadSpecialAsciiMap(ARC_LOCA_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.hardfloor = true;
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, true);
-    specialRectangularRoom(
-        context, 25, 4, 28, 7, TEMPLE, true, FILL_LVFLAGS,
-    );
-    specialRectangularRoom(
-        context, 25, 9, 28, 11, TEMPLE, false, FILL_LVFLAGS,
-    );
-    specialRectangularRoom(
-        context, 25, 13, 28, 16, TEMPLE, true, FILL_LVFLAGS,
-    );
-    setSpecialRegionLighting(context, 30, 4, 30, 16, true);
-    setSpecialRegionLighting(context, 32, 4, 32, 16, false);
-    specialIrregularRoom(context, 33, 4, OROOM, false, 0);
-    setSpecialRegionLighting(context, 36, 10, 37, 10, false);
-    setSpecialRegionLighting(context, 39, 9, 39, 11, false);
-    specialIrregularRoom(context, 36, 6, OROOM, false, 0);
-    specialIrregularRoom(context, 36, 12, OROOM, false, 0);
-    setSpecialRegionLighting(context, 46, 6, 51, 9, false);
-    specialIrregularRoom(context, 46, 11, OROOM, false, 0);
-    setSpecialRegionLighting(context, 48, 13, 51, 14, false);
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 31, 4],
-        [D_CLOSED, 28, 8],
-        [D_LOCKED, 29, 10],
-        [D_CLOSED, 28, 12],
-        [D_CLOSED, 31, 16],
-        [D_LOCKED, 34, 5],
-        [D_LOCKED, 35, 10],
-        [D_LOCKED, 38, 10],
-        [D_CLOSED, 43, 10],
-        [D_CLOSED, 45, 8],
-        [D_LOCKED, 46, 14],
-        [D_LOCKED, 46, 15],
-        [D_LOCKED, 49, 10],
-        [D_LOCKED, 52, 11],
-        [D_CLOSED, 52, 13],
-        [D_CLOSED, 54, 15],
-    ]) specialDoorAt(context, mask, x, y);
-
-    specialStairAt(context, 3, 17, true);
-    specialStairAt(context, 39, 10, false);
-    const alignmentValue = value => value === 'law' ? A_LAWFUL
-        : value === 'chaos' ? A_CHAOTIC : A_NEUTRAL;
-    for (const [index, x, y] of [
-        [0, 26, 5], [1, 26, 10], [2, 26, 15],
-    ]) {
-        const altar = game.level.at(context.xstart + x, context.ystart + y);
-        altar.typ = ALTAR;
-        altar.flags = Align2amask(alignmentValue(active.align[index]));
-    }
-    specialNonDiggable(context);
-
-    for (let count = 0; count < 15; count++) specialObject(context);
-    for (let count = 0; count < 4; count++) {
-        const point = specialRandomLocation(context);
-        if (point) {
-            make_engr_at(
-                point.x, point.y, 'X marks the spot.',
-                null, 0, ENGRAVE,
-            );
-        }
-    }
-
-    for (const [type, x, y] of [
-        [SPIKED_PIT, 24, 2],
-        [SPIKED_PIT, 37, 0],
-        [SPIKED_PIT, 23, 5],
-        [SPIKED_PIT, 26, 19],
-        [SPIKED_PIT, 55, 10],
-        [SPIKED_PIT, 55, 8],
-        [PIT, 51, 1],
-        [PIT, 23, 18],
-        [PIT, 31, 18],
-        [PIT, 48, 19],
-        [PIT, 55, 15],
-        [MAGIC_TRAP, 60, 4],
-        [STATUE_TRAP, 72, 7],
-    ]) await specialTrapAt(context, type, x, y);
-    for (let count = 0; count < 2; count++)
-        await specialTrapOfType(context, STATUE_TRAP);
-    await specialTrapAt(context, ANTI_MAGIC, 64, 12);
-    for (let count = 0; count < 2; count++)
-        await specialTrapOfType(context, SLP_GAS_TRAP);
-    for (let count = 0; count < 3; count++)
-        await specialTrapOfType(context, DART_TRAP);
-    await specialTrapAt(context, ROLLING_BOULDER_TRAP, 32, 10);
-    await specialTrapAt(context, ROLLING_BOULDER_TRAP, 40, 16);
-
-    for (let count = 0; count < 18; count++)
-        await specialMonsterOfClass(context, 45); // S_SNAKE
-    await specialMonsterOfClass(context, 39); // S_MUMMY
-    for (let count = 0; count < 7; count++)
-        await specialExplicitMonster(context, PM_HUMAN_MUMMY);
-    await specialMonsterOfClass(context, 39); // S_MUMMY
-
-    game.level.flags.has_temple = true;
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
-async function generateArcheologistGoal(active) {
-    // Lua source: dat/Arc-goal.lua.  Preserve directive order because the
-    // artifact, random population, wallification, and flip share the gameplay
-    // PRNG even though most terrain coordinates are fixed.
-    const context = loadSpecialAsciiMap(ARC_GOAL_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, true);
-    for (const [x1, y1, x2, y2, lit] of [
-        [35, 2, 36, 3, false],
-        [40, 2, 41, 3, false],
-        [24, 4, 24, 6, false],
-        [26, 4, 33, 6, true],
-        [38, 2, 38, 6, false],
-        [43, 4, 50, 6, true],
-        [52, 4, 52, 6, false],
-        [35, 5, 36, 6, false],
-        [40, 5, 41, 6, false],
-        [21, 8, 22, 11, false],
-        [24, 8, 33, 11, true],
-        [35, 8, 41, 11, false],
-        [43, 8, 52, 11, true],
-        [54, 8, 55, 11, false],
-        [24, 13, 24, 15, false],
-        [26, 13, 33, 15, false],
-        [35, 13, 36, 14, false],
-        [35, 16, 36, 17, false],
-        [38, 13, 38, 17, false],
-        [40, 13, 41, 14, false],
-        [40, 16, 41, 17, false],
-        [52, 13, 52, 15, false],
-    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, lit);
-    specialRectangularRoom(
-        context, 43, 13, 50, 15, TEMPLE, false, FILL_LVFLAGS,
-    );
-
-    specialStairAt(context, 38, 10, true);
-    specialNonDiggable(context);
-    const altar = game.level.at(
-        context.xstart + 50, context.ystart + 14,
-    );
-    altar.typ = ALTAR;
-    altar.flags = Align2amask(A_CHAOTIC);
-
-    const orb = specialObjectAt(
-        context, CRYSTAL_BALL, 50, 14, { named: true },
-    );
-    if (orb) {
-        orb.blessed = true;
-        orb.cursed = false;
-        orb.spe = 5;
-        orb.artifact = true;
-        orb.oartifact = true;
-        orb.questArtifact = true;
-        orb.oextra = {
-            ...(orb.oextra || {}),
-            oname: 'The Orb of Detection',
-        };
-        game._artifactExistCount = (game._artifactExistCount ?? 0) + 1;
-    }
-    for (let count = 0; count < 14; count++) specialObject(context);
-
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-    await specialTrapAt(context, ROLLING_BOULDER_TRAP, 46, 14);
-
-    await specialMonsterAt(
-        context, game.urole.neminum, 50, 14,
-        { randomGender: namedMonsterNeedsGenderDraw(game.urole.neminum) },
-    );
-    for (let count = 0; count < 18; count++)
-        await specialMonsterOfClass(context, 45); // S_SNAKE
-    for (let count = 0; count < 8; count++)
-        await specialExplicitMonster(context, PM_HUMAN_MUMMY);
-    await specialMonsterOfClass(context, 39); // S_MUMMY
-
-    game.level.flags.has_temple = true;
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
 }
 
 const BAR_START_MAP = [
@@ -7905,6 +7559,14 @@ export async function generateMinetown(active) {
         await fillSpecialRoom(room);
 }
 
+async function generateArcheologistQuestLevel(active) {
+    if (!/^Arc-(strt|loca|goal|fila|filb)$/.test(active?.prototype))
+        throw new RangeError(`unknown Archeologist level ${active?.prototype}`);
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    for (const room of game.level.rooms.slice(0, game.level.nroom))
+        await fillSpecialRoom(room);
+}
+
 export async function generateOracleLevel(active) {
     if (active?.prototype !== 'oracle')
         throw new RangeError(`unknown Oracle level ${active?.prototype}`);
@@ -8097,33 +7759,6 @@ const PRIEST_FILLER_ROOMS = {
     ],
 };
 
-const ARCHAEOLOGIST_FILLER_ROOMS = {
-    'Arc-fila': [
-        { actions: ['up', 'object', 'snake'] },
-        { actions: ['object', 'object', 'snake'] },
-        { actions: ['object', 'trap', 'object', 'snake'] },
-        {
-            actions: [
-                'down', 'object', 'trap', 'snake', 'human mummy',
-            ],
-        },
-        { actions: ['object', 'object', 'trap', 'snake'] },
-        { actions: ['object', 'trap', 'snake'] },
-    ],
-    'Arc-filb': [
-        { actions: ['up', 'object', 'mummy'] },
-        { actions: ['object', 'object', 'mummy'] },
-        { actions: ['object', 'trap', 'object', 'mummy'] },
-        {
-            actions: [
-                'down', 'object', 'trap', 'snake', 'human mummy',
-            ],
-        },
-        { actions: ['object', 'object', 'trap', 'snake'] },
-        { actions: ['object', 'trap', 'snake'] },
-    ],
-};
-
 const WIZARD_FILLER_ROOMS = {
     'Wiz-fila': [
         { actions: ['up', 'object', 'imp'] },
@@ -8155,32 +7790,6 @@ const WIZARD_FILLER_ROOMS = {
         { actions: ['object', 'trap', 'vampire bat'] },
     ],
 };
-
-async function runArcheologistFillerAction(context, action) {
-    if (action === 'up') specialStair(context, true);
-    else if (action === 'down') specialStair(context, false);
-    else if (action === 'object') specialObject(context);
-    else if (action === 'trap') await specialTrap(context);
-    else if (action === 'snake')
-        await specialMonsterOfClass(context, 45); // S_SNAKE
-    else if (action === 'mummy')
-        await specialMonsterOfClass(context, 39); // S_MUMMY
-    else if (action === 'human mummy')
-        await specialExplicitMonster(context, PM_HUMAN_MUMMY);
-}
-
-async function generateArcheologistFiller(active) {
-    for (const spec of ARCHAEOLOGIST_FILLER_ROOMS[active.prototype] || []) {
-        await buildSpecialRoom({ rtype: OROOM }, null, async room => {
-            const context = specialRoomContext(room);
-            for (const action of spec.actions)
-                await runArcheologistFillerAction(context, action);
-        });
-    }
-    makecorridors();
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
 
 async function runWizardFillerAction(context, action) {
     if (action === 'up') specialStair(context, true);
@@ -9035,7 +8644,7 @@ function createLuaGold(context, options) {
 }
 
 async function createLuaObject(
-    context, options, parentContainer, invokeContents,
+    context, options, parentContainer, parentMonster, invokeContents,
 ) {
     const { point, objectClass, objectType } = options;
     let object;
@@ -9094,9 +8703,17 @@ async function createLuaObject(
             | (options.female ? CORPSTAT_FEMALE : 0);
     }
     if (options.name) {
-        object.oextra = {
-            ...(object.oextra || {}), oname: String(options.name),
-        };
+        const artifact = artifactByName(options.name);
+        if (artifact?.baseType === object.otyp) {
+            if (nameArtifact(object, artifact)
+                && game.urole?.artifactName
+                && artifactByName(game.urole.artifactName)?.id === artifact.id)
+                object.questArtifact = true;
+        } else {
+            object.oextra = {
+                ...(object.oextra || {}), oname: String(options.name),
+            };
+        }
     }
     if (Number.isInteger(options.quantity) && options.quantity > 0
         && OBJECT_MERGE[object.otyp]) {
@@ -9120,6 +8737,9 @@ async function createLuaObject(
     if (parentContainer) {
         addSpecialContainerObject(parentContainer, object);
         parentContainer.owt = objectWeight(parentContainer);
+    } else if (parentMonster) {
+        removeFloorObject(object);
+        addObjectToMonsterInventory(parentMonster, object, game);
     }
     if (options.contents && typeof options.contents === 'object')
         await invokeContents(options.contents, object);
@@ -9152,13 +8772,19 @@ async function createLuaMonster(context, options) {
     const { point, monsterClass, monsterType } = options;
     const peaceful = options.peaceful == null ? null : !!options.peaceful;
     const asleep = options.asleep == null ? null : !!options.asleep;
+    let mmflags = 0;
+    if (options.tail === false) mmflags |= MM_NOTAIL;
+    if (options.group === false) mmflags |= MM_NOGRP;
+    if (options.adjacentok) mmflags |= MM_ADJACENTOK;
+    if (options.ignorewater) mmflags |= MM_IGNOREWATER;
+    if (options.countbirth === false) mmflags |= MM_NOCOUNTBIRTH;
     const explicitAlignment = options.align != null
         && options.align !== 'random';
     const creation = explicitAlignment ? {
         randomAlignment: false,
-        mmflags: MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
+        mmflags: mmflags | MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
         roamerAlignment: () => luaSpecialAlignment(options.align),
-    } : {};
+    } : { mmflags };
     let monster;
     if (monsterType != null) {
         const settings = {
@@ -9207,6 +8833,32 @@ async function createLuaMonster(context, options) {
             && options.appearance?.kind !== 'monster') {
             shapechangeMonster(monster, PM_VAMPIRE_LEADER);
         }
+    }
+    if (monster && options.seentraps)
+        monster.mtrapseen = options.seentraps;
+    if (monster && options.cancelled) monster.mcan = 1;
+    if (monster && options.revived) monster.mrevived = 1;
+    if (monster && options.avenge) monster.mavenge = 1;
+    if (monster && options.stunned) monster.mstun = 1;
+    if (monster && options.confused) monster.mconf = 1;
+    if (monster && options.invisible)
+        monster.minvis = monster.perminvis = 1;
+    if (monster && options.blinded) {
+        monster.mcansee = 0;
+        monster.mblinded = options.blinded % 127;
+    }
+    if (monster && options.paralyzed) {
+        monster.mcanmove = 0;
+        monster.mfrozen = options.paralyzed % 127;
+    }
+    if (monster && options.fleeing) {
+        monster.mflee = 1;
+        monster.mfleetim = options.fleeing % 127;
+    }
+    if (monster && options.m_lev_adj) {
+        monster.m_lev = Math.max(
+            0, Math.min(49, monster.m_lev + options.m_lev_adj),
+        );
     }
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
@@ -9344,6 +8996,7 @@ async function generateLuaSpecialLevel(active) {
     let context = wholeLevel;
     let luaState = null;
     const containers = [];
+    const monsterInventories = [];
     const mappedContexts = [];
     let mappedCells = new SpecialSelection();
     active.allowFlips = 3;
@@ -9564,10 +9217,27 @@ async function generateLuaSpecialLevel(active) {
             context,
             options,
             containers.at(-1) ?? null,
+            monsterInventories.at(-1) ?? null,
             invokeObjectContents,
         ),
         trap: options => createLuaTrap(context, options),
-        monster: options => createLuaMonster(context, options),
+        monster: async options => {
+            const monster = await createLuaMonster(context, options);
+            if (monster && (options.inventory
+                || options.keep_default_invent === false)
+                && options.keep_default_invent !== true)
+                discardSpecialMonsterInventory(monster);
+            if (options.inventory) {
+                monsterInventories.push(monster);
+                try {
+                    await luaState.callValueAsync(options.inventory, []);
+                } finally {
+                    monsterInventories.pop();
+                }
+                if (monster) initializeMonsterArmor(monster);
+            }
+            return monster;
+        },
     };
     const selectionApi = createSelectionApi(
         () => context,
@@ -11388,6 +11058,7 @@ async function makelevel() {
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'minend'
             || prototype === 'minetn'
+            || prototype.startsWith('Arc-')
             || prototype.startsWith('soko')
             || /^tower[1-3]$/.test(prototype)
             || prototype === 'oracle'
@@ -11542,19 +11213,8 @@ async function makelevel() {
                 g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'Arc-strt') {
-            await generateSpecialAndFixup(generateArcheologistStart,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Arc-loca') {
-            await generateSpecialAndFixup(generateArcheologistLocate,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Arc-goal') {
-            await generateSpecialAndFixup(generateArcheologistGoal,
-                g._activeSpecialLevel);
+        if (prototype.startsWith('Arc-')) {
+            await generateArcheologistQuestLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'Bar-strt') {
@@ -11614,11 +11274,6 @@ async function makelevel() {
         }
         if (/^tower[1-3]$/.test(prototype)) {
             await generateVladsTowerLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Arc-fila' || prototype === 'Arc-filb') {
-            await generateSpecialAndFixup(generateArcheologistFiller,
-                g._activeSpecialLevel);
             return;
         }
         if (prototype === 'Pri-fila' || prototype === 'Pri-filb') {

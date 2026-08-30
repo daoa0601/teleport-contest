@@ -26,6 +26,8 @@ const names = [
     'oracle.lua',
     'minetn-1.lua', 'minetn-2.lua', 'minetn-3.lua', 'minetn-4.lua',
     'minetn-5.lua', 'minetn-6.lua', 'minetn-7.lua',
+    'Arc-strt.lua', 'Arc-loca.lua', 'Arc-goal.lua',
+    'Arc-fila.lua', 'Arc-filb.lua',
 ];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [
