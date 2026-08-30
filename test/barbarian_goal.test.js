@@ -42,3 +42,17 @@ test('the Barbarian quest ends at Thoth Amon and the Heart of Ahriman',
         assert.equal(altars, 1);
         assert.equal(game.level.traps.length, 6);
     });
+
+test('the Barbarian filler levels have both stairways', async () => {
+    for (const prototype of ['Bar-fila', 'Bar-filb']) {
+        freshSpecialLevel({ prototype, variant: 1, seed: 2601, depth: 5 });
+        game._specialLevelPrototype = prototype;
+        game._activeSpecialLevel = null;
+
+        await mklev();
+
+        let stairways = 0;
+        for (let stair = game.stairs; stair; stair = stair.next) stairways++;
+        assert.equal(stairways, 2, prototype);
+    }
+});

@@ -83,6 +83,22 @@ const RAW_ARTIFACTS = [
     ],
 ];
 
+const QUEST_ARTIFACT_NAMES = new Set([
+    'The Orb of Detection',
+    'The Heart of Ahriman',
+    'The Sceptre of Might',
+    'The Staff of Aesculapius',
+    'The Magic Mirror of Merlin',
+    'The Eyes of the Overworld',
+    'The Mitre of Holiness',
+    'The Longbow of Diana',
+    'The Master Key of Thievery',
+    'The Tsurugi of Muramasa',
+    'The Platinum Yendorian Express Card',
+    'The Orb of Fate',
+    'The Eye of the Aethiopica',
+]);
+
 // C include/artilist.h attack fields.  Keep attack behavior on the artifact
 // identity rather than on silver saber: ordinary and named sabers share the
 // base weapon die, but only Grayswandir receives PHYS(5, 0).  Profiles are
@@ -131,6 +147,7 @@ export const ARTIFACTS = RAW_ARTIFACTS.map((
     // hero-touch alignment probe.
     restricted: name !== 'Orcrist' && name !== 'Sting',
     noGeneration,
+    questArtifact: QUEST_ARTIFACT_NAMES.has(name),
     invokePower,
     attack: SUPPORTED_ATTACK_PROFILES.get(name) || null,
     wieldedProperties: SUPPORTED_WIELDED_PROPERTIES.get(name) || [],

@@ -282,7 +282,6 @@ const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
-const PM_THOTH_AMON = 358;
 const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
@@ -306,7 +305,6 @@ const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_WIZARD = 343;
-const PM_PELIAS = 345;
 const PM_NEFERET_THE_GREEN = 356;
 const PM_STUDENT = 369;
 const PM_CHIEFTAIN = 370;
@@ -324,8 +322,6 @@ const HELM_OF_BRILLIANCE = 96;
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
-const PM_OGRE = 203;
-const PM_ROCK_TROLL = 222;
 const PM_GIANT_EEL = 319;
 const PM_WUMPUS = 84;
 const PM_LONG_WORM = 114;
@@ -335,7 +331,6 @@ const PM_BLACK_PUDDING = 209;
 const PM_LEATHER_GOLEM = 253;
 const PM_FLESH_GOLEM = 255;
 const LUMP_OF_ROYAL_JELLY = 286;
-const RUNESWORD = 58;
 const CHAIN_MAIL = 128;
 
 // artifact.c:mk_artifact() candidates which are eligible for random object
@@ -6489,354 +6484,6 @@ async function finalizeExplicitQuestBranch(active) {
     game.made_branch = true;
 }
 
-const BAR_START_MAP = [
-    '..................................PP........................................',
-    '...................................PP.......................................',
-    '...................................PP.......................................',
-    '....................................PP......................................',
-    '........--------------......-----....PPP....................................',
-    '........|...S........|......+...|...PPP.....................................',
-    '........|----........|......|...|....PP.....................................',
-    '........|.\\..........+......-----...........................................',
-    '........|----........|...............PP.....................................',
-    '........|...S........|...-----.......PPP....................................',
-    '........--------------...+...|......PPPPP...................................',
-    '.........................|...|.......PPP....................................',
-    '...-----......-----......-----........PP....................................',
-    '...|...+......|...+..--+--.............PP...................................',
-    '...|...|......|...|..|...|..............PP..................................',
-    '...-----......-----..|...|.............PPPP.................................',
-    '.....................-----............PP..PP................................',
-    '.....................................PP...PP................................',
-    '....................................PP...PP.................................',
-    '....................................PP....PP................................',
-];
-
-async function generateBarbarianStart(active) {
-    // Lua source: dat/Bar-strt.lua.  Preserve script order because the three
-    // terrain selections, recursive line, and removable ogre selection are
-    // all observable PRNG owners.
-    const context = loadSpecialAsciiMap(BAR_START_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-
-    replaceSpecialTerrain(context, 37, 0, 59, 19, ROOM, TREE, 5);
-    replaceSpecialTerrain(context, 60, 0, 64, 19, ROOM, TREE, 10);
-    replaceSpecialTerrain(context, 65, 0, 75, 19, ROOM, TREE, 20);
-
-    const path = specialSelectionRandLine(
-        context.xstart + 37, context.ystart + 7,
-        context.xstart + 62, context.ystart + 2,
-        7,
-    );
-    specialSelectionTerrain(path, ROOM);
-    setLevelTerrainType(
-        context.xstart + 62, context.ystart + 2, ROOM,
-    );
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, true);
-    for (const [x1, y1, x2, y2, lit] of [
-        [9, 5, 11, 5, false],
-        [9, 7, 11, 7, true],
-        [9, 9, 11, 9, false],
-        [13, 5, 20, 9, true],
-        [29, 5, 31, 6, true],
-        [26, 10, 28, 11, true],
-        [4, 13, 6, 14, true],
-        [15, 13, 17, 14, true],
-        [22, 14, 24, 15, true],
-    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, lit);
-
-    specialStairAt(context, 9, 9, false);
-    active.branchRegion = {
-        x: context.xstart + 62,
-        y: context.ystart + 2,
-    };
-    for (const [mask, x, y] of [
-        [D_LOCKED, 12, 5],
-        [D_LOCKED, 12, 9],
-        [D_CLOSED, 21, 7],
-        [D_ISOPEN, 7, 13],
-        [D_ISOPEN, 18, 13],
-        [D_ISOPEN, 23, 13],
-        [D_ISOPEN, 25, 10],
-        [D_ISOPEN, 28, 5],
-    ]) specialDoorAt(context, mask, x, y);
-
-    const leader = await specialMonsterAt(
-        context, PM_PELIAS, 10, 7, { randomGender: false },
-    );
-    if (leader) {
-        discardSpecialMonsterInventory(leader);
-        giveSpecialMonsterObject(context, leader, RUNESWORD, 5);
-        giveSpecialMonsterObject(context, leader, CHAIN_MAIL, 5);
-    }
-    specialObjectAt(context, CHEST, 9, 5);
-
-    for (const [x, y] of [
-        [10, 5], [10, 9], [11, 5], [11, 9],
-        [14, 5], [14, 9], [16, 5], [16, 9],
-    ]) await specialMonsterAt(context, PM_CHIEFTAIN, x, y);
-
-    specialNonDiggable(context);
-    await specialTrapAt(context, SPIKED_PIT, 37, 7);
-    for (const [x, y] of [[36, 1], [37, 9], [39, 15]])
-        await specialMonsterAt(context, PM_GIANT_EEL, x, y);
-
-    const ogrelocs = specialFloodSelection(context, 37, 7);
-    ogrelocs.points = ogrelocs.points.filter(point => {
-        const x = point.x - context.xstart;
-        const y = point.y - context.ystart;
-        return x >= 40 && x <= 45 && y >= 3 && y <= 20;
-    });
-    ogrelocs.initialCount = ogrelocs.points.length;
-    for (let count = 0; count < 12; count++) {
-        const point = ogrelocs.sample(true);
-        if (!point) break;
-        await specialMonsterAt(
-            context, PM_OGRE,
-            point.x - context.xstart, point.y - context.ystart,
-            { peaceful: false },
-        );
-    }
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    await finalizeExplicitQuestBranch(active);
-}
-
-const BAR_LOCA_MAP = [
-    '..........PPP.........................................                      ',
-    '...........PP..........................................        .......      ',
-    '..........PP...........-----..........------------------     ..........     ',
-    '...........PP..........+...|..........|....S...........|..  ............    ',
-    '..........PPP..........|...|..........|-----...........|...  .............  ',
-    '...........PPP.........-----..........+....+...........|...  .............  ',
-    '..........PPPPPPPPP...................+....+...........S.................   ',
-    '........PPPPPPPPPPPPP.........-----...|-----...........|................    ',
-    '......PPPPPPPPPPPPPP..P.......+...|...|....S...........|          ...       ',
-    '.....PPPPPPP......P..PPPP.....|...|...------------------..         ...      ',
-    '....PPPPPPP.........PPPPPP....-----........................      ........   ',
-    '...PPPPPPP..........PPPPPPP..................................   ..........  ',
-    '....PPPPPPP........PPPPPPP....................................  ..........  ',
-    '.....PPPPP........PPPPPPP.........-----........................   ........  ',
-    '......PPP..PPPPPPPPPPPP...........+...|.........................    .....   ',
-    '..........PPPPPPPPPPP.............|...|.........................     ....   ',
-    '..........PPPPPPPPP...............-----.........................       .    ',
-    '..............PPP.................................................          ',
-    '...............PP....................................................       ',
-    '................PPP...................................................      ',
-];
-
-const BAR_GOAL_MAP = [
-    '                                                                            ',
-    '                               .............                                ',
-    '                             ..................                             ',
-    '        ....              .........................          ....           ',
-    '      .......          ..........................           .......         ',
-    '      ......             ........................          .......          ',
-    '      ..  ......................................             ..             ',
-    '       ..                 .....................             ..              ',
-    '        ..                 ..................              ..               ',
-    '         ..         ..S...S..............   ................                ',
-    '          ..                   ........                ...                  ',
-    '       .........                                         ..                 ',
-    '       ......  ..                                         ...  ....         ',
-    '      .. ...    ..                             ......       ........        ',
-    '   ....          .. ..................        ........       ......         ',
-    '  ......          ......................       ......         ..            ',
-    '   ....             ..................              ...........             ',
-    '                      ..............                                        ',
-    '                        ...........                                         ',
-    '                                                                            ',
-];
-
-async function generateBarbarianLocate(active) {
-    // Lua source: dat/Bar-loca.lua.  Fixed coordinates still delegate to the
-    // shared object/trap/monster constructors; only the three unpositioned
-    // ogres, two unpositioned rock trolls, and two class requests own random
-    // location selection.
-    const context = loadSpecialAsciiMap(BAR_LOCA_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.hardfloor = true;
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, true);
-    for (const [x1, y1, x2, y2, lit] of [
-        [24, 3, 26, 4, false],
-        [31, 8, 33, 9, false],
-        [35, 14, 37, 15, false],
-        [39, 3, 54, 8, true],
-        [56, 0, 75, 8, false],
-        [64, 9, 75, 16, false],
-    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, lit);
-
-    for (const [mask, x, y] of [
-        [D_ISOPEN, 23, 3],
-        [D_ISOPEN, 30, 8],
-        [D_ISOPEN, 34, 14],
-        [D_LOCKED, 38, 5],
-        [D_LOCKED, 38, 6],
-        [D_CLOSED, 43, 3],
-        [D_CLOSED, 43, 5],
-        [D_CLOSED, 43, 6],
-        [D_CLOSED, 43, 8],
-        [D_LOCKED, 55, 6],
-    ]) specialDoorAt(context, mask, x, y);
-    specialStairAt(context, 5, 2, true);
-    specialStairAt(context, 70, 13, false);
-
-    for (const [x, y] of [
-        [42, 3], [42, 3], [42, 3],
-        [41, 3], [41, 3], [41, 3], [41, 3],
-        [41, 8], [41, 8],
-        [42, 8], [42, 8], [42, 8],
-        [71, 13], [71, 13], [71, 13],
-    ]) specialRandomObjectAt(context, x, y);
-
-    for (const [x, y] of [
-        [10, 13], [21, 7], [67, 8], [68, 9],
-    ]) await specialTrapAt(context, SPIKED_PIT, x, y);
-    for (let count = 0; count < 4; count++) await specialTrap(context);
-
-    for (const [x, y] of [
-        [12, 9], [18, 11], [45, 5], [45, 6], [47, 5], [46, 5],
-        [56, 3], [56, 4], [56, 5], [56, 6],
-        [57, 3], [57, 4], [57, 5], [57, 6],
-    ]) await specialMonsterAt(
-        context, PM_OGRE, x, y, { peaceful: false },
-    );
-    for (let count = 0; count < 3; count++)
-        await specialExplicitMonster(
-            context, PM_OGRE, null, { peaceful: false },
-        );
-    await specialMonsterOfClass(context, 41, { peaceful: false }); // S_OGRE
-    await specialMonsterOfClass(context, 46, { peaceful: false }); // S_TROLL
-
-    for (const [x, y] of [
-        [46, 6], [47, 6], [56, 7], [57, 7], [70, 13],
-    ]) await specialMonsterAt(
-        context, PM_ROCK_TROLL, x, y, { peaceful: false },
-    );
-    for (let count = 0; count < 2; count++)
-        await specialExplicitMonster(
-            context, PM_ROCK_TROLL, null, { peaceful: false },
-        );
-    await specialMonsterOfClass(context, 46, { peaceful: false }); // S_TROLL
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
-async function generateBarbarianFiller(active) {
-    // Lua sources: dat/Bar-fila.lua and dat/Bar-filb.lua.  Both issue a
-    // second mines-style level initializer after the common solid fill and
-    // then use only unpositioned constructors across the whole 79x21 map.
-    const sparse = active.prototype === 'Bar-filb';
-    if (sparse) mineFillerMinesField({ lit: false });
-    else uniformRoomMinesField(false);
-
-    const context = {
-        xstart: 1, ystart: 0,
-        width: COLNO - 1, height: ROWNO,
-    };
-    active.context = { ...context };
-    game.level.flags.allow_flips = 0;
-
-    specialStair(context, true);
-    specialStair(context, false);
-    for (let count = 0; count < (sparse ? 11 : 8); count++)
-        specialObject(context);
-    for (let count = 0; count < 4; count++) await specialTrap(context);
-
-    for (let count = 0; count < (sparse ? 7 : 2); count++)
-        await specialExplicitMonster(
-            context, PM_OGRE, null, { peaceful: false },
-        );
-    await specialMonsterOfClass(context, 41, { peaceful: false }); // S_OGRE
-    for (let count = 0; count < (sparse ? 3 : 1); count++)
-        await specialExplicitMonster(
-            context, PM_ROCK_TROLL, null, { peaceful: false },
-        );
-    if (sparse)
-        await specialMonsterOfClass(
-            context, 46, { peaceful: false },
-        ); // S_TROLL
-
-    // load_special() finalizes every non-corrmaze Lua map after the script
-    // has finished.  mkmap(..., walled=true) only creates provisional
-    // straight walls; this shared loader phase resolves their corner and
-    // junction spines without consuming RNG.
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-}
-
-async function generateBarbarianGoal(active) {
-    const context = loadSpecialAsciiMap(BAR_GOAL_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-
-    setSpecialRegionLighting(context, 0, 0, 75, 19, false);
-    specialDoorAt(context, D_LOCKED, 22, 9);
-    specialDoorAt(context, D_LOCKED, 26, 9);
-    specialStairAt(context, 36, 5, true);
-
-    const altar = game.level.at(
-        context.xstart + 63, context.ystart + 4,
-    );
-    altar.typ = ALTAR;
-    const originalAlignment = game.u?.ualignbase?.[0]
-        ?? game.u?.ualign?.type ?? A_NEUTRAL;
-    const otherAlignmentRoll = rn2(2);
-    const altarAlignment = originalAlignment === A_NEUTRAL
-        ? (otherAlignmentRoll ? A_CHAOTIC : A_LAWFUL)
-        : (otherAlignmentRoll ? -originalAlignment : A_NEUTRAL);
-    altar.flags = Align2amask(altarAlignment);
-    specialNonDiggable(context);
-
-    const heart = specialObjectAt(
-        context, LUCKSTONE, 63, 4, { named: true },
-    );
-    if (heart) {
-        heart.blessed = true;
-        heart.cursed = false;
-        heart.spe = 0;
-        heart.artifact = true;
-        heart.oartifact = true;
-        heart.questArtifact = true;
-        heart.oextra = {
-            ...(heart.oextra || {}),
-            oname: 'The Heart of Ahriman',
-        };
-        game._artifactExistCount = (game._artifactExistCount ?? 0) + 1;
-    }
-    for (let count = 0; count < 14; count++) specialObject(context);
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-
-    await specialMonsterAt(context, PM_THOTH_AMON, 63, 4, {
-        randomGender: false,
-        peaceful: false,
-    });
-    for (let count = 0; count < 16; count++)
-        await specialExplicitMonster(
-            context, PM_OGRE, null, { peaceful: false },
-        );
-    for (let count = 0; count < 2; count++)
-        await specialMonsterOfClass(context, 41, { peaceful: false });
-    for (let count = 0; count < 8; count++)
-        await specialExplicitMonster(
-            context, PM_ROCK_TROLL, null, { peaceful: false },
-        );
-    await specialMonsterOfClass(context, 46, { peaceful: false });
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
 const PRI_START_MAP = [
     '............................................................................',
     '............................................................................',
@@ -7135,8 +6782,9 @@ function mineFillerMinesField({
                 while (pending.length) {
                     const [cx, cy] = pending.pop();
                     const cellKey = `${cx},${cy}`;
-                    if (seen.has(cellKey)
-                        || terrainAt(cx, cy) !== foreground) continue;
+                    if (cx < 1 || cx > width || cy < 0 || cy >= ROWNO
+                        || seen.has(cellKey)
+                        || game.level.at(cx, cy).typ !== foreground) continue;
                     seen.add(cellKey);
                     cells.push([cx, cy]);
                     lx = Math.min(lx, cx); hx = Math.max(hx, cx);
@@ -7559,9 +7207,13 @@ export async function generateMinetown(active) {
         await fillSpecialRoom(room);
 }
 
-async function generateArcheologistQuestLevel(active) {
-    if (!/^Arc-(strt|loca|goal|fila|filb)$/.test(active?.prototype))
-        throw new RangeError(`unknown Archeologist level ${active?.prototype}`);
+function isLuaQuestPrototype(prototype) {
+    return /^(Arc|Bar)-(strt|loca|goal|fila|filb)$/.test(prototype);
+}
+
+async function generateLuaQuestLevel(active) {
+    if (!isLuaQuestPrototype(active?.prototype))
+        throw new RangeError(`unknown quest level ${active?.prototype}`);
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of game.level.rooms.slice(0, game.level.nroom))
         await fillSpecialRoom(room);
@@ -8705,9 +8357,7 @@ async function createLuaObject(
     if (options.name) {
         const artifact = artifactByName(options.name);
         if (artifact?.baseType === object.otyp) {
-            if (nameArtifact(object, artifact)
-                && game.urole?.artifactName
-                && artifactByName(game.urole.artifactName)?.id === artifact.id)
+            if (nameArtifact(object, artifact) && artifact.questArtifact)
                 object.questArtifact = true;
         } else {
             object.oextra = {
@@ -11058,7 +10708,7 @@ async function makelevel() {
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'minend'
             || prototype === 'minetn'
-            || prototype.startsWith('Arc-')
+            || isLuaQuestPrototype(prototype)
             || prototype.startsWith('soko')
             || /^tower[1-3]$/.test(prototype)
             || prototype === 'oracle'
@@ -11093,8 +10743,7 @@ async function makelevel() {
         const roomForm = (prototype === 'minetn'
             && [2, 3, 4, 7].includes(variant))
             || prototype === 'oracle'
-            || (/-fil[ab]$/.test(prototype)
-                && !prototype.startsWith('Bar-'));
+            || /-fil[ab]$/.test(prototype);
         // LVLINIT_MAZEGRID ignores its random-light field.  Named Gehennom
         // fortresses share that initializer with Castle, so classify the
         // Lua operation rather than special-casing whichever file was ported
@@ -11213,28 +10862,8 @@ async function makelevel() {
                 g._activeSpecialLevel);
             return;
         }
-        if (prototype.startsWith('Arc-')) {
-            await generateArcheologistQuestLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Bar-strt') {
-            await generateSpecialAndFixup(generateBarbarianStart,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Bar-loca') {
-            await generateSpecialAndFixup(generateBarbarianLocate,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Bar-goal') {
-            await generateSpecialAndFixup(generateBarbarianGoal,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Bar-fila' || prototype === 'Bar-filb') {
-            await generateSpecialAndFixup(generateBarbarianFiller,
-                g._activeSpecialLevel);
+        if (isLuaQuestPrototype(prototype)) {
+            await generateLuaQuestLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'Pri-strt') {
