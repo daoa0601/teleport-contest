@@ -7,7 +7,7 @@ import { ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { CLUB, FLINT, SLING } from '../js/object_data.js';
+import { CLUB, DART, FLINT, ROCK, SLING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
 
@@ -17,15 +17,17 @@ process.env.TELEPORT_DISABLE_FIXTURES = '1';
 function inventoryObject(otyp, invlet, overrides = {}) {
     const names = new Map([
         [CLUB, ['club', 'clubs', 2]],
+        [DART, ['dart', 'darts', 2]],
         [SLING, ['sling', 'slings', 2]],
         [FLINT, ['flint stone', 'flint stones', 13]],
+        [ROCK, ['rock', 'rocks', 13]],
     ]);
     const [name, plural, oclass] = names.get(otyp);
     return {
         otyp, invlet, name, plural, oclass,
         quan: 1, quantity: 1,
         where: 'inventory',
-        cursed: false, blessed: false, bknown: true,
+        cursed: false, blessed: false, bknown: true, dknown: true,
         worn: false, wielded: false, alternate: false, ready: false,
         owornmask: 0,
         contents: [], objectTimers: [], timed: 0,
@@ -114,4 +116,106 @@ test('swapping a sole primary makes it the alternate and leaves bare hands',
         assert.equal(club.wielded, false);
         assert.equal(club.alternate, true);
         assert.equal(game.context.move, 1);
+    });
+
+test('autoquiver prefers current-launcher ammo and fires it immediately',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = true;
+        const sling = inventoryObject(SLING, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const darts = inventoryObject(DART, 'b', {
+            quan: 3, quantity: 3,
+        });
+        const rocks = inventoryObject(ROCK, 'c', {
+            quan: 3, quantity: 3,
+        });
+        const flint = inventoryObject(FLINT, 'd', {
+            quan: 3, quantity: 3, typeKnown: true,
+        });
+        game.inventory = [sling, darts, rocks, flint];
+        game.uwep = sling;
+        game._knownObjectTypes = new Set([FLINT]);
+        game._commandCount = 1;
+
+        // The trailing keys let the pre-fix manual picker terminate.  The
+        // source autoquiver path consumes only the direction and leaves them
+        // irrelevant to this completed command.
+        pushKey('l');
+        pushKey(' ');
+        pushKey(27);
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uquiver, flint);
+        assert.equal(flint.quantity, 2);
+        assert.equal(darts.quantity, 3);
+        assert.equal(rocks.quantity, 3);
+        assert.equal(game.uwep, sling);
+    });
+
+test('manual empty-quiver fire keeps the surviving selected stack readied',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const club = inventoryObject(CLUB, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const darts = inventoryObject(DART, 'b', {
+            quan: 3, quantity: 3,
+        });
+        game.inventory = [club, darts];
+        game.uwep = club;
+
+        pushKey('b');
+        pushKey('l');
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uquiver, darts);
+        assert.equal(darts.ready, true);
+        assert.equal(darts.quantity, 2);
+        assert.equal(game.uwep, club);
+    });
+
+test('autoquiver excludes hidden and artifact objects and ranks missiles over alternate ammo',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = true;
+        game.flags.fireassist = false;
+        const club = inventoryObject(CLUB, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const sling = inventoryObject(SLING, 'b', {
+            alternate: true, owornmask: 2,
+        });
+        const flint = inventoryObject(FLINT, 'c', {
+            quan: 3, quantity: 3, typeKnown: true,
+        });
+        const darts = inventoryObject(DART, 'd', {
+            quan: 3, quantity: 3,
+        });
+        const hiddenDarts = inventoryObject(DART, 'e', {
+            quan: 3, quantity: 3, dknown: false,
+        });
+        const artifactDarts = inventoryObject(DART, 'f', {
+            quan: 3, quantity: 3, oartifact: 1,
+        });
+        game.inventory = [
+            club, sling, flint, darts, hiddenDarts, artifactDarts,
+        ];
+        game.uwep = club;
+        game.uswapwep = sling;
+        game._knownObjectTypes = new Set([FLINT]);
+
+        pushKey('l');
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uquiver, darts);
+        assert.equal(darts.quantity, 2);
+        assert.equal(flint.quantity, 3);
+        assert.equal(hiddenDarts.quantity, 3);
+        assert.equal(artifactDarts.quantity, 3);
+        assert.equal(game.uwep, club);
+        assert.equal(game.uswapwep, sling);
     });

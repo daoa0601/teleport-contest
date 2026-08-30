@@ -68,6 +68,10 @@ import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
     resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
+import {
+    autoquiverCandidate, launcherMatchesAmmo, readySuggestion,
+    setQuiverObject,
+} from './quiver.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
@@ -87,7 +91,8 @@ import {
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE,
-    WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM, BOULDER, ROCK, ARROW, BOW, DART,
+    WAN_SLEEP, GOLD_PIECE, CORPSE, ORCISH_HELM, BOULDER, ROCK,
+    ARROW, BOW, DART,
     LONG_SWORD,
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
@@ -14739,6 +14744,49 @@ async function doready() {
     game.context.move = 0;
 }
 
+async function chooseManualFireQuiver() {
+    if (!(game.inventory || []).length) {
+        await pline('You have nothing to ready for firing.');
+        game.context.move = 0;
+        return null;
+    }
+    const letters = (game.inventory || [])
+        .filter(item => readySuggestion(item, game))
+        .map(item => item.invlet)
+        .join('');
+    const prompt = `What do you want to fire? [- ${
+        compactInventoryLetters(letters)} or ?*] `;
+    const selection = await promptInventoryObject(
+        prompt, game.inventory || [], { allowNone: true, allowMenu: true },
+    );
+    if (selection.cancelled || selection.none || !selection.object) {
+        game.context.move = 0;
+        return null;
+    }
+    const item = selection.object;
+    if (item.worn && item !== game.uwep && item !== game.uswapwep) {
+        await pline('You cannot fire that!');
+        game.context.move = 0;
+        return null;
+    }
+    // Primary/alternate stacks have distinct split and confirmation owners;
+    // keep those explicit rather than silently treating worn identities as
+    // an ordinary zero-time quiver selection.
+    if (item === game.uwep || item === game.uswapwep) {
+        await pline('That weapon is already in use.');
+        game.context.move = 0;
+        return null;
+    }
+    const wasReady = item.ready;
+    item.ready = false;
+    await pline(
+        `You ready: ${item.invlet} - ${inventoryItemDescription(item)}.`,
+    );
+    item.ready = wasReady;
+    setQuiverObject(item, game);
+    return item;
+}
+
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
 async function okToThrow() {
@@ -14773,16 +14821,37 @@ async function dofire(cannedShotLimit = null) {
     game._commandCount = 0;
     if (!await okToThrow()) return;
 
+    let fireObject = game.uquiver;
+    if (!fireObject) {
+        if (game.flags?.autoquiver) {
+            fireObject = autoquiverCandidate(game);
+            if (fireObject) {
+                const wasReady = fireObject.ready;
+                fireObject.ready = false;
+                await pline(
+                    `You ready: ${fireObject.invlet} - ${
+                        inventoryItemDescription(fireObject)}.`,
+                );
+                fireObject.ready = wasReady;
+                setQuiverObject(fireObject, game);
+            } else {
+                await pline('You have nothing appropriate for your quiver.');
+            }
+        } else {
+            await pline('You have no ammunition readied.');
+        }
+        if (!fireObject) fireObject = await chooseManualFireQuiver();
+        if (!fireObject) return;
+    }
+
     // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
     // matching alternate weapon is swapped in as one timed action, then fire
     // resumes after the complete monster/global turn without consuming a new
     // physical key.  This applies to every matching ammo/launcher pair; role
     // names and recorded command streams do not participate in selection.
-    if (game.uquiver) {
-        const ammoSkill = OBJECT_SUBTYPE[game.uquiver.otyp] ?? 0;
-        const matchingLauncher = launcher => ammoSkill < 0
-            && launcher
-            && ammoSkill === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
+    if (fireObject) {
+        const matchingLauncher = launcher =>
+            launcherMatchesAmmo(fireObject, launcher);
         const alternate = game.uswapwep || game.u?.uswapwep || null;
         const fireassist = game.flags?.fireassist !== false;
         if (fireassist && !matchingLauncher(game.uwep)
@@ -14824,10 +14893,9 @@ async function dofire(cannedShotLimit = null) {
                 return;
             }
         }
-        await dothrow(game.uquiver, true, shotLimit);
+        await dothrow(fireObject, true, shotLimit);
         return;
     }
-    await dothrow(null, true, shotLimit);
 }
 
 async function captureThrownObjectFlight(object, flightPath) {
