@@ -1,7 +1,7 @@
 # Bridge-free acceptance regime
 
-Status: adopted 2026-08-24; enforcement slice 1 implemented locally, sealed
-evaluation not started.
+Status: adopted 2026-08-24; bridge-free runtime and sealed-gate infrastructure
+implemented locally, sealed corpus execution and evaluation not started.
 
 This regime supersedes public-session and supplemental-animation optimization
 as the development acceptance target.  The current public checkpoint remains a
@@ -162,6 +162,43 @@ graph, whose imports are mechanically restricted to `*_fixture.js` modules.
 The bridge audit therefore finds zero guarded replay exporters in the live
 JavaScript graph.  These later slices have focused fresh witnesses and selected
 public regressions, but still no sealed gate or hidden measurement.
+
+### Enforcement checkpoint 2: sealed custody, not a result
+
+Commit `67bd698` implements the generator/recorder/evaluator boundary without
+executing it.  The public specification expands all 73 legal character tuples
+plus 84 repeated command/world/lifecycle scenarios.  A real gate will derive
+fresh seeds, datetimes, names, option assignments, and per-session mappings
+from a private 256-bit key; the public manifest carries only aggregate strata,
+the generation recipe and revisions, disclosure policy, and keyed
+commitments.  The key is not copied into the gate root.
+
+The fixed-input recorder remains compatible with existing sessions, while an
+optional semantic driver can page through the live C wizard dungeon menu and
+select a named branch or special-level entry.  This corrected an invalid first
+design in which numeric depth 8 was labeled as Mines even though C
+`get_level()` confines downward numeric teleport to the current dungeon.  One
+disposable, public-key C qualification for each of the six adaptive scenarios
+plus the stateful save/restore recipe completed and deleted its trace; follow-up
+commit `c4e7bb0` keeps that seventh stateful recipe in the repeatable
+qualification command.  This is driver evidence only, not parity or a retained
+corpus.
+
+Private plan, resume state, raw answers, recording receipts, and release
+authorization are isolated from production code, permission-restricted, and
+cryptographically linked.  The recorder and evaluator run one owned process
+group at a time, retain signed checkpoints across interruption, suppress
+identity-bearing child output, and refuse an active competing Contest process.
+The evaluator forces `TELEPORT_BRIDGE_FREE=1` with fixtures disabled, freezes
+one aggregate result, suppresses cells smaller than the manifest threshold,
+and refuses rescoring.  Its keyed failure sample cannot be released until the
+frozen result hash is acknowledged in the parity journal.  The ordinary test
+gate mechanically prevents `js/` from naming sealed custody artifacts.
+
+This checkpoint is explicitly a non-result.  No private key, actual manifest,
+C corpus, JavaScript aggregate, failure sample, public scorer, push, or hidden
+measurement was created or run.  The complete operator boundary is documented
+in `sealed-corpus/README.md`.
 
 ## 1. Genuinely bridge-free mode
 

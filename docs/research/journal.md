@@ -100427,3 +100427,80 @@ publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 11:55 EEST, journal block 3250] {#sealed-corpus #custody #strata #adaptive-recorder #aggregate-gate #process-safety #test-independence #critical-portfolio}
+
+**Previous-turn classification and mechanism portfolio:** block 3249 was
+production progress: recorded-RNL left the live graph and the bridge audit
+reached zero guarded replay exporters.  The next acceptance requirement was
+not another public mechanic patch but an evidence boundary which could test
+fresh mechanics without becoming a new trace oracle.  The critical-debugging
+portfolio separated four independent failure mechanisms: input resampling,
+trace/identity disclosure, evaluator disclosure or repeated scoring, and
+abandoned child processes.  It treated each as a gate invariant rather than
+assuming an ignored directory was sufficient sealing.
+
+**Earliest design divergences, predictions, and red evidence:** the existing
+recorder printed each seed and move count to stderr, and the existing scorer
+printed per-session names, metrics, and errors.  Neither could be wrapped as a
+sealed gate without changing its observable boundary.  A first stratification
+draft also labeled numeric wizard teleport to depth 8 as a Mines witness.
+Pinned C `dungeon.c:get_level()` falsified that label: downward numeric
+teleport remains in the current dungeon.  The source prediction was that
+fresh branch placement requires semantic selection from C's current dungeon
+menu, not a fixed depth or menu letter.
+
+**Implementation and custody effect:** commit `67bd698` adds a deterministic
+HMAC-derived 157-session specification: all 73 legal
+role/race/gender/alignment tuples and 84 repeated command, option, runmode,
+world, special-layout, and save/restore scenarios.  The public manifest has
+aggregate strata, recipe/revision metadata, disclosure policy, and keyed
+commitments only.  Seeds, datetimes, player names, per-session scenario
+assignment, realized move strings, and C answers remain private.  Separate
+opaque-ID and recipe commitments prevent joining public commitments to raw
+filenames.  Recorder binary/runtime hashes bind the C witness.  Private plan,
+resume state,
+recording receipt, raw corpus, evaluation state, and release authorization are
+permission-restricted and signed.
+
+The optional recorder driver opens `m Ctrl-V`, searches each visible C menu
+page for the named destination, selects the live accelerator, and records the
+realized keys.  Seven disposable public-key qualifications reached Minetown,
+Medusa, the Valley, Big Room, Sokoban, the Archeologist Quest layout, and a
+save/restore continuation; follow-up commit `c4e7bb0` retains that stateful
+case in the repeatable qualifier, and the temporary traces were deleted.
+Record and evaluation operations take an exclusive gate lock, reject competing
+Contest processes, run one owned process
+group at a time, checkpoint exact committed sessions, and reap descendants on
+timeout or interruption.  Evaluation forces bridge-free mode with fixtures
+disabled, emits only thresholded aggregates, freezes one result, and selects a
+key-ranked failing sample which cannot open before its result hash is logged
+here.
+
+**Independent and adversarial evidence:** ten focused custody tests verify
+same-key determinism, absence of private keys from the public manifest,
+commitment failure after recipe mutation, required strata, sequential and
+resumable recording, resumable one-shot evaluation, aggregate-only disclosure,
+predeclared sample release, raw-trace tamper rejection, adaptive menu paging,
+absent-target failure, and full process-group termination.  In particular,
+interrupting evaluation after two of four synthetic commitments caused the
+resume to execute only the remaining two; a timed-out helper and its grandchild
+were both absent from the process registry.  These are custody outcomes, not
+copies of function bodies or game transcripts.
+
+**Measured effect, falsified hypotheses, and next blocker:** one managed
+`npm test` invocation passed **473/473** behavioral tests across **55**
+lane-audited files, with the 119/0/19 bridge audit and the new sealed-boundary
+audit green.  The seven-scenario C qualification completed sequentially in 7.6
+seconds, and no recorder, scorer, or test process remained.  An ignored output
+directory alone was not a seal; fixed numeric depth was not branch coverage;
+unsalted hashes were not an adequate low-entropy identity commitment; and a
+yielded/failed worker could not be treated as completed evidence.  No C/Lua
+game ownership changed, so the ownership registry/map and
+`public-session-status.md` are unchanged.  No real key, manifest, C corpus,
+sealed evaluation, trace release, public regression, scorer, push,
+publication, hidden measurement, or animation work ran.  The next blocker is
+an explicitly scheduled clean-tree audit gate; until then the committed
+infrastructure must not be used to create or inspect a corpus.
+
+---
