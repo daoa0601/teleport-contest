@@ -31,7 +31,8 @@ import {
     SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, FILL_LVFLAGS,
     ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DBWALL,
     ICED_POOL, ICED_MOAT,
-    DB_EAST, TREE, AIR, CLOUD,
+    DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
+    TREE, AIR, CLOUD,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
@@ -310,6 +311,7 @@ const PM_VLAD_THE_IMPALER = 228;
 const PM_VAMPIRE_BAT = 129;
 const PM_JABBERWOCK = 178;
 const PM_ARCHON = 125;
+const PM_ANGEL = 122;
 const PM_DOPPELGANGER = 270;
 const PM_SANDESTIN = 301;
 const PM_CHAMELEON = 327;
@@ -5520,7 +5522,8 @@ function replaceSpecialSelectionTerrain(
 ) {
     selection.forEachXMajor((x, y) => {
         const loc = game.level.at(x, y);
-        if (loc?.typ !== fromType || rn2(100) >= chance) return;
+        if (loc?.typ !== fromType
+            || (chance < 100 && rn2(100) >= chance)) return;
         setLevelTerrainType(x, y, toType);
         if (toType === IRONBARS || toType === HWALL)
             game.level.at(x, y).horizontal = true;
@@ -7662,7 +7665,7 @@ function priestGoalMinesField() {
 // smoothing pass reads the preceding pass, and disconnected regions are
 // joined through temporary irregular rooms before their room metadata is
 // discarded.
-function mineFillerMinesField(lit, background = STONE) {
+function mineFillerMinesField(lit, background = STONE, walled = true) {
     const width = COLNO - 2;
     const height = ROWNO - 1;
     for (let x = 1; x < COLNO; x++) {
@@ -7792,7 +7795,7 @@ function mineFillerMinesField(lit, background = STONE) {
     game.level.rooms = [{ hx: -1 }];
     game.level.nroom = 0;
 
-    wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
+    if (walled) wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
     if (lit) {
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {
@@ -13189,7 +13192,242 @@ async function generateWizard2(active) {
     ]) active[field] = flipSpecialRegion(active[field]);
 }
 
-function generateHellMazeGrid(context, active) {
+const HELL_FORTRESS_PREFAB = [
+    'xxxxxx.xxxxxx',
+    'xLLLLLLLLLLLx',
+    'xL---------Lx',
+    'xL|.......|Lx',
+    'xL|.......|Lx',
+    '.L|.......|L.',
+    'xL|.......|Lx',
+    'xL|.......|Lx',
+    'xL---------Lx',
+    'xLLLLLLLLLLLx',
+    'xxxxxx.xxxxxx',
+];
+
+const HELL_TEMPLE_PREFAB = [
+    'FFFFFFF',
+    'F.....F',
+    'F.....F',
+    'F.....F',
+    'F.....F',
+    'F.....F',
+    'FFFFFFF',
+];
+
+const HELL_BAR_ENCLOSURE_PREFAB = [
+    '..........',
+    '..........',
+    '..........',
+    '...FFFF...',
+    '...F..F...',
+    '...F..F...',
+    '...FFFF...',
+    '..........',
+    '..........',
+    '..........',
+];
+
+const HELL_MOAT_FORTRESS_PREFAB = [
+    '.........',
+    '.}}}}}}}.',
+    '.}}---}}.',
+    '.}--.--}.',
+    '.}|...|}.',
+    '.}--.--}.',
+    '.}}---}}.',
+    '.}}}}}}}.',
+    '.........',
+];
+
+function hellPrefabOrigin(width, height, halign, valign) {
+    const horizontal = halign === 'half-left'
+        ? halfLeftSpecialMap(width, height)
+        : halign === 'half-right'
+            ? halfRightSpecialMap(width, height)
+            : centeredSpecialMap(width, height);
+    const mazeMaxY = (ROWNO - 1) & ~1;
+    let ystart = horizontal.ystart;
+    if (valign === 'top') ystart = 3;
+    else if (valign === 'bottom') {
+        ystart = mazeMaxY - height - 1;
+        if (!(ystart % 2)) ystart++;
+    }
+    return { xstart: horizontal.xstart, ystart, width, height };
+}
+
+function randomHellPrefabAlignment() {
+    return {
+        halign: ['half-left', 'center', 'half-right'][rn2(3)],
+        valign: ['top', 'center', 'bottom'][rn2(3)],
+    };
+}
+
+function loadHellPrefab(rows, { halign = 'center', valign = 'center',
+    lit = false, origin = null } = {}) {
+    const width = Math.max(...rows.map(row => row.length));
+    const placement = origin || hellPrefabOrigin(
+        width, rows.length, halign, valign,
+    );
+    return loadSpecialAsciiMap(rows, lit, placement);
+}
+
+function addHellTeleportExclusion(context, x1, y1, x2, y2) {
+    game.level.exclusionZones.push({
+        type: 'teleport',
+        lx: context.xstart + Math.min(x1, x2),
+        ly: context.ystart + Math.min(y1, y2),
+        hx: context.xstart + Math.max(x1, x2),
+        hy: context.ystart + Math.max(y1, y2),
+    });
+}
+
+function makeHellDrawbridge(context, x, y, direction) {
+    const bridgeX = context.xstart + x;
+    const bridgeY = context.ystart + y;
+    const bridge = game.level.at(bridgeX, bridgeY);
+    if (!bridge) return;
+    const under = bridge.typ === LAVAPOOL ? DB_LAVA : DB_MOAT;
+    const offsets = {
+        [DB_NORTH]: [0, -1], [DB_SOUTH]: [0, 1],
+        [DB_EAST]: [1, 0], [DB_WEST]: [-1, 0],
+    };
+    const [dx, dy] = offsets[direction];
+    bridge.typ = DRAWBRIDGE_UP;
+    bridge.horizontal = direction === DB_EAST || direction === DB_WEST;
+    bridge.drawbridgemask = direction | under;
+    const wall = game.level.at(bridgeX + dx, bridgeY + dy);
+    if (wall) {
+        wall.typ = DBWALL;
+        wall.horizontal = direction === DB_NORTH || direction === DB_SOUTH;
+        wall.wall_info |= W_NONDIGGABLE;
+    }
+}
+
+async function generateHellPrefab(prefab, coldHell) {
+    if (prefab === 1) {
+        loadHellPrefab(Array(16).fill('......'), {
+            halign: ['half-left', 'center', 'half-right'][rn2(3)],
+        });
+    } else if (prefab === 2) {
+        loadHellPrefab([
+            'xxxxxx.....xxxxxx', 'xxxx.........xxxx',
+            'xx.............xx', 'xx.............xx',
+            'x...............x', 'x...............x',
+            '.................', '.................',
+            '.................', '.................',
+            '.................', 'x...............x',
+            'x...............x', 'xx.............xx',
+            'xx.............xx', 'xxxx.........xxxx',
+            'xxxxxx.....xxxxxx',
+        ], { halign: ['half-left', 'center', 'half-right'][rn2(3)] });
+    } else if (prefab === 3) {
+        const alignment = randomHellPrefabAlignment();
+        const context = loadHellPrefab(HELL_FORTRESS_PREFAB, alignment);
+        const fortressWalls = specialSelectionFillRect(context, 2, 2, 10, 8);
+        markSpecialSelectionWallProperty(fortressWalls, W_NONDIGGABLE);
+        setSpecialRegionLighting(context, 4, 4, 8, 6, true);
+        addHellTeleportExclusion(context, 2, 2, 10, 8);
+        if (coldHell) {
+            replaceSpecialSelectionTerrain(
+                specialSelectionFillRect(context, 1, 1, 11, 9),
+                LAVAPOOL, POOL,
+            );
+        }
+        const bridges = luaShuffle([
+            [1, 5, DB_EAST], [11, 5, DB_WEST],
+            [6, 1, DB_SOUTH], [6, 9, DB_NORTH],
+        ]);
+        const bridgeCount = rnd(bridges.length);
+        for (let index = 0; index < bridgeCount; index++)
+            makeHellDrawbridge(context, ...bridges[index]);
+        const monsterClass = luaShuffle([34, 46, S_HUMAN])[0];
+        for (let count = 3 + rnd(5); count > 0; count--)
+            await specialMonsterClassAt(context, monsterClass, 6, 5);
+    } else if (prefab === 4) {
+        loadHellPrefab(Array(5).fill('.'.repeat(62)));
+    } else if (prefab === 5) {
+        const alignment = randomHellPrefabAlignment();
+        loadHellPrefab([
+            'x.....x', '.......', '.......', '.......',
+            '.......', '.......', 'x.....x',
+        ], { ...alignment, lit: true });
+    } else if (prefab === 6) {
+        const alignment = randomHellPrefabAlignment();
+        const context = loadHellPrefab(HELL_TEMPLE_PREFAB, alignment);
+        const temple = specialIrregularRoom(
+            context, 2, 2, TEMPLE, false, FILL_NORMAL,
+        );
+        const altarX = context.xstart + 3;
+        const altarY = context.ystart + 3;
+        const altar = game.level.at(altarX, altarY);
+        altar.typ = ALTAR;
+        altar.flags = Align2amask(A_NONE);
+        if (rn2(100) >= 75) {
+            altar.flags |= AM_SHRINE;
+            await specialShrinePriest(temple, altarX, altarY, A_NONE);
+        }
+        game.level.flags.has_temple = true;
+    } else if (prefab === 7) {
+        const alignment = randomHellPrefabAlignment();
+        const context = loadHellPrefab(HELL_BAR_ENCLOSURE_PREFAB, alignment);
+        addHellTeleportExclusion(context, 4, 4, 5, 5);
+        const inhabitants = [PM_ANGEL, 30, 34, 38];
+        const inhabitant = inhabitants[rn2(inhabitants.length)];
+        if (inhabitant === PM_ANGEL) {
+            await specialMonsterAt(context, inhabitant, 4, 4, {
+                randomGender: namedMonsterNeedsGenderDraw(inhabitant),
+            });
+        } else {
+            await specialMonsterClassAt(context, inhabitant, 4, 4);
+        }
+    } else if (prefab === 8) {
+        const alignment = randomHellPrefabAlignment();
+        const context = loadHellPrefab(HELL_MOAT_FORTRESS_PREFAB, alignment);
+        addHellTeleportExclusion(context, 3, 3, 5, 5);
+        await specialMonsterClassAt(context, 38, 4, 4);
+    } else if (prefab === 9) {
+        const lava = rn2(100) < 30;
+        const rows = lava
+            ? ['.....', '.LLL.', '.LZL.', '.LLL.', '.....']
+            : ['.....', '.PPP.', '.PWP.', '.PPP.', '.....'];
+        for (let dx = 1; dx <= 5; dx++) {
+            loadHellPrefab(rows, {
+                origin: {
+                    xstart: dx * 14 - 4,
+                    ystart: 3 + rn2(13),
+                    width: 5, height: 5,
+                },
+            });
+        }
+    } else if (prefab === 10) {
+        const rows = Array(17).fill('...');
+        for (let dx = 0; dx < 3; dx++) {
+            loadHellPrefab(rows, {
+                origin: {
+                    xstart: 3 + rn2(73), ystart: 3,
+                    width: 3, height: 17,
+                },
+            });
+        }
+    }
+}
+
+async function generateRandomHellPrefabs(coldHell) {
+    const repeatable = new Set([1, 2, 4, 5, 10]);
+    let loops = 0;
+    let again = true;
+    do {
+        loops++;
+        const prefab = rnd(10);
+        await generateHellPrefab(prefab, coldHell);
+        again = repeatable.has(prefab)
+            && rn2(loops * 2 + 1) !== 0;
+    } while (again && loops <= 5);
+}
+
+async function generateHellMazeGrid(context) {
     // sp_lev.c:lvlfill_maze_grid(2,0,x_maze_max,y_maze_max,HWALL).
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
@@ -13225,12 +13463,7 @@ function generateHellMazeGrid(context, active) {
     );
     applyHellTweaks(context, mutableArea.negate());
 
-    if (rn2(100) < 25) {
-        // rnd_hell_prefab(false) is a separate script block.  Keep the
-        // branch visible until its map/content variants are ported instead
-        // of pretending that hell_tweaks owns prefab generation.
-        active.pendingHellPrefab = true;
-    }
+    if (rn2(100) < 25) await generateRandomHellPrefabs(false);
 }
 
 async function generateHellFiller(active) {
@@ -13248,11 +13481,60 @@ async function generateHellFiller(active) {
     // hellfill.lua runs; only the cold variant overrides this to -1.
     game.level.flags.temperature = 1;
 
-    if (active.variant === 2) {
-        generateHellMazeGrid(context, active);
+    if (active.variant === 1) {
+        mineFillerMinesField(false, STONE);
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const loc = game.level.at(x, y);
+                if (loc.typ === STONE) setLevelTerrainType(x, y, LAVAPOOL);
+            }
+        }
+        replaceSpecialSelectionTerrain(
+            specialSelectionOfTerrain(context, ROOM), ROOM, LAVAPOOL, 5,
+        );
+        const walls = new SpecialSelection();
+        for (let x = 1; x < COLNO; x++)
+            for (let y = 0; y < ROWNO; y++)
+                if (IS_STWALL(game.level.at(x, y)?.typ)) walls.add(x, y);
+        walls.forEachXMajor((x, y) => {
+            const loc = game.level.at(x, y);
+            if (rn2(100) < 20) setLevelTerrainType(x, y, LAVAPOOL);
+            else if (loc && rn2(100) < 15) setLevelTerrainType(x, y, ROOM);
+        });
+    } else if (active.variant === 2) {
+        await generateHellMazeGrid(context);
     } else if (active.variant === 3) {
         // Classic one-cell-wall maze with a random corridor width.
         createSpecialMaze(-1, 1, false);
+    } else if (active.variant === 4) {
+        const corridorWidth = rnd(4);
+        createSpecialMaze(corridorWidth, 1, false);
+        const outsideStone = specialSelectionOfTerrain(context, STONE);
+        const wallTerrain = luaShuffle([IRONBARS, LAVAPOOL])[0];
+        const mazeWalls = new SpecialSelection();
+        for (let x = 1; x < COLNO; x++)
+            for (let y = 0; y < ROWNO; y++)
+                if (IS_STWALL(game.level.at(x, y)?.typ)) mazeWalls.add(x, y);
+        specialSelectionTerrain(mazeWalls, wallTerrain);
+        if (corridorWidth === 1) {
+            if (wallTerrain === IRONBARS && rn2(100) < 80) {
+                const amount = 25 * rnd(4);
+                const openings = new SpecialSelection();
+                for (let x = 1; x < COLNO; x++) {
+                    for (let y = 1; y < ROWNO - 1; y++) {
+                        if (game.level.at(x, y)?.typ === IRONBARS
+                            && game.level.at(x, y - 1)?.typ === ROOM
+                            && game.level.at(x, y + 1)?.typ === ROOM) {
+                            openings.add(x, y);
+                        }
+                    }
+                }
+                specialSelectionTerrain(openings.percentage(amount), ROOM);
+            } else if (rn2(100) < 25) {
+                await generateRandomHellPrefabs(false);
+            }
+        }
+        specialSelectionTerrain(outsideStone, STONE);
     } else if (active.variant === 5) {
         // Thick-wall maze.  hellfill.lua snapshots original stone, converts
         // every solid cell through replace_terrain("w"), then restores that
@@ -13272,7 +13554,7 @@ async function generateHellFiller(active) {
             for (let x = 1; x < COLNO; x++) {
                 for (let y = 0; y < ROWNO; y++) {
                     const loc = game.level.at(x, y);
-                    if (loc && IS_STWALL(loc.typ) && rn2(100) < 100)
+                    if (loc && IS_STWALL(loc.typ))
                         setLevelTerrainType(x, y, LAVAPOOL);
                 }
             }
@@ -13306,17 +13588,58 @@ async function generateHellFiller(active) {
                 }
             }
         }
+    } else if (active.variant === 6) {
+        const corridorWidth = rnd(4);
+        createSpecialMaze(corridorWidth, 1, false);
+        game.level.flags.temperature = -1;
+        const outsideStone = specialSelectionOfTerrain(context, STONE);
+        const ice = new SpecialSelection().negate().percentage(10)
+            .grow('all')
+            .intersect(specialSelectionOfTerrain(context, ROOM));
+        specialSelectionTerrain(ice, ICE);
+        if (corridorWidth > 1)
+            specialSelectionTerrain(ice.percentage(1), WATER);
+        specialSelectionTerrain(ice.percentage(5), POOL);
+        if (rn2(100) < 25) {
+            const walls = new SpecialSelection();
+            for (let x = 1; x < COLNO; x++)
+                for (let y = 0; y < ROWNO; y++)
+                    if (IS_STWALL(game.level.at(x, y)?.typ)) walls.add(x, y);
+            specialSelectionTerrain(walls, WATER);
+        }
+        if (corridorWidth === 1 && rn2(100) < 25)
+            await generateRandomHellPrefabs(true);
+        specialSelectionTerrain(outsideStone, STONE);
+    } else if (active.variant === 7) {
+        const background = rn2(100) < 50 ? STONE : LAVAPOOL;
+        mineFillerMinesField(false, background, false);
+        const cavern = specialSelectionOfTerrain(context, ROOM).grow('all');
+        specialSelectionTerrain(cavern, ROOM);
+        specialSelectionTerrain(
+            specialSelectionRect(context, 0, 0, 78, 20), background,
+        );
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
     } else {
-        // Other variants remain separate script blocks because their mines,
-        // prefabs, and terrain-selection graphs have different RNG.
-        return false;
+        throw new RangeError(`unknown Hell filler variant ${active.variant}`);
     }
 
+    game.level.flags.is_maze_lev = true;
     specialStair(context, true);
-    specialStair(context, false);
+    const dungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
+    const invocationLevel = !!dungeon?.flags?.hellish
+        && game.u?.uz?.dlevel === (dungeon.num_dunlevs ?? 1) - 1;
+    if (invocationLevel)
+        await specialTrapOfType(context, VIBRATING_SQUARE);
+    else
+        specialStair(context, false);
     await populateHellMaze(context);
     wallification(1, 0, COLNO - 1, ROWNO - 1);
     return true;
+}
+
+export async function generateHellFillerLevel(active) {
+    await generateHellFiller(active);
+    await fixupSpecialBranch(active);
 }
 
 function flipSpecialRegion(region) {
@@ -15328,13 +15651,8 @@ async function makelevel() {
             file: 'hellfill.lua', align, defaultLit: false,
         };
         g._activeSpecialLevel = active;
-        if (await generateHellFiller(active)) {
-            await fixupSpecialBranch(active);
-            return;
-        }
-        // Preserve the selected descriptor while unported variants fall
-        // through to the ordinary generator; their first difference remains
-        // visible instead of being disguised as a completed Hell filler.
+        await generateHellFillerLevel(active);
+        return;
     }
 
     // C ref: mklev.c:1295 — check for below-Medusa maze level
