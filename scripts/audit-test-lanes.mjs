@@ -26,6 +26,18 @@ const FORBIDDEN_BEHAVIORAL_PATTERNS = [
         pattern: /\b(?:const|let)\s+(?:calls|callOrder|invocations)\s*=\s*\[\]/g,
     },
     {
+        id: 'rng-transcript-oracle',
+        pattern: /\b(?:enableRngLog|getRngLog)\b/g,
+    },
+    {
+        id: 'private-scheduler-plan-oracle',
+        pattern: /\b(?:scan\.rounds|scan\.actors|allocations\.map\s*\()/g,
+    },
+    {
+        id: 'callback-order-transcript',
+        pattern: /assert\.deepEqual\(\s*\w+\.map\(\s*\w+\s*=>\s*\w+\.kind\s*\)/g,
+    },
+    {
         id: 'same-implementation-mode-oracle',
         pattern: /\b(?:outcomesAcrossModes|assertLiveAcrossModes)\b/g,
     },
@@ -124,7 +136,8 @@ if (process.argv[1] && path.resolve(process.argv[1])
         console.log(
             `Behavioral lane audit passed: ${result.entrypoints.length} `
             + `test files and ${result.supportFiles.length} support modules, `
-            + 'no recorded-session, public-parity, mock/spy, or '
+            + 'no recorded-session, public-parity, RNG/call transcript, '
+            + 'private scheduler-plan/callback-order, mock/spy, or '
             + 'same-implementation/source-checksum/call-transcript '
             + 'dependencies; mechanics tests do not recheck bridge-ledger '
             + 'bookkeeping, and scheduler tests use outcome oracles.',
