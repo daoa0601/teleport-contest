@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceDirectory = path.join(root, 'nethack-c', 'upstream', 'dat');
 const output = path.join(root, 'js', 'generated', 'lua_sources.js');
-const names = ['nhlib.lua', 'nhcore.lua', 'dungeon.lua'];
+const names = ['nhlib.lua', 'nhcore.lua', 'dungeon.lua', 'bigrm-1.lua'];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [
     name,

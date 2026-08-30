@@ -42,6 +42,7 @@ export function freshSpecialLevel({
 
     const active = {
         prototype, variant, defaultLit,
+        file: variant ? `${prototype}-${variant}.lua` : `${prototype}.lua`,
         align: ['law', 'neutral', 'chaos'],
         ...(monsterAlignment ? { monsterAlignment } : {}),
     };

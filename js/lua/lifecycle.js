@@ -6,7 +6,7 @@ import {
     objectToLuaTable,
 } from './runtime.js';
 
-function bindingsFor(gameState) {
+function bindingsFor(gameState, additionalBindings = {}) {
     return {
         nh: {
             rn2: range => rn2(range),
@@ -22,6 +22,7 @@ function bindingsFor(gameState) {
         des: {},
         selection: {},
         obj: {},
+        ...additionalBindings,
     };
 }
 
@@ -31,8 +32,8 @@ export class LuaLifecycle {
         this.themed = new Map();
     }
 
-    createState(gameState) {
-        const state = new LuaState(bindingsFor(gameState));
+    createState(gameState, bindings = {}) {
+        const state = new LuaState(bindingsFor(gameState, bindings));
         state.execute(LUA_SOURCES['nhlib.lua'], 'nhlib.lua');
         return state;
     }
@@ -54,8 +55,22 @@ export class LuaLifecycle {
         return this.core;
     }
 
-    createSpecialState(gameState) {
-        return this.createState(gameState);
+    createSpecialState(gameState, bindings = {}) {
+        return this.createState(gameState, bindings);
+    }
+
+    async executeSpecial(
+        gameState, filename, bindings = {}, beforeExecute = null,
+    ) {
+        const state = this.createSpecialState(gameState, bindings);
+        try {
+            const source = LUA_SOURCES[filename];
+            if (!source) throw new Error(`Lua source is not packaged: ${filename}`);
+            beforeExecute?.(state);
+            await state.executeAsync(source, filename);
+        } finally {
+            state.destroy();
+        }
     }
 
     loadData(gameState, filename, globalName) {

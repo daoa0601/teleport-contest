@@ -7,6 +7,9 @@
 
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { createDesBindings } from './lua/des.js';
+import { createSelectionBindings } from './lua/selection.js';
+import { luaTableToArray } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
@@ -124,6 +127,7 @@ import {
 import { vision_note_blocker_change } from './vision.js';
 import {
     SpecialSelection,
+    mapCharacterType,
     specialSelectionFillRect,
     specialSelectionFloodFill,
     specialSelectionLine,
@@ -5594,6 +5598,14 @@ function specialNonDiggable(context = null) {
     }
 }
 
+function specialSelectionNonDiggable(selection) {
+    selection.forEachXMajor((x, y) => {
+        const loc = game.level.at(x, y);
+        if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
+            || loc.typ === IRONBARS)) loc.wall_info |= W_NONDIGGABLE;
+    });
+}
+
 function specialObject(context) {
     const point = specialRandomLocation(context, (loc, x, y) =>
         SPACE_POS(loc.typ)
@@ -10404,7 +10416,105 @@ async function finishMappedBigRoom(
     if (wallify) wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
-const BIGRM_1_MAP = [
+function specialMapRows(source) {
+    const rows = source.split('\n');
+    if (rows.at(-1) === '') rows.pop();
+    return rows;
+}
+
+function fillSpecialLevel(options, active) {
+    if (options.style !== 'solidfill')
+        throw new Error(`unsupported Lua level style ${options.style}`);
+    const type = mapCharacterType(options.filling ?? options.fg ?? '.');
+    if (type === undefined)
+        throw new Error(`unknown Lua map character ${options.fg}`);
+    active.defaultLit = options.lit == null ? !!rn2(2) : !!options.lit;
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            setLevelTerrainType(x, y, type);
+            game.level.at(x, y).lit = active.defaultLit;
+        }
+    }
+}
+
+function setLuaLevelFlags(active, flags) {
+    for (const flag of flags) {
+        if (flag === 'mazelevel') game.level.flags.is_maze_lev = true;
+        else if (flag === 'noteleport') game.level.flags.noteleport = true;
+        else if (flag === 'hardfloor') game.level.flags.hardfloor = true;
+        else if (flag === 'nommap') game.level.flags.nommap = true;
+        else if (flag === 'shortsighted') game.level.flags.shortsighted = true;
+        else if (flag === 'arboreal') game.level.flags.arboreal = true;
+        else if (flag === 'graveyard') game.level.flags.graveyard = true;
+        else if (flag === 'corrmaze') game.level.flags.corrmaze = true;
+        else if (flag === 'sokoban') game.level.flags.sokoban_rules = true;
+        else if (flag === 'premapped') active.premapped = true;
+        else if (flag === 'solidify') active.solidify = true;
+        else if (flag === 'inaccessibles') active.checkInaccessibles = true;
+        else if (flag === 'noflipx') active.allowFlips &= ~2;
+        else if (flag === 'noflipy') active.allowFlips &= ~1;
+        else if (flag === 'noflip') active.allowFlips = 0;
+        else if (flag === 'temperate') game.level.flags.temperature = 0;
+        else if (flag === 'hot') game.level.flags.temperature = 1;
+        else if (flag === 'cold') game.level.flags.temperature = -1;
+        else if (flag === 'nomongen') game.level.flags.rndmongen = false;
+        else if (flag === 'nodeathdrops') game.level.flags.deathdrops = false;
+        else if (flag !== 'shroud')
+            throw new Error(`unknown Lua level flag ${flag}`);
+    }
+}
+
+async function generateLuaSpecialLevel(active) {
+    let context = null;
+    active.allowFlips = 3;
+    game.level.flags.is_special = true;
+    const operations = {
+        levelInit: options => fillSpecialLevel(options, active),
+        levelFlags: flags => setLuaLevelFlags(active, flags),
+        map: source => {
+            context = loadSpecialAsciiMap(
+                specialMapRows(source), active.defaultLit,
+            );
+            active.context = context;
+        },
+        terrain: (selection, character) => {
+            const type = mapCharacterType(character);
+            if (type === undefined)
+                throw new Error(`unknown Lua terrain ${character}`);
+            specialSelectionTerrain(selection, type);
+        },
+        region: (selection, lighting) => {
+            const lit = lighting === 'lit';
+            const area = lit ? selection.grow() : selection;
+            area.forEachXMajor((x, y) => {
+                const loc = game.level.at(x, y);
+                if (loc) loc.lit = lit;
+            });
+        },
+        stair: direction => specialStair(context, direction === 'up'),
+        nonDiggable: selection => selection
+            ? specialSelectionNonDiggable(selection)
+            : specialNonDiggable(context),
+        object: () => specialObject(context),
+        trap: () => specialTrap(context),
+        monster: () => specialMonster(context),
+    };
+    await currentLuaLifecycle().executeSpecial(
+        game, active.file,
+        {
+            des: createDesBindings(operations),
+            selection: createSelectionBindings(() => context),
+        },
+        state => {
+            active.align = luaTableToArray(state.getGlobal('align'));
+        },
+    );
+    if (!game.level.flags.corrmaze)
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(active.allowFlips);
+}
+
+const BIGRM_RECTANGULAR_MAP = [
     '---------------------------------------------------------------------------',
     '|.........................................................................|',
     '|.........................................................................|',
@@ -10424,55 +10534,6 @@ const BIGRM_1_MAP = [
     '|.........................................................................|',
     '---------------------------------------------------------------------------',
 ];
-
-async function generateBigrm1(active) {
-    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
-    if (rn2(100) < 80) {
-        const terrains = [HWALL, IRONBARS, LAVAPOOL, TREE, CLOUD];
-        const terrain = terrains[rn2(terrains.length)];
-        const choice = rn2(6);
-        if (choice === 0) {
-            specialSelectionTerrain(
-                specialSelectionLine(context, 10, 8, 65, 8), terrain,
-            );
-        } else if (choice === 1) {
-            specialSelectionTerrain(
-                specialSelectionLine(context, 15, 4, 15, 13)
-                    .union(specialSelectionLine(context, 59, 4, 59, 13)),
-                terrain,
-            );
-        } else if (choice === 2) {
-            specialSelectionTerrain(
-                specialSelectionLine(context, 10, 8, 64, 8)
-                    .union(specialSelectionLine(context, 37, 3, 37, 14)),
-                terrain,
-            );
-        } else if (choice === 3) {
-            specialSelectionTerrain(
-                specialSelectionRect(context, 4, 4, 70, 13), terrain,
-            );
-            specialSelectionTerrain(
-                specialSelectionLine(context, 25, 4, 50, 4)
-                    .union(specialSelectionLine(context, 25, 13, 50, 13)),
-                ROOM,
-            );
-        } else if (choice === 4) {
-            specialSelectionTerrain(
-                specialSelectionFillRect(context, 5, 5, 69, 12), terrain,
-            );
-            for (let index = 0; index < 8; index++) {
-                const x = 6 + index * 8;
-                const y = 5 + (index % 2);
-                specialSelectionTerrain(
-                    specialSelectionFillRect(context, x, y, x + 6, y + 6),
-                    ROOM,
-                );
-            }
-        }
-    }
-    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
-    await finishMappedBigRoom(context);
-}
 
 const BIGRM_5_MAP = [
     '                            ------------------                            ',
@@ -10665,7 +10726,7 @@ function placeBigrm13Pillar(context, x, y) {
 }
 
 async function generateBigrm13(active) {
-    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
+    const context = beginMappedBigRoom(active, BIGRM_RECTANGULAR_MAP);
     const filter = rn2(8);
     for (let y = 0; y < 3; y++) {
         for (let x = 0; x < 7; x++) {
@@ -10693,7 +10754,7 @@ async function generateBigrm13(active) {
 }
 
 async function generateBigrm2(active) {
-    const context = beginMappedBigRoom(active, BIGRM_1_MAP);
+    const context = beginMappedBigRoom(active, BIGRM_RECTANGULAR_MAP);
     setSpecialRegionLighting(context, 1, 1, 73, 16, true);
 
     let darkness = null;
@@ -11107,13 +11168,17 @@ async function generateBigrm12(active) {
 
 const BIG_ROOM_GENERATORS = Object.freeze([
     null,
-    generateBigrm1, generateBigrm2, generateBigrm3, generateBigrm4,
+    null, generateBigrm2, generateBigrm3, generateBigrm4,
     generateBigrm5, generateBigrm6, generateBigrm7, generateBigrm8,
     generateBigrm9, generateBigrm10, generateBigrm11, generateBigrm12,
     generateBigrm13,
 ]);
 
 export async function generateBigRoom(active) {
+    if (active?.variant === 1) {
+        await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+        return;
+    }
     const generator = BIG_ROOM_GENERATORS[active?.variant];
     if (!generator) {
         throw new RangeError(`unknown Big Room variant ${active?.variant}`);
@@ -15977,11 +16042,10 @@ async function makelevel() {
     if (isRogueLevel && g._specialLevelPrototype === 'rogue')
         g._specialLevelPrototype = null;
 
-    // C mklev.c -> mkmaze.c: a named special level chooses its Lua variant,
-    // initializes nhlib's alignment shuffle, and lets splev_initlev() choose
-    // the random default lighting before the selected script issues its first
-    // des.* operation.  The interpreter/operation layer follows this seam;
-    // keeping the preamble here gives every special prototype one owner.
+    // C mklev.c -> mkmaze.c: a named special level chooses its Lua variant.
+    // Lua-owned variants perform the nhlib shuffle and level_init lighting
+    // draw inside the interpreter.  The remaining handwritten variants keep
+    // the equivalent preamble until their scripts replace them.
     if (g._specialLevelPrototype) {
         const prototype = g._specialLevelPrototype;
         const variants = prototype === 'bigrm' ? 13
@@ -15990,10 +16054,13 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
+        const luaOwnedSpecial = prototype === 'bigrm' && variant === 1;
         const align = ['law', 'neutral', 'chaos'];
-        for (let i = align.length; i > 1; i--) {
-            const j = rn2(i);
-            [align[i - 1], align[j]] = [align[j], align[i - 1]];
+        if (!luaOwnedSpecial) {
+            for (let i = align.length; i > 1; i--) {
+                const j = rn2(i);
+                [align[i - 1], align[j]] = [align[j], align[i - 1]];
+            }
         }
         // Room-form scripts do not call des.level_init(); their first
         // operation is des.room, so no splev_initlev lighting draw belongs
@@ -16015,9 +16082,10 @@ async function makelevel() {
         // likewise bypasses BOOL_RANDOM.
         const fixedLightingPrototype = prototype === 'juiblex'
             || prototype === 'baalz';
-        const defaultLit = roomForm || mazeGridPrototype.has(prototype)
-            || fixedLightingPrototype
-            ? false : !!rn2(2);
+        const defaultLit = luaOwnedSpecial ? null
+            : roomForm || mazeGridPrototype.has(prototype)
+                || fixedLightingPrototype
+                ? false : !!rn2(2);
         g._activeSpecialLevel = {
             prototype, variant,
             file: prototype === 'tut-1'

@@ -710,6 +710,10 @@ const MAP_CHAR_TYPES = {
     w: MATCH_WALL,
 };
 
+export function mapCharacterType(character) {
+    return MAP_CHAR_TYPES[character];
+}
+
 export function specialSelectionMatch(fragment) {
     const rows = fragment.split('\n');
     const width = Math.max(...rows.map(row => row.length));
