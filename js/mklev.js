@@ -9341,7 +9341,7 @@ async function makelevel() {
             || prototype === 'fire'
             || prototype === 'water'
             || prototype === 'astral'
-            || prototype === 'tut-1';
+            || /^tut-[12]$/.test(prototype);
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {
@@ -9469,7 +9469,7 @@ async function makelevel() {
             await generateSokobanLevel(g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'tut-1') {
+        if (/^tut-[12]$/.test(prototype)) {
             await generateSpecialAndFixup(generateLuaSpecialLevel,
                 g._activeSpecialLevel);
             return;
