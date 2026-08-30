@@ -38056,11 +38056,11 @@ live movement-ration, monster-scan, maintenance, negative-multi, `unmul()`, and
 `prayer_done()` path.  The new-game maintenance watermark is initialized in
 both modes so dismissing the welcome cannot allocate a phantom turn.
 
-A fresh non-public seed distinguishes the mechanism: one wait advances
-`hero_seq`, leaves live hero and pet movement credit, records a real monster
-scan, and has no `fastforward.turn` hit.  A fresh `#pray` spends one hero action,
-advances three global turns, increments gnostic conduct, and emits the combined
-opening/completion through the live occupation.  A mechanical audit rejects
+A fresh `#pray` spends one hero action, advances three global turns, increments
+gnostic conduct, and emits the combined opening/completion through the live
+occupation.  The former wait test was deleted because hero/pet movement credit
+and absence of one bridge ID were implementation bookkeeping rather than a
+Samurai mechanic.  A mechanical audit rejects
 reintroduction of every deleted Samurai replay token.  The existing seed0017
 bridge-free exact session and two normal-mode boundaries remain green only as
 lower-tier public regressions.
@@ -38250,16 +38250,15 @@ actor, projectile, prayer, spell, persistence, and tty owners.  The deleted
 the Priest production graph; the shared `fixture_screen.js` remains only for
 other explicitly guarded compatibility carriers.
 
-A fresh seed23501 discriminator does not read a recorded session.  Its first
-command stream exercises the old extended-command selector and now reaches the
-same live world in both modes with no Priest bridge.  Its second stream performs
-four waits before a save prompt while later unused bytes contain `Z` and
-`#turn`.  Before removal, those future bytes moved the pet from `(41,4)` to
-`(39,8)` and changed two unrelated monsters' positions and movement credit.
-Now both modes preserve the same live actor graph.  The tests assert final
-world state rather than helper order or a copied RNG transcript.  A mechanical
-audit independently rejects reintroduction of the removed classifier, helper,
-bridge, and module names.
+The earlier seed23501 normal/bridge-free world-comparison tests were deleted
+during the oracle audit because two paths through the same JavaScript engine
+were not an independent correctness contract.  The retained fresh seed23501
+witness instead performs `#pray`: gnostic conduct increments, three occupation
+turns elapse, the hero regains a complete movement ration, and the selected
+deity's opening and completion message is observable.  A mechanical audit
+independently rejects reintroduction of the removed classifier, helper, bridge,
+and module names; that structural result is not reported as projectile or
+extended-command behavior.
 
 The two existing seed0501 and seed0106 bridge-free public carriers remain exact
 as lower-tier regressions.  Alternate ranged outcomes, pantheons, unseen actor
@@ -38305,15 +38304,15 @@ three replay exports, the duplicate artifact reset, the exhaustive predicate,
 and its fallback graph are deleted.  `fastforward.js` now contains only the two
 explicit role-turn debts still recorded by the turn-scheduler registry.
 
-The fresh all-role discriminator runs every selectable role once in normal and
-bridge-free modes on different non-public seeds.  Before removal, all 13 live
-worlds already matched but every normal run recorded
-`fastforward.pre-mklev`; that proved the wrapper was redundant rather than an
-essential compatibility implementation.  After removal, role, race,
-alignment, gods, position, level, attributes, movement, inventory including
-contained objects, pet state, discoveries, and turn state match in both modes
-with no pre/post/mineralize bridge.  This oracle is an observable startup-world
-invariant; it does not copy an RNG transcript or assert helper order.
+The former fresh all-role discriminator ran every selectable role in normal
+and bridge-free modes and serialized the complete startup world.  It was
+deleted during the oracle audit: both sides executed the same JavaScript
+implementation, so whole-world agreement could not establish correctness, and
+its later replacement checked only that a hero and tame pet existed.  Startup
+ownership is instead supported by the removed bridge graph plus focused
+`u_init`, reroll, carry, race substitution, pauper/nudist, artifact, and fresh
+Tourist command/state witnesses.  Those establish their named C boundaries;
+they do not create an all-role runtime-mechanics claim.
 
 The startup entries remain partial because alternate legal races, genders,
 alignments, option families, dungeon configurations, longer pet combinations,
@@ -38357,14 +38356,12 @@ suspension before the suffix was interpreted did not prevent those future
 bytes from changing the already-created world.
 
 The classifier, bridge ID, placeholder object mutation, and scheduler exclusion
-are deleted together.  Normal and bridge-free ordinary Valkyries now retain the
-same generated object graph and enter the same actor scheduler.  A fresh
-seed27001 witness performs four wait turns, enters the save prompt, and leaves
-unused `#chat` bytes after that suspension.  Before removal, normal mode had an
-extra type475 boulder at `(26,17)` while bridge-free mode did not.  Now hero,
-turn, message, complete floor-object summary, and live actor positions, HP, and
-movement agree across modes with zero bridge hits.  The test observes world
-state rather than a room-fill callback or RNG-call transcript.
+are deleted together.  Ordinary Valkyries now retain the live generated object
+graph and enter the actor scheduler.  A fresh bridge-free seed27001 witness
+performs four waits, enters the save prompt, and leaves unused `#chat` bytes
+after that suspension.  The hero remains still while current actor positions,
+HP, or inventories change.  Static source audit, rather than a copied floor
+snapshot, rejects reintroduction of the trace-specific boulder mutation.
 
 The Valkyrie subsystem remains partial: the separate pit/level-transition path
 still owns seeded replay, role-specific commands, detection mutations, and
@@ -38412,15 +38409,13 @@ shared live movement ration, current actor graph, ordinary search, terrain-
 checked descent, destination level construction, branch placement, and actual
 fillable-room count in normal and bridge-free modes.
 
-Fresh seed27002 distinguishes the mechanism without reading a recorded
-session.  Before removal, the selector moved the hero from the live `(63,12)`
-result to fixed `(52,16)`, advanced move 9 to move 16, relocated the pet and an
-unrelated monster, and displayed `You descend the stairs.--More--`; the live
-world correctly retained depth one and said `You can't go down here.`  After
-removal, the complete bounded hero/depth/turn/message, floor-object, and actor
-summaries agree across modes with zero bridge hits.  The test does not demand
-that this fresh seed reproduce the old public journey; it demands that current
-terrain own the commands.
+Fresh seed27002 historically distinguished the mechanism without reading a
+recorded session: the removed selector moved the hero from live `(63,12)` to
+fixed `(52,16)`, forced later time and descent, and relocated current actors.
+The resulting normal/bridge-free whole-world comparison was deleted during the
+oracle audit because both sides were the same implementation.  Current evidence
+for this slice is structural removal plus lower-tier public regression; a fresh
+source-derived successful descent/room-state witness remains open.
 
 The Valkyrie registry entry remains partial for alternate races/options, wider
 actor and terrain states, successful fresh level transitions, longer
@@ -38571,23 +38566,21 @@ flowchart LR
     E --> F[per-shot split, flight, settlement]
 ```
 
-Fresh seed28001 performs four ordinary waits and compares bounded hero,
-movement, message, inventory, complete floor-object, and live-actor state
-between normal and bridge-free modes.  Fresh seed28003 compares startup with a
-real `f` command: the alternate sling becomes primary, the club becomes
+The former seed28001 wait test was deleted because pet existence, movement
+credit, and bridge bookkeeping did not prove an actor mechanic.  Fresh
+seed28003 instead compares startup with a real `f` command: the alternate sling becomes primary, the club becomes
 secondary, and pinned C's low-tech bonus plus fresh `rnd(2)=2` outcome removes
 and lands two flint units.  The same seed with `1f` still consumes that source
 selection but caps it afterward, removing and landing exactly one flint across
 the scheduler-separated fireassist continuation.  The test encodes those
 world deltas but no pet
 path, floor coordinate, later RNG transcript, projectile endpoint, helper
-call, or fixed prose.  Both fresh invariants pass with zero Caveman bridges,
-and fresh seed28100 first uses ordinary commands with `pushweapon` disabled to
+call, or fixed prose.  Fresh seed28100 first uses ordinary commands with `pushweapon` disabled to
 move the sling outside both weapon slots.  Fireassist then discovers that inventory
 identity, moves the old primary to the alternate slot, wields the sling, and
 fires the readied flint.  A separate live arena rejects a known-cursed sling
 and prefers a later known-safe match over an earlier unknown fallback.  Those
-tests assert only final slot, inventory, floor-identity, and bridge state.  The
+tests assert only final slot, inventory, and floor-identity state.  The
 autoquiver arena then proves that a later current-sling flint outranks an
 earlier rock and dart, while a second arena proves a missile outranks
 alternate-sling flint and excludes unseen or artifact darts.  Manual
@@ -38838,12 +38831,12 @@ alternate clock.
 
 Before this slice, the same fresh one-wait probe reached `fastforward.turn` in
 normal mode and the forbidden `scheduler.default-replay-gap` in bridge-free
-mode for both roles.  `js/allmain.js` now puts every legal Archeologist and
-Barbarian race on the shared source movement ration, current `fmon`/`dog_move`
-scan, and live global maintenance.  A fresh bridge-free matrix over all 13
-selectable roles proves that each constructs a living hero and tame current
-actor with zero bridge use; the role-specific transitions below supply the
-stronger mechanic oracles.
+mode for both roles.  `js/allmain.js` now routes Archeologist and Barbarian
+through the shared source movement ration, current `fmon`/`dog_move` scan, and
+live global maintenance.  The former legal-race loops and all-role matrix were
+deleted because pet existence and movement counters were not mechanics
+oracles; only the role-specific transitions below are claimed as behavioral
+evidence.
 
 Two adversarial witnesses distinguish a live clock from a replay counter.
 With seed 31222, Archeologist intrinsic Searching reveals an adjacent teleport
@@ -38859,7 +38852,7 @@ This owner remains `partial`.  Explicit normal-mode compatibility classifiers
 still retain `fastforward.turn`, `scheduler.default-replay-gap`, and seeded
 role modules for represented legacy paths.  Wider actor, terrain, interruption,
 option, persistence, and sealed
-strata are also open.  The latest managed default gate passes 453/453 with 50
+strata are also open.  The latest managed default gate passes 444/444 with 50
 lane-audited files and a clean 124-production-file, 7-guarded-module,
 19-fixture-module bridge audit.
 
@@ -38912,16 +38905,18 @@ All Ranger starts now use the source movement ration and current
 `fmon`/`fobj` scheduler.  `f` always reaches shared fireassist, and the old
 coordinate/sink classifier, fixed pet/RNG routine, dedicated Ranger pager/fire
 handler, and `fastforward_ranger_step()` exporter are deleted and mechanically
-forbidden.  Three state-only Ranger witnesses cover the fresh collision,
-fireassist inventory/weapon/actor effects, and all four legal races without
+forbidden.  The remaining state-only Ranger witness covers live fireassist
+inventory, weapon-slot, arrow-quantity, and elapsed-turn effects without
 asserting source lines, collaborator calls, screens, RNG transcripts, or a
-second execution mode as the oracle.
+second execution mode as the oracle.  The fresh-collision wait and legal-race
+loops were deleted because pet existence or movement credit did not establish
+their claimed mechanics.
 
 This owner remains `partial`.  General projectile gaps include mid-volley
 interruption, alternate launcher failure continuations, non-bow multishot
 families, special terrain/floor effects, persistence, options, and sealed
 strata.  Other explicitly classified Knight, Tourist, and Wizard compatibility
-paths also remain.  The latest managed default gate passes 453/453 with 50
+paths also remain.  The latest managed default gate passes 444/444 with 50
 lane-audited files and a clean 124-production-file, 7-guarded-module,
 19-fixture-module bridge audit.
 
@@ -38973,22 +38968,23 @@ interval to the existing live helpless scheduler.  Seed 44007 spends one
 charge, identifies the wand, advances from turn 1 through a source-selected
 multi-turn sleep with current actors, clears helpless state, and wakes through
 the live timeout owner.  A sleep-resistant control spends and learns
-the wand but never installs helplessness.  Fresh human and gnome Healers share
-the live scheduler, and future `szf` text no longer changes earlier state.
+the wand but never installs helplessness.  In the future-`szf` control, the
+hero remains still while current actor positions, HP, or inventories change;
+future text no longer changes earlier state.
 The early table, aggregate replay module, fixed pet/gold mutations, late-search
 branch, and apple exception are deleted and mechanically forbidden.
 
-The behavioral tests also share one bridge-free role-outcome serializer now;
-base-role, Ranger, and Healer witnesses no longer maintain three copies of
-actor, floor, trap, inventory, environment, and bridge-ledger plumbing.  Their
-oracles are C-derived or command-derived state transitions, not equality with
-a second mode of this implementation.
+The behavioral tests share a deliberately narrow bridge-free role-outcome
+collector.  It retains only fields used by command-derived oracles and does not
+serialize role/race/HP/depth, floor state, actor movement/tame counters, carrier
+bookkeeping, or bridge-ledger shape.  A no-op mutation of the live actor
+executor makes the Healer actor-transition witness fail.
 
 This owner remains `partial`.  Directional ray behavior, monster resistance
 observation, early combat wakeup, alternate sleep sources, interruption
 presentation, persistence, options, and sealed strata remain open.  Explicit
 Knight, Tourist, and Wizard compatibility paths also remain.  The latest
-managed default gate passes 453/453 with 50 lane-audited files and a clean
+managed default gate passes 444/444 with 50 lane-audited files and a clean
 124-production-file, 7-guarded-module, 19-fixture-module bridge audit.
 
 ## 1026. Monk commands and meat conduct use live world ownership
@@ -39035,10 +39031,10 @@ thirteen cells of total displacement from its thirteen direction bytes.
 
 `js/allmain.js`, `js/cmd.js`, `js/detect.js`, and `js/display.js` now use only
 the shared live owners, and `js/monk_search.js` is deleted.  The fresh former-
-prefix witness stays within the physical displacement bound, uses no bridge,
+prefix witness stays within the physical displacement bound,
 and reports the actual missing inventory selection instead of fabricating a
-corpse.  Fresh lawful, neutral, and chaotic Monks all allocate current tame
-actors.  Separate live-state witnesses prove carried and floor goblin-corpse
+corpse.  The former alignment loop was deleted because current-pet existence
+did not prove a mechanic.  Separate live-state witnesses prove carried and floor goblin-corpse
 occupation/removal, ordinary and rotten meat guilt, alignment abuse, and a
 Rogue control which breaks vegetarian conduct without receiving the Monk-only
 penalty.  None uses a public trace, a second execution mode, a call transcript,
@@ -39049,5 +39045,5 @@ acid, cannibalism, post-effects, interruptions, relocation, partially eaten
 stacks, polymorph diets, tins, globs, worn and non-food objects, wider movement,
 terrain, actor, run, search, pickup, and kick families, tty continuation
 breadth, persistence, and a sealed stratum remain open.  The managed default
-gate passes 453/453 across 50 behavioral files; the bridge audit now covers
+gate passes 444/444 across 50 behavioral files; the bridge audit now covers
 124 production files, 7 guarded replay modules, and 19 fixture modules.

@@ -56,10 +56,11 @@ Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
 ration, command, prayer, projectile, level-generation, and current-world actor
 paths.  Pre-mklev and all-role inventory startup
 now also have one live owner; their pre/post replay exports, exhaustive-role
-fallback, and unused mineralize transcript are deleted.  Fresh bridge-free
-execution for every selectable role now constructs a live hero and tame actor
-with zero bridge use; role-specific C/command-derived state transitions supply
-the mechanic evidence.  Archeologist and Barbarian no longer fall
+fallback, and unused mineralize transcript are deleted.  The former all-role
+"hero and pet exist" loop is no longer cited as mechanics evidence: it could
+pass with an inert scheduler and repeated the same weak assertion across roles.
+Role-specific C/command-derived state transitions supply the represented
+mechanic evidence instead.  Archeologist and Barbarian no longer fall
 through to `fastforward.turn` or `scheduler.default-replay-gap`; they use the
 same source movement ration, live actor scan, and global maintenance as the
 other represented roles.  Archeologist intrinsic Searching is exercised by a
@@ -258,9 +259,11 @@ be reported as bridge-free acceptance.
 default-lane `.test.js` file may not read a recorded `sessions/*.session.json`
 input, import the public RNG-parity helpers, use a mock/spy API, or introduce a
 named `calls`/`callOrder`/`invocations` transcript collector. It also rejects
-the known whole-world normal/bridge-free self-oracle and test self-discovery
-patterns. Exact bridge-free replays, character-selection traces, Priest/Race
-startup traces, and the
+the known whole-world normal/bridge-free self-oracle, test self-discovery,
+production-source-text checksum, and copied-source checksum patterns. Role
+scheduler tests may not use bridge-ledger shape or mere tame-pet existence as
+their mechanics oracle. Exact bridge-free replays, character-selection traces,
+Priest/Race startup traces, and the
 trap-victim trace therefore use `.public-regression.js`; only the fresh
 quiet-role runtime and fail-loud policy checks remain in
 `bridge_free.test.js`. This audit prevents known traces and the most explicit

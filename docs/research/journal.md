@@ -175,6 +175,7 @@ No full engine-only corpus, normal suite, held-out judge, stage, commit, push,
 publication, or submission ran; the accepted aggregate remains unchanged.
 
 ---
+
 ### [2026-07-30 12:47 EEST, journal block 935] {#seed0360 #input344 #wizard2 #hell-tweaks #selection #transparent-map #sp-lev #diagnosis #source-boundary}
 
 **Witness and earliest divergence:** the first Wizard2 implementation reaches
@@ -99879,5 +99880,63 @@ Knight, Tourist, Wizard, and other explicit compatibility families remain the
 next bridge-removal surface.  No corpus, scorer, public-regression lane, sealed
 trace, push, publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
+
+---
+
+### [2026-08-30 09:38 EEST, journal block 3240] {#test-quality #change-detector #fake-acceptance #scheduler #source-checksum #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and earliest weak oracle:** block 3239 was
+production progress: the Monk replay carrier and fabricated eating state were
+removed and replaced by live command and object lifecycle.  Knight work was
+then paused on the user's instruction to clean test slop.  The first remaining
+weak acceptance claim was the all-role scheduler loop: it asserted only that a
+role, positive hero coordinates/HP, and a tame actor existed.  A scheduler that
+never executed an actor could pass it.  Legal-race loops for Archeologist,
+Barbarian, Healer, Monk, and Ranger repeated the same pet-existence or movement-
+counter checks.  Caveman and Samurai mechanics tests also inspected bridge-
+ledger or movement bookkeeping instead of requiring the claimed world change.
+Separately, the themeroom metadata test copied every Lua room name into a second
+literal list and first checksummed the pinned source against that copy.
+
+**Portfolio, prediction, and decision:** the critical-debugging portfolio kept
+five evidence mechanisms separate: C/Lua rules, command-caused world state,
+bridge-free fail-loud policy, static lane policy, and public transcript
+regression.  Only the first two establish mechanics.  Delete the nine tests
+whose only oracle was existence, legal-stratum repetition, movement counters,
+or bridge bookkeeping.  Remove unused actor/floor/role/race/HP/depth/carrier
+serialization from the shared role collector.  Retain the independent Lua-to-
+generated-metadata comparison but delete the intermediate literal checksum.
+Strengthen Rogue, Healer, and Valkyrie waits so the hero stays still while
+current actor positions, HP, or inventories must actually change.  Keep exact
+RNG contracts only where pinned C and the externally graded PRNG stream make
+them independent behavior; do not delete them by syntax alone.
+
+**Adversarial evidence and measured effect:** commit `40262e5` deletes **281
+lines** and adds **90** across the test-policy batch.  Temporarily replacing
+`executeLiveQuietMonsterScan()` with a no-op made both Rogue witnesses plus the
+Healer and Valkyrie actor-transition witnesses fail; three unrelated Healer
+sleep tests remained green.  Restoring the source made the seven-test mutation
+portfolio green again, and `git diff -- js/allmain.js` was empty.  The final
+focused scheduler portfolio passes **21/21**.  One guarded `npm test` invocation
+runs the audits followed by one serial behavioral process and passes all
+**444/444** behavioral tests across **50 files** in 4.4 seconds.  The bridge
+audit remains **124 production files, 7 guarded replay modules, and 19 fixture
+modules**; the owned process exited and no matching runner remains.
+
+**Falsified claims, registry correction, and next blocker:** actor allocation
+counters and bridge-ledger shape were not needed to detect an inert scheduler;
+observable actor state was.  Repeating a weak assertion across thirteen roles
+did not create all-role mechanics coverage, and checking an upstream source
+against a copied literal did not validate the port.  The ownership registry,
+original C/Lua map, and acceptance regime no longer cite those deleted
+witnesses or claim all-role/legal-race scheduler coverage; the lane audit now
+rejects production-source
+text checksums, source-copy checksums, scheduler bridge-ledger oracles, and the
+known pet-existence-only oracle in addition to the earlier mock/transcript/self-
+comparison patterns.  This scanner catches explicit shapes, not every semantic
+change detector.  The remaining RNG-rich behavioral files still need bounded,
+case-by-case provenance review before Knight work resumes.  No corpus, scorer,
+public-regression lane, sealed trace, push, publication, hidden measurement, or
+animation work ran; `public-session-status.md` is unchanged.
 
 ---
