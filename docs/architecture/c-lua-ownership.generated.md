@@ -6,7 +6,7 @@ Scope: Initial parity-critical ownership inventory; not yet exhaustive.
 
 | Implemented | Partial | Stubbed | Absent | Total |
 | ---: | ---: | ---: | ---: | ---: |
-| 2 | 32 | 0 | 0 | 34 |
+| 2 | 33 | 0 | 0 | 35 |
 
 ```mermaid
 flowchart LR
@@ -42,6 +42,7 @@ flowchart LR
     n_samurai_pet_turns["Samurai pet turns, altar run, and prayer occupation<br/>partial"]
     n_rogue_actor_scheduling["Rogue and Rogue-Orc actor scheduling<br/>partial"]
     n_priest_passive_projectiles["Priest passive projectiles and extended commands<br/>partial"]
+    n_valkyrie_actor_scheduling["Valkyrie actor scheduling and generated room state<br/>partial"]
     n_tty_display["TTY display, cursor, and input-boundary capture<br/>partial"]
     n_level_transition_persistence["Level transitions, save/restore, and bones<br/>partial"]
     n_runtime_entry --> n_startup_pre_mklev
@@ -138,6 +139,7 @@ flowchart LR
     n_turn_scheduler --> n_samurai_pet_turns
     n_turn_scheduler --> n_rogue_actor_scheduling
     n_turn_scheduler --> n_priest_passive_projectiles
+    n_turn_scheduler --> n_valkyrie_actor_scheduling
     n_samurai_pet_turns --> n_turn_scheduler
     n_samurai_pet_turns --> n_startup_role_inventory
     n_samurai_pet_turns --> n_hero_melee_two_weapon
@@ -145,6 +147,9 @@ flowchart LR
     n_rogue_actor_scheduling --> n_turn_scheduler
     n_priest_passive_projectiles --> n_turn_scheduler
     n_priest_passive_projectiles --> n_tty_display
+    n_valkyrie_actor_scheduling --> n_turn_scheduler
+    n_valkyrie_actor_scheduling --> n_level_generation
+    n_valkyrie_actor_scheduling --> n_startup_role_inventory
     n_level_transition_persistence --> n_level_generation
     n_level_transition_persistence --> n_turn_scheduler
 ```
@@ -179,10 +184,11 @@ flowchart LR
 | Floor and monster-inventory stack merging | partial | js/object_merge.js<br/>js/mklev.js<br/>js/monster_inventory.js<br/>js/object_timers.js | none | Ordinary compatible stacks and globs share one survivor/free boundary across floor stacking and monster add_to_minv. Quantity, ordinary and coin weight, weighted age, name and knowledge promotion, bypass propagation, incoming timer deletion, glob delay averaging, and swallowed LOST_STOLEN compatibility are live. Unpaid same-price and bill fixups, mail-command identity, lit-object light-source merging, hero addinv and worn-slot reconciliation, contained/migrating/buried chains, pudding presentation, remaining how_lost and knowledge variants, and a sealed stratum remain open. |
 | Ordinary monster-carried figurine transformation | partial | js/monster_inventory.js<br/>js/swallowed_throw.js<br/>js/cmd.js<br/>js/monmove.js<br/>js/allmain.js<br/>js/figurine_timer.js<br/>js/object_timers.js<br/>js/figurine.js<br/>js/mklev.js<br/>js/display.js | none | The ordinary cursed wumpus figurine is source-shaped when it crosses the shared monster acquisition boundary and transforms from a visible or invisible leocrotta carrier, including pool attribution, overdue silence, blocked-placement retry, and post-presentation deletion. Ordinary floor pickup, deferred hero theft, primary and ambient generated inventory, hardcoded special-level transfer, shrine, court, shop, pet, covetous, unicorn-gift, bullwhip, and live swallowed generic-throw paths call that boundary in production; the swallowed route directly witnesses timer replacement. Stack merging is tracked separately; figurines themselves are nonmergeable. Other thrown or kicked catches, special swallowed objects, polymorph transfer, light snuffing, knowledge loss, named and long-worm carrier attribution, See-invisible, alternate locomotion, hidden spawned forms, special familiar state, inactive cached-level timing, and a sealed stratum remain open. |
 | Lamp application and light transitions | partial | js/cmd.js<br/>js/swallowed_throw.js<br/>js/monster_inventory.js<br/>js/light.js<br/>js/object_timers.js<br/>js/shk.js<br/>js/senses.js<br/>js/vision.js | none | Oil lamps, brass lanterns, and magic lamps own the ordinary live doapply transaction, including timed or untimed start/stop, source branch order, mobile light, blind presentation, cursed RNG and glib state, normal-use shop fees, and lit magic-to-oil timer acquisition during djinni release. They also own swallowed mpickobj link-before-snuff ordering, unused-fuel restoration, and sighted/blind presentation. Alternate unpaid djinni-release billing, mute or non-speaking shopkeeper presentation, threshold warning prose, other light-source families, non-swallowed carrier/location transitions, and a sealed stratum remain open. |
-| Hero, monster, and global-turn scheduler | partial | js/allmain.js<br/>js/monmove.js | fastforward.turn<br/>fastforward.ranger-turn<br/>scheduler.default-replay-gap<br/>seeded role replay modules | Fresh-seed Samurai wait/prayer and the represented Samurai, Rogue, and Priest carriers use live actor/global scheduling. Other normal-mode roles still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open. |
+| Hero, monster, and global-turn scheduler | partial | js/allmain.js<br/>js/monmove.js | fastforward.turn<br/>fastforward.ranger-turn<br/>scheduler.default-replay-gap<br/>seeded role replay modules | Fresh-seed Samurai wait/prayer plus the represented Samurai, Rogue, Priest, and ordinary non-pit Valkyrie carriers use live actor/global scheduling in both modes. Other normal-mode roles and the Valkyrie pit path still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open. |
 | Samurai pet turns, altar run, and prayer occupation | partial | js/allmain.js<br/>js/monmove.js<br/>js/pray.js | none | Samurai now uses the shared source movement-ration, live fmon/dog_move scan, once-per-turn maintenance, hero_seq, negative-multi, and prayer_done continuation in both bridge-free and normal runner modes. The aggregate Samurai RNG ranges, hard-coded hero/pet path tables, altar classifier, timed-action counter, prayer transcript, lichen combat branch, and doorway-memory branch are deleted. The lichen carrier now reaches shared primary/off-hand melee and the door carrier reaches shared door/vision ownership. Wider pet candidates, combat modifiers, terrain, interruption, divine outcomes, save/restore, and a sealed stratum remain open. |
 | Rogue and Rogue-Orc actor scheduling | partial | js/allmain.js<br/>js/monmove.js<br/>js/cmd.js<br/>js/invent.js | none | All Rogue roles, races, coordinates, command streams, and normal/bridge-free modes now enter the shared source movement ration, actor/trap scheduling, command parsing, and persistence owners. The explore, Friday-13, Orc, and chargen classifiers; hard-coded hero/pet paths; command counter; maintenance bypass; elapsed-turn override; aggregate RNG tables; and three replay modules are deleted. Alternate unseen actors, trap kinds, bindings, options, dungeon branches, long save/restore histories, and a sealed stratum remain unverified. |
 | Priest passive projectiles and extended commands | partial | js/allmain.js<br/>js/cmd.js<br/>js/monmove.js<br/>js/pray.js<br/>js/invent.js<br/>js/exper.js<br/>js/end.js<br/>js/gamelog.js | none | Normal and bridge-free Priest execution now share the live source-ration, prayer, projectile lifecycle, extended-command, command state, chronicle, overview, and naming owners. Both replayMoves classifiers, the command-swallow path, hard-coded pet positions, aggregate RNG, 136 stored screens, and priest_extcmd.js are deleted. Alternate ranged outcomes, pantheons, command histories, unseen actors/options, save/restore, dungeon branches, and sealed strata remain unverified. |
+| Valkyrie actor scheduling and generated room state | partial | js/allmain.js<br/>js/mklev.js<br/>js/monmove.js<br/>js/cmd.js<br/>js/detect.js<br/>js/valk_pit.js | legacy-only seeded-replay.valkyrie-pit | Future #chat text no longer injects a post-mklev boulder or excludes Valkyrie from the live actor scheduler. Ordinary non-pit Valkyries share generated room state and source movement ownership in both modes. The Valkyrie pit/level-transition replay, alternate races/options, wider actor and terrain states, save/restore histories, and a sealed stratum remain open. |
 | TTY display, cursor, and input-boundary capture | partial | js/terminal.js<br/>js/game_display.js<br/>js/display.js<br/>js/query.js<br/>js/options.js<br/>js/cmd.js<br/>js/jsmain.js | snapshot-painter.fixture-screen | Snapshot painters remain in legacy mode and the full tty/window surface has no sealed bridge-free gate. |
 | Level transitions, save/restore, and bones | partial | js/cmd.js<br/>js/save.js<br/>js/mklev.js | stress and ten-deaths top-level fixtures | Fresh save/restore chains and bones have not been exercised by a sealed bridge-free corpus. |
 

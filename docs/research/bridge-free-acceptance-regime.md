@@ -57,8 +57,10 @@ command, prayer, and projectile paths.  Pre-mklev and all-role inventory startup
 now also have one live owner; their pre/post replay exports, exhaustive-role
 fallback, and unused mineralize transcript are deleted.  The next ordered
 replacement is the remaining seeded room-fill and role-turn compatibility
-paths.  Those later slices have focused fresh witnesses and selected public
-regressions, but still no sealed gate or hidden measurement.
+paths.  Future Valkyrie `#chat` text no longer injects a post-generation
+boulder or selects a second actor scheduler; the Valkyrie pit and other named
+role paths remain.  Those later slices have focused fresh witnesses and
+selected public regressions, but still no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

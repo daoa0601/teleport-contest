@@ -98717,3 +98717,72 @@ the requested batched local commits; seeded room-fill and remaining role-turn
 compatibility paths remain next.
 
 ---
+
+### [2026-08-30 05:47 EEST, journal block 3206] {#bridge-free #valkyrie #chat #room-fill #actor-scheduler #future-input #fresh-seed #change-detector #critical-debugging-portfolio #architecture #process-safety}
+
+**Contract and portfolio ranking:** the remaining portfolio separated future-
+input level mutation, coordinate-selected role schedulers, aggregate default
+turn replay, and Wizard/level-transition replay.  The cheapest high-information
+boundary was `_valkChatPath`: after `mklev()` returned, any future `#chat` bytes
+in the complete input selected both a fixed room object mutation and a second
+Valkyrie scheduler.  Success required those bytes to affect neither the
+generated level nor earlier actor turns.  Recovering one public boulder or
+retaining the classifier behind a legacy gate were explicit non-results.
+
+**Independent red evidence and earliest divergence:** fresh seed27001 performs
+four wait turns, then reaches a save prompt before the remaining `#chat` suffix
+is interpreted.  Before removal, normal and bridge-free modes agreed on hero
+`(27,11)`, move 1, the save prompt, and the initial actors in the zero-turn
+minimal probe, but normal mode alone contained an additional type 475 boulder at
+`(26,17)` with `visionBlocker:false`.  This is the earliest possible
+divergence: a post-`mklev()` object was injected before `dochat()` could run.
+The live-world test was **0/1**.  It reads no public trace and compares bounded
+object/actor state rather than mock calls, callback order, or a complete RNG
+transcript.
+
+**Source evidence and implementation decision:** pinned
+`allmain.c:newgame()` finishes `mklev()` before command dispatch;
+`mklev.c`/`mkroom.c` own ordinary object construction; `cmd.c` and
+`sounds.c:dochat()` act only on the current command; and
+`allmain.c:moveloop_core()` schedules current `fmon`/movement state.  No owner
+can consult an unread command suffix.  Deleted the `#chat` classifier, the
+`valkyrie.chat` bridge ID, the unregistered boulder mutation, and the
+live-scheduler exclusion as one cross-boundary compatibility owner.  The audit
+now rejects both removed tokens.
+
+**Measured effect, falsified hypotheses, and next blocker:** the expanded fresh
+witness now includes four elapsed turns before the save suspension and passes
+**1/1**; together with bridge-policy controls it passes **5/5**, with equal
+complete floor-object summaries, live actors, hero, turn, and message state and
+zero bridge hits.  The bridge audit remains green across **125 production
+files, 11 guarded replay modules, and 19 fixture modules**.  The fixed boulder
+was not a harmless display placeholder because it altered the world object
+graph; future command text was not legitimate room-fill configuration; and
+the chat carrier did not require a second scheduler.  The separate Valkyrie
+pit/level-transition replay remains the next role-local gap, followed by other
+seeded room-fill and role-turn paths.  No full behavioral suite, corpus, scorer,
+public-regression lane, sealed trace, push, publication, hidden measurement, or
+animation work ran for this slice yet.
+
+---
+
+### [2026-08-30 05:49 EEST, journal block 3207] {#valkyrie #behavioral-gate #bridge-audit #test-lanes #ownership #process-safety}
+
+**Post-implementation gate:** one guarded default behavioral run passed all
+**371/371** named tests across **42** files and exited normally.  The fresh
+Valkyrie plus bridge-policy set remains **5/5**.  The bridge audit passes **125
+production files, 11 guarded replay modules, and 19 fixture modules**; the
+behavioral-lane audit passes all 42 default files without recorded-session,
+public-parity, mock/spy, or named call-transcript dependencies.  Ownership
+generation/checking, registry JSON, changed JavaScript syntax, and diff hygiene
+pass.
+
+**Process and evidence limit:** the default verifier was singular, owned to
+normal exit, and the post-run guard is empty.  No full engine-only corpus,
+scorer, public-regression lane, sealed corpus or trace inspection, push,
+publication, official hidden measurement, or animation work ran.
+`public-session-status.md` remains unchanged.  The Valkyrie chat slice is ready
+for batched local commits; the separately mapped Valkyrie pit/level-transition
+owner remains the next role-local target.
+
+---

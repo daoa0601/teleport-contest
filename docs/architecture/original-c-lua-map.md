@@ -38314,3 +38314,53 @@ and a sealed stratum are not exhausted.  Seeded room-fill compatibility paths
 and role-turn replays remain separate mapped debts.  Lua owns dungeon data and
 special-level construction beneath the live initialization boundary; it does
 not own a replay alternative.
+
+## 1017. Future Valkyrie chat text cannot rewrite level generation
+
+```mermaid
+flowchart TD
+    A[newgame] --> B[mklev builds rooms and ordinary objects]
+    B --> C[u_on_upstairs and makedog]
+    C --> D[rhack reads the current command]
+    D --> E{command spends time?}
+    E -- yes --> F[moveloop_core scans live fmon and dog_move]
+    E -- no --> D
+    F --> D
+
+    G[future replayMoves contains #chat] -. deleted .-> H[inject boulder at 26,17]
+    G -. deleted .-> I[exclude Valkyrie from live scheduler]
+    H -. deleted .-> C
+    I -. deleted .-> F
+```
+
+Pinned `allmain.c:newgame()` completes `mklev()` before the command loop.
+Ordinary room objects come from `mklev.c`/`mkroom.c` and the current PRNG/world
+state.  `sounds.c:dochat()` is reached only when `cmd.c` dispatches the current
+extended command; bytes which have not been read cannot be an input to either
+level construction or earlier actor turns.  `moveloop_core()` likewise chooses
+actors from current movement credit and the `fmon` graph rather than from a
+future command name.
+
+The former JavaScript path violated both boundaries.  After live `mklev()` had
+returned, a full-input `/\#chat/` classifier inserted an ad hoc boulder at
+`(26,17)`, with a deliberately false `visionBlocker`, then excluded that
+Valkyrie from the shared live-role scheduler.  The object did not come from
+`mksobj()`, room filling, or the level's generated object chain.  A save
+suspension before the suffix was interpreted did not prevent those future
+bytes from changing the already-created world.
+
+The classifier, bridge ID, placeholder object mutation, and scheduler exclusion
+are deleted together.  Normal and bridge-free ordinary Valkyries now retain the
+same generated object graph and enter the same actor scheduler.  A fresh
+seed27001 witness performs four wait turns, enters the save prompt, and leaves
+unused `#chat` bytes after that suspension.  Before removal, normal mode had an
+extra type475 boulder at `(26,17)` while bridge-free mode did not.  Now hero,
+turn, message, complete floor-object summary, and live actor positions, HP, and
+movement agree across modes with zero bridge hits.  The test observes world
+state rather than a room-fill callback or RNG-call transcript.
+
+The Valkyrie subsystem remains partial: the separate pit/level-transition path
+still owns seeded replay, role-specific commands, detection mutations, and
+depth-two room/stair selection.  Alternate races, options, terrain, actor
+graphs, persistence histories, and a sealed stratum also remain open.  Lua owns
+no alternate chat or scheduler path.
