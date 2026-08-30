@@ -99807,3 +99807,77 @@ push, publication, official hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 09:27 EEST, journal block 3238] {#monk #diagnosis #future-input #corpse #vegetarian #critical-portfolio #red-witness}
+
+**Previous-turn classification and independent portfolio:** block 3237 was
+progress: it committed the test-policy correction and made the next acceptance
+oracle honest.  The Monk portfolio then kept five mechanisms distinct: future-
+input classifier selection, current actor scheduling, ordinary command/terrain
+ownership, corpse carrier/eating lifecycle, and trace-only display overrides.
+Attractive non-results were making `_monkNorthPath` bridge-free-only, deleting
+only its RNG table, or preserving the fabricated corpse and turn counters while
+calling the result live.
+
+**Earliest divergences and red evidence:** fresh neutral Monk seed45003 starts
+at `(67,4)`.  Supplying the former exact move prefix made normal execution hit
+`seeded-replay.monk-search`, teleport to `(54,9)`, force turn 19, fabricate a
+goblin corpse, and emit guilty-eating prose despite the requested inventory
+letter being unavailable.  The thirteen physical direction bytes can move the
+hero by at most thirteen total cells, so this violates a command-derived bound
+without comparing two modes of the JS engine.  In a separate live arena,
+carried goblin meat incremented conduct but left a Monk's alignment at 10
+instead of source-predicted 9.  Fresh lawful, neutral, and chaotic actor-turn
+controls were already green, falsifying the hypothesis that the shared Monk
+movement ration itself was missing.
+
+**Source prediction and decision:** pinned `allmain.c` has no Monk/move-prefix
+scheduler.  Pinned `eat.c:doeat()` touches the selected floor or carried object,
+routes corpses through `eatcorpse()`, and calls `violated_vegetarian()` for
+meat; that function emits guilt and calls `adjalign(-1)` only for Monks, while
+negative alignment increments abuse.  Delete the classifier, fixed hero/pet/
+goblin/corpse/turn/search/kick/pickup/eating branches, replay module, and color
+exceptions as one slice.  Complete one shared floor/carried corpse occupation
+and Monk conduct owner rather than retaining the public north-room carrier.
+
+---
+
+### [2026-08-30 09:27 EEST, journal block 3239] {#monk #implementation #eatcorpse #adjalign #behavioral-gate #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** commit `ed2fed6` deletes
+`js/monk_search.js` and all `_monkNorthPath` state.  Ordinary movement, waiting,
+search, pickup, kick, current-actor scheduling, and generated colors now own
+every Monk command stream.  `doeat()` now touches and retains either a floor or
+inventory corpse, applies shared poison/illness/taste/nutrition state, records
+vegan/vegetarian conduct, applies Monk guilt plus alignment record/abuse, runs
+the timed corpse occupation, and removes the same carrier at completion.
+Ordinary and rotten flesh foods preserve the same Monk-specific conduct message
+and penalty.  The source audit forbids every removed token and module.
+
+**Behavioral and adversarial evidence:** the seven-test Monk portfolio passes:
+the former exact prefix stays within its physical displacement bound, uses no
+bridge, and reports the unavailable item instead of fabricating a corpse; all
+three legal alignments schedule current tame actors; carried and floor goblin
+corpses apply guilt and complete their own object lifecycle; ordinary and rotten
+meat retain guilt; and a Rogue control breaks vegetarian conduct without the
+Monk-only alignment penalty.  The first carried-corpse completion attempt
+stopped at a real `--More--` boundary with an empty test input queue; supplying
+the physical acknowledgement corrected the witness rather than bypassing the
+continuation.  Focused neighboring role/hunger tests pass **18/18**.
+
+**Managed gate, falsified hypotheses, and limits:** one guarded `npm test`
+invocation passed all **453/453** behavioral tests across **50 files**.  The
+bridge audit shrinks to **124 production files, 7 guarded replay modules, and
+19 fixture modules**; lane, syntax, ownership-generation, and diff checks pass,
+and no matching runner remains.  Fixed colors, absolute coordinates, aggregate
+RNG, and a fabricated corpse were not required for live Monk mechanics; the
+generic inventory-corpse path really was incomplete and was not merely a later
+screen symptom.  Corpse hazard/post-effect breadth, interrupted/relocated meals,
+partial stacks, polymorph diets, tins/globs/non-food, wider command/terrain/
+actor states, tty breadth, persistence, and a sealed stratum remain open.
+Knight, Tourist, Wizard, and other explicit compatibility families remain the
+next bridge-removal surface.  No corpus, scorer, public-regression lane, sealed
+trace, push, publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---

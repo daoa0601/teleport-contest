@@ -56,9 +56,10 @@ Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
 ration, command, prayer, projectile, level-generation, and current-world actor
 paths.  Pre-mklev and all-role inventory startup
 now also have one live owner; their pre/post replay exports, exhaustive-role
-fallback, and unused mineralize transcript are deleted.  Fresh unclassified
-execution for every selectable role now has a four-turn normal/bridge-free
-state witness with zero bridge use.  Archeologist and Barbarian no longer fall
+fallback, and unused mineralize transcript are deleted.  Fresh bridge-free
+execution for every selectable role now constructs a live hero and tame actor
+with zero bridge use; role-specific C/command-derived state transitions supply
+the mechanic evidence.  Archeologist and Barbarian no longer fall
 through to `fastforward.turn` or `scheduler.default-replay-gap`; they use the
 same source movement ration, live actor scan, and global maintenance as the
 other represented roles.  Archeologist intrinsic Searching is exercised by a
@@ -119,8 +120,14 @@ legal Healer races use the live movement ration.  Self-directed sleep wands
 now spend a live charge, apply sleep resistance or `rnd(50)` negative multi,
 advance current actors and global maintenance, and wake through the shared
 helpless-turn owner.  The aggregate sleep/wake/search RNG module, early-turn
-table, fixed pet/gold mutation, and apple exception are removed.  Explicit
-normal-mode compatibility classifiers for other paths remain.  These later
+table, fixed pet/gold mutation, and apple exception are removed.  Monk's exact
+move-prefix classifier is now deleted too, along with its fixed hero/pet/goblin
+coordinates, fabricated corpse, forced turn counts, search/kick/pickup/eating
+branches, trace-only colors, and seeded RNG module.  All three legal alignments
+use live actor scheduling; carried and floor corpse meals share live conduct,
+Monk guilt/alignment abuse, timed eating, and object removal.  Explicit
+normal-mode compatibility classifiers for Knight, Tourist, Wizard, and other
+paths remain.  These later
 slices have focused fresh witnesses and selected public regressions, but still
 no sealed gate or hidden measurement.
 

@@ -38840,10 +38840,10 @@ Before this slice, the same fresh one-wait probe reached `fastforward.turn` in
 normal mode and the forbidden `scheduler.default-replay-gap` in bridge-free
 mode for both roles.  `js/allmain.js` now puts every legal Archeologist and
 Barbarian race on the shared source movement ration, current `fmon`/`dog_move`
-scan, and live global maintenance in both modes.  A four-turn matrix over all
-13 selectable roles observes equal hero, actor, trap, floor, and inventory
-state with zero bridge use, so the boundary is not inferred from those two
-roles alone.
+scan, and live global maintenance.  A fresh bridge-free matrix over all 13
+selectable roles proves that each constructs a living hero and tame current
+actor with zero bridge use; the role-specific transitions below supply the
+stronger mechanic oracles.
 
 Two adversarial witnesses distinguish a live clock from a replay counter.
 With seed 31222, Archeologist intrinsic Searching reveals an adjacent teleport
@@ -38859,9 +38859,9 @@ This owner remains `partial`.  Explicit normal-mode compatibility classifiers
 still retain `fastforward.turn`, `scheduler.default-replay-gap`, and seeded
 role modules for represented legacy paths.  Wider actor, terrain, interruption,
 option, persistence, and sealed
-strata are also open.  The focused live-scheduler portfolio passes 20/20; the
-managed default gate passes 443/443 with 49 lane-audited files and a clean
-126-production-file, 9-guarded-module, 19-fixture-module bridge audit.
+strata are also open.  The latest managed default gate passes 453/453 with 50
+lane-audited files and a clean 124-production-file, 7-guarded-module,
+19-fixture-module bridge audit.
 
 ## 1024. Ranger coordinates no longer select a second game engine
 
@@ -38914,15 +38914,16 @@ coordinate/sink classifier, fixed pet/RNG routine, dedicated Ranger pager/fire
 handler, and `fastforward_ranger_step()` exporter are deleted and mechanically
 forbidden.  Three state-only Ranger witnesses cover the fresh collision,
 fireassist inventory/weapon/actor effects, and all four legal races without
-asserting source lines, collaborator calls, screens, or RNG transcripts.
+asserting source lines, collaborator calls, screens, RNG transcripts, or a
+second execution mode as the oracle.
 
 This owner remains `partial`.  General projectile gaps include mid-volley
 interruption, alternate launcher failure continuations, non-bow multishot
 families, special terrain/floor effects, persistence, options, and sealed
-strata.  Other explicitly classified Knight, Monk, Tourist, and Wizard
-compatibility paths also remain.  The focused neighboring portfolio passes
-22/22; the managed default gate passes 446/446 with 50 lane-audited files and
-a clean 126-production-file, 9-guarded-module, 19-fixture-module bridge audit.
+strata.  Other explicitly classified Knight, Tourist, and Wizard compatibility
+paths also remain.  The latest managed default gate passes 453/453 with 50
+lane-audited files and a clean 124-production-file, 7-guarded-module,
+19-fixture-module bridge audit.
 
 ## 1025. Healer sleep is negative multi, not an aggregate transcript
 
@@ -38970,22 +38971,83 @@ installed sleep.
 `js/cmd.js` now owns self-directed sleep-wand state and delegates the elapsed
 interval to the existing live helpless scheduler.  Seed 44007 spends one
 charge, identifies the wand, advances from turn 1 through a source-selected
-multi-turn sleep with current actors, clears helpless state, and wakes in
-equal normal/bridge-free worlds.  A sleep-resistant control spends and learns
+multi-turn sleep with current actors, clears helpless state, and wakes through
+the live timeout owner.  A sleep-resistant control spends and learns
 the wand but never installs helplessness.  Fresh human and gnome Healers share
 the live scheduler, and future `szf` text no longer changes earlier state.
 The early table, aggregate replay module, fixed pet/gold mutations, late-search
 branch, and apple exception are deleted and mechanically forbidden.
 
-The behavioral tests also share one role-outcome serializer now; base-role,
-Ranger, and Healer witnesses no longer maintain three copies of actor, floor,
-trap, inventory, environment, and bridge-ledger plumbing.  Their oracles remain
-observable state transitions rather than helper calls or source checks.
+The behavioral tests also share one bridge-free role-outcome serializer now;
+base-role, Ranger, and Healer witnesses no longer maintain three copies of
+actor, floor, trap, inventory, environment, and bridge-ledger plumbing.  Their
+oracles are C-derived or command-derived state transitions, not equality with
+a second mode of this implementation.
 
 This owner remains `partial`.  Directional ray behavior, monster resistance
 observation, early combat wakeup, alternate sleep sources, interruption
 presentation, persistence, options, and sealed strata remain open.  Explicit
-Knight, Monk, Tourist, and Wizard compatibility paths also remain.  The
-focused neighboring portfolio passes 163/163; the managed default gate passes
-451/451 with 51 lane-audited files and a clean 125-production-file,
-8-guarded-module, 19-fixture-module bridge audit.
+Knight, Tourist, and Wizard compatibility paths also remain.  The latest
+managed default gate passes 453/453 with 50 lane-audited files and a clean
+124-production-file, 7-guarded-module, 19-fixture-module bridge audit.
+
+## 1026. Monk commands and meat conduct use live world ownership
+
+```mermaid
+flowchart TD
+    Bytes["physical Monk commands"] --> Parse["ordinary rhack parser"]
+    Parse --> Move["domove / wait / search / pickup / kick"]
+    Move --> Scan["current fmon and dog_move turn scan"]
+
+    Eat["select live floor or carried food"] --> Touch["touchfood carrier identity"]
+    Touch --> Kind{"corpse or ordinary flesh?"}
+    Kind --> Conduct["food, vegan, vegetarian conduct"]
+    Conduct --> Monk{"role is Monk?"}
+    Monk -- yes --> Guilt["You feel guilty; adjalign -1 and abuse +1"]
+    Monk -- no --> Meal["conduct only"]
+    Guilt --> Meal
+    Meal --> Occupation["eatcorpse timing and nutrition"]
+    Occupation --> Finish["done_eating post-effect and carrier removal"]
+
+    Prefix["future move-prefix classifier"] -. deleted .-> Replay["fixed hero, pet, goblin, corpse, turns, RNG"]
+    Replay -. deleted .-> Colors["trace-only object and monster colors"]
+```
+
+Pinned `allmain.c:moveloop_core()` does not select an alternate engine from a
+Monk role plus future command bytes.  Movement, waiting, searching, pickup,
+kicking, actor turns, and display colors consume the current level and actor
+graph.  Pinned `eat.c:doeat()` then calls `touchfood()` on the selected live
+identity, sends corpses through `eatcorpse()`, and calls
+`violated_vegetarian()` for meat.  That function increments conduct for every
+violation and, only for a Monk, emits guilt and calls `adjalign(-1)`; negative
+alignment also increments abuse.  `start_eating()` and `eatfood()` retain the
+same floor or inventory object until `done_eating()` removes it.
+
+The deleted JavaScript path instead recognized
+`^  n:kkkhhhjjjlll.ssh,ek` before those bytes executed.  It replayed fixed RNG
+shapes, assigned absolute hero and pet coordinates and turn numbers, moved and
+killed a named goblin, fabricated its corpse, performed pickup and eating,
+short-circuited search and kick, and overrode goblin/object colors.  On fresh
+seed 45003 it teleported the hero from `(67,4)` to `(54,9)`, forced turn 19,
+created the guilty-corpse result despite an unavailable inventory letter, and
+hit `seeded-replay.monk-search`.  The source command bound permits at most
+thirteen cells of total displacement from its thirteen direction bytes.
+
+`js/allmain.js`, `js/cmd.js`, `js/detect.js`, and `js/display.js` now use only
+the shared live owners, and `js/monk_search.js` is deleted.  The fresh former-
+prefix witness stays within the physical displacement bound, uses no bridge,
+and reports the actual missing inventory selection instead of fabricating a
+corpse.  Fresh lawful, neutral, and chaotic Monks all allocate current tame
+actors.  Separate live-state witnesses prove carried and floor goblin-corpse
+occupation/removal, ordinary and rotten meat guilt, alignment abuse, and a
+Rogue control which breaks vegetarian conduct without receiving the Monk-only
+penalty.  None uses a public trace, a second execution mode, a call transcript,
+or copied production output as its oracle.
+
+This owner remains `partial`.  Corpse poison, illness, petrification, slime,
+acid, cannibalism, post-effects, interruptions, relocation, partially eaten
+stacks, polymorph diets, tins, globs, worn and non-food objects, wider movement,
+terrain, actor, run, search, pickup, and kick families, tty continuation
+breadth, persistence, and a sealed stratum remain open.  The managed default
+gate passes 453/453 across 50 behavioral files; the bridge audit now covers
+124 production files, 7 guarded replay modules, and 19 fixture modules.
