@@ -3,7 +3,7 @@
 //
 // The live init_objects() boundary owns per-game knowledge reset and the
 // Fisher-Yates description/color shuffles.  Other startup owners remain
-// partial and are tracked in docs/architecture/c-lua-ownership.json.
+// partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { bot, docrtRecalc, flush_screen } from './display.js';

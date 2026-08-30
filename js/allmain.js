@@ -4,9 +4,6 @@
 // Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
-import {
-    bridgeFreeEnabled, useCompatibilityBridge,
-} from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rn2Display, rnd } from './rng.js';
 import {

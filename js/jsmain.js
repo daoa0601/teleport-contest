@@ -21,10 +21,6 @@ import {
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { restoreGame } from './save.js';
-import {
-    bridgeFreeEnabled, getBridgeUsageLedger, installReplayMovesGuard,
-    resetBridgeUsageLedger,
-} from './bridge_policy.js';
 
 const UNICODE_TO_DEC = new Map(
     Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]),
@@ -287,8 +283,6 @@ export class NethackGame {
     async start() {
         const g = resetGame();
         g.datetime = this._datetime;
-        if (bridgeFreeEnabled()) installReplayMovesGuard(g);
-        else g.replayMoves = this._moves;
         g.nethackrc = this._nethackrc;
         g.storage = this._storage;
         // Engine code calls the same environment-neutral hook for transient
@@ -1030,7 +1024,6 @@ export class NethackGame {
     // for steps that didn't animate.  SUPPLEMENTAL metric — not part
     // of the official ranking; see API.md.
     getAnimationFramesByStep() { return this._animFramesByStep; }
-    getBridgeUsageLedger() { return getBridgeUsageLedger(); }
 }
 
 // ── Per-segment runner — the contest contract ──
@@ -1054,22 +1047,8 @@ export class NethackGame {
 // this segment. The harness concatenates them itself. Cross-segment
 // C-side state (bones, record file, save) lives in `input.storage`.
 export async function runSegment(input) {
-    resetBridgeUsageLedger();
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
-
-    // Exact public-session fixtures are useful as parity witnesses, but they
-    // hide the behavior of the general engine.  Keep an explicit diagnostic
-    // path that exercises only real game logic for held-out work.
-    const fixturesEnabled = !bridgeFreeEnabled()
-        && (typeof process === 'undefined'
-            || process.env.TELEPORT_DISABLE_FIXTURES !== '1');
-
-    if (fixturesEnabled) {
-        const { tryRunSessionFixture } = await import('./session_fixtures.js');
-        const fixture = tryRunSessionFixture(input);
-        if (fixture) return fixture;
-    }
 
     const nhGame = new NethackGame({
         seed, datetime, nethackrc, moves, storage,

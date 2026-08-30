@@ -11,7 +11,7 @@ const EQUIPMENT_KEYS = ['uwep', 'uswapwep', 'uquiver', 'uarm', 'uarms', 'uarmc',
 const OMIT_KEYS = new Set([
     'nhDisplay', '_preNhgetchHook', 'coreCtx', 'displayCtx', 'currentSeed',
     'mockStorage',
-    'storage', 'datetime', 'replayMoves', '_screen_output', '_pending_message',
+    'storage', 'datetime', '_screen_output', '_pending_message',
     '_saveExitPending', 'program_state', 'startingPet', 'fmon',
     ...EQUIPMENT_KEYS,
 ]);

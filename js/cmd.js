@@ -6,7 +6,6 @@
 // wear, wield, drop, throw, pray, cast, and all other commands.
 
 import { game } from './gstate.js';
-import { useCompatibilityBridge } from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
 import { getLine, promptYesNo, promptYesNoQuit } from './query.js';
@@ -15092,10 +15091,9 @@ async function dothrow(
         && (thrownObjectClass === 2
             || (thrownObjectClass === 6
                 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0))) {
-        // The legacy floor/projectile continuations below do not model
-        // thitmonst()->hmon() while engulfed. Make that pre-existing gap a
-        // named bridge so bridge-free execution cannot silently accept it.
-        useCompatibilityBridge('throw.swallowed-weapon-unsupported');
+        // The ordinary floor/projectile continuation cannot model
+        // thitmonst()->hmon() while engulfed, so do not pretend it can.
+        throw new Error('swallowed weapon throwing is not implemented');
     }
 
     if (await resolveSwallowedPotionThrow({
@@ -15110,7 +15108,7 @@ async function dothrow(
         finishKill: finishOrdinarySwallowedPotionKill,
     })) return;
     if (game.u?.uswallow && thrownObjectClass === 8)
-        useCompatibilityBridge('throw.potion-impact-unsupported');
+        throw new Error('swallowed potion throwing is not implemented');
 
     if (await resolveGenericSwallowedThrow({
         state: game,
@@ -15121,10 +15119,9 @@ async function dothrow(
         wakeMonster: wakeAttackedMonster,
     })) return;
     if (game.u?.uswallow && thrownObjectClass !== 8) {
-        // No unresolved swallowed object may continue into the ordinary
-        // projectile/floor implementation in bridge-free mode. That fallback
-        // targets map coordinates and is not a source-shaped engulfed path.
-        useCompatibilityBridge('throw.swallowed-special-unsupported');
+        // An unresolved swallowed object cannot use the ordinary floor path;
+        // that path targets map coordinates rather than the engulfing monster.
+        throw new Error('swallowed special-object throwing is not implemented');
     }
 
     if (!game.u?.uswallow && await resolveMapPotionThrow({
@@ -15143,7 +15140,7 @@ async function dothrow(
         finishKill: finishOrdinaryMapPotionKill,
     })) return;
     if (!game.u?.uswallow && thrownObjectClass === 8)
-        useCompatibilityBridge('throw.potion-impact-unsupported');
+        throw new Error('map potion impact is not implemented');
 
     if (thrownObjectClass === 3) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
