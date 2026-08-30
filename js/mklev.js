@@ -45,12 +45,13 @@ import {
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_NOCORPSE,
-    W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_INIT,
+    W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_HISTORIC, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
 } from './const.js';
 import {
     OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_DIR,
+    OBJECT_NAMES, OBJECT_DESCRIPTIONS,
     OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_MERGE, OBJECT_USES_KNOWN, OBJECT_WEIGHT,
     CHARGED_OBJECTS,
@@ -162,7 +163,6 @@ const VEGETARIAN_CLASS = 15;
 const PLACEHOLDER_MONSTERS = new Set([72, 169, 260, 264]);
 const SCR_TELEPORTATION = 333;
 const SCR_LIGHT = 332;
-const SCR_BLANK_PAPER = 365;
 const CROSSBOW_BOLT = 23;
 const ARROW = 18;
 const KNIFE = 40;
@@ -298,7 +298,6 @@ const PM_MORDOR_ORC = 74;
 const PM_URUK_HAI = 75;
 const PM_ORC_SHAMAN = 76;
 const PM_ORC_CAPTAIN = 77;
-const PM_RAVEN = 128;
 const PM_MONKEY = 233;
 const PM_KOBOLD_SHAMAN = 62;
 const PM_GNOME = 165;
@@ -368,20 +367,9 @@ const WORTHLESS_VIOLET_GLASS = 469;
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
-const PM_MEDUSA = 284;
-const PM_GREMLIN = 40;
-const PM_TITAN = 176;
-const PM_YELLOW_LIGHT = 118;
-const PM_BABY_YELLOW_DRAGON = 142;
-const PM_YELLOW_DRAGON = 152;
-const PM_BLACK_NAGA_HATCHLING = 196;
-const PM_BLACK_NAGA = 200;
-const PM_COBRA = 219;
-const PM_STONE_GOLEM = 257;
 const PM_OGRE = 203;
 const PM_ROCK_TROLL = 222;
 const PM_GIANT_EEL = 319;
-const PM_ELECTRIC_EEL = 320;
 const PM_KRAKEN = 321;
 const PM_PIRANHA = 317;
 const PM_WUMPUS = 84;
@@ -389,7 +377,6 @@ const PM_LONG_WORM = 114;
 const PM_JELLYFISH = 316;
 const PM_SHARK = 318;
 const PM_WATER_TROLL = 223;
-const PM_KNIGHT = 335;
 const PM_BLACK_LIGHT = 119;
 const PM_STALKER = 153;
 const PM_BLACK_PUDDING = 209;
@@ -6210,6 +6197,7 @@ async function specialMonsterAt(context, mndx, x, y,
         randomGender = true,
         randomAlignment = true,
         peaceful = null,
+        asleep = null,
         mmflags = 0,
     } = {}) {
     // Lua's find_montype() resolves a requested gender before
@@ -6217,14 +6205,14 @@ async function specialMonsterAt(context, mndx, x, y,
     // the former draw; makemon() still performs its own independent gender
     // initialization before the explicit value is restored.
     const requestedFemale = randomGender ? !!rn2(2) : null;
-    if (randomAlignment)
-        rn2(3); // sp_amask_to_amask(AM_SPLEV_RANDOM) -> induced_align(80)
+    if (randomAlignment) consumeSpecialMonsterAlignment();
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const monster = await makemon(
         mndx, context.xstart + x, context.ystart + y, mmflags,
     );
     if (monster && randomGender) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     return monster;
 }
 
@@ -6233,7 +6221,7 @@ async function specialMonsterClassAt(context, monsterClass, x, y,
     // A class request resolves random alignment and mkclass(), but unlike a
     // named species it has no separate find_montype() gender draw.  Explicit
     // coordinates also bypass get_location()'s two-axis sampling.
-    rn2(3);
+    consumeSpecialMonsterAlignment();
     let mndx = mkclass(monsterClass, 0x0200);
     if (mndx == null) return null;
     mndx = applyMinesSameRaceMonsterGate(mndx);
@@ -6320,7 +6308,7 @@ function specialMonsterRandomLocation(context, mndx) {
 }
 
 async function specialExplicitMonster(context, mndx, appearance = null,
-    { randomGender = true, peaceful = null } = {}) {
+    { randomGender = true, peaceful = null, asleep = null } = {}) {
     // sp_lev.c find_montype() resolves a legal gender while parsing the Lua
     // table.  makemon() independently initializes gender, then
     // create_monster() restores this explicit value after construction.
@@ -6328,8 +6316,8 @@ async function specialExplicitMonster(context, mndx, appearance = null,
         ? (namedMonsterNeedsGenderDraw(mndx)
             ? !!rn2(2)
             : !!((MONSTER_FLAGS2[mndx] || 0) & 0x00020000))
-        : false;
-    rn2(3); // sp_amask_to_amask(AM_SPLEV_RANDOM) -> induced_align(80)
+        : null;
+    consumeSpecialMonsterAlignment();
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const point = specialMonsterRandomLocation(context, mndx);
     if (!point) return null;
@@ -6339,8 +6327,9 @@ async function specialExplicitMonster(context, mndx, appearance = null,
         ? await makemonNear(mndx, point.x, point.y)
         : await makemon(mndx, point.x, point.y, 0);
     if (!monster) return null;
-    monster.female = requestedFemale;
+    if (requestedFemale != null) monster.female = requestedFemale;
     if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (asleep != null) monster.msleeping = asleep ? 1 : 0;
     if (appearance?.kind === 'object') {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = appearance.otyp;
@@ -6349,11 +6338,11 @@ async function specialExplicitMonster(context, mndx, appearance = null,
 }
 
 async function specialMonsterOfClass(
-    context, monsterClass, { peaceful = null } = {},
+    context, monsterClass, { peaceful = null, asleep = null } = {},
 ) {
     // create_monster() resolves its random alignment before a one-character
     // monster id is expanded through mkclass_aligned().
-    rn2(3);
+    consumeSpecialMonsterAlignment();
     // find_montype() allows class requests to select species which carry
     // G_NOGEN; explicit special-level population is the exception encoded
     // by mkclass(class, G_NOGEN).
@@ -6369,6 +6358,8 @@ async function specialMonsterOfClass(
     const resolved = await monster;
     if (resolved && peaceful != null)
         resolved.mpeaceful = peaceful ? 1 : 0;
+    if (resolved && asleep != null)
+        resolved.msleeping = asleep ? 1 : 0;
     return resolved;
 }
 
@@ -6470,16 +6461,13 @@ async function specialTrap(context) {
 }
 
 async function specialMonster(context) {
-    // sp_amask_to_amask(AM_SPLEV_RANDOM) calls induced_align(80).  Big Room
-    // and the Dungeons of Doom have no fixed alignment, so its observable
-    // branch is the final rn2(3).
-    rn2(3);
+    consumeSpecialMonsterAlignment();
     const point = specialRandomLocation(context);
     if (!point) return;
     const occupiedPoint = game.level.monsters?.some(monster => monster.mhp > 0
         && monster.mx === point.x && monster.my === point.y);
-    if (occupiedPoint) await makemonNear(null, point.x, point.y);
-    else await makemon(null, point.x, point.y, 0);
+    if (occupiedPoint) return makemonNear(null, point.x, point.y);
+    return makemon(null, point.x, point.y, 0);
 }
 
 const ARC_START_MAP = [
@@ -10480,19 +10468,311 @@ function createLuaFeature(context, type, x = null, y = null) {
     const featureType = types[type];
     if (featureType === undefined)
         throw new Error(`unknown Lua feature ${type}`);
-    if (Number.isInteger(x) && Number.isInteger(y)) {
-        const loc = game.level.at(context.xstart + x, context.ystart + y);
+    const point = luaPoint(x, y);
+    if (point) {
+        const loc = game.level.at(
+            context.xstart + point.x, context.ystart + point.y,
+        );
         if (loc) loc.typ = featureType;
         return;
     }
     specialFeatureOfType(context, featureType);
 }
 
+const LUA_OBJECT_CLASS_SYMBOLS = [
+    '', ']', ')', '[', '=', '"', '(', '%', '!', '?', '+', '/', '$', '*',
+    '`', '0', '_', '.',
+];
+
+const LUA_TRAP_TYPES = new Map([
+    ['arrow', ARROW_TRAP],
+    ['dart', DART_TRAP],
+    ['falling rock', ROCKTRAP],
+    ['board', SQKY_BOARD],
+    ['bear', BEAR_TRAP],
+    ['land mine', LANDMINE],
+    ['rolling boulder', ROLLING_BOULDER_TRAP],
+    ['sleep gas', SLP_GAS_TRAP],
+    ['rust', RUST_TRAP],
+    ['fire', FIRE_TRAP],
+    ['pit', PIT],
+    ['spiked pit', SPIKED_PIT],
+    ['hole', HOLE],
+    ['trap door', TRAPDOOR],
+    ['teleport', TELEP_TRAP],
+    ['level teleport', LEVEL_TELEP],
+    ['magic portal', MAGIC_PORTAL],
+    ['web', WEB],
+    ['statue', STATUE_TRAP],
+    ['magic', MAGIC_TRAP],
+    ['anti magic', ANTI_MAGIC],
+    ['polymorph', POLY_TRAP],
+    ['vibrating square', VIBRATING_SQUARE],
+]);
+
+function luaPoint(value, y = null) {
+    if (Number.isInteger(value) && Number.isInteger(y))
+        return { x: value, y };
+    if (Array.isArray(value) && value.length >= 2)
+        return { x: value[0], y: value[1] };
+    if (value && Number.isInteger(value.x) && Number.isInteger(value.y))
+        return { x: value.x, y: value.y };
+    return null;
+}
+
+function luaRoomLighting(value) {
+    if (value !== -1) return !!value;
+    return rnd(1 + Math.abs(depth_of_level(game.u?.uz))) < 11
+        && rn2(77) !== 0;
+}
+
+function createLuaRoomRegion(context, options) {
+    if (!Array.isArray(options.region))
+        throw new TypeError('des.region requires four coordinates');
+    if (options.type !== 'ordinary')
+        throw new Error(`unsupported Lua room type ${options.type}`);
+    const lit = luaRoomLighting(options.lit ?? -1);
+    const room = options.irregular
+        ? specialIrregularRoom(
+            context, options.region[0], options.region[1], OROOM, lit, 0,
+        )
+        : specialRectangularRoom(
+            context, ...options.region, OROOM, lit, 0,
+        );
+    if (room && options.arrival_room) room.arrival_room = true;
+    return room;
+}
+
+function createLuaStair(context, direction, x = null, y = null) {
+    const up = direction === 'up';
+    const point = luaPoint(x, y);
+    if (point) specialStairAt(context, point.x, point.y, up);
+    else specialStair(context, up);
+}
+
+function createLuaDoor(context, state, x, y) {
+    const point = luaPoint(x, y);
+    if (!point) throw new TypeError('des.door requires coordinates');
+    if (state === 'random')
+        return specialRandomDoorAt(context, point.x, point.y);
+    const masks = {
+        nodoor: D_NODOOR,
+        broken: D_BROKEN,
+        open: D_ISOPEN,
+        closed: D_CLOSED,
+        locked: D_LOCKED,
+    };
+    if (!(state in masks)) throw new Error(`unknown Lua door state ${state}`);
+    return specialDoorAt(context, masks[state], point.x, point.y);
+}
+
+function luaObjectClass(symbol) {
+    const objectClass = LUA_OBJECT_CLASS_SYMBOLS.indexOf(symbol);
+    if (objectClass < 1)
+        throw new Error(`unknown Lua object class ${symbol}`);
+    return objectClass;
+}
+
+function luaObjectType(name, classSymbol = null) {
+    const prefixes = [
+        ['ring of ', RING_CLASS],
+        ['potion of ', POTION_CLASS],
+        ['scroll of ', SCROLL_CLASS],
+        ['spellbook of ', SPBOOK_CLASS],
+        ['wand of ', WAND_CLASS],
+    ];
+    let desiredClass = classSymbol ? luaObjectClass(classSymbol) : null;
+    let target = String(name).toLowerCase();
+    for (const [prefix, prefixClass] of prefixes) {
+        if (!target.startsWith(prefix)) continue;
+        target = target.slice(prefix.length);
+        desiredClass = prefixClass;
+        break;
+    }
+    for (let type = 0; type < OBJECT_NAMES.length; type++) {
+        if (desiredClass && desiredClass !== objectClass(type)) continue;
+        if (OBJECT_NAMES[type]?.toLowerCase() === target
+            || OBJECT_DESCRIPTIONS[type]?.toLowerCase() === target) return type;
+    }
+    throw new Error(`unknown Lua object ${name}`);
+}
+
+function luaObjectOptions(id, x, y) {
+    if (id && typeof id === 'object' && !Array.isArray(id)) return { ...id };
+    const options = {};
+    if (typeof id === 'string') {
+        if (id.length === 1) options.class = id;
+        else options.id = id;
+    }
+    const point = luaPoint(x, y);
+    if (point) Object.assign(options, point);
+    return options;
+}
+
+async function createLuaObject(
+    context, options, parentContainer, invokeContents,
+) {
+    const point = luaPoint(options.coord) ?? luaPoint(options.x, options.y);
+    const objectClass = options.class ? luaObjectClass(options.class) : null;
+    const objectType = options.id
+        ? luaObjectType(options.id, options.class) : null;
+    let object;
+    const randomMedusaStatue = objectType === STATUE
+        && game._activeSpecialLevel?.prototype === 'medusa'
+        && options.montype == null;
+    if (randomMedusaStatue) {
+        object = await medusaEmptyStatue(context, point);
+    } else if (objectType != null) {
+        object = point
+            ? specialObjectAt(
+                context, objectType, point.x, point.y,
+                { named: !!options.name },
+            )
+            : specialObjectOfType(context, objectType);
+    } else if (objectClass != null) {
+        object = point
+            ? specialObjectClassAt(context, objectClass, point.x, point.y)
+            : specialObjectOfClass(context, objectClass);
+    } else {
+        object = point
+            ? specialRandomObjectAt(context, point.x, point.y)
+            : specialObject(context);
+    }
+    if (!object) return null;
+
+    if (options.buc === 'blessed') {
+        object.blessed = true;
+        object.cursed = false;
+    } else if (options.buc === 'uncursed') {
+        object.blessed = false;
+        object.cursed = false;
+    } else if (options.buc === 'cursed') {
+        object.blessed = false;
+        object.cursed = true;
+    }
+    if (Number.isInteger(options.spe)) object.spe = options.spe;
+    if (options.montype) set_corpsenm(
+        object, monsterIndexByNameInsensitive(options.montype),
+    );
+    if (object.otyp === STATUE || object.otyp === CORPSE) {
+        object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
+            | (options.male ? CORPSTAT_MALE : 0)
+            | (options.female ? CORPSTAT_FEMALE : 0);
+    }
+    if (options.name) {
+        object.oextra = {
+            ...(object.oextra || {}), oname: String(options.name),
+        };
+    }
+    if (Object.hasOwn(options, 'contents')) object.contents = [];
+    if (parentContainer) {
+        addSpecialContainerObject(parentContainer, object);
+        parentContainer.owt = objectWeight(parentContainer);
+    }
+    if (options.contents && typeof options.contents === 'object')
+        await invokeContents(options.contents, object);
+    return object;
+}
+
+function monsterIndexByNameInsensitive(name) {
+    const target = String(name).toLowerCase();
+    const index = MONSTER_NAME.findIndex(candidate =>
+        candidate?.toLowerCase() === target);
+    if (index < 0) throw new Error(`unknown Lua monster ${name}`);
+    return index;
+}
+
+function luaMonsterOptions(id, x, y) {
+    if (id && typeof id === 'object' && !Array.isArray(id)) return { ...id };
+    const options = {};
+    if (typeof id === 'string') {
+        if (id.length === 1) options.class = id;
+        else options.id = id;
+    }
+    const point = luaPoint(x, y);
+    if (point) Object.assign(options, point);
+    return options;
+}
+
+async function createLuaMonster(context, options) {
+    const point = luaPoint(options.coord) ?? luaPoint(options.x, options.y);
+    const peaceful = options.peaceful == null ? null : !!options.peaceful;
+    const asleep = options.asleep == null ? null : !!options.asleep;
+    let monster;
+    if (options.id) {
+        const type = monsterIndexByNameInsensitive(options.id);
+        const settings = {
+            randomGender: namedMonsterNeedsGenderDraw(type), peaceful, asleep,
+        };
+        monster = point
+            ? await specialMonsterAt(
+                context, type, point.x, point.y, settings,
+            )
+            : await specialExplicitMonster(context, type, null, settings);
+    } else if (options.class) {
+        const monsterClass = MONSTER_CLASS_SYMBOLS.indexOf(options.class);
+        if (monsterClass < 1)
+            throw new Error(`unknown Lua monster class ${options.class}`);
+        monster = point
+            ? await specialMonsterClassAt(
+                context, monsterClass, point.x, point.y,
+            )
+            : await specialMonsterOfClass(
+                context, monsterClass, { peaceful, asleep },
+            );
+    } else {
+        monster = point
+            ? await specialRandomMonsterAt(context, point.x, point.y)
+            : await specialMonster(context);
+    }
+    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
+    return monster;
+}
+
+async function createLuaTrap(context, type = null, x = null, y = null) {
+    if (type && typeof type === 'object') {
+        const options = type;
+        type = options.type ?? null;
+        const point = luaPoint(options.coord)
+            ?? luaPoint(options.x, options.y);
+        x = point;
+        y = null;
+    }
+    if (type === 'random') type = null;
+    if (type == null) return specialTrap(context);
+    const trapType = LUA_TRAP_TYPES.get(String(type));
+    if (trapType == null) throw new Error(`unknown Lua trap ${type}`);
+    const point = luaPoint(x, y);
+    return point
+        ? specialTrapAt(context, trapType, point.x, point.y)
+        : specialTrapOfType(context, trapType);
+}
+
+function flipLuaRegions(active) {
+    for (const field of [
+        'upTeleportRegion', 'upTeleportExclude',
+        'downTeleportRegion', 'downTeleportExclude',
+        'explicitUpStairRegion', 'explicitDownStairRegion',
+        'explicitBranchRegion', 'explicitBranchExclude',
+        'explicitPortalRegion', 'explicitPortalExclude',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
 async function generateLuaSpecialLevel(active) {
     let context = null;
     let luaState = null;
+    const containers = [];
     active.allowFlips = 3;
     game.level.flags.is_special = true;
+    const invokeObjectContents = async (callback, object) => {
+        containers.push(object);
+        try {
+            await luaState.callValueAsync(callback, []);
+        } finally {
+            containers.pop();
+        }
+    };
     const operations = {
         levelInit: options => {
             const initializedContext = fillSpecialLevel(options, active);
@@ -10553,7 +10833,13 @@ async function generateLuaSpecialLevel(active) {
                 if (loc) loc.lit = lit;
             });
         },
-        stair: direction => specialStair(context, direction === 'up'),
+        roomRegion: options => createLuaRoomRegion(context, options),
+        stair: (direction, x, y) => createLuaStair(
+            context, String(direction), x, y,
+        ),
+        door: (state, x, y) => createLuaDoor(
+            context, String(state), x, y,
+        ),
         feature: (type, x, y) => createLuaFeature(context, type, x, y),
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
@@ -10591,22 +10877,26 @@ async function generateLuaSpecialLevel(active) {
                 active.explicitUpStairRegion = value;
             else if (options.type === 'stair-down')
                 active.explicitDownStairRegion = value;
+            else if (options.type === 'branch') {
+                active.explicitBranchRegion = region;
+                active.explicitBranchExclude = exclude;
+            }
             else throw new Error(`unsupported Lua level region ${options.type}`);
         },
         mazeWalk: options => specialMazeWalk(
             context, options.x, options.y, options.dir,
             mapCharacterType(options.typ ?? '.'),
         ),
-        object: (id, x, y) => id === 'boulder'
-            ? specialObjectAt(context, BOULDER, x, y, { named: true })
-            : specialObject(context),
-        trap: type => type === 'rolling boulder'
-            ? specialTrapOfType(context, ROLLING_BOULDER_TRAP)
-            : specialTrap(context),
-        monster: options => options && Number.isInteger(options.x)
-            && Number.isInteger(options.y)
-            ? specialRandomMonsterAt(context, options.x, options.y)
-            : specialMonster(context),
+        object: (id, x, y) => createLuaObject(
+            context,
+            luaObjectOptions(id, x, y),
+            containers.at(-1) ?? null,
+            invokeObjectContents,
+        ),
+        trap: (type, x, y) => createLuaTrap(context, type, x, y),
+        monster: (id, x, y) => createLuaMonster(
+            context, luaMonsterOptions(id, x, y),
+        ),
     };
     await currentLuaLifecycle().executeSpecial(
         game, active.file,
@@ -10625,6 +10915,7 @@ async function generateLuaSpecialLevel(active) {
     if (!game.level.flags.corrmaze)
         wallification(1, 0, COLNO - 1, ROWNO - 1);
     flipSpecialLevelRandom(active.allowFlips);
+    flipLuaRegions(active);
 }
 
 async function specialRandomMonsterAt(context, x, y) {
@@ -10632,7 +10923,7 @@ async function specialRandomMonsterAt(context, x, y) {
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
     // gender draw and unlike des.monster() without coordinates it performs no
     // get_location() sampling.
-    rn2(3);
+    consumeSpecialMonsterAlignment();
     const absoluteX = context.xstart + x;
     const absoluteY = context.ystart + y;
     const occupied = game.level.monsters?.some(monster => monster.mhp > 0
@@ -10647,99 +10938,6 @@ export async function generateBigRoom(active) {
         throw new RangeError(`unknown Big Room variant ${active?.variant}`);
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
-
-const MEDUSA_1_MAP = [
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}.}}}}}..}}}}}......}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}....}}}...}}}}}',
-    '}...}}.....}}}}}....}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}...............}',
-    '}....}}}}}}}}}}....}}}..}}}}}}}}}}}.......}}}}}}}}}}}}}}}}..}}.....}}}...}}',
-    '}....}}}}}}}}.....}}}}..}}}}}}.................}}}}}}}}}}}.}}}}.....}}...}}',
-    '}....}}}}}}}}}}}}.}}}}.}}}}}}.-----------------.}}}}}}}}}}}}}}}}}.........}',
-    '}....}}}}}}}}}}}}}}}}}}.}}}...|...............S...}}}}}}}}}}}}}}}}}}}....}}',
-    '}.....}.}}....}}}}}}}}}.}}....--------+--------....}}}}}}..}}}}}}}}}}}...}}',
-    '}......}}}}..}}}}}}}}}}}}}........|.......|........}}}}}....}}}}}}}}}}}}}}}',
-    '}.....}}}}}}}}}}}}}}}}}}}}........|.......|........}}}}}...}}}}}}}}}.}}}}}}',
-    '}.....}}}}}}}}}}}}}}}}}}}}....--------+--------....}}}}}}.}.}}}}}}}}}}}}}}}',
-    '}......}}}}}}}}}}}}}}}}}}}}...S...............|...}}}}}}}}}}}}}}}}}.}}}}}}}',
-    '}.......}}}}}}}..}}}}}}}}}}}}.-----------------.}}}}}}}}}}}}}}}}}....}}}}}}',
-    '}........}}.}}....}}}}}}}}}}}}.................}}}}}..}}}}}}}}}.......}}}}}',
-    '}.......}}}}}}}......}}}}}}}}}}}}}}.......}}}}}}}}}.....}}}}}}...}}..}}}}}}',
-    '}.....}}}}}}}}}}}.....}}}}}}}}}}}}}}}}}}}}}}.}}}}}}}..}}}}}}}}}}....}}}}}}}',
-    '}}..}}}}}}}}}}}}}....}}}}}}}}}}}}}}}}}}}}}}...}}..}}}}}}}.}}.}}}}..}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-];
-
-const MEDUSA_2_MAP = [
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}------}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}-------}}}}}}}}--------------}',
-    '}|....|}}}}}}}}}..}.}}..}}}}}}}}}}}}}..}}}}}}-.....--}}}}}}}|............|}',
-    '}|....|.}}}}}}}}}}}.}...}}..}}}}}}}}}}}}}}}}}---......}}}}}.|............|}',
-    '}S....|.}}}}}}---}}}}}}}}}}}}}}}}}}}}}}}}}}---...|..-}}}}}}.S..----------|}',
-    '}|....|.}}}}}}-...}}}}}}}}}.}}...}.}}}}.}}}......----}}}}}}.|............|}',
-    '}|....|.}}}}}}-....--}}}}}}}}}}}}}}}}}}}}}}----...--}}}}}}}.|..--------+-|}',
-    '}|....|.}}}}}}}......}}}}...}}}}}}.}}}}}}}}}}}---..---}}}}}.|..|..S...|..|}',
-    '}|....|.}}}}}}-....-}}}}}}}------}}}}}}}}}}}}}}-...|.-}}}}}.|..|..|...|..|}',
-    '}|....|.}}}}}}}}}---}}}}}}}........}}}}}}}}}}---.|....}}}}}.|..|..|...|..|}',
-    '}|....|.}}}}}}}}}}}}}}}}}}-....|...-}}}}}}}}--...----.}}}}}.|..|..|...|..|}',
-    '}|....|.}}}}}}..}}}}}}}}}}---..--------}}}}}-..---}}}}}}}}}.|..|..-------|}',
-    '}|...}|...}}}.}}}}}}...}}}}}--..........}}}}..--}}}}}}}}}}}.|..|.........|}',
-    '}|...}S...}}.}}}}}}}}}}}}}}}-..--------}}}}}}}}}}}}}}...}}}.|..--------..S}',
-    '}|...}|...}}}}}}}..}}}}}}----..|....-}}}}}}}}}}}}}}}}}..}}}.|............|}',
-    '}|....|}}}}}....}}}}..}}.-.......----}}......}}}}}}.......}}|............|}',
-    '}------}}}}}}}}}}}}}}}}}}---------}}}}}}}}}}}}}}}}}}}}}}}}}}--------------}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-];
-
-const MEDUSA_3_MAP = [
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}T..T.}}}}}}}}}}}}}}}}}}}}..}}}}}}}}.}}}...}}}}}}}.}}}}}......}}}}}}}',
-    '}}}}}}.......T.}}}}}}}}}}}..}}}}..T.}}}}}}...T...T..}}...T..}}..-----..}}}}}',
-    '}}}...-----....}}}}}}}}}}.T..}}}}}...}}}}}.....T..}}}}}......T..|...|.T..}}}',
-    '}}}.T.|...|...T.}}}}}}}.T......}}}}..T..}}.}}}.}}...}}}}}.T.....+...|...}}}}',
-    '}}}}..|...|.}}.}}}}}.....}}}T.}}}}.....}}}}}}.T}}}}}}}}}}}}}..T.|...|.}}}}}}',
-    '}}}}}.|...|.}}}}}}..T..}}}}}}}}}}}}}T.}}}}}}}}..}}}}}}}}}}}.....-----.}}}}}}',
-    '}}}}}.--+--..}}}}}}...}}}}}}}}}}}}}}}}}}}T.}}}}}}}}}}}}}}}}.T.}........}}}}}',
-    '}}}}}.......}}}}}}..}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}.}}.T.}}}}}}',
-    '}}.T...T...}}}}T}}}}}}}}}}}....}}}}}}}}}}T}}}}}.T}}...}}}}}}}}}}}}}}...}}}}}',
-    '}}}...T}}}}}}}..}}}}}}}}}}}.T...}}}}}}}}.T.}.T.....T....}}}}}}}}}}}}}.}}}}}}',
-    '}}}}}}}}}}}}}}}....}}}}}}}...}}.}}}}}}}}}}............T..}}}}}.T.}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}..T..}}}}}}}}}}}}}}..}}}}}..------+--...T.}}}....}}}}}}}}}}}',
-    '}}}}.}..}}}}}}}.T.....}}}}}}}}}}}..T.}}}}.T.|...|...|....}}}}}.}}}}}...}}}}}',
-    '}}}.T.}...}..}}}}T.T.}}}}}}.}}}}}}}....}}...|...+...|.}}}}}}}}}}}}}..T...}}}',
-    '}}}}..}}}.....}}...}}}}}}}...}}}}}}}}}}}}}T.|...|...|}}}}}}}}}}}....T..}}}}}',
-    '}}}}}..}}}.T..}}}.}}}}}}}}.T..}}}}}}}}}}}}}}---S-----}}}}}}}}}}}}}....}}}}}}',
-    '}}}}}}}}}}}..}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}T..T}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-];
-
-const MEDUSA_4_MAP = [
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}........}}}}}}}}}}}}}}}}}}}}}}}..}}}.....}}}}}}}}}}}----|}}}}}',
-    '}}}}}}..----------F-.....}}}}}}}}}}}}}}}}..---...}}}}....T.}}}}}}}....|}}}}}',
-    '}}}.....|...F......S}}}}....}}}}}}}...}}.....|}}.}}}}}}}......}}}}|......}}}',
-    '}}}.....+...|..{...|}}}}}}}}}}}}.....}}}}|...|}}}}}}}}}}}.}}}}}}}}----.}}}}}',
-    '}}......|...|......|}}}}}}}}}......}}}}}}|.......}}}}}}}}}}}}}..}}}}}...}}}}',
-    '}}|-+--F|-+--....|F|-|}}}}}....}}}....}}}-----}}.....}}}}}}}......}}}}.}}}}}',
-    '}}|...}}|...|....|}}}|}}}}}}}..}}}}}}}}}}}}}}}}}}}}....}}}}}}}}....T.}}}}}}}',
-    '}}|...}}F...+....F}}}}}}}..}}}}}}}}}}}}}}...}}}}}}}}}}}}}}}}}}}}}}....}}..}}',
-    '}}|...}}|...|....|}}}|}....}}}}}}....}}}...}}}}}...}}}}}}}}}}}}}}}}}.....}}}',
-    '}}--+--F|-+--....-F|-|....}}}}}}}}}}.T...}}}}....---}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}......|...|......|}}}}}.}}}}}}}}}....}}}}}}}.....|}}}}}}}}}.}}}}}}}}}}}}}}',
-    '}}}}....+...|..{...|.}}}}}}}}}}}}}}}}}}}}}}}}}}.|..|}}}}}}}......}}}}...}}}}',
-    '}}}}}}..|...F......|...}}}}}}}}}}..---}}}}}}}}}}--.-}}}}}....}}}}}}....}}}}}',
-    '}}}}}}}}-----S----F|....}}}}}}}}}|...|}}}}}}}}}}}}...}}}}}}...}}}}}}..}}}}}}',
-    '}}}}}}}}}..............T...}}}}}.|.......}}}}}}}}}}}}}}..}...}.}}}}....}}}}}',
-    '}}}}}}}}}}....}}}}...}...}}}}}.......|.}}}}}}}}}}}}}}.......}}}}}}}}}...}}}}',
-    '}}}}}}}}}}..}}}}}}}}}}.}}}}}}}}}}-..--.}}}}}}}}..}}}}}}..T...}}}..}}}}}}}}}}',
-    '}}}}}}}}}...}}}}}}}}}}}}}}}}}}}}}}}...}}}}}}}....}}}}}}}.}}}..}}}...}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}}}}....}}}}}}}}}}}}}}}}}}}...}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-];
 
 function removeFloorObject(object) {
     const pile = game.level.objects?.[object?.ox]?.[object?.oy];
@@ -10770,9 +10968,11 @@ function addBuriedObject(object, x, y) {
     return object;
 }
 
-function medusaInducedAlignment() {
-    // Medusa has an aligned special-level descriptor.  induced_align(80)
-    // usually returns it after rn2(100), falling back to rn2(3) on 80..99.
+function consumeSpecialMonsterAlignment() {
+    if (!game._activeSpecialLevel?.monsterAlignment) {
+        rn2(3);
+        return;
+    }
     if (rn2(100) >= 80) rn2(3);
 }
 
@@ -10782,137 +10982,6 @@ function namedMonsterNeedsGenderDraw(mndx) {
     // male or female species.  A neuter species still resolves rn2(2), even
     // though makemon() later stores the neutral gender independently.
     return !(flags & (0x10000 | 0x20000));
-}
-
-async function medusaNamedMonsterAt(context, mndx, x, y, asleep = false) {
-    const requestedFemale = namedMonsterNeedsGenderDraw(mndx) ? !!rn2(2) : null;
-    medusaInducedAlignment();
-    const monster = await makemon(
-        mndx, context.xstart + x, context.ystart + y, 0,
-    );
-    if (monster && requestedFemale != null) monster.female = requestedFemale;
-    if (monster && asleep) monster.msleeping = 1;
-    return monster;
-}
-
-async function medusaNamedMonsterAtRandom(
-    context, mndx, { asleep = false, peaceful = null } = {},
-) {
-    const requestedFemale = namedMonsterNeedsGenderDraw(mndx) ? !!rn2(2) : null;
-    medusaInducedAlignment();
-    const point = specialRandomLocation(
-        context, (loc, x, y) =>
-            specialMonsterLocationAcceptable(mndx, loc, x, y),
-        { allowWalls: true },
-    );
-    if (!point) return null;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === point.x && monster.my === point.y);
-    const monster = occupied
-        ? await makemonNear(mndx, point.x, point.y)
-        : await makemon(mndx, point.x, point.y, 0);
-    if (monster && requestedFemale != null) monster.female = requestedFemale;
-    if (monster && asleep) monster.msleeping = 1;
-    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
-    return monster;
-}
-
-async function medusaMonsterClassAt(context, monsterClass, x, y) {
-    medusaInducedAlignment();
-    const mndx = mkclass(monsterClass, 0x0200);
-    if (mndx == null) return null;
-    const absoluteX = context.xstart + x, absoluteY = context.ystart + y;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === absoluteX && monster.my === absoluteY);
-    return occupied
-        ? makemonNear(mndx, absoluteX, absoluteY)
-        : makemon(mndx, absoluteX, absoluteY, 0);
-}
-
-async function medusaMonsterOfClass(context, monsterClass) {
-    medusaInducedAlignment();
-    const mndx = mkclass(monsterClass, 0x0200);
-    if (mndx == null) return null;
-    const point = specialMonsterRandomLocation(context, mndx);
-    if (!point) return null;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === point.x && monster.my === point.y);
-    return occupied
-        ? makemonNear(mndx, point.x, point.y)
-        : makemon(mndx, point.x, point.y, 0);
-}
-
-async function medusaRandomMonsterAt(context, x, y) {
-    medusaInducedAlignment();
-    const absoluteX = context.xstart + x;
-    const absoluteY = context.ystart + y;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === absoluteX && monster.my === absoluteY);
-    return occupied
-        ? makemonNear(null, absoluteX, absoluteY)
-        : makemon(null, absoluteX, absoluteY, 0);
-}
-
-async function medusaRandomMonster(context) {
-    medusaInducedAlignment();
-    const point = specialRandomLocation(context);
-    if (!point) return null;
-    const occupied = game.level.monsters?.some(monster => !monster.dead
-        && monster.mx === point.x && monster.my === point.y);
-    return occupied
-        ? makemonNear(null, point.x, point.y)
-        : makemon(null, point.x, point.y, 0);
-}
-
-function medusaObjectAtRandom(context, otyp) {
-    const point = specialRandomLocation(context);
-    if (!point) return null;
-    return mksobj_at(otyp, point.x, point.y, true, true);
-}
-
-function medusaPerseusStatue(
-    context, x = 36, y = 10,
-    { shieldChance = 75, bootsChance = 25 } = {},
-) {
-    const statue = specialObjectAt(
-        context, STATUE, x, y, { named: true },
-    );
-    if (!statue) return null;
-    // A Lua contents field deletes the spellbook which initialized statues
-    // can acquire before it begins executing the contents callback.
-    statue.contents = [];
-    statue.corpsenm = PM_KNIGHT;
-    statue.cursed = false;
-    statue.blessed = false;
-    statue.spe = 3; // historic and explicitly male
-    statue.oextra = { ...(statue.oextra || {}), oname: 'Perseus' };
-
-    const add = (otyp, state = {}) => {
-        const object = medusaObjectAtRandom(context, otyp);
-        if (!object) return;
-        Object.assign(object, state);
-        addSpecialContainerObject(statue, object);
-    };
-    if (rn2(100) < shieldChance)
-        add(SHIELD_OF_REFLECTION, { cursed: true, blessed: false, spe: 0 });
-    if (rn2(100) < bootsChance)
-        add(LEVITATION_BOOTS, { spe: 0 });
-    if (rn2(100) < 50)
-        add(SCIMITAR, { cursed: false, blessed: true, spe: 2 });
-    if (rn2(100) < 50) add(SACK);
-    return statue;
-}
-
-function medusaDragonEggAt(context, x, y) {
-    const egg = specialObjectAt(
-        context, EGG, x, y, { named: true },
-    );
-    if (egg) set_corpsenm(egg, PM_YELLOW_DRAGON);
-    return egg;
-}
-
-function medusaMonsterGoodPos(mndx, x, y) {
-    return monsterGoodPosition(mndx, x, y);
 }
 
 function medusaPetrifiable(mndx) {
@@ -10940,7 +11009,7 @@ async function medusaEmptyStatue(context, fixedPoint = null) {
         for (let locations = 0; locations < 100; locations++) {
             const x = rn2(COLNO - 3) + 2;
             const y = rn2(ROWNO);
-            if (medusaMonsterGoodPos(mndx, x, y)) {
+            if (monsterGoodPosition(mndx, x, y)) {
                 monsterPoint = { x, y };
                 break;
             }
@@ -10959,12 +11028,6 @@ async function medusaEmptyStatue(context, fixedPoint = null) {
         break;
     }
     return statue;
-}
-
-async function medusaTrapAt(context, typ, x, y) {
-    const trap = await maketrap(context.xstart + x, context.ystart + y, typ);
-    rnd(4);
-    return trap;
 }
 
 function absoluteSpecialRegion(context, x1, y1, x2, y2) {
@@ -11083,12 +11146,12 @@ async function generateSanctum(active) {
     ]) specialDoorAt(context, mask, x, y);
 
     for (let x = 13; x <= 23; x++) {
-        await medusaTrapAt(context, FIRE_TRAP, x, 5);
-        await medusaTrapAt(context, FIRE_TRAP, x, 12);
+        await specialTrapAt(context, FIRE_TRAP, x, 5);
+        await specialTrapAt(context, FIRE_TRAP, x, 12);
     }
     for (let y = 6; y <= 11; y++) {
-        await medusaTrapAt(context, FIRE_TRAP, 13, y);
-        await medusaTrapAt(context, FIRE_TRAP, 23, y);
+        await specialTrapAt(context, FIRE_TRAP, 13, y);
+        await specialTrapAt(context, FIRE_TRAP, 23, y);
     }
     for (const typ of [
         SPIKED_PIT, FIRE_TRAP, SLP_GAS_TRAP,
@@ -11820,10 +11883,10 @@ async function generateValley(active) {
         [SPIKED_PIT, 14, 5],
         [SLP_GAS_TRAP, 3, 1],
         [SQKY_BOARD, 21, 12],
-    ]) await medusaTrapAt(context, typ, x, y);
+    ]) await specialTrapAt(context, typ, x, y);
     await specialTrapOfType(context, SQKY_BOARD);
-    await medusaTrapAt(context, DART_TRAP, 60, 1);
-    await medusaTrapAt(context, DART_TRAP, 26, 17);
+    await specialTrapAt(context, DART_TRAP, 60, 1);
+    await specialTrapAt(context, DART_TRAP, 26, 17);
     await specialTrapOfType(context, ANTI_MAGIC);
     await specialTrapOfType(context, ANTI_MAGIC);
     await specialTrapOfType(context, MAGIC_TRAP);
@@ -13671,372 +13734,11 @@ function flipSpecialRegion(region) {
     return result;
 }
 
-async function generateMedusa1(active) {
-    const context = loadSpecialAsciiMap(MEDUSA_1_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-
-    // selection-form lighting grows by one square; unlighting does not.
-    for (let x = context.xstart - 1; x <= context.xstart + 75; x++)
-        for (let y = context.ystart - 1; y <= context.ystart + 20; y++) {
-            const loc = game.level.at(x, y);
-            if (loc) loc.lit = true;
-        }
-    for (let x = 31; x <= 45; x++)
-        game.level.at(context.xstart + x, context.ystart + 7).lit = false;
-    const arrivalRoom = specialRectangularRoom(
-        context, 35, 9, 41, 10, OROOM, false, 0,
-    );
-    arrivalRoom.arrival_room = true;
-    for (let x = 31; x <= 45; x++)
-        game.level.at(context.xstart + x, context.ystart + 12).lit = false;
-
-    active.downTeleportRegion = absoluteSpecialRegion(context, 1, 1, 5, 17);
-    active.upTeleportRegion = absoluteSpecialRegion(context, 26, 4, 50, 15);
-    active.explicitBranchRegion = absoluteSpecialRegion(context, 1, 0, 79, 20);
-    active.explicitBranchExclude = absoluteSpecialRegion(context, 30, 6, 46, 13);
-
-    specialStairAt(context, 5, 14, true);
-    specialStairAt(context, 36, 10, false);
-    for (const [mask, x, y] of [
-        [D_CLOSED, 46, 7], [D_LOCKED, 38, 8],
-        [D_LOCKED, 38, 11], [D_CLOSED, 30, 12],
-    ]) specialDoorAt(context, mask, x, y);
-    for (let x = 30; x <= 46; x++)
-        for (let y = 6; y <= 13; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc && IS_WALL(loc.typ)) loc.wall_info |= W_NONDIGGABLE;
-        }
-
-    medusaPerseusStatue(context);
-    for (let count = 0; count < 7; count++)
-        await medusaEmptyStatue(context);
-    for (let count = 0; count < 8; count++) specialObject(context);
-    for (let count = 0; count < 5; count++) await specialTrap(context);
-    await medusaTrapAt(context, SQKY_BOARD, 38, 7);
-    await medusaTrapAt(context, SQKY_BOARD, 38, 12);
-
-    await medusaNamedMonsterAt(context, PM_MEDUSA, 36, 10, true);
-    for (const [mndx, x, y] of [
-        [PM_GIANT_EEL, 11, 6], [PM_GIANT_EEL, 23, 13],
-        [PM_GIANT_EEL, 29, 2], [PM_JELLYFISH, 2, 2],
-        [PM_JELLYFISH, 0, 8], [PM_JELLYFISH, 4, 18],
-        [PM_WATER_TROLL, 51, 3], [PM_WATER_TROLL, 64, 11],
-    ]) await medusaNamedMonsterAt(context, mndx, x, y);
-    await medusaMonsterClassAt(context, 45, 38, 7); // S_SNAKE
-    await medusaMonsterClassAt(context, 45, 38, 12);
-    for (let count = 0; count < 10; count++)
-        await medusaRandomMonster(context);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.explicitBranchRegion = flipSpecialRegion(active.explicitBranchRegion);
-    active.explicitBranchExclude = flipSpecialRegion(active.explicitBranchExclude);
-}
-
-async function generateMedusa2(active) {
-    const context = loadSpecialAsciiMap(MEDUSA_2_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-
-    setSpecialRegionLighting(context, 0, 0, 74, 19, true);
-    setSpecialRegionLighting(context, 2, 3, 5, 16, false);
-    specialIrregularRoom(context, 61, 3, OROOM, false, 0);
-    setSpecialRegionLighting(context, 71, 8, 72, 11, false);
-    const arrivalRoom = specialRectangularRoom(
-        context, 67, 8, 69, 11, OROOM, true, 0,
-    );
-    arrivalRoom.arrival_room = true;
-
-    active.downTeleportRegion = absoluteSpecialRegion(context, 2, 3, 5, 16);
-    active.upTeleportRegion = absoluteSpecialRegion(context, 61, 3, 72, 16);
-    active.explicitBranchRegion = absoluteSpecialRegion(context, 1, 0, 79, 20);
-    active.explicitBranchExclude = absoluteSpecialRegion(
-        context, 59, 1, 73, 17,
-    );
-
-    specialStairAt(context, 4, 9, true);
-    specialStairAt(context, 68, 10, false);
-    specialDoorAt(context, D_LOCKED, 71, 7);
-    specialNonDiggable({
-        xstart: context.xstart + 1,
-        ystart: context.ystart + 2,
-        width: 6,
-        height: 16,
-    });
-    specialNonDiggable({
-        xstart: context.xstart + 60,
-        ystart: context.ystart + 2,
-        width: 14,
-        height: 16,
-    });
-
-    medusaPerseusStatue(context, 68, 10, {
-        shieldChance: 25,
-        bootsChance: 75,
-    });
-    for (const [x, y] of [
-        [64, 8], [65, 8], [64, 9], [65, 9],
-        [64, 10], [65, 10], [64, 11], [65, 11],
-    ]) await medusaEmptyStatue(context, { x, y });
-    specialObjectAt(context, BOULDER, 4, 4, { named: true });
-    specialObjectClassAt(context, WAND_CLASS, 52, 9);
-    specialObjectAt(context, BOULDER, 52, 9, { named: true });
-    for (let count = 0; count < 6; count++) specialObject(context);
-
-    await medusaTrapAt(context, MAGIC_TRAP, 3, 12);
-    for (let count = 0; count < 4; count++) await specialTrap(context);
-
-    await medusaNamedMonsterAt(context, PM_MEDUSA, 68, 10, true);
-    for (const [mndx, x, y, asleep] of [
-        [PM_GREMLIN, 2, 14, false],
-        [PM_TITAN, 2, 5, false],
-        [PM_ELECTRIC_EEL, 10, 13, false],
-        [PM_ELECTRIC_EEL, 11, 13, false],
-        [PM_ELECTRIC_EEL, 10, 14, false],
-        [PM_ELECTRIC_EEL, 11, 14, false],
-        [PM_ELECTRIC_EEL, 10, 15, false],
-        [PM_ELECTRIC_EEL, 11, 15, false],
-        [PM_JELLYFISH, 1, 1, false],
-        [PM_JELLYFISH, 0, 8, false],
-        [PM_JELLYFISH, 4, 19, false],
-        [PM_STONE_GOLEM, 64, 8, true],
-        [PM_STONE_GOLEM, 65, 8, true],
-        [PM_STONE_GOLEM, 64, 9, true],
-        [PM_STONE_GOLEM, 65, 9, true],
-        [PM_COBRA, 64, 10, true],
-        [PM_COBRA, 65, 10, true],
-        [PM_YELLOW_LIGHT, 72, 11, true],
-    ]) await medusaNamedMonsterAt(context, mndx, x, y, asleep);
-    await medusaMonsterClassAt(context, S_ANGEL, 72, 8);
-    for (const [x, y] of [
-        [17, 7], [28, 11], [32, 13], [49, 9], [48, 7],
-        [65, 3], [70, 4], [70, 15], [65, 16],
-    ]) await medusaRandomMonsterAt(context, x, y);
-    for (let count = 0; count < 4; count++)
-        await medusaRandomMonster(context);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.explicitBranchRegion = flipSpecialRegion(active.explicitBranchRegion);
-    active.explicitBranchExclude = flipSpecialRegion(active.explicitBranchExclude);
-}
-
-async function generateMedusa3(active) {
-    // Lua source: dat/medusa-3.lua, the raven-island variant.
-    const context = loadSpecialAsciiMap(MEDUSA_3_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.shortsighted = true;
-
-    // selection_rndcoord() enumerates the set in x-major order regardless
-    // of the order of the preceding selection:set() calls.
-    const places = [[8, 6], [46, 15], [66, 5]];
-    const takePlace = () => places.splice(rn2(places.length), 1)[0];
-    const medloc = takePlace();
-    const altloc = takePlace();
-    const othloc = takePlace();
-
-    // Lighting a selection grows its edge by one square; unlighting the
-    // three enclosed rooms does not.
-    for (let x = context.xstart - 1; x <= context.xstart + 75; x++)
-        for (let y = context.ystart - 1; y <= context.ystart + 20; y++) {
-            const loc = game.level.at(x, y);
-            if (loc) loc.lit = true;
-        }
-    const roomLit = rnd(1 + Math.abs(depth_of_level(game.u?.uz))) < 11
-        && rn2(77) !== 0;
-    const arrivalRoom = specialRectangularRoom(
-        context, 49, 14, 51, 16, OROOM, roomLit, 0,
-    );
-    arrivalRoom.arrival_room = true;
-    for (const [x1, y1, x2, y2] of [
-        [7, 5, 9, 7], [65, 4, 67, 6], [45, 14, 47, 16],
-    ]) {
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++)
-                game.level.at(context.xstart + x, context.ystart + y).lit = false;
-    }
-    for (const [x1, y1, x2, y2] of [
-        [6, 4, 10, 8], [64, 3, 68, 7], [44, 13, 48, 17],
-    ]) {
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++) {
-                const loc = game.level.at(
-                    context.xstart + x, context.ystart + y,
-                );
-                if (loc && IS_STWALL(loc.typ))
-                    loc.wall_info |= W_NONDIGGABLE;
-            }
-    }
-
-    active.downTeleportRegion = absoluteSpecialRegion(
-        context, 33, 2, 38, 7,
-    );
-    let upStairRegion = absoluteSpecialRegion(context, 32, 1, 39, 7);
-    specialStairAt(context, medloc[0], medloc[1], false);
-
-    specialDoorAt(context, D_LOCKED, 8, 8);
-    specialDoorAt(context, D_LOCKED, 64, 5);
-    const randomDoor = [
-        D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED,
-    ][rn2(5)];
-    specialDoorAt(context, randomDoor, 50, 13);
-    specialDoorAt(context, D_LOCKED, 48, 15);
-
-    const fountain = game.level.at(
-        context.xstart + othloc[0], context.ystart + othloc[1],
-    );
-    if (fountain) {
-        fountain.typ = FOUNTAIN;
-        game.level.flags.nfountains++;
-    }
-
-    medusaPerseusStatue(context, medloc[0], medloc[1]);
-    await medusaEmptyStatue(context, { x: altloc[0], y: altloc[1] });
-    for (let count = 0; count < 6; count++)
-        await medusaEmptyStatue(context);
-    for (let count = 0; count < 8; count++) specialObject(context);
-    specialObjectAt(context, SCR_BLANK_PAPER, 48, 18);
-    specialObjectAt(context, SCR_BLANK_PAPER, 48, 18);
-
-    for (const typ of [
-        RUST_TRAP, RUST_TRAP, SQKY_BOARD, SQKY_BOARD,
-    ]) await specialTrapOfType(context, typ);
-    await specialTrap(context);
-
-    await medusaNamedMonsterAt(
-        context, PM_MEDUSA, medloc[0], medloc[1], true,
-    );
-    for (const mndx of [
-        PM_GIANT_EEL, PM_GIANT_EEL,
-        PM_JELLYFISH, PM_JELLYFISH,
-        PM_WOOD_NYMPH, PM_WOOD_NYMPH,
-        PM_WATER_NYMPH, PM_WATER_NYMPH,
-    ]) await medusaNamedMonsterAtRandom(context, mndx);
-    for (let count = 0; count < 30; count++)
-        await medusaNamedMonsterAtRandom(
-            context, PM_RAVEN, { peaceful: false },
-        );
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    upStairRegion = flipSpecialRegion(upStairRegion);
-    place_lregion(
-        upStairRegion.lx, upStairRegion.ly,
-        upStairRegion.hx, upStairRegion.hy,
-        0, 0, 0, 0, LR_UPSTAIR, null,
-    );
-}
-
-async function generateMedusa4(active) {
-    const context = loadSpecialAsciiMap(MEDUSA_4_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-
-    const places = [[4, 8], [10, 4], [10, 8], [10, 12]];
-    const takePlace = () => places.splice(rn2(places.length), 1)[0];
-    const medloc = takePlace();
-    const altloc = takePlace();
-
-    setSpecialRegionLighting(context, 0, 0, 74, 19, true);
-    specialIrregularRoom(context, 13, 3, OROOM, true, 0);
-    active.downTeleportRegion = absoluteSpecialRegion(
-        context, 64, 1, 74, 17,
-    );
-    active.upTeleportRegion = absoluteSpecialRegion(
-        context, 2, 2, 18, 13,
-    );
-    let upStairRegion = absoluteSpecialRegion(context, 67, 1, 74, 20);
-
-    specialStairAt(context, medloc[0], medloc[1], false);
-    for (const [x, y] of [
-        [4, 6], [4, 10], [8, 4], [8, 12],
-        [10, 6], [10, 10], [12, 8],
-    ]) specialDoorAt(context, D_LOCKED, x, y);
-    active.explicitBranchRegion = absoluteSpecialRegion(
-        context, 27, 0, 79, 20,
-    );
-    specialNonDiggable({
-        xstart: context.xstart + 1,
-        ystart: context.ystart + 1,
-        width: 22,
-        height: 14,
-    });
-
-    specialObjectAt(context, CRYSTAL_BALL, 7, 8, { named: true });
-    medusaPerseusStatue(context, medloc[0], medloc[1]);
-    await medusaEmptyStatue(context, { x: altloc[0], y: altloc[1] });
-    for (let count = 0; count < 6; count++)
-        await medusaEmptyStatue(context);
-    for (let count = 0; count < 8; count++) specialObject(context);
-    for (let count = 0; count < 7; count++) await specialTrap(context);
-
-    await medusaNamedMonsterAt(
-        context, PM_MEDUSA, medloc[0], medloc[1], true,
-    );
-    await medusaNamedMonsterAt(context, PM_KRAKEN, 7, 7);
-    await medusaNamedMonsterAt(context, PM_YELLOW_DRAGON, 5, 4, true);
-    if (rn2(100) < 50)
-        await medusaNamedMonsterAt(
-            context, PM_BABY_YELLOW_DRAGON, 4, 4, true,
-        );
-    if (rn2(100) < 25)
-        await medusaNamedMonsterAt(
-            context, PM_BABY_YELLOW_DRAGON, 4, 5, true,
-        );
-    medusaDragonEggAt(context, 5, 4);
-    if (rn2(100) < 50) medusaDragonEggAt(context, 5, 4);
-    if (rn2(100) < 25) medusaDragonEggAt(context, 5, 4);
-
-    for (const mndx of [
-        PM_GIANT_EEL, PM_GIANT_EEL,
-        PM_JELLYFISH, PM_JELLYFISH,
-    ]) await medusaNamedMonsterAtRandom(context, mndx);
-    for (let count = 0; count < 14; count++)
-        await medusaMonsterOfClass(context, 45); // S_SNAKE
-    for (let count = 0; count < 4; count++) {
-        await medusaNamedMonsterAtRandom(context, PM_BLACK_NAGA_HATCHLING);
-        await medusaNamedMonsterAtRandom(context, PM_BLACK_NAGA);
-    }
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.explicitBranchRegion = flipSpecialRegion(active.explicitBranchRegion);
-    upStairRegion = flipSpecialRegion(upStairRegion);
-    place_lregion(
-        upStairRegion.lx, upStairRegion.ly,
-        upStairRegion.hx, upStairRegion.hy,
-        0, 0, 0, 0, LR_UPSTAIR, null,
-    );
-}
-
-const MEDUSA_GENERATORS = Object.freeze([
-    null,
-    generateMedusa1, generateMedusa2, generateMedusa3, generateMedusa4,
-]);
-
 export async function generateMedusaLevel(active) {
-    const generator = MEDUSA_GENERATORS[active?.variant];
-    if (!generator) {
+    if (active?.variant < 1 || active?.variant > 4) {
         throw new RangeError(`unknown Medusa variant ${active?.variant}`);
     }
-    await generateSpecialAndFixup(generator, active);
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 function makeToptenStatue(x, y) {
@@ -15516,7 +15218,8 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm';
+        const luaOwnedSpecial = prototype === 'bigrm'
+            || prototype === 'medusa';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

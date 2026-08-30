@@ -557,6 +557,11 @@ export class SpecialSelection {
         return this;
     }
 
+    remove(x, y) {
+        selection_setpoint(x, y, this.selection, 0);
+        return this;
+    }
+
     clone() {
         return new SpecialSelection(selection_clone(this.selection));
     }

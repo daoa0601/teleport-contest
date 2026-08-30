@@ -24,8 +24,25 @@ function pointTable(point) {
 
 export function createSelectionBindings(context, invoke = null) {
     const wrap = selection => new LuaUserdata(selection, metatable);
+    const relativePoint = point => {
+        if (!point) return null;
+        const active = currentContext();
+        return {
+            x: point.x - active.xstart,
+            y: point.y - active.ystart,
+        };
+    };
     const metatable = {
         __index: {
+            set: (self, x, y, value = 1) => {
+                const active = currentContext();
+                const selection = selectionValue(self);
+                const absoluteX = active.xstart + x;
+                const absoluteY = active.ystart + y;
+                if (value) selection.add(absoluteX, absoluteY);
+                else selection.remove(absoluteX, absoluteY);
+                return self;
+            },
             clone: self => wrap(selectionValue(self).clone()),
             numpoints: self => selectionValue(self).numPoints(),
             percentage: (self, percent) => wrap(
@@ -34,14 +51,18 @@ export function createSelectionBindings(context, invoke = null) {
             grow: (self, direction = 'all') => wrap(
                 selectionValue(self).grow(direction),
             ),
-            rndcoord: (self, remove = false) => pointTable(
+            rndcoord: (self, remove = false) => pointTable(relativePoint(
                 selectionValue(self).randomCoordinate(remove),
-            ),
+            )),
             iterate: async (self, callback) => {
                 if (!invoke)
                     throw new Error('selection.iterate needs a Lua state');
                 const points = [];
-                selectionValue(self).forEachLua((x, y) => points.push([x, y]));
+                const active = currentContext();
+                selectionValue(self).forEachLua((x, y) => points.push([
+                    x - active.xstart,
+                    y - active.ystart,
+                ]));
                 for (const point of points) await invoke(callback, point);
             },
         },

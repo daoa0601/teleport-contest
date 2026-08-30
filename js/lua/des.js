@@ -31,10 +31,13 @@ export function createDesBindings(operations) {
                     ? null : unwrapSelection(options.selection),
             });
         },
-        region: (selection, lighting) => operations.region(
-            unwrapSelection(selection), String(lighting),
-        ),
-        stair: direction => operations.stair(String(direction)),
+        region: (selection, lighting) => selection instanceof LuaTable
+            ? operations.roomRegion(tableOptions(selection))
+            : operations.region(
+                unwrapSelection(selection), String(lighting),
+            ),
+        stair: (...args) => operations.stair(...args.map(luaArgument)),
+        door: (...args) => operations.door(...args.map(luaArgument)),
         feature: (...args) => operations.feature(...args.map(luaArgument)),
         non_diggable: selection => operations.nonDiggable(
             selection == null ? null : unwrapSelection(selection),
