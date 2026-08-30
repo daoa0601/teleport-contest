@@ -43,8 +43,7 @@ export function auditBridgeFreeSource() {
         '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_priestExtcmdPath', '_touristExplorePath',
-        '_rangerNamePath', '_rogueExplorePath', '_rogueFriday13Path',
-        '_rogueOrcPath', '_rogueChargenPath', '_valkChatPath',
+        '_rangerNamePath', '_valkChatPath',
         '_priestCastPath', '_healerNewmoonPath', '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
@@ -75,6 +74,26 @@ export function auditBridgeFreeSource() {
     for (const predicate of forbiddenSamuraiTracePredicates) {
         if (predicate.test(cmd))
             failures.push(`cmd.js: trace-shaped Samurai predicate ${predicate}`);
+    }
+    const forbiddenRogueReplayTokens = [
+        '_rogueExplorePath', '_rogueFriday13Path', '_rogueOrcPath',
+        '_rogueChargenPath', '_rogueFriday13RngReplayed',
+        '_rogueFriday13Commands', '_rogueOrcTimedActions',
+        'ROGUE_PET_POSITIONS', 'replayRogue', 'rogueFriday13Command',
+        'rogueOrcTimedAction', '_friday13ElapsedTurns',
+        '_friday13ForceFight', '_rogueFriday13SavePath',
+    ];
+    for (const token of forbiddenRogueReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'insight.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Rogue replay token ${token}`);
+        }
+    }
+    for (const file of [
+        'rogue_explore.js', 'rogue_friday13.js', 'rogue_orc.js',
+    ]) {
+        if (sources.has(file))
+            failures.push(`${file}: legacy Rogue replay module still exists`);
     }
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))

@@ -7,7 +7,7 @@ import {
 } from '../js/bridge_policy.js';
 import { fastforward_pre_mklev } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
-import { replayRogueTurn } from '../js/rogue_explore.js';
+import { replayCavemanTurn } from '../js/caveman_explore.js';
 import { runSegment } from '../js/jsmain.js';
 import { auditBridgeFreeSource } from '../scripts/audit-bridge-free.mjs';
 
@@ -67,7 +67,7 @@ test('replayMoves is poisoned and known replay boundaries are guarded', () => {
                 return state.replayMoves;
             },
             () => fastforward_pre_mklev(),
-            () => replayRogueTurn(2),
+            () => replayCavemanTurn(2),
             () => paintFixtureScreen('', null, {}),
         ]) {
             resetBridgeUsageLedger();
@@ -83,7 +83,7 @@ test('mechanical source audit covers fixture and replay additions', () => {
     assert.deepEqual(result.failures, []);
     assert.ok(result.fixtureModules.length > 0);
     assert.ok(result.guardedModules.includes('fastforward.js'));
-    assert.ok(result.guardedModules.includes('rogue_explore.js'));
+    assert.ok(result.guardedModules.includes('caveman_explore.js'));
 });
 
 test('bridge-free entry executes a live quiet-role turn with zero bridge hits', async () => {

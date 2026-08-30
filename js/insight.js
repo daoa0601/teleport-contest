@@ -431,9 +431,7 @@ function attributePages() {
     const displayedDungeonName = dungeonName.replace(/^The\b/, 'the');
     const displayedDepth = /\bQuest\b/i.test(dungeonName)
         ? u.uz?.dlevel : dungeonDepth(u.uz);
-    const elapsedTurns = game._friday13ElapsedTurns ?? (game._rogueExplorePath
-        ? Math.max(1, (game.moves || 1) - 1)
-        : game.moves || 1);
+    const elapsedTurns = game.moves || 1;
     const entered = elapsedTurns === 1
         ? '  You have just started your adventure.'
         : `  You entered the dungeon ${elapsedTurns} ${

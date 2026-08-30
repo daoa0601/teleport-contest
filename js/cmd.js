@@ -1812,9 +1812,6 @@ export async function rhack(key) {
         return;
     }
 
-    if (game._rogueFriday13Path
-        && await rogueFriday13Command(key, ch)) return;
-
     if (game._valkPitPath && game.u?.uz?.dlevel === 1
         && isMovementKey(ch) && await valkPitLevelOneMovement(ch)) {
         return;
@@ -1828,13 +1825,6 @@ export async function rhack(key) {
         && (ch === 'L' || isMovementKey(ch))
         && await knightCombatMovement(ch)) {
         return;
-    } else if (game._rogueOrcPath && ch === 'L') {
-        const timedRun = (game.u?.ux === 5 && game.u?.uy === 13)
-            || (game.u?.ux === 11 && game.u?.uy === 13)
-            || (game.u?.ux === 16 && game.u?.uy === 12);
-        game.context.move = timedRun ? 1 : 0;
-    } else if (game._rogueOrcPath && ch === 'H') {
-        game.context.move = 0;
     } else if (ch === 'F') {
         await doforcefight();
     } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
@@ -4787,166 +4777,6 @@ async function dosave() {
     game.context.move = 0;
 }
 
-function placeFriday13Pet(x, y) {
-    const pet = game.startingPet;
-    if (!pet) return;
-    const oldx = pet.mx, oldy = pet.my;
-    pet.mx = x; pet.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
-}
-
-function runFriday13HeroPath(points) {
-    const u = game.u;
-    for (const [x, y] of points) {
-        const oldx = u.ux, oldy = u.uy;
-        u.ux0 = oldx; u.uy0 = oldy;
-        u.ux = x; u.uy = y;
-        newsym(oldx, oldy);
-        vision_recalc(1);
-        newsym(x, y);
-    }
-}
-
-async function friday13DropSword() {
-    const key = await promptKey('What do you want to drop? [a-g or ?*] ');
-    if (String.fromCharCode(key) !== 'a') {
-        game.context.move = 0;
-        return;
-    }
-    const sword = game.inventory?.find(item => item.invlet === 'a');
-    if (sword) {
-        game.inventory = game.inventory.filter(item => item !== sword);
-        if (game.uwep === sword) game.uwep = null;
-        const { ux: x, uy: y } = game.u;
-        sword.ox = x; sword.oy = y;
-        if (!game.level.objects[x]) game.level.objects[x] = [];
-        if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-        game.level.objects[x][y].unshift(sword);
-        newsym(x, y);
-    }
-    placeFriday13Pet(42, 11);
-    await pline('You drop a +0 short sword.');
-    game.context.move = 1;
-}
-
-// This session exercises NetHack's queued uppercase-direction running.  The
-// general command loop does not yet retain C's multi/run state, so advance the
-// live hero through the same terrain and let vision.c reveal each traversed
-// cell.  Menus and ordinary commands continue through the generic handlers.
-async function rogueFriday13Command(key, ch) {
-    const command = (game._rogueFriday13Commands || 0) + 1;
-    game._rogueFriday13Commands = command;
-
-    if (command === 1 && ch === 'L') {
-        runFriday13HeroPath([[10, 15], [11, 15], [12, 15]]);
-        placeFriday13Pet(10, 15);
-        await pline('You hear an A note squeak in the distance.');
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 2 && key === 12) {
-        runFriday13HeroPath(Array.from({ length: 20 }, (_, i) => [13 + i, 15]));
-        placeFriday13Pet(15, 15);
-        for (const y of [14, 16]) {
-            const edge = game.level?.at(33, y);
-            if (edge) {
-                edge.remembered_glyph = null;
-                edge.disp_ch = ' ';
-            }
-        }
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 3 && ch === 'l') {
-        runFriday13HeroPath([[33, 15]]);
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 4 && ch === 'K') {
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 5 && ch === 'L') {
-        runFriday13HeroPath([[34, 15], [35, 15]]);
-        placeFriday13Pet(34, 16);
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 6 && ch === 'L') {
-        runFriday13HeroPath(Array.from({ length: 7 }, (_, i) => [36 + i, 15]));
-        placeFriday13Pet(39, 15);
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 7 && ch === 'l') {
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 8 && ch === 'J') {
-        runFriday13HeroPath([[42, 16]]);
-        placeFriday13Pet(41, 15);
-        game.context.move = 1;
-        return true;
-    }
-    if (command >= 9 && command <= 11 && ch === 'L') {
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 12 && ch === 'K') {
-        runFriday13HeroPath(Array.from({ length: 6 }, (_, i) => [42, 15 - i]));
-        placeFriday13Pet(42, 12);
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 13 && ch === 'L') {
-        game.context.move = 0;
-        return true;
-    }
-    if ((command === 18 || command === 19) && ch === ',') {
-        await pline('There is nothing here to pick up.');
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 20 && ch === 'd') {
-        await friday13DropSword();
-        return true;
-    }
-    if ([23, 25, 27, 29].includes(command) && ch === 'F') {
-        game._friday13ForceFight = true;
-        game.context.move = 0;
-        return true;
-    }
-    if ([24, 26, 28, 30].includes(command) && ch === 'h'
-        && game._friday13ForceFight) {
-        game._friday13ForceFight = false;
-        const petPositions = {
-            24: [42, 12], 26: [42, 11], 28: [41, 12], 30: [42, 12],
-        };
-        placeFriday13Pet(...petPositions[command]);
-        await pline('You harmlessly attack the wall.');
-        game.context.move = 1;
-        return true;
-    }
-    if (command === 35 && ch === 'n') {
-        const door = game.level?.at(43, 11);
-        if (door) {
-            door.doormask &= ~(D_CLOSED | D_LOCKED);
-            door.doormask |= 2;
-            newsym(43, 11);
-        }
-        await pline('The door opens.');
-        game.context.move = 0;
-        return true;
-    }
-    if (command === 36 && ch === 'n') {
-        game.context.move = 0;
-        return true;
-    }
-    if (ch === 's') placeFriday13Pet(42, 11);
-    return false;
-}
-
 export function wakeMonstersNear(x, y, distance) {
     for (const monster of game.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
@@ -5113,13 +4943,6 @@ async function dokick() {
         placeMonkMonster(game.startingPet, 60, 11);
         await pline('You kick at empty space.');
         monkNorthFinish(20);
-        return;
-    }
-    if (game._rogueOrcPath) {
-        await pline(direction === 'l'
-            ? 'Ouch!  That hurts!'
-            : 'You kick at empty space.');
-        game.context.move = 1;
         return;
     }
     const monster = game.level?.monsters?.find(candidate =>
@@ -18184,8 +18007,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            const yields = game._rogueFriday13RngReplayed
-                || rn2(7) !== 0;
+            const yields = rn2(7) !== 0;
             if (!yields) {
                 if (tame) {
                     let fleeTime = rnd(6);
@@ -18303,9 +18125,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             game.context.move = 0;
             return false;
         }
-        // The bounded Friday-13 combat bridge replays this command together
-        // with its intervening monster turns, so do not consume it twice.
-        const openRoll = game._rogueFriday13RngReplayed ? 0 : rnl(20);
+        const openRoll = rnl(20);
         const attributes = game.u?.acurr?.a || [10, 10, 10];
         const openThreshold = Math.trunc(
             ((attributes[0] ?? 10) + (attributes[1] ?? 10)
