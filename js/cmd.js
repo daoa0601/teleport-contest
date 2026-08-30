@@ -174,6 +174,7 @@ import {
     addHeroGoldObject, detachHeroGold, ensureHeroGoldObject,
     heroGoldAmount, setHeroGoldAmount, syncHeroGoldCache,
 } from './hero_gold.js';
+import { resolveDirectGoldThrow } from './gold_throw.js';
 import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
 } from './senses.js';
@@ -15264,14 +15265,21 @@ async function dothrow(
         game._pending_message = '';
         return;
     }
+    const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
+    const directGoldThrow = selectedObjectClass === 12
+        && item !== game.uquiver;
     const directionKey = await promptKey('In what direction? ');
     const direction = String.fromCharCode(directionKey);
     if (direction === '.') {
-        await pline('You cannot throw an object at yourself.');
+        await pline(directGoldThrow
+            ? 'You cannot throw gold at yourself.'
+            : 'You cannot throw an object at yourself.');
         game.context.move = 0;
         return;
     }
-    if (!isMovementKey(direction)) {
+    const verticalGoldThrow = directGoldThrow
+        && (direction === '<' || direction === '>');
+    if (!isMovementKey(direction) && !verticalGoldThrow) {
         const quitDirection = [27, 32, 10, 13].includes(directionKey);
         if (!quitDirection && game.flags?.cmdassist !== false) {
             await showTextPages([directionAssistPage()], {
@@ -15292,13 +15300,29 @@ async function dothrow(
 
     // getdir() commits the source direction before throw_obj() detaches an
     // identity.  throwit() may later rewrite it for slip or low stamina.
-    const dx = DIR_DX[direction], dy = DIR_DY[direction];
+    const dx = DIR_DX[direction] ?? 0;
+    const dy = DIR_DY[direction] ?? 0;
+    const dz = direction === '<' ? -1 : direction === '>' ? 1 : 0;
     game.u.dx = dx;
     game.u.dy = dy;
-    game.u.dz = 0;
+    game.u.dz = dz;
+
+    if (directGoldThrow) {
+        await resolveDirectGoldThrow({
+            state: game,
+            gold: item,
+            dx, dy, dz,
+            captureFlight: captureThrownObjectFlight,
+            wakeMonster: wakeAttackedMonster,
+            angerMonster: setMonsterAngryFromAttack,
+            adjustAlignment: adjustHeroAlignment,
+        });
+        game.context.move = 1;
+        return;
+    }
 
     const selectedQuantity = item.quantity ?? item.quan ?? 1;
-    const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
+    const thrownObjectClass = selectedObjectClass;
     // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
     // by the signed P_BOW subtype, not the ordinary ARROW/BOW identities.
     // This includes elven, orcish, silver and ya ammunition with any matching
@@ -17344,25 +17368,23 @@ async function respondPeacefulBystanders(attackedMonster) {
     }
 }
 
-// C refs: mon.c:wakeup(via_attack)/setmangry() and sounds.c:growl().
-// The target's attitude and its audible reaction are one shared transition;
-// projectile callers must not reproduce just the state mutation.  The
-// witnessed non-Hallucination animal branch is deterministic.  Hallucinated
-// growl-name/verb ordering and peaceful bystander response remain separately
-// selected successors.
-async function wakeAttackedMonster(monster) {
+// C mon.c:setmangry(via_attack=TRUE).  This is intentionally separate from
+// wakeup(): ghitm() already clears sleep before its one-in-four anger probe.
+// Priest alignment is target-specific rather than the ordinary -1 penalty.
+async function setMonsterAngryFromAttack(monster) {
     if (!monster) return;
     if (monster.isshk) {
         await wakeAttackedShopkeeper(monster);
         return;
     }
 
-    monster.msleeping = 0;
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     if (!monster.mpeaceful || (monster.mtame ?? 0) > 0) return;
 
     monster.mpeaceful = 0;
-    adjustHeroAlignment(-1);
+    adjustHeroAlignment(monster.ispriest
+        ? (priestIsCoaligned(monster, game) ? -5 : 2)
+        : -1);
     const hallucinating = !!(game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0);
     const actualMonsterName = monster.name
@@ -17376,6 +17398,15 @@ async function wakeAttackedMonster(monster) {
         await publishMonsterGrowl(monster);
     }
     await respondPeacefulBystanders(monster);
+}
+
+// C refs: mon.c:wakeup(via_attack)/setmangry() and sounds.c:growl().
+// The target's sleep, attitude, and audible reaction are one shared
+// transition; projectile callers must not reproduce just the state mutation.
+async function wakeAttackedMonster(monster) {
+    if (!monster) return;
+    monster.msleeping = 0;
+    await setMonsterAngryFromAttack(monster);
 }
 
 async function attackHostileMonster(monster, x, y, {
