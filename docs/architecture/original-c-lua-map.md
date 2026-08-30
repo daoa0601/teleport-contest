@@ -39109,3 +39109,59 @@ complete mounted combat and jousting, save/restore, wider options and terrain,
 and a sealed stratum remain open.  The managed default gate passes 451/451
 across 51 behavioral files; the bridge audit covers 123 production files, 6
 guarded replay modules, and 19 fixture modules.
+
+## 1028. Tourist explore mode shares actor, run, and search ownership
+
+```mermaid
+flowchart TD
+    Input["physical Tourist command"] --> Dispatch["cmd.c rhack"]
+    Dispatch --> Move{"movement or Shift-run?"}
+    Move --> Domove["hack.c domove against current terrain and actors"]
+    Domove --> Continue["allmain.c lookaround / run continuation"]
+
+    Dispatch --> Search{"counted search?"}
+    Search --> First["detect.c dosearch on current neighbors"]
+    First --> Occupation["cmd.c timed_occupation remainder"]
+    Occupation --> Turn["one complete movemon/global turn per repeat"]
+    Turn --> First
+
+    Turn --> Actors["current fmon / dog_move state transitions"]
+
+    Coordinate["Tourist + explore + hero at 71,5"] -. deleted .-> Replay["fixed pet/jackal/RNG/turn/search world"]
+    Replay -. deleted .-> West["fixed H teleport and map-memory rewrite"]
+```
+
+Pinned `allmain.c:moveloop_core()` does not select a different scheduler from
+play mode or the hero's generated coordinate.  A time-taking command debits
+the current movement ration, scans the current `fmon` chain, allocates global
+maintenance only after active actors are exhausted, and returns to input once
+the hero again owns a full ration.  Pinned `cmd.c` implements count-prefixed
+search as an occupation: the explicit `dosearch()` is followed by one
+`timed_occupation()` repetition per complete scheduler cycle.  Shift movement
+similarly resumes through `lookaround()` and `domove()` against current terrain
+rather than replacing the map or actor graph.
+
+The deleted Tourist path instead activated whenever explore mode generated
+the hero at `(71,5)`.  It replayed two aggregate actor/RNG tables, forced turn
+4, teleported the hero and named actors for `H`, cleared a fixed map region,
+replayed a complete 20-search pet/jackal fight, forced turns 6 through 24, and
+supplied two late-search tables.  `tourist_explore.js` contained call shapes
+without current actor, object, terrain, or command ownership.
+
+All Tourist modes now enter the same source movement-ration, live actor scan,
+ordinary run, and counted-search owners.  Fresh explore-mode seed 48567 starts
+at the old classifier coordinate, keeps the hero fixed across four waits,
+advances four turns, and changes the current kitten position.  Fresh seed
+47230 performs a ten-count search, keeps the hero fixed, advances ten turns,
+and changes current actor state.  A no-op Tourist actor executor makes the
+first witness fail; disabling counted-command continuation leaves the second
+at turn 2 instead of turn 11.  Neither test observes helper calls, bridge
+ledger shape, a second implementation, or a recorded session.
+
+This owner remains mechanically `partial`.  Burdened and Fast movement-ration
+edges, wider run interruption and terrain, search discovery breadth,
+occupation interruption and tty pagination, actor combat, explore inventory
+and discovery presentation, level transitions, options, save/restore, and a
+sealed stratum remain open.  The managed default gate passes 453/453 across
+52 behavioral files; the bridge audit covers 122 production files, 5 guarded
+replay modules, and 19 fixture modules.

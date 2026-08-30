@@ -100083,3 +100083,64 @@ publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 10:23 EEST, journal block 3244] {#tourist #explore-mode #scheduler #counted-search #bridge-removal #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and mechanism portfolio:** block 3243 was
+production progress: Knight's parallel engine was deleted and replaced by
+current riding/actor ownership.  The remaining guarded modules separated into
+four incompatible mechanisms.  Tourist explore replay duplicated actor, run,
+and counted-search owners which already existed live; Wizard bind/poly/quaff
+cross unresolved debug, level-generation, and replay-painted tty boundaries;
+`fastforward.turn` remains a fallback until those unsupported paths close; and
+recorded-RNL is fixture compatibility rather than the next production
+scheduler divergence.  The critical-debugging portfolio therefore selected
+Tourist as the dependency-correct coherent slice, not merely the shortest
+module.
+
+**Earliest divergence, prediction, and red evidence:** normal startup selected
+`_touristExplorePath` whenever a Tourist in explore mode happened to generate
+at `(71,5)`.  The path then used two fixed actor/RNG tables, a fixed west-run
+teleport/map rewrite, forced turns, one aggregate 20-search pet/jackal fight,
+and two late-search tables from `tourist_explore.js`.  The strengthened audit
+failed on **19** tokens/modules.  The initial proposed test asserted that
+explore mode should lack magic-mapping, extra-healing, and wishing discoveries;
+that was false because the live explore startup legitimately owns those
+discoveries.  The assertion and its collector field were deleted rather than
+turning a mistaken expectation into acceptance.
+
+**Independent witnesses and implementation:** a fresh generated scan found
+seed48567, which legitimately starts an explore-mode Tourist at `(71,5)` with
+one current kitten and no public-trace dependency.  Four waits keep the hero
+fixed, advance four turns, and change that actor's position.  Fresh seed47230
+performs a ten-count search: the hero remains fixed while ten complete
+scheduler turns advance and current actor state changes.  Commit `9ed0c21`
+deletes the classifier, both coordinate-shaped RNG/actor tables, fixed run and
+map mutation, forced-turn counted/late search branches, and
+`tourist_explore.js`; all Tourist modes now use the source movement ration,
+current `fmon`/`dog_move`, ordinary run, `dosearch()`, and scheduler-separated
+counted occupation.  The source batch adds 83 lines and deletes 296.
+
+**Adversarial and managed evidence:** temporarily returning before Tourist
+actor execution made the former-coordinate witness fail because the current
+kitten remained unchanged.  Temporarily disabling Tourist counted-command
+continuation made the search witness stop at turn 2 instead of turn 11.
+Restoring both mutations returned the two-test portfolio and 15 neighboring
+scheduler tests to green.  One guarded `npm test` invocation passed all
+**453/453** behavioral tests across **52** lane-audited files.  The bridge
+audit drops to **122 production files, 5 guarded replay modules, and 19 fixture
+modules**; syntax, lane, diff, and source audits pass, the owned process exited,
+and no matching runner remains.
+
+**Falsified hypotheses, limits, and next blocker:** explore-mode discoveries
+were not evidence of replay, while coordinate-selected actor/RNG/turn/map
+ownership was.  Aggregate RNG, fixed positions, and forced turns were not
+required for live Tourist waits or counted search.  The owner remains
+`partial` at Burdened/Fast ration edges, wider run/search interruption,
+terrain, actor combat, tty, explore presentation, level transitions, options,
+persistence, and sealed strata.  Wizard bind/poly/quaff are now the remaining
+production classifier family.  No corpus, scorer, public-regression lane,
+sealed trace, push, publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---

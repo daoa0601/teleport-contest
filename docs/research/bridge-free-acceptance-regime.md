@@ -134,7 +134,14 @@ dismount preserve one live pony identity and fresh former-prefix input remains
 within its physical command bound.  The represented riding rules remain
 partial at the mechanically recorded form, impairment, terrain, trap,
 overcrowding, mounted-combat, and persistence gaps.  Explicit normal-mode
-compatibility classifiers for Tourist, Wizard, and other paths remain.  These later
+Tourist explore scheduling is source-owned now too: all modes use the current
+actor graph, movement ration, ordinary run path, and scheduler-separated
+counted search.  Its coordinate/option classifier, fixed actor/map/run/search
+mutations, forced turns, aggregate RNG, and replay module are deleted.  The
+represented Tourist slice remains partial at wider movement-ration, run,
+interruption, actor, level-transition, persistence, and option strata.
+Explicit normal-mode compatibility classifiers for Wizard and other paths
+remain.  These later
 slices have focused fresh witnesses and selected public regressions, but still
 no sealed gate or hidden measurement.
 
