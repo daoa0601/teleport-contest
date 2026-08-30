@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AIR, MAGIC_PORTAL, ROOM, WATER } from '../js/const.js';
+import {
+    AIR, ALTAR, AM_SANCTUM, MAGIC_PORTAL, ROOM, WATER,
+} from '../js/const.js';
 import { moveElementalBubbles } from '../js/elemental.js';
 import { game } from '../js/gstate.js';
 import {
-    generateEarthLevel, generateWaterLevel,
+    generateAstralLevel, generateEarthLevel, generateWaterLevel,
 } from '../js/mklev.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER } from '../js/object_data.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
@@ -21,6 +24,40 @@ function terrainCount(typ) {
 function floorObjects() {
     return (game.level.objects || []).flat(2).filter(Boolean);
 }
+
+test('the Astral Plane builds three sanctums and all three Riders', async () => {
+    const active = freshSpecialLevel({
+        prototype: 'astral', variant: 1, seed: 1913, depth: 1,
+    });
+    game.astral_level = { ...game.u.uz };
+    game.u.ualign.type = 1;
+    game.urole = {
+        gods: {
+            lawful: 'Tyr', neutral: 'Odin', chaotic: 'Loki',
+        },
+    };
+
+    await generateAstralLevel(active);
+
+    assert.equal(game.level.flags.noteleport, true);
+    assert.equal(game.level.flags.nommap, true);
+    assert.equal(game.level.flags.solidify, true);
+    assert.equal(terrainCount(ALTAR), 3);
+    const sanctums = [];
+    for (let x = 1; x < 80; x++) {
+        for (let y = 0; y < 21; y++) {
+            const loc = game.level.at(x, y);
+            if (loc?.typ === ALTAR && (loc.flags & AM_SANCTUM))
+                sanctums.push({ x, y });
+        }
+    }
+    assert.equal(sanctums.length, 3);
+    const riders = new Set(['Death', 'Pestilence', 'Famine']);
+    assert.deepEqual(new Set(game.level.monsters
+        .map(monster => MONSTER_NAME[monster.mnum])
+        .filter(name => riders.has(name))), riders);
+    assert.ok(game.level.monsters.length >= 69);
+});
 
 test('the Plane of Earth builds its caverns, defenders, and air portal',
     async () => {
