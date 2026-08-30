@@ -273,7 +273,16 @@ const PM_DWARF = 44;
 const PM_KITTEN = 32;
 const PM_WOOD_NYMPH = 67;
 const PM_WATER_NYMPH = 68;
+const PM_DOG = 18;
+const PM_KOBOLD = 59;
+const PM_GOBLIN = 70;
+const PM_HILL_ORC = 73;
+const PM_MORDOR_ORC = 74;
+const PM_URUK_HAI = 75;
+const PM_ORC_SHAMAN = 76;
+const PM_ORC_CAPTAIN = 77;
 const PM_RAVEN = 128;
+const PM_MONKEY = 233;
 const PM_KOBOLD_SHAMAN = 62;
 const PM_GNOME = 165;
 const PM_GNOME_LEADER = 166;
@@ -5435,6 +5444,25 @@ function specialSelectionOfTerrain(context, typ) {
     return selection;
 }
 
+function specialSelectionFloodFill(context, x, y) {
+    const selection = new SpecialSelection();
+    const startX = context.xstart + x;
+    const startY = context.ystart + y;
+    const terrain = game.level.at(startX, startY)?.typ;
+    const pending = [[startX, startY]];
+    while (pending.length) {
+        const [currentX, currentY] = pending.pop();
+        if (selection.has(currentX, currentY)
+            || game.level.at(currentX, currentY)?.typ !== terrain) continue;
+        selection.add(currentX, currentY);
+        pending.push(
+            [currentX + 1, currentY], [currentX - 1, currentY],
+            [currentX, currentY + 1], [currentX, currentY - 1],
+        );
+    }
+    return selection;
+}
+
 function specialSelectionRandomPoint(context) {
     return new SpecialSelection().add(
         context.xstart + rn2(context.width),
@@ -5918,6 +5946,18 @@ function specialDoorAt(context, mask, x, y) {
     loc.horizontal = !!((wleft || wright) && !(wup && wdown));
     loc.doormask = mask;
     return { x: doorX, y: doorY };
+}
+
+function specialRandomDoorAt(context, x, y) {
+    rn2(5);
+    let mask = D_NODOOR;
+    if (rn2(3) === 0) {
+        if (rn2(5) === 0) mask = D_ISOPEN;
+        else if (rn2(6) === 0) mask = D_LOCKED;
+        else mask = D_CLOSED;
+        if (mask !== D_ISOPEN && rn2(25) === 0) mask |= D_TRAPPED;
+    }
+    return specialDoorAt(context, mask, x, y);
 }
 
 function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
@@ -7622,13 +7662,13 @@ function priestGoalMinesField() {
 // smoothing pass reads the preceding pass, and disconnected regions are
 // joined through temporary irregular rooms before their room metadata is
 // discarded.
-function mineFillerMinesField(lit) {
+function mineFillerMinesField(lit, background = STONE) {
     const width = COLNO - 2;
     const height = ROWNO - 1;
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level.at(x, y);
-            loc.typ = STONE;
+            loc.typ = background;
             loc.roomno = 0;
             loc.edge = false;
             loc.lit = false;
@@ -7641,7 +7681,7 @@ function mineFillerMinesField(lit) {
         const x = rn2(width - 1) + 2;
         const y = rnd(height - 1);
         const loc = game.level.at(x, y);
-        if (loc.typ === STONE) {
+        if (loc.typ === background) {
             loc.typ = ROOM;
             changed++;
         }
@@ -7653,7 +7693,7 @@ function mineFillerMinesField(lit) {
     ];
     const terrainAt = (x, y) => x <= 0 || y < 0
         || x > width || y >= height
-        ? STONE : game.level.at(x, y).typ;
+        ? background : game.level.at(x, y).typ;
     const neighborCount = (x, y) => dirs.reduce((count, [dx, dy]) =>
         count + Number(terrainAt(x + dx, y + dy) === ROOM), 0);
 
@@ -7661,14 +7701,14 @@ function mineFillerMinesField(lit) {
     for (let x = 2; x <= width; x++) {
         for (let y = 1; y < height; y++) {
             const count = neighborCount(x, y);
-            if (count <= 2) game.level.at(x, y).typ = STONE;
+            if (count <= 2) game.level.at(x, y).typ = background;
             else if (count >= 5) game.level.at(x, y).typ = ROOM;
         }
     }
 
     const applySnapshotPass = rule => {
         const next = Array.from({ length: COLNO }, () =>
-            Array(ROWNO).fill(STONE));
+            Array(ROWNO).fill(background));
         for (let x = 2; x <= width; x++) {
             for (let y = 1; y < height; y++)
                 next[x][y] = rule(neighborCount(x, y), terrainAt(x, y));
@@ -7677,9 +7717,9 @@ function mineFillerMinesField(lit) {
             for (let y = 1; y < height; y++)
                 game.level.at(x, y).typ = next[x][y];
     };
-    applySnapshotPass((count, current) => count === 5 ? STONE : current);
-    applySnapshotPass((count, current) => count < 3 ? STONE : current);
-    applySnapshotPass((count, current) => count < 3 ? STONE : current);
+    applySnapshotPass((count, current) => count === 5 ? background : current);
+    applySnapshotPass((count, current) => count < 3 ? background : current);
+    applySnapshotPass((count, current) => count < 3 ? background : current);
 
     // join_map() discovers eight-connected floor components in x-major
     // order.  Temporary room numbers make somexy() retry within an
@@ -7706,7 +7746,7 @@ function mineFillerMinesField(lit) {
             }
             if (cells.length <= 3) {
                 for (const [cx, cy] of cells) {
-                    game.level.at(cx, cy).typ = STONE;
+                    game.level.at(cx, cy).typ = background;
                     game.level.at(cx, cy).roomno = 0;
                 }
                 continue;
@@ -7740,7 +7780,7 @@ function mineFillerMinesField(lit) {
             end.y = nextRoom.ly
                 + Math.trunc((nextRoom.hy - nextRoom.ly) / 2);
         }
-        dig_corridor(start, end, null, false, ROOM, STONE);
+        dig_corridor(start, end, null, false, ROOM, background);
         if (nextRoom.lx > room.hx
             || ((nextRoom.ly > room.hy || nextRoom.hy < room.ly)
                 && rn2(3)))
@@ -8698,6 +8738,168 @@ function minetownAlignment(active) {
         : active.align?.[0] === 'chaos' ? A_CHAOTIC : A_NEUTRAL;
 }
 
+async function generateMinetown1(active) {
+    mineFillerMinesField(active.defaultLit);
+    const context = loadSpecialAsciiMap(
+        MINETOWN_1_MAP, active.defaultLit,
+    );
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.has_town = true;
+
+    const arrival = { lx: 1, ly: 1, hx: 75, hy: 19 };
+    const townExclude = { lx: 1, ly: 0, hx: 35, hy: 21 };
+    active.upTeleportRegion = { ...arrival };
+    active.downTeleportRegion = { ...arrival };
+    active.upTeleportExclude = { ...townExclude };
+    active.downTeleportExclude = { ...townExclude };
+    active.explicitUpStairRegion = {
+        lx: 1, ly: 3, hx: 21, hy: 19,
+        nlx: 0, nly: 1, nhx: 36, nhy: 17,
+    };
+    active.explicitDownStairRegion = {
+        lx: 57, ly: 3, hx: 75, hy: 19,
+        nlx: 0, nly: 1, nhx: 36, nhy: 17,
+    };
+
+    setSpecialRegionLighting(context, 1, 1, 35, 17, true);
+    for (const [x, y] of [[16, 9], [25, 9]]) {
+        const fountain = game.level.at(
+            context.xstart + x, context.ystart + y,
+        );
+        if (fountain) fountain.typ = FOUNTAIN;
+    }
+    game.level.flags.nfountains += 2;
+    const altar = game.level.at(
+        context.xstart + 20, context.ystart + 13,
+    );
+    if (altar) {
+        altar.typ = ALTAR;
+        altar.flags = Align2amask(A_NONE);
+    }
+
+    for (const [x, y] of [
+        [5, 8], [9, 8], [13, 7], [22, 5], [27, 7], [31, 7],
+        [5, 10], [9, 10], [15, 13], [25, 13], [31, 11],
+    ]) specialRandomDoorAt(context, x, y);
+    for (const [x1, y1, x2, y2, chance] of [
+        [7, 4, 11, 6, 18], [25, 4, 29, 6, 18],
+        [7, 12, 11, 14, 18], [28, 12, 28, 14, 33],
+    ]) replaceSpecialTerrain(
+        context, x1, y1, x2, y2, VWALL, ROOM, chance,
+    );
+
+    const places = luaShuffle([
+        [5, 4], [9, 5], [13, 4], [26, 4], [31, 5],
+        [30, 14], [5, 14], [10, 13], [26, 14], [27, 13],
+    ]);
+    active.places = places.map(point => [...point]);
+    const corpseAt = (mndx, point = null) => {
+        const corpse = point
+            ? specialObjectAt(
+                context, CORPSE, point[0], point[1], { named: true },
+            )
+            : specialObjectOfType(context, CORPSE);
+        if (corpse) set_corpsenm(corpse, mndx);
+        return corpse;
+    };
+    corpseAt(PM_ALIGNED_CLERIC, [20, 12]);
+    for (let index = 0; index < 5; index++)
+        corpseAt(PM_SHOPKEEPER, places[index]);
+    for (let count = 0; count < 4; count++) corpseAt(PM_WATCHMAN);
+    corpseAt(PM_WATCH_CAPTAIN);
+
+    for (let count = rn1(10, 10); count > 0; count--) {
+        if (rn2(100) < 90) specialObjectOfType(context, BOULDER);
+        specialObjectOfType(context, ROCK);
+    }
+
+    const candleAt = (otyp, placeIndex, quantity) => {
+        const [x, y] = places[placeIndex];
+        const candle = specialObjectAt(
+            context, otyp, x, y, { named: true },
+        );
+        if (candle) {
+            candle.quan = candle.quantity = quantity;
+            candle.owt = objectWeight(candle);
+        }
+    };
+    candleAt(WAX_CANDLE, 3, rn1(2, 1));
+    candleAt(WAX_CANDLE, 0, rn1(3, 2));
+    candleAt(WAX_CANDLE, 1, rn1(2, 1));
+    candleAt(TALLOW_CANDLE, 2, rn1(3, 1));
+    candleAt(TALLOW_CANDLE, 1, rn1(2, 1));
+    candleAt(TALLOW_CANDLE, 3, rn1(2, 1));
+
+    const objectAtPlace = (otyp, placeIndex, state = null) => {
+        const [x, y] = places[placeIndex];
+        const object = specialObjectAt(
+            context, otyp, x, y, { named: true },
+        );
+        if (object && state) Object.assign(object, state);
+        return object;
+    };
+    objectAtPlace(OIL_LAMP, 1);
+    objectAtPlace(WAN_STRIKING, 0, {
+        blessed: false, cursed: false, spe: 0,
+    });
+    objectAtPlace(WAN_STRIKING, 2, {
+        blessed: false, cursed: false, spe: 0,
+    });
+    objectAtPlace(WAN_STRIKING, 3, {
+        blessed: false, cursed: false, spe: 0,
+    });
+    objectAtPlace(WAN_MAGIC_MISSILE, 3, {
+        blessed: false, cursed: false, spe: 0,
+    });
+    objectAtPlace(WAN_MAGIC_MISSILE, 4, {
+        blessed: false, cursed: false, spe: 0,
+    });
+
+    const inside = specialSelectionFloodFill(context, 18, 8);
+    const nearTemple = specialSelectionFillRect(context, 17, 8, 23, 14)
+        .intersect(inside);
+    const monsterAtSelection = async (selection, mndx, remove = true) => {
+        const point = selection.randomCoordinate(remove);
+        if (!point) return null;
+        const monster = await specialMonsterAt(
+            context, mndx,
+            point.x - context.xstart,
+            point.y - context.ystart,
+        );
+        if (monster) monster.mpeaceful = 0;
+        return monster;
+    };
+    for (let count = rn1(11, 5); count > 0; count--) {
+        const mndx = rn2(100) < 50 ? PM_ORC_CAPTAIN
+            : rn2(100) < 80 ? PM_URUK_HAI : PM_MORDOR_ORC;
+        await monsterAtSelection(inside, mndx);
+    }
+    const shamanCount = rn1(6, 1);
+    for (let index = 0; index < shamanCount; index++) {
+        const shaman = await monsterAtSelection(
+            nearTemple, PM_ORC_SHAMAN, false,
+        );
+        if (shaman && index === 0)
+            shaman.m_lev = Math.min(49, (shaman.m_lev ?? 0) + 3);
+    }
+    for (let count = rn1(10, 10); count > 0; count--) {
+        const mndx = rn2(100) < 90 ? PM_HILL_ORC : PM_GOBLIN;
+        const monster = await specialExplicitMonster(context, mndx);
+        if (monster) monster.mpeaceful = 0;
+    }
+
+    wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'upTeleportRegion', 'upTeleportExclude',
+        'downTeleportRegion', 'downTeleportExclude',
+        'explicitUpStairRegion', 'explicitDownStairRegion',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
 async function generateMinetown2(active) {
     game.level.flags.is_special = true;
     game.level.flags.has_town = true;
@@ -9041,6 +9243,51 @@ async function generateMinetown4(active) {
         await fillSpecialRoom(room);
 }
 
+const MINETOWN_1_MAP = [
+    '.....................................',
+    '.----------------F------------------.',
+    '.|.................................|.',
+    '.|.-------------......------------.|.',
+    '.|.|...|...|...|......|..|...|...|.|.',
+    '.F.|...|...|...|......|..|...|...|.|.',
+    '.|.|...|...|...|......|..|...|...|.F.',
+    '.|.|...|...|----......------------.|.',
+    '.|.---------.......................|.',
+    '.|.................................|.',
+    '.|.---------.....--...--...........|.',
+    '.|.|...|...|----.|.....|.---------.|.',
+    '.|.|...|...|...|.|.....|.|..|....|.|.',
+    '.|.|...|...|...|.|.....|.|..|....|.|.',
+    '.|.|...|...|...|.|.....|.|..|....|.|.',
+    '.|.-------------.-------.---------.|.',
+    '.|.................................F.',
+    '.-----------F------------F----------.',
+    '.....................................',
+];
+
+const MINETOWN_6_MAP = [
+    'x--------xxxxxxxxxxx-------------------x',
+    'x------xxxxxxxxxxxxxx-----------------xx',
+    '.-----................----------------.x',
+    '.|...|................|...|..|...|...|..',
+    '.|...+..--+--.........|...|..|...|...|..',
+    '.|...|..|...|..-----..|...|..|-+---+--..',
+    '.-----..|...|--|...|..--+---+-.........x',
+    '........|...|..|...+.............-----.x',
+    '........-----..|...|......--+-...|...|..',
+    'x----...|...|+------..{...|..|...+...|..',
+    'x|..+...|...|.............|..|...|...|..',
+    '.|..|...|...|-+-.....---+-------------.x',
+    '.----...--+--..|..-+-|..................',
+    '...|........|..|..|..|----....--------.x',
+    '...|..T.....----..|..|...+....|......|..',
+    '...|-....{........|..|...|....+......|x.',
+    '...--..-....T.....--------....|......|x.',
+    '.......--.....................----------',
+    '.xxxx-----xxxxxxxxxxxxxxxxxx------------',
+    'xxxx-------xxxxxxxxxxxxxxx--------------',
+];
+
 const MINETOWN_5_MAP = [
     '-----         ---------                                                    ',
     '|...---  ------.......--    -------                       ---------------  ',
@@ -9228,6 +9475,261 @@ async function generateMinetown5(active) {
 
     wallification(1, 0, COLNO - 1, ROWNO - 1);
     flipSpecialLevelRandom(3);
+}
+
+async function generateMinetown6(active) {
+    mineFillerMinesField(true, HWALL);
+    const context = loadSpecialAsciiMap(MINETOWN_6_MAP, false);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.has_town = true;
+    game.level.flags.inaccessibles = true;
+
+    setSpecialRegionLighting(context, 0, 0, 39, 19, true);
+    active.explicitUpStairRegion = {
+        lx: 1, ly: 3, hx: 21, hy: 19,
+        nlx: 1, nly: 0, nhx: 39, nhy: 18,
+    };
+    active.explicitDownStairRegion = {
+        lx: 60, ly: 3, hx: 75, hy: 19,
+        nlx: 0, nly: 0, nhx: 38, nhy: 18,
+    };
+    setSpecialRegionLighting(context, 13, 7, 14, 8, false);
+
+    specialRectangularRoom(
+        context, 9, 9, 11, 11, SHOPBASE + 11, true, FILL_NORMAL,
+    );
+    specialRectangularRoom(
+        context, 16, 6, 18, 8, SHOPBASE + 8, true, FILL_NORMAL,
+    );
+    specialRectangularRoom(
+        context, 23, 3, 25, 5, SHOPBASE, true, FILL_NORMAL,
+    );
+    specialRectangularRoom(
+        context, 22, 14, 24, 15,
+        game.urole?.key === 'monk' ? SHOPBASE + 10 : SHOPBASE + 5,
+        true, FILL_NORMAL,
+    );
+    const temple = specialRectangularRoom(
+        context, 31, 14, 36, 16, TEMPLE, true, FILL_NORMAL,
+    );
+    const altarX = context.xstart + 35;
+    const altarY = context.ystart + 15;
+    const altar = game.level.at(altarX, altarY);
+    const alignment = minetownAlignment(active);
+    if (altar) {
+        altar.typ = ALTAR;
+        altar.flags = Align2amask(alignment) | AM_SHRINE;
+    }
+    await specialShrinePriest(temple, altarX, altarY, alignment);
+
+    for (const [mask, x, y] of [
+        [D_CLOSED, 5, 4], [D_LOCKED, 4, 10],
+        [D_CLOSED, 10, 4], [D_CLOSED, 10, 12],
+        [D_LOCKED, 13, 9], [D_LOCKED, 14, 11],
+        [D_CLOSED, 19, 7], [D_CLOSED, 19, 12],
+        [D_CLOSED, 24, 6], [D_CLOSED, 24, 11],
+        [D_CLOSED, 25, 14], [D_CLOSED, 28, 6],
+        [D_LOCKED, 28, 8], [D_CLOSED, 30, 15],
+        [D_CLOSED, 31, 5], [D_CLOSED, 35, 5],
+        [D_CLOSED, 33, 9],
+    ]) specialDoorAt(context, mask, x, y);
+
+    for (let count = 0; count < 6; count++)
+        await specialExplicitMonster(context, PM_GNOME);
+    await specialMonsterAt(context, PM_GNOME, 14, 8);
+    await specialMonsterAt(
+        context, PM_GNOME_LEADER, 14, 7,
+        { randomGender: false },
+    );
+    await specialMonsterAt(context, PM_GNOME, 27, 10);
+    await specialExplicitMonster(
+        context, PM_GNOME_LEADER, null, { randomGender: false },
+    );
+    await specialExplicitMonster(
+        context, PM_GNOME_LEADER, null, { randomGender: false },
+    );
+    for (let count = 0; count < 3; count++)
+        await specialExplicitMonster(context, PM_DWARF);
+    for (const mndx of [
+        PM_DWARF, PM_DWARF, PM_GNOME, PM_GNOME,
+        PM_HOBBIT, PM_GOBLIN, PM_KOBOLD, PM_DOG,
+        PM_WATCHMAN, PM_WATCHMAN, PM_WATCHMAN,
+        PM_WATCH_CAPTAIN, PM_WATCH_CAPTAIN,
+    ]) {
+        const monster = await specialExplicitMonster(context, mndx);
+        if (monster) monster.mpeaceful = 1;
+    }
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    active.explicitUpStairRegion = flipSpecialRegion(
+        active.explicitUpStairRegion,
+    );
+    active.explicitDownStairRegion = flipSpecialRegion(
+        active.explicitDownStairRegion,
+    );
+}
+
+async function generateMinetown7(active) {
+    game.level.flags.is_special = true;
+    game.level.flags.has_town = true;
+    const optionalRoom = async (parent, spec, contents) => {
+        if (rn2(100) >= 75) return null;
+        return buildSpecialRoom(spec, parent, contents);
+    };
+    const doorContents = (state, wall, extra = null) => async room => {
+        createSpecialRoomDoor(room, state, wall);
+        if (extra) await extra(room);
+    };
+
+    const town = await buildSpecialRoom({
+        rtype: OROOM, lit: 1, x: 3, y: 3,
+        xalign: 3, yalign: 3, w: 30, h: 15,
+    }, null, async room => {
+        for (const [x, y] of [[12, 7], [11, 13]]) {
+            const fountain = game.level.at(room.lx + x, room.ly + y);
+            if (fountain) fountain.typ = FOUNTAIN;
+        }
+        game.level.flags.nfountains += 2;
+
+        await optionalRoom(room, { x: 2, y: 2, w: 4, h: 2 },
+            doorContents('closed', 'south'));
+        await optionalRoom(room, { x: 7, y: 2, w: 2, h: 2 },
+            doorContents('closed', 'north'));
+        await optionalRoom(room, { x: 7, y: 5, w: 2, h: 2 },
+            doorContents('closed', 'south'));
+        await optionalRoom(room, {
+            x: 10, y: 2, w: 3, h: 4, lit: 1,
+        }, doorContents('closed', 'south', async child => {
+            await minetownMonster(child, PM_GNOME);
+            for (let count = 0; count < 3; count++)
+                await minetownMonster(child, PM_MONKEY);
+        }));
+        await optionalRoom(room, { x: 14, y: 2, w: 4, h: 2 },
+            doorContents('closed', 'south', child =>
+                specialMonsterOfClass(
+                    specialRoomContext(child),
+                    MONSTER_SYMBOL[PM_WOOD_NYMPH],
+                )));
+        await optionalRoom(room, { x: 16, y: 5, w: 2, h: 2 },
+            doorContents('closed', 'south'));
+        await optionalRoom(room, {
+            x: 19, y: 2, w: 2, h: 2, lit: 0,
+        }, doorContents('locked', 'east', child =>
+            minetownMonster(child, PM_GNOME_RULER)));
+
+        await buildSpecialRoom({
+            rtype: game.urole?.key === 'monk'
+                ? SHOPBASE + 10 : SHOPBASE + 5,
+            chance: 50, lit: 1, x: 19, y: 5, w: 2, h: 3,
+        }, room, doorContents('closed', 'south'));
+        await optionalRoom(room, { x: 2, y: 7, w: 2, h: 2 },
+            doorContents('closed', 'east'));
+        await buildSpecialRoom({
+            rtype: SHOPBASE + 8, chance: 50, lit: 1,
+            x: 2, y: 10, w: 2, h: 3,
+        }, room, doorContents('closed', 'south'));
+        await buildSpecialRoom({
+            rtype: SHOPBASE + 11, lit: 1,
+            x: 5, y: 10, w: 3, h: 3,
+        }, room, doorContents('closed', 'north'));
+        await optionalRoom(room, { x: 11, y: 10, w: 2, h: 2 },
+            doorContents('locked', 'west', child =>
+                specialMonsterOfClass(
+                    specialRoomContext(child),
+                    MONSTER_SYMBOL[PM_GNOME],
+                )));
+        await buildSpecialRoom({
+            rtype: SHOPBASE, chance: 60, lit: 1,
+            x: 14, y: 10, w: 2, h: 3,
+        }, room, doorContents('closed', 'north'));
+        await optionalRoom(room, { x: 17, y: 11, w: 4, h: 2 },
+            doorContents('closed', 'north'));
+        await optionalRoom(room, { x: 22, y: 11, w: 2, h: 2 },
+            doorContents('closed', 'south', child => {
+                const sink = game.level.at(child.lx, child.ly);
+                if (sink) sink.typ = SINK;
+                game.level.flags.nsinks++;
+            }));
+        await buildSpecialRoom({
+            rtype: game.urole?.key === 'monk'
+                ? SHOPBASE + 10 : SHOPBASE + 5,
+            chance: 50, lit: 1, x: 25, y: 11, w: 3, h: 2,
+        }, room, doorContents('closed', 'east'));
+        await buildSpecialRoom({
+            rtype: SHOPBASE + 8, chance: 30, lit: 1,
+            x: 25, y: 2, w: 3, h: 3,
+        }, room, doorContents('closed', 'west'));
+        await buildSpecialRoom({
+            rtype: TEMPLE, lit: 1, x: 24, y: 6, w: 4, h: 4,
+        }, room, doorContents('closed', 'west', async child => {
+            const altarX = child.lx + 2;
+            const altarY = child.ly + 1;
+            const altar = game.level.at(altarX, altarY);
+            const alignment = minetownAlignment(active);
+            altar.typ = ALTAR;
+            altar.flags = Align2amask(alignment) | AM_SHRINE;
+            await specialShrinePriest(child, altarX, altarY, alignment);
+            await minetownMonster(child, PM_GNOMISH_WIZARD);
+            await minetownMonster(child, PM_GNOMISH_WIZARD);
+        }));
+
+        for (let count = 0; count < 4; count++)
+            await minetownMonster(room, PM_WATCHMAN, true);
+        await minetownMonster(room, PM_WATCH_CAPTAIN, true);
+        for (let count = 0; count < 3; count++)
+            await minetownMonster(room, PM_GNOME);
+        await minetownMonster(room, PM_GNOME_LEADER);
+        await minetownMonster(room, PM_MONKEY);
+        await minetownMonster(room, PM_MONKEY);
+    });
+    active.context = town ? specialRoomContext(town) : null;
+
+    await buildSpecialRoom({}, null, room =>
+        specialStair(specialRoomContext(room), true));
+    await buildSpecialRoom({}, null, async room => {
+        const context = specialRoomContext(room);
+        specialStair(context, false);
+        await specialTrap(context);
+        await minetownMonster(room, PM_GNOME);
+        await minetownMonster(room, PM_GNOME);
+    });
+    await buildSpecialRoom({}, null, room =>
+        minetownMonster(room, PM_DWARF));
+    await buildSpecialRoom({}, null, async room => {
+        await specialTrap(specialRoomContext(room));
+        await minetownMonster(room, PM_GNOME);
+    });
+
+    makecorridors();
+    flipSpecialLevelRandom(3);
+    for (const room of game.level.rooms.slice(0, game.level.nroom))
+        await fillSpecialRoom(room);
+}
+
+const MINETOWN_GENERATORS = Object.freeze([
+    null,
+    { generator: generateMinetown1 },
+    { generator: generateMinetown2 },
+    { generator: generateMinetown3 },
+    { generator: generateMinetown4 },
+    { generator: generateMinetown5, fillRooms: true },
+    { generator: generateMinetown6, fillRooms: true },
+    { generator: generateMinetown7 },
+]);
+
+export async function generateMinetown(active) {
+    const entry = MINETOWN_GENERATORS[active?.variant];
+    if (!entry) {
+        throw new RangeError(`unknown Minetown layout ${active?.variant}`);
+    }
+    await generateSpecialAndFixup(entry.generator, active);
+    if (entry.fillRooms) {
+        for (const room of game.level.rooms.slice(0, game.level.nroom))
+            await fillSpecialRoom(room);
+    }
 }
 
 function oracleInducedAlignment() {
@@ -14774,26 +15276,8 @@ async function makelevel() {
                 await fillSpecialRoom(room);
             return;
         }
-        if (prototype === 'minetn' && variant === 2) {
-            await generateSpecialAndFixup(generateMinetown2,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minetn' && variant === 3) {
-            await generateSpecialAndFixup(generateMinetown3,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minetn' && variant === 4) {
-            await generateSpecialAndFixup(generateMinetown4,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minetn' && variant === 5) {
-            await generateSpecialAndFixup(generateMinetown5,
-                g._activeSpecialLevel);
-            for (const room of g.level.rooms.slice(0, g.level.nroom))
-                await fillSpecialRoom(room);
+        if (prototype === 'minetn') {
+            await generateMinetown(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'minend') {
