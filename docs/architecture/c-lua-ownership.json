@@ -530,7 +530,7 @@
       "javascriptOwners": ["js/allmain.js", "js/monmove.js"],
       "dependencies": ["rng-core", "object-timer-queue", "samurai-pet-turns", "rogue-actor-scheduling", "priest-passive-projectiles"],
       "bridgeIds": ["fastforward.turn", "fastforward.ranger-turn", "scheduler.default-replay-gap", "seeded role replay modules"],
-      "acceptanceWitnesses": ["test/bridge_free.test.js: fresh quiet-role maintenance advances a live Tourist turn with zero bridge hits", "test/samurai_scheduler.test.js: a fresh non-public Samurai wait increments source hero_seq, allocates the pet and hero movement ration, enters the live monster scan, and never reaches fastforward.turn", "test/bridge_free.public-regression.js: known Samurai, Rogue, and Priest session replays remain exact with zero bridge hits; public regression only"],
+      "acceptanceWitnesses": ["test/bridge_free.test.js: fresh quiet-role maintenance advances a live Tourist turn with zero bridge hits", "test/samurai_scheduler.test.js: a fresh non-public Samurai wait allocates the pet and hero movement ration and never reaches fastforward.turn", "test/rogue_scheduler.test.js: independently generated human and Orc Rogue starts produce identical four-wait actor/world outcomes in normal and bridge-free modes with no Rogue bridge hits", "test/bridge_free.public-regression.js: known Samurai, Rogue, and Priest session replays remain exact with zero bridge hits; public regression only"],
       "lastSealedGate": null,
       "openGap": "Fresh-seed Samurai wait/prayer and the represented Samurai, Rogue, and Priest carriers use live actor/global scheduling. Other normal-mode roles still retain fastforward or seeded replay fallbacks; broader unseen actor, terrain, interruption, save/restore, and sealed strata remain open."
     },
@@ -561,12 +561,12 @@
         "luaFiles": [],
         "luaSymbols": []
       },
-      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/cmd.js", "js/invent.js", "js/rogue_explore.js", "js/rogue_orc.js", "js/rogue_friday13.js"],
+      "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/cmd.js", "js/invent.js"],
       "dependencies": ["turn-scheduler"],
-      "bridgeIds": ["legacy-only rogue.explore", "legacy-only rogue.friday13", "legacy-only rogue.orc", "legacy-only rogue.chargen", "legacy-only seeded-replay.rogue-explore", "legacy-only seeded-replay.rogue-orc", "legacy-only seeded-replay.rogue-friday13"],
-      "acceptanceWitnesses": ["test/bridge_free.public-regression.js: seed0077 chargen, seed1500 pet/dart-trap, seed0060 orc combat/run, seed0013 Friday combat, and seed0013 save/restore parity with zero bridge hits; public regressions only", "test/run_scheduler.public-regression.js: source-mode corridor turn, visible-monster stop, and mode-3 open-door stop"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/rogue_scheduler.test.js: fresh non-public human seed10325 and Orc seed12168 were found by generated-start scans; four waits preserve the same live hero, actor, movement, inventory, turn, and message state in normal and bridge-free modes with no Rogue bridge hits", "scripts/audit-bridge-free.mjs: rejects every removed Rogue classifier, path counter, replay token, command script, elapsed-turn override, and all three deleted replay modules", "fixture-disabled single-session regressions: seed0077 chargen 3242/3242 RNG and 33/33 screens/cursors; seed1500 explore 2768/2768 and 40/40; seed0060 Orc 3626/3626 and 41/41; seed0013 combat 4838/4838 and 59/59; seed0013 save/restore 4804/4804 and 99/99; public regressions only", "test/run_scheduler.public-regression.js: source-mode corridor turn, visible-monster stop, and mode-3 open-door stop"],
       "lastSealedGate": null,
-      "openGap": "All represented Rogue compatibility paths now use live source-ration, actor/trap scheduling, command parsing, and persistence in bridge-free mode; alternate unseen actor, trap, command-binding, option, and sealed strata remain unverified."
+      "openGap": "All Rogue roles, races, coordinates, command streams, and normal/bridge-free modes now enter the shared source movement ration, actor/trap scheduling, command parsing, and persistence owners. The explore, Friday-13, Orc, and chargen classifiers; hard-coded hero/pet paths; command counter; maintenance bypass; elapsed-turn override; aggregate RNG tables; and three replay modules are deleted. Alternate unseen actors, trap kinds, bindings, options, dungeon branches, long save/restore histories, and a sealed stratum remain unverified."
     },
     {
       "id": "priest-passive-projectiles",

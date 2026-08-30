@@ -98478,3 +98478,91 @@ normal scorer, sealed trace, push, publication, official hidden measurement,
 or animation work ran.
 
 ---
+
+### [2026-08-30 05:26 EEST, journal block 3200] {#bridge-free #rogue #rogue-orc #moveloop-core #dog-move #run #replay-removal #fresh-seed #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Contract and opening portfolio:** the next ordered acceptance slice was
+Rogue actor scheduling.  Success required normal and bridge-free modes to send
+every Rogue role, race, generated coordinate, and command stream through the
+same live source movement-ration and actor owners.  Public exactness, a
+legacy-only gate around replay, or deleting only an RNG module were explicit
+non-results.  Three mechanism families remained open: startup classifier debt,
+command-dispatch/path debt, and scheduler/maintenance debt.  Inspection found
+four normal-mode classifiers, three aggregate RNG modules, hard-coded
+hero/pet/hostile paths, a command-number Friday state machine, an Orc timed
+action script, chargen object/actor overwrites, an elapsed-turn override, and
+special kick, displacement, door, maintenance, and `hero_seq` branches.
+
+**Independent red evidence and earliest divergence:** a bridge-free scan of
+newly generated starts, without reading any recorded trace, found human Rogue
+seed10325 at the old `(71,14)` explore coordinate and Orc Rogue seed12168 at
+the old `(5,12)` coordinate.  Before removal, four human waits recorded four
+`seeded-replay.rogue-explore` hits and overwrote pet/hostile positions while
+bridge-free mode advanced live actors.  The Orc discriminator was earlier and
+stronger: its first timed wait entered `rogueOrcTimedAction`; by four requested
+waits normal mode had moved the hero to `(6,13)`, remained at move2, and stopped
+on the fabricated kitten/newt pager, while bridge-free mode left the hero at
+`(5,12)`, reached move5, and advanced the live actor graph.  The two focused
+tests were **0/2** before implementation.
+
+**Decisive source evidence and implementation:**
+`allmain.c:moveloop_core()` debits the hero movement ration and calls
+`movemon()` over current `fmon`; `dochug()` and `dog_move()` consume current
+actor, goal, floor, trap, track, and inventory state.  `cmd.c:rhack()`,
+`hack.c:domove()`, `dokick.c`, and `lock.c` dispatch current input and terrain;
+none accepts a role/race/coordinate/replay classifier or command number.  All
+four classifiers and downstream mutations were therefore one alternate owner,
+not independent fixes.  Deleted them together with the three replay modules,
+aggregate tables, fixed paths, command scripts, maintenance bypass, elapsed-
+turn override, and replay-conditioned kick/displacement/door branches.  Normal
+Rogue startup now initializes the no-elapsed-turn maintenance watermark and
+every Rogue uses the shared source-ration predicate.  Production shrank by
+more than six hundred lines, and the audit rejects every removed token and
+module filename.
+
+**Measured effect and adversarial regression:** the fresh normal-versus-
+bridge-free metamorphic set now passes **2/2**, and together with four bridge
+policy controls passes **6/6**.  Both fresh seeds have equal live hero, actor,
+movement, inventory, turn, and message state across modes with no Rogue bridge
+hit.  Five managed fixture-disabled public regressions remain exact after the
+live path becomes the only normal owner: seed0077 **3,242/3,242 RNG, 33/33**
+screens/cursors; seed1500 **2,768/2,768, 40/40**; seed0060 **3,626/3,626,
+41/41**; seed0013 combat **4,838/4,838, 59/59**; and seed0013 save/restore
+**4,804/4,804, 99/99**.  These selected public witnesses are compatibility
+regressions, not sealed or hidden evidence.
+
+**Falsified hypotheses, residual risk, and next blocker:** bridge-free exactness
+did not mean normal production had one owner; a legacy gate did not make the
+dead replay code harmless because fresh coordinates could select it; the Orc
+branch did not merely replay RNG but reinterpreted wait commands and controlled
+turn ownership; and the public live path was already sufficient, so its old
+parallel replay was redundant liability rather than required compatibility.
+Alternate unseen actors, trap kinds, bindings, options, dungeon branches, long
+persistence histories, and a sealed stratum remain unverified.  No full corpus,
+normal scorer, configured public-regression lane, sealed trace, push,
+publication, official hidden measurement, or animation work ran.  The next
+ordered bridge slice is Priest passive projectiles and extended commands.
+
+---
+
+### [2026-08-30 05:27 EEST, journal block 3201] {#rogue #bridge-audit #test-lanes #ownership #behavioral-gate #process-safety}
+
+**Post-implementation structural gate:** one guarded default behavioral run
+passes all **367/367** named tests across **39** files and exits normally.  The
+fresh Rogue and bridge-policy set remains **6/6**.  The bridge audit passes
+across **126 production files, 12 guarded replay/fast-forward modules, and 19
+fixture modules**, down from129/15/19 because the three Rogue replay modules
+are deleted.  The behavioral-lane audit passes39 files with no recorded
+session, public-parity, mock/spy, or call-transcript dependency.  Ownership
+generation/checking, registry JSON, changed JavaScript syntax, forbidden Rogue
+token search, and diff hygiene pass.  Every selected process was singular,
+owned to normal exit, and no matching test/corpus process remains.
+
+**Evidence limit:** no full engine-only corpus or normal scorer ran, so
+`public-session-status.md` remains unchanged.  No configured full public-
+regression lane, sealed corpus, trace inspection, push, publication, official
+hidden measurement, or animation work ran.  The branch is ready for this
+coherent Rogue slice to be committed locally; Priest remains the next ordered
+bridge-removal target.
+
+---

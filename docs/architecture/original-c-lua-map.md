@@ -38127,3 +38127,75 @@ Special melee modifiers, passive interruption and life-saving, weapon
 destruction between strikes, non-ordinary doors, broader visibility states,
 save/restore, and sealed strata remain partial.  Lua owns neither runtime
 path.
+
+## 1014. Rogue has one live actor owner in normal and bridge-free modes
+
+```mermaid
+flowchart TD
+    A[Rogue command from rhack] --> B{time-consuming?}
+    B -- no --> C[next input]
+    B -- yes --> D[debit u.umovement and set hero-time pending]
+    D --> E[scan current fmon in movemon order]
+    E --> F[dochug or dog_move reads live actor, floor, goal, trap, and track]
+    F --> G{hero has full movement ration?}
+    G -- no --> H[allocate global actor and hero movement]
+    H --> I[run current global maintenance]
+    I --> E
+    G -- yes --> J[finish hero-took-time effects]
+    J --> C
+
+    K[role, race, coordinate, replayMoves classifiers] -. deleted .-> D
+    L[three aggregate Rogue RNG modules] -. deleted .-> E
+    M[command-number hero and pet path scripts] -. deleted .-> A
+```
+
+Pinned `allmain.c:moveloop_core()` does not select an actor scheduler from the
+hero's role, race, upstairs coordinate, command prefix, or recorded input.
+Every time-consuming command debits the current hero movement ration,
+`movemon()` scans the current `fmon` chain, `dochug()` or `dog_move()` consumes
+the live actor and world graph, and a new global turn is allocated only after
+the actor scan and hero ration require it.  `cmd.c`, `hack.c`, `dokick.c`, and
+`lock.c` likewise dispatch the current command and terrain rather than a
+session command number.
+
+The former JavaScript normal mode had four alternate owners.  Generated start
+coordinates selected human explore, Orc, Friday-the-13th, or character-picker
+paths.  Those flags could replay three large aggregate RNG tables, overwrite
+pet and hostile coordinates, move the hero through fixed point lists, fabricate
+combat/trap/drop/door messages, bypass ordinary maintenance and `hero_seq`,
+override attribute elapsed turns, and reinterpret unrelated wait or run keys
+by their position in a recorded command stream.  Bridge-free mode already
+skipped all four paths and used the live scheduler.
+
+All four classifiers and every downstream alternate owner are now deleted.
+Normal Rogue startup initializes the same no-elapsed-turn maintenance
+watermark as bridge-free startup, every Rogue satisfies the shared source-ration
+predicate, and ordinary `rhack`, running, kicking, displacement, door opening,
+attribute reporting, actor scans, traps, tty continuation, and save/restore
+remain the only owners.  The replay modules `rogue_explore.js`,
+`rogue_orc.js`, and `rogue_friday13.js` no longer exist.  The mechanical audit
+rejects their filenames plus every removed classifier, counter, helper, and
+state token.
+
+Two independent fresh-seed metamorphic witnesses expose why removal matters.
+Seed10325 was found by scanning newly generated human Rogue starts and happens
+to place the hero at the former `(71,14)` explore coordinate.  Before removal,
+four waits paid `seeded-replay.rogue-explore` four times and overwrote the pet
+and hostile locations; bridge-free mode advanced the live actors instead.
+Seed12168 was found the same way for an Orc Rogue at the former `(5,12)`
+coordinate.  Before removal, four waits entered the scripted public fight/run,
+moved the hero to `(6,13)`, advanced only to move2, and stopped at a fabricated
+combat pager.  Normal and bridge-free modes now produce equal live hero,
+actor, movement, inventory, turn, and message state for both seeds, with no
+Rogue bridge hit.  These tests do not read public sessions or compare a replay
+transcript.
+
+Five lower-tier fixture-disabled public regressions remain exact after the
+alternate owner is removed: seed0077 chargen **3,242/3,242 RNG, 33/33**
+screens/cursors; seed1500 explore **2,768/2,768, 40/40**; seed0060 Orc
+**3,626/3,626, 41/41**; seed0013 combat **4,838/4,838, 59/59**; and seed0013
+save/restore **4,804/4,804, 99/99**.  This confirms the live path subsumes the
+known compatibility behavior; it does not substitute for a sealed or official
+hidden measurement.  Alternate unseen actors, trap kinds, command bindings,
+options, dungeon branches, long persistence histories, and sealed strata keep
+the registry entry partial.  Lua owns none of this runtime scheduling path.
