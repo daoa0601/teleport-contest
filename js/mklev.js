@@ -318,7 +318,6 @@ const S_ANGEL = 27;
 const S_VAMPIRE = 48;
 const S_HUMAN = 53;
 const SCR_CREATE_MONSTER = 329;
-const HELM_OF_BRILLIANCE = 96;
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
@@ -6484,29 +6483,6 @@ async function finalizeExplicitQuestBranch(active) {
     game.made_branch = true;
 }
 
-const PRI_START_MAP = [
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-    '....................------------------------------------....................',
-    '....................|................|.....|.....|.....|....................',
-    '....................|..------------..|--+-----+-----+--|....................',
-    '....................|..|..........|..|.................|....................',
-    '....................|..|..........|..|+---+---+-----+--|....................',
-    '..................---..|..........|......|...|...|.....|....................',
-    '..................+....|..........+......|...|...|.....|....................',
-    '..................+....|..........+......|...|...|.....|....................',
-    '..................---..|..........|......|...|...|.....|....................',
-    '....................|..|..........|..|+-----+---+---+--|....................',
-    '....................|..|..........|..|.................|....................',
-    '....................|..------------..|--+-----+-----+--|....................',
-    '....................|................|.....|.....|.....|....................',
-    '....................------------------------------------....................',
-    '............................................................................',
-    '............................................................................',
-    '............................................................................',
-];
-
 const WIZ_START_MAP = [
     '............................................................................',
     '.....................C....CC.C........................C.....................',
@@ -6554,37 +6530,6 @@ const WIZ_LOCA_MAP = [
     '.............        .......................................................',
 ];
 
-const PRI_LOCA_MAP = [
-    '........................................',
-    '........................................',
-    '..........----------+----------.........',
-    '..........|........|.|........|.........',
-    '..........|........|.|........|.........',
-    '..........|----.----.----.----|.........',
-    '..........+...................+.........',
-    '..........+...................+.........',
-    '..........|----.----.----.----|.........',
-    '..........|........|.|........|.........',
-    '..........|........|.|........|.........',
-    '..........----------+----------.........',
-    '........................................',
-    '........................................',
-];
-
-const PRI_GOAL_MAP = [
-    'xxxxxx..xxxxxx...xxxxxxxxx',
-    'xxxx......xx......xxxxxxxx',
-    'xx.xx.............xxxxxxxx',
-    'x....................xxxxx',
-    '......................xxxx',
-    '......................xxxx',
-    'xx........................',
-    'xxx......................x',
-    'xxx................xxxxxxx',
-    'xxxx.....x.xx.......xxxxxx',
-    'xxxxx...xxxxxx....xxxxxxxx',
-];
-
 const KNI_GOAL_MAP = [
     '....PPPP..PPP..',
     '.PPPPP...PP..     ..........     .................................',
@@ -6608,94 +6553,6 @@ const KNI_GOAL_MAP = [
     '.......PPPP...',
 ].map(row => row.padEnd(76, ' '));
 
-function uniformRoomMinesField(lit = true) {
-    // Pri-loca.lua deliberately issues a second level_init after its initial
-    // solid fill.  With fg and bg both ROOM, mkmap()'s 2/5 fill loop changes
-    // no terrain but still samples 624 coordinates in source order.
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const loc = game.level.at(x, y);
-            loc.typ = ROOM;
-            loc.roomno = 0;
-            loc.lit = false;
-        }
-    }
-    const fillCount = Math.trunc(((COLNO - 2) * (ROWNO - 1) * 2) / 5);
-    for (let count = 0; count < fillCount; count++) {
-        rn2(COLNO - 3); // rn1(WIDTH - 1, 2)
-        rnd(ROWNO - 2); // rnd(HEIGHT - 1)
-    }
-    for (let x = 1; x < COLNO; x++)
-        for (let y = 0; y < ROWNO; y++) game.level.at(x, y).lit = !!lit;
-    game.level.flags.is_maze_lev = false;
-    game.level.flags.is_cavernous_lev = true;
-}
-
-function priestGoalMinesField() {
-    // mkmap.c with bg=ROOM, fg=LAVAPOOL, smoothed=false, joined=false.
-    // Unlike Pri-loca, duplicate samples do not advance the 624-cell fill;
-    // the two cellular passes then mutate the live field in source order.
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const loc = game.level.at(x, y);
-            loc.typ = ROOM;
-            loc.roomno = 0;
-            loc.lit = false;
-        }
-    }
-    const fillCount = Math.trunc(((COLNO - 2) * (ROWNO - 1) * 2) / 5);
-    let changed = 0;
-    while (changed < fillCount) {
-        const x = rn2(COLNO - 3) + 2;
-        const y = rnd(ROWNO - 2);
-        const loc = game.level.at(x, y);
-        if (loc.typ === ROOM) {
-            loc.typ = LAVAPOOL;
-            changed++;
-        }
-    }
-
-    const dirs = [
-        [-1, -1], [-1, 0], [-1, 1], [0, -1],
-        [0, 1], [1, -1], [1, 0], [1, 1],
-    ];
-    const terrainAt = (x, y) => x <= 0 || y < 0
-        || x > COLNO - 2 || y >= ROWNO - 1
-        ? ROOM : game.level.at(x, y).typ;
-    for (let x = 2; x <= COLNO - 2; x++) {
-        for (let y = 1; y < ROWNO - 1; y++) {
-            const lavaNeighbors = dirs.reduce((count, [dx, dy]) =>
-                count + Number(terrainAt(x + dx, y + dy) === LAVAPOOL), 0);
-            if (lavaNeighbors <= 2) game.level.at(x, y).typ = ROOM;
-            else if (lavaNeighbors >= 5) game.level.at(x, y).typ = LAVAPOOL;
-        }
-    }
-    const passTwo = Array.from({ length: COLNO }, () =>
-        Array(ROWNO).fill(ROOM));
-    for (let x = 2; x <= COLNO - 2; x++) {
-        for (let y = 1; y < ROWNO - 1; y++) {
-            const lavaNeighbors = dirs.reduce((count, [dx, dy]) =>
-                count + Number(terrainAt(x + dx, y + dy) === LAVAPOOL), 0);
-            passTwo[x][y] = lavaNeighbors === 5
-                ? ROOM : terrainAt(x, y);
-        }
-    }
-    for (let x = 2; x <= COLNO - 2; x++)
-        for (let y = 1; y < ROWNO - 1; y++)
-            game.level.at(x, y).typ = passTwo[x][y];
-
-    // finish_map() lights lava even when the requested mines field is dark.
-    for (let x = 1; x < COLNO; x++)
-        for (let y = 0; y < ROWNO; y++)
-            if (game.level.at(x, y).typ === LAVAPOOL)
-                game.level.at(x, y).lit = true;
-}
-
-// C refs: mkmap.c mkmap(), join_map(), and dat/minefill.lua.  The Mines
-// filler uses a live cellular field: duplicate initial samples retry, each
-// smoothing pass reads the preceding pass, and disconnected regions are
-// joined through temporary irregular rooms before their room metadata is
-// discarded.
 function mineFillerMinesField({
     lit,
     foreground = ROOM,
@@ -6908,81 +6765,6 @@ async function generateMineFiller(active, lit) {
     wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
-function loadPriestGoalMap() {
-    const context = centeredSpecialMap(26, PRI_GOAL_MAP.length);
-    for (let dy = 0; dy < context.height; dy++) {
-        for (let dx = 0; dx < context.width; dx++) {
-            // `x` maps to MAX_TYPE and is transparent in lspo_map().
-            if (PRI_GOAL_MAP[dy][dx] === 'x') continue;
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            loc.typ = ROOM;
-            loc.lit = false;
-            loc.roomno = 0;
-            loc.horizontal = false;
-        }
-    }
-    return context;
-}
-
-async function generatePriestGoal(active) {
-    priestGoalMinesField();
-    const context = loadPriestGoalMap();
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.placeIndex = rn2(2);
-
-    // des.region(selection.area(...), "unlit") preserves lava's intrinsic
-    // light while clearing every non-lava cell in the mapped selection.
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const loc = game.level.at(context.xstart + dx, context.ystart + dy);
-            loc.lit = loc.typ === LAVAPOOL;
-        }
-    }
-    specialStairAt(context, 20, 5, true);
-
-    const artifactPlaces = [[14, 4], [13, 7]];
-    const [artifactX, artifactY] = artifactPlaces[active.placeIndex];
-    const mitre = specialObjectAt(
-        context, HELM_OF_BRILLIANCE, artifactX, artifactY, { named: true },
-    );
-    if (mitre) {
-        mitre.blessed = true;
-        mitre.cursed = false;
-        mitre.spe = 0;
-        mitre.oerodeproof = true;
-        mitre.artifact = true;
-        mitre.oartifact = true;
-        mitre.questArtifact = true;
-        mitre.oextra = { ...(mitre.oextra || {}),
-            oname: 'The Mitre of Holiness' };
-        game._artifactExistCount = (game._artifactExistCount ?? 0) + 1;
-    }
-    for (let count = 0; count < 14; count++) specialObject(context);
-
-    for (let count = 0; count < 4; count++)
-        await specialTrapOfType(context, FIRE_TRAP);
-    for (let count = 0; count < 2; count++) await specialTrap(context);
-
-    await specialMonsterAt(
-        context, game.urole.neminum, artifactX, artifactY,
-        { randomGender: false },
-    );
-    for (let count = 0; count < 16; count++)
-        await specialExplicitMonster(context, PM_HUMAN_ZOMBIE);
-    for (let count = 0; count < 2; count++)
-        await specialMonsterOfClass(context, 52); // S_ZOMBIE
-    for (let count = 0; count < 8; count++)
-        await specialExplicitMonster(context, PM_WRAITH);
-    await specialMonsterOfClass(context, 49); // S_WRAITH
-
-    flipSpecialLevelRandom(3);
-}
-
-// Lua source: dat/Kni-goal.lua.  The script's fixed-coordinate random
-// objects and traps deliberately use the ordinary shared constructors: only
-// their location is fixed, not their identity or initialization.
 async function generateKnightGoal(active) {
     const context = loadSpecialAsciiMap(KNI_GOAL_MAP, active.defaultLit);
     active.context = { ...context };
@@ -7208,7 +6990,7 @@ export async function generateMinetown(active) {
 }
 
 function isLuaQuestPrototype(prototype) {
-    return /^(Arc|Bar)-(strt|loca|goal|fila|filb)$/.test(prototype);
+    return /^(Arc|Bar|Pri)-(strt|loca|goal|fila|filb)$/.test(prototype);
 }
 
 async function generateLuaQuestLevel(active) {
@@ -7319,21 +7101,6 @@ async function specialShrinePriest(temple, altarX, altarY, altarAlignment,
     return priest;
 }
 
-async function priestLocateShrinePriest(context, temple) {
-    return specialShrinePriest(
-        temple, context.xstart + 20, context.ystart + 7, A_NONE,
-    );
-}
-
-async function specialTrapAtRandom(context, x, y) {
-    let type = specialRandomTrapType();
-    if (is_hole(type) && !canFallThrough()) type = ROCKTRAP;
-    const trapX = context.xstart + x, trapY = context.ystart + y;
-    await maketrap(trapX, trapY, type);
-    if (type === WEB) await makemon(PM_GIANT_SPIDER, trapX, trapY, 0);
-    rnd(4);
-}
-
 function morgueMonsterType() {
     const roll = rn2(100);
     const hitDice = rn2(level_difficulty());
@@ -7391,25 +7158,6 @@ async function fillMorgueRoom(room) {
     }
     game.level.flags.has_morgue = true;
 }
-
-const PRIEST_FILLER_ROOMS = {
-    'Pri-fila': [
-        { actions: ['up', 'object', 'human zombie'] },
-        { actions: ['object', 'object'] },
-        { actions: ['object', 'trap', 'object', 'human zombie'] },
-        { rtype: MORGUE, actions: ['down', 'object', 'trap'] },
-        { actions: ['object', 'object', 'trap', 'wraith'] },
-        { rtype: MORGUE, actions: ['object', 'trap'] },
-    ],
-    'Pri-filb': [
-        { actions: ['up', 'object', 'human zombie', 'wraith'] },
-        { rtype: MORGUE, actions: ['object', 'object', 'object'] },
-        { actions: ['object', 'trap', 'object', 'human zombie', 'wraith'] },
-        { rtype: MORGUE, actions: ['down', 'object', 'object', 'trap'] },
-        { actions: ['object', 'object', 'trap', 'human zombie', 'wraith'] },
-        { rtype: MORGUE, actions: ['object', 'trap'] },
-    ],
-};
 
 const WIZARD_FILLER_ROOMS = {
     'Wiz-fila': [
@@ -7477,109 +7225,6 @@ async function generateWizardFiller(active) {
     flipSpecialLevelRandom(3);
 }
 
-async function runPriestFillerAction(context, action) {
-    if (action === 'up') specialStair(context, true);
-    else if (action === 'down') specialStair(context, false);
-    else if (action === 'object') specialObject(context);
-    else if (action === 'trap') await specialTrap(context);
-    else if (action === 'human zombie')
-        await specialExplicitMonster(context, PM_HUMAN_ZOMBIE);
-    else if (action === 'wraith')
-        await specialExplicitMonster(context, PM_WRAITH);
-}
-
-// Lua sources: dat/Pri-fila.lua and dat/Pri-filb.lua.  These are room-form
-// Quest fillers, not named special levels: the script owns six rooms and
-// random corridors, while the shared special-level finalizer owns flipping,
-// deferred morgue stocking, and ordinary (non-Is_special) mineralization.
-async function generatePriestFiller(active) {
-    for (const spec of PRIEST_FILLER_ROOMS[active.prototype] || []) {
-        await buildSpecialRoom({ rtype: spec.rtype ?? OROOM }, null,
-            async room => {
-                const context = specialRoomContext(room);
-                for (const action of spec.actions)
-                    await runPriestFillerAction(context, action);
-            });
-    }
-    makecorridors();
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
-async function generatePriestLocate(active) {
-    uniformRoomMinesField(true);
-    // lspo_map([[...]]) defaults `lit` to false and rewrites every inserted
-    // map cell after the mines initializer.  The surrounding field remains
-    // lit; later lit regions selectively relight the temple component.
-    const context = loadSpecialAsciiMap(PRI_LOCA_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.allow_flips = 0;
-
-    for (const region of [
-        [0, 0, 9, 13], [9, 0, 30, 1],
-        [9, 12, 30, 13], [31, 0, 39, 13],
-    ]) specialRectangularRoom(
-        context, ...region, MORGUE, false, 1,
-    );
-    const temple = specialIrregularRoom(
-        context, 11, 3, TEMPLE, true, 1,
-    );
-
-    const altar = game.level.at(context.xstart + 20, context.ystart + 7);
-    altar.typ = ALTAR;
-    altar.flags = Align2amask(A_NONE) | AM_SHRINE;
-    await priestLocateShrinePriest(context, temple);
-
-    const hostileCleric = await specialMonsterAt(
-        context, PM_ALIGNED_CLERIC, 20, 7,
-        { randomAlignment: false, mmflags: MM_EMIN },
-    );
-    if (hostileCleric) {
-        hostileCleric.mpeaceful = 0;
-        hostileCleric.ispriest = 0;
-        hostileCleric.isminion = 1;
-        hostileCleric.emin = { min_align: A_NONE, renegade: false };
-        setMonsterMalign(hostileCleric);
-        // sp_lev.c:create_monster() routes a descriptor with explicit
-        // alignment through priest.c:mk_roamer(), which knows all traps.
-        hostileCleric.mtrapseen = 0x7fffffff;
-    }
-
-    for (const [x, y] of [
-        [10, 6], [10, 7], [20, 2],
-        [20, 11], [30, 6], [30, 7],
-    ]) specialDoorAt(context, D_LOCKED, x, y);
-    specialStairAt(context, 43, 5, true);
-    specialStairAt(context, 20, 6, false);
-    for (let x = 10; x <= 30; x++) {
-        for (let y = 2; y <= 13; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc && IS_WALL(loc.typ)) loc.wall_info |= W_NONDIGGABLE;
-        }
-    }
-
-    for (const [x, y] of [
-        [14, 3], [15, 3], [16, 3],
-        [14, 10], [15, 10], [16, 10], [17, 10],
-        [24, 3], [25, 3], [26, 3], [27, 3],
-        [24, 10], [25, 10], [26, 10], [27, 10],
-    ]) mkobj_at(
-        RANDOM_CLASS, context.xstart + x, context.ystart + y, true,
-    );
-
-    for (const [x, y] of [[15, 4], [25, 4], [15, 9], [25, 9]])
-        await specialTrapAtRandom(context, x, y);
-    for (let count = 0; count < 2; count++) await specialTrap(context);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    game.level.flags.has_temple = true;
-    for (const morgue of game.level.rooms.slice(0, 4))
-        await fillMorgueRoom(morgue);
-}
-
 function replaceSpecialTerrain(
     context, xlo, ylo, xhi, yhi, fromType, toType, chance,
 ) {
@@ -7596,140 +7241,6 @@ function replaceSpecialTerrain(
             }
         }
     }
-}
-
-function specialFloodSelection(context, startX, startY) {
-    const start = {
-        x: context.xstart + startX,
-        y: context.ystart + startY,
-    };
-    const terrain = game.level.at(start.x, start.y)?.typ;
-    const pending = [start], seen = new Set(), points = [];
-    while (pending.length) {
-        const point = pending.pop();
-        const key = `${point.x},${point.y}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        if (!isok(point.x, point.y)
-            || game.level.at(point.x, point.y)?.typ !== terrain) continue;
-        points.push(point);
-        pending.push(
-            { x: point.x + 1, y: point.y },
-            { x: point.x - 1, y: point.y },
-            { x: point.x, y: point.y + 1 },
-            { x: point.x, y: point.y - 1 },
-        );
-    }
-    // selection_rndcoord() does not observe flood traversal order.  It scans
-    // the selected bitmap x-major/y-minor on every sample.
-    points.sort((a, b) => a.x - b.x || a.y - b.y);
-    return {
-        initialCount: points.length,
-        points,
-        sample(remove = false) {
-            if (!this.points.length) return null;
-            const index = rn2(this.points.length);
-            const point = this.points[index];
-            if (remove) this.points.splice(index, 1);
-            return point;
-        },
-    };
-}
-
-function priestStartStaticOperations(active) {
-    const context = loadSpecialAsciiMap(PRI_START_MAP, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-
-    for (let x = 0; x < context.width; x++)
-        for (let y = 0; y < context.height; y++)
-            game.level.at(context.xstart + x, context.ystart + y).lit = true;
-
-    const temple = add_room(
-        context.xstart + 24, context.ystart + 6,
-        context.xstart + 33, context.ystart + 13,
-        true, TEMPLE, true,
-    );
-    if (temple) {
-        temple.needfill = 2;
-        game.level.flags.has_temple = true;
-    }
-
-    replaceSpecialTerrain(context, 0, 0, 10, 19, ROOM, TREE, 10);
-    replaceSpecialTerrain(context, 65, 0, 75, 19, ROOM, TREE, 10);
-    game.level.at(context.xstart + 5, context.ystart + 4).typ = ROOM;
-    active.priestSpaceSelection = specialFloodSelection(context, 5, 4);
-
-    active.branchRegion = {
-        x: context.xstart + 5,
-        y: context.ystart + 4,
-    };
-    specialStairAt(context, 52, 9, false);
-    for (const [mask, x, y] of [
-        [D_LOCKED, 18, 9], [D_LOCKED, 18, 10],
-        [D_CLOSED, 34, 9], [D_CLOSED, 34, 10],
-        [D_CLOSED, 40, 5], [D_CLOSED, 46, 5], [D_CLOSED, 52, 5],
-        [D_LOCKED, 38, 7], [D_CLOSED, 42, 7],
-        [D_CLOSED, 46, 7], [D_CLOSED, 52, 7],
-        [D_LOCKED, 38, 12], [D_CLOSED, 44, 12],
-        [D_CLOSED, 48, 12], [D_CLOSED, 52, 12],
-        [D_CLOSED, 40, 14], [D_CLOSED, 46, 14], [D_CLOSED, 52, 14],
-    ]) specialDoorAt(context, mask, x, y);
-
-    const altar = game.level.at(context.xstart + 28, context.ystart + 9);
-    altar.typ = ALTAR;
-    altar.flags = Align2amask(A_NONE);
-    for (let x = 18; x <= 55; x++) {
-        for (let y = 3; y <= 16; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc && IS_WALL(loc.typ)) loc.wall_info |= W_NONDIGGABLE;
-        }
-    }
-    return context;
-}
-
-async function generatePriestStart(active) {
-    const context = priestStartStaticOperations(active);
-
-    const leader = await specialMonsterAt(
-        context, PM_ARCH_PRIEST, 28, 10, { randomGender: false },
-    );
-    if (leader) {
-        discardSpecialMonsterInventory(leader);
-        giveSpecialMonsterObject(context, leader, ROBE, 4);
-        giveSpecialMonsterObject(context, leader, MACE, 4);
-    }
-    specialObjectAt(context, CHEST, 27, 10);
-
-    for (const [x, y] of [
-        [32, 7], [32, 8], [32, 11], [32, 12],
-        [33, 7], [33, 8], [33, 11], [33, 12],
-    ]) await specialMonsterAt(context, PM_ACOLYTE, x, y);
-
-    const spacelocs = active.priestSpaceSelection;
-    for (let index = 0; index < 2; index++) {
-        const point = spacelocs.sample(true);
-        await maketrap(point.x, point.y, DART_TRAP);
-        rnd(4);
-    }
-    for (let index = 0; index < 4; index++) await specialTrap(context);
-    for (let index = 0; index < 12; index++) {
-        const point = spacelocs.sample(true);
-        await specialMonsterAt(
-            context, PM_HUMAN_ZOMBIE,
-            point.x - context.xstart, point.y - context.ystart,
-        );
-    }
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-
-    // fixup_special() runs after flipping.  The single-cell branch region
-    // still executes place_lregion()'s independent x/y rolls before placing
-    // the Quest portal at the transformed coordinate.
-    await finalizeExplicitQuestBranch(active);
 }
 
 async function generateWizardStart(active) {
@@ -8340,9 +7851,30 @@ async function createLuaObject(
         object.blessed = false;
     }
     if (Number.isInteger(options.spe)) object.spe = options.spe;
+    if (options.eroded) {
+        if (options.eroded < 0) {
+            object.oerodeproof = true;
+        } else {
+            object.oeroded = options.eroded % 4;
+            object.oeroded2 = (options.eroded >> 2) % 4;
+        }
+    } else {
+        object.oeroded = 0;
+        object.oeroded2 = 0;
+        object.oerodeproof = false;
+    }
+    if (options.recharged)
+        object.recharged = options.recharged % 8;
     if (Object.hasOwn(options, 'trapped'))
         object.otrapped = !!options.trapped;
     if (Object.hasOwn(options, 'locked')) object.olocked = !!options.locked;
+    else if (options.broken) {
+        object.obroken = true;
+        object.olocked = false;
+    }
+    if (options.trapped && Object.hasOwn(options, 'tknown'))
+        object.tknown = !!options.tknown;
+    object.greased = !!options.greased;
     if (options.monsterType != null)
         set_corpsenm(object, options.monsterType);
     else if (options.monsterClass != null)
@@ -10866,21 +10398,6 @@ async function makelevel() {
             await generateLuaQuestLevel(g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'Pri-strt') {
-            await generateSpecialAndFixup(generatePriestStart,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Pri-loca') {
-            await generateSpecialAndFixup(generatePriestLocate,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Pri-goal') {
-            await generateSpecialAndFixup(generatePriestGoal,
-                g._activeSpecialLevel);
-            return;
-        }
         if (prototype === 'Wiz-strt') {
             await generateSpecialAndFixup(generateWizardStart,
                 g._activeSpecialLevel);
@@ -10903,15 +10420,6 @@ async function makelevel() {
         }
         if (/^tower[1-3]$/.test(prototype)) {
             await generateVladsTowerLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'Pri-fila' || prototype === 'Pri-filb') {
-            await generateSpecialAndFixup(generatePriestFiller,
-                g._activeSpecialLevel);
-            // load_special() defers special-room stocking until after
-            // fixup_special(); ordinary rooms remain untouched here.
-            for (const room of g.level.rooms.slice(0, g.level.nroom))
-                await fillSpecialRoom(room);
             return;
         }
         if (prototype === 'minetn') {
