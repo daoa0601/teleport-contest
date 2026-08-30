@@ -51,7 +51,6 @@ import {
 } from './const.js';
 import {
     OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_DIR,
-    OBJECT_NAMES, OBJECT_DESCRIPTIONS,
     OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_MERGE, OBJECT_USES_KNOWN, OBJECT_WEIGHT,
     CHARGED_OBJECTS,
@@ -10460,7 +10459,7 @@ function replaceLuaTerrain(context, options) {
     });
 }
 
-function createLuaFeature(context, type, x = null, y = null) {
+function createLuaFeature(context, { type, point }) {
     const types = {
         fountain: FOUNTAIN, sink: SINK, pool: POOL,
         throne: THRONE, tree: TREE,
@@ -10468,7 +10467,6 @@ function createLuaFeature(context, type, x = null, y = null) {
     const featureType = types[type];
     if (featureType === undefined)
         throw new Error(`unknown Lua feature ${type}`);
-    const point = luaPoint(x, y);
     if (point) {
         const loc = game.level.at(
             context.xstart + point.x, context.ystart + point.y,
@@ -10477,47 +10475,6 @@ function createLuaFeature(context, type, x = null, y = null) {
         return;
     }
     specialFeatureOfType(context, featureType);
-}
-
-const LUA_OBJECT_CLASS_SYMBOLS = [
-    '', ']', ')', '[', '=', '"', '(', '%', '!', '?', '+', '/', '$', '*',
-    '`', '0', '_', '.',
-];
-
-const LUA_TRAP_TYPES = new Map([
-    ['arrow', ARROW_TRAP],
-    ['dart', DART_TRAP],
-    ['falling rock', ROCKTRAP],
-    ['board', SQKY_BOARD],
-    ['bear', BEAR_TRAP],
-    ['land mine', LANDMINE],
-    ['rolling boulder', ROLLING_BOULDER_TRAP],
-    ['sleep gas', SLP_GAS_TRAP],
-    ['rust', RUST_TRAP],
-    ['fire', FIRE_TRAP],
-    ['pit', PIT],
-    ['spiked pit', SPIKED_PIT],
-    ['hole', HOLE],
-    ['trap door', TRAPDOOR],
-    ['teleport', TELEP_TRAP],
-    ['level teleport', LEVEL_TELEP],
-    ['magic portal', MAGIC_PORTAL],
-    ['web', WEB],
-    ['statue', STATUE_TRAP],
-    ['magic', MAGIC_TRAP],
-    ['anti magic', ANTI_MAGIC],
-    ['polymorph', POLY_TRAP],
-    ['vibrating square', VIBRATING_SQUARE],
-]);
-
-function luaPoint(value, y = null) {
-    if (Number.isInteger(value) && Number.isInteger(y))
-        return { x: value, y };
-    if (Array.isArray(value) && value.length >= 2)
-        return { x: value[0], y: value[1] };
-    if (value && Number.isInteger(value.x) && Number.isInteger(value.y))
-        return { x: value.x, y: value.y };
-    return null;
 }
 
 function luaRoomLighting(value) {
@@ -10543,15 +10500,13 @@ function createLuaRoomRegion(context, options) {
     return room;
 }
 
-function createLuaStair(context, direction, x = null, y = null) {
+function createLuaStair(context, { direction, point }) {
     const up = direction === 'up';
-    const point = luaPoint(x, y);
     if (point) specialStairAt(context, point.x, point.y, up);
     else specialStair(context, up);
 }
 
-function createLuaDoor(context, state, x, y) {
-    const point = luaPoint(x, y);
+function createLuaDoor(context, { state, point }) {
     if (!point) throw new TypeError('des.door requires coordinates');
     if (state === 'random')
         return specialRandomDoorAt(context, point.x, point.y);
@@ -10566,56 +10521,10 @@ function createLuaDoor(context, state, x, y) {
     return specialDoorAt(context, masks[state], point.x, point.y);
 }
 
-function luaObjectClass(symbol) {
-    const objectClass = LUA_OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-    if (objectClass < 1)
-        throw new Error(`unknown Lua object class ${symbol}`);
-    return objectClass;
-}
-
-function luaObjectType(name, classSymbol = null) {
-    const prefixes = [
-        ['ring of ', RING_CLASS],
-        ['potion of ', POTION_CLASS],
-        ['scroll of ', SCROLL_CLASS],
-        ['spellbook of ', SPBOOK_CLASS],
-        ['wand of ', WAND_CLASS],
-    ];
-    let desiredClass = classSymbol ? luaObjectClass(classSymbol) : null;
-    let target = String(name).toLowerCase();
-    for (const [prefix, prefixClass] of prefixes) {
-        if (!target.startsWith(prefix)) continue;
-        target = target.slice(prefix.length);
-        desiredClass = prefixClass;
-        break;
-    }
-    for (let type = 0; type < OBJECT_NAMES.length; type++) {
-        if (desiredClass && desiredClass !== objectClass(type)) continue;
-        if (OBJECT_NAMES[type]?.toLowerCase() === target
-            || OBJECT_DESCRIPTIONS[type]?.toLowerCase() === target) return type;
-    }
-    throw new Error(`unknown Lua object ${name}`);
-}
-
-function luaObjectOptions(id, x, y) {
-    if (id && typeof id === 'object' && !Array.isArray(id)) return { ...id };
-    const options = {};
-    if (typeof id === 'string') {
-        if (id.length === 1) options.class = id;
-        else options.id = id;
-    }
-    const point = luaPoint(x, y);
-    if (point) Object.assign(options, point);
-    return options;
-}
-
 async function createLuaObject(
     context, options, parentContainer, invokeContents,
 ) {
-    const point = luaPoint(options.coord) ?? luaPoint(options.x, options.y);
-    const objectClass = options.class ? luaObjectClass(options.class) : null;
-    const objectType = options.id
-        ? luaObjectType(options.id, options.class) : null;
+    const { point, objectClass, objectType } = options;
     let object;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -10651,9 +10560,8 @@ async function createLuaObject(
         object.cursed = true;
     }
     if (Number.isInteger(options.spe)) object.spe = options.spe;
-    if (options.montype) set_corpsenm(
-        object, monsterIndexByNameInsensitive(options.montype),
-    );
+    if (options.monsterType != null)
+        set_corpsenm(object, options.monsterType);
     if (object.otyp === STATUE || object.otyp === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0)
@@ -10674,45 +10582,25 @@ async function createLuaObject(
     return object;
 }
 
-function monsterIndexByNameInsensitive(name) {
-    const target = String(name).toLowerCase();
-    const index = MONSTER_NAME.findIndex(candidate =>
-        candidate?.toLowerCase() === target);
-    if (index < 0) throw new Error(`unknown Lua monster ${name}`);
-    return index;
-}
-
-function luaMonsterOptions(id, x, y) {
-    if (id && typeof id === 'object' && !Array.isArray(id)) return { ...id };
-    const options = {};
-    if (typeof id === 'string') {
-        if (id.length === 1) options.class = id;
-        else options.id = id;
-    }
-    const point = luaPoint(x, y);
-    if (point) Object.assign(options, point);
-    return options;
-}
-
 async function createLuaMonster(context, options) {
-    const point = luaPoint(options.coord) ?? luaPoint(options.x, options.y);
+    const { point, monsterClass, monsterType } = options;
     const peaceful = options.peaceful == null ? null : !!options.peaceful;
     const asleep = options.asleep == null ? null : !!options.asleep;
     let monster;
-    if (options.id) {
-        const type = monsterIndexByNameInsensitive(options.id);
+    if (monsterType != null) {
         const settings = {
-            randomGender: namedMonsterNeedsGenderDraw(type), peaceful, asleep,
+            randomGender: namedMonsterNeedsGenderDraw(monsterType),
+            peaceful,
+            asleep,
         };
         monster = point
             ? await specialMonsterAt(
-                context, type, point.x, point.y, settings,
+                context, monsterType, point.x, point.y, settings,
             )
-            : await specialExplicitMonster(context, type, null, settings);
-    } else if (options.class) {
-        const monsterClass = MONSTER_CLASS_SYMBOLS.indexOf(options.class);
-        if (monsterClass < 1)
-            throw new Error(`unknown Lua monster class ${options.class}`);
+            : await specialExplicitMonster(
+                context, monsterType, null, settings,
+            );
+    } else if (monsterClass != null) {
         monster = point
             ? await specialMonsterClassAt(
                 context, monsterClass, point.x, point.y,
@@ -10730,20 +10618,8 @@ async function createLuaMonster(context, options) {
     return monster;
 }
 
-async function createLuaTrap(context, type = null, x = null, y = null) {
-    if (type && typeof type === 'object') {
-        const options = type;
-        type = options.type ?? null;
-        const point = luaPoint(options.coord)
-            ?? luaPoint(options.x, options.y);
-        x = point;
-        y = null;
-    }
-    if (type === 'random') type = null;
-    if (type == null) return specialTrap(context);
-    const trapType = LUA_TRAP_TYPES.get(String(type));
-    if (trapType == null) throw new Error(`unknown Lua trap ${type}`);
-    const point = luaPoint(x, y);
+async function createLuaTrap(context, { trapType, point }) {
+    if (trapType == null) return specialTrap(context);
     return point
         ? specialTrapAt(context, trapType, point.x, point.y)
         : specialTrapOfType(context, trapType);
@@ -10834,13 +10710,9 @@ async function generateLuaSpecialLevel(active) {
             });
         },
         roomRegion: options => createLuaRoomRegion(context, options),
-        stair: (direction, x, y) => createLuaStair(
-            context, String(direction), x, y,
-        ),
-        door: (state, x, y) => createLuaDoor(
-            context, String(state), x, y,
-        ),
-        feature: (type, x, y) => createLuaFeature(context, type, x, y),
+        stair: options => createLuaStair(context, options),
+        door: options => createLuaDoor(context, options),
+        feature: options => createLuaFeature(context, options),
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(),
@@ -10887,16 +10759,14 @@ async function generateLuaSpecialLevel(active) {
             context, options.x, options.y, options.dir,
             mapCharacterType(options.typ ?? '.'),
         ),
-        object: (id, x, y) => createLuaObject(
+        object: options => createLuaObject(
             context,
-            luaObjectOptions(id, x, y),
+            options,
             containers.at(-1) ?? null,
             invokeObjectContents,
         ),
-        trap: (type, x, y) => createLuaTrap(context, type, x, y),
-        monster: (id, x, y) => createLuaMonster(
-            context, luaMonsterOptions(id, x, y),
-        ),
+        trap: options => createLuaTrap(context, options),
+        monster: options => createLuaMonster(context, options),
     };
     await currentLuaLifecycle().executeSpecial(
         game, active.file,
