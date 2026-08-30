@@ -4,6 +4,7 @@
 // Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rnd } from './rng.js';
 import {
@@ -243,9 +244,10 @@ function putStatusLines(snapshot = null) {
 // C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
 // creation story is laid out by the tty pager; role, rank, and god are live.
 async function showLegacy(statusSnapshot = null) {
-    // Loading quest.lua pulls in nhlib.lua and shuffles its three alignments.
-    rn2(3);
-    rn2(2);
+    // com_pager() creates a fresh Lua state, which loads nhlib.lua before
+    // quest.lua and consumes the alignment shuffle from CORE.
+    const questState = currentLuaLifecycle().createSpecialState(game);
+    questState.destroy();
 
     const d = game.nhDisplay;
     const god = game.urole?.gods?.[game.initAlignment?.name] || 'your god';

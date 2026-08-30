@@ -12,6 +12,7 @@
 import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
+import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
 import {
@@ -278,6 +279,7 @@ export class Engine {
             beforeRead: () => this.capture.beforeInput(),
             display: opts.interactive ? this.display : null,
         });
+        this.lua = new LuaLifecycle();
         this.coreRng = null;
         this.displayRng = null;
         this.rngLog = [];
@@ -315,6 +317,7 @@ export class Engine {
         if (!this.display) throw new Error('Engine requires a display');
         const g = resetGame(this.state);
         bindInputGate(this.inputGate);
+        bindLuaLifecycle(this.lua);
         g.datetime = this._datetime;
         g.nethackrc = this._nethackrc;
         g.storage = this.storage;
@@ -1020,6 +1023,7 @@ export class Engine {
             while (!this.state.program_state?.gameover) await moveloop_core();
         } finally {
             this.rngLog = [...getRngLog()];
+            if (this.state.program_state?.gameover) this.lua.destroy();
         }
     }
 

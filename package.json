@@ -9,6 +9,7 @@
     "score": "bash frozen/score.sh",
     "score:engine": "node frozen/ps_test_runner.mjs sessions",
     "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
+    "generate:lua-core": "node scripts/generate-lua-core.mjs",
     "play": "echo 'Open index.html in a browser to play'"
   },
   "engines": {

@@ -3,6 +3,7 @@
 
 import { game } from './gstate.js';
 import { GameMap } from './game.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { copyPersistentState, SAVE_VERSION } from './state_schema.js';
 
 const SAVE_PREFIX = 'teleport-save:';
@@ -164,6 +165,7 @@ function rehydrateLevels(state) {
 export function saveGame(storage = game.storage) {
     if (!storage?.setItem) return false;
     try {
+        currentLuaLifecycle().syncVariables(game);
         const encoded = JSON.stringify(snapshotState(), graphReplacer());
         storage.setItem(saveKey(game.plname), encoded);
         return true;

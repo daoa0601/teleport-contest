@@ -6,6 +6,7 @@
 // Uses the real game PRNG (not a separate layout PRNG) for bit-exact parity.
 
 import { game } from './gstate.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
@@ -5015,12 +5016,7 @@ async function getbones() {
 
 // C ref: allmain.c l_nhcore_init()
 export function l_nhcore_init() {
-    const align = [0, 0, 0]; // A_LAWFUL, A_NEUTRAL, A_CHAOTIC
-    for (let i = align.length; i > 1; i--) {
-        const j = rn2(i);
-        [align[i - 1], align[j]] = [align[j], align[i - 1]];
-    }
-    game.splev_align = align;
+    currentLuaLifecycle().startCore(game);
 }
 
 // C ref: mklev.c mklev()

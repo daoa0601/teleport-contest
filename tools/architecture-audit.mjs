@@ -72,6 +72,10 @@ const forbiddenPatterns = [
         message: 'production code contains fixed RNG compensation',
     },
     {
+        pattern: /\blua(?:Rng|RandomContext)\b/gu,
+        message: 'Lua must consume CORE rather than a third RNG context',
+    },
+    {
         pattern: /\b(?:game|g|state)(?:\?\.|\.)moves\s*===?\s*\d+/gu,
         message: 'production code branches on an exact move number',
     },
