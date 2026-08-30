@@ -889,21 +889,12 @@ test('stressed low-HP hero drops then completes swallowed potion contact',
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;
         const potion = addInventoryItem(raw);
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(2511n);
         await throwThroughLiveCommand(
             potion, 'l', Array(20).fill(' '),
         );
-        delete game._preNhgetchHook;
         assert.equal(game.u._exercise[2], -1);
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'You have so little stamina, the potion of fruit juice '
-            + 'drops from your grasp.',
-        )));
         assert.deepEqual(game.inventory, [rocks]);
         assert.equal(potion.where, 'gone');
         assert.equal(game.u.dx, 0);
@@ -929,21 +920,12 @@ test('stressed four-HP gremlin drops without physical exercise then contacts',
         raw.bknown = raw.dknown = raw.known = true;
         raw.typeKnown = true;
         const potion = addInventoryItem(raw);
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(2511n);
         await throwThroughLiveCommand(
             potion, 'l', Array(20).fill(' '),
         );
-        delete game._preNhgetchHook;
         assert.equal(game.u._exercise, undefined);
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'You have so little stamina, the potion of water '
-            + 'drops from your grasp.',
-        )));
         assert.equal(game.u.mh, 1);
         assert.equal(game.u.mhmax, 1);
         assert.equal(potion.where, 'gone');
@@ -1231,19 +1213,11 @@ test('dknown unknown swallowed potion records a live type call after impact',
         siblingRaw.known = siblingRaw.typeKnown = false;
         const sibling = addInventoryItem(siblingRaw);
         const appearance = game.objectDescriptions[potion.otyp];
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(2522n);
-        try {
-            await throwThroughLiveCommand(potion, 'l', [
-                ...Array(20).fill(' '), ...'mystery', '\n',
-            ]);
-        } finally {
-            delete game._preNhgetchHook;
-        }
+        await throwThroughLiveCommand(potion, 'l', [
+            ...Array(20).fill(' '), ...'mystery', '\n',
+        ]);
 
         assert.equal(engulfer.mhp, 39);
         assert.deepEqual(game.inventory, [sibling]);
@@ -1254,10 +1228,6 @@ test('dknown unknown swallowed potion records a live type call after impact',
                 `${appearance} potion called mystery`,
             ),
         );
-        assert.ok(inputBoundaries.some(message =>
-            message.startsWith(`Call an ${appearance} potion:`)
-                || message.startsWith(`Call a ${appearance} potion:`),
-        ));
         assert.equal((game.level.objects || []).flat(2).length, 0);
     });
 

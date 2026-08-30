@@ -271,9 +271,6 @@ span.terminal-cursor {
      *   KeyboardEvent and returns a char code (or null). Bypasses bindings
      *   and default translation entirely.
      * @param {Function} [options.onInterrupt] - Ctrl-C handler for this read.
-     * @param {Function} [options.onEmptyQueue] - called when queue is empty.
-     *   Can throw (end of replay), return a code (default key), or return
-     *   null/undefined (wait as usual).
      * @returns {Promise<number>}
      */
     readKey(options) {
@@ -285,13 +282,6 @@ span.terminal-cursor {
         if (!this._inputQueue) this._inputQueue = [];
         if (this._inputQueue.length > 0) {
             return Promise.resolve(this._inputQueue.shift());
-        }
-        const onEmpty = options?.onEmptyQueue;
-        if (onEmpty) {
-            const result = onEmpty();
-            if (result !== undefined && result !== null) {
-                return Promise.resolve(result);
-            }
         }
         return new Promise((resolve) => {
             this._inputResolver = resolve;

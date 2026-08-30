@@ -1,41 +1,93 @@
-// input.js — Keystroke input handling.
-// Provides async nhgetch() that reads from an input queue.
+// input.js — The single boundary for NetHack key input.
+// C refs: win/tty/wintty.c:tty_nhgetch(), win/tty/getline.c.
 
-import { game } from './gstate.js';
 import { KEY_BINDINGS } from './terminal.js';
 
-const _inputQueue = [];
+function keyCode(key) {
+    if (typeof key === 'number') return key;
+    if (typeof key === 'string' && key.length > 0) return key.charCodeAt(0);
+    throw new TypeError('InputGate accepts character strings or key codes');
+}
+
+export class InputGate {
+    constructor({ beforeRead = null, display = null } = {}) {
+        this.beforeRead = beforeRead;
+        this.display = display;
+        this.queue = [];
+        this.pendingRead = null;
+        this.blockedWaiters = [];
+    }
+
+    feed(keys) {
+        const values = typeof keys === 'string' ? [...keys] : [keys].flat();
+        for (const key of values) this.feedOne(keyCode(key));
+    }
+
+    feedOne(code) {
+        if (!this.pendingRead) {
+            this.queue.push(code);
+            return;
+        }
+        const resolve = this.pendingRead;
+        this.pendingRead = null;
+        resolve(code);
+    }
+
+    async readKey() {
+        await this.beforeRead?.();
+        if (this.queue.length > 0) return this.queue.shift();
+        if (this.display) {
+            return this.display.readKey({ bindings: KEY_BINDINGS.VI_KEYS });
+        }
+
+        const key = new Promise(resolve => {
+            this.pendingRead = resolve;
+        });
+        this.notifyBlocked();
+        return key;
+    }
+
+    waitUntilBlocked() {
+        if (this.isBlocked) return Promise.resolve();
+        return new Promise(resolve => this.blockedWaiters.push(resolve));
+    }
+
+    notifyBlocked() {
+        const waiters = this.blockedWaiters;
+        this.blockedWaiters = [];
+        for (const resolve of waiters) resolve();
+    }
+
+    clear() {
+        this.queue.length = 0;
+    }
+
+    get isBlocked() {
+        return this.pendingRead !== null;
+    }
+}
+
+let activeInputGate = new InputGate();
+
+export function bindInputGate(inputGate) {
+    if (!(inputGate instanceof InputGate))
+        throw new TypeError('bindInputGate requires an InputGate');
+    activeInputGate = inputGate;
+}
 
 export function pushKey(key) {
-    _inputQueue.push(typeof key === 'number' ? key : key.charCodeAt(0));
+    activeInputGate.feed(key);
 }
 
 export function pushKeys(keys) {
-    for (const k of keys) pushKey(k);
+    activeInputGate.feed(keys);
 }
 
-// C ref: tty_nhgetch — read one key.
-// In replay mode, reads from the input queue.
-// In browser mode, waits for a real keypress.
 export async function nhgetch() {
-    // Fire the capture hook before reading the next key
-    const hook = game._preNhgetchHook;
-    if (hook) await hook();
-
-    if (_inputQueue.length > 0) {
-        return _inputQueue.shift();
-    }
-
-    // Browser mode: wait for keypress from the display
-    const display = game?.nhDisplay;
-    if (display?.readKey) {
-        return await display.readKey({ bindings: KEY_BINDINGS.VI_KEYS });
-    }
-
-    throw new Error('Input queue empty - test may be missing keystrokes');
+    return activeInputGate.readKey();
 }
 
-// Reset input state
 export function resetInputState() {
-    _inputQueue.length = 0;
+    activeInputGate = new InputGate();
+    return activeInputGate;
 }

@@ -81,14 +81,13 @@ export class GameDisplay {
 
     /**
      * Read a key with NetHack-specific options bundled.
-     * Apps set keyMapper, onInterrupt, onEmptyQueue on GameDisplay;
+     * Apps set keyMapper and onInterrupt on GameDisplay;
      * these are passed through to terminal.readKey on every call.
      */
     readKey(extraOptions) {
         return this.terminal.readKey({
             keyMapper: this.keyMapper,
             onInterrupt: this.onInterrupt,
-            onEmptyQueue: this.onEmptyQueue,
             ...extraOptions,
         });
     }
@@ -97,9 +96,6 @@ export class GameDisplay {
     keyMapper = null;
     /** Ctrl-C handler. */
     onInterrupt = null;
-    /** Called when input queue is empty (headless replay). */
-    onEmptyQueue = null;
-
     // --- NetHack-specific methods ---
 
     putstr_message(msg) {

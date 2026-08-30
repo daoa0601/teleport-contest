@@ -255,15 +255,11 @@ if (snap?.owner && snap?.fork) {
 
 const [
     { GameDisplay },
-    { NethackGame },
-    { game },
-    { moveloop_core },
+    { Engine },
     { vfsReadFile },
 ] = await Promise.all([
     import('./js/game_display.js'),
     import('./js/jsmain.js'),
-    import('./js/gstate.js'),
-    import('./js/allmain.js'),
     import('./js/storage.js'),
 ]);
 
@@ -378,18 +374,15 @@ async function main() {
     // the judge sandbox uses across multi-segment sessions) now get
     // browser save/restore for free, namespaced under
     // localStorage[`vfs:<owner>:<path>`]. The wrapper survives
-    // contestant designs that re-build NethackGame on every keypress
-    // because it lives on `window` and we re-attach it via
-    // `_pendingStorage` so it propagates into each new instance.
+    // because it lives on `window` and is passed to the game engine.
     const forkPrefix = window.__TELEPORT_VFS_PREFIX || 'vfs:';
     const persistentStorage = new FrontalLocalStorage(forkPrefix);
     window.__TELEPORT_STORAGE = persistentStorage;
 
-    const nhGame = new NethackGame({ seed, nethackrc, storage: persistentStorage });
-    nhGame._storage = persistentStorage;
-    nhGame._pendingStorage = persistentStorage;
-    nhGame._pendingDisplay = display;
-    game.nhDisplay = display;
+    const engine = new Engine({
+        seed, nethackrc, storage: persistentStorage, display,
+        interactive: true,
+    });
 
     // Wire toolbar. The terminal installs its keydown handler on
     // `document`, so any button that holds focus also receives those
@@ -429,12 +422,7 @@ async function main() {
     wireToolbarButton(document.getElementById('play-again-btn'),
                       () => location.reload());
 
-    await nhGame.start();
-
-    for (;;) {
-        await moveloop_core();
-        if (game.program_state?.gameover) break;
-    }
+    await engine.run();
     showGameOver();
 }
 

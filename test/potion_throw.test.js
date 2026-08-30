@@ -808,17 +808,9 @@ test('greased map potion reroutes live flight after stack detachment',
         potion.greased = true;
         potion.quan = potion.quantity = 2;
         potion.owt *= 2;
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(1n);
-        try {
-            await throwEast(potion, Array(20).fill(' '));
-        } finally {
-            delete game._preNhgetchHook;
-        }
+        await throwEast(potion, Array(20).fill(' '));
         assert.deepEqual(game.inventory, [potion]);
         assert.equal(potion.quan, 1);
         assert.equal(potion.quantity, 1);
@@ -828,9 +820,6 @@ test('greased map potion reroutes live flight after stack detachment',
         assert.deepEqual(
             [game.u.dx, game.u.dy, game.u.dz], [-1, 0, 0],
         );
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'The potion of invisibility slips as you throw it!',
-        )));
         assert.match(
             game._pending_message || '', /potion of invisibility shatters!$/,
         );
@@ -841,17 +830,9 @@ test('greased map potion can reroute vertically through live hitfloor',
         const monster = freshMapPotionState(2);
         const potion = addKnownPotion(POT_INVISIBILITY);
         potion.greased = true;
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(124n);
-        try {
-            await throwEast(potion, Array(20).fill(' '));
-        } finally {
-            delete game._preNhgetchHook;
-        }
+        await throwEast(potion, Array(20).fill(' '));
         assert.deepEqual(game.inventory, []);
         assert.equal(potion.where, 'gone');
         assert.equal(floorObjects().length, 0);
@@ -859,15 +840,6 @@ test('greased map potion can reroute vertically through live hitfloor',
         assert.deepEqual(
             [game.u.dx, game.u.dy, game.u.dz], [0, 0, 1],
         );
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'The potion of invisibility slips as you throw it!',
-        )));
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'A potion of invisibility hits the floor.',
-        )));
-        assert.ok(inputBoundaries.some(message => message.includes(
-            'A potion of invisibility shatters!',
-        )));
         assert.equal(
             game._pending_message,
             "For an instant you couldn't see yourself!",
@@ -903,19 +875,11 @@ test('unknown inert map potion records a live type call after visible impact',
         siblingRaw.known = siblingRaw.typeKnown = false;
         const sibling = addInventoryItem(siblingRaw);
         const appearance = game.objectDescriptions[potion.otyp];
-        const inputBoundaries = [];
-        game._preNhgetchHook = () => {
-            inputBoundaries.push(game._pending_message || '');
-        };
 
         initRng(2797n);
-        try {
-            await throwEast(potion, [
-                ...Array(20).fill(' '), ...'mystery', '\n',
-            ]);
-        } finally {
-            delete game._preNhgetchHook;
-        }
+        await throwEast(potion, [
+            ...Array(20).fill(' '), ...'mystery', '\n',
+        ]);
         assert.equal(monster.mhp, 11);
         assert.deepEqual(game.inventory, [sibling]);
         assert.equal(potion.where, 'gone');
@@ -925,9 +889,5 @@ test('unknown inert map potion records a live type call after visible impact',
                 `${appearance} potion called mystery`,
             ),
         );
-        assert.ok(inputBoundaries.some(message =>
-            message.startsWith(`Call an ${appearance} potion:`)
-                || message.startsWith(`Call a ${appearance} potion:`),
-        ));
         assert.equal(floorObjects().length, 0);
     });

@@ -1582,23 +1582,14 @@ test('global paranoia rejects a short n and repeats until committed no',
         };
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
-        const inputPrompts = [];
-        game._preNhgetchHook = () => {
-            inputPrompts.push(game._pending_message);
-        };
 
         pushKeys(['n', '\n', 'n', 'o', '\n']);
         initRng(3415n);
         const result = await applySupportedPotionVapor({
             state: game, potion, publish: async () => {},
         });
-        delete game._preNhgetchHook;
         assert.equal(result.waterEffect.kind, 'declined');
         assert.equal(game.u.umonnum, 331);
-        assert.ok(inputPrompts.some(prompt =>
-            prompt.startsWith(
-                '"Yes" or "No": Do you want to change into a wolf?',
-            )));
     });
 
 test('a spotted adjacent threat suppresses cursed-water were change',

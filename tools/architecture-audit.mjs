@@ -59,6 +59,14 @@ const forbiddenPatterns = [
         message: 'the game owner must not retain future input',
     },
     {
+        pattern: /\b(?:NethackGame|onEmptyQueue|_preNhgetchHook)\b/gu,
+        message: 'production code contains a deleted runtime path',
+    },
+    {
+        pattern: /Input queue empty/giu,
+        message: 'input exhaustion must be an InputGate result',
+    },
+    {
         pattern: /\b(?:rng|display)[A-Za-z0-9_]*debt\b/giu,
         message: 'production code contains fixed RNG compensation',
     },

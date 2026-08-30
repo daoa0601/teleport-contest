@@ -2,8 +2,8 @@
   "statuses": ["implemented", "partial", "stubbed", "absent"],
   "columns": ["id", "sourceOwners", "jsOwner", "stateFields", "publicEntryPoints", "privateHelpers", "generatedData", "persistence", "status"],
   "systems": [
-    ["engine", ["sys/unix/unixmain.c", "src/allmain.c"], "js/jsmain.js", ["program_state", "moves", "context"], ["runSegment"], ["NethackGame.start", "NethackGame._chooseCharacter"], [], "persistent state is mixed with runtime handles", "partial"],
-    ["input", ["win/tty/wintty.c", "win/tty/getline.c", "win/tty/winmisc.c"], "js/input.js", [], ["nhgetch"], [], [], "transient", "partial"],
+    ["engine", ["sys/unix/unixmain.c", "src/allmain.c"], "js/jsmain.js", ["program_state", "moves", "context"], ["Engine", "runSegment"], ["Engine.start", "Engine.runGame"], [], "state is persistent; input, display, capture, and runningTask are transient", "partial"],
+    ["input", ["win/tty/wintty.c", "win/tty/getline.c", "win/tty/winmisc.c"], "js/input.js", [], ["InputGate", "nhgetch"], [], [], "transient", "partial"],
     ["display", ["src/display.c", "win/tty/wintty.c", "win/tty/topl.c"], "js/display.js", ["_cursorOverride", "_last_message", "_retained_message", "_screen_output"], ["newsym", "flush_screen"], [], ["js/symbols.js"], "mixed", "partial"],
     ["random", ["src/rnd.c"], "js/rng.js", ["coreCtx", "displayCtx", "currentSeed"], ["rn2", "rn2Display", "rnd"], [], [], "persistent contexts; transient diagnostic log", "partial"],
     ["game-state", ["include/decl.h", "include/you.h", "include/rm.h"], "js/gstate.js", ["u", "level", "flags", "context", "program_state", "moves"], ["resetGame"], [], ["js/const.js"], "mixed and not yet partitioned", "partial"],

@@ -63,7 +63,7 @@ export function init_storage_globals() {
 }
 
 // Minimal Storage-API-compatible in-memory backing for tests and multi-segment
-// replay. session_test_runner.mjs / NethackGame instances create one of these
+// a game. The contest runner creates one of these
 // at construction time and re-link it onto game.mockStorage after every
 // decl_globals_init() (which clears the link). The Map survives across segments
 // so vfsWriteFile in seg 1 is readable by vfsReadFile in seg 2 — same role

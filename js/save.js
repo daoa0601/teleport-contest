@@ -9,7 +9,7 @@ const SAVE_VERSION = 1;
 const SAVE_PREFIX = 'teleport-save:';
 const EQUIPMENT_KEYS = ['uwep', 'uswapwep', 'uquiver', 'uarm', 'uarms', 'uarmc', 'uarmu'];
 const OMIT_KEYS = new Set([
-    'nhDisplay', '_preNhgetchHook', 'coreCtx', 'displayCtx', 'currentSeed',
+    'nhDisplay', 'coreCtx', 'displayCtx', 'currentSeed',
     'mockStorage',
     'storage', 'datetime', '_screen_output', '_pending_message',
     '_saveExitPending', 'program_state', 'startingPet', 'fmon',

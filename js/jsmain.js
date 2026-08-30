@@ -1,4 +1,4 @@
-// jsmain.js — Game engine: NethackGame class + per-segment runner.
+// jsmain.js — Per-game engine and contest adapter.
 // C ref: unixmain.c — nethack_main() initialization and game setup.
 //
 // Contest contract: the judge orchestrates sessions (load JSON,
@@ -7,11 +7,11 @@
 // game.getScreens() / getRngLog() / getCursors() to compare with
 // C-recorded session data.
 //
-// For browser play, see nethack.js (uses NethackGame directly).
+// For browser play, see nethack.js.
 
 import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
-import { nhgetch } from './input.js';
+import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
 import {
@@ -214,9 +214,51 @@ function serializeCapture(term) {
     return lines.join('\n');
 }
 
-// ── NethackGame ──
-// Wraps a single game session with replay infrastructure.
-export class NethackGame {
+class SegmentCapture {
+    constructor(engine) {
+        this.engine = engine;
+        this.screens = [];
+        this.cursors = [];
+        this.rngSlices = [];
+        this.animationFramesByStep = [];
+        this.pendingAnimationFrames = [];
+        this.lastRngIndex = 0;
+    }
+
+    async beforeInput() {
+        const fullLog = getRngLog() || [];
+        this.engine.rngLog = fullLog.slice();
+        this.rngSlices.push(fullLog.slice(this.lastRngIndex));
+        this.lastRngIndex = fullLog.length;
+
+        const display = this.engine.display;
+        const terminal = display?.terminal || display;
+        this.screens.push(serializeCapture(terminal));
+        this.cursors.push(display
+            ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
+            : null);
+        this.animationFramesByStep.push(this.pendingAnimationFrames);
+        this.pendingAnimationFrames = [];
+    }
+
+    async animationFrame() {
+        const display = this.engine.display;
+        const terminal = display?.terminal || display;
+        this.pendingAnimationFrames.push({
+            screen: serializeCapture(terminal),
+            cursor: display
+                ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
+                : null,
+        });
+        if (typeof requestAnimationFrame === 'function') {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        } else {
+            await null;
+        }
+    }
+}
+
+export class Engine {
     constructor(opts = {}) {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
@@ -228,19 +270,19 @@ export class NethackGame {
         // those files also survive page reloads. If a port doesn't
         // need persistence (no save/restore implemented yet), it can
         // ignore this; the field just sits unused.
-        this._storage = opts.storage || null;
-        this._screens = [];
-        this._cursors = [];
-        this._rngSlices = [];
-        // Animation frames captured during each step.  Outer index
-        // matches _screens (one entry per input boundary); inner array
-        // is the frames that fired between this boundary and the
-        // previous one, in emit order.  Populated by animationFrame()
-        // calls; committed at each input boundary.
-        this._animFramesByStep = [];
-        this._pendingAnimFrames = [];
-        this._lastRngIdx = 0;
-        this._nhgetchCount = 0;
+        this.storage = opts.storage || null;
+        this.display = opts.display || null;
+        this.state = {};
+        this.capture = new SegmentCapture(this);
+        this.inputGate = new InputGate({
+            beforeRead: () => this.capture.beforeInput(),
+            display: opts.interactive ? this.display : null,
+        });
+        this.coreRng = null;
+        this.displayRng = null;
+        this.rngLog = [];
+        this.runningTask = null;
+        this.lastRunResult = null;
     }
 
     // Universal animation-frame hook.  Call once per intermediate
@@ -266,24 +308,16 @@ export class NethackGame {
     // implementing animation frames doesn't penalise your official
     // RNG / screen score in any way.
     async animationFrame() {
-        const disp = game?.nhDisplay;
-        const term = disp?.terminal || disp;
-        this._pendingAnimFrames.push({
-            screen: serializeCapture(term),
-            cursor: disp ? [disp.cursorCol ?? 0, disp.cursorRow ?? 0, 1] : null,
-        });
-        if (typeof requestAnimationFrame === 'function') {
-            await new Promise((resolve) => requestAnimationFrame(resolve));
-        } else {
-            await null;
-        }
+        await this.capture.animationFrame();
     }
 
     async start() {
-        const g = resetGame();
+        if (!this.display) throw new Error('Engine requires a display');
+        const g = resetGame(this.state);
+        bindInputGate(this.inputGate);
         g.datetime = this._datetime;
         g.nethackrc = this._nethackrc;
-        g.storage = this._storage;
+        g.storage = this.storage;
         // Engine code calls the same environment-neutral hook for transient
         // frames that NetHack emits through nh_delay_output().  The runner
         // owns capture bookkeeping; gameplay modules only paint and yield.
@@ -295,13 +329,11 @@ export class NethackGame {
         // Install the terminal and capture hook before character creation:
         // an unset OPTIONS=name invokes tty's editable "Who are you?" prompt,
         // and every keystroke in that prompt is a scored input boundary.
-        if (this._pendingDisplay) {
-            g.nhDisplay = this._pendingDisplay;
-            this._pendingDisplay = null;
-        }
+        g.nhDisplay = this.display;
         initRng(this._seed);
+        this.coreRng = g.coreCtx;
+        this.displayRng = g.displayCtx;
         enableRngLog();
-        this._installCaptureHook();
 
         const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
@@ -332,7 +364,7 @@ export class NethackGame {
         g.program_state = {};
         g.moves = 0;
 
-        if (restoreGame(configuredName, this._storage)) {
+        if (restoreGame(configuredName, this.storage)) {
             await restoregamePreamble();
             return;
         }
@@ -977,63 +1009,56 @@ export class NethackGame {
         return name || 'player';
     }
 
-    _installCaptureHook() {
-        const nhGame = this;
-        game._preNhgetchHook = async () => {
-            const keyIdx = nhGame._nhgetchCount++;
-            // Capture RNG slice since last capture
-            const fullLog = getRngLog() || [];
-            const slice = fullLog.slice(nhGame._lastRngIdx);
-            nhGame._lastRngIdx = fullLog.length;
-
-            // Capture screen from the terminal grid. The fixture for
-            // screen scoring is the Terminal: contestants drive it
-            // however they like, judge reads back terminal.serialize()
-            // and compares to the C session's recorded screen.
-            const disp = game?.nhDisplay;
-            const term = disp?.terminal || disp;
-            nhGame._screens.push(serializeCapture(term));
-            nhGame._rngSlices.push(slice);
-
-            const cursor = disp ? [disp.cursorCol ?? 0, disp.cursorRow ?? 0, 1] : null;
-            nhGame._cursors.push(cursor);
-
-            // Commit animation frames accumulated since the previous
-            // input boundary as belonging to this step.  Frames are
-            // captured by animationFrame() into _pendingAnimFrames; we
-            // snapshot and reset here so the next step starts empty.
-            nhGame._animFramesByStep.push(nhGame._pendingAnimFrames);
-            nhGame._pendingAnimFrames = [];
-        };
+    run() {
+        if (!this.runningTask) this.runningTask = this.runGame();
+        return this.runningTask;
     }
 
-    getScreens() { return this._screens; }
-    getCursors() { return this._cursors; }
-    getRngLog() { return getRngLog(); }
+    async runGame() {
+        try {
+            await this.start();
+            while (!this.state.program_state?.gameover) await moveloop_core();
+        } finally {
+            this.rngLog = [...getRngLog()];
+        }
+    }
+
+    async runUntilInputNeeded() {
+        const stopped = this.run().then(() => ({ kind: 'stopped' }));
+        const inputNeeded = this.inputGate.waitUntilBlocked()
+            .then(() => ({ kind: 'input-needed' }));
+        this.lastRunResult = await Promise.race([stopped, inputNeeded]);
+        return this.lastRunResult;
+    }
+
+    getScreens() { return this.capture.screens; }
+    getCursors() { return this.capture.cursors; }
+    getRngLog() { return this.rngLog; }
     // Per-step PRNG slices, parallel to getScreens(). Each entry is the
     // log of PRNG calls that fired since the previous capture (i.e.
     // since the previous nhgetch). Useful for tooling like the PS
     // visualizer that wants to attribute calls to individual keystrokes;
     // the judge ignores this and uses getRngLog() flat.
-    getRngSlices() { return this._rngSlices; }
+    getRngSlices() { return this.capture.rngSlices; }
     // Per-step animation frames, parallel to getScreens().  Each entry
     // is the array of frames captured (via animationFrame()) between
     // the previous input boundary and this one — i.e. the intermediate
     // display states for that step's animation.  Empty inner arrays
     // for steps that didn't animate.  SUPPLEMENTAL metric — not part
     // of the official ranking; see API.md.
-    getAnimationFramesByStep() { return this._animFramesByStep; }
+    getAnimationFramesByStep() {
+        return this.capture.animationFramesByStep;
+    }
 }
 
 // ── Per-segment runner — the contest contract ──
 //
-// The judge calls this once per segment. Input is a clean replay
-// descriptor with up to five fields (NO recorded answers):
+// The judge calls this once per segment with five input fields:
 //
 //   { seed: number,        // PRNG seed
 //     datetime: string,    // fixed datetime "YYYYMMDDHHMMSS"
 //     nethackrc: string,   // game-options rc text
-//     moves: string,       // raw key sequence to replay from launch
+//     moves: string,       // raw key sequence supplied from launch
 //     storage: object }    // Web-Storage-shaped (getItem/setItem/...)
 //                          //   handle for cross-segment persistence —
 //                          //   shared across all segments of a
@@ -1048,31 +1073,13 @@ export class NethackGame {
 export async function runSegment(input) {
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
-
-    const nhGame = new NethackGame({
-        seed, datetime, nethackrc, moves, storage,
-    });
-
     const display = new GameDisplay(null);
-    display.onEmptyQueue = () => { throw new Error('Input queue empty - test may be missing keystrokes'); };
-    nhGame._pendingDisplay = display;
 
-    for (const ch of moves) display.pushKey(ch.charCodeAt(0));
+    const engine = new Engine({
+        seed, datetime, nethackrc, storage, display,
+    });
+    engine.inputGate.feed(moves);
+    await engine.runUntilInputNeeded();
 
-    await nhGame.start();
-
-    // Drive the game loop until input is exhausted. The judge looks
-    // at game.getScreens() afterwards; whatever the contestant
-    // captured is what gets compared.
-    const maxIter = Math.max(moves.length * 8, 1024);
-    for (let iter = 0; iter < maxIter; iter++) {
-        try {
-            await moveloop_core();
-        } catch (e) {
-            if (String(e?.message || '').includes('Input queue empty')) break;
-            throw e;
-        }
-    }
-
-    return nhGame;
+    return engine;
 }

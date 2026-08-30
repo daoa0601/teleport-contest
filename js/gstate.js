@@ -3,7 +3,7 @@
 
 export let game = {};
 
-export function resetGame() {
-    game = {};
+export function resetGame(nextState = {}) {
+    game = nextState;
     return game;
 }
