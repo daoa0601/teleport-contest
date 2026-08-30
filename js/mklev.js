@@ -904,9 +904,9 @@ function mksobj_init(otmp, artif) {
         } else if (otyp === EGG) {
             otmp.corpsenm = -1; // NON_PM: generic egg
             if (!rn2(3)) {
-                // C ref: mkobj.c EGG initialization.  Try up to 200 random
-                // monsters; low-level seed0102 has no oviparous candidate,
-                // but every failed rndmonnum() call still matters to parity.
+                // C ref: mkobj.c EGG initialization. Try up to 200 random
+                // monsters. Every failed rndmonnum() call still advances the
+                // gameplay RNG.
                 for (let tries = 200; tries > 0; tries--) {
                     const mndx = rndmonnum();
                     if (MONSTER_FLAGS1[mndx] & 0x00400000) { // M1_OVIPAROUS

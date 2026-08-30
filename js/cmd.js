@@ -13233,10 +13233,9 @@ function removeMonsterInventoryQuantity(monster, item, count) {
     monster.hasInventory = inventory.length > 0;
 }
 
-// C refs: zap.c:destroy_items(AD_COLD), maybe_destroy_item().  The bounded
-// stack reservoir is evaluated even for an empty monster inventory, which is
-// why a lethal cold hit on the inventory-less seed0014 newt still consumes
-// rn2(5) before wand resistance and xkilled().
+// C refs: zap.c:destroy_items(AD_COLD), maybe_destroy_item(). The bounded
+// stack reservoir is evaluated even for an empty monster inventory, so the
+// rn2(5) call precedes wand resistance and xkilled().
 async function destroyColdMonsterInventory(monster, sourceDamage) {
     let limit = Math.trunc(sourceDamage / 5);
     if (sourceDamage % 5 > rn2(5)) limit++;
@@ -15067,8 +15066,8 @@ async function dothrow(
             return;
         }
     }
-    // The bounded generic-object bridge below currently models the armor path
-    // exercised by seed0399.  Missiles retain their class-specific handling:
+    // Generic thrown objects and missiles follow different source paths.
+    // Missiles retain their class-specific handling:
     // routing arrows and darts through this branch consumes the entire stack
     // and suppresses dothrow()'s launcher warning.
     if (await resolveSwallowedProjectileThrow({
@@ -16118,8 +16117,8 @@ async function dothrow(
     if (thrownObjectClass === 2
         && blocksMove(game.u.ux + dx, game.u.uy + dy)) {
         // A blocked weapon-class projectile lands at gb.bhitpos, which is
-        // still the hero square.  Its floor/fobj identity is visible to the
-        // same-turn monster scheduler (seed1800's dart is the control).
+        // still the hero square. Its floor/fobj identity is visible to the
+        // same-turn monster scheduler.
         let thrown = item;
         if (selectedQuantity > 1) {
             thrown = {
@@ -17555,9 +17554,9 @@ async function finishDestinationSpotEffects({
     const destinationFeature = skipDestinationFeature
         ? '' : dungeonFeatureSentenceAt(newx, newy);
     // C pickup()/check_here(): arriving on any floor object terminates a
-    // non-travel run before the next automatic square.  This input boundary
+    // non-travel run before the next automatic square. This input boundary
     // is behaviorally significant even when autopickup leaves the object in
-    // place (as for the old kobold corpse in seed0006).
+    // place.
     if (objects.length && game._runState?.mode !== 8
         && !game.context.nopick) stopRun();
     if (objects.length && !game.flags?.pickup) {

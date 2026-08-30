@@ -105,9 +105,8 @@ export async function finishPrayerOccupation(state = game) {
         || 'You finish your prayer.';
     if (state._prayerForced) {
         // unmul() emits nomovemsg through ordinary tty topline continuation.
-        // Usually the pending clause is the shimmering-light opening, but a
-        // monster message can replace it while prayer time elapses (seed4500
-        // reaches hideunder()).  Preserve whichever source line is current.
+        // A monster message can replace the shimmering-light opening while
+        // prayer time elapses. Preserve whichever source line is current.
         const opening = state._pending_message
             ? `${state._pending_message}  ` : '';
         await prayerMore(

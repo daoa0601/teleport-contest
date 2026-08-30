@@ -5,7 +5,7 @@
 
 import { game } from './gstate.js';
 import { nextIdent } from './ident.js';
-import { d, rn2, rn2Display, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import {
     initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
@@ -2564,14 +2564,7 @@ async function resolveDeferredHeroPoison(action, monster, attack) {
 }
 
 function quietMonsterName(monster) {
-    // The recorded seed0399 Big Room dwarf-leader actor is rendered by C as
-    // "dwarf lord" even though the otherwise matching birth slice records
-    // rn2(2)=1 and JS consequently retains female=true.  Keep this observed
-    // presentation bridge narrow until the producer-side sex discrepancy is
-    // explained.  All other NAMS() species are selected from instance sex by
-    // the shared pmname-shaped helper.
-    const name = monster?.mnum === 46 ? 'dwarf lord'
-        : monsterTypeName(monster?.mnum, !!monster?.female);
+    const name = monsterTypeName(monster?.mnum, !!monster?.female);
     return monster?.saddled ? `saddled ${name}` : name;
 }
 
@@ -2781,8 +2774,8 @@ function distantMonsterObjectName(object) {
 }
 
 // C mon.c:hideunder() snapshots ansimpleoname() before the actor becomes
-// undetected.  Unlike doname(), this deliberately omits BUC, enchantment,
-// and shuffled-description knowledge; the seed4500 witness is "a statue".
+// undetected. Unlike doname(), this deliberately omits BUC, enchantment,
+// and shuffled-description knowledge.
 function simpleHideUnderObjectName(object) {
     const noun = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
     const quantity = object?.quan ?? object?.quantity ?? 1;
@@ -3567,15 +3560,6 @@ async function resolveMonsterMagicMissileBeam(action) {
 }
 
 async function executeLiveQuietMonsterScan(monsterScan) {
-    // Bounded Oracle witness: after the visible soldier wield transaction,
-    // C's next hero-movement/vision boundary advances one presentation draw
-    // before movemon() begins.  The JS sight graph still lacks that low-level
-    // repaint owner; keep the debt attached to the next scan, not the wield
-    // screen's once-input overlay, so both observed projections stay intact.
-    if (game._boundedOracleHalluPostWieldDisplayDebt) {
-        rn2Display(1);
-        delete game._boundedOracleHalluPostWieldDisplayDebt;
-    }
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
     const actions = [];
@@ -4138,12 +4122,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 await queueTurnMessage(
                     `The ${weaponName} welds itself to ${possessive} hand!`,
                 );
-            }
-            if (game._activeSpecialLevel?.prototype === 'oracle'
-                && monster.mnum === 277
-                && (game.u?.hallucinating
-                    || (game.u?.hallucinationTurns ?? 0) > 0)) {
-                game._boundedOracleHalluPostWieldDisplayDebt = 1;
             }
             if (movement.deferredHeroWield) {
                 game._deferVisibleMonsterContact = true;
@@ -5720,20 +5698,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (game.u?.hallucinating
                 || (game.u?.hallucinationTurns ?? 0) > 0)
                 newsym(monster.mx, monster.my);
-            // Bounded Oracle witness: the C recorder advances fifteen
-            // presentation-only draws after this visible soldier pickup and
-            // before the following input overlay.  The final pickup screen is
-            // already exact, so retain that deferred display-stream debt
-            // explicitly until its lower-level redraw owner is isolated.
-            if (game._activeSpecialLevel?.prototype === 'oracle'
-                && monster.mnum === 277
-                && movement.pickedUpHostile.otyp === 283
-                && (game.u?.hallucinating
-                    || (game.u?.hallucinationTurns ?? 0) > 0)) {
-                game._boundedOracleHalluDisplayDebt = {
-                    amount: 15, boundaries: 1,
-                };
-            }
         }
         if (movement?.deferredAfterPickupMessage) {
             resumeDeferredMonsterPickup(action, game);
@@ -6478,13 +6442,6 @@ export async function moveloop_core() {
     // source order is display-RNG-visible under Hallucination.
     const hallucinatingNow = !!(g.u?.hallucinating
         || (g.u?.hallucinationTurns ?? 0) > 0);
-    const displayDebt = g._boundedOracleHalluDisplayDebt;
-    if (displayDebt?.boundaries > 0) {
-        displayDebt.boundaries--;
-    } else if (displayDebt) {
-        for (let i = 0; i < displayDebt.amount; i++) rn2Display(1);
-        delete g._boundedOracleHalluDisplayDebt;
-    }
     if (!g.context?.mv) {
         // The see_* calls remain in place while swallowed (newsym suppresses
         // them), then swallowed(0) refreshes the eight-cell stomach projection

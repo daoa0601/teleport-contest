@@ -220,7 +220,6 @@ export class NethackGame {
     constructor(opts = {}) {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
-        this._moves = opts.moves || '';
         this._nethackrc = opts.nethackrc || '';
         // Cross-segment persistence handle. The judge sandbox passes a
         // shared Web-Storage-shaped object here so save / record /

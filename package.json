@@ -4,6 +4,7 @@
   "description": "The Teleport Coding Challenge — Port NetHack C to JavaScript",
   "type": "module",
   "scripts": {
+    "audit:architecture": "node tools/architecture-audit.mjs",
     "test": "node --test --test-concurrency=1 --test-reporter=dot $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
     "score": "bash frozen/score.sh",
     "score:engine": "node frozen/ps_test_runner.mjs sessions",

@@ -153,7 +153,6 @@ const S_GHOST = 54;
 const S_SNAKE = 45;
 const S_EEL = 57;
 const S_DRAGON = 30;
-const PM_RAVEN = 128;
 const PM_ETTIN = 174;
 const PM_JABBERWOCK = 178;
 const PM_FIRE_ELEMENTAL = 155;
@@ -1053,8 +1052,8 @@ function useMonsterMiscItem(monster, state, random, calls) {
         const object = inventory[index];
         // muse.c:find_misc() lets a temple priest use an uncursed gain-level
         // potion, but rejects a cursed one so the resident cannot leave the
-        // shrine level.  The visible seed0361 resident is the bounded first
-        // owner; growth remains deferred across both mquaffmsg() toplines.
+        // shrine level. Growth remains deferred across both mquaffmsg()
+        // toplines.
         if (object.otyp === POT_GAIN_LEVEL
             && (!object.cursed
                 || (!monster.isgd && !monster.isshk
@@ -3903,30 +3902,6 @@ function moveHostile(
             preparedDigging: true,
         });
     }
-    // Bounded composed-session bridge.  seed0360's canonical C transcript
-    // proves this exact Wiz-strt raven candidate transaction returns
-    // MMOVE_DONE: all eight reservoir draws and the trailing distfleeck are
-    // present, the actor remains at (12,18), and phase four is suppressed.
-    // The source artifact was built by sherpa_compose_multi.py and cannot be
-    // replayed to distinguish the zero-RNG post-selection veto
-    // (occupancy/aggression, displacement, or region admission).  Keep this
-    // uncertainty attached to the complete observed state instead of
-    // weakening general candidate movement.
-    const composedWizardTourRavenVeto
-        = state?._activeSpecialLevel?.prototype === 'Wiz-strt'
-        && state?.moves === 59
-        && monster.mnum === PM_RAVEN
-        && heroIsDisplaced(state)
-        && state?.u?.ux === 11 && state?.u?.uy === 19
-        && oldx === 12 && oldy === 18
-        && nix === 11 && niy === 18;
-    if (composedWizardTourRavenVeto) {
-        return finishMovement({
-            oldx, oldy, x: oldx, y: oldy, moved: false,
-            boundedPostSelectionVeto: true,
-            actionCompleted: true,
-        });
-    }
     monster.mx = nix;
     monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
@@ -5597,9 +5572,8 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ROCKTRAP) {
         // The visible branch crosses thitm()/pline() before death and floor
-        // placement.  This block is intentionally the source-faithful unseen
-        // branch reached by seed0030; retain the previous behavior for a
-        // future visible tty witness rather than inventing that suspension.
+        // placement. This block implements only the source-faithful unseen
+        // branch. The visible path requires its own tty continuation.
         const visible = !state?.blind && !(state?.u?.blindTurns > 0)
             && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
             && (!monster.minvis || state?.u?.seeInvisible
@@ -5795,9 +5769,9 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ANTI_MAGIC) {
         // mintrap() records the type even when the field has no effect.  A
-        // non-resistant monster which can cast or breathe loses spell energy;
-        // an ordinary nonmagical monster (the seed4500 elf mummy) learns the
-        // field without consuming another core-RNG call.
+        // non-resistant monster which can cast or breathe loses spell energy.
+        // An ordinary nonmagical monster learns the field without consuming
+        // another core RNG call.
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -8666,9 +8640,9 @@ function finishDochugAfterMovement(
         // distant actor has a natural ranged attack, a weapon attack, or an
         // offensive inventory action.  The first two predicates short
         // circuit; otherwise find_offensive() reaches lined_up() before it
-        // scans inventory.  That probe remains RNG-visible for a concealed
-        // polymorphed hero even when an empty-handed actor (the Valley
-        // ghosts in seed4500) ultimately has no offensive action.
+        // scans inventory. That probe remains RNG-visible for a concealed
+        // polymorphed hero even when an empty-handed actor has no offensive
+        // action.
         const postMoveTargetX = Number.isFinite(monster?.mux)
             ? monster.mux : state?.u?.ux ?? movement?.x;
         const postMoveTargetY = Number.isFinite(monster?.muy)
@@ -9224,8 +9198,8 @@ export function resumeDeferredMonsterStrikingWand(
     offensive.range = 6 + recordRandom(random, action.calls, 8);
 
     // zap.c:bhit() follows sign(mux-mx),sign(muy-my), not a recomputed line
-    // to the live hero.  The first false-target witness (seed0070) crosses
-    // three ordinary shop-floor objects before a wall.  Each one reaches
+    // to the live hero. A false-target ray can cross ordinary floor objects
+    // before a wall. Each one reaches
     // bhito()->breaks()->breaktest()->obj_resists(); the nonzero rolls leave
     // those non-breakable objects intact, while an occupied square shortens
     // the remaining ray by one.  Direct adjacent hero rays retain the
