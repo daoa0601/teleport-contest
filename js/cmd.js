@@ -251,7 +251,7 @@ import {
     MM_NOEXCLAM, MM_NOMSG, MM_NONAME, MM_NOWAIT,
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
-    In_endgame, Is_airlevel, Is_rogue_level,
+    In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
@@ -3630,7 +3630,8 @@ async function gotoLevel(targetDepth, {
     }
     for (const follower of followers) arriveWithHero(follower);
     resolveHeroArrivalCollision();
-    if (Is_airlevel(game.u?.uz)) moveElementalBubbles();
+    if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
+        moveElementalBubbles();
     else if (game.level?.flags?.fumaroles) fumaroles(game);
 
     const newLevel = game.level;

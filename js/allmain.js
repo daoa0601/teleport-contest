@@ -71,7 +71,7 @@ import {
     VAULT, SHOPBASE, ROOMOFFSET,
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
-    M_AP_MONSTER, Upolyd, Is_airlevel,
+    M_AP_MONSTER, Upolyd, Is_airlevel, Is_waterlevel,
 } from './const.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
@@ -1152,10 +1152,11 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
 }
 
 function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
-    // allmain.c's environmental owner runs after engraving wear. Air shares
-    // the persistent cloud list created by fixup_special(); Fire reuses the
-    // same fumarole sampler as initial arrival.
-    if (Is_airlevel(game.u?.uz)) moveElementalBubbles();
+    // allmain.c's environmental owner runs after engraving wear. Air and
+    // Water share the moving bubble list created by fixup_special(); Fire
+    // reuses the same fumarole sampler as initial arrival.
+    if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
+        moveElementalBubbles();
     else if (game.level?.flags?.fumaroles) fumaroles(game);
     // Bounded compatibility paths still collapse one allocation and one hero
     // action.  Source movement-ration paths own the real post-loop boundary

@@ -6328,6 +6328,11 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
             // preserves the terrain established by level_init.
             if (row[dx] === 'x') continue;
             const loc = game.level.at(context.xstart + dx, context.ystart + dy);
+            // lspo_map() clips a fragment at COLNO/ROWNO while retaining its
+            // declared coordinate frame.  water.lua deliberately supplies an
+            // 80-column fragment beginning at column one, so its last source
+            // column lies beyond NetHack's usable map and is ignored.
+            if (!loc) continue;
             loc.lit = defaultLit;
             loc.horizontal = row[dx] === '-';
             if (row[dx] === '.') loc.typ = ROOM;
@@ -6371,6 +6376,7 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
         for (let dx = 0; dx < width; dx++) {
             if (row[dx] !== '+' && row[dx] !== 'S') continue;
             const loc = game.level.at(context.xstart + dx, context.ystart + dy);
+            if (!loc) continue;
             specialDoorAt(context, loc.doormask, dx, dy);
         }
     }
@@ -11791,6 +11797,167 @@ async function generateSanctum(active) {
     flipSpecialLevelRandom(3);
 }
 
+const EARTH_MAP = [
+    '',
+    '  ...',
+    ' ....                ..',
+    ' .....             ...                                      ..',
+    '  ....              ....                                     ...',
+    '   ....              ...                ....                 ...      .',
+    '    ..                ..              .......                 .      ..',
+    '                                      ..  ...                        .',
+    '              .                      ..    .                         ...',
+    '             ..  ..                  .     ..                         .',
+    '            ..   ...                        .',
+    '            ...   ...',
+    '              .. ...                                 ..',
+    '               ....                                 ..',
+    '                          ..                                       ...',
+    '                         ..                                       .....',
+    '  ...                                                              ...',
+    ' ....',
+    '   ..',
+    '',
+].map(row => row.padEnd(76, ' '));
+
+const EARTH_MONSTERS = [
+    ['elven monarch', 67, 16], ['minotaur', 67, 14],
+    ['earth elemental', 52, 13, false],
+    ['earth elemental', 53, 13, false],
+    ['rock troll', 53, 12], ['stone giant', 54, 12],
+    ['pit viper', 70, 5], ['barbed devil', 69, 6],
+    ['stone giant', 69, 8], ['stone golem', 71, 8],
+    ['pit fiend', 70, 9], ['earth elemental', 70, 8, false],
+    ['earth elemental', 60, 3, false], ['stone giant', 61, 4],
+    ['earth elemental', 62, 4, false],
+    ['earth elemental', 61, 5, false],
+    ['scorpion', 62, 5], ['rock piercer', 63, 5],
+    ['umber hulk', 40, 5], ['dust vortex', 42, 5],
+    ['rock troll', 38, 6], ['earth elemental', 39, 6, false],
+    ['earth elemental', 41, 6, false],
+    ['earth elemental', 38, 7, false], ['stone giant', 39, 7],
+    ['earth elemental', 43, 7, false], ['stone golem', 37, 8],
+    ['pit viper', 43, 8], ['pit viper', 43, 9],
+    ['rock troll', 44, 10], ['earth elemental', 2, 1, false],
+    ['earth elemental', 3, 1, false], ['stone golem', 1, 2],
+    ['earth elemental', 2, 2, false], ['rock troll', 4, 3],
+    ['rock troll', 3, 3], ['pit fiend', 3, 4],
+    ['earth elemental', 4, 5, false], ['pit viper', 5, 6],
+    ['earth elemental', 21, 2, false],
+    ['earth elemental', 21, 3, false], ['minotaur', 21, 4],
+    ['earth elemental', 21, 5, false], ['rock troll', 22, 5],
+    ['earth elemental', 22, 6, false],
+    ['earth elemental', 23, 6, false], ['pit viper', 14, 8],
+    ['barbed devil', 14, 9], ['earth elemental', 13, 10, false],
+    ['rock troll', 12, 11], ['earth elemental', 14, 12, false],
+    ['earth elemental', 15, 13, false], ['stone giant', 17, 13],
+    ['stone golem', 18, 13], ['pit fiend', 18, 12],
+    ['earth elemental', 18, 11, false],
+    ['earth elemental', 18, 10, false], ['barbed devil', 2, 16],
+    ['earth elemental', 3, 16, false], ['rock troll', 2, 17],
+    ['earth elemental', 4, 17, false],
+    ['earth elemental', 4, 18, false],
+];
+
+async function generateEarth(active) {
+    const context = loadSpecialAsciiMap(EARTH_MAP, false);
+    active.context = { ...context };
+    active.specialMessages = [
+        'Well done, mortal!',
+        'But now thou must face the final Test...',
+        'Prove thyself worthy or perish!',
+    ];
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+    game.level.flags.hardfloor = true;
+    game.level.flags.shortsighted = true;
+
+    replaceSpecialSelectionTerrain(
+        specialSelectionFillRect(context, 0, 0, 75, 19),
+        STONE, ROOM, 5,
+    );
+    const arrival = absoluteSpecialRegion(context, 69, 16, 69, 16);
+    active.upTeleportRegion = { ...arrival };
+    active.downTeleportRegion = { ...arrival };
+    active.explicitPortalRegion = absoluteSpecialRegion(
+        context, 0, 0, 75, 19,
+    );
+    active.explicitPortalExclude = absoluteSpecialRegion(
+        context, 65, 13, 75, 19,
+    );
+    active.portalDestinationName = 'air';
+
+    for (const [name, x, y, peaceful = null] of EARTH_MONSTERS) {
+        const mndx = monsterIndexByName(name);
+        await specialMonsterAt(context, mndx, x, y, {
+            randomGender: namedMonsterNeedsGenderDraw(mndx), peaceful,
+        });
+    }
+    specialObjectOfType(context, BOULDER);
+
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'upTeleportRegion', 'downTeleportRegion',
+        'explicitPortalRegion', 'explicitPortalExclude',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+const WATER_MAP = Array(20).fill('W'.repeat(80));
+
+async function generateWater(active) {
+    const context = loadSpecialAsciiMap(WATER_MAP, false);
+    active.context = { ...context };
+    active.specialMessages = [
+        'You find yourself suspended in an air bubble surrounded by water.',
+    ];
+    active.elementalBubbles = true;
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+    game.level.flags.hardfloor = true;
+    game.level.flags.shortsighted = true;
+    game.level.flags.waterlevel = true;
+
+    const arrival = absoluteSpecialRegion(context, 0, 0, 25, 19);
+    active.upTeleportRegion = { ...arrival };
+    active.downTeleportRegion = { ...arrival };
+    active.explicitPortalRegion = absoluteSpecialRegion(
+        context, 51, 0, 75, 19,
+    );
+    active.portalDestinationName = 'astral';
+
+    for (const [name, count] of [
+        ['giant eel', 8], ['electric eel', 8], ['kraken', 9],
+        ['shark', 4], ['piranha', 4], ['jellyfish', 4],
+    ]) {
+        const mndx = monsterIndexByName(name);
+        for (let index = 0; index < count; index++)
+            await specialExplicitMonster(context, mndx);
+    }
+    for (let count = 0; count < 4; count++)
+        await specialMonsterOfClass(context, 57);
+    const waterElemental = monsterIndexByName('water elemental');
+    for (let count = 0; count < 19; count++) {
+        await specialExplicitMonster(
+            context, waterElemental, null, { peaceful: false },
+        );
+    }
+
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'upTeleportRegion', 'downTeleportRegion', 'explicitPortalRegion',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+export async function generateEarthLevel(active) {
+    await generateSpecialAndFixup(generateEarth, active);
+}
+
+export async function generateWaterLevel(active) {
+    await generateSpecialAndFixup(generateWater, active);
+}
+
 // Lua source: dat/fire.lua.  This is a full 79x21 map, so sp_lev.c anchors it
 // at absolute (1,0) after its centered-origin overflow correction.
 const FIRE_MAP = [
@@ -15464,6 +15631,14 @@ async function makelevel() {
         if (prototype === 'air') {
             await generateSpecialAndFixup(generateAir,
                 g._activeSpecialLevel);
+            return;
+        }
+        if (prototype === 'earth') {
+            await generateEarthLevel(g._activeSpecialLevel);
+            return;
+        }
+        if (prototype === 'water') {
+            await generateWaterLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'soko1' && variant === 1) {
