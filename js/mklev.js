@@ -44,7 +44,7 @@ import {
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
     M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
-    MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER,
+    MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_NOCORPSE,
     W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_HISTORIC, CORPSTAT_INIT,
@@ -6178,6 +6178,21 @@ function applyMinesSameRaceMonsterGate(mndx) {
     return rn2(3) ? null : mndx;
 }
 
+function finishSpecialRoamer(monster, alignment, peaceful) {
+    const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
+    monster.ispriest = 0;
+    monster.isminion = 1;
+    monster.emin = {
+        min_align: alignment,
+        renegade: coaligned && !peaceful,
+    };
+    monster.maligntyp = alignment;
+    monster.mpeaceful = peaceful ? 1 : 0;
+    monster.msleeping = 0;
+    monster.mtrapseen = 0x7fffffff;
+    setMonsterMalign(monster);
+}
+
 async function specialMonsterAt(context, mndx, x, y,
     {
         randomGender = true,
@@ -6185,6 +6200,7 @@ async function specialMonsterAt(context, mndx, x, y,
         peaceful = null,
         asleep = null,
         mmflags = 0,
+        roamerAlignment = null,
     } = {}) {
     // Lua's find_montype() resolves a requested gender before
     // create_monster() resolves random alignment.  Fixed-sex monsters skip
@@ -6192,6 +6208,8 @@ async function specialMonsterAt(context, mndx, x, y,
     // initialization before the explicit value is restored.
     const requestedFemale = randomGender ? !!rn2(2) : null;
     if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const monster = await makemon(
         mndx, context.xstart + x, context.ystart + y, mmflags,
@@ -6199,15 +6217,26 @@ async function specialMonsterAt(context, mndx, x, y,
     if (monster && randomGender) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
+    if (monster && alignment != null)
+        finishSpecialRoamer(monster, alignment, peaceful ?? true);
     return monster;
 }
 
 async function specialMonsterClassAt(context, monsterClass, x, y,
-    appearance = null) {
+    appearance = null,
+    {
+        randomAlignment = true,
+        peaceful = null,
+        asleep = null,
+        mmflags = 0,
+        roamerAlignment = null,
+    } = {}) {
     // A class request resolves random alignment and mkclass(), but unlike a
     // named species it has no separate find_montype() gender draw.  Explicit
     // coordinates also bypass get_location()'s two-axis sampling.
-    consumeSpecialMonsterAlignment();
+    if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     let mndx = mkclass(monsterClass, 0x0200);
     if (mndx == null) return null;
     mndx = applyMinesSameRaceMonsterGate(mndx);
@@ -6215,8 +6244,12 @@ async function specialMonsterClassAt(context, monsterClass, x, y,
     const occupied = game.level.monsters?.some(candidate => candidate.mhp > 0
         && candidate.mx === absoluteX && candidate.my === absoluteY);
     const monster = occupied
-        ? await makemonNear(mndx, absoluteX, absoluteY)
-        : await makemon(mndx, absoluteX, absoluteY, 0);
+        ? await makemonNear(mndx, absoluteX, absoluteY, mmflags)
+        : await makemon(mndx, absoluteX, absoluteY, mmflags);
+    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
+    if (monster && alignment != null)
+        finishSpecialRoamer(monster, alignment, peaceful ?? true);
     if (monster && appearance?.kind === 'object') {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = appearance.otyp;
@@ -6294,7 +6327,14 @@ function specialMonsterRandomLocation(context, mndx) {
 }
 
 async function specialExplicitMonster(context, mndx, appearance = null,
-    { randomGender = true, peaceful = null, asleep = null } = {}) {
+    {
+        randomGender = true,
+        randomAlignment = true,
+        peaceful = null,
+        asleep = null,
+        mmflags = 0,
+        roamerAlignment = null,
+    } = {}) {
     // sp_lev.c find_montype() resolves a legal gender while parsing the Lua
     // table.  makemon() independently initializes gender, then
     // create_monster() restores this explicit value after construction.
@@ -6303,19 +6343,23 @@ async function specialExplicitMonster(context, mndx, appearance = null,
             ? !!rn2(2)
             : !!((MONSTER_FLAGS2[mndx] || 0) & 0x00020000))
         : null;
-    consumeSpecialMonsterAlignment();
+    if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const point = specialMonsterRandomLocation(context, mndx);
     if (!point) return null;
     const occupied = game.level.monsters?.some(candidate => candidate.mhp > 0
         && candidate.mx === point.x && candidate.my === point.y);
     const monster = occupied
-        ? await makemonNear(mndx, point.x, point.y)
-        : await makemon(mndx, point.x, point.y, 0);
+        ? await makemonNear(mndx, point.x, point.y, mmflags)
+        : await makemon(mndx, point.x, point.y, mmflags);
     if (!monster) return null;
     if (requestedFemale != null) monster.female = requestedFemale;
     if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (asleep != null) monster.msleeping = asleep ? 1 : 0;
+    if (alignment != null)
+        finishSpecialRoamer(monster, alignment, peaceful ?? true);
     if (appearance?.kind === 'object') {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = appearance.otyp;
@@ -6324,11 +6368,20 @@ async function specialExplicitMonster(context, mndx, appearance = null,
 }
 
 async function specialMonsterOfClass(
-    context, monsterClass, { peaceful = null, asleep = null } = {},
+    context, monsterClass,
+    {
+        randomAlignment = true,
+        peaceful = null,
+        asleep = null,
+        mmflags = 0,
+        roamerAlignment = null,
+    } = {},
 ) {
     // create_monster() resolves its random alignment before a one-character
     // monster id is expanded through mkclass_aligned().
-    consumeSpecialMonsterAlignment();
+    if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     // find_montype() allows class requests to select species which carry
     // G_NOGEN; explicit special-level population is the exception encoded
     // by mkclass(class, G_NOGEN).
@@ -6339,13 +6392,15 @@ async function specialMonsterOfClass(
     const occupied = game.level.monsters?.some(candidate => candidate.mhp > 0
         && candidate.mx === point.x && candidate.my === point.y);
     const monster = occupied
-        ? makemonNear(mndx, point.x, point.y)
-        : makemon(mndx, point.x, point.y, 0);
+        ? makemonNear(mndx, point.x, point.y, mmflags)
+        : makemon(mndx, point.x, point.y, mmflags);
     const resolved = await monster;
     if (resolved && peaceful != null)
         resolved.mpeaceful = peaceful ? 1 : 0;
     if (resolved && asleep != null)
         resolved.msleeping = asleep ? 1 : 0;
+    if (resolved && alignment != null)
+        finishSpecialRoamer(resolved, alignment, peaceful ?? true);
     return resolved;
 }
 
@@ -6446,14 +6501,28 @@ async function specialTrap(context) {
     await finishSpecialTrapConstruction(trap);
 }
 
-async function specialMonster(context) {
-    consumeSpecialMonsterAlignment();
+async function specialMonster(context, {
+    randomAlignment = true,
+    peaceful = null,
+    asleep = null,
+    mmflags = 0,
+    roamerAlignment = null,
+} = {}) {
+    if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     const point = specialRandomLocation(context);
     if (!point) return;
     const occupiedPoint = game.level.monsters?.some(monster => monster.mhp > 0
         && monster.mx === point.x && monster.my === point.y);
-    if (occupiedPoint) return makemonNear(null, point.x, point.y);
-    return makemon(null, point.x, point.y, 0);
+    const monster = occupiedPoint
+        ? await makemonNear(null, point.x, point.y, mmflags)
+        : await makemon(null, point.x, point.y, mmflags);
+    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
+    if (monster && alignment != null)
+        finishSpecialRoamer(monster, alignment, peaceful ?? true);
+    return monster;
 }
 
 const ARC_START_MAP = [
@@ -10496,7 +10565,42 @@ function createLuaFeature(context, { type, point }) {
     }
 }
 
-function createLuaAltar(context, options) {
+function noncoalignedSpecialAlignment() {
+    const original = game.u?.ualignbase?.[1]
+        ?? game.u?.ualign?.type ?? A_NEUTRAL;
+    const choice = rn2(2);
+    if (original === A_NEUTRAL)
+        return choice ? A_CHAOTIC : A_LAWFUL;
+    return choice ? -original : A_NEUTRAL;
+}
+
+function luaSpecialAlignment(value = 'random') {
+    if (value === 'noalign') return A_NONE;
+    if (value === 'law') return A_LAWFUL;
+    if (value === 'neutral') return A_NEUTRAL;
+    if (value === 'chaos') return A_CHAOTIC;
+    if (value === 'coaligned') {
+        return game.u?.ualignbase?.[1]
+            ?? game.u?.ualign?.type ?? A_NEUTRAL;
+    }
+    if (value === 'noncoaligned') return noncoalignedSpecialAlignment();
+    if (value === 'random') return inducedAlignment(80);
+    throw new Error(`unsupported Lua alignment ${value}`);
+}
+
+function specialRoomAt(x, y, roomType) {
+    const roomNumber = game.level.at(x, y)?.roomno ?? 0;
+    const direct = roomNumber >= ROOMOFFSET
+        ? game.level.rooms?.[roomNumber - ROOMOFFSET] : null;
+    if (direct?.rtype === roomType) return direct;
+    return game.level.rooms
+        ?.slice(0, game.level.nroom)
+        .find(room => room?.rtype === roomType
+            && x >= room.lx && x <= room.hx
+            && y >= room.ly && y <= room.hy) ?? null;
+}
+
+async function createLuaAltar(context, options) {
     const coordinate = Array.isArray(options.coord)
         ? { x: options.coord[0], y: options.coord[1] }
         : Number.isInteger(options.x) && Number.isInteger(options.y)
@@ -10511,17 +10615,21 @@ function createLuaAltar(context, options) {
     if (!point) return;
     const altar = game.level.at(point.x, point.y);
     if (!altar || IS_FURNITURE(altar.typ)) return;
-    const alignments = {
-        noalign: A_NONE,
-        law: A_LAWFUL,
-        neutral: A_NEUTRAL,
-        chaos: A_CHAOTIC,
-    };
-    const alignment = alignments[options.align];
-    if (alignment == null)
-        throw new Error(`unsupported Lua altar alignment ${options.align}`);
+    const alignment = luaSpecialAlignment(options.align);
     altar.typ = ALTAR;
     altar.flags = Align2amask(alignment);
+    const altarType = options.type ?? 'altar';
+    if (!['altar', 'shrine', 'sanctum'].includes(altarType))
+        throw new Error(`unsupported Lua altar type ${altarType}`);
+    const temple = specialRoomAt(point.x, point.y, TEMPLE);
+    if (!temple || altarType === 'altar') return;
+    const sanctum = altarType === 'sanctum';
+    await specialShrinePriest(
+        temple, point.x, point.y, alignment, { sanctum },
+    );
+    altar.flags |= AM_SHRINE;
+    if (sanctum) altar.flags |= AM_SANCTUM;
+    game.level.flags.has_temple = true;
 }
 
 function luaRoomLighting(value) {
@@ -10661,6 +10769,13 @@ async function createLuaMonster(context, options) {
     const { point, monsterClass, monsterType } = options;
     const peaceful = options.peaceful == null ? null : !!options.peaceful;
     const asleep = options.asleep == null ? null : !!options.asleep;
+    const explicitAlignment = options.align != null
+        && options.align !== 'random';
+    const creation = explicitAlignment ? {
+        randomAlignment: false,
+        mmflags: MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
+        roamerAlignment: () => luaSpecialAlignment(options.align),
+    } : {};
     let monster;
     if (monsterType != null) {
         const settings = {
@@ -10668,6 +10783,7 @@ async function createLuaMonster(context, options) {
                 && namedMonsterNeedsGenderDraw(monsterType),
             peaceful,
             asleep,
+            ...creation,
         };
         monster = point
             ? await specialMonsterAt(
@@ -10682,14 +10798,20 @@ async function createLuaMonster(context, options) {
         monster = point
             ? await specialMonsterClassAt(
                 context, monsterClass, point.x, point.y,
+                null, { peaceful, asleep, ...creation },
             )
             : await specialMonsterOfClass(
-                context, monsterClass, { peaceful, asleep },
+                context, monsterClass, { peaceful, asleep, ...creation },
             );
     } else {
         monster = point
-            ? await specialRandomMonsterAt(context, point.x, point.y)
-            : await specialMonster(context);
+            ? await specialRandomMonsterAt(
+                context, point.x, point.y,
+                { peaceful, asleep, ...creation },
+            )
+            : await specialMonster(context, {
+                peaceful, asleep, ...creation,
+            });
     }
     if (monster && options.appear_as === 'ter:fountain') {
         monster.m_ap_type = M_AP_FURNITURE;
@@ -10942,19 +11064,32 @@ async function generateLuaSpecialLevel(active) {
     flipLuaRegions(active);
 }
 
-async function specialRandomMonsterAt(context, x, y) {
+async function specialRandomMonsterAt(context, x, y, {
+    randomAlignment = true,
+    peaceful = null,
+    asleep = null,
+    mmflags = 0,
+    roamerAlignment = null,
+} = {}) {
     // A coordinate-only des.monster() resolves random alignment before
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
     // gender draw and unlike des.monster() without coordinates it performs no
     // get_location() sampling.
-    consumeSpecialMonsterAlignment();
+    if (randomAlignment) consumeSpecialMonsterAlignment();
+    const alignment = typeof roamerAlignment === 'function'
+        ? roamerAlignment() : roamerAlignment;
     const absoluteX = context.xstart + x;
     const absoluteY = context.ystart + y;
     const occupied = game.level.monsters?.some(monster => monster.mhp > 0
         && monster.mx === absoluteX && monster.my === absoluteY);
-    return occupied
-        ? makemonNear(null, absoluteX, absoluteY)
-        : makemon(null, absoluteX, absoluteY, 0);
+    const monster = occupied
+        ? await makemonNear(null, absoluteX, absoluteY, mmflags)
+        : await makemon(null, absoluteX, absoluteY, mmflags);
+    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
+    if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
+    if (monster && alignment != null)
+        finishSpecialRoamer(monster, alignment, peaceful ?? true);
+    return monster;
 }
 
 export async function generateBigRoom(active) {
@@ -11061,29 +11196,6 @@ function absoluteSpecialRegion(context, x1, y1, x2, y2) {
     };
 }
 
-const SANCTUM_MAP = [
-    '----------------------------------------------------------------------------',
-    '|             --------------                                               |',
-    '|             |............|             -------                           |',
-    '|       -------............-----         |.....|                           |',
-    '|       |......................|        --.....|            ---------      |',
-    '|    ----......................---------|......----         |.......|      |',
-    '|    |........---------..........|......+.........|     ------+---..|      |',
-    '|  ---........|.......|..........--S----|.........|     |........|..|      |',
-    '|  |..........|.......|.............|   |.........-------..----------      |',
-    '|  |..........|.......|..........----   |..........|....|..|......|        |',
-    '|  |..........|.......|..........|      --.......----+---S---S--..|        |',
-    '|  |..........---------..........|       |.......|.............|..|        |',
-    '|  ---...........................|       -----+-------S---------S---       |',
-    '|    |...........................|          |...| |......|    |....|--     |',
-    '|    ----.....................----          |...---....---  ---......|     |',
-    '|       |.....................|             |..........|    |.....----     |',
-    '|       -------...........-----             --...-------    |.....|        |',
-    '|             |...........|                  |...|          |.....|        |',
-    '|             -------------                  -----          -------        |',
-    '----------------------------------------------------------------------------',
-];
-
 function markSpecialSelectionWallProperty(selection, property) {
     selection.forEachXMajor((x, y) => {
         const loc = game.level.at(x, y);
@@ -11091,129 +11203,6 @@ function markSpecialSelectionWallProperty(selection, property) {
             || loc.typ === IRONBARS))
             loc.wall_info |= property;
     });
-}
-
-async function sanctumHostileCleric(context, x, y) {
-    const cleric = await specialMonsterAt(
-        context, PM_ALIGNED_CLERIC, x, y,
-        { randomAlignment: false, mmflags: MM_EMIN },
-    );
-    if (!cleric) return null;
-    cleric.mpeaceful = 0;
-    cleric.ispriest = 0;
-    cleric.isminion = 1;
-    cleric.emin = { min_align: A_NONE, renegade: false };
-    setMonsterMalign(cleric);
-    // sanctum.lua supplies align="noalign", so create_monster() delegates to
-    // mk_roamer() rather than ordinary makemon(); roamers know every trap.
-    cleric.mtrapseen = 0x7fffffff;
-    return cleric;
-}
-
-async function sanctumNamedMonster(context, mndx, x, y) {
-    const monster = await specialMonsterAt(context, mndx, x, y, {
-        randomGender: namedMonsterNeedsGenderDraw(mndx),
-    });
-    if (monster) monster.mpeaceful = 0;
-    return monster;
-}
-
-async function generateSanctum(active) {
-    // sanctum.lua sets the first passwall barrier before des.map() anchors
-    // relative coordinates.  The top-row points are consequently absolute.
-    const topBarrier = new SpecialSelection();
-    for (let x = 39; x <= 41; x++) topBarrier.add(x, 0);
-    markSpecialSelectionWallProperty(topBarrier, W_NONPASSWALL);
-
-    // The one-argument des.map([[...]]) form initializes every inserted cell
-    // unlit; it does not inherit the preceding solidfill's random lighting.
-    const context = loadSpecialAsciiMap(SANCTUM_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.nommap = true;
-    game.level.flags.temperature = 1;
-
-    const temple = specialRectangularRoom(
-        context, 15, 7, 21, 10, TEMPLE, true, FILL_LVFLAGS,
-    );
-    createSpecialRoomDoor(temple, 'secret', 'all');
-
-    const altarX = context.xstart + 18;
-    const altarY = context.ystart + 8;
-    const altar = game.level.at(altarX, altarY);
-    altar.typ = ALTAR;
-    altar.flags = Align2amask(A_NONE) | AM_SHRINE | AM_SANCTUM;
-    await specialShrinePriest(
-        temple, altarX, altarY, A_NONE, { sanctum: true },
-    );
-    game.level.flags.has_temple = true;
-
-    specialIrregularRoom(
-        context, 41, 6, MORGUE, false, FILL_NORMAL,
-    );
-
-    specialNonDiggable(context);
-    const centralBarrier = new SpecialSelection();
-    for (let x = context.xstart + 37; x <= context.xstart + 39; x++)
-        for (let y = context.ystart; y <= context.ystart + 19; y++)
-            centralBarrier.add(x, y);
-    markSpecialSelectionWallProperty(centralBarrier, W_NONPASSWALL);
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 40, 6],
-        [D_LOCKED, 62, 6],
-        [D_CLOSED, 46, 12],
-        [D_CLOSED, 53, 10],
-    ]) specialDoorAt(context, mask, x, y);
-
-    for (let x = 13; x <= 23; x++) {
-        await specialTrapAt(context, FIRE_TRAP, x, 5);
-        await specialTrapAt(context, FIRE_TRAP, x, 12);
-    }
-    for (let y = 6; y <= 11; y++) {
-        await specialTrapAt(context, FIRE_TRAP, 13, y);
-        await specialTrapAt(context, FIRE_TRAP, 23, y);
-    }
-    for (const typ of [
-        SPIKED_PIT, FIRE_TRAP, SLP_GAS_TRAP,
-        ANTI_MAGIC, FIRE_TRAP, MAGIC_TRAP,
-    ]) await specialTrapOfType(context, typ);
-
-    for (let count = 0; count < 4; count++)
-        specialObjectOfClass(context, ARMOR_CLASS);
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(context, WEAPON_CLASS);
-    specialObjectOfClass(context, GEM_CLASS);
-    for (let count = 0; count < 4; count++)
-        specialObjectOfClass(context, POTION_CLASS);
-    for (let count = 0; count < 5; count++)
-        specialObjectOfClass(context, SCROLL_CLASS);
-
-    await sanctumNamedMonster(context, PM_HORNED_DEVIL, 14, 12);
-    await sanctumNamedMonster(context, 293, 18, 8); // barbed devil
-    await sanctumNamedMonster(context, PM_ERINYS, 10, 4);
-    await sanctumNamedMonster(context, 294, 7, 9); // marilith
-    await sanctumNamedMonster(context, 299, 27, 8); // nalfeshnee
-
-    for (const [x, y] of [
-        [20, 3], [15, 4], [11, 5], [11, 7], [11, 9],
-        [11, 12], [15, 13], [17, 13], [21, 13],
-    ]) await sanctumHostileCleric(context, x, y);
-
-    await specialMonsterOfClass(context, 38); // L, lich
-    await specialMonsterOfClass(context, 38);
-    await specialMonsterOfClass(context, 48); // V, vampire
-    await specialMonsterOfClass(context, 48);
-    await specialMonsterOfClass(context, 48);
-
-    specialStairAt(context, 63, 15, true);
-    active.downTeleportRegion = { lx: 54, ly: 1, hx: 79, hy: 18 };
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
 }
 
 async function generateElementalPlane(active) {
@@ -11494,153 +11483,6 @@ async function generateAstral(active) {
 
 export async function generateAstralLevel(active) {
     await generateSpecialAndFixup(generateAstral, active);
-}
-
-const VALLEY_MAP = [
-    '----------------------------------------------------------------------------',
-    '|...S.|..|.....|  |.....-|      |................|   |...............| |...|',
-    '|---|.|.--.---.|  |......--- ----..........-----.-----....---........---.-.|',
-    '|   |.|.|..| |.| --........| |.............|   |.......---| |-...........--|',
-    '|   |...S..| |.| |.......-----.......------|   |--------..---......------- |',
-    '|----------- |.| |-......| |....|...-- |...-----................----       |',
-    '|.....S....---.| |.......| |....|...|  |..............-----------          |',
-    '|.....|.|......| |.....--- |......---  |....---.......|                    |',
-    '|.....|.|------| |....--   --....-- |-------- ----....---------------      |',
-    '|.....|--......---BBB-|     |...--  |.......|    |..................|      |',
-    '|..........||........-|    --...|   |.......|    |...||.............|      |',
-    '|.....|...-||-........------....|   |.......---- |...||.............--     |',
-    '|.....|--......---...........--------..........| |.......---------...--    |',
-    '|.....| |------| |--.......--|   |..B......----- -----....| |.|  |....---  |',
-    '|.....| |......--| ------..| |----..B......|       |.--------.-- |-.....---|',
-    '|------ |........|  |.|....| |.....----BBBB---------...........---.........|',
-    '|       |........|  |...|..| |.....|  |-.............--------...........---|',
-    '|       --.....-----------.| |....-----.....----------     |.........----  |',
-    '|        |..|..B...........| |.|..........|.|              |.|........|    |',
-    '----------------------------------------------------------------------------',
-];
-
-async function generateValley(active) {
-    // Lua source: dat/valley.lua through its shrine operation.  Remaining
-    // object, trap, monster, and deferred-morgue blocks are appended below in
-    // their source order rather than folded into generic maze generation.
-    const context = loadSpecialAsciiMap(VALLEY_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-    game.level.flags.hardfloor = true;
-    game.level.flags.nommap = true;
-    // valley.lua explicitly overrides Gehennom's inherited heat.
-    game.level.flags.temperature = 0;
-
-    if (rn2(100) < 50) {
-        for (let x = 50; x <= 53; x++)
-            game.level.at(context.xstart + x, context.ystart + 8).typ = HWALL;
-        for (let x = 40; x <= 43; x++)
-            game.level.at(context.xstart + x, context.ystart + 8).typ = CROSSWALL;
-    }
-    if (rn2(100) < 50) {
-        game.level.at(context.xstart + 27, context.ystart + 12).typ = VWALL;
-        for (let x = 27; x <= 29; x++)
-            game.level.at(context.xstart + x, context.ystart + 3).typ = CROSSWALL;
-        game.level.at(context.xstart + 28, context.ystart + 2).typ = HWALL;
-    }
-    if (rn2(100) < 50) {
-        for (let y = 10; y <= 11; y++)
-            game.level.at(context.xstart + 16, context.ystart + y).typ = VWALL;
-        for (let x = 9; x <= 14; x++)
-            game.level.at(context.xstart + x, context.ystart + 13).typ = CROSSWALL;
-    }
-
-    const temple = specialRectangularRoom(
-        context, 1, 6, 5, 14, TEMPLE, true, FILL_LVFLAGS,
-    );
-    specialIrregularRoom(context, 19, 1, MORGUE, false, FILL_NORMAL);
-    specialIrregularRoom(context, 9, 14, MORGUE, false, FILL_NORMAL);
-    specialIrregularRoom(context, 37, 9, MORGUE, false, FILL_NORMAL);
-
-    specialStairAt(context, 1, 1, false);
-    active.explicitBranchRegion = absoluteSpecialRegion(
-        context, 66, 17, 66, 17,
-    );
-    active.downTeleportRegion = absoluteSpecialRegion(
-        context, 58, 9, 72, 18,
-    );
-
-    specialDoorAt(context, D_LOCKED, 4, 1);
-    specialDoorAt(context, D_LOCKED, 8, 4);
-    specialDoorAt(context, D_LOCKED, 6, 6);
-
-    const altarX = context.xstart + 3, altarY = context.ystart + 10;
-    const altar = game.level.at(altarX, altarY);
-    altar.typ = ALTAR;
-    altar.flags = Align2amask(A_NONE) | AM_SHRINE;
-    await specialShrinePriest(temple, altarX, altarY, A_NONE);
-    game.level.flags.has_temple = true;
-
-    specialNonDiggable(context);
-    for (const mndx of [
-        331, 331, // archeologists
-        332, 332, // barbarians
-        333, 333, // caveman and cavewoman share PM_CAVE_DWELLER
-        334, 334, // healers
-        335, 335, // knights
-        338, 338, // rangers
-        339, 339, // rogues
-        340, 340, // samurai
-        341, 341, // tourists
-        342, 342, // valkyries
-        343, 343, // wizards
-    ]) specialCorpseOf(context, mndx);
-
-    for (let count = 0; count < 4; count++)
-        specialObjectOfClass(context, ARMOR_CLASS);
-    for (let count = 0; count < 4; count++)
-        specialObjectOfClass(context, WEAPON_CLASS);
-    specialObjectOfType(context, RUBY);
-    for (const [objectClass, count] of [
-        [GEM_CLASS, 2], [POTION_CLASS, 3], [SCROLL_CLASS, 3],
-        [WAND_CLASS, 2], [RING_CLASS, 2], [SPBOOK_CLASS, 2],
-        [TOOL_CLASS, 3],
-    ]) {
-        for (let index = 0; index < count; index++)
-            specialObjectOfClass(context, objectClass);
-    }
-
-    for (const [typ, x, y] of [
-        [SPIKED_PIT, 5, 2],
-        [SPIKED_PIT, 14, 5],
-        [SLP_GAS_TRAP, 3, 1],
-        [SQKY_BOARD, 21, 12],
-    ]) await specialTrapAt(context, typ, x, y);
-    await specialTrapOfType(context, SQKY_BOARD);
-    await specialTrapAt(context, DART_TRAP, 60, 1);
-    await specialTrapAt(context, DART_TRAP, 26, 17);
-    await specialTrapOfType(context, ANTI_MAGIC);
-    await specialTrapOfType(context, ANTI_MAGIC);
-    await specialTrapOfType(context, MAGIC_TRAP);
-    await specialTrapOfType(context, MAGIC_TRAP);
-
-    for (let count = 0; count < 6; count++)
-        await specialExplicitMonster(context, 287); // ghost
-    for (let count = 0; count < 3; count++)
-        await specialExplicitMonster(context, PM_VAMPIRE_BAT);
-    await specialMonsterOfClass(context, 38); // L, lich
-    for (let count = 0; count < 3; count++)
-        await specialMonsterOfClass(context, 48); // V, vampire
-    for (let count = 0; count < 4; count++)
-        await specialMonsterOfClass(context, 52); // Z, zombie
-    for (let count = 0; count < 4; count++)
-        await specialMonsterOfClass(context, 39); // M, mummy
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
-    active.downTeleportRegion = flipSpecialRegion(
-        active.downTeleportRegion,
-    );
 }
 
 async function populateHellMaze(context) {
@@ -13826,6 +13668,8 @@ async function makelevel() {
             || prototype === 'baalz'
             || prototype === 'orcus'
             || prototype === 'juiblex'
+            || prototype === 'valley'
+            || prototype === 'sanctum'
             || prototype === 'earth'
             || prototype === 'air'
             || prototype === 'fire'
@@ -13933,14 +13777,14 @@ async function makelevel() {
             return;
         }
         if (prototype === 'valley') {
-            await generateSpecialAndFixup(generateValley,
+            await generateSpecialAndFixup(generateLuaSpecialLevel,
                 g._activeSpecialLevel);
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
             return;
         }
         if (prototype === 'sanctum') {
-            await generateSpecialAndFixup(generateSanctum,
+            await generateSpecialAndFixup(generateLuaSpecialLevel,
                 g._activeSpecialLevel);
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
