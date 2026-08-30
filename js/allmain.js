@@ -577,8 +577,7 @@ async function moveloopPreamble() {
     if (!game.tutorial_set_in_config) {
         // Creating the tutorial menu makes tty finish the pending welcome
         // message first, yielding the same intermediate --More-- boundary.
-        if (game.urole?.key === 'caveman' || game.urole?.key === 'priest'
-            || game._monkNorthPath) {
+        if (game.urole?.key === 'caveman' || game.urole?.key === 'priest') {
             await docrt();
             await bot();
             await showInlineMore(welcomeText());
@@ -2153,7 +2152,7 @@ function liveQuietKnight(state = game) {
 }
 
 function liveQuietMonk(state = game) {
-    return state.urole?.key === 'monk' && !state._monkNorthPath;
+    return state.urole?.key === 'monk';
 }
 
 function liveQuietRogue(state = game) {
@@ -6189,8 +6188,6 @@ export async function newgame() {
     // reached before the post-mklev path flags below can be derived.
     g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
         && /^  ns#ride/.test(replayMoves);
-    g._monkNorthPath = !bridgeFree && g.urole?.key === 'monk'
-        && /^  n:kkkhhhjjjlll\.ssh,ek/.test(replayMoves);
     g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
     g._wizardPolyPath = !bridgeFree && g.urole?.key === 'wizard'

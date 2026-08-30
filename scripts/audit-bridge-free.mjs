@@ -40,7 +40,7 @@ export function auditBridgeFreeSource() {
     // path, but bridge-free mode must make each one structurally unreachable
     // rather than relying on an empty replay string or lucky coordinates.
     const compatibilityClassifiers = [
-        '_knightCombatPath', '_monkNorthPath',
+        '_knightCombatPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
         '_knightPonyPath',
@@ -162,6 +162,20 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('healer_newmoon.js'))
         failures.push('healer_newmoon.js: legacy Healer replay module still exists');
+    const forbiddenMonkReplayTokens = [
+        '_monkNorthPath', '_monkNorthSearches', '_monkNorthMovementIndex',
+        'replayMonkTurn', 'placeMonkMonster', 'placeMonkHero',
+        'monkNorthFinish', 'monkNorthCorpse', 'monkNorthMovement',
+        'monkNorthPickup', 'seeded-replay.monk-search',
+    ];
+    for (const token of forbiddenMonkReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'detect.js', 'display.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Monk replay token ${token}`);
+        }
+    }
+    if (sources.has('monk_search.js'))
+        failures.push('monk_search.js: legacy Monk replay module still exists');
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');

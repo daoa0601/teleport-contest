@@ -24,7 +24,6 @@ import {
 } from './do.js';
 import { vision_note_blocker_change } from './vision.js';
 import { replayKnightCombatSearch } from './knight_ride.js';
-import { replayMonkTurn } from './monk_search.js';
 import { captureRunmodeDelay } from './runmode.js';
 
 function placeMonster(monster, x, y) {
@@ -270,21 +269,6 @@ async function preventUnsafeSearch(force = false) {
 // witnesses above remain bounded until their actor paths converge on this
 // shared source implementation.
 export async function dosearch(force = false) {
-    if (game._monkNorthPath) {
-        const index = game._monkNorthSearches || 0;
-        const turns = [18, 19, 37, 38];
-        const moves = [10, 11, 21, 22];
-        const petPositions = [[58, 8], [59, 9], [59, 10], [57, 9]];
-        if (index < turns.length) {
-            replayMonkTurn(turns[index]);
-            placeMonster(game.startingPet, ...petPositions[index]);
-            game._monkNorthSearches = index + 1;
-            game.moves = moves[index];
-            game._maintenanceMove = moves[index];
-            game.context.move = 0;
-            return;
-        }
-    }
     if (game._knightCombatPath && !game.u?.usteed
         && game._knightCombatRuns === 2
         && (game._knightCombatMoves || 0) >= 9) {

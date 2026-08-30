@@ -199,7 +199,6 @@ export function objectColor(object) {
     // oclass and deliberately use the ordinary gray tty foreground.
     if (objectUsesGenericGlyph(object))
         return OBJECT_COLOR[object.oclass] ?? CLR_GRAY;
-    if (game._monkNorthPath && object?.oclass === 8) return NO_COLOR;
     // C obj_to_glyph(): a corpse keeps the depicted monster's color; it is
     // not colored as a generic food-class object.
     if (object?.otyp === CORPSE && Number.isInteger(object?.corpsenm))
@@ -1098,8 +1097,7 @@ export function newsym(x, y) {
             show_glyph_cell(x, y, glyph.ch, glyph.color, false);
         } else {
             show_glyph_cell(x, y, monster.symbol || '?',
-                game._monkNorthPath && monster.mnum === 70 ? NO_COLOR
-                    : monster.mnum === 102 ? NO_COLOR
+                monster.mnum === 102 ? NO_COLOR
                     : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN
                     : (MONSTER_COLOR[monster.mnum]
                         ?? monster.color ?? CLR_GRAY),

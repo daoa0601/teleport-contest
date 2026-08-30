@@ -241,7 +241,6 @@ import {
     replayKnightCombatEast, replayKnightCombatKill,
     replayKnightCombatLanding, replayKnightPostDismount,
 } from './knight_ride.js';
-import { replayMonkTurn } from './monk_search.js';
 import {
     BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
@@ -1824,10 +1823,7 @@ export async function rhack(key) {
         return;
     }
 
-    if (game._monkNorthPath && isMovementKey(ch)
-        && await monkNorthMovement(ch)) {
-        return;
-    } else if (game._knightCombatPath && game.u?.usteed
+    if (game._knightCombatPath && game.u?.usteed
         && (ch === 'L' || isMovementKey(ch))
         && await knightCombatMovement(ch)) {
         return;
@@ -1914,9 +1910,6 @@ export async function rhack(key) {
             await pline(`Count: ${game._commandCount}`);
         else if (previousMessage) game._pending_message = previousMessage;
         game.context.move = 0;
-    } else if (ch === '.' && game._monkNorthPath) {
-        replayMonkTurn(17);
-        monkNorthFinish(10);
     } else if (ch === '.') {
         await performWaitCommand();
     } else if (ch === 'e') {
@@ -1940,8 +1933,6 @@ export async function rhack(key) {
             ? `Autopickup: ON, for ${classes || 'all'} objects.`
             : 'Autopickup: OFF.');
         game.context.move = 0;
-    } else if (ch === ',' && game._monkNorthPath) {
-        await monkNorthPickup();
     } else if (ch === ',') {
         await pickupFloorObject();
     } else if (ch === '>') {
@@ -3955,116 +3946,6 @@ async function ordinaryAscend() {
     return true;
 }
 
-function placeMonkMonster(monster, x, y) {
-    if (!monster) return;
-    const oldx = monster.mx, oldy = monster.my;
-    monster.mx = x; monster.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
-}
-
-function placeMonkHero(x, y) {
-    const u = game.u;
-    const oldx = u.ux, oldy = u.uy;
-    u.ux0 = oldx; u.uy0 = oldy;
-    u.ux = x; u.uy = y;
-    newsym(oldx, oldy);
-    vision_recalc(1);
-    newsym(x, y);
-}
-
-function monkNorthFinish(moves) {
-    game.moves = moves;
-    game._maintenanceMove = moves;
-    game.context.move = 0;
-}
-
-function monkNorthCorpse() {
-    const x = 54, y = 9;
-    if (!game.level.objects[x]) game.level.objects[x] = [];
-    const pile = game.level.objects[x][y] || [];
-    let corpse = pile.find(object => object.name === 'goblin corpse');
-    if (!corpse) {
-        corpse = {
-            otyp: CORPSE, oclass: 7, corpsenm: 70,
-            name: 'goblin corpse', quantity: 1, quan: 1,
-            ox: x, oy: y, color: NO_COLOR,
-        };
-        pile.unshift(corpse);
-        game.level.objects[x][y] = pile;
-    }
-    newsym(x, y);
-    return corpse;
-}
-
-async function monkNorthMovement(ch) {
-    const index = game._monkNorthMovementIndex || 0;
-    const expected = [
-        'k', 'k', 'k', 'h', 'h', 'h', 'j', 'j', 'j', 'l', 'l', 'l', 'h',
-    ];
-    if (ch !== expected[index]) return false;
-    game._monkNorthMovementIndex = index + 1;
-
-    const pet = game.startingPet;
-    const turns = [5, 0, 0, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20];
-    const moveCounts = [2, 2, 2, 3, 4, 5, 6, 7, 7, 8, 9, 9, 12];
-    const hero = [
-        [56, 6], null, null, [55, 6], [54, 6], [53, 6],
-        [53, 7], [53, 8], [53, 9], null, [54, 9], [55, 9], [54, 9],
-    ];
-    const pets = [
-        [55, 6], null, null, [58, 8], [60, 10], [60, 11],
-        [59, 10], [59, 11], [58, 10], [58, 10], [57, 10], [57, 9], [60, 11],
-    ];
-
-    if (turns[index]) replayMonkTurn(turns[index]);
-    if (hero[index]) placeMonkHero(...hero[index]);
-    if (pets[index]) placeMonkMonster(pet, ...pets[index]);
-
-    if (index === 3) {
-        await pline('You swap places with your little dog.');
-    } else if (index === 6) {
-        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
-        placeMonkMonster(goblin, 55, 10);
-    } else if (index === 8) {
-        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
-        placeMonkMonster(goblin, 54, 9);
-    } else if (index === 9) {
-        const goblin = game.level?.monsters?.find(monster => monster.mnum === 70);
-        if (goblin) {
-            game.level.monsters = game.level.monsters.filter(monster => monster !== goblin);
-            newsym(goblin.mx, goblin.my);
-        }
-        monkNorthCorpse();
-        game.u.uexp = 6;
-        await pline('You kill the goblin!');
-    } else if (index === 10 || index === 12) {
-        await pline('You see here a goblin corpse.');
-    }
-
-    monkNorthFinish(moveCounts[index]);
-    return true;
-}
-
-async function monkNorthPickup() {
-    const pile = game.level.objects?.[54]?.[9] || [];
-    const corpse = pile.find(object => object.name === 'goblin corpse');
-    if (!corpse) {
-        await pline('There is nothing here to pick up.');
-        game.context.move = 0;
-        return;
-    }
-    replayMonkTurn(21);
-    game.level.objects[54][9] = pile.filter(object => object !== corpse);
-    corpse.invlet = 'k';
-    corpse.ox = 0; corpse.oy = 0;
-    game.inventory.push(corpse);
-    placeMonkMonster(game.startingPet, 59, 11);
-    newsym(54, 9);
-    await pline('k - a goblin corpse.');
-    monkNorthFinish(13);
-}
-
 function objectQuantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
@@ -4777,13 +4658,6 @@ async function dokick() {
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
-    if (game._monkNorthPath && direction === 'j') {
-        replayMonkTurn(27);
-        placeMonkMonster(game.startingPet, 60, 11);
-        await pline('You kick at empty space.');
-        monkNorthFinish(20);
-        return;
-    }
     const monster = game.level?.monsters?.find(candidate =>
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === x && candidate.my === y);
@@ -12169,14 +12043,20 @@ function recordFoodConduct(item, corpseMnum = null) {
     if (!game.u.uconduct) game.u.uconduct = {};
     const conduct = game.u.uconduct;
     conduct.food = (conduct.food || 0) + 1;
+    const violateVegetarian = () => {
+        conduct.unvegetarian = (conduct.unvegetarian || 0) + 1;
+        if (game.urole?.key !== 'monk') return null;
+        // eat.c:violated_vegetarian() applies this every time, not only when
+        // the conduct counter first becomes nonzero.
+        adjustHeroAlignment(-1);
+        return 'You feel guilty.';
+    };
 
     if (Number.isInteger(corpseMnum)) {
         if (!veganCorpse(corpseMnum))
             conduct.unvegan = (conduct.unvegan || 0) + 1;
-        if (!vegetarianCorpse(corpseMnum)) {
-            conduct.unvegetarian = (conduct.unvegetarian || 0) + 1;
-        }
-        return;
+        return !vegetarianCorpse(corpseMnum)
+            ? violateVegetarian() : null;
     }
 
     const material = OBJECT_MATERIAL[item?.otyp] ?? 0;
@@ -12186,8 +12066,8 @@ function recordFoodConduct(item, corpseMnum = null) {
             'lump of royal jelly'].includes(name)) {
         conduct.unvegan = (conduct.unvegan || 0) + 1;
     }
-    if (material === 4 && name !== 'egg')
-        conduct.unvegetarian = (conduct.unvegetarian || 0) + 1;
+    return material === 4 && name !== 'egg'
+        ? violateVegetarian() : null;
 }
 
 // C eat.c:doeat() non-corpse freshness gate.  Cram and lembas never rot;
@@ -12379,17 +12259,68 @@ async function finishCorpseMeal(g, meal, showFinishMessage) {
     const postEffectMessage = applyCorpsePostEffects(g, meal.object);
     if (postEffectMessage)
         await plineWithContinuation(postEffectMessage);
-    const pile = g.level?.objects?.[meal.x]?.[meal.y];
-    if (Array.isArray(pile)) {
-        const index = pile.indexOf(meal.object);
-        if (index >= 0) pile.splice(index, 1);
+    if (meal.carried) {
+        consumeTouchedFood(meal.object);
+    } else {
+        const pile = g.level?.objects?.[meal.x]?.[meal.y];
+        if (Array.isArray(pile)) {
+            const index = pile.indexOf(meal.object);
+            if (index >= 0) pile.splice(index, 1);
+        }
+        newsym(meal.x, meal.y);
     }
-    newsym(meal.x, meal.y);
     // The C boundary has one obj_resists() draw after meal completion and
     // before the following monster scan.  Its deeper dog-inventory owner is
     // tracked separately; keep it attached to completion until that owner is
     // ported as a first-class post-move phase.
     rn2(100);
+}
+
+async function beginCorpseMeal(corpse, floorPile = null) {
+    const x = floorPile ? (corpse.ox ?? game.u?.ux) : game.u?.ux;
+    const y = floorPile ? (corpse.oy ?? game.u?.uy) : game.u?.uy;
+    const corpseName = corpse.name
+        || `${MONSTER_NAME[corpse.corpsenm] || 'monster'} corpse`;
+    const conductMessage = recordFoodConduct(corpse, corpse.corpsenm);
+    const meal = normalCorpseMeal(corpse, corpseName);
+    if (meal.poisonBranch) applyCorpsePoisonDamage(meal);
+    if (meal.illnessDamage) {
+        game.u.uhp = Math.max(0,
+            (game.u.uhp ?? 1) - meal.illnessDamage);
+    }
+    game._pending_message = [conductMessage, meal.tasteMessage]
+        .filter(Boolean).join('  ');
+    if (meal.rotsAway) {
+        consumeTouchedFood(corpse, floorPile);
+        game.context.move = 1;
+        return;
+    }
+    if (meal.passedOut) {
+        game.context.move = 1;
+        return;
+    }
+    applyCorpseNutrition(game, meal, 0);
+    const corpseOccupation = {
+        key: 'eat-corpse',
+        object: corpse,
+        x,
+        y,
+        carried: !floorPile,
+        // start_eating() takes the first bite now.  eatfood() remains busy
+        // through usedtime == reqtime and finishes on the next callback.
+        remaining: meal.reqtime,
+        usedtime: 1,
+        nutritionNmod: meal.nutritionNmod,
+        finishMessage: `You finish eating the ${corpseName}.`,
+        rottenBranch: meal.rottenBranch,
+    };
+    if (meal.reqtime <= 1) {
+        await finishCorpseMeal(game, corpseOccupation, false);
+        game._occupation = null;
+    } else {
+        game._occupation = corpseOccupation;
+    }
+    game.context.move = 1;
 }
 
 // C refs: mondata.c:olfaction(), eat.c:garlic_breath(), and
@@ -12457,50 +12388,8 @@ async function doeat() {
             return;
         }
 
-        recordFoodConduct(floorCorpse, floorCorpse.corpsenm);
-        const meal = normalCorpseMeal(floorCorpse, corpseName);
-        if (meal.poisonBranch) applyCorpsePoisonDamage(meal);
-        if (meal.illnessDamage) {
-            game.u.uhp = Math.max(0,
-                (game.u.uhp ?? 1) - meal.illnessDamage);
-        }
-        game._pending_message = meal.tasteMessage;
-        if (meal.rotsAway) {
-            const index = floorPile.indexOf(floorCorpse);
-            if (index >= 0) floorPile.splice(index, 1);
-            newsym(floorX, floorY);
-            game.context.move = 1;
-            return;
-        }
-        if (meal.passedOut) {
-            game.context.move = 1;
-            return;
-        }
-        applyCorpseNutrition(game, meal, 0);
-        const corpseOccupation = {
-            key: 'eat-corpse',
-            object: floorCorpse,
-            x: floorX,
-            y: floorY,
-            // start_eating() takes the first bite now.  eatfood() remains
-            // busy through usedtime == reqtime and finishes on the following
-            // callback, so exactly reqtime resumptions follow the first bite.
-            remaining: meal.reqtime,
-            usedtime: 1,
-            nutritionNmod: meal.nutritionNmod,
-            finishMessage: `You finish eating the ${corpseName}.`,
-            rottenBranch: meal.rottenBranch,
-        };
-        if (meal.reqtime <= 1) {
-            // start_eating() finishes a one-bite, not-previously-eaten meal
-            // with done_eating(FALSE): post-effects and removal happen now,
-            // but the ordinary "finish eating" line is suppressed.
-            await finishCorpseMeal(game, corpseOccupation, false);
-            game._occupation = null;
-        } else {
-            game._occupation = corpseOccupation;
-        }
-        game.context.move = 1;
+        const touched = touchFood(floorCorpse, floorPile);
+        await beginCorpseMeal(touched, floorPile);
         return;
     }
 
@@ -12602,12 +12491,18 @@ async function doeat() {
 
     // doeat() breaks food conduct as soon as a committed meal begins, before
     // touchfood(), freshness, and first-bite effects.
-    recordFoodConduct(item);
+    const conductMessage = item.otyp === CORPSE
+        ? null : recordFoodConduct(item);
 
     // touchfood() precedes both the freshness gate and every first-bite
     // effect.  In particular, even one-turn apples and carrots split from
     // their starting stacks before doeat() rolls rn2(7).
     item = touchFood(item, itemFloorPile);
+
+    if (item.otyp === CORPSE) {
+        await beginCorpseMeal(item, itemFloorPile);
+        return;
+    }
 
     if (item.otyp === FORTUNE_COOKIE) {
         const rumor = getRumor(false, true);
@@ -12620,27 +12515,14 @@ async function doeat() {
         return;
     }
 
-    if (game._monkNorthPath && item.name === 'goblin corpse') {
-        game.inventory = game.inventory.filter(candidate => candidate !== item);
-        replayMonkTurn(23);
-        placeMonkMonster(game.startingPet, 59, 10);
-        monkNorthFinish(19);
-        await promptKey('You feel guilty.  This goblin corpse tastes terrible!--More--');
-
-        replayMonkTurn(24);
-        placeMonkMonster(game.startingPet, 59, 11);
-        await pline('You finish eating the goblin corpse.');
-        monkNorthFinish(20);
-        return;
-    }
-
     const rotten = ordinaryFoodIsRotten(item);
     if (rotten) {
         const effect = rottenFoodEffect();
         item.oeaten = Math.max(1, (item.oeaten || 0) >> 1);
         if (effect.passedOut) {
             item.orotten = true;
-            await pline(effect.message);
+            await pline([conductMessage, effect.message]
+                .filter(Boolean).join('  '));
             game.context.move = 1;
             return;
         }
@@ -12651,7 +12533,8 @@ async function doeat() {
             game.u.uhunger = (game.u.uhunger ?? 900) + item.oeaten;
             consumeTouchedFood(item, itemFloorPile);
         }
-        await pline(effect.message);
+        await pline([conductMessage, effect.message]
+            .filter(Boolean).join('  '));
         game.context.move = 1;
         return;
     }
@@ -12670,7 +12553,8 @@ async function doeat() {
     }
 
     consumeTouchedFood(item, itemFloorPile);
-    await pline(`This ${item.name} is delicious!`);
+    await pline([conductMessage, `This ${item.name} is delicious!`]
+        .filter(Boolean).join('  '));
     game.context.move = 1;
 }
 
