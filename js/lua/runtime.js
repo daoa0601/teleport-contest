@@ -85,6 +85,30 @@ export class LuaTable {
     }
 }
 
+export class LuaUserdata {
+    constructor(value, metatable = {}) {
+        this.value = value;
+        this.metatable = metatable;
+    }
+
+    get(key) {
+        const index = this.metatable.__index;
+        if (typeof index === 'function') return index(this, key);
+        return index?.[key] ?? null;
+    }
+
+    set(key, value) {
+        const newIndex = this.metatable.__newindex;
+        if (typeof newIndex !== 'function')
+            throw new TypeError(`attempt to set userdata field ${String(key)}`);
+        newIndex(this, key, value);
+    }
+
+    metamethod(name) {
+        return this.metatable[name] ?? null;
+    }
+}
+
 class LuaGlobals {
     constructor(environment) {
         this.environment = environment;
@@ -139,6 +163,10 @@ function luaType(value) {
 function luaString(value) {
     value = first(value);
     if (value === null || value === undefined) return 'nil';
+    if (value instanceof LuaUserdata) {
+        const tostring = value.metamethod('__tostring');
+        return tostring ? String(tostring(value)) : 'userdata';
+    }
     if (value === true) return 'true';
     if (value === false) return 'false';
     return String(value);
@@ -148,6 +176,7 @@ function getIndex(target, key) {
     target = first(target);
     key = first(key);
     if (target instanceof LuaTable) return target.get(key);
+    if (target instanceof LuaUserdata) return target.get(key);
     if (target instanceof LuaGlobals) return target.environment.get(key);
     if (target === null || target === undefined)
         throw new TypeError('attempt to index a nil value');
@@ -159,6 +188,10 @@ function setIndex(target, key, value) {
     key = first(key);
     value = first(value);
     if (target instanceof LuaTable) {
+        target.set(key, value);
+        return;
+    }
+    if (target instanceof LuaUserdata) {
         target.set(key, value);
         return;
     }
@@ -463,6 +496,12 @@ export class LuaState {
     evaluateUnary(expression, environment) {
         const value = first(this.evaluate(expression.expression, environment));
         if (expression.operator === 'not') return !truthy(value);
+        if (value instanceof LuaUserdata) {
+            const method = value.metamethod({
+                '-': '__unm', '~': '__bnot', '#': '__len',
+            }[expression.operator]);
+            if (method) return method(value);
+        }
         if (expression.operator === '-') return -Number(value);
         if (expression.operator === '~') return ~Number(value);
         if (expression.operator === '#') {
@@ -481,6 +520,21 @@ export class LuaState {
         if (operator === 'or')
             return truthy(left) ? left : first(this.evaluate(expression.right, environment));
         const right = first(this.evaluate(expression.right, environment));
+        const metamethodName = {
+            '==': '__eq', '~=': '__eq', '<': '__lt', '<=': '__le',
+            '..': '__concat', '+': '__add', '-': '__sub', '*': '__mul',
+            '/': '__div', '//': '__idiv', '%': '__mod', '^': '__pow',
+            '&': '__band', '|': '__bor', '~': '__bxor',
+            '<<': '__shl', '>>': '__shr',
+        }[operator];
+        const metamethod = left instanceof LuaUserdata
+            ? left.metamethod(metamethodName)
+            : right instanceof LuaUserdata
+                ? right.metamethod(metamethodName) : null;
+        if (metamethod) {
+            const result = metamethod(left, right);
+            return operator === '~=' ? !truthy(result) : result;
+        }
 
         switch (operator) {
         case '==': return left === right;
