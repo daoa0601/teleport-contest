@@ -1759,7 +1759,7 @@ export async function rhack(key) {
     }
     if (cannedCommand?.kind === 'fire') {
         game._pending_message = previousMessage;
-        await dofire();
+        await dofire(cannedCommand.shotLimit ?? 0);
         return;
     }
 
@@ -14727,7 +14727,11 @@ async function okToThrow() {
     return true;
 }
 
-async function dofire() {
+async function dofire(cannedShotLimit = null) {
+    const shotLimit = cannedShotLimit === null
+        ? Math.max(0, game._commandCount || 0)
+        : Math.max(0, cannedShotLimit || 0);
+    game._commandCount = 0;
     if (!await okToThrow()) return;
 
     // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
@@ -14748,14 +14752,14 @@ async function dofire() {
             await doswapweapon();
             if (game.uwep === alternate) {
                 game._cannedCommands ||= [];
-                game._cannedCommands.push({ kind: 'fire' });
+                game._cannedCommands.push({ kind: 'fire', shotLimit });
             }
             return;
         }
-        await dothrow(game.uquiver, true);
+        await dothrow(game.uquiver, true, shotLimit);
         return;
     }
-    await dothrow(null, true);
+    await dothrow(null, true, shotLimit);
 }
 
 async function captureThrownObjectFlight(object, flightPath) {
@@ -14864,7 +14868,7 @@ async function finishOrdinaryMapPotionKill(monster) {
 // skill and weak-multishot policy plus the only role bonuses which apply to a
 // sling (Cave Dweller and Ranger). Bow/crossbow and stackable-weapon families
 // retain their existing owners.
-function matchingSlingVolleyCount(item, selectedQuantity) {
+function matchingSlingVolleyCount(item, selectedQuantity, shotLimit = 0) {
     if (selectedQuantity <= 1
         || OBJECT_SUBTYPE[item.otyp] !== -P_SLING
         || OBJECT_SUBTYPE[game.uwep?.otyp] !== P_SLING
@@ -14886,10 +14890,17 @@ function matchingSlingVolleyCount(item, selectedQuantity) {
     if (level >= P_SKILLED && !weakMultishot) maximum++;
     if (role === 'caveman' || role === 'ranger') maximum++;
 
-    return Math.min(rnd(maximum), selectedQuantity);
+    const selected = Math.min(rnd(maximum), selectedQuantity);
+    return shotLimit > 0 ? Math.min(selected, shotLimit) : selected;
 }
 
-async function dothrow(selectedItem = null, capabilityChecked = false) {
+async function dothrow(
+    selectedItem = null, capabilityChecked = false, suppliedShotLimit = null,
+) {
+    const shotLimit = suppliedShotLimit === null
+        ? Math.max(0, game._commandCount || 0)
+        : Math.max(0, suppliedShotLimit || 0);
+    game._commandCount = 0;
     if (!capabilityChecked && !await okToThrow()) return;
 
     // getobj("throw") changes its suggested class when the primary weapon is
@@ -14998,7 +15009,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         && wieldingSling && thrownObjectClass === 13
         && OBJECT_SUBTYPE[item.otyp] === -P_SLING;
     const slingVolleyCount = matchingSlingGem
-        ? matchingSlingVolleyCount(item, selectedQuantity) : 1;
+        ? matchingSlingVolleyCount(item, selectedQuantity, shotLimit) : 1;
 
     // Tourist darts get their role multishot roll even when the result can
     // only be one projectile.  A Ranger using a matching bow selects one
@@ -15009,6 +15020,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     if (!game.u?.uswallow
         && game.urole?.key === 'ranger' && launchedArrow) {
         arrowVolleyCount = Math.min(rnd(2), selectedQuantity);
+        if (shotLimit > 0)
+            arrowVolleyCount = Math.min(arrowVolleyCount, shotLimit);
     }
     let splitObjectId = null;
     if (!game.u?.uswallow && thrownObjectClass !== 8
@@ -15507,9 +15520,13 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     };
 
     if (handThrownArrow || launchedArrow) {
-        if (arrowVolleyCount > 1) {
+        if (arrowVolleyCount > 1 || shotLimit > 0) {
+            const noun = arrowVolleyCount === 1
+                ? arrowObjectName
+                : item.plural || `${arrowObjectName}s`;
             await plineWithContinuation(
-                `You shoot ${arrowVolleyCount} ${arrowObjectName}s.`,
+                `You ${launchedArrow ? 'shoot' : 'throw'} ${
+                    arrowVolleyCount} ${noun}.`,
             );
         }
         for (let shot = 1; shot <= arrowVolleyCount; shot++) {
@@ -15553,10 +15570,13 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
             || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
             || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS
             || IS_WALL(mineralFirstTyp))) {
-        if (matchingSlingGem && slingVolleyCount > 1) {
-            const plural = item.plural
-                || `${item.name || OBJECT_NAMES[item.otyp] || 'stone'}s`;
-            await pline(`You shoot ${slingVolleyCount} ${plural}.`);
+        if (matchingSlingGem
+            && (slingVolleyCount > 1 || shotLimit > 0)) {
+            const baseName = item.name
+                || OBJECT_NAMES[item.otyp] || 'stone';
+            const noun = slingVolleyCount === 1
+                ? baseName : item.plural || `${baseName}s`;
+            await pline(`You shoot ${slingVolleyCount} ${noun}.`);
         }
         const resolveGemShot = async () => {
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;

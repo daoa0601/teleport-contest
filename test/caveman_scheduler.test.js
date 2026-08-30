@@ -170,3 +170,46 @@ test('Caveman fire uses live quiver and fireassist state', async () => {
     assert.equal(normal.error, null);
     assert.deepEqual(normal.world, bridgeFree.world);
 });
+
+test('a count prefix caps the live Caveman volley', async () => {
+    // The same fresh source roll as the two-shot witness remains observable,
+    // but dothrow.c applies an explicit command count after that roll. The
+    // limit survives the fireassist weapon-swap turn and caps the volley at 1.
+    const seed = 28003;
+    const startup = await cavemanOutcome({
+        seed, moves: ' ', bridgeFree: true,
+    });
+    const bridgeFree = await cavemanOutcome({
+        seed, moves: ' 1f l', bridgeFree: true,
+    });
+
+    assert.equal(startup.error, null);
+    assert.equal(bridgeFree.error, null);
+
+    const initialFlint = startup.world.inventory.find(object =>
+        object.type === FLINT);
+    const remainingFlint = bridgeFree.world.inventory.find(object =>
+        object.type === FLINT);
+    const initialFloorFlint = startup.world.floorObjects
+        .filter(object => object.type === FLINT)
+        .reduce((total, object) => total + object.quantity, 0);
+    const landedFlint = bridgeFree.world.floorObjects
+        .filter(object => object.type === FLINT)
+        .reduce((total, object) => total + object.quantity, 0);
+
+    assert.ok(initialFlint);
+    assert.equal(
+        initialFlint.quantity - (remainingFlint?.quantity ?? 0),
+        1,
+    );
+    assert.equal(landedFlint - initialFloorFlint, 1);
+    assert.equal(bridgeFree.world.primary, SLING);
+    assert.equal(bridgeFree.world.alternate, CLUB);
+    assert.deepEqual(bridgeFree.cavemanBridges, []);
+
+    const normal = await cavemanOutcome({
+        seed, moves: ' 1f l', bridgeFree: false,
+    });
+    assert.equal(normal.error, null);
+    assert.deepEqual(normal.world, bridgeFree.world);
+});
