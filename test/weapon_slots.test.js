@@ -219,3 +219,159 @@ test('autoquiver excludes hidden and artifact objects and ranks missiles over al
         assert.equal(game.uwep, club);
         assert.equal(game.uswapwep, sling);
     });
+
+test('manual fire splits all but one wielded projectile into a new quiver identity',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const darts = inventoryObject(DART, 'a', {
+            o_id: 28110,
+            quan: 3, quantity: 3,
+            wielded: true, owornmask: 1,
+        });
+        game.inventory = [darts];
+        game.uwep = darts;
+
+        pushKey('a');
+        pushKey('y');
+        pushKey('l');
+        await rhack('f'.charCodeAt(0));
+
+        const quivered = game.uquiver;
+        assert.equal(game.uwep, darts);
+        assert.equal(darts.quantity, 1);
+        assert.ok(quivered);
+        assert.notEqual(quivered, darts);
+        assert.notEqual(quivered.o_id, darts.o_id);
+        assert.equal(quivered.quantity, 1);
+        assert.equal(quivered.ready, true);
+        assert.equal(game.inventory.length, 2);
+    });
+
+test('moving the whole primary stack to the quiver spends time even when fire is cancelled',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const darts = inventoryObject(DART, 'a', {
+            o_id: 28111,
+            quan: 3, quantity: 3,
+            wielded: true, owornmask: 1,
+        });
+        game.inventory = [darts];
+        game.uwep = darts;
+
+        pushKey('a');
+        pushKey('n');
+        pushKey('y');
+        pushKey(27);
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uwep, null);
+        assert.equal(game.uquiver, darts);
+        assert.equal(darts.quantity, 3);
+        assert.equal(darts.wielded, false);
+        assert.equal(darts.ready, true);
+        assert.equal(game.context.move, 1);
+    });
+
+test('manual fire splits an alternate stack without replacing its parent slot',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const club = inventoryObject(CLUB, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const darts = inventoryObject(DART, 'b', {
+            o_id: 28112,
+            quan: 3, quantity: 3,
+            alternate: true, owornmask: 2,
+        });
+        game.inventory = [club, darts];
+        game.uwep = club;
+        game.uswapwep = darts;
+
+        pushKey('b');
+        pushKey('y');
+        pushKey('l');
+        await rhack('f'.charCodeAt(0));
+
+        const quivered = game.uquiver;
+        assert.equal(game.uwep, club);
+        assert.equal(game.uswapwep, darts);
+        assert.equal(darts.quantity, 1);
+        assert.ok(quivered);
+        assert.notEqual(quivered, darts);
+        assert.notEqual(quivered.o_id, darts.o_id);
+        assert.equal(quivered.quantity, 1);
+        assert.equal(quivered.ready, true);
+        assert.equal(game.inventory.length, 3);
+    });
+
+test('moving the whole offhand stack ends two-weapon mode and preserves cancellation time',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const club = inventoryObject(CLUB, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const darts = inventoryObject(DART, 'b', {
+            o_id: 28113,
+            quan: 3, quantity: 3,
+            alternate: true, owornmask: 2,
+        });
+        game.inventory = [club, darts];
+        game.uwep = club;
+        game.uswapwep = darts;
+        game.u.twoweap = true;
+
+        pushKey('b');
+        pushKey('n');
+        pushKey('y');
+        pushKey(27);
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uwep, club);
+        assert.equal(game.uswapwep, null);
+        assert.equal(game.uquiver, darts);
+        assert.equal(game.u.twoweap, false);
+        assert.equal(darts.quantity, 3);
+        assert.equal(darts.alternate, false);
+        assert.equal(darts.ready, true);
+        assert.equal(game.context.move, 1);
+    });
+
+test('moving an unused alternate stack remains zero-time when the later fire is cancelled',
+    async () => {
+        freshWeaponArena();
+        game.flags.autoquiver = false;
+        game.flags.fireassist = false;
+        const club = inventoryObject(CLUB, 'a', {
+            wielded: true, owornmask: 1,
+        });
+        const darts = inventoryObject(DART, 'b', {
+            o_id: 28114,
+            quan: 3, quantity: 3,
+            alternate: true, owornmask: 2,
+        });
+        game.inventory = [club, darts];
+        game.uwep = club;
+        game.uswapwep = darts;
+        game.u.twoweap = false;
+
+        pushKey('b');
+        pushKey('n');
+        pushKey('y');
+        pushKey(27);
+        await rhack('f'.charCodeAt(0));
+
+        assert.equal(game.uwep, club);
+        assert.equal(game.uswapwep, null);
+        assert.equal(game.uquiver, darts);
+        assert.equal(darts.quantity, 3);
+        assert.equal(darts.ready, true);
+        assert.equal(game.context.move, 0);
+    });

@@ -94,6 +94,28 @@ export async function promptYesNo(
     }
 }
 
+// wield.c:doquiver_core() uses ynq() for stack/slot transitions: `n`
+// proceeds to a distinct follow-up, while `q` (and the displayed default)
+// cancels the whole nested transaction.
+export async function promptYesNoQuit(
+    message, defaultAnswer = 'q', cursorOffset = 0,
+) {
+    game._suppressMessagesUntilInput = false;
+    await pline(message);
+    await flush_screen(1);
+    placeToplinePromptCursor(message.length + cursorOffset);
+    for (;;) {
+        const key = await nhgetch();
+        const answer = String.fromCharCode(key).toLowerCase();
+        if (!['y', 'n', 'q'].includes(answer)
+            && ![27, 32, 10, 13].includes(key)) continue;
+        game._pending_message = '';
+        game._retained_message = '';
+        return ['y', 'n', 'q'].includes(answer)
+            ? answer : defaultAnswer;
+    }
+}
+
 // A per-question paranoia bit changes affirmative input from `y` to the full
 // line `yes`.  PARANOID_CONFIRM additionally removes the default and requires
 // `no` (or Escape) to reject, retrying other committed lines up to six times.

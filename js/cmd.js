@@ -9,8 +9,8 @@ import { game } from './gstate.js';
 import { useCompatibilityBridge } from './bridge_policy.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
-import { getLine, promptYesNo } from './query.js';
-export { getLine, promptYesNo } from './query.js';
+import { getLine, promptYesNo, promptYesNoQuit } from './query.js';
+export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
     objectTypeCallNoun, tryCallObjectType,
 } from './object_call.js';
@@ -14744,6 +14744,32 @@ async function doready() {
     game.context.move = 0;
 }
 
+function splitStackForQuiver(item, count) {
+    const quantity = item.quantity ?? item.quan ?? 1;
+    const selected = Math.max(1, Math.min(count, quantity - 1));
+    const unitWeight = OBJECT_WEIGHT[item.otyp]
+        ?? Math.max(1, Math.trunc((item.owt ?? 1) / quantity));
+    item.quantity = item.quan = quantity - selected;
+    item.owt = unitWeight * item.quantity;
+    const child = {
+        ...item,
+        o_id: nextIdent(),
+        invlet: null,
+        quantity: selected,
+        quan: selected,
+        owt: unitWeight * selected,
+        owornmask: 0,
+        worn: false,
+        wielded: false,
+        alternate: false,
+        ready: false,
+        where: 'inventory',
+    };
+    assignInventoryLetter(child);
+    game.inventory.push(child);
+    return child;
+}
+
 async function chooseManualFireQuiver() {
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
@@ -14763,19 +14789,58 @@ async function chooseManualFireQuiver() {
         game.context.move = 0;
         return null;
     }
-    const item = selection.object;
+    let item = selection.object;
     if (item.worn && item !== game.uwep && item !== game.uswapwep) {
         await pline('You cannot fire that!');
         game.context.move = 0;
         return null;
     }
-    // Primary/alternate stacks have distinct split and confirmation owners;
-    // keep those explicit rather than silently treating worn identities as
-    // an ordinary zero-time quiver selection.
-    if (item === game.uwep || item === game.uswapwep) {
-        await pline('That weapon is already in use.');
-        game.context.move = 0;
-        return null;
+    const primary = item === game.uwep;
+    const alternate = item === game.uswapwep;
+    const wasTwoweap = !!game.u?.twoweap;
+    let spentTime = false;
+    if (primary || alternate) {
+        const quantity = item.quantity ?? item.quan ?? 1;
+        let readyAll = true;
+        if (quantity > 1) {
+            const slotDescription = primary
+                ? `You are wielding ${quantity} ${item.plural}.`
+                : `${wasTwoweap ? 'You are dual wielding'
+                    : 'Your alternate weapon is'} ${quantity} ${item.plural}.`;
+            const partial = await promptYesNoQuit(
+                `${slotDescription}  Ready ${quantity - 1} of them? [ynq] (q) `,
+            );
+            if (partial === 'q') {
+                game.context.move = 0;
+                return null;
+            }
+            if (partial === 'y') {
+                item = splitStackForQuiver(item, quantity - 1);
+                readyAll = false;
+            }
+        }
+        if (readyAll) {
+            const answer = await promptYesNoQuit(
+                `Ready ${quantity > 1 ? 'all of them' : 'it'} instead? [ynq] (q) `,
+            );
+            if (answer !== 'y') {
+                game.context.move = 0;
+                return null;
+            }
+            if (primary) {
+                game.uwep = null;
+                if (game.u) game.u.uwep = null;
+                item.wielded = false;
+                spentTime = true;
+            } else {
+                game.uswapwep = null;
+                if (game.u) game.u.uswapwep = null;
+                item.alternate = false;
+                spentTime = wasTwoweap;
+            }
+            item.owornmask = 0;
+            if (game.u) game.u.twoweap = false;
+        }
     }
     const wasReady = item.ready;
     item.ready = false;
@@ -14784,7 +14849,7 @@ async function chooseManualFireQuiver() {
     );
     item.ready = wasReady;
     setQuiverObject(item, game);
-    return item;
+    return { item, spentTime };
 }
 
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
@@ -14822,6 +14887,7 @@ async function dofire(cannedShotLimit = null) {
     if (!await okToThrow()) return;
 
     let fireObject = game.uquiver;
+    let quiverSelectionSpentTime = false;
     if (!fireObject) {
         if (game.flags?.autoquiver) {
             fireObject = autoquiverCandidate(game);
@@ -14840,7 +14906,11 @@ async function dofire(cannedShotLimit = null) {
         } else {
             await pline('You have no ammunition readied.');
         }
-        if (!fireObject) fireObject = await chooseManualFireQuiver();
+        if (!fireObject) {
+            const selection = await chooseManualFireQuiver();
+            fireObject = selection?.item || null;
+            quiverSelectionSpentTime = !!selection?.spentTime;
+        }
         if (!fireObject) return;
     }
 
@@ -14856,11 +14926,10 @@ async function dofire(cannedShotLimit = null) {
         const fireassist = game.flags?.fireassist !== false;
         if (fireassist && !matchingLauncher(game.uwep)
             && matchingLauncher(alternate)) {
-            await doswapweapon();
-            if (game.uwep === alternate) {
-                game._cannedCommands ||= [];
-                game._cannedCommands.push({ kind: 'fire', shotLimit });
-            }
+            game._cannedCommands ||= [];
+            game._cannedCommands.push({ kind: 'swap-weapon' });
+            game._cannedCommands.push({ kind: 'fire', shotLimit });
+            game.context.move = quiverSelectionSpentTime ? 1 : 0;
             return;
         }
         if (fireassist && !matchingLauncher(game.uwep)) {
@@ -14889,11 +14958,13 @@ async function dofire(cannedShotLimit = null) {
                     kind: 'wield', invlet: inventoryLauncher.invlet,
                 });
                 game._cannedCommands.push({ kind: 'fire', shotLimit });
-                game.context.move = 0;
+                game.context.move = quiverSelectionSpentTime ? 1 : 0;
                 return;
             }
         }
         await dothrow(fireObject, true, shotLimit);
+        if (quiverSelectionSpentTime && !game.context.move)
+            game.context.move = 1;
         return;
     }
 }
