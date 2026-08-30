@@ -82,7 +82,7 @@ import {
     touchArtifactByHero,
 } from './artifacts.js';
 import {
-    CLUB, SLING, FLINT, FOOD_RATION, FORTUNE_COOKIE, CLOVE_OF_GARLIC, CARROT,
+    SLING, FORTUNE_COOKIE, CLOVE_OF_GARLIC, CARROT,
     CREAM_PIE, EGG, SLIME_MOLD, TIN,
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
@@ -214,14 +214,6 @@ import {
     chatWithQuestLeader, displayPreparedQuestArrival, prepareQuestArrival,
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
-import {
-    replayCavemanFireSwap,
-    replayCavemanFireReady,
-    replayCavemanShotMonsterTurn,
-    replayCavemanShotObjectEnd,
-    replayCavemanShotObjectStart,
-    replayCavemanShotVolley,
-} from './caveman_explore.js';
 import {
     fumaroles, monsterTeleportRestricted, randomMonsterRelocation,
     sessionIsNight, triggerImmediateMonsterTrap,
@@ -1765,6 +1757,11 @@ export async function rhack(key) {
         await dorub(cannedCommand.invlet);
         return;
     }
+    if (cannedCommand?.kind === 'fire') {
+        game._pending_message = previousMessage;
+        await dofire();
+        return;
+    }
 
     // The Wizard debug fixture's remaining inputs are menu navigation after
     // the first level-teleport command.  Its special-level RNG is replayed at
@@ -1888,8 +1885,6 @@ export async function rhack(key) {
         await performSearchCommand();
     } else if (key === 4) { // Ctrl-D
         await dokick();
-    } else if (ch === 'f' && game.urole?.key === 'caveman') {
-        await docavemanfire();
     } else if (ch === 'f' && game._rangerNamePath) {
         await dorangerfire();
     } else if (ch === 'f') {
@@ -4841,94 +4836,6 @@ async function dokick() {
     game.context.move = 1;
 }
 
-async function cavemanMore(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    return nhgetch();
-}
-
-async function docavemanfire() {
-    const club = game.inventory?.find(item => item.otyp === CLUB);
-    const sling = game.inventory?.find(item => item.otyp === SLING);
-    const flint = game.inventory?.find(item => item.otyp === FLINT);
-
-    game.uwep = sling;
-    game.uswapwep = club;
-    await cavemanMore('b - a +2 sling (weapon in right hand).--More--');
-
-    replayCavemanFireSwap();
-    await cavemanMore('a - a +1 club (alternate weapon; not wielded).--More--');
-
-    replayCavemanFireReady();
-    game.moves = 23;
-    if (game.startingPet) {
-        const pet = game.startingPet;
-        const oldx = pet.mx, oldy = pet.my;
-        pet.mx = 40; pet.my = 5;
-        addCavemanFood(oldx, oldy);
-        newsym(oldx, oldy);
-    }
-    await cavemanMore('Slasher drops a food ration.--More--');
-
-    const direction = await promptKey('In what direction? ');
-    if (String.fromCharCode(direction) === 'l') {
-        const shotCount = replayCavemanShotVolley();
-        const strength = game.u?.acurr?.a?.[0] ?? 10;
-        const range = Math.max(
-            1,
-            Math.trunc(strength / 2)
-                - Math.trunc((flint?.owt ?? 0) / 40) + 1,
-        );
-        const flightPath = [];
-        let x = game.u.ux;
-        const y = game.u.uy;
-        for (let distance = 0; distance < range; distance++) {
-            const nextX = x + 1;
-            if (blocksMove(nextX, y)) break;
-            x = nextX;
-            flightPath.push({ x, y });
-            if (game.level?.monsters?.some(monster =>
-                !monster.dead && (monster.mhp ?? 1) > 0
-                && monster.mx === x && monster.my === y)) break;
-        }
-        await pline(`You shoot ${shotCount} flint stones.`);
-        for (let shot = 0; shot < shotCount; shot++) {
-            replayCavemanShotObjectStart();
-            await captureThrownObjectFlight(flint, flightPath);
-            replayCavemanShotObjectEnd();
-        }
-        if (flint) {
-            flint.quantity = (flint.quantity || 1) - shotCount;
-            flint.quan = flint.quantity;
-        }
-        replayCavemanShotMonsterTurn();
-        game.moves = 24;
-        if (game.startingPet) {
-            const oldx = game.startingPet.mx, oldy = game.startingPet.my;
-            game.startingPet.mx = 48;
-            game.startingPet.my = 16;
-            newsym(oldx, oldy);
-            newsym(48, 16);
-        }
-    }
-    game.context.move = 0;
-}
-
-function addCavemanFood(x, y) {
-    if (!game.level) return;
-    const existing = game.level.objects?.[x]?.[y]
-        ?.some(object => object.otyp === FOOD_RATION);
-    if (existing) return;
-    if (!game.level.objects[x]) game.level.objects[x] = [];
-    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-    game.level.objects[x][y].unshift({
-        otyp: FOOD_RATION, oclass: 7, name: 'food ration',
-        plural: 'food rations', quan: 1, quantity: 1, ox: x, oy: y,
-    });
-    newsym(x, y);
-}
-
 function putCommandLine(col, row, message, attr = 0) {
     const display = game.nhDisplay;
     for (let index = 0; index < message.length && col + index < display.cols; index++)
@@ -5368,6 +5275,8 @@ async function doswapweapon() {
     game.uswapwep = null;
     if (game.u) game.u.uswapwep = null;
 
+    oldSecondary.alternate = false;
+    oldSecondary.wielded = true;
     game.uwep = oldSecondary;
     if (game.u) game.u.uwep = oldSecondary;
     await pline(
@@ -5378,6 +5287,8 @@ async function doswapweapon() {
     game.uswapwep = oldPrimary;
     if (game.u) game.u.uswapwep = oldPrimary;
     if (oldPrimary) {
+        oldPrimary.wielded = false;
+        oldPrimary.alternate = true;
         await plineWithContinuation(
             `${oldPrimary.invlet} - ${
                 inventoryItemDescription(oldPrimary)}.`,
@@ -14819,10 +14730,28 @@ async function okToThrow() {
 async function dofire() {
     if (!await okToThrow()) return;
 
-    // dothrow.c:dofire() starts with the quivered object and otherwise falls
-    // back to the same object-selection transaction as #throw.  The full
-    // fireassist/autoquiver policy remains downstream of this shared gate.
+    // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
+    // matching alternate weapon is swapped in as one timed action, then fire
+    // resumes after the complete monster/global turn without consuming a new
+    // physical key.  This applies to every matching ammo/launcher pair; role
+    // names and recorded command streams do not participate in selection.
     if (game.uquiver) {
+        const ammoSkill = OBJECT_SUBTYPE[game.uquiver.otyp] ?? 0;
+        const matchingLauncher = launcher => ammoSkill < 0
+            && launcher
+            && ammoSkill === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
+        const alternate = game.uswapwep || game.u?.uswapwep || null;
+        const fireassist = game.flags?.fireassist !== false;
+        if (fireassist && !matchingLauncher(game.uwep)
+            && matchingLauncher(alternate)
+            && !(alternate.cursed && alternate.bknown)) {
+            await doswapweapon();
+            if (game.uwep === alternate) {
+                game._cannedCommands ||= [];
+                game._cannedCommands.push({ kind: 'fire' });
+            }
+            return;
+        }
         await dothrow(game.uquiver, true);
         return;
     }

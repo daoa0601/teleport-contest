@@ -63,7 +63,7 @@ import {
     ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK,
     ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD,
     ELVEN_SHORT_SWORD, ELVEN_SPEAR,
-    FOOD_RATION, GOLD_PIECE, LARGE_BOX, LONG_SWORD,
+    GOLD_PIECE, LARGE_BOX, LONG_SWORD,
     LUCERN_HAMMER,
     OBJECT_BIMANUAL, OBJECT_WEIGHT,
     ORCISH_DAGGER, ORCISH_HELM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
@@ -80,7 +80,6 @@ import {
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel,
 } from './const.js';
-import { replayCavemanTurn } from './caveman_explore.js';
 import { replayKnightMaintenance } from './knight_ride.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
@@ -2177,6 +2176,10 @@ function liveQuietSamurai(state = game) {
     return state.urole?.key === 'samurai';
 }
 
+function liveQuietCaveman(state = game) {
+    return state.urole?.key === 'caveman';
+}
+
 function liveQuietValkyrie(state = game) {
     return state.urole?.key === 'valkyrie';
 }
@@ -2195,6 +2198,7 @@ function usesSourceMovementRation(state = game) {
     return liveQuietKnight(state) || liveQuietMonk(state)
         || liveQuietRogue(state) || liveQuietHealer(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
+        || liveQuietCaveman(state)
         || liveDebugSourceRation(state);
 }
 
@@ -6197,104 +6201,6 @@ function rangerNameMonsterActionRng(turn) {
     return true;
 }
 
-const CAVEMAN_PET_POSITIONS = {
-    1: [48, 18], 2: [49, 17], 3: [51, 16], 4: [52, 16], 5: [50, 17],
-    6: [51, 18], 7: [53, 18], 8: [53, 18], 9: [52, 17], 10: [52, 18],
-    11: [50, 18], 12: [50, 17], 13: [49, 17], 14: [48, 16],
-    15: [48, 15], 16: [48, 14], 17: [49, 14],
-    18: [40, 5], 19: [40, 5], 20: [40, 5], 21: [49, 14],
-    24: [49, 14], 25: [49, 14],
-};
-
-function placeCavemanPet(turn) {
-    const pet = game.startingPet;
-    const position = CAVEMAN_PET_POSITIONS[turn];
-    if (!pet || !position) return;
-    const oldx = pet.mx, oldy = pet.my;
-    pet.mx = position[0]; pet.my = position[1];
-    newsym(oldx, oldy);
-    newsym(pet.mx, pet.my);
-}
-
-function cavemanFoodAt(x, y) {
-    return game.level?.objects?.[x]?.[y]
-        ?.find(object => object.otyp === FOOD_RATION);
-}
-
-function removeCavemanFood(x, y) {
-    const objects = game.level?.objects?.[x]?.[y];
-    if (!objects) return;
-    game.level.objects[x][y] = objects.filter(object => object.otyp !== FOOD_RATION);
-    newsym(x, y);
-}
-
-function addCavemanFood(x, y) {
-    if (!game.level || cavemanFoodAt(x, y)) return;
-    if (!game.level.objects[x]) game.level.objects[x] = [];
-    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-    game.level.objects[x][y].unshift({
-        otyp: FOOD_RATION, oclass: 7, name: 'food ration',
-        plural: 'food rations', quan: 1, quantity: 1, ox: x, oy: y,
-    });
-    newsym(x, y);
-}
-
-function updateCavemanFloorState(turn) {
-    switch (turn) {
-    case 1:
-        pline('You see here a food ration.');
-        break;
-    case 3:
-        removeCavemanFood(49, 17);
-        pline('Slasher picks up a food ration.');
-        break;
-    case 7:
-        addCavemanFood(51, 18);
-        pline('Slasher drops a food ration.');
-        break;
-    case 8:
-        pline('You see here a food ration.');
-        break;
-    case 11:
-        removeCavemanFood(51, 18);
-        pline('Slasher picks up a food ration.');
-        break;
-    case 18:
-        addCavemanFood(50, 14);
-        pline('You swap places with Slasher.  Slasher drops a food ration.');
-        break;
-    }
-}
-
-function brightenCavemanCorridors(turn) {
-    const dim = (x, y) => {
-        const loc = game.level?.at(x, y);
-        if (loc?.disp_ch !== '#') return;
-        loc.disp_color = NO_COLOR;
-        if (loc.remembered_glyph?.ch === '#')
-            loc.remembered_glyph.color = NO_COLOR;
-    };
-    if (turn === 17) dim(48, 14);
-    if (turn === 18) {
-        dim(51, 13);
-        dim(51, 14);
-    }
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            if (loc?.disp_ch !== '#') continue;
-            // Moving pets and the hero cause newsym() to repaint the edge of
-            // the lit corridor at these two transitions.
-            if ((turn === 17 && x === 48 && y === 14)
-                || (turn >= 18 && x === 51 && (y === 13 || y === 14)))
-                continue;
-            loc.disp_color = CLR_WHITE;
-            if (loc.remembered_glyph?.ch === '#')
-                loc.remembered_glyph.color = CLR_WHITE;
-        }
-    }
-}
-
 // C ref: allmain.c newgame()
 export async function newgame() {
     const g = game;
@@ -6469,6 +6375,7 @@ export async function moveloop_core() {
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
     if ((liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
         || liveQuietPriest(g) || liveQuietSamurai(g)
+        || liveQuietCaveman(g)
         || liveDebugSourceRation(g))
         && g._heroTimePending) {
         const consumeInterruptedMultiAction = () => {
@@ -6607,6 +6514,9 @@ export async function moveloop_core() {
             || liveQuietRanger(g)
             || liveQuietPriest(g)
             || liveQuietSamurai(g)
+            // Cavemen share the live actor, floor-object, and movement-ration
+            // owners. No turn number selects a second pet or world mutator.
+            || liveQuietCaveman(g)
             // Ordinary Valkyries and Tourists have no native role-specific
             // pet transcript.  Keep their explicitly bounded compatibility
             // paths isolated, but drive every other actor from live fmon,
@@ -6682,12 +6592,6 @@ export async function moveloop_core() {
                 newsym(mx, my);
                 newsym(g.startingPet.mx, g.startingPet.my);
             }
-        } else if (g.urole?.key === 'caveman') {
-            if (stepNum === 1) initialTurnMaintenanceRng();
-            else replayCavemanTurn(stepNum);
-            placeCavemanPet(stepNum);
-            updateCavemanFloorState(stepNum);
-            brightenCavemanCorridors(stepNum);
         } else if (g.urole?.key === 'tourist' && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g.urole?.key === 'valkyrie') {
@@ -6754,7 +6658,7 @@ export async function moveloop_core() {
         } else if (g.urole?.key === 'tourist'
             && touristMonsterActionRng(stepNum - 1)) {
             initialTurnMaintenanceRng();
-        } else if (liveQuietSamurai(g)
+        } else if (liveQuietSamurai(g) || liveQuietCaveman(g)
             || (bridgeFreeEnabled() && liveQuietRole)) {
             // A quiet source-owned role with no full-ration actor still owns
             // the global maintenance pass.  The legacy fallback padded this

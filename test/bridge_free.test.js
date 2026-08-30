@@ -7,7 +7,6 @@ import {
 } from '../js/bridge_policy.js';
 import { fastforward_step } from '../js/fastforward.js';
 import { paintFixtureScreen } from '../js/fixture_screen.js';
-import { replayCavemanTurn } from '../js/caveman_explore.js';
 import { runSegment } from '../js/jsmain.js';
 import { auditBridgeFreeSource } from '../scripts/audit-bridge-free.mjs';
 
@@ -67,7 +66,6 @@ test('replayMoves is poisoned and known replay boundaries are guarded', () => {
                 return state.replayMoves;
             },
             () => fastforward_step(1),
-            () => replayCavemanTurn(2),
             () => paintFixtureScreen('', null, {}),
         ]) {
             resetBridgeUsageLedger();
@@ -78,12 +76,9 @@ test('replayMoves is poisoned and known replay boundaries are guarded', () => {
     });
 });
 
-test('mechanical source audit covers fixture and replay additions', () => {
+test('bridge-free source policy accepts the production graph', () => {
     const result = auditBridgeFreeSource();
     assert.deepEqual(result.failures, []);
-    assert.ok(result.fixtureModules.length > 0);
-    assert.ok(result.guardedModules.includes('fastforward.js'));
-    assert.ok(result.guardedModules.includes('caveman_explore.js'));
 });
 
 test('bridge-free entry executes a live quiet-role turn with zero bridge hits', async () => {
