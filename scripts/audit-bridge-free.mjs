@@ -42,9 +42,9 @@ export function auditBridgeFreeSource() {
     const compatibilityClassifiers = [
         '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
-        '_priestExtcmdPath', '_touristExplorePath',
+        '_touristExplorePath',
         '_rangerNamePath', '_valkChatPath',
-        '_priestCastPath', '_healerNewmoonPath', '_knightPonyPath',
+        '_healerNewmoonPath', '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
         const explicitLegacyGate = new RegExp(
@@ -95,6 +95,20 @@ export function auditBridgeFreeSource() {
         if (sources.has(file))
             failures.push(`${file}: legacy Rogue replay module still exists`);
     }
+    const forbiddenPriestReplayTokens = [
+        '_priestExtcmdPath', '_priestCastPath', 'priestDogSearchRng',
+        'placePriestPet', 'replayPriestExtcmdBoundary',
+        'paintPriestExtcmdScreen', 'seeded-replay.priest-extcmd',
+        'priest.passive-projectile',
+    ];
+    for (const token of forbiddenPriestReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'jsmain.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Priest replay token ${token}`);
+        }
+    }
+    if (sources.has('priest_extcmd.js'))
+        failures.push('priest_extcmd.js: legacy Priest replay module still exists');
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');

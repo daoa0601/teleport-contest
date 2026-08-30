@@ -2171,7 +2171,7 @@ function liveQuietRanger(state = game) {
 }
 
 function liveQuietPriest(state = game) {
-    return state.urole?.key === 'priest' && !state._priestCastPath;
+    return state.urole?.key === 'priest';
 }
 
 function liveQuietSamurai(state = game) {
@@ -6115,13 +6115,6 @@ function valkyrieDogSearchRng() {
         rn2(range);
 }
 
-function priestDogSearchRng(stepNum) {
-    const ranges = stepNum === 2
-        ? [5, 4, 1, 5]
-        : stepNum === 3 ? [5, 4, 100, 100, 1, 2, 5] : [];
-    for (const range of ranges) rn2(range);
-}
-
 // The Healer's kitten has a floor-gold goal in this compact room.  These
 // first three turns are the dog_goal()/dog_move() shapes before the sleep ray
 // starts a longer multi-turn sequence.
@@ -6136,15 +6129,6 @@ const HEALER_EARLY_TURN_RNG = {
 
 function healerEarlyTurnRng(stepNum) {
     for (const range of HEALER_EARLY_TURN_RNG[stepNum] || []) rn2(range);
-}
-
-function placePriestPet(stepNum) {
-    if (!game.startingPet || stepNum < 2 || stepNum > 3) return;
-    const oldx = game.startingPet.mx, oldy = game.startingPet.my;
-    const next = stepNum === 2 ? [40, 7] : [39, 8];
-    [game.startingPet.mx, game.startingPet.my] = next;
-    newsym(oldx, oldy);
-    newsym(...next);
 }
 
 // The south-east kitten start can bank enough movement for two steps during
@@ -6336,9 +6320,6 @@ export async function newgame() {
         && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
     g._wizardQuaffPath = !bridgeFree && g.urole?.key === 'wizard'
         && /^  nqhzc\.rjhlll/.test(replayMoves);
-    g._priestExtcmdPath = !bridgeFree && g.urole?.key === 'priest'
-        && /^  ns#pray/.test(replayMoves);
-
     // Bridge-free mode enters the source-owned startup boundary directly.
     // Legacy mode retains the guarded fastforward name for compatibility.
     const handednessRoll = bridgeFree
@@ -6388,8 +6369,6 @@ export async function newgame() {
         && g.level?.flags?.nsinks === 1 && g.u?.ux === 28 && g.u?.uy === 7;
     g._valkChatPath = !bridgeFree && g.urole?.key === 'valkyrie'
         && /#chat/.test(replayMoves);
-    g._priestCastPath = !bridgeFree && g.urole?.key === 'priest'
-        && /Z.*#turn/s.test(replayMoves);
     g._healerNewmoonPath = !bridgeFree && g.urole?.key === 'healer'
         && /szf/.test(replayMoves);
     g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
@@ -6402,7 +6381,6 @@ export async function newgame() {
             ['tourist.explore-search', g._touristExplorePath],
             ['ranger.named-start', g._rangerNamePath],
             ['valkyrie.chat', g._valkChatPath],
-            ['priest.passive-projectile', g._priestCastPath],
             ['healer.newmoon', g._healerNewmoonPath],
             ['knight.pony', g._knightPonyPath],
             ['wizard.bind', g._wizardBindPath],
@@ -6451,11 +6429,6 @@ export async function newgame() {
         // inventory tables are translated.
         if (!bridgeFreeEnabled()) fastforward_post_mklev();
     }
-
-    // This Priest fixture begins with a zero-time cast menu.  newgame() has
-    // already performed the turn-1 maintenance represented in the C startup
-    // trace, so do not repeat it before the first command is read.
-    if (g._priestCastPath) g._maintenanceMove = g.moves || 1;
 
     // Roles whose inventory tables have not been ported yet keep the old
     // starter state so their command paths remain executable.
@@ -6824,10 +6797,6 @@ export async function moveloop_core() {
             // Monks gain intrinsic Fast at level one, so their first live
             // allocation uses the shared u_calc_moveamt() rn2(3) gate.
             initialTurnMaintenanceRng();
-        } else if (g._priestCastPath) {
-            if (stepNum >= 2) priestDogSearchRng(stepNum);
-            initialTurnMaintenanceRng();
-            placePriestPet(stepNum);
         } else if (liveQuietHealer(g) && stepNum === 1) {
             // The first elapsed Healer turn has no prior monster movement
             // ration to scan, but it still runs the complete source global
