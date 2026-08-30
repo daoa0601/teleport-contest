@@ -38,7 +38,7 @@ import {
     M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER,
-    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, NO_MINVENT,
+    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_NOCORPSE,
     W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
@@ -128,6 +128,9 @@ const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
 const AMULET_CLASS = 5;
 const TOOL_CLASS = 6;
+const M2_DOMESTIC = 0x00400000;
+const G_NOGEN = 0x0200;
+const MAXMONNO = 120;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
@@ -3462,6 +3465,90 @@ export function splitHostileMonster(monster, state = game) {
     monster.mhpmax -= clone.mhpmax;
 
     state.level.monsters.push(clone);
+    newsym(clone.mx, clone.my);
+    return clone;
+}
+
+function heroCloneBirthLimit(mnum) {
+    const name = String(MONSTER_NAME[mnum] || '').toLowerCase();
+    return name === 'nazgul' ? 9 : name === 'erinys' ? 3 : MAXMONNO;
+}
+
+function recordHeroCloneBirth(mnum, state) {
+    if (!Array.isArray(state.mvitals)) state.mvitals = [];
+    const vital = state.mvitals[mnum]
+        || (state.mvitals[mnum] = { mvflags: 0, born: 0 });
+    if ((vital.born ?? 0) < 255) vital.born = (vital.born ?? 0) + 1;
+    if ((vital.born ?? 0) >= heroCloneBirthLimit(mnum)
+        && !((MONSTER_GENO[mnum] ?? 0) & G_NOGEN)) {
+        vital.mvflags = (vital.mvflags ?? 0) | G_EXTINCT;
+    }
+}
+
+// C refs: mhitu.c:cloneu(), potion.c:split_mon(), dog.c:initedog().
+// The actor is a fresh makemon birth rather than a copy of youmonst: it owns
+// ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
+// replaces its level/HP and initializes a named tame companion.  split_mon()
+// then halves maximum form HP separately, leaving odd points with the hero.
+export async function splitHeroMonsterForm(state = game) {
+    if (state !== game)
+        throw new Error('hero clone owner requires live game state');
+    const u = state.u || {};
+    if (Number.isFinite(u.mh) && Number.isFinite(u.mhmax)
+        && u.mh > u.mhmax) u.mh = u.mhmax;
+    const mnum = u.umonnum;
+    const vitalFlags = state.mvitals?.[mnum]?.mvflags ?? 0;
+    if (!Number.isInteger(mnum) || !Number.isFinite(u.mh)
+        || !Number.isFinite(u.mhmax) || u.mh <= 1
+        || (vitalFlags & (G_EXTINCT | G_GENOD))) return null;
+
+    const clone = await makemonNear(
+        mnum, u.ux, u.uy, NO_MINVENT | MM_EDOG | MM_NOMSG, true,
+    );
+    if (!clone) return null;
+    recordHeroCloneBirth(mnum, state);
+
+    const name = state.plname || 'player';
+    const edog = {
+        parentmid: clone.m_id,
+        droptime: 0,
+        dropdist: 10000,
+        apport: u.acurr?.a?.[5] ?? 3,
+        whistletime: 0,
+        hungrytime: (state.moves ?? 0) + 1000,
+        ogoal: { x: -1, y: -1 },
+        abuse: 0,
+        revivals: 0,
+        mhpmax_penalty: 0,
+        killed_by_u: 0,
+    };
+    clone.mcloned = 1;
+    clone.name = name;
+    clone.mgivenname = name;
+    clone.m_lev = MONSTER_LEVEL[mnum] ?? clone.m_lev;
+    clone.mtame = Math.max(
+        (MONSTER_FLAGS2[mnum] ?? 0) & M2_DOMESTIC ? 10 : 5,
+        clone.mtame ?? 0,
+    );
+    clone.mpeaceful = 1;
+    clone.mavenge = 0;
+    clone.mleashed = 0;
+    clone.meating = 0;
+    clone.pet = true;
+    clone.minvent = [];
+    clone.inventory = clone.minvent;
+    clone.hasInventory = false;
+    clone.edog = edog;
+    clone.mextra = { ...(clone.mextra || {}), mgivenname: name, edog };
+    delete clone.malign;
+
+    clone.mhpmax = u.mhmax;
+    clone.mhp = Math.trunc(u.mh / 2);
+    u.mh -= clone.mhp;
+    clone.mhpmax = Math.trunc(u.mhmax / 2);
+    u.mhmax -= clone.mhpmax;
+    if (!u.uconduct) u.uconduct = {};
+    u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
     newsym(clone.mx, clone.my);
     return clone;
 }

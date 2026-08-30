@@ -875,15 +875,96 @@ test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
         assertNoBridgeUse();
     });
 
-test('gremlin hero water vapor fails before swallowed throw mutation',
+test('gremlin hero water vapor creates a named tame clone and splits form HP',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        game.plname = 'Splitter';
+        Object.assign(game.u, {
+            umonnum: PM_GREMLIN,
+            mtimedone: 300,
+            mh: 19,
+            mhmax: 17,
+        });
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(30).fill(' '),
+        );
+
+        const clones = game.level.monsters.filter(monster => monster.mcloned);
+        assert.equal(clones.length, 1);
+        const clone = clones[0];
+        assert.equal(clone.mnum, PM_GREMLIN);
+        assert.equal(clone.name, 'Splitter');
+        assert.equal(clone.pet, true);
+        assert.equal(clone.mtame, 5);
+        assert.equal(clone.mpeaceful, 1);
+        assert.equal(clone.mhp, 8);
+        assert.equal(clone.mhpmax, 8);
+        assert.deepEqual(clone.minvent, []);
+        assert.strictEqual(clone.inventory, clone.minvent);
+        assert.deepEqual(clone.edog.ogoal, { x: -1, y: -1 });
+        assert.equal(clone.edog.apport, 12);
+        assert.equal(clone.edog.hungrytime, 1040);
+        assert.notDeepEqual([clone.mx, clone.my], [game.u.ux, game.u.uy]);
+        assert.equal(game.u.umonnum, PM_GREMLIN);
+        assert.equal(game.u.mh, 9);
+        assert.equal(game.u.mhmax, 9);
+        assert.equal(game.u.uconduct.pets, 1);
+        assert.equal(potion.where, 'gone');
+        assert.match(game._pending_message, /You multiply!$/);
+        assertNoBridgeUse();
+    });
+
+test('one-HP gremlin vapor consumes water without constructing a clone',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfState();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
             mtimedone: 300,
-            mh: 12,
-            mhmax: 12,
+            mh: 5,
+            mhmax: 1,
+        });
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.equal(
+            game.level.monsters.some(monster => monster.mcloned), false,
+        );
+        assert.equal(game.u.mh, 1);
+        assert.equal(game.u.mhmax, 1);
+        assert.equal(game.u.uconduct.pets ?? 0, 0);
+        assert.equal(potion.where, 'gone');
+        assert.doesNotMatch(game._pending_message, /multiply/);
+        assertNoBridgeUse();
+    });
+
+test('four-HP gremlin throw retains the low-stamina fail-before-mutation gap',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        Object.assign(game.u, {
+            umonnum: PM_GREMLIN,
+            mtimedone: 300,
+            mh: 4,
+            mhmax: 1,
         });
         const raw = mksobj(POT_WATER, true, false);
         raw.cursed = raw.blessed = false;
@@ -901,8 +982,11 @@ test('gremlin hero water vapor fails before swallowed throw mutation',
 
         assert.deepEqual(getRngLog(), []);
         assert.deepEqual(game.inventory, [potion]);
-        assert.equal(game.u.umonnum, PM_GREMLIN);
-        assert.equal(game.u.mh, 12);
+        assert.equal(
+            game.level.monsters.some(monster => monster.mcloned), false,
+        );
+        assert.equal(game.u.mh, 4);
+        assert.equal(game.u.mhmax, 1);
         assert.equal(potion.where, 'inventory');
     });
 

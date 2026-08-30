@@ -852,6 +852,36 @@ test('live water contact clones a hostile gremlin with split hit points',
         assertNoBridgeUse();
     });
 
+test('two-square water vapor can multiply a live gremlin hero', async () => {
+    freshMapPotionState(2);
+    game.plname = 'Splitter';
+    Object.assign(game.u, {
+        umonster: 331,
+        umonnum: 40,
+        mtimedone: 300,
+        mh: 17,
+        mhmax: 17,
+    });
+    const potion = addKnownPotion(POT_WATER);
+
+    initRng(2746n);
+    enableRngLog();
+    await throwEast(potion, Array(30).fill(' '));
+
+    const clones = game.level.monsters.filter(monster => monster.mcloned);
+    assert.equal(clones.length, 1);
+    assert.equal(clones[0].name, 'Splitter');
+    assert.equal(clones[0].pet, true);
+    assert.equal(clones[0].mhp, 8);
+    assert.equal(clones[0].mhpmax, 8);
+    assert.equal(game.u.mh, 9);
+    assert.equal(game.u.mhmax, 9);
+    assert.equal(game.u.uconduct.pets, 1);
+    assert.equal(potion.where, 'gone');
+    assert.match(game._pending_message, /You multiply!$/);
+    assertNoBridgeUse();
+});
+
 test('live blessed water rehumanizes an unequipped beast were', async () => {
     const monster = freshMapPotionState(2);
     Object.assign(monster, {

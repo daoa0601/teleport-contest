@@ -26,6 +26,7 @@ import {
     supportedPotionHeroVaporGap, supportedPotionTargetGap,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
+import { heroIsPolymorphed } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus,
@@ -56,6 +57,17 @@ const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
     'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
 ];
+
+function lowStaminaThrowGap(state, item) {
+    const polymorphed = heroIsPolymorphed(state);
+    const currentHp = polymorphed
+        ? state.u?.mh ?? 1 : state.u?.uhp ?? 1;
+    const currentHpMax = polymorphed
+        ? state.u?.mhmax ?? currentHp : state.u?.uhpmax ?? currentHp;
+    const threshold = polymorphed ? 5 : 10;
+    return currentHp < threshold && currentHp !== currentHpMax
+        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2;
+}
 
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
@@ -186,12 +198,7 @@ function swallowedWeaponEligibility(
             + weaponSkillDamageBonus(state, skill),
     );
     if (!Number.isFinite(engulfer.mhp)) return null;
-    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
-    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
-    if (currentHp < 10 && currentHp !== currentHpMax
-        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
-        return null;
-    }
+    if (lowStaminaThrowGap(state, item)) return null;
     return { engulfer, skill, maximumDamage };
 }
 
@@ -248,12 +255,7 @@ function swallowedProjectileEligibility(
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
     if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
-    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
-    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
-    if (currentHp < 10 && currentHp !== currentHpMax
-        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
-        return null;
-    }
+    if (lowStaminaThrowGap(state, item)) return null;
     return {
         engulfer, kind, launcher, skill, roleDamage, maximumDamage,
     };
@@ -283,12 +285,7 @@ function genericSwallowedEligibility(
         && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
         return null;
     }
-    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
-    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
-    if (currentHp < 10 && currentHp !== currentHpMax
-        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
-        return null;
-    }
+    if (lowStaminaThrowGap(state, item)) return null;
     return engulfer;
 }
 
@@ -316,12 +313,7 @@ function swallowedPotionEligibility(
         return null;
     }
 
-    const currentHp = state.u?.mh ?? state.u?.uhp ?? 1;
-    const currentHpMax = state.u?.mhmax ?? state.u?.uhpmax ?? currentHp;
-    if (currentHp < 10 && currentHp !== currentHpMax
-        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2) {
-        return null;
-    }
+    if (lowStaminaThrowGap(state, item)) return null;
     if (supportedPotionTargetGap({
         state, potion: item, monster: engulfer,
     })) return null;

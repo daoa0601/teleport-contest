@@ -37747,7 +37747,13 @@ flowchart TD
     A[potionbreathe POT_WATER] --> B{wet towel or cannot receive vapor?}
     B -- yes --> C[shielded or not received]
     B -- no --> D{current hero form}
-    D -- gremlin --> E[cloneu gap rejected before reachable throw mutation]
+    D -- gremlin --> E0[clamp current form HP to maximum]
+    E0 --> E1{HP above one, species live, adjacent position exists?}
+    E1 -- no --> E2[consume vapor without a clone]
+    E1 -- yes --> E3[makemon with no inventory and EDOG]
+    E3 --> E4[name for hero, initialize pet, mark cloned]
+    E4 --> E5[split current and maximum form HP; hero keeps odd points]
+    E5 --> E6[You multiply]
     D -- ordinary non-lycanthrope --> F[received zero-RNG no-op]
     D -- lycanthrope state --> G{beatitude and current form}
     G -- cursed human --> H{Unchanging or already polymorphed?}
@@ -37788,11 +37794,25 @@ human-to-werewolf transformation and stunned-control bypass; direct source
 witnesses prove blessed rehumanization, threat suppression, ordinary no-op,
 and Unchanging duration restoration.
 
+`mklev.js:splitHeroMonsterForm()` now owns `cloneu()` as a fresh monster birth,
+not a shallow copy of hero state.  It uses the shared shuffled `enexto()` and
+`makemon()` owners before assigning the player's name, base species level,
+`mcloned`, empty inventory, and a complete `initedog()` record.  Only then does
+it halve current and maximum monster-form HP separately.  Extinction rejects
+before placement or identity RNG; failed placement preserves HP and pet
+conduct; a birth which reaches the species limit remains live but marks later
+births extinct.  Swallowed water and a probabilistic two-square map vapor are
+both live carriers.  One-HP form state consumes the impact without a clone.
+
 Reachability is part of preflight.  Swallowed contact always reaches vapor;
-two-square map contact can reach it probabilistically and therefore rejects
-interactive control or hero-gremlin splitting before object detachment.  A
-three-square contact cannot call `potionbreathe()` and remains live even with
-polymorph control.  The remaining explicit gaps are `cloneu()`, both
-interactive paranoid-query continuations, broader scary-square nuances inside
+two-square map contact can reach it probabilistically and therefore rejects an
+interactive control prompt before object detachment, while live gremlin cloning
+is admitted.  A three-square contact cannot call `potionbreathe()` and remains
+live even with polymorph control.  `dothrow.c` also distinguishes the
+polymorphed low-stamina threshold (`mh < 5`) from the ordinary threshold
+(`uhp < 10`); a five-HP gremlin can throw and later clamp to one HP inside
+`split_mon()`, while the four-HP drop-from-grasp presentation remains fail-loud.
+The remaining explicit gaps are both interactive paranoid-query continuations,
+that low-stamina continuation, broader scary-square nuances inside
 `monster_nearby()`, an external live carrier for blessed beast-form vapor, and
 the sealed stratum.  Lua owns none of this runtime form graph.

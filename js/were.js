@@ -3,6 +3,7 @@
 
 import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
+import { splitHeroMonsterForm } from './mklev.js';
 import { newsym, plineWithContinuation } from './display.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -73,7 +74,6 @@ function controllableWereChange(state) {
 
 export function heroWaterVaporGap(state = game, potion = {}) {
     const u = state.u || {};
-    if (u.umonnum === PM_GREMLIN) return 'hero-gremlin-split';
     const beast = lycanthropeBeastMnum(state);
     if (beast === null || heroIsUnchanging(state)) return null;
 
@@ -97,6 +97,15 @@ export async function applyHeroWaterVaporChange({
     const gap = heroWaterVaporGap(state, potion);
     if (gap) throw new Error(`unsupported water-vapor branch: ${gap}`);
     const u = state.u || {};
+    if (u.umonnum === PM_GREMLIN) {
+        const clone = await splitHeroMonsterForm(state);
+        if (clone) await publish('You multiply!');
+        return {
+            kind: clone ? 'cloned' : 'clone-suppressed',
+            changed: !!clone,
+            clone,
+        };
+    }
     const beast = lycanthropeBeastMnum(state);
     if (beast === null) return { kind: 'ordinary', changed: false };
 

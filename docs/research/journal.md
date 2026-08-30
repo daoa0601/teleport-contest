@@ -97930,3 +97930,67 @@ scorer, sealed trace, push, publication, official hidden measurement, or
 animation work ran.
 
 ---
+
+### [2026-08-30 03:30 EEST, journal block 3188] {#bridge-free #water-vapor #cloneu #split-mon #makemon #enexto #initedog #birth-limit #low-stamina #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and portfolio:** after block 3187 corrected
+the acceptance lanes, the next live water-vapor branch still rejected every
+gremlin hero at `throw.potion-impact-unsupported`.  The initial swallowed
+source witnesses were red **0/2**: a healthy form could not reach `cloneu()`,
+and a form whose pre-throw HP would later clamp to one could not reach C's
+no-clone continuation.  The portfolio kept fresh monster construction versus
+hero copying, shuffled placement versus identity allocation, current versus
+maximum HP splitting, pet initialization, birth/extinction accounting, and
+throw admission thresholds as independent mechanisms.
+
+**Prediction and decisive source evidence:** `mhitu.c:cloneu()` calls
+`makemon(current_form, u.ux, u.uy, NO_MINVENT|MM_EDOG|MM_NOMSG)`, so the clone
+owns ordinary `enexto()`, new-monster HP/gender/attitude, and `next_ident()` RNG
+before those provisional values are replaced.  It is named for the player,
+initialized through `initedog(TRUE)`, marked `mcloned`, assigned the base
+species level, and given half the current monster-form HP.  `potion.c:split_mon`
+first clamps `u.mh` to `u.mhmax`, then separately halves maximum HP, leaving
+both odd points with the hero.  HP at one, extinction/genocide, or failed
+placement returns no clone without undoing the water impact.  Separately,
+`dothrow.c` uses `mh < 5` for polymorphed low-stamina throws but `uhp < 10` for
+ordinary heroes.
+
+**Decision and implementation:** `mklev.js:splitHeroMonsterForm()` now composes
+the shared live placement and construction owners, then installs player name,
+complete no-food pet state, empty inventory, clone marker, species level,
+clone-specific birth accounting, current/max HP division, pet conduct, and
+repaint.  `were.js` routes gremlin water vapor through that owner and publishes
+`You multiply!` only after a successful birth.  `swallowed_throw.js` replaces
+four copied generic HP guards with one source-shaped polymorph-aware admission
+predicate.  Thus a five-HP gremlin throw is admitted and can clamp to one inside
+`split_mon()`, while the still-unowned four-HP drop-from-grasp presentation
+remains fail-loud before object mutation.  Swallowed contact and a fresh-seed
+two-square map contact both witness the live clone path.
+
+**Measured effect and adversarial audit:** the first implementation reached
+**1/2** and exposed the incorrect shared ten-HP threshold; after correcting
+that independent owner, the two live swallowed cases pass **2/2**.  Seven
+clone/gremlin boundary witnesses pass **7/7**: successful and one-HP swallowed
+vapor, four-HP fail-before-mutation, two-square map vapor, hostile-monster clone
+control, extinction-before-RNG, failed placement without HP/conduct mutation,
+and a limit-reaching birth retained while later births become extinct.  The
+complete potion impact/map/swallowed/clone gate passes **135/135**.  The default
+behavioral lane passes **363/363** in **2.6 seconds** across **38** files.  The
+bridge audit reports **126 files, 15 guarded modules, and 19 fixture modules**;
+ownership generation/checking, syntax, JSON, test-lane audit, and
+`git diff --check` pass.  Every runner was guarded, singular, and owned to
+normal exit.
+
+**Falsified hypotheses, limits, and next blocker:** `cloneu()` is not a copy of
+`youmonst`; low HP does not justify rejecting the whole impact; a five-HP
+polymorphed hero is not governed by the ordinary ten-HP threshold; and reaching
+the birth limit suppresses later clones rather than the clone which reaches it.
+The reusable clone owner is currently connected to gremlin water vapor; cold
+passives, traps, sitting, debug commands, and other `cloneu()` callers remain
+unwired.  Interactive lycanthrope prompts, the low-stamina drop presentation,
+general `makemon()` propagation outside this clone owner, pet alignment/livelog
+variants, broader scary-square rules, and the sealed stratum also remain open.
+No public regression lane, full Contest corpus, scorer, sealed trace, push,
+publication, official hidden measurement, or animation work ran.
+
+---
