@@ -23,6 +23,7 @@ const names = [
     'valley.lua', 'sanctum.lua', 'castle.lua', 'knox.lua',
     'earth.lua', 'air.lua', 'fire.lua', 'water.lua',
     'astral.lua',
+    'hellfill.lua',
     'tut-1.lua', 'tut-2.lua',
     'tower1.lua', 'tower2.lua', 'tower3.lua',
     'oracle.lua',

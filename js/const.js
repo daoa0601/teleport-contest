@@ -2925,6 +2925,13 @@ export function Is_botlevel(uz) {
     const dun = game?.dungeons?.[lev.dnum];
     return !!dun && lev.dlevel === dun.num_dunlevs;
 }
+export function Invocation_lev(uz) {
+    const lev = uz ?? game?.u?.uz;
+    if (!lev) return false;
+    const dungeon = game?.dungeons?.[lev.dnum];
+    return !!dungeon?.flags?.hellish
+        && lev.dlevel === dungeon.num_dunlevs - 1;
+}
 export function Is_rogue_level(uz) { const g = game; return g?.rogue_level && (uz ?? g?.u?.uz)?.dnum === g.rogue_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.rogue_level.dlevel; }
 export function Is_oracle_level(uz) { const g = game; return g?.oracle_level && (uz ?? g?.u?.uz)?.dnum === g.oracle_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.oracle_level.dlevel; }
 export function Is_knox_level(uz) { const g = game; return g?.knox_level && (uz ?? g?.u?.uz)?.dnum === g.knox_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.knox_level.dlevel; }

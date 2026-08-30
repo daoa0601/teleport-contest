@@ -306,7 +306,14 @@ function callTerrain(operations, args) {
             ?? point(options);
         const type = args.length === 1 ? options.typ : args[1];
         if (location && type != null)
-            return operations.terrainAt(location.x, location.y, String(type));
+            return operations.terrainAt(
+                location.x, location.y, String(type), options.lit,
+            );
+        if (options.selection != null && type != null) {
+            return operations.terrain(
+                unwrapSelection(options.selection), String(type), options.lit,
+            );
+        }
     }
     return operations.terrain(
         unwrapSelection(args[0]), String(args[1]),

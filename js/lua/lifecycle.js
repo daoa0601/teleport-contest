@@ -1,4 +1,4 @@
-import { COLNO, ROWNO } from '../const.js';
+import { COLNO, Invocation_lev, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { depth } from '../hacklib.js';
 import { commandKeyDescription } from '../command_keys.js';
@@ -45,6 +45,7 @@ function bindingsFor(gameState, additionalBindings = {}) {
         u: {
             ...(gameState.u || {}),
             depth: depth(gameState.u?.uz, gameState.dungeons),
+            invocation_level: Invocation_lev(gameState.u?.uz),
             role: roleName,
         },
         des: {},
