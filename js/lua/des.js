@@ -182,6 +182,35 @@ function trapOptions(type, x, y) {
     };
 }
 
+function doorOptions(state, x, y) {
+    if (state instanceof LuaTable) {
+        const options = tableOptions(state);
+        return {
+            ...options,
+            state: String(options.state ?? 'random'),
+            point: point(options.coord) ?? point(options.x, options.y),
+        };
+    }
+    return {
+        state: String(state),
+        point: point(luaArgument(x), luaArgument(y)),
+    };
+}
+
+function stairOptions(direction, x, y) {
+    if (direction instanceof LuaTable) {
+        const options = tableOptions(direction);
+        return {
+            direction: String(options.dir ?? 'down'),
+            point: point(options.coord) ?? point(options.x, options.y),
+        };
+    }
+    return {
+        direction: String(direction),
+        point: point(luaArgument(x), luaArgument(y)),
+    };
+}
+
 function mazeWalkOptions(value, y, direction) {
     if (!(value instanceof LuaTable)) {
         return {
@@ -282,19 +311,21 @@ export function createDesBindings(operations, wrapSelection = value => value) {
             : operations.region(
                 unwrapSelection(selection), String(lighting),
             ),
-        stair: (direction, x, y) => operations.stair({
-            direction: String(direction),
-            point: point(luaArgument(x), luaArgument(y)),
-        }),
-        door: (state, x, y) => operations.door({
-            state: String(state),
-            point: point(luaArgument(x), luaArgument(y)),
-        }),
+        stair: (direction, x, y) => operations.stair(
+            stairOptions(direction, x, y),
+        ),
+        ladder: (direction, x, y) => operations.ladder(
+            stairOptions(direction, x, y),
+        ),
+        door: (state, x, y) => operations.door(doorOptions(state, x, y)),
         feature: (type, x, y) => operations.feature({
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),
         }),
         non_diggable: selection => operations.nonDiggable(
+            selection == null ? null : unwrapSelection(selection),
+        ),
+        non_passwall: selection => operations.nonPasswall(
             selection == null ? null : unwrapSelection(selection),
         ),
         wallify: () => operations.wallify(),

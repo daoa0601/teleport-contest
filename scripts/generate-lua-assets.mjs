@@ -13,6 +13,7 @@ const names = [
     'bigrm-10.lua', 'bigrm-11.lua', 'bigrm-12.lua', 'bigrm-13.lua',
     'medusa-1.lua', 'medusa-2.lua', 'medusa-3.lua', 'medusa-4.lua',
     'fakewiz1.lua', 'fakewiz2.lua',
+    'wizard1.lua', 'wizard2.lua', 'wizard3.lua',
 ];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [
