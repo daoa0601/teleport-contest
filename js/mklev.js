@@ -259,6 +259,7 @@ const PM_HIGH_CLERIC = 276;
 const PM_ARCH_PRIEST = 350;
 const PM_ACOLYTE = 375;
 const PM_HUMAN_MUMMY = 192;
+const PM_ETTIN_MUMMY = 193;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_ETTIN_ZOMBIE = 245;
 const PM_GIANT_ZOMBIE = 247;
@@ -7513,6 +7514,26 @@ const MINEND2_MAP = [
     '---------------------------------------------------------------------------',
 ];
 
+const MINEND3_MAP = [
+    ' - - - - - - - - - - -- -- - - . - - - - - - - - - -- - - -- - - - - . - - |',
+    '------...---------.-----------...-----.-------.-------     ----------------|',
+    ' - - - - - - - - - - - . - - - . - - - - - - - - - - -- - -- - . - - - - - |',
+    '------------.---------...-------------------------.---   ------------------|',
+    ' - - - - - - - - - - . . - - --- - . - - - - - - - - -- -- - - - - |.....| |',
+    '--.---------------.......------------------------------- ----------|.....S-|',
+    ' - - - - |.. ..| - ....... . - - - - |.........| - - - --- - - - - |.....| |',
+    '----.----|.....|------.......--------|.........|--------------.------------|',
+    ' - - - - |..{..| - - -.... . --- - -.S.........S - - - - - - - - - - - - - |',
+    '---------|.....|--.---...------------|.........|---------------------------|',
+    ' - - - - |.. ..| - - - . - - - - - - |.........| - --- . - - - - - - - - - |',
+    '----------------------...-------.---------------------...------------------|',
+    '---..| - - - - - - - - . --- - - - - - - - - - - - - - . - - --- - - --- - |',
+    '-.S..|----.-------.------- ---------.-----------------...----- -----.-------',
+    '---..| - - - - - - - -- - - -- . - - - - - . - - - . - . - - -- -- - - - -- ',
+    '-.S..|--------.---.---       -...---------------...{.---------   ---------  ',
+    '--|. - - - - - - - -- - - - -- . - - - --- - - - . . - - - - -- - - - - - - ',
+];
+
 function uniformRoomMinesField(lit = true) {
     // Pri-loca.lua deliberately issues a second level_init after its initial
     // solid fill.  With fg and bg both ROOM, mkmap()'s 2/5 fill loop changes
@@ -8431,6 +8452,112 @@ async function generateMinend2(active) {
         active.downTeleportRegion,
     );
     active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
+}
+
+async function generateMinend3(active) {
+    fillSpecialSolid(HWALL, active.defaultLit);
+    const context = loadSpecialAsciiMap(MINEND3_MAP, active.defaultLit);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.nommap = true;
+
+    const places = luaShuffle([[1, 15], [68, 6], [1, 13]]);
+    active.places = places.map(point => [...point]);
+
+    const markNonDiggable = (x1, y1, x2, y2) => {
+        for (let x = x1; x <= x2; x++) {
+            for (let y = y1; y <= y2; y++) {
+                const loc = game.level.at(
+                    context.xstart + x, context.ystart + y,
+                );
+                if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
+                    || loc.typ === IRONBARS)) {
+                    loc.wall_info |= W_NONDIGGABLE;
+                }
+            }
+        }
+    };
+    markNonDiggable(67, 3, 73, 7);
+    markNonDiggable(0, 12, 2, 16);
+
+    for (const [x, y] of [[12, 8], [51, 15]]) {
+        const fountain = game.level.at(
+            context.xstart + x, context.ystart + y,
+        );
+        if (fountain) fountain.typ = FOUNTAIN;
+    }
+    game.level.flags.nfountains += 2;
+    setSpecialRegionLighting(context, 0, 0, 75, 16, false);
+    setSpecialRegionLighting(context, 38, 6, 46, 10, true);
+    for (const [x, y] of [
+        [37, 8], [47, 8], [73, 5], [2, 15],
+    ]) specialDoorAt(context, D_CLOSED, x, y);
+    specialMazeWalk(context, 36, 8, 'west', ROOM);
+    specialStairAt(context, 42, 8, true);
+    wallifyMap(
+        context.xstart - 1,
+        context.ystart - 1,
+        context.xstart + context.width + 1,
+        context.ystart + context.height + 1,
+    );
+
+    for (const otyp of [
+        DIAMOND, null, DIAMOND, null,
+        EMERALD, null, EMERALD, null,
+        EMERALD, null, RUBY, null,
+        RUBY, AMETHYST, null, AMETHYST,
+    ]) {
+        if (otyp == null) specialObjectOfClass(context, GEM_CLASS);
+        else specialObjectOfType(context, otyp);
+    }
+    const [luckX, luckY] = places[1];
+    const luckstone = specialObjectAt(
+        context, LUCKSTONE, luckX, luckY, { named: true },
+    );
+    if (luckstone) {
+        luckstone.blessed = false;
+        luckstone.cursed = false;
+        luckstone.achievement = true;
+    }
+    const [flintX, flintY] = places[0];
+    specialObjectAt(
+        context, FLINT, flintX, flintY, { named: true },
+    );
+    for (let count = 0; count < 5; count++)
+        specialObjectOfClass(context, SCROLL_CLASS);
+    for (let count = 0; count < 4; count++)
+        specialObjectOfClass(context, SPBOOK_CLASS);
+    for (let count = 0; count < 3; count++) specialObject(context);
+
+    for (let count = 0; count < 7; count++) await specialTrap(context);
+    await specialTrapAt(context, LEVEL_TELEP, luckX, luckY);
+    await specialTrapAt(context, LEVEL_TELEP, flintX, flintY);
+
+    for (let count = 0; count < 5; count++)
+        await specialMonsterOfClass(context, 39); // S_MUMMY
+    await specialExplicitMonster(context, PM_ETTIN_MUMMY);
+    await specialMonsterOfClass(context, 48); // S_VAMPIRE
+    for (let count = 0; count < 5; count++)
+        await specialMonsterOfClass(context, 52); // S_ZOMBIE
+    await specialMonsterOfClass(context, 48); // S_VAMPIRE
+    for (let count = 0; count < 4; count++)
+        await specialMonsterOfClass(context, 5); // S_EYE
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+}
+
+const MINES_END_GENERATORS = Object.freeze([
+    null, generateMinend1, generateMinend2, generateMinend3,
+]);
+
+export async function generateMinesEnd(active) {
+    const generator = MINES_END_GENERATORS[active?.variant];
+    if (!generator) {
+        throw new RangeError(`unknown Mines' End layout ${active?.variant}`);
+    }
+    await generateSpecialAndFixup(generator, active);
 }
 
 function specialRoomContext(room) {
@@ -14669,14 +14796,8 @@ async function makelevel() {
                 await fillSpecialRoom(room);
             return;
         }
-        if (prototype === 'minend' && variant === 1) {
-            await generateSpecialAndFixup(generateMinend1,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minend' && variant === 2) {
-            await generateSpecialAndFixup(generateMinend2,
-                g._activeSpecialLevel);
+        if (prototype === 'minend') {
+            await generateMinesEnd(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'oracle') {
