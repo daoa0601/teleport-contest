@@ -59,7 +59,7 @@ gate root:
 
 ```sh
 umask 077
-openssl rand 32 > /secure/path/teleport-gate.key
+openssl rand -out /secure/path/teleport-gate.key 32
 node scripts/sealed-corpus-prepare.mjs \
   --gate-root .sealed-corpus/phase1-gate-001 \
   --gate-id phase1-gate-001 \

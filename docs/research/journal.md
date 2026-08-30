@@ -100504,3 +100504,32 @@ an explicitly scheduled clean-tree audit gate; until then the committed
 infrastructure must not be used to create or inspect a corpus.
 
 ---
+
+### [2026-08-30 12:06 EEST, journal block 3251] {#sealed-corpus #gate-preparation #cli #diagnosis #correction #no-corpus}
+
+**Scheduled-gate witness and earliest failure:** the first local sealed gate
+was scheduled against clean commit `d27dbad`.  Structural, ownership,
+recorder/runtime, dirty-tree, and process checks were green.  Preparation
+stopped before creating a key because the installed OpenSSL requires its byte
+count after `-out`.  The corrected command created one 32-byte mode-`0600`
+secret, but preparation again stopped before writing a gate root: the
+generator-attestation helper passed the string form of `import.meta.url` to
+`readFile()`, which treated `file:///...` as a literal pathname.
+
+**Decision, evidence, and falsified alternatives:** preserve the same secret
+and gate ID; no manifest, private plan, recipe commitment, or C trace exists,
+so correcting the invocation is not resampling.  Commit `fa06a27` converts the
+module URL through `fileURLToPath()`, and the operator documentation now uses
+the locally valid OpenSSL argument order.  Read-only checks confirmed the gate
+root remained absent after both failures.  It is false that either failed
+command produced a partial corpus, and false that retrying with a new key is
+necessary or acceptable.
+
+**Measured effect and next blocker:** only the external private key exists;
+no session identity or answer has been generated or inspected.  The next step
+is to rerun preparation once with that same key and gate ID, then inspect only
+the public manifest before starting the sequential recorder.  No scorer,
+evaluation, trace release, public regression, push, hidden measurement, or
+animation work ran; the game ownership map and public status are unchanged.
+
+---
