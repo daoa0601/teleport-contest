@@ -85,7 +85,7 @@ import {
     HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE,
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
-    MIRROR, POT_OBJECT_DETECTION, POT_BOOZE, APPLE, SHIELD_OF_REFLECTION,
+    MIRROR, POT_OBJECT_DETECTION, APPLE, SHIELD_OF_REFLECTION,
     SPE_BOOK_OF_THE_DEAD,
     AMULET_OF_LIFE_SAVING,
 } from './object_data.js';
@@ -272,7 +272,6 @@ const PM_HIGH_CLERIC = 276;
 const PM_ARCH_PRIEST = 350;
 const PM_ACOLYTE = 375;
 const PM_HUMAN_MUMMY = 192;
-const PM_ETTIN_MUMMY = 193;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_WRAITH = 230;
 const PM_QUASIT = 54;
@@ -348,10 +347,6 @@ const DIAMOND = 440;
 const RUBY = 441;
 const EMERALD = 445;
 const AMETHYST = 455;
-const WORTHLESS_WHITE_GLASS = 461;
-const WORTHLESS_RED_GLASS = 463;
-const WORTHLESS_GREEN_GLASS = 468;
-const WORTHLESS_VIOLET_GLASS = 469;
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
@@ -7378,68 +7373,6 @@ const KNI_GOAL_MAP = [
     '.......PPPP...',
 ].map(row => row.padEnd(76, ' '));
 
-const MINEND1_MAP = [
-    '------------------------------------------------------------------   ------',
-    '|                        |.......|     |.......-...|       |.....|.       |',
-    '|    ---------        ----.......-------...........|       ---...-S-      |',
-    '|    |.......|        |..........................-S-      --.......|      |',
-    '|    |......-------   ---........................|.       |.......--      |',
-    '|    |..--........-----..........................|.       -.-..----       |',
-    '|    --..--.-----........-.....................---        --..--          |',
-    '|     --..--..| -----------..................---.----------..--           |',
-    '|      |...--.|    |..S...S..............---................--            |',
-    '|     ----..-----  ------------........--- ------------...---             |',
-    '|     |.........--            ----------              ---...-- -----      |',
-    '|    --.....---..--                           --------  --...---...--     |',
-    '| ----..-..-- --..---------------------      --......--  ---........|     |',
-    '|--....-----   --..-..................---    |........|    |.......--     |',
-    '|.......|       --......................S..  --......--    ---..----      |',
-    '|--.--.--        ----.................---     ------..------...--         |',
-    '| |....S..          |...............-..|         ..S...........|          |',
-    '--------            --------------------           ------------------------',
-];
-
-const MINEND2_MAP = [
-    '---------------------------------------------------------------------------',
-    '|...................................................|                     |',
-    '|.|---------S--.--|...|--------------------------|..|                     |',
-    '|.||---|   |.||-| |...|..........................|..|                     |',
-    '|.||...| |-|.|.|---...|.............................|                ..   |',
-    '|.||...|-|.....|....|-|..........................|..|.               ..   |',
-    '|.||.....|-S|..|....|............................|..|..                   |',
-    '|.||--|..|..|..|-|..|----------------------------|..|-.                   |',
-    '|.|   |..|..|....|..................................|...                  |',
-    '|.|   |..|..|----|..-----------------------------|..|....                 |',
-    '|.|---|..|--|.......|----------------------------|..|.....                |',
-    '|...........|----.--|......................|     |..|.......              |',
-    '|-----------|...|.| |------------------|.|.|-----|..|.....|..             |',
-    '|-----------|.{.|.|--------------------|.|..........|.....|....           |',
-    '|...............|.S......................|-------------..-----...         |',
-    '|.--------------|.|--------------------|.|.........................       |',
-    '|.................|                    |.....................|........    |',
-    '---------------------------------------------------------------------------',
-];
-
-const MINEND3_MAP = [
-    ' - - - - - - - - - - -- -- - - . - - - - - - - - - -- - - -- - - - - . - - |',
-    '------...---------.-----------...-----.-------.-------     ----------------|',
-    ' - - - - - - - - - - - . - - - . - - - - - - - - - - -- - -- - . - - - - - |',
-    '------------.---------...-------------------------.---   ------------------|',
-    ' - - - - - - - - - - . . - - --- - . - - - - - - - - -- -- - - - - |.....| |',
-    '--.---------------.......------------------------------- ----------|.....S-|',
-    ' - - - - |.. ..| - ....... . - - - - |.........| - - - --- - - - - |.....| |',
-    '----.----|.....|------.......--------|.........|--------------.------------|',
-    ' - - - - |..{..| - - -.... . --- - -.S.........S - - - - - - - - - - - - - |',
-    '---------|.....|--.---...------------|.........|---------------------------|',
-    ' - - - - |.. ..| - - - . - - - - - - |.........| - --- . - - - - - - - - - |',
-    '----------------------...-------.---------------------...------------------|',
-    '---..| - - - - - - - - . --- - - - - - - - - - - - - - . - - --- - - --- - |',
-    '-.S..|----.-------.------- ---------.-----------------...----- -----.-------',
-    '---..| - - - - - - - -- - - -- . - - - - - . - - - . - . - - -- -- - - - -- ',
-    '-.S..|--------.---.---       -...---------------...{.---------   ---------  ',
-    '--|. - - - - - - - -- - - - -- . - - - --- - - - . . - - - - -- - - - - - - ',
-];
-
 function uniformRoomMinesField(lit = true) {
     // Pri-loca.lua deliberately issues a second level_init after its initial
     // solid fill.  With fg and bg both ROOM, mkmap()'s 2/5 fill loop changes
@@ -8108,362 +8041,12 @@ async function generateTower3(active) {
     finalizeTowerMap(context, active);
 }
 
-async function generateMinend1(active) {
-    const context = loadSpecialAsciiMap(MINEND1_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-
-    const places = luaShuffle([
-        [8, 16], [13, 7], [21, 8], [41, 14],
-        [50, 4], [50, 16], [66, 1],
-    ]);
-    active.places = places.map(point => [...point]);
-
-    const arrivalRoom = specialIrregularRoom(
-        context, 26, 1, OROOM, false, 0,
-    );
-    arrivalRoom.arrivalRoom = true;
-    for (const [x1, y1, x2, y2] of [
-        [20, 8, 21, 8], [23, 8, 25, 8],
-    ]) {
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++)
-                game.level.at(context.xstart + x, context.ystart + y).lit = false;
-    }
-    for (const [x, y] of [
-        [7, 16], [22, 8], [26, 8], [40, 14],
-        [50, 3], [51, 16], [66, 2],
-    ]) specialDoorAt(context, D_LOCKED, x, y);
-    specialStairAt(context, 36, 4, true);
-    specialNonDiggable(context);
-
-    const objectAtPlace = (otyp, placeIndex) => {
-        const [x, y] = places[placeIndex];
-        return specialObjectAt(context, otyp, x, y);
-    };
-    const mimicAtPlace = async (appearance, placeIndex) => {
-        const [x, y] = places[placeIndex];
-        return specialMonsterClassAt(context, S_MIMIC, x, y, {
-            kind: 'object', otyp: appearance,
-        });
-    };
-
-    objectAtPlace(DIAMOND, 6);
-    objectAtPlace(EMERALD, 6);
-    objectAtPlace(WORTHLESS_VIOLET_GLASS, 6);
-    await mimicAtPlace(LUCKSTONE, 6);
-
-    objectAtPlace(WORTHLESS_WHITE_GLASS, 0);
-    objectAtPlace(EMERALD, 0);
-    objectAtPlace(AMETHYST, 0);
-    await mimicAtPlace(LOADSTONE, 0);
-
-    objectAtPlace(DIAMOND, 1);
-    objectAtPlace(WORTHLESS_GREEN_GLASS, 1);
-    objectAtPlace(AMETHYST, 1);
-    await mimicAtPlace(FLINT, 1);
-
-    objectAtPlace(WORTHLESS_WHITE_GLASS, 2);
-    objectAtPlace(EMERALD, 2);
-    objectAtPlace(WORTHLESS_VIOLET_GLASS, 2);
-    await mimicAtPlace(TOUCHSTONE, 2);
-
-    objectAtPlace(WORTHLESS_RED_GLASS, 3);
-    objectAtPlace(RUBY, 3);
-    objectAtPlace(LOADSTONE, 3);
-    objectAtPlace(RUBY, 4);
-    objectAtPlace(WORTHLESS_RED_GLASS, 4);
-    const luckstone = objectAtPlace(LUCKSTONE, 4);
-    if (luckstone) {
-        luckstone.blessed = false;
-        luckstone.cursed = false;
-        luckstone.achievement = true;
-    }
-
-    for (let count = 0; count < 7; count++)
-        specialObjectOfClass(context, GEM_CLASS);
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(context, TOOL_CLASS);
-    for (let count = 0; count < 3; count++) specialObject(context);
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-
-    for (const mndx of [
-        PM_GNOME_RULER,
-        PM_GNOME_LEADER, PM_GNOME_LEADER, PM_GNOME_LEADER,
-    ]) await specialExplicitMonster(
-        context, mndx, null, { randomGender: false },
-    );
-    for (const mndx of [
-        PM_GNOMISH_WIZARD, PM_GNOMISH_WIZARD,
-        PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME,
-        PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME,
-        PM_HOBBIT, PM_HOBBIT,
-        PM_DWARF, PM_DWARF, PM_DWARF,
-    ]) await specialExplicitMonster(context, mndx);
-    await specialMonsterOfClass(context, 8); // S_HUMANOID
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
-async function generateMinend2(active) {
-    // Lua source: dat/minend-2.lua, "Gnome King's Wine Cellar".
-    const context = loadSpecialAsciiMap(MINEND2_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-
-    const terrainAt = (x, y, typ) => {
-        const loc = game.level.at(context.xstart + x, context.ystart + y);
-        if (!loc) return;
-        loc.typ = typ;
-        loc.horizontal = typ === HWALL;
-    };
-    if (rn2(100) < 50) {
-        terrainAt(55, 14, HWALL);
-        terrainAt(56, 14, HWALL);
-        terrainAt(61, 15, VWALL);
-        terrainAt(52, 5, SDOOR);
-        specialDoorAt(context, D_LOCKED, 52, 5);
-    }
-    if (rn2(100) < 50) {
-        terrainAt(18, 1, VWALL);
-        for (let x = 7; x <= 8; x++)
-            for (let y = 12; y <= 13; y++) terrainAt(x, y, ROOM);
-    }
-    if (rn2(100) < 50) {
-        terrainAt(49, 4, VWALL);
-        terrainAt(21, 5, ROOM);
-    }
-    if (rn2(100) < 50) {
-        if (rn2(100) < 50) terrainAt(22, 1, VWALL);
-        else {
-            terrainAt(50, 7, HWALL);
-            terrainAt(51, 7, HWALL);
-        }
-    }
-
-    // region_islev=1 makes these level coordinates, not map-fragment
-    // coordinates.  flip_level() transforms the region with the map.
-    const arrivalRegion = { lx: 23, ly: 3, hx: 48, hy: 16 };
-    active.downTeleportRegion = arrivalRegion;
-    active.upTeleportRegion = { ...arrivalRegion };
-
-    const fountain = game.level.at(
-        context.xstart + 14, context.ystart + 13,
-    );
-    if (fountain) {
-        fountain.typ = FOUNTAIN;
-        game.level.flags.nfountains++;
-    }
-    const setLit = (x1, y1, x2, y2, lit) =>
-        lightCastleSelection(context, x1, y1, x2, y2, lit);
-    setLit(23, 3, 48, 6, true);
-    setLit(21, 6, 22, 6, true);
-    setLit(14, 4, 14, 4, false);
-    setLit(10, 5, 14, 8, false);
-    setLit(10, 9, 11, 9, false);
-    setLit(15, 8, 16, 8, false);
-
-    specialDoorAt(context, D_LOCKED, 12, 2);
-    specialDoorAt(context, D_LOCKED, 11, 6);
-    specialStairAt(context, 36, 4, true);
-
-    const markNonDiggable = (x1, y1, x2, y2) => {
-        for (let x = x1; x <= x2; x++)
-            for (let y = y1; y <= y2; y++) {
-                const loc = game.level.at(
-                    context.xstart + x, context.ystart + y,
-                );
-                if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
-                    || loc.typ === IRONBARS))
-                    loc.wall_info |= W_NONDIGGABLE;
-            }
-    };
-    markNonDiggable(0, 0, 52, 17);
-    markNonDiggable(53, 0, 74, 0);
-    markNonDiggable(53, 17, 74, 17);
-    markNonDiggable(74, 1, 74, 16);
-    markNonDiggable(53, 7, 55, 7);
-    markNonDiggable(53, 14, 61, 14);
-
-    const engravingAt = (x, y, text) => make_engr_at(
-        context.xstart + x, context.ystart + y,
-        text, null, 0, ENGRAVE,
-    );
-    engravingAt(
-        12, 3, "You are now entering the Gnome King's wine cellar.",
-    );
-    engravingAt(12, 4, 'Trespassers will be persecuted!');
-
-    const objectClassAt = (objectClass, x, y) => mkobj_at(
-        objectClass, context.xstart + x, context.ystart + y, true,
-    );
-    specialObjectAt(context, POT_BOOZE, 10, 7);
-    specialObjectAt(context, POT_BOOZE, 10, 7);
-    objectClassAt(POTION_CLASS, 10, 7);
-    specialObjectAt(context, POT_BOOZE, 10, 8);
-    specialObjectAt(context, POT_BOOZE, 10, 8);
-    objectClassAt(POTION_CLASS, 10, 8);
-    specialObjectAt(context, POT_BOOZE, 10, 9);
-    specialObjectAt(context, POT_BOOZE, 10, 9);
-    specialObjectAt(context, POT_OBJECT_DETECTION, 10, 9);
-
-    for (const [otyp, x, y] of [
-        [DIAMOND, 69, 4], [null, 69, 4],
-        [DIAMOND, 69, 4], [null, 69, 4],
-        [EMERALD, 70, 4], [null, 70, 4],
-        [EMERALD, 70, 4], [null, 70, 4],
-        [EMERALD, 69, 5], [null, 69, 5],
-        [RUBY, 69, 5], [null, 69, 5],
-        [RUBY, 70, 5], [AMETHYST, 70, 5],
-        [null, 70, 5], [AMETHYST, 70, 5],
-    ]) {
-        if (otyp == null) objectClassAt(GEM_CLASS, x, y);
-        else specialObjectAt(context, otyp, x, y);
-    }
-    const luckstone = specialObjectAt(context, LUCKSTONE, 70, 5);
-    if (luckstone) {
-        luckstone.blessed = false;
-        luckstone.cursed = false;
-        luckstone.achievement = true;
-    }
-
-    for (let count = 0; count < 7; count++)
-        specialObjectOfClass(context, GEM_CLASS);
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(context, TOOL_CLASS);
-    for (let count = 0; count < 3; count++) specialObject(context);
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-
-    for (const mndx of [
-        PM_GNOME_RULER,
-        PM_GNOME_LEADER, PM_GNOME_LEADER, PM_GNOME_LEADER,
-    ]) await specialExplicitMonster(
-        context, mndx, null, { randomGender: false },
-    );
-    for (const mndx of [
-        PM_GNOMISH_WIZARD, PM_GNOMISH_WIZARD,
-        PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME,
-        PM_GNOME, PM_GNOME, PM_GNOME, PM_GNOME,
-        PM_HOBBIT, PM_HOBBIT,
-        PM_DWARF, PM_DWARF, PM_DWARF,
-    ]) await specialExplicitMonster(context, mndx);
-    await specialMonsterOfClass(context, 8); // S_HUMANOID
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.downTeleportRegion = flipSpecialRegion(
-        active.downTeleportRegion,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-}
-
-async function generateMinend3(active) {
-    fillSpecialSolid(HWALL, active.defaultLit);
-    const context = loadSpecialAsciiMap(MINEND3_MAP, active.defaultLit);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.nommap = true;
-
-    const places = luaShuffle([[1, 15], [68, 6], [1, 13]]);
-    active.places = places.map(point => [...point]);
-
-    const markNonDiggable = (x1, y1, x2, y2) => {
-        for (let x = x1; x <= x2; x++) {
-            for (let y = y1; y <= y2; y++) {
-                const loc = game.level.at(
-                    context.xstart + x, context.ystart + y,
-                );
-                if (loc && (IS_STWALL(loc.typ) || loc.typ === TREE
-                    || loc.typ === IRONBARS)) {
-                    loc.wall_info |= W_NONDIGGABLE;
-                }
-            }
-        }
-    };
-    markNonDiggable(67, 3, 73, 7);
-    markNonDiggable(0, 12, 2, 16);
-
-    for (const [x, y] of [[12, 8], [51, 15]]) {
-        const fountain = game.level.at(
-            context.xstart + x, context.ystart + y,
-        );
-        if (fountain) fountain.typ = FOUNTAIN;
-    }
-    game.level.flags.nfountains += 2;
-    setSpecialRegionLighting(context, 0, 0, 75, 16, false);
-    setSpecialRegionLighting(context, 38, 6, 46, 10, true);
-    for (const [x, y] of [
-        [37, 8], [47, 8], [73, 5], [2, 15],
-    ]) specialDoorAt(context, D_CLOSED, x, y);
-    specialMazeWalk(context, 36, 8, 'west', ROOM);
-    specialStairAt(context, 42, 8, true);
-    wallifyMap(
-        context.xstart - 1,
-        context.ystart - 1,
-        context.xstart + context.width + 1,
-        context.ystart + context.height + 1,
-    );
-
-    for (const otyp of [
-        DIAMOND, null, DIAMOND, null,
-        EMERALD, null, EMERALD, null,
-        EMERALD, null, RUBY, null,
-        RUBY, AMETHYST, null, AMETHYST,
-    ]) {
-        if (otyp == null) specialObjectOfClass(context, GEM_CLASS);
-        else specialObjectOfType(context, otyp);
-    }
-    const [luckX, luckY] = places[1];
-    const luckstone = specialObjectAt(
-        context, LUCKSTONE, luckX, luckY, { named: true },
-    );
-    if (luckstone) {
-        luckstone.blessed = false;
-        luckstone.cursed = false;
-        luckstone.achievement = true;
-    }
-    const [flintX, flintY] = places[0];
-    specialObjectAt(
-        context, FLINT, flintX, flintY, { named: true },
-    );
-    for (let count = 0; count < 5; count++)
-        specialObjectOfClass(context, SCROLL_CLASS);
-    for (let count = 0; count < 4; count++)
-        specialObjectOfClass(context, SPBOOK_CLASS);
-    for (let count = 0; count < 3; count++) specialObject(context);
-
-    for (let count = 0; count < 7; count++) await specialTrap(context);
-    await specialTrapAt(context, LEVEL_TELEP, luckX, luckY);
-    await specialTrapAt(context, LEVEL_TELEP, flintX, flintY);
-
-    for (let count = 0; count < 5; count++)
-        await specialMonsterOfClass(context, 39); // S_MUMMY
-    await specialExplicitMonster(context, PM_ETTIN_MUMMY);
-    await specialMonsterOfClass(context, 48); // S_VAMPIRE
-    for (let count = 0; count < 5; count++)
-        await specialMonsterOfClass(context, 52); // S_ZOMBIE
-    await specialMonsterOfClass(context, 48); // S_VAMPIRE
-    for (let count = 0; count < 4; count++)
-        await specialMonsterOfClass(context, 5); // S_EYE
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
-const MINES_END_GENERATORS = Object.freeze([
-    null, generateMinend1, generateMinend2, generateMinend3,
-]);
-
 export async function generateMinesEnd(active) {
-    const generator = MINES_END_GENERATORS[active?.variant];
-    if (!generator) {
+    if (active?.variant < 1 || active?.variant > 3) {
         throw new RangeError(`unknown Mines' End layout ${active?.variant}`);
     }
-    await generateSpecialAndFixup(generator, active);
+    active.file = `minend-${active.variant}.lua`;
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 function specialRoomContext(room) {
@@ -10810,6 +10393,12 @@ async function createLuaObject(
     } else if (options.buc === 'cursed') {
         object.blessed = false;
         object.cursed = true;
+    } else if (options.buc === 'not-cursed') {
+        object.cursed = false;
+    } else if (options.buc === 'not-uncursed') {
+        blessorcurse(object, 1);
+    } else if (options.buc === 'not-blessed') {
+        object.blessed = false;
     }
     if (Number.isInteger(options.spe)) object.spe = options.spe;
     if (Object.hasOwn(options, 'trapped'))
@@ -10827,6 +10416,19 @@ async function createLuaObject(
             ...(object.oextra || {}), oname: String(options.name),
         };
     }
+    if (options.achievement) {
+        object.achievement = true;
+        object.nomerge = true;
+        if (!game.context) game.context = {};
+        if (!game.context.achieveo) game.context.achieveo = {};
+        const prototype = game._activeSpecialLevel?.prototype;
+        const prefix = prototype === 'minend' ? 'mines'
+            : prototype === 'soko1' ? 'soko' : null;
+        if (prefix && !game.context.achieveo[`${prefix}_prize_oid`]) {
+            game.context.achieveo[`${prefix}_prize_oid`] = object.o_id;
+            game.context.achieveo[`${prefix}_prize_otyp`] = object.otyp;
+        }
+    }
     if (Object.hasOwn(options, 'contents')) object.contents = [];
     if (parentContainer) {
         addSpecialContainerObject(parentContainer, object);
@@ -10835,6 +10437,28 @@ async function createLuaObject(
     if (options.contents && typeof options.contents === 'object')
         await invokeContents(options.contents, object);
     return object;
+}
+
+function applyLuaMonsterAppearance(monster, appearance) {
+    if (!monster || !appearance) return;
+    if (appearance.kind === 'object') {
+        monster.m_ap_type = M_AP_OBJECT;
+        monster.mappearance = appearance.type;
+        return;
+    }
+    if (appearance.kind === 'monster') {
+        monster.m_ap_type = M_AP_MONSTER;
+        monster.mappearance = appearance.type;
+        return;
+    }
+    const terrain = {
+        fountain: FOUNTAIN,
+        'staircase down': STAIRS,
+    }[appearance.name];
+    if (appearance.kind !== 'terrain' || terrain == null)
+        throw new Error(`unsupported Lua monster appearance ${appearance.name}`);
+    monster.m_ap_type = M_AP_FURNITURE;
+    monster.mappearance = terrain;
 }
 
 async function createLuaMonster(context, options) {
@@ -10885,12 +10509,7 @@ async function createLuaMonster(context, options) {
                 peaceful, asleep, ...creation,
             });
     }
-    if (monster && options.appear_as === 'ter:fountain') {
-        monster.m_ap_type = M_AP_FURNITURE;
-        monster.mappearance = FOUNTAIN;
-    } else if (monster && options.appear_as) {
-        throw new Error(`unsupported Lua monster appearance ${options.appear_as}`);
-    }
+    applyLuaMonsterAppearance(monster, options.appearance);
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     return monster;
@@ -11203,11 +10822,7 @@ function addBuriedObject(object, x, y) {
 }
 
 function consumeSpecialMonsterAlignment() {
-    if (!game._activeSpecialLevel?.monsterAlignment) {
-        rn2(3);
-        return;
-    }
-    if (rn2(100) >= 80) rn2(3);
+    inducedAlignment(80);
 }
 
 function namedMonsterNeedsGenderDraw(mndx) {
@@ -13388,6 +13003,7 @@ async function makelevel() {
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
         const luaOwnedSpecial = prototype === 'bigrm'
+            || prototype === 'minend'
             || prototype === 'medusa'
             || prototype === 'castle'
             || prototype === 'knox'

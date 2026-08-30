@@ -158,6 +158,23 @@ function monsterOptions(id, x, y) {
     if (options.class && monsterClass < 1)
         throw new Error(`unknown Lua monster class ${options.class}`);
     const namedMonster = options.id ? monsterTypeForName(options.id) : null;
+    let appearance = null;
+    if (typeof options.appear_as === 'string') {
+        const separator = options.appear_as.indexOf(':');
+        if (separator < 1)
+            throw new Error(`unknown Lua monster appearance ${options.appear_as}`);
+        const kind = options.appear_as.slice(0, separator);
+        const name = options.appear_as.slice(separator + 1);
+        if (kind === 'obj') {
+            appearance = { kind: 'object', type: objectTypeForName(name) };
+        } else if (kind === 'mon') {
+            appearance = { kind: 'monster', type: monsterTypeForName(name).type };
+        } else if (kind === 'ter') {
+            appearance = { kind: 'terrain', name };
+        } else {
+            throw new Error(`unknown Lua monster appearance ${options.appear_as}`);
+        }
+    }
     return {
         ...options,
         point: point(options.coord)
@@ -166,6 +183,7 @@ function monsterOptions(id, x, y) {
         monsterClass,
         monsterType: namedMonster?.type ?? null,
         nameFemale: namedMonster?.female ?? null,
+        appearance,
     };
 }
 
@@ -267,6 +285,23 @@ function goldOptions(value, x, y) {
     };
 }
 
+function callTerrain(operations, args) {
+    if (args.length === 3)
+        return operations.terrainAt(args[0], args[1], String(args[2]));
+    if (args[0] instanceof LuaTable) {
+        const options = tableOptions(args[0]);
+        const location = point(options.coord)
+            ?? point(options.x, options.y)
+            ?? point(options);
+        const type = args.length === 1 ? options.typ : args[1];
+        if (location && type != null)
+            return operations.terrainAt(location.x, location.y, String(type));
+    }
+    return operations.terrain(
+        unwrapSelection(args[0]), String(args[1]),
+    );
+}
+
 export function mapOrigin(options, width, height, levelInitialized) {
     const coordinate = Array.isArray(options.coord)
         ? options.coord : [options.x, options.y];
@@ -330,11 +365,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
         map: async value => wrapSelection(await operations.map(
             value instanceof LuaTable ? tableOptions(value) : String(value),
         )),
-        terrain: (...args) => args.length === 3
-            ? operations.terrainAt(args[0], args[1], String(args[2]))
-            : operations.terrain(
-                unwrapSelection(args[0]), String(args[1]),
-            ),
+        terrain: (...args) => callTerrain(operations, args),
         replace_terrain: value => {
             const options = tableOptions(value);
             return operations.replaceTerrain({
