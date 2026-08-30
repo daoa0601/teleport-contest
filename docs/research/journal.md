@@ -98342,3 +98342,94 @@ hidden measurement ran; the next source debt remains block3195's trace-shaped
 Samurai lichen/door branches or the next ordered role fallback.
 
 ---
+
+### [2026-08-30 05:06 EEST, journal block 3197] {#bridge-free #samurai #uhitm #two-weapon #door #vision-memory #trace-removal #change-detector #focused-regression #architecture #process-safety}
+
+**Witness, earliest divergence, and prediction:** after block3196's scheduler
+cleanup, `cmd.js` still had two role-shaped owners: Samurai plus lichen158 paid
+an eighteen-call RNG transcript, deleted the target regardless of HP, created a
+raw corpse, fixed experience at4, and painted the miss/kill line; Samurai plus
+door coordinate `(43,18)` erased adjacent memory at `(43,17)` and `(43,19)`.
+Cross-role metamorphic witnesses predicted that a high-HP lichen and the same
+door/map state must have identical outcomes under Tourist and Samurai.  The
+first run failed **3/8**: the audit named both predicates, the Samurai lichen
+was dead while the Tourist lichen retained100 HP, and only the Samurai door
+lost its adjacent memory.
+
+**C evidence and implementation decision:** `hack.c:do_attack()` enters
+`uhitm.c:hitum()` without a role/species classifier.  `hitum()` attempts the
+primary weapon, runs its passive boundary, then attempts `uswapwep` only when
+two-weapon mode remains active and the same live target remains at the same
+location.  An off-hand miss has no second passive call; an off-hand hit does.
+`weapon.c` applies the worse underlying/two-weapon skill, trains
+`P_TWO_WEAPON_COMBAT`, and `hmon_hitmon_dmg_recalc()` uses three quarters of
+the Strength bonus for each strike.  `lock.c:doopen_indir()` sets `D_ISOPEN`
+and delegates memory projection to `vision.c`; it has no role-coordinate
+deletion.  Both predicates were deleted.  Shared hero melee now selects the
+live primary/off-hand object, owns the second-strike eligibility boundary,
+dual-wield skill/damage/training, primary-only metabolism/exercise/caitiff,
+passive order, and dual-wield knockback exclusion.
+
+**Red discriminator and measured effect:** deleting only the trace branches
+made the fixture-disabled seed0107 boundary red at **2,846/2,902 RNG** and
+**43/98 screens**, with the first bounded divergence at input40: JavaScript
+stopped after the primary katana miss while C continued with a wakizashi
+strike.  A fresh source-derived two-weapon witness was independently red
+because it produced one attack outcome instead of a primary miss followed by
+an off-hand hit.  After the shared implementation, the fresh cross-role melee,
+door, Samurai scheduling, and bridge-policy gate passes **9/9**.  The managed
+single-session bridge-free regression returns to exact **2,902/2,902 RNG** and
+**98/98 screens, cells, and cursors**.  This is public regression evidence,
+not sealed or hidden acceptance.
+
+**Falsified hypotheses, test quality, and next blocker:** deleting the lichen
+shortcut alone did not reveal a lichen-specific rule; it exposed missing
+generic two-weapon scheduling.  Forced public death was not a safe temporary
+combat approximation, and door memory was not role-owned.  The new outcomes
+compare equal worlds across roles and visible state/messages rather than
+copying complete RNG logs, private helper calls, or callback order.  The
+Samurai scheduler witnesses also dropped assertions about `_heroActionSeq`,
+`_lastMonsterScan`, `_samuraiTimedActions`, and the prayer counter because the
+bridge audit and observable turn/prayer outcomes already discriminate those
+mechanisms.  Special melee modifiers, passive paralysis/life-saving,
+between-strike weapon destruction, broader door/vision states, other role
+fallbacks, and the sealed stratum remain open.  No full Contest corpus, normal
+scorer, sealed trace, push, publication, official hidden measurement, or
+animation work ran.
+
+---
+
+### [2026-08-30 05:08 EEST, journal block 3198] {#samurai #two-weapon #door-memory #test-quality #change-detector #behavioral-lane #ownership #structural-gate #process-safety}
+
+**Post-implementation and test-quality gate:** the scheduler, melee, and door
+witnesses are now separated by source subsystem.  `samurai_scheduler.test.js`
+contains only live turn/prayer outcomes; `hero_melee.test.js` contains the two
+cross-role combat outcomes; and `door_open.test.js` contains the cross-role
+door/memory outcome.  A small shared live-command state builder removes setup
+duplication without introducing a production injection seam.  The combat and
+door tests assert world state and presentation only; they do not inspect RNG
+logs, callback order, private scan history, replay output, or deleted helper
+state.
+
+**Measured effect and mechanical evidence:** one guarded default behavioral
+run passed all **381** named tests across **41** files and exited normally.  The
+focused cross-role/scheduler/bridge-policy set passes **9/9**.  The bridge audit
+passes across **129 production files, 15 guarded modules, and 19 fixture
+modules**; the behavioral-lane audit passes all **41** default files with no
+recorded-session or public-parity dependency.  Ownership generation/checking,
+registry JSON, changed JavaScript syntax, and diff hygiene pass.  The registry
+now has **34** mechanically classified subsystems:2 implemented and32 partial,
+including distinct hero-melee/two-weapon and door/vision-memory entries.
+
+**Scope and next blocker:** the test-lane audit remains structural, not a proof
+that every old exact-RNG assertion is semantically independent.  Exact RNG may
+remain in the behavioral lane only when derived from C/Lua and needed as scored
+state, not when it merely mirrors JavaScript decomposition.  The tracked
+public-regression lane was not run; the three user-owned untracked regression
+files remain unstaged and outside both the default lane and configured public
+allowlist.  No full Contest corpus, normal scorer, sealed trace, push,
+publication, official hidden measurement, or animation work ran.  The next
+implementation blocker remains the next ordered role fallback or a broader
+source-owned melee/door slice, not recovery of a public-only metric.
+
+---

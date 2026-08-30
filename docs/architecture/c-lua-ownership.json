@@ -387,16 +387,50 @@
       "status": "partial",
       "source": {
         "cFiles": ["src/weapon.c", "src/uhitm.c", "src/attrib.c"],
-        "cSymbols": ["dmgval", "dbon", "hmon_hitmon_weapon", "hmon_hitmon_dmg_recalc"],
+        "cSymbols": ["dmgval", "dbon", "hmon_hitmon_weapon", "hmon_hitmon_dmg_recalc", "weapon_hit_bonus", "weapon_dam_bonus", "uwep_skill_type"],
         "luaFiles": [],
         "luaSymbols": []
       },
       "javascriptOwners": ["js/weapon_damage.js", "js/swallowed_throw.js", "js/cmd.js"],
       "dependencies": ["rng-core"],
       "bridgeIds": [],
-      "acceptanceWitnesses": ["test/swallowed_throw.test.js: ordinary dagger, minimal pick-axe, and multi-die two-handed sword prove small-target physical dice, enchantment/erosion boundary, Strength and skill bonuses, training cadence, and survivor acquisition with zero bridge usage", "test/run_scheduler.public-regression.js: exceptional Strength values retain NetHack internal encoding across the shared damage-bonus owner"],
+      "acceptanceWitnesses": ["test/swallowed_throw.test.js: ordinary dagger, minimal pick-axe, and multi-die two-handed sword prove small-target physical dice, enchantment/erosion boundary, Strength and skill bonuses, training cadence, and survivor acquisition with zero bridge usage", "test/hero_melee.test.js: a role-independent primary-miss/off-hand-hit outcome composes the shared physical dice, dual-wield skill, reduced Strength bonus, and two-weapon training owners", "test/run_scheduler.public-regression.js: exceptional Strength values retain NetHack internal encoding across the shared damage-bonus owner"],
       "lastSealedGate": null,
-      "openGap": "The ordinary physical damage table, enchantment, erosion, and Strength bonus core are shared, and swallowed guaranteed-survivor weapon plus projectile callers compose live launcher/weapon skill damage, Strength selection, and training. Target-specific blessed, silver, wooden, artifact-light, shade, thick-hide, axe, poison, and special-monster modifiers are deliberately excluded; melee and several map projectile callers still retain partial duplicated damage ownership, and no sealed stratum has run."
+      "openGap": "The ordinary physical damage table, enchantment, erosion, Strength bonus, weapon skill, and two-weapon skill projections are shared. Swallowed weapon/projectile callers and ordinary hero melee compose those owners, including the three-quarter dual-wield Strength adjustment and P_TWO_WEAPON_COMBAT training. Target-specific blessed, silver, wooden, artifact-light, shade, thick-hide, axe, poison, and special-monster modifiers are deliberately excluded; several map projectile callers still retain partial duplicated damage ownership, and no sealed stratum has run."
+    },
+    {
+      "id": "hero-melee-two-weapon",
+      "label": "Hero melee and two-weapon strike scheduling",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/hack.c", "src/uhitm.c", "src/weapon.c", "src/eat.c"],
+        "cSymbols": ["do_attack", "hitum", "find_roll_to_hit", "known_hitum", "hmon", "passive", "gethungry", "weapon_hit_bonus", "weapon_dam_bonus", "uwep_skill_type"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/cmd.js", "js/skills.js", "js/weapon_damage.js", "js/hunger.js"],
+      "dependencies": ["rng-core", "physical-weapon-damage"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/hero_melee.test.js: identical Tourist and Samurai world outcomes reject role/species branching; a valid two-weapon state produces a primary miss followed by a damaging off-hand hit without asserting an implementation call transcript", "scripts/audit-bridge-free.mjs: rejects the removed Samurai-plus-lichen production predicate", "single fixture-disabled bridge-free seed0107 regression: RNG, screens, cells, and cursors 2902/2902 and 98/98; public regression only"],
+      "lastSealedGate": null,
+      "openGap": "Ordinary equipped primary melee and a surviving valid two-weapon target now share hit selection, off-hand scheduling, weapon selection, conduct, damage, skill training, dual-wield Strength, survivor, kill, and passive boundaries. Unarmed double-punch, confirmation override, passive paralysis and life-saving interruption, weapon destruction between strikes, special artifact/poison/material damage, displacement, swallowed melee variants, complete peaceful/shop/guard response, save/restore, and a sealed stratum remain open."
+    },
+    {
+      "id": "door-open-vision-memory",
+      "label": "Door opening and adjacent vision memory",
+      "status": "partial",
+      "source": {
+        "cFiles": ["src/hack.c", "src/lock.c", "src/vision.c", "src/display.c"],
+        "cSymbols": ["domove", "doopen_indir", "feel_newsym", "vision_recalc", "newsym"],
+        "luaFiles": [],
+        "luaSymbols": []
+      },
+      "javascriptOwners": ["js/cmd.js", "js/vision.js", "js/display.js"],
+      "dependencies": ["rng-core", "hero-sensory-properties", "tty-display"],
+      "bridgeIds": [],
+      "acceptanceWitnesses": ["test/door_open.test.js: identical Tourist and Samurai outcomes open the same door while preserving both pre-existing adjacent memory cells at the former trace coordinate", "scripts/audit-bridge-free.mjs: rejects the removed Samurai-plus-coordinate production predicate"],
+      "lastSealedGate": null,
+      "openGap": "The ordinary auto-open transaction mutates D_ISOPEN and delegates projection to shared vision/display owners without role-and-coordinate memory deletion. Locked, trapped, obstructed, secret, rogue-level, blind, tactile, manual-open, shop, pet, runmode, save/restore, and sealed strata remain open."
     },
     {
       "id": "projectile-hit-lifecycle",
@@ -511,11 +545,11 @@
         "luaSymbols": []
       },
       "javascriptOwners": ["js/allmain.js", "js/monmove.js", "js/pray.js"],
-      "dependencies": ["turn-scheduler", "startup-role-inventory"],
+      "dependencies": ["turn-scheduler", "startup-role-inventory", "hero-melee-two-weapon", "door-open-vision-memory"],
       "bridgeIds": [],
-      "acceptanceWitnesses": ["test/samurai_scheduler.test.js: a fresh seed in normal runner mode sends wait and #pray through the shared hero-ration, pet-scan, global-maintenance, negative-multi, and prayer_done owners without fastforward.turn or a Samurai replay counter", "scripts/audit-bridge-free.mjs: mechanically rejects the removed Samurai RNG tables, coordinate tables, replay functions, altar classifier, prayer transcript, and timed-action counter", "test/bridge_free.public-regression.js: seed0017 pet, run, prayer, RNG, screen, and cursor parity with zero bridge hits; public regression only"],
+      "acceptanceWitnesses": ["test/samurai_scheduler.test.js: a fresh seed in normal runner mode sends wait and #pray through the shared hero-ration, pet-scan, global-maintenance, negative-multi, and prayer_done owners without fastforward.turn or a Samurai replay counter", "test/hero_melee.test.js and test/door_open.test.js: the former lichen and doorway trace coordinates now have cross-role world-outcome witnesses through shared melee, two-weapon, door, vision, and display owners", "scripts/audit-bridge-free.mjs: mechanically rejects the removed Samurai RNG tables, coordinate tables, replay functions, altar classifier, prayer transcript, timed-action counter, lichen predicate, and doorway predicate", "test/bridge_free.public-regression.js: seed0017 pet, run, prayer, RNG, screen, and cursor parity with zero bridge hits; public regression only", "single fixture-disabled bridge-free seed0107 regression: two-weapon enhancement carrier returns to exact 2902/2902 RNG and 98/98 screens/cells/cursors; public regression only"],
       "lastSealedGate": null,
-      "openGap": "Samurai now uses the shared source movement-ration, live fmon/dog_move scan, once-per-turn maintenance, hero_seq, negative-multi, and prayer_done continuation in both bridge-free and normal runner modes. The aggregate Samurai RNG ranges, hard-coded hero/pet path tables, altar classifier, timed-action counter, and prayer transcript are deleted. Role-and-coordinate-specific lichen combat and doorway-memory branches in cmd.js remain trace-shaped debt outside this scheduler slice; wider candidates, combat, terrain, interruption, divine outcomes, save/restore, and a sealed stratum remain open."
+      "openGap": "Samurai now uses the shared source movement-ration, live fmon/dog_move scan, once-per-turn maintenance, hero_seq, negative-multi, and prayer_done continuation in both bridge-free and normal runner modes. The aggregate Samurai RNG ranges, hard-coded hero/pet path tables, altar classifier, timed-action counter, prayer transcript, lichen combat branch, and doorway-memory branch are deleted. The lichen carrier now reaches shared primary/off-hand melee and the door carrier reaches shared door/vision ownership. Wider pet candidates, combat modifiers, terrain, interruption, divine outcomes, save/restore, and a sealed stratum remain open."
     },
     {
       "id": "rogue-actor-scheduling",

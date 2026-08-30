@@ -38062,3 +38062,68 @@ Samurai is still partial.  Role-and-coordinate-specific lichen combat and
 doorway-memory branches remain in `cmd.js`, and wider pet candidates, combat,
 terrain, interruption, divine outcomes, save/restore, and sealed strata have
 not yet been accepted.  Lua owns none of this scheduler or prayer runtime.
+
+## 1013. Samurai lichen and doorway traces collapse into shared source owners
+
+```mermaid
+flowchart TD
+    A[do_attack] --> B[gethungry once]
+    B --> C[hitum primary weapon]
+    C --> D[find_roll_to_hit and known_hitum]
+    D --> E[primary passive]
+    E --> F{two-weapon mode, target alive and unmoved, hero able to act?}
+    F -- yes --> G[hitum off-hand weapon]
+    G --> H[off-hand hit only: passive]
+    F -- no --> I[finish attack]
+    H --> I
+
+    J[domove into closed door] --> K[doopen_indir sets D_ISOPEN]
+    K --> L[feel_newsym and vision_recalc]
+    L --> M[newsym projects remembered terrain]
+
+    N[Samurai plus lichen predicate] -. deleted .-> C
+    O[Samurai plus coordinate predicate] -. deleted .-> K
+```
+
+`uhitm.c:hitum()` owns one attack transaction rather than a role-specific
+combat transcript.  It pays metabolism before entering the primary strike,
+calls `passive()` after that primary attempt even when it misses, and then
+attempts the off-hand weapon only while two-weapon mode remains valid, the
+hero remains able to act, and the same living target still occupies the same
+square.  The second strike uses `uswapwep`; its miss does not call `passive()`,
+while its hit does.  `weapon.c` selects the worse of the underlying weapon and
+two-weapon skills, applies the dedicated accuracy and damage penalties, trains
+`P_TWO_WEAPON_COMBAT`, and `hmon_hitmon_dmg_recalc()` applies three quarters of
+the ordinary Strength bonus to each dual-wield hit.
+
+The JavaScript melee owner now follows that shared boundary.  It selects the
+actual primary or off-hand object for artifact, accuracy, damage, conduct, and
+presentation; pays hunger, Strength exercise, and caitiff handling only for
+the primary attempt; suppresses ordinary weapon knockback during dual wield;
+and schedules the off-hand attempt from live target and hero state.  The
+former Samurai/lichen branch, its eighteen-call transcript, forced death,
+raw corpse, fixed experience, and painted message are deleted.
+
+`lock.c:doopen_indir()` similarly has no role or map-coordinate exception.
+After setting `D_ISOPEN`, the normal vision and display owners determine what
+adjacent memory remains.  The former `(43,18)` Samurai branch which erased the
+two neighboring remembered glyphs is deleted.
+
+The independent tests do not preserve either old mechanism.  They construct
+the same world under Tourist and Samurai roles and require equal observable
+world outcomes.  One high-HP lichen remains alive after an ordinary miss; a
+valid two-weapon setup produces a primary miss followed by a damaging off-hand
+hit; and the door opens while both neighboring memory cells remain present.
+They intentionally do not compare the implementation's full RNG transcript,
+private scheduler logs, helper calls, or callback order.  A mechanical audit
+separately rejects reintroduction of the two trace-shaped production
+predicates.
+
+The fixture-disabled bridge-free seed0107 carrier returns to exact public
+regression parity at **2,902/2,902 RNG** and **98/98 screens, cells, and
+cursors**.  That lower-tier witness confirms the compatibility regression was
+recovered by the shared mechanic; it is not held-out or sealed-corpus evidence.
+Special melee modifiers, passive interruption and life-saving, weapon
+destruction between strikes, non-ordinary doors, broader visibility states,
+save/restore, and sealed strata remain partial.  Lua owns neither runtime
+path.
