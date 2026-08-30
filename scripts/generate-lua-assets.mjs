@@ -15,7 +15,7 @@ const names = [
     'fakewiz1.lua', 'fakewiz2.lua',
     'wizard1.lua', 'wizard2.lua', 'wizard3.lua',
     'asmodeus.lua', 'baalz.lua', 'orcus.lua', 'juiblex.lua',
-    'valley.lua', 'sanctum.lua', 'castle.lua',
+    'valley.lua', 'sanctum.lua', 'castle.lua', 'knox.lua',
     'earth.lua', 'air.lua', 'fire.lua', 'water.lua',
 ];
 

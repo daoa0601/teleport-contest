@@ -301,8 +301,6 @@ const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
-const PM_STONE_GIANT = 170;
-const PM_CROESUS = 286;
 const PM_THOTH_AMON = 358;
 const K_RATION = 294;
 const C_RATION = 295;
@@ -10644,7 +10642,10 @@ function luaRoomLighting(value) {
 }
 
 function createLuaRoomRegion(context, options) {
-    if (!Array.isArray(options.region))
+    const region = Array.isArray(options.region)
+        ? options.region
+        : [options.x1, options.y1, options.x2, options.y2];
+    if (!region.every(Number.isInteger))
         throw new TypeError('des.region requires four coordinates');
     const roomTypes = {
         ordinary: OROOM,
@@ -10663,17 +10664,17 @@ function createLuaRoomRegion(context, options) {
         throw new Error(`unsupported Lua room type ${options.type}`);
     const lit = luaRoomLighting(options.lit ?? -1);
     if (roomType === OROOM && !options.irregular && !options.arrival_room) {
-        lightSpecialArea(context, ...options.region, lit);
+        lightSpecialArea(context, ...region, lit);
         return null;
     }
     const needFill = options.filled ?? 0;
     const room = options.irregular
         ? specialIrregularRoom(
-            context, options.region[0], options.region[1],
+            context, region[0], region[1],
             roomType, lit, needFill,
         )
         : specialRectangularRoom(
-            context, ...options.region, roomType, lit, needFill,
+            context, ...region, roomType, lit, needFill,
         );
     if (room && options.arrival_room) room.arrival_room = true;
     return room;
@@ -10757,6 +10758,19 @@ function createLuaEngraving(context, options) {
             guardobjects: !!options.guardobjects,
         },
     );
+}
+
+function createLuaGold(context, options) {
+    const point = options.point
+        ? {
+            x: context.xstart + options.point.x,
+            y: context.ystart + options.point.y,
+        }
+        : specialRandomLocation(context);
+    if (!point) return null;
+    const amount = (options.amount ?? -1) < 0
+        ? rnd(200) : options.amount;
+    return mkgold(amount, point.x, point.y);
 }
 
 async function createLuaObject(
@@ -11016,6 +11030,7 @@ async function generateLuaSpecialLevel(active) {
         door: options => createLuaDoor(context, options),
         drawbridge: options => createLuaDrawbridge(context, options),
         engraving: options => createLuaEngraving(context, options),
+        gold: options => createLuaGold(context, options),
         feature: options => createLuaFeature(context, options),
         altar: options => createLuaAltar(context, options),
         nonDiggable: selection => selection
@@ -13111,157 +13126,11 @@ function lightCastleSelection(context, x1, y1, x2, y2, lit) {
     }
 }
 
-const KNOX_MAP = [
-    '----------------------------------------------------------------------------',
-    '| |........|...............................................................|',
-    '| |........|.................................................------------..|',
-    '| --S----S--.................................................|..........|..|',
-    '|   #   |........}}}}}}}....................}}}}}}}..........|..........|..|',
-    '|   #   |........}-----}....................}-----}..........--+--+--...|..|',
-    '|   # ---........}|...|}}}}}}}}}}}}}}}}}}}}}}|...|}.................|...|..|',
-    '|   # |..........}---S------------------------S---}.................|...|..|',
-    '|   # |..........}}}|...............|..........|}}}.................+...|..|',
-    '| --S----..........}|...............S..........|}...................|...|..|',
-    '| |.....|..........}|...............|......\\...S}...................|...|..|',
-    '| |.....+........}}}|...............|..........|}}}.................+...|..|',
-    '| |.....|........}---S------------------------S---}.................|...|..|',
-    '| |.....|........}|...|}}}}}}}}}}}}}}}}}}}}}}|...|}.................|...|..|',
-    '| |..-S----......}-----}....................}-----}..........--+--+--...|..|',
-    '| |..|....|......}}}}}}}....................}}}}}}}..........|..........|..|',
-    '| |..|....|..................................................|..........|..|',
-    '| -----------................................................------------..|',
-    '|           |..............................................................|',
-    '----------------------------------------------------------------------------',
-];
-
-async function generateKnox(active) {
-    const context = loadSpecialAsciiMap(KNOX_MAP, false);
-    active.context = { ...context };
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.noteleport = true;
-
-    markSpecialSelectionWallProperty(
-        specialSelectionFillRect(context, 0, 0, 75, 19),
-        W_NONDIGGABLE,
-    );
-    active.explicitBranchRegion = absoluteSpecialRegion(
-        context, 8, 16, 8, 16,
-    );
-    active.upTeleportRegion = absoluteSpecialRegion(
-        context, 6, 15, 9, 16,
-    );
-    active.downTeleportRegion = { ...active.upTeleportRegion };
-
-    specialRectangularRoom(
-        context, 37, 8, 46, 11, COURT, true, FILL_NORMAL,
-    );
-    const croesusY = rn2(100) < 50 ? 10 : 9;
-    await specialMonsterAt(context, PM_CROESUS, 43, croesusY, {
-        randomGender: namedMonsterNeedsGenderDraw(PM_CROESUS),
-        peaceful: false,
-    });
-    if (croesusY === 9) {
-        game.level.at(context.xstart + 43, context.ystart + 9).typ = THRONE;
-        game.level.at(context.xstart + 43, context.ystart + 10).typ = ROOM;
-    }
-    if (rn2(100) < 50) {
-        const upperEntry = game.level.at(
-            context.xstart + 47, context.ystart + 9,
-        );
-        upperEntry.typ = SDOOR;
-        upperEntry.doormask = D_CLOSED;
-        game.level.at(
-            context.xstart + 47, context.ystart + 10,
-        ).typ = VWALL;
-    }
-
-    setSpecialRegionLighting(context, 21, 8, 35, 11, true);
-    for (let y = 8; y <= 11; y++) {
-        for (let x = 21; x <= 35; x++) {
-            mkgold(
-                600 + rn2(301),
-                context.xstart + x, context.ystart + y,
-            );
-            if (rn2(3) === 0) {
-                await specialTrapAt(
-                    context, rn2(3) === 0 ? SPIKED_PIT : LANDMINE, x, y,
-                );
-            }
-        }
-    }
-    if (rn2(100) < 50) {
-        game.level.at(
-            context.xstart + 36, context.ystart + 9,
-        ).typ = VWALL;
-        const lowerVault = game.level.at(
-            context.xstart + 36, context.ystart + 10,
-        );
-        lowerVault.typ = SDOOR;
-        lowerVault.doormask = D_CLOSED;
-    }
-
-    for (const [x1, y1, x2, y2] of [
-        [19, 6, 21, 6], [46, 6, 48, 6],
-        [19, 13, 21, 13], [46, 13, 48, 13],
-    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, true);
-
-    specialIrregularRoom(
-        context, 3, 10, ZOO, true, FILL_NORMAL,
-    );
-    const arrival = specialRectangularRoom(
-        context, 6, 15, 9, 16, OROOM, false, 0,
-    );
-    arrival.arrival_room = true;
-    arrival.arrivalRoom = true;
-    setSpecialRegionLighting(context, 5, 14, 5, 17, false);
-    setSpecialRegionLighting(context, 5, 14, 9, 14, false);
-
-    specialIrregularRoom(
-        context, 62, 3, BARRACKS, true, FILL_NORMAL,
-    );
-    for (const [mask, x, y] of [
-        [D_CLOSED, 6, 14], [D_CLOSED, 9, 3],
-        [D_ISOPEN, 63, 5], [D_ISOPEN, 66, 5],
-        [D_ISOPEN, 68, 8], [D_LOCKED, 8, 11],
-        [D_ISOPEN, 68, 11], [D_CLOSED, 63, 14],
-        [D_CLOSED, 66, 14], [D_CLOSED, 4, 3],
-        [D_CLOSED, 4, 9],
-    ]) specialDoorAt(context, mask, x, y);
-
-    for (const [x, y] of [
-        [12, 14], [12, 13], [11, 10], [13, 2],
-        [14, 3], [20, 2], [30, 2], [40, 2],
-        [30, 16], [32, 16], [40, 16], [54, 16],
-        [54, 14], [54, 13], [57, 10], [57, 9],
-    ]) await specialMonsterAt(context, PM_SOLDIER, x, y);
-    await specialMonsterAt(context, PM_LIEUTENANT, 15, 8);
-    await specialMonsterAt(context, PM_STONE_GIANT, 3, 1);
-    for (const [x, y] of [
-        [18, 9], [49, 10], [33, 5], [33, 14],
-    ]) await specialMonsterClassAt(context, 30, x, y);
-    for (const [x, y] of [
-        [17, 8], [17, 11], [48, 8], [48, 11],
-    ]) await specialMonsterAt(context, PM_GIANT_EEL, x, y);
-
-    for (const [otyp, x, y] of [
-        [DIAMOND, 19, 6], [DIAMOND, 20, 6], [DIAMOND, 21, 6],
-        [EMERALD, 19, 13], [EMERALD, 20, 13], [EMERALD, 21, 13],
-        [RUBY, 46, 6], [RUBY, 47, 6], [RUBY, 48, 6],
-        [AMETHYST, 46, 13], [AMETHYST, 47, 13], [AMETHYST, 48, 13],
-    ]) specialObjectAt(context, otyp, x, y);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-}
-
 export async function generateKnoxLevel(active) {
-    await generateSpecialAndFixup(generateKnox, active);
+    if (active?.prototype !== 'knox')
+        throw new RangeError(`unknown Knox level ${active?.prototype}`);
+    active.file = 'knox.lua';
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of game.level.rooms.slice(0, game.level.nroom))
         await fillSpecialRoom(room);
 }
@@ -13521,6 +13390,7 @@ async function makelevel() {
         const luaOwnedSpecial = prototype === 'bigrm'
             || prototype === 'medusa'
             || prototype === 'castle'
+            || prototype === 'knox'
             || prototype === 'fakewiz1'
             || prototype === 'fakewiz2'
             || prototype === 'wizard1'

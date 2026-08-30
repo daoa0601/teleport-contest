@@ -100,8 +100,11 @@ function objectTypeForName(name, classSymbol = null) {
     }
     for (let type = 0; type < OBJECT_NAMES.length; type++) {
         if (desiredClass && desiredClass !== objectClassForType(type)) continue;
-        if (OBJECT_NAMES[type]?.toLowerCase() === target
-            || OBJECT_DESCRIPTIONS[type]?.toLowerCase() === target) return type;
+        if (OBJECT_NAMES[type]?.toLowerCase() === target) return type;
+    }
+    for (let type = 0; type < OBJECT_DESCRIPTIONS.length; type++) {
+        if (desiredClass && desiredClass !== objectClassForType(type)) continue;
+        if (OBJECT_DESCRIPTIONS[type]?.toLowerCase() === target) return type;
     }
     throw new Error(`unknown Lua object ${name}`);
 }
@@ -250,6 +253,20 @@ function engravingOptions(value, type, text) {
     };
 }
 
+function goldOptions(value, x, y) {
+    if (value instanceof LuaTable) {
+        const options = tableOptions(value);
+        return {
+            ...options,
+            point: point(options.coord) ?? point(options.x, options.y),
+        };
+    }
+    return {
+        amount: Number.isInteger(value) ? value : -1,
+        point: point(luaArgument(x), luaArgument(y)),
+    };
+}
+
 export function mapOrigin(options, width, height, levelInitialized) {
     const coordinate = Array.isArray(options.coord)
         ? options.coord : [options.x, options.y];
@@ -342,6 +359,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
         engraving: (value, type, text) => operations.engraving(
             engravingOptions(value, type, text),
         ),
+        gold: (value, x, y) => operations.gold(goldOptions(value, x, y)),
         feature: (type, x, y) => operations.feature({
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),
