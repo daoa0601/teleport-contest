@@ -174,7 +174,9 @@ import {
     addHeroGoldObject, detachHeroGold, ensureHeroGoldObject,
     heroGoldAmount, setHeroGoldAmount, syncHeroGoldCache,
 } from './hero_gold.js';
-import { resolveDirectGoldThrow } from './gold_throw.js';
+import {
+    resolveDirectGoldThrow, resolveQuiveredGoldThrow,
+} from './gold_throw.js';
 import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
 } from './senses.js';
@@ -15266,8 +15268,8 @@ async function dothrow(
         return;
     }
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
-    const directGoldThrow = selectedObjectClass === 12
-        && item !== game.uquiver;
+    const selectedIsGold = selectedObjectClass === 12;
+    const directGoldThrow = selectedIsGold && item !== game.uquiver;
     const directionKey = await promptKey('In what direction? ');
     const direction = String.fromCharCode(directionKey);
     if (direction === '.') {
@@ -15277,7 +15279,7 @@ async function dothrow(
         game.context.move = 0;
         return;
     }
-    const verticalGoldThrow = directGoldThrow
+    const verticalGoldThrow = selectedIsGold
         && (direction === '<' || direction === '>');
     if (!isMovementKey(direction) && !verticalGoldThrow) {
         const quitDirection = [27, 32, 10, 13].includes(directionKey);
@@ -15317,6 +15319,27 @@ async function dothrow(
             angerMonster: setMonsterAngryFromAttack,
             adjustAlignment: adjustHeroAlignment,
         });
+        game.context.move = 1;
+        return;
+    }
+
+    if (selectedIsGold && item === game.uquiver) {
+        const previousCapacity = game._encumbranceLevel
+            ?? nearCapacity(game);
+        await resolveQuiveredGoldThrow({
+            state: game,
+            gold: item,
+            dx, dy, dz,
+            captureFlight: captureThrownObjectFlight,
+            wakeMonster: wakeAttackedMonster,
+        });
+        const currentCapacity = nearCapacity(game);
+        const capacityMessage = encumbranceMessage(
+            previousCapacity, currentCapacity,
+        );
+        if (capacityMessage) await plineWithContinuation(capacityMessage);
+        game._encumbranceLevel = currentCapacity;
+        game.u._encumbrance = encumbranceLabel(currentCapacity);
         game.context.move = 1;
         return;
     }

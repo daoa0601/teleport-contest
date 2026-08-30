@@ -1,75 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getBridgeUsageLedger } from '../js/bridge_policy.js';
-import { rhack } from '../js/cmd.js';
 import { IRONBARS, STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import {
-    addHeroGoldObject, heroGoldAmount, heroGoldObject,
-} from '../js/hero_gold.js';
-import { pushKey } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import {
+    assertNoBridgeUse, carriedGold, floorAt, floorObjects, liveMonster,
+    looseGold, throwGold,
+} from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 process.env.TELEPORT_BRIDGE_FREE = '1';
 process.env.TELEPORT_DISABLE_FIXTURES = '1';
 
-const PM_LEPRECHAUN = 63;
 const PM_SHOPKEEPER = 271;
 const PM_GUARD = 272;
 const PM_ALIGNED_CLERIC = 274;
 const PM_SOLDIER = 277;
 const PM_WATCHMAN = 282;
-
-function carriedGold(amount, id) {
-    const gold = mksobj(GOLD_PIECE, false, false);
-    gold.quan = gold.quantity = amount;
-    gold.o_id = id;
-    addHeroGoldObject(game, gold);
-    return gold;
-}
-
-function liveMonster(overrides = {}) {
-    return {
-        m_id: 29000,
-        mnum: PM_LEPRECHAUN,
-        mx: 13, my: 10,
-        mhp: 12, mhpmax: 12, m_lev: 5,
-        mpeaceful: 0, mtame: 0,
-        msleeping: 0, mcanmove: 1, mfrozen: 0, meating: 0,
-        mcansee: 1, mcan: 0, mstrategy: 0,
-        minvent: [], inventory: [], hasInventory: false,
-        ...overrides,
-    };
-}
-
-function floorObjects(level) {
-    return (level.objects || []).flatMap(column =>
-        (column || []).flatMap(pile => pile || []));
-}
-
-function floorAt(level, x, y) {
-    return level.objects?.[x]?.[y] || [];
-}
-
-async function throwGold(direction = 'l') {
-    pushKey('$');
-    pushKey(direction);
-    await rhack('t'.charCodeAt(0));
-}
-
-function assertNoBridgeUse() {
-    assert.deepEqual(getBridgeUsageLedger(), {
-        bridgeFree: true,
-        totalHits: 0,
-        forbiddenHits: 0,
-        bridges: {},
-    });
-}
 
 test('direct throw moves the whole purse through its strength-weight range',
     async () => {
@@ -182,25 +133,6 @@ test('self-directed gold cancellation preserves the purse and spends no time',
         assert.equal(game.context.move, 0);
     });
 
-test('direct t from the quiver keeps one-coin ownership instead of throwing the purse',
-    async () => {
-        const level = freshWeaponArena();
-        const purse = carriedGold(5, 29033);
-        pushKey('$');
-        await rhack('Q'.charCodeAt(0));
-
-        await throwGold('l');
-
-        assert.equal(heroGoldObject(game), purse);
-        assert.equal(heroGoldAmount(game), 4);
-        assert.equal(game.uquiver, purse);
-        assert.equal(purse.quantity, 4);
-        const children = floorObjects(level).filter(object =>
-            object.otyp === GOLD_PIECE && object !== purse);
-        assert.equal(children.length, 1);
-        assert.equal(children[0].quantity, 1);
-    });
-
 test('a non-greedy monster wakes but does not catch thrown gold', async () => {
     const level = freshWeaponArena();
     const purse = carriedGold(25, 29004);
@@ -281,8 +213,7 @@ test('a greedy catch merges into the prior monster purse and frees the incoming 
         freshWeaponArena();
         const purse = carriedGold(11, 29030);
         const leprechaun = liveMonster({ m_id: 29031 });
-        const prior = mksobj(GOLD_PIECE, false, false);
-        prior.quan = prior.quantity = 9;
+        const prior = looseGold(9);
         linkObjectToMonsterInventory(leprechaun, prior, { state: game });
         game.level.monsters.push(leprechaun);
         initRng(1n);

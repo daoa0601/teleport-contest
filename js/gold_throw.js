@@ -1,9 +1,10 @@
-// gold_throw.js — Direct hero-gold flight and ghitm() contact ownership.
-// C refs: dothrow.c:throw_gold(), zap.c:bhit(), dokick.c:ghitm().
+// gold_throw.js — Hero-gold flight and direct/quivered contact ownership.
+// C refs: dothrow.c:throw_gold()/throwit()/thitmonst(), zap.c:bhit(),
+// dokick.c:ghitm().
 
 import {
-    DOOR, D_CLOSED, D_LOCKED, IS_WATERWALL, LAVAWALL, LOST_THROWN,
-    M_AP_OBJECT, SINK, WEB, ZAP_POS,
+    DOOR, D_CLOSED, D_LOCKED, IS_SOFT, IS_WATERWALL, Is_airlevel,
+    Is_waterlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { newsym, pline } from './display.js';
@@ -16,11 +17,11 @@ import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
 import {
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { OBJECT_COST } from './object_data.js';
 import { visiblePriestName } from './priest.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { shopkeeperName } from './shk.js';
 import { cansee } from './vision.js';
 
@@ -242,39 +243,15 @@ function settleGoldOnFloor(state, gold, x, y) {
     return survivor;
 }
 
-export async function resolveDirectGoldThrow({
-    state, gold, dx = 0, dy = 0, dz = 0,
-    captureFlight = null, wakeMonster = null, angerMonster = null,
-    adjustAlignment = null,
+async function traceGoldFlight({
+    state, gold, dx, dy, range, captureFlight = null,
 }) {
-    if (!gold || gold !== heroGoldObject(state)) return false;
-    gold = detachHeroGold(state);
-    if (!gold) return false;
-    gold.how_lost = LOST_THROWN;
-
-    if (state.u?.uswallow && state.u?.ustuck) {
-        await pline('The gold disappears into the engulfing monster.');
-        linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
-        return true;
-    }
-
     let x = state.u?.ux ?? 0;
     let y = state.u?.uy ?? 0;
-    if (dz) {
-        if (dz > 0) await pline('The gold hits the floor.');
-        settleGoldOnFloor(state, gold, x, y);
-        return true;
-    }
-
     const first = state.level?.at?.(x + dx, y + dy);
-    if (!first || !ZAP_POS(first.typ) || closedDoor(first)) {
-        settleGoldOnFloor(state, gold, x, y);
-        return true;
-    }
+    if (!first || !ZAP_POS(first.typ) || closedDoor(first))
+        return { x, y, contact: null };
 
-    const range = Math.max(0,
-        Math.trunc(sourceStrength(state) / 2)
-        - Math.trunc((gold.owt ?? 1) / 40));
     const flightPath = [];
     let contact = null;
     for (let step = 0; step < range; step++) {
@@ -315,6 +292,67 @@ export async function resolveDirectGoldThrow({
 
     if (captureFlight && flightPath.length)
         await captureFlight(gold, flightPath);
+    return { x, y, contact };
+}
+
+async function resolveQuiveredGoldMonsterContact({
+    state, monster, gold, swallowed = false, wakeMonster = null,
+}) {
+    // dothrow.c:omon_adj() can thaw a mobile species before thitmonst()
+    // consumes its ordinary d20 targeting roll.  Coins do not enter any of
+    // thitmonst()'s damaging classes, so a non-swallowed coin always reaches
+    // tmiss() regardless of that targeting result or the monster's greed.
+    if ((monster.mcanmove === 0 || monster.mcanmove === false)
+        && (MONSTER_MOVE[monster.mnum] ?? monster.mmove ?? 0) > 0
+        && rn2(10) === 0) {
+        monster.mcanmove = 1;
+        monster.mfrozen = 0;
+    }
+    rnd(20);
+
+    if (swallowed) {
+        await wakeMonster?.(monster);
+        await pline(`The gold piece vanishes into ${
+            monsterSubject(monster, state).toLowerCase()}.`);
+        addObjectToMonsterInventory(monster, gold, state);
+        return true;
+    }
+
+    await missGold(monster, gold, state);
+    if (rn2(3) === 0) await wakeMonster?.(monster);
+    return false;
+}
+
+export async function resolveDirectGoldThrow({
+    state, gold, dx = 0, dy = 0, dz = 0,
+    captureFlight = null, wakeMonster = null, angerMonster = null,
+    adjustAlignment = null,
+}) {
+    if (!gold || gold !== heroGoldObject(state)) return false;
+    gold = detachHeroGold(state);
+    if (!gold) return false;
+    gold.how_lost = LOST_THROWN;
+
+    if (state.u?.uswallow && state.u?.ustuck) {
+        await pline('The gold disappears into the engulfing monster.');
+        linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
+        return true;
+    }
+
+    const heroX = state.u?.ux ?? 0;
+    const heroY = state.u?.uy ?? 0;
+    if (dz) {
+        if (dz > 0) await pline('The gold hits the floor.');
+        settleGoldOnFloor(state, gold, heroX, heroY);
+        return true;
+    }
+
+    const range = Math.max(0,
+        Math.trunc(sourceStrength(state) / 2)
+        - Math.trunc((gold.owt ?? 1) / 40));
+    const { x, y, contact } = await traceGoldFlight({
+        state, gold, dx, dy, range, captureFlight,
+    });
     if (contact) {
         const caught = await resolveGoldMonsterContact({
             state, monster: contact, gold,
@@ -322,6 +360,87 @@ export async function resolveDirectGoldThrow({
         });
         if (caught) return true;
     }
+    settleGoldOnFloor(state, gold, x, y);
+    return true;
+}
+
+export async function resolveQuiveredGoldThrow({
+    state, gold, dx = 0, dy = 0, dz = 0,
+    captureFlight = null, wakeMonster = null,
+}) {
+    if (!gold || gold !== heroGoldObject(state) || gold !== state.uquiver)
+        return false;
+    gold = detachHeroGold(state, 1);
+    if (!gold) return false;
+    gold.how_lost = LOST_THROWN;
+
+    // throwit() probes every cursed or greased horizontal object, but a coin
+    // is not a throwing weapon so only grease can turn that probe into a
+    // slip.  The two direction draws may convert the throw into a drop.
+    if ((gold.cursed || gold.greased) && (dx || dy) && rn2(7) === 0
+        && gold.greased) {
+        dx = rn2(3) - 1;
+        dy = rn2(3) - 1;
+        if (!dx && !dy) dz = 1;
+    }
+
+    if (state.u?.uswallow && state.u?.ustuck) {
+        return resolveQuiveredGoldMonsterContact({
+            state, monster: state.u.ustuck, gold,
+            swallowed: true, wakeMonster,
+        });
+    }
+
+    const heroX = state.u?.ux ?? 0;
+    const heroY = state.u?.uy ?? 0;
+    if (dz) {
+        if (dz < 0) {
+            // toss_up() consumes the roof probe even when underwater.  The
+            // represented ordinary coin is a non-weapon of weight one, so it
+            // deals one point before hitfloor() leaves that identity here.
+            const roofProbe = rn2(5) !== 0
+                && !(state.underwater || state.u?.uinwater);
+            const hasCeiling = !Is_airlevel(state.u?.uz)
+                && !Is_waterlevel(state.u?.uz);
+            const hitsRoof = hasCeiling && roofProbe;
+            // Coins cannot break, but each breaktest() still consumes its
+            // obj_resists() percentage draw: once at the roof when struck,
+            // once on the hero, and once more on a hard floor via hitfloor().
+            if (hitsRoof) rn2(100);
+            const upwardAction = !hasCeiling
+                ? 'flies up into the sky above'
+                : hitsRoof ? 'hits the ceiling' : 'almost hits the ceiling';
+            await pline(`The gold piece ${upwardAction}, then falls back on top of your head.`);
+            rn2(100);
+            const floor = state.level?.at?.(heroX, heroY);
+            if (!(state.underwater || state.u?.uinwater)
+                && floor && !IS_SOFT(floor.typ)) rn2(100);
+            settleGoldOnFloor(state, gold, heroX, heroY);
+            state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - 1);
+        } else {
+            await pline('The gold piece hits the floor.');
+            const floor = state.level?.at?.(heroX, heroY);
+            if (!(state.underwater || state.u?.uinwater)
+                && floor && !IS_SOFT(floor.typ)) rn2(100);
+            settleGoldOnFloor(state, gold, heroX, heroY);
+        }
+        return true;
+    }
+
+    const underwater = !!(state.underwater || state.u?.uinwater);
+    const range = underwater ? 1 : Math.max(1,
+        Math.trunc(sourceStrength(state) / 2)
+        - Math.trunc((gold.owt ?? 1) / 40));
+    const { x, y, contact } = await traceGoldFlight({
+        state, gold, dx, dy, range, captureFlight,
+    });
+    if (contact) {
+        await resolveQuiveredGoldMonsterContact({
+            state, monster: contact, gold, wakeMonster,
+        });
+    }
+    const endpoint = state.level?.at?.(x, y);
+    if (endpoint && !IS_SOFT(endpoint.typ)) rn2(100);
     settleGoldOnFloor(state, gold, x, y);
     return true;
 }
