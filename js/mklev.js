@@ -6625,47 +6625,9 @@ function mineFillerMinesField({
     }
 }
 
-async function generateMineFiller(active, lit) {
-    mineFillerMinesField({ lit });
-    const context = {
-        xstart: 1, ystart: 0,
-        width: COLNO - 1, height: ROWNO,
-    };
-    active.context = { ...context };
-
-    specialStair(context, true);
-    specialStair(context, false);
-
-    for (let count = 2 + rn2(4); count > 0; count--)
-        specialObjectOfClass(context, GEM_CLASS);
-    specialObjectOfClass(context, TOOL_CLASS);
-    for (let count = 2 + rn2(3); count > 0; count--)
-        specialObject(context);
-    if (rn2(100) < 75) {
-        for (let count = 1 + rn2(2); count > 0; count--)
-            specialObjectOfType(context, BOULDER);
-    }
-
-    for (let count = 6 + rn2(3); count > 0; count--)
-        await specialExplicitMonster(context, PM_GNOME);
-    // `gnome lord` is a legacy gendered alias: name_to_monplus() returns the
-    // modern gnome leader species with an explicit male request and therefore
-    // find_montype() does not spend its ordinary rn2(2) gender draw.
-    await specialExplicitMonster(
-        context, PM_GNOME_LEADER, null, { randomGender: false },
-    );
-    await specialExplicitMonster(context, PM_DWARF);
-    await specialExplicitMonster(context, PM_DWARF);
-    const gnomeClass = MONSTER_SYMBOL[PM_GNOME];
-    const humanoidClass = MONSTER_SYMBOL[PM_DWARF];
-    await specialMonsterOfClass(context, gnomeClass);
-    await specialMonsterOfClass(context, gnomeClass);
-    await specialMonsterOfClass(
-        context, rn2(100) < 50 ? humanoidClass : gnomeClass,
-    );
-
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
+async function generateMineFiller(active) {
+    active.file = 'minefill.lua';
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 export async function generateVladsTowerLevel(active) {
@@ -8954,25 +8916,11 @@ async function makelevel() {
 
     const currentDungeon = g.dungeons?.[g.u?.uz?.dnum ?? 0];
     if (currentDungeon?.dname === 'The Gnomish Mines') {
-        // Dungeon filler scripts are Lua levels even though they are not
-        // entries in the named special-level table.  minefill.lua performs
-        // two independent level_init operations, so both random lighting
-        // draws follow nhlib's alignment shuffle.
-        const align = ['law', 'neutral', 'chaos'];
-        for (let i = align.length; i > 1; i--) {
-            const j = rn2(i);
-            [align[i - 1], align[j]] = [align[j], align[i - 1]];
-        }
-        const solidFillLit = !!rn2(2);
-        const minesLit = !!rn2(2);
         const active = {
-            prototype: 'minefill', variant: 1,
-            file: 'minefill.lua', align,
-            solidFillLit, defaultLit: minesLit,
+            prototype: 'minefill', file: 'minefill.lua',
         };
         g._activeSpecialLevel = active;
-        await generateMineFiller(active, minesLit);
-        await fixupSpecialBranch(active);
+        await generateMineFiller(active);
         return;
     }
     if (currentDungeon?.flags?.hellish) {
