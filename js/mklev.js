@@ -13373,6 +13373,34 @@ const WIZARD2_MAP = [
     '----------------------------x',
 ];
 
+const WIZARD3_MAP = [
+    '----------------------------x',
+    '|..|............S..........|x',
+    '|..|..------------------S--|x',
+    '|..|..|.........|..........|x',
+    '|..S..|.}}}}}}}.|..........|x',
+    '|..|..|.}}---}}.|-S--------|x',
+    '|..|..|.}--.--}.|..|.......|x',
+    '|..|..|.}|...|}.|..|.......|x',
+    '|..---|.}--.--}.|..|.......|x',
+    '|.....|.}}---}}.|..|.......|x',
+    '|.....S.}}}}}}}.|..|.......|x',
+    '|.....|.........|..|.......|x',
+    '----------------------------x',
+];
+
+const FAKE_WIZARD_MAP = [
+    '.........',
+    '.}}}}}}}.',
+    '.}}---}}.',
+    '.}--.--}.',
+    '.}|...|}.',
+    '.}--.--}.',
+    '.}}---}}.',
+    '.}}}}}}}.',
+    '.........',
+];
+
 async function generateWizard1(active) {
     // Lua source: dat/wizard1.lua.  The mazegrid initializer and protected
     // whole-level selection precede the centered transparent fortress map.
@@ -13617,6 +13645,224 @@ async function generateWizard2(active) {
         'explicitBranchRegion', 'explicitBranchExclude',
         'upTeleportRegion', 'downTeleportRegion',
     ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+async function generateWizard3(active) {
+    fillSpecialMazeGrid(HWALL);
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.corrmaze = false;
+    game.level.flags.noteleport = true;
+    game.level.flags.hardfloor = true;
+    game.level.flags.temperature = 1;
+
+    const wholeLevelContext = {
+        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+    };
+    const wallBounds = specialSelectionMatch('-').bounds();
+    const interiorBounds = specialSelectionFillRect(
+        wholeLevelContext,
+        wallBounds.lx,
+        wallBounds.ly + 1,
+        wallBounds.hx - 2,
+        wallBounds.hy - 1,
+    );
+    const context = loadSpecialAsciiMap(WIZARD3_MAP, false);
+    active.context = { ...context };
+    const outside = {
+        lx: 1, ly: 0, hx: 79, hy: 20,
+        nlx: context.xstart, nly: context.ystart,
+        nhx: context.xstart + 28, nhy: context.ystart + 12,
+    };
+    active.explicitUpStairRegion = { ...outside };
+    active.explicitDownStairRegion = { ...outside };
+    active.explicitBranchRegion = {
+        lx: outside.lx, ly: outside.ly, hx: outside.hx, hy: outside.hy,
+    };
+    active.explicitBranchExclude = {
+        lx: outside.nlx, ly: outside.nly,
+        hx: outside.nhx, hy: outside.nhy,
+    };
+    active.upTeleportRegion = {
+        ...outside, nhx: context.xstart + 27,
+    };
+    active.downTeleportRegion = { ...active.upTeleportRegion };
+    active.explicitPortalRegion = absoluteSpecialRegion(
+        context, 25, 11, 25, 11,
+    );
+    active.portalDestinationName = 'fakewiz1';
+
+    specialMazeWalk(context, 28, 9, 'east', ROOM);
+    await fillEmptySpecialMaze(context, [{ ...context, width: 28 }]);
+    specialRectangularRoom(
+        context, 7, 3, 15, 11, MORGUE, false, FILL_LVFLAGS,
+    );
+    specialRectangularRoom(
+        context, 17, 6, 18, 11, BEEHIVE, false, FILL_NORMAL,
+    );
+    const arrivalRoom = specialRectangularRoom(
+        context, 20, 6, 26, 11, OROOM, false, 0,
+    );
+    arrivalRoom.arrival_room = true;
+    arrivalRoom.arrivalRoom = true;
+    createSpecialRoomDoor(
+        arrivalRoom, 'secret', rn2(100) < 50 ? 'west' : 'north',
+    );
+    addDoorsToSpecialRoom(arrivalRoom);
+    specialDoorAt(context, D_CLOSED, 18, 5);
+    specialLadderAt(context, 11, 7, true);
+
+    let fortressBarrier = new SpecialSelection();
+    for (const [x1, y1, x2, y2] of [
+        [0, 0, 6, 12], [6, 0, 27, 2],
+        [16, 2, 27, 12], [6, 12, 16, 12],
+    ]) {
+        fortressBarrier = fortressBarrier.union(
+            specialSelectionFillRect(context, x1, y1, x2, y2),
+        );
+    }
+    markSpecialSelectionWallProperty(fortressBarrier, W_NONDIGGABLE);
+    markSpecialSelectionWallProperty(fortressBarrier, W_NONPASSWALL);
+
+    await specialMonsterClassAt(context, 38, 10, 7);
+    const vampireLord = await specialMonsterAt(
+        context, PM_VAMPIRE_LEADER, 12, 7,
+        { randomGender: false },
+    );
+    if (vampireLord) vampireLord.female = false;
+    for (const [mndx, x, y] of [
+        [PM_KRAKEN, 8, 5], [PM_GIANT_EEL, 8, 8],
+        [PM_KRAKEN, 14, 5], [PM_GIANT_EEL, 14, 8],
+    ]) {
+        await specialMonsterAt(
+            context, mndx, x, y,
+            { randomGender: namedMonsterNeedsGenderDraw(mndx) },
+        );
+    }
+    await specialMonsterOfClass(context, 38);
+    await specialMonsterOfClass(context, 30);
+    await specialMonsterClassAt(context, 30, 26, 9);
+    for (let count = 0; count < 3; count++)
+        await specialMonsterOfClass(context, S_DEMON);
+    for (const [x, y] of [[10, 7], [12, 7], [11, 6], [11, 8]])
+        await specialTrapAt(context, SQKY_BOARD, x, y);
+    for (const objectClass of [
+        WEAPON_CLASS, POTION_CLASS, SCROLL_CLASS, SCROLL_CLASS, TOOL_CLASS,
+    ]) specialObjectOfClass(context, objectClass);
+    specialObjectClassAt(context, AMULET_CLASS, 11, 7);
+
+    const protectedArea = interiorBounds.negate()
+        .union(specialMapSelection(context, WIZARD3_MAP));
+    applyHellTweaks(wholeLevelContext, protectedArea);
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'explicitUpStairRegion', 'explicitDownStairRegion',
+        'explicitBranchRegion', 'explicitBranchExclude',
+        'upTeleportRegion', 'downTeleportRegion', 'explicitPortalRegion',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+async function generateFakeWizard(active, withPortal) {
+    fillSpecialMazeGrid(HWALL);
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.corrmaze = false;
+    game.level.flags.temperature = 1;
+
+    const wholeLevelContext = {
+        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+    };
+    const wallBounds = specialSelectionMatch('-').bounds();
+    const interiorBounds = specialSelectionFillRect(
+        wholeLevelContext,
+        wallBounds.lx,
+        wallBounds.ly + 1,
+        wallBounds.hx - 2,
+        wallBounds.hy - 1,
+    );
+    const context = loadSpecialAsciiMap(FAKE_WIZARD_MAP, false);
+    active.context = { ...context };
+    const outside = {
+        lx: 1, ly: 0, hx: 79, hy: 20,
+        nlx: context.xstart, nly: context.ystart,
+        nhx: context.xstart + 8, nhy: context.ystart + 8,
+    };
+    active.explicitUpStairRegion = { ...outside };
+    active.explicitDownStairRegion = { ...outside };
+    active.explicitBranchRegion = {
+        lx: outside.lx, ly: outside.ly, hx: outside.hx, hy: outside.hy,
+    };
+    active.explicitBranchExclude = {
+        lx: outside.nlx, ly: outside.nly,
+        hx: outside.nhx, hy: outside.nhy,
+    };
+    const teleportExclude = absoluteSpecialRegion(context, 2, 2, 6, 6);
+    active.upTeleportRegion = {
+        lx: 1, ly: 0, hx: 79, hy: 20,
+        nlx: teleportExclude.lx, nly: teleportExclude.ly,
+        nhx: teleportExclude.hx, nhy: teleportExclude.hy,
+    };
+    active.downTeleportRegion = { ...active.upTeleportRegion };
+    if (withPortal) {
+        active.explicitPortalRegion = absoluteSpecialRegion(
+            context, 4, 4, 4, 4,
+        );
+        active.portalDestinationName = 'wizard3';
+    }
+
+    specialMazeWalk(context, 8, 5, 'east', ROOM);
+    await fillEmptySpecialMaze(context);
+    if (withPortal) {
+        const arrivalRoom = specialIrregularRoom(
+            context, 4, 3, OROOM, false, 0,
+        );
+        arrivalRoom.arrival_room = true;
+        arrivalRoom.arrivalRoom = true;
+    }
+    await specialMonsterClassAt(context, 38, 4, 4);
+    const vampireLord = await specialMonsterAt(
+        context, PM_VAMPIRE_LEADER, 3, 4,
+        { randomGender: false },
+    );
+    if (vampireLord) vampireLord.female = false;
+    await specialMonsterAt(
+        context, PM_KRAKEN, 6, 6,
+        { randomGender: namedMonsterNeedsGenderDraw(PM_KRAKEN) },
+    );
+    for (const [x, y] of [[4, 3], [4, 5], [3, 4], [5, 4]])
+        await specialTrapAt(context, SQKY_BOARD, x, y);
+    if (!withPortal)
+        specialObjectClassAt(context, AMULET_CLASS, 4, 4);
+
+    const protectedArea = interiorBounds.negate()
+        .union(specialMapSelection(context, FAKE_WIZARD_MAP));
+    applyHellTweaks(wholeLevelContext, protectedArea);
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'explicitUpStairRegion', 'explicitDownStairRegion',
+        'explicitBranchRegion', 'explicitBranchExclude',
+        'upTeleportRegion', 'downTeleportRegion', 'explicitPortalRegion',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+export async function generateWizard3Level(active) {
+    await generateSpecialAndFixup(generateWizard3, active);
+    for (const room of game.level.rooms.slice(0, game.level.nroom))
+        await fillSpecialRoom(room);
+}
+
+export async function generateFakeWizardLevel(active) {
+    if (!['fakewiz1', 'fakewiz2'].includes(active?.prototype)) {
+        throw new RangeError(`unknown false Wizard level ${active?.prototype}`);
+    }
+    await generateSpecialAndFixup(
+        current => generateFakeWizard(
+            current, current.prototype === 'fakewiz1',
+        ),
+        active,
+    );
 }
 
 const HELL_FORTRESS_PREFAB = [
@@ -14722,9 +14968,20 @@ async function fixupSpecialBranch(active) {
 
 async function generateSpecialAndFixup(generator, active) {
     await generator(active);
-    const arrivalRegion = (region, exclude) => region
-        ? { ...region, ...(exclude ? { exclude: { ...exclude } } : {}) }
-        : null;
+    const arrivalRegion = (region, exclude) => {
+        if (!region) return null;
+        const embeddedExclude = Number.isInteger(region.nlx)
+            ? {
+                lx: region.nlx, ly: region.nly,
+                hx: region.nhx, hy: region.nhy,
+            }
+            : null;
+        const exclusion = exclude || embeddedExclude;
+        return {
+            ...region,
+            ...(exclusion ? { exclude: { ...exclusion } } : {}),
+        };
+    };
     game.level.upTeleportRegion = arrivalRegion(
         active?.upTeleportRegion, active?.upTeleportExclude,
     );
@@ -15859,6 +16116,14 @@ async function makelevel() {
                 g._activeSpecialLevel);
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
+            return;
+        }
+        if (prototype === 'wizard3') {
+            await generateWizard3Level(g._activeSpecialLevel);
+            return;
+        }
+        if (prototype === 'fakewiz1' || prototype === 'fakewiz2') {
+            await generateFakeWizardLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'bigrm') {
