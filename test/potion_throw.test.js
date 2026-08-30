@@ -1048,28 +1048,90 @@ test('live fatal blessed water uses the ordinary map death continuation',
         assertNoBridgeUse();
     });
 
-test('greased map potion remains fail-loud before split or throw RNG',
+test('greased map potion reroutes live flight after stack detachment',
     async () => {
-        freshMapPotionState(2);
+        const monster = freshMapPotionState(2);
         const potion = addKnownPotion(POT_INVISIBILITY);
         potion.greased = true;
         potion.quan = potion.quantity = 2;
         potion.owt *= 2;
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
 
-        initRng(7n);
+        initRng(1n);
         enableRngLog();
-        await assert.rejects(
-            throwEast(potion),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
-        );
+        try {
+            await throwEast(potion, Array(20).fill(' '));
+        } finally {
+            delete game._preNhgetchHook;
+        }
 
-        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(getRngLog(), [
+            'rnd(2)=2', 'rn2(7)=0', 'rn2(3)=0', 'rn2(3)=1',
+            'rn2(100)=79',
+        ]);
         assert.deepEqual(game.inventory, [potion]);
-        assert.equal(potion.quan, 2);
-        assert.equal(potion.quantity, 2);
+        assert.equal(potion.quan, 1);
+        assert.equal(potion.quantity, 1);
         assert.equal(potion.where, 'inventory');
         assert.equal(floorObjects().length, 0);
+        assert.equal(monster.mhp, 12);
+        assert.deepEqual(
+            [game.u.dx, game.u.dy, game.u.dz], [-1, 0, 0],
+        );
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'The potion of invisibility slips as you throw it!',
+        )));
+        assert.match(
+            game._pending_message || '', /potion of invisibility shatters!$/,
+        );
+        assertNoBridgeUse();
+    });
+
+test('greased map potion can reroute vertically through live hitfloor',
+    async () => {
+        const monster = freshMapPotionState(2);
+        const potion = addKnownPotion(POT_INVISIBILITY);
+        potion.greased = true;
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
+
+        initRng(124n);
+        enableRngLog();
+        try {
+            await throwEast(potion, Array(20).fill(' '));
+        } finally {
+            delete game._preNhgetchHook;
+        }
+
+        assert.deepEqual(getRngLog(), [
+            'rn2(7)=0', 'rn2(3)=1', 'rn2(3)=1', 'rn2(100)=62',
+        ]);
+        assert.deepEqual(game.inventory, []);
+        assert.equal(potion.where, 'gone');
+        assert.equal(floorObjects().length, 0);
+        assert.equal(monster.mhp, 12);
+        assert.deepEqual(
+            [game.u.dx, game.u.dy, game.u.dz], [0, 0, 1],
+        );
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'The potion of invisibility slips as you throw it!',
+        )));
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'A potion of invisibility hits the floor.',
+        )));
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'A potion of invisibility shatters!',
+        )));
+        assert.equal(
+            game._pending_message,
+            "For an instant you couldn't see yourself!",
+        );
+        assertNoBridgeUse();
     });
 
 test('live unlit oil breaks without evaporation and wakes its target', async () => {
