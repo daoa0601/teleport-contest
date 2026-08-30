@@ -20,10 +20,10 @@ export function auditBridgeFreeSource() {
         readFileSync(join(JS_ROOT, file), 'utf8')]));
 
     // replayMoves may exist only at the runner installation boundary, the
-    // one compatibility classifier gate, the poisoned policy property, and
-    // save-state's explicit non-serialized key list.
+    // poisoned policy property, and save-state's explicit non-serialized key
+    // list. Production game initialization and scheduling must never read it.
     const allowedReplayMoveFiles = new Set([
-        'allmain.js', 'bridge_policy.js', 'jsmain.js', 'save.js',
+        'bridge_policy.js', 'jsmain.js', 'save.js',
     ]);
     for (const [file, source] of sources) {
         if (!source.includes('replayMoves')) continue;
@@ -32,16 +32,12 @@ export function auditBridgeFreeSource() {
         }
     }
     const allmain = sources.get('allmain.js');
-    const directAllmainReads = [...allmain.matchAll(/\bg\.replayMoves\b/g)];
-    if (directAllmainReads.length !== 1) {
-        failures.push(`allmain.js: expected one guarded g.replayMoves read, found ${directAllmainReads.length}`);
-    }
+    if (allmain.includes('replayMoves'))
+        failures.push('allmain.js: production initialization reads replayMoves');
     // Compatibility classifiers may remain for the legacy public-regression
     // path, but bridge-free mode must make each one structurally unreachable
     // rather than relying on an empty replay string or lucky coordinates.
-    const compatibilityClassifiers = [
-        '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
-    ];
+    const compatibilityClassifiers = ['_wizardBindPath'];
     for (const classifier of compatibilityClassifiers) {
         const explicitLegacyGate = new RegExp(
             `g\\.${classifier}\\s*=\\s*!bridgeFree\\s*&&`,
@@ -97,6 +93,22 @@ export function auditBridgeFreeSource() {
     }
     if (sources.has('tourist_explore.js'))
         failures.push('tourist_explore.js: legacy Tourist replay module still exists');
+    const forbiddenWizardCommandReplayTokens = [
+        '_wizardPolyPath', '_wizardQuaffPath',
+        'replayWizardPolyBoundary', 'paintWizardPolyScreen',
+        'replayWizardQuaffBoundary', 'paintWizardQuaffScreen',
+        'seeded-replay.wizard-poly', 'seeded-replay.wizard-quaff',
+    ];
+    for (const token of forbiddenWizardCommandReplayTokens) {
+        for (const [file, source] of sources) {
+            if (source.includes(token))
+                failures.push(`${file}: legacy Wizard command replay token ${token}`);
+        }
+    }
+    for (const file of ['wizard_poly.js', 'wizard_quaff.js']) {
+        if (sources.has(file))
+            failures.push(`${file}: legacy Wizard command replay module still exists`);
+    }
     const cmd = sources.get('cmd.js');
     const forbiddenSamuraiTracePredicates = [
         /urole\?\.key === ['"]samurai['"]\s*&&\s*monster\.mnum === 158/,

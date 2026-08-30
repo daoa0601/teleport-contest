@@ -2183,6 +2183,10 @@ function liveQuietTourist(state = game) {
     return state.urole?.key === 'tourist';
 }
 
+function liveQuietWizard(state = game) {
+    return state.urole?.key === 'wizard' && !state._wizardBindPath;
+}
+
 // Archeologist and Barbarian have no role/session-specific turn owner.  They
 // share the ordinary movement-ration and fmon scan for every legal race and
 // command stream; role identity belongs to startup and mechanics, not to the
@@ -2204,6 +2208,7 @@ function usesSourceMovementRation(state = game) {
         || liveQuietRanger(state)
         || liveQuietPriest(state) || liveQuietSamurai(state)
         || liveQuietCaveman(state) || liveQuietTourist(state)
+        || liveQuietWizard(state)
         || liveDebugSourceRation(state);
 }
 
@@ -2214,10 +2219,7 @@ function usesSourceMovementRation(state = game) {
 // synchronous append behavior.
 function usesQueuedHelplessRecovery(state = game) {
     return usesSourceMovementRation(state)
-        || (state.urole?.key === 'wizard' && !state._wizardBindPath)
-        || liveQuietRogue(state) || liveQuietPriest(state)
-        || liveQuietValkyrie(state)
-        || liveQuietTourist(state);
+        || liveQuietValkyrie(state);
 }
 
 // allmain.c:u_calc_moveamt() clamps a negative movement balance after every
@@ -6126,17 +6128,11 @@ function valkyrieDogSearchRng() {
 export async function newgame() {
     const g = game;
     const bridgeFree = bridgeFreeEnabled();
-    // replayMoves is compatibility metadata, never source game state.  Keep
-    // every session-shape classifier on the legacy side of this one gate so
-    // bridge-free execution never reads the poisoned property installed by
-    // NethackGame.start().
-    const replayMoves = bridgeFree ? '' : (g.replayMoves || '');
+    // The remaining compatibility classifier depends only on the explicit
+    // bind option.  Future command bytes are not game state and are never
+    // read by production initialization or scheduling.
     g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
-    g._wizardPolyPath = !bridgeFree && g.urole?.key === 'wizard'
-        && /^\x17wand of polymorph \(0:30\)/.test(replayMoves);
-    g._wizardQuaffPath = !bridgeFree && g.urole?.key === 'wizard'
-        && /^  nqhzc\.rjhlll/.test(replayMoves);
     const handednessRoll = initializeSourceStartup();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
@@ -6265,12 +6261,7 @@ export async function moveloop_core() {
     // so some commands need a second monster/global round before input.
     const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
         && (g.urole?.key === 'wizard' || liveQuietKnight(g));
-    if ((liveBaseRole(g)
-        || liveQuietMonk(g) || liveQuietRogue(g) || liveQuietHealer(g)
-        || liveQuietRanger(g)
-        || liveQuietPriest(g) || liveQuietSamurai(g)
-        || liveQuietCaveman(g) || liveQuietTourist(g)
-        || liveDebugSourceRation(g))
+    if ((usesSourceMovementRation(g) && !liveQuietKnight(g))
         && g._heroTimePending) {
         const consumeInterruptedMultiAction = () => {
             if (!g._interruptedMultiActionDebt
@@ -6385,43 +6376,11 @@ export async function moveloop_core() {
     // `moves`; they must not repeat monster movement or consume more RNG.
     if (g._maintenanceMove !== (g.moves || 1)) {
         const stepNum = (g.moves || 1) - 1;
-        const liveQuietRole = liveQuietKnight(g)
-            || liveBaseRole(g)
-            || (g.urole?.key === 'wizard' && !g._wizardBindPath)
-            || g.urole?.key === 'monk'
-            // Wizard levelchange can promote any role before its first live
-            // action.  At that point actor movement, newly gained intrinsics,
-            // and maintenance must come from current state rather than the
-            // startup role's bounded fast-forward transcript.
-            || liveDebugSourceRation(g)
-            // Every Rogue shares the source movemon()/dog_move() scheduler;
-            // no coordinate, race, command stream, or session selects a
-            // second actor owner.
-            || liveQuietRogue(g)
-            // Ordinary Healers use the same source movemon()/dog_move()
-            // scheduler.  Only the explicit new-moon compatibility witness
-            // remains on its bounded early-turn replay below.
-            || liveQuietHealer(g)
-            // Ordinary Rangers must derive pet goals and actor movement from
-            // the current fobj/fmon graph.  The named start remains on its
-            // bounded compatibility path until separately generalized.
-            || liveQuietRanger(g)
-            || liveQuietPriest(g)
-            || liveQuietSamurai(g)
-            // Cavemen share the live actor, floor-object, and movement-ration
-            // owners. No turn number selects a second pet or world mutator.
-            || liveQuietCaveman(g)
-            // Ordinary Valkyries and Tourists have no native role-specific
-            // pet transcript. Drive every actor from live fmon, floor-object,
-            // edog, and candidate state.
-            || liveQuietValkyrie(g)
-            || liveQuietTourist(g)
-            // Delayed armor completion is the first seed5006 boundary where
-            // the generated destination's live kitten and monsters all own a
-            // movement ration; replaying a generic Tourist call list loses
-            // their combat and state changes.
-            || (g.urole?.key === 'tourist'
-                && (!!g._delayedAction || !!g._liveQuietTurnRequested));
+        // Source-ration roles share one actor/global maintenance boundary.
+        // Valkyrie already owns live actor scans but has not yet moved onto
+        // the source movement-ration accounting predicate.
+        const liveQuietRole = usesSourceMovementRation(g)
+            || liveQuietValkyrie(g);
         let monsterScan = null;
         if (g._monsterMovementInitialized || liveQuietRole) {
             monsterScan = scanMonsterMovement(
