@@ -1866,6 +1866,11 @@ export async function rhack(key) {
             game.context.nopick = false;
         } else if (String.fromCharCode(nextKey) === 'O') {
             await doOptions(true);
+        } else if (nextKey === 22 && game.flags?.debug) {
+            // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
+            // iflags.menu_requested, so level_tele() skips its numeric
+            // get-line editor and opens print_dungeon(TRUE) immediately.
+            await wizLevelTeleport({ menuRequested: true });
         } else if (direction === 's') {
             // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
             // does not alter its behavior, but the prefixed command still
@@ -6166,8 +6171,8 @@ async function wizWhere() {
 // do.c schedule_goto()/deferred_goto().  The C command schedules the level
 // change for the end of the current command loop; completing it here after the
 // line editor preserves the same no-input interval and the same next capture.
-async function wizLevelTeleport() {
-    const value = await getLine(
+async function wizLevelTeleport({ menuRequested = false } = {}) {
+    const value = menuRequested ? '?' : await getLine(
         'To what level do you want to teleport?',
         ch => /^[0-9+?-]$/.test(ch),
     );

@@ -163,3 +163,22 @@ test('debug level menu builds the selected live special level', async () => {
     assert.ok(outcome.world.hero[0] > 0);
     assert.ok(outcome.world.hero[1] >= 0);
 });
+
+test('request-menu prefix sends debug level teleport directly to live choices',
+    async () => {
+        // cmd.c gives wiz_level_tele CMD_M_PREFIX. `m Ctrl-V` therefore sets
+        // menu_requested and enters print_dungeon(TRUE) without first asking
+        // for a numeric line; the selected destination must be a live level.
+        const outcome = await freshRoleOutcome(boundWizardInput({
+            seed: 48602,
+            moves: ` m${String.fromCharCode(22)}e`,
+            bridgeFree: true,
+        }));
+
+        assert.equal(outcome.error, null);
+        assert.deepEqual(outcome.world.depth, [0, 11]);
+        assert.equal(outcome.world.prototype, 'bigrm');
+        assert.ok(outcome.world.rooms > 0);
+        assert.ok(outcome.world.hero[0] > 0);
+        assert.ok(outcome.world.hero[1] >= 0);
+    });
