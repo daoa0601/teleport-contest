@@ -297,6 +297,7 @@ const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
 const PM_STONE_GIANT = 170;
 const PM_CROESUS = 286;
+const PM_THOTH_AMON = 358;
 const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
@@ -7295,6 +7296,29 @@ const BAR_LOCA_MAP = [
     '................PPP...................................................      ',
 ];
 
+const BAR_GOAL_MAP = [
+    '                                                                            ',
+    '                               .............                                ',
+    '                             ..................                             ',
+    '        ....              .........................          ....           ',
+    '      .......          ..........................           .......         ',
+    '      ......             ........................          .......          ',
+    '      ..  ......................................             ..             ',
+    '       ..                 .....................             ..              ',
+    '        ..                 ..................              ..               ',
+    '         ..         ..S...S..............   ................                ',
+    '          ..                   ........                ...                  ',
+    '       .........                                         ..                 ',
+    '       ......  ..                                         ...  ....         ',
+    '      .. ...    ..                             ......       ........        ',
+    '   ....          .. ..................        ........       ......         ',
+    '  ......          ......................       ......         ..            ',
+    '   ....             ..................              ...........             ',
+    '                      ..............                                        ',
+    '                        ...........                                         ',
+    '                                                                            ',
+];
+
 async function generateBarbarianLocate(active) {
     // Lua source: dat/Bar-loca.lua.  Fixed coordinates still delegate to the
     // shared object/trap/monster constructors; only the three unpositioned
@@ -7413,6 +7437,69 @@ async function generateBarbarianFiller(active) {
     // straight walls; this shared loader phase resolves their corner and
     // junction spines without consuming RNG.
     wallification(1, 0, COLNO - 1, ROWNO - 1);
+}
+
+async function generateBarbarianGoal(active) {
+    const context = loadSpecialAsciiMap(BAR_GOAL_MAP, false);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+
+    setSpecialRegionLighting(context, 0, 0, 75, 19, false);
+    specialDoorAt(context, D_LOCKED, 22, 9);
+    specialDoorAt(context, D_LOCKED, 26, 9);
+    specialStairAt(context, 36, 5, true);
+
+    const altar = game.level.at(
+        context.xstart + 63, context.ystart + 4,
+    );
+    altar.typ = ALTAR;
+    const originalAlignment = game.u?.ualignbase?.[0]
+        ?? game.u?.ualign?.type ?? A_NEUTRAL;
+    const otherAlignmentRoll = rn2(2);
+    const altarAlignment = originalAlignment === A_NEUTRAL
+        ? (otherAlignmentRoll ? A_CHAOTIC : A_LAWFUL)
+        : (otherAlignmentRoll ? -originalAlignment : A_NEUTRAL);
+    altar.flags = Align2amask(altarAlignment);
+    specialNonDiggable(context);
+
+    const heart = specialObjectAt(
+        context, LUCKSTONE, 63, 4, { named: true },
+    );
+    if (heart) {
+        heart.blessed = true;
+        heart.cursed = false;
+        heart.spe = 0;
+        heart.artifact = true;
+        heart.oartifact = true;
+        heart.questArtifact = true;
+        heart.oextra = {
+            ...(heart.oextra || {}),
+            oname: 'The Heart of Ahriman',
+        };
+        game._artifactExistCount = (game._artifactExistCount ?? 0) + 1;
+    }
+    for (let count = 0; count < 14; count++) specialObject(context);
+    for (let count = 0; count < 6; count++) await specialTrap(context);
+
+    await specialMonsterAt(context, PM_THOTH_AMON, 63, 4, {
+        randomGender: false,
+        peaceful: false,
+    });
+    for (let count = 0; count < 16; count++)
+        await specialExplicitMonster(
+            context, PM_OGRE, null, { peaceful: false },
+        );
+    for (let count = 0; count < 2; count++)
+        await specialMonsterOfClass(context, 41, { peaceful: false });
+    for (let count = 0; count < 8; count++)
+        await specialExplicitMonster(
+            context, PM_ROCK_TROLL, null, { peaceful: false },
+        );
+    await specialMonsterOfClass(context, 46, { peaceful: false });
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
 }
 
 const PRI_START_MAP = [
@@ -16408,6 +16495,11 @@ async function makelevel() {
         }
         if (prototype === 'Bar-loca') {
             await generateSpecialAndFixup(generateBarbarianLocate,
+                g._activeSpecialLevel);
+            return;
+        }
+        if (prototype === 'Bar-goal') {
+            await generateSpecialAndFixup(generateBarbarianGoal,
                 g._activeSpecialLevel);
             return;
         }
