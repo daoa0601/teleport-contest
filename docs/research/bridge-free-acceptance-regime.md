@@ -285,23 +285,25 @@ be reported as bridge-free acceptance.
 `scripts/audit-test-lanes.mjs` enforces the first structural boundary across
 all default-lane `.test.js` entrypoints and their shared support modules. They
 may not read a recorded `sessions/*.session.json` input, import the public
-RNG-parity helpers, use a mock/spy API, or introduce a
-named `calls`/`callOrder`/`invocations` transcript collector. It also rejects
-the known whole-world normal/bridge-free self-oracle, test self-discovery,
-production-source-text checksum, and copied-source checksum patterns. Role
-scheduler tests may not use bridge-ledger shape or mere tame-pet existence as
-their mechanics oracle. Outside the dedicated `bridge_free.test.js` policy
-contract, mechanics tests may not read or reset the bridge ledger at all: an
-attempted compatibility boundary already throws in bridge-free mode, while
-ledger counters do not prove the named game behavior. Exact bridge-free
-replays, character-selection traces,
+RNG-parity helpers, enable or read the internal RNG log, use a mock/spy API, or
+introduce a named `calls`/`callOrder`/`invocations` transcript collector. It
+also rejects direct private monster scheduler plans and exact callback-kind
+sequences: those merely restate how the current implementation decomposes an
+operation. The audit continues to reject the known whole-world normal/bridge-
+free self-oracle, test self-discovery, production-source-text checksum, and
+copied-source checksum patterns. Role scheduler tests may not use bridge-ledger
+shape or mere tame-pet existence as their mechanics oracle. Outside the
+dedicated `bridge_free.test.js` policy contract, mechanics tests may not read
+or reset the bridge ledger at all: an attempted compatibility boundary already
+throws in bridge-free mode, while ledger counters do not prove the named game
+behavior. Exact bridge-free replays, character-selection traces,
 Priest/Race startup traces, and the
 trap-victim trace therefore use `.public-regression.js`; only the fresh
 quiet-role runtime and fail-loud policy checks remain in
 `bridge_free.test.js`. This audit prevents known traces and the most explicit
-mock-order checks from inflating the behavioral count, but it is not a
-substitute for semantic review of dependency callbacks, result objects,
-renamed collectors, or internal call-order assertions.
+transcript/order checks from inflating the behavioral count, but it is not a
+substitute for semantic review of result objects, renamed collectors, or
+assertions which indirectly reconstruct implementation order.
 
 ## Explicit non-results
 

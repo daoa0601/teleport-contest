@@ -100332,3 +100332,52 @@ hidden measurement, or animation work ran; `public-session-status.md` is
 unchanged.
 
 ---
+
+### [2026-08-30 11:20 EEST, journal block 3248] {#test-independence #change-detector #rng-transcript #scheduler-plan #callback-order #behavioral-gate #mutation-probe #process-safety}
+
+**Priority correction and diagnosis:** block 3247 was production progress:
+the fixed default scheduler transcript was deleted.  The next proposed step
+was recorded-RNL removal, but semantic review against the change-detector
+criterion found that the default behavioral lane still admitted disguised
+implementation transcripts.  At commit `a065c8a`, 13 test files contained
+**220** `getRngLog` reads and **200** `enableRngLog` calls.  `monmove.test.js`
+also asserted four exact private allocation/round/actor plan expressions, and
+three themed-room cases asserted complete callback-kind sequences.  The old
+lane audit rejected a collector literally named `calls`, but not the same
+information renamed as an RNG log, scheduler result, or `phases` array.
+
+**Decision and cleanup batches:** exact RNG transcripts are compatibility
+witnesses, not default mechanics acceptance.  Commits `86829e5`, `831d8f1`,
+`69d83d6`, `8f64ddc`, `9942079`, and `e0a9d24` remove those transcript oracles
+from 14 behavioral files without deleting a test.  Lifecycle, timer, lamp,
+potion, swallowed-action, themed-room, and monster-allocation tests now assert
+object identities, HP/status effects, messages, timer bounds, terrain,
+inventory, movement, death/life-saving, or other current-world outcomes.
+Where an old test had no independent claim--for example Rogue room-fill RNG
+rejoin or NO_MINVENT prefix equality--it was narrowed to the actual terrain or
+inventory behavior instead of preserving a checksum under a new name.
+
+**Mechanical guard and adversarial evidence:** commit `03a29c5` makes the lane
+audit reject internal RNG logging, direct private scheduler-plan assertions,
+and exact callback-kind sequences in addition to existing public-trace,
+mock/spy, named-call-collector, source-checksum, same-implementation, and
+bridge-ledger patterns.  A concrete mutation removed cursed-lamp slippery-
+finger state while leaving the spill message and random branch intact; the
+rewritten test failed independently at `glibTurns` (`undefined` versus 10).
+Restoring the mutation returned it to green.  This falsifies the concern that
+deleting the exact RNG list left only a cosmetic smoke test.
+
+**Measured effect, limits, and next blocker:** all affected files passed their
+focused gates.  One managed `npm test` invocation passed **462/462** behavioral
+tests across **53** files, with the strengthened lane audit and the unchanged
+118/1/19 bridge audit green.  Test count stability is reported only to show
+that transcript assertions were replaced or removed in place; it is not a
+coverage claim.  Regex enforcement still cannot recognize every renamed or
+indirect self-oracle, so semantic review and mutation probes remain required.
+No production game mechanic changed in this block, and the C/Lua ownership map
+therefore did not change.  Recorded-RNL compatibility remains the next
+production bridge blocker.  No corpus, scorer, public-regression lane, sealed
+trace, push, publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---
