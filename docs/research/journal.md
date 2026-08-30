@@ -133,8 +133,6 @@ prefix.  Generalize the extcmd autocomplete owner established by
 engine-only measurement remains **37/44**.  No hidden suite, full corpus,
 normal suite, stage, commit, push, or submission has run.
 
----
-
 ### [2026-07-30 14:11 EEST, journal block 946] {#seed0360 #input457 #input495 #input497 #input510 #armor #attributes #displacement #set-apparxy #tty #focused-gate #regression #architecture #ledger #process-safety #priority}
 
 **Witness and earliest divergence:** the wished-armor and displacement block
@@ -99307,5 +99305,72 @@ timing branches witnessed in block3222.  Wallet gold and the other named gaps
 remain `partial`.  This gate is local bridge-free behavioral evidence, not an
 engine-only corpus, public scorer, sealed gate, or official hidden measurement;
 `public-session-status.md` is unchanged and publication remains unauthorized.
+
+---
+
+### [2026-08-30 07:30 EEST, journal block 3224] {#bridge-free #hero-gold #object-identity #carrier-lifecycle #quiver #shop-payment #change-detector #critical-debugging-portfolio #diagnosis}
+
+**Witness and competing hypotheses:** block3222 identified aggregate wallet
+state as the next representation blocker.  The source-shaped hypothesis was
+that carried gold must be one top-level `COIN_CLASS` identity whose carrier,
+quantity, quiver mask, split children, and merge survivor are observable state.
+Competing repairs were (a) keep `_goldCount` authoritative and synthesize a
+temporary gold object only for `Q`/`f`, (b) keep both an object and wallet as
+independent authorities, or (c) move ownership to the object and retain the
+amount only as a derived compatibility cache.  The first two can reproduce a
+number while losing allocation, carrier, quiver, payment, weight, and
+recipient semantics, so they were treated as equivalent-strength gaps rather
+than accepted shortcuts.
+
+**Earliest divergences, prediction, and evidence:** before this slice, startup
+money and an existing purse had no live inventory identity; pickup committed
+only a numeric increment; drop and bag operations fabricated fresh objects;
+partial payment decremented the amount directly; and a gold quiver selection
+would require a proxy.  The prediction was that one canonical owner would make
+identity-preserving pickup, merge, drop, bag, payment, counted-refusal, and
+one-coin-detachment witnesses independently green while allowing every direct
+production `_goldCount` access outside that owner to be deleted.  These are
+state boundaries before screen formatting, public-session output, actor replay,
+or hidden scoring.
+
+**Decision and evidence limit:** implement the canonical top-level purse and
+its carrier transitions first.  Do not fold direct `t` into the quivered-gold
+witness: pinned C gives direct gold a separate `throw_gold()` whole-stack path,
+and monster contact continues through `ghitm()`.  Those mechanisms, recipient
+coin-object transfer, persistence breadth, and sealed strata remain explicit
+gaps rather than inferred coverage.
+
+---
+
+### [2026-08-30 07:31 EEST, journal block 3225] {#hero-gold #implementation #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** `js/hero_gold.js` now owns one
+top-level purse object plus the synchronized legacy cache.  Startup constructs
+the gold object after ordinary role/race inventory; pickup moves or merges live
+identities; whole-purse floor and bag moves retain identity; partial shop debit
+detaches a child and preserves the parent/remainder; and Q plus quivered fire
+own partial-count refusal, whole-purse readiness, and one-coin detachment.
+Display, insight, weight, vault, death, and pet-goal consumers read the object.
+Seven gold-specific state witnesses pass, the neighboring gold/quiver/weapon/
+startup portfolio passes **33/33**, and the production search leaves every
+direct `_goldCount` read/write inside the canonical owner.
+
+**Adversarial audit and falsified alternatives:** a guarded default behavioral
+process passed **402/402** tests and exited normally.  The lane audit is green
+across **46 files** with no recorded-session, public-parity, mock/spy, or
+call-transcript dependencies.  The bridge audit passes across **125 production
+files, 9 guarded replay modules, and 19 fixture modules**; no matching runner
+remains.  The carrier witnesses falsify the temporary-proxy repair, and the
+single-owner search falsifies a dual-authority repair.  The one-coin floor
+witness does not falsify missing full flight/contact behavior, so no broader
+projectile claim is recorded.
+
+**Next blocker and evidence limit:** implement direct `throw_gold()` and then
+the `ghitm()` contact matrix without weakening the new carrier invariant.
+Shopkeeper/monster recipient coin identity, save/restore materialization,
+nested/loss/death variants, option strata, and a scheduled sealed gate remain
+open.  No corpus, scorer, public-regression lane, sealed trace, push,
+publication, hidden measurement, or supplemental-animation work ran;
+`public-session-status.md` is unchanged.
 
 ---

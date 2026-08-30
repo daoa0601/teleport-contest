@@ -38606,11 +38606,78 @@ elapsed turns, and bridge use rather than prompt snapshots, collaborator
 calls, or private queue shape.  The default behavioral gate passes 395/395.
 
 This subsystem remains partial.  Hurtle/death interruption within a volley,
-wallet-backed gold selection, partial-gold refusal and coin flight; menu-
-supplied counts; exact multiple-overflow `#` identity and reassignment breadth;
+direct gold flight and contact; menu-supplied counts; exact multiple-overflow
+`#` identity and reassignment breadth;
 welded `reset_remarm()` occupation cancellation and presentation breadth;
 touch/artifact and unknown-cursed launcher-wield failure continuations;
 polearm/whip and return-weapon fire modes; swallowed sling ammunition;
 water-wall/sink and other projectile contacts and terrain; non-sling multishot
 and count-prefix families; alternate options; persistence; and sealed strata
 are still open.  Lua owns no runtime Caveman scheduler or projectile exception.
+
+## 1020. Hero gold rejoins the object lifecycle
+
+```mermaid
+flowchart TD
+    Start["u_init.c ini_inv Money"] --> Make["mksobj GOLD_PIECE"]
+    Make --> Purse["one top-level COIN_CLASS identity at inventory head"]
+    Floor["pickup.c floor gold identity"] --> Merge{"existing purse?"}
+    Merge -- no --> Purse
+    Merge -- yes --> Survivor["merged survivor identity; incoming object freed"]
+    Survivor --> Purse
+
+    Purse --> Drop["do.c whole-purse floor move"]
+    Purse --> Bag["in_container / out_container carrier move"]
+    Purse --> Pay["shk.c partial debit via splitobj"]
+    Purse --> Quiver["wield.c doquiver_core"]
+    Quiver --> Partial{"count less than purse?"}
+    Partial -- yes --> Refuse["consume split identity boundary, unsplit, refuse"]
+    Partial -- no --> Ready["setuqwep owns the same purse identity"]
+    Ready --> Fire["dothrow.c detach one coin identity"]
+    Fire --> Generic["current generic projectile settlement"]
+
+    Purse -. derives .-> Cache["_goldCount compatibility cache"]
+    Cache -. never selects production behavior .-> Purse
+    Direct["direct t: throw_gold whole stack"] -. open .-> Contact["ghitm catches, bribes, credits, guards"]
+```
+
+Pinned C does not store carried money as an amount outside the object graph.
+`u_init.c:ini_inv()` creates a `GOLD_PIECE`; `invent.c:addinv()` links it at
+the logical inventory head, and pickup/merge, removal, splitting, container,
+quiver, throw, and shop code continue moving or transforming that identity.
+Consequently a JavaScript wallet amount plus temporary objects at command
+boundaries would be two competing authorities: it could preserve the visible
+number while losing source allocation, carrier, quiver, weight, and recipient
+semantics.
+
+`js/hero_gold.js` is now the single owner for the top-level purse.  Startup
+constructs the source object after the ordinary role/race inventory sequence;
+floor pickup moves the incoming identity or merges it into the surviving purse;
+whole-purse drop and bag operations move that same identity; and partial shop
+payment detaches a separately identified child while preserving the purse and
+exact remainder.  Inventory display, status, insight, weight, vault, death,
+and pet-goal readers derive their amount from the live object.  Direct
+production reads and writes of `_goldCount` are confined to the owner, where it
+is maintained only for legacy restored states and older harnesses.
+
+`Q` now treats gold as that same live object.  A direct partial count reaches
+the source split/unsplit identity boundary and refuses without changing the
+purse.  Readying all installs the purse in `uquiver`; firing detaches one new
+coin identity while the original purse and quiver survive with the reduced
+quantity.  Seven behavioral witnesses assert object identity, carrier,
+quantity, slot mask, remainder, and elapsed state across pickup, merge, drop,
+bag insertion/removal, payment, counted refusal, and one-coin detachment.  The
+focused neighboring portfolio passes 33/33, and the guarded default behavioral
+gate passes 402/402 with 46 lane-audited files and a clean 125-file bridge
+audit.  None of these tests copies JavaScript control flow, helper calls,
+screens, RNG transcripts, or public-session outcomes.
+
+This entry remains `partial`.  Direct `t` must still route gold through C's
+`throw_gold()` whole-stack transaction rather than the generic object branch.
+The quivered child currently proves identity detachment and floor settlement,
+not full source range/path behavior.  `ghitm()` catch, bribe, credit, guard,
+Priest, shopkeeper, mercenary, and greedy-monster contacts remain absent;
+payment still credits aggregate `resident.gold` instead of moving a recipient
+coin object.  Save/restore materialization breadth, nested-carrier and
+loss/death variants, option strata, and a sealed gate are also open.  Lua owns
+none of this runtime object lifecycle.

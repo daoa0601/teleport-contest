@@ -79,9 +79,15 @@ quiver `f` fallback now share that same live `doquiver_core` owner instead of
 using a Ranger-only arrow picker.  The shared transaction owns explicit
 clearing, direct counted splits, the 52-letter implicit-split boundary,
 armor/accessory/saddle rejection, cursed-loadstone non-splitting, and the
-known-versus-newly-discovered welded-primary time distinction.  Wallet-backed
-gold, menu-supplied counts and exact overflow-letter breadth, non-sling count
-families, interruption, and broader fire modes remain explicitly partial.
+known-versus-newly-discovered welded-primary time distinction.  Hero gold now
+has one top-level `COIN_CLASS` identity rather than an aggregate wallet as its
+production authority.  Startup, pickup/merge, floor and bag carrier moves,
+partial shop debit, partial-count quiver refusal, whole-purse quivering, and a
+one-coin quivered detachment have live state witnesses; `_goldCount` remains
+only a synchronized legacy cache inside that owner.  Direct `throw_gold()` and
+`ghitm()` flight/contact behavior, recipient coin identity, menu-supplied
+counts and exact overflow-letter breadth, non-sling count families,
+interruption, and broader fire modes remain explicitly partial.
 Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
