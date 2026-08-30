@@ -14190,19 +14190,8 @@ async function makelevel() {
     // ordinary-room bonus and filling passes below.
     await maybeMakeSpecialRoom(roomThreshold);
 
-    // At depth 2 this fixture selects a shop candidate, then places the
-    // dungeon branch in a random room.  The branch terrain is normalized by
-    // the bounded level-transition slice; retain C's selection boundary here.
-    if (g._valkPitPath && (g.u?.uz?.dlevel ?? 1) === 2) {
-        rn2(2);
-        rn2(4);
-        rn2(6);
-    }
-
     // Place dungeon branch
-    if (branchp && !(g._valkPitPath && (g.u?.uz?.dlevel ?? 1) === 2)) {
-        await place_branch(branchp);
-    }
+    if (branchp) await place_branch(branchp);
 
     // Choose one of the ordinary rooms for any level-specific bonus item,
     // then populate every ordinary room.  The choice must use the current
@@ -14213,10 +14202,8 @@ async function makelevel() {
         .filter(room => room
             && (room.rtype === OROOM || room.rtype === THEMEROOM)
             && room.needfill === FILL_NORMAL);
-    const bonusItemRoomRange = g._valkPitPath
-        && (g.u?.uz?.dlevel ?? 1) === 2 ? 4 : fillableRooms.length;
     let bonusItemRoomCountdown = fillableRooms.length
-        ? rn2(bonusItemRoomRange) : -1;
+        ? rn2(fillableRooms.length) : -1;
     for (const croom of g.level.rooms.slice(0, g.level.nroom)) {
         const fillable = croom
             && (croom.rtype === OROOM || croom.rtype === THEMEROOM)

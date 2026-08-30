@@ -2178,7 +2178,7 @@ function liveQuietSamurai(state = game) {
 }
 
 function liveQuietValkyrie(state = game) {
-    return state.urole?.key === 'valkyrie' && !state._valkPitPath;
+    return state.urole?.key === 'valkyrie';
 }
 
 function liveQuietTourist(state = game) {
@@ -6310,8 +6310,6 @@ export async function newgame() {
         && /^  ns#ride/.test(replayMoves);
     g._monkNorthPath = !bridgeFree && g.urole?.key === 'monk'
         && /^  n:kkkhhhjjjlll\.ssh,ek/.test(replayMoves);
-    g._valkPitPath = !bridgeFree && g.urole?.key === 'valkyrie'
-        && /^  nllllllllkkkllkk>/.test(replayMoves);
     g._wizardBindPath = !bridgeFree && g.urole?.key === 'wizard'
         && /BIND=v:inventory/.test(g.nethackrc || '');
     g._wizardPolyPath = !bridgeFree && g.urole?.key === 'wizard'

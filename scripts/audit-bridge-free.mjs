@@ -40,7 +40,7 @@ export function auditBridgeFreeSource() {
     // path, but bridge-free mode must make each one structurally unreachable
     // rather than relying on an empty replay string or lucky coordinates.
     const compatibilityClassifiers = [
-        '_knightCombatPath', '_monkNorthPath', '_valkPitPath',
+        '_knightCombatPath', '_monkNorthPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
         '_rangerNamePath',
@@ -125,6 +125,18 @@ export function auditBridgeFreeSource() {
         if (allmain.includes(token))
             failures.push(`allmain.js: legacy Valkyrie chat token ${token}`);
     }
+    const forbiddenValkyrieReplayTokens = [
+        '_valkPitPath', 'valkPit', 'replayValkPit',
+        'seeded-replay.valkyrie-pit',
+    ];
+    for (const token of forbiddenValkyrieReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'detect.js', 'mklev.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Valkyrie pit token ${token}`);
+        }
+    }
+    if (sources.has('valk_pit.js'))
+        failures.push('valk_pit.js: legacy Valkyrie replay module still exists');
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');

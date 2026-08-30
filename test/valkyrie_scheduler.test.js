@@ -52,7 +52,7 @@ function actorState() {
             || left.position[1] - right.position[1]);
 }
 
-async function futureChatOutcome(bridgeFree) {
+async function valkyrieOutcome({ seed, moves, bridgeFree }) {
     const previousBridgeFree = process.env.TELEPORT_BRIDGE_FREE;
     const previousFixtures = process.env.TELEPORT_DISABLE_FIXTURES;
     if (bridgeFree) process.env.TELEPORT_BRIDGE_FREE = '1';
@@ -60,17 +60,15 @@ async function futureChatOutcome(bridgeFree) {
     process.env.TELEPORT_DISABLE_FIXTURES = '1';
     try {
         const result = await runSegment({
-            seed: 27001,
+            seed,
             datetime: '20260830110000',
             nethackrc: valkyrieConfig(),
-            // Four elapsed turns expose actor scheduling. Saving then
-            // suspends before this suffix is interpreted. Those future bytes
-            // cannot be an input to level construction or earlier turns.
-            moves: ' ....Syny#chat',
+            moves,
         });
         return {
             world: {
                 hero: [game.u?.ux, game.u?.uy],
+                depth: [game.u?.uz?.dnum, game.u?.uz?.dlevel],
                 moves: game.moves,
                 message: game._pending_message,
                 objects: floorObjectState(),
@@ -89,9 +87,36 @@ async function futureChatOutcome(bridgeFree) {
 }
 
 test('future chat text cannot rewrite a fresh Valkyrie start', async () => {
-    const normal = await futureChatOutcome(false);
-    const bridgeFree = await futureChatOutcome(true);
+    // Four elapsed turns expose actor scheduling. Saving then suspends before
+    // this suffix is interpreted. Those future bytes cannot be an input to
+    // level construction or earlier turns.
+    const input = {
+        seed: 27001,
+        moves: ' ....Syny#chat',
+    };
+    const normal = await valkyrieOutcome({ ...input, bridgeFree: false });
+    const bridgeFree = await valkyrieOutcome({
+        ...input, bridgeFree: true,
+    });
 
     assert.deepEqual(normal.world, bridgeFree.world);
     assert.deepEqual(normal.bridges, []);
 });
+
+test('fresh Valkyrie movement and descent cannot select a pit replay',
+    async () => {
+        // This fresh seed is not a recorded session. The command sequence is
+        // a regression witness for the former selector; its meaning must come
+        // from current terrain and commands in both modes.
+        const input = {
+            seed: 27002,
+            moves: '  nllllllllkkkllkk>',
+        };
+        const normal = await valkyrieOutcome({ ...input, bridgeFree: false });
+        const bridgeFree = await valkyrieOutcome({
+            ...input, bridgeFree: true,
+        });
+
+        assert.deepEqual(normal.world, bridgeFree.world);
+        assert.deepEqual(normal.bridges, []);
+    });
