@@ -38809,3 +38809,56 @@ This owner remains `partial`.  Horizontal Air-level/Levitation recoil and
 sale and billing, full upward damage modifiers/death handling, exact special-
 level and hallucinated presentation, save/restore, and sealed option/terrain
 strata remain open.  No public or replay result is treated as coverage.
+
+## 1023. Archeologist and Barbarian leave the default turn replay
+
+```mermaid
+flowchart TD
+    Action["timed command"] --> Debit["u.umovement -= 12"]
+    Debit --> Scan["movemon scans current fmon"]
+    Scan --> Pet["dog_move uses current pet, goals, and floor"]
+    Pet --> Ready{"hero movement at least 12?"}
+    Ready -- no; both sides exhausted --> Allocate["allocate monster and hero movement; moves++"]
+    Allocate --> Maintain["timeouts, Searching, sounds, hunger, engraving"]
+    Maintain --> Scan
+    Ready -- yes --> Input["next command"]
+
+    Role["Archeologist or Barbarian startup identity"] --> Mechanics["intrinsics and live role mechanics"]
+    Mechanics --> Maintain
+    Fast["fastforward.turn table"] -. "no longer reachable" .-> Scan
+    Gap["scheduler.default-replay-gap"] -. "no longer reachable" .-> Scan
+```
+
+Pinned `allmain.c:moveloop_core()` has no Archeologist or Barbarian scheduler
+branch.  A timed action debits the hero movement ration, `movemon()` drains
+current monster movement, the engine allocates a new global turn only when
+neither side can act, and once-per-turn maintenance runs before the scan
+repeats.  Role identity belongs to startup and mechanics, not selection of an
+alternate clock.
+
+Before this slice, the same fresh one-wait probe reached `fastforward.turn` in
+normal mode and the forbidden `scheduler.default-replay-gap` in bridge-free
+mode for both roles.  `js/allmain.js` now puts every legal Archeologist and
+Barbarian race on the shared source movement ration, current `fmon`/`dog_move`
+scan, and live global maintenance in both modes.  A four-turn matrix over all
+13 selectable roles observes equal hero, actor, trap, floor, and inventory
+state with zero bridge use, so the boundary is not inferred from those two
+roles alone.
+
+Two adversarial witnesses distinguish a live clock from a replay counter.
+With seed 31222, Archeologist intrinsic Searching reveals an adjacent teleport
+trap during maintenance.  With seed 31004, a Barbarian's live hostile actor
+becomes adjacent before the fourth dot and the source input-safety rule refuses
+that wait without consuming time.  The latter initially looked like a lost
+turn; bounding each input falsified that hypothesis and retained the actor-
+sensitive behavior instead of weakening the expected move count.  Tests assert
+only observable world state, not helper calls, source text, RNG transcripts, or
+mock order.
+
+This owner remains `partial`.  Explicit normal-mode compatibility classifiers
+still retain `fastforward.turn`, `fastforward.ranger-turn`,
+`scheduler.default-replay-gap`, and seeded role modules for represented legacy
+paths.  Wider actor, terrain, interruption, option, persistence, and sealed
+strata are also open.  The focused live-scheduler portfolio passes 20/20; the
+managed default gate passes 443/443 with 49 lane-audited files and a clean
+126-production-file, 9-guarded-module, 19-fixture-module bridge audit.

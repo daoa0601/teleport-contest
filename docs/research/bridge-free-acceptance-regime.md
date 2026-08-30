@@ -56,12 +56,20 @@ Priest, Valkyrie, and Caveman alternate schedulers in favor of live source-
 ration, command, prayer, projectile, level-generation, and current-world actor
 paths.  Pre-mklev and all-role inventory startup
 now also have one live owner; their pre/post replay exports, exhaustive-role
-fallback, and unused mineralize transcript are deleted.  The next ordered
-replacement is the remaining seeded room-fill and role-turn compatibility
-paths.  Future Valkyrie `#chat` text no longer injects a post-generation
-boulder, and the pit prefix no longer selects fixed movement, depth-two room,
-detection, corpse, or actor replay.  Caveman `f` now reaches shared fireassist
-through a scheduler-separated canned weapon-swap continuation.  Matching-sling
+fallback, and unused mineralize transcript are deleted.  Fresh unclassified
+execution for every selectable role now has a four-turn normal/bridge-free
+state witness with zero bridge use.  Archeologist and Barbarian no longer fall
+through to `fastforward.turn` or `scheduler.default-replay-gap`; they use the
+same source movement ration, live actor scan, and global maintenance as the
+other represented roles.  Archeologist intrinsic Searching is exercised by a
+live adjacent-trap discovery, while Barbarian actor proximity exercises the
+source safety refusal that leaves an unsafe wait zero-time.  The remaining
+ordered replacements are explicitly classified seeded room-fill and role-turn
+compatibility paths.  Future Valkyrie `#chat` text no longer injects a post-
+generation boulder, and the pit prefix no longer selects fixed movement,
+depth-two room, detection, corpse, or actor replay.  Caveman `f` now reaches
+shared fireassist through a scheduler-separated canned weapon-swap
+continuation.  Matching-sling
 fire now selects the source action-level multishot count before independently
 splitting and settling each projectile.  A positive command count survives the
 fireassist continuation and caps the matching-sling volley after that source
@@ -99,9 +107,9 @@ policy.  Air/levitation recoil, special floor/level shipping and shop
 settlement, complete shopkeeper mollification, presentation breadth,
 menu-supplied counts and exact overflow-letter breadth, non-sling count
 families, interruption, and broader fire modes remain explicitly partial.
-Other named role paths remain.  Those
-later slices have focused fresh witnesses and selected public regressions, but
-still no sealed gate or hidden measurement.
+Explicit normal-mode compatibility classifiers remain.  Those later slices
+have focused fresh witnesses and selected public regressions, but still no
+sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 

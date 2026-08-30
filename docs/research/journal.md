@@ -99534,3 +99534,68 @@ measurement, or supplemental-animation work ran; `public-session-status.md`
 is unchanged.
 
 ---
+
+### [2026-08-30 08:25 EEST, journal block 3230] {#turn-scheduler #diagnosis #critical-portfolio #bridge-free #source-contract}
+
+**Prior-turn classification and current state:** the quivered-gold slice was
+progress: it replaced one compatibility fallback with source-owned state and
+left a named partial boundary.  Re-reading the acceptance regime and ownership
+registry showed that Samurai, Rogue, Priest, Valkyrie, and Caveman already had
+live scheduling owners; the unclassified whole-role defect was instead
+Archeologist and Barbarian.  The critical-debugging portfolio kept scheduler
+selection, movement-ration allocation, input safety/refusal, intrinsic
+maintenance, and actor interruption as separate hypothesis families.
+
+**Earliest divergence, prediction, and red evidence:** a fresh one-wait probe
+for each role reached `fastforward.turn` in normal mode and the forbidden
+`scheduler.default-replay-gap` in bridge-free mode.  The pinned
+`allmain.c:moveloop_core()` contract predicts no role scheduler branch: debit
+12 hero movement for a timed action, drain current monster movement, allocate
+monster and hero movement plus `moves` only when both sides are exhausted, run
+once-per-turn maintenance, and repeat until the hero can act.  The initial two
+bridge-free witnesses therefore failed before any downstream public-session
+symptom and established the source boundary to restore.
+
+**Decision and evidence limit:** route only the previously unclassified base
+roles through the existing source movement-ration owner, without changing the
+explicit legacy compatibility classifiers.  Require cross-mode observable
+world equality across every selectable role, legal-race coverage for the two
+changed roles, and live maintenance/actor witnesses that a blind counter cannot
+satisfy.  No public, sealed, hidden, or scorer result is evidence for this
+diagnosis.
+
+---
+
+### [2026-08-30 08:25 EEST, journal block 3231] {#turn-scheduler #implementation #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** `js/allmain.js` now classifies
+Archeologist and Barbarian as live base roles and includes them in source
+movement-ration selection, the generic pending-time loop, and live quiet-role
+maintenance.  Five state-only witnesses cover four fresh normal/bridge-free
+turns for all 13 selectable roles, all three legal Archeologist races, both
+legal Barbarian races, zero bridge use, intrinsic Searching that reveals a
+seed-31222 adjacent teleport trap, and seed-31004 actor-sensitive refusal of an
+unsafe fourth wait without consuming time.
+
+**Adversarial correction and falsified hypotheses:** the first Barbarian
+witness expected `moves == 5` and observed 4.  Bounded per-input inspection
+showed that a hostile actor had become adjacent before the fourth dot, so the
+source safety rule correctly rejected the wait as zero-time.  This falsified a
+hidden Barbarian speed rule and scheduler turn loss; seed 31006 supplies the
+ordinary-ration control, while seed 31004 remains the stronger adversarial
+witness.  Cross-mode equality across all roles also falsifies the claim that
+the change merely moved the bridge-free failure elsewhere.
+
+**Gates, next blocker, and evidence limit:** the focused base-role file passes
+5/5 and the live scheduler portfolio passes 20/20.  One owned default suite
+passed **443/443** and exited normally in 4.5 seconds.  The lane audit passes
+**49 files** with no recorded-session, public-parity, mock/spy, or call-
+transcript dependency; bridge audit remains **126 production files, 9 guarded
+replay modules, and 19 fixture modules**.  Syntax and diff checks pass, and no
+matching runner remains.  Explicit Ranger, Healer, Knight, Monk, Wizard,
+Tourist, and other named normal-mode compatibility paths plus wider actor,
+terrain, interruption, option, persistence, and sealed strata remain open.  No
+corpus, scorer, public-regression lane, sealed trace, push, publication, hidden
+measurement, or animation work ran; `public-session-status.md` is unchanged.
+
+---
