@@ -99374,3 +99374,72 @@ publication, hidden measurement, or supplemental-animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 07:50 EEST, journal block 3226] {#bridge-free #throw-gold #ghitm #monster-contact #shop-credit #priest-alignment #vault-guard #mercenary-bribe #critical-debugging-portfolio #diagnosis}
+
+**Contract and independent mechanism portfolio:** block3225 left direct
+`throw_gold()` and `ghitm()` open.  Pinned NetHack 5.0 separates unquivered
+direct `t` from quivered gold before ordinary projectile handling: direct `t`
+frees the whole purse, computes integer range from effective Strength and coin
+weight, and passes a live map endpoint to `ghitm()`.  Contact then splits into
+ordinary non-greedy wake/miss, immobilized eligible harmless miss, greedy catch,
+shop loss/credit, priest contribution, vault-guard response, and rank-dependent
+mercenary bribery.  A one-coin generic throw, a universal catch flag, and a
+single bribe threshold were kept as incompatible hypotheses rather than
+allowed to approximate one another.
+
+**Red evidence, prediction, and earliest divergences:** all **14** opening
+witnesses failed against the prior generic fallback.  The earliest state split
+was immediately after direction acceptance: JavaScript allocated a child,
+left `N-1` coins in inventory, and moved one coin one cell; C transfers the
+whole direct purse before flight.  Vertical input was rejected, swallowed gold
+reached a forbidden generic-object bridge, and no actor beyond the adjacent
+cell reached any contact branch.  The prediction was that a distinct direct
+owner would make whole-stack carrier/range state green while preserving the
+already-quivered one-coin parent, then allow each catch family to be tested by
+its own resulting carrier, sleep/meal, attitude, alignment, robbery, credit,
+or bribe state.
+
+**Decision and falsified shortcuts:** route only an unquivered coin identity
+through the direct owner.  Preserve quivered `t`/`f` as a distinct one-coin
+path.  Reuse live map, monster-inventory merge, hidden-gold, shop, priest, and
+attitude owners rather than adding role/seed/session classifiers.  Source
+review of the one-in-four catch anger probe also falsified the shared generic
+alignment penalty: `setmangry()` applies minus five to a coaligned priest and
+plus two to a cross-aligned priest.  The wake and anger operations are now
+separate so the catch path does not wake twice or retain that coarse state.
+
+---
+
+### [2026-08-30 07:51 EEST, journal block 3227] {#throw-gold #ghitm #implementation #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Implementation and adversarial effect:** `js/gold_throw.js` now owns whole-
+purse self/vertical/swallowed/horizontal transitions; source integer range;
+adjacent and later walls; coin passage through iron bars; web stopping; floor
+stacking; ineligible and immobilized misses; greedy catch/merge; sleep, meal,
+appearance, and anger transitions; shop robbery/credit; priest state; vault
+guard policy; and soldier/watch bribery.  Additional adversarial witnesses
+cover heavy coin range, a later wall, iron bars, web state, incoming-object
+free semantics, self cancellation, direct `t` from a quivered purse, the guard
+anger-probe exclusion, and both priest alignment branches.  The gold-specific
+portfolio passes **24/24**, and the neighboring gold/quiver/weapon/monster-
+inventory portfolio passes **62/62**.
+
+**Managed effect and evidence limit:** one guarded default behavioral process
+passed **426/426** named tests and exited normally.  The lane audit is green
+across **47 files** with no recorded-session, public-parity, mock/spy, or call-
+transcript dependencies.  The bridge audit passes across **126 production
+files, 9 guarded replay modules, and 19 fixture modules**; no matching runner
+remains.  These witnesses prove observable live state, not exact prose,
+animation, screens, private helper order, or a hidden result.
+
+**Next blocker:** full quivered-coin range/contact, water/lava floor effects,
+holes and level shipping, shop-floor sales, complete mimic/invisible/
+Hallucination and voice/deaf presentation, Elbereth anger side effects, and
+`make_happy_shk()` relocation/Kops/guard repair remain open.  Partial carried-
+bill payment still credits aggregate `resident.gold`.  Persistence, option
+strata, and the scheduled sealed gate also remain.  No corpus, scorer, public-
+regression lane, sealed trace, push, publication, hidden measurement, or
+supplemental-animation work ran; `public-session-status.md` is unchanged.
+
+---

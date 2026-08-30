@@ -38638,7 +38638,7 @@ flowchart TD
 
     Purse -. derives .-> Cache["_goldCount compatibility cache"]
     Cache -. never selects production behavior .-> Purse
-    Direct["direct t: throw_gold whole stack"] -. open .-> Contact["ghitm catches, bribes, credits, guards"]
+    Direct["direct t: throw_gold whole stack"] --> Contact["bhit then ghitm contact owner"]
 ```
 
 Pinned C does not store carried money as an amount outside the object graph.
@@ -38672,12 +38672,80 @@ gate passes 402/402 with 46 lane-audited files and a clean 125-file bridge
 audit.  None of these tests copies JavaScript control flow, helper calls,
 screens, RNG transcripts, or public-session outcomes.
 
-This entry remains `partial`.  Direct `t` must still route gold through C's
-`throw_gold()` whole-stack transaction rather than the generic object branch.
-The quivered child currently proves identity detachment and floor settlement,
-not full source range/path behavior.  `ghitm()` catch, bribe, credit, guard,
-Priest, shopkeeper, mercenary, and greedy-monster contacts remain absent;
-payment still credits aggregate `resident.gold` instead of moving a recipient
-coin object.  Save/restore materialization breadth, nested-carrier and
-loss/death variants, option strata, and a sealed gate are also open.  Lua owns
-none of this runtime object lifecycle.
+The lifecycle entry remains `partial`, but direct unquivered `t` and the
+represented `ghitm()` state matrix now have a dedicated owner described below.
+The quivered child still proves only identity detachment and current floor
+settlement, not full source range/contact.  Partial carried-bill payment still
+credits aggregate `resident.gold`; persistence, nested carriers, and broader
+loss/death variants also remain open.  Lua owns none of this runtime object
+lifecycle.
+
+## 1021. Direct gold throw separates flight from catch policy
+
+```mermaid
+flowchart TD
+    Select["getobj throw selects top-level purse"] --> Direction{"getdir result"}
+    Direction -- self --> Cancel["unsplit/preserve purse; zero time"]
+    Direction -- vertical --> Vertical["whole purse returns to hero square"]
+    Direction -- swallowed --> Swallow["add_to_minv on current engulfer"]
+    Direction -- horizontal --> Free["freeinv whole purse identity"]
+    Free --> Range["ACURRSTR/2 - coinWeight/40"]
+    Range --> BHit["bhit: open cells, walls, iron bars, webs, actors"]
+    BHit --> Target{"monster at endpoint"}
+    Target -- no --> Floor["place_object, stackobj, newsym"]
+    Target -- yes --> Eligible{"likes_gold or resident class"}
+    Eligible -- no --> Wake["wakeup via attack; miss; floor owns purse"]
+    Eligible -- immobilized --> Harmless["harmless hit; miss; floor owns purse"]
+    Eligible -- moving --> Common["wake, finish_meating, optional setmangry, mpickobj"]
+    Common --> Kind{"resident kind"}
+    Kind -- greedy --> MonsterPurse["merge or head-link monster purse"]
+    Kind -- shopkeeper --> Shop["robbed recovery or credit"]
+    Kind -- priest --> Priest["contribution plus priest alignment on anger"]
+    Kind -- vault guard --> Guard["skip ordinary anger probe; inspect remaining/hidden gold"]
+    Kind -- mercenary --> Bribe["rank base plus level/Charisma threshold"]
+
+    Quivered["uquiver gold"] --> One["generic one-coin path remains separate and partial"]
+```
+
+Pinned `dothrow.c:throw_obj()` branches before ordinary `canletgo()` and
+generic projectile damage: an unquivered coin object enters `throw_gold()` and
+the complete stack is freed from inventory.  Quivered gold deliberately does
+not take that branch.  Horizontal range is an integer source calculation over
+effective Strength and rounded coin weight.  `zap.c:bhit()` then owns live map
+termination; coin class passes through iron bars, a web can stop the purse,
+walls leave it at the previous open cell, and a monster endpoint delegates to
+`dokick.c:ghitm()`.
+
+`ghitm()` is not a generic catch flag.  Ordinary non-greedy actors wake and
+miss; an immobilized eligible actor is hit harmlessly but still cannot catch.
+A moving eligible actor ends sleep and eating, clears a non-mimic appearance,
+performs the non-guard one-in-four `setmangry()` probe, then transfers the
+actual purse through `mpickobj()`, including merge/free semantics.  The
+post-catch branch separately repairs shop robbery or extends credit, accepts a
+priest contribution, tells a vault guard whether top-level or hidden gold
+remains, and evaluates mercenary rank, remaining purse, hero level, Charisma,
+and two random gates before changing attitude.  Watch actors share mercenary
+catch eligibility but have no bribe base and therefore remain unbribable.
+
+JavaScript now gives that boundary to `js/gold_throw.js`; `cmd.js` retains
+input and delegates shared `wakeup()`/`setmangry()` state.  Splitting those
+attitude hooks exposed and corrected a neighboring coarse invariant: a
+co-aligned peaceful priest loses five alignment when angered and a
+cross-aligned priest gains two, rather than every target receiving the generic
+minus one.  Twenty-four direct command witnesses independently observe purse
+identity/quantity/carrier, strength/weight endpoints, adjacent and later
+walls, iron bars, webs, vertical and swallowed carriers, direct-versus-quivered
+selection, eligibility and mobility, sleep/meal/appearance/attitude,
+monster-purse merging, shop robbery/credit, priest alignment, guard behavior,
+and soldier/watch bribes.  They do not assert helper order, source lines,
+screens, RNG transcripts, or public outcomes.  The focused neighboring
+portfolio passes 62/62; the managed default gate passes 426/426 with 47
+lane-audited files and a clean 126-file bridge audit.
+
+This owner remains `partial`.  The quivered one-coin path still uses the
+bounded generic range/contact continuation.  Water/lava `flooreffects()`,
+holes and `ship_object()` level transfer, shop-floor `sellobj()`, complete
+mimic/invisible/Hallucination and voice/deaf presentation, Elbereth-specific
+`setmangry()` consequences, full `make_happy_shk()` home/migration/Kops/guard
+repair, direct rank witnesses beyond soldier/watch, persistence, option
+strata, and a sealed gate remain open.

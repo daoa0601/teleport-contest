@@ -84,10 +84,16 @@ has one top-level `COIN_CLASS` identity rather than an aggregate wallet as its
 production authority.  Startup, pickup/merge, floor and bag carrier moves,
 partial shop debit, partial-count quiver refusal, whole-purse quivering, and a
 one-coin quivered detachment have live state witnesses; `_goldCount` remains
-only a synchronized legacy cache inside that owner.  Direct `throw_gold()` and
-`ghitm()` flight/contact behavior, recipient coin identity, menu-supplied
-counts and exact overflow-letter breadth, non-sling count families,
-interruption, and broader fire modes remain explicitly partial.
+only a synchronized legacy cache inside that owner.  Direct unquivered `t` now
+moves the whole purse through source strength/weight range, blockers, iron
+bars, webs, vertical/swallowed carriers, and floor or monster ownership.
+The represented `ghitm()` state matrix distinguishes ineligible and immobilized
+misses, greedy catches, shop robbery/credit, priest alignment, vault guards,
+and sufficient, insufficient, or forbidden mercenary bribes.  Full
+quivered-coin range/contact, special floor/level shipping and shop settlement,
+complete shopkeeper mollification, presentation breadth, menu-supplied counts
+and exact overflow-letter breadth, non-sling count families, interruption, and
+broader fire modes remain explicitly partial.
 Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
