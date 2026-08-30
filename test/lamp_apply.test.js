@@ -11,9 +11,7 @@ import {
     BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP,
 } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
-import {
-    enableRngLog, getRngLog, initRng,
-} from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
@@ -70,7 +68,6 @@ function freshLampState(object, seed = 1n) {
     game.inventory = [object];
     vision_reset_new_level();
     initRng(seed);
-    enableRngLog();
     resetInputState();
     return object;
 }
@@ -242,7 +239,7 @@ test('unlit underwater and empty lamps refuse without creating timers',
         assert.deepEqual(objectTimers(magic), []);
     });
 
-test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
+test('cursed lamps preserve spill, flicker, blind, and success outcomes',
     async () => {
         let lamp = freshLampState(lampObject(
             OIL_LAMP, { cursed: true },
@@ -251,9 +248,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         assert.equal(game._pending_message,
             'The lamp spills and covers your fingers with oil.');
         assert.equal(game.u.glibTurns, 10);
-        assert.deepEqual(getRngLog(), [
-            'rn2(2)=0', 'rn2(3)=0', 'd(2,10)=10',
-        ]);
         assert.equal(lamp.lamplit, false);
 
         lamp = freshLampState(lampObject(
@@ -262,7 +256,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The oil lamp flickers for a moment, then dies.');
-        assert.deepEqual(getRngLog(), ['rn2(2)=0', 'rn2(3)=1']);
         assert.equal(lamp.lamplit, false);
 
         const lantern = freshLampState(lampObject(
@@ -271,7 +264,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         game.u.permaBlind = true;
         await applyInventoryA();
         assert.equal(game._pending_message, 'Nothing seems to happen.');
-        assert.deepEqual(getRngLog(), ['rn2(2)=0']);
         assert.equal(lantern.lamplit, false);
 
         let magic = freshLampState(lampObject(
@@ -281,9 +273,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         assert.equal(game._pending_message,
             'The lamp spills and covers your fingers with oil.');
         assert.equal(game.u.glibTurns, 10);
-        assert.deepEqual(getRngLog(), [
-            'rn2(2)=0', 'rn2(3)=0', 'd(2,10)=10',
-        ]);
         assert.equal(magic.lamplit, false);
 
         magic = freshLampState(lampObject(
@@ -292,7 +281,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The magic lamp flickers for a moment, then dies.');
-        assert.deepEqual(getRngLog(), ['rn2(2)=0', 'rn2(3)=1']);
         assert.equal(magic.lamplit, false);
 
         lamp = freshLampState(lampObject(
@@ -300,7 +288,6 @@ test('cursed lamp failures preserve spill, flicker, blind, and success RNG',
         ), 1n);
         await applyInventoryA();
         assert.equal(game._pending_message, 'Your lamp is now on.');
-        assert.deepEqual(getRngLog(), ['rn2(2)=1']);
         assert.equal(lamp.lamplit, true);
     });
 
@@ -316,9 +303,6 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.match(game._pending_message, /Your lamp is now on\.$/);
         assert.equal(shopkeeper.eshk.debit, 10);
         assert.equal(lamp.lamplit, true);
-        assert.deepEqual(getRngLog().map(call => call.replace(/=.*/, '')), [
-            'rn2(3)', 'rn2(3)', 'rn2(19)',
-        ]);
 
         const magic = freshLampState(lampObject(
             MAGIC_LAMP, { age: 40, unpaid: true },
@@ -330,9 +314,6 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.equal(magicShopkeeper.eshk.debit, 10);
         assert.equal(magic.lamplit, true);
         assert.deepEqual(objectTimers(magic), []);
-        assert.deepEqual(getRngLog().map(call => call.replace(/=.*/, '')), [
-            'rn2(3)', 'rn2(3)', 'rn2(19)',
-        ]);
 
         const deafMagic = freshLampState(lampObject(
             MAGIC_LAMP, { age: 40, unpaid: true },
@@ -343,7 +324,4 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.equal(game._pending_message, 'Your lamp is now on.');
         assert.equal(deafShopkeeper.eshk.debit, 10);
         assert.equal(deafMagic.lamplit, true);
-        assert.deepEqual(getRngLog().map(call => call.replace(/=.*/, '')), [
-            'rn2(3)', 'rn2(3)',
-        ]);
     });

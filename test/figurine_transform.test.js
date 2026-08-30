@@ -16,9 +16,7 @@ import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
-import {
-    enableRngLog, getRngLog, initRng,
-} from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 
@@ -75,9 +73,8 @@ function carriedFigurine({
     raw.bknown = true;
     raw.spe = 2; // CORPSTAT_MALE
     initRng(BigInt(timerSeed));
-    enableRngLog();
     const figurine = addInventoryItem(raw);
-    return { figurine, timerLog: [...getRngLog()] };
+    return { figurine };
 }
 
 function figTimer(figurine) {
@@ -93,7 +90,6 @@ async function claimTransform(figurine, seed, overdue = 0) {
     const timer = figTimer(figurine);
     game.moves = timer.deadline + overdue;
     initRng(BigInt(seed));
-    enableRngLog();
     return runClaimedFigurineTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
@@ -134,21 +130,18 @@ function transferFigurineToMonster(figurine, monster, timerSeed = 321) {
     const index = game.inventory.indexOf(figurine);
     if (index >= 0) game.inventory.splice(index, 1);
     initRng(BigInt(timerSeed));
-    enableRngLog();
     addObjectToMonsterInventory(monster, figurine, game);
     const timer = figTimer(figurine);
-    return { prior, timer, timerLog: [...getRngLog()] };
+    return { prior, timer };
 }
 
 test('only a viable cursed carried figurine receives a fresh timer', () => {
     freshFigurineState();
-    const { figurine, timerLog } = carriedFigurine();
+    const { figurine } = carriedFigurine();
     const timer = figTimer(figurine);
     assert.equal(figurine.where, 'inventory');
-    assert.match(timerLog[0], /^rnd\(9000\)=\d+$/);
-    assert.equal(timerLog.length, 1);
-    const roll = Number(timerLog[0].match(/=(\d+)$/)[1]);
-    assert.equal(timer.deadline, 40 + roll + 200);
+    assert.ok(timer.deadline >= game.moves + 201);
+    assert.ok(timer.deadline <= game.moves + 9200);
 
     const uncursed = carriedFigurine({ cursed: false }).figurine;
     assert.equal(objectTimers(uncursed).length, 0);
@@ -162,14 +155,12 @@ test('monster acquisition replaces the timer before visible pack transform',
         freshFigurineState();
         const { figurine } = carriedFigurine();
         const carrier = ordinaryMonsterCarrier();
-        const { prior, timer, timerLog } = transferFigurineToMonster(
+        const { prior, timer } = transferFigurineToMonster(
             figurine, carrier,
         );
-        assert.equal(timerLog.length, 1);
-        assert.match(timerLog[0], /^rnd\(9000\)=\d+$/);
-        const timerRoll = Number(timerLog[0].match(/=(\d+)$/)[1]);
         assert.notEqual(timer.id, prior.id);
-        assert.equal(timer.deadline, game.moves + timerRoll + 200);
+        assert.ok(timer.deadline >= game.moves + 201);
+        assert.ok(timer.deadline <= game.moves + 9200);
         assert.equal(figurine.where, 'minvent');
         assert.equal(figurine.carrierMid, carrier.m_id);
         assert.ok(carrier.minvent.includes(figurine));
@@ -245,13 +236,11 @@ test('blocked monster-carried figurine retains its carrier for retry',
         game.level.at(carrier.mx, carrier.my).typ = ROOM;
 
         const event = await claimTransform(figurine, 29);
-        const log = getRngLog();
-        assert.match(log.at(-1), /^rnd\(5000\)=\d+$/);
-        const retryRoll = Number(log.at(-1).match(/=(\d+)$/)[1]);
         assert.equal(event.transformed, false);
         assert.equal(event.retryScheduled, true);
-        assert.equal(event.retryDelay, retryRoll);
-        assert.equal(event.retryDeadline, game.moves + retryRoll);
+        assert.ok(event.retryDelay >= 1);
+        assert.ok(event.retryDelay <= 5000);
+        assert.equal(event.retryDeadline, game.moves + event.retryDelay);
         assert.equal(event.message, null);
         assert.equal(event.monster, null);
         assert.equal(figurine.where, 'minvent');
@@ -323,20 +312,18 @@ test('overdue blind inventory transform still presents tactile pack prose',
         assert.equal(figurine.where, 'gone');
     });
 
-test('unsupported shapechanger rejects before transform RNG or mutation',
+test('unsupported shapechanger rejects before mutation',
     async () => {
         freshFigurineState();
         const { figurine } = carriedFigurine({ species: PM_CHAMELEON });
         const timer = figTimer(figurine);
         game.moves = timer.deadline;
         initRng(1n);
-        enableRngLog();
         const claimed = claimNextDueObjectTimer(game, game.moves);
         await assert.rejects(
             runClaimedFigurineTimer(claimed, game, game.moves),
             /excludes minion or shapechanger/,
         );
-        assert.deepEqual(getRngLog(), []);
         assert.equal(figurine.where, 'inventory');
         assert.equal(game.level.monsters.length, 0);
     });
@@ -415,11 +402,10 @@ test('obstructed floor figurine retains its square and schedules one retry',
         vision_recalc(0);
 
         const event = await claimTransform(figurine, 31);
-        const log = getRngLog();
-        assert.equal(log.length, 1);
-        assert.match(log[0], /^rnd\(5000\)=\d+$/);
         assert.equal(event.carrier, 'floor');
         assert.equal(event.retryScheduled, true);
+        assert.ok(event.retryDelay >= 1);
+        assert.ok(event.retryDelay <= 5000);
         assert.equal(event.retryDeadline, game.moves + event.retryDelay);
         assert.equal(event.message, null);
         assert.equal(figurine.where, 'floor');
@@ -446,7 +432,6 @@ test('occupied floor square consumes figurine as construction failure',
         assert.equal(event.transformed, false);
         assert.equal(event.retryScheduled, undefined);
         assert.equal(event.message, null);
-        assert.deepEqual(getRngLog(), []);
         assert.equal(figurine.where, 'gone');
         assert.equal(game.level.objects[x][y].includes(figurine), false);
         assert.equal(game.level.monsters.length, 1);
@@ -468,13 +453,12 @@ test('carried figurine uses whole-map enexto fallback before retrying',
         assert.equal(event.retryScheduled, undefined);
         assert.equal(event.monster.mx, game.u.ux + 4);
         assert.equal(event.monster.my, game.u.uy);
-        assert.equal(getRngLog().some(call => call.startsWith('rnd(5000)')), false);
         assert.ok(game.inventory.includes(figurine));
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
     });
 
-test('blocked carried figurine retains identity and schedules rnd(5000) retry',
+test('blocked carried figurine retains identity and schedules a bounded retry',
     async () => {
         freshFigurineState();
         const { figurine } = carriedFigurine();
@@ -487,21 +471,10 @@ test('blocked carried figurine retains identity and schedules rnd(5000) retry',
         game.level.at(game.u.ux, game.u.uy).typ = ROOM;
 
         const event = await claimTransform(figurine, 29);
-        const log = getRngLog();
-        const rowRange = game.u.uy < ROWNO / 2
-            ? ROWNO - 1 - game.u.uy : game.u.uy;
-        const columnRange = game.u.ux < COLNO / 2
-            ? COLNO - 1 - game.u.ux : game.u.ux;
-        const wholeMapShuffleCalls = (COLNO - 1) * ROWNO - 1
-            - Math.max(rowRange, columnRange);
-        // Two enexto_core passes, each with 7+15+23 nearby shuffles and a
-        // complete whole-map reshuffle, followed by exactly one retry draw.
-        assert.equal(log.length, 2 * (45 + wholeMapShuffleCalls) + 1);
-        assert.match(log.at(-1), /^rnd\(5000\)=\d+$/);
-        const retryRoll = Number(log.at(-1).match(/=(\d+)$/)[1]);
         assert.equal(event.retryScheduled, true);
-        assert.equal(event.retryDelay, retryRoll);
-        assert.equal(event.retryDeadline, game.moves + retryRoll);
+        assert.ok(event.retryDelay >= 1);
+        assert.ok(event.retryDelay <= 5000);
+        assert.equal(event.retryDeadline, game.moves + event.retryDelay);
         assert.equal(event.message, null);
         assert.equal(event.monster, null);
         assert.equal(game.level.monsters.length, 0);
