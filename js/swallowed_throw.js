@@ -9,14 +9,14 @@ import { game } from './gstate.js';
 import { endLampBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL,
-    OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, OIL_LAMP,
+    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_MATERIAL,
+    OBJECT_NAMES, OBJECT_SUBTYPE, OIL_LAMP,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
-import { rn2, rnd } from './rng.js';
+import { rnd } from './rng.js';
 import {
     applyProjectileObjectPassive, destroyMulchedProjectile, projectileKind,
     shouldMulchMissile,
@@ -26,7 +26,6 @@ import {
     supportedPotionTargetGap,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
-import { heroIsPolymorphed } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus,
@@ -37,6 +36,9 @@ import {
     strengthDamageBonus,
 } from './weapon_damage.js';
 import { detachThrownUnit } from './thrown_object.js';
+import {
+    applyLowStaminaThrow, applyThrowSlip, thrownObjectName,
+} from './throw_state.js';
 
 const PM_AIR_ELEMENTAL = 154;
 const AT_ENGL = 11;
@@ -58,48 +60,8 @@ const EQUIPMENT_SLOTS = [
     'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
 ];
 
-function lowStaminaThrowGap(state, item) {
-    const polymorphed = heroIsPolymorphed(state);
-    const currentHp = polymorphed
-        ? state.u?.mh ?? 1 : state.u?.uhp ?? 1;
-    const currentHpMax = polymorphed
-        ? state.u?.mhmax ?? currentHp : state.u?.uhpmax ?? currentHp;
-    const threshold = polymorphed ? 5 : 10;
-    return currentHp < threshold && currentHp !== currentHpMax
-        && (item.owt ?? OBJECT_WEIGHT[item.otyp] ?? 0) > currentHp * 2;
-}
-
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-// objnam.c:xname() presentation used by Tobjnam() during swallowed contact.
-// Unlike doname(), this deliberately omits quantity, beatitude, enchantment,
-// and an indefinite article; throwit adds the definite article and verb.
-function thrownObjectName(object, state) {
-    const oclass = object.oclass;
-    const trueName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-    const appearance = state.objectDescriptions?.[object.otyp]
-        ?? OBJECT_DESCRIPTIONS[object.otyp];
-    const known = objectTypeKnown(object, state);
-    let noun;
-    if (known) {
-        if (oclass === 4) noun = `ring of ${trueName}`;
-        else if (oclass === 8) noun = `potion of ${trueName}`;
-        else if (oclass === 9) noun = `scroll of ${trueName}`;
-        else if (oclass === 10) noun = `spellbook of ${trueName}`;
-        else if (oclass === 11) noun = `wand of ${trueName}`;
-        else noun = trueName;
-    } else if (oclass === 4) noun = `${appearance || 'unknown'} ring`;
-    else if (oclass === 8) noun = `${appearance || 'unknown'} potion`;
-    else if (oclass === 9) noun = appearance === 'unlabeled'
-        ? 'unlabeled scroll' : `scroll labeled ${appearance || 'unknown'}`;
-    else if (oclass === 10) noun = `${appearance || 'unknown'} spellbook`;
-    else if (oclass === 11) noun = `${appearance || 'unknown'} wand`;
-    else noun = appearance || trueName;
-
-    const individualName = object.oextra?.oname || object.oname;
-    return individualName ? `${noun} named ${individualName}` : noun;
 }
 
 function containsUnpaidObject(object) {
@@ -198,7 +160,6 @@ function swallowedWeaponEligibility(
             + weaponSkillDamageBonus(state, skill),
     );
     if (!Number.isFinite(engulfer.mhp)) return null;
-    if (lowStaminaThrowGap(state, item)) return null;
     return { engulfer, skill, maximumDamage };
 }
 
@@ -255,7 +216,6 @@ function swallowedProjectileEligibility(
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
     if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
-    if (lowStaminaThrowGap(state, item)) return null;
     return {
         engulfer, kind, launcher, skill, roleDamage, maximumDamage,
     };
@@ -285,7 +245,6 @@ function genericSwallowedEligibility(
         && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
         return null;
     }
-    if (lowStaminaThrowGap(state, item)) return null;
     return engulfer;
 }
 
@@ -313,7 +272,6 @@ function swallowedPotionEligibility(
         return null;
     }
 
-    if (lowStaminaThrowGap(state, item)) return null;
     if (supportedPotionTargetGap({
         state, potion: item, monster: engulfer,
     })) return null;
@@ -350,17 +308,13 @@ export async function resolveSwallowedProjectileThrow({
         state, item, selectedQuantity, splitObjectId,
     );
 
-    if ((thrown.cursed || thrown.greased) && rn2(7) === 0) {
-        const slipok = !!launcher || thrown.greased || kind === 'missile';
-        if (slipok) {
-            const action = launcher
-                ? `${thrownObjectName(thrown, state)} misfires!`
-                : `${thrownObjectName(thrown, state)} slips as you throw it!`;
-            await plineWithContinuation(`The ${action}`);
-            rn2(3);
-            rn2(3);
-        }
-    }
+    await applyThrowSlip({
+        state,
+        object: thrown,
+        launcher: !!launcher,
+        throwingWeapon: kind === 'missile',
+    });
+    await applyLowStaminaThrow({ state, object: thrown });
 
     rnd(20);
     const unlaunchedAmmo = kind === 'ammunition' && !launcher;
@@ -429,14 +383,12 @@ export async function resolveSwallowedWeaponThrow({
         state, item, selectedQuantity, splitObjectId,
     );
 
-    if ((thrown.cursed || thrown.greased) && rn2(7) === 0
-        && (thrown.greased || intendedThrowingWeapon(thrown))) {
-        await plineWithContinuation(
-            `The ${thrownObjectName(thrown, state)} slips as you throw it!`,
-        );
-        rn2(3);
-        rn2(3);
-    }
+    await applyThrowSlip({
+        state,
+        object: thrown,
+        throwingWeapon: intendedThrowingWeapon(thrown),
+    });
+    await applyLowStaminaThrow({ state, object: thrown });
 
     rnd(20); // thitmonst() consumes its guaranteed-hit dieroll first
     const physicalDamage = rollPhysicalWeaponDamage(thrown, engulfer);
@@ -495,14 +447,8 @@ export async function resolveSwallowedPotionThrow({
     // throwit() evaluates its cursed/greased slip draw before thitmonst().
     // Potions only enter the displacement branch when greased, but a cursed
     // ungreased identity still consumes the rn2(7) gate.
-    if ((thrown.cursed || thrown.greased) && rn2(7) === 0
-        && thrown.greased) {
-        await plineWithContinuation(
-            `The ${thrownObjectName(thrown, state)} slips as you throw it!`,
-        );
-        rn2(3);
-        rn2(3);
-    }
+    await applyThrowSlip({ state, object: thrown });
+    await applyLowStaminaThrow({ state, object: thrown });
 
     rnd(20);
     await hitMonsterWithSupportedPotion({
@@ -536,16 +482,8 @@ export async function resolveGenericSwallowedThrow({
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
-    if ((thrown.cursed || thrown.greased) && rn2(7) === 0
-        && thrown.greased) {
-        await plineWithContinuation(
-            `The ${thrownObjectName(thrown, state)} slips as you throw it!`,
-        );
-        // throwit() rewrites direction even though u.uswallow makes every
-        // result contact the same engulfer.
-        rn2(3);
-        rn2(3);
-    }
+    await applyThrowSlip({ state, object: thrown });
+    await applyLowStaminaThrow({ state, object: thrown });
 
     rnd(20); // thitmonst() consumes dieroll before selecting this class arm
     await wakeMonster(engulfer);

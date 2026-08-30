@@ -22,7 +22,7 @@ import {
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
-    POT_WATER, RIN_POLYMORPH_CONTROL,
+    POT_WATER, RIN_POLYMORPH_CONTROL, ROCK,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -110,6 +110,15 @@ function installHumanWerewolfState() {
         ulycn: PM_WEREWOLF,
         mtimedone: 0,
     });
+}
+
+function installLowCapacityRockBurden(quantity) {
+    game.u.acurr.a[0] = game.u.acurr.a[2] = 3;
+    game.u.amax.a[0] = game.u.amax.a[2] = 3;
+    const burdenRaw = mksobj(ROCK, true, false);
+    burdenRaw.quan = burdenRaw.quantity = quantity;
+    burdenRaw.owt = 10 * quantity;
+    return addInventoryItem(burdenRaw);
 }
 
 function setBasicWeaponSkill(object) {
@@ -411,6 +420,9 @@ test('cursed swallowed throwing weapon rerolls direction before damage',
             'rn2(7)=0', 'rn2(3)=0', 'rn2(3)=0',
             'rnd(20)=8', 'rnd(3)=3', 'rn2(19)=8',
         ]);
+        assert.equal(game.u.dx, -1);
+        assert.equal(game.u.dy, -1);
+        assert.equal(game.u.dz, 0);
         assert.equal((game.level.objects || []).flat(2).length, 0);
         assertNoBridgeUse();
     });
@@ -956,7 +968,7 @@ test('one-HP gremlin vapor consumes water without constructing a clone',
         assertNoBridgeUse();
     });
 
-test('four-HP gremlin throw retains the low-stamina fail-before-mutation gap',
+test('four-HP gremlin throw is not a stamina drop while unencumbered',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfState();
@@ -974,20 +986,150 @@ test('four-HP gremlin throw retains the low-stamina fail-before-mutation gap',
 
         initRng(2511n);
         enableRngLog();
-        await assert.rejects(
-            throwThroughLiveCommand(potion, 'l'),
-            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
-                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
         );
 
-        assert.deepEqual(getRngLog(), []);
-        assert.deepEqual(game.inventory, [potion]);
+        assert.deepEqual(game.inventory, []);
         assert.equal(
             game.level.monsters.some(monster => monster.mcloned), false,
         );
-        assert.equal(game.u.mh, 4);
+        assert.equal(game.u.mh, 1);
         assert.equal(game.u.mhmax, 1);
-        assert.equal(potion.where, 'inventory');
+        assert.equal(potion.where, 'gone');
+        assert.doesNotMatch(
+            game._pending_message || '', /so little stamina/,
+        );
+        assertNoBridgeUse();
+    });
+
+test('overtaxed throw rejects before object and direction input', async () => {
+    freshSwallowedState(PM_ENERGY_VORTEX);
+    const rocks = installLowCapacityRockBurden(50);
+
+    initRng(2511n);
+    enableRngLog();
+    await rhack('t'.charCodeAt(0));
+
+    assert.deepEqual(getRngLog(), []);
+    assert.deepEqual(game.inventory, [rocks]);
+    assert.equal(
+        game._pending_message,
+        "You can't do that while carrying so much stuff.",
+    );
+    assert.equal(game.context.move, 0);
+    assertNoBridgeUse();
+});
+
+test('burdened low-HP hero throws without the Stressed stamina branch',
+    async () => {
+        freshSwallowedState(PM_ENERGY_VORTEX);
+        game.u.uhp = 9;
+        const rocks = installLowCapacityRockBurden(20);
+        const raw = mksobj(POT_FRUIT_JUICE, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.match(getRngLog()[0], /^rnd\(20\)=/);
+        assert.equal(game.u._exercise, undefined);
+        assert.deepEqual(game.inventory, [rocks]);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game.u.dx, 1);
+        assert.equal(game.u.dy, 0);
+        assert.equal(game.u.dz, 0);
+        assert.doesNotMatch(
+            game._pending_message || '', /so little stamina/,
+        );
+        assertNoBridgeUse();
+    });
+
+test('stressed low-HP hero drops then completes swallowed potion contact',
+    async () => {
+        const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+        game.u.uhp = 9;
+        const rocks = installLowCapacityRockBurden(30);
+        const raw = mksobj(POT_FRUIT_JUICE, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+        delete game._preNhgetchHook;
+
+        assert.equal(getRngLog()[0], 'rn2(2)=1');
+        assert.equal(game.u._exercise[2], -1);
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'You have so little stamina, the potion of fruit juice '
+            + 'drops from your grasp.',
+        )));
+        assert.deepEqual(game.inventory, [rocks]);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game.u.dx, 0);
+        assert.equal(game.u.dy, 0);
+        assert.equal(game.u.dz, 1);
+        assert.equal(engulfer.msleeping, 0);
+        assertNoBridgeUse();
+    });
+
+test('stressed four-HP gremlin drops without physical exercise then contacts',
+    async () => {
+        freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        Object.assign(game.u, {
+            umonnum: PM_GREMLIN,
+            mtimedone: 300,
+            mh: 4,
+            mhmax: 1,
+        });
+        game.u.acurr.a[0] = game.u.acurr.a[2] = 3;
+        game.u.amax.a[0] = game.u.amax.a[2] = 3;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+        const inputBoundaries = [];
+        game._preNhgetchHook = () => {
+            inputBoundaries.push(game._pending_message || '');
+        };
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+        delete game._preNhgetchHook;
+
+        assert.match(getRngLog()[0], /^rnd\(20\)=/);
+        assert.equal(game.u._exercise, undefined);
+        assert.ok(inputBoundaries.some(message => message.includes(
+            'You have so little stamina, the potion of water '
+            + 'drops from your grasp.',
+        )));
+        assert.equal(game.u.mh, 1);
+        assert.equal(game.u.mhmax, 1);
+        assert.equal(potion.where, 'gone');
+        assert.equal(game.u.dx, 0);
+        assert.equal(game.u.dy, 0);
+        assert.equal(game.u.dz, 1);
+        assertNoBridgeUse();
     });
 
 test('controlled lycanthrope acceptance completes swallowed mutation',
@@ -1438,6 +1580,9 @@ test('greased inert potion slips before its swallowed impact transaction',
         assert.equal(potion.where, 'gone');
         assert.equal(game._pending_message,
             'The potion of gain energy slips as you throw it!  Crash!');
+        assert.equal(game.u.dx, 0);
+        assert.equal(game.u.dy, 0);
+        assert.equal(game.u.dz, 1);
         assertNoBridgeUse();
     });
 

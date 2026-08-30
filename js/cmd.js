@@ -15203,6 +15203,11 @@ async function okToThrow() {
         game.context.move = 0;
         return false;
     }
+    if (exceedsActionCapacity(game)) {
+        await pline("You can't do that while carrying so much stuff.");
+        game.context.move = 0;
+        return false;
+    }
     return true;
 }
 
@@ -15407,6 +15412,13 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
     // launcher warning; launched projectiles need the boundary explicitly.
     game._pending_message = '';
 
+    // getdir() commits the source direction before throw_obj() detaches an
+    // identity.  throwit() may later rewrite it for slip or low stamina.
+    const dx = DIR_DX[direction], dy = DIR_DY[direction];
+    game.u.dx = dx;
+    game.u.dy = dy;
+    game.u.dz = 0;
+
     const selectedQuantity = item.quantity ?? item.quan ?? 1;
     const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
     // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
@@ -15437,7 +15449,6 @@ async function dothrow(selectedItem = null, capabilityChecked = false) {
         item.quantity = selectedQuantity - 1;
         item.quan = item.quantity;
     }
-    const dx = DIR_DX[direction], dy = DIR_DY[direction];
     const adjacentMonster = game.level?.monsters?.find(candidate =>
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === game.u.ux + dx
