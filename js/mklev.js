@@ -11958,6 +11958,266 @@ export async function generateWaterLevel(active) {
     await generateSpecialAndFixup(generateWater, active);
 }
 
+const ASTRAL_MAP = [
+    '                              ---------------',
+    '                              |.............|',
+    '                              |..---------..|',
+    '                              |..|.......|..|',
+    '---------------               |..|.......|..|               ---------------',
+    '|.............|               |..|.......|..|               |.............|',
+    '|..---------..-|   |-------|  |..|.......|..|  |-------|   |-..---------..|',
+    '|..|.......|...-| |-.......-| |..|.......|..| |-.......-| |-...|.......|..|',
+    '|..|.......|....-|-.........-||..----+----..||-.........-|-....|.......|..|',
+    '|..|.......+.....+...........||.............||...........+.....+.......|..|',
+    '|..|.......|....-|-.........-|--|.........|--|-.........-|-....|.......|..|',
+    '|..|.......|...-| |-.......-|   -|---+---|-   |-.......-| |-...|.......|..|',
+    '|..---------..-|   |---+---|    |-.......-|    |---+---|   |-..---------..|',
+    '|.............|      |...|-----|-.........-|-----|...|      |.............|',
+    '---------------      |.........|...........|.........|      ---------------',
+    '                     -------...|-.........-|...-------',
+    '                           |....|-.......-|....|',
+    '                           ---...|---+---|...---',
+    '                             |...............|',
+    '                             -----------------',
+].map(row => row.padEnd(76, ' '));
+
+function astralAlignment(value) {
+    if (value === 'law') return A_LAWFUL;
+    if (value === 'chaos') return A_CHAOTIC;
+    if (value === 'neutral') return A_NEUTRAL;
+    return A_NONE;
+}
+
+async function astralRoamerAt(
+    context, mndx, x, y, alignment, peaceful,
+) {
+    const monster = await specialMonsterAt(context, mndx, x, y, {
+        randomGender: namedMonsterNeedsGenderDraw(mndx),
+        randomAlignment: false,
+        peaceful,
+        mmflags: MM_EMIN,
+    });
+    if (!monster) return null;
+    monster.ispriest = 0;
+    monster.isminion = 1;
+    monster.emin = {
+        min_align: alignment,
+        renegade: (alignment !== (game.u?.ualign?.type ?? A_NONE))
+            !== !peaceful,
+    };
+    setMonsterMalign(monster);
+    return monster;
+}
+
+async function astralRoamerAtAbsolute(
+    mndx, point, alignment, peaceful,
+) {
+    return astralRoamerAt(
+        { xstart: point.x, ystart: point.y, width: 1, height: 1 },
+        mndx, 0, 0, alignment, peaceful,
+    );
+}
+
+const ASTRAL_MOLOCH_HORDE = [
+    [PM_ALIGNED_CLERIC, 18, 9], [PM_ALIGNED_CLERIC, 19, 8],
+    [PM_ALIGNED_CLERIC, 19, 9], [PM_ALIGNED_CLERIC, 19, 10],
+    [PM_ANGEL, 20, 9], [PM_ANGEL, 20, 10],
+    [PM_ALIGNED_CLERIC, 36, 12], [PM_ALIGNED_CLERIC, 37, 12],
+    [PM_ALIGNED_CLERIC, 38, 12], [PM_ALIGNED_CLERIC, 36, 13],
+    [PM_ANGEL, 38, 13], [PM_ANGEL, 37, 13],
+    [PM_ALIGNED_CLERIC, 56, 9], [PM_ALIGNED_CLERIC, 55, 8],
+    [PM_ALIGNED_CLERIC, 55, 9], [PM_ALIGNED_CLERIC, 55, 10],
+    [PM_ANGEL, 54, 9], [PM_ANGEL, 54, 10],
+];
+
+const ASTRAL_ALIGNED_HORDE = [
+    [PM_ALIGNED_CLERIC, 12, 7, A_CHAOTIC, false],
+    [PM_ALIGNED_CLERIC, 13, 7, A_CHAOTIC, true],
+    [PM_ALIGNED_CLERIC, 14, 7, A_LAWFUL, false],
+    [PM_ALIGNED_CLERIC, 12, 11, A_LAWFUL, true],
+    [PM_ALIGNED_CLERIC, 13, 11, A_NEUTRAL, false],
+    [PM_ALIGNED_CLERIC, 14, 11, A_NEUTRAL, true],
+    [PM_ANGEL, 11, 5, A_CHAOTIC, false],
+    [PM_ANGEL, 12, 5, A_CHAOTIC, true],
+    [PM_ANGEL, 13, 5, A_LAWFUL, false],
+    [PM_ANGEL, 11, 13, A_LAWFUL, true],
+    [PM_ANGEL, 12, 13, A_NEUTRAL, false],
+    [PM_ANGEL, 13, 13, A_NEUTRAL, true],
+    [PM_ALIGNED_CLERIC, 32, 9, A_CHAOTIC, false],
+    [PM_ALIGNED_CLERIC, 33, 9, A_CHAOTIC, true],
+    [PM_ALIGNED_CLERIC, 34, 9, A_LAWFUL, false],
+    [PM_ALIGNED_CLERIC, 40, 9, A_LAWFUL, true],
+    [PM_ALIGNED_CLERIC, 41, 9, A_NEUTRAL, false],
+    [PM_ALIGNED_CLERIC, 42, 9, A_NEUTRAL, true],
+    [PM_ANGEL, 31, 8, A_CHAOTIC, false],
+    [PM_ANGEL, 32, 8, A_CHAOTIC, true],
+    [PM_ANGEL, 31, 9, A_LAWFUL, false],
+    [PM_ANGEL, 42, 8, A_LAWFUL, true],
+    [PM_ANGEL, 43, 8, A_NEUTRAL, false],
+    [PM_ANGEL, 43, 9, A_NEUTRAL, true],
+    [PM_ALIGNED_CLERIC, 60, 7, A_CHAOTIC, false],
+    [PM_ALIGNED_CLERIC, 61, 7, A_CHAOTIC, true],
+    [PM_ALIGNED_CLERIC, 62, 7, A_LAWFUL, false],
+    [PM_ALIGNED_CLERIC, 60, 11, A_LAWFUL, true],
+    [PM_ALIGNED_CLERIC, 61, 11, A_NEUTRAL, false],
+    [PM_ALIGNED_CLERIC, 62, 11, A_NEUTRAL, true],
+    [PM_ANGEL, 61, 5, A_CHAOTIC, false],
+    [PM_ANGEL, 62, 5, A_CHAOTIC, true],
+    [PM_ANGEL, 63, 5, A_LAWFUL, false],
+    [PM_ANGEL, 61, 13, A_LAWFUL, true],
+    [PM_ANGEL, 62, 13, A_NEUTRAL, false],
+    [PM_ANGEL, 63, 13, A_NEUTRAL, true],
+];
+
+async function generateAstral(active) {
+    const context = loadSpecialAsciiMap(ASTRAL_MAP, false);
+    active.context = { ...context };
+    const heroAlignment = game.u?.ualign?.type ?? A_NONE;
+    const godKey = heroAlignment > 0 ? 'lawful'
+        : heroAlignment < 0 ? 'chaotic' : 'neutral';
+    const deity = game.urole?.gods?.[godKey] || 'your god';
+    active.specialMessages = [
+        'You arrive on the Astral Plane!',
+        `Here the High Temple of ${deity} is located.`,
+        'You sense alarm, hostility, and excitement in the air!',
+    ];
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+    game.level.flags.hardfloor = true;
+    game.level.flags.nommap = true;
+    game.level.flags.shortsighted = true;
+    game.level.flags.solidify = true;
+
+    for (let wing = 0; wing < 2; wing++) {
+        if (rn2(100) >= 60) continue;
+        const left = wing === 0;
+        specialSelectionTerrain(specialSelectionFillRect(
+            context, left ? 17 : 44, 14, left ? 30 : 57, 18,
+        ), ROOM);
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
+        const barrierX = left ? 33 : 41;
+        setLevelTerrainType(
+            context.xstart + barrierX, context.ystart + 18, VWALL,
+        );
+        const hall = specialSelectionFloodFill(
+            context, left ? 30 : 44, 16,
+        );
+        setLevelTerrainType(
+            context.xstart + barrierX, context.ystart + 18, ROOM,
+        );
+        for (let count = 4 + rn2(6); count > 0; count--) {
+            const angelPoint = hall.randomCoordinate(true);
+            if (angelPoint)
+                await astralRoamerAtAbsolute(
+                    PM_ANGEL, angelPoint, A_NONE, false,
+                );
+            if (rn2(100) < 50) {
+                const monsterPoint = hall.randomCoordinate(true);
+                if (monsterPoint) {
+                    await specialMonsterAt(
+                        {
+                            xstart: monsterPoint.x,
+                            ystart: monsterPoint.y,
+                            width: 1, height: 1,
+                        },
+                        null, 0, 0, {
+                            randomGender: false, peaceful: false,
+                        },
+                    );
+                }
+            }
+        }
+    }
+
+    const riderPlaces = new SpecialSelection();
+    for (const [x, y] of [[23, 9], [37, 14], [51, 9]])
+        riderPlaces.add(context.xstart + x, context.ystart + y);
+
+    active.upTeleportRegion = absoluteSpecialRegion(
+        context, 29, 15, 45, 15,
+    );
+    active.upTeleportExclude = absoluteSpecialRegion(
+        context, 30, 15, 44, 15,
+    );
+    active.downTeleportRegion = { ...active.upTeleportRegion };
+    active.downTeleportExclude = { ...active.upTeleportExclude };
+
+    for (const [x, y] of [[1, 5], [31, 1], [61, 5]])
+        specialIrregularRoom(context, x, y, OROOM, true, 0);
+    const temples = [
+        specialRectangularRoom(
+            context, 4, 7, 10, 11, TEMPLE, true, FILL_LVFLAGS,
+        ),
+        specialRectangularRoom(
+            context, 34, 3, 40, 7, TEMPLE, true, FILL_LVFLAGS,
+        ),
+        specialRectangularRoom(
+            context, 64, 7, 70, 11, TEMPLE, true, FILL_LVFLAGS,
+        ),
+    ];
+    for (let index = 0; index < temples.length; index++) {
+        const [x, y] = [[7, 9], [37, 5], [67, 9]][index];
+        const alignment = astralAlignment(active.align[index]);
+        const altarX = context.xstart + x, altarY = context.ystart + y;
+        const altar = game.level.at(altarX, altarY);
+        altar.typ = ALTAR;
+        altar.flags = Align2amask(alignment) | AM_SHRINE | AM_SANCTUM;
+        await specialShrinePriest(
+            temples[index], altarX, altarY, alignment, { sanctum: true },
+        );
+    }
+    game.level.flags.has_temple = true;
+
+    for (const [mask, x, y] of [
+        [D_CLOSED, 11, 9], [D_CLOSED, 17, 9], [D_LOCKED, 23, 12],
+        [D_LOCKED, 37, 8], [D_CLOSED, 37, 11], [D_CLOSED, 37, 17],
+        [D_LOCKED, 51, 12], [D_LOCKED, 57, 9], [D_CLOSED, 63, 9],
+    ]) specialDoorAt(context, mask, x, y);
+    const wholeMap = specialSelectionFillRect(context, 0, 0, 74, 19);
+    markSpecialSelectionWallProperty(wholeMap, W_NONDIGGABLE);
+    markSpecialSelectionWallProperty(wholeMap, W_NONPASSWALL);
+
+    const riders = [PM_PESTILENCE, PM_DEATH, PM_FAMINE];
+    for (let group = 0; group < riders.length; group++) {
+        for (const [mndx, x, y] of ASTRAL_MOLOCH_HORDE.slice(
+            group * 6, group * 6 + 6,
+        )) {
+            await astralRoamerAt(context, mndx, x, y, A_NONE, false);
+        }
+        const point = riderPlaces.randomCoordinate(true);
+        if (point) {
+            await specialMonsterAt(
+                { xstart: point.x, ystart: point.y, width: 1, height: 1 },
+                riders[group], 0, 0, {
+                    randomGender: namedMonsterNeedsGenderDraw(riders[group]),
+                    peaceful: false,
+                },
+            );
+        }
+    }
+    for (const [mndx, x, y, alignment, peaceful]
+        of ASTRAL_ALIGNED_HORDE) {
+        await astralRoamerAt(
+            context, mndx, x, y, alignment, peaceful,
+        );
+    }
+    for (const monsterClass of [38, 38, 38, 48, 48, 48, 30, 30, 30])
+        await specialMonsterOfClass(
+            context, monsterClass, { peaceful: false },
+        );
+
+    flipSpecialLevelRandom(3);
+    for (const field of [
+        'upTeleportRegion', 'upTeleportExclude',
+        'downTeleportRegion', 'downTeleportExclude',
+    ]) active[field] = flipSpecialRegion(active[field]);
+}
+
+export async function generateAstralLevel(active) {
+    await generateSpecialAndFixup(generateAstral, active);
+}
+
 // Lua source: dat/fire.lua.  This is a full 79x21 map, so sp_lev.c anchors it
 // at absolute (1,0) after its centered-origin overflow correction.
 const FIRE_MAP = [
@@ -15639,6 +15899,10 @@ async function makelevel() {
         }
         if (prototype === 'water') {
             await generateWaterLevel(g._activeSpecialLevel);
+            return;
+        }
+        if (prototype === 'astral') {
+            await generateAstralLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'soko1' && variant === 1) {
