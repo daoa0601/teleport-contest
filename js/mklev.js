@@ -295,6 +295,8 @@ const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
+const PM_STONE_GIANT = 170;
+const PM_CROESUS = 286;
 const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
@@ -5965,8 +5967,8 @@ function specialRandomDoorAt(context, x, y) {
 
 function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
     // sp_lev.c lspo_region() delegates irregular rooms to flood_fill_rm().
-    // This map's connected floor component is bounded by its four doors, so
-    // a four-way fill over the seed terrain is the exact component owner.
+    // That scanline flood includes diagonally touching runs of the same
+    // terrain, then marks neighboring walls and doors as the room's edge.
     const seedX = context.xstart + x, seedY = context.ystart + y;
     const seedType = game.level.at(seedX, seedY)?.typ;
     const roomNumber = game.level.nroom + ROOMOFFSET;
@@ -5983,8 +5985,11 @@ function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
         loc.lit = !!lit;
         lx = Math.min(lx, roomX); hx = Math.max(hx, roomX);
         ly = Math.min(ly, roomY); hy = Math.max(hy, roomY);
-        pending.push([roomX - 1, roomY], [roomX + 1, roomY],
-            [roomX, roomY - 1], [roomX, roomY + 1]);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                if (dx || dy) pending.push([roomX + dx, roomY + dy]);
+            }
+        }
     }
     for (const key of visited) {
         const [roomX, roomY] = key.split(',').map(Number);
@@ -6244,13 +6249,26 @@ function courtMonsterType() {
 }
 
 async function fillCourtRoom(room) {
-    // C mkroom.c:fill_zoo(COURT).  The throne actor is constructed before
-    // the room scan; the throne terrain itself is committed only after the
-    // remaining court has been populated.
+    // C mkroom.c:fill_zoo(COURT).  Maze courts use the throne already drawn
+    // on the map; ordinary courts choose a free square for a new throne.
     const throne = { x: 0, y: 0 };
-    for (let attempts = 100; attempts > 0; attempts--) {
-        somexyspace(room, throne);
-        if (!occupied(throne.x, throne.y)) break;
+    let mappedThrone = false;
+    if (game.level.flags.is_maze_lev) {
+        for (let x = room.lx; x <= room.hx && !mappedThrone; x++) {
+            for (let y = room.ly; y <= room.hy; y++) {
+                if (game.level.at(x, y)?.typ !== THRONE) continue;
+                throne.x = x;
+                throne.y = y;
+                mappedThrone = true;
+                break;
+            }
+        }
+    }
+    if (!mappedThrone) {
+        for (let attempts = 100; attempts > 0; attempts--) {
+            somexyspace(room, throne);
+            if (!occupied(throne.x, throne.y)) break;
+        }
     }
     const difficulty = level_difficulty();
     const rulerRoll = rnd(difficulty);
@@ -15777,6 +15795,161 @@ async function generateCastle(active) {
     active.castleMonsterClasses = monsterClasses;
 }
 
+const KNOX_MAP = [
+    '----------------------------------------------------------------------------',
+    '| |........|...............................................................|',
+    '| |........|.................................................------------..|',
+    '| --S----S--.................................................|..........|..|',
+    '|   #   |........}}}}}}}....................}}}}}}}..........|..........|..|',
+    '|   #   |........}-----}....................}-----}..........--+--+--...|..|',
+    '|   # ---........}|...|}}}}}}}}}}}}}}}}}}}}}}|...|}.................|...|..|',
+    '|   # |..........}---S------------------------S---}.................|...|..|',
+    '|   # |..........}}}|...............|..........|}}}.................+...|..|',
+    '| --S----..........}|...............S..........|}...................|...|..|',
+    '| |.....|..........}|...............|......\\...S}...................|...|..|',
+    '| |.....+........}}}|...............|..........|}}}.................+...|..|',
+    '| |.....|........}---S------------------------S---}.................|...|..|',
+    '| |.....|........}|...|}}}}}}}}}}}}}}}}}}}}}}|...|}.................|...|..|',
+    '| |..-S----......}-----}....................}-----}..........--+--+--...|..|',
+    '| |..|....|......}}}}}}}....................}}}}}}}..........|..........|..|',
+    '| |..|....|..................................................|..........|..|',
+    '| -----------................................................------------..|',
+    '|           |..............................................................|',
+    '----------------------------------------------------------------------------',
+];
+
+async function generateKnox(active) {
+    const context = loadSpecialAsciiMap(KNOX_MAP, false);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+
+    markSpecialSelectionWallProperty(
+        specialSelectionFillRect(context, 0, 0, 75, 19),
+        W_NONDIGGABLE,
+    );
+    active.explicitBranchRegion = absoluteSpecialRegion(
+        context, 8, 16, 8, 16,
+    );
+    active.upTeleportRegion = absoluteSpecialRegion(
+        context, 6, 15, 9, 16,
+    );
+    active.downTeleportRegion = { ...active.upTeleportRegion };
+
+    specialRectangularRoom(
+        context, 37, 8, 46, 11, COURT, true, FILL_NORMAL,
+    );
+    const croesusY = rn2(100) < 50 ? 10 : 9;
+    await specialMonsterAt(context, PM_CROESUS, 43, croesusY, {
+        randomGender: namedMonsterNeedsGenderDraw(PM_CROESUS),
+        peaceful: false,
+    });
+    if (croesusY === 9) {
+        game.level.at(context.xstart + 43, context.ystart + 9).typ = THRONE;
+        game.level.at(context.xstart + 43, context.ystart + 10).typ = ROOM;
+    }
+    if (rn2(100) < 50) {
+        const upperEntry = game.level.at(
+            context.xstart + 47, context.ystart + 9,
+        );
+        upperEntry.typ = SDOOR;
+        upperEntry.doormask = D_CLOSED;
+        game.level.at(
+            context.xstart + 47, context.ystart + 10,
+        ).typ = VWALL;
+    }
+
+    setSpecialRegionLighting(context, 21, 8, 35, 11, true);
+    for (let y = 8; y <= 11; y++) {
+        for (let x = 21; x <= 35; x++) {
+            mkgold(
+                600 + rn2(301),
+                context.xstart + x, context.ystart + y,
+            );
+            if (rn2(3) === 0) {
+                await specialTrapAt(
+                    context, rn2(3) === 0 ? SPIKED_PIT : LANDMINE, x, y,
+                );
+            }
+        }
+    }
+    if (rn2(100) < 50) {
+        game.level.at(
+            context.xstart + 36, context.ystart + 9,
+        ).typ = VWALL;
+        const lowerVault = game.level.at(
+            context.xstart + 36, context.ystart + 10,
+        );
+        lowerVault.typ = SDOOR;
+        lowerVault.doormask = D_CLOSED;
+    }
+
+    for (const [x1, y1, x2, y2] of [
+        [19, 6, 21, 6], [46, 6, 48, 6],
+        [19, 13, 21, 13], [46, 13, 48, 13],
+    ]) setSpecialRegionLighting(context, x1, y1, x2, y2, true);
+
+    specialIrregularRoom(
+        context, 3, 10, ZOO, true, FILL_NORMAL,
+    );
+    const arrival = specialRectangularRoom(
+        context, 6, 15, 9, 16, OROOM, false, 0,
+    );
+    arrival.arrival_room = true;
+    arrival.arrivalRoom = true;
+    setSpecialRegionLighting(context, 5, 14, 5, 17, false);
+    setSpecialRegionLighting(context, 5, 14, 9, 14, false);
+
+    specialIrregularRoom(
+        context, 62, 3, BARRACKS, true, FILL_NORMAL,
+    );
+    for (const [mask, x, y] of [
+        [D_CLOSED, 6, 14], [D_CLOSED, 9, 3],
+        [D_ISOPEN, 63, 5], [D_ISOPEN, 66, 5],
+        [D_ISOPEN, 68, 8], [D_LOCKED, 8, 11],
+        [D_ISOPEN, 68, 11], [D_CLOSED, 63, 14],
+        [D_CLOSED, 66, 14], [D_CLOSED, 4, 3],
+        [D_CLOSED, 4, 9],
+    ]) specialDoorAt(context, mask, x, y);
+
+    for (const [x, y] of [
+        [12, 14], [12, 13], [11, 10], [13, 2],
+        [14, 3], [20, 2], [30, 2], [40, 2],
+        [30, 16], [32, 16], [40, 16], [54, 16],
+        [54, 14], [54, 13], [57, 10], [57, 9],
+    ]) await specialMonsterAt(context, PM_SOLDIER, x, y);
+    await specialMonsterAt(context, PM_LIEUTENANT, 15, 8);
+    await specialMonsterAt(context, PM_STONE_GIANT, 3, 1);
+    for (const [x, y] of [
+        [18, 9], [49, 10], [33, 5], [33, 14],
+    ]) await specialMonsterClassAt(context, 30, x, y);
+    for (const [x, y] of [
+        [17, 8], [17, 11], [48, 8], [48, 11],
+    ]) await specialMonsterAt(context, PM_GIANT_EEL, x, y);
+
+    for (const [otyp, x, y] of [
+        [DIAMOND, 19, 6], [DIAMOND, 20, 6], [DIAMOND, 21, 6],
+        [EMERALD, 19, 13], [EMERALD, 20, 13], [EMERALD, 21, 13],
+        [RUBY, 46, 6], [RUBY, 47, 6], [RUBY, 48, 6],
+        [AMETHYST, 46, 13], [AMETHYST, 47, 13], [AMETHYST, 48, 13],
+    ]) specialObjectAt(context, otyp, x, y);
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    active.explicitBranchRegion = flipSpecialRegion(
+        active.explicitBranchRegion,
+    );
+    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
+    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
+}
+
+export async function generateKnoxLevel(active) {
+    await generateSpecialAndFixup(generateKnox, active);
+    for (const room of game.level.rooms.slice(0, game.level.nroom))
+        await fillSpecialRoom(room);
+}
+
 async function tutorialMonsterAt(context, mndx, x, y, peaceful = null) {
     const requestedFemale = !!rn2(2); // find_montype()
     if (rn2(100) >= 80) rn2(3); // induced_align(80)
@@ -16078,6 +16251,10 @@ async function makelevel() {
                 g._activeSpecialLevel);
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
+            return;
+        }
+        if (prototype === 'knox') {
+            await generateKnoxLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'asmodeus') {
@@ -17122,10 +17299,18 @@ function barracksMonsterType() {
 
 async function fillBarracksRoom(room) {
     const entrance = room.doorct ? game.level.doors?.[room.fdoor] : null;
+    const roomNumber = game.level.rooms.indexOf(room) + ROOMOFFSET;
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const loc = game.level.at(x, y);
-            if (!loc || !SPACE_POS(loc.typ)
+            if (!loc) continue;
+            if (room.irregular) {
+                if (loc.roomno !== roomNumber || loc.edge
+                    || (entrance
+                        && Math.max(Math.abs(x - entrance.x),
+                            Math.abs(y - entrance.y)) <= 1))
+                    continue;
+            } else if (!SPACE_POS(loc.typ)
                 || (entrance
                     && ((x === room.lx && entrance.x === x - 1)
                         || (x === room.hx && entrance.x === x + 1)
