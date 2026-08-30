@@ -37627,7 +37627,8 @@ scheduling and potion contact.  `mklev.js` owns the bounded hostile
 `clone_mon()` continuation because it already owns `enexto()`, identity
 allocation, actor insertion, and repaint.  Map contact passes the existing
 synchronous radius wake and shared hero-kill lifecycle; swallowed contact uses
-the same effect and zero-RNG water-vapor owner.  `finishHeroMonsterKill()` now
+the same monster effect and the hero-vapor owner in section1008.
+`finishHeroMonsterKill()` now
 owns the iron-golem branch of `make_corpse()`: after the ordinary `xkilled()`
 inventory, treasure, and corpse-eligibility stages, it consumes `d(2,6)` and
 places that many initialized, non-stacking iron-chain identities at the death
@@ -37738,3 +37739,60 @@ before split, detachment, or throw RNG, retaining `explode_oil()` and its area
 damage, inventory, terrain, display, death-credit, and shop continuations as
 one explicit gap rather than approximating them with the unlit path.  Lua owns
 none of this runtime branch.
+
+## 1008. Water vapor dispatches hero form state before ordinary no-effect
+
+```mermaid
+flowchart TD
+    A[potionbreathe POT_WATER] --> B{wet towel or cannot receive vapor?}
+    B -- yes --> C[shielded or not received]
+    B -- no --> D{current hero form}
+    D -- gremlin --> E[cloneu gap rejected before reachable throw mutation]
+    D -- ordinary non-lycanthrope --> F[received zero-RNG no-op]
+    D -- lycanthrope state --> G{beatitude and current form}
+    G -- cursed human --> H{Unchanging or already polymorphed?}
+    H -- yes --> I[no change]
+    H -- no --> J{controllable and not stunned or unaware?}
+    J -- yes --> K[interactive prompt gap rejected before mutation]
+    J -- no --> L{spotted adjacent threat?}
+    L -- yes --> I
+    L -- no --> M[were_changes plus shared polymon]
+    G -- blessed beast --> N{Unchanging or adjacent threat?}
+    N -- no --> O{interactive control?}
+    O -- yes --> K
+    O -- no --> P[shared rehumanize and presentation]
+    N -- yes --> Q{mtimedone zero?}
+    Q -- yes --> R[rn1 200 200 duration restoration]
+    Q -- no --> I
+```
+
+`potion.c:potionbreathe(POT_WATER)` is not a general no-op.  A gremlin hero
+enters `split_mon(&youmonst, 0)`, which delegates to `cloneu()` and splits both
+current and maximum monster-form HP.  A hero with a valid `u.ulycn` instead
+enters `were.c:you_were()` for cursed vapor while human or
+`were.c:you_unwere(FALSE)` for blessed vapor while in the corresponding beast
+form.  `you_were()` checks Unchanging, current form, controllable prompting,
+and then `monster_nearby()` before incrementing `were_changes` and calling
+`polymon()`.  `you_unwere()` checks Unchanging, current were form, nearby
+threats, and the inverse control prompt before `rehumanize()`; a blocked were
+form whose duration has reached zero receives `rn1(200,200)` instead.
+
+JavaScript now exposes the existing source-shaped form/equipment transaction as
+`polyself.js:polymonHero()` so involuntary lycanthropy and wizard-controlled
+selection share HP, duration, attribute exercise, movement-ration, equipment,
+vision, encumbrance, and presentation ownership.  `were.js` owns the water
+vapor state machine, worn polymorph-control ring and Unchanging amulet
+properties, the shared `threateningMonsterNearby()` gate, rehumanization, and
+expired-duration restoration.  The live swallowed command proves cursed
+human-to-werewolf transformation and stunned-control bypass; direct source
+witnesses prove blessed rehumanization, threat suppression, ordinary no-op,
+and Unchanging duration restoration.
+
+Reachability is part of preflight.  Swallowed contact always reaches vapor;
+two-square map contact can reach it probabilistically and therefore rejects
+interactive control or hero-gremlin splitting before object detachment.  A
+three-square contact cannot call `potionbreathe()` and remains live even with
+polymorph control.  The remaining explicit gaps are `cloneu()`, both
+interactive paranoid-query continuations, broader scary-square nuances inside
+`monster_nearby()`, an external live carrier for blessed beast-form vapor, and
+the sealed stratum.  Lua owns none of this runtime form graph.

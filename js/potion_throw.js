@@ -14,7 +14,8 @@ import { OBJECT_WEIGHT } from './object_data.js';
 import {
     applySupportedPotionVapor, destroyPotionIdentity,
     hitMonsterWithSupportedPotion, potionImpactObjectName,
-    maximumSupportedPotionFatalDamage, supportedPotionTargetGap,
+    maximumSupportedPotionFatalDamage, supportedPotionHeroVaporGap,
+    supportedPotionTargetGap,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
@@ -129,6 +130,11 @@ function ordinaryEligibility({
     const flight = traceOrdinaryPath(state, dx, dy, range, blocksMove);
     if (!flight || (flight.contact && !targetIsOrdinary(flight.contact)))
         return null;
+    const vaporDistance = distanceFromHero(state, flight.x, flight.y);
+    const canReachHeroWithVapor = flight.contact
+        ? vaporDistance < 3 : vaporDistance <= 1;
+    if (canReachHeroWithVapor
+        && supportedPotionHeroVaporGap({ state, potion: item })) return null;
     if (flight.contact) {
         if (supportedPotionTargetGap({
             state, potion: item, monster: flight.contact,

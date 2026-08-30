@@ -21,17 +21,18 @@ function monsterIsHelpless(monster) {
 // C hack.c:monster_nearby().  This is the shared threat predicate used by
 // both safe waiting and safe searching; it is intentionally stricter than
 // mere adjacency.
-export function threateningMonsterNearby() {
-    const u = game.u;
+export function threateningMonsterNearby(state = game) {
+    const u = state.u;
     if (!u) return false;
     const hallucinating = !!(u.hallucinating
         || (u.hallucinationTurns ?? 0) > 0);
-    return (game.level?.monsters || []).some(monster => {
+    return (state.level?.monsters || []).some(monster => {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
             || monsterIsHelpless(monster)
             || monster.m_ap_type === M_AP_FURNITURE
             || monster.m_ap_type === M_AP_OBJECT
             || monster.mundetected
+            || (monster.mx === u.ux && monster.my === u.uy)
             || Math.abs(monster.mx - u.ux) > 1
             || Math.abs(monster.my - u.uy) > 1
             || !canSpotMonster(monster)) {

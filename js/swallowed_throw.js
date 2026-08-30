@@ -23,7 +23,8 @@ import {
 } from './projectile.js';
 import {
     hitMonsterWithSupportedPotion, maximumSupportedPotionFatalDamage,
-    supportedPotionTargetGap, SUPPORTED_MONSTER_POTION_TYPES,
+    supportedPotionHeroVaporGap, supportedPotionTargetGap,
+    SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
 import {
@@ -324,6 +325,7 @@ function swallowedPotionEligibility(
     if (supportedPotionTargetGap({
         state, potion: item, monster: engulfer,
     })) return null;
+    if (supportedPotionHeroVaporGap({ state, potion: item })) return null;
     const maximumFatalDamage = maximumSupportedPotionFatalDamage(
         item, engulfer,
     );

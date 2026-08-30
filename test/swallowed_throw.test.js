@@ -13,7 +13,8 @@ import { beginLampBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_LIFE_SAVING, ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
+    AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
+    ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -21,7 +22,7 @@ import {
     POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION,
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
-    POT_WATER,
+    POT_WATER, RIN_POLYMORPH_CONTROL,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -38,6 +39,9 @@ const PM_OCHRE_JELLY = 58;
 const PM_PURPLE_WORM = 115;
 const PM_TRAPPER = 99;
 const PM_JUIBLEX = 303;
+const PM_WEREWOLF = 21;
+const PM_GREMLIN = 40;
+const PM_ARCHEOLOGIST = 331;
 
 function freshSwallowedState(mnum) {
     resetGame();
@@ -93,6 +97,18 @@ function freshSwallowedState(mnum) {
 function assertNoBridgeUse() {
     assert.deepEqual(getBridgeUsageLedger(), {
         bridgeFree: true, totalHits: 0, forbiddenHits: 0, bridges: {},
+    });
+}
+
+function installHumanWerewolfState() {
+    game.urole = { key: 'archeologist', mnum: 0 };
+    game.urace = { name: 'human', noun: 'human', adj: 'human', mnum: 260 };
+    game.flags.female = false;
+    Object.assign(game.u, {
+        umonster: PM_ARCHEOLOGIST,
+        umonnum: PM_ARCHEOLOGIST,
+        ulycn: PM_WEREWOLF,
+        mtimedone: 0,
     });
 }
 
@@ -799,6 +815,152 @@ test('swallowed cursed water heals a demonic engulfer without angering it',
         ]);
         assert.equal(engulfer.mhp, 31);
         assert.equal(engulfer.msleeping, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        engulfer.mhp = 20;
+        installHumanWerewolfState();
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(30).fill(' '),
+        );
+
+        assert.equal(game.u.umonnum, PM_WEREWOLF);
+        assert.ok(game.u.mtimedone >= 500 && game.u.mtimedone <= 999);
+        assert.equal(game.u.mh, game.u.mhmax);
+        assert.ok(game.u.mh > 0);
+        assert.equal(game.u.uconduct.polyselfs, 1);
+        assert.equal(game.were_changes, 1);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        const amulet = {
+            otyp: AMULET_OF_UNCHANGING, worn: true, owornmask: W_AMUL,
+        };
+        game.u.uamul = game.uamul = amulet;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(20).fill(' '),
+        );
+
+        assert.equal(game.u.umonnum, PM_ARCHEOLOGIST);
+        assert.equal(game.u.mtimedone, 0);
+        assert.equal(game.u.uconduct.polyselfs ?? 0, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
+    });
+
+test('gremlin hero water vapor fails before swallowed throw mutation',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        Object.assign(game.u, {
+            umonnum: PM_GREMLIN,
+            mtimedone: 300,
+            mh: 12,
+            mhmax: 12,
+        });
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await assert.rejects(
+            throwThroughLiveCommand(potion, 'l'),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(game.u.umonnum, PM_GREMLIN);
+        assert.equal(game.u.mh, 12);
+        assert.equal(potion.where, 'inventory');
+    });
+
+test('controlled lycanthrope vapor prompt fails before swallowed mutation',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        const ring = {
+            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
+        };
+        game.u.uright = game.uright = ring;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await assert.rejects(
+            throwThroughLiveCommand(potion, 'l'),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(game.u.umonnum, PM_ARCHEOLOGIST);
+        assert.equal(potion.where, 'inventory');
+    });
+
+test('stun bypasses the lycanthrope control prompt and permits transformation',
+    async () => {
+        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        installHumanWerewolfState();
+        const ring = {
+            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
+        };
+        game.u.uright = game.uright = ring;
+        game.u.stunned = true;
+        game.u.stunnedTurns = 4;
+        const raw = mksobj(POT_WATER, true, false);
+        raw.cursed = true;
+        raw.blessed = false;
+        raw.bknown = raw.dknown = raw.known = true;
+        raw.typeKnown = true;
+        const potion = addInventoryItem(raw);
+
+        initRng(2511n);
+        enableRngLog();
+        await throwThroughLiveCommand(
+            potion, 'l', Array(30).fill(' '),
+        );
+
+        assert.equal(game.u.umonnum, PM_WEREWOLF);
+        assert.equal(game.u.uconduct.polyselfs, 1);
+        assert.equal(game.were_changes, 1);
         assert.equal(potion.where, 'gone');
         assertNoBridgeUse();
     });

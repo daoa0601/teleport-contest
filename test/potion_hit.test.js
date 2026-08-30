@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
@@ -27,6 +28,29 @@ function potionObject(otyp) {
         typeKnown: true,
         where: 'free',
         objectTimers: [],
+    };
+}
+
+function installDirectWereHero({ beast = false } = {}) {
+    resetGame();
+    game.level = new GameMap();
+    game.inventory = [];
+    game.flags = { female: false };
+    game.urole = { key: 'archeologist', mnum: 0 };
+    game.urace = {
+        name: 'human', noun: 'human', adj: 'human', mnum: 260,
+    };
+    game.u = {
+        ux: 10, uy: 10,
+        umonster: 331, umonnum: beast ? 21 : 331, ulycn: 21,
+        mtimedone: beast ? 350 : 0,
+        mh: beast ? 18 : 0,
+        mhmax: beast ? 24 : 0,
+        uhp: 40, uhpmax: 40,
+        acurr: { a: Array(6).fill(12) },
+        amax: { a: Array(6).fill(12) },
+        macurr: { a: Array(6).fill(12) },
+        mamax: { a: Array(6).fill(12) },
     };
 }
 
@@ -1467,7 +1491,8 @@ test('invisibility vapor reports only the clear visible-self glimpse',
         }
     });
 
-test('water vapor is a received zero-RNG no-op', async () => {
+test('water vapor is a zero-RNG no-op for an ordinary non-lycanthrope hero',
+    async () => {
     resetGame();
     game.u = { uhp: 7, uhpmax: 12 };
     const messages = [];
@@ -1484,8 +1509,81 @@ test('water vapor is a received zero-RNG no-op', async () => {
     assert.deepEqual(messages, []);
     assert.equal(game.u.uhp, 7);
     assert.equal(result.received, true);
-    assert.equal(result.waterEffect, null);
+    assert.deepEqual(result.waterEffect, {
+        kind: 'ordinary', changed: false,
+    });
 });
+
+test('blessed water vapor returns a werewolf hero to human form', async () => {
+    installDirectWereHero({ beast: true });
+    const potion = potionObject(POT_WATER);
+    potion.blessed = true;
+    const messages = [];
+
+    initRng(3401n);
+    enableRngLog();
+    const result = await applySupportedPotionVapor({
+        state: game,
+        potion,
+        publish: async message => messages.push(message),
+    });
+
+    assert.deepEqual(getRngLog(), []);
+    assert.deepEqual(messages, ['You return to human form!']);
+    assert.equal(result.waterEffect.kind, 'rehumanized');
+    assert.equal(result.waterEffect.changed, true);
+    assert.equal(game.u.umonnum, 331);
+    assert.equal(game.u.mtimedone, 0);
+    assert.equal(game.u.mh, 0);
+    assert.equal(game.u.mhmax, 0);
+});
+
+test('a spotted adjacent threat suppresses cursed-water were change',
+    async () => {
+        installDirectWereHero();
+        game.u.detectMonsters = true;
+        game.level.monsters = [{
+            mnum: PM_PURPLE_WORM,
+            mx: 11, my: 10,
+            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
+        }];
+        const potion = potionObject(POT_WATER);
+        potion.cursed = true;
+
+        initRng(3402n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+
+        assert.deepEqual(getRngLog(), []);
+        assert.equal(result.waterEffect.kind, 'blocked');
+        assert.equal(result.waterEffect.changed, false);
+        assert.equal(game.u.umonnum, 331);
+        assert.equal(game.u.mtimedone, 0);
+        assert.equal(game.u.uconduct?.polyselfs ?? 0, 0);
+    });
+
+test('Unchanging restores a zero were-form duration instead of rehumanizing',
+    async () => {
+        installDirectWereHero({ beast: true });
+        game.u.mtimedone = 0;
+        game.u.unchanging = true;
+        const potion = potionObject(POT_WATER);
+        potion.blessed = true;
+
+        initRng(3403n);
+        enableRngLog();
+        const result = await applySupportedPotionVapor({
+            state: game, potion, publish: async () => {},
+        });
+
+        assert.match(getRngLog()[0], /^rn2\(200\)=/);
+        assert.equal(getRngLog().length, 1);
+        assert.equal(result.waterEffect.kind, 'duration-restored');
+        assert.ok(game.u.mtimedone >= 200 && game.u.mtimedone <= 399);
+        assert.equal(game.u.umonnum, 21);
+    });
 
 test('vapor respects breathless forms with and without eyes', async () => {
     resetGame();

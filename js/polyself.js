@@ -72,7 +72,11 @@ const OLFACTIONLESS_SYMBOLS = new Set([
 ]);
 
 export function heroIsPolymorphed(state = game) {
-    return (state.u?.mtimedone ?? 0) > 0;
+    const u = state.u;
+    if ((u?.mtimedone ?? 0) > 0) return true;
+    return Number.isInteger(u?.umonnum)
+        && Number.isInteger(u?.umonster)
+        && u.umonnum !== u.umonster;
 }
 
 export function heroHasNoHands(state = game) {
@@ -314,14 +318,14 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     return { previousMnum, wasPolymorphed };
 }
 
-// C polyself.c:polyself(POLY_CONTROLLED) -> polymon().  Selection and
-// legality remain command-owned; this function owns the accepted form,
-// equipment, encumbrance, and verbose ability transaction.
-export async function polyselfControlledMonster(mnum) {
+// C polyself.c:polymon().  Selection and legality remain caller-owned; this
+// function owns the accepted form, equipment, encumbrance, and verbose
+// ability transaction for controlled and involuntary transformations alike.
+export async function polymonHero(mnum, { sexChangeAllowed = false } = {}) {
     const previousCapacity = nearCapacity(game);
     const wasPolymorphed = heroIsPolymorphed(game);
     const previousMnum = game.u?.umonnum;
-    beginMonsterForm(mnum, { sexChangeAllowed: true });
+    beginMonsterForm(mnum, { sexChangeAllowed });
 
     const monsterName = MONSTER_NAME[mnum] || 'monster';
     const article = /^[aeiou]/i.test(monsterName) ? 'an' : 'a';
@@ -524,6 +528,10 @@ export async function polyselfControlledMonster(mnum) {
         );
     }
     return { transformed: true, mnum };
+}
+
+export async function polyselfControlledMonster(mnum) {
+    return polymonHero(mnum, { sexChangeAllowed: true });
 }
 
 function roundDivPositive(numerator, denominator) {

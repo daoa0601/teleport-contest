@@ -34,7 +34,8 @@ import {
 import { objectTypeKnown } from './shk.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
-    heroHasProtectionFromShapeChangers, transformWereMonster,
+    applyHeroWaterVaporChange, heroHasProtectionFromShapeChangers,
+    heroWaterVaporGap, transformWereMonster,
 } from './were.js';
 
 const PM_PESTILENCE = 312;
@@ -418,6 +419,13 @@ export function supportedPotionTargetGap({ state = game, potion, monster }) {
     return null;
 }
 
+export function supportedPotionHeroVaporGap({ state = game, potion }) {
+    if (potion?.otyp !== POT_WATER) return null;
+    const profile = heroVaporProfile(state);
+    if (!profile.canReceive || heroHasVaporShield(state)) return null;
+    return heroWaterVaporGap(state, potion);
+}
+
 function waterEffectSubject(monster, targetSpotted) {
     return targetSpotted ? sentenceSubject(monster) : 'It';
 }
@@ -581,9 +589,9 @@ export async function applySupportedPotionVapor({
                 : "For an instant you couldn't see yourself!");
         }
     } else if (potion.otyp === POT_WATER) {
-        // potionbreathe() has no water case.  Admission and possible naming
-        // still occur in the caller, but hero state and gameplay RNG do not.
-        waterEffect = null;
+        waterEffect = await applyHeroWaterVaporChange({
+            state, potion, publish,
+        });
     } else if (potion.otyp === POT_ACID) {
         exerciseAttribute(2, false, state);
     } else if (potion.otyp === POT_OIL) {

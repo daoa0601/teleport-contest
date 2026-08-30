@@ -1,12 +1,21 @@
 // were.js — Shared deterministic were-creature form transition.
 // C refs: were.c counter_were(), new_were(); mondata.c set_mon_data().
 
+import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
-import { newsym } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import {
-    MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL,
+    MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
+import {
+    AMULET_OF_UNCHANGING, RIN_POLYMORPH_CONTROL,
+    RIN_PROTECTION_FROM_SHAPE_CHANGERS,
+} from './object_data.js';
+import {
+    heroIsPolymorphed, polymonHero, rehumanizeHero,
+} from './polyself.js';
+import { rn2 } from './rng.js';
+import { vision_recalc } from './vision.js';
 
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
@@ -18,6 +27,117 @@ const COUNTER_WERE = new Map([
     [21, 263], [263, 21], // werewolf <-> human werewolf
     [91, 261], [261, 91], // wererat <-> human wererat
 ]);
+const PM_GREMLIN = 40;
+
+function wornPropertyObject(state, otyp, slots) {
+    return slots.some(slot => {
+        const object = state[slot] || state.u?.[slot];
+        return object?.otyp === otyp && object.worn !== false;
+    });
+}
+
+export function heroHasPolymorphControl(state = game) {
+    return !!(state.u?.polymorphControl || state.polymorphControl)
+        || wornPropertyObject(
+            state, RIN_POLYMORPH_CONTROL, ['uleft', 'uright'],
+        );
+}
+
+export function heroIsUnchanging(state = game) {
+    return !!(state.u?.unchanging || state.unchanging)
+        || wornPropertyObject(state, AMULET_OF_UNCHANGING, ['uamul']);
+}
+
+function heroIsUnaware(state) {
+    return !!(state.u?.unaware || state.unaware
+        || state._helplessReason === 'unconscious from rotten food'
+        || state._helplessReason === 'sleeping off a magical draught');
+}
+
+function heroIsStunned(state) {
+    return !!(state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0);
+}
+
+function lycanthropeBeastMnum(state) {
+    const mnum = state.u?.ulycn;
+    if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
+        return null;
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    return (flags & M2_WERE) && !(flags & M2_HUMAN) ? mnum : null;
+}
+
+function controllableWereChange(state) {
+    return heroHasPolymorphControl(state)
+        && !heroIsStunned(state) && !heroIsUnaware(state);
+}
+
+export function heroWaterVaporGap(state = game, potion = {}) {
+    const u = state.u || {};
+    if (u.umonnum === PM_GREMLIN) return 'hero-gremlin-split';
+    const beast = lycanthropeBeastMnum(state);
+    if (beast === null || heroIsUnchanging(state)) return null;
+
+    if (potion.cursed && !heroIsPolymorphed(state)
+        && u.umonnum !== beast && controllableWereChange(state)) {
+        return 'hero-lycanthrope-control-prompt';
+    }
+    if (potion.blessed && u.umonnum === beast
+        && !threateningMonsterNearby(state)
+        && controllableWereChange(state)) {
+        return 'hero-lycanthrope-control-prompt';
+    }
+    return null;
+}
+
+export async function applyHeroWaterVaporChange({
+    state = game,
+    potion,
+    publish = plineWithContinuation,
+} = {}) {
+    const gap = heroWaterVaporGap(state, potion);
+    if (gap) throw new Error(`unsupported water-vapor branch: ${gap}`);
+    const u = state.u || {};
+    const beast = lycanthropeBeastMnum(state);
+    if (beast === null) return { kind: 'ordinary', changed: false };
+
+    const nearbyThreat = threateningMonsterNearby(state);
+    if (potion?.blessed && u.umonnum === beast) {
+        if (!heroIsUnchanging(state) && !nearbyThreat) {
+            const restored = rehumanizeHero(state);
+            if (restored.regainedSight && state === game) vision_recalc(0);
+            if (restored.changed) {
+                await publish(`You return to ${restored.race} form!${
+                    restored.regainedSight ? '  You can see again.' : ''
+                }`);
+                if (restored.encumbranceMessage)
+                    await publish(restored.encumbranceMessage);
+            }
+            return { kind: 'rehumanized', changed: restored.changed, restored };
+        }
+        if (!u.mtimedone) {
+            u.mtimedone = 200 + rn2(200);
+            return {
+                kind: 'duration-restored', changed: false,
+                duration: u.mtimedone,
+            };
+        }
+        return { kind: 'blocked', changed: false };
+    }
+
+    if (potion?.cursed && !heroIsPolymorphed(state)
+        && u.umonnum !== beast) {
+        if (heroIsUnchanging(state) || nearbyThreat)
+            return { kind: 'blocked', changed: false };
+        if (state !== game)
+            throw new Error('hero polymon owner requires live game state');
+        state.were_changes = (state.were_changes ?? 0) + 1;
+        const transformed = await polymonHero(
+            beast, { sexChangeAllowed: false },
+        );
+        return { kind: 'transformed', changed: true, transformed };
+    }
+    return { kind: 'unaffected', changed: false };
+}
 
 export function heroHasProtectionFromShapeChangers(state = game) {
     if (state.u?.protectionFromShapeChangers

@@ -97805,3 +97805,78 @@ public regression lane, full Contest corpus, scorer, sealed trace, push,
 publication, official hidden measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 03:07 EEST, journal block 3186] {#bridge-free #water-vapor #lycanthropy #you-were #you-unwere #polymon #rehumanize #monster-nearby #unchanging #polymorph-control #cloneu #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and portfolio:** after the test-quality batches,
+the next source-owned audit falsified the registry's statement that
+`potionbreathe(POT_WATER)` was a general zero-RNG no-op.  Five initial live
+swallowed-command witnesses produced **1/5**: ordinary Unchanging suppression
+already matched by accident, while cursed human-lycanthrope transformation,
+blessed beast rehumanization, hero-gremlin preflight, and interactive-control
+preflight were absent.  The critical-debugging portfolio kept ordinary hero
+vapor, cursed `you_were()`, blessed `you_unwere(FALSE)`, gremlin `cloneu()`,
+control prompting, and carrier reachability as independent mechanisms.
+
+**Prediction and decisive C evidence:** `potion.c:potionbreathe()` first sends
+a gremlin hero to `split_mon(&youmonst,0)`.  Otherwise a valid `u.ulycn`
+selects cursed `you_were()` only while not polymorphed or blessed
+`you_unwere(FALSE)` only while in the matching beast form.  `you_were()`
+checks Unchanging/current form, then a controllable prompt or
+`hack.c:monster_nearby()`, before incrementing `gw.were_changes` and calling
+`polymon()`.  `you_unwere()` checks Unchanging, current form, nearby threats,
+and the inverse control prompt before `rehumanize()`; a blocked were form with
+zero `mtimedone` receives `rn1(200,200)`.  Stunned or Unaware heroes do not
+control either transformation.  Core `Upolyd` is form identity
+`u.umonnum != u.umonster`, not positive duration alone.
+
+**Implementation and ownership:** `polyself.js` now exposes its existing
+source-shaped form/equipment transaction as `polymonHero()` and defines
+polymorphed state by current-versus-base form even when duration is zero.
+`were.js` owns worn polymorph-control-ring and Unchanging-amulet properties,
+valid lycanthrope identity, control eligibility, threat gating, live
+`were_changes`, involuntary polymon, rehumanization/presentation, and expired
+duration restoration.  `potion_hit.js` replaces the blanket water no-op with
+that owner.  Swallowed and map eligibility detect unsupported hero gremlin
+splitting or interactive prompts before object detachment or RNG.  Map
+preflight is reachability-aware: two-square contact can breathe vapor, while a
+three-square contact cannot and remains live.  The mechanical C/Lua registry
+and section1008 graph now include `you_were`, `you_unwere`, `monster_nearby`,
+`polymon`, `rehumanize`, and the still-open `cloneu`; Lua owns no branch here.
+
+**Adversarial corrections:** the first implementation reached **4/5** and the
+remaining failure exposed an invalid witness rather than missing production
+behavior: a werewolf hero has no hands and therefore cannot initiate the live
+throw command.  Blessed rehumanization was moved to a direct source-outcome
+witness instead of weakening throw capability.  The same diagnosis exposed a
+real shared bug: `threateningMonsterNearby()` counted the engulfer on the
+hero's own square, while C skips `u_at(x,y)`; the live cursed-vapor witness now
+proves that correction.  Added controls prove ordinary no-op, spotted-adjacent
+threat suppression, worn Unchanging and polymorph-control items, stunned
+control bypass, zero-duration restoration, two-square fail-before-mutation,
+and three-square non-rejection.
+
+**Measured effect and process custody:** the source red set is green **9/9**
+and the two map-reachability controls pass **2/2**.  The complete potion
+impact/map/swallowed gate passes **129/129**; adding bridge-free and startup
+neighbors gives **144/144**.  The structurally selected default behavioral
+lane passes **381/381** in **4.5 seconds**.  One narrow controlled-polymorph
+public compatibility witness passes **1/1** but is not acceptance evidence.
+The mechanical bridge audit reports **126 files, 15 guarded modules, and 19
+fixture modules**; ownership generation/checking, syntax, JSON parsing, and
+`git diff --check` pass.  Every runner was guarded, singular, and owned to
+normal exit.
+
+**Falsified hypotheses, limits, and next blocker:** water vapor is not
+generally inert; `mtimedone === 0` does not imply human form; an engulfer is
+not a nearby square threat; control is disabled by stun/Unaware; and rejecting
+all controlled-water throws would be overbroad when vapor is out of range.
+Hero `cloneu()`, both interactive paranoid-query continuations, broader
+scary-square nuances in `monster_nearby()`, and an external live carrier for
+blessed beast-form vapor remain explicit gaps.  The broader potion subsystem
+also retains its named target, terrain, equipment, shop, death, and sealed-gate
+gaps and therefore remains mechanically **partial**.  No full Contest corpus,
+public suite, scorer, sealed trace, push, publication, official hidden
+measurement, or animation work ran.
+
+---

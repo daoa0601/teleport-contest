@@ -14,7 +14,7 @@ import {
     CORPSE, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
-    POT_WATER,
+    POT_WATER, RIN_POLYMORPH_CONTROL,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -900,6 +900,57 @@ test('equipped were transformation fails before map throw mutation',
         assert.deepEqual(getRngLog(), []);
         assert.deepEqual(game.inventory, [potion]);
         assert.equal(potion.where, 'inventory');
+    });
+
+test('controlled lycanthrope vapor fails before a two-square map throw',
+    async () => {
+        freshMapPotionState(2);
+        Object.assign(game.u, {
+            umonster: 331, umonnum: 331, ulycn: 21,
+        });
+        const ring = {
+            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
+        };
+        game.u.uright = game.uright = ring;
+        const potion = addKnownPotion(POT_WATER);
+        potion.cursed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await assert.rejects(
+            throwEast(potion),
+            error => error?.code === 'TELEPORT_BRIDGE_FORBIDDEN'
+                && error?.bridgeId === 'throw.potion-impact-unsupported',
+        );
+
+        assert.deepEqual(getRngLog(), []);
+        assert.deepEqual(game.inventory, [potion]);
+        assert.equal(game.u.umonnum, 331);
+        assert.equal(potion.where, 'inventory');
+    });
+
+test('three-square water contact bypasses unreachable hero-vapor prompts',
+    async () => {
+        const monster = freshMapPotionState(3);
+        Object.assign(game.u, {
+            umonster: 331, umonnum: 331, ulycn: 21,
+        });
+        const ring = {
+            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
+        };
+        game.u.uright = game.uright = ring;
+        const potion = addKnownPotion(POT_WATER);
+        potion.cursed = true;
+
+        initRng(2702n);
+        enableRngLog();
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.ok(monster.mhp >= 11 && monster.mhp <= 12);
+        assert.equal(game.u.umonnum, 331);
+        assert.equal(game.u.mtimedone ?? 0, 0);
+        assert.equal(potion.where, 'gone');
+        assertNoBridgeUse();
     });
 
 test('live fatal iron-golem water creates source special chain drops',
