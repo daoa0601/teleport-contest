@@ -99664,3 +99664,71 @@ public-regression lane, sealed trace, push, publication, hidden measurement,
 or animation work ran; `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 08:52 EEST, journal block 3234] {#healer #diagnosis #future-input #sleep-wand #critical-portfolio #source-contract}
+
+**Previous-turn classification and portfolio:** the Ranger turn was progress:
+it deleted a production classifier, alternate scheduler/fire engine, and replay
+exporter, then committed source-state evidence.  The next live compatibility
+family was Healer.  The critical-debugging portfolio kept future-input startup
+selection, actor/global scheduling, self-directed sleep mechanics, and the
+apple/late-search collateral patches as four distinct mechanisms.  A green
+legal-race wait alone would not establish self-sleep, and reproducing the
+aggregate RNG transcript would preserve the hidden failure mode.
+
+**Earliest divergences and red evidence:** fresh seed44001 executes four waits
+and then blocks at a save prompt before the trailing `szf` bytes.  Normal mode
+nevertheless selected `_healerNewmoonPath`, hit `fastforward.turn`, and left
+the pet at `(5,17)` with zero movement; bridge-free mode used current state and
+left it at `(3,17)` with 12 movement.  A separate self-zap spent the starting
+sleep wand's charge in both modes but advanced only to turn 2, installed no
+helpless state, and emitted no wake message.  The first three-witness file was
+therefore red in the future-causality and self-sleep families while both legal
+Healer races were already cross-mode green.
+
+**Source prediction and decision:** pinned `zap.c:zapyourself(WAN_SLEEP)`
+identifies the effect and either reports sleep resistance or calls
+`fall_asleep(-rnd(50), TRUE)`.  `timeout.c:fall_asleep()` installs negative
+`multi`; `allmain.c:moveloop_core()` runs current actors and global maintenance
+for every helpless action before producing the wake message.  Delete the
+future-`szf` selector, early tables, aggregate sleep/wake/search module, fixed
+pet/gold mutations, and apple exception together.  Implement self-sleep state
+on the shared live scheduler rather than another bulk continuation.
+
+---
+
+### [2026-08-30 08:52 EEST, journal block 3235] {#healer #implementation #behavioral-gate #test-cleanup #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** every Healer now uses the source
+movement ration.  Self-directed `WAN_SLEEP` spends its live charge, exercises
+Wisdom, learns the type, and either emits sleep resistance or installs
+`rnd(50)` helpless turns, the sleeping reason, source-turn ownership, and the
+timeout wake message.  Seed44007 advances through a multi-turn live sleep and
+wakes with equal normal/bridge-free actor, floor, inventory, movement, and
+message state.  A controlled resistant hero spends and learns the wand without
+entering helplessness.  Future `szf` bytes and both legal Healer races are also
+cross-mode equal with zero bridges.
+
+**Deleted surface and test cleanup:** `_healerNewmoonPath`, the three early
+turn call tables, fixed pet moves, coordinate gold deletion, forced turn 31,
+aggregate sleep/wake/two-search transcripts, dedicated module, and Healer-only
+apple branch are deleted.  The mechanical audit forbids their tokens and
+module.  A shared role-outcome support file replaces 277 lines of duplicated
+base-role and Ranger actor/floor/trap/inventory/environment plumbing while
+preserving state-only oracles.  The focused Healer file passes **4/4**; the
+neighboring scheduler, bridge-policy, helplessness, potion, Ranger, and
+swallowed-projectile portfolio passes **163/163**.
+
+**Gates, next blocker, and evidence limit:** one owned default behavioral suite
+passed **450/450** and exited normally in 4.7 seconds.  The lane audit passes
+**51 files** with no recorded-session, public-parity, mock/spy, or call-
+transcript dependency.  Bridge audit shrinks to **125 production files, 8
+guarded replay modules, and 19 fixture modules**; syntax and diff checks pass,
+and no matching runner remains.  Explicit Knight, Monk, Tourist, Wizard, and
+other seeded compatibility paths plus directional-ray breadth, early wakeup,
+terrain, interruption, options, persistence, and sealed strata remain open.
+No corpus, scorer, public-regression lane, sealed trace, push, publication,
+hidden measurement, or animation work ran; `public-session-status.md` is
+unchanged.
+
+---

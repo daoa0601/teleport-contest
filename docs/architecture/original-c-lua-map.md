@@ -38919,7 +38919,73 @@ asserting source lines, collaborator calls, screens, or RNG transcripts.
 This owner remains `partial`.  General projectile gaps include mid-volley
 interruption, alternate launcher failure continuations, non-bow multishot
 families, special terrain/floor effects, persistence, options, and sealed
-strata.  Other explicitly classified Healer, Knight, Monk, Tourist, and Wizard
+strata.  Other explicitly classified Knight, Monk, Tourist, and Wizard
 compatibility paths also remain.  The focused neighboring portfolio passes
 22/22; the managed default gate passes 446/446 with 50 lane-audited files and
 a clean 126-production-file, 9-guarded-module, 19-fixture-module bridge audit.
+
+## 1025. Healer sleep is negative multi, not an aggregate transcript
+
+```mermaid
+flowchart TD
+    Zap["z; select live sleep wand; direction ."] --> Charge["zappable spends one charge"]
+    Charge --> Resist{"Sleep resistance?"}
+    Resist -- yes --> Shield["shield effect; no helpless state"]
+    Resist -- no --> Duration["rnd(50); fall_asleep negative multi"]
+    Duration --> Debit["each helpless action debits hero movement"]
+    Debit --> Scan["movemon scans current fmon and floor goals"]
+    Scan --> Turn["allocate current actors and run global maintenance"]
+    Turn --> Tick{"helpless counter expired?"}
+    Tick -- no --> Debit
+    Tick -- yes --> Wake["You wake up; resume input"]
+
+    Future["future replayMoves contains szf"] -. deleted .-> Replay["early RNG, fixed pet/gold, bulk sleep/wake/search transcript"]
+    Apple["Healer-path apple exception"] -. deleted .-> Replay
+```
+
+Pinned `zap.c:zapyourself(WAN_SLEEP)` spends the selected wand charge before
+resolving its self effect, identifies sleep, exercises Wisdom, and either
+shows resistance or calls `fall_asleep(-rnd(50), TRUE)`.  Pinned
+`timeout.c:fall_asleep()` installs negative `multi`, the sleeping reason, and
+the wake message.  `allmain.c:moveloop_core()` then owns every elapsed helpless
+action; current monsters and global maintenance run normally before the
+counter advances.  Neither source boundary consults later command bytes.
+
+The removed JavaScript path selected when any future `replayMoves` substring
+matched `/szf/`.  It excluded the Healer from the source movement ration,
+replayed three early turn tables, bulk-replayed an entire self-sleep interval,
+teleported the pet at named turns, deleted gold from `(53,4)`, forced turn 31,
+replayed two later searches, and supplied a separate apple message.  Those
+operations could remain public-exact while making the future input stream an
+authority over past world state.
+
+Fresh seed 44001 demonstrates that causality failure without executing the
+suffix: four waits followed by a save prompt leave later `szf` bytes blocked.
+Before deletion, normal mode still hit `fastforward.turn` and left the pet at
+`(5,17)` with zero movement; bridge-free mode used current actors and left it
+at `(3,17)` with 12 movement.  A separate seed44001 self-zap showed the other
+missing owner: both ordinary modes spent the charge and one turn but never
+installed sleep.
+
+`js/cmd.js` now owns self-directed sleep-wand state and delegates the elapsed
+interval to the existing live helpless scheduler.  Seed 44007 spends one
+charge, identifies the wand, advances from turn 1 through a source-selected
+multi-turn sleep with current actors, clears helpless state, and wakes in
+equal normal/bridge-free worlds.  A sleep-resistant control spends and learns
+the wand but never installs helplessness.  Fresh human and gnome Healers share
+the live scheduler, and future `szf` text no longer changes earlier state.
+The early table, aggregate replay module, fixed pet/gold mutations, late-search
+branch, and apple exception are deleted and mechanically forbidden.
+
+The behavioral tests also share one role-outcome serializer now; base-role,
+Ranger, and Healer witnesses no longer maintain three copies of actor, floor,
+trap, inventory, environment, and bridge-ledger plumbing.  Their oracles remain
+observable state transitions rather than helper calls or source checks.
+
+This owner remains `partial`.  Directional ray behavior, monster resistance
+observation, early combat wakeup, alternate sleep sources, interruption
+presentation, persistence, options, and sealed strata remain open.  Explicit
+Knight, Monk, Tourist, and Wizard compatibility paths also remain.  The
+focused neighboring portfolio passes 163/163; the managed default gate passes
+450/450 with 51 lane-audited files and a clean 125-production-file,
+8-guarded-module, 19-fixture-module bridge audit.

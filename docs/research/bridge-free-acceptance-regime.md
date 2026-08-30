@@ -112,10 +112,17 @@ which collides with its former coordinate/sink predicate now uses the current
 `fmon`/`fobj` graph and source movement ration in both modes, as do all four
 legal Ranger races.  `f` no longer selects a dedicated Ranger pager/RNG path:
 the shared `dofire` owner queues the alternate-bow swap, resumes through the
-canned-command queue, and detaches live quivered arrows.  Explicit normal-mode
-compatibility classifiers for other paths remain.  These later slices have
-focused fresh witnesses and selected public regressions, but still no sealed
-gate or hidden measurement.
+canned-command queue, and detaches live quivered arrows.  Healer's future-`szf`
+new-moon exception is now deleted as well.  Future bytes blocked behind a save
+prompt cannot select startup or actor scheduling; both
+legal Healer races use the live movement ration.  Self-directed sleep wands
+now spend a live charge, apply sleep resistance or `rnd(50)` negative multi,
+advance current actors and global maintenance, and wake through the shared
+helpless-turn owner.  The aggregate sleep/wake/search RNG module, early-turn
+table, fixed pet/gold mutation, and apple exception are removed.  Explicit
+normal-mode compatibility classifiers for other paths remain.  These later
+slices have focused fresh witnesses and selected public regressions, but still
+no sealed gate or hidden measurement.
 
 ## 1. Genuinely bridge-free mode
 
