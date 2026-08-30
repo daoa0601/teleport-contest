@@ -38474,24 +38474,42 @@ Pinned `throw_obj()` chooses the complete volley before the first object is
 split.  For matching sling ammunition it admits stacks only while the hero is
 not confused or stunned, adds Skilled/Expert proficiency subject to the weak-
 multishot gate, adds the Cave Dweller or Ranger class bonus, and calls one
-`rnd(maximum)`.  Each selected unit then passes through its own `splitobj()`,
+`rnd(maximum)`.  `cmd.c:parse()` retains a positive command prefix as
+`gc.command_count`; `dothrow.c:ok_to_throw()` snapshots that value as the shot
+limit, and `throw_obj()` caps the already-selected random volley rather than
+replacing or bypassing its roll.  The fireassist `CQ_CANNED` continuation must
+therefore carry the snapshot across the weapon-swap turn.  Each selected unit
+then passes through its own `splitobj()`,
 inventory detachment, live path/contact/floor continuation, stacking, and
 `encumber_msg()` boundary.  JavaScript now preserves that order for ordinary
 map sling ammunition; it does not decrement a stack by a precomputed total or
 reuse one projectile identity across the volley.
+
+```mermaid
+flowchart LR
+    A[cmd.c parse stores command_count] --> B[ok_to_throw snapshots shotlimit]
+    B --> C[dofire and fireassist canned continuation]
+    C --> D[throw_obj rolls source multishot]
+    D --> E[positive shotlimit caps rolled count]
+    E --> F[per-shot split, flight, settlement]
+```
 
 Fresh seed28001 performs four ordinary waits and compares bounded hero,
 movement, message, inventory, complete floor-object, and live-actor state
 between normal and bridge-free modes.  Fresh seed28003 compares startup with a
 real `f` command: the alternate sling becomes primary, the club becomes
 secondary, and pinned C's low-tech bonus plus fresh `rnd(2)=2` outcome removes
-and lands two flint units.  The test encodes that source outcome but no pet
+and lands two flint units.  The same seed with `1f` still consumes that source
+selection but caps it afterward, removing and landing exactly one flint across
+the scheduler-separated fireassist continuation.  The test encodes those
+world deltas but no pet
 path, floor coordinate, later RNG transcript, projectile endpoint, helper
 call, or fixed prose.  Both fresh invariants pass with zero Caveman bridges,
-and the default behavioral gate passes 374/374.
+and the default behavioral gate passes 375/375.
 
-This subsystem remains partial.  Count-prefix limits, hurtle/death interruption
-within a volley, general inventory launcher search, autoquiver, polearm/whip
-fire modes, swallowed sling ammunition, water-wall/sink and other projectile
-contacts and terrain, alternate options, persistence, and sealed strata are
-still open.  Lua owns no runtime Caveman scheduler or projectile exception.
+This subsystem remains partial.  Hurtle/death interruption within a volley,
+general inventory launcher search, autoquiver, polearm/whip fire modes,
+swallowed sling ammunition, water-wall/sink and other projectile contacts and
+terrain, non-sling multishot and count-prefix families, alternate options,
+persistence, and sealed strata are still open.  Lua owns no runtime Caveman
+scheduler or projectile exception.

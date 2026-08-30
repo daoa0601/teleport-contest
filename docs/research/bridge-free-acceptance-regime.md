@@ -63,8 +63,10 @@ boulder, and the pit prefix no longer selects fixed movement, depth-two room,
 detection, corpse, or actor replay.  Caveman `f` now reaches shared fireassist
 through a scheduler-separated canned weapon-swap continuation.  Matching-sling
 fire now selects the source action-level multishot count before independently
-splitting and settling each projectile; count limits, interruption and broader
-fire modes remain explicitly partial.  Other named role paths remain.  Those
+splitting and settling each projectile.  A positive command count survives the
+fireassist continuation and caps the matching-sling volley after that source
+roll; non-sling count families, interruption, and broader fire modes remain
+explicitly partial.  Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.
 

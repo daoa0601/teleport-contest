@@ -98982,3 +98982,61 @@ public-corpus or hidden generalization measurement; `public-session-status.md`
 is unchanged and no publication is authorized.
 
 ---
+
+### [2026-08-30 06:27 EEST, journal block 3214] {#bridge-free #caveman #count-prefix #dofire #fireassist #canned-command #multishot #fresh-seed #behavioral-witness #c-source #change-detector #implementation #process-safety}
+
+**Contract, prediction, and source evidence:** block3212 left command-count
+limiting open.  Pinned `cmd.c:parse()` retains a positive prefix as
+`gc.command_count`; `dothrow.c:ok_to_throw()` snapshots it as `shotlimit`; and
+`throw_obj()` first performs the ordinary multishot roll, then caps the result
+to that positive limit.  Because fireassist swaps weapons and resumes through
+`CQ_CANNED`, the snapshot must outlive the swap turn without consulting future
+input.  The prediction was therefore narrow: on the same fresh seed whose
+unprefixed source roll selects two flints, `1f` must preserve that selection but
+detach and settle only one.  Skipping the roll, counting the weapon swap as the
+shot, or reading the cleared prefix again inside the canned command were
+explicit non-results.
+
+**Independent red witness and earliest divergence:** the new seed28003 test
+compares startup inventory/floor quantities with a real `1f l` command in both
+normal and bridge-free modes.  Before implementation it failed at the first
+world delta, removing **2** flints where the positive prefix required **1**.
+It does not assert helper calls, canned-queue shape, source lines, RNG
+transcripts, projectile coordinates, messages, or a public-session outcome.
+That falsifies the prior behavior as a command-count owner even though its
+unprefixed multishot behavior was correct.
+
+**Implementation, measured effect, and remaining boundary:** shared
+`dofire()` and `dothrow()` now snapshot and clear the live command count once;
+the fireassist canned command carries that immutable shot limit across its
+scheduler transaction.  Matching-sling and Ranger-arrow owners still execute
+their source roll, then apply the positive cap.  Count-requested volley prose
+also follows the resulting singular/plural and shoot/throw action.  The
+focused fresh file passes **3/3**: seed28003 removes and lands two flints
+without a prefix and one with `1f`, while preserving live weapon slots, equal
+normal/bridge-free worlds, and zero Caveman bridges.  Non-sling multishot/count
+families, mid-volley interruption, broader launcher selection and fire modes,
+special contacts, persistence, and sealed strata remain open.  No corpus,
+scorer, public-regression lane, sealed trace, push, publication, hidden
+measurement, or supplemental-animation work ran.
+
+---
+
+### [2026-08-30 06:28 EEST, journal block 3215] {#caveman #count-prefix #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Managed gate:** after the focused red-to-green witness, one guarded default
+behavioral process passed **375/375** named tests in 3.58 seconds and exited
+normally.  The behavioral-lane audit remains green across **43 files** and the
+bridge audit remains green at **123 production files, 9 guarded replay
+modules, and 19 fixture modules**.  No matching test or corpus runner remains.
+
+**Ownership and evidence limit:** the C/Lua registry and map now mark positive
+matching-sling count limiting as implemented inside the still-`partial`
+Caveman/projectile slice; other count families and the interruption,
+selection, terrain, swallowed, persistence, and sealed cases remain explicit
+gaps.  This was one local behavioral gate, not an engine-only corpus or public
+scorer measurement, so `public-session-status.md` remains unchanged.  No push,
+publication, official hidden measurement, or animation work is authorized by
+this result.
+
+---
