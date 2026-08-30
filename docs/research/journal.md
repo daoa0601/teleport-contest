@@ -100144,3 +100144,69 @@ sealed trace, push, publication, hidden measurement, or animation work ran;
 `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 10:36 EEST, journal block 3245] {#wizard #future-input #wish #quaff #scheduler #bridge-removal #behavioral-gate #mutation-probe #ownership #critical-portfolio #process-safety}
+
+**Previous-turn classification and mechanism portfolio:** block 3244 was
+production progress: Tourist actor, run, and counted-search replay was deleted
+and replaced by current-state owners.  The remaining guarded modules separated
+into Wizard command playback (`wizard_poly.js` and `wizard_quaff.js`), the
+Wizard bind/level-generation carrier, the default fast-forward gap, and
+recorded-RNL fixture compatibility.  Pinned C inspection showed that wishing
+and quaffing already had independent live owners, while bind still crosses
+special-level generation and tty.  The critical-debugging portfolio therefore
+selected the two future-input command carriers as one coherent slice and left
+bind explicit rather than conflating those mechanisms.
+
+**Earliest divergence, source prediction, and red evidence:** `newgame()` read
+the complete future `replayMoves` string and selected `_wizardPolyPath` from a
+Ctrl-W polymorph-wand prefix or `_wizardQuaffPath` from
+`"  nqhzc.rjhlll"`.  `rhack()` then swallowed every key as zero-time while
+the capture hook replayed RNG boundaries and painted stored screens.  A fresh
+normal-mode seed48392 carrier therefore remained at move 1 with its generated
+actors unchanged; the same carrier with the classifier structurally disabled
+physically moved, changed current actors, and spent one charge from its live
+starting wand.  The strengthened source audit independently failed on both
+classifiers, four replay/painter functions, two bridge IDs, all dispatcher and
+capture-hook references, and both replay modules.
+
+**Implementation and ownership effect:** commit `d471bc1` deletes both
+classifiers, both zero-time command bypasses, both capture-hook replay/painter
+branches, `wizard_poly.js`, and `wizard_quaff.js`.  Production `newgame()` no
+longer reads `replayMoves`.  Every non-bind Wizard now uses the shared command
+state machines and the same source movement-ration/current-actor/global-turn
+predicate as the generalized roles.  The duplicated role lists in the
+source-ration, live-actor, and helpless-recovery gates were collapsed onto that
+single mechanical predicate; this also exposed and fixed the first attempted
+Wizard integration's negative movement balance, where commands executed but
+`moves` stayed at 1 and `umovement` reached -72.
+
+**Independent behavioral and adversarial evidence:** direct Ctrl-W creates a
+real 30-charge polymorph wand, increments wish conduct, and spends no time.
+Direct quaffing selects and consumes one gain-energy potion, changes live
+energy, and spends an action.  The fresh former-prefix carrier requires
+elapsed turns, hero displacement, current-actor changes, and a live wand-charge
+transition without copying a screen, coordinate path, exact RNG list, helper
+call, or production output.  Temporarily removing the Wizard source-ration
+entry made the carrier fail on turn advancement.  Temporarily disabling
+Ctrl-W dispatch and potion consumption independently made the other two
+witnesses fail on missing carrier/effect state.  All mutations were restored;
+36 focused policy/scheduler tests passed.
+
+**Measured effect, falsified hypotheses, and next blocker:** one managed
+`npm test` invocation passed all **456/456** behavioral tests across **53**
+lane-audited files.  The bridge audit drops from 122/5/19 to **120 production
+files, 3 guarded replay modules, and 19 fixture modules**: `fastforward.js`,
+`rng.js`, and `wizard_bind.js`.  The owned process exited and no matching
+runner remained.  Stored screens and aggregate RNG were not required for live
+wishing, potion consumption, movement, actor scheduling, or wand charge
+ownership; bridge-free-only success did not prove normal-mode causality, while
+the fresh normal-mode carrier did.  This is not broad Wizard coverage:
+polymorph breadth, potion occupants/effects, debug commands, tty, persistence,
+and wider terrain/actor/options remain partial.  The Wizard bind option is now
+the only production classifier family and the next dependency-distinct bridge
+slice.  No corpus, scorer, public-regression lane, sealed trace, push,
+publication, hidden measurement, or animation work ran;
+`public-session-status.md` is unchanged.
+
+---

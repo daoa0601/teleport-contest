@@ -140,10 +140,17 @@ counted search.  Its coordinate/option classifier, fixed actor/map/run/search
 mutations, forced turns, aggregate RNG, and replay module are deleted.  The
 represented Tourist slice remains partial at wider movement-ration, run,
 interruption, actor, level-transition, persistence, and option strata.
-Explicit normal-mode compatibility classifiers for Wizard and other paths
-remain.  These later
-slices have focused fresh witnesses and selected public regressions, but still
-no sealed gate or hidden measurement.
+The two Wizard future-input command classifiers are deleted as well.  Debug
+wishing, quaffing, zapping, movement, current actors, and elapsed turns now use
+the shared command and source-ration owners in normal and bridge-free modes;
+production initialization no longer reads `replayMoves`.  The represented
+slice directly validates a charged polymorph-wand wish, gain-energy potion
+effect/consumption, and a fresh former-prefix command carrier, but does not
+claim broad polymorph, potion, debug-command, or tty coverage.  The explicit
+Wizard bind-option path, the default fast-forward gap, and recorded-RNL
+compatibility remain guarded.  These later slices have focused fresh witnesses
+and selected public regressions, but still no sealed gate or hidden
+measurement.
 
 ## 1. Genuinely bridge-free mode
 

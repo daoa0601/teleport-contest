@@ -39165,3 +39165,65 @@ and discovery presentation, level transitions, options, save/restore, and a
 sealed stratum remain open.  The managed default gate passes 453/453 across
 52 behavioral files; the bridge audit covers 122 production files, 5 guarded
 replay modules, and 19 fixture modules.
+
+## 1029. Wizard command carriers use live transactions and source turns
+
+```mermaid
+flowchart TD
+    Input["physical Wizard input"] --> Dispatch["cmd.c / JavaScript rhack"]
+    Dispatch --> Wish["wizcmds.c wiz_wish -> makewish"]
+    Wish --> Object["objnam lookup, object creation, inventory identity"]
+    Dispatch --> Quaff["potion.c dodrink -> dopotion / peffects"]
+    Quaff --> Consume["effect state, useup, ECMD_TIME"]
+    Dispatch --> Zap["zap.c dozap against selected live wand"]
+
+    Consume --> Debit["allmain.c source movement-ration debit"]
+    Zap --> Debit
+    Debit --> Actors["current fmon / dog_move scan"]
+    Actors --> Global["global maintenance and movement allocation"]
+
+    Future["complete future replayMoves prefix"] -. deleted .-> Select["poly/quaff alternate engine"]
+    Select -. deleted .-> Playback["stored RNG boundaries and screens"]
+    Bind["explicit BIND option"] -. guarded and still partial .-> BindReplay["wizard_bind compatibility"]
+```
+
+Pinned `wizcmds.c:wiz_wish()` calls `makewish()` and returns zero-time after a
+real object has been parsed, constructed, held, and charged.  Pinned
+`potion.c:dodrink()` selects one current inventory identity, sends it through
+`dopotion()` and `peffects()`, calls `useup()`, and returns `ECMD_TIME`.
+Time-taking commands then re-enter `allmain.c:moveloop_core()`: the spent hero
+movement ration is restored only after current monsters have exhausted their
+rations and one complete global-maintenance allocation has occurred.  None of
+those owners receives the future command suffix as state.
+
+The deleted JavaScript engine did exactly that forbidden selection during
+`newgame()`.  A Ctrl-W polymorph-wand prefix selected `_wizardPolyPath`; a
+`"  nqhzc.rjhlll"` prefix selected `_wizardQuaffPath`.  `rhack()` discarded
+every subsequent byte without time, while `jsmain` called replay functions and
+painted stored terminal snapshots at each input boundary.  The two modules
+encoded aggregate RNG and screen data rather than objects, actors, terrain, or
+command transactions.  Even after their deletion, the first source-ration
+attempt exposed a duplicated-role-list defect: Wizard commands spent movement
+but the replenishment loop did not include Wizard, leaving `moves == 1` and
+`umovement == -72`.  The scheduler now uses one shared
+`usesSourceMovementRation()` predicate for replenishment and actor ownership,
+so role additions cannot drift between copies of the same policy.
+
+Fresh behavioral witnesses cover three independent mechanisms.  Ctrl-W in a
+controlled live arena creates one 30-charge polymorph wand, increments wish
+conduct, and stays zero-time.  Quaffing a selected gain-energy potion changes
+energy, consumes that identity, and spends one action.  Independently generated
+seed48392 collides with the former quaff prefix in normal mode but now advances
+time, moves the hero, changes current actors, and spends a real carried-wand
+charge.  Scheduler, dispatch, and consumption mutations each defeat only their
+corresponding world-state witness.  A mechanical audit separately forbids the
+two classifier/painter/replay families and every production initialization
+read of `replayMoves`.
+
+This owner remains `partial`.  Object polymorph and pile behavior, alternate
+potion effects and bottle occupants, broader wand directions and targets,
+debug-command families, tty continuations, terrain and actor breadth, options,
+save/restore, and sealed strata remain open.  The explicit Wizard bind option
+still owns a guarded compatibility path and is not claimed here.  The managed
+default gate passes 456/456 across 53 behavioral files; the bridge audit covers
+120 production files, 3 guarded replay modules, and 19 fixture modules.
