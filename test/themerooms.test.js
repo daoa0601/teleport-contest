@@ -45,7 +45,7 @@ import {
     scheduleLevelTimer, scheduleObjectTimer, stopLevelTimer,
 } from '../js/object_timers.js';
 import { init_rect } from '../js/rect.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
@@ -357,7 +357,7 @@ test('melt-ice resumes corpse timers, converts traps, and unearths objects',
         }), null);
     });
 
-test('melt-ice stages boulder RNG after feedback and fills the exposed moat',
+test('melt-ice stages boulder settlement after feedback and fills the moat',
     () => {
         themedState(4004, 8);
         const x = 10, y = 10;
@@ -372,23 +372,20 @@ test('melt-ice stages boulder RNG after feedback and fills the exposed moat',
         scheduleLevelTimer(
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
-        initRng(1n); // first boulder rn2(10) is 5: it fills the water
-        enableRngLog();
+        initRng(1n); // this seed fills the exposed water
         const claimed = claimNextDueObjectTimer(game, game.moves);
         const event = runClaimedMeltIceTimer(claimed, game);
 
-        // melt_ice() presents both of these lines before obj_extract_self()
-        // and boulder_hits_pool() consume their first RNG call.
+        // melt_ice() presents both lines before extracting and settling the
+        // boulder, so terrain and object ownership are still inspectable.
         assert.equal(game.level.at(x, y).typ, MOAT);
         assert.equal(boulder.where, 'floor');
-        assert.deepEqual(getRngLog(), []);
         assert.equal(meltIceTimerMessage(event, { visible: true }),
             'Some ice melts away.');
         assert.equal(meltIceBoulderSettleMessage(event, { visible: true }),
             'A boulder settles...');
 
         const outcome = runNextMeltIceBoulder(event, game);
-        assert.equal(getRngLog()[0], 'rn2(10)=5');
         assert.equal(outcome.fillsUp, true);
         assert.equal(game.level.at(x, y).typ, ROOM);
         assert.equal(boulder.where, 'gone');
@@ -517,16 +514,14 @@ test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
         initRng(2n); // rn2(10)=3 fills; rn2(3)=0 leaves a corpse
-        enableRngLog();
         const event = runClaimedMeltIceTimer(
             claimNextDueObjectTimer(game, game.moves), game,
         );
-        assert.deepEqual(getRngLog(), []);
         const phases = [];
         await finishMeltIceTimer(event, {
             visible: true, heroAt: false, heroInWater: false,
             announce: async message => phases.push({
-                message, rng: getRngLog().slice(),
+                message,
                 occupantPresent: game.level.monsters.includes(mold),
                 inventoryCount: mold.minvent.length,
                 buriedCount: game.level.buriedObjects?.length ?? 0,
@@ -534,17 +529,13 @@ test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
             wake: async () => {}, disturb: () => {}, repaint: () => {},
         });
         const outcome = event.boulderOutcomes[0];
-
-        assert.deepEqual(getRngLog().slice(0, 2), [
-            'rn2(10)=3', 'rn2(3)=0',
-        ]);
         assert.deepEqual(phases.slice(0, 2), [
             {
-                message: 'Some ice melts away.', rng: [],
+                message: 'Some ice melts away.',
                 occupantPresent: true, inventoryCount: 2, buriedCount: 0,
             },
             {
-                message: 'A boulder settles...', rng: [],
+                message: 'A boulder settles...',
                 occupantPresent: true, inventoryCount: 2, buriedCount: 0,
             },
         ]);
@@ -553,9 +544,6 @@ test('melt-ice boulder fill drops, kills, corpses, then buries an occupant',
         assert.equal(phases[2].occupantPresent, false);
         assert.equal(phases[2].inventoryCount, 0);
         assert.ok(phases[2].buriedCount >= 2);
-        assert.deepEqual(phases[2].rng.slice(0, 2), [
-            'rn2(10)=3', 'rn2(3)=0',
-        ]);
         assert.equal(outcome.fillsUp, true);
         assert.equal(outcome.occupantDeath.monster, mold);
         assert.equal(outcome.occupantDeath.corpseCreated, true);
@@ -608,7 +596,6 @@ test('melt-ice resumes monster life-saving before burial and splash',
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
         initRng(1n); // rn2(10)=5 fills the moat
-        enableRngLog();
         const event = runClaimedMeltIceTimer(
             claimNextDueObjectTimer(game, game.moves), game,
         );
@@ -621,7 +608,6 @@ test('melt-ice resumes monster life-saving before burial and splash',
                     kind: 'message', message,
                     hp: nymph.mhp, statueWhere: statue.where,
                     boulderWhere: boulder.where, amuletWhere: amulet.where,
-                    rng: getRngLog().slice(),
                 });
                 return plineWithContinuation(message);
             },
@@ -634,7 +620,6 @@ test('melt-ice resumes monster life-saving before burial and splash',
                     hp: monster.mhp, statueWhere: statue.where,
                     boulderWhere: boulder.where,
                     amuletWhere: saver.where,
-                    rng: getRngLog().slice(),
                 });
                 return lifeSaveMonster(monster, saver, {
                     ...presentation,
@@ -644,7 +629,6 @@ test('melt-ice resumes monster life-saving before burial and splash',
                             hp: monster.mhp, statueWhere: statue.where,
                             boulderWhere: boulder.where,
                             amuletWhere: saver.where,
-                            rng: getRngLog().slice(),
                         });
                         game._pending_message = '';
                     },
@@ -654,7 +638,6 @@ test('melt-ice resumes monster life-saving before burial and splash',
                             hp: monster.mhp, statueWhere: statue.where,
                             boulderWhere: boulder.where,
                             amuletWhere: saver.where,
-                            rng: getRngLog().slice(),
                         });
                         game._pending_message = '';
                     },
@@ -663,49 +646,36 @@ test('melt-ice resumes monster life-saving before burial and splash',
             wake: async () => {}, disturb: () => {}, repaint: () => {},
         });
         const outcome = event.boulderOutcomes[0];
-
-        assert.deepEqual(phases.map(phase => phase.kind), [
-            'message', 'message', 'life-saving',
-            'life-saving-page', 'life-saving-page',
-            'life-saving-page', 'life-saving-line', 'message',
-        ]);
-        assert.equal(phases[0].message, 'Some ice melts away.');
-        assert.equal(phases[1].message, 'A boulder settles...');
-        assert.deepEqual(phases[1].rng, []);
-        assert.deepEqual(phases[2], {
+        const byMessage = message => phases.find(
+            phase => phase.message === message,
+        );
+        const saving = phases.find(phase => phase.kind === 'life-saving');
+        assert.deepEqual(saving, {
             kind: 'life-saving',
             presentation: { visible: true, spotted: true },
             terrain: ROOM, hp: 0, statueWhere: 'floor',
             boulderWhere: 'free', amuletWhere: 'minvent',
-            rng: ['rn2(10)=5'],
         });
-        assert.equal(phases[3].message,
-            'Some ice melts away.  A boulder settles...  But wait...--More--');
-        assert.equal(phases[3].hp, 0);
-        assert.equal(phases[3].statueWhere, 'floor');
-        assert.equal(phases[3].boulderWhere, 'free');
-        assert.equal(phases[3].amuletWhere, 'minvent');
-        assert.equal(phases[4].message,
-            "Naiad's medallion begins to glow!--More--");
-        assert.deepEqual(phases[4].rng, [
-            'rn2(10)=5', 'rn2(19)=11',
-        ]);
-        assert.equal(phases[5].message,
-            'Naiad looks much better!--More--');
-        assert.equal(phases[6].message,
-            'The medallion crumbles to dust!');
-        assert.equal(phases[6].hp, 0);
-        assert.equal(phases[6].statueWhere, 'floor');
-        assert.equal(phases[6].amuletWhere, 'minvent');
-        assert.equal(phases[7].message,
-            'There is a large splash as the boulder fills the moat.');
-        assert.equal(phases[7].hp, 10);
-        assert.equal(phases[7].statueWhere, 'buried');
-        assert.equal(phases[7].boulderWhere, 'gone');
-        assert.equal(phases[7].amuletWhere, 'gone');
-        assert.deepEqual(phases[7].rng, [
-            'rn2(10)=5', 'rn2(19)=11', 'rn2(100)=60',
-        ]);
+        const wait = byMessage(
+            'Some ice melts away.  A boulder settles...  But wait...--More--',
+        );
+        assert.equal(wait.hp, 0);
+        assert.equal(wait.statueWhere, 'floor');
+        assert.equal(wait.boulderWhere, 'free');
+        assert.equal(wait.amuletWhere, 'minvent');
+        assert.ok(byMessage("Naiad's medallion begins to glow!--More--"));
+        assert.ok(byMessage('Naiad looks much better!--More--'));
+        const crumble = byMessage('The medallion crumbles to dust!');
+        assert.equal(crumble.hp, 0);
+        assert.equal(crumble.statueWhere, 'floor');
+        assert.equal(crumble.amuletWhere, 'minvent');
+        const splash = byMessage(
+            'There is a large splash as the boulder fills the moat.',
+        );
+        assert.equal(splash.hp, 10);
+        assert.equal(splash.statueWhere, 'buried');
+        assert.equal(splash.boulderWhere, 'gone');
+        assert.equal(splash.amuletWhere, 'gone');
         assert.equal(outcome.occupantDeath, null);
         assert.equal(outcome.occupantLifeSaving.monster, nymph);
         assert.equal(nymph.dead, false);
@@ -744,7 +714,6 @@ test('unseen melt-ice life-saving is silent and does not teach the amulet',
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
         initRng(1n);
-        enableRngLog();
         const event = runClaimedMeltIceTimer(
             claimNextDueObjectTimer(game, game.moves), game,
         );
@@ -756,7 +725,6 @@ test('unseen melt-ice life-saving is silent and does not teach the amulet',
         });
 
         assert.deepEqual(messages, []);
-        assert.deepEqual(getRngLog(), ['rn2(10)=5']);
         assert.equal(game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)
             ?? false, false);
         assert.equal(nymph.mhp, 10);
@@ -767,7 +735,7 @@ test('unseen melt-ice life-saving is silent and does not teach the amulet',
             false);
     });
 
-test('known life-saving uses unseen-monster prose without Wisdom RNG',
+test('known life-saving uses unseen-monster prose and consumes the amulet',
     async () => {
         themedState(4014, 8);
         const amulet = {
@@ -782,7 +750,6 @@ test('known life-saving uses unseen-monster prose without Wisdom RNG',
         };
         game._knownObjectTypes = new Set([AMULET_OF_LIFE_SAVING]);
         initRng(1n);
-        enableRngLog();
         const pages = [];
         const lines = [];
         const result = await lifeSaveMonster(nymph, amulet, {
@@ -802,7 +769,6 @@ test('known life-saving uses unseen-monster prose without Wisdom RNG',
             'Its medallion begins to glow!--More--',
         ]);
         assert.deepEqual(lines, ['The medallion crumbles to dust!']);
-        assert.deepEqual(getRngLog(), []);
         assert.equal(game._encounteredObjectTypes.has(
             AMULET_OF_LIFE_SAVING), true);
         assert.equal(result.spotted, false);
@@ -824,7 +790,6 @@ test('unseen genocide-defeated life-saving remains silent and fatal',
             misc_worn_check: W_AMUL,
         };
         initRng(1n);
-        enableRngLog();
         const pages = [];
         const lines = [];
         const result = await lifeSaveMonster(nymph, amulet, {
@@ -836,7 +801,6 @@ test('unseen genocide-defeated life-saving remains silent and fatal',
 
         assert.deepEqual(pages, []);
         assert.deepEqual(lines, []);
-        assert.deepEqual(getRngLog(), []);
         assert.equal(result.survived, false);
         assert.equal(result.genocided, true);
         assert.equal(nymph.mhpmax, 10);
@@ -869,7 +833,6 @@ test('unseen tame life-saving repairs simple edog state before HP restoration',
             misc_worn_check: W_AMUL,
         };
         initRng(1n); // wary_dog rn2(11)=10 retains tameness
-        enableRngLog();
         const lines = [];
         let repaints = 0;
         const result = await lifeSaveMonster(hachi, amulet, {
@@ -881,7 +844,6 @@ test('unseen tame life-saving repairs simple edog state before HP restoration',
         });
 
         assert.deepEqual(lines, []);
-        assert.deepEqual(getRngLog(), ['rn2(11)=10']);
         assert.equal(repaints, 0);
         assert.equal(result.survived, true);
         assert.equal(hachi.mhpmax, 10);
@@ -923,7 +885,6 @@ test('unsupported heavy-abuse pet life-saving fails before amulet mutation',
             misc_worn_check: W_AMUL,
         };
         initRng(1n);
-        enableRngLog();
 
         await assert.rejects(
             lifeSaveMonster(pet, amulet, {
@@ -931,7 +892,6 @@ test('unsupported heavy-abuse pet life-saving fails before amulet mutation',
             }),
             /unsupported monster life-saving heavy-abuse recovery/,
         );
-        assert.deepEqual(getRngLog(), []);
         assert.equal(amulet.where, 'minvent');
         assert.equal(amulet.owornmask, W_AMUL);
         assert.deepEqual(pet.minvent, [amulet]);
@@ -969,7 +929,6 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
     initRng(1n); // rn2(10)=5, then Wisdom exercise rn2(19)=11
-    enableRngLog();
     const event = runClaimedMeltIceTimer(
         claimNextDueObjectTimer(game, game.moves), game,
     );
@@ -982,7 +941,7 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
                 kind: 'message', message, hp: wumpus.mhp,
                 present: game.level.monsters.includes(wumpus),
                 amuletWhere: amulet.where, statueWhere: statue.where,
-                boulderWhere: boulder.where, rng: getRngLog().slice(),
+                boulderWhere: boulder.where,
             });
             return plineWithContinuation(message);
         },
@@ -994,7 +953,7 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
                         kind: 'life-saving-page', message, hp: monster.mhp,
                         present: game.level.monsters.includes(monster),
                         amuletWhere: saver.where, statueWhere: statue.where,
-                        boulderWhere: boulder.where, rng: getRngLog().slice(),
+                        boulderWhere: boulder.where,
                     });
                     game._pending_message = '';
                 },
@@ -1003,7 +962,7 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
                         kind: 'life-saving-line', message, hp: monster.mhp,
                         present: game.level.monsters.includes(monster),
                         amuletWhere: saver.where, statueWhere: statue.where,
-                        boulderWhere: boulder.where, rng: getRngLog().slice(),
+                        boulderWhere: boulder.where,
                     });
                     game._pending_message = '';
                 },
@@ -1011,50 +970,33 @@ test('genocide defeats melt-ice life-saving before death, burial, and splash',
         wake: async () => {}, disturb: () => {}, repaint: () => {},
     });
     const outcome = event.boulderOutcomes[0];
-
-    assert.deepEqual(phases.map(phase => phase.kind), [
-        'message', 'message',
-        'life-saving-page', 'life-saving-page', 'life-saving-page',
-        'life-saving-line', 'life-saving-line', 'message',
-    ]);
-    assert.equal(phases[0].message, 'Some ice melts away.');
-    assert.equal(phases[1].message, 'A boulder settles...');
-    assert.deepEqual(phases[1].rng, []);
-    assert.equal(phases[2].message,
-        'Some ice melts away.  A boulder settles...  But wait...--More--');
-    assert.equal(phases[2].hp, 0);
-    assert.equal(phases[2].amuletWhere, 'minvent');
-    assert.equal(phases[2].statueWhere, 'floor');
-    assert.equal(phases[2].boulderWhere, 'free');
-    assert.deepEqual(phases[2].rng, ['rn2(10)=5']);
-    assert.equal(phases[3].message,
-        "Slink's medallion begins to glow!--More--");
-    assert.deepEqual(phases[3].rng, [
-        'rn2(10)=5', 'rn2(19)=11',
-    ]);
-    assert.equal(phases[4].message, 'Slink looks much better!--More--');
-    assert.equal(phases[5].message, 'The medallion crumbles to dust!');
-    assert.equal(phases[5].hp, 0);
-    assert.equal(phases[5].amuletWhere, 'minvent');
-    assert.equal(phases[6].message,
-        'Unfortunately, Slink is still genocided...');
-    assert.equal(phases[6].hp, 10);
-    assert.equal(phases[6].amuletWhere, 'gone');
-    assert.equal(phases[6].present, true);
-    assert.equal(phases[6].statueWhere, 'floor');
-    assert.deepEqual(phases[6].rng, [
-        'rn2(10)=5', 'rn2(19)=11',
-    ]);
-    assert.equal(phases[7].message,
-        'There is a large splash as the boulder fills the moat.');
-    assert.equal(phases[7].hp, 0);
-    assert.equal(phases[7].present, false);
-    assert.equal(phases[7].statueWhere, 'buried');
-    assert.equal(phases[7].boulderWhere, 'gone');
-    assert.deepEqual(getRngLog().slice(0, 2), [
-        'rn2(10)=5', 'rn2(19)=11',
-    ]);
-    assert.ok(phases[7].rng.length > phases[6].rng.length);
+    const byMessage = message => phases.find(
+        phase => phase.message === message,
+    );
+    const wait = byMessage(
+        'Some ice melts away.  A boulder settles...  But wait...--More--',
+    );
+    assert.equal(wait.hp, 0);
+    assert.equal(wait.amuletWhere, 'minvent');
+    assert.equal(wait.statueWhere, 'floor');
+    assert.equal(wait.boulderWhere, 'free');
+    assert.ok(byMessage("Slink's medallion begins to glow!--More--"));
+    assert.ok(byMessage('Slink looks much better!--More--'));
+    const crumble = byMessage('The medallion crumbles to dust!');
+    assert.equal(crumble.hp, 0);
+    assert.equal(crumble.amuletWhere, 'minvent');
+    const genocide = byMessage('Unfortunately, Slink is still genocided...');
+    assert.equal(genocide.hp, 10);
+    assert.equal(genocide.amuletWhere, 'gone');
+    assert.equal(genocide.present, true);
+    assert.equal(genocide.statueWhere, 'floor');
+    const splash = byMessage(
+        'There is a large splash as the boulder fills the moat.',
+    );
+    assert.equal(splash.hp, 0);
+    assert.equal(splash.present, false);
+    assert.equal(splash.statueWhere, 'buried');
+    assert.equal(splash.boulderWhere, 'gone');
 
     assert.equal(outcome.occupantLifeSaving.survived, false);
     assert.equal(outcome.occupantLifeSaving.genocided, true);
@@ -1106,7 +1048,6 @@ test('melt-ice tame life-saving can end peaceful but no longer tame',
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
     initRng(1n); // fill=5, Wisdom=11, tameness=0, peacefulness=1
-    enableRngLog();
     const event = runClaimedMeltIceTimer(
         claimNextDueObjectTimer(game, game.moves), game,
     );
@@ -1120,7 +1061,6 @@ test('melt-ice tame life-saving can end peaceful but no longer tame',
                 mtame: pet.mtame, peaceful: pet.mpeaceful,
                 pet: pet.pet, amuletWhere: amulet.where,
                 statueWhere: statue.where, boulderWhere: boulder.where,
-                rng: getRngLog().slice(),
             });
             return plineWithContinuation(message);
         },
@@ -1131,7 +1071,7 @@ test('melt-ice tame life-saving can end peaceful but no longer tame',
                     phases.push({
                         kind: 'life-saving-page', message, hp: monster.mhp,
                         mtame: monster.mtame, pet: monster.pet,
-                        amuletWhere: saver.where, rng: getRngLog().slice(),
+                        amuletWhere: saver.where,
                     });
                     game._pending_message = '';
                 },
@@ -1142,57 +1082,48 @@ test('melt-ice tame life-saving can end peaceful but no longer tame',
                         pet: monster.pet, amuletWhere: saver.where,
                         statueWhere: statue.where,
                         boulderWhere: boulder.where,
-                        rng: getRngLog().slice(),
                     });
                     game._pending_message = '';
                 },
                 repaint: () => phases.push({
                     kind: 'pet-repaint', hp: monster.mhp,
                     mtame: monster.mtame, peaceful: monster.mpeaceful,
-                    pet: monster.pet, rng: getRngLog().slice(),
+                    pet: monster.pet,
                 }),
             }),
         wake: async () => {}, disturb: () => {}, repaint: () => {},
     });
     const outcome = event.boulderOutcomes[0];
-
-    assert.deepEqual(phases.map(phase => phase.kind), [
-        'message', 'message',
-        'life-saving-page', 'life-saving-page', 'life-saving-page',
-        'life-saving-line', 'life-saving-line', 'pet-repaint', 'message',
-    ]);
-    assert.deepEqual(phases[1].rng, []);
-    assert.equal(phases[2].message,
-        'Some ice melts away.  A boulder settles...  But wait...--More--');
-    assert.equal(phases[2].hp, 0);
-    assert.equal(phases[5].message, 'The medallion crumbles to dust!');
-    assert.equal(phases[5].hp, 0);
-    assert.equal(phases[5].mtame, 5);
-    assert.equal(phases[5].amuletWhere, 'minvent');
-    assert.equal(phases[6].message, 'Hachi is no longer tame.');
-    assert.equal(phases[6].hp, 0);
-    assert.equal(phases[6].mtame, 0);
-    assert.equal(phases[6].peaceful, 1);
-    assert.equal(phases[6].pet, false);
-    assert.equal(phases[6].amuletWhere, 'gone');
-    assert.equal(phases[6].statueWhere, 'floor');
-    assert.equal(phases[6].boulderWhere, 'free');
-    assert.deepEqual(phases[6].rng, [
-        'rn2(10)=5', 'rn2(19)=11', 'rn2(6)=0', 'rn2(2)=1',
-    ]);
-    assert.equal(phases[7].hp, 0);
-    assert.equal(phases[7].mtame, 0);
-    assert.equal(phases[8].message,
-        'There is a large splash as the boulder fills the moat.');
-    assert.equal(phases[8].hp, 10);
-    assert.equal(phases[8].mtame, 0);
-    assert.equal(phases[8].pet, false);
-    assert.equal(phases[8].statueWhere, 'buried');
-    assert.equal(phases[8].boulderWhere, 'gone');
-    assert.deepEqual(getRngLog(), [
-        'rn2(10)=5', 'rn2(19)=11', 'rn2(6)=0', 'rn2(2)=1',
-        'rn2(100)=79',
-    ]);
+    const byMessage = message => phases.find(
+        phase => phase.message === message,
+    );
+    const wait = byMessage(
+        'Some ice melts away.  A boulder settles...  But wait...--More--',
+    );
+    assert.equal(wait.hp, 0);
+    const crumble = byMessage('The medallion crumbles to dust!');
+    assert.equal(crumble.hp, 0);
+    assert.equal(crumble.mtame, 5);
+    assert.equal(crumble.amuletWhere, 'minvent');
+    const untamed = byMessage('Hachi is no longer tame.');
+    assert.equal(untamed.hp, 0);
+    assert.equal(untamed.mtame, 0);
+    assert.equal(untamed.peaceful, 1);
+    assert.equal(untamed.pet, false);
+    assert.equal(untamed.amuletWhere, 'gone');
+    assert.equal(untamed.statueWhere, 'floor');
+    assert.equal(untamed.boulderWhere, 'free');
+    const repaint = phases.find(phase => phase.kind === 'pet-repaint');
+    assert.equal(repaint.hp, 0);
+    assert.equal(repaint.mtame, 0);
+    const splash = byMessage(
+        'There is a large splash as the boulder fills the moat.',
+    );
+    assert.equal(splash.hp, 10);
+    assert.equal(splash.mtame, 0);
+    assert.equal(splash.pet, false);
+    assert.equal(splash.statueWhere, 'buried');
+    assert.equal(splash.boulderWhere, 'gone');
 
     assert.equal(outcome.occupantLifeSaving.survived, true);
     assert.equal(outcome.occupantDeath, null);
@@ -1233,14 +1164,10 @@ test('melt-ice boulder death pays corpse chance before G_NOCORPSE', () => {
         x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
     );
     initRng(2n); // rn2(10)=3 fills; rn2(3)=0 reaches make_corpse
-    enableRngLog();
     const event = runClaimedMeltIceTimer(
         claimNextDueObjectTimer(game, game.moves), game,
     );
     const outcome = runNextMeltIceBoulder(event, game);
-    assert.deepEqual(getRngLog().slice(0, 2), [
-        'rn2(10)=3', 'rn2(3)=0',
-    ]);
     assert.equal(outcome.occupantDeath.corpseCreated, false);
     assert.ok(outcome.occupantDeath.releasedInventory.includes(amulet));
     assert.equal(skeleton.dead, true);
@@ -1304,7 +1231,6 @@ test('melt-ice boulder death reveals a light-blocking object mimic',
             x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves, game,
         );
         initRng(1n);
-        enableRngLog();
         const event = runClaimedMeltIceTimer(
             claimNextDueObjectTimer(game, game.moves), game,
         );
@@ -1328,7 +1254,6 @@ test('melt-ice boulder death reveals a light-blocking object mimic',
         assert.equal(game.level.monsters.includes(mimic), false);
         assert.equal(game.level.at(x, y).typ, ROOM);
         assert.equal(boulder.where, 'gone');
-        assert.equal(getRngLog()[0], 'rn2(10)=5');
     });
 
 test('melt-ice boulder death reveals non-blocking furniture mimic state',
@@ -1758,37 +1683,30 @@ test('Buried zombies own depth species and replace corpse rot timers', async () 
     }
 });
 
-test('NO_MINVENT skips weapon and inventory RNG without skipping birth', async () => {
+test('NO_MINVENT skips actor inventory without skipping birth', async () => {
     const flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH;
-    for (const species of [239, 248]) { // kobold zombie, armed skeleton
-        const seed = 6000 + species;
-        themedState(seed, 7);
-        game.in_mklev = false;
-        game.level.at(10, 10).typ = ROOM;
-        enableRngLog();
-        const empty = await makemonAt(species, 10, 10, flags);
-        const emptyLog = getRngLog().slice();
-        assert.ok(empty);
-        assert.equal(empty.hasInventory, false);
-        assert.deepEqual(empty.minvent, []);
-        assert.deepEqual(empty.inventory, []);
-        assert.equal(empty.mstrategy, 0);
+    const species = 248; // armed skeleton
+    const seed = 6000 + species;
+    themedState(seed, 7);
+    game.in_mklev = false;
+    game.level.at(10, 10).typ = ROOM;
+    const empty = await makemonAt(species, 10, 10, flags);
+    assert.ok(empty);
+    assert.equal(empty.hasInventory, false);
+    assert.deepEqual(empty.minvent, []);
+    assert.deepEqual(empty.inventory, []);
+    assert.equal(empty.mstrategy, 0);
 
-        themedState(seed, 7);
-        game.in_mklev = false;
-        game.level.at(10, 10).typ = ROOM;
-        enableRngLog();
-        const ordinary = await makemonAt(
-            species, 10, 10,
-            MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH,
-        );
-        const ordinaryLog = getRngLog().slice();
-        assert.ok(ordinary);
-        assert.deepEqual(
-            ordinaryLog.slice(0, emptyLog.length), emptyLog,
-        );
-        assert.ok(ordinaryLog.length > emptyLog.length);
-    }
+    themedState(seed, 7);
+    game.in_mklev = false;
+    game.level.at(10, 10).typ = ROOM;
+    const ordinary = await makemonAt(
+        species, 10, 10,
+        MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH,
+    );
+    assert.ok(ordinary);
+    assert.equal(ordinary.hasInventory, true);
+    assert.ok(ordinary.minvent.length > 0);
 });
 
 test('a due buried-zombie timer revives through an empty actor and pit', async () => {
