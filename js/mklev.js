@@ -87,7 +87,7 @@ import {
     HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE,
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
-    MIRROR, POT_OBJECT_DETECTION, APPLE, SHIELD_OF_REFLECTION,
+    MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION,
     SPE_BOOK_OF_THE_DEAD,
     AMULET_OF_LIFE_SAVING, SADDLE,
 } from './object_data.js';
@@ -199,12 +199,9 @@ const HIGH_BOOTS = 165;
 const LEATHER_CLOAK = 146;
 const MUMMY_WRAPPING = 138;
 const TIN_WHISTLE = 245;
-const RIN_LEVITATION = 183;
-const SCR_REMOVE_CURSE = 327;
 const SPE_LIGHT = 372;
 const WAN_LIGHT = 410;
 const POT_OIL = 321;
-const WAN_SECRET_DOOR_DETECTION = 411;
 const BELL = 255;
 const CANDELABRUM_OF_INVOCATION = 262;
 const BELL_OF_OPENING = 263;
@@ -6330,16 +6327,19 @@ async function specialMonsterOfClass(
 }
 
 async function finishSpecialTrapConstruction(
-    trap, { spiderOnWeb = true } = {},
+    trap, { spiderOnWeb = true, seen = false, victim = true } = {},
 ) {
     if (!trap) return null;
     const kind = trap.ttyp;
+    if (seen) trap.tseen = true;
+    if (kind === MAGIC_PORTAL && !trap.dst)
+        trap.dst = { ...(game.u?.ucamefrom || {}) };
     // mklev.c:mktrap() owns the web's resident spider before evaluating the
     // shallow-level dead-predecessor gate.
     if (kind === WEB && spiderOnWeb)
         await makemon(PM_GIANT_SPIDER, trap.tx, trap.ty, 0);
 
-    if (!game.in_mklev || kind === NO_TRAP) return trap;
+    if (!game.in_mklev || kind === NO_TRAP || !victim) return trap;
     const predecessorRoll = rnd(4);
     if (level_difficulty() <= predecessorRoll
         && kind !== SQKY_BOARD && kind !== RUST_TRAP
@@ -6355,7 +6355,7 @@ async function finishSpecialTrapConstruction(
     return trap;
 }
 
-async function specialTrapOfType(context, typ) {
+async function specialTrapOfType(context, typ, options = undefined) {
     const point = specialRandomLocation(context, (loc, x, y) =>
         SPACE_POS(loc.typ)
         && loc.typ !== STAIRS
@@ -6364,7 +6364,7 @@ async function specialTrapOfType(context, typ) {
         ));
     if (!point) return null;
     const trap = await maketrap(point.x, point.y, typ);
-    return finishSpecialTrapConstruction(trap);
+    return finishSpecialTrapConstruction(trap, options);
 }
 
 async function specialTrapAt(context, typ, x, y, options = undefined) {
@@ -6410,7 +6410,7 @@ function specialRandomTrapType(inHell = false) {
     }
 }
 
-async function specialTrap(context) {
+async function specialTrap(context, options = undefined) {
     const point = specialRandomLocation(context,
         (loc, x, y) => SPACE_POS(loc.typ)
             && loc.typ !== STAIRS && loc.typ !== LADDER
@@ -6423,7 +6423,7 @@ async function specialTrap(context) {
         ? FIRE_TRAP : specialRandomTrapType(inHell);
     if (is_hole(type) && !canFallThrough()) type = ROCKTRAP;
     const trap = await maketrap(point.x, point.y, type);
-    await finishSpecialTrapConstruction(trap);
+    await finishSpecialTrapConstruction(trap, options);
 }
 
 async function specialMonster(context, {
@@ -7102,6 +7102,7 @@ function setLuaLevelFlags(active, flags) {
         else if (flag === 'cold') game.level.flags.temperature = -1;
         else if (flag === 'nomongen') game.level.flags.rndmongen = false;
         else if (flag === 'nodeathdrops') game.level.flags.deathdrops = false;
+        else if (flag === 'noautosearch') game.level.flags.noautosearch = true;
         else if (flag === 'fumaroles') game.level.flags.fumaroles = true;
         else if (flag === 'stormy') game.level.flags.stormy = true;
         else if (flag === 'icedpools') active.icedPools = true;
@@ -7656,11 +7657,19 @@ async function createLuaMonster(context, options) {
     return monster;
 }
 
-async function createLuaTrap(context, { trapType, point }) {
-    if (trapType == null) return specialTrap(context);
+async function createLuaTrap(context, options) {
+    const { trapType, point } = options;
+    const construction = {
+        seen: !!options.seen,
+        victim: options.victim !== false,
+        spiderOnWeb: options.spider_on_web !== false,
+    };
+    if (trapType == null) return specialTrap(context, construction);
     return point
-        ? specialTrapAt(context, trapType, point.x, point.y)
-        : specialTrapOfType(context, trapType);
+        ? specialTrapAt(
+            context, trapType, point.x, point.y, construction,
+        )
+        : specialTrapOfType(context, trapType, construction);
 }
 
 function createLuaExclusion(context, options) {
@@ -9235,61 +9244,6 @@ export async function generateSokobanLevel2(active) {
     await generateSokobanLevel(active);
 }
 
-// Lua source: dat/tut-1.lua.  Unlike ordinary generation, this level is a
-// deliberately ordered teaching script: every percent(), shuffle, and shared
-// constructor remains in Lua statement order so C-side RNG stays observable.
-const TUTORIAL1_MAP = [
-    '---------------------------------------------------------------------------',
-    '|-.--|.......|......|..S....|.F.......|.............|.......|.............|',
-    '|.-..........|......|--|....|.F.....|.|S-------.....|.....................|',
-    '||.--|.......|..T......|....|.F.....|.|.......|.....|.......|.............|',
-    '||.|.|.......|......|-.|....|.F.....|.|.......|.....|--------.............|',
-    '||.|.|.......|......||.|-.-----------.-.......|-S----.....................|',
-    '|-+-S---------..---.||........................|...|.......................|',
-    '|......|          |.-------------------.......|...|....--S----............|',
-    '|......|  ######  |.........|      |..S.......|...|....|.....|............|',
-    '|----.-| -+-   #  |.....---.|######+..|.......S...|....|.....|............|',
-    '|----+----.----+---.|.--|.|.|#     ------------...|....|.....F............|',
-    '|........|.|......|.|...F...|#  ........|.....+...|....|.....|............|',
-    '|.P......-S|......|------.---# .........|.....|...|....-------........----|',
-    '|..........|......+.|...|.|.S# ..--S-----.....|LLL|..................|..| |',
-    '|.W......---......|.|.|.|.|.|# ..|......|.....|LLL|..................|..--|',
-    '|....Z.L.S.F......|.|.|.|.---#   |......+.....|...|..................|..|.|',
-    '|........|--......|...|.....|####+......|.....|...+..................||...|',
-    '---------------------------------------------------------------------------',
-];
-
-function tutorialAbsolute(context, x, y) {
-    return { x: context.xstart + x, y: context.ystart + y };
-}
-
-function tutorialEngraving(context, x, y, text, type = ENGRAVE) {
-    const point = tutorialAbsolute(context, x, y);
-    return make_engr_at(point.x, point.y, text, null, 0, type, {
-        nowipeout: true,
-    });
-}
-
-function tutorialObjectAt(context, otyp, x, y) {
-    const point = tutorialAbsolute(context, x, y);
-    // sp_lev.c create_object() permits the ordinary artifact roll.  That roll
-    // is observable for the tutorial's weapons even when no artifact results.
-    return mksobj_at(otyp, point.x, point.y, true, true);
-}
-
-async function tutorialTrapAt(context, typ, x, y, {
-    seen = false, victim = true,
-} = {}) {
-    const point = tutorialAbsolute(context, x, y);
-    const trap = await maketrap(point.x, point.y, typ);
-    trap.tseen = seen;
-    if (typ === MAGIC_PORTAL) trap.dst = { ...(game.u?.ucamefrom || {}) };
-    // mklev.c mktrap() evaluates its shallow-level victim gate before the
-    // trap-type exclusions. Lua's explicit victim=false bypasses the gate.
-    if (victim) rnd(4);
-    return trap;
-}
-
 function luaShuffle(values) {
     for (let remaining = values.length; remaining > 1; remaining--) {
         const pick = rn2(remaining);
@@ -9315,21 +9269,6 @@ function fillSpecialMazeGrid(filling = HWALL) {
     }
 }
 
-function lightCastleSelection(context, x1, y1, x2, y2, lit) {
-    // lspo_region(selection, "lit") grows lit selections once with W_ANY.
-    // selection_do_grow() treats combined orthogonal direction bits as the
-    // matching diagonals too, so a rectangular selection grows to the full
-    // one-cell perimeter including all four corners.  "unlit" iterates only
-    // the original selection.
-    const padding = lit ? 1 : 0;
-    for (let x = x1 - padding; x <= x2 + padding; x++) {
-        for (let y = y1 - padding; y <= y2 + padding; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc) loc.lit = lit;
-        }
-    }
-}
-
 export async function generateKnoxLevel(active) {
     if (active?.prototype !== 'knox')
         throw new RangeError(`unknown Knox level ${active?.prototype}`);
@@ -9337,221 +9276,6 @@ export async function generateKnoxLevel(active) {
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of game.level.rooms.slice(0, game.level.nroom))
         await fillSpecialRoom(room);
-}
-
-async function tutorialMonsterAt(context, mndx, x, y, peaceful = null) {
-    const requestedFemale = !!rn2(2); // find_montype()
-    if (rn2(100) >= 80) rn2(3); // induced_align(80)
-    const point = tutorialAbsolute(context, x, y);
-    const monster = await makemon(mndx, point.x, point.y, MM_NOGRP);
-    if (!monster) return null;
-    monster.female = requestedFemale;
-    monster.waiting = true;
-    monster.countbirth = false;
-    if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
-    return monster;
-}
-
-function setTutorialObjectState(object, {
-    blessed = false, cursed = false, spe = object?.spe ?? 0,
-    quantity = object?.quan ?? 1,
-} = {}) {
-    if (!object) return object;
-    object.blessed = blessed;
-    object.cursed = cursed;
-    object.spe = spe;
-    object.quan = object.quantity = quantity;
-    return object;
-}
-
-async function generateTutorial1(active) {
-    const context = loadSpecialAsciiMap(TUTORIAL1_MAP, active.defaultLit);
-    active.context = { ...context };
-    active.monsterAlignment = active.align[0];
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.rndmongen = false;
-    game.level.flags.deathdrops = false;
-    game.level.flags.noautosearch = true;
-    game.flags.mention_walls = true;
-    game.flags.mention_decor = true;
-    game.flags.lit_corridor = true;
-
-    // des.region(selection.area(1,1,73,16), "lit")
-    for (let x = 1; x <= 73; x++)
-        for (let y = 1; y <= 16; y++)
-            game.level.at(context.xstart + x, context.ystart + y).lit = true;
-    specialNonDiggable(context);
-    active.teleportRegion = tutorialAbsolute(context, 9, 3);
-
-    const engrave = (x, y, text, type) =>
-        tutorialEngraving(context, x, y, text, type);
-    const door = (x, y, state) => specialDoorAt(context, state, x, y);
-
-    engrave(9, 3, 'Move around with h j k l');
-    engrave(5, 2, 'Move diagonally with b u n y');
-    engrave(2, 4, 'Some actions may require multiple tries before succeeding');
-    engrave(2, 5, 'Open the door by moving into it');
-    door(2, 6, D_CLOSED);
-    engrave(2, 7, "Close the door with 'c'");
-
-    engrave(4, 5, 'You can leave the tutorial via the magic portal.');
-    await tutorialTrapAt(context, MAGIC_PORTAL, 4, 4, { seen: true });
-
-    engrave(5, 9, "This door is locked. Kick it with 'Ctrl-D'");
-    door(5, 10, D_LOCKED);
-    engrave(6, 8,
-        "Note: Outside the tutorial, Ctrl-key combinations are shown prefixed with a caret, like '^D'");
-    engrave(5, 12, "Look around the map with ';', press ESC when you're done");
-    engrave(10, 13, "Use 's' to search for secret doors");
-    engrave(10, 15, 'Wrong secret');
-
-    engrave(10, 10, 'Behind this door is a dark corridor');
-    door(10, 9, rn2(100) < 50 ? D_LOCKED : D_CLOSED);
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const source = TUTORIAL1_MAP[dy]?.[dx] ?? ' ';
-            if (source === '#' || source === ' ')
-                game.level.at(context.xstart + dx, context.ystart + dy).lit = false;
-        }
-    }
-    door(15, 10, rn2(100) < 50 ? D_LOCKED : D_CLOSED);
-
-    engrave(15, 11, 'There are four traps next to you! Search for them.');
-    const trapLocations = luaShuffle([[14, 11], [14, 12], [15, 12],
-        [16, 12], [16, 11]]);
-    for (let index = 0; index < 4; index++) {
-        const [x, y] = trapLocations[index];
-        const typ = rn2(100) < 50 ? SLP_GAS_TRAP : SQKY_BOARD;
-        await tutorialTrapAt(context, typ, x, y, { victim: false });
-    }
-    engrave(15, 15, "Some traps can be disabled with '#untrap'");
-    await tutorialTrapAt(context, WEB, 15, 16);
-
-    door(18, 13, D_CLOSED);
-    engrave(19, 13, "Pick up items with ','");
-    setTutorialObjectState(tutorialObjectAt(context, LEATHER_ARMOR, 19, 14),
-        { cursed: true, spe: 0 });
-    engrave(19, 15, "Wear armor with 'W'");
-    setTutorialObjectState(tutorialObjectAt(context, DAGGER, 21, 15),
-        { spe: 0 });
-    engrave(21, 14, "Wield weapons with 'w'");
-    engrave(22, 13, 'Hit monsters by walking into them.');
-    await tutorialMonsterAt(context, PM_LICHEN, 23, 15);
-
-    engrave(24, 16,
-        'Now you know the very basics. You can leave the tutorial via the magic portal.');
-    engrave(26, 16, 'Step into this portal to leave the tutorial');
-    await tutorialTrapAt(context, MAGIC_PORTAL, 27, 16, { seen: true });
-    engrave(25, 13, 'Push boulders by moving into them');
-    tutorialObjectAt(context, BOULDER, 25, 12);
-    engrave(27, 9, "Take off armor with 'T'");
-
-    setTutorialObjectState(tutorialObjectAt(context, SCR_REMOVE_CURSE, 23, 11),
-        { blessed: true });
-    engrave(22, 11, 'Some items have shuffled descriptions, different each game');
-    engrave(23, 11,
-        "Pick up this scroll, read it with 'r', and try to remove the armor again");
-    engrave(19, 10, 'Another magic portal, a way to leave this tutorial');
-    await tutorialTrapAt(context, MAGIC_PORTAL, 19, 11, { seen: true });
-
-    const rocks = [
-        [14, 5, 50, 50], [15, 5, 10, 21], [14, 4, 10, 21],
-        [15, 6, 30, 31], [14, 6, 30, 31],
-    ];
-    for (const [x, y, minimum, range] of rocks) {
-        const quantity = minimum + rn2(range);
-        setTutorialObjectState(tutorialObjectAt(context, ROCK, x, y),
-            { quantity });
-    }
-    tutorialObjectAt(context, BOULDER, 14, 6);
-    const randomDoorStates = [D_NODOOR, 1, D_ISOPEN, D_CLOSED, D_LOCKED];
-    door(20, 3, rn2(100) < 50 ? D_ISOPEN : D_CLOSED);
-    engrave(21, 3, 'Avoid being burdened, it slows you down');
-    engrave(22, 3, "Drop items with 'd'");
-    engrave(22, 4,
-        'You can drop partial stacks by prefixing the item slot letter with a number');
-
-    await tutorialMonsterAt(context, 160, 26, 2);
-    engrave(25, 5, "Throw items with 't'");
-    await tutorialTrapAt(context, MAGIC_PORTAL, 21, 1, { seen: true });
-    await tutorialMonsterAt(context, 20, 29, 2, false);
-    engrave(37, 4,
-        'Missiles, such as rocks, work better when fired from appropriate launcher');
-    setTutorialObjectState(tutorialObjectAt(context, SLING, 37, 3),
-        { spe: 9 });
-    engrave(37, 3, 'Wield the sling');
-    engrave(36, 1, "Use 'f' to fire missiles with the wielded launcher");
-    engrave(35, 4,
-        "Firing launches items from your quiver; Use 'Q' to put items in it");
-    engrave(33, 4, "You can wait a turn with '.'");
-
-    door(38, 6, D_CLOSED);
-    engrave(39, 6, "You loot containers with '#loot'");
-    const box = tutorialObjectAt(context, LARGE_BOX, 41, 6);
-    box.broken = true;
-    box.otrapped = false;
-    // A contained Lua object without coord still runs get_location() before
-    // create_object() re-parents it into the box.
-    rn2(context.width);
-    rn2(context.height);
-    const wand = mksobj(WAN_SECRET_DOOR_DETECTION, true, true);
-    wand.spe = 30;
-    box.contents = [wand];
-    engrave(42, 6, "Containers can also be emptied with '#tip'");
-    engrave(45, 6, "Magic wands are used with 'z'");
-    door(35, 9, D_NODOOR);
-    engrave(34, 9, "You can run by prefixing a movement key with 'g'");
-    door(33, 16, D_NODOOR);
-    engrave(35, 15, "Travel across the level with '_'");
-    await tutorialTrapAt(context, MAGIC_PORTAL, 27, 14, { seen: true });
-
-    engrave(48, 1, "Use 'e' to eat edible things", BURN);
-    setTutorialObjectState(tutorialObjectAt(context, APPLE, 50, 3));
-    setTutorialObjectState(tutorialObjectAt(context, CANDY_BAR, 50, 3));
-    const corpse = setTutorialObjectState(
-        tutorialObjectAt(context, CORPSE, 50, 3));
-    corpse.corpsenm = PM_LICHEN;
-
-    door(46, 11, D_CLOSED);
-    engrave(43, 11, "Use '#twoweapon' to use two weapons at once", BURN);
-    setTutorialObjectState(tutorialObjectAt(context, KNIFE, 43, 13));
-    setTutorialObjectState(tutorialObjectAt(context, DAGGER, 43, 14),
-        { blessed: true });
-    engrave(43, 16, "Swap weapons quickly with 'x'", BURN);
-    door(40, 15, randomDoorStates[rn2(randomDoorStates.length)]);
-
-    setTutorialObjectState(tutorialObjectAt(context, RIN_LEVITATION, 48, 7));
-    engrave(48, 10, "Put on accessories with 'P'", BURN);
-    engrave(48, 16, "Remove accessories with 'R'", BURN);
-    door(50, 16, D_CLOSED);
-    engrave(58, 9, "Use '>' to go down the stairs", BURN);
-    specialStairAt(context, 58, 10, false);
-    engrave(65, 3, 'UNDER CONSTRUCTION', BURN);
-    await tutorialTrapAt(context, MAGIC_PORTAL, 66, 2, { seen: true });
-    engrave(69, 12, "Can't get through?  You're carrying too much.", BURN);
-    tutorialObjectAt(context, BOULDER, 71, 16);
-    tutorialObjectAt(context, BOULDER, 72, 16);
-    tutorialObjectAt(context, BOULDER, 73, 16);
-    await tutorialTrapAt(context, TRAPDOOR, 73, 15);
-
-    engrave(60, 2, 'Spellcasting');
-    if ((game.u?.uenmax ?? 0) < 5)
-        engrave(59, 2, "Unfortunately you don't have enough energy to cast spells.");
-    engrave(57, 2, "Pick up the spellbook with ','");
-    setTutorialObjectState(tutorialObjectAt(context, SPE_LIGHT, 57, 2),
-        { blessed: true });
-    engrave(55, 2, "Read the spellbook with 'r'");
-    engrave(53, 2, "Use 'Z' to cast a spell");
-    for (let x = 53; x <= 59; x++)
-        for (let y = 1; y <= 3; y++)
-            game.level.at(context.xstart + x, context.ystart + y).lit = false;
-    engrave(72, 2, "You \"quaff\" potions with 'q'");
-    setTutorialObjectState(
-        tutorialObjectAt(context, POT_OBJECT_DETECTION, 72, 2),
-        { blessed: true });
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
 }
 
 // C ref: mklev.c makelevel()
@@ -9616,7 +9340,8 @@ async function makelevel() {
             || prototype === 'air'
             || prototype === 'fire'
             || prototype === 'water'
-            || prototype === 'astral';
+            || prototype === 'astral'
+            || prototype === 'tut-1';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {
@@ -9745,7 +9470,7 @@ async function makelevel() {
             return;
         }
         if (prototype === 'tut-1') {
-            await generateSpecialAndFixup(generateTutorial1,
+            await generateSpecialAndFixup(generateLuaSpecialLevel,
                 g._activeSpecialLevel);
             return;
         }

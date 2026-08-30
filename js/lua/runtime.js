@@ -197,6 +197,7 @@ function getIndex(target, key) {
     if (target instanceof LuaGlobals) return target.environment.get(key);
     if (target === null || target === undefined)
         throw new TypeError('attempt to index a nil value');
+    if (typeof target === 'string' && key === 'match') return luaStringMatch;
     return target[key] ?? null;
 }
 
@@ -230,6 +231,46 @@ function formatLuaString(format, args) {
         if (token === '%f') return String(Number(value));
         return luaString(value);
     });
+}
+
+function luaPatternSource(pattern) {
+    const classes = {
+        a: 'A-Za-z', d: '0-9', l: 'a-z', u: 'A-Z', w: 'A-Za-z0-9_',
+        s: '\\s', x: 'A-Fa-f0-9', p: '!-/:-@[-`{-~', c: '\\x00-\\x1f\\x7f',
+    };
+    let source = '';
+    let inClass = false;
+    const text = String(pattern);
+    for (let index = 0; index < text.length; index++) {
+        const character = text[index];
+        if (character === '%') {
+            const escaped = text[++index] ?? '';
+            const characterClass = classes[escaped.toLowerCase()];
+            if (characterClass) {
+                const negated = escaped === escaped.toUpperCase();
+                source += inClass
+                    ? characterClass
+                    : `[${negated ? '^' : ''}${characterClass}]`;
+            } else {
+                source += /[\\^$.*+?()[\]{}|/]/u.test(escaped)
+                    ? `\\${escaped}` : escaped;
+            }
+            continue;
+        }
+        if (character === '[') inClass = true;
+        else if (character === ']') inClass = false;
+        if (character === '^' && index > 0 && !inClass) source += '\\^';
+        else source += character;
+    }
+    return source;
+}
+
+function luaStringMatch(value, pattern) {
+    const match = new RegExp(luaPatternSource(pattern), 'u').exec(String(value));
+    if (!match) return null;
+    if (match.length === 1) return match[0];
+    if (match.length === 2) return match[1];
+    return new LuaValues(match.slice(1));
 }
 
 function unaryValue(operator, value) {
@@ -331,6 +372,7 @@ export class LuaState {
         });
         this.globals.define('string', {
             format: (format, ...args) => formatLuaString(format, args),
+            match: luaStringMatch,
         });
         this.globals.define('table', {
             unpack: table => {

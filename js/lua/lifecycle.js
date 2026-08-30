@@ -1,6 +1,8 @@
 import { COLNO, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { depth } from '../hacklib.js';
+import { commandKeyDescription } from '../command_keys.js';
+import { parseNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
 import {
     LuaState, luaTableToArray, luaTableToObject, luaValueToJs,
@@ -16,6 +18,15 @@ function bindingsFor(gameState, additionalBindings = {}) {
         ?? (roleKey
             ? roleKey[0].toUpperCase() + roleKey.slice(1)
             : undefined);
+    const parseConfig = line => {
+        const parsed = parseNethackrc(String(line));
+        Object.assign(gameState.flags || (gameState.flags = {}), parsed.flags);
+        Object.assign(gameState.iflags || (gameState.iflags = {}), parsed.iflags);
+        Object.assign(
+            gameState.commandBindings || (gameState.commandBindings = {}),
+            parsed.bindings,
+        );
+    };
     return {
         nh: {
             rn2: range => rn2(range),
@@ -24,7 +35,10 @@ function bindingsFor(gameState, additionalBindings = {}) {
             gamestate: () => null,
             pline: () => null,
             text: () => null,
-            eckey: command => command,
+            eckey: command => commandKeyDescription(
+                command, gameState.commandBindings,
+            ),
+            parse_config: parseConfig,
             ...additionalNh,
         },
         nhc: { COLNO, ROWNO },

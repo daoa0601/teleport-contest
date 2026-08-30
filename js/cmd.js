@@ -6,6 +6,7 @@
 // wear, wield, drop, throw, pray, cast, and all other commands.
 
 import { game } from './gstate.js';
+import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
 import { getLine, promptYesNo, promptYesNoQuit } from './query.js';
@@ -309,26 +310,11 @@ function controlRushDirection(key) {
     return CONTROL_RUSH_DIRECTION.get(key === 13 ? 10 : key) || null;
 }
 
-// C options.c:parsebindings()/cmd.c:bind_key().  Configuration stores source
-// command names; remapping them to the corresponding ordinary dispatcher key
-// keeps custom and default invocations on the same state machine.
-const BOUND_COMMAND_KEYS = new Map([
-    ['apply', 'a'], ['attributes', String.fromCharCode(24)],
-    ['cast', 'Z'], ['close', 'c'], ['discoveries', '\\'], ['down', '>'],
-    ['drop', 'd'], ['eat', 'e'], ['fire', 'f'], ['forcefight', 'F'],
-    ['inventory', 'i'], ['kick', String.fromCharCode(4)], ['look', ':'],
-    ['open', 'o'], ['options', 'O'], ['pickup', ','], ['puton', 'P'],
-    ['quaff', 'q'], ['quiver', 'Q'], ['read', 'r'], ['remove', 'R'],
-    ['search', 's'], ['swapweapon', 'x'], ['takeoff', 'T'], ['throw', 't'],
-    ['twoweapon', 'X'], ['up', '<'], ['wait', '.'], ['wear', 'W'],
-    ['wield', 'w'], ['zap', 'z'],
-]);
-
 function remapConfiguredCommand(key) {
     const command = game.commandBindings?.[key];
     if (!command) return { key, disabled: false };
     if (command === 'nothing') return { key, disabled: true };
-    const mapped = BOUND_COMMAND_KEYS.get(command);
+    const mapped = defaultCommandKey(command);
     return {
         key: mapped ? mapped.charCodeAt(0) : key,
         disabled: false,
