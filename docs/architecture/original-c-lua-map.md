@@ -38634,7 +38634,7 @@ flowchart TD
     Partial -- yes --> Refuse["consume split identity boundary, unsplit, refuse"]
     Partial -- no --> Ready["setuqwep owns the same purse identity"]
     Ready --> Fire["dothrow.c detach one coin identity"]
-    Fire --> Generic["current generic projectile settlement"]
+    Fire --> Quivered["throwit / bhit / thitmonst one-coin owner"]
 
     Purse -. derives .-> Cache["_goldCount compatibility cache"]
     Cache -. never selects production behavior .-> Purse
@@ -38667,18 +38667,17 @@ coin identity while the original purse and quiver survive with the reduced
 quantity.  Seven behavioral witnesses assert object identity, carrier,
 quantity, slot mask, remainder, and elapsed state across pickup, merge, drop,
 bag insertion/removal, payment, counted refusal, and one-coin detachment.  The
-focused neighboring portfolio passes 33/33, and the guarded default behavioral
-gate passes 402/402 with 46 lane-audited files and a clean 125-file bridge
-audit.  None of these tests copies JavaScript control flow, helper calls,
+current focused neighboring portfolio passes 148/148, and the guarded default
+behavioral gate passes 438/438 with 48 lane-audited files and a clean 126-file
+bridge audit.  None of these tests copies JavaScript control flow, helper calls,
 screens, RNG transcripts, or public-session outcomes.
 
-The lifecycle entry remains `partial`, but direct unquivered `t` and the
-represented `ghitm()` state matrix now have a dedicated owner described below.
-The quivered child still proves only identity detachment and current floor
-settlement, not full source range/contact.  Partial carried-bill payment still
-credits aggregate `resident.gold`; persistence, nested carriers, and broader
-loss/death variants also remain open.  Lua owns none of this runtime object
-lifecycle.
+The lifecycle entry remains `partial`, but direct unquivered `t`, the
+represented `ghitm()` state matrix, and the distinct ordinary quivered-coin
+projectile now have dedicated owners described below.  Partial carried-bill
+payment still credits aggregate `resident.gold`; persistence, nested carriers,
+and broader loss/death variants also remain open.  Lua owns none of this
+runtime object lifecycle.
 
 ## 1021. Direct gold throw separates flight from catch policy
 
@@ -38704,7 +38703,7 @@ flowchart TD
     Kind -- vault guard --> Guard["skip ordinary anger probe; inspect remaining/hidden gold"]
     Kind -- mercenary --> Bribe["rank base plus level/Charisma threshold"]
 
-    Quivered["uquiver gold"] --> One["generic one-coin path remains separate and partial"]
+    Quivered["uquiver gold"] --> One["throwit/thitmonst one-coin owner in section 1022"]
 ```
 
 Pinned `dothrow.c:throw_obj()` branches before ordinary `canletgo()` and
@@ -38732,20 +38731,81 @@ input and delegates shared `wakeup()`/`setmangry()` state.  Splitting those
 attitude hooks exposed and corrected a neighboring coarse invariant: a
 co-aligned peaceful priest loses five alignment when angered and a
 cross-aligned priest gains two, rather than every target receiving the generic
-minus one.  Twenty-four direct command witnesses independently observe purse
+minus one.  Twenty-three direct command witnesses independently observe purse
 identity/quantity/carrier, strength/weight endpoints, adjacent and later
-walls, iron bars, webs, vertical and swallowed carriers, direct-versus-quivered
-selection, eligibility and mobility, sleep/meal/appearance/attitude,
+walls, iron bars, webs, vertical and swallowed carriers, eligibility and
+mobility, sleep/meal/appearance/attitude,
 monster-purse merging, shop robbery/credit, priest alignment, guard behavior,
 and soldier/watch bribes.  They do not assert helper order, source lines,
 screens, RNG transcripts, or public outcomes.  The focused neighboring
-portfolio passes 62/62; the managed default gate passes 426/426 with 47
+portfolio passes 148/148; the managed default gate passes 438/438 with 48
 lane-audited files and a clean 126-file bridge audit.
 
 This owner remains `partial`.  The quivered one-coin path still uses the
-bounded generic range/contact continuation.  Water/lava `flooreffects()`,
+distinct source continuation described next.  Water/lava `flooreffects()`,
 holes and `ship_object()` level transfer, shop-floor `sellobj()`, complete
 mimic/invisible/Hallucination and voice/deaf presentation, Elbereth-specific
 `setmangry()` consequences, full `make_happy_shk()` home/migration/Kops/guard
 repair, direct rank witnesses beyond soldier/watch, persistence, option
 strata, and a sealed gate remain open.
+
+## 1022. Quivered gold uses ordinary projectile contact, not ghitm
+
+```mermaid
+flowchart TD
+    Ready["uquiver owns the live purse"] --> Split{"quantity greater than one?"}
+    Split -- yes --> Child["splitobj child: one coin, new identity"]
+    Split -- no --> Whole["remove_worn_item/freeinv: original identity leaves quiver"]
+    Child --> Slip["cursed/greased probe; grease may rewrite direction"]
+    Whole --> Slip
+    Slip --> Shape{"throw shape"}
+    Shape -- swallowed --> Guaranteed["omon_adj; rnd20; wakeup; swallowit/mpickobj"]
+    Shape -- upward --> Toss["roof probe; breaktest probes; one-point ordinary self hit"]
+    Shape -- downward --> Feet["hitfloor and hard-surface resistance probe"]
+    Shape -- horizontal --> Range["max 1, ACURRSTR/2 - childWeight/40; underwater is 1"]
+    Range --> BHit["bhit across blockers, bars, webs, mimic/shade visibility"]
+    BHit --> Actor{"ordinary monster endpoint?"}
+    Actor -- no --> Impact["hard-surface breaktest probe; floor settlement"]
+    Actor -- yes --> Adjust["omon_adj may thaw; consume rnd20"]
+    Adjust --> Miss["coin class reaches tmiss regardless of greed"]
+    Miss --> Wake{"one-in-three wakeup?"}
+    Wake -- no --> Impact
+    Wake -- yes --> Angry["shared wakeup/setmangry state"]
+    Angry --> Impact
+
+    Direct["unquivered whole purse"] -. separate policy .-> GHitm["ghitm may catch gold"]
+```
+
+Pinned `dothrow.c:throw_obj()` makes the policy split before projectile
+execution.  Unquivered gold calls `throw_gold()` with the whole purse, but a
+quivered purse enters the ordinary one-shot loop: `splitobj()` detaches one
+coin (or the last original identity leaves its slot), `throwit()` owns slip,
+vertical, swallowed, and range branches, and `bhit()` chooses the live map
+endpoint.  The parent purse retains its identity, recalculated quantity and
+weight, synchronized cache, and `W_QUIVER` state while any quantity remains.
+`encumber_msg()` is evaluated only after that child has left inventory.
+
+The contact distinction is behaviorally decisive.  `thitmonst()` performs
+`omon_adj()` and consumes its d20, but coin class is not a weapon, gem,
+boulder, potion, food, or other successful-hit family.  A normal quivered coin
+therefore always reaches `tmiss()`: even a sleeping greedy leprechaun does not
+catch it.  The miss independently has a one-in-three `wakeup(mon, TRUE)` edge,
+and `omon_adj()` can first thaw a normally mobile frozen target.  Swallowed
+contact is the separate guaranteed branch: it wakes the engulfer and the coin
+then reaches `swallowit()`/`mpickobj()` rather than the floor.
+
+`js/gold_throw.js` now shares live `bhit`-shaped traversal between the direct
+and quivered owners but keeps `ghitm` catch policy isolated from quivered
+`thitmonst` miss policy.  Thirteen command/state witnesses cover `f` and direct
+`t` selection, parent/child identity, weight/cache repair, blockers,
+underwater range, no-wake and wake misses, target thaw, swallowed transfer,
+upward self-contact, greased slip, final-coin slot clearing, web stopping, and
+zero bridge use.  Shared test support removes duplicated arena/action setup;
+the oracles inspect resulting world state rather than helper calls, source
+lines, prompt copies, or RNG transcripts.
+
+This owner remains `partial`.  Horizontal Air-level/Levitation recoil and
+`hurtle()`, water/lava `flooreffects()`, holes and level shipping, shop-floor
+sale and billing, full upward damage modifiers/death handling, exact special-
+level and hallucinated presentation, save/restore, and sealed option/terrain
+strata remain open.  No public or replay result is treated as coverage.

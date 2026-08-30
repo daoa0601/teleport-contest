@@ -90,10 +90,15 @@ bars, webs, vertical/swallowed carriers, and floor or monster ownership.
 The represented `ghitm()` state matrix distinguishes ineligible and immobilized
 misses, greedy catches, shop robbery/credit, priest alignment, vault guards,
 and sufficient, insufficient, or forbidden mercenary bribes.  Full
-quivered-coin range/contact, special floor/level shipping and shop settlement,
-complete shopkeeper mollification, presentation breadth, menu-supplied counts
-and exact overflow-letter breadth, non-sling count families, interruption, and
-broader fire modes remain explicitly partial.
+quivered-coin ownership now splits one live child, preserves or clears the
+parent quiver as appropriate, and follows ordinary throwit/bhit/thitmonst state:
+strength range, underwater range, blockers, webs, greased slip, hard-surface
+resistance probes, vertical self-contact, swallowed transfer, immobilized thaw,
+and the one-in-three miss wakeup are represented without reusing ghitm catch
+policy.  Air/levitation recoil, special floor/level shipping and shop
+settlement, complete shopkeeper mollification, presentation breadth,
+menu-supplied counts and exact overflow-letter breadth, non-sling count
+families, interruption, and broader fire modes remain explicitly partial.
 Other named role paths remain.  Those
 later slices have focused fresh witnesses and selected public regressions, but
 still no sealed gate or hidden measurement.

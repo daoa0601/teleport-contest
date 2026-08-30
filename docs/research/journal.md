@@ -99443,3 +99443,94 @@ regression lane, sealed trace, push, publication, hidden measurement, or
 supplemental-animation work ran; `public-session-status.md` is unchanged.
 
 ---
+
+### [2026-08-30 08:09 EEST, journal block 3228] {#bridge-free #quivered-gold #throwit #thitmonst #tmiss #critical-debugging-portfolio #change-detector #diagnosis #process-safety}
+
+**Witness and independent mechanism portfolio:** block3227 left quivered-coin
+range/contact behind the generic one-cell fallback.  Pinned
+`dothrow.c:throw_obj()` first distinguishes direct unquivered gold from
+`uquiver`: direct gold calls `throw_gold()` with the whole purse, while
+quivered gold enters the ordinary one-shot split/free loop and then
+`throwit()`.  The latter owns greased/cursed probing, vertical and swallowed
+shape, minimum strength/weight range, underwater range one, `bhit()` terrain,
+`thitmonst()` targeting, `tmiss()`, hard-surface `breaktest()` probes, and
+post-detachment `encumber_msg()`.  Whole-purse `ghitm()` catching, one-cell
+generic settlement, and ordinary coin-class `thitmonst()` were kept as three
+incompatible hypotheses rather than treated as interchangeable gold behavior.
+
+**Earliest divergence, prediction, and red evidence:** all **11** opening
+quivered witnesses failed.  Before any actor policy, the detached child landed
+at x=11 instead of its strength range endpoint x=15; the 4,049-coin parent
+retained stale weight 41; later walls and webs were unreachable; vertical input
+was rejected; and swallowed contact entered a forbidden compatibility bridge.
+At actor contact the one-cell fallback never reached x=13, so it could neither
+preserve an asleep peaceful greedy target nor exercise the conditional wake or
+immobilized-thaw edges.  The prediction was that one source-shaped child owner
+would make `f` and direct `t` agree on carrier/range state while still making a
+greedy target miss every quivered coin, unlike direct `ghitm()`.
+
+**Source correction and falsified shortcuts:** `thitmonst()` consumes
+`omon_adj()` and `rnd(20)`, but coin class is in none of its successful hit
+families.  Normal contact therefore always reaches `tmiss()`; only its later
+one-in-three edge calls `wakeup(mon, TRUE)`.  A swallowed target instead takes
+the guaranteed branch and then `swallowit()`/`mpickobj()`.  This falsifies
+reusing the direct greedy-catch matrix.  The critical-debugging portfolio's
+adversarial pass also found an equivalent-strength gap after visible state was
+green: gold cannot break, but `breaktest()->obj_resists()` still consumes
+hard-impact RNG.  Upward return can pay two or three such probes, and ordinary
+horizontal settlement pays one.  Omitting them would preserve local objects
+while drifting the hidden PRNG.  Split identity allocation likewise consumes
+the source `next_ident()` draw, so full-command stochastic witnesses were
+calibrated after that allocation but assert only resulting world state, never
+the private RNG transcript.
+
+**Decision and evidence limit:** replace only the quivered-gold fallback with
+the coherent ordinary projectile slice; share map traversal with direct gold
+but keep contact policy separate.  Extract common gold arena/actions so direct
+and quivered tests do not copy command plumbing or collaborator order.  Do not
+claim Air/Levitation recoil, special floor/level/shop effects, complete upward
+damage/death handling, presentation breadth, persistence, or sealed coverage.
+
+---
+
+### [2026-08-30 08:10 EEST, journal block 3229] {#quivered-gold #implementation #behavioral-gate #test-lanes #bridge-audit #ownership #process-safety}
+
+**Implementation and measured effect:** `js/gold_throw.js` now detaches one
+live child with source identity and weight repair, preserves or clears the
+parent quiver, handles cursed/greased probing and slip, computes ordinary and
+underwater range, shares live blocker/web traversal, pays non-breaking hard-
+surface resistance probes, and owns upward/downward and swallowed shapes.
+Quivered contact performs immobilized thaw, the targeting d20, unconditional
+coin miss, conditional wake/anger, or guaranteed swallowed transfer without
+entering the direct `ghitm()` catch matrix.  `cmd.js` delegates both `f` and a
+directly selected quivered `t` before the bounded generic-object branch and
+runs the post-child encumbrance transition.  Thirteen state witnesses cover
+selection, carrier/identity, parent cache/weight/quiver, range, underwater,
+walls, webs, no-wake/wake misses, target thaw, swallowed transfer, upward
+self-contact, greased slip, final-coin slot clearing, and zero bridge use.
+
+**Test cleanup and gates:** the weaker earlier quivered test, which asserted
+only `5 -> 4` plus the existence of some floor child, is deleted in favor of
+the source-discriminating flight/contact portfolio.  Shared support removes
+duplicated purse, actor, floor, Q, t, and f setup; no test asserts source text,
+helper calls, mock order, prompt copies, screens, or RNG logs.  The focused
+gold/quiver/throw portfolio passes **148/148**.  One guarded default behavioral
+process passed **438/438** named tests and exited normally in 4.2 seconds.  The
+lane audit passes **48 files** with no recorded-session, public-parity,
+mock/spy, or call-transcript dependency.  Bridge audit remains green at **126
+production files, 9 guarded replay modules, and 19 fixture modules**; syntax,
+JSON, and diff checks pass, and no matching runner remains.
+
+**Falsified alternatives, next blocker, and evidence limit:** a greedy monster
+does not catch quivered gold; a non-breaking coin does not imply zero impact
+RNG; a one-cell detached child does not prove projectile ownership; and public
+whole-purse exactness does not cover this path.  The next coherent gold gaps
+are Air-level/Levitation recoil and `hurtle()`, water/lava `flooreffects()`,
+holes and level shipping, shop-floor settlement, and full upward damage/death
+state.  The broader priority remains live source-turn scheduling and sealed
+generalization, not public-session or animation optimization.  No corpus,
+scorer, public-regression lane, sealed trace, push, publication, hidden
+measurement, or supplemental-animation work ran; `public-session-status.md`
+is unchanged.
+
+---
