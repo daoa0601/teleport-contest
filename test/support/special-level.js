@@ -1,6 +1,8 @@
 import { GameMap } from '../../js/game.js';
 import { game, resetGame } from '../../js/gstate.js';
+import { MAXNROFROOMS } from '../../js/const.js';
 import { init_objects } from '../../js/o_init.js';
+import { init_rect } from '../../js/rect.js';
 import { initRng } from '../../js/rng.js';
 
 export function freshSpecialLevel({
@@ -28,7 +30,11 @@ export function freshSpecialLevel({
         flags: {},
     }];
     game.level = new GameMap();
+    game.level.subrooms = [];
+    game.level.nsubroom = 0;
     game.stairs = null;
+    game.smeq = new Array(MAXNROFROOMS + 1).fill(0);
+    init_rect();
 
     initRng(999n);
     init_objects();
