@@ -37895,6 +37895,56 @@ suppression, slip direction, object lifecycle, and eventual engulfer contact.
 They replace the former test which accepted a named bridge rejection as the
 expected result for a valid unencumbered four-HP gremlin throw.
 
-Ordinary-map low-stamina `hitfloor()` remains partial: its breakage, soft
-terrain, altar, shipping, shop, and Air-level continuations have not been
-claimed.  Lua owns none of this runtime throw path.
+The basic hard-ROOM `hitfloor()` path is now live for a greased potion whose
+slip rerolls both horizontal axes to zero: floor presentation precedes the
+ordinary break-resistance draw, shatter, identity deletion, and nearby vapor.
+Ordinary-map low-stamina `hitfloor()` remains partial because map eligibility
+does not yet admit the required Stressed load; soft terrain, altar, shipping,
+shop, and Air-level continuations are also unclaimed.  Lua owns none of this
+runtime throw path.
+
+## 1010. Greased map potions choose flight only after split and slip RNG
+
+```mermaid
+flowchart TD
+    A[map potion throw admitted] --> B[splitobj or freeinv]
+    B --> C[next_ident draw for a stack child]
+    C --> D{cursed or greased rn2 7 succeeds?}
+    D -- no --> E[retain requested u.dx u.dy]
+    D -- yes, greased --> F[publish slip]
+    F --> G[rn2 3 minus one for dx]
+    G --> H[rn2 3 minus one for dy]
+    H --> I{both axes zero?}
+    I -- no --> J[bhit along rerouted horizontal path]
+    I -- yes --> K[set u.dz down]
+    K --> L[hitfloor at hero square]
+    L --> M[breaktest resistance draw]
+    M -- resists --> N[place and stack surviving potion]
+    M -- breaks --> O[shatter and nearby potionbreathe]
+    E --> P[ordinary bhit path]
+    J --> Q[contact or miss settlement]
+    P --> Q
+```
+
+The earlier map test encoded a source-valid greased throw as a required
+`throw.potion-impact-unsupported` failure before identity allocation.  C does
+the opposite: `throw_obj()` splits or frees the object first, then `throwit()`
+consumes the slip gate and rewrites persistent direction.  A stack therefore
+pays `next_ident()` before `rn2(7)`.  Horizontal rerouting changes the real
+`bhit()` path; a `(0,0)` reroll sets `u.dz=1` and enters `hitfloor()` instead.
+
+`potion_throw.js` now composes the shared `throw_state.js` owner after
+detachment and traces the selected live direction rather than the requested
+one.  Its bounded preflight admits a greased potion only when every possible
+horizontal reroll and the hero-square floor outcome remain inside the owned
+ordinary ROOM/CORR/open-DOOR slice.  This check is world-stratified, not
+seed-specific: production never predicts which RNG direction will occur.
+One witness proves a two-potion stack retains its parent at quantity one while
+the child reroutes west and shatters; another proves the zero-axis result hits
+the floor, shatters, applies nearby invisibility vapor, and leaves no object.
+
+Worlds where an alternate greased direction would cross a trap, unsupported
+terrain, special target, shop, or other unowned continuation remain explicit
+gaps.  Lamplit oil is separate because `breakobj()` delegates to the area
+explosion transaction rather than ordinary potion vapor.  Lua owns none of
+this runtime map-flight branch.

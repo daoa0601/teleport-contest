@@ -98130,3 +98130,53 @@ full Contest corpus, scorer, sealed trace, push, publication, official hidden
 measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 04:11 EEST, journal block 3192] {#bridge-free #throwit #greased #slip #direction #splitobj #hitfloor #potion #change-detector #fake-acceptance #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and classification:** the remaining behavioral
+bridge assertions were inventoried after block 3191.  Life-saving, lamplit oil,
+special worn transformation, and multigen projectiles still name genuinely
+unowned subsystem continuations.  The greased map-potion test did not: it passed
+only by requiring `throw.potion-impact-unsupported` before stack splitting or
+RNG.  Rewritten as a live outcome, it failed at that bridge before the parent
+quantity changed.  This was the next clear fake-acceptance test rather than a
+legitimate boundary guard.
+
+**Prediction and decisive C evidence:** `throw_obj()` calls `splitobj()` or
+`freeinv()` before `throwit()`.  The cursed/greased `rn2(7)` gate therefore
+occurs after a stacked identity has paid `next_ident()`.  A successful greased
+slip publishes its message and assigns `u.dx=rn2(3)-1` and
+`u.dy=rn2(3)-1`; two zero axes set `u.dz=1`.  A horizontal result changes the
+actual `bhit()` route.  A vertical result reaches `hitfloor()`, whose ordinary
+hard-floor path publishes the surface hit before `hero_breaks()`, the one-
+percent resistance draw, shatter, deletion, and adjacent `potionbreathe()`.
+
+**Decision and implementation:** `potion_throw.js` now composes the shared
+slip/stamina owner after real detachment, traces persistent source direction,
+and owns the basic ROOM vertical floor continuation.  Greased preflight is
+world-stratified rather than seed-specific: it admits the throw only when every
+RNG-reachable horizontal direction and the hero-square floor outcome stay
+inside the current ordinary map-potion slice.  The former bridge assertion now
+proves a stack child is allocated before slip, reroutes west, shatters, leaves
+the parent at quantity one, and never contacts the originally eastward target.
+A second outcome proves a zero-axis slip hits the floor, shatters, applies
+nearby invisibility vapor, and consumes the singleton.
+
+**Measured effect and process custody:** the two direct greased outcomes pass
+**2/2**; the complete map-potion file passes **37/37**; and the potion-impact,
+map, swallowed, and hero-clone gate passes **146/146**.  One guarded default
+behavioral run passes all **374** named tests across **38** files and exits
+normally.  No duplicate or abandoned verifier was present.
+
+**Falsified hypotheses, limits, and next blocker:** a greased stack does not
+fail before identity mutation; slip does not merely consume invisible RNG;
+the requested direction is not necessarily the flight direction; and a
+zero-axis reroll is not an ordinary horizontal miss.  Broader greased worlds
+remain partial when an alternate direction can reach traps, unsupported
+terrain, special targets, or shop state.  Map low-stamina entry, non-ROOM
+`hitfloor()`, lamplit-oil explosion, unknown-potion `trycall()`, equipped were
+transformations, special fatalities/life-saving, and the sealed stratum remain
+open.  No public regression lane, full Contest corpus, scorer, sealed trace,
+push, publication, official hidden measurement, or animation work ran.
+
+---
