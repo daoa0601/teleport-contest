@@ -2161,7 +2161,7 @@ function liveQuietRogue(state = game) {
 }
 
 function liveQuietHealer(state = game) {
-    return state.urole?.key === 'healer' && !state._healerNewmoonPath;
+    return state.urole?.key === 'healer';
 }
 
 function liveQuietRanger(state = game) {
@@ -6127,22 +6127,6 @@ function valkyrieDogSearchRng() {
         rn2(range);
 }
 
-// The Healer's kitten has a floor-gold goal in this compact room.  These
-// first three turns are the dog_goal()/dog_move() shapes before the sleep ray
-// starts a longer multi-turn sequence.
-const HEALER_EARLY_TURN_RNG = {
-    1: [12, 12, 70, 200, 20, 70],
-    2: [5, 4, 100, 8, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-        100, 100, 1, 2, 3, 4, 5, 5, 100, 8, 4, 100, 5,
-        12, 12, 70, 200, 20, 70],
-    3: [5, 4, 100, 8, 1, 5, 5, 100, 8, 4, 100, 5,
-        12, 12, 70, 200, 20, 70],
-};
-
-function healerEarlyTurnRng(stepNum) {
-    for (const range of HEALER_EARLY_TURN_RNG[stepNum] || []) rn2(range);
-}
-
 // The south-east kitten start can bank enough movement for two steps during
 // each of these early hero turns.  These are the dog_goal()/dog_move() call
 // shapes for that geometry; the shared once-per-turn maintenance remains
@@ -6251,8 +6235,6 @@ export async function newgame() {
         g._samuraiLiveScheduler = true;
     g._touristExplorePath = !bridgeFree && g.urole?.key === 'tourist'
         && g.flags?.explore && g.u?.ux === 71 && g.u?.uy === 5;
-    g._healerNewmoonPath = !bridgeFree && g.urole?.key === 'healer'
-        && /szf/.test(replayMoves);
     g._knightPonyPath = !bridgeFree && g.urole?.key === 'knight'
         && /^  sns#ride/.test(replayMoves);
     g._knightCombatPath = !bridgeFree && g.urole?.key === 'knight'
@@ -6261,7 +6243,6 @@ export async function newgame() {
     if (bridgeFree) {
         const compatibilityPaths = [
             ['tourist.explore-search', g._touristExplorePath],
-            ['healer.newmoon', g._healerNewmoonPath],
             ['knight.pony', g._knightPonyPath],
             ['wizard.bind', g._wizardBindPath],
         ];
@@ -6582,8 +6563,6 @@ export async function moveloop_core() {
             // maintenance pass.  In particular, the engraving wipe gate is
             // 40 + 3 * current Dexterity rather than fastforward's fixed 82.
             initialTurnMaintenanceRng();
-        } else if (g._healerNewmoonPath && stepNum <= 3) {
-            healerEarlyTurnRng(stepNum);
         } else if (liveQuietPriest(g) && stepNum === 1) {
             initialTurnMaintenanceRng();
         } else if (g._wizardBindPath && stepNum <= 5) {

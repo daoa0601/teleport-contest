@@ -43,7 +43,7 @@ export function auditBridgeFreeSource() {
         '_knightCombatPath', '_monkNorthPath',
         '_wizardBindPath', '_wizardPolyPath', '_wizardQuaffPath',
         '_touristExplorePath',
-        '_healerNewmoonPath', '_knightPonyPath',
+        '_knightPonyPath',
     ];
     for (const classifier of compatibilityClassifiers) {
         const explicitLegacyGate = new RegExp(
@@ -147,6 +147,21 @@ export function auditBridgeFreeSource() {
                 failures.push(`${file}: legacy Ranger replay token ${token}`);
         }
     }
+    const forbiddenHealerReplayTokens = [
+        '_healerNewmoonPath', 'HEALER_EARLY_TURN_RNG',
+        'healerEarlyTurnRng', 'replayHealerSleepRay',
+        'replayHealerWake', 'replayHealerLateSearch',
+        'placeHealerPet', 'removeHealerFloorGold',
+        'seeded-replay.healer-newmoon', 'healer.newmoon',
+    ];
+    for (const token of forbiddenHealerReplayTokens) {
+        for (const file of ['allmain.js', 'cmd.js', 'detect.js']) {
+            if (sources.get(file)?.includes(token))
+                failures.push(`${file}: legacy Healer replay token ${token}`);
+        }
+    }
+    if (sources.has('healer_newmoon.js'))
+        failures.push('healer_newmoon.js: legacy Healer replay module still exists');
     const jsmain = sources.get('jsmain.js');
     if (!jsmain.includes('const fixturesEnabled = !bridgeFreeEnabled()'))
         failures.push('jsmain.js: top-level fixtures are not gated by bridge-free mode');

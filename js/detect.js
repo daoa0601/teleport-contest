@@ -23,7 +23,6 @@ import {
     commandSafetyPrevention, threateningMonsterNearby,
 } from './do.js';
 import { vision_note_blocker_change } from './vision.js';
-import { replayHealerLateSearch } from './healer_newmoon.js';
 import { replayKnightCombatSearch } from './knight_ride.js';
 import { replayMonkTurn } from './monk_search.js';
 import { captureRunmodeDelay } from './runmode.js';
@@ -297,18 +296,6 @@ export async function dosearch(force = false) {
             game._maintenanceMove = game.moves;
             placeMonster(game.startingPet, index === 0 ? 0 : 33,
                 index === 0 ? 0 : 8);
-            game.context.move = 0;
-            return;
-        }
-    }
-    if (game._healerNewmoonPath && (game.moves || 1) >= 31) {
-        const index = game._healerLateSearches || 0;
-        if (index < 2) {
-            replayHealerLateSearch(index);
-            game._healerLateSearches = index + 1;
-            game.moves = (game.moves || 1) + 1;
-            placeMonster(game.startingPet, index === 0 ? 48 : 52,
-                index === 0 ? 1 : 3);
             game.context.move = 0;
             return;
         }

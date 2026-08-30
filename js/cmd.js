@@ -234,9 +234,6 @@ import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
-    replayHealerSleepRay, replayHealerWake,
-} from './healer_newmoon.js';
-import {
     replayKnightFirstDismount, replayKnightSecondDismountOpening,
     replayKnightPonyMiss, replayKnightPonyBite,
     replayKnightZombieDeathTurn,
@@ -12623,13 +12620,6 @@ async function doeat() {
         return;
     }
 
-    if (game._healerNewmoonPath && item.name === 'apple') {
-        consumeTouchedFood(item, itemFloorPile);
-        await pline('Delicious!  Must be a Macintosh!');
-        game.context.move = 1;
-        return;
-    }
-
     if (game._monkNorthPath && item.name === 'goblin corpse') {
         game.inventory = game.inventory.filter(candidate => candidate !== item);
         replayMonkTurn(23);
@@ -12682,23 +12672,6 @@ async function doeat() {
     consumeTouchedFood(item, itemFloorPile);
     await pline(`This ${item.name} is delicious!`);
     game.context.move = 1;
-}
-
-function placeHealerPet(x, y) {
-    const pet = game.startingPet;
-    if (!pet) return;
-    const oldx = pet.mx, oldy = pet.my;
-    pet.mx = x;
-    pet.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
-}
-
-function removeHealerFloorGold() {
-    const pile = game.level?.objects?.[53]?.[4];
-    if (Array.isArray(pile))
-        game.level.objects[53][4] = pile.filter(object => object.otyp !== GOLD_PIECE);
-    newsym(53, 4);
 }
 
 function terminalLine(row, col, value) {
@@ -13902,6 +13875,29 @@ async function dozap() {
         game.context.move = 1;
         return;
     }
+    if (wand.otyp === WAN_SLEEP && directionChar === '.') {
+        // C zap.c:zapyourself(WAN_SLEEP) identifies the effect before either
+        // resistance or fall_asleep().  The duration becomes ordinary
+        // negative multi: moveloop_core owns each current actor/global turn
+        // and timeout.c supplies the wake message when the counter expires.
+        exerciseAttribute(2, true);
+        if (game.u?.sleepResistance) {
+            await shieldeff(game.u.ux, game.u.uy);
+            await pline("You don't feel sleepy!");
+        } else {
+            await pline('The sleep ray hits you!');
+            game._helplessTurns = rnd(50);
+            game._helplessReason = 'sleeping';
+            game._helplessDoneMessage = 'You wake up.';
+            game.u.usleep = game.moves || 1;
+        }
+        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+        game._knownObjectTypes.add(wand.otyp);
+        wand.typeKnown = true;
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
     if (wand.otyp === WAN_SLEEP && DIR_DX[directionChar] !== undefined
         && directionChar !== '.') {
         await zapSleepRay(directionChar);
@@ -13951,48 +13947,7 @@ async function dozap() {
         return;
     }
 
-    if (!(game._healerNewmoonPath && wand.otyp === WAN_SLEEP
-        && String.fromCharCode(direction) === '.')) {
-        game.context.move = direction === 27 ? 0 : 1;
-        return;
-    }
-
-    await pline('The sleep ray hits you!');
-    await replayHealerSleepRay({
-        onTurn: async turn => {
-            const sourceTurn = 4 + turn;
-            if (sourceTurn === 7) placeHealerPet(51, 3);
-            else if (sourceTurn === 14) placeHealerPet(52, 3);
-            else if (sourceTurn === 21) {
-                placeHealerPet(51, 3);
-                await plineWithContinuation(
-                    'The kitten picks up a gold piece.',
-                );
-            } else if (sourceTurn === 28) {
-                placeHealerPet(51, 4);
-            }
-            await captureRunmodeDelay(game, true, sourceTurn, {
-                preservePhysicalTopline: true,
-            });
-        },
-    });
-    placeHealerPet(53, 4);
-    removeHealerFloorGold();
-
-    const sleepMessage = 'The sleep ray hits you!  The kitten picks up a gold piece.--More--';
-    await pline(sleepMessage);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(sleepMessage.length, 0);
-    let dismissal;
-    do dismissal = await nhgetch();
-    while (![27, 32, 10, 13].includes(dismissal));
-
-    replayHealerWake();
-    placeHealerPet(51, 3);
-    game.moves = 31;
-    game._maintenanceMove = 31;
-    await pline('The kitten picks up a gold piece.  You wake up.');
-    game.context.move = 0;
+    game.context.move = direction === 27 ? 0 : 1;
 }
 
 // C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
