@@ -338,9 +338,19 @@ const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
 const PM_MEDUSA = 284;
+const PM_GREMLIN = 40;
+const PM_TITAN = 176;
+const PM_YELLOW_LIGHT = 118;
+const PM_BABY_YELLOW_DRAGON = 142;
+const PM_YELLOW_DRAGON = 152;
+const PM_BLACK_NAGA_HATCHLING = 196;
+const PM_BLACK_NAGA = 200;
+const PM_COBRA = 219;
+const PM_STONE_GOLEM = 257;
 const PM_OGRE = 203;
 const PM_ROCK_TROLL = 222;
 const PM_GIANT_EEL = 319;
+const PM_ELECTRIC_EEL = 320;
 const PM_KRAKEN = 321;
 const PM_PIRANHA = 317;
 const PM_WUMPUS = 84;
@@ -10691,6 +10701,29 @@ const MEDUSA_1_MAP = [
     '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
 ];
 
+const MEDUSA_2_MAP = [
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}------}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}-------}}}}}}}}--------------}',
+    '}|....|}}}}}}}}}..}.}}..}}}}}}}}}}}}}..}}}}}}-.....--}}}}}}}|............|}',
+    '}|....|.}}}}}}}}}}}.}...}}..}}}}}}}}}}}}}}}}}---......}}}}}.|............|}',
+    '}S....|.}}}}}}---}}}}}}}}}}}}}}}}}}}}}}}}}}---...|..-}}}}}}.S..----------|}',
+    '}|....|.}}}}}}-...}}}}}}}}}.}}...}.}}}}.}}}......----}}}}}}.|............|}',
+    '}|....|.}}}}}}-....--}}}}}}}}}}}}}}}}}}}}}}----...--}}}}}}}.|..--------+-|}',
+    '}|....|.}}}}}}}......}}}}...}}}}}}.}}}}}}}}}}}---..---}}}}}.|..|..S...|..|}',
+    '}|....|.}}}}}}-....-}}}}}}}------}}}}}}}}}}}}}}-...|.-}}}}}.|..|..|...|..|}',
+    '}|....|.}}}}}}}}}---}}}}}}}........}}}}}}}}}}---.|....}}}}}.|..|..|...|..|}',
+    '}|....|.}}}}}}}}}}}}}}}}}}-....|...-}}}}}}}}--...----.}}}}}.|..|..|...|..|}',
+    '}|....|.}}}}}}..}}}}}}}}}}---..--------}}}}}-..---}}}}}}}}}.|..|..-------|}',
+    '}|...}|...}}}.}}}}}}...}}}}}--..........}}}}..--}}}}}}}}}}}.|..|.........|}',
+    '}|...}S...}}.}}}}}}}}}}}}}}}-..--------}}}}}}}}}}}}}}...}}}.|..--------..S}',
+    '}|...}|...}}}}}}}..}}}}}}----..|....-}}}}}}}}}}}}}}}}}..}}}.|............|}',
+    '}|....|}}}}}....}}}}..}}.-.......----}}......}}}}}}.......}}|............|}',
+    '}------}}}}}}}}}}}}}}}}}}---------}}}}}}}}}}}}}}}}}}}}}}}}}}--------------}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+];
+
 const MEDUSA_3_MAP = [
     '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
     '}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
@@ -10711,6 +10744,30 @@ const MEDUSA_3_MAP = [
     '}}}}..}}}.....}}...}}}}}}}...}}}}}}}}}}}}}T.|...|...|}}}}}}}}}}}....T..}}}}}',
     '}}}}}..}}}.T..}}}.}}}}}}}}.T..}}}}}}}}}}}}}}---S-----}}}}}}}}}}}}}....}}}}}}',
     '}}}}}}}}}}}..}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}T..T}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+];
+
+const MEDUSA_4_MAP = [
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}}}}}}}}}}}}}........}}}}}}}}}}}}}}}}}}}}}}}..}}}.....}}}}}}}}}}}----|}}}}}',
+    '}}}}}}..----------F-.....}}}}}}}}}}}}}}}}..---...}}}}....T.}}}}}}}....|}}}}}',
+    '}}}.....|...F......S}}}}....}}}}}}}...}}.....|}}.}}}}}}}......}}}}|......}}}',
+    '}}}.....+...|..{...|}}}}}}}}}}}}.....}}}}|...|}}}}}}}}}}}.}}}}}}}}----.}}}}}',
+    '}}......|...|......|}}}}}}}}}......}}}}}}|.......}}}}}}}}}}}}}..}}}}}...}}}}',
+    '}}|-+--F|-+--....|F|-|}}}}}....}}}....}}}-----}}.....}}}}}}}......}}}}.}}}}}',
+    '}}|...}}|...|....|}}}|}}}}}}}..}}}}}}}}}}}}}}}}}}}}....}}}}}}}}....T.}}}}}}}',
+    '}}|...}}F...+....F}}}}}}}..}}}}}}}}}}}}}}...}}}}}}}}}}}}}}}}}}}}}}....}}..}}',
+    '}}|...}}|...|....|}}}|}....}}}}}}....}}}...}}}}}...}}}}}}}}}}}}}}}}}.....}}}',
+    '}}--+--F|-+--....-F|-|....}}}}}}}}}}.T...}}}}....---}}}}}}}}}}}}}}}}}}}}}}}}',
+    '}}......|...|......|}}}}}.}}}}}}}}}....}}}}}}}.....|}}}}}}}}}.}}}}}}}}}}}}}}',
+    '}}}}....+...|..{...|.}}}}}}}}}}}}}}}}}}}}}}}}}}.|..|}}}}}}}......}}}}...}}}}',
+    '}}}}}}..|...F......|...}}}}}}}}}}..---}}}}}}}}}}--.-}}}}}....}}}}}}....}}}}}',
+    '}}}}}}}}-----S----F|....}}}}}}}}}|...|}}}}}}}}}}}}...}}}}}}...}}}}}}..}}}}}}',
+    '}}}}}}}}}..............T...}}}}}.|.......}}}}}}}}}}}}}}..}...}.}}}}....}}}}}',
+    '}}}}}}}}}}....}}}}...}...}}}}}.......|.}}}}}}}}}}}}}}.......}}}}}}}}}...}}}}',
+    '}}}}}}}}}}..}}}}}}}}}}.}}}}}}}}}}-..--.}}}}}}}}..}}}}}}..T...}}}..}}}}}}}}}}',
+    '}}}}}}}}}...}}}}}}}}}}}}}}}}}}}}}}}...}}}}}}}....}}}}}}}.}}}..}}}...}}}}}}}}',
+    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}}}}....}}}}}}}}}}}}}}}}}}}...}}}}}}',
     '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
 ];
 
@@ -10802,6 +10859,30 @@ async function medusaMonsterClassAt(context, monsterClass, x, y) {
         : makemon(mndx, absoluteX, absoluteY, 0);
 }
 
+async function medusaMonsterOfClass(context, monsterClass) {
+    medusaInducedAlignment();
+    const mndx = mkclass(monsterClass, 0x0200);
+    if (mndx == null) return null;
+    const point = specialMonsterRandomLocation(context, mndx);
+    if (!point) return null;
+    const occupied = game.level.monsters?.some(monster => !monster.dead
+        && monster.mx === point.x && monster.my === point.y);
+    return occupied
+        ? makemonNear(mndx, point.x, point.y)
+        : makemon(mndx, point.x, point.y, 0);
+}
+
+async function medusaRandomMonsterAt(context, x, y) {
+    medusaInducedAlignment();
+    const absoluteX = context.xstart + x;
+    const absoluteY = context.ystart + y;
+    const occupied = game.level.monsters?.some(monster => !monster.dead
+        && monster.mx === absoluteX && monster.my === absoluteY);
+    return occupied
+        ? makemonNear(null, absoluteX, absoluteY)
+        : makemon(null, absoluteX, absoluteY, 0);
+}
+
 async function medusaRandomMonster(context) {
     medusaInducedAlignment();
     const point = specialRandomLocation(context);
@@ -10819,7 +10900,10 @@ function medusaObjectAtRandom(context, otyp) {
     return mksobj_at(otyp, point.x, point.y, true, true);
 }
 
-function medusaPerseusStatue(context, x = 36, y = 10) {
+function medusaPerseusStatue(
+    context, x = 36, y = 10,
+    { shieldChance = 75, bootsChance = 25 } = {},
+) {
     const statue = specialObjectAt(
         context, STATUE, x, y, { named: true },
     );
@@ -10839,14 +10923,22 @@ function medusaPerseusStatue(context, x = 36, y = 10) {
         Object.assign(object, state);
         addSpecialContainerObject(statue, object);
     };
-    if (rn2(100) < 75)
+    if (rn2(100) < shieldChance)
         add(SHIELD_OF_REFLECTION, { cursed: true, blessed: false, spe: 0 });
-    if (rn2(100) < 25)
+    if (rn2(100) < bootsChance)
         add(LEVITATION_BOOTS, { spe: 0 });
     if (rn2(100) < 50)
         add(SCIMITAR, { cursed: false, blessed: true, spe: 2 });
     if (rn2(100) < 50) add(SACK);
     return statue;
+}
+
+function medusaDragonEggAt(context, x, y) {
+    const egg = specialObjectAt(
+        context, EGG, x, y, { named: true },
+    );
+    if (egg) set_corpsenm(egg, PM_YELLOW_DRAGON);
+    return egg;
 }
 
 function medusaMonsterGoodPos(mndx, x, y) {
@@ -12689,6 +12781,98 @@ async function generateMedusa1(active) {
     active.explicitBranchExclude = flipSpecialRegion(active.explicitBranchExclude);
 }
 
+async function generateMedusa2(active) {
+    const context = loadSpecialAsciiMap(MEDUSA_2_MAP, active.defaultLit);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+
+    setSpecialRegionLighting(context, 0, 0, 74, 19, true);
+    setSpecialRegionLighting(context, 2, 3, 5, 16, false);
+    specialIrregularRoom(context, 61, 3, OROOM, false, 0);
+    setSpecialRegionLighting(context, 71, 8, 72, 11, false);
+    const arrivalRoom = specialRectangularRoom(
+        context, 67, 8, 69, 11, OROOM, true, 0,
+    );
+    arrivalRoom.arrival_room = true;
+
+    active.downTeleportRegion = absoluteSpecialRegion(context, 2, 3, 5, 16);
+    active.upTeleportRegion = absoluteSpecialRegion(context, 61, 3, 72, 16);
+    active.explicitBranchRegion = absoluteSpecialRegion(context, 1, 0, 79, 20);
+    active.explicitBranchExclude = absoluteSpecialRegion(
+        context, 59, 1, 73, 17,
+    );
+
+    specialStairAt(context, 4, 9, true);
+    specialStairAt(context, 68, 10, false);
+    specialDoorAt(context, D_LOCKED, 71, 7);
+    specialNonDiggable({
+        xstart: context.xstart + 1,
+        ystart: context.ystart + 2,
+        width: 6,
+        height: 16,
+    });
+    specialNonDiggable({
+        xstart: context.xstart + 60,
+        ystart: context.ystart + 2,
+        width: 14,
+        height: 16,
+    });
+
+    medusaPerseusStatue(context, 68, 10, {
+        shieldChance: 25,
+        bootsChance: 75,
+    });
+    for (const [x, y] of [
+        [64, 8], [65, 8], [64, 9], [65, 9],
+        [64, 10], [65, 10], [64, 11], [65, 11],
+    ]) await medusaEmptyStatue(context, { x, y });
+    specialObjectAt(context, BOULDER, 4, 4, { named: true });
+    specialObjectClassAt(context, WAND_CLASS, 52, 9);
+    specialObjectAt(context, BOULDER, 52, 9, { named: true });
+    for (let count = 0; count < 6; count++) specialObject(context);
+
+    await medusaTrapAt(context, MAGIC_TRAP, 3, 12);
+    for (let count = 0; count < 4; count++) await specialTrap(context);
+
+    await medusaNamedMonsterAt(context, PM_MEDUSA, 68, 10, true);
+    for (const [mndx, x, y, asleep] of [
+        [PM_GREMLIN, 2, 14, false],
+        [PM_TITAN, 2, 5, false],
+        [PM_ELECTRIC_EEL, 10, 13, false],
+        [PM_ELECTRIC_EEL, 11, 13, false],
+        [PM_ELECTRIC_EEL, 10, 14, false],
+        [PM_ELECTRIC_EEL, 11, 14, false],
+        [PM_ELECTRIC_EEL, 10, 15, false],
+        [PM_ELECTRIC_EEL, 11, 15, false],
+        [PM_JELLYFISH, 1, 1, false],
+        [PM_JELLYFISH, 0, 8, false],
+        [PM_JELLYFISH, 4, 19, false],
+        [PM_STONE_GOLEM, 64, 8, true],
+        [PM_STONE_GOLEM, 65, 8, true],
+        [PM_STONE_GOLEM, 64, 9, true],
+        [PM_STONE_GOLEM, 65, 9, true],
+        [PM_COBRA, 64, 10, true],
+        [PM_COBRA, 65, 10, true],
+        [PM_YELLOW_LIGHT, 72, 11, true],
+    ]) await medusaNamedMonsterAt(context, mndx, x, y, asleep);
+    await medusaMonsterClassAt(context, S_ANGEL, 72, 8);
+    for (const [x, y] of [
+        [17, 7], [28, 11], [32, 13], [49, 9], [48, 7],
+        [65, 3], [70, 4], [70, 15], [65, 16],
+    ]) await medusaRandomMonsterAt(context, x, y);
+    for (let count = 0; count < 4; count++)
+        await medusaRandomMonster(context);
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
+    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
+    active.explicitBranchRegion = flipSpecialRegion(active.explicitBranchRegion);
+    active.explicitBranchExclude = flipSpecialRegion(active.explicitBranchExclude);
+}
+
 async function generateMedusa3(active) {
     // Lua source: dat/medusa-3.lua, the raven-island variant.
     const context = loadSpecialAsciiMap(MEDUSA_3_MAP, active.defaultLit);
@@ -12797,6 +12981,105 @@ async function generateMedusa3(active) {
         upStairRegion.hx, upStairRegion.hy,
         0, 0, 0, 0, LR_UPSTAIR, null,
     );
+}
+
+async function generateMedusa4(active) {
+    const context = loadSpecialAsciiMap(MEDUSA_4_MAP, active.defaultLit);
+    active.context = { ...context };
+    game.level.flags.is_special = true;
+    game.level.flags.is_maze_lev = true;
+    game.level.flags.noteleport = true;
+
+    const places = [[4, 8], [10, 4], [10, 8], [10, 12]];
+    const takePlace = () => places.splice(rn2(places.length), 1)[0];
+    const medloc = takePlace();
+    const altloc = takePlace();
+
+    setSpecialRegionLighting(context, 0, 0, 74, 19, true);
+    specialIrregularRoom(context, 13, 3, OROOM, true, 0);
+    active.downTeleportRegion = absoluteSpecialRegion(
+        context, 64, 1, 74, 17,
+    );
+    active.upTeleportRegion = absoluteSpecialRegion(
+        context, 2, 2, 18, 13,
+    );
+    let upStairRegion = absoluteSpecialRegion(context, 67, 1, 74, 20);
+
+    specialStairAt(context, medloc[0], medloc[1], false);
+    for (const [x, y] of [
+        [4, 6], [4, 10], [8, 4], [8, 12],
+        [10, 6], [10, 10], [12, 8],
+    ]) specialDoorAt(context, D_LOCKED, x, y);
+    active.explicitBranchRegion = absoluteSpecialRegion(
+        context, 27, 0, 79, 20,
+    );
+    specialNonDiggable({
+        xstart: context.xstart + 1,
+        ystart: context.ystart + 1,
+        width: 22,
+        height: 14,
+    });
+
+    specialObjectAt(context, CRYSTAL_BALL, 7, 8, { named: true });
+    medusaPerseusStatue(context, medloc[0], medloc[1]);
+    await medusaEmptyStatue(context, { x: altloc[0], y: altloc[1] });
+    for (let count = 0; count < 6; count++)
+        await medusaEmptyStatue(context);
+    for (let count = 0; count < 8; count++) specialObject(context);
+    for (let count = 0; count < 7; count++) await specialTrap(context);
+
+    await medusaNamedMonsterAt(
+        context, PM_MEDUSA, medloc[0], medloc[1], true,
+    );
+    await medusaNamedMonsterAt(context, PM_KRAKEN, 7, 7);
+    await medusaNamedMonsterAt(context, PM_YELLOW_DRAGON, 5, 4, true);
+    if (rn2(100) < 50)
+        await medusaNamedMonsterAt(
+            context, PM_BABY_YELLOW_DRAGON, 4, 4, true,
+        );
+    if (rn2(100) < 25)
+        await medusaNamedMonsterAt(
+            context, PM_BABY_YELLOW_DRAGON, 4, 5, true,
+        );
+    medusaDragonEggAt(context, 5, 4);
+    if (rn2(100) < 50) medusaDragonEggAt(context, 5, 4);
+    if (rn2(100) < 25) medusaDragonEggAt(context, 5, 4);
+
+    for (const mndx of [
+        PM_GIANT_EEL, PM_GIANT_EEL,
+        PM_JELLYFISH, PM_JELLYFISH,
+    ]) await medusaNamedMonsterAtRandom(context, mndx);
+    for (let count = 0; count < 14; count++)
+        await medusaMonsterOfClass(context, 45); // S_SNAKE
+    for (let count = 0; count < 4; count++) {
+        await medusaNamedMonsterAtRandom(context, PM_BLACK_NAGA_HATCHLING);
+        await medusaNamedMonsterAtRandom(context, PM_BLACK_NAGA);
+    }
+
+    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    flipSpecialLevelRandom(3);
+    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
+    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
+    active.explicitBranchRegion = flipSpecialRegion(active.explicitBranchRegion);
+    upStairRegion = flipSpecialRegion(upStairRegion);
+    place_lregion(
+        upStairRegion.lx, upStairRegion.ly,
+        upStairRegion.hx, upStairRegion.hy,
+        0, 0, 0, 0, LR_UPSTAIR, null,
+    );
+}
+
+const MEDUSA_GENERATORS = Object.freeze([
+    null,
+    generateMedusa1, generateMedusa2, generateMedusa3, generateMedusa4,
+]);
+
+export async function generateMedusaLevel(active) {
+    const generator = MEDUSA_GENERATORS[active?.variant];
+    if (!generator) {
+        throw new RangeError(`unknown Medusa variant ${active?.variant}`);
+    }
+    await generateSpecialAndFixup(generator, active);
 }
 
 function makeToptenStatue(x, y) {
@@ -14158,14 +14441,8 @@ async function makelevel() {
             await generateBigRoom(g._activeSpecialLevel);
             return;
         }
-        if (prototype === 'medusa' && variant === 1) {
-            await generateSpecialAndFixup(generateMedusa1,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'medusa' && variant === 3) {
-            await generateSpecialAndFixup(generateMedusa3,
-                g._activeSpecialLevel);
+        if (prototype === 'medusa') {
+            await generateMedusaLevel(g._activeSpecialLevel);
             return;
         }
         if (prototype === 'valley') {
