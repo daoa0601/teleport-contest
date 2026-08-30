@@ -21,7 +21,7 @@ function gitObject(name) {
 async function generatorDigest(specBytes) {
     const sources = await Promise.all([
         fsp.readFile(new URL('./lib/sealed-corpus.mjs', import.meta.url)),
-        fsp.readFile(import.meta.url),
+        fsp.readFile(fileURLToPath(import.meta.url)),
     ]);
     return sha256(Buffer.concat([...sources, specBytes]));
 }
