@@ -24,7 +24,7 @@ import { promises as fs, constants as fsConstants } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import path from 'node:path';
-import { setTimeout as sleep } from 'node:timers/promises';
+import { createSessionDriver } from './lib/session-driver.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_ROOT = path.resolve(SCRIPT_DIR, '..');
@@ -381,6 +381,7 @@ async function recordSegment({
     rngLogPath,
     homeDir,
     tz,
+    quiet,
 }) {
     // Write nethackrc into homeDir
     await fs.mkdir(homeDir, { recursive: true });
@@ -423,7 +424,9 @@ async function recordSegment({
         }
         moves = reconstructed.join('');
     }
-    const expectedSteps = moves.length + 1;
+    const driver = seg.driver ? createSessionDriver(seg.driver) : null;
+    if (driver && moves) throw new Error('segment cannot provide both moves and driver');
+    const expectedSteps = driver ? null : moves.length + 1;
     const steps = [];
     let lastRngBytes = 0;
     let nextKeyIdx = 0;
@@ -444,9 +447,21 @@ async function recordSegment({
 
     const child = spawn(binary, args, {
         env,
-        stdio: ['pipe', 'pipe', 'inherit'],
+        stdio: ['pipe', 'pipe', quiet ? 'pipe' : 'inherit'],
     });
+    let resolveClosed;
+    const childClosed = new Promise(resolve => { resolveClosed = resolve; });
     child.stdin.on('error', () => {});
+    // A sealed recorder must not forward diagnostics which could contain
+    // session identity. Consume a bounded amount so the child cannot block;
+    // the sealed wrapper reports only a generic failure.
+    let quietStderrBytes = 0;
+    if (quiet) child.stderr.on('data', chunk => {
+        quietStderrBytes += chunk.length;
+        if (quietStderrBytes > 1024 * 1024) {
+            rejectDone(new Error('recorder diagnostic output exceeded sealed limit'));
+        }
+    });
 
     armTimeout(20000, 'first marker');
 
@@ -492,13 +507,14 @@ async function recordSegment({
             return;
         }
         if (m.kind !== 'input') return;
-        if (steps.length >= expectedSteps) {
+        if (expectedSteps !== null && steps.length >= expectedSteps) {
             // We have everything we need; tear down.
             finish('expected steps reached');
             return;
         }
         try {
-            const screen = encodeScreenAnsiRle(payloadToLines(m.payload));
+            const screenLines = payloadToLines(m.payload);
+            const screen = encodeScreenAnsiRle(screenLines);
             const rng = await readRngDelta();
             const stepIdx = m.seq - 1;
             const key = stepIdx === 0 ? null : moves[stepIdx - 1] ?? null;
@@ -509,12 +525,19 @@ async function recordSegment({
             }
             steps.push(step);
 
-            if (steps.length >= expectedSteps) {
+            if (expectedSteps !== null && steps.length >= expectedSteps) {
                 finish('expected steps reached');
                 return;
             }
-            if (nextKeyIdx < moves.length) {
-                let k = moves[nextKeyIdx++];
+            let k = null;
+            if (driver) {
+                k = driver.nextKey(screenLines);
+                if (k !== null) moves += k;
+            } else if (nextKeyIdx < moves.length) {
+                k = moves[nextKeyIdx];
+            }
+            if (k !== null) {
+                nextKeyIdx++;
                 // The canonical sessions were captured under tmux, whose pty
                 // line discipline maps incoming CR (\r) to LF (\n) before the
                 // application reads it (ICRNL).  Our pipe-based stdin has no
@@ -523,10 +546,16 @@ async function recordSegment({
                 // patched gettty seeds erase_char with '\177'.)
                 if (k === '\r') k = '\n';
                 child.stdin.write(Buffer.from(k, 'utf8'));
-                armTimeout(20000, `after key ${nextKeyIdx}/${moves.length}`);
+                armTimeout(20000, driver
+                    ? `after adaptive key ${nextKeyIdx}`
+                    : `after key ${nextKeyIdx}/${moves.length}`);
             } else if (!child.stdin.writableEnded) {
-                try { child.stdin.end(); } catch {}
-                armTimeout(10000, 'awaiting process exit');
+                if (driver) {
+                    finish('adaptive driver complete');
+                } else {
+                    try { child.stdin.end(); } catch {}
+                    armTimeout(10000, 'awaiting process exit');
+                }
             }
         } catch (err) {
             rejectDone(err);
@@ -548,17 +577,27 @@ async function recordSegment({
     child.stdout.on('error', (err) => rejectDone(err));
     child.on('error', (err) => rejectDone(err));
     child.on('close', (code, signal) => {
+        resolveClosed();
         if (timeoutHandle) clearTimeout(timeoutHandle);
         parser.stop();
         if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-            // Killed by us after collecting expected steps.
+            if ((driver && !driver.exhausted)
+                || (expectedSteps !== null && steps.length < expectedSteps)) {
+                rejectDone(new Error('recorder was terminated before the recipe completed'));
+                return;
+            }
+            // Killed by us after collecting the expected or adaptive steps.
             resolveDone(0);
             return;
         }
         if ((code ?? 0) !== 0) {
             rejectDone(new Error(
                 `recorder exited with code ${code} after `
-                + `${steps.length}/${expectedSteps} input markers`));
+                + `${steps.length}/${expectedSteps ?? 'adaptive'} input markers`));
+            return;
+        }
+        if (driver && !driver.exhausted) {
+            rejectDone(new Error('recorder exited before adaptive driver completed'));
             return;
         }
         // For death sessions the game can terminate before all keys are
@@ -568,10 +607,42 @@ async function recordSegment({
         resolveDone(code ?? 0);
     });
 
-    await done;
+    try {
+        await done;
+    } catch (error) {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        parser.stop();
+        try { child.kill('SIGTERM'); } catch {}
+        const closedPromptly = await Promise.race([
+            childClosed.then(() => true),
+            new Promise(resolve => setTimeout(() => resolve(false), 1000)),
+        ]);
+        if (!closedPromptly) {
+            try { child.kill('SIGKILL'); } catch {}
+            await Promise.race([
+                childClosed,
+                new Promise(resolve => setTimeout(resolve, 1000)),
+            ]);
+        }
+        throw error;
+    }
+    const closedPromptly = await Promise.race([
+        childClosed.then(() => true),
+        new Promise(resolve => setTimeout(() => resolve(false), 1000)),
+    ]);
+    if (!closedPromptly) {
+        try { child.kill('SIGKILL'); } catch {}
+        await Promise.race([
+            childClosed,
+            new Promise(resolve => setTimeout(resolve, 1000)),
+        ]);
+    }
     if (steps.length === 0)
         throw new Error('recorder exited without producing an input marker');
-    return steps.slice(0, expectedSteps);
+    return {
+        steps: expectedSteps === null ? steps : steps.slice(0, expectedSteps),
+        moves,
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -595,6 +666,7 @@ async function main() {
     const binary = process.env.NETHACK_BINARY || DEFAULT_BINARY;
     const installDir = process.env.NETHACK_INSTALL || DEFAULT_INSTALL;
     const tz = process.env.RERECORD_TZ || 'America/New_York';
+    const quiet = process.env.RECORD_SESSION_QUIET === '1';
 
     if (!await exists(binary)) {
         throw new Error(`recorder binary not found: ${binary}\n  build it via nethack-c/build-recorder.sh`);
@@ -612,8 +684,10 @@ async function main() {
         const newSegments = [];
         for (let i = 0; i < session.segments.length; i++) {
             const seg = session.segments[i];
-            console.error(`[seg ${i + 1}/${session.segments.length}] seed=${seg.seed} moves=${(seg.moves || '').length}`);
-            const steps = await recordSegment({
+            if (!quiet) {
+                console.error(`[seg ${i + 1}/${session.segments.length}] seed=${seg.seed} moves=${(seg.moves || '').length}`);
+            }
+            const recorded = await recordSegment({
                 seg,
                 isFirstSegment: i === 0,
                 binary,
@@ -621,18 +695,19 @@ async function main() {
                 rngLogPath,
                 homeDir,
                 tz,
+                quiet,
             });
             const out = {
                 seed: seg.seed,
                 datetime: seg.datetime,
                 nethackrc: seg.nethackrc,
-                moves: seg.moves,
-                steps,
+                moves: recorded.moves,
+                steps: recorded.steps,
             };
             // Preserve any extra per-segment fields (e.g. checkpoints) that
             // existed in the input — we only overwrite steps.
             for (const k of Object.keys(seg)) {
-                if (!(k in out)) out[k] = seg[k];
+                if (k !== 'driver' && !(k in out)) out[k] = seg[k];
             }
             newSegments.push(out);
         }
@@ -646,13 +721,17 @@ async function main() {
         }
 
         await fs.writeFile(outputPath, JSON.stringify(outDoc));
-        console.error(`[ok] wrote ${outputPath}`);
+        if (!quiet) console.error(`[ok] wrote ${outputPath}`);
     } finally {
         await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
     }
 }
 
 main().catch((err) => {
-    console.error('[fail]', err.message || err);
+    if (process.env.RECORD_SESSION_QUIET === '1') {
+        console.error('[fail] sealed recorder failed');
+    } else {
+        console.error('[fail]', err.message || err);
+    }
     process.exit(1);
 });
