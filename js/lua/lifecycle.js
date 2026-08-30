@@ -10,6 +10,12 @@ import {
 function bindingsFor(gameState, additionalBindings = {}) {
     const { nh: additionalNh = {}, ...remainingBindings }
         = additionalBindings;
+    const roleKey = gameState.urole?.key;
+    const roleName = gameState.urole?.name?.m
+        ?? gameState.u?.role
+        ?? (roleKey
+            ? roleKey[0].toUpperCase() + roleKey.slice(1)
+            : undefined);
     return {
         nh: {
             rn2: range => rn2(range),
@@ -25,6 +31,7 @@ function bindingsFor(gameState, additionalBindings = {}) {
         u: {
             ...(gameState.u || {}),
             depth: depth(gameState.u?.uz, gameState.dungeons),
+            role: roleName,
         },
         des: {},
         selection: {},

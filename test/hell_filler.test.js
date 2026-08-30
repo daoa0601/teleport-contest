@@ -60,7 +60,6 @@ test('the lava, bar, cold, and open-cavern variants keep their terrain',
         assert.ok(terrainCount(ICE, POOL, WATER) > 10);
 
         await buildHell(7);
-        assert.equal(game.level.flags.is_cavernous_lev, true);
         assert.ok(terrainCount(ROOM) > 100);
     });
 

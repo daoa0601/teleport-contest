@@ -602,6 +602,11 @@ export class SpecialSelection {
         return selection_rndcoord(this.selection, remove);
     }
 
+    floodFill(x, y, diagonals, accepts) {
+        selection_floodfill(this.selection, x, y, diagonals, accepts);
+        return this;
+    }
+
     grow(direction = 'all') {
         const result = selection_clone(this.selection);
         selection_do_grow(result, GROW_DIRECTIONS[direction] ?? W_ANY);
@@ -671,14 +676,12 @@ export function specialSelectionOfTerrain(context, typ) {
 }
 
 export function specialSelectionFloodFill(context, x, y, diagonals = false) {
-    const selection = selection_new();
     const start = absolute(context, x, y);
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
-    selection_floodfill(
-        selection, start.x, start.y, diagonals,
+    return new SpecialSelection().floodFill(
+        start.x, start.y, diagonals,
         (nextX, nextY) => game.level?.at?.(nextX, nextY)?.typ === terrain,
     );
-    return new SpecialSelection(selection);
 }
 
 export function specialSelectionRandomPoint(context) {

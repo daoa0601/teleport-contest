@@ -1,6 +1,7 @@
 import {
     SpecialSelection,
     specialSelectionFillRect,
+    specialSelectionFloodFill,
     specialSelectionLine,
     specialSelectionMatch,
     specialSelectionRandLine,
@@ -138,6 +139,9 @@ export function createSelectionApi(context, invoke = null) {
         area: (x1, y1, x2, y2) => wrap(specialSelectionFillRect(
             currentContext(), x1, y1, x2, y2,
         )),
+        floodfill: (x, y, diagonals = false) => wrap(
+            specialSelectionFloodFill(currentContext(), x, y, diagonals),
+        ),
         match: fragment => wrap(specialSelectionMatch(String(fragment))),
     };
     return { bindings, wrap };
