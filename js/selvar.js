@@ -718,7 +718,7 @@ export function specialSelectionMatch(fragment) {
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
     const center = MAP_CHAR_TYPES[rows[yRadius]?.[xRadius]];
-    if (center === undefined || center >= MAX_TYPE)
+    if (center === undefined || center === MAX_TYPE)
         throw new Error('mapfragment center must be valid terrain');
 
     const selection = selection_new();
