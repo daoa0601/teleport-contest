@@ -22,7 +22,7 @@ function pointTable(point) {
     return table;
 }
 
-export function createSelectionBindings(context) {
+export function createSelectionBindings(context, invoke = null) {
     const wrap = selection => new LuaUserdata(selection, metatable);
     const metatable = {
         __index: {
@@ -37,6 +37,13 @@ export function createSelectionBindings(context) {
             rndcoord: (self, remove = false) => pointTable(
                 selectionValue(self).randomCoordinate(remove),
             ),
+            iterate: async (self, callback) => {
+                if (!invoke)
+                    throw new Error('selection.iterate needs a Lua state');
+                const points = [];
+                selectionValue(self).forEachLua((x, y) => points.push([x, y]));
+                for (const point of points) await invoke(callback, point);
+            },
         },
         __bor: (left, right) => wrap(
             selectionValue(left).union(selectionValue(right)),

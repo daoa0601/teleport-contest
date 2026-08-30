@@ -18,9 +18,11 @@ export function createDesBindings(operations) {
         map: value => operations.map(
             value instanceof LuaTable ? tableOptions(value) : String(value),
         ),
-        terrain: (selection, terrain) => operations.terrain(
-            unwrapSelection(selection), String(terrain),
-        ),
+        terrain: (...args) => args.length === 3
+            ? operations.terrainAt(args[0], args[1], String(args[2]))
+            : operations.terrain(
+                unwrapSelection(args[0]), String(args[1]),
+            ),
         replace_terrain: value => {
             const options = tableOptions(value);
             return operations.replaceTerrain({
@@ -38,8 +40,13 @@ export function createDesBindings(operations) {
             selection == null ? null : unwrapSelection(selection),
         ),
         wallify: () => operations.wallify(),
-        object: (...args) => operations.object(...args),
-        trap: (...args) => operations.trap(...args),
+        teleport_region: value => operations.teleportRegion(
+            tableOptions(value),
+        ),
+        levregion: value => operations.levelRegion(tableOptions(value)),
+        mazewalk: value => operations.mazeWalk(tableOptions(value)),
+        object: (...args) => operations.object(...args.map(luaArgument)),
+        trap: (...args) => operations.trap(...args.map(luaArgument)),
         monster: (...args) => operations.monster(...args.map(luaArgument)),
     };
 }
