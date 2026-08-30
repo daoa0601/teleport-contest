@@ -23,13 +23,15 @@ export function createDesBindings(operations) {
             const options = tableOptions(value);
             return operations.replaceTerrain({
                 ...options,
-                selection: unwrapSelection(options.selection),
+                selection: options.selection == null
+                    ? null : unwrapSelection(options.selection),
             });
         },
         region: (selection, lighting) => operations.region(
             unwrapSelection(selection), String(lighting),
         ),
         stair: direction => operations.stair(String(direction)),
+        feature: (...args) => operations.feature(...args.map(luaArgument)),
         non_diggable: selection => operations.nonDiggable(
             selection == null ? null : unwrapSelection(selection),
         ),

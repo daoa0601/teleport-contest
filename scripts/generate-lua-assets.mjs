@@ -8,6 +8,8 @@ const output = path.join(root, 'js', 'generated', 'lua_sources.js');
 const names = [
     'nhlib.lua', 'nhcore.lua', 'dungeon.lua',
     'bigrm-1.lua', 'bigrm-2.lua', 'bigrm-3.lua',
+    'bigrm-4.lua', 'bigrm-5.lua', 'bigrm-6.lua',
+    'bigrm-7.lua', 'bigrm-8.lua', 'bigrm-9.lua',
 ];
 
 const sources = Object.fromEntries(await Promise.all(names.map(async name => [

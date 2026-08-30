@@ -10464,6 +10464,45 @@ function setLuaLevelFlags(active, flags) {
     }
 }
 
+function replaceLuaTerrain(context, options) {
+    let selection = options.selection;
+    if (!selection && Array.isArray(options.region)) {
+        selection = specialSelectionFillRect(context, ...options.region);
+    }
+    if (!selection) {
+        selection = specialSelectionFillRect(
+            { xstart: 0, ystart: 0 }, 1, 0, COLNO - 1, ROWNO - 1,
+        );
+    }
+    const fromType = mapCharacterType(options.fromterrain);
+    const toType = mapCharacterType(options.toterrain);
+    if (fromType === undefined || toType === undefined)
+        throw new Error('unknown Lua replacement terrain');
+    const chance = options.chance ?? 100;
+    selection.forEachXMajor((x, y) => {
+        const loc = game.level.at(x, y);
+        if (loc?.typ !== fromType || rn2(100) >= chance) return;
+        setLevelTerrainType(x, y, toType);
+        if (toType === IRONBARS || toType === HWALL) loc.horizontal = true;
+    });
+}
+
+function createLuaFeature(context, type, x = null, y = null) {
+    const types = {
+        fountain: FOUNTAIN, sink: SINK, pool: POOL,
+        throne: THRONE, tree: TREE,
+    };
+    const featureType = types[type];
+    if (featureType === undefined)
+        throw new Error(`unknown Lua feature ${type}`);
+    if (Number.isInteger(x) && Number.isInteger(y)) {
+        const loc = game.level.at(context.xstart + x, context.ystart + y);
+        if (loc) loc.typ = featureType;
+        return;
+    }
+    specialFeatureOfType(context, featureType);
+}
+
 async function generateLuaSpecialLevel(active) {
     let context = null;
     active.allowFlips = 3;
@@ -10483,15 +10522,7 @@ async function generateLuaSpecialLevel(active) {
                 throw new Error(`unknown Lua terrain ${character}`);
             specialSelectionTerrain(selection, type);
         },
-        replaceTerrain: options => {
-            const fromType = mapCharacterType(options.fromterrain);
-            const toType = mapCharacterType(options.toterrain);
-            if (fromType === undefined || toType === undefined)
-                throw new Error('unknown Lua replacement terrain');
-            replaceSpecialSelectionTerrain(
-                options.selection, fromType, toType, options.chance ?? 100,
-            );
-        },
+        replaceTerrain: options => replaceLuaTerrain(context, options),
         region: (selection, lighting) => {
             const lit = lighting === 'lit';
             const area = lit ? selection.grow() : selection;
@@ -10501,6 +10532,7 @@ async function generateLuaSpecialLevel(active) {
             });
         },
         stair: direction => specialStair(context, direction === 'up'),
+        feature: (type, x, y) => createLuaFeature(context, type, x, y),
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(context),
@@ -10546,99 +10578,6 @@ const BIGRM_RECTANGULAR_MAP = [
     '|.........................................................................|',
     '---------------------------------------------------------------------------',
 ];
-
-const BIGRM_5_MAP = [
-    '                            ------------------                            ',
-    '                    ---------................---------                    ',
-    '              -------................................-------              ',
-    '         ------............................................------         ',
-    '      ----......................................................----      ',
-    '    ---............................................................---    ',
-    '  ---................................................................---  ',
-    '---....................................................................---',
-    '|........................................................................|',
-    '|........................................................................|',
-    '|........................................................................|',
-    '---....................................................................---',
-    '  ---................................................................---  ',
-    '    ---............................................................---    ',
-    '      ----......................................................----      ',
-    '         ------............................................------         ',
-    '              -------................................-------              ',
-    '                    ---------................---------                    ',
-    '                            ------------------                            ',
-];
-
-async function generateBigrm5(active) {
-    const context = beginMappedBigRoom(active, BIGRM_5_MAP);
-    if (rn2(100) < 25) {
-        const selected = specialSelectionOfTerrain(context, ROOM)
-            .percentage(2).grow();
-        const terrain = rn2(100) < 50 ? ICE : CLOUD;
-        replaceSpecialSelectionTerrain(selected, ROOM, terrain);
-    }
-    setSpecialRegionLighting(context, 0, 0, 72, 18, true);
-    await finishMappedBigRoom(context);
-}
-
-const BIGRM_6_MAP = [
-    '     ---------         ---------         ---------         ---------     ',
-    '   ---.......---     ---.......---     ---.......---     ---.......---   ',
-    '  --...........--   --...........--   --...........--   --...........--  ',
-    ' --.............-- --.............-- --.............-- --.............-- ',
-    ' -...............- -...............- -...............- -...............- ',
-    '--...............---...............---...............---...............--',
-    '|.................-.................-.................-.................|',
-    '|........T.................T.................T.................T........|',
-    '|.......................................................................|',
-    '|......T.{.....................................................{.T......|',
-    '|.......................................................................|',
-    '|........T.................T.................T.................T........|',
-    '|.................-.................-.................-.................|',
-    '--...............---...............---...............---...............--',
-    ' -...............- -...............- -...............- -...............- ',
-    ' --.............-- --.............-- --.............-- --.............-- ',
-    '  --...........--   --...........--   --...........--   --...........--  ',
-    '   ---.......---     ---.......---     ---.......---     ---.......---   ',
-    '     ---------         ---------         ---------         ---------     ',
-];
-
-async function generateBigrm6(active) {
-    const context = beginMappedBigRoom(active, BIGRM_6_MAP);
-    setSpecialRegionLighting(context, 1, 1, 72, 17, true);
-    await finishMappedBigRoom(context);
-}
-
-const BIGRM_9_MAP = [
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}................................}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}............................................}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}......................................................}}}}}}}}}}',
-    '}}}}}}}............................................................}}}}}}}',
-    '}}}}}.......................LLLLLLLLLLLLLLLLLL.......................}}}}}',
-    '}}}....................LLLLLLLLLLLLLLLLLLLLLLLLLLL.....................}}}',
-    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
-    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
-    '}....................LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL....................}',
-    '}}}....................LLLLLLLLLLLLLLLLLLLLLLLLLLL.....................}}}',
-    '}}}}}.......................LLLLLLLLLLLLLLLLLL.......................}}}}}',
-    '}}}}}}}............................................................}}}}}}}',
-    '}}}}}}}}}}......................................................}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}............................................}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}................................}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}................}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-    '}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}',
-];
-
-async function generateBigrm9(active) {
-    const context = beginMappedBigRoom(active, BIGRM_9_MAP);
-    setSpecialRegionLighting(context, 0, 0, 73, 18, false);
-    setSpecialRegionLighting(context, 26, 4, 47, 14, true);
-    setSpecialRegionLighting(context, 21, 5, 51, 13, true);
-    setSpecialRegionLighting(context, 19, 6, 54, 12, true);
-    await finishMappedBigRoom(context);
-}
 
 const BIGRM_10_MAP = [
     '.......................................................................',
@@ -10780,189 +10719,6 @@ async function specialRandomMonsterAt(context, x, y) {
         : makemon(null, absoluteX, absoluteY, 0);
 }
 
-const BIGRM_4_MAP = [
-    '-----------                                                     -----------',
-    '|.........|                                                     |.........|',
-    '|.........-------------                             -------------.........|',
-    '---...................------------       ------------...................---',
-    '  --.............................---------.............................--  ',
-    '   --.................................................................--   ',
-    '    --...............................................................--    ',
-    '     --......LLLLL.......................................LLLLL......--     ',
-    '      --.....LLLLL.......................................LLLLL.....--      ',
-    '      --.....LLLLL.......................................LLLLL.....--      ',
-    '     --......LLLLL.......................................LLLLL......--     ',
-    '    --...............................................................--    ',
-    '   --.................................................................--   ',
-    '  --.............................---------.............................--  ',
-    '---...................------------       ------------...................---',
-    '|.........-------------                             -------------.........|',
-    '|.........|                                                     |.........|',
-    '-----------                                                     -----------',
-];
-
-async function generateBigrm4(active) {
-    const context = loadSpecialAsciiMap(BIGRM_4_MAP, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.context = context;
-
-    const terrains = [
-        ROOM, ROOM, ROOM, ROOM, POOL,
-        LAVAPOOL, HWALL, TREE, WATER, LAVAWALL,
-    ];
-    const terrainChoice = rn2(terrains.length);
-    active.terrainChoice = terrainChoice;
-    const replacement = terrains[terrainChoice];
-    if (replacement !== LAVAPOOL) {
-        replaceSpecialTerrain(
-            context, 0, 0, context.width - 1, context.height - 1,
-            LAVAPOOL, replacement, 100,
-        );
-    }
-
-    for (const [x, y] of [[5, 2], [5, 15], [69, 2], [69, 15]]) {
-        game.level.at(context.xstart + x, context.ystart + y).typ = FOUNTAIN;
-        game.level.flags.nfountains++;
-    }
-    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
-
-    specialStair(context, true);
-    specialStair(context, false);
-    specialNonDiggable(context);
-    for (let count = 0; count < 15; count++) specialObject(context);
-    for (let count = 0; count < 6; count++) await specialTrap(context);
-    for (let count = 0; count < 28; count++) await specialMonster(context);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-}
-
-const BIGRM_7_MAP = [
-    '                                                        -----              ',
-    '                                                ---------...---            ',
-    '                                        ---------.........L...---          ',
-    '                                ---------.......................---        ',
-    '                        ---------.................................---      ',
-    '                ---------...........................................---    ',
-    '        ---------.....................................................---  ',
-    '---------...............................................................---',
-    '|.........................................................................|',
-    '|.L.....................................................................L.|',
-    '|.........................................................................|',
-    '---...............................................................---------',
-    '  ---.....................................................---------        ',
-    '    ---...........................................---------                ',
-    '      ---.................................---------                        ',
-    '        ---.......................---------                                ',
-    '          ---...L.........---------                                        ',
-    '            ---...---------                                                ',
-    '              -----                                                        ',
-];
-
-async function generateBigrm7(active) {
-    // Centering first rounds the origin to the odd maze grid at y=3.  A
-    // 19-row fragment would then overflow ROWNO, so lspo_map() applies its
-    // two-row retry and places this unusually tall map at y=1.
-    const context = loadSpecialAsciiMap(
-        BIGRM_7_MAP, active.defaultLit, { xstart: 3, ystart: 1 },
-    );
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.context = context;
-
-    // Lua selects one replacement for every literal lava cell, then
-    // lspo_replace_terrain() independently evaluates its default 100%
-    // chance for each of the four matching cells.
-    const terrains = [LAVAPOOL, TREE, FOUNTAIN, ROOM];
-    const terrainChoice = rn2(terrains.length);
-    active.terrainChoice = terrainChoice;
-    for (let x = 0; x < context.width; x++) {
-        for (let y = 0; y < context.height; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc?.typ === LAVAPOOL && rn2(100) < 100)
-                loc.typ = terrains[terrainChoice];
-        }
-    }
-
-    // des.region(selection.area(1,1,73,17), "lit") grows the selected
-    // interior by one cell so its enclosing walls receive the same light.
-    for (let x = 0; x <= 74; x++) {
-        for (let y = 0; y <= 18; y++) {
-            const loc = game.level.at(context.xstart + x, context.ystart + y);
-            if (loc) loc.lit = true;
-        }
-    }
-
-    specialStair(context, true);
-    specialStair(context, false);
-    specialNonDiggable();
-    for (let i = 0; i < 15; i++) specialObject(context);
-    for (let i = 0; i < 6; i++) await specialTrap(context);
-    for (let i = 0; i < 28; i++) await specialMonster(context);
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    // bigrm-7.lua permits both vertical and horizontal reflection.  The
-    // interpreter performs these draws only after the complete Lua graph has
-    // been built and wallified, before fixup_special() places the arrival
-    // region on the transformed level.
-    flipSpecialLevelRandom(3);
-}
-
-const BIGRM_8_MAP = [
-    '----------------------------------------------',
-    '|............................................---',
-    '--.............................................---',
-    ' ---......................................FF.....---',
-    '   ---...................................FF........---',
-    '     ---................................FF...........---',
-    '       ---.............................FF..............---',
-    '         ---..........................FF.................---',
-    '           ---.......................FF....................---',
-    '             ---....................FF.......................---',
-    '               ---.................FF..........................---',
-    '                 ---..............FF.............................---',
-    '                   ---...........FF................................----',
-    '                     ---........FF...................................---',
-    '                       ---.....FF......................................---',
-    '                         ---.............................................--',
-    '                           ---............................................|',
-    '                             ----------------------------------------------',
-];
-
-async function generateBigrm8(active) {
-    // Lua source: dat/bigrm-8.lua.  The optional terrain choice is made only
-    // when percent(40) succeeds; each matching iron-bar cell then receives
-    // replace_terrain's independent default-100% decision.
-    const context = loadSpecialAsciiMap(BIGRM_8_MAP, active.defaultLit);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    active.context = context;
-
-    if (rn2(100) < 40) {
-        const terrains = [
-            LAVAPOOL, MOAT, TREE, ROOM, HWALL, CLOUD,
-        ];
-        const choice = rn2(terrains.length);
-        active.terrainChoice = choice;
-        replaceSpecialTerrain(
-            context, 0, 0, 74, 17,
-            IRONBARS, terrains[choice], 100,
-        );
-    }
-
-    // des.region(selection.area(1,1,73,16), "lit") grows the selected
-    // interior by one cell, lighting the complete 75x18 fragment.
-    setSpecialRegionLighting(context, 1, 1, 73, 16, true);
-    specialStair(context, true);
-    specialStair(context, false);
-    specialNonDiggable(context);
-    for (let i = 0; i < 15; i++) specialObject(context);
-    for (let i = 0; i < 6; i++) await specialTrap(context);
-    for (let i = 0; i < 28; i++) await specialMonster(context);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-}
-
 const BIGRM_12_MAP = [
     '',
     '         .......................           .......................',
@@ -11063,14 +10819,14 @@ async function generateBigrm12(active) {
 
 const BIG_ROOM_GENERATORS = Object.freeze([
     null,
-    null, null, null, generateBigrm4,
-    generateBigrm5, generateBigrm6, generateBigrm7, generateBigrm8,
-    generateBigrm9, generateBigrm10, generateBigrm11, generateBigrm12,
+    null, null, null, null,
+    null, null, null, null,
+    null, generateBigrm10, generateBigrm11, generateBigrm12,
     generateBigrm13,
 ]);
 
 export async function generateBigRoom(active) {
-    if (active?.variant >= 1 && active?.variant <= 3) {
+    if (active?.variant >= 1 && active?.variant <= 9) {
         await generateSpecialAndFixup(generateLuaSpecialLevel, active);
         return;
     }
@@ -15949,7 +15705,7 @@ async function makelevel() {
                     : prototype === 'minend' ? 3
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm' && variant <= 3;
+        const luaOwnedSpecial = prototype === 'bigrm' && variant <= 9;
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

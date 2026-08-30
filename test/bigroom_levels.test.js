@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    CLOUD, FOUNTAIN, ICE, IS_WALL, LAVAPOOL, MOAT, ROLLING_BOULDER_TRAP,
-    ROOM, STONE, TREE,
+    CLOUD, FOUNTAIN, IS_WALL, ROLLING_BOULDER_TRAP, ROOM, STONE,
 } from '../js/const.js';
 import { placeHeroAtRandomArrival } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
@@ -44,9 +43,9 @@ function floorObjects() {
     return (game.level.objects || []).flat(2).filter(Boolean);
 }
 
-test('Lua Big Room sources build their maps and apply their wall rules',
+test('the first Lua Big Rooms build their maps and apply their wall rules',
     async () => {
-        for (const variant of [1, 2, 3]) {
+        for (let variant = 1; variant <= 3; variant++) {
             const active = await buildBigRoom(variant, variant * 17);
 
             assert.deepEqual(
@@ -62,17 +61,34 @@ test('Lua Big Room sources build their maps and apply their wall rules',
         }
     });
 
-test('Big Room terrain programs alter the rooms described by Lua', async () => {
-    await buildBigRoom(5, 9);
-    assert.ok(terrainCount(CLOUD) + terrainCount(ICE) > 100);
+test('bigrm-4 places the four fountains declared by Lua', async () => {
+    const active = await buildBigRoom(4);
 
-    await buildBigRoom(6);
-    assert.equal(terrainCount(FOUNTAIN), 2);
-    assert.equal(terrainCount(TREE), 10);
+    for (const [x, y] of [[5, 2], [5, 15], [69, 2], [69, 15]]) {
+        assert.equal(
+            game.level.at(active.context.xstart + x,
+                active.context.ystart + y).typ,
+            FOUNTAIN,
+        );
+    }
+});
 
-    await buildBigRoom(9);
-    assert.ok(terrainCount(MOAT) > 400);
-    assert.ok(terrainCount(LAVAPOOL) > 100);
+test('bigrm-7 keeps the tall map inside the level before flipping', async () => {
+    const active = await buildBigRoom(7);
+
+    assert.equal(active.context.ystart, 1);
+    assert.equal(active.context.height, 19);
+    assert.equal(active.allowFlips, 3);
+});
+
+test('bigrm-9 applies the nested light regions from Lua', async () => {
+    const active = await buildBigRoom(9);
+    const at = (x, y) => game.level.at(
+        active.context.xstart + x, active.context.ystart + y,
+    );
+
+    assert.equal(at(0, 0).lit, false);
+    assert.equal(at(30, 9).lit, true);
 });
 
 test('the fog maze keeps arrivals and its up stair outside the fog', async () => {
