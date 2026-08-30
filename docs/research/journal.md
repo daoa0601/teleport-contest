@@ -97994,3 +97994,16 @@ No public regression lane, full Contest corpus, scorer, sealed trace, push,
 publication, official hidden measurement, or animation work ran.
 
 ---
+
+### [2026-08-30 03:32 EEST, journal block 3189] {#correction #cloneu #test-count #evidence-custody}
+
+**Correction to block 3188:** the filtered clone-name probe reported **7/7**
+because the separately titled extinction test did not match that filter.  The
+subsequent complete **135/135** potion/clone gate did run it.  The correct
+boundary inventory is **8/8**: successful swallowed clone, one-HP no-clone,
+four-HP low-stamina refusal, two-square map clone, hostile-monster clone
+control, extinction-before-RNG, failed placement, and the limit-reaching birth.
+No implementation or broader gate result changes; this entry corrects only the
+earlier witness count without rewriting that historical block.
+
+---
