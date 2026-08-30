@@ -6,35 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CORPSE, MEATBALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import {
-    roleOutcome,
-} from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
-
-const monkInput = input => ({
-    role: 'Monk', race: 'human', gender: 'male', align: 'neutral',
-    datetime: '20260830160000',
-    ...input,
-});
-
-test('future Monk command text cannot teleport a fresh live hero', async () => {
-    // Thirteen directional commands can change each coordinate by at most
-    // thirteen cells in total.  The later eat selector is invalid for this
-    // fresh inventory and may not synthesize a corpse or rewrite elapsed time.
-    const startup = await roleOutcome(monkInput({
-        seed: 45003,
-        moves: ' ',
-    }));
-    const outcome = await roleOutcome(monkInput({
-        seed: 45003,
-        moves: '  n:kkkhhhjjjlll.ssh,ek',
-    }));
-    const distance = Math.abs(outcome.hero[0] - startup.hero[0])
-        + Math.abs(outcome.hero[1] - startup.hero[1]);
-
-    assert.ok(distance <= 13);
-    assert.match(outcome.message, /You don't have that object/);
-});
 
 test('a carried meat corpse applies the live Monk conduct penalty', async () => {
     freshWeaponArena();

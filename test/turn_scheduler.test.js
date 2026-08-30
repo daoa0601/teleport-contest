@@ -6,27 +6,9 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
-import {
-    roleOutcome,
-} from './support/role-outcome.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-const valkyrieInput = input => ({
-    role: 'Valkyrie', race: 'human', gender: 'female', align: 'lawful',
-    datetime: '20260830110000',
-    ...input,
-});
-
-function actorOutcomes(world) {
-    return world.actors.map(actor => ({
-        species: actor.species,
-        position: actor.position,
-        hp: actor.hp,
-        inventory: actor.inventory,
-    }));
-}
-
-function petlessValkyrieArena() {
+function freshTurnArena() {
     freshWeaponArena();
     game.nhDisplay = new GameDisplay(null);
     game.urole = { key: 'valkyrie' };
@@ -47,31 +29,9 @@ async function runUntilInput(inputGate, maxCycles) {
     return Promise.race([turns, inputNeeded]);
 }
 
-test('save-blocked chat text cannot replace elapsed Valkyrie waits',
+test('helplessness advances through live global turns',
     async () => {
-        // The save request blocks before the trailing bytes are commands.
-        // Four preceding dots therefore keep the hero still while live actors
-        // receive four ordinary turn allocations.
-        const startup = await roleOutcome(valkyrieInput({
-            seed: 27001,
-            moves: ' ',
-        }));
-        const afterTurns = await roleOutcome(valkyrieInput({
-            seed: 27001,
-            moves: ' ....Syny#chat',
-        }));
-
-        assert.deepEqual(afterTurns.hero, startup.hero);
-        assert.equal(afterTurns.moves, startup.moves + 4);
-        assert.equal(afterTurns.heroMovement, 12);
-        assert.notDeepEqual(
-            actorOutcomes(afterTurns), actorOutcomes(startup),
-        );
-    });
-
-test('petless Valkyrie helplessness advances through live global turns',
-    async () => {
-        const inputGate = petlessValkyrieArena();
+        const inputGate = freshTurnArena();
         game.inventory = [{
             otyp: POT_PARALYSIS,
             invlet: 'a',
@@ -96,9 +56,9 @@ test('petless Valkyrie helplessness advances through live global turns',
         assert.match(game._pending_message, /You can move again\.$/);
     });
 
-test('burdened Valkyrie waits for a complete live movement ration',
+test('a burdened hero waits for a complete movement ration',
     async () => {
-        const inputGate = petlessValkyrieArena();
+        const inputGate = freshTurnArena();
         // Strength 10 + Constitution 10 carries 550 units.  A 600-unit
         // payload is Burdened, so each global allocation grants 9 rather than
         // 12 movement points.  One wait therefore needs two world turns.

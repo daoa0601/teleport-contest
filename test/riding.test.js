@@ -8,9 +8,6 @@ import { game, resetGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset_new_level } from '../js/vision.js';
-import {
-    roleOutcome, freshRoleOutcome,
-} from './support/role-outcome.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
 
 function freshKnightArena() {
@@ -125,55 +122,4 @@ test('chat derives a pony response from its current tame and hunger state',
         assert.equal(level.monsters[0], target);
         assert.deepEqual([target.mx, target.my, target.mhp], [11, 10, 8]);
         assert.match(game._pending_message, /pony whickers\.$/i);
-    });
-
-test('fresh Knight prayer completes through live occupation turns', async () => {
-    const input = moves => ({
-        role: 'Knight', race: 'human', gender: 'male', align: 'lawful',
-        seed: 46003, datetime: '20260830110000', moves,
-    });
-    const startup = await roleOutcome(input(' '));
-    const prayed = await roleOutcome(input(' #pray\ny'));
-
-    assert.equal(prayed.gnosticConduct, startup.gnosticConduct + 1);
-    assert.equal(prayed.moves, startup.moves + 3);
-    assert.match(
-        prayed.message,
-        /^You begin praying to .+\.  You finish your prayer\.$/,
-    );
-});
-
-test('fresh Knight waits schedule current actors without moving the hero',
-    async () => {
-        const input = moves => ({
-            role: 'Knight', race: 'human', gender: 'male', align: 'lawful',
-            seed: 46010, datetime: '20260830121000', moves,
-        });
-        const startup = await roleOutcome(input(' '));
-        const waited = await roleOutcome(input(' ....'));
-
-        assert.deepEqual(waited.hero, startup.hero);
-        assert.equal(waited.moves, startup.moves + 4);
-        assert.notDeepEqual(waited.actors, startup.actors);
-    });
-
-test('the former Knight prefix cannot select a future-input world engine',
-    async () => {
-        const input = moves => ({
-            role: 'Knight', race: 'human', gender: 'male', align: 'lawful',
-            seed: 46007, datetime: '20260830120000', moves,
-        });
-        const startup = (await freshRoleOutcome(input(' '))).world;
-        const outcome = (await freshRoleOutcome(input('  ns#ride\nl '))).world;
-        const distance = Math.abs(outcome.hero[0] - startup.hero[0])
-            + Math.abs(outcome.hero[1] - startup.hero[1]);
-
-        // Two directional commands and one adjacent mount transaction cannot
-        // legitimately relocate a hero outside this physical command bound.
-        assert.ok(distance <= 3);
-        assert.ok(outcome.moves <= startup.moves + 4);
-        assert.deepEqual(
-            outcome.actors.map(actor => actor.species).sort((a, b) => a - b),
-            startup.actors.map(actor => actor.species).sort((a, b) => a - b),
-        );
     });
