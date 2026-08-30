@@ -1,8 +1,9 @@
 import { COLNO, ROWNO } from '../const.js';
-import { LUA_CORE_SOURCES } from '../generated/lua_core_sources.js';
+import { LUA_SOURCES } from '../generated/lua_sources.js';
 import { rn2 } from '../rng.js';
 import {
-    LuaState, luaTableToArray, luaTableToObject, objectToLuaTable,
+    LuaState, luaTableToArray, luaTableToObject, luaValueToJs,
+    objectToLuaTable,
 } from './runtime.js';
 
 function bindingsFor(gameState) {
@@ -32,7 +33,7 @@ export class LuaLifecycle {
 
     createState(gameState) {
         const state = new LuaState(bindingsFor(gameState));
-        state.execute(LUA_CORE_SOURCES['nhlib.lua'], 'nhlib.lua');
+        state.execute(LUA_SOURCES['nhlib.lua'], 'nhlib.lua');
         return state;
     }
 
@@ -40,7 +41,7 @@ export class LuaLifecycle {
         this.core?.destroy();
         const savedVariables = gameState.nh_lua_variables || null;
         this.core = this.createState(gameState);
-        this.core.execute(LUA_CORE_SOURCES['nhcore.lua'], 'nhcore.lua');
+        this.core.execute(LUA_SOURCES['nhcore.lua'], 'nhcore.lua');
         if (savedVariables) {
             this.core.setGlobal(
                 'nh_lua_variables', objectToLuaTable(savedVariables),
@@ -55,6 +56,18 @@ export class LuaLifecycle {
 
     createSpecialState(gameState) {
         return this.createState(gameState);
+    }
+
+    loadData(gameState, filename, globalName) {
+        const state = this.createSpecialState(gameState);
+        try {
+            const source = LUA_SOURCES[filename];
+            if (!source) throw new Error(`Lua source is not packaged: ${filename}`);
+            state.execute(source, filename);
+            return luaValueToJs(state.getGlobal(globalName));
+        } finally {
+            state.destroy();
+        }
     }
 
     themedState(gameState, dungeonNumber) {

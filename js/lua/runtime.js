@@ -516,6 +516,19 @@ export function luaTableToArray(table) {
     return values;
 }
 
+export function luaValueToJs(value) {
+    if (!(value instanceof LuaTable)) return value;
+    const entries = [...value.entries()];
+    const length = value.length();
+    if (length === entries.length) {
+        return Array.from({ length }, (_entry, index) =>
+            luaValueToJs(value.get(index + 1)));
+    }
+    return Object.fromEntries(entries.map(([key, entry]) => [
+        String(key), luaValueToJs(entry),
+    ]));
+}
+
 export function luaTableToObject(table) {
     if (!(table instanceof LuaTable)) return {};
     return Object.fromEntries([...table.entries()].map(([key, value]) => [

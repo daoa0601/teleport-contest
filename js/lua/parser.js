@@ -26,7 +26,8 @@ export function parseLua(source, filename = '<lua>') {
     }
 
     function is(value) {
-        return current().value === value;
+        return (current().type === 'symbol' || current().type === 'keyword')
+            && current().value === value;
     }
 
     function take(value = null) {

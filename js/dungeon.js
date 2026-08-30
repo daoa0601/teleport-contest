@@ -3,118 +3,68 @@
 // Data ref: dat/dungeon.lua.
 
 import { game } from './gstate.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 
-// Runtime-safe transcription of NetHack 5.0's dungeon.lua.  The contest
-// sandbox cannot read data files, so the compiled JS port carries this table.
-const DUNGEON_DEFINITIONS = [
-    {
-        name: 'The Dungeons of Doom', base: 25, range: 5,
-        levels: [
-            { name: 'rogue', base: 15, range: 4 },
-            { name: 'oracle', base: 5, range: 5 },
-            { name: 'bigrm', base: 10, range: 3, chance: 40, variants: 13 },
-            { name: 'medusa', base: -5, range: 4, variants: 4 },
-            { name: 'castle', base: -1 },
-        ],
-        branches: [
-            { name: 'The Gnomish Mines', base: 2, range: 3 },
-            { name: 'Sokoban', chain: 'oracle', base: 1, up: true },
-            {
-                name: 'The Quest', chain: 'oracle', base: 6, range: 2,
-                branchType: 'portal',
-            },
-            {
-                name: 'Fort Ludios', base: 18, range: 4,
-                branchType: 'portal',
-            },
-            {
-                name: 'Gehennom', chain: 'castle', base: 0,
-                branchType: 'no_down',
-            },
-            {
-                name: 'The Elemental Planes', base: 1, up: true,
-                branchType: 'no_down',
-            },
-        ],
-    },
-    {
-        name: 'Gehennom', base: 20, range: 5, flags: { maze_like: true, hellish: true },
-        levels: [
-            { name: 'valley', base: 1 },
-            { name: 'sanctum', base: -1 },
-            { name: 'juiblex', base: 4, range: 4 },
-            { name: 'baalz', base: 6, range: 4 },
-            { name: 'asmodeus', base: 2, range: 6 },
-            { name: 'wizard1', base: 11, range: 6 },
-            { name: 'wizard2', chain: 'wizard1', base: 1 },
-            { name: 'wizard3', chain: 'wizard1', base: 2 },
-            { name: 'orcus', base: 10, range: 6 },
-            { name: 'fakewiz1', base: -6, range: 4 },
-            { name: 'fakewiz2', base: -6, range: 4 },
-        ],
-        branches: [{ name: "Vlad's Tower", base: 9, range: 5, up: true }],
-    },
-    {
-        name: 'The Gnomish Mines', base: 8, range: 2,
-        flags: { maze_like: true },
-        levels: [
-            { name: 'minetn', base: 3, range: 2, variants: 7 },
-            { name: 'minend', base: -1, variants: 3 },
-        ],
-    },
-    {
-        name: 'The Quest', base: 5, range: 2,
-        levels: [
-            { name: 'x-strt', base: 1, range: 1 },
-            { name: 'x-loca', base: 3, range: 1 },
-            { name: 'x-goal', base: -1 },
-        ],
-    },
-    {
-        name: 'Sokoban', base: 4, entry: -1,
-        flags: { maze_like: true },
-        levels: [
-            { name: 'soko1', base: 1, variants: 2 },
-            { name: 'soko2', base: 2, variants: 2 },
-            { name: 'soko3', base: 3, variants: 2 },
-            { name: 'soko4', base: 4, variants: 2 },
-        ],
-    },
-    {
-        name: 'Fort Ludios', base: 1, flags: { maze_like: true },
-        levels: [{ name: 'knox', base: -1 }],
-    },
-    {
-        name: "Vlad's Tower", base: 3, entry: -1,
-        flags: { maze_like: true },
-        levels: [
-            { name: 'tower1', base: 1 },
-            { name: 'tower2', base: 2 },
-            { name: 'tower3', base: 3 },
-        ],
-    },
-    {
-        name: 'The Elemental Planes', base: 6, entry: -2,
-        flags: { maze_like: true },
-        levels: [
-            { name: 'astral', base: 1 },
-            { name: 'water', base: 2 },
-            { name: 'fire', base: 3 },
-            { name: 'air', base: 4 },
-            { name: 'earth', base: 5 },
-            { name: 'dummy', base: 6 },
-        ],
-    },
-    {
-        name: 'The Tutorial', base: 2, unconnected: true,
-        flags: { maze_like: true },
-        levels: [
-            { name: 'tut-1', base: 1 },
-            { name: 'tut-2', base: 2 },
-        ],
-    },
-];
+// The Lua runtime supplies the data. This module owns dungeon.c's placement
+// and branch construction rules.
+function flagNames(flags) {
+    if (!flags) return [];
+    return Array.isArray(flags) ? flags : [flags];
+}
+function levelDefinition(source) {
+    return {
+        name: source.name,
+        base: source.base,
+        range: source.range,
+        chance: source.chance,
+        chain: source.chainlevel,
+        variants: source.nlevels || 1,
+        alignment: source.alignment,
+        flags: flagNames(source.flags),
+        bonetag: source.bonetag,
+    };
+}
+
+function dungeonDefinition(source) {
+    const flags = flagNames(source.flags);
+    return {
+        name: source.name,
+        base: source.base,
+        range: source.range,
+        chance: source.chance,
+        entry: source.entry,
+        alignment: source.alignment,
+        bonetag: source.bonetag,
+        protofile: source.protofile,
+        levelFill: source.lvlfill,
+        themeRooms: source.themerooms,
+        unconnected: flags.includes('unconnected'),
+        flags: {
+            maze_like: flags.includes('mazelike'),
+            hellish: flags.includes('hellish'),
+            alignment: source.alignment,
+        },
+        branches: (source.branches || []).map(branch => ({
+            name: branch.name,
+            base: branch.base,
+            range: branch.range,
+            chain: branch.chainlevel,
+            up: branch.direction === 'up',
+            branchType: branch.branchtype,
+        })),
+        levels: (source.levels || []).map(levelDefinition),
+    };
+}
+
+export function loadDungeonDefinitions() {
+    const definitions = currentLuaLifecycle().loadData(
+        game, 'dungeon.lua', 'dungeon',
+    );
+    if (!Array.isArray(definitions))
+        throw new Error('dungeon.lua did not define a dungeon array');
+    return definitions.map(dungeonDefinition);
+}
 
 function levelRange(dungeon, spec, finalByName) {
     let base = spec.base;
@@ -235,7 +185,8 @@ export function init_dungeons() {
     const loaded = [];
     const branches = [];
 
-    for (const definition of DUNGEON_DEFINITIONS) {
+    const definitions = loadDungeonDefinitions();
+    for (const definition of definitions) {
         const chance = definition.chance ?? 100;
         if (!game.flags?.debug && chance && chance <= rn2(100)) continue;
 
@@ -249,6 +200,10 @@ export function init_dungeons() {
             entry_lev: entryLevel(definition, num_dunlevs),
             depth_start: dnum === 0 || definition.unconnected ? 1 : 0,
             flags: { ...(definition.flags || {}) },
+            bonetag: definition.bonetag,
+            protofile: definition.protofile,
+            levelFill: definition.levelFill,
+            themeRooms: definition.themeRooms,
         };
         if (!definition.unconnected && dnum > 0) {
             const parentInfo = findParent(definition.name, loaded);
@@ -303,5 +258,3 @@ export function init_dungeons() {
         game.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
     if (knoxBranch) knoxBranch.end1.dnum = loaded.length;
 }
-
-export { DUNGEON_DEFINITIONS };
