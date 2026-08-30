@@ -1,10 +1,11 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const productionRoot = path.join(root, 'js');
 const ownershipPath = path.join(root, 'architecture', 'ownership.json');
+const stateSchemaPath = path.join(root, 'js', 'state_schema.js');
 
 async function javascriptFiles(directory) {
     const entries = await readdir(directory, { withFileTypes: true });
@@ -90,6 +91,7 @@ const futureInputOwners = new Set(['js/jsmain.js']);
 
 async function main() {
     const ownership = JSON.parse(await readFile(ownershipPath, 'utf8'));
+    const stateSchema = await import(pathToFileURL(stateSchemaPath));
     const allowedStatuses = new Set(ownership.statuses || []);
     const legacyFields = ownership.legacyState?.fields || '';
     const ownedFields = new Set(Array.isArray(legacyFields)
@@ -117,6 +119,16 @@ async function main() {
         }
         for (const field of system.stateFields || []) {
             if (field.startsWith('_')) ownedFields.add(field);
+        }
+    }
+
+    for (const field of ownedFields) {
+        const persistent = stateSchema.PERSISTENT_STATE_KEYS.has(field);
+        const transient = stateSchema.TRANSIENT_STATE_KEYS.has(field);
+        if (persistent === transient) {
+            failures.push(
+                `js/state_schema.js: ${field} must be classified exactly once`,
+            );
         }
     }
 
