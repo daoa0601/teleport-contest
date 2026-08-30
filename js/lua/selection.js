@@ -3,6 +3,8 @@ import {
     specialSelectionFillRect,
     specialSelectionLine,
     specialSelectionMatch,
+    specialSelectionRandLine,
+    specialSelectionRandomPoint,
     specialSelectionRect,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
@@ -22,7 +24,14 @@ function pointTable(point) {
     return table;
 }
 
-export function createSelectionBindings(context, invoke = null) {
+function boundsTable(bounds) {
+    const table = new LuaTable();
+    for (const field of ['lx', 'ly', 'hx', 'hy'])
+        table.set(field, bounds[field]);
+    return table;
+}
+
+export function createSelectionApi(context, invoke = null) {
     const wrap = selection => new LuaUserdata(selection, metatable);
     const relativePoint = point => {
         if (!point) return null;
@@ -32,39 +41,73 @@ export function createSelectionBindings(context, invoke = null) {
             y: point.y - active.ystart,
         };
     };
+    const set = (self, x = null, y = null, value = 1) => {
+        const selection = selectionValue(self);
+        if (Number.isInteger(x) && Number.isInteger(y)) {
+            const active = currentContext();
+            const absoluteX = active.xstart + x;
+            const absoluteY = active.ystart + y;
+            if (value) selection.add(absoluteX, absoluteY);
+            else selection.remove(absoluteX, absoluteY);
+        } else {
+            const point = specialSelectionRandomPoint(currentContext())
+                .randomCoordinate();
+            selection.add(point.x, point.y);
+        }
+        return self;
+    };
+    const clone = self => wrap(selectionValue(self).clone());
+    const numpoints = self => selectionValue(self).numPoints();
+    const negate = self => wrap(selectionValue(self).negate());
+    const percentage = (self, percent) => wrap(
+        selectionValue(self).percentage(percent),
+    );
+    const grow = (self, direction = 'all') => wrap(
+        selectionValue(self).grow(direction),
+    );
+    const rndcoord = (self, remove = false) => pointTable(relativePoint(
+        selectionValue(self).randomCoordinate(remove),
+    ));
+    const bounds = self => boundsTable(selectionValue(self).bounds());
+    const randline = (self, x1, y1, x2, y2, roughness = 7) => {
+        const active = currentContext();
+        const result = selectionValue(self).clone();
+        return wrap(specialSelectionRandLine(
+            active.xstart + x1,
+            active.ystart + y1,
+            active.xstart + x2,
+            active.ystart + y2,
+            roughness,
+            12,
+            result,
+        ));
+    };
+    const iterate = async (self, callback) => {
+        if (!invoke)
+            throw new Error('selection.iterate needs a Lua state');
+        const points = [];
+        const active = currentContext();
+        selectionValue(self).forEachLua((x, y) => points.push([
+            x - active.xstart,
+            y - active.ystart,
+        ]));
+        for (const point of points) await invoke(callback, point);
+    };
+    const methods = {
+        set,
+        clone,
+        numpoints,
+        negate,
+        percentage,
+        grow,
+        rndcoord,
+        bounds,
+        randline,
+        iterate,
+    };
     const metatable = {
         __index: {
-            set: (self, x, y, value = 1) => {
-                const active = currentContext();
-                const selection = selectionValue(self);
-                const absoluteX = active.xstart + x;
-                const absoluteY = active.ystart + y;
-                if (value) selection.add(absoluteX, absoluteY);
-                else selection.remove(absoluteX, absoluteY);
-                return self;
-            },
-            clone: self => wrap(selectionValue(self).clone()),
-            numpoints: self => selectionValue(self).numPoints(),
-            percentage: (self, percent) => wrap(
-                selectionValue(self).percentage(percent),
-            ),
-            grow: (self, direction = 'all') => wrap(
-                selectionValue(self).grow(direction),
-            ),
-            rndcoord: (self, remove = false) => pointTable(relativePoint(
-                selectionValue(self).randomCoordinate(remove),
-            )),
-            iterate: async (self, callback) => {
-                if (!invoke)
-                    throw new Error('selection.iterate needs a Lua state');
-                const points = [];
-                const active = currentContext();
-                selectionValue(self).forEachLua((x, y) => points.push([
-                    x - active.xstart,
-                    y - active.ystart,
-                ]));
-                for (const point of points) await invoke(callback, point);
-            },
+            ...methods,
         },
         __bor: (left, right) => wrap(
             selectionValue(left).union(selectionValue(right)),
@@ -80,9 +123,9 @@ export function createSelectionBindings(context, invoke = null) {
         return value;
     };
 
-    return {
+    const bindings = {
         new: () => wrap(new SpecialSelection()),
-        clone: value => wrap(selectionValue(value).clone()),
+        ...methods,
         line: (x1, y1, x2, y2) => wrap(specialSelectionLine(
             currentContext(), x1, y1, x2, y2,
         )),
@@ -97,6 +140,11 @@ export function createSelectionBindings(context, invoke = null) {
         )),
         match: fragment => wrap(specialSelectionMatch(String(fragment))),
     };
+    return { bindings, wrap };
+}
+
+export function createSelectionBindings(context, invoke = null) {
+    return createSelectionApi(context, invoke).bindings;
 }
 
 export function unwrapSelection(value) {

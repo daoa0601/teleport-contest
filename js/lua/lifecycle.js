@@ -1,5 +1,6 @@
 import { COLNO, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
+import { depth } from '../hacklib.js';
 import { rn2 } from '../rng.js';
 import {
     LuaState, luaTableToArray, luaTableToObject, luaValueToJs,
@@ -18,7 +19,10 @@ function bindingsFor(gameState, additionalBindings = {}) {
             eckey: command => command,
         },
         nhc: { COLNO, ROWNO },
-        u: gameState.u || {},
+        u: {
+            ...(gameState.u || {}),
+            depth: depth(gameState.u?.uz, gameState.dungeons),
+        },
         des: {},
         selection: {},
         obj: {},

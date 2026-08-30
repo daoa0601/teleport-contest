@@ -7,8 +7,10 @@
 
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { createDesBindings } from './lua/des.js';
-import { createSelectionBindings } from './lua/selection.js';
+import {
+    createDesBindings, mapOrigin, regionCoordinates,
+} from './lua/des.js';
+import { createSelectionApi } from './lua/selection.js';
 import { luaTableToArray, objectToLuaTable } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
@@ -10385,6 +10387,17 @@ function specialMapRows(source) {
 }
 
 function fillSpecialLevel(options, active) {
+    active.levelInitialized = true;
+    if (options.style === 'mazegrid') {
+        const type = mapCharacterType(options.bg ?? '-');
+        if (type === undefined)
+            throw new Error(`unknown Lua map character ${options.bg}`);
+        fillSpecialMazeGrid(type);
+        active.defaultLit = false;
+        return {
+            xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+        };
+    }
     if (options.style === 'maze') {
         createSpecialMaze(
             options.corrwid ?? 1,
@@ -10589,7 +10602,8 @@ async function createLuaMonster(context, options) {
     let monster;
     if (monsterType != null) {
         const settings = {
-            randomGender: namedMonsterNeedsGenderDraw(monsterType),
+            randomGender: options.nameFemale == null
+                && namedMonsterNeedsGenderDraw(monsterType),
             peaceful,
             asleep,
         };
@@ -10600,6 +10614,8 @@ async function createLuaMonster(context, options) {
             : await specialExplicitMonster(
                 context, monsterType, null, settings,
             );
+        if (monster && options.nameFemale != null)
+            monster.female = options.nameFemale;
     } else if (monsterClass != null) {
         monster = point
             ? await specialMonsterClassAt(
@@ -10636,11 +10652,17 @@ function flipLuaRegions(active) {
 }
 
 async function generateLuaSpecialLevel(active) {
-    let context = null;
+    const wholeLevel = {
+        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
+    };
+    let context = wholeLevel;
     let luaState = null;
     const containers = [];
+    const mappedContexts = [];
     active.allowFlips = 3;
     game.level.flags.is_special = true;
+    const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
+    game.level.flags.temperature = currentDungeon?.flags?.hellish ? 1 : 0;
     const invokeObjectContents = async (callback, object) => {
         containers.push(object);
         try {
@@ -10659,34 +10681,36 @@ async function generateLuaSpecialLevel(active) {
         },
         levelFlags: flags => setLuaLevelFlags(active, flags),
         map: async value => {
-            if (typeof value === 'string') {
-                context = loadSpecialAsciiMap(
-                    specialMapRows(value), active.defaultLit,
-                );
-                active.context = context;
-                return;
-            }
-            if (!context || !Array.isArray(value.coord))
-                throw new Error('nested Lua map requires coord');
-            const parent = context;
-            context = loadSpecialAsciiMap(
-                specialMapRows(value.map), !!value.lit,
-                {
-                    xstart: parent.xstart + value.coord[0],
-                    ystart: parent.ystart + value.coord[1],
-                },
+            const rows = specialMapRows(
+                typeof value === 'string' ? value : value.map,
             );
-            try {
-                if (value.contents) {
+            const width = Math.max(...rows.map(row => row.length));
+            const origin = typeof value === 'string'
+                ? centeredSpecialMap(width, rows.length)
+                : mapOrigin(
+                    value, width, rows.length, active.levelInitialized,
+                );
+            const mapContext = loadSpecialAsciiMap(
+                rows,
+                typeof value === 'string' ? active.defaultLit : !!value.lit,
+                origin,
+            );
+            mappedContexts.push(mapContext);
+            context = mapContext;
+            active.context = context;
+            if (typeof value !== 'string' && value.contents) {
+                try {
                     await luaState.callValueAsync(value.contents, [
                         objectToLuaTable({
                             width: context.width, height: context.height,
                         }),
                     ]);
+                } finally {
+                    context = wholeLevel;
+                    active.context = context;
                 }
-            } finally {
-                context = parent;
             }
+            return specialMapSelection(mapContext, rows);
         },
         terrain: (selection, character) => {
             const type = mapCharacterType(character);
@@ -10723,21 +10747,36 @@ async function generateLuaSpecialLevel(active) {
             context.ystart + context.height + 1,
         ),
         teleportRegion: options => {
-            const region = absoluteSpecialRegion(context, ...options.region);
+            const region = regionCoordinates(
+                context, options.region, options.region_islev,
+            );
             const exclude = options.exclude
-                ? absoluteSpecialRegion(context, ...options.exclude) : null;
+                ? regionCoordinates(
+                    context, options.exclude, options.exclude_islev,
+                )
+                : null;
             if (options.dir === 'up') {
                 active.upTeleportRegion = region;
                 active.upTeleportExclude = exclude;
-            } else {
+            } else if (options.dir === 'down') {
                 active.downTeleportRegion = region;
                 active.downTeleportExclude = exclude;
+            } else {
+                active.upTeleportRegion = { ...region };
+                active.downTeleportRegion = { ...region };
+                active.upTeleportExclude = exclude ? { ...exclude } : null;
+                active.downTeleportExclude = exclude ? { ...exclude } : null;
             }
         },
         levelRegion: options => {
-            const region = absoluteSpecialRegion(context, ...options.region);
+            const region = regionCoordinates(
+                context, options.region, options.region_islev,
+            );
             const exclude = options.exclude
-                ? absoluteSpecialRegion(context, ...options.exclude) : null;
+                ? regionCoordinates(
+                    context, options.exclude, options.exclude_islev,
+                )
+                : null;
             const value = {
                 ...region,
                 ...(exclude ? {
@@ -10753,12 +10792,24 @@ async function generateLuaSpecialLevel(active) {
                 active.explicitBranchRegion = region;
                 active.explicitBranchExclude = exclude;
             }
+            else if (options.type === 'portal') {
+                active.explicitPortalRegion = region;
+                active.explicitPortalExclude = exclude;
+                active.portalDestinationName = options.name;
+            }
             else throw new Error(`unsupported Lua level region ${options.type}`);
         },
-        mazeWalk: options => specialMazeWalk(
-            context, options.x, options.y, options.dir,
-            mapCharacterType(options.typ ?? '.'),
-        ),
+        mazeWalk: async options => {
+            const directions = ['north', 'south', 'east', 'west'];
+            const direction = options.dir === 'random'
+                ? directions[rn2(directions.length)] : options.dir;
+            specialMazeWalk(
+                context, options.x, options.y, direction,
+                mapCharacterType(options.typ ?? '.'),
+            );
+            if (options.stocked)
+                await fillEmptySpecialMaze(context, mappedContexts);
+        },
         object: options => createLuaObject(
             context,
             options,
@@ -10768,14 +10819,15 @@ async function generateLuaSpecialLevel(active) {
         trap: options => createLuaTrap(context, options),
         monster: options => createLuaMonster(context, options),
     };
+    const selectionApi = createSelectionApi(
+        () => context,
+        (callable, args) => luaState.callValueAsync(callable, args),
+    );
     await currentLuaLifecycle().executeSpecial(
         game, active.file,
         {
-            des: createDesBindings(operations),
-            selection: createSelectionBindings(
-                () => context,
-                (callable, args) => luaState.callValueAsync(callable, args),
-            ),
+            des: createDesBindings(operations, selectionApi.wrap),
+            selection: selectionApi.bindings,
         },
         state => {
             luaState = state;
@@ -12654,18 +12706,6 @@ const WIZARD3_MAP = [
     '----------------------------x',
 ];
 
-const FAKE_WIZARD_MAP = [
-    '.........',
-    '.}}}}}}}.',
-    '.}}---}}.',
-    '.}--.--}.',
-    '.}|...|}.',
-    '.}--.--}.',
-    '.}}---}}.',
-    '.}}}}}}}.',
-    '.........',
-];
-
 async function generateWizard1(active) {
     // Lua source: dat/wizard1.lua.  The mazegrid initializer and protected
     // whole-level selection precede the centered transparent fortress map.
@@ -13028,90 +13068,6 @@ async function generateWizard3(active) {
     ]) active[field] = flipSpecialRegion(active[field]);
 }
 
-async function generateFakeWizard(active, withPortal) {
-    fillSpecialMazeGrid(HWALL);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.corrmaze = false;
-    game.level.flags.temperature = 1;
-
-    const wholeLevelContext = {
-        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-    };
-    const wallBounds = specialSelectionMatch('-').bounds();
-    const interiorBounds = specialSelectionFillRect(
-        wholeLevelContext,
-        wallBounds.lx,
-        wallBounds.ly + 1,
-        wallBounds.hx - 2,
-        wallBounds.hy - 1,
-    );
-    const context = loadSpecialAsciiMap(FAKE_WIZARD_MAP, false);
-    active.context = { ...context };
-    const outside = {
-        lx: 1, ly: 0, hx: 79, hy: 20,
-        nlx: context.xstart, nly: context.ystart,
-        nhx: context.xstart + 8, nhy: context.ystart + 8,
-    };
-    active.explicitUpStairRegion = { ...outside };
-    active.explicitDownStairRegion = { ...outside };
-    active.explicitBranchRegion = {
-        lx: outside.lx, ly: outside.ly, hx: outside.hx, hy: outside.hy,
-    };
-    active.explicitBranchExclude = {
-        lx: outside.nlx, ly: outside.nly,
-        hx: outside.nhx, hy: outside.nhy,
-    };
-    const teleportExclude = absoluteSpecialRegion(context, 2, 2, 6, 6);
-    active.upTeleportRegion = {
-        lx: 1, ly: 0, hx: 79, hy: 20,
-        nlx: teleportExclude.lx, nly: teleportExclude.ly,
-        nhx: teleportExclude.hx, nhy: teleportExclude.hy,
-    };
-    active.downTeleportRegion = { ...active.upTeleportRegion };
-    if (withPortal) {
-        active.explicitPortalRegion = absoluteSpecialRegion(
-            context, 4, 4, 4, 4,
-        );
-        active.portalDestinationName = 'wizard3';
-    }
-
-    specialMazeWalk(context, 8, 5, 'east', ROOM);
-    await fillEmptySpecialMaze(context);
-    if (withPortal) {
-        const arrivalRoom = specialIrregularRoom(
-            context, 4, 3, OROOM, false, 0,
-        );
-        arrivalRoom.arrival_room = true;
-        arrivalRoom.arrivalRoom = true;
-    }
-    await specialMonsterClassAt(context, 38, 4, 4);
-    const vampireLord = await specialMonsterAt(
-        context, PM_VAMPIRE_LEADER, 3, 4,
-        { randomGender: false },
-    );
-    if (vampireLord) vampireLord.female = false;
-    await specialMonsterAt(
-        context, PM_KRAKEN, 6, 6,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_KRAKEN) },
-    );
-    for (const [x, y] of [[4, 3], [4, 5], [3, 4], [5, 4]])
-        await specialTrapAt(context, SQKY_BOARD, x, y);
-    if (!withPortal)
-        specialObjectClassAt(context, AMULET_CLASS, 4, 4);
-
-    const protectedArea = interiorBounds.negate()
-        .union(specialMapSelection(context, FAKE_WIZARD_MAP));
-    applyHellTweaks(wholeLevelContext, protectedArea);
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    for (const field of [
-        'explicitUpStairRegion', 'explicitDownStairRegion',
-        'explicitBranchRegion', 'explicitBranchExclude',
-        'upTeleportRegion', 'downTeleportRegion', 'explicitPortalRegion',
-    ]) active[field] = flipSpecialRegion(active[field]);
-}
-
 export async function generateWizard3Level(active) {
     await generateSpecialAndFixup(generateWizard3, active);
     for (const room of game.level.rooms.slice(0, game.level.nroom))
@@ -13122,12 +13078,8 @@ export async function generateFakeWizardLevel(active) {
     if (!['fakewiz1', 'fakewiz2'].includes(active?.prototype)) {
         throw new RangeError(`unknown false Wizard level ${active?.prototype}`);
     }
-    await generateSpecialAndFixup(
-        current => generateFakeWizard(
-            current, current.prototype === 'fakewiz1',
-        ),
-        active,
-    );
+    active.file = `${active.prototype}.lua`;
+    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
 
 const HELL_FORTRESS_PREFAB = [
@@ -15089,7 +15041,9 @@ async function makelevel() {
                         : prototype === 'medusa' ? 4 : 1;
         const variant = variants > 1 ? rnd(variants) : 1;
         const luaOwnedSpecial = prototype === 'bigrm'
-            || prototype === 'medusa';
+            || prototype === 'medusa'
+            || prototype === 'fakewiz1'
+            || prototype === 'fakewiz2';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {

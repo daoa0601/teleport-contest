@@ -25,8 +25,8 @@ export function dist2(x1, y1, x2, y2) {
 
 // C ref: dungeon.c depth().  Internal branch levels are local coordinates;
 // tty/status and dungeon listings use their absolute dungeon depth.
-export function dungeonDepth(dnum, dlevel) {
-    const dungeon = game?.dungeons?.[dnum];
+export function dungeonDepth(dnum, dlevel, dungeons = game?.dungeons) {
+    const dungeon = dungeons?.[dnum];
     if (!dungeon) return dlevel;
     if (dungeon.dname === 'The Elemental Planes') return dlevel - 6;
     const start = Number.isInteger(dungeon.depth_start)
@@ -34,8 +34,8 @@ export function dungeonDepth(dnum, dlevel) {
     return start + dlevel - 1;
 }
 
-export function depth(uz) {
-    return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1);
+export function depth(uz, dungeons = game?.dungeons) {
+    return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1, dungeons);
 }
 
 // C ref: dungeon.c:ledger_no().  Ledger numbers are save-file bookkeeping

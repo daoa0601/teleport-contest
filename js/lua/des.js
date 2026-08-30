@@ -1,13 +1,13 @@
 import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE,
+    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, DART_TRAP, FIRE_TRAP, HOLE,
     LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP,
-    ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT,
+    ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT,
     SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
 } from '../const.js';
 import {
     OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from '../object_data.js';
-import { MONSTER_NAME } from '../monster_data.js';
+import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
 
@@ -47,7 +47,7 @@ const TRAP_TYPES = new Map([
 
 function tableOptions(value) {
     if (!(value instanceof LuaTable))
-        throw new TypeError('des.level_init expects a table');
+        throw new TypeError('des operation expects a table');
     return luaValueToJs(value);
 }
 
@@ -124,16 +124,23 @@ function objectOptions(id, x, y) {
         objectType: options.id
             ? objectTypeForName(options.id, options.class) : null,
         monsterType: options.montype
-            ? monsterTypeForName(options.montype) : null,
+            ? monsterTypeForName(options.montype).type : null,
     };
 }
 
 function monsterTypeForName(name) {
     const target = String(name).toLowerCase();
-    const type = MONSTER_NAME.findIndex(candidate =>
-        candidate?.toLowerCase() === target);
-    if (type < 0) throw new Error(`unknown Lua monster ${name}`);
-    return type;
+    for (let type = 0; type < MONSTER_NAME.length; type++) {
+        const neutral = MONSTER_NAME[type]?.toLowerCase();
+        if (neutral === target) return { type, female: null };
+        const male = monsterTypeName(type, false)?.toLowerCase();
+        const female = monsterTypeName(type, true)?.toLowerCase();
+        if (male !== neutral && male === target)
+            return { type, female: false };
+        if (female !== neutral && female === target)
+            return { type, female: true };
+    }
+    throw new Error(`unknown Lua monster ${name}`);
 }
 
 function monsterOptions(id, x, y) {
@@ -147,13 +154,15 @@ function monsterOptions(id, x, y) {
         ? MONSTER_CLASS_SYMBOLS.indexOf(options.class) : null;
     if (options.class && monsterClass < 1)
         throw new Error(`unknown Lua monster class ${options.class}`);
+    const namedMonster = options.id ? monsterTypeForName(options.id) : null;
     return {
         ...options,
         point: point(options.coord)
             ?? point(options.x, options.y)
             ?? point(luaArgument(x), luaArgument(y)),
         monsterClass,
-        monsterType: options.id ? monsterTypeForName(options.id) : null,
+        monsterType: namedMonster?.type ?? null,
+        nameFemale: namedMonster?.female ?? null,
     };
 }
 
@@ -173,13 +182,88 @@ function trapOptions(type, x, y) {
     };
 }
 
-export function createDesBindings(operations) {
+function mazeWalkOptions(value, y, direction) {
+    if (!(value instanceof LuaTable)) {
+        return {
+            x: value,
+            y,
+            dir: String(direction ?? 'random'),
+            stocked: true,
+        };
+    }
+    const options = tableOptions(value);
+    const location = point(options.coord) ?? point(options.x, options.y);
+    return {
+        ...options,
+        x: location?.x,
+        y: location?.y,
+        dir: String(options.dir ?? 'random'),
+        stocked: options.stocked !== false && options.stocked !== 0,
+    };
+}
+
+export function mapOrigin(options, width, height, levelInitialized) {
+    const coordinate = Array.isArray(options.coord)
+        ? options.coord : [options.x, options.y];
+    if (Number.isInteger(coordinate[0])
+        && Number.isInteger(coordinate[1])) {
+        return {
+            xstart: coordinate[0], ystart: coordinate[1], width, height,
+        };
+    }
+
+    const mazeMaxX = (COLNO - 1) & ~1;
+    const mazeMaxY = (ROWNO - 1) & ~1;
+    const horizontal = {
+        left: levelInitialized ? 1 : 3,
+        'half-left': 2 + Math.trunc((mazeMaxX - 2 - width) / 4),
+        center: 2 + Math.trunc((mazeMaxX - 2 - width) / 2),
+        'half-right': 2 + Math.trunc(
+            (mazeMaxX - 2 - width) * 3 / 4,
+        ),
+        right: mazeMaxX - width - 1,
+    };
+    const vertical = {
+        top: 3,
+        center: 2 + Math.trunc((mazeMaxY - 2 - height) / 2),
+        bottom: mazeMaxY - height - 1,
+    };
+    let xstart = horizontal[options.halign];
+    let ystart = vertical[options.valign];
+    if (!Number.isInteger(xstart) || !Number.isInteger(ystart))
+        throw new Error('Lua map needs coordinates or horizontal and vertical alignment');
+    if (!(xstart % 2)) xstart++;
+    if (!(ystart % 2)) ystart++;
+    if (ystart < 0 || ystart + height > ROWNO) {
+        ystart += ystart > 0 ? -2 : 2;
+        if (height === ROWNO) ystart = 0;
+        if (ystart < 0 || ystart + height > ROWNO) ystart = 0;
+    }
+    return { xstart, ystart, width, height };
+}
+
+export function regionCoordinates(context, coordinates, levelCoordinates) {
+    if (levelCoordinates) {
+        return {
+            lx: coordinates[0], ly: coordinates[1],
+            hx: coordinates[2], hy: coordinates[3],
+        };
+    }
+    return {
+        lx: context.xstart + coordinates[0],
+        ly: context.ystart + coordinates[1],
+        hx: context.xstart + coordinates[2],
+        hy: context.ystart + coordinates[3],
+    };
+}
+
+export function createDesBindings(operations, wrapSelection = value => value) {
     return {
         level_init: options => operations.levelInit(tableOptions(options)),
         level_flags: (...flags) => operations.levelFlags(flags),
-        map: value => operations.map(
+        map: async value => wrapSelection(await operations.map(
             value instanceof LuaTable ? tableOptions(value) : String(value),
-        ),
+        )),
         terrain: (...args) => args.length === 3
             ? operations.terrainAt(args[0], args[1], String(args[2]))
             : operations.terrain(
@@ -218,7 +302,9 @@ export function createDesBindings(operations) {
             tableOptions(value),
         ),
         levregion: value => operations.levelRegion(tableOptions(value)),
-        mazewalk: value => operations.mazeWalk(tableOptions(value)),
+        mazewalk: (value, y, direction) => operations.mazeWalk(
+            mazeWalkOptions(value, y, direction),
+        ),
         object: (id, x, y) => operations.object(objectOptions(id, x, y)),
         trap: (type, x, y) => operations.trap(trapOptions(type, x, y)),
         monster: (id, x, y) => operations.monster(monsterOptions(id, x, y)),
