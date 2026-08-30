@@ -98007,3 +98007,68 @@ No implementation or broader gate result changes; this entry corrects only the
 earlier witness count without rewriting that historical block.
 
 ---
+
+### [2026-08-30 03:46 EEST, journal block 3190] {#bridge-free #water-vapor #lycanthropy #you-were #you-unwere #paranoid-query #getlin #options #change-detector #fake-acceptance #critical-debugging-portfolio #architecture #focused-regression #process-safety}
+
+**Witness, earliest divergence, and portfolio:** block 3189 left controlled
+lycanthrope vapor as a named pre-mutation rejection.  That was a fake
+acceptance boundary: both live map and swallowed tests passed by proving the
+port could refuse the source interaction before detaching the potion.  Four
+new outcome witnesses were red **0/4** at
+`hero-lycanthrope-control-prompt`.  The critical-debugging portfolio kept
+cursed versus blessed question polarity, ordinary versus paranoid input,
+nearby-threat ordering, Unchanging, stun/Unaware, RNG, and carrier lifecycle
+independent instead of treating all control as one boolean branch.
+
+**Prediction and decisive C evidence:** `were.c:you_were()` returns before
+input for Unchanging/current beast form.  With active control it asks "Do you
+want to change into a wolf?" and does **not** call `monster_nearby()`; yes can
+therefore transform beside a threat.  Without control, a nearby threat blocks
+the involuntary change.  `you_unwere(FALSE)` reverses both boundaries: it
+checks Unchanging and `monster_nearby()` before asking "Remain in beast form?";
+yes stays a beast, while no rehumanizes.  `cmd.c:paranoid_query()` normally
+delegates to single-key `yn_function()`, but the Were-change paranoia bit uses
+`getlin()` and accepts only `yes` plus Return.  Global Confirm also requires
+`no` plus Return and repeats after a short `n`.
+
+**Decision and implementation:** `query.js` is now the shared tty owner for
+the existing line editor, ordinary yes/no, and paranoid yes/no transactions;
+`cmd.js` imports and re-exports it rather than retaining a command-layer copy.
+`options.js` parses the default paranoia set, canonical Were-change/Confirm
+tokens, additions, removals, aliases, all, and none into `paranoia_bits`.
+`were.js` implements the two source branches with their opposite answer
+polarity and asymmetric threat ordering.  The prompt-only
+`heroWaterVaporGap()` and both map/swallowed preflight calls were deleted, so
+reachable prompts now happen after normal object detachment and impact.
+
+**Behavioral acceptance rather than change detection:** direct witnesses prove
+accepted/rejected form, `were_changes`, conduct, duration, zero-RNG rejection,
+threat bypass or suppression, and ordinary/paranoid input.  The swallowed live
+command proves an accepted controlled change consumes the real potion and
+reaches `polymon()`.  The two-square map witness proves one existing
+crash/evaporation pager precedes a controlled decline, after which the potion
+is gone and human form is preserved with the exact six-draw flight/vapor
+prefix.  These replace the former assertions that a specific bridge threw
+before inventory mutation.
+
+**Measured effect and process custody:** the focused potion/map/swallowed/clone
+gate passes **141/141**.  The one guarded default behavioral run passes all
+**369** named tests across **38** files; the lane audit finds no recorded
+session or public-parity dependencies.  The bridge audit passes over **127
+files, 15 guarded modules, and 19 fixture modules**.  Ownership generation and
+checking, JSON parsing, syntax through the complete behavioral imports, and
+`git diff --check` pass.  Every runner was guarded, singular, and owned to
+normal exit.
+
+**Falsified hypotheses, limits, and next blocker:** controlled cursed change
+is not threat-gated; blessed and cursed prompts do not share answer polarity;
+`y` is not affirmative under Were-change paranoia; and a live map prompt does
+not necessarily own the next queued key because the prior impact prose can
+page first.  Equipped were transformations, a live external blessed-beast
+carrier, the low-stamina drop continuation, broader scary-square rules,
+in-game editing of the full paranoia option surface, and the scheduled sealed
+stratum remain open.  No public regression lane, full Contest corpus, scorer,
+sealed trace, push, publication, official hidden measurement, or animation
+work ran.
+
+---

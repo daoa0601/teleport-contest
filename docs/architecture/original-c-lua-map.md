@@ -37759,17 +37759,24 @@ flowchart TD
     G -- cursed human --> H{Unchanging or already polymorphed?}
     H -- yes --> I[no change]
     H -- no --> J{controllable and not stunned or unaware?}
-    J -- yes --> K[interactive prompt gap rejected before mutation]
+    J -- yes --> K{Do you want to change into beast?}
+    K -- accept --> M[were_changes plus shared polymon]
+    K -- decline --> I
     J -- no --> L{spotted adjacent threat?}
     L -- yes --> I
-    L -- no --> M[were_changes plus shared polymon]
+    L -- no --> M
     G -- blessed beast --> N{Unchanging or adjacent threat?}
     N -- no --> O{interactive control?}
-    O -- yes --> K
+    O -- yes --> O1{Remain in beast form?}
+    O1 -- yes --> Q{mtimedone zero?}
+    O1 -- no --> P[shared rehumanize and presentation]
     O -- no --> P[shared rehumanize and presentation]
     N -- yes --> Q{mtimedone zero?}
     Q -- yes --> R[rn1 200 200 duration restoration]
     Q -- no --> I
+    K -. Were-change paranoia .-> S[require yes plus Return]
+    O1 -. Were-change paranoia .-> S
+    S -. global Confirm .-> T[require no plus Return or repeat]
 ```
 
 `potion.c:potionbreathe(POT_WATER)` is not a general no-op.  A gremlin hero
@@ -37789,10 +37796,19 @@ selection share HP, duration, attribute exercise, movement-ration, equipment,
 vision, encumbrance, and presentation ownership.  `were.js` owns the water
 vapor state machine, worn polymorph-control ring and Unchanging amulet
 properties, the shared `threateningMonsterNearby()` gate, rehumanization, and
-expired-duration restoration.  The live swallowed command proves cursed
-human-to-werewolf transformation and stunned-control bypass; direct source
-witnesses prove blessed rehumanization, threat suppression, ordinary no-op,
-and Unchanging duration restoration.
+expired-duration restoration.  C's prompt ordering is asymmetric: controlled
+`you_were()` asks before and instead of checking nearby threats, so acceptance
+can transform beside a threat; `you_unwere(FALSE)` checks Unchanging and the
+threat first, then asks the inverse question "Remain in beast form?"  A yes
+therefore keeps beast form and a no rehumanizes.
+
+`query.js` is the shared tty input owner formerly embedded in `cmd.js`.
+Ordinary control consumes one `y`/`n` key with no as the default.  Parsed
+`paranoid_confirmation:Were-change` switches either were prompt to `getlin()`
+and accepts only `yes` plus Return; adding global `Confirm` also rejects a
+short `n`, repeats the question, and requires `no` plus Return (Escape still
+rejects).  Tests assert resulting hero form, duration, inventory lifecycle,
+RNG, and visible input boundaries rather than collaborator invocation order.
 
 `mklev.js:splitHeroMonsterForm()` now owns `cloneu()` as a fresh monster birth,
 not a shallow copy of hero state.  It uses the shared shuffled `enexto()` and
@@ -37804,15 +37820,18 @@ conduct; a birth which reaches the species limit remains live but marks later
 births extinct.  Swallowed water and a probabilistic two-square map vapor are
 both live carriers.  One-HP form state consumes the impact without a clone.
 
-Reachability is part of preflight.  Swallowed contact always reaches vapor;
-two-square map contact can reach it probabilistically and therefore rejects an
-interactive control prompt before object detachment, while live gremlin cloning
-is admitted.  A three-square contact cannot call `potionbreathe()` and remains
-live even with polymorph control.  `dothrow.c` also distinguishes the
+Reachability is part of execution, not a prompt-specific rejection.  Swallowed
+contact always reaches vapor and now asks after the real thrown identity has
+been detached; a live controlled acceptance consumes the potion and reaches
+`polymon()`.  Two-square map contact can reach vapor probabilistically; its
+controlled-decline witness first crosses the source crash/evaporation pager,
+then answers the live prompt, consumes the potion, and preserves human form.
+A three-square contact cannot call `potionbreathe()` and remains live without
+asking even with polymorph control.  `dothrow.c` also distinguishes the
 polymorphed low-stamina threshold (`mh < 5`) from the ordinary threshold
 (`uhp < 10`); a five-HP gremlin can throw and later clamp to one HP inside
 `split_mon()`, while the four-HP drop-from-grasp presentation remains fail-loud.
-The remaining explicit gaps are both interactive paranoid-query continuations,
-that low-stamina continuation, broader scary-square nuances inside
-`monster_nearby()`, an external live carrier for blessed beast-form vapor, and
-the sealed stratum.  Lua owns none of this runtime form graph.
+The remaining explicit gaps are in-game editing for the broader paranoia
+option surface, that low-stamina continuation, broader scary-square nuances
+inside `monster_nearby()`, an external live carrier for blessed beast-form
+vapor, and the sealed stratum.  Lua owns none of this runtime form graph.
