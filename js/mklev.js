@@ -262,11 +262,9 @@ const PM_BALROG = 302;
 const PM_YEENOGHU = 304;
 const PM_ORCUS = 305;
 const PM_DISPATER = 307;
-const PM_BAALZEBUB = 308;
 const PM_ASMODEUS = 309;
 const PM_JUIBLEX = 303;
 const PM_LEMURE = 53;
-const PM_BARBED_DEVIL = 293;
 const PM_GIANT_MIMIC = 66;
 const PM_GIANT_SPIDER = 96;
 const PM_MINOTAUR = 177;
@@ -278,11 +276,7 @@ const PM_ACOLYTE = 375;
 const PM_HUMAN_MUMMY = 192;
 const PM_ETTIN_MUMMY = 193;
 const PM_HUMAN_ZOMBIE = 244;
-const PM_ETTIN_ZOMBIE = 245;
-const PM_GIANT_ZOMBIE = 247;
-const PM_SKELETON = 248;
 const PM_WRAITH = 230;
-const PM_SHADE = 288;
 const PM_QUASIT = 54;
 const PM_OCHRE_JELLY = 58;
 const PM_IXOTH = 361;
@@ -10484,6 +10478,34 @@ function createLuaFeature(context, { type, point }) {
     specialFeatureOfType(context, featureType);
 }
 
+function createLuaAltar(context, options) {
+    const coordinate = Array.isArray(options.coord)
+        ? { x: options.coord[0], y: options.coord[1] }
+        : Number.isInteger(options.x) && Number.isInteger(options.y)
+            ? { x: options.x, y: options.y }
+            : null;
+    const point = coordinate
+        ? {
+            x: context.xstart + coordinate.x,
+            y: context.ystart + coordinate.y,
+        }
+        : specialRandomLocation(context);
+    if (!point) return;
+    const altar = game.level.at(point.x, point.y);
+    if (!altar || IS_FURNITURE(altar.typ)) return;
+    const alignments = {
+        noalign: A_NONE,
+        law: A_LAWFUL,
+        neutral: A_NEUTRAL,
+        chaos: A_CHAOTIC,
+    };
+    const alignment = alignments[options.align];
+    if (alignment == null)
+        throw new Error(`unsupported Lua altar alignment ${options.align}`);
+    altar.typ = ALTAR;
+    altar.flags = Align2amask(alignment);
+}
+
 function luaRoomLighting(value) {
     if (value !== -1) return !!value;
     return rnd(1 + Math.abs(depth_of_level(game.u?.uz))) < 11
@@ -10502,6 +10524,7 @@ function createLuaRoomRegion(context, options) {
         court: COURT,
         swamp: SWAMP,
         temple: TEMPLE,
+        shop: SHOPBASE,
     };
     const roomType = roomTypes[options.type ?? 'ordinary'];
     if (roomType == null)
@@ -10784,6 +10807,7 @@ async function generateLuaSpecialLevel(active) {
         },
         door: options => createLuaDoor(context, options),
         feature: options => createLuaFeature(context, options),
+        altar: options => createLuaAltar(context, options),
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(),
@@ -12000,29 +12024,6 @@ function applyHellTweaks(context, protectedArea) {
     }
 }
 
-const ASMODEUS_MAIN_MAP = [
-    '---------------------',
-    '|.............|.....|',
-    '|.............S.....|',
-    '|---+------------...|',
-    '|.....|.........|-+--',
-    '|..---|.........|....',
-    '|..|..S.........|....',
-    '|..|..|.........|....',
-    '|..|..|.........|-+--',
-    '|..|..-----------...|',
-    '|..S..........|.....|',
-    '---------------------',
-];
-
-const ASMODEUS_EXIT_MAP = [
-    '---------------------------------',
-    '................................|',
-    '................................+',
-    '................................|',
-    '---------------------------------',
-];
-
 function specialMapSelection(context, rows = null) {
     // sp_lev.c:lspo_map() returns only cells whose glyph decoded to real
     // terrain.  In particular, `x` is MAX_TYPE/transparent: it leaves both
@@ -12047,140 +12048,6 @@ function lightSpecialArea(context, x1, y1, x2, y2, lit) {
             if (loc) loc.lit = lit;
         }
     }
-}
-
-async function generateAsmodeus(active) {
-    // Lua source: dat/asmodeus.lua.  LVLINIT_MAZEGRID builds the shared
-    // Gehennom wall lattice before either mapped fragment establishes a
-    // relative coordinate context.
-    fillSpecialMazeGrid(HWALL);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.corrmaze = false;
-    game.level.flags.temperature = 1;
-
-    const wholeLevelContext = {
-        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-    };
-    const wallBounds = specialSelectionMatch('-').bounds();
-    // selection.fillrect() feeds the absolute bounds back through the
-    // no-map get_location_coord() context, which starts at column one.
-    const interiorBounds = specialSelectionFillRect(
-        wholeLevelContext,
-        wallBounds.lx,
-        wallBounds.ly + 1,
-        wallBounds.hx - 2,
-        wallBounds.hy - 1,
-    );
-
-    const mainOrigin = halfLeftSpecialMap(
-        ASMODEUS_MAIN_MAP[0].length, ASMODEUS_MAIN_MAP.length,
-    );
-    const main = loadSpecialAsciiMap(
-        ASMODEUS_MAIN_MAP, false, mainOrigin,
-    );
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 4, 3],
-        [D_LOCKED, 18, 4],
-        [D_CLOSED, 18, 8],
-    ]) specialDoorAt(main, mask, x, y);
-    specialStairAt(main, 13, 7, false);
-    specialNonDiggable(main);
-    lightSpecialArea(main, 1, 1, 20, 10, false);
-
-    await specialMonsterAt(
-        main, PM_ASMODEUS, 12, 7,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_ASMODEUS) },
-    );
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(main, ARMOR_CLASS);
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(main, WEAPON_CLASS);
-    specialObjectOfClass(main, GEM_CLASS);
-    for (let count = 0; count < 2; count++)
-        specialObjectOfClass(main, POTION_CLASS);
-    for (let count = 0; count < 3; count++)
-        specialObjectOfClass(main, SCROLL_CLASS);
-
-    await specialTrapAt(main, SPIKED_PIT, 5, 2);
-    await specialTrapAt(main, FIRE_TRAP, 8, 6);
-    for (const typ of [
-        SLP_GAS_TRAP, ANTI_MAGIC, FIRE_TRAP, MAGIC_TRAP, MAGIC_TRAP,
-    ]) await specialTrapOfType(main, typ);
-
-    await specialMonsterAt(
-        main, 287, 11, 7,
-        { randomGender: namedMonsterNeedsGenderDraw(287) },
-    );
-    await specialMonsterAt(
-        main, PM_HORNED_DEVIL, 10, 5,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_HORNED_DEVIL) },
-    );
-    await specialMonsterOfClass(main, 38); // L, lich
-    for (let count = 0; count < 3; count++)
-        await specialMonsterOfClass(main, 48); // V, vampire
-
-    const leftRegion = {
-        lx: 1, ly: 0, hx: 6, hy: 20,
-        nlx: 6, nly: 1, nhx: 70, nhy: 16,
-    };
-    active.explicitUpStairRegion = { ...leftRegion };
-    active.explicitBranchRegion = {
-        lx: leftRegion.lx, ly: leftRegion.ly,
-        hx: leftRegion.hx, hy: leftRegion.hy,
-    };
-    active.explicitBranchExclude = {
-        lx: leftRegion.nlx, ly: leftRegion.nly,
-        hx: leftRegion.nhx, hy: leftRegion.nhy,
-    };
-    active.upTeleportRegion = { ...leftRegion };
-    active.downTeleportRegion = { ...leftRegion };
-
-    const exitOrigin = halfRightSpecialMap(
-        ASMODEUS_EXIT_MAP[0].length, ASMODEUS_EXIT_MAP.length,
-    );
-    const exit = loadSpecialAsciiMap(
-        ASMODEUS_EXIT_MAP, false, exitOrigin,
-    );
-    specialMazeWalk(exit, 32, 2, 'east');
-    // The legacy positional des.mazewalk() signature defaults `stocked` to
-    // true.  fill_empty_maze() therefore populates the newly carved exterior
-    // before the map's non-diggable and resident declarations continue.
-    await fillEmptySpecialMaze(exit, [main, exit]);
-    specialNonDiggable(exit);
-    specialDoorAt(exit, D_CLOSED, 32, 2);
-    for (let count = 0; count < 3; count++)
-        await specialMonsterOfClass(exit, S_DEMON);
-    for (const typ of [ANTI_MAGIC, FIRE_TRAP, MAGIC_TRAP])
-        await specialTrapOfType(exit, typ);
-
-    const protectedArea = interiorBounds.negate()
-        .union(specialMapSelection(main))
-        .union(specialMapSelection(exit));
-    // nhlib selection.set() has no map-relative coordinate argument; after
-    // the mapped contents callback returns, its implicit random points span
-    // the complete level even though the last des.map() was half-right.
-    applyHellTweaks(wholeLevelContext, protectedArea);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.explicitUpStairRegion = flipSpecialRegion(
-        active.explicitUpStairRegion,
-    );
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
-    active.explicitBranchExclude = flipSpecialRegion(
-        active.explicitBranchExclude,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.context = { ...exit };
-    active.fragments = {
-        main: { ...main },
-        exit: { ...exit },
-    };
 }
 
 const JUIBLEX_STAIR_MAP = [
@@ -12212,21 +12079,6 @@ const JUIBLEX_LAIR_MAP = [
     'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 ];
 
-const BAALZ_MAP = [
-    '-------------------------------------------------',
-    '|                   ----               ----',
-    '|          ----     |     -----------  |',
-    '| ------      |  ---------|.........|--P',
-    '| F....|  -------|...........--------------',
-    '---....|--|..................S............|----',
-    '+...--....S..----------------|............S...|',
-    '---....|--|..................|............|----',
-    '| F....|  -------|...........-----S--------',
-    '| ------      |  ---------|.........|--P',
-    '|          ----     |     -----------  |',
-    '|                   ----               ----',
-    '-------------------------------------------------',
-];
 
 function fillSpecialSolid(filling = STONE, lit = false) {
     for (let x = 1; x < COLNO; x++) {
@@ -12433,280 +12285,6 @@ async function generateJuiblex(active) {
     };
 }
 
-async function generateBaalz(active) {
-    // Lua source: dat/baalz.lua.  Its corrmaze flag deliberately suppresses
-    // the generic loader wallification; mkmaze.c:baalz_fixup() owns a later,
-    // protected wallification pass over the beetle.
-    fillSpecialSolid(STONE, false);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.corrmaze = true;
-    // mklev.c marks Gehennom hot before load_special(); this Lua file does
-    // not override that inherited temperature.
-    game.level.flags.temperature = 1;
-
-    const context = loadSpecialAsciiMap(
-        BAALZ_MAP, false,
-        rightCenterSpecialMap(BAALZ_MAP[0].length, BAALZ_MAP.length),
-    );
-    active.context = { ...context };
-    active.explicitUpStairRegion = {
-        lx: 1, ly: 0, hx: 15, hy: 20,
-        nlx: 15, nly: 1, nhx: 70, nhy: 16,
-    };
-    active.explicitBranchRegion = {
-        lx: 1, ly: 0, hx: 15, hy: 20,
-    };
-    active.explicitBranchExclude = {
-        lx: 15, ly: 1, hx: 70, hy: 16,
-    };
-    active.upTeleportRegion = {
-        lx: 1, ly: 0, hx: 15, hy: 20,
-        nlx: 15, nly: 1, nhx: 70, nhy: 16,
-    };
-    active.downTeleportRegion = { ...active.upTeleportRegion };
-
-    specialNonDiggable({
-        xstart: context.xstart,
-        ystart: context.ystart,
-        width: 48,
-        height: 13,
-    });
-    // Legacy lspo_mazewalk(x,y,dir) initializes ftyp to ROOM; corrmaze is
-    // consulted only when an explicit table-form typ resolves below 1.
-    specialMazeWalk(context, 0, 6, 'west', ROOM);
-    // The legacy positional des.mazewalk() form defaults `stocked` to true;
-    // fill_empty_maze() runs inside that operation before the next Lua
-    // declaration (the fixed down stair).
-    await fillEmptySpecialMaze(context, [context]);
-    specialStairAt(context, 44, 6, false);
-    specialDoorAt(context, D_LOCKED, 0, 6);
-
-    await specialMonsterAt(
-        context, PM_BAALZEBUB, 35, 6,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_BAALZEBUB) },
-    );
-    for (const objectClass of [
-        ARMOR_CLASS, ARMOR_CLASS,
-        WEAPON_CLASS, WEAPON_CLASS,
-        GEM_CLASS,
-        POTION_CLASS, POTION_CLASS,
-        SCROLL_CLASS, SCROLL_CLASS, SCROLL_CLASS,
-    ]) specialObjectOfClass(context, objectClass);
-    for (const trapType of [
-        SPIKED_PIT, FIRE_TRAP, SLP_GAS_TRAP, ANTI_MAGIC,
-        FIRE_TRAP, MAGIC_TRAP, MAGIC_TRAP,
-    ]) await specialTrapOfType(context, trapType);
-
-    await specialMonsterAt(
-        context, 287, 37, 7,
-        { randomGender: namedMonsterNeedsGenderDraw(287) },
-    );
-    await specialMonsterAt(
-        context, PM_HORNED_DEVIL, 32, 5,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_HORNED_DEVIL) },
-    );
-    await specialMonsterAt(
-        context, PM_BARBED_DEVIL, 38, 7,
-        { randomGender: namedMonsterNeedsGenderDraw(PM_BARBED_DEVIL) },
-    );
-    await specialMonsterOfClass(context, 38); // L, lich
-    for (let count = 0; count < 3; count++)
-        await specialMonsterOfClass(context, 48); // V, vampire
-
-    flipSpecialLevelRandom(3);
-    active.explicitUpStairRegion = flipSpecialRegion(
-        active.explicitUpStairRegion,
-    );
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
-    active.explicitBranchExclude = flipSpecialRegion(
-        active.explicitBranchExclude,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-    active.baalzFixup = true;
-}
-
-const ORCUS_MAP = [
-    '.|....|....|....|..............|....|........',
-    '.|....|....|....|..............|....|........',
-    '.|....|....|....|--...-+-------|.............',
-    '.|....|....|....|..............+.............',
-    '.|.........|....|..............|....|........',
-    '.--+-...-+----+--....-------...--------.-+---',
-    '.....................|.....|.................',
-    '.....................|.....|.................',
-    '.--+----....-+---....|.....|...----------+---',
-    '.|....|....|....|....---+---...|......|......',
-    '.|.........|....|..............|......|......',
-    '.----...---------.....-----....+......|......',
-    '.|........................|....|......|......',
-    '.----------+-...--+--|....|....----------+---',
-    '.|....|..............|....+....|.............',
-    '.|....+.......|......|....|....|.............',
-    '.|....|.......|......|....|....|.............',
-];
-
-async function generateOrcus(active) {
-    // Lua source: dat/orcus.lua.  A mazegrid exterior is carved and stocked
-    // before the ghost-town callback proceeds with its fixed contents.
-    fillSpecialMazeGrid(HWALL);
-    game.level.flags.is_special = true;
-    game.level.flags.is_maze_lev = true;
-    game.level.flags.corrmaze = false;
-    game.level.flags.shortsighted = true;
-    // Orcus inherits Gehennom's hot temperature.
-    game.level.flags.temperature = 1;
-
-    const wholeLevelContext = {
-        xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-    };
-    const wallBounds = specialSelectionMatch('-').bounds();
-    const interiorBounds = specialSelectionFillRect(
-        wholeLevelContext,
-        wallBounds.lx,
-        wallBounds.ly + 1,
-        wallBounds.hx - 2,
-        wallBounds.hy - 1,
-    );
-
-    const context = loadSpecialAsciiMap(
-        ORCUS_MAP, false,
-        rightCenterSpecialMap(ORCUS_MAP[0].length, ORCUS_MAP.length),
-    );
-    active.context = { ...context };
-
-    // Legacy positional mazewalk defaults to ROOM passages and immediate
-    // stocking.  Both phases finish before the first fixed boulder.
-    specialMazeWalk(context, 0, 6, 'west', ROOM);
-    await fillEmptySpecialMaze(context, [context]);
-    setSpecialRegionLighting(context, 1, 0, 44, 16, false);
-    specialStairAt(context, 33, 15, false);
-
-    for (const [x, y] of [
-        [19, 2], [20, 2], [21, 2], [36, 2], [36, 3],
-        [6, 4], [5, 5], [6, 5], [7, 5], [39, 5],
-        [8, 8], [9, 8], [10, 8], [11, 8],
-        [6, 10], [5, 11], [6, 11], [7, 11],
-        [21, 11], [21, 12],
-        [13, 13], [14, 13], [15, 13], [14, 14],
-    ]) specialObjectAt(context, BOULDER, x, y);
-
-    for (const [mask, x, y] of [
-        [D_CLOSED, 23, 2], [D_ISOPEN, 31, 3],
-        [D_NODOOR, 3, 5], [D_CLOSED, 9, 5],
-        [D_CLOSED, 14, 5], [D_CLOSED, 41, 5],
-        [D_ISOPEN, 3, 8], [D_NODOOR, 13, 8],
-        [D_ISOPEN, 41, 8], [D_CLOSED, 24, 9],
-        [D_CLOSED, 31, 11], [D_ISOPEN, 11, 13],
-        [D_CLOSED, 18, 13], [D_CLOSED, 41, 13],
-        [D_ISOPEN, 26, 14], [D_CLOSED, 6, 15],
-    ]) specialDoorAt(context, mask, x, y);
-
-    const altar = game.level.at(
-        context.xstart + 24, context.ystart + 7,
-    );
-    altar.typ = ALTAR;
-    // create_altar() only installs shrine/sanctum bits when the altar is
-    // inside a TEMPLE region; Orcus's central room is deliberately ordinary.
-    altar.flags = Align2amask(A_NONE);
-
-    specialRectangularRoom(
-        context, 22, 12, 25, 16, MORGUE, false, FILL_NORMAL,
-    );
-    specialRectangularRoom(
-        context, 32, 9, 37, 12, SHOPBASE, true, FILL_NORMAL,
-    );
-    specialRectangularRoom(
-        context, 12, 0, 15, 4, SHOPBASE, true, FILL_NORMAL,
-    );
-
-    for (const trapType of [
-        SPIKED_PIT, SLP_GAS_TRAP, ANTI_MAGIC,
-        FIRE_TRAP, FIRE_TRAP, FIRE_TRAP,
-        MAGIC_TRAP, MAGIC_TRAP,
-    ]) await specialTrapOfType(context, trapType);
-    for (let count = 0; count < 10; count++) specialObject(context);
-    specialObjectOfType(
-        context, rn2(2) ? MAGIC_MARKER : MAGIC_LAMP,
-    );
-
-    for (const [mndx, x, y] of [
-        [PM_ORCUS, 33, 15],
-        [PM_HUMAN_ZOMBIE, 32, 15],
-        [PM_SHADE, 32, 14], [PM_SHADE, 32, 16],
-        [PM_VAMPIRE, 35, 16], [PM_VAMPIRE, 35, 14],
-        [PM_VAMPIRE_LEADER, 36, 14],
-        [PM_VAMPIRE_LEADER, 36, 15],
-    ]) {
-        const explicitLord = mndx === PM_VAMPIRE_LEADER;
-        const monster = await specialMonsterAt(
-            context, mndx, x, y,
-            {
-                randomGender: !explicitLord
-                    && namedMonsterNeedsGenderDraw(mndx),
-            },
-        );
-        // name_to_monplus("vampire lord") resolves an explicit male name;
-        // makemon still performs its independent natural-gender draw before
-        // create_monster restores the requested sex.
-        if (monster && explicitLord) monster.female = false;
-    }
-
-    for (const [mndx, count] of [
-        [PM_SKELETON, 5],
-        [PM_SHADE, 4],
-        [PM_GIANT_ZOMBIE, 3],
-        [PM_ETTIN_ZOMBIE, 3],
-        [PM_HUMAN_ZOMBIE, 3],
-        [PM_VAMPIRE, 3],
-        [PM_VAMPIRE_LEADER, 2],
-    ]) {
-        for (let index = 0; index < count; index++)
-            await specialExplicitMonster(
-                context, mndx, null,
-                { randomGender: mndx !== PM_VAMPIRE_LEADER },
-            );
-    }
-    for (let count = 0; count < 5; count++)
-        await specialMonster(context);
-
-    const arrivalRegion = {
-        lx: 1, ly: 0, hx: 12, hy: 20,
-        nlx: 20, nly: 1, nhx: 70, nhy: 20,
-    };
-    active.explicitUpStairRegion = { ...arrivalRegion };
-    active.explicitBranchRegion = {
-        lx: arrivalRegion.lx, ly: arrivalRegion.ly,
-        hx: arrivalRegion.hx, hy: arrivalRegion.hy,
-    };
-    active.explicitBranchExclude = {
-        lx: arrivalRegion.nlx, ly: arrivalRegion.nly,
-        hx: arrivalRegion.nhx, hy: arrivalRegion.nhy,
-    };
-    active.upTeleportRegion = { ...arrivalRegion };
-    active.downTeleportRegion = { ...arrivalRegion };
-
-    const protectedArea = interiorBounds.negate()
-        .union(specialMapSelection(context));
-    applyHellTweaks(wholeLevelContext, protectedArea);
-
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
-    flipSpecialLevelRandom(3);
-    active.explicitUpStairRegion = flipSpecialRegion(
-        active.explicitUpStairRegion,
-    );
-    active.explicitBranchRegion = flipSpecialRegion(
-        active.explicitBranchRegion,
-    );
-    active.explicitBranchExclude = flipSpecialRegion(
-        active.explicitBranchExclude,
-    );
-    active.upTeleportRegion = flipSpecialRegion(active.upTeleportRegion);
-    active.downTeleportRegion = flipSpecialRegion(active.downTeleportRegion);
-}
 
 async function generateWizardLevel(active) {
     active.file = `${active.prototype}.lua`;
@@ -14693,7 +14271,10 @@ async function makelevel() {
             || prototype === 'fakewiz2'
             || prototype === 'wizard1'
             || prototype === 'wizard2'
-            || prototype === 'wizard3';
+            || prototype === 'wizard3'
+            || prototype === 'asmodeus'
+            || prototype === 'baalz'
+            || prototype === 'orcus';
         const align = ['law', 'neutral', 'chaos'];
         if (!luaOwnedSpecial) {
             for (let i = align.length; i > 1; i--) {
@@ -14752,8 +14333,9 @@ async function makelevel() {
             return;
         }
         if (prototype === 'asmodeus') {
-            await generateSpecialAndFixup(generateAsmodeus,
-                g._activeSpecialLevel);
+            await generateSpecialAndFixup(
+                generateLuaSpecialLevel, g._activeSpecialLevel,
+            );
             return;
         }
         if (prototype === 'juiblex') {
@@ -14764,13 +14346,16 @@ async function makelevel() {
             return;
         }
         if (prototype === 'baalz') {
-            await generateSpecialAndFixup(generateBaalz,
-                g._activeSpecialLevel);
+            g._activeSpecialLevel.baalzFixup = true;
+            await generateSpecialAndFixup(
+                generateLuaSpecialLevel, g._activeSpecialLevel,
+            );
             return;
         }
         if (prototype === 'orcus') {
-            await generateSpecialAndFixup(generateOrcus,
-                g._activeSpecialLevel);
+            await generateSpecialAndFixup(
+                generateLuaSpecialLevel, g._activeSpecialLevel,
+            );
             for (const room of g.level.rooms.slice(0, g.level.nroom))
                 await fillSpecialRoom(room);
             return;

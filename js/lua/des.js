@@ -322,6 +322,7 @@ export function createDesBindings(operations, wrapSelection = value => value) {
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),
         }),
+        altar: value => operations.altar(tableOptions(value)),
         non_diggable: selection => operations.nonDiggable(
             selection == null ? null : unwrapSelection(selection),
         ),
