@@ -5,8 +5,15 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR, Align2amask } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { CLUB, CREAM_PIE } from '../js/object_data.js';
-import { rndcurse } from '../js/sit.js';
+import {
+    CLUB, CREAM_PIE, WHITE_DRAGON_SCALE_MAIL,
+} from '../js/object_data.js';
+import { attrcurse, rndcurse } from '../js/sit.js';
+import { applyArmorOnEffects } from '../js/armor.js';
+import {
+    grantIntrinsicProperty, hasIntrinsicProperty,
+} from '../js/properties.js';
+import { initRng } from '../js/rng.js';
 import {
     freshWeaponArena, inventoryObject,
 } from './support/weapon-arena.js';
@@ -56,4 +63,23 @@ test('a malignant aura curses an ordinary inventory item', async () => {
 
     assert.equal(club.cursed, true);
     assert.equal(club.buc, 'cursed');
+});
+
+test('an attribute curse removes intrinsic but not worn resistance', async () => {
+    freshWeaponArena();
+    const armor = {
+        otyp: WHITE_DRAGON_SCALE_MAIL,
+        o_id: 42,
+        worn: true,
+    };
+    game.inventory = [armor];
+    game.uarm = armor;
+    grantIntrinsicProperty('coldResistance', 'race', game);
+    applyArmorOnEffects(armor, game);
+    initRng(15n);
+
+    await attrcurse();
+
+    assert.equal(hasIntrinsicProperty('coldResistance', null, game), false);
+    assert.equal(game.u.coldResistance, true);
 });

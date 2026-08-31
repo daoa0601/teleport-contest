@@ -7,7 +7,7 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { pline, shieldeff } from './display.js';
+import { newsym, pline, see_monsters, shieldeff } from './display.js';
 import { artifactById } from './artifacts.js';
 import { game } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
@@ -30,6 +30,9 @@ import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
 import { monsterSaddle } from './steed.js';
 import { objectWeight } from './weight.js';
+import {
+    hasIntrinsicProperty, removeIntrinsicProperty,
+} from './properties.js';
 
 const COIN_CLASS = 12;
 const CLOTH = 6;
@@ -282,6 +285,55 @@ function formLikesLava() {
     ].includes(currentForm());
 }
 
+const CURSEABLE_INTRINSICS = Object.freeze([
+    ['fireResistance', 'You feel warmer.'],
+    ['teleportation', 'You feel less jumpy.'],
+    ['poisonResistance', 'You feel a little sick!'],
+    ['telepathy', 'Your senses fail!'],
+    ['coldResistance', 'You feel cooler.'],
+    ['intrinsicInvisible', 'You feel paranoid.'],
+    ['seeInvisible', null],
+    ['fast', 'You feel slower.'],
+    ['stealth', 'You feel clumsy.'],
+    ['intrinsicProtection', 'You feel vulnerable.'],
+    ['aggravateMonster', 'You feel less attractive.'],
+]);
+
+// C sit.c:attrcurse().  Selection falls through the source list until it
+// finds an intrinsic the hero actually has; worn sources stay active.
+export async function attrcurse() {
+    const hero = game.u || {};
+    const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
+    for (let index = start; index < CURSEABLE_INTRINSICS.length; index++) {
+        const [property, ordinaryMessage] = CURSEABLE_INTRINSICS[index];
+        if (!hasIntrinsicProperty(property, null, game)) continue;
+        removeIntrinsicProperty(property, game);
+
+        if (property === 'telepathy' && game.blind
+            && !hero.blindTelepathy) see_monsters();
+        if (property === 'intrinsicInvisible') {
+            hero.invisible = !!(hero.intrinsicInvisible
+                || hero.extrinsicInvisible || hero.formInvisible
+                || (hero.invisibleTurns ?? 0) > 0);
+            hero.invis = hero.invisible;
+        }
+        if (property === 'seeInvisible') {
+            if (!hero.seeInvisible) {
+                see_monsters();
+                newsym(hero.ux, hero.uy);
+            }
+            await pline(hero.hallucinating
+                || (hero.hallucinationTurns ?? 0) > 0
+                ? 'You tawt you taw a puttie tat!'
+                : 'You thought you saw something!');
+        } else {
+            await pline(ordinaryMessage);
+        }
+        return property;
+    }
+    return null;
+}
+
 export async function rndcurse({
     publish = pline,
 } = {}) {
@@ -425,12 +477,12 @@ export async function dosit({
             await pline('The lava feels warm.');
         } else {
             await pline('The lava burns you!');
-            const dice = u?.fireResistance || u?.fire_resistance ? 2 : 10;
+            const dice = u?.fireResistance ? 2 : 10;
             u.uhp = Math.max(0, (u.uhp ?? 1) - d(dice, 10));
         }
     } else if (typ === ICE) {
         await pline('You sit on the ice.');
-        if (!(u?.coldResistance || u?.cold_resistance))
+        if (!u?.coldResistance)
             await pline('The ice feels cold.');
     } else if (typ === DRAWBRIDGE_DOWN) {
         await pline('You sit on the drawbridge.');

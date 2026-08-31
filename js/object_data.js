@@ -71,6 +71,7 @@ export const FEDORA = 92;
 export const DUNCE_CAP = 94;
 export const HELMET = 97;
 export const RED_DRAGON_SCALE_MAIL = 104;
+export const WHITE_DRAGON_SCALE_MAIL = 105;
 export const RED_DRAGON_SCALES = 114;
 export const SPLINT_MAIL = 124;
 export const DWARVISH_MITHRIL_COAT = 126;
