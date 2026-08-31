@@ -72,7 +72,7 @@ import {
 import { randomBottleName } from './potion_hit.js';
 import {
     monsterTeleportRestricted, randomMonsterRelocation,
-    scareScrollAffects, teleportMonsterFromTrap,
+    monsterIsScaredAt, teleportMonsterFromTrap,
 } from './teleport.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
@@ -1949,7 +1949,7 @@ export function mfndpos(monster, state, flags = monAllowFlags(monster, state)) {
             }
 
             let info = 0;
-            if (scareScrollAffects(monster, state, nx, ny)) {
+            if (monsterIsScaredAt(monster, state, nx, ny)) {
                 if (!(flags & ALLOW_SSM)) continue;
                 info |= ALLOW_SSM;
             }
@@ -3105,7 +3105,7 @@ function petAttacksMonster(
     if (result.struck && !result.defenderDied
         && recordRandom(random, calls, 4) !== 0
         && target.mlstmv !== sourceMonsterTurn(state)
-        && !scareScrollAffects(target, state, pet.mx, pet.my)
+        && !monsterIsScaredAt(target, state, pet.mx, pet.my)
         && distmin(target.mx, target.my, pet.mx, pet.my) <= 1) {
         const counterattacks = sourceMonsterMeleeAttacks(target);
         result.counterattack = monsterMeleeAttack(
@@ -7102,7 +7102,7 @@ function covetousTeleportDestination(monster, state, random, calls) {
             // rejected just like any other MON_AT location.
             (x !== monster.mx || y !== monster.my)
             && expulsionDestinationOk(monster, state, x, y)
-            && (!checkScary || !scareScrollAffects(
+            && (!checkScary || !monsterIsScaredAt(
                 monster, state, x, y,
             )));
         if (destination) return destination;
@@ -9449,7 +9449,7 @@ function fatalUnseenLavaDeathBeforeMove(monster, state) {
     const likesLava = monster?.mnum === PM_FIRE_ELEMENTAL
         || monster?.mnum === PM_SALAMANDER;
     const teleportEscape = !!(flags & M1_TPORT)
-        && !state?.level?.flags?.noteleport;
+        && !monsterTeleportRestricted(monster, state);
     const fireResistant = !!(
         (MONSTER_RESISTS[monster?.mnum] ?? 0) & MR_FIRE
     );
@@ -9705,7 +9705,7 @@ export function resumeDeferredMonsterContact(
     if (attack.deathPending) attack.postDeathFleePending = true;
     else if (attack.struck && recordRandom(random, calls, 4) !== 0
         && defender.mlstmv !== sourceMonsterTurn(state)
-        && !scareScrollAffects(
+        && !monsterIsScaredAt(
             defender, state, aggressor.mx, aggressor.my,
         )
         && distmin(defender.mx, defender.my,

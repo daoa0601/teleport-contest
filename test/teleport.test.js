@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM, TELEP_TRAP } from '../js/const.js';
+import {
+    ROOM, ROOMOFFSET, SHOPBASE, TELEP_TRAP,
+} from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
 import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
-    moveHeroByTeleport, safeTeleportDestination,
+    moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from '../js/teleport.js';
 
 function teleportState() {
@@ -87,4 +89,54 @@ test('level rules and magic resistance block teleport traps', () => {
 
     state.u.antimagic = true;
     assert.equal(heroTeleportTrapBlock(state), 'antimagic');
+});
+
+test('monster relocation searches the map after random attempts fail', () => {
+    const state = teleportState();
+    state.level.at(10, 10).typ = ROOM;
+    state.level.at(40, 10).typ = ROOM;
+    const monster = { mnum: 16, mx: 10, my: 10, mhp: 8 };
+    state.level.monsters.push(monster);
+
+    const relocation = randomMonsterRelocation(
+        monster, state, [], () => 0, () => 1,
+    );
+
+    assert.deepEqual(
+        { x: relocation.x, y: relocation.y },
+        { x: 40, y: 10 },
+    );
+});
+
+test('a shopkeeper teleports within its own shop', () => {
+    const state = teleportState();
+    const shopRoomno = ROOMOFFSET;
+    state.level.rooms.push({ rtype: SHOPBASE });
+    state.level.nroom = 1;
+    for (const [x, y, roomno] of [
+        [10, 10, shopRoomno],
+        [20, 10, 0],
+        [12, 10, shopRoomno],
+    ]) {
+        state.level.at(x, y).typ = ROOM;
+        state.level.at(x, y).roomno = roomno;
+    }
+    const monster = {
+        mnum: 16, mx: 10, my: 10, mhp: 8, isshk: true,
+        eshk: {
+            shoproom: shopRoomno,
+            shoplevel: { ...state.u.uz },
+        },
+    };
+    state.level.monsters.push(monster);
+    const xs = [20, 12];
+
+    const relocation = randomMonsterRelocation(
+        monster, state, [], () => 10, () => xs.shift(),
+    );
+
+    assert.deepEqual(
+        { x: relocation.x, y: relocation.y },
+        { x: 12, y: 10 },
+    );
 });

@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
-    ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR,
+    ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, HEADSTONE,
     IS_LAVA, IS_POOL, ROWNO, VAULT, VIBRATING_SQUARE,
     WATER, W_NONPASSWALL, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
@@ -18,8 +18,10 @@ import {
 import {
     beginBallAndChainTeleport, finishBallAndChainTeleport,
 } from './ball.js';
+import { heroIsDisplaced } from './armor.js';
+import { engravingAt } from './engrave.js';
 import { monsterGoodPosition, somexyspace } from './mklev.js';
-import { priestIsInOwnTemple } from './priest.js';
+import { priestAlignment, priestIsInOwnTemple } from './priest.js';
 import { shopkeeperInOwnShop } from './shk.js';
 
 const M1_FLY = 0x00000001;
@@ -31,8 +33,13 @@ const M2_PRINCE = 0x00000800;
 const M2_ROCKTHROW = 0x08000000;
 const M3_COVETOUS = 0x001f;
 const S_DEMON = 56;
+const S_HUMAN = 53;
+const S_VAMPIRE = 48;
 const PM_FLOATING_EYE = 28;
 const PM_ANGEL = 122;
+const PM_MINOTAUR = 177;
+const PM_VAMPIRE = 226;
+const PM_VAMPIRE_LEADER = 227;
 const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
@@ -79,17 +86,44 @@ export function heroTeleportTrapBlock(state = game) {
     return null;
 }
 
-export function scareScrollAffects(monster, state, x, y) {
-    const pile = state?.level?.objects?.[x]?.[y] || [];
-    if (!pile.some(object => object.otyp === SCR_SCARE_MONSTER)) return false;
+export function monsterIsScaredAt(monster, state, x, y) {
     if (monster?.iswiz || monster?.mnum === PM_ANGEL
         || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(monster?.mnum)
-        || MONSTER_SYMBOL[monster?.mnum] === 53
+        || (monster?.isminion && priestAlignment(monster) > 0)) return false;
+
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
+    if (symbol === S_HUMAN
         || ((MONSTER_GENO[monster?.mnum] ?? 0) & G_UNIQ)
-        || (monster?.isminion && (monster?.maligntyp ?? 1) > 0)
         || shopkeeperInOwnShop(monster, state)
         || priestIsInOwnTemple(monster, state)) return false;
-    return true;
+
+    const vampireShifter = monster?.cham === PM_VAMPIRE
+        || monster?.cham === PM_VAMPIRE_LEADER;
+    if (state?.level?.at?.(x, y)?.typ === ALTAR
+        && (symbol === S_VAMPIRE || vampireShifter)) return true;
+
+    const pile = state?.level?.objects?.[x]?.[y] || [];
+    if (pile.some(object => object.otyp === SCR_SCARE_MONSTER)) return true;
+
+    const engraving = engravingAt(x, y, state?.level);
+    const completeElbereth = engraving?.engr_type !== HEADSTONE
+        && (engraving?.epoch ?? 0) <= (state?.moves ?? 0)
+        && /^Elbereth$/i.test(engraving?.text || '');
+    if (!completeElbereth) return false;
+    const protectsSquare = state?.u?.ux === x && state?.u?.uy === y
+        || (heroIsDisplaced(state)
+            && monster?.mux === x && monster?.muy === y)
+        || (engraving.guardobjects && pile.length > 0);
+    if (!protectsSquare) return false;
+
+    const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
+        ?.flags?.hellish;
+    const endgame = !!state?.u?.uz && !!state?.astral_level
+        && state.u.uz.dnum === state.astral_level.dnum;
+    return !(monster?.isshk || monster?.isgd
+        || monster?.mcansee === false || monster?.mcansee === 0
+        || monster?.mpeaceful || monster?.mnum === PM_MINOTAUR
+        || inHell || endgame);
 }
 
 function inside(area, x, y) {
@@ -97,14 +131,14 @@ function inside(area, x, y) {
         && y >= area.ly && y <= area.hy;
 }
 
-function crossesTeleportBoundary(state, x, y) {
+function crossesTeleportBoundary(state, fromX, fromY, toX, toY) {
     for (const region of [
         state?.level?.downTeleportRegion,
         state?.level?.upTeleportRegion,
     ]) {
         const area = region?.exclude;
         if (!area || area.lx <= 0) continue;
-        if (inside(area, state.u.ux, state.u.uy) !== inside(area, x, y))
+        if (inside(area, fromX, fromY) !== inside(area, toX, toY))
             return true;
     }
     return false;
@@ -169,10 +203,7 @@ export function heroTeleportDestinationOk(
     if (!isok(x, y)) return false;
     const location = state?.level?.at?.(x, y);
     if (!location || !heroCanEnterTerrain(state, location)) return false;
-    if (state.level?.monsters?.some(monster =>
-        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)) {
-        return false;
-    }
+    if (locationHasMonster(state, x, y)) return false;
     const trap = state.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y);
     if (!trapAllowedAtDestination(state, trap, allowTrap)) return false;
@@ -181,7 +212,9 @@ export function heroTeleportDestinationOk(
         && state.level?.objects?.[x]?.[y]?.some(
             object => object.otyp === BOULDER,
         )) return false;
-    return !crossesTeleportBoundary(state, x, y);
+    return !crossesTeleportBoundary(
+        state, state.u.ux, state.u.uy, x, y,
+    );
 }
 
 function shuffleCoordinates(coordinates, random) {
@@ -260,20 +293,86 @@ export function randomMonsterRelocation(
     monster, state = game, calls = [], random = rn2, rollOne = rnd,
 ) {
     if (!monster) return null;
-    let destination = null;
     for (let attempt = 0; attempt < 50; attempt++) {
         const x = rollOne(COLNO - 1);
         calls.push(`rnd(${COLNO - 1})`);
         const y = random(ROWNO);
         calls.push(`rn2(${ROWNO})`);
-        const selfSquare = x === monster.mx && y === monster.my;
-        if ((!selfSquare && !monsterGoodPosition(monster.mnum, x, y))
-            || scareScrollAffects(monster, state, x, y)) continue;
-        destination = { x, y };
-        break;
+        if (monsterTeleportDestinationOk(monster, state, x, y))
+            return relocateMonsterTo(monster, x, y);
     }
-    if (!destination) return null;
-    return relocateMonsterTo(monster, destination.x, destination.y);
+
+    const candidates = monsterRelocationCandidates(monster, state);
+    let fallback = null;
+    for (let index = 0; index < candidates.length; index++) {
+        const remaining = candidates.length - index;
+        const offset = random(remaining);
+        calls.push(`rn2(${remaining})`);
+        if (offset) {
+            [candidates[index], candidates[index + offset]] = [
+                candidates[index + offset], candidates[index],
+            ];
+        }
+        const { x, y } = candidates[index];
+        if (monsterTeleportDestinationOk(monster, state, x, y))
+            return relocateMonsterTo(monster, x, y);
+        if (!fallback && monsterGoodPosition(monster.mnum, x, y))
+            fallback = { x, y };
+    }
+    return fallback
+        ? relocateMonsterTo(monster, fallback.x, fallback.y)
+        : null;
+}
+
+function monsterTeleportDestinationOk(monster, state, x, y) {
+    const selfSquare = x === monster.mx && y === monster.my;
+    if ((selfSquare && monster.wormno)
+        || (!selfSquare && !monsterGoodPosition(monster.mnum, x, y))
+        || monsterIsScaredAt(monster, state, x, y)) return false;
+
+    const roomno = state.level?.at?.(x, y)?.roomno;
+    if (shopkeeperInOwnShop(monster, state)
+        && roomno !== monster.eshk?.shoproom) return false;
+    const priest = monster.epri || monster.mextra?.epri;
+    if (priestIsInOwnTemple(monster, state)
+        && roomno !== priest?.shroom) return false;
+
+    return !crossesTeleportBoundary(
+        state, monster.mx, monster.my, x, y,
+    );
+}
+
+function monsterRelocationCandidates(monster, state) {
+    const centerX = Math.trunc(COLNO / 2);
+    const centerY = Math.trunc(ROWNO / 2);
+    const maxRadius = Math.max(
+        centerX,
+        centerY,
+        COLNO - 1 - centerX,
+        ROWNO - 1 - centerY,
+    );
+    const passesWalls = !!(
+        (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK
+    );
+    const candidates = [];
+
+    for (let radius = 0; radius <= maxRadius; radius++) {
+        const lox = centerX - radius;
+        const hix = centerX + radius;
+        const loy = centerY - radius;
+        const hiy = centerY + radius;
+        for (let y = Math.max(loy, 0); y <= Math.min(hiy, ROWNO - 1); y++) {
+            for (let x = Math.max(lox, 1); x <= Math.min(hix, COLNO - 1); x++) {
+                if (x !== lox && x !== hix && y !== loy && y !== hiy)
+                    continue;
+                if (locationHasMonster(state, x, y)) continue;
+                if (!passesWalls && !ZAP_POS(state.level?.at?.(x, y)?.typ))
+                    continue;
+                candidates.push({ x, y });
+            }
+        }
+    }
+    return candidates;
 }
 
 function nearbyMonsterDestination(
@@ -318,6 +417,14 @@ function monsterVisibleAt(monster, state, x = monster.mx, y = monster.my) {
         && (!monster.minvis || canSeeInvisible);
 }
 
+function locationHasMonster(state, x, y) {
+    return state.level?.monsters?.some(monster =>
+        (monster.mhp ?? 1) > 0
+        && ((monster.mx === x && monster.my === y)
+            || monster.wormSegments?.some(segment =>
+                segment.x === x && segment.y === y))) ?? false;
+}
+
 function relocateMonsterTo(monster, x, y) {
     const oldx = monster.mx;
     const oldy = monster.my;
@@ -334,7 +441,10 @@ export function clearFixedTeleportDestination(
     x, y, state = game, random = rn2,
 ) {
     const monster = state.level?.monsters?.find(candidate =>
-        (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
+        (candidate.mhp ?? 1) > 0
+        && ((candidate.mx === x && candidate.my === y)
+            || candidate.wormSegments?.some(segment =>
+                segment.x === x && segment.y === y)));
     if (!monster) return { cleared: true, relocation: null };
     const oldx = monster.mx;
     const oldy = monster.my;

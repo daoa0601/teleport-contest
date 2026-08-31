@@ -155,6 +155,7 @@ import {
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
+import { monsterTeleportRestricted } from './teleport.js';
 import { rehumanizeHero } from './polyself.js';
 import { setTrack } from './track.js';
 import {
@@ -2467,7 +2468,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     // that acknowledgement, rloc() may append its own message to this one.
     await queueTurnMessage(`${thief} stole ${stolenObjectDescription}.`);
 
-    if (game.level?.flags?.noteleport) {
+    if (monsterTeleportRestricted(monster, game)) {
         await queueTurnMessage(
             `A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`,
         );
