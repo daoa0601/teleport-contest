@@ -189,10 +189,8 @@ function swallowedProjectileEligibility(
             && itemName === 'elven arrow' && launcherName === 'elven bow'
             ? 1 : 0;
 
-    // The first shared projectile continuation owns a single ordinary
-    // weapon-class identity. Gem/sling ammo, multishot, poison, target
-    // material bonuses, returning boomerangs, and kill handling stay behind
-    // the named swallowed-weapon bridge.
+    // This path handles one ordinary weapon or missile. The cases below need
+    // their own swallowed-combat rules and remain with the caller.
     if ((skill != null && (!skillState
             || !Number.isInteger(skillState.skill)))
         || material === SILVER || item.blessed || item.opoisoned

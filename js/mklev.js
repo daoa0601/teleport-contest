@@ -1,9 +1,7 @@
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
 // Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
-// Stripped-down version for contest: generates regular dungeon levels with
-// room placement, corridors, doors, stairs, niches, and fill.
-// Uses the real game PRNG (not a separate layout PRNG) for bit-exact parity.
+// Level construction uses the game's main random-number stream.
 
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';

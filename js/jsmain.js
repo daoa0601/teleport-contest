@@ -1,13 +1,5 @@
 // jsmain.js — Per-game engine and contest adapter.
 // C ref: unixmain.c — nethack_main() initialization and game setup.
-//
-// Contest contract: the judge orchestrates sessions (load JSON,
-// normalize v4/v5, loop segments, aggregate scores). It calls
-// runSegment(segment, prevGame) for each game segment and reads back
-// game.getScreens() / getRngLog() / getCursors() to compare with
-// C-recorded session data.
-//
-// For browser play, see nethack.js.
 
 import { game, resetGame } from './gstate.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
@@ -262,13 +254,8 @@ export class Engine {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
         this._nethackrc = opts.nethackrc || '';
-        // Cross-segment persistence handle. The judge sandbox passes a
-        // shared Web-Storage-shaped object here so save / record /
-        // bones survive across segments of a session; the browser
-        // /play/<owner>/ page passes a localStorage-backed view so
-        // those files also survive page reloads. If a port doesn't
-        // need persistence (no save/restore implemented yet), it can
-        // ignore this; the field just sits unused.
+        // Save files, bones, and records share this Web Storage interface in
+        // both the browser and headless engine.
         this.storage = opts.storage || null;
         this.display = opts.display || null;
         this.state = {};
@@ -285,28 +272,8 @@ export class Engine {
         this.lastRunResult = null;
     }
 
-    // Universal animation-frame hook.  Call once per intermediate
-    // animation state — typically inside whatever your port writes as
-    // the equivalent of NetHack's nh_delay_output() (zap beams, thrown
-    // objects, hurtle steps, explosion expansions).
-    //
-    // Same call, same code, in every runtime:
-    //   * Browser /play/  — your writes to the Terminal already update
-    //                        the visible DOM cells; we yield via
-    //                        requestAnimationFrame so the browser
-    //                        actually paints between frames.
-    //   * Judge sandbox    — the Terminal is a pure data structure;
-    //                        we yield a microtask, effectively
-    //                        immediate.
-    //   * Local score.sh   — same as judge sandbox.
-    //
-    // The yield mechanism is the only environment-sensitive bit, and
-    // it is invisible to contestant code: every caller writes the same
-    // `await game.animationFrame()`.
-    //
-    // Frames are scored as a SUPPLEMENTAL metric (see API.md).  Not
-    // implementing animation frames doesn't penalise your official
-    // RNG / screen score in any way.
+    // Yield after painting a transient frame. The browser waits for its next
+    // paint; headless callers can continue immediately.
     async animationFrame() {
         await this.capture.animationFrame();
     }
@@ -319,17 +286,14 @@ export class Engine {
         g.datetime = this._datetime;
         g.nethackrc = this._nethackrc;
         g.storage = this.storage;
-        // Engine code calls the same environment-neutral hook for transient
-        // frames that NetHack emits through nh_delay_output().  The runner
-        // owns capture bookkeeping; gameplay modules only paint and yield.
+        // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
 
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
 
-        // Install the terminal and capture hook before character creation:
-        // an unset OPTIONS=name invokes tty's editable "Who are you?" prompt,
-        // and every keystroke in that prompt is a scored input boundary.
+        // Install the terminal before character creation because an unset
+        // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
         initRng(this._seed);
         this.coreRng = g.coreCtx;

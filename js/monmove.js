@@ -404,9 +404,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
     return { effectDamage, effectMessage };
 }
 
-// C weapon.c:hwep[], strongest/preferred first.  Object display names are
-// used as the stable bridge until the generated object layer exports the
-// weapon preference table itself.
+// C weapon.c:hwep[], strongest/preferred first. The object data does not yet
+// expose this table, so these names select the matching object types.
 const HAND_TO_HAND_WEAPON_PREFERENCE = [
     'tsurugi', 'runesword', 'dwarvish mattock', 'two-handed sword',
     'battle-axe', 'katana', 'unicorn horn', 'crysknife', 'trident',
@@ -2923,8 +2922,7 @@ function createOrdinaryMonsterCorpse(defender, state, random, calls) {
             - Number(state?.urole?.key === 'wizard'));
         if (corpseForm !== defender.mnum) corpse.age = sourceMove - 51;
         // The object layer does not yet derive corpse weight from permonst.
-        // Preserve the live kobold corpse's C cwt so can_carry() parity is
-        // available to dog_goal() on the following action.
+        // Set the kobold corpse weight used by can_carry() on the next action.
         if (corpseForm === 59) corpse.owt = 400;
         return corpse;
     }

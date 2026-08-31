@@ -275,9 +275,8 @@ span.terminal-cursor {
      */
     readKey(options) {
         this._activeOptions = options || null;
-        // Increment epoch on every readKey call — the parity debugger
-        // uses this to detect that the game consumed a key and is
-        // ready for the next one, regardless of whether it waited.
+        // Record every read, including reads satisfied by an already queued
+        // key, so callers can tell when the game accepted their input.
         this._waitEpoch = (this._waitEpoch || 0) + 1;
         if (!this._inputQueue) this._inputQueue = [];
         if (this._inputQueue.length > 0) {
@@ -314,9 +313,7 @@ span.terminal-cursor {
         return !!this._inputResolver;
     }
 
-    /** Monotonically increasing counter — increments each time readKey() enters a wait.
-     *  Used by the parity debugger to detect when the game has processed a key
-     *  and is ready for the next one (avoids race with isWaitingForInput). */
+    /** Number of calls to readKey(). */
     get waitEpoch() {
         return this._waitEpoch || 0;
     }

@@ -35,9 +35,8 @@ function objectId(name) {
 }
 
 // C refs: o_init.c randomize_gem_colors(), shuffle(), and shuffle_all().
-// The original fast-forward consumed these calls but discarded their state.
-// Preserve the shuffled description index because both readobjnam() and
-// doname() consult it after startup.
+// Store the shuffled description index because both readobjnam() and doname()
+// use it after startup.
 export function initializeObjectDescriptions() {
     const descriptionIndex = OBJECT_DESCRIPTIONS.map((_, index) => index);
     const colors = OBJECT_COLOR.slice();

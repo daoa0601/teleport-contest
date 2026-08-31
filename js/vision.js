@@ -1,7 +1,5 @@
-// vision.js — C ref: vision.c Algorithm C shadow-casting
-// Stripped-down port for the contest skeleton: no light sources, underwater,
-// blindness, or pit handling.
-// Contestants should port the full vision.c for complete parity.
+// vision.js — Visibility and light.
+// C ref: vision.c Algorithm C shadow-casting.
 
 import { game } from './gstate.js';
 import {

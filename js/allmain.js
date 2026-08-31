@@ -1,7 +1,5 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
-//
-// Real mklev.js handles level generation for screen parity.
 
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -4649,11 +4647,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         if (corrosionDismissal !== null
                             && corrosionDismissal !== undefined) {
                             actorContactPagerOwned = true;
-                            // The dismissal can belong to the older hitmsg,
-                            // with this armor line installed afterward.  If
-                            // death later forces the newer line through tty,
-                            // its status must show committed HP rather than
-                            // inherit the pre-hit bridge from the old pager.
+                            // The key can dismiss the preceding hit message
+                            // before this armor message appears. A later death
+                            // screen must show the HP after the hit.
                             actorContactMessageAfterPager
                                 = game._pending_message
                                     === corrosionArmor.message;
@@ -5999,10 +5995,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
     return actions;
 }
 
-// C allmain.c runs movemon() before allocating the next global turn and
-// incrementing `moves`. JS pre-increments its bookkeeping key so the next core
-// can detect pending maintenance; hide that implementation detail from status
-// while a monster-owned tty boundary has suspended the scan.
+// C increments `moves` after movemon(). The internal counter advances earlier,
+// so status messages during the monster scan must display the source turn.
 async function executeSourceTurnMonsterScan(monsterScan) {
     const previous = game._statusTurnOverride;
     const sourceTurn = game._maintenanceMove;
@@ -6459,10 +6453,8 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    // A removal pager can suspend above with the previously painted AC still
-    // visible.  Once post-command maintenance reaches the ordinary input
-    // repaint, C's bot() projects committed equipment through find_ac().
-    // Expire the tty-only bridge here even when no live actor scan ran.
+    // A removal message can leave the old AC on screen. Clear that temporary
+    // value before the ordinary status repaint.
     delete g._statusAcOverride;
     await bot();
     await flush_screen(1);

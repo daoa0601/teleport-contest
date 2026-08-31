@@ -1,9 +1,5 @@
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
-//
-// Minimal skeleton: only hjklyubn movement is implemented.
-// Contestants should add: search, kick, eat, drink, read, zap,
-// wear, wield, drop, throw, pray, cast, and all other commands.
 
 import { game } from './gstate.js';
 import { heroEntersPool } from './hack.js';
@@ -2378,8 +2374,8 @@ function deleteGushFloorTrap(trap) {
 }
 
 // C refs: fountain.c dogushforth()/gush(), vision.c do_clear_area().
-// The callback's filter order is RNG-visible: parity and hero checks precede
-// rn2(distance), while terrain, boulders, adjacent doors, and traps follow it.
+// The checkerboard and hero-position checks precede rn2(distance). Terrain,
+// boulders, adjacent doors, and traps are checked after that draw.
 async function dogushforth(drinking) {
     const messages = [];
     let madePool = 0;
@@ -2532,10 +2528,9 @@ function fountainActorVisibleSubject(monster) {
         : `The ${monsterInstanceDisplayName(monster)}`;
 }
 
-// Bounded bridge while the remaining mintrap presenters are still mapped
-// gaps: no-trap and web entry use the shared state/RNG and tty owners.  Other
-// trap kinds retain the pre-existing behavior rather than partially applying
-// state whose deferred presentation/resume cannot yet complete here.
+// Fountain-spawned monsters can enter webs immediately. Other trap types
+// still wait for their normal turn because their messages are not handled
+// here yet.
 function supportedImmediateFountainTrap(monster) {
     return game.level?.traps?.some(trap =>
         trap.tx === monster.mx && trap.ty === monster.my
@@ -3144,11 +3139,9 @@ function levelFollowers(level) {
             || (game.u?.uhave?.amulet && monster.iswiz)));
 }
 
-// C dog.c:keepdogs()->relmon() repaints a follower's old square, but the tty
-// can expose a pager prepared before that repaint while destination creation
-// is already under way.  JS builds the pager from level state, so preserve the
-// already-rendered actor as a bounded presentation bridge without losing the
-// nonliving memory underneath it.  This consumes no display RNG.
+// Level departure can begin while an earlier message is still visible.
+// Preserve the displayed follower until that message is dismissed, then
+// restore the remembered terrain beneath it.
 function retainFollowerDepartureGlyph(level, follower) {
     const loc = level?.at?.(follower.mx, follower.my);
     if (!loc?.disp_ch || loc.disp_ch === ' ') return;
@@ -14939,10 +14932,8 @@ async function dothrow(
                 return;
             }
 
-            // Proper sling ammo uses hmon_hitmon_weapon_melee()/dmgval(), not
-            // the unlaunched-ammo 1d2 bridge.  Its launcher skill supplies
-            // the damage adjustment and receives practice before the final
-            // minimum-one clamp.
+            // Launched sling ammunition uses its object damage and launcher
+            // skill. A stone thrown by hand uses the ordinary 1d2 damage.
             const slingSkill = matchingSlingGem
                 ? Math.abs(OBJECT_SUBTYPE[game.uwep.otyp] || 0) : 0;
             const targetIsLarge = (MONSTER_SIZE[contact.mnum] ?? 2) >= 3;
