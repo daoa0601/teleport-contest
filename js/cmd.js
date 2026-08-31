@@ -133,7 +133,8 @@ import {
     monsterGrowthFamilyMatch, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import {
-    awardMonsterExperience, newExperienceThreshold,
+    awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
+    newExperienceThreshold,
 } from './exper.js';
 import { dosave } from './save.js';
 import { initTrack, setTrack } from './track.js';
@@ -200,7 +201,7 @@ import {
     vanquishedLines,
 } from './end.js';
 import {
-    rankAchievement, recordAchievement, recordDungeonEntryAchievements,
+    recordDungeonEntryAchievements,
 } from './achievements.js';
 import { getHungry } from './hunger.js';
 import {
@@ -4443,153 +4444,6 @@ async function dosit() {
         ? "You sit on the corpse.  It's not very comfortable..."
         : `Having fun sitting on the ${surface}?`);
     game.context.move = 1;
-}
-
-function xlevToRank(level) {
-    return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-}
-
-function conHpBonus(con) {
-    if (con <= 3) return -2;
-    if (con <= 6) return -1;
-    if (con <= 14) return 0;
-    if (con <= 16) return 1;
-    if (con === 17) return 2;
-    if (con === 18) return 3;
-    return 4;
-}
-
-function levelHpIncrease() {
-    const u = game.u;
-    const role = game.urole?.hpadv || {};
-    const race = game.urace?.hpadv || {};
-    const lower = u.ulevel < (game.urole?.xlev ?? 10);
-    const fixKey = lower ? 'lofix' : 'hifix';
-    const rndKey = lower ? 'lornd' : 'hirnd';
-    let hp = (role[fixKey] || 0) + (race[fixKey] || 0);
-    if ((role[rndKey] || 0) > 0) hp += rnd(role[rndKey]);
-    if ((race[rndKey] || 0) > 0) hp += rnd(race[rndKey]);
-    return Math.max(1, hp + conHpBonus(u.acurr?.a?.[A_CON] || 0));
-}
-
-function energyModifier(energy) {
-    if (['priest', 'wizard'].includes(game.urole?.key)) return 2 * energy;
-    if (['healer', 'knight'].includes(game.urole?.key))
-        return Math.trunc((3 * energy) / 2);
-    if (['barbarian', 'valkyrie'].includes(game.urole?.key))
-        return Math.trunc((3 * energy) / 4);
-    return energy;
-}
-
-function levelEnergyIncrease() {
-    const u = game.u;
-    const role = game.urole?.enadv || {};
-    const race = game.urace?.enadv || {};
-    const lower = u.ulevel < (game.urole?.xlev ?? 10);
-    const fixKey = lower ? 'lofix' : 'hifix';
-    const rndKey = lower ? 'lornd' : 'hirnd';
-    const range = Math.trunc((u.acurr?.a?.[A_WIS] || 0) / 2)
-        + (role[rndKey] || 0) + (race[rndKey] || 0);
-    const fixed = (role[fixKey] || 0) + (race[fixKey] || 0);
-    return Math.max(1, energyModifier(rn2(range) + fixed));
-}
-
-function gainExperienceLevel({ incremental = false } = {}) {
-    const u = game.u;
-    const oldRank = xlevToRank(u.ulevel);
-    const hp = levelHpIncrease();
-    const energy = levelEnergyIncrease();
-    if (!Array.isArray(u.uhpinc)) u.uhpinc = Array(30).fill(0);
-    if (!Array.isArray(u.ueninc)) u.ueninc = Array(30).fill(0);
-    // exper.c:newhp()/newpw() retain the increment before pluslvl() advances
-    // ulevel, making the gain exactly reversible by losexp().
-    u.uhpinc[u.ulevel] = hp;
-    u.ueninc[u.ulevel] = energy;
-    u.uhp += hp;
-    u.uhpmax += hp;
-    u.uhppeak = Math.max(u.uhppeak || 0, u.uhpmax);
-    u.uen += energy;
-    u.uenmax += energy;
-    u.uenpeak = Math.max(u.uenpeak || 0, u.uenmax);
-    if (incremental) {
-        const followingThreshold = newExperienceThreshold(u.ulevel + 1);
-        if (u.uexp >= followingThreshold)
-            u.uexp = followingThreshold - 1;
-    } else {
-        u.uexp = newExperienceThreshold(u.ulevel);
-    }
-    u.ulevel++;
-    u.ulevelmax = Math.max(u.ulevelmax || 0, u.ulevel);
-    const newRank = xlevToRank(u.ulevel);
-    if (newRank > oldRank) {
-        recordAchievement(
-            game,
-            rankAchievement(newRank, !!game.flags?.female),
-        );
-    }
-    game.urole.rank = game.urole.title?.[xlevToRank(u.ulevel)]
-        || game.urole.name;
-}
-
-// C attrib.c role_abil[]: adjabil() runs after the new level's welcome
-// message.  Keeping data and state transition separate from tty continuation
-// lets the ordinary message layer reproduce intervening --More-- boundaries.
-const ROLE_LEVEL_ABILITIES = {
-    archeologist: [
-        [5, 'stealth', 'stealthy'], [10, 'fast', 'quick'],
-    ],
-    barbarian: [
-        [7, 'fast', 'quick'], [15, 'stealth', 'stealthy'],
-    ],
-    caveman: [
-        [7, 'fast', 'quick'], [15, 'warning', 'sensitive'],
-    ],
-    healer: [[15, 'warning', 'sensitive']],
-    knight: [[7, 'fast', 'quick']],
-    monk: [
-        [3, 'poison_resistance', 'healthy'],
-        [5, 'stealth', 'stealthy'],
-        [7, 'warning', 'sensitive'],
-        [9, 'searching', 'perceptive'],
-        [11, 'fire_resistance', 'cool'],
-        [13, 'cold_resistance', 'warm'],
-        [15, 'shock_resistance', 'insulated'],
-        [17, 'teleport_control', 'controlled'],
-    ],
-    priest: [
-        [15, 'warning', 'sensitive'], [20, 'fire_resistance', 'cool'],
-    ],
-    ranger: [
-        [7, 'stealth', 'stealthy'], [15, 'see_invisible', ''],
-    ],
-    rogue: [[10, 'searching', 'perceptive']],
-    samurai: [[15, 'stealth', 'stealthy']],
-    tourist: [
-        [10, 'searching', 'perceptive'], [20, 'poison_resistance', 'hardy'],
-    ],
-    valkyrie: [
-        [3, 'stealth', 'stealthy'], [7, 'fast', 'quick'],
-    ],
-    wizard: [
-        [15, 'warning', 'sensitive'],
-        [17, 'teleport_control', 'controlled'],
-    ],
-};
-
-async function gainLevelAbilities(oldLevel, newLevel) {
-    const abilities = ROLE_LEVEL_ABILITIES[game.urole?.key] || [];
-    for (const [level, property, message] of abilities) {
-        if (oldLevel < level && newLevel >= level) {
-            const alreadyHadAbility = !!game.u[property];
-            game.u[property] = true;
-            if (!game.u._propertySources) game.u._propertySources = {};
-            // attrib.c:adjabil() records FROMEXPER independently of whether
-            // an extrinsic source already made the effective property true.
-            game.u._propertySources[property] = 'experience';
-            if (!alreadyHadAbility && message)
-                await plineWithContinuation(`You feel ${message}!`);
-        }
-    }
 }
 
 function indefiniteArticle(text) {

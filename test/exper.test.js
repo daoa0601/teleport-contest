@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    awardMonsterExperience, loseExperienceLevel, monsterExperience,
-    newExperienceThreshold,
+    awardMonsterExperience, gainExperienceLevel, loseExperienceLevel,
+    monsterExperience, newExperienceThreshold,
 } from '../js/exper.js';
+import { A_CON, A_WIS } from '../js/const.js';
+import { game, resetGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { initRng } from '../js/rng.js';
 
 const monster = (name, state = {}) => ({
     mnum: MONSTER_NAME.indexOf(name),
@@ -35,6 +38,44 @@ test('more_experienced adds experience and fourfold score', () => {
         state,
     }), 4);
     assert.deepEqual(state.u, { uexp: 6, urexp: 24 });
+});
+
+test('a gained level retains the HP and power that losing it removes', () => {
+    resetGame();
+    initRng(712n);
+    const attributes = Array(6).fill(10);
+    attributes[A_CON] = 14;
+    attributes[A_WIS] = 12;
+    game.flags = { female: false };
+    game.urole = {
+        key: 'archeologist', name: { m: 'Archeologist' }, xlev: 10,
+        title: [{ m: 'Digger' }],
+        hpadv: { lofix: 2, lornd: 0 },
+        enadv: { lofix: 1, lornd: 0 },
+    };
+    game.urace = {
+        hpadv: { lofix: 0, lornd: 0 },
+        enadv: { lofix: 0, lornd: 0 },
+    };
+    game.u = {
+        ulevel: 1, ulevelmax: 1,
+        uhp: 10, uhpmax: 10, uhppeak: 10,
+        uen: 5, uenmax: 5, uenpeak: 5,
+        uexp: 19,
+        acurr: { a: attributes },
+    };
+
+    gainExperienceLevel();
+    const hpGain = game.u.uhpinc[1];
+    const powerGain = game.u.ueninc[1];
+    assert.equal(game.u.ulevel, 2);
+    assert.equal(game.u.uhpmax, 10 + hpGain);
+    assert.equal(game.u.uenmax, 5 + powerGain);
+
+    loseExperienceLevel();
+    assert.equal(game.u.ulevel, 1);
+    assert.equal(game.u.uhpmax, 10);
+    assert.equal(game.u.uenmax, 5);
 });
 
 test('losexp removes the exact retained level HP and power increments', () => {
