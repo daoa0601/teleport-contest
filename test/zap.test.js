@@ -11,8 +11,8 @@ import { meltIce } from '../js/ice.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
     APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER,
-    WAN_ENLIGHTENMENT, WAN_FIRE, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
-    WAN_STASIS, WAN_WISHING,
+    WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
+    WAN_SLEEP, WAN_STASIS, WAN_WISHING,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -21,6 +21,7 @@ import {
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
+import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -143,6 +144,34 @@ test('secret door detection reveals nearby hidden terrain and traps', async () =
     assert.equal(hiddenTrap.tseen, true);
     assert.equal(wand.typeKnown, true);
 });
+
+test('light illuminates the visible area and burns a nearby gremlin',
+    async () => {
+        const level = freshWeaponArena();
+        for (let x = 8; x <= 18; x++) {
+            for (let y = 8; y <= 12; y++) level.at(x, y).lit = false;
+        }
+        vision_reset_new_level();
+        vision_recalc(0);
+        const gremlin = {
+            mnum: MONSTER_NAME.indexOf('gremlin'),
+            mx: 11,
+            my: 10,
+            mhp: 20,
+            mhpmax: 20,
+            minvent: [],
+        };
+        level.monsters = [gremlin];
+        const wand = carriedWand(WAN_LIGHT, { name: 'light' });
+        game.inventory = [wand];
+        pushKey('a');
+
+        await rhack('z'.charCodeAt(0));
+
+        assert.equal(level.at(11, 10).lit, true);
+        assert.equal(level.at(18, 10).lit, false);
+        assert.ok(gremlin.mhp < 20);
+    });
 
 test('stasis blocks teleporting until its turns expire', async () => {
     freshWeaponArena();

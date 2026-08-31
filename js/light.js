@@ -4,6 +4,16 @@
 import { game } from './gstate.js';
 import { exerciseAttribute } from './attrib.js';
 import {
+    CORR, Is_rogue_level, Is_waterlevel, Upolyd,
+} from './const.js';
+import {
+    canSeeMonster, canSpotMonster, map_invisible, pline,
+} from './display.js';
+import { wakeMonstersNear } from './mon.js';
+import {
+    MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
+} from './monster_data.js';
+import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
     OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
@@ -11,9 +21,12 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer,
     stopObjectTimer,
 } from './object_timers.js';
-import { rn2 } from './rng.js';
+import { rehumanizeHero } from './polyself.js';
+import { roomForRoomno } from './room.js';
+import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 
 const CANDLE_TYPES = new Set([
@@ -23,6 +36,143 @@ const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
+const PM_GREMLIN = 40;
+const PM_AIR_ELEMENTAL = 154;
+const S_VORTEX = 22;
+const AT_ENGL = 11;
+const AD_DGST = 26;
+
+function heroIsBlind() {
+    return !!(game.blind || (game.u?.blindTurns ?? 0) > 0);
+}
+
+function swallowedLightMessage() {
+    const swallower = game.u?.ustuck;
+    if (!swallower) return null;
+    const name = swallower.name
+        || monsterTypeName(swallower.mnum, !!swallower.female);
+    const subject = `The ${name}`;
+    const digests = (MONSTER_ATTACKS[swallower.mnum] || []).some(attack =>
+        attack[0] === AT_ENGL && attack[1] === AD_DGST);
+    if (digests) return `${subject}'s stomach is lit.`;
+    const whirly = MONSTER_SYMBOL[swallower.mnum] === S_VORTEX
+        || swallower.mnum === PM_AIR_ELEMENTAL;
+    return whirly
+        ? `${subject} shines briefly.`
+        : `${subject} glistens.`;
+}
+
+function cellsLitByRoomEffect() {
+    if (!Is_rogue_level(game.u?.uz))
+        return clearAreaCells(game.u.ux, game.u.uy, 5);
+
+    const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
+    const room = roomForRoomno(game.level, roomno);
+    if (!room) return [];
+    const cells = [];
+    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
+        for (let y = room.ly - 1; y <= room.hy + 1; y++)
+            cells.push({ x, y });
+    }
+    room.rlit = 1;
+    return cells;
+}
+
+async function lightHitsGremlin(
+    monster, damage, finishMonsterKill,
+) {
+    const name = monster.name
+        || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
+    const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
+    const dy = (monster.my ?? 0) - (game.u?.uy ?? 0);
+    if (!(game.deaf || game.u?.deaf) && dx * dx + dy * dy <= 90) {
+        const reaction = damage > (monster.mhp ?? 1) / 2
+            ? 'wails in agony' : 'cries out in pain';
+        await pline(`${name} ${reaction}!`);
+    } else if (canSeeMonster(monster, monster.mx, monster.my)) {
+        await pline(`${name} recoils from the light!`);
+    }
+    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    wakeMonstersNear(monster.mx, monster.my, 30);
+    if (monster.mhp <= 0) {
+        await finishMonsterKill(monster, monster.mx, monster.my, {
+            weaponHit: false,
+        });
+    } else if (cansee(monster.mx, monster.my)
+        && !canSpotMonster(monster, monster.mx, monster.my)) {
+        map_invisible(monster.mx, monster.my);
+    }
+}
+
+export async function lightRoom(
+    { finishMonsterKill } = {},
+) {
+    const blind = heroIsBlind();
+    const swallowed = !!game.u?.uswallow;
+    const noEffect = swallowed || game.underwater || game.u?.uinwater
+        || Is_waterlevel(game.u?.uz);
+
+    if (swallowed) {
+        if (!blind) await pline(swallowedLightMessage());
+    } else if (!blind && (!Is_rogue_level(game.u?.uz)
+        || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
+        await pline(`A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`);
+    }
+    if (noEffect) return false;
+
+    const gremlins = [];
+    for (const { x, y } of cellsLitByRoomEffect()) {
+        const location = game.level?.at?.(x, y);
+        if (!location) continue;
+        location.lit = true;
+        const monster = game.level?.monsters?.find(candidate =>
+            candidate.mx === x && candidate.my === y
+            && candidate.mnum === PM_GREMLIN
+            && !candidate.dead && (candidate.mhp ?? 1) > 0);
+        if (monster) gremlins.push(monster);
+    }
+    if (!blind) vision_recalc(2);
+    game.vision_full_recalc = 1;
+    if (gremlins.length) {
+        vision_recalc(0);
+        for (const gremlin of gremlins.reverse()) {
+            if (!finishMonsterKill)
+                throw new TypeError('lightRoom needs a monster death handler');
+            await lightHitsGremlin(
+                gremlin, rnd(5), finishMonsterKill,
+            );
+        }
+    }
+    return true;
+}
+
+export async function damageGremlinHeroWithLight(
+    source, { finishHeroDeath } = {},
+) {
+    if (!Upolyd(game.u) || game.u?.umonnum !== PM_GREMLIN) return 0;
+    let damage = rnd(5);
+    const punctuation = damage > 2 || (game.u?.mh ?? 1) <= 5 ? '!' : '.';
+    await pline(`Ow, that light hurts${punctuation}`);
+    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+        damage = Math.trunc((damage + 1) / 2);
+    game.u.mh = Math.max(0, (game.u.mh ?? 1) - damage);
+    if (game.u.mh > 0) return damage;
+
+    if (!(game.u?.unchanging || game.unchanging)) {
+        const restored = rehumanizeHero(game);
+        if (restored.changed)
+            await pline(`You return to ${restored.race} form!`);
+        return damage;
+    }
+    if (!finishHeroDeath)
+        throw new TypeError('light damage needs a hero death handler');
+    const reflexive = game.flags?.female ? 'herself' : 'himself';
+    await finishHeroDeath({
+        killer: source?.name || 'wand of light',
+        deathCause: `zapped ${reflexive} with a wand of light`,
+    });
+    return damage;
+}
 
 function lampBurnTurns(age) {
     if (age > 150) return age - 150;

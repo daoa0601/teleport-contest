@@ -21,7 +21,9 @@ import { game } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
 import { selectInventoryObject } from './invent.js';
-import { igniteItems } from './light.js';
+import {
+    damageGremlinHeroWithLight, igniteItems, lightRoom,
+} from './light.js';
 import { doEnlightenmentEffect } from './insight.js';
 import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
@@ -39,7 +41,7 @@ import {
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
-    WAN_ENLIGHTENMENT, WAN_FIRE,
+    WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
     WAN_STASIS, WAN_WISHING,
 } from './object_data.js';
@@ -205,7 +207,14 @@ function learnNoDirectionWand(wand) {
     wand.typeKnown = true;
 }
 
-async function zapNoDirection(wand) {
+async function zapNoDirection(wand, { finishMonsterKill } = {}) {
+    if (wand.otyp === WAN_LIGHT) {
+        await lightRoom({ finishMonsterKill });
+        await damageGremlinHeroWithLight(wand, { finishHeroDeath });
+        if (!game.blind && !((game.u?.blindTurns ?? 0) > 0))
+            learnNoDirectionWand(wand);
+        return true;
+    }
     if (wand.otyp === WAN_SECRET_DOOR_DETECTION) {
         await findit();
         learnNoDirectionWand(wand);
@@ -283,7 +292,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         return;
     }
 
-    if (await zapNoDirection(wand)) {
+    if (await zapNoDirection(wand, { finishMonsterKill })) {
         wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
