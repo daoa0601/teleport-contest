@@ -19,13 +19,12 @@ import { heroGoldAmount } from './hero_gold.js';
 import {
     ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME, isok,
 } from './const.js';
-import { CORPSE } from './object_data.js';
+import { AMULET_OF_LIFE_SAVING, CORPSE } from './object_data.js';
 import {
     bonesLevelExists, makemonAt, mksobj, place_object, saveBonesLevel,
     stack_object,
 } from './mklev.js';
 
-const AMULET_OF_LIFE_SAVING = 202;
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
 
 function isCurrentBranchLevel() {

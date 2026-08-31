@@ -5,7 +5,9 @@ import { POOL, ROOM, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroEntersPool } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { LEASH, LOADSTONE, POT_ACID } from '../js/object_data.js';
+import {
+    AMULET_OF_LIFE_SAVING, LEASH, LOADSTONE, POT_ACID,
+} from '../js/object_data.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function poolAtHero() {
@@ -218,6 +220,33 @@ test('a cursed loadstone can keep the hero from crawling out', async () => {
         'You drown.',
     ]);
     assert.equal(death.killer, 'deep water');
+});
+
+test('life saving moves a drowned hero to dry land', async () => {
+    const level = poolAtHero();
+    level.at(20, 5).typ = ROOM;
+    const loadstone = inventoryObject(LOADSTONE, { cursed: true });
+    const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, {
+        oclass: 5,
+        worn: true,
+    });
+    game.inventory = [loadstone, amulet];
+    game.uamul = amulet;
+    game.u.uamul = amulet;
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async () => {},
+        random: range => range === 21 ? 5 : range - 1,
+        rollOne: () => 20,
+        die: async () => assert.fail('life saving should prevent death'),
+    });
+
+    assert.equal(result.moved, true);
+    assert.deepEqual([game.u.ux, game.u.uy], [20, 5]);
+    assert.equal(game.uamul, null);
+    assert.equal(game.inventory.includes(amulet), false);
+    assert.ok(game.u.uhp > 0);
 });
 
 test('water wakes a sleeping hero before the crawl attempt', async () => {

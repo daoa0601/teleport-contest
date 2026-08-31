@@ -8,7 +8,9 @@ import {
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
-import { finishOrdinaryDeath } from './end.js';
+import {
+    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+} from './end.js';
 import { game } from './gstate.js';
 import { splitHeroMonsterForm, place_object, stack_object } from './mklev.js';
 import {
@@ -21,7 +23,7 @@ import { waterDamageChain } from './trap.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
 import {
     heroCanTeleport, heroControlsTeleport, heroIsUnaware,
-    teleportHeroAtWill,
+    moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill,
 } from './teleport.js';
 import { heroTeleportRestricted } from './teleport_rules.js';
 import { vision_recalc, vision_reset } from './vision.js';
@@ -307,6 +309,28 @@ async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
     return { kind: 'rust', damage, rehumanized: restored.changed };
 }
 
+async function finishWaterTeleport(
+    movement,
+    {
+        state,
+        repaint,
+        resetVision,
+        recalculateVision,
+        applyLandingEffects,
+    },
+) {
+    state.u.uinwater = 0;
+    state.underwater = false;
+    repaint(movement.oldx, movement.oldy);
+    resetVision();
+    recalculateVision(0);
+    repaint(movement.x, movement.y);
+    const from = { x: movement.oldx, y: movement.oldy };
+    const to = { x: movement.x, y: movement.y };
+    await applyLandingEffects({ from, to });
+    return { entered: true, moved: true, died: false, from, to };
+}
+
 export async function heroEntersPool({
     state = game,
     publish = plineWithContinuation,
@@ -420,33 +444,13 @@ export async function heroEntersPool({
             for (const message of teleport.messages)
                 await publish(message);
             if (teleport.moved) {
-                u.uinwater = 0;
-                state.underwater = false;
-                repaint(teleport.movement.oldx, teleport.movement.oldy);
-                resetVision();
-                recalculateVision(0);
-                repaint(teleport.movement.x, teleport.movement.y);
-                await applyLandingEffects({
-                    from: {
-                        x: teleport.movement.oldx,
-                        y: teleport.movement.oldy,
-                    },
-                    to: {
-                        x: teleport.movement.x,
-                        y: teleport.movement.y,
-                    },
+                return finishWaterTeleport(teleport.movement, {
+                    state,
+                    repaint,
+                    resetVision,
+                    recalculateVision,
+                    applyLandingEffects,
                 });
-                return {
-                    entered: true, moved: true, died: false,
-                    from: {
-                        x: teleport.movement.oldx,
-                        y: teleport.movement.oldy,
-                    },
-                    to: {
-                        x: teleport.movement.x,
-                        y: teleport.movement.y,
-                    },
-                };
             }
         }
     }
@@ -486,10 +490,43 @@ export async function heroEntersPool({
 
     u.uinwater = 1;
     await publish('You drown.');
-    u.uhp = 0;
-    await die({
-        killer: 'deep water', possessionAnswer: 'n', deathVerb: 'drowned',
-    });
+    for (let attempt = 0; attempt < 2; attempt++) {
+        u.uhp = 0;
+        const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
+        if (!lifeSaving) {
+            await die({
+                killer: 'deep water',
+                possessionAnswer: 'n',
+                deathVerb: 'drowned',
+            });
+            if (state.context) state.context.move = 0;
+            return { entered: true, moved: false, died: true };
+        }
+
+        await publish('But wait...  Your medallion begins to glow!');
+        completeHeroLifeSaving(lifeSaving);
+        await publish('You feel much better!');
+        await publish('The medallion crumbles to dust!');
+
+        const destination = safeTeleportDestination(state, random, rollOne);
+        if (destination) {
+            const movement = moveHeroByTeleport(
+                destination.x, destination.y, state,
+            );
+            if (state.flags?.verbose !== false) {
+                await publish('You materialize in a different location!');
+            }
+            return finishWaterTeleport(movement, {
+                state,
+                repaint,
+                resetVision,
+                recalculateVision,
+                applyLandingEffects,
+            });
+        }
+        if (attempt === 0) await publish("You're still drowning.");
+    }
+
     if (state.context) state.context.move = 0;
     return { entered: true, moved: false, died: true };
 }
