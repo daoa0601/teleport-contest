@@ -1,7 +1,12 @@
-// skills.js — Hero weapon/fighting/spell skill state.
-// C refs: skills.h, u_init.c:skill_init(), weapon.c:add_skills_to_menu().
+// skills.js - Hero weapon/fighting/spell skill state and commands.
+// C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
 
 import { OBJECT_SUBTYPE } from './object_data.js';
+import { game } from './gstate.js';
+import { docrt } from './display.js';
+import { moreUntilDismissed, promptKey } from './tty_prompts.js';
+import { showPagedPickOneMenu, showTextPages } from './windows.js';
+import { ATR_INVERSE } from './terminal.js';
 
 export const SKILL_NAMES = [
     'no skill',
@@ -254,4 +259,124 @@ export function advanceHeroSkill(game, skill) {
     state.skill++;
     game.u.skillRecord.push(skill);
     return state;
+}
+
+function skillName(skill, state = game) {
+    if (skill === 35
+        && (state.urole?.key === 'monk' || state.urole?.key === 'samurai')) {
+        return 'martial arts';
+    }
+    return SKILL_NAMES[skill];
+}
+
+function currentSkillPages() {
+    const skills = ensureHeroSkills(game);
+    if (!skills) return [];
+
+    const availableSkills = skills
+        .map((state, skill) => ({ state, skill }))
+        .filter(({ state, skill }) => skill > 0 && state.skill > 0);
+    const longest = Math.max(0, ...availableSkills.map(({ skill }) =>
+        skillName(skill).length));
+    const body = [];
+    for (const group of SKILL_GROUPS) {
+        body.push({ text: group.heading, attr: ATR_INVERSE, col: 1 });
+        for (let skill = group.first; skill <= group.last; skill++) {
+            const state = skills[skill];
+            if (!state?.skill) continue;
+            body.push(`   ${skillName(skill).padEnd(longest)} `
+                + `[${SKILL_LEVEL_NAMES[state.skill]}]`);
+        }
+    }
+
+    const pageSize = 21;
+    const pageCount = Math.max(1, Math.ceil(body.length / pageSize));
+    return Array.from({ length: pageCount }, (_, page) => {
+        const lines = Array(24).fill('');
+        lines[0] = { text: 'Current skills:', attr: ATR_INVERSE, col: 1 };
+        const entries = body.slice(page * pageSize, (page + 1) * pageSize);
+        for (let row = 0; row < entries.length; row++)
+            lines[row + 2] = entries[row];
+        const marker = pageCount > 1
+            ? `(${page + 1} of ${pageCount})` : '(end)';
+        lines[23] = ` ${marker}`;
+        return { lines, cursor: [marker.length + 1, 23] };
+    });
+}
+
+function menuLetter(index) {
+    if (index < 26) return String.fromCharCode(97 + index);
+    if (index < 52) return String.fromCharCode(65 + index - 26);
+    return String.fromCharCode(48 + ((index - 52) % 10));
+}
+
+function wizardEnhanceMenu() {
+    const skills = ensureHeroSkills(game);
+    if (!skills) return null;
+    const availableSkills = skills
+        .map((state, skill) => ({ state, skill }))
+        .filter(({ state, skill }) => skill > 0 && state.skill > 0);
+    const longest = Math.max(...availableSkills.map(({ skill }) =>
+        skillName(skill).length));
+    const rows = [
+        { text: 'Pick a skill to advance:', attr: ATR_INVERSE },
+        '',
+    ];
+    const choices = new Map();
+    let choiceIndex = 0;
+    for (const group of SKILL_GROUPS) {
+        rows.push({ text: group.heading, attr: ATR_INVERSE });
+        for (let skill = group.first; skill <= group.last; skill++) {
+            const state = skills[skill];
+            if (!state?.skill) continue;
+            const key = menuLetter(choiceIndex++);
+            const name = skillName(skill).padEnd(longest);
+            const level = SKILL_LEVEL_NAMES[state.skill].padEnd(12);
+            const practice = String(state.advance).padStart(5);
+            const needed = String(
+                practiceNeededToAdvance(state.skill),
+            ).padStart(4);
+            rows.push(`${key} -  ${name} ${level} ${practice}(${needed})`);
+            choices.set(key, skill);
+        }
+    }
+    return { rows, choices };
+}
+
+export async function doenhance() {
+    if (game.flags?.debug && game.urole?.key === 'knight') {
+        const answer = String.fromCharCode(await promptKey(
+            'Advance skills without practice? [yn] (n) ',
+        )).toLowerCase();
+        if (answer === 'y') {
+            for (;;) {
+                const menu = wizardEnhanceMenu();
+                if (!menu) break;
+                const skill = await showPagedPickOneMenu({
+                    ...menu, returnCancels: true,
+                });
+                if (skill === null) break;
+                const state = advanceHeroSkill(game, skill);
+                if (!state) break;
+                game._pending_message = '';
+                await docrt();
+                const degree = state.skill >= state.maxSkill
+                    ? 'most' : 'more';
+                await moreUntilDismissed(
+                    `You are now ${degree} skilled in ${
+                        skillName(skill)
+                    }.--More--`,
+                );
+            }
+            game._pending_message = '';
+            await docrt();
+            game.context.move = 0;
+            return;
+        }
+    }
+    await showTextPages(currentSkillPages(), {
+        validKeys: [27, 32, 10, 13],
+    });
+    game._pending_message = '';
+    game.context.move = 0;
 }
