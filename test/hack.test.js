@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { POOL, ROOM, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroEntersPool } from '../js/hack.js';
+import { heroLiquidEffects } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, LEASH, LOADSTONE, POT_ACID,
@@ -41,6 +41,23 @@ const noDisplay = {
     repaint: () => {},
 };
 
+test('leaving a pool clears the underwater state', async () => {
+    freshWeaponArena();
+    game.level.at(game.u.ux, game.u.uy).typ = ROOM;
+    game.u.uinwater = 1;
+    game.underwater = true;
+    const messages = [];
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.uinwater, 0);
+    assert.equal(game.underwater, false);
+    assert.equal(messages.at(-1), 'You are back on solid ground.');
+});
+
 test('a hero can teleport out before trying to crawl', async () => {
     const level = poolAtHero();
     level.at(20, 5).typ = ROOM;
@@ -53,7 +70,7 @@ test('a hero can teleport out before trying to crawl', async () => {
     game.inventory = [];
     const messages = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         random: range => range === 3 ? 0 : 5,
@@ -80,7 +97,7 @@ test('teleport control chooses where a drowning hero lands', async () => {
     game.u.acurr.a[0] = 10;
     game.inventory = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async () => {},
         chooseTeleportDestination: async () => ({ x: 24, y: 6 }),
@@ -103,7 +120,7 @@ test('a no-teleport level blocks escape without spending power', async () => {
     game.u.uluck = 0;
     const messages = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         random: range => range === 3 ? 0 : range - 1,
@@ -134,7 +151,7 @@ test('a grounded steed drowns before the hero tries to crawl out', async () => {
     level.monsters = [];
     const alignmentBefore = game.u.ualign.record;
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async () => {},
         random: range => range - 1,
@@ -162,7 +179,7 @@ test('a flying steed keeps its rider above the pool', async () => {
     };
     game.u.usteed = steed;
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async () => assert.fail('the rider should stay dry'),
         die: async () => assert.fail('the rider should stay dry'),
@@ -179,7 +196,7 @@ test('a burdened hero drops gear before crawling out of a pool', async () => {
     game.inventory = [stone];
     const messages = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         random: range => range - 1,
@@ -204,7 +221,7 @@ test('a cursed loadstone can keep the hero from crawling out', async () => {
     const messages = [];
     let death = null;
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         random: range => range - 1,
@@ -234,7 +251,7 @@ test('life saving moves a drowned hero to dry land', async () => {
     game.uamul = amulet;
     game.u.uamul = amulet;
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async () => {},
         random: range => range === 21 ? 5 : range - 1,
@@ -256,7 +273,7 @@ test('water wakes a sleeping hero before the crawl attempt', async () => {
     game._helplessReason = 'sleeping';
     const messages = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         random: range => range - 1,
@@ -275,7 +292,7 @@ test('the Plane of Water does not make the hero drop gear to escape', async () =
     const stone = inventoryObject(LOADSTONE);
     game.inventory = [stone];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async () => {},
         random: range => range - 1,
@@ -300,7 +317,7 @@ test('swimming through the same pool usually leaves inventory dry', async () => 
     const acid = inventoryObject(POT_ACID, { oclass: 8 });
     game.inventory = [acid];
 
-    await heroEntersPool({
+    await heroLiquidEffects({
         ...noDisplay,
         publish: async () => {},
         random: () => 1,
@@ -331,7 +348,7 @@ test('entering a pool releases every leash', async () => {
     game.inventory = [leash];
     const messages = [];
 
-    await heroEntersPool({
+    await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         die: async () => assert.fail('an amphibious hero should not drown'),
@@ -351,7 +368,7 @@ test('water walking does not protect against a wall of water', async () => {
     game.u.uluck = 100;
     const messages = [];
 
-    const result = await heroEntersPool({
+    const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async message => messages.push(message),
         die: async () => assert.fail('an amphibious hero should not drown'),

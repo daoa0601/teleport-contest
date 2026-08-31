@@ -5,7 +5,7 @@ import {
     canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
-import { heroEntersPool } from './hack.js';
+import { heroLiquidEffects } from './hack.js';
 import {
     disturbBuriedZombieTimers, finishMeltIceBoulderLifeSaving,
     killMonsterOnMeltingIce, meltIceAt, runNextMeltIceBoulder,
@@ -107,7 +107,7 @@ export async function finishMeltIce(event, options = {}) {
     if (event.boulderOutcomes.length) repaint(event.x, event.y);
     const heroAt = game.u?.ux === event.x && game.u?.uy === event.y;
     if (heroAt) {
-        await heroEntersPool({
+        await heroLiquidEffects({
             publish: announce,
         });
     } else {

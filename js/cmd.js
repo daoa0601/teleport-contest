@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import {
-    blocksDiagonalDoor, heroBadRock, heroEntersPool,
+    blocksDiagonalDoor, heroBadRock, heroLiquidEffects,
     heroTightDiagonalReason,
 } from './hack.js';
 import { defaultCommandKey } from './command_keys.js';
@@ -16233,7 +16233,7 @@ async function finishMovedHero({
         return true;
     }
 
-    const pool = await heroEntersPool({
+    const pool = await heroLiquidEffects({
         chooseTeleportDestination: async () => {
             const choice = await askTeleportDestination();
             return choice.destination;

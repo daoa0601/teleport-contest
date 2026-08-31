@@ -2,7 +2,7 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 
 import {
-    D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DOOR, IS_LAVA,
+    D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DOOR, ICE, IS_LAVA,
     IS_OBSTRUCTED, IS_POOL, IS_WALL, Is_waterlevel, STONE, TREE, WATER,
     W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
@@ -331,7 +331,55 @@ async function finishWaterTeleport(
     return { entered: true, moved: true, died: false, from, to };
 }
 
-export async function heroEntersPool({
+function drySurface(location) {
+    if (location?.typ === ICE) return 'ice';
+    if (location?.typ === DOOR) return 'a doorway';
+    return 'solid ground';
+}
+
+async function leaveWater({
+    state, location, publish, resetVision, recalculateVision,
+}) {
+    const u = state.u;
+    if (!u.uinwater) return false;
+
+    let message = null;
+    let stillInWater = false;
+    if (!IS_POOL(location.typ)) {
+        if (heroIsOnWaterLevel(state)) {
+            message = 'You pop into an air bubble.';
+        } else if (IS_LAVA(location.typ)) {
+            message = 'You leave the water...';
+        } else {
+            const preposition = u.levitating || u.levitation
+                || u.flying || u.flight ? 'over' : 'on';
+            message = `You are back ${preposition} ${drySurface(location)}.`;
+        }
+    } else if (heroIsOnWaterLevel(state)) {
+        stillInWater = true;
+    } else if (u.levitating || u.levitation) {
+        message = 'You pop out of the water like a cork!';
+    } else if (u.flying || u.flight) {
+        message = 'You fly out of the water.';
+    } else if (u.waterWalking || u.water_walking) {
+        message = 'You slowly rise above the surface.';
+    } else {
+        stillInWater = true;
+    }
+
+    if (stillInWater) return false;
+    if (message) await publish(message);
+    const wasUnderwater = !!state.underwater && !heroIsOnWaterLevel(state);
+    u.uinwater = 0;
+    state.underwater = false;
+    if (wasUnderwater) {
+        resetVision();
+        recalculateVision(0);
+    }
+    return true;
+}
+
+export async function heroLiquidEffects({
     state = game,
     publish = plineWithContinuation,
     random = rn2,
@@ -348,9 +396,15 @@ export async function heroEntersPool({
     let x = u?.ux;
     let y = u?.uy;
     let location = state.level?.at?.(x, y);
-    if (!u || !location || !IS_POOL(location.typ) || u.ustuck) return null;
+    if (!u || !location) return null;
+    const leftWater = await leaveWater({
+        state, location, publish, resetVision, recalculateVision,
+    });
+    if (!IS_POOL(location.typ) || u.ustuck)
+        return leftWater ? { left: true } : null;
     if (u.usteed && !steedIsGrounded(u.usteed, state)) return null;
-    if (heroStaysAboveWater(state, location)) return null;
+    if (heroStaysAboveWater(state, location))
+        return leftWater ? { left: true } : null;
 
     if (u.usteed) {
         const dismount = await dismountHero(DISMOUNT_GENERIC, {
