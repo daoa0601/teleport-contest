@@ -57,10 +57,9 @@ import {
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import {
-    bonesLevelExists, getRumor, makemonAt, makemonNear, mkcorpstat, mklev,
+    getRumor, makemonNear, mkcorpstat, mklev,
     mergable, mkgold, mkobj, mksobj, place_object, remove_object, stack_object,
     rndClass,
-    saveBonesLevel,
     u_on_downstairs, u_on_upstairs, undeadToCorpse,
 } from './mklev.js';
 import { level_difficulty } from './dungeon.js';
@@ -197,6 +196,7 @@ import {
 import {
     beginHeroLifeSaving, completeHeroLifeSaving,
     finishOrdinaryDeath, finishOrdinaryQuit,
+    probeCanMakeBones,
     recordHeroKillConduct, recordVanquished,
     restoreHeroAfterDeath, vanquishedLines,
 } from './end.js';
@@ -269,7 +269,7 @@ import {
     TT_BEARTRAP, G_GENOD, G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
-    MM_NOEXCLAM, MM_NOMSG, MM_NONAME, MM_NOWAIT,
+    MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
@@ -11804,162 +11804,6 @@ async function doeat() {
     game.context.move = 1;
 }
 
-function terminalLine(row, col, value) {
-    const display = game.nhDisplay;
-    for (let index = 0; index < value.length; index++)
-        display?.setCell(col + index, row, value[index], NO_COLOR, 0);
-}
-
-function tombstoneLine(value) {
-    const text = String(value).slice(0, 16);
-    const col = 28 - Math.trunc((text.length + 1) / 2);
-    return `${' '.repeat(col - 19)}${text}${' '.repeat(37 - col - text.length)}`;
-}
-
-function deathSummaryValues() {
-    const visibleGold = heroGoldAmount(game);
-    const gold = visibleGold + hiddenGold(game, true);
-    const initialGold = game._initialGoldCount || 0;
-    const gain = Math.max(0, gold - initialGold);
-    const depth = game.u?.uz?.dlevel ?? 1;
-    const score = (game.u?.urexp || 0) + gain - Math.trunc(gain / 10)
-        + 50 * (Math.max(depth, game._deepestLevel || depth) - 1);
-    return { gold, score, depth };
-}
-
-function renderDeathSummaryPage({ gold, score, depth }) {
-    const display = game.nhDisplay;
-    display?.clearScreen();
-    game._preserveLeadingStyledBlanks = false;
-    const name = game.plname || 'player';
-    const female = !!game.flags?.female;
-    const reflexive = female ? 'herself' : 'himself';
-    const year = String(game.datetime || '').slice(0, 4) || '2026';
-    const role = game.urole?.name?.m || game.urole?.name || 'Tourist';
-    const goodbye = game.urole?.goodbye || 'Goodbye';
-    const moves = game.moves || 1;
-
-    const lines = [
-        [1, 23, '----------'],
-        [2, 22, '/          \\'],
-        [3, 21, '/    REST    \\'],
-        [4, 20, '/      IN      \\'],
-        [5, 19, '/     PEACE      \\'],
-        [6, 18, '/                  \\'],
-        [7, 18, `|${tombstoneLine(name)}|`],
-        [8, 18, `|${tombstoneLine(`${gold} Au`)}|`],
-        [9, 18, `|   shot ${reflexive.padEnd(10, ' ')}|`],
-        [10, 18, '| with a death ray |'],
-        [11, 18, '|                  |'],
-        [12, 18, '|                  |'],
-        [13, 18, `|       ${year}       |`],
-        [14, 17, '*|     *  *  *      | *'],
-        [15, 8, '_________)/\\\\_//(\\/( /\\)/\\//\\/|_)_______'.replace('( /', '(/')],
-        [18, 0, `${goodbye} ${name} the ${role}...`],
-        [20, 0, `You died in The Dungeons of Doom on dungeon level ${depth} with ${score} points,`],
-        [21, 0, `and ${gold} pieces of gold, after ${moves} moves.`],
-        [22, 0, `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit points when you died.`],
-        [23, 0, '--More--'],
-    ];
-    for (const [row, col, value] of lines) terminalLine(row, col, value);
-    display?.setCursor(8, 23);
-}
-
-function renderBlankDeathMore() {
-    const display = game.nhDisplay;
-    display?.clearScreen();
-    terminalLine(23, 0, '--More--');
-    display?.setCursor(8, 23);
-}
-
-function renderWizardScoreNotice() {
-    const display = game.nhDisplay;
-    display?.clearScreen();
-    terminalLine(
-        1, 0,
-        'Since you were in wizard mode, the score list will not be checked.',
-    );
-    display?.setCursor(0, 2);
-}
-
-async function waitForCurrentMore() {
-    let key;
-    do key = await nhgetch();
-    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-}
-
-async function finishDeathWithBones() {
-    const deathX = game.u.ux, deathY = game.u.uy;
-
-    // end.c:really_done() asks can_make_bones(), then constructs a named
-    // human corpse and explicit grave before the wizard bones query.
-    rn2(1);
-    const corpse = mksobj(CORPSE, true, false);
-    corpse.corpsenm = 260; // PM_HUMAN, gu.urace.mnum
-    corpse.name = `${game.plname || 'player'} corpse`;
-    corpse.ox = deathX;
-    corpse.oy = deathY;
-    if (!game.level.objects[deathX]) game.level.objects[deathX] = [];
-    if (!game.level.objects[deathX][deathY])
-        game.level.objects[deathX][deathY] = [];
-    game.level.objects[deathX][deathY].unshift(corpse);
-
-    const summary = deathSummaryValues();
-    const saveBones = String.fromCharCode(
-        await promptKey('Save bones? [yn] (n) '),
-    ).toLowerCase();
-    let writeBones = saveBones === 'y';
-    if (writeBones && bonesLevelExists()) {
-        const replaceBones = String.fromCharCode(await promptKey(
-            'Bones file already exists.  Replace it? [yn] (n) ',
-        )).toLowerCase();
-        writeBones = replaceBones === 'y';
-    }
-    if (writeBones) {
-        // Gold remains the logical head of gi.invent. Every item then passes
-        // drop_upon_death()'s curse and nearby-monster reservoir gates.
-        ensureHeroGoldObject(game);
-        const dropped = [...(game.inventory || [])];
-        for (const object of dropped) {
-            if (rn2(5)) object.cursed = true;
-            rn2(8);
-            object.owornmask = 0;
-            object.ox = deathX;
-            object.oy = deathY;
-            object.ghostly = true;
-            if (!game.level.objects[deathX])
-                game.level.objects[deathX] = [];
-            if (!game.level.objects[deathX][deathY])
-                game.level.objects[deathX][deathY] = [];
-            game.level.objects[deathX][deathY].unshift(object);
-        }
-        game.inventory = [];
-        syncHeroGoldCache(game);
-
-        game.in_mklev = true;
-        const ghost = await makemonAt(
-            287, deathX, deathY, MM_NONAME,
-        ); // PM_GHOST; savebones() christens it with the player name.
-        game.in_mklev = false;
-        if (ghost) {
-            ghost.name = game.plname;
-            ghost.m_lev = game.u?.ulevel || 1;
-            ghost.mhp = ghost.mhpmax = game.u?.uhpmax || 1;
-            ghost.female = !!game.flags?.female;
-            ghost.msleeping = 1;
-        }
-        saveBonesLevel();
-    }
-
-    game.context.move = 0;
-    renderDeathSummaryPage(summary);
-    await waitForCurrentMore();
-    renderBlankDeathMore();
-    await waitForCurrentMore();
-    renderWizardScoreNotice();
-    game.program_state.gameover = true;
-}
-
 async function zapDig(direction) {
     exerciseAttribute(2, true); // weffects(): exercise(A_WIS, TRUE)
     const dx = DIR_DX[direction] || 0;
@@ -12006,29 +11850,11 @@ async function zapDig(direction) {
     exerciseAttribute(2, true); // learnwand(): discovery exercise
 }
 
-async function finishDeathRayHit() {
-    const pending = game._pending_message;
-    const amulet = game.uamul || game.u?.uamul;
-    const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
-
-    if (lifeSaving) {
-        game.u.uhp = 0;
-        const recovery = beginHeroLifeSaving();
-        await moreUntilDismissed(`${pending}  But wait...--More--`);
-        await pline('Your medallion begins to glow!');
-        await plineWithContinuation('You feel much better!');
-        await plineWithContinuation(
-            'The medallion crumbles to dust!',
-        );
-        completeHeroLifeSaving(recovery);
-        game._deathSurvivedMessagePending = true;
-        return false;
-    }
-
-    if (pending) await moreUntilDismissed(`${pending}--More--`);
-    game.u.uhp = 0;
+async function finishConfirmedHeroDeath({
+    killer, deathCause = null, deathVerb = 'died',
+}) {
+    game.u.umortality = (game.u.umortality || 0) + 1;
     if (game.flags?.debug || game.flags?.explore) {
-        game.u.umortality = (game.u.umortality || 0) + 1;
         const answer = String.fromCharCode(
             await promptKey('Die? [yn] (n) '),
         ).toLowerCase();
@@ -12040,24 +11866,39 @@ async function finishDeathRayHit() {
         }
     }
 
-    await finishDeathWithBones();
+    game._canMakeBones = probeCanMakeBones();
+    await finishOrdinaryDeath({ killer, deathCause, deathVerb });
     return true;
 }
 
-async function handleFatalRayHit() {
+async function finishDeathRayHit({
+    killer = 'death ray', deathCause = null, deathLineShown = false,
+} = {}) {
     const pending = game._pending_message;
-    if (pending) await moreUntilDismissed(`${pending}--More--`);
-    await moreUntilDismissed('You die...--More--');
-    const answer = String.fromCharCode(
-        await promptKey('Die? [yn] (n) '),
-    ).toLowerCase();
-    if (answer !== 'y') {
-        game.u.uhp = game.u.uhpmax;
-        await pline("OK, so you don't die.");
+    const amulet = game.uamul || game.u?.uamul;
+    const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
+
+    if (lifeSaving) {
+        game.u.uhp = 0;
+        const recovery = beginHeroLifeSaving();
+        const prefix = pending && !deathLineShown ? `${pending}  ` : '';
+        await moreUntilDismissed(`${prefix}But wait...--More--`);
+        await pline('Your medallion begins to glow!');
+        await plineWithContinuation('You feel much better!');
+        await plineWithContinuation(
+            'The medallion crumbles to dust!',
+        );
+        completeHeroLifeSaving(recovery);
+        game._deathSurvivedMessagePending = true;
         return false;
     }
-    await finishDeathWithBones();
-    return true;
+
+    if (!deathLineShown) {
+        if (pending) await moreUntilDismissed(`${pending}--More--`);
+        await moreUntilDismissed('You die...--More--');
+    }
+    game.u.uhp = 0;
+    return finishConfirmedHeroDeath({ killer, deathCause });
 }
 
 // C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().
@@ -12119,17 +11960,12 @@ async function dozap() {
         await promptKey('You irradiate yourself with pure energy!--More--');
         await promptKey('You die.--More--');
         game.u.uhp = 0;
-
-        const die = String.fromCharCode(await promptKey('Die? [yn] (n) '))
-            .toLowerCase();
-        if (die !== 'y') {
-            game.u.uhp = game.u.uhpmax;
-            await pline("OK, so you don't die.");
-            game.context.move = 0;
-            return;
-        }
-
-        await finishDeathWithBones();
+        const reflexive = game.flags?.female ? 'herself' : 'himself';
+        await finishDeathRayHit({
+            killer: 'death ray',
+            deathCause: `shot ${reflexive} with a death ray`,
+            deathLineShown: true,
+        });
         return;
     }
     if (wand.otyp === WAN_DEATH && DIR_DX[directionChar] !== undefined
@@ -12137,7 +11973,7 @@ async function dozap() {
         const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
         const deathRay = await zapDeathRay(directionChar, {
             dismissMessage: moreUntilDismissed,
-            finishHeroHit: finishDeathRayHit,
+            finishHeroHit: () => finishDeathRayHit(),
             finishMonsterKill: finishHeroMonsterKill,
         });
         if (deathRay.gameEnded) return;
@@ -12206,7 +12042,9 @@ async function dozap() {
         const coldRay = await zapColdRay(directionChar, {
             finishMonsterKill: finishHeroMonsterKill,
         });
-        if (coldRay.heroDied && await handleFatalRayHit()) return;
+        if (coldRay.heroDied && await finishDeathRayHit({
+            killer: 'bolt of cold',
+        })) return;
         if (wand.dknown) {
             if (wasUnknown) exerciseAttribute(2, true);
             recordObjectKnowledge(wand.otyp);
@@ -12225,7 +12063,9 @@ async function dozap() {
             finishMonsterKill: finishHeroMonsterKill,
             wakeMonsters: wakeMonstersNearWithMessages,
         });
-        if (fireRay.heroDied && await handleFatalRayHit()) return;
+        if (fireRay.heroDied && await finishDeathRayHit({
+            killer: 'bolt of fire',
+        })) return;
         if (wand.dknown) {
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             game._knownObjectTypes.add(wand.otyp);

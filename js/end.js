@@ -43,7 +43,7 @@ export function probeCanMakeBones(random = rn2) {
         || game.level?.flags?.no_bones
         || game.level?.flags?.no_bones_level
         || game.u?.uswallow
-        || game.discover) return false;
+        || game.discover || game.flags?.explore) return false;
     // C bones.c:no_bones_level().  Level one may be a dungeon entrance, but
     // later local levels which are branch endpoints are multiway/terminal
     // junctions and cannot own a bones file.
@@ -66,7 +66,7 @@ export function probeCanMakeBones(random = rn2) {
 // corpse state, timeout, HP, and monster inventory initialization retain
 // their source RNG ownership.
 async function createOrdinaryBones() {
-    if (!game._canMakeBones || bonesLevelExists()) return false;
+    if (!game._canMakeBones) return false;
     const x = game.u?.ux ?? 0;
     const y = game.u?.uy ?? 0;
 
@@ -83,6 +83,18 @@ async function createOrdinaryBones() {
         deathSquare.graveText = `${game.plname || 'player'}, killed by ${
             game._deathKiller || 'an unknown cause'
         }`;
+    }
+
+    if (game.flags?.debug) {
+        const save = await promptDeathQuestion('Save bones? [yn] (n) ');
+        if (save !== 'y') return false;
+    }
+    if (bonesLevelExists()) {
+        if (!game.flags?.debug) return false;
+        const replace = await promptDeathQuestion(
+            'Bones file already exists.  Replace it? [yn] (n) ',
+        );
+        if (replace !== 'y') return false;
     }
 
     // The inventory array retains gi.invent head-to-tail order.
@@ -257,7 +269,8 @@ function visitedMainDungeonLevels() {
     return [...levels].sort((a, b) => a - b);
 }
 
-function overviewLines(killer, deathVerb = 'killed') {
+function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
+    const cause = deathCause || deathCauseRecord(killer, deathVerb);
     if (game._tutorialActive) {
         return [
             'The Dungeons of Doom:',
@@ -265,7 +278,7 @@ function overviewLines(killer, deathVerb = 'killed') {
             'The Tutorial:',
             '   Level 1: <- You were here.',
             '      Final resting place for',
-            `         you, ${deathVerb} by ${killer}.`,
+            `         you, ${cause}.`,
         ];
     }
     const levels = visitedMainDungeonLevels();
@@ -279,7 +292,7 @@ function overviewLines(killer, deathVerb = 'killed') {
         lines.push(`   Level ${level}:${current ? ' <- You were here.' : ''}`);
         if (current) {
             lines.push('      Final resting place for');
-            lines.push(`         you, killed by a ${killer}.`);
+            lines.push(`         you, ${cause}.`);
         }
     }
     return lines;
@@ -361,7 +374,7 @@ function tombstoneDeathRows(cause) {
 }
 
 function renderDeathSummaryPage(killer, { gold, score, depth, moves }, {
-    deathVerb = 'died',
+    deathVerb = 'died', deathCause = null,
 } = {}) {
     const display = game.nhDisplay;
     display?.clearScreen();
@@ -374,7 +387,7 @@ function renderDeathSummaryPage(killer, { gold, score, depth, moves }, {
     const deathDungeon = game._tutorialActive
         ? 'The Tutorial' : currentDungeonName();
     const causeRows = tombstoneDeathRows(
-        deathCauseRecord(killer, deathVerb),
+        deathCause || deathCauseRecord(killer, deathVerb),
     );
     const lines = [
         [1, 23, '----------'],
@@ -582,7 +595,7 @@ function deathCauseRecord(killer, deathVerb = 'died') {
 }
 
 function currentScoreRecord(summary, {
-    outcome = 'died', killer = '', deathVerb = 'died',
+    outcome = 'died', killer = '', deathVerb = 'died', deathCause = null,
 } = {}) {
     return {
         points: summary.score,
@@ -595,7 +608,7 @@ function currentScoreRecord(summary, {
         dungeon: currentDungeonName(),
         outcome,
         death: outcome === 'quit' ? 'quit'
-            : deathCauseRecord(killer, deathVerb),
+            : deathCause || deathCauseRecord(killer, deathVerb),
     };
 }
 
@@ -792,7 +805,7 @@ function doneObjectCleanup() {
 // remaining windows and really_done()'s tombstone/score tail.  It deliberately
 // performs no random calls.
 export async function finishOrdinaryDeath({
-    killer, possessionAnswer = null, deathVerb = 'died',
+    killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
 }) {
     game.program_state.gameover = true;
     game._deathKiller = killer;
@@ -836,16 +849,18 @@ export async function finishOrdinaryDeath({
         'Do you want to see the dungeon overview? [ynq] (n)',
     );
     if (overview === 'y') {
-        await showDisclosureOverlay(overviewLines(killer, deathVerb), {
-            marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
-        });
+        await showDisclosureOverlay(
+            overviewLines(killer, deathVerb, deathCause), {
+                marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
+            },
+        );
     }
     if (overview === 'q') return;
 
     await createOrdinaryBones();
 
     const summary = deathSummaryValues();
-    renderDeathSummaryPage(killer, summary, { deathVerb });
+    renderDeathSummaryPage(killer, summary, { deathVerb, deathCause });
     await waitForCurrentMore();
     renderBlankDeathMore();
     await waitForCurrentMore();
@@ -853,7 +868,7 @@ export async function finishOrdinaryDeath({
     else if (game.flags?.debug) renderWizardScoreNotice();
     else {
         const current = currentScoreRecord(summary, {
-            killer, deathVerb,
+            killer, deathVerb, deathCause,
         });
         renderScoreList(current, updateScoreRecord(current));
     }
