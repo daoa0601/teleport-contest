@@ -101,15 +101,15 @@ import {
     LONG_SWORD,
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
-    BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
+    BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
     STATUE, IRON_CHAIN,
     RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
-    POT_ACID, POT_GAIN_ENERGY, POT_WATER,
+    POT_GAIN_ENERGY,
     WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
     WAN_POLYMORPH,
-    LENSES, BLINDFOLD, TOWEL, CAN_OF_GREASE, FUMBLE_BOOTS, KICKING_BOOTS,
+    LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
@@ -233,6 +233,7 @@ import {
 import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
     heroTeleportTrapBlock, moveHeroByTeleport,
@@ -2381,114 +2382,6 @@ function deleteGushFloorTrap(trap) {
     return true;
 }
 
-function floorObjectContents(object) {
-    if (Array.isArray(object?.contents)) return object.contents;
-    if (Array.isArray(object?.cobj)) return object.cobj;
-    return [];
-}
-
-function waterDamagedPotionName(object) {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const typeKnown = object.typeKnown
-        || game._knownObjectTypes?.has(object.otyp);
-    const noun = typeKnown ? `potion of ${OBJECT_NAMES[object.otyp] || 'acid'}`
-        : 'potion';
-    if (quantity === 1) return `A ${noun} explodes!`;
-    return `Some ${noun}s explode!`;
-}
-
-// C refs: trap.c water_damage() and water_damage_chain().  Floor water uses
-// ordinary luck protection, recursively wets leaking container contents, and
-// mutates paper/potions without inventory prose.  The source sets POOL first,
-// so ordinary erosion feedback is hidden beneath the water.
-async function waterDamageFloorObject(object, messages) {
-    if (!object) return false;
-    const spe = object.spe ?? 0;
-    if (object.otyp === CAN_OF_GREASE && spe > 0) return false;
-    if (object.otyp === TOWEL && spe < 7) {
-        object.spe = spe + rnd(7 - spe);
-        return false;
-    }
-    if (object.greased) {
-        if (rn2(2) === 0) object.greased = false;
-        return false;
-    }
-
-    const isContainer = object.otyp >= LARGE_BOX
-        && object.otyp <= BAG_OF_TRICKS;
-    if (isContainer) {
-        const waterproof = object.otyp === OILSKIN_SACK
-            || object.otyp === ICE_BOX
-            || object.otyp === LARGE_BOX
-            || object.otyp === CHEST;
-        const leaks = !waterproof || (object.cursed && rn2(3) === 0);
-        if (leaks)
-            await waterDamageFloorChain(floorObjectContents(object), messages);
-        return false;
-    }
-
-    if (((game.u?.uluck ?? 0) + 5) > rn2(20)) return false;
-
-    if (object.oclass === 9) {
-        if (object.otyp !== SCR_BLANK_PAPER) {
-            object.otyp = SCR_BLANK_PAPER;
-            object.dknown = false;
-            object.spe = 0;
-        }
-        return false;
-    }
-    if (object.oclass === 10) {
-        if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
-            if (cansee(object.ox, object.oy))
-                messages.push('Steam rises from the Book of the Dead.');
-            return false;
-        }
-        if (object.otyp !== SPE_BLANK_PAPER) {
-            if (object.spestudied)
-                object.spestudied = rn2(object.spestudied);
-            object.otyp = SPE_BLANK_PAPER;
-            object.dknown = false;
-        }
-        return false;
-    }
-    if (object.oclass === 8) {
-        if (object.otyp === POT_ACID) {
-            messages.push(waterDamagedPotionName(object));
-            return true;
-        }
-        if (object.odiluted) {
-            object.otyp = POT_WATER;
-            object.dknown = false;
-            object.blessed = false;
-            object.cursed = false;
-            object.odiluted = 0;
-        } else if (object.otyp !== POT_WATER) {
-            object.odiluted = 1;
-        }
-        return false;
-    }
-
-    if (OBJECT_MATERIAL[object.otyp] === 11) {
-        const proof = !!(object.oerodeproof || object.rustproof);
-        if (proof) {
-            object.rknown = true;
-            return false;
-        }
-        if (object.blessed && rnl(4) === 0) return false;
-        object.oeroded = Math.min(3, (object.oeroded || 0) + 1);
-    }
-    return false;
-}
-
-async function waterDamageFloorChain(objects, messages) {
-    if (!Array.isArray(objects)) return;
-    for (const object of [...objects]) {
-        if (!await waterDamageFloorObject(object, messages)) continue;
-        const index = objects.indexOf(object);
-        if (index >= 0) objects.splice(index, 1);
-    }
-}
-
 // C refs: fountain.c dogushforth()/gush(), vision.c do_clear_area().
 // The callback's filter order is RNG-visible: parity and hero checks precede
 // rn2(distance), while terrain, boulders, adjacent doors, and traps follow it.
@@ -2521,7 +2414,7 @@ async function dogushforth(drinking) {
             game.level.engravings = game.level.engravings.filter(engraving =>
                 engraving.x !== x || engraving.y !== y);
         }
-        await waterDamageFloorChain(objects, messages);
+        await waterDamageChain(objects, messages, game);
 
         // minliquid() is a separate monster/liquid owner.  Repaint here so
         // airborne or water-compatible occupants expose the new background;
@@ -15209,7 +15102,7 @@ async function dothrow(
             );
             thrownMineral.ox = x;
             thrownMineral.oy = y;
-            await waterDamageFloorObject(thrownMineral, []);
+            await waterDamageObject(thrownMineral, [], game);
         } else {
             rn2(100); // drop_throw()->breaktest()->obj_resists()
         }

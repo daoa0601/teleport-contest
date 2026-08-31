@@ -9,6 +9,7 @@ import { newsym, plineWithContinuation } from './display.js';
 import { finishOrdinaryDeath } from './end.js';
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
+import { waterDamageChain } from './trap.js';
 import { vision_recalc } from './vision.js';
 
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
@@ -79,6 +80,10 @@ export async function heroEntersPool({
         if (!u.swimming && !waterWall)
             await publish('You sink like a rock.');
     }
+
+    const damageMessages = [];
+    await waterDamageChain(state.inventory || [], damageMessages, state);
+    for (const message of damageMessages) await publish(message);
 
     if (heroCanLiveUnderwater(state)) {
         if (u.amphibious || u.breathless)

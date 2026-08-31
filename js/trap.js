@@ -1,4 +1,4 @@
-// Armor damage from fire and monster rust-trap effects.
+// Water damage, fire damage, and monster rust-trap effects.
 // C ref: trap.c burnarmor(), trapeffect_rust_trap(), water_damage(),
 // and erode_obj().
 
@@ -6,13 +6,18 @@ import {
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP,
     W_WEP,
 } from './const.js';
+import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
+import { game } from './gstate.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import {
-    BRASS_LANTERN, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES,
+    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX,
+    LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OILSKIN_SACK,
+    POT_ACID, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER,
+    SPE_BOOK_OF_THE_DEAD, TOWEL,
 } from './object_data.js';
-import { rnl, rn2 } from './rng.js';
+import { rnl, rn2, rnd } from './rng.js';
 
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
@@ -38,6 +43,126 @@ function wieldedObject(monster) {
 
 function objectDescription(object, fallback) {
     return object?.name || OBJECT_NAMES[object?.otyp] || fallback;
+}
+
+function objectContents(object) {
+    if (Array.isArray(object?.contents)) return object.contents;
+    if (Array.isArray(object?.cobj)) return object.cobj;
+    return [];
+}
+
+function explodingPotionMessage(object, state) {
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const typeKnown = object.typeKnown
+        || state._knownObjectTypes?.has(object.otyp);
+    const noun = typeKnown ? `potion of ${OBJECT_NAMES[object.otyp] || 'acid'}`
+        : 'potion';
+    return quantity === 1
+        ? `A ${noun} explodes!`
+        : `Some ${noun}s explode!`;
+}
+
+export async function waterDamageObject(
+    object,
+    messages = [],
+    state = game,
+) {
+    if (!object) return false;
+    const spe = object.spe ?? 0;
+    if (object.otyp === CAN_OF_GREASE && spe > 0) return false;
+    if (object.otyp === TOWEL && spe < 7) {
+        object.spe = spe + rnd(7 - spe);
+        return false;
+    }
+    if (object.greased) {
+        if (rn2(2) === 0) {
+            object.greased = false;
+            if (object.otyp === POT_ACID) {
+                messages.push(explodingPotionMessage(object, state));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const isContainer = object.otyp >= LARGE_BOX
+        && object.otyp <= BAG_OF_TRICKS;
+    if (isContainer) {
+        const waterproof = object.otyp === OILSKIN_SACK
+            || object.otyp === ICE_BOX
+            || object.otyp === LARGE_BOX
+            || object.otyp === CHEST;
+        const leaks = !waterproof || (object.cursed && rn2(3) === 0);
+        if (leaks)
+            await waterDamageChain(objectContents(object), messages, state);
+        return false;
+    }
+
+    if (((state.u?.uluck ?? 0) + 5) > rn2(20)) return false;
+
+    if (object.oclass === 9) {
+        if (object.otyp !== SCR_BLANK_PAPER) {
+            object.otyp = SCR_BLANK_PAPER;
+            object.dknown = false;
+            object.spe = 0;
+        }
+        return false;
+    }
+    if (object.oclass === 10) {
+        if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
+            if (cansee(object.ox, object.oy))
+                messages.push('Steam rises from the Book of the Dead.');
+            return false;
+        }
+        if (object.otyp !== SPE_BLANK_PAPER) {
+            if (object.spestudied)
+                object.spestudied = rn2(object.spestudied);
+            object.otyp = SPE_BLANK_PAPER;
+            object.dknown = false;
+        }
+        return false;
+    }
+    if (object.oclass === 8) {
+        if (object.otyp === POT_ACID) {
+            messages.push(explodingPotionMessage(object, state));
+            return true;
+        }
+        if (object.odiluted) {
+            object.otyp = POT_WATER;
+            object.dknown = false;
+            object.blessed = false;
+            object.cursed = false;
+            object.odiluted = 0;
+        } else if (object.otyp !== POT_WATER) {
+            object.odiluted = 1;
+        }
+        return false;
+    }
+
+    if (OBJECT_MATERIAL[object.otyp] === 11) {
+        const proof = !!(object.oerodeproof || object.rustproof);
+        if (proof) {
+            object.rknown = true;
+            return false;
+        }
+        if (object.blessed && rnl(4) === 0) return false;
+        object.oeroded = Math.min(3, (object.oeroded || 0) + 1);
+    }
+    return false;
+}
+
+export async function waterDamageChain(
+    objects,
+    messages = [],
+    state = game,
+) {
+    if (!Array.isArray(objects)) return messages;
+    for (const object of [...objects]) {
+        if (!await waterDamageObject(object, messages, state)) continue;
+        const index = objects.indexOf(object);
+        if (index >= 0) objects.splice(index, 1);
+    }
+    return messages;
 }
 
 function extinguishLitObject(object, monster, state) {

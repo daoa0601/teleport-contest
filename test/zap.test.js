@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey } from '../js/input.js';
 import {
-    OIL_LAMP, SCR_IDENTIFY, WAN_FIRE, WAN_SLEEP,
+    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_FIRE, WAN_SLEEP,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -232,6 +232,15 @@ test('a fire ray melts ice back into its pool', async () => {
 
 test('melting ice makes the hero crawl out of the pool', async () => {
     const level = freshWeaponArena();
+    const acid = {
+        otyp: POT_ACID,
+        oclass: 8,
+        quan: 1,
+        quantity: 1,
+        where: 'inventory',
+    };
+    game.u.uluck = -5;
+    game.inventory = [acid];
     const ice = level.at(game.u.ux, game.u.uy);
     ice.typ = ICE;
     ice.icedpool = ICED_POOL;
@@ -243,6 +252,7 @@ test('melting ice makes the hero crawl out of the pool', async () => {
     assert.equal(ice.typ, POOL);
     assert.notDeepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(IS_POOL(level.at(game.u.ux, game.u.uy).typ), false);
+    assert.equal(game.inventory.includes(acid), false);
 });
 
 test('melting ice drowns a land monster but not a swimmer', async () => {
