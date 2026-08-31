@@ -11,7 +11,9 @@ import {
     flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
+import {
+    consumeInventoryItem, identifyPack, inventoryItemDescription,
+} from './invent.js';
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
 import { mkobj, place_object } from './mklev.js';
@@ -19,7 +21,7 @@ import {
     MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    OBJECT_NAMES, SCR_BLANK_PAPER, SCR_DESTROY_ARMOR,
+    SCR_BLANK_PAPER, SCR_DESTROY_ARMOR,
     SCR_ENCHANT_WEAPON, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT,
     SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_TELEPORTATION,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD,
@@ -42,7 +44,6 @@ import { exceedsActionCapacity } from './weight.js';
 
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
-const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const WEAPON_CLASS = 2;
@@ -179,37 +180,6 @@ async function readPunishmentScroll(scroll) {
     game.context.move = 1;
 }
 
-function objectNeedsFullIdentification(object) {
-    if (!object || object.oclass === COIN_CLASS) return false;
-    return !object.known || !object.bknown || !object.rknown
-        || !object.dknown
-        || (!object.typeKnown
-            && !game._knownObjectTypes?.has(object.otyp));
-}
-
-function fullyIdentifyObject(object) {
-    recordObjectKnowledge(object.otyp);
-    object.typeKnown = true;
-    object.known = true;
-    object.bknown = true;
-    object.rknown = true;
-    object.dknown = true;
-    object.buc = object.blessed ? 'blessed'
-        : object.cursed ? 'cursed' : 'uncursed';
-    const canonical = OBJECT_NAMES[object.otyp];
-    if (canonical && object.oclass === SCROLL_CLASS) {
-        object.name = `scroll of ${canonical}`;
-        object.plural = `scrolls of ${canonical}`;
-    } else if (canonical && object.oclass === SPBOOK_CLASS) {
-        object.name = `spellbook of ${canonical}`;
-        object.plural = `spellbooks of ${canonical}`;
-    }
-    if (Array.isArray(object.contents)) {
-        object.cknown = true;
-        object.lknown = true;
-    }
-}
-
 async function readIdentifyScroll(scroll) {
     const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
     await pline('As you read the scroll, it disappears.');
@@ -231,21 +201,8 @@ async function readIdentifyScroll(scroll) {
             identifyLimit++;
     }
 
-    const candidates = (game.inventory || [])
-        .filter(objectNeedsFullIdentification);
-    if (!candidates.length) {
-        await plineWithContinuation(
-            `You have already identified ${
-                alreadyKnown ? 'all' : 'the rest'
-            } of your possessions.`,
-        );
-        game.context.move = 1;
-        return;
-    }
-    const selected = identifyLimit === 0
-        ? candidates : candidates.slice(0, identifyLimit);
+    const selected = await identifyPack(identifyLimit, !alreadyKnown);
     for (const object of selected) {
-        fullyIdentifyObject(object);
         await plineWithContinuation(
             `${object.invlet} - ${inventoryItemDescription(object)}.`,
         );

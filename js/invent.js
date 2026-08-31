@@ -7,7 +7,9 @@ import {
     bot, consumeHallucinatedMenuObjectGlyph, docrtRecalc, flush_screen,
     formatStrength, pline,
 } from './display.js';
-import { showChoiceWindow, showInventoryWindow } from './windows.js';
+import {
+    showChoiceWindow, showInventoryWindow, showMultiSelectWindow,
+} from './windows.js';
 import { nhgetch } from './input.js';
 import {
     DOOR, D_BROKEN, D_ISOPEN, D_NODOOR,
@@ -24,12 +26,95 @@ import { unseenObjectNoun } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
 import { objectTypeCallNoun } from './object_call.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { recordObjectKnowledge } from './object_knowledge.js';
+
+const COIN_CLASS = 12;
+const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
 
 const CLASS_ORDER = [
     'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
     'Spellbooks', 'Potions', 'Rings', 'Wands', 'Tools', 'Gems/Stones',
     'Boulders',
 ];
+
+function objectNeedsFullIdentification(object) {
+    if (!object || object.oclass === COIN_CLASS) return false;
+    return !object.known || !object.bknown || !object.rknown
+        || !object.dknown
+        || (!object.typeKnown
+            && !game._knownObjectTypes?.has(object.otyp));
+}
+
+function fullyIdentifyObject(object) {
+    recordObjectKnowledge(object.otyp);
+    object.typeKnown = true;
+    object.known = true;
+    object.bknown = true;
+    object.rknown = true;
+    object.dknown = true;
+    object.buc = object.blessed ? 'blessed'
+        : object.cursed ? 'cursed' : 'uncursed';
+    const canonical = OBJECT_NAMES[object.otyp];
+    if (canonical && object.oclass === SCROLL_CLASS) {
+        object.name = `scroll of ${canonical}`;
+        object.plural = `scrolls of ${canonical}`;
+    } else if (canonical && object.oclass === SPBOOK_CLASS) {
+        object.name = `spellbook of ${canonical}`;
+        object.plural = `spellbooks of ${canonical}`;
+    }
+    if (Array.isArray(object.contents)) {
+        object.cknown = true;
+        object.lknown = true;
+    }
+}
+
+function identificationMenu(candidates, first) {
+    return showMultiSelectWindow({
+        title: `What would you like to identify ${first ? 'first' : 'next'}?`,
+        sections: [{
+            heading: 'Inventory',
+            items: candidates.map(object => ({
+                key: object.invlet,
+                text: inventoryItemDescription(object),
+                value: object,
+            })),
+        }],
+    });
+}
+
+// C invent.c:identify_pack().  A zero limit identifies everything.  A
+// smaller limit asks the player which still-unknown objects to identify.
+export async function identifyPack(idLimit, learningIdentify = false) {
+    let candidates = (game.inventory || [])
+        .filter(objectNeedsFullIdentification);
+    if (!candidates.length) {
+        await pline(`You have already identified ${
+            learningIdentify ? 'the rest' : 'all'
+        } of your possessions.`);
+        return [];
+    }
+
+    if (!idLimit || idLimit >= candidates.length) {
+        for (const object of candidates) fullyIdentifyObject(object);
+        return candidates;
+    }
+
+    const identified = [];
+    let remaining = idLimit;
+    let first = true;
+    while (remaining > 0 && candidates.length) {
+        const selected = await identificationMenu(candidates, first);
+        if (!selected.length) break;
+        const accepted = selected.slice(0, remaining);
+        for (const object of accepted) fullyIdentifyObject(object);
+        identified.push(...accepted);
+        remaining -= accepted.length;
+        candidates = candidates.filter(object => !accepted.includes(object));
+        first = false;
+    }
+    return identified;
+}
 
 function indefiniteArticle(text) {
     return /^[aeiou]/i.test(text) ? 'an' : 'a';
