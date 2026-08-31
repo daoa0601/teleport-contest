@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BEAR_TRAP, WEB } from '../js/const.js';
+import { BEAR_TRAP, TELEP_TRAP, WEB } from '../js/const.js';
 import { triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 
@@ -55,6 +55,43 @@ test('a monster which recognizes a web can avoid becoming trapped', () => {
     assert.equal(result.event.kind, 'known-trap-avoided');
     assert.equal(monster.mtrapped ?? 0, 0);
     assert.equal(monster.mtrapseen, 1 << (WEB - 1));
+});
+
+test('a monster can avoid a familiar ordinary teleport trap', () => {
+    const monster = {
+        mnum: 16, mx: 11, my: 10, mhp: 8,
+        mtrapseen: 1 << (TELEP_TRAP - 1),
+    };
+    const trap = { tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true };
+    initRng(3n);
+
+    const result = triggerImmediateMonsterTrap(
+        monster, trapState(monster, trap),
+    );
+
+    assert.equal(result.event.kind, 'known-trap-avoided');
+    assert.deepEqual({ x: monster.mx, y: monster.my }, { x: 11, y: 10 });
+});
+
+test('a fixed teleport trap sends a monster to its free destination', () => {
+    const monster = {
+        mnum: 16, mx: 11, my: 10, mhp: 8,
+        mtrapseen: 1 << (TELEP_TRAP - 1),
+        mtrack: [{ x: 9, y: 10 }],
+    };
+    const trap = {
+        tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true,
+        teledest: { x: 15, y: 10 },
+    };
+
+    const result = triggerImmediateMonsterTrap(
+        monster, trapState(monster, trap),
+    );
+
+    assert.equal(result.event.kind, 'teleport-trap');
+    assert.deepEqual({ x: monster.mx, y: monster.my }, trap.teledest);
+    assert.deepEqual(monster.mtrack, []);
+    assert.equal(result.movement.actionCompleted, true);
 });
 
 test('visible bear trap returns the existing deferred-damage handoff', () => {

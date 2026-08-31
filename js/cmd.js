@@ -226,13 +226,12 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    fumaroles, randomMonsterRelocation,
-    sessionIsNight, triggerImmediateMonsterTrap,
+    fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
     heroTeleportTrapBlock, monsterTeleportRestricted, moveHeroByTeleport,
-    prepareHeroTeleport, safeTeleportDestination,
+    prepareHeroTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';

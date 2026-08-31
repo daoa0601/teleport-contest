@@ -5,19 +5,22 @@ import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
     ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR,
-    IS_LAVA, IS_POOL, ROWNO, VIBRATING_SQUARE,
+    IS_LAVA, IS_POOL, ROWNO, VAULT, VIBRATING_SQUARE,
     WATER, W_NONPASSWALL, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO,
+    MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    AMULET_OF_YENDOR, BOULDER, LEASH,
+    AMULET_OF_YENDOR, BOULDER, LEASH, SCR_SCARE_MONSTER,
 } from './object_data.js';
 import {
     beginBallAndChainTeleport, finishBallAndChainTeleport,
 } from './ball.js';
-import { monsterGoodPosition } from './mklev.js';
+import { monsterGoodPosition, somexyspace } from './mklev.js';
+import { priestIsInOwnTemple } from './priest.js';
+import { shopkeeperInOwnShop } from './shk.js';
 
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
@@ -29,6 +32,11 @@ const M2_ROCKTHROW = 0x08000000;
 const M3_COVETOUS = 0x001f;
 const S_DEMON = 56;
 const PM_FLOATING_EYE = 28;
+const PM_ANGEL = 122;
+const PM_DEATH = 311;
+const PM_PESTILENCE = 312;
+const PM_FAMINE = 313;
+const G_UNIQ = 0x1000;
 
 function monsterIsDemonRuler(monster) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
@@ -69,6 +77,19 @@ export function heroTeleportTrapBlock(state = game) {
         ? state.u.umonnum : state?.u?.umonster;
     if (monsterTeleportRestricted({ mnum: currentForm }, state)) return 'level';
     return null;
+}
+
+export function scareScrollAffects(monster, state, x, y) {
+    const pile = state?.level?.objects?.[x]?.[y] || [];
+    if (!pile.some(object => object.otyp === SCR_SCARE_MONSTER)) return false;
+    if (monster?.iswiz || monster?.mnum === PM_ANGEL
+        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(monster?.mnum)
+        || MONSTER_SYMBOL[monster?.mnum] === 53
+        || ((MONSTER_GENO[monster?.mnum] ?? 0) & G_UNIQ)
+        || (monster?.isminion && (monster?.maligntyp ?? 1) > 0)
+        || shopkeeperInOwnShop(monster, state)
+        || priestIsInOwnTemple(monster, state)) return false;
+    return true;
 }
 
 function inside(area, x, y) {
@@ -235,6 +256,26 @@ export function safeTeleportDestination(
     return trappedFallback;
 }
 
+export function randomMonsterRelocation(
+    monster, state = game, calls = [], random = rn2, rollOne = rnd,
+) {
+    if (!monster) return null;
+    let destination = null;
+    for (let attempt = 0; attempt < 50; attempt++) {
+        const x = rollOne(COLNO - 1);
+        calls.push(`rnd(${COLNO - 1})`);
+        const y = random(ROWNO);
+        calls.push(`rn2(${ROWNO})`);
+        const selfSquare = x === monster.mx && y === monster.my;
+        if ((!selfSquare && !monsterGoodPosition(monster.mnum, x, y))
+            || scareScrollAffects(monster, state, x, y)) continue;
+        destination = { x, y };
+        break;
+    }
+    if (!destination) return null;
+    return relocateMonsterTo(monster, destination.x, destination.y);
+}
+
 function nearbyMonsterDestination(
     monster, centerX, centerY, state, random = rn2,
 ) {
@@ -265,6 +306,28 @@ function nearbyMonsterDestination(
         }
     }
     return null;
+}
+
+function monsterVisibleAt(monster, state, x = monster.mx, y = monster.my) {
+    const inSight = !state?.viz_array
+        || !!(state.viz_array?.[y]?.[x] & 0x2);
+    const canSeeInvisible = !!(state?.u?.seeInvisible
+        || state?.u?.see_invisible);
+    return !state?.blind && !(state?.u?.blindTurns > 0)
+        && inSight && !monster.mundetected
+        && (!monster.minvis || canSeeInvisible);
+}
+
+function relocateMonsterTo(monster, x, y) {
+    const oldx = monster.mx;
+    const oldy = monster.my;
+    monster.mx = x;
+    monster.my = y;
+    monster.mtrack = [];
+    return {
+        oldx, oldy, x, y,
+        moved: oldx !== x || oldy !== y,
+    };
 }
 
 export function clearFixedTeleportDestination(
@@ -337,6 +400,86 @@ export function prepareHeroTeleport(state = game, random = rn2) {
     if (steedInventory.some(object => object.otyp === AMULET_OF_YENDOR))
         return { allowed: false, messages };
     return { allowed: true, messages };
+}
+
+export function prepareMonsterTeleport(
+    monster, state = game, force = false,
+) {
+    if (monster === state?.u?.usteed)
+        return { allowed: false, leashReleased: false };
+    if (!monster?.mleashed)
+        return { allowed: true, leashReleased: false };
+
+    const leash = state.inventory?.find(object =>
+        object.otyp === LEASH && object.leashmon === monster.m_id);
+    if (leash?.cursed && !force)
+        return { allowed: false, leashReleased: false, cursedLeash: true };
+
+    monster.mleashed = 0;
+    if (leash) leash.leashmon = 0;
+    return { allowed: true, leashReleased: true };
+}
+
+export function teleportMonsterFromTrap(
+    monster, trap, {
+        state = game, calls = [], random = rn2, rollOne = rnd,
+    } = {},
+) {
+    const event = {
+        kind: 'teleport-trap', trap,
+        trapSquare: { x: monster.mx, y: monster.my },
+        visible: monsterVisibleAt(monster, state),
+        relocation: null,
+        damage: 0,
+        killed: false,
+    };
+    if (monsterTeleportRestricted(monster, state)) {
+        event.restricted = true;
+        return event;
+    }
+
+    const preparation = prepareMonsterTeleport(monster, state);
+    event.leashReleased = preparation.leashReleased;
+    if (!preparation.allowed) {
+        event.cursedLeash = preparation.cursedLeash;
+        return event;
+    }
+
+    const fixedDestination = trap.teledest
+        && isok(trap.teledest.x, trap.teledest.y);
+    if (trap.once) {
+        const vault = state.level?.rooms?.find(room => room?.rtype === VAULT);
+        if (vault) {
+            const square = { x: 0, y: 0 };
+            if (somexyspace(vault, square)
+                && monsterGoodPosition(monster.mnum, square.x, square.y)) {
+                event.relocation = relocateMonsterTo(
+                    monster, square.x, square.y,
+                );
+            }
+        }
+        event.relocation ||= randomMonsterRelocation(
+            monster, state, calls, random, rollOne,
+        );
+    } else if (fixedDestination) {
+        const occupiedByHero = state.u?.ux === trap.teledest.x
+            && state.u?.uy === trap.teledest.y;
+        const occupiedByMonster = state.level?.monsters?.some(candidate =>
+            (candidate.mhp ?? 1) > 0
+            && candidate.mx === trap.teledest.x
+            && candidate.my === trap.teledest.y);
+        if (!occupiedByHero && !occupiedByMonster) {
+            event.relocation = relocateMonsterTo(
+                monster, trap.teledest.x, trap.teledest.y,
+            );
+        }
+    } else {
+        event.relocation = randomMonsterRelocation(
+            monster, state, calls, random, rollOne,
+        );
+    }
+    event.teleportAttempted = true;
+    return event;
 }
 
 export function moveHeroByTeleport(x, y, state = game) {

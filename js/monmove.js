@@ -35,7 +35,6 @@ import {
     OBJECT_SMALL_DAMAGE,
     OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
-    SCR_SCARE_MONSTER,
     SLIME_MOLD,
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from './object_data.js';
@@ -61,6 +60,7 @@ import {
 import { inTown } from './room.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { syncBlindness } from './senses.js';
+import { priestIsInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
     removeObjectFromMonsterInventory,
@@ -70,7 +70,10 @@ import {
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
-import { monsterTeleportRestricted } from './teleport.js';
+import {
+    monsterTeleportRestricted, randomMonsterRelocation,
+    scareScrollAffects, teleportMonsterFromTrap,
+} from './teleport.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
     transformWereMonster,
@@ -173,10 +176,8 @@ const PM_TENGU = 55;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
 const PM_VLAD_THE_IMPALER = 228;
-const PM_ANGEL = 122;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
-const PM_PESTILENCE = 312;
 const PM_STALKER = 153;
 const PM_LICHEN = 158;
 const PM_LEATHER_GOLEM = 253;
@@ -187,7 +188,6 @@ const PM_WIZARD = 343;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const WAN_MAGIC_MISSILE = 429;
-const G_UNIQ = 0x1000;
 const S_GOLEM = 55;
 const AD_RUST = 24;
 const AD_DCAY = 34;
@@ -1723,28 +1723,6 @@ function conflictActive(state) {
     const right = state?.uright ?? state?.u?.uright;
     const left = state?.uleft ?? state?.u?.uleft;
     return right?.otyp === 186 || left?.otyp === 186;
-}
-
-function priestInOwnTemple(monster, state) {
-    const epri = monster?.epri || monster?.mextra?.epri;
-    const roomno = state?.level?.at?.(monster?.mx, monster?.my)?.roomno;
-    return !!(monster?.ispriest && epri && roomno === epri.shroom);
-}
-
-// C monmove.c:onscary() and mon.c:mfndpos().  The floor scroll is a magical
-// square property: most monsters refuse it before candidate count and track
-// avoidance are evaluated.  Directly resistant identities ignore it.
-function scareScrollAffects(monster, state, x, y) {
-    const pile = state?.level?.objects?.[x]?.[y] || [];
-    if (!pile.some(object => object.otyp === SCR_SCARE_MONSTER)) return false;
-    if (monster?.iswiz || monster?.mnum === PM_ANGEL
-        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(monster?.mnum)
-        || MONSTER_SYMBOL[monster?.mnum] === 53
-        || ((MONSTER_GENO[monster?.mnum] ?? 0) & G_UNIQ)
-        || (monster?.isminion && (monster?.maligntyp ?? 1) > 0)
-        || shopkeeperInOwnShop(monster, state)
-        || priestInOwnTemple(monster, state)) return false;
-    return true;
 }
 
 // C ref: trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
@@ -5186,26 +5164,28 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === TELEP_TRAP) {
-        // trap.c:mintrap()->trapeffect_telep_trap().  Ordinary monster
-        // teleport traps keep the actor on-level, then postmov() continues
-        // with the relocated coordinates and trailing distfleeck.
+        const fixedDestination = trap.teledest
+            && isok(trap.teledest.x, trap.teledest.y);
+        if (!fixedDestination && monsterKnowsTrap(monster, trap)
+            && recordRandom(random, calls, 4) !== 0) {
+            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
+
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const trapSquare = { x: monster.mx, y: monster.my };
-        const relocation = randomMonsterRelocation(
-            monster, state, calls, random, rollOne,
-        );
-        if (!relocation) return null;
-        movement.x = relocation.x;
-        movement.y = relocation.y;
-        movement.moved = movement.oldx !== movement.x
-            || movement.oldy !== movement.y;
-        const event = {
-            kind: 'teleport-trap', trap, trapSquare, relocation,
-            damage: 0, killed: false,
-        };
+        const event = teleportMonsterFromTrap(monster, trap, {
+            state, calls, random, rollOne,
+        });
         movement.trap = event;
         movement.actionCompleted = true;
+        if (event.relocation) {
+            movement.x = event.relocation.x;
+            movement.y = event.relocation.y;
+            movement.moved = movement.oldx !== movement.x
+                || movement.oldy !== movement.y;
+        }
         return event;
     }
     if (trap.ttyp === RUST_TRAP) {
@@ -5944,39 +5924,6 @@ function drainHeroItemByDisenchanter(object, random, calls) {
     object.spe = enchantment - 1;
     object.enchantment = object.spe;
     return true;
-}
-
-// C teleport.c:rloc().  The ordinary random phase consumes complete x/y
-// pairs and accepts the first rloc_pos_ok()-shaped destination.  Theft and
-// dochug()'s fleeing-teleporter branch share this physical owner.  The
-// exhaustive fifty-failure fallback remains a separate, unwitnessed branch.
-export function randomMonsterRelocation(
-    monster, state, calls, random = rn2, rollOne = rnd,
-) {
-    if (!monster) return null;
-    let destination = null;
-    for (let attempt = 0; attempt < 50; attempt++) {
-        const x = rollOne(COLNO - 1);
-        calls.push(`rnd(${COLNO - 1})`);
-        const y = random(ROWNO);
-        calls.push(`rn2(${ROWNO})`);
-        const selfSquare = x === monster.mx && y === monster.my;
-        if ((!selfSquare && !monsterGoodPosition(monster.mnum, x, y))
-            || scareScrollAffects(monster, state, x, y)) continue;
-        destination = { x, y };
-        break;
-    }
-    if (!destination) return null;
-
-    const oldx = monster.mx, oldy = monster.my;
-    monster.mx = destination.x;
-    monster.my = destination.y;
-    monster.mtrack = [];
-    return {
-        oldx, oldy,
-        x: destination.x, y: destination.y,
-        moved: oldx !== destination.x || oldy !== destination.y,
-    };
 }
 
 // C mon.c:mnexto()->teleport.c:enexto().  All three rings are collected and
@@ -7131,7 +7078,7 @@ function covetousPicksUpTargetUnderfoot(monster, state) {
 function covetousUsesHarassStrategy(monster, state) {
     if (!monsterIsCovetous(monster)
         || shopkeeperInOwnShop(monster, state)
-        || priestInOwnTemple(monster, state)) return false;
+        || priestIsInOwnTemple(monster, state)) return false;
     const hp = Math.max(0, monster.mhp ?? 0);
     const maxHp = Math.max(1, monster.mhpmax ?? hp);
     if (Math.floor((hp * 3) / maxHp) !== 3) return false;

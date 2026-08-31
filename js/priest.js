@@ -32,6 +32,11 @@ function priestInOwnTemple(priest, roomno, state = game) {
     return state.level?.at?.(priest.mx, priest.my)?.roomno === roomno;
 }
 
+export function priestIsInOwnTemple(priest, state = game) {
+    const roomno = state.level?.at?.(priest?.mx, priest?.my)?.roomno;
+    return roomno != null && priestInOwnTemple(priest, roomno, state);
+}
+
 function findPriest(roomno, state = game) {
     return state.level?.monsters?.find(priest => !priest.dead
         && priestInOwnTemple(priest, roomno, state)) || null;
