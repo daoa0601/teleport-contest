@@ -32,7 +32,7 @@ import {
     ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES,
     OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
-    OBJECT_SMALL_DAMAGE,
+    OBJECT_SMALL_DAMAGE, IRON_CHAIN,
     OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
     SLIME_MOLD,
@@ -76,6 +76,7 @@ import {
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
+import { applyMonsterRustTrap } from './trap.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
     transformWereMonster,
@@ -185,6 +186,7 @@ const PM_LICHEN = 158;
 const PM_LEATHER_GOLEM = 253;
 const PM_FLESH_GOLEM = 255;
 const PM_LIZARD = 326;
+const PM_IRON_GOLEM = 259;
 const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
 const PM_WATCHMAN = 282;
@@ -2893,6 +2895,16 @@ function finishPetMonsterKill(
 // this producer; grow_up() remains exclusively with the pet-combat caller.
 function createOrdinaryMonsterCorpse(defender, state, random, calls) {
     const x = defender.mx, y = defender.my;
+    if (defender.mnum === PM_IRON_GOLEM) {
+        const chainCount = d(2, 6);
+        calls.push('d(2,6)');
+        let lastChain = null;
+        for (let index = 0; index < chainCount; index++) {
+            lastChain = mksobj(IRON_CHAIN, true, false);
+            placeThrownObject(state, lastChain, x, y);
+        }
+        return lastChain;
+    }
     const frequency = (MONSTER_GENO[defender.mnum] ?? 0) & 0x7;
     const corpseDenominator = 2 + Number(frequency < 2)
         + Number((MONSTER_SIZE[defender.mnum] ?? 0) === 0);
@@ -5198,17 +5210,18 @@ function triggerMonsterTrap(
         if (visible) trap.tseen = true;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const targetRoll = recordRandom(random, calls, 5);
-        const event = {
-            kind: 'rust-trap', trap, visible, targetRoll,
-            deferredWaterDamage: true,
-            damage: 0, killed: false,
-        };
-        // The selected seed73 actor takes the default body splash with no
-        // lit item or worn torso armor.  Head/arm equipment damage, complete
-        // rusting, and gremlin splitting remain named effect branches.
-        if (targetRoll < 3)
-            event.unimplementedTargetedWaterDamage = true;
+        const event = applyMonsterRustTrap(monster, state, {
+            roll: range => recordRandom(random, calls, range),
+        });
+        event.trap = trap;
+        event.visible = visible;
+        if (event.completelyRusted) {
+            monster.mhp = 0;
+            event.killed = true;
+            movement.actorDied = true;
+            movement.actionCompleted = true;
+            movement.deferredAfterRustTrapMessage = true;
+        }
         movement.trap = event;
         return event;
     }
@@ -9276,6 +9289,22 @@ export function resumeDeferredMonsterRollingBoulderDeath(
         );
         event.death = { corpseCreated: !!corpse, corpse };
     }
+    return action;
+}
+
+export function resumeDeferredMonsterRustTrap(
+    action, state, random = rn2,
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterRustTrapMessage
+        || event?.kind !== 'rust-trap' || !event.killed) return action;
+    delete movement.deferredAfterRustTrapMessage;
+    detachDeadMonster(action.monster, state);
+    const corpse = createOrdinaryMonsterCorpse(
+        action.monster, state, random, action.calls || DISCARDED_CALL_LOG,
+    );
+    event.death = { corpseCreated: !!corpse, corpse };
     return action;
 }
 

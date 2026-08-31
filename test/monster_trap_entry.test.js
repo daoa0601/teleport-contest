@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BEAR_TRAP, TELEP_TRAP, WEB } from '../js/const.js';
+import {
+    BEAR_TRAP, TELEP_TRAP, W_ARMH, WEB,
+} from '../js/const.js';
 import { triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { applyMonsterRustTrap } from '../js/trap.js';
 
 function trapState(monster, trap = null) {
     return {
@@ -106,4 +110,21 @@ test('visible bear trap returns the existing deferred-damage handoff', () => {
     assert.equal(result.movement.deferredAfterBearTrapMessage, true);
     assert.equal(monster.mtrapped, 1);
     assert.equal(monster.mhp, 20);
+});
+
+test('rust-trap water rusts an iron helmet worn by a monster', () => {
+    const helmet = {
+        otyp: ORCISH_HELM, owornmask: W_ARMH, oeroded: 0,
+    };
+    const monster = {
+        mnum: 16, mx: 11, my: 10, mhp: 8,
+        minvent: [helmet],
+    };
+    const event = applyMonsterRustTrap(monster, trapState(monster), {
+        roll: range => range === 5 ? 0 : 1,
+    });
+
+    assert.equal(event.target, 'head');
+    assert.equal(helmet.oeroded, 1);
+    assert.equal(event.effects[0].kind, 'rusted');
 });

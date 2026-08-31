@@ -137,6 +137,7 @@ import {
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterProjectileTrap,
+    resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     finishDeferredMonsterRollingBoulderPlacement,
     resumeDeferredMonsterRollingBoulderDeath,
@@ -198,7 +199,9 @@ import {
 } from './shk.js';
 import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
-import { presentMonsterWebTrap } from './monster_trap_events.js';
+import {
+    presentMonsterRustTrap, presentMonsterWebTrap,
+} from './monster_trap_events.js';
 import { captureRunmodeDelay } from './runmode.js';
 
 const M2_LORD = 0x00000400;
@@ -3965,6 +3968,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             await queueTurnMessage(
                 `${visibleMonsterSubject(monster)} suddenly falls asleep!`,
             );
+        }
+        if (movement?.trap?.kind === 'rust-trap') {
+            const event = movement.trap;
+            await presentMonsterRustTrap({
+                event, monster, visible: event.visible,
+                subject: visibleMonsterSubject,
+                announce: queueTurnMessage,
+            });
+            if (movement.deferredAfterRustTrapMessage) {
+                resumeDeferredMonsterRustTrap(action, game);
+                movement = action.movement;
+            }
         }
         if (movement?.trap?.kind === 'pit-trap'
             && movement.trap.visible) {
