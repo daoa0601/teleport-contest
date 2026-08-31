@@ -11,7 +11,7 @@ import {
     initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
     randomDefensiveMonsterItem, randomMiscMonsterItem,
-    randomOffensiveMonsterItem, monsterGoodPosition, level_difficulty,
+    randomOffensiveMonsterItem, level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     disturbBuriedZombieTimers, finishBuriedZombieTimer,
@@ -155,7 +155,9 @@ import {
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
-import { monsterTeleportRestricted } from './teleport.js';
+import {
+    monsterGoodPosition, monsterTeleportRestricted,
+} from './teleport_rules.js';
 import { rehumanizeHero } from './polyself.js';
 import { setTrack } from './track.js';
 import {

@@ -230,10 +230,12 @@ import {
 } from './monmove.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportRestricted, heroTeleportTrapBlock,
-    monsterTeleportRestricted, moveHeroByTeleport,
+    heroTeleportTrapBlock, moveHeroByTeleport,
     prepareHeroTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
+import {
+    heroTeleportRestricted, monsterTeleportRestricted,
+} from './teleport_rules.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';

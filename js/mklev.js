@@ -109,7 +109,7 @@ import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
-import { engravingAt, makeEngravingAt, wipeoutText } from './engrave.js';
+import { makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -137,6 +137,7 @@ import {
     mergable as objectsMergable, mergeObjectStacks,
 } from './object_merge.js';
 import { vision_note_blocker_change } from './vision.js';
+import { monsterGoodPosition } from './teleport_rules.js';
 import {
     SpecialSelection,
     match_maptyps,
@@ -282,7 +283,6 @@ const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
 const PM_WOLF = 20;
-const PM_FLOATING_EYE = 28;
 const PM_FOG_CLOUD = 106;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_VAMPIRE = 226;
@@ -307,10 +307,6 @@ const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
 const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
-const M1_NOEYES = 0x00001000;
-const S_ANGEL = 27;
-const S_VAMPIRE = 48;
-const S_HUMAN = 53;
 const SCR_CREATE_MONSTER = 329;
 const FLINT = 473;
 const PM_HOBBIT = 43;
@@ -1484,7 +1480,6 @@ const M2_PEACEFUL = 0x00200000;
 const M2_NASTY = 0x02000000;
 const M2_STRONG = 0x04000000;
 const M2_GREEDY = 0x10000000;
-const M2_ROCKTHROW = 0x08000000;
 const M1_MINDLESS = 0x00010000;
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
@@ -2092,10 +2087,6 @@ export function shapechangeMonster(monster, forcedTargetMndx = null) {
     return true;
 }
 
-// C ref: teleport.c goodpos().  A null mndx represents the first half of
-// makemon(ptr=NULL, 0, 0): select an accessible square without applying
-// species-specific water, lava, wall, or boulder-carrier policy.  Once a
-// species exists, the same owner applies those restrictions.
 function monsterOccupiesPosition(monster, x, y) {
     return !!monster && (monster.mhp ?? 1) > 0 && (
         (monster.mx === x && monster.my === y)
@@ -2107,85 +2098,6 @@ function monsterOccupiesPosition(monster, x, y) {
 function levelMonsterAt(x, y, ignore = null) {
     return game.level?.monsters?.find(monster => monster !== ignore
         && monsterOccupiesPosition(monster, x, y));
-}
-
-export function monsterGoodPosition(
-    mndx, x, y, avoidMonsterGenerationExclusions = false,
-    checkScary = false, ignoreWater = false,
-) {
-    const loc = game.level?.at?.(x, y);
-    if (!loc || !isok(x, y)) return false;
-    if (game.u?.ux === x && game.u?.uy === y) return false;
-    if (levelMonsterAt(x, y)) return false;
-
-    const flags1 = mndx == null ? 0 : MONSTER_FLAGS1[mndx] ?? 0;
-    const flags2 = mndx == null ? 0 : MONSTER_FLAGS2[mndx] ?? 0;
-    const symbol = mndx == null ? 0 : MONSTER_SYMBOL[mndx] ?? 0;
-    if (mndx != null) {
-        const inAir = !!(flags1 & 0x00000001)
-            || symbol === 5 || symbol === 25;
-        const swimmer = !!(flags1 & 0x00000002);
-
-        if (IS_POOL(loc.typ) && !ignoreWater) {
-            const waterWall = loc.typ === WATER;
-            return swimmer || (!game.level?.flags?.waterlevel
-                && !waterWall && inAir);
-        } else if (symbol === 57 && rn2(13) && !ignoreWater) {
-            // C evaluates the eel probe before MM_IGNOREWATER suppresses its
-            // result, so an ignored-water eel still owns the rn2(13) draw.
-            return false;
-        } else if (IS_LAVA(loc.typ)) {
-            if (mndx === PM_FLOATING_EYE) return false;
-            return inAir || mndx === PM_FIRE_ELEMENTAL
-                || mndx === PM_SALAMANDER;
-        }
-
-        // passes_walls() and amorphous() accept their special terrain before
-        // the ordinary accessibility, boulder, and exclusion tail.
-        if ((flags1 & 0x00000008)
-            && !(loc.wall_info & W_NONPASSWALL)) return true;
-        if ((flags1 & 0x00000004) && loc.typ === DOOR
-            && (loc.doormask & (D_CLOSED | D_LOCKED))) return true;
-        if (checkScary && monsterTypeScaredFromPosition(mndx, x, y))
-            return false;
-    }
-    // C teleport.c:accessible() excludes a closed or locked door even
-    // though DOOR is otherwise an ACCESSIBLE terrain type.  Pass-wall and
-    // amorphous species have already taken their explicit exceptions above.
-    if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED)))
-        return false;
-    if (loc.typ < DOOR && !(ignoreWater && IS_POOL(loc.typ))) return false;
-    const hasBoulder = game.level.objects?.[x]?.[y]?.some(
-        object => object.otyp === BOULDER,
-    );
-    if (hasBoulder && !(flags2 & M2_ROCKTHROW)) return false;
-    if (avoidMonsterGenerationExclusions
-        && game.level.exclusionZones?.some(zone =>
-            zone.type === 'monster-generation'
-            && x >= zone.lx && x <= zone.hx
-            && y >= zone.ly && y <= zone.hy)) {
-        return false;
-    }
-    return true;
-}
-
-// C teleport.c:goodpos_onscary().  New-monster placement has species data
-// but no live actor state, so its first enexto pass uses this deliberately
-// narrower scare approximation before retrying without GP_CHECKSCARY.
-function monsterTypeScaredFromPosition(mndx, x, y) {
-    const symbol = MONSTER_SYMBOL[mndx] ?? 0;
-    if (symbol === S_HUMAN || symbol === S_ANGEL
-        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(mndx)
-        || ((MONSTER_GENO[mndx] ?? 0) & G_UNIQ_MASK)) return false;
-    const loc = game.level?.at?.(x, y);
-    if (loc?.typ === ALTAR && symbol === S_VAMPIRE) return true;
-    if (game.level?.objects?.[x]?.[y]?.some(
-        object => object.otyp === SCR_SCARE_MONSTER,
-    )) return true;
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
-    if (inHell || In_endgame(game.u?.uz) || mndx === PM_MINOTAUR
-        || ((MONSTER_FLAGS1[mndx] ?? 0) & M1_NOEYES)) return false;
-    return !!engravingAt(x, y)?.text?.includes('Elbereth');
 }
 
 // C ref: makemon.c makemon_rnd_goodpos().  The random phase owns a complete

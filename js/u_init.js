@@ -4,7 +4,8 @@
 import { game } from './gstate.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
-import { mkobj, mksobj, monsterGoodPosition } from './mklev.js';
+import { mkobj, mksobj } from './mklev.js';
+import { monsterGoodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { armorSlotFor, findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';

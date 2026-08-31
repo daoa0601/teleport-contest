@@ -40,7 +40,7 @@ import {
 } from './object_data.js';
 import {
     makemonNear, mkcorpstat, mksobj, place_object, shapechangeMonster,
-    summonNastyMonsters, stack_object, undeadToCorpse, monsterGoodPosition,
+    summonNastyMonsters, stack_object, undeadToCorpse,
 } from './mklev.js';
 import { getTrack } from './track.js';
 import { rehumanizeHero } from './polyself.js';
@@ -71,9 +71,11 @@ import {
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
 import {
-    monsterTeleportRestricted, randomMonsterRelocation,
-    monsterIsScaredAt, teleportMonsterFromTrap,
+    randomMonsterRelocation, monsterIsScaredAt, teleportMonsterFromTrap,
 } from './teleport.js';
+import {
+    monsterGoodPosition, monsterTeleportRestricted,
+} from './teleport_rules.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
     transformWereMonster,
