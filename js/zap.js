@@ -209,7 +209,7 @@ function learnNoDirectionWand(wand) {
 
 async function zapNoDirection(wand, { finishMonsterKill } = {}) {
     if (wand.otyp === WAN_LIGHT) {
-        await lightRoom({ finishMonsterKill });
+        await lightRoom(true, { finishMonsterKill });
         await damageGremlinHeroWithLight(wand, { finishHeroDeath });
         if (!game.blind && !((game.u?.blindTurns ?? 0) > 0))
             learnNoDirectionWand(wand);
@@ -293,6 +293,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     }
 
     if (await zapNoDirection(wand, { finishMonsterKill })) {
+        if (game.program_state?.gameover) return;
         wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);

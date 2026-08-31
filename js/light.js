@@ -4,11 +4,15 @@
 import { game } from './gstate.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    CORR, Is_rogue_level, Is_waterlevel, Upolyd,
+    CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
+    NO_MINVENT, Upolyd,
 } from './const.js';
 import {
-    canSeeMonster, canSpotMonster, map_invisible, pline,
+    canSeeMonster, canSpotMonster, map_invisible, newsym,
+    plineWithContinuation,
 } from './display.js';
+import { tameMonster } from './dog.js';
+import { makemonNear } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import {
     MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
@@ -36,7 +40,11 @@ const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
+const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
+const PM_YELLOW_LIGHT = 118;
+const PM_BLACK_LIGHT = 119;
 const PM_AIR_ELEMENTAL = 154;
 const S_VORTEX = 22;
 const AT_ENGL = 11;
@@ -62,9 +70,9 @@ function swallowedLightMessage() {
         : `${subject} glistens.`;
 }
 
-function cellsLitByRoomEffect() {
+function roomEffectCells(radius, lit) {
     if (!Is_rogue_level(game.u?.uz))
-        return clearAreaCells(game.u.ux, game.u.uy, 5);
+        return clearAreaCells(game.u.ux, game.u.uy, radius);
 
     const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
     const room = roomForRoomno(game.level, roomno);
@@ -74,8 +82,34 @@ function cellsLitByRoomEffect() {
         for (let y = room.ly - 1; y <= room.hy + 1; y++)
             cells.push({ x, y });
     }
-    room.rlit = 1;
+    room.rlit = lit ? 1 : 0;
     return cells;
+}
+
+function snuffOrdinaryLight(object) {
+    if (!object?.lamplit || !LIGHT_TYPES.has(object.otyp)) return false;
+    return endObjectBurn(object, game, game.moves ?? 0);
+}
+
+function snuffLightsAt(x, y) {
+    for (const object of game.level?.objects?.[x]?.[y] || [])
+        snuffOrdinaryLight(object);
+    const carrier = game.level?.monsters?.find(monster =>
+        monster.mx === x && monster.my === y);
+    if (!carrier) return;
+    const inventories = new Set([carrier.minvent, carrier.inventory]);
+    for (const inventory of inventories) {
+        for (const object of inventory || []) snuffOrdinaryLight(object);
+    }
+}
+
+function darkenCarriedLights() {
+    let stillLit = 0;
+    for (const object of game.inventory || []) {
+        if (!object.lamplit) continue;
+        if (!snuffOrdinaryLight(object)) stillLit++;
+    }
+    return stillLit;
 }
 
 async function lightHitsGremlin(
@@ -88,9 +122,9 @@ async function lightHitsGremlin(
     if (!(game.deaf || game.u?.deaf) && dx * dx + dy * dy <= 90) {
         const reaction = damage > (monster.mhp ?? 1) / 2
             ? 'wails in agony' : 'cries out in pain';
-        await pline(`${name} ${reaction}!`);
+        await plineWithContinuation(`${name} ${reaction}!`);
     } else if (canSeeMonster(monster, monster.mx, monster.my)) {
-        await pline(`${name} recoils from the light!`);
+        await plineWithContinuation(`${name} recoils from the light!`);
     }
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     wakeMonstersNear(monster.mx, monster.my, 30);
@@ -105,26 +139,42 @@ async function lightHitsGremlin(
 }
 
 export async function lightRoom(
-    { finishMonsterKill } = {},
+    lit, { radius = 5, finishMonsterKill } = {},
 ) {
     const blind = heroIsBlind();
     const swallowed = !!game.u?.uswallow;
     const noEffect = swallowed || game.underwater || game.u?.uinwater
         || Is_waterlevel(game.u?.uz);
 
-    if (swallowed) {
-        if (!blind) await pline(swallowedLightMessage());
+    if (!lit) {
+        const stillLit = darkenCarriedLights();
+        if (!blind) {
+            const message = stillLit
+                ? 'The ambient light seems dimmer.'
+                : swallowed
+                    ? 'It seems even darker in here than before.'
+                    : 'You are surrounded by darkness!';
+            await plineWithContinuation(message);
+        }
+    } else if (swallowed) {
+        if (!blind) await plineWithContinuation(swallowedLightMessage());
     } else if (!blind && (!Is_rogue_level(game.u?.uz)
         || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
-        await pline(`A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`);
+        await plineWithContinuation(
+            `A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`,
+        );
     }
     if (noEffect) return false;
 
     const gremlins = [];
-    for (const { x, y } of cellsLitByRoomEffect()) {
+    for (const { x, y } of roomEffectCells(radius, lit)) {
         const location = game.level?.at?.(x, y);
         if (!location) continue;
-        location.lit = true;
+        location.lit = !!lit;
+        if (!lit) {
+            snuffLightsAt(x, y);
+            continue;
+        }
         const monster = game.level?.monsters?.find(candidate =>
             candidate.mx === x && candidate.my === y
             && candidate.mnum === PM_GREMLIN
@@ -133,7 +183,7 @@ export async function lightRoom(
     }
     if (!blind) vision_recalc(2);
     game.vision_full_recalc = 1;
-    if (gremlins.length) {
+    if (lit && gremlins.length) {
         vision_recalc(0);
         for (const gremlin of gremlins.reverse()) {
             if (!finishMonsterKill)
@@ -147,12 +197,12 @@ export async function lightRoom(
 }
 
 export async function damageGremlinHeroWithLight(
-    source, { finishHeroDeath } = {},
+    source, { finishHeroDeath, ordinary = true } = {},
 ) {
     if (!Upolyd(game.u) || game.u?.umonnum !== PM_GREMLIN) return 0;
     let damage = rnd(5);
     const punctuation = damage > 2 || (game.u?.mh ?? 1) <= 5 ? '!' : '.';
-    await pline(`Ow, that light hurts${punctuation}`);
+    await plineWithContinuation(`Ow, that light hurts${punctuation}`);
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
     game.u.mh = Math.max(0, (game.u.mh ?? 1) - damage);
@@ -161,17 +211,100 @@ export async function damageGremlinHeroWithLight(
     if (!(game.u?.unchanging || game.unchanging)) {
         const restored = rehumanizeHero(game);
         if (restored.changed)
-            await pline(`You return to ${restored.race} form!`);
+            await plineWithContinuation(
+                `You return to ${restored.race} form!`,
+            );
         return damage;
     }
     if (!finishHeroDeath)
         throw new TypeError('light damage needs a hero death handler');
     const reflexive = game.flags?.female ? 'herself' : 'himself';
+    const sourceName = source?.oclass === SCROLL_CLASS
+        ? `scroll of ${source.name || 'light'}`
+        : source?.oclass === SPBOOK_CLASS
+            ? `spell of ${source.name || 'light'}`
+            : `wand of ${source?.name || 'light'}`;
     await finishHeroDeath({
-        killer: source?.name || 'wand of light',
-        deathCause: `zapped ${reflexive} with a wand of light`,
+        killer: sourceName,
+        deathCause: `${ordinary ? 'zapped' : 'blasted'} ${
+            reflexive} with a ${sourceName}`,
     });
     return damage;
+}
+
+function consumeOneLightScroll(scroll) {
+    const quantity = scroll.quan ?? scroll.quantity ?? 1;
+    if (quantity > 1) {
+        scroll.quan = quantity - 1;
+        scroll.quantity = quantity - 1;
+        return;
+    }
+    const index = game.inventory?.indexOf(scroll) ?? -1;
+    if (index >= 0) game.inventory.splice(index, 1);
+}
+
+async function createConfusedLightPets(scroll) {
+    const mnum = scroll.cursed ? PM_BLACK_LIGHT : PM_YELLOW_LIGHT;
+    if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE) {
+        await plineWithContinuation(
+            'Tiny lights sparkle in the air momentarily.',
+        );
+        return false;
+    }
+
+    const count = rn2(2) + 3 + (scroll.blessed ? 2 : 0);
+    let sawLight = false;
+    for (let index = 0; index < count; index++) {
+        const monster = await makemonNear(
+            mnum, game.u.ux, game.u.uy,
+            NO_MINVENT | MM_EDOG | MM_NOMSG,
+        );
+        if (!monster) continue;
+        tameMonster(monster);
+        monster.msleeping = 0;
+        monster.mcan = 1;
+        if (canSpotMonster(monster, monster.mx, monster.my)) sawLight = true;
+        newsym(monster.mx, monster.my);
+    }
+    if (sawLight)
+        await plineWithContinuation('Lights appear all around you!');
+    return sawLight;
+}
+
+export async function readLightScroll(
+    scroll, { finishHeroDeath, finishMonsterKill } = {},
+) {
+    exerciseAttribute(4, true);
+    const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
+    let known = false;
+
+    await plineWithContinuation('As you read the scroll, it disappears.');
+    if ((game.u?.confusionTurns ?? 0) > 0) {
+        known = await createConfusedLightPets(scroll);
+    } else {
+        known = !heroIsBlind();
+        const lit = !scroll.cursed;
+        await lightRoom(lit, {
+            radius: scroll.blessed ? 9 : 5,
+            finishMonsterKill,
+        });
+        if (lit) {
+            const damage = await damageGremlinHeroWithLight(scroll, {
+                finishHeroDeath,
+                ordinary: false,
+            });
+            if (game.program_state?.gameover) return;
+            if (damage) known = true;
+        }
+    }
+
+    if (known && !alreadyKnown) {
+        exerciseAttribute(4, true);
+        recordObjectKnowledge(scroll.otyp);
+        game.u.urexp = (game.u.urexp || 0) + 10;
+    }
+    consumeOneLightScroll(scroll);
+    game.context.move = 1;
 }
 
 function lampBurnTurns(age) {

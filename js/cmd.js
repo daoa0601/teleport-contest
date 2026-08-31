@@ -28,11 +28,12 @@ import {
     unmap_invisible,
 } from './display.js';
 import {
-    cansee, clearAreaCells, couldsee, visibleCellsFrom, vision_recalc, vision_reset,
+    cansee, clearAreaCells, couldsee, vision_recalc, vision_reset,
     vision_reset_new_level,
 } from './vision.js';
 import {
-    beginObjectBurn, endObjectBurn, igniteItems, transformMagicLampToOilLamp,
+    beginObjectBurn, endObjectBurn, igniteItems, readLightScroll,
+    transformMagicLampToOilLamp,
 } from './light.js';
 import {
     destroyFireInventory, dozap,
@@ -49,6 +50,7 @@ import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
 import { dosearch } from './detect.js';
+import { tameMonster } from './dog.js';
 import { donull, threateningMonsterNearby } from './do.js';
 import {
     ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
@@ -193,6 +195,7 @@ import {
 } from './ball.js';
 import {
     doquit,
+    finishHeroDeath,
     recordHeroKillConduct, recordVanquished,
     vanquishedLines,
 } from './end.js';
@@ -293,7 +296,6 @@ const PM_WATCH_CAPTAIN = 283;
 const M1_WALLWALK = 0x00000008;
 const M1_THICK_HIDE = 0x00200000;
 const M2_ROCKTHROW = 0x08000000;
-const M2_DOMESTIC = 0x00400000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 
@@ -5350,7 +5352,7 @@ async function wizGenesis() {
         // requested state flags.  Deleting a constructor-provided malign lets
         // the shared death-alignment fallback derive it from forced peace.
         if (tame) {
-            tameMonsterWithoutFood(monster);
+            tameMonster(monster);
         } else if (peaceful) {
             monster.mtame = 0;
             monster.pet = false;
@@ -6524,48 +6526,6 @@ function rubObjectName(object) {
     return `${indefiniteArticle(description)} ${description}`;
 }
 
-// C refs: dog.c:tamedog(), newedog(), and initedog().  A newly tamed domestic
-// actor starts at tameness ten; every other eligible species starts at five.
-// The edog record is behavioral state, not decoration: dog_goal() uses its
-// nutrition and apport fields on the very next turn.  Both Wizard genesis and
-// a released djinni enter through this shared no-food tamedog transaction.
-function tameMonsterWithoutFood(monster) {
-    if (!monster) return;
-    if (monster.mfrozen)
-        monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
-    monster.msleeping = 0;
-    monster.mpeaceful = 1;
-    monster.mavenge = 0;
-    monster.mflee = 0;
-    monster.mfleetim = 0;
-    const minimumTameness = (MONSTER_FLAGS2[monster.mnum] & M2_DOMESTIC)
-        ? 10 : 5;
-    monster.mtame = Math.max(minimumTameness, monster.mtame || 0);
-    monster.pet = true;
-    monster.mleashed = 0;
-    monster.meating = 0;
-    delete monster.malign;
-
-    const edog = {
-        parentmid: monster.m_id,
-        droptime: 0,
-        dropdist: 10000,
-        apport: game.u?.acurr?.a?.[5] ?? 3,
-        whistletime: 0,
-        hungrytime: (game.moves ?? 0) + 1000,
-        ogoal: { x: -1, y: -1 },
-        abuse: 0,
-        revivals: 0,
-        mhpmax_penalty: 0,
-        killed_by_u: 0,
-    };
-    monster.edog = edog;
-    monster.mextra = { ...(monster.mextra || {}), edog };
-    if (!game.u.uconduct) game.u.uconduct = {};
-    game.u.uconduct.pets = (game.u.uconduct.pets || 0) + 1;
-    newsym(monster.mx, monster.my);
-}
-
 async function djinniFromLamp(object) {
     const djinni = await makemonNear(
         PM_DJINNI, game.u.ux, game.u.uy, MM_NOMSG,
@@ -6605,7 +6565,7 @@ async function djinniFromLamp(object) {
     }
     case 1:
         await plineWithContinuation('"Thank you for freeing me!"');
-        tameMonsterWithoutFood(djinni);
+        tameMonster(djinni);
         break;
     case 2:
         await plineWithContinuation('"You freed me!"');
@@ -10088,6 +10048,7 @@ async function doread() {
         );
     }
     const book = books.find(item => item.invlet === String.fromCharCode(key));
+    game._pending_message = '';
     // read.c counts the committed reading action before dispatching either a
     // scroll effect or spellbook study.  Blank paper and the Book of the Dead
     // are required/non-literate exceptions.
@@ -10102,7 +10063,10 @@ async function doread() {
         return;
     }
     if (book?.otyp === SCR_LIGHT) {
-        await readLightScroll(book);
+        await readLightScroll(book, {
+            finishHeroDeath,
+            finishMonsterKill: finishHeroMonsterKill,
+        });
         return;
     }
     if (book?.otyp === SCR_REMOVE_CURSE) {
@@ -10322,33 +10286,6 @@ async function readGenocideScroll(scroll) {
         recordObjectKnowledge(scroll.otyp);
     }
     consumeOneInventoryObject(scroll);
-    game.context.move = 1;
-}
-
-async function readLightScroll(scroll) {
-    // read.c:seffects() exercises Wisdom for attempting magical scroll work;
-    // visible seffect_light() makes the type known and credits Wisdom again.
-    exerciseAttribute(4, true);
-    const on = !scroll.cursed;
-    const radius = scroll.blessed ? 9 : 5;
-    // do_clear_area() refreshes visibility before consulting couldsee().
-    vision_recalc(0);
-    for (const { x, y } of visibleCellsFrom(game.u.ux, game.u.uy, radius)) {
-        const loc = game.level?.at?.(x, y);
-        if (loc) loc.lit = on ? 1 : 0;
-    }
-    game.vision_full_recalc = 1;
-
-    if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-    if (!game._knownObjectTypes.has(scroll.otyp)) {
-        exerciseAttribute(4, true);
-        game._knownObjectTypes.add(scroll.otyp);
-        game.u.urexp = (game.u.urexp || 0) + 10;
-    }
-    consumeOneInventoryObject(scroll);
-    await pline(on
-        ? 'As you read the scroll, it disappears.  A lit field surrounds you!'
-        : 'As you read the scroll, it disappears.  You are surrounded by darkness!');
     game.context.move = 1;
 }
 
