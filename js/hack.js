@@ -46,11 +46,13 @@ const M1_WALLWALK = 0x00000008;
 const M1_CLING = 0x00000010;
 const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
+const M1_HIDE = 0x00000100;
 const M1_SLITHY = 0x00080000;
 const M1_UNSOLID = 0x00100000;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
+const S_MIMIC = 13;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
 const PM_GREMLIN = 40;
@@ -75,6 +77,16 @@ function heroIsInAir(state) {
         || symbol === S_EYE
         || symbol === S_LIGHT
         || (!!(flags & M1_CLING) && levelHasCeiling(state));
+}
+
+function heroIsHiddenOnCeiling(state) {
+    const hero = state.u || {};
+    if (!(hero.mtimedone > 0) || !hero.uundetected) return false;
+    const flags = heroFormFlags(state);
+    const symbol = MONSTER_SYMBOL[hero.umonnum];
+    return !!(flags & M1_HIDE)
+        && (!!(flags & M1_FLY)
+            || (!!(flags & M1_CLING) && symbol !== S_MIMIC));
 }
 
 function heroFloorType(state, x, y) {
@@ -466,6 +478,8 @@ export async function heroLiquidEffects({
     if (!IS_POOL(location.typ) || u.ustuck)
         return leftWater ? { left: true } : null;
     if (u.usteed && !steedIsGrounded(u.usteed, state)) return null;
+    if (heroIsHiddenOnCeiling(state))
+        return leftWater ? { left: true } : null;
     if (heroStaysAboveWater(state, location))
         return leftWater ? { left: true } : null;
 

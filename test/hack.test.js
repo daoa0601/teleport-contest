@@ -193,6 +193,21 @@ test('a flying steed keeps its rider above the pool', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
 });
 
+test('a hidden piercer stays above the pool', async () => {
+    poolAtHero();
+    game.u.mtimedone = 20;
+    game.u.umonnum = MONSTER_NAME.indexOf('rock piercer');
+    game.u.uundetected = 1;
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async () => assert.fail('the hidden hero should stay dry'),
+        die: async () => assert.fail('the hidden hero should stay dry'),
+    });
+
+    assert.equal(!!game.u.uinwater, false);
+});
+
 test('known water-walking boots let the hero step onto a pool', async () => {
     const level = freshWeaponArena();
     level.at(11, 10).typ = POOL;
