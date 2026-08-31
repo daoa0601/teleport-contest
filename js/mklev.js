@@ -94,6 +94,7 @@ import {
     MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION,
     SPE_BOOK_OF_THE_DEAD,
     AMULET_OF_LIFE_SAVING, SADDLE,
+    WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
@@ -120,7 +121,7 @@ import {
 } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
 import { putSaddleOnMonster } from './steed.js';
-import { roomForIndex } from './room.js';
+import { roomForIndex, roomsAt } from './room.js';
 import {
     occupied, somex, somey, somexy, somexyspace,
 } from './mkroom.js';
@@ -134,6 +135,7 @@ import {
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
+import { curseObjectState } from './object_state.js';
 import {
     mergable as objectsMergable, mergeObjectStacks,
 } from './object_merge.js';
@@ -208,7 +210,6 @@ const LEATHER_CLOAK = 146;
 const MUMMY_WRAPPING = 138;
 const TIN_WHISTLE = 245;
 const SPE_LIGHT = 372;
-const WAN_LIGHT = 410;
 const POT_OIL = 321;
 const BELL = 255;
 const CANDELABRUM_OF_INVOCATION = 262;
@@ -556,8 +557,7 @@ function blessorcurse(otmp, chance = 10) {
     }
 }
 
-// C ref: mkobj.c mksobj — create a specific object
-// Minimal stub: consumes RNG for next_ident + type-specific init
+// C ref: mkobj.c mksobj — create a specific object.
 export function mksobj(otyp, init, artif) {
     const oclass = objectClass(otyp);
     const startsDescriptionUnknown = oclass === WAND_CLASS
@@ -948,6 +948,7 @@ function mkboxCnts(box) {
         if (box.otyp === ICE_BOX) {
             content = mksobj(CORPSE, true, false);
             content.age = 0;
+            stopAllObjectTimers(content);
         } else {
             let roll = rnd(100);
             let objectClass = AMULET_CLASS;
@@ -961,17 +962,29 @@ function mkboxCnts(box) {
             content = mkobj(objectClass, false);
             if (content.oclass === COIN_CLASS) {
                 content.quan = rnd(level_difficulty() + 2) * rnd(75);
-            } else if (content.otyp === ROCK) {
-                let gemRoll = rnd(OBJECT_PROB.slice(439, LOADSTONE + 1)
-                    .reduce((sum, probability) => sum + probability, 0));
-                let replacement = 439; // DILITHIUM_CRYSTAL
-                while ((gemRoll -= OBJECT_PROB[replacement]) > 0) replacement++;
-                content.otyp = replacement;
+                content.quantity = content.quan;
+                content.owt = objectWeight(content);
+            } else while (content.otyp === ROCK) {
+                content.otyp = rndClass(DILITHIUM_CRYSTAL, LOADSTONE);
                 if (content.quan > 2) content.quan = 1;
+                content.quantity = content.quan;
+                content.owt = objectWeight(content);
             }
-            // Magical-bag substitutions are state-only for now.
+            if (box.otyp === BAG_OF_HOLDING) {
+                if (content.otyp === BAG_OF_HOLDING
+                    || content.otyp === BAG_OF_TRICKS) {
+                    content.otyp = SACK;
+                    content.spe = 0;
+                    content.owt = objectWeight(content);
+                } else {
+                    while (content.otyp === WAN_CANCELLATION) {
+                        content.otyp = rndClass(WAN_LIGHT, WAN_LIGHTNING);
+                        content.owt = objectWeight(content);
+                    }
+                }
+            }
         }
-        box.contents.push(content);
+        addToContainer(box, content);
     }
 }
 
@@ -1103,12 +1116,6 @@ export function remove_object(otmp) {
     updateCorpseIceTimer(otmp, otmp.ox, otmp.oy, false);
     return otmp;
 }
-function dealloc_obj(otmp) { /* stub */ }
-function curse(otmp) { if (otmp) otmp.cursed = true; }
-function weight(otmp) { return otmp?.owt || 1; }
-function add_to_container(container, otmp) { /* stub */ }
-function sobj_at(otyp, x, y) { return false; }
-
 const PM_LICHEN = 158;
 const PM_LIZARD = 326;
 
@@ -1194,7 +1201,7 @@ function set_corpsenm(otmp, pm) {
     }
 }
 
-// mkcorpstat stub
+// C ref: mkobj.c mkcorpstat().
 export function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
     // C ref: mkcorpstat() creates and initializes a statue, including its
     // random monster identity and possible container roll.
@@ -2013,7 +2020,6 @@ function initializeLongWormTail(monster, allowTail) {
     }
 }
 
-// makemon stub
 async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (x === 0 && y === 0) {
         const point = randomMonsterPosition(mdat);
@@ -3427,7 +3433,6 @@ export async function summonNastyMonsters(
     return { count: created.length, created };
 }
 
-// maketrap stub
 async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than
@@ -3519,7 +3524,7 @@ async function maketrap(x, y, typ) {
             temporary.minvent = [];
             temporary.inventory = temporary.minvent;
             temporary.hasInventory = false;
-            statue.owt = weight(statue);
+            statue.owt = objectWeight(statue);
             game.level.monsters = game.level.monsters.filter(
                 monster => monster !== temporary,
             );
@@ -4422,13 +4427,6 @@ function random_engraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-
-// in_rooms stub
-function in_rooms(x, y, rtype) { return []; }
-
-// ============================================================
-// Core mklev functions (ported from main project's mklev.js)
-// ============================================================
 
 const BONES_VERSION = 1;
 
@@ -7093,7 +7091,7 @@ async function createLuaObject(
     }
     if (Object.hasOwn(options, 'contents')) object.contents = [];
     if (parentContainer) {
-        addSpecialContainerObject(parentContainer, object);
+        addToContainer(parentContainer, object);
         parentContainer.owt = objectWeight(parentContainer);
     } else if (parentMonster) {
         removeFloorObject(object);
@@ -7379,7 +7377,7 @@ function luaObjectValue(object) {
         ? value.value : value;
     return new LuaUserdata(object, {
         __index: {
-            addcontent: (self, value) => addSpecialContainerObject(
+            addcontent: (self, value) => addToContainer(
                 rawObject(self), rawObject(value),
             ),
             class: self => objectToLuaTable({
@@ -7831,12 +7829,16 @@ function removeFloorObject(object) {
     if (index >= 0) pile.splice(index, 1);
 }
 
-function addSpecialContainerObject(container, object) {
+function addToContainer(container, object) {
     if (!container || !object) return object;
     removeFloorObject(object);
-    object.where = 'contained';
-    object.ox = object.oy = 0;
     if (!container.contents) container.contents = [];
+    const existing = container.contents.find(candidate =>
+        objectsMergable(candidate, object, game));
+    if (existing) return mergeObjectStacks(existing, object, game);
+    object.where = 'contained';
+    object.container = container;
+    object.ox = object.oy = 0;
     container.contents.unshift(object);
     return object;
 }
@@ -9703,33 +9705,33 @@ async function makerogueghost() {
     if (rn2(2)) {
         ghostobj = mksobj_at(MACE, x, y, false, false);
         ghostobj.spe = rnd(3);
-        if (rn2(4)) curse(ghostobj);
+        if (rn2(4)) curseObjectState(ghostobj);
     } else {
         ghostobj = mksobj_at(TWO_HANDED_SWORD, x, y, false, false);
         ghostobj.spe = rnd(5) - 2;
-        if (rn2(4)) curse(ghostobj);
+        if (rn2(4)) curseObjectState(ghostobj);
     }
     ghostobj = mksobj_at(BOW, x, y, false, false);
     ghostobj.spe = 1;
-    if (rn2(4)) curse(ghostobj);
+    if (rn2(4)) curseObjectState(ghostobj);
 
     ghostobj = mksobj_at(ARROW, x, y, false, false);
     ghostobj.spe = 0;
     ghostobj.quan = rn1(10, 25);
     ghostobj.quantity = ghostobj.quan;
     ghostobj.owt = (OBJECT_WEIGHT[ARROW] ?? 1) * ghostobj.quan;
-    if (rn2(4)) curse(ghostobj);
+    if (rn2(4)) curseObjectState(ghostobj);
 
     if (rn2(2)) {
         ghostobj = mksobj_at(RING_MAIL, x, y, false, false);
         ghostobj.spe = rn2(3);
         if (!rn2(3)) ghostobj.oerodeproof = true;
-        if (rn2(4)) curse(ghostobj);
+        if (rn2(4)) curseObjectState(ghostobj);
     } else {
         ghostobj = mksobj_at(PLATE_MAIL, x, y, false, false);
         ghostobj.spe = rnd(5) - 2;
         if (!rn2(3)) ghostobj.oerodeproof = true;
-        if (rn2(4)) curse(ghostobj);
+        if (rn2(4)) curseObjectState(ghostobj);
     }
     if (rn2(2)) {
         ghostobj = mksobj_at(
@@ -10351,7 +10353,7 @@ function dosdoor(x, y, aroom, type) {
     const map = game.level;
     const loc = map.at(x, y);
     if (!loc) return;
-    const shdoor = in_rooms(x, y, 0).length > 0;
+    const shdoor = roomsAt(game.level, x, y).length > 0;
     if (!IS_WALL(loc.typ)) type = DOOR;
     loc.typ = type;
     if (type === DOOR) {
@@ -10940,7 +10942,7 @@ function mktrap_victim(trap) {
     do {
         const cls = [WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, GEM_CLASS][rn2(4)];
         const otmp = mkobj(cls, false);
-        curse(otmp);
+        curseObjectState(otmp);
         // mktrap_victim() treats PIT as an exploded landmine.  Its impact
         // test consumes obj_resists() before deciding whether a fragile item
         // survives, so both the call and the floor-chain mutation belong here.
@@ -10964,7 +10966,7 @@ function mktrap_victim(trap) {
         if (!rn2(10)) {
             const otmp = mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
             otmp.quan = 1;
-            curse(otmp);
+            curseObjectState(otmp);
             place_object(otmp, x, y);
         }
         break;
@@ -11064,7 +11066,7 @@ function mkgrave_room(croom) {
     }
     for (let tryct = rn2(5); tryct > 0; tryct--) {
         const otmp = mkobj(RANDOM_CLASS, true);
-        curse(otmp);
+        curseObjectState(otmp);
         addBuriedObject(otmp, pos.x, pos.y);
     }
     if (dobell) mksobj_at(BELL, pos.x, pos.y, true, false);
@@ -11172,7 +11174,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
                         otmp.quan = otmp.quantity = 2;
                     }
                     cursed_item = otmp?.cursed ?? false;
-                    addSpecialContainerObject(supply_chest, otmp);
+                    addToContainer(supply_chest, otmp);
                     if (++tryct2 >= 50) break;
                 } while (cursed_item || !rn2(5));
                 if (rn2(3)) {
@@ -11192,7 +11194,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
                             }
                         }
                     }
-                    addSpecialContainerObject(supply_chest, otmp);
+                    addToContainer(supply_chest, otmp);
                 }
                 supply_chest.owt = objectWeight(supply_chest);
             }

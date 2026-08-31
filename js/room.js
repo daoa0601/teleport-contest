@@ -5,7 +5,9 @@
 // occupy [0, MAXNROFROOMS), then subrooms continue from MAXNROFROOMS.
 // ROOMOFFSET is added only when that index is written into levl[].roomno.
 
-import { MAXNROFROOMS, ROOMOFFSET } from './const.js';
+import {
+    MAXNROFROOMS, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, SHOPBASE,
+} from './const.js';
 
 export function roomForIndex(level, index) {
     if (!Number.isInteger(index) || index < 0) return null;
@@ -17,6 +19,34 @@ export function roomForIndex(level, index) {
 export function roomForRoomno(level, roomno) {
     if (!Number.isInteger(roomno) || roomno < ROOMOFFSET) return null;
     return roomForIndex(level, roomno - ROOMOFFSET);
+}
+
+function roomHasType(level, roomno, wantedType) {
+    if (!wantedType) return true;
+    const roomType = roomForRoomno(level, roomno)?.rtype;
+    return roomType === wantedType
+        || wantedType === SHOPBASE && roomType > SHOPBASE;
+}
+
+// C hack.c:in_rooms(). A boundary square can belong to the rooms beside it.
+export function roomsAt(level, x, y, wantedType = 0) {
+    const roomno = level?.at?.(x, y)?.roomno ?? NO_ROOM;
+    if (roomno === NO_ROOM) return [];
+    if (roomno !== SHARED && roomno !== SHARED_PLUS) {
+        return roomHasType(level, roomno, wantedType) ? [roomno] : [];
+    }
+
+    const step = roomno === SHARED ? 2 : 1;
+    const rooms = [];
+    for (let nx = x - 1; nx <= x + 1; nx += step) {
+        for (let ny = y - 1; ny <= y + 1; ny += step) {
+            const neighborRoom = level?.at?.(nx, ny)?.roomno ?? NO_ROOM;
+            if (neighborRoom < ROOMOFFSET || rooms.includes(neighborRoom)
+                || !roomHasType(level, neighborRoom, wantedType)) continue;
+            rooms.unshift(neighborRoom);
+        }
+    }
+    return rooms;
 }
 
 // C mkroom.c:inside_room().  Rectangular rooms include their one-cell
