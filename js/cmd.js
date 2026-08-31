@@ -95,7 +95,7 @@ import {
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
-    WAN_SLEEP, GOLD_PIECE, CORPSE, SADDLE, BOULDER, ROCK,
+    WAN_SLEEP, GOLD_PIECE, CORPSE, BOULDER, ROCK,
     ARROW, BOW, DART,
     LONG_SWORD,
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
@@ -154,6 +154,7 @@ import {
 import {
     wakeMonstersNear, wakeMonstersNearWithMessages,
 } from './mon.js';
+import { dismountHero, monsterSaddle } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
@@ -270,6 +271,7 @@ import {
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
+    DISMOUNT_BYCHOICE,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
@@ -8087,50 +8089,6 @@ async function doforce() {
     game.context.move = 1;
 }
 
-function steedSaddle(steed) {
-    if (steed?.saddle) return steed.saddle;
-    return (steed?.minvent || steed?.inventory || []).find(object =>
-        object.otyp === SADDLE && ((object.owornmask ?? W_SADDLE) & W_SADDLE));
-}
-
-function voluntaryDismountSpot(x, y, steed) {
-    // C steed.c:landing_spot() walks W, NW, N, NE, E, SE, S, SW and
-    // reservoir-selects among equally close legal squares.  Its first pass
-    // avoids known traps and boulders, then relaxes those constraints.
-    const offsets = [
-        [-1, 0], [-1, -1], [0, -1], [1, -1],
-        [1, 0], [1, 1], [0, 1], [-1, 1],
-    ];
-    for (let pass = 0; pass < 3; pass++) {
-        let viable = 0;
-        let selected = null;
-        let minimumDistance = Infinity;
-        for (const [dx, dy] of offsets) {
-            const candidateX = x + dx, candidateY = y + dy;
-            if (blocksMove(candidateX, candidateY)) continue;
-            if (game.level?.monsters?.some(monster => monster !== steed
-                && monster.mx === candidateX && monster.my === candidateY)) {
-                continue;
-            }
-            viable++;
-            const distance = dx * dx + dy * dy;
-            const competes = distance < minimumDistance
-                || (distance === minimumDistance && rn2(viable) === 0);
-            if (!competes) continue;
-            const knownTrap = game.level?.traps?.some(trap => trap.tseen
-                && (trap.tx ?? trap.x) === candidateX
-                && (trap.ty ?? trap.y) === candidateY);
-            const boulder = (game.level?.objects?.[candidateX]?.[candidateY] || [])
-                .some(object => object.otyp === BOULDER);
-            if ((pass === 0 && knownTrap) || (pass <= 1 && boulder)) continue;
-            selected = [candidateX, candidateY];
-            minimumDistance = distance;
-        }
-        if (selected) return selected;
-    }
-    return null;
-}
-
 // C refs: steed.c doride(), mount_steed(), landing_spot(), and
 // dismount_steed().  Mount failures are zero-time; successful mount and
 // voluntary dismount preserve one live monster identity across its carrier
@@ -8138,33 +8096,17 @@ function voluntaryDismountSpot(x, y, steed) {
 async function doride() {
     const u = game.u;
     if (u?.usteed) {
-        const steed = u.usteed;
-        const saddle = steedSaddle(steed);
-        if (saddle?.cursed) {
-            saddle.bknown = true;
-            await pline("You can't.  The saddle seems to be cursed.");
-            game.context.move = 1;
-            return;
-        }
         const oldx = u.ux, oldy = u.uy;
-        const landing = voluntaryDismountSpot(oldx, oldy, steed);
-        if (!landing) {
-            await pline("You can't.  There isn't anywhere for you to stand.");
-            game.context.move = 1;
-            return;
+        const result = await dismountHero(DISMOUNT_BYCHOICE, {
+            state: game,
+            random: rn2,
+            announce: pline,
+        });
+        if (result.movement) {
+            newsym(oldx, oldy);
+            vision_recalc(1);
+            newsym(u.ux, u.uy);
         }
-        u.usteed = null;
-        steed.mx = oldx;
-        steed.my = oldy;
-        if (!game.level.monsters.includes(steed))
-            game.level.monsters.push(steed);
-        u.ux0 = oldx;
-        u.uy0 = oldy;
-        [u.ux, u.uy] = landing;
-        newsym(oldx, oldy);
-        vision_recalc(1);
-        newsym(u.ux, u.uy);
-        await pline("You've been through the dungeon on a pony with no name.");
         game.context.move = 1;
         return;
     }
@@ -8187,7 +8129,7 @@ async function doride() {
         return;
     }
     const steedName = monsterInstanceDisplayName(steed);
-    if (!steed.saddled && !steedSaddle(steed)) {
+    if (!steed.saddled && !monsterSaddle(steed)) {
         await pline(`The ${steedName} is not saddled.`);
         game.context.move = 0;
         return;

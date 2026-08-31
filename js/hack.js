@@ -2,8 +2,8 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 
 import {
-    D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL,
-    IS_WALL, Is_waterlevel, STONE, TREE, WATER,
+    D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DOOR, IS_LAVA,
+    IS_OBSTRUCTED, IS_POOL, IS_WALL, Is_waterlevel, STONE, TREE, WATER,
     W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
@@ -18,6 +18,7 @@ import { BOULDER, LEASH, LOADSTONE } from './object_data.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { waterDamageChain } from './trap.js';
+import { dismountHero, steedIsGrounded } from './steed.js';
 import {
     heroCanTeleport, heroControlsTeleport, heroIsUnaware,
     teleportHeroAtWill,
@@ -320,11 +321,45 @@ export async function heroEntersPool({
     die = finishOrdinaryDeath,
 } = {}) {
     const u = state.u;
-    const x = u?.ux;
-    const y = u?.uy;
-    const location = state.level?.at?.(x, y);
-    if (!u || !location || !IS_POOL(location.typ)
-        || u.ustuck || heroStaysAboveWater(state, location)) return null;
+    let x = u?.ux;
+    let y = u?.uy;
+    let location = state.level?.at?.(x, y);
+    if (!u || !location || !IS_POOL(location.typ) || u.ustuck) return null;
+    if (u.usteed && !steedIsGrounded(u.usteed, state)) return null;
+    if (heroStaysAboveWater(state, location)) return null;
+
+    if (u.usteed) {
+        const dismount = await dismountHero(DISMOUNT_GENERIC, {
+            state,
+            random,
+            announce: publish,
+        });
+        if (dismount.movement) {
+            const from = {
+                x: dismount.movement.oldx,
+                y: dismount.movement.oldy,
+            };
+            repaint(from.x, from.y);
+            resetVision();
+            recalculateVision(0);
+            repaint(u.ux, u.uy);
+            await applyLandingEffects({
+                from,
+                to: { x: u.ux, y: u.uy },
+            });
+            x = u.ux;
+            y = u.uy;
+            location = state.level?.at?.(x, y);
+            if (!IS_POOL(location?.typ)) {
+                u.uinwater = 0;
+                state.underwater = false;
+                return {
+                    entered: true, moved: true, died: false,
+                    from, to: { x, y },
+                };
+            }
+        }
+    }
 
     const waterWall = location.typ === WATER;
     let canLiveUnderwater = heroCanLiveUnderwater(state);

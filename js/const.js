@@ -1908,14 +1908,14 @@ export const MAY_FRACTURE = 0x8;
 
 // Steed dismount reason enum (src/steed.c)
 // Runtime fields: dismount_steed(reason) reason selector.
-export const DISMOUNT_BYCHOICE = 0;
-export const DISMOUNT_THROWN = 1;
-export const DISMOUNT_KNOCKED = 2;
-export const DISMOUNT_FELL = 3;
+export const DISMOUNT_GENERIC = 0;
+export const DISMOUNT_FELL = 1;
+export const DISMOUNT_THROWN = 2;
+export const DISMOUNT_KNOCKED = 3;
 export const DISMOUNT_POLY = 4;
 export const DISMOUNT_ENGULFED = 5;
 export const DISMOUNT_BONES = 6;
-export const DISMOUNT_GENERIC = 7;
+export const DISMOUNT_BYCHOICE = 7;
 
 // Vault guard constants (src/vault.c)
 // Runtime fields for vault guard timing and activity.

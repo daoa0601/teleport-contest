@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { POOL, ROOM, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroEntersPool } from '../js/hack.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { LEASH, LOADSTONE, POT_ACID } from '../js/object_data.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -113,6 +114,61 @@ test('a no-teleport level blocks escape without spending power', async () => {
     assert.equal(
         messages.includes('The attempted teleport spell fails.'), true,
     );
+});
+
+test('a grounded steed drowns before the hero tries to crawl out', async () => {
+    const level = poolAtHero();
+    const steed = {
+        mnum: MONSTER_NAME.indexOf('pony'),
+        mx: game.u.ux,
+        my: game.u.uy,
+        mhp: 8,
+        mhpmax: 8,
+        mtame: 20,
+        pet: true,
+        minvent: [],
+    };
+    game.u.usteed = steed;
+    level.monsters = [];
+    const alignmentBefore = game.u.ualign.record;
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async () => {},
+        random: range => range - 1,
+        die: async () => assert.fail('the hero should crawl out'),
+    });
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(steed.dead, true);
+    assert.equal(level.monsters.includes(steed), false);
+    assert.equal(game.u.ualign.record, alignmentBefore - 1);
+    assert.equal(result.moved, true);
+});
+
+test('a flying steed keeps its rider above the pool', async () => {
+    poolAtHero();
+    const steed = {
+        mnum: MONSTER_NAME.indexOf('couatl'),
+        mx: game.u.ux,
+        my: game.u.uy,
+        mhp: 20,
+        mhpmax: 20,
+        mtame: 20,
+        pet: true,
+        minvent: [],
+    };
+    game.u.usteed = steed;
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async () => assert.fail('the rider should stay dry'),
+        die: async () => assert.fail('the rider should stay dry'),
+    });
+
+    assert.equal(result, null);
+    assert.equal(game.u.usteed, steed);
+    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
 });
 
 test('a burdened hero drops gear before crawling out of a pool', async () => {
