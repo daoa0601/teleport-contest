@@ -6,6 +6,7 @@
 // wear, wield, drop, throw, pray, cast, and all other commands.
 
 import { game } from './gstate.js';
+import { heroEntersPool } from './hack.js';
 import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
@@ -353,8 +354,6 @@ function moveGetposCursor(cursor, dx, dy) {
     cursor.y += dy;
 }
 
-const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
-const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
     'purified water', 'instant coffee', 'tea', 'herbal infusion',
@@ -16807,50 +16806,10 @@ async function finishMovedHero({
         return true;
     }
 
-    // C spoteffects()->pooleffects()->drown().  Build the complete shuffled
-    // crawl candidate order before tty suspends on the accumulated entry
-    // message; that ordering is observable in the input-local RNG slice.
-    if (IS_POOL(loc?.typ) && !game.u?.amphibious
-        && !game.u?.swimming && !game.u?.breathless) {
-        const directions = [0, 1, 2, 3, 4, 5, 6, 7];
-        for (let remaining = directions.length; remaining > 0; remaining--) {
-            const index = rn2(remaining);
-            const swap = directions[index];
-            directions[index] = directions[remaining - 1];
-            directions[remaining - 1] = swap;
-        }
-        const crawl = directions.map(index => ({
-            x: newx + CRAWL_DX[index],
-            y: newy + CRAWL_DY[index],
-        })).find(candidate => {
-            const destination = game.level?.at(candidate.x, candidate.y);
-            if (!destination || blocksMove(candidate.x, candidate.y)
-                || IS_POOL(destination.typ) || IS_LAVA(destination.typ))
-                return false;
-            return !game.level?.monsters?.some(monster => !monster.dead
-                && monster.mx === candidate.x && monster.my === candidate.y);
-        });
-
-        if (crawl) {
-            const solidWater = loc.typ === WATER;
-            await promptKey(solidWater
-                ? 'You plunge into the wall of water!  You try to crawl out of the water.--More--'
-                : 'You fall into the pool of water!  You sink like a rock.--More--');
-            u.ux0 = newx;
-            u.uy0 = newy;
-            u.ux = crawl.x;
-            u.uy = crawl.y;
-            newsym(newx, newy);
-            vision_recalc(1);
-            newsym(crawl.x, crawl.y);
-            await pline(solidWater
-                ? 'Pheew!  That was close.'
-                : 'You try to crawl out of the water.  Pheew!  That was close.');
-            if (explicitAttempt)
-                maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
-            return true;
-        }
-    }
+    const pool = await heroEntersPool();
+    if (pool?.moved && explicitAttempt)
+        maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
+    if (pool?.moved || pool?.died) return true;
 
     const finished = await finishDestinationSpotEffects({
         oldx, oldy, newx, newy, loc, explicitAttempt,

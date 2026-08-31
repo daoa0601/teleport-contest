@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, PIT, POOL, ROOM, WEB,
+    DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT, POOL, ROOM, WEB,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { meltIce } from '../js/ice.js';
 import { pushKey } from '../js/input.js';
 import {
     OIL_LAMP, SCR_IDENTIFY, WAN_FIRE, WAN_SLEEP,
@@ -14,6 +15,7 @@ import { place_object } from '../js/mklev.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -226,6 +228,61 @@ test('a fire ray melts ice back into its pool', async () => {
     assert.equal(level.levelTimers.some(timer =>
         timer.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY
         && timer.x === 11 && timer.y === 10), false);
+});
+
+test('melting ice makes the hero crawl out of the pool', async () => {
+    const level = freshWeaponArena();
+    const ice = level.at(game.u.ux, game.u.uy);
+    ice.typ = ICE;
+    ice.icedpool = ICED_POOL;
+
+    await meltIce(game.u.ux, game.u.uy, {
+        announce: async () => {},
+    });
+
+    assert.equal(ice.typ, POOL);
+    assert.notDeepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.equal(IS_POOL(level.at(game.u.ux, game.u.uy).typ), false);
+});
+
+test('melting ice drowns a land monster but not a swimmer', async () => {
+    const level = freshWeaponArena();
+    game.blind = true;
+    game.u.blindTurns = 10;
+    const ant = {
+        mnum: MONSTER_NAME.indexOf('giant ant'),
+        m_id: 9101,
+        mx: 11,
+        my: 10,
+        mhp: 4,
+        mhpmax: 4,
+        minvent: [],
+        inventory: [],
+    };
+    const shark = {
+        mnum: MONSTER_NAME.indexOf('shark'),
+        m_id: 9102,
+        mx: 12,
+        my: 10,
+        mhp: 20,
+        mhpmax: 20,
+        minvent: [],
+        inventory: [],
+    };
+    game.level.monsters = [ant, shark];
+    for (const x of [11, 12]) {
+        const ice = level.at(x, 10);
+        ice.typ = ICE;
+        ice.icedpool = ICED_POOL;
+    }
+
+    await meltIce(11, 10, { announce: async () => {} });
+    await meltIce(12, 10, { announce: async () => {} });
+
+    assert.equal(game.level.monsters.includes(ant), false);
+    assert.equal(ant.dead, true);
+    assert.equal(game.level.monsters.includes(shark), true);
+    assert.equal(shark.mhp, 20);
 });
 
 test('a fire ray evaporates a pool into a steaming pit', async () => {

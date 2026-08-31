@@ -53,7 +53,7 @@ import {
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_NOCORPSE,
-    W_AMUL, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_HISTORIC, CORPSTAT_INIT,
+    CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_HISTORIC, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
 } from './const.js';
@@ -92,7 +92,7 @@ import {
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
     MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION,
-    AMULET_OF_LIFE_SAVING, SADDLE,
+    SADDLE,
     WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
 } from './object_data.js';
 import {
@@ -101,9 +101,10 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
-    SPECIAL_PM, monsterIsNonliving,
+    SPECIAL_PM,
 } from './monster_data.js';
-import { petLifeSavingGap } from './mondeath.js';
+import { wornMonsterLifeSaver } from './mondeath.js';
+import { monsterInAir } from './mon.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, pline } from './display.js';
 import { premap_detect } from './detect.js';
@@ -3797,101 +3798,6 @@ function unearthObjectsAt(x, y, state = game) {
     return unearthed;
 }
 
-function meltLevelHasCeiling(state = game) {
-    const flags = state.level?.flags || {};
-    if (typeof flags.has_ceiling === 'boolean') return flags.has_ceiling;
-    return state === game
-        ? !(In_endgame(state.u?.uz) && !Is_earthlevel(state.u?.uz))
-        : !(flags.is_endgame && !flags.is_earthlevel);
-}
-
-function monsterInAir(monster, state = game) {
-    if (!monster) return false;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    return !!(flags & 0x00000001) || symbol === 5 || symbol === 25
-        || !!(flags & 0x00000010)
-            && meltLevelHasCeiling(state) && !!monster.mundetected;
-}
-
-function monsterSafelySurvivesMeltedIce(monster, state = game) {
-    if (!monster) return true;
-    const name = MONSTER_NAME[monster.mnum];
-    // minliquid() gives these two species separate split/rust transactions.
-    if (name === 'gremlin' || name === 'iron golem') return false;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return monsterInAir(monster, state)
-        || !!(flags & (0x00000002 | 0x00000010
-            | 0x00000200 | 0x00000400));
-}
-
-const MELT_SPECIAL_CORPSE_NAMES = new Set([
-    'white unicorn', 'gray unicorn', 'black unicorn', 'long worm',
-    'vampire', 'vampire leader',
-    'gray ooze', 'brown pudding', 'green slime', 'black pudding',
-]);
-
-function meltSpecialDeathFamily(monster) {
-    const name = MONSTER_NAME[monster.mnum] || '';
-    return MELT_SPECIAL_CORPSE_NAMES.has(name)
-        || (name.endsWith(' dragon') && !name.startsWith('baby '))
-        || name.endsWith(' mummy') || name.endsWith(' zombie')
-        || name.endsWith(' golem')
-        || name === 'lich' || name.endsWith('lich')
-        || name === 'troll' || name.endsWith(' troll')
-        || (MONSTER_ATTACKS[monster.mnum] || [])
-            .some(attack => attack[0] === 14
-                || attack[1] === 22 || attack[1] === 35); // BOOM/SEDU/SSEX
-}
-
-function wornMeltMonsterLifeSaver(monster) {
-    if (monsterIsNonliving(monster.mnum)) return null;
-    return (monster.minvent || monster.inventory || []).find(object =>
-        object.otyp === AMULET_OF_LIFE_SAVING
-        && ((object.owornmask ?? 0) & W_AMUL)) || null;
-}
-
-function meltOccupantDeathGap(
-    monster, state = game, { afterFailedLifeSaving = false } = {},
-) {
-    if (state !== game) return 'custom-state death projection';
-    if (Number.isInteger(monster.cham) && monster.cham >= 0)
-        return 'shapechanging';
-    const lifeSaver = wornMeltMonsterLifeSaver(monster);
-    if (lifeSaver && !afterFailedLifeSaving) {
-        const genocided = !!((state.mvitals?.[monster.mnum]?.mvflags ?? 0)
-            & G_GENOD);
-        const petGap = petLifeSavingGap(monster, { genocided, state });
-        if (petGap) return `pet life-saving ${petGap}`;
-        if (genocided) {
-            return meltOccupantDeathGap(
-                monster, state, { afterFailedLifeSaving: true },
-            );
-        }
-        return null;
-    }
-    if (monster.mtame || monster.pet) return 'pet traits';
-    if (state.u?.ustuck === monster || state.u?.usteed === monster)
-        return 'hero attachment';
-    // trap_ice_effects() runs before any boulder-fill death.  It clears
-    // mtrapped and destroys ordinary pits/holes, so mon_leaving_level() has
-    // no pit left to fill for this callback.  Do not guard on the stale
-    // pre-melt trap state inspected by runClaimedMeltIceTimer().
-    if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
-        return 'unique monster bookkeeping';
-    if (monster.isgd || monster.iswiz || monster.isshk || monster.ispriest
-        || monster.wormno || monster.mleashed
-        || monster.isQuestLeader || monster.isQuestNemesis) {
-        return 'special monster detachment';
-    }
-    const leaderId = state.quest_status?.leader_m_id
-        ?? state.u?.quest_status?.leader_m_id;
-    if (leaderId != null && monster.m_id === leaderId)
-        return 'quest leader bookkeeping';
-    if (meltSpecialDeathFamily(monster)) return 'special corpse/death effects';
-    return null;
-}
-
 function recordMeltMonsterDeath(monster, state = game) {
     if (!state._vanquishedCounts) state._vanquishedCounts = new Map();
     const mnum = monster.mnum ?? -1;
@@ -3997,9 +3903,7 @@ function revealMeltMonsterAppearance(monster, state = game) {
     };
 }
 
-function resolveMeltMonsterDeath(monster, state = game) {
-    const gap = meltOccupantDeathGap(monster, state);
-    if (gap) throw new Error(`unsupported melt-ice occupant ${gap}`);
+export function killMonsterOnMeltingIce(monster, state = game) {
     monster.mhp = 0;
     recordMeltMonsterDeath(monster, state);
     monster.dead = true;
@@ -4097,7 +4001,7 @@ export function finishMeltIceBoulderLifeSaving(
     outcome.occupantLifeSaving = resolution;
     event.occupantLifeSaving = resolution;
     if (!resolution.survived) {
-        const occupantDeath = resolveMeltMonsterDeath(
+        const occupantDeath = killMonsterOnMeltingIce(
             pending.monster, state,
         );
         outcome.occupantDeath = occupantDeath;
@@ -4143,7 +4047,7 @@ export function runNextMeltIceBoulder(event, state = game) {
         const occupant = event.occupant;
         if (occupant && (occupant.mhp ?? 1) > 0
             && !monsterInAir(occupant, state)) {
-            const lifeSaver = wornMeltMonsterLifeSaver(occupant);
+            const lifeSaver = wornMonsterLifeSaver(occupant);
             if (lifeSaver) {
                 occupant.mhp = 0;
                 pendingOccupantLifeSaving = {
@@ -4153,7 +4057,7 @@ export function runNextMeltIceBoulder(event, state = game) {
                         ?? 0) & G_GENOD),
                 };
             } else {
-                occupantDeath = resolveMeltMonsterDeath(occupant, state);
+                occupantDeath = killMonsterOnMeltingIce(occupant, state);
                 event.occupantDeath = occupantDeath;
             }
         }
@@ -4182,27 +4086,7 @@ export function meltIceAt(x, y, state = game) {
     if (!loc || loc.typ !== ICE) {
         throw new Error(`cannot melt non-ice position ${x},${y}`);
     }
-    const pile = state.level?.objects?.[x]?.[y] || [];
-    const boulder = pile.find(object => object.otyp === BOULDER) || null;
-    if (state.u?.ux === x && state.u?.uy === y) {
-        throw new Error(
-            `melt-ice hero liquid lifecycle is not implemented at ${x},${y}`,
-        );
-    }
     const occupant = levelMonsterAt(x, y);
-    if (occupant && !monsterSafelySurvivesMeltedIce(occupant, state)) {
-        throw new Error(
-            `melt-ice monster liquid lifecycle is not implemented at ${x},${y}`,
-        );
-    }
-    if (boulder && occupant && !monsterInAir(occupant, state)) {
-        const gap = meltOccupantDeathGap(occupant, state);
-        if (gap) {
-            throw new Error(
-                `melt-ice boulder occupant ${gap} is not implemented at ${x},${y}`,
-            );
-        }
-    }
 
     const icedpool = loc.icedpool ?? loc.flags ?? ICED_MOAT;
     const meltInto = icedpool === ICED_POOL ? POOL : MOAT;
@@ -4218,6 +4102,7 @@ export function meltIceAt(x, y, state = game) {
     return {
         kind: LEVEL_TIMER_KIND.MELT_ICE_AWAY,
         x, y, meltInto, trap, unearthed, occupant,
+        monsterMoving: !!state.context?.mon_moving,
         pendingBoulder: floorBoulderAt(x, y, state),
         boulderComplete: !floorBoulderAt(x, y, state),
         boulderOutcomes: [],
@@ -4227,7 +4112,9 @@ export function meltIceAt(x, y, state = game) {
 export function runClaimedMeltIceTimer(claimed, state = game) {
     if (claimed?.timer?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
         || !claimed.position) return null;
-    return meltIceAt(claimed.position.x, claimed.position.y, state);
+    const event = meltIceAt(claimed.position.x, claimed.position.y, state);
+    event.monsterMoving = true;
+    return event;
 }
 
 export function runClaimedObjectRotTimer(claimed, state = game) {

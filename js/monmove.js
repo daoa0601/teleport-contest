@@ -4,6 +4,7 @@
 
 import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
+import { levelHasCeiling, monsterInAir } from './mon.js';
 import { currentAttribute } from './attrib.js';
 import { loseExperienceLevel } from './exper.js';
 import {
@@ -89,7 +90,7 @@ import {
     ALLOW_TRAPS, ALLOW_U, ALLOW_WALL,
     ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO,
     D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED,
-    In_endgame, Is_earthlevel, Is_firelevel, Is_waterlevel,
+    Is_firelevel, Is_waterlevel,
     IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE,
     IS_WALL,
     IRONBARS, LAVAPOOL, LAVAWALL,
@@ -1653,14 +1654,6 @@ function monsterIsCovetous(monster) {
     return !!((MONSTER_FLAGS3[monster?.mnum] ?? 0) & M3_COVETOUS);
 }
 
-function levelHasCeiling(state) {
-    const flags = state?.level?.flags || {};
-    if (typeof flags.has_ceiling === 'boolean') return flags.has_ceiling;
-    return state === game
-        ? !(In_endgame(state?.u?.uz) && !Is_earthlevel(state?.u?.uz))
-        : !(flags.is_endgame && !flags.is_earthlevel);
-}
-
 function monsterCanTunnel(monster, state) {
     const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (!(speciesFlags & M1_TUNNEL)
@@ -1885,10 +1878,7 @@ export function mfndpos(monster, state, flags = monAllowFlags(monster, state)) {
     const levelFlags = state?.level?.flags || {};
     const waterLevel = !!levelFlags.is_waterlevel
         || state === game && Is_waterlevel(state?.u?.uz);
-    const hasCeiling = levelHasCeiling(state);
-    const inAir = !!(speciesFlags & M1_FLY)
-        || symbol === S_EYE || symbol === S_LIGHT
-        || !!(speciesFlags & M1_CLING) && hasCeiling && !!monster.mundetected;
+    const inAir = monsterInAir(monster, state);
     let wantPool = symbol === S_EEL;
     // C computes poolok once, before its land fallback for a beached eel.
     // On the Plane of Water even an airborne non-swimmer must stay off pool

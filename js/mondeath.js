@@ -65,48 +65,43 @@ function monsterPetRecord(monster) {
     return monster?.edog || monster?.mextra?.edog || null;
 }
 
-// Keep the shared owner fail-loud for wary_dog() branches whose state or
-// presentation is not yet complete.  This same predicate is used by the ice
-// transaction before it mutates terrain.
-export function petLifeSavingGap(
-    monster, { genocided = false, state = game } = {},
-) {
-    if (!(monster?.mtame > 0)) return null;
-    if (genocided) return 'genocide-defeated pet death';
-    if (monster.isminion) return 'minion recovery';
-    const edog = monsterPetRecord(monster);
-    if (!edog || !edog.ogoal) return 'missing edog state';
-    if (monster.meating) return 'active eating';
-    if ((monster.m_ap_type ?? 0) !== 0) return 'active appearance';
-    if (edog.killed_by_u === 1 || (edog.abuse ?? 0) > 2)
-        return 'heavy-abuse recovery';
-    if (monster.mleashed) return 'leash release';
-    if (state.u?.usteed === monster) return 'steed dismount';
-    if (state.u?.ustuck === monster) return 'hero attachment';
-    return null;
-}
-
 async function waryDogAfterLifeSaving(
     monster, {
         wasDead = false, spotted = true,
         line = pline, repaint = newsym, state = game,
     } = {},
 ) {
+    if (!(monster?.mtame > 0)) return;
     const edog = monsterPetRecord(monster);
     monster.meating = 0;
-    const penalty = edog.mhpmax_penalty ?? 0;
+    const penalty = edog?.mhpmax_penalty ?? 0;
     if (penalty) {
         monster.mhpmax = (monster.mhpmax ?? 0) + penalty;
         monster.mhp = (monster.mhp ?? 0) + penalty;
         edog.mhpmax_penalty = 0;
     }
 
-    monster.mtame = rn2((monster.mtame ?? 0) + 1);
-    if (!monster.mtame)
-        monster.mpeaceful = rn2(2);
+    if (edog && (edog.killed_by_u === 1 || (edog.abuse ?? 0) > 2)) {
+        monster.mtame = 0;
+        monster.mpeaceful = 0;
+        if ((edog.abuse ?? -1) >= 0 && (edog.abuse ?? 10) < 10
+            && rn2((edog.abuse ?? 0) + 1) === 0) monster.mpeaceful = 1;
+    } else {
+        monster.mtame = rn2((monster.mtame ?? 0) + 1);
+        if (!monster.mtame) monster.mpeaceful = rn2(2);
+    }
 
     if (!monster.mtame) {
         monster.pet = false;
+        monster.mleashed = 0;
+        for (const object of state.inventory || []) {
+            if (object.leashmon === monster.m_id) object.leashmon = 0;
+        }
+        if (state.u?.usteed === monster) state.u.usteed = null;
+        if (state.u?.ustuck === monster) {
+            state.u.ustuck = null;
+            state.u.uswallow = false;
+        }
         if (!wasDead && spotted) {
             const subject = lifeSavingSubject(monster, true);
             const disposition = monster.mpeaceful
@@ -118,10 +113,11 @@ async function waryDogAfterLifeSaving(
     }
 
     monster.pet = true;
+    if (!edog) return;
     edog.revivals = (edog.revivals ?? 0) + 1;
     edog.killed_by_u = 0;
     edog.abuse = 0;
-    edog.ogoal.x = edog.ogoal.y = -1;
+    edog.ogoal = { x: -1, y: -1 };
     const hungerFloor = (state.moves ?? 0) + 500;
     if (wasDead || (edog.hungrytime ?? 0) < hungerFloor)
         edog.hungrytime = hungerFloor;
@@ -145,9 +141,6 @@ export async function lifeSaveMonster(
         page = lifeSavingPage, line = pline, repaint = newsym,
     } = {},
 ) {
-    const petGap = petLifeSavingGap(monster, { genocided, state: game });
-    if (petGap)
-        throw new Error(`unsupported monster life-saving ${petGap}`);
     const subject = lifeSavingSubject(monster, spotted);
     if (creditedKill) await continueLine(creditedKill);
     if (visible) {
@@ -187,7 +180,7 @@ export async function lifeSaveMonster(
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
-    if (monster.mtame > 0) {
+    if (monster.mtame > 0 && !monster.isminion) {
         await waryDogAfterLifeSaving(monster, {
             wasDead: genocided, spotted: petSpotted,
             line, repaint, state: game,

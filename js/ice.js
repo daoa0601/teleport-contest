@@ -5,13 +5,105 @@ import {
     canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
+import { heroEntersPool } from './hack.js';
+import { G_GENOD, IS_POOL } from './const.js';
 import {
-    disturbBuriedZombieTimers, finishMeltIceBoulderLifeSaving, meltIceAt,
-    runNextMeltIceBoulder,
+    disturbBuriedZombieTimers, finishMeltIceBoulderLifeSaving,
+    killMonsterOnMeltingIce, meltIceAt, runNextMeltIceBoulder,
 } from './mklev.js';
-import { lifeSaveMonster } from './mondeath.js';
+import {
+    lifeSaveMonster, wornMonsterLifeSaver,
+} from './mondeath.js';
+import { rollMonsterPoolReaction } from './mon.js';
+import { splitMonster } from './monster_clone.js';
+import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { LEVEL_TIMER_KIND } from './object_timers.js';
+import { randomMonsterRelocation } from './teleport.js';
+import { monsterTeleportRestricted } from './teleport_rules.js';
 import { cansee } from './vision.js';
+
+const M1_TPORT = 0x02000000;
+
+async function finishMonsterOnMeltedIce(
+    event, { announce, saveMonster, visible },
+) {
+    const monster = event.occupant;
+    const location = game.level?.at?.(event.x, event.y);
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
+        || !location || !IS_POOL(location.typ)) return null;
+
+    const seen = visible ?? cansee(event.x, event.y);
+    const name = MONSTER_NAME[monster.mnum] || 'monster';
+    const reaction = rollMonsterPoolReaction(monster, game);
+    if (reaction.kind === 'safe') return reaction;
+    if (reaction.kind === 'split') {
+        reaction.clone = splitMonster(
+            monster, game, { monsterMoving: true },
+        );
+        return reaction;
+    }
+    if (reaction.kind === 'rust') {
+        monster.mhp = (monster.mhp ?? 1) - reaction.damage;
+        if (monster.mhpmax > reaction.damage)
+            monster.mhpmax -= reaction.damage;
+        if (monster.mhp > 0) {
+            if (seen) await announce(`The ${name} rusts.`);
+            return reaction;
+        }
+    }
+
+    const canTeleport = reaction.kind === 'drown'
+        && !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT);
+    if (canTeleport && !monsterTeleportRestricted(monster, game)) {
+        const oldx = monster.mx;
+        const oldy = monster.my;
+        const relocation = randomMonsterRelocation(monster, game);
+        if (relocation) {
+            newsym(oldx, oldy);
+            newsym(monster.mx, monster.my);
+            return { survived: true, relocation };
+        }
+    }
+
+    if (seen) {
+        if (reaction.kind === 'rust') {
+            await announce(`The ${name} rusts.`);
+        } else {
+            await announce(event.monsterMoving
+                ? `The ${name} drowns.`
+                : `You drown the ${name}.`);
+        }
+    }
+
+    const amulet = wornMonsterLifeSaver(monster);
+    if (amulet) {
+        monster.mhp = 0;
+        const resolution = await saveMonster(monster, amulet, {
+            visible: seen,
+            spotted: canSeeMonster(monster, event.x, event.y),
+            genocided: !!((game.mvitals?.[monster.mnum]?.mvflags ?? 0)
+                & G_GENOD),
+            petSpotted: canSpotMonster(monster),
+        });
+        if (resolution.survived) {
+            if (reaction.kind === 'rust') {
+                return { survived: true, lifeSaving: resolution };
+            }
+            const oldx = monster.mx;
+            const oldy = monster.my;
+            const relocation = randomMonsterRelocation(monster, game);
+            if (relocation) {
+                newsym(oldx, oldy);
+                newsym(monster.mx, monster.my);
+            }
+            return { survived: true, lifeSaving: resolution, relocation };
+        }
+    }
+
+    const death = killMonsterOnMeltingIce(monster, game);
+    event.occupantDeath = death;
+    return { survived: false, death };
+}
 
 export function meltIceTimerMessage(event, options = {}) {
     if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY) return null;
@@ -103,6 +195,18 @@ export async function finishMeltIce(event, options = {}) {
         if (sinks) await announce(sinks);
     }
     if (event.boulderOutcomes.length) repaint(event.x, event.y);
+    const heroAt = game.u?.ux === event.x && game.u?.uy === event.y;
+    if (heroAt) {
+        await heroEntersPool({
+            publish: announce,
+        });
+    } else {
+        await finishMonsterOnMeltedIce(event, {
+            announce,
+            saveMonster,
+            visible: options.visible,
+        });
+    }
     event.meltPresentationFinished = true;
     return event;
 }
