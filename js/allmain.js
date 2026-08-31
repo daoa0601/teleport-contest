@@ -10,8 +10,7 @@ import { d, rn2, rnd } from './rng.js';
 import {
     initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
-    randomDefensiveMonsterItem, randomMiscMonsterItem,
-    randomOffensiveMonsterItem, level_difficulty,
+    level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     disturbBuriedZombieTimers, finishBuriedZombieTimer,
@@ -19,6 +18,10 @@ import {
     runClaimedBuriedZombieTimer, runClaimedMeltIceTimer,
     runClaimedObjectRotTimer, runNextMeltIceBoulder,
 } from './mklev.js';
+import {
+    randomDefensiveMonsterItem, randomMiscMonsterItem,
+    randomOffensiveMonsterItem,
+} from './muse.js';
 import {
     animateRollingBoulderCell,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
@@ -700,7 +703,7 @@ export function initializeRandomMonsterInventory(monster) {
         }
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll) {
-            const otyp = randomOffensiveMonsterItem(monster.mnum);
+            const otyp = randomOffensiveMonsterItem(monster);
             addObject(otyp);
         }
     } else if (monster?.mnum === 70) {
@@ -711,7 +714,7 @@ export function initializeRandomMonsterInventory(monster) {
         if (rn2(2)) addObject(ORCISH_DAGGER);
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
-            addObject(randomOffensiveMonsterItem(monster.mnum));
+            addObject(randomOffensiveMonsterItem(monster));
     } else if (monster.mnum >= 264 && monster.mnum <= 269) {
         // makemon.c:m_initweap(), is_elf().  Clothing probes precede the
         // mutually exclusive primary loadout; ambient Elven Monarchs retain
@@ -745,7 +748,7 @@ export function initializeRandomMonsterInventory(monster) {
         }
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
-            addObject(randomOffensiveMonsterItem(monster.mnum));
+            addObject(randomOffensiveMonsterItem(monster));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 41
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), S_OGRE.  Ranked ogres receive a better
@@ -756,7 +759,7 @@ export function initializeRandomMonsterInventory(monster) {
         addObject(!rn2(range) ? BATTLE_AXE : CLUB);
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
-            addObject(randomOffensiveMonsterItem(monster.mnum));
+            addObject(randomOffensiveMonsterItem(monster));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 29
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), S_CENTAUR.  Forest centaurs use bows;
@@ -768,7 +771,7 @@ export function initializeRandomMonsterInventory(monster) {
         }
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
-            addObject(randomOffensiveMonsterItem(monster.mnum));
+            addObject(randomOffensiveMonsterItem(monster));
     } else if (MONSTER_SYMBOL[monster?.mnum] === 33
         && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         // makemon.c:m_initweap(), default armament.  Gnomes have no
@@ -806,7 +809,7 @@ export function initializeRandomMonsterInventory(monster) {
         }
         const offensiveRoll = rn2(75);
         if ((monster.m_lev ?? 0) > offensiveRoll)
-            addObject(randomOffensiveMonsterItem(monster.mnum));
+            addObject(randomOffensiveMonsterItem(monster));
     }
 
     // makemon.c:m_initinv(), S_MUMMY.  A nonzero gate grants the class's
@@ -859,12 +862,10 @@ export function initializeRandomMonsterInventory(monster) {
 
     const defensiveRoll = rn2(50);
     if ((monster.m_lev ?? 0) > defensiveRoll)
-        addObject(randomDefensiveMonsterItem(monster.mnum));
+        addObject(randomDefensiveMonsterItem(monster));
     const miscellaneousRoll = rn2(100);
     if ((monster.m_lev ?? 0) > miscellaneousRoll) {
-        addObject(randomMiscMonsterItem(
-            monster.mnum, !!monster.mpeaceful,
-        ));
+        addObject(randomMiscMonsterItem(monster));
     }
 
     // C makemon.c:m_initinv() evaluates this gate for every greedy species

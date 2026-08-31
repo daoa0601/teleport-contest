@@ -139,6 +139,10 @@ import {
 import { vision_note_blocker_change } from './vision.js';
 import { monsterGoodPosition } from './teleport_rules.js';
 import {
+    randomDefensiveMonsterItem, randomMiscMonsterItem,
+    randomOffensiveMonsterItem,
+} from './muse.js';
+import {
     SpecialSelection,
     match_maptyps,
     mapCharacterType,
@@ -216,9 +220,6 @@ const POT_HEALING = 307;
 const POT_EXTRA_HEALING = 308;
 const POT_SPEED = 302;
 const POT_GAIN_ENERGY = 313;
-const POT_POLYMORPH = 316;
-const POT_INVISIBILITY = 305;
-const POT_GAIN_LEVEL = 309;
 const POT_FULL_HEALING = 315;
 const SCR_ENCHANT_WEAPON = 328;
 const SCR_ENCHANT_ARMOR = 323;
@@ -232,23 +233,13 @@ const LEMBAS_WAFER = 291;
 const SKELETON_KEY = 221;
 const SCR_CHARGING = 342;
 const WAN_STRIKING = 417;
-const WAN_MAKE_INVISIBLE = 418;
-const WAN_SPEED_MONSTER = 420;
-const WAN_POLYMORPH = 422;
 const WAN_TELEPORTATION = 424;
 const WAN_MAGIC_MISSILE = 429;
-const WAN_CREATE_MONSTER = 413;
 const WAN_NOTHING = 416;
 const WAN_FIRE = 430;
 const WAN_COLD = 431;
 const WAN_SLEEP = 432;
 const WAN_DEATH = 433;
-const WAN_LIGHTNING = 434;
-const POT_CONFUSION = 299;
-const POT_BLINDNESS = 300;
-const POT_PARALYSIS = 301;
-const POT_SLEEPING = 314;
-const POT_ACID = 320;
 const PM_SHOPKEEPER = 271;
 const PM_GUARD = 272;
 const PM_HORNED_DEVIL = 291;
@@ -305,9 +296,7 @@ const PM_CHIEFTAIN = 370;
 const PM_APPRENTICE = 382;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
-const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
-const SCR_CREATE_MONSTER = 329;
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GNOME_RULER = 168;
@@ -1480,7 +1469,6 @@ const M2_PEACEFUL = 0x00200000;
 const M2_NASTY = 0x02000000;
 const M2_STRONG = 0x04000000;
 const M2_GREEDY = 0x10000000;
-const M1_MINDLESS = 0x00010000;
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
 const G_LGROUP = 0x0040;
@@ -1563,127 +1551,6 @@ async function initMonsterGroup(mndx, x, y, countRange, mmflags) {
             member.mpeaceful = 0;
             centerX = member.mx;
             centerY = member.my;
-        }
-    }
-}
-
-export function randomMiscMonsterItem(mndx, peaceful) {
-    // C ref: muse.c rnd_misc_item().  Attack-shape exclusions will remain at
-    // the monster metadata boundary; the generated flags cover the animal and
-    // mindless exclusions exercised by random level monsters.
-    const flags1 = MONSTER_FLAGS1[mndx] || 0;
-    const symbol = MONSTER_SYMBOL[mndx];
-    if (flags1 & (0x00040000 | 0x00010000)
-        || symbol === 54 || symbol === 37) return 0;
-    if ((MONSTER_DIFFICULTY[mndx] || 0) < 6 && !rn2(30))
-        return rn2(6) ? POT_POLYMORPH : WAN_POLYMORPH;
-    if (!rn2(40) && !monsterIsNonliving(mndx))
-        return AMULET_OF_LIFE_SAVING;
-    switch (rn2(3)) {
-    case 0:
-        return rn2(6) ? POT_SPEED : WAN_SPEED_MONSTER;
-    case 1:
-        if (peaceful && !game.u?.seeInvisible) return 0;
-        return rn2(6) ? POT_INVISIBILITY : WAN_MAKE_INVISIBLE;
-    default:
-        return POT_GAIN_LEVEL;
-    }
-}
-
-function rejectsRandomMonsterItem(mndx) {
-    const flags1 = MONSTER_FLAGS1[mndx] || 0;
-    const symbol = MONSTER_SYMBOL[mndx];
-    return !!(flags1 & (M1_ANIMAL | M1_MINDLESS))
-        || (MONSTER_ATTACKS[mndx] || []).some(attack => attack[0] === 13)
-        || symbol === 54 || symbol === 37; // ghost or Kop
-}
-
-export function randomOffensiveMonsterItem(mndx) {
-    // muse.c rejects animals, exploding monsters, mindless creatures,
-    // ghosts, and Kops before the difficulty-sensitive RNG.  The caller's
-    // rn2(75) remains observable even when this resolver returns no item.
-    if (rejectsRandomMonsterItem(mndx)) return 0;
-    const difficulty = MONSTER_DIFFICULTY[mndx] || 0;
-    if (difficulty > 7 && !rn2(35)) return WAN_DEATH;
-    switch (rn2(9 - Number(difficulty < 4) + 4 * Number(difficulty > 6))) {
-    case 0:
-    case 1:
-        return WAN_STRIKING;
-    case 2:
-        return POT_ACID;
-    case 3:
-        return POT_CONFUSION;
-    case 4:
-        return POT_BLINDNESS;
-    case 5:
-        return POT_SLEEPING;
-    case 6:
-        return POT_PARALYSIS;
-    case 7:
-    case 8:
-        return WAN_MAGIC_MISSILE;
-    case 9:
-        return WAN_SLEEP;
-    case 10:
-        return WAN_FIRE;
-    case 11:
-        return WAN_COLD;
-    default:
-        return WAN_LIGHTNING;
-    }
-}
-
-export function randomDefensiveMonsterItem(mndx) {
-    // C ref: muse.c rnd_defensive_item().
-    const symbol = MONSTER_SYMBOL[mndx];
-    if (rejectsRandomMonsterItem(mndx)) return 0;
-    const difficulty = MONSTER_DIFFICULTY[mndx] || 0;
-    const flags2 = MONSTER_FLAGS2[mndx] || 0;
-    const isDemonCourtMember = symbol === S_DEMON
-        && !!(flags2 & (M2_LORD | M2_PRINCE));
-    const demonCourtBlocksTeleport = !!game.dungeons?.[
-        game.u?.uz?.dnum ?? 0
-    ]?.flags?.hellish
-        && !isDemonCourtMember
-        && game.level.monsters.some(monster => {
-            const memberFlags = MONSTER_FLAGS2[monster.mnum] || 0;
-            return MONSTER_SYMBOL[monster.mnum] === S_DEMON
-                && !!(memberFlags & (M2_LORD | M2_PRINCE));
-        });
-    const noTeleport = demonCourtBlocksTeleport
-        || (game.level.flags.noteleport
-            && !((MONSTER_FLAGS3[mndx] || 0) & 0x001f))
-        || (game.level.flags.stasis_until >= (game.moves ?? 0));
-    let tryCount = 0;
-    for (;;) {
-        switch (rn2(8 + Number(difficulty > 3) + Number(difficulty > 6)
-            + Number(difficulty > 8))) {
-        case 6:
-        case 9:
-            if (noTeleport && ++tryCount < 2) continue;
-            if (!rn2(3)) return WAN_TELEPORTATION;
-            return SCR_TELEPORTATION;
-        case 0:
-        case 1:
-            return SCR_TELEPORTATION;
-        case 8:
-        case 10:
-            if (!rn2(3)) return WAN_CREATE_MONSTER;
-            return SCR_CREATE_MONSTER;
-        case 2:
-            return SCR_CREATE_MONSTER;
-        case 3:
-            return POT_HEALING;
-        case 4:
-            return POT_EXTRA_HEALING;
-        case 5:
-            return POT_FULL_HEALING;
-        case 7:
-            if (game.level.flags.sokoban_rules && rn2(4)) continue;
-            // C is_floater(): eyes/spheres and lights cannot use a wand to
-            // dig down to another level, so the selected case yields no item.
-            if (symbol === 5 || symbol === 25) return 0;
-            return WAN_DIGGING;
         }
     }
 }
@@ -2247,6 +2114,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const pendingMonster = {
         m_id: monsterId,
         mnum: mndx, mx: x, my: y, mhp: hp,
+        m_lev: baseLevel, mpeaceful: peaceful ? 1 : 0,
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -2319,6 +2187,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             renegade,
             mpeaceful: minionPeaceful ? 1 : 0,
         };
+        pendingMonster.mpeaceful = clericMinion.mpeaceful;
     }
 
     if (mdat == null && !(mmflags & MM_NOGRP)) {
@@ -2357,7 +2226,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const giveOffensiveMonsterItem = () => {
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(mndx);
+            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
             if (offensiveItem) mongets(offensiveItem);
         }
     };
@@ -2571,7 +2440,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         if (secondaryWeapon) mongets(secondaryWeapon);
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(mndx);
+            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
             if (offensiveItem) mongets(offensiveItem);
         }
 
@@ -2655,7 +2524,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // the final offensive-item roll before receiving their fixed kit.
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(mndx);
+            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
             if (offensiveItem) mongets(offensiveItem);
         }
         mongets(SKELETON_KEY);
@@ -2705,7 +2574,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         hasMonsterInventory = true;
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(mndx);
+            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
             if (offensiveItem) mongets(offensiveItem);
         }
     } else if (mndx === PM_STUDENT || mndx === PM_ACOLYTE
@@ -3089,12 +2958,12 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (allowMonsterInventory && !skipCommonMonsterInventory) {
         const defensiveRoll = rn2(50);
         if (baseLevel > defensiveRoll) {
-            const defensiveItem = randomDefensiveMonsterItem(mndx);
+            const defensiveItem = randomDefensiveMonsterItem(pendingMonster);
             if (defensiveItem) mongets(defensiveItem);
         }
         const miscellaneousRoll = rn2(100);
         if (baseLevel > miscellaneousRoll) {
-            const miscellaneousItem = randomMiscMonsterItem(mndx, peaceful);
+            const miscellaneousItem = randomMiscMonsterItem(pendingMonster);
             if (miscellaneousItem) mongets(miscellaneousItem);
         }
     }
