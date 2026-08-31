@@ -25,7 +25,7 @@ import {
     see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName,
     randomDisplayMonsterSubject, see_monsters, see_objects, see_traps,
     transientObjectGlyph, lastDirtyMapCursor, shieldeff,
-    map_background, map_object, map_engraving, map_trap, map_invisible,
+    map_object, map_trap, map_invisible,
     unmap_invisible,
 } from './display.js';
 import {
@@ -52,7 +52,7 @@ import { doread } from './read.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
-import { dosearch } from './detect.js';
+import { dosearch, mapLevel } from './detect.js';
 import { tameMonster } from './dog.js';
 import {
     continueWipingFace, donull, dowipe, threateningMonsterNearby,
@@ -70,7 +70,9 @@ import {
     rndClass,
     u_on_downstairs, u_on_upstairs, undeadToCorpse,
 } from './mklev.js';
-import { level_difficulty } from './dungeon.js';
+import {
+    level_difficulty, recordMappedOverviewState,
+} from './dungeon.js';
 import { somexyspace } from './mkroom.js';
 import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
@@ -257,7 +259,7 @@ import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS,
-    BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
+    BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
     FOUNTAIN, SINK,
     ALTAR, GRAVE, THRONE, WATER, MOAT, LAVAWALL, TREE,
@@ -5713,35 +5715,7 @@ async function wizMap() {
         game.u.hallucinationTurns = 0;
     }
 
-    for (const trap of game.level?.traps || []) {
-        trap.tseen = true;
-        map_trap(trap, true);
-    }
-    for (const engraving of game.level?.engravings || [])
-        map_engraving(engraving, true);
-
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            loc.seenv = 0xff;
-            if (loc.typ === SCORR) loc.typ = CORR;
-            map_background(x, y, true);
-            newsym(x, y);
-            if (!IS_FURNITURE(loc.typ)) {
-                const trap = game.level?.traps?.find(candidate =>
-                    candidate.tx === x && candidate.ty === y
-                    && candidate.tseen);
-                const engraving = game.level?.engravings?.find(candidate =>
-                    candidate.x === x && candidate.y === y);
-                if (trap) map_trap(trap, true);
-                else if (engraving) map_engraving(engraving, true);
-            }
-        }
-    }
-    recordMappedOverviewState({ mapped: true });
-
-    exerciseAttribute(A_WIS, true);
+    mapLevel({ confused: false, revealAllTraps: true });
     if (game.u) {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
@@ -6075,60 +6049,6 @@ function visitedDungeonLevels() {
         remember(dnum, dlevel);
     }
     return byDungeon;
-}
-
-function recordMappedOverviewState({ mapped = false } = {}) {
-    const level = game.level;
-    const dnum = game.u?.uz?.dnum ?? 0;
-    const dlevel = game.u?.uz?.dlevel ?? 1;
-    const cap3 = count => Math.min(3, count);
-    const countTerrain = typ => {
-        let count = 0;
-        for (let x = 1; x < COLNO; x++) {
-            for (let y = 0; y < ROWNO; y++) {
-                const loc = level?.at(x, y);
-                if (loc?.typ !== typ) continue;
-                // dungeon.c:recalc_mapseen() counts lastseentyp, not the
-                // hidden live level.  A square enters that memory when it
-                // has been seen, or when the non-levitating hero feels the
-                // terrain underfoot.  wizMap() sets seenv for every square,
-                // so the same projection also covers magic mapping.
-                if (loc.seenv || (x === game.u?.ux && y === game.u?.uy))
-                    count++;
-            }
-        }
-        return cap3(count);
-    };
-    const heroRoom = level?.at(game.u?.ux, game.u?.uy)?.roomno;
-    const shops = (level?.rooms || [])
-        .slice(0, level?.nroom ?? 0)
-        .filter((room, index) => (room?.rtype ?? 0) >= SHOPBASE
-            && (mapped || heroRoom === (room.roomnoidx ?? index) + ROOMOFFSET));
-    const sourceBranch = game.branches?.find(candidate =>
-        candidate.end1?.dnum === dnum
-        && candidate.end1?.dlevel === dlevel);
-    const prior = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
-    const branch = mapped && sourceBranch ? {
-        up: !!sourceBranch.end1_up,
-        dnum: sourceBranch.end2.dnum,
-        dlevel: sourceBranch.end2.dlevel,
-    } : prior?.branch || null;
-    if (!game._overviewRecords) game._overviewRecords = new Map();
-    game._overviewRecords.set(`${dnum}:${dlevel}`, {
-        features: {
-            nshop: mapped ? cap3(shops.length)
-                : Math.max(prior?.features?.nshop || 0, cap3(shops.length)),
-            shoptype: shops.length === 1 ? shops[0].rtype
-                : prior?.features?.shoptype || 0,
-            nfount: countTerrain(FOUNTAIN),
-            nsink: countTerrain(SINK),
-            naltar: countTerrain(ALTAR),
-            nthrone: countTerrain(THRONE),
-            ngrave: countTerrain(GRAVE),
-            ntree: countTerrain(TREE),
-        },
-        branch,
-    });
 }
 
 function dungeonOverviewHeading(dnum, levels) {

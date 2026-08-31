@@ -5,7 +5,10 @@
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { In_endgame } from './const.js';
+import {
+    ALTAR, COLNO, FOUNTAIN, GRAVE, In_endgame, ROOMOFFSET, ROWNO,
+    SHOPBASE, SINK, THRONE, TREE,
+} from './const.js';
 import { depth } from './hacklib.js';
 
 // Upward-building branches are harder than their displayed local depth because
@@ -32,6 +35,59 @@ export function level_difficulty() {
         difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
     }
     return difficulty;
+}
+
+// C dungeon.c:recalc_mapseen().  The overview records what the hero has
+// learned about the current level, not every feature in the live map.
+export function recordMappedOverviewState({ mapped = false } = {}) {
+    const level = game.level;
+    const dnum = game.u?.uz?.dnum ?? 0;
+    const dlevel = game.u?.uz?.dlevel ?? 1;
+    const cap3 = count => Math.min(3, count);
+    const countTerrain = typ => {
+        let count = 0;
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const loc = level?.at(x, y);
+                if (loc?.typ !== typ) continue;
+                if (loc.seenv || (x === game.u?.ux && y === game.u?.uy))
+                    count++;
+            }
+        }
+        return cap3(count);
+    };
+    const heroRoom = level?.at(game.u?.ux, game.u?.uy)?.roomno;
+    const shops = (level?.rooms || [])
+        .slice(0, level?.nroom ?? 0)
+        .filter((room, index) => (room?.rtype ?? 0) >= SHOPBASE
+            && (mapped || heroRoom === (
+                room.roomnoidx ?? index
+            ) + ROOMOFFSET));
+    const sourceBranch = game.branches?.find(candidate =>
+        candidate.end1?.dnum === dnum
+        && candidate.end1?.dlevel === dlevel);
+    const prior = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
+    const branch = mapped && sourceBranch ? {
+        up: !!sourceBranch.end1_up,
+        dnum: sourceBranch.end2.dnum,
+        dlevel: sourceBranch.end2.dlevel,
+    } : prior?.branch || null;
+    if (!game._overviewRecords) game._overviewRecords = new Map();
+    game._overviewRecords.set(`${dnum}:${dlevel}`, {
+        features: {
+            nshop: mapped ? cap3(shops.length)
+                : Math.max(prior?.features?.nshop || 0, cap3(shops.length)),
+            shoptype: shops.length === 1 ? shops[0].rtype
+                : prior?.features?.shoptype || 0,
+            nfount: countTerrain(FOUNTAIN),
+            nsink: countTerrain(SINK),
+            naltar: countTerrain(ALTAR),
+            nthrone: countTerrain(THRONE),
+            ngrave: countTerrain(GRAVE),
+            ntree: countTerrain(TREE),
+        },
+        branch,
+    });
 }
 
 // The Lua runtime supplies the data. This module owns dungeon.c's placement

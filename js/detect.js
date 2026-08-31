@@ -4,12 +4,13 @@
 import { game } from './gstate.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    canSpotMonster, feel_location, map_background, map_invisible,
-    map_object, map_trap, newsym, pline, unmap_invisible,
+    canSpotMonster, feel_location, map_background, map_engraving,
+    map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell,
+    unmap_invisible,
 } from './display.js';
 import {
     A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR,
-    Is_rogue_level,
+    IS_FURNITURE, Is_rogue_level,
     D_CLOSED, D_LOCKED, D_TRAPPED,
     STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS,
     W_NONDIGGABLE, W_NONPASSWALL,
@@ -21,6 +22,7 @@ import {
     commandSafetyPrevention, threateningMonsterNearby,
 } from './do.js';
 import { clearAreaCells, vision_note_blocker_change } from './vision.js';
+import { recordMappedOverviewState } from './dungeon.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -44,6 +46,52 @@ export function premap_detect() {
         }
     }
     for (const trap of game.level?.traps || []) map_trap(trap, true);
+}
+
+// C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
+// secret corridors.  It preserves secret doors, unknown traps, and objects
+// the hero had not already seen.
+export function mapLevel({
+    confused = (game.u?.confusionTurns ?? 0) > 0,
+    revealAllTraps = false,
+} = {}) {
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            if (confused && rn2(7)) continue;
+            const loc = game.level?.at(x, y);
+            if (!loc) continue;
+            const remembered = loc.remembered_glyph;
+            loc.seenv = 0xff;
+            if (loc.typ === SCORR) {
+                loc.typ = CORR;
+                vision_note_blocker_change(x, y);
+            }
+
+            map_background(x, y, true);
+            newsym(x, y);
+            if (IS_FURNITURE(loc.typ)) continue;
+
+            const trap = game.level?.traps?.find(candidate =>
+                candidate.tx === x && candidate.ty === y);
+            const engraving = game.level?.engravings?.find(candidate =>
+                candidate.x === x && candidate.y === y);
+            if (trap && (trap.tseen || revealAllTraps)) {
+                map_trap(trap, true);
+            } else if (engraving && !confused) {
+                map_engraving(engraving, true);
+            } else if (remembered
+                && ['object', 'trap'].includes(remembered.kind)) {
+                if (game.level?.flags?.hero_memory)
+                    loc.remembered_glyph = remembered;
+                show_glyph_cell(
+                    x, y, remembered.ch, remembered.color,
+                    remembered.decgfx, false,
+                );
+            }
+        }
+    }
+    recordMappedOverviewState({ mapped: !confused });
+    exerciseAttribute(A_WIS, true);
 }
 
 function exerciseWisdom() {
