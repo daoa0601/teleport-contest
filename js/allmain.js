@@ -10,7 +10,6 @@ import { d, rn2, rnd } from './rng.js';
 import {
     initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
     initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
-    level_difficulty,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     disturbBuriedZombieTimers, finishBuriedZombieTimer,
@@ -18,6 +17,7 @@ import {
     runClaimedBuriedZombieTimer, runClaimedMeltIceTimer,
     runClaimedObjectRotTimer, runNextMeltIceBoulder,
 } from './mklev.js';
+import { level_difficulty } from './dungeon.js';
 import {
     randomDefensiveMonsterItem, randomMiscMonsterItem,
     randomOffensiveMonsterItem,

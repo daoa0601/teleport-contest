@@ -5,6 +5,34 @@
 import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
+import { In_endgame } from './const.js';
+import { depth } from './hacklib.js';
+
+// Upward-building branches are harder than their displayed local depth because
+// the hero must descend to the branch entrance before climbing back up.
+export function level_difficulty() {
+    const uz = game.u?.uz;
+    if (In_endgame(uz)) {
+        return depth(game.sanctum_level)
+            + Math.trunc((game.u?.ulevel || 1) / 2);
+    }
+    if (game.u?.uhave?.amulet) {
+        let deepest = depth(uz);
+        for (const key of game._levelCache?.keys?.() || []) {
+            const [dnum, dlevel] = String(key).split(':').map(Number);
+            if (!Number.isInteger(dnum) || !Number.isInteger(dlevel))
+                continue;
+            deepest = Math.max(deepest, depth({ dnum, dlevel }));
+        }
+        return deepest;
+    }
+    let difficulty = depth(uz);
+    const dungeon = game.dungeons?.[uz?.dnum ?? 0];
+    if ((dungeon?.entry_lev ?? 1) > 1) {
+        difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
+    }
+    return difficulty;
+}
 
 // The Lua runtime supplies the data. This module owns dungeon.c's placement
 // and branch construction rules.

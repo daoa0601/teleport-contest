@@ -8,8 +8,9 @@ import {
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
-    fill_ordinary_room, level_difficulty, mksobj,
+    fill_ordinary_room, mksobj,
 } from '../js/mklev.js';
+import { level_difficulty } from '../js/dungeon.js';
 import {
     CHEST, DART, LARGE_BOX,
 } from '../js/object_data.js';
@@ -155,7 +156,7 @@ test('grave contents are linked and weighted in the buried object chain', async 
     }
 });
 
-test('supply chest commits final contained weight and no bridge usage', async () => {
+test('supply chest weight includes its contents', async () => {
     const room = roomState({ seed: 1 });
     await fill_ordinary_room(room, true);
 

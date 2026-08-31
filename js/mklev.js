@@ -21,6 +21,7 @@ import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import {
     depth as depth_of_level, ledgerNo, maxLedgerNo,
 } from './hacklib.js';
+import { level_difficulty } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import {
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
@@ -545,43 +546,6 @@ function oinit() {
             / (lastRealGem + 1 - first));
     }
 }
-
-// C ref: dungeon.c level_difficulty().  Upward-building branches are harder
-// than their raw absolute depth because reaching a lower-numbered local level
-// requires first descending to the branch entrance and then climbing back up.
-export function level_difficulty() {
-    const uz = game.u?.uz;
-    // dungeon.c:level_difficulty() deliberately divorces the negative
-    // Elemental-Plane display depths from monster/object difficulty.  Every
-    // endgame plane uses Sanctum depth plus half the hero's experience level.
-    if (In_endgame(uz)) {
-        return depth_of_level(game.sanctum_level)
-            + Math.trunc((game.u?.ulevel || 1) / 2);
-    }
-    if (game.u?.uhave?.amulet) {
-        let deepest = depth_of_level(uz);
-        for (const key of game._levelCache?.keys?.() || []) {
-            const [dnum, dlevel] = String(key).split(':').map(Number);
-            if (!Number.isInteger(dnum) || !Number.isInteger(dlevel))
-                continue;
-            deepest = Math.max(
-                deepest, depth_of_level({ dnum, dlevel }),
-            );
-        }
-        return deepest;
-    }
-    let difficulty = depth_of_level(uz);
-    const dungeon = game.dungeons?.[uz?.dnum ?? 0];
-    if ((dungeon?.entry_lev ?? 1) > 1) {
-        difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
-    }
-    return difficulty;
-}
-
-// ============================================================
-// Stub functions for object/monster/trap creation
-// These consume the exact RNG calls that C makes.
-// ============================================================
 
 // C ref: mkobj.c blessorcurse — rn2(4) BUC selection
 function blessorcurse(otmp, chance = 10) {
