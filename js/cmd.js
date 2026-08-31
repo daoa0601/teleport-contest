@@ -151,7 +151,7 @@ import {
 import {
     wakeMonstersNear, wakeMonstersNearWithMessages,
 } from './mon.js';
-import { dismountHero, monsterSaddle } from './steed.js';
+import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
@@ -269,7 +269,6 @@ import {
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
-    DISMOUNT_BYCHOICE,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
@@ -7918,78 +7917,6 @@ async function doforce() {
         chance: 2 * (OBJECT_LARGE_DAMAGE[weapon.otyp] || 0),
         usedtime: 0,
     };
-    game.context.move = 1;
-}
-
-// C refs: steed.c doride(), mount_steed(), landing_spot(), and
-// dismount_steed().  Mount failures are zero-time; successful mount and
-// voluntary dismount preserve one live monster identity across its carrier
-// transition between fmon and u.usteed.
-async function doride() {
-    const u = game.u;
-    if (u?.usteed) {
-        const oldx = u.ux, oldy = u.uy;
-        const result = await dismountHero(DISMOUNT_BYCHOICE, {
-            state: game,
-            random: rn2,
-            announce: pline,
-        });
-        if (result.movement) {
-            newsym(oldx, oldy);
-            vision_recalc(1);
-            newsym(u.ux, u.uy);
-        }
-        game.context.move = 1;
-        return;
-    }
-
-    const direction = String.fromCharCode(
-        await promptKey('In what direction? '),
-    ).toLowerCase();
-    if (!isMovementKey(direction)) {
-        game._pending_message = '';
-        game.context.move = 0;
-        return;
-    }
-    const x = u.ux + DIR_DX[direction];
-    const y = u.uy + DIR_DY[direction];
-    const steed = game.level?.monsters?.find(monster =>
-        monster.mx === x && monster.my === y);
-    if (!steed) {
-        await pline('I see nobody there.');
-        game.context.move = 0;
-        return;
-    }
-    const steedName = monsterInstanceDisplayName(steed);
-    if (!steed.saddled && !monsterSaddle(steed)) {
-        await pline(`The ${steedName} is not saddled.`);
-        game.context.move = 0;
-        return;
-    }
-    if (!(steed.mtame > 0) || steed.isminion) {
-        await pline(`I think the ${steedName} would mind.`);
-        game.context.move = 0;
-        return;
-    }
-
-    if (u.ulevel + steed.mtame < rnd(20)) {
-        const damage = 10 + rn2(5);
-        u.uhp = Math.max(0, (u.uhp || 0) - damage);
-        await pline(`You slip while trying to get on the saddled ${steedName}.`);
-        game.context.move = 0;
-        return;
-    }
-
-    await pline(`You mount the saddled ${steedName}.`);
-    game.level.monsters = game.level.monsters.filter(monster => monster !== steed);
-    u.ux0 = u.ux;
-    u.uy0 = u.uy;
-    u.ux = steed.mx;
-    u.uy = steed.my;
-    u.usteed = steed;
-    newsym(u.ux0, u.uy0);
-    vision_recalc(1);
-    newsym(u.ux, u.uy);
     game.context.move = 1;
 }
 

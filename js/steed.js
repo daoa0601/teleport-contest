@@ -1,11 +1,12 @@
-// steed.js — Saddling, mounting, and dismounting.
-// C ref: steed.c can_saddle(), put_saddle_on_mon(), and dismount_steed().
+// steed.js — Saddling, mounting, riding, and dismounting.
+// C ref: steed.c.
 
 import {
     ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BYCHOICE, DOOR, IS_POOL,
     MGIVENNAME, W_SADDLE, isok,
 } from './const.js';
 import { game } from './gstate.js';
+import { newsym, pline } from './display.js';
 import { levelHasCeiling, resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monmove.js';
 import {
@@ -13,8 +14,10 @@ import {
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { BOULDER } from './object_data.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { moveHeroByTeleport } from './teleport.js';
+import { promptKey } from './tty_prompts.js';
+import { vision_recalc } from './vision.js';
 
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
@@ -42,6 +45,8 @@ const SADDLE_CLASSES = new Set([
     S_DRAGON,
     S_JABBERWOCK,
 ]);
+const DIRECTION_X = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
+const DIRECTION_Y = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 
 export function canSaddleMonster(monster) {
     if (!Number.isInteger(monster?.mnum)) return false;
@@ -69,6 +74,80 @@ export function monsterSaddle(monster) {
     if (monster?.saddle) return monster.saddle;
     return (monster?.minvent || monster?.inventory || []).find(object =>
         (object.owornmask ?? 0) & W_SADDLE) ?? null;
+}
+
+export async function doride() {
+    const hero = game.u;
+    if (hero?.usteed) {
+        const oldx = hero.ux;
+        const oldy = hero.uy;
+        const result = await dismountHero(DISMOUNT_BYCHOICE, {
+            state: game,
+            random: rn2,
+            announce: pline,
+        });
+        if (result.movement) {
+            newsym(oldx, oldy);
+            vision_recalc(1);
+            newsym(hero.ux, hero.uy);
+        }
+        game.context.move = 1;
+        return;
+    }
+
+    const direction = String.fromCharCode(
+        await promptKey('In what direction? '),
+    ).toLowerCase();
+    if (!Object.hasOwn(DIRECTION_X, direction)) {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+    const x = hero.ux + DIRECTION_X[direction];
+    const y = hero.uy + DIRECTION_Y[direction];
+    const steed = game.level?.monsters?.find(monster =>
+        monster.mx === x && monster.my === y);
+    if (!steed) {
+        await pline('I see nobody there.');
+        game.context.move = 0;
+        return;
+    }
+    const steedName = steed.name || monsterTypeName(
+        steed.mnum, !!steed.female,
+    );
+    if (!steed.saddled && !monsterSaddle(steed)) {
+        await pline(`The ${steedName} is not saddled.`);
+        game.context.move = 0;
+        return;
+    }
+    if (!(steed.mtame > 0) || steed.isminion) {
+        await pline(`I think the ${steedName} would mind.`);
+        game.context.move = 0;
+        return;
+    }
+    if (hero.ulevel + steed.mtame < rnd(20)) {
+        const damage = 10 + rn2(5);
+        hero.uhp = Math.max(0, (hero.uhp || 0) - damage);
+        await pline(
+            `You slip while trying to get on the saddled ${steedName}.`,
+        );
+        game.context.move = 0;
+        return;
+    }
+
+    await pline(`You mount the saddled ${steedName}.`);
+    game.level.monsters = game.level.monsters.filter(
+        monster => monster !== steed,
+    );
+    hero.ux0 = hero.ux;
+    hero.uy0 = hero.uy;
+    hero.ux = steed.mx;
+    hero.uy = steed.my;
+    hero.usteed = steed;
+    newsym(hero.ux0, hero.uy0);
+    vision_recalc(1);
+    newsym(hero.ux, hero.uy);
+    game.context.move = 1;
 }
 
 export function putSaddleOnMonster(saddle, monster) {
