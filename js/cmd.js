@@ -2,7 +2,10 @@
 // C ref: cmd.c rhack(), hack.c domove().
 
 import { game } from './gstate.js';
-import { heroEntersPool } from './hack.js';
+import {
+    blocksDiagonalDoor, heroBadRock, heroEntersPool,
+    heroTightDiagonalReason,
+} from './hack.js';
 import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
@@ -171,7 +174,7 @@ import {
 } from './object_knowledge.js';
 import {
     encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
-    inventoryWeight, invWeight, HVY_ENCUMBER, OVERLOADED, pickupLoadPrefix,
+    invWeight, HVY_ENCUMBER, OVERLOADED, pickupLoadPrefix,
     SLT_ENCUMBER,
 } from './weight.js';
 import { hiddenGold } from './gold.js';
@@ -266,9 +269,9 @@ import {
     F_LOOTED, F_WARNED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
-    W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
+    W_BALL, W_CHAIN, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    WT_TOOMUCH_DIAGONAL, P_BOW, P_SLING, P_SKILLED, P_EXPERT, isok,
+    P_BOW, P_SLING, P_SKILLED, P_EXPERT, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -385,64 +388,6 @@ function blocksMove(x, y) {
     return false;
 }
 
-function doorlessDoor(loc) {
-    return loc?.typ === DOOR && !((loc.doormask || 0) & ~D_BROKEN);
-}
-
-// C hack.c test_move(): diagonal entry/exit is barred for an intact doorway,
-// but a D_NODOOR (mask 0) or broken doorway is an open gap in the wall.
-export function blocksDiagonalDoor(current, destination) {
-    return (destination?.typ === DOOR && !doorlessDoor(destination))
-        || (current?.typ === DOOR && !doorlessDoor(current));
-}
-
-// C refs: hack.c bad_rock(), cant_squeeze_thru(), and test_move().  A tight
-// diagonal is rejected before destination boulder handling.  In Sokoban,
-// boulders in the two orthogonal shoulder cells count as bad rock even though
-// the underlying terrain is ordinary floor.
-function heroBadRock(x, y) {
-    const loc = game.level?.at(x, y);
-    if (!loc) return true;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    if (game.level?.flags?.sokoban_rules
-        && pile.some(object => object.otyp === BOULDER)) return true;
-    if (!IS_OBSTRUCTED(loc.typ)) return false;
-
-    const mnum = Number.isInteger(game.u?.umonnum)
-        ? game.u.umonnum : null;
-    const flags = mnum === null ? 0 : MONSTER_FLAGS1[mnum] ?? 0;
-    const tunnels = !!(flags & 0x00000020); // M1_TUNNEL
-    const needsPick = !!(flags & 0x00000040); // M1_NEEDPICK
-    const mayDig = !((IS_WALL(loc.typ) || loc.typ === TREE)
-        && ((loc.wall_info ?? 0) & W_NONDIGGABLE));
-    const passesWalls = !!(flags & 0x00000008); // M1_WALLWALK
-    const mayPassWall = !(IS_WALL(loc.typ)
-        && ((loc.wall_info ?? 0) & W_NONPASSWALL));
-    return (!tunnels || needsPick || !mayDig)
-        && !(passesWalls && mayPassWall);
-}
-
-function heroTightDiagonalReason() {
-    const mnum = Number.isInteger(game.u?.umonnum)
-        ? game.u.umonnum : null;
-    const flags = mnum === null ? 0 : MONSTER_FLAGS1[mnum] ?? 0;
-    if (flags & 0x00000008) return 0; // M1_WALLWALK
-
-    const symbol = mnum === null ? null : MONSTER_SYMBOL[mnum];
-    const name = mnum === null ? '' : MONSTER_NAME[mnum];
-    const flexible = !!(flags & (
-        0x00000004 // M1_AMORPHOUS
-        | 0x00080000 // M1_SLITHY
-        | 0x00100000 // M1_UNSOLID
-    )) || symbol === 22 // S_VORTEX
-        || name === 'air elemental';
-    if (mnum !== null && (MONSTER_SIZE[mnum] ?? 2) >= 3 && !flexible)
-        return 1;
-    if (inventoryWeight(game) > WT_TOOMUCH_DIAGONAL) return 2;
-    if (game.level?.flags?.sokoban_rules) return 3;
-    return 0;
-}
-
 // C ref: hack.c:could_move_onto_boulder().  Travel planning is allowed to
 // route through an ordinary boulder, then actual run-mode movement consults
 // this capability before deciding whether to stop or enter/push the square.
@@ -465,9 +410,9 @@ function heroCouldMoveOntoBoulder(sx, sy, g = game) {
 
 async function rejectTightHeroDiagonal(dx, dy) {
     if (!dx || !dy
-        || !heroBadRock(game.u.ux, game.u.uy + dy)
-        || !heroBadRock(game.u.ux + dx, game.u.uy)) return false;
-    const reason = heroTightDiagonalReason();
+        || !heroBadRock(game, game.u.ux, game.u.uy + dy)
+        || !heroBadRock(game, game.u.ux + dx, game.u.uy)) return false;
+    const reason = heroTightDiagonalReason(game);
     if (!reason) return false;
     if (reason === 1) await pline('Your body is too large to fit through.');
     else if (reason === 2)
