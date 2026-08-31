@@ -194,11 +194,9 @@ import {
     beginBallAndChainMove, finishBallAndChainMove,
 } from './ball.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving,
-    finishOrdinaryDeath, finishOrdinaryQuit,
-    probeCanMakeBones,
+    finishHeroDeath, finishOrdinaryQuit,
     recordHeroKillConduct, recordVanquished,
-    restoreHeroAfterDeath, vanquishedLines,
+    vanquishedLines,
 } from './end.js';
 import {
     rankAchievement, recordAchievement, recordDungeonEntryAchievements,
@@ -11850,57 +11848,6 @@ async function zapDig(direction) {
     exerciseAttribute(2, true); // learnwand(): discovery exercise
 }
 
-async function finishConfirmedHeroDeath({
-    killer, deathCause = null, deathVerb = 'died',
-}) {
-    game.u.umortality = (game.u.umortality || 0) + 1;
-    if (game.flags?.debug || game.flags?.explore) {
-        const answer = String.fromCharCode(
-            await promptKey('Die? [yn] (n) '),
-        ).toLowerCase();
-        if (answer !== 'y') {
-            restoreHeroAfterDeath();
-            await pline("OK, so you don't die.");
-            game._deathSurvivedMessagePending = true;
-            return false;
-        }
-    }
-
-    game._canMakeBones = probeCanMakeBones();
-    await finishOrdinaryDeath({ killer, deathCause, deathVerb });
-    return true;
-}
-
-async function finishDeathRayHit({
-    killer = 'death ray', deathCause = null, deathLineShown = false,
-} = {}) {
-    const pending = game._pending_message;
-    const amulet = game.uamul || game.u?.uamul;
-    const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
-
-    if (lifeSaving) {
-        game.u.uhp = 0;
-        const recovery = beginHeroLifeSaving();
-        const prefix = pending && !deathLineShown ? `${pending}  ` : '';
-        await moreUntilDismissed(`${prefix}But wait...--More--`);
-        await pline('Your medallion begins to glow!');
-        await plineWithContinuation('You feel much better!');
-        await plineWithContinuation(
-            'The medallion crumbles to dust!',
-        );
-        completeHeroLifeSaving(recovery);
-        game._deathSurvivedMessagePending = true;
-        return false;
-    }
-
-    if (!deathLineShown) {
-        if (pending) await moreUntilDismissed(`${pending}--More--`);
-        await moreUntilDismissed('You die...--More--');
-    }
-    game.u.uhp = 0;
-    return finishConfirmedHeroDeath({ killer, deathCause });
-}
-
 // C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().
 async function dozap() {
     if (heroHasNoHands(game)) {
@@ -11961,7 +11908,7 @@ async function dozap() {
         await promptKey('You die.--More--');
         game.u.uhp = 0;
         const reflexive = game.flags?.female ? 'herself' : 'himself';
-        await finishDeathRayHit({
+        await finishHeroDeath({
             killer: 'death ray',
             deathCause: `shot ${reflexive} with a death ray`,
             deathLineShown: true,
@@ -11973,7 +11920,9 @@ async function dozap() {
         const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
         const deathRay = await zapDeathRay(directionChar, {
             dismissMessage: moreUntilDismissed,
-            finishHeroHit: () => finishDeathRayHit(),
+            finishHeroHit: () => finishHeroDeath({
+                killer: 'death ray',
+            }),
             finishMonsterKill: finishHeroMonsterKill,
         });
         if (deathRay.gameEnded) return;
@@ -12042,7 +11991,7 @@ async function dozap() {
         const coldRay = await zapColdRay(directionChar, {
             finishMonsterKill: finishHeroMonsterKill,
         });
-        if (coldRay.heroDied && await finishDeathRayHit({
+        if (coldRay.heroDied && await finishHeroDeath({
             killer: 'bolt of cold',
         })) return;
         if (wand.dknown) {
@@ -12063,7 +12012,7 @@ async function dozap() {
             finishMonsterKill: finishHeroMonsterKill,
             wakeMonsters: wakeMonstersNearWithMessages,
         });
-        if (fireRay.heroDied && await finishDeathRayHit({
+        if (fireRay.heroDied && await finishHeroDeath({
             killer: 'bolt of fire',
         })) return;
         if (wand.dknown) {

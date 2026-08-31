@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { flush_screen, pline } from './display.js';
+import { flush_screen, pline, plineWithContinuation } from './display.js';
 import { showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { showDisclosureOverlay } from './windows.js';
@@ -195,6 +195,56 @@ export function restoreHeroAfterDeath() {
     game._helplessDoneMessage = '';
     rebasePrayerAfterLifeSaving(game);
     return game.u.uhp;
+}
+
+async function showDeathMore(message) {
+    await pline(message);
+    await flush_screen(1);
+    game.nhDisplay?.setCursor(message.length, 0);
+    await waitForCurrentMore();
+}
+
+export async function finishHeroDeath({
+    killer,
+    deathCause = null,
+    deathVerb = 'died',
+    deathLineShown = false,
+} = {}) {
+    const pending = game._pending_message;
+    const amulet = game.uamul || game.u?.uamul;
+    if (amulet?.otyp === AMULET_OF_LIFE_SAVING) {
+        game.u.uhp = 0;
+        const recovery = beginHeroLifeSaving();
+        const prefix = pending && !deathLineShown ? `${pending}  ` : '';
+        await showDeathMore(`${prefix}But wait...`);
+        await pline('Your medallion begins to glow!');
+        await plineWithContinuation('You feel much better!');
+        await plineWithContinuation('The medallion crumbles to dust!');
+        completeHeroLifeSaving(recovery);
+        game._deathSurvivedMessagePending = true;
+        return false;
+    }
+
+    if (!deathLineShown) {
+        if (pending) await showDeathMore(pending);
+        await showDeathMore('You die...');
+    }
+    game.u.uhp = 0;
+    game.u.umortality = (game.u.umortality || 0) + 1;
+
+    if (game.flags?.debug || game.flags?.explore) {
+        const answer = await promptDeathQuestion('Die? [yn] (n) ');
+        if (answer !== 'y') {
+            restoreHeroAfterDeath();
+            await pline("OK, so you don't die.");
+            game._deathSurvivedMessagePending = true;
+            return false;
+        }
+    }
+
+    game._canMakeBones = probeCanMakeBones();
+    await finishOrdinaryDeath({ killer, deathCause, deathVerb });
+    return true;
 }
 
 function conductState(state = game) {
