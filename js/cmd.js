@@ -54,7 +54,9 @@ import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
 import { dosearch } from './detect.js';
 import { tameMonster } from './dog.js';
-import { donull, threateningMonsterNearby } from './do.js';
+import {
+    continueWipingFace, donull, dowipe, threateningMonsterNearby,
+} from './do.js';
 import {
     ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
@@ -898,34 +900,7 @@ export async function continueCountedCommand(g = game) {
         return true;
     }
     if (occupation.key === 'wipe-face') {
-        occupation.remaining--;
-        const creamRemoved = Math.min(4, g.u?.ucreamed ?? 0);
-        const blindnessRemoved = Math.min(4, g.u?.blindTurns ?? 0);
-        g.u.ucreamed = Math.max(
-            0, (g.u?.ucreamed ?? 0) - creamRemoved,
-        );
-        g.u.blindTurns = Math.max(
-            0, (g.u?.blindTurns ?? 0) - blindnessRemoved,
-        );
-
-        if ((g.u?.blindTurns ?? 0) === 0) {
-            await pline("You've got the glop off.");
-            g.u.ucreamed = 0;
-            syncBlindness(g);
-            g.vision_full_recalc = 1;
-            if (!g.blind)
-                await plineWithContinuation('You can see again.');
-            g._occupation = null;
-        } else if ((g.u?.ucreamed ?? 0) === 0) {
-            await pline('Your face feels clean now.');
-            g._occupation = null;
-        } else if (occupation.remaining <= 0) {
-            // timed_occupation() is open-ended; the counter is only a local
-            // guard for this projection and grows when wipeoff() remains busy.
-            occupation.remaining = 1;
-        }
-        g.context.move = 1;
-        return true;
+        return continueWipingFace(occupation, g);
     }
     if (occupation.key === '.') {
         occupation.remaining--;
@@ -5864,23 +5839,6 @@ async function doadjust() {
             inventoryItemDescription(object)}.`,
     );
     game.context.move = 0;
-}
-
-// C ref: do.c:dowipe().  Even the already-clean exit returns ECMD_TIME;
-// whether that allocates a new global turn is owned by the movement-ration
-// scheduler, not by this command.
-async function dowipe() {
-    if ((game.u?.ucreamed ?? 0) > 0) {
-        game._occupation = {
-            key: 'wipe-face',
-            remaining: 1,
-            text: 'wiping off your face',
-        };
-        game.context.move = 1;
-        return;
-    }
-    await pline('Your face is already clean.');
-    game.context.move = 1;
 }
 
 // C ref: pray.c:doturn().

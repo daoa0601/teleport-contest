@@ -1,10 +1,14 @@
 // do.js — shared hero command transactions.
-// C refs: do.c cmd_safety_prevention()/donull() and hack.c monster_nearby().
+// C refs: do.c cmd_safety_prevention(), donull(), dowipe(), and wipeoff();
+//         hack.c monster_nearby().
 
 import { game } from './gstate.js';
-import { canSpotMonster, pline } from './display.js';
+import {
+    canSpotMonster, pline, plineWithContinuation,
+} from './display.js';
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { M_AP_FURNITURE, M_AP_OBJECT } from './const.js';
+import { syncBlindness } from './senses.js';
 
 const AT_BOOM = 14;
 
@@ -103,4 +107,49 @@ export async function donull(force = false, multi = false) {
         counterKey: '_didNothingFlag',
     });
     return !prevented;
+}
+
+// C do.c:dowipe().  Starting the command and cleaning one turn are separate
+// because monsters and timed effects act between occupation turns.
+export async function dowipe(state = game) {
+    if ((state.u?.ucreamed ?? 0) > 0) {
+        state._occupation = {
+            key: 'wipe-face',
+            remaining: 1,
+            text: 'wiping off your face',
+        };
+        state.context.move = 1;
+        return;
+    }
+    await pline('Your face is already clean.');
+    state.context.move = 1;
+}
+
+export async function continueWipingFace(occupation, state = game) {
+    occupation.remaining--;
+    const creamRemoved = Math.min(4, state.u?.ucreamed ?? 0);
+    const blindnessRemoved = Math.min(4, state.u?.blindTurns ?? 0);
+    state.u.ucreamed = Math.max(
+        0, (state.u?.ucreamed ?? 0) - creamRemoved,
+    );
+    state.u.blindTurns = Math.max(
+        0, (state.u?.blindTurns ?? 0) - blindnessRemoved,
+    );
+
+    if ((state.u?.blindTurns ?? 0) === 0) {
+        await pline("You've got the glop off.");
+        state.u.ucreamed = 0;
+        syncBlindness(state);
+        state.vision_full_recalc = 1;
+        if (!state.blind)
+            await plineWithContinuation('You can see again.');
+        state._occupation = null;
+    } else if ((state.u?.ucreamed ?? 0) === 0) {
+        await pline('Your face feels clean now.');
+        state._occupation = null;
+    } else if (occupation.remaining <= 0) {
+        occupation.remaining = 1;
+    }
+    state.context.move = 1;
+    return true;
 }
