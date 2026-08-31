@@ -22,6 +22,7 @@ import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
 import { selectInventoryObject } from './invent.js';
 import { igniteItems } from './light.js';
+import { doEnlightenmentEffect } from './insight.js';
 import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
@@ -38,7 +39,7 @@ import {
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
-    WAN_FIRE,
+    WAN_ENLIGHTENMENT, WAN_FIRE,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
     WAN_STASIS, WAN_WISHING,
 } from './object_data.js';
@@ -228,6 +229,11 @@ async function zapNoDirection(wand) {
             await makeWish({ announce: game.flags?.verbose !== false });
             learnNoDirectionWand(wand);
         }
+        return true;
+    }
+    if (wand.otyp === WAN_ENLIGHTENMENT) {
+        await doEnlightenmentEffect();
+        learnNoDirectionWand(wand);
         return true;
     }
     return false;

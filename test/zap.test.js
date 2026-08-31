@@ -10,9 +10,9 @@ import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
-    APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER, WAN_FIRE,
-    WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS,
-    WAN_WISHING,
+    APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER,
+    WAN_ENLIGHTENMENT, WAN_FIRE, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
+    WAN_STASIS, WAN_WISHING,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -185,6 +185,21 @@ test('wishing creates the requested object without asking for a direction',
         await rhack('z'.charCodeAt(0));
 
         assert.ok(game.inventory.some(object => object.otyp === APPLE));
+    });
+
+test('enlightenment describes the hero without asking for a direction',
+    async () => {
+        freshWeaponArena();
+        const wand = carriedWand(WAN_ENLIGHTENMENT, {
+            name: 'enlightenment',
+        });
+        game.inventory = [wand];
+        pushKey('a');
+        pushKey(' ');
+
+        await rhack('z'.charCodeAt(0));
+
+        assert.equal(game._pending_message, 'The feeling subsides.');
     });
 
 test('a fire ray burns a monster in its path', async () => {

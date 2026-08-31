@@ -2,11 +2,13 @@
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { game } from './gstate.js';
-import { bot, docrtRecalc, flush_screen, formatStrength } from './display.js';
+import {
+    bot, docrtRecalc, flush_screen, formatStrength, pline,
+} from './display.js';
 import { showDisclosureOverlay, showTextPages } from './windows.js';
 import { In_endgame } from './const.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsDisplaced, magicNegation } from './armor.js';
 import { invWeight, nearCapacity } from './weight.js';
 import {
@@ -404,14 +406,8 @@ function paginateAttributeLines(lines) {
     return pages;
 }
 
-// C insight.c:enlightenment() emits one ordered text stream.  tty, rather
-// than the calendar flags or individual sections, owns pagination.  Keeping
-// the stream intact makes optional status/property rows move every following
-// boundary exactly as they do in the original.
-function attributePages() {
+function basicEnlightenmentLines(roleName) {
     const u = game.u;
-    const roleName = game.flags?.female && game.urole?.name?.f
-        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const rank = (game.flags?.female && game.urole?.rank?.f)
         || game.urole?.rank?.m || roleName;
     const gender = game.flags?.female ? 'female' : 'male';
@@ -437,12 +433,7 @@ function attributePages() {
         ? '  You have just started your adventure.'
         : `  You entered the dungeon ${elapsedTurns} ${
             plural(elapsedTurns, 'turn')} ago.`;
-    const lines = [
-        ` ${game.displayName || game.plname} the ${roleName}'s attributes:`,
-        '',
-        ' Background:',
-    ];
-
+    const lines = ['', ' Background:'];
     const rankMatchesRole = rank.localeCompare(
         roleName, undefined, { sensitivity: 'accent' },
     ) === 0;
@@ -511,6 +502,45 @@ function attributePages() {
     );
     for (let index = 0; index < 6; index++)
         lines.push(characteristicLine(index));
+    return lines;
+}
+
+function magicEnlightenmentLines() {
+    const u = game.u;
+    const record = u.ualign?.record || 0;
+    const piety = piousness(record);
+    const lines = [
+        '',
+        ' Attributes:',
+        record >= 0
+            ? `  You are ${piety ? `${piety} ` : ''}aligned.`
+            : `  You have ${piety}.`,
+    ];
+    if (game.flags?.debug) lines.push(`  Your alignment is ${record}.`);
+    lines.push(...liveAttributePropertyLines());
+    if (game.uarmc?.otyp === 148) {
+        lines.push(
+            '  You are magic-protected because of your cloak of magic resistance.',
+        );
+    }
+    lines.push(`  You can't safely pray${game.flags?.debug
+        ? ` (${u.ublesscnt || 0})` : ''}.`);
+    if ((u.umortality ?? 0) > 0) {
+        lines.push(`  You have been killed ${
+            killedCountPhrase(u.umortality)}.`);
+    }
+    return lines;
+}
+
+// C insight.c:enlightenment() emits one ordered text stream.  tty owns its
+// pagination, so optional status rows move all later page boundaries.
+function attributePages({ basic = true, magic = false } = {}) {
+    const roleName = game.flags?.female && game.urole?.name?.f
+        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
+    const lines = [
+        ` ${game.displayName || game.plname} the ${roleName}'s attributes:`,
+    ];
+    if (basic) lines.push(...basicEnlightenmentLines(roleName));
 
     lines.push('', ' Status:', ...statusEnlightenmentLines());
     lines.push(...weaponInsightLines());
@@ -521,28 +551,10 @@ function attributePages() {
     if (!armorSlots.some(Boolean))
         lines.push("  You aren't wearing any armor.");
 
-    if (game.flags?.debug || game.flags?.explore) {
-        lines.push('', ' Attributes:');
-        const record = u.ualign?.record || 0;
-        const piety = piousness(record);
-        lines.push(record >= 0
-            ? `  You are ${piety ? `${piety} ` : ''}aligned.`
-            : `  You have ${piety}.`);
-        if (game.flags?.debug)
-            lines.push(`  Your alignment is ${record}.`);
-        lines.push(...liveAttributePropertyLines());
-        if (game.uarmc?.otyp === 148)
-            lines.push('  You are magic-protected because of your cloak of magic resistance.');
-        lines.push(`  You can't safely pray${game.flags?.debug
-            ? ` (${u.ublesscnt || 0})` : ''}.`);
-        if ((u.umortality ?? 0) > 0) {
-            lines.push(`  You have been killed ${
-                killedCountPhrase(u.umortality)}.`);
-        }
-    }
+    if (magic) lines.push(...magicEnlightenmentLines());
 
     lines.push('', ' Miscellaneous:');
-    if (game.flags?.debug || game.flags?.explore) {
+    if (basic && (game.flags?.debug || game.flags?.explore)) {
         lines.push(`  You are running in ${game.flags?.debug
             ? 'debug' : 'explore'} mode.`);
         lines.push("  You haven't encountered any bones levels.");
@@ -551,13 +563,27 @@ function attributePages() {
     return paginateAttributeLines(lines);
 }
 
-export async function doattributes() {
-    await showTextPages(attributePages(), { validKeys: [27, 32, 10, 13] });
-    // Full-screen NHW_TEXT destruction restores memory, sight, and fmon.
+async function showEnlightenment(options) {
+    await showTextPages(attributePages(options), {
+        validKeys: [27, 32, 10, 13],
+    });
     await docrtRecalc();
     await bot();
     await flush_screen(1);
+}
+
+export async function doattributes() {
+    const magic = game.flags?.debug || game.flags?.explore;
+    await showEnlightenment({ magic });
     game.context.move = 0;
+}
+
+export async function doEnlightenmentEffect() {
+    await pline('You feel self-knowledgeable...');
+    await flush_screen(1);
+    await showEnlightenment({ basic: false, magic: true });
+    await pline('The feeling subsides.');
+    exerciseAttribute(4, true);
 }
 
 function finalAttributeLimit(displayIndex) {
