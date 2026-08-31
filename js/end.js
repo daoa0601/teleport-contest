@@ -3,7 +3,9 @@
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { flush_screen, pline, plineWithContinuation } from './display.js';
+import {
+    docrt, flush_screen, pline, plineWithContinuation,
+} from './display.js';
 import { showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { showDisclosureOverlay } from './windows.js';
@@ -25,6 +27,7 @@ import {
     stack_object,
 } from './mklev.js';
 import { moreUntilDismissed } from './tty_prompts.js';
+import { promptYesNo } from './query.js';
 
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
 
@@ -919,7 +922,21 @@ export async function finishOrdinaryDeath({
     game.context.move = 0;
 }
 
-// C refs: end.c doquit()/done(QUIT)/really_done().  QUIT skips the tombstone,
+export async function doquit() {
+    const answer = await promptYesNo(
+        'Really quit without saving? [yn] (n) ',
+    );
+    if (answer !== 'y') {
+        game._pending_message = '';
+        game._retained_message = '';
+        await docrt();
+        game.context.move = 0;
+        return;
+    }
+    await finishOrdinaryQuit();
+}
+
+// C refs: end.c done(QUIT)/really_done().  QUIT skips the tombstone,
 // but otherwise owns disclosures, a role-aware summary text window, and the
 // score-list handoff as one terminal transaction.
 export async function finishOrdinaryQuit() {

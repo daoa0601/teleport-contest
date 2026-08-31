@@ -192,7 +192,7 @@ import {
     beginBallAndChainMove, finishBallAndChainMove,
 } from './ball.js';
 import {
-    finishOrdinaryQuit,
+    doquit,
     recordHeroKillConduct, recordVanquished,
     vanquishedLines,
 } from './end.js';
@@ -6530,24 +6530,6 @@ async function doinvoke() {
     // their own source transactions before they can be accepted.
     await pline('Nothing happens.');
     game.context.move = 1;
-}
-
-// C ref: end.c:doquit().  The negative branch is an ordinary zero-time
-// command cancellation: yn_function() owns the input, destroys the extended
-// command line, and hands the map back to tty without entering done().
-async function doquit() {
-    const answer = await promptYesNo(
-        'Really quit without saving? [yn] (n) ',
-    );
-    if (answer !== 'y') {
-        game._pending_message = '';
-        game._retained_message = '';
-        await docrt();
-        game.context.move = 0;
-        return;
-    }
-
-    await finishOrdinaryQuit();
 }
 
 function rubEligibleObject(object) {
