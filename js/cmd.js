@@ -158,6 +158,7 @@ import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
+import { continueForceLock, doforce } from './lock.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -853,46 +854,7 @@ export async function continueCountedCommand(g = game) {
         return true;
     }
     if (occupation.key === 'force-lock') {
-        const box = occupation.container;
-        const pile = g.level?.objects?.[g.u?.ux]?.[g.u?.uy] || [];
-        if (!box || !pile.includes(box)) {
-            occupation.usedtime = 0;
-            g._occupation = null;
-            return false;
-        }
-
-        const usedtime = occupation.usedtime ?? 0;
-        occupation.usedtime = usedtime + 1;
-        if (usedtime >= 50 || !g.uwep || heroHasNoHands(g)) {
-            await pline('You give up your attempt to force the lock.');
-            if (occupation.usedtime >= 50)
-                exerciseAttribute(
-                    occupation.picktyp ? A_DEX : A_STR, true,
-                );
-            g._occupation = null;
-            g.context.move = 1;
-            return true;
-        }
-
-        if (!occupation.picktyp) {
-            // mon.c:wake_nearby(FALSE): hammering wakes every live monster
-            // within ulevel*20 squared distance without angering it.
-            const wakeDistance = (g.u?.ulevel ?? 1) * 20;
-            wakeMonstersNear(g.u?.ux ?? 0, g.u?.uy ?? 0, wakeDistance, g);
-        }
-
-        if (rn2(100) < occupation.chance) {
-            await plineWithContinuation('You succeed in forcing the lock.');
-            exerciseAttribute(
-                occupation.picktyp ? A_DEX : A_STR, true,
-            );
-            const destroyed = !occupation.picktyp && rn2(3) === 0;
-            await breakChestLock(box, destroyed, g);
-            newsym(g.u.ux, g.u.uy);
-            g._occupation = null;
-        }
-        g.context.move = 1;
-        return true;
+        return continueForceLock(occupation, g);
     }
     if (occupation.remaining <= 0) {
         g._occupation = null;
@@ -1590,64 +1552,6 @@ function nextToDoor(x, y) {
         }
     }
     return false;
-}
-
-function forceShatterMessage(object) {
-    const thing = unseenObjectNoun({ ...object, dknown: false });
-    const article = /^[aeiou]/i.test(thing) ? 'An' : 'A';
-    const material = OBJECT_MATERIAL[object?.otyp] ?? 0;
-    const disposition = material === 5 ? 'is torn to shreds'
-        : material === 2 ? 'is crushed'
-        : material === 3 ? 'is pulped'
-        : material === 4 ? 'is mashed'
-        : material === 19 ? 'shatters'
-        : material === 8 ? 'splinters to fragments'
-        : 'is destroyed';
-    return `${article} ${thing} ${disposition}!`;
-}
-
-// C ref: lock.c:breakchestlock().  Destruction remains inside the force-lock
-// occupation call stack across tty acknowledgements: each later pline can
-// page the prior one before the contents loop advances.
-async function breakChestLock(box, destroyIt, g = game) {
-    if (!destroyIt) {
-        box.olocked = false;
-        box.obroken = true;
-        box.lknown = true;
-        return;
-    }
-
-    const boxName = OBJECT_NAMES[box.otyp] || 'box';
-    await plineWithContinuation(
-        `In fact, you've totally destroyed the ${boxName}.`,
-    );
-    const contents = Array.isArray(box.contents) ? box.contents : [];
-    while (contents.length) {
-        const object = contents.shift();
-        const shatters = rn2(3) === 0 || object.oclass === 8;
-        if (shatters) {
-            await plineWithContinuation(forceShatterMessage(object));
-            const quantity = object.quan ?? object.quantity ?? 1;
-            if (quantity <= 1) {
-                object.where = 'gone';
-                object.ox = object.oy = 0;
-                continue;
-            }
-            object.quan = object.quantity = quantity - 1;
-        }
-        place_object(object, g.u.ux, g.u.uy);
-        stack_object(object, g);
-    }
-
-    // invent.c:delobj_core() checks whether even an ordinary floor object
-    // resists deletion before extracting it.  Chests are not protected, but
-    // the obj_resists(0,0) call still consumes this draw.
-    rn2(100);
-    const pile = g.level?.objects?.[g.u?.ux]?.[g.u?.uy];
-    const index = pile?.indexOf(box) ?? -1;
-    if (index >= 0) pile.splice(index, 1);
-    box.where = 'gone';
-    box.ox = box.oy = 0;
 }
 
 // C ref: trap.c delfloortrap().  Gush rejects portal-like and special traps,
@@ -6857,88 +6761,6 @@ async function doextcmd() {
     await runExtendedCommand(
         completeExtendedCommand(normalizedCommand) || normalizedCommand,
     );
-}
-
-function forceableWeapon(weapon) {
-    if (!weapon) return false;
-    // C lock.c:u_have_forceable_weapon().  Weapon-tools use the same
-    // oc_skill alias as weapons; ROCK_CLASS is forceable independently.
-    const weaponClass = weapon.oclass === 2 || weapon.class === 'Weapons';
-    const weaponTool = (weapon.oclass === 6 || weapon.class === 'Tools')
-        && (OBJECT_SUBTYPE[weapon.otyp] || 0) !== 0;
-    if (weaponClass || weaponTool) {
-        const skill = OBJECT_SUBTYPE[weapon.otyp] || 0;
-        // P_DAGGER=1 through P_LANCE=19; P_FLAIL=20 is excluded by the
-        // original condition together with every later launcher skill.
-        return skill >= 1 && skill <= 19;
-    }
-    return weapon.oclass === 14 || weapon.class === 'Rocks';
-}
-
-// C ref: lock.c:doforce().  Lock-forcing is a floor-container transaction;
-// even reaching the valid-weapon/no-box outcome consumes a scheduler turn.
-async function doforce() {
-    if (game.u?.uswallow) {
-        await pline("You can't force anything from inside here.");
-        game.context.move = 0;
-        return;
-    }
-    if (!forceableWeapon(game.uwep)) {
-        const weapon = game.uwep;
-        if (!weapon) {
-            await pline("You can't force anything when not wielding a weapon.");
-        } else {
-            const plural = (weapon.quan ?? weapon.quantity ?? 1) > 1;
-            await pline(`You can't force anything ${plural
-                ? 'with those weapons' : 'with that weapon'}.`);
-        }
-        game.context.move = 0;
-        return;
-    }
-
-    const x = game.u.ux, y = game.u.uy;
-    const boxes = (game.level?.objects?.[x]?.[y] || []).filter(object =>
-        object.otyp === LARGE_BOX || object.otyp === CHEST);
-    const locked = boxes.find(object => !object.obroken && object.olocked);
-    if (!locked) {
-        await pline('You decide not to force the issue.');
-        game.context.move = 1;
-        return;
-    }
-
-    locked.lknown = true;
-    const answer = await promptYnq(
-        `There is a locked ${OBJECT_NAMES[locked.otyp] || 'box'} here; `
-        + 'force its lock? [ynq] (q) ',
-        'q',
-    );
-    if (answer === 'q') {
-        game.context.move = 0;
-        return;
-    }
-    if (answer === 'n') {
-        await pline('You decide not to force the issue.');
-        game.context.move = 1;
-        return;
-    }
-
-    const weapon = game.uwep;
-    const artifact = weapon.oartifact
-        ? artifactById(weapon.oartifact) : null;
-    const weaponName = `${OBJECT_NAMES[weapon.otyp] || weapon.name || 'weapon'}`
-        + (artifact ? ` named ${artifact.name}` : '');
-    // TODO: apply the blade breakage check on each forcing turn.
-    const picktyp = false;
-    await pline(`You start bashing it with your ${weaponName}.`);
-    game._occupation = {
-        key: 'force-lock',
-        container: locked,
-        weapon,
-        picktyp,
-        chance: 2 * (OBJECT_LARGE_DAMAGE[weapon.otyp] || 0),
-        usedtime: 0,
-    };
-    game.context.move = 1;
 }
 
 function wizardPositionDescription(x, y) {
