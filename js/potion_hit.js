@@ -11,7 +11,7 @@ import {
     plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
-import { splitHostileMonster } from './mklev.js';
+import { splitMonster as splitMonsterActor } from './monster_clone.js';
 import { tryCallObjectType } from './object_call.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -1026,7 +1026,7 @@ export async function hitMonsterWithSupportedPotion({
     repaintMonster = target => newsym(target.mx, target.my),
     rememberInvisible = target => map_invisible(target.mx, target.my),
     wakeNearby,
-    splitMonster = target => splitHostileMonster(target, state),
+    splitMonster = target => splitMonsterActor(target, state),
     transformWere = target => transformWereMonster(target, state),
     finishKill,
     showShield = target => shieldeff(target.mx, target.my, state),

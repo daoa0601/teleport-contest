@@ -3093,12 +3093,12 @@ function collectShuffledMonsterCoordinates(centerX, centerY, maxRadius = 0) {
 }
 
 function findMonsterNearPositionCore(
-    mnum, centerX, centerY, checkScary, ignoreWater,
+    mnum, centerX, centerY, checkScary, ignoreWater, state,
 ) {
     const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
     for (const pos of nearby) {
         if (monsterGoodPosition(
-            mnum, pos.x, pos.y, false, checkScary, ignoreWater,
+            mnum, pos.x, pos.y, false, checkScary, ignoreWater, state,
         ))
             return pos;
     }
@@ -3109,7 +3109,7 @@ function findMonsterNearPositionCore(
     for (let index = nearby.length; index < all.length; index++) {
         const pos = all[index];
         if (monsterGoodPosition(
-            mnum, pos.x, pos.y, false, checkScary, ignoreWater,
+            mnum, pos.x, pos.y, false, checkScary, ignoreWater, state,
         ))
             return pos;
     }
@@ -3121,59 +3121,13 @@ function findMonsterNearPositionCore(
 // Exposing selection separately lets callbacks distinguish enexto failure
 // from a later makemon()/make_familiar() construction failure.
 export function findMonsterNearPosition(
-    mnum, centerX, centerY, { ignoreWater = false } = {},
+    mnum, centerX, centerY, { ignoreWater = false, state = game } = {},
 ) {
     return findMonsterNearPositionCore(
-        mnum, centerX, centerY, true, ignoreWater,
+        mnum, centerX, centerY, true, ignoreWater, state,
     ) || findMonsterNearPositionCore(
-        mnum, centerX, centerY, false, ignoreWater,
+        mnum, centerX, centerY, false, ignoreWater, state,
     );
-}
-
-// C refs: potion.c:split_mon() and makemon.c:clone_mon().  This owner is
-// deliberately bounded to the hostile gremlin/mold caller used by water and
-// heat effects; peaceful/tame attitude reinitialization belongs to pet state.
-export function splitHostileMonster(monster, state = game) {
-    if (!monster || state !== game || monster.mpeaceful
-        || (monster.mtame ?? 0) > 0) return null;
-    if ((monster.mhp ?? 0) > (monster.mhpmax ?? monster.mhp ?? 0))
-        monster.mhp = monster.mhpmax;
-    if ((monster.mhp ?? 0) <= 1
-        || ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_EXTINCT)) {
-        return null;
-    }
-
-    const position = findMonsterNearPosition(
-        monster.mnum, monster.mx, monster.my,
-    );
-    if (!position) return null;
-
-    const clone = { ...monster };
-    clone.m_id = nextIdent();
-    clone.mx = position.x;
-    clone.my = position.y;
-    clone.mundetected = 0;
-    clone.mtrapped = 0;
-    clone.mcloned = 1;
-    clone.mleashed = 0;
-    clone.isshk = 0;
-    clone.isgd = 0;
-    clone.ispriest = 0;
-    clone.minvent = [];
-    clone.inventory = clone.minvent;
-    clone.hasInventory = false;
-    clone.mtrack = [];
-    clone._track = [];
-
-    clone.mhpmax = monster.mhpmax;
-    clone.mhp = Math.trunc(monster.mhp / 2);
-    monster.mhp -= clone.mhp;
-    clone.mhpmax = Math.trunc(monster.mhpmax / 2);
-    monster.mhpmax -= clone.mhpmax;
-
-    state.level.monsters.push(clone);
-    newsym(clone.mx, clone.my);
-    return clone;
 }
 
 function heroCloneBirthLimit(mnum) {

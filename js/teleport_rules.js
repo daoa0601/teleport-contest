@@ -71,8 +71,8 @@ export function heroTeleportRestricted(state = game) {
     return monsterTeleportRestricted({ mnum: currentForm }, state);
 }
 
-function monsterAt(x, y) {
-    return game.level?.monsters?.find(monster =>
+function monsterAt(state, x, y) {
+    return state.level?.monsters?.find(monster =>
         (monster.mhp ?? 1) > 0
         && ((monster.mx === x && monster.my === y)
             || monster.wormSegments?.some(segment =>
@@ -81,12 +81,12 @@ function monsterAt(x, y) {
 
 export function monsterGoodPosition(
     mndx, x, y, avoidMonsterGenerationExclusions = false,
-    checkScary = false, ignoreWater = false,
+    checkScary = false, ignoreWater = false, state = game,
 ) {
-    const location = game.level?.at?.(x, y);
+    const location = state.level?.at?.(x, y);
     if (!location || !isok(x, y)) return false;
-    if (game.u?.ux === x && game.u?.uy === y) return false;
-    if (monsterAt(x, y)) return false;
+    if (state.u?.ux === x && state.u?.uy === y) return false;
+    if (monsterAt(state, x, y)) return false;
 
     const flags1 = mndx == null ? 0 : MONSTER_FLAGS1[mndx] ?? 0;
     const flags2 = mndx == null ? 0 : MONSTER_FLAGS2[mndx] ?? 0;
@@ -97,7 +97,7 @@ export function monsterGoodPosition(
 
         if (IS_POOL(location.typ) && !ignoreWater) {
             const waterWall = location.typ === WATER;
-            return swimmer || (!game.level?.flags?.waterlevel
+            return swimmer || (!state.level?.flags?.waterlevel
                 && !waterWall && inAir);
         } else if (symbol === S_EEL && rn2(13) && !ignoreWater) {
             return false;
@@ -111,7 +111,7 @@ export function monsterGoodPosition(
             && !(location.wall_info & W_NONPASSWALL)) return true;
         if ((flags1 & M1_AMORPHOUS) && location.typ === DOOR
             && (location.doormask & (D_CLOSED | D_LOCKED))) return true;
-        if (checkScary && monsterTypeScaredFromPosition(mndx, x, y))
+        if (checkScary && monsterTypeScaredFromPosition(mndx, x, y, state))
             return false;
     }
 
@@ -119,32 +119,36 @@ export function monsterGoodPosition(
         && (location.doormask & (D_CLOSED | D_LOCKED))) return false;
     if (location.typ < DOOR && !(ignoreWater && IS_POOL(location.typ)))
         return false;
-    const hasBoulder = game.level?.objects?.[x]?.[y]?.some(
+    const hasBoulder = state.level?.objects?.[x]?.[y]?.some(
         object => object.otyp === BOULDER,
     );
     if (hasBoulder && !(flags2 & M2_ROCKTHROW)) return false;
     if (avoidMonsterGenerationExclusions
-        && game.level?.exclusionZones?.some(zone =>
+        && state.level?.exclusionZones?.some(zone =>
             zone.type === 'monster-generation'
             && x >= zone.lx && x <= zone.hx
             && y >= zone.ly && y <= zone.hy)) return false;
     return true;
 }
 
-function monsterTypeScaredFromPosition(mndx, x, y) {
+function monsterTypeScaredFromPosition(mndx, x, y, state) {
     const symbol = MONSTER_SYMBOL[mndx] ?? 0;
     if (symbol === S_HUMAN || symbol === S_ANGEL
         || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(mndx)
         || ((MONSTER_GENO[mndx] ?? 0) & G_UNIQ)) return false;
-    const location = game.level?.at?.(x, y);
+    const location = state.level?.at?.(x, y);
     if (location?.typ === ALTAR && symbol === S_VAMPIRE) return true;
-    if (game.level?.objects?.[x]?.[y]?.some(
+    if (state.level?.objects?.[x]?.[y]?.some(
         object => object.otyp === SCR_SCARE_MONSTER,
     )) return true;
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
-    const inFinalDungeon = !!game.u?.uz && !!game.astral_level
-        && game.u.uz.dnum === game.astral_level.dnum;
+    const inHell = !!state.dungeons?.[state.u?.uz?.dnum ?? -1]?.flags?.hellish;
+    const inFinalDungeon = !!state.u?.uz && !!state.astral_level
+        && state.u.uz.dnum === state.astral_level.dnum;
     if (inHell || inFinalDungeon || mndx === PM_MINOTAUR
         || ((MONSTER_FLAGS1[mndx] ?? 0) & M1_NOEYES)) return false;
-    return !!engravingAt(x, y)?.text?.includes('Elbereth');
+    const engraving = state === game
+        ? engravingAt(x, y)
+        : state.level?.engravings?.find(candidate =>
+            candidate.x === x && candidate.y === y);
+    return !!engraving?.text?.includes('Elbereth');
 }
