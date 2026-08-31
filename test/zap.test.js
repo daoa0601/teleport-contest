@@ -2,14 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT, POOL, ROOM, WEB,
+    COULD_SEE, DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT,
+    POOL, ROOM, SDOOR, WEB,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey } from '../js/input.js';
 import {
-    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_FIRE, WAN_SLEEP,
+    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_FIRE,
+    WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -115,6 +117,29 @@ test('a cursed wand can explode before asking for a direction', async () => {
     assert.equal(game.inventory.includes(wand), false);
     assert.ok(game.u.uhp < 100);
     assert.equal(game.context.move, 1);
+});
+
+test('secret door detection reveals nearby hidden terrain and traps', async () => {
+    const level = freshWeaponArena();
+    const hiddenDoor = level.at(12, 10);
+    hiddenDoor.typ = SDOOR;
+    hiddenDoor.doormask = 0;
+    const hiddenTrap = { ttyp: WEB, tx: 11, ty: 11, tseen: false };
+    level.traps.push(hiddenTrap);
+    game.viz_array[10][12] |= COULD_SEE;
+    game.viz_array[11][11] |= COULD_SEE;
+    const wand = carriedWand(WAN_SECRET_DOOR_DETECTION, {
+        name: 'secret door detection',
+    });
+    game.inventory = [wand];
+    pushKey('a');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(hiddenDoor.typ, DOOR);
+    assert.equal(hiddenDoor.doormask, D_CLOSED);
+    assert.equal(hiddenTrap.tseen, true);
+    assert.equal(wand.typeKnown, true);
 });
 
 test('a fire ray burns a monster in its path', async () => {

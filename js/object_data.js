@@ -255,6 +255,7 @@ export const SPE_TELEPORT_AWAY = 400;
 export const SPE_STONE_TO_FLESH = 405;
 export const SPE_PROTECTION = 403;
 export const WAN_LIGHT = 410;
+export const WAN_SECRET_DOOR_DETECTION = 411;
 export const WAN_CREATE_MONSTER = 413;
 export const WAN_WISHING = 414;
 export const WAN_STRIKING = 417;

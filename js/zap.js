@@ -4,6 +4,7 @@
 
 import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
+import { findit } from './detect.js';
 import {
     COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR, DRAWBRIDGE_UP,
     D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL,
@@ -37,7 +38,7 @@ import {
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
-    WAN_LIGHTNING, WAN_POLYMORPH, WAN_SLEEP,
+    WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -232,6 +233,21 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     if (wand.cursed && rn2(100) === 0) {
         await backfireWand(wand);
         if (!game.program_state?.gameover) game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_SECRET_DOOR_DETECTION) {
+        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
+        await findit();
+        if (wand.dknown) {
+            if (wasUnknown) game.u.urexp = (game.u.urexp || 0) + 10;
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 

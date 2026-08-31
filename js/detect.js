@@ -4,19 +4,21 @@
 import { game } from './gstate.js';
 import {
     canSpotMonster, feel_location, map_background, map_invisible,
-    map_object, map_trap, newsym, pline,
+    map_object, map_trap, newsym, pline, unmap_invisible,
 } from './display.js';
 import {
-    COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR,
+    BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, Is_rogue_level,
     D_CLOSED, D_LOCKED, D_TRAPPED,
-    TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL,
+    STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS,
+    W_NONDIGGABLE, W_NONPASSWALL,
 } from './const.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, CHEST, LARGE_BOX } from './object_data.js';
+import { recordObjectEncounter } from './object_knowledge.js';
 import { rnl, rn2 } from './rng.js';
 import {
     commandSafetyPrevention, threateningMonsterNearby,
 } from './do.js';
-import { vision_note_blocker_change } from './vision.js';
+import { clearAreaCells, vision_note_blocker_change } from './vision.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -55,6 +57,28 @@ function foundTrapMessage(trap) {
     return `You find ${article} ${name}.`;
 }
 
+function revealSecretDoor(x, y) {
+    const loc = game.level?.at(x, y);
+    if (loc?.typ !== SDOOR) return false;
+    const retained = (loc.doormask || 0) & (D_LOCKED | D_TRAPPED);
+    loc.typ = DOOR;
+    loc.doormask = Is_rogue_level(game.u?.uz)
+        ? 0 : retained | ((retained & D_LOCKED) ? 0 : D_CLOSED);
+    loc.arboreal_sdoor = 0;
+    vision_note_blocker_change(x, y);
+    game.vision_full_recalc = 1;
+    return true;
+}
+
+function revealSecretCorridor(x, y) {
+    const loc = game.level?.at(x, y);
+    if (loc?.typ !== SCORR) return false;
+    loc.typ = CORR;
+    vision_note_blocker_change(x, y);
+    game.vision_full_recalc = 1;
+    return true;
+}
+
 // C detect.c:dosearch0(1), invoked once per global turn by intrinsic
 // Searching.  This synchronous branch owns the maintenance RNG and immediate
 // map/state changes; it never consumes another hero action.
@@ -67,25 +91,16 @@ export function automaticSearch() {
             if (!loc) continue;
             if (loc.typ === SDOOR) {
                 if (rnl(7)) continue;
-                const retained = (loc.doormask || 0)
-                    & (D_LOCKED | D_TRAPPED);
-                loc.typ = DOOR;
-                loc.doormask = retained
-                    | ((retained & D_LOCKED) ? 0 : D_CLOSED);
-                loc.arboreal_sdoor = 0;
-                vision_note_blocker_change(x, y);
+                revealSecretDoor(x, y);
                 exerciseWisdom();
-                game.vision_full_recalc = 1;
                 newsym(x, y);
                 game._pending_message = 'You find a hidden door.';
                 return true;
             }
             if (loc.typ === SCORR) {
                 if (rnl(7)) continue;
-                loc.typ = CORR;
-                vision_note_blocker_change(x, y);
+                revealSecretCorridor(x, y);
                 exerciseWisdom();
-                game.vision_full_recalc = 1;
                 newsym(x, y);
                 game._pending_message = 'You find a hidden passage.';
                 return true;
@@ -121,27 +136,18 @@ async function searchAdjacentSecrets() {
                 feel_location(x, y);
             if (loc.typ === SDOOR) {
                 if (rnl(7)) continue;
-                const retained = (loc.doormask || 0)
-                    & (D_LOCKED | D_TRAPPED);
-                loc.typ = DOOR;
-                loc.doormask = retained
-                    | ((retained & D_LOCKED) ? 0 : D_CLOSED);
-                loc.arboreal_sdoor = 0;
-                vision_note_blocker_change(x, y);
+                revealSecretDoor(x, y);
                 exerciseWisdom();
                 game._occupation = null;
-                game.vision_full_recalc = 1;
                 newsym(x, y);
                 await pline('You find a hidden door.');
                 return true;
             }
             if (loc.typ === SCORR) {
                 if (rnl(7)) continue;
-                loc.typ = CORR;
-                vision_note_blocker_change(x, y);
+                revealSecretCorridor(x, y);
                 exerciseWisdom();
                 game._occupation = null;
-                game.vision_full_recalc = 1;
                 newsym(x, y);
                 await pline('You find a hidden passage.');
                 return true;
@@ -197,6 +203,157 @@ async function searchAdjacentSecrets() {
         }
     }
     return false;
+}
+
+function revealTrappedContainers(objects) {
+    let found = 0;
+    for (const object of objects || []) {
+        if ((object.otyp === LARGE_BOX || object.otyp === CHEST)
+            && object.otrapped) {
+            object.tknown = true;
+            if (!(game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0)) {
+                object.dknown = true;
+                recordObjectEncounter(object.otyp);
+            }
+            found++;
+        }
+        found += revealTrappedContainers(object.contents);
+    }
+    return found;
+}
+
+function joinFindings(parts) {
+    if (parts.length < 2) return parts[0] || '';
+    if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+    return `${parts.slice(0, -1).join(', ')}, and ${parts.at(-1)}`;
+}
+
+function countDescription(count, singular, plural) {
+    return count === 1 ? singular : `${count} ${plural}`;
+}
+
+// C detect.c:findit().  Magical searching reveals every hidden thing within
+// eight spaces that is not behind blocking terrain.
+export async function findit() {
+    if (game.u?.uswallow) return 0;
+
+    const found = {
+        doors: 0, corridors: 0, traps: 0, monsters: 0,
+        unseen: 0, keptUnseen: 0, clearedUnseen: 0,
+    };
+    const cells = clearAreaCells(game.u.ux, game.u.uy, BOLT_LIM);
+    for (const { x, y } of cells) {
+        const loc = game.level.at(x, y);
+        const monster = game.level.monsters?.find(candidate =>
+            !candidate.dead && (candidate.mhp ?? 1) > 0
+            && candidate.mx === x && candidate.my === y);
+
+        if (revealSecretDoor(x, y)) {
+            loc.seenv = 0xff;
+            map_background(x, y, true);
+            found.doors++;
+        } else if (revealSecretCorridor(x, y)) {
+            loc.seenv = 0xff;
+            map_background(x, y, true);
+            found.corridors++;
+        }
+
+        const trap = game.level.traps?.find(candidate =>
+            candidate.tx === x && candidate.ty === y);
+        if (trap && !trap.tseen && trap.ttyp !== STATUE_TRAP) {
+            map_trap(trap, true);
+            found.traps++;
+        }
+        if (loc.typ === DOOR && (loc.doormask & D_TRAPPED)) {
+            map_trap({ ttyp: TRAPPED_DOOR, tx: x, ty: y }, true);
+            found.traps++;
+        }
+
+        let trappedContainers = revealTrappedContainers(
+            game.level.objects?.[x]?.[y],
+        );
+        trappedContainers += revealTrappedContainers(
+            game.level.buriedObjects?.filter(object =>
+                object.ox === x && object.oy === y),
+        );
+        if (monster) {
+            trappedContainers += revealTrappedContainers(
+                monster.minvent || monster.inventory,
+            );
+        }
+        if (game.u.ux === x && game.u.uy === y)
+            trappedContainers += revealTrappedContainers(game.inventory);
+        if (trappedContainers) {
+            map_trap({ ttyp: TRAPPED_CHEST, tx: x, ty: y }, true);
+            found.traps += trappedContainers;
+        }
+
+        if (monster && (!canSpotMonster(monster)
+            || monster.mundetected || monster.m_ap_type)) {
+            let revealedMonster = false;
+            if (monster.m_ap_type) {
+                monster.m_ap_type = 0;
+                monster.mappearance = 0;
+                revealedMonster = true;
+            } else if (monster.mundetected) {
+                monster.mundetected = 0;
+                revealedMonster = true;
+            }
+            if (revealedMonster) found.monsters++;
+            newsym(x, y);
+
+            if (!canSpotMonster(monster)) {
+                if (loc.remembered_glyph?.kind === 'invisible') {
+                    found.keptUnseen++;
+                } else {
+                    map_invisible(x, y);
+                    found.unseen++;
+                }
+            }
+        } else if (unmap_invisible(x, y, false)) {
+            newsym(x, y);
+            found.clearedUnseen++;
+        }
+    }
+
+    const revealed = [];
+    if (found.doors) {
+        revealed.push(countDescription(
+            found.doors, 'a secret door', 'secret doors',
+        ));
+    }
+    if (found.corridors) {
+        revealed.push(countDescription(
+            found.corridors, 'a secret corridor', 'secret corridors',
+        ));
+    }
+    if (found.traps)
+        revealed.push(countDescription(found.traps, 'a trap', 'traps'));
+    if (found.monsters) {
+        revealed.push(countDescription(
+            found.monsters, 'a hidden monster', 'hidden monsters',
+        ));
+    }
+    if (revealed.length) await pline(`You reveal ${joinFindings(revealed)}!`);
+
+    if (found.unseen) {
+        const qualifier = found.keptUnseen ? ' other' : '';
+        const amount = found.unseen === 1
+            ? `${found.keptUnseen ? 'another' : 'an'} unseen monster`
+            : `${found.unseen}${qualifier} unseen monsters`;
+        await pline(`You detect ${amount}!`);
+    }
+
+    const total = found.doors + found.corridors + found.traps
+        + found.monsters + found.unseen + found.clearedUnseen;
+    if (!total) await pline("You don't find anything.");
+    else if (found.clearedUnseen && total === found.clearedUnseen) {
+        await pline(
+            `You feel ${found.keptUnseen ? 'somewhat ' : ''}less paranoid.`,
+        );
+    }
+    return total;
 }
 
 async function preventUnsafeSearch(force = false) {
