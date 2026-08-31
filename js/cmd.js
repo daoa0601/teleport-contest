@@ -142,7 +142,8 @@ import { initTrack, setTrack } from './track.js';
 import { captureRunmodeDelay } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
-    findArmorClass, heroIsDisplaced,
+    destroyWornArmor, findArmorClass, heroIsDisplaced,
+    objectErosionKind, objectErosionMessage, wornArmorInDestroyOrder,
 } from './armor.js';
 import {
     findMonsterArmorClass,
@@ -11194,50 +11195,6 @@ async function readEnchantWeaponScroll(scroll) {
 
     consumeOneInventoryObject(scroll);
     game.context.move = 1;
-}
-
-export function wornArmorInDestroyOrder() {
-    return ['uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu']
-        .map(slot => game[slot] || game.u?.[slot])
-        .filter(Boolean);
-}
-
-export function objectErosionKind(object) {
-    const material = OBJECT_MATERIAL[object.otyp];
-    if ((material <= 8 && material !== 1) || material === 18)
-        return { field: 'oeroded', action: 'smoulder' };
-    if (material === 11)
-        return { field: 'oeroded', action: 'rust' };
-    if (material === 19 && object.oclass === 3)
-        return { field: 'oeroded', action: 'crack' };
-    if (material === 10)
-        return { field: 'oeroded2', action: 'rot' };
-    if (material === 13)
-        return { field: 'oeroded2', action: 'corrode' };
-    return null;
-}
-
-export function objectErosionMessage(object, kind) {
-    const erosion = object[kind.field] || 0;
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    const verb = kind.action === 'smoulder' ? 'smoulders'
-        : kind.action === 'rust' ? 'rusts'
-        : kind.action === 'crack' ? 'cracks'
-        : kind.action === 'rot' ? 'rots' : 'corrodes';
-    if (erosion >= 3) return `Your ${name} ${verb} away!`;
-    const adverb = erosion === 2 ? ' completely'
-        : erosion ? ' further' : '';
-    return `Your ${name} ${verb}${adverb}!`;
-}
-
-export function destroyWornArmor(armor) {
-    for (const slot of [
-        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
-    ]) {
-        if (game[slot] === armor) game[slot] = null;
-        if (game.u?.[slot] === armor) game.u[slot] = null;
-    }
-    game.inventory = (game.inventory || []).filter(item => item !== armor);
 }
 
 async function appendReadEffectMessage(transaction, message, commit) {

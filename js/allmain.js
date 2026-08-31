@@ -25,11 +25,9 @@ import {
     animateRollingBoulderCell,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     finishArmorRemoval, grantAmuletWish,
-    destroyWornArmor, objectErosionKind, objectErosionMessage,
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack, stopRun, wakeMonstersNear,
     wakeMonstersNearWithMessages,
-    wornArmorInDestroyOrder,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
@@ -172,7 +170,8 @@ import { rehumanizeHero } from './polyself.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
-    heroHasFreeAction, projectedArmorClass,
+    destroyWornArmor, heroHasFreeAction, objectErosionKind,
+    objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder,
 } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,

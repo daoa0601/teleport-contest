@@ -6,7 +6,7 @@ import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     SHIELD_OF_DRAIN_RESISTANCE,
-    OBJECT_NAMES, OBJECT_SPELL_LEVEL,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
 } from './object_data.js';
 import { rnd } from './rng.js';
 
@@ -95,6 +95,50 @@ export function armorSlotFor(otyp) {
     if (otyp >= 159 && otyp <= 162) return 'uarmg';
     if (otyp >= 163 && otyp <= 172) return 'uarmf';
     return null;
+}
+
+export function wornArmorInDestroyOrder(state = game) {
+    return ['uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu']
+        .map(slot => state[slot] || state.u?.[slot])
+        .filter(Boolean);
+}
+
+export function objectErosionKind(object) {
+    const material = OBJECT_MATERIAL[object.otyp];
+    if ((material <= 8 && material !== 1) || material === 18)
+        return { field: 'oeroded', action: 'smoulder' };
+    if (material === 11)
+        return { field: 'oeroded', action: 'rust' };
+    if (material === 19 && object.oclass === 3)
+        return { field: 'oeroded', action: 'crack' };
+    if (material === 10)
+        return { field: 'oeroded2', action: 'rot' };
+    if (material === 13)
+        return { field: 'oeroded2', action: 'corrode' };
+    return null;
+}
+
+export function objectErosionMessage(object, kind) {
+    const erosion = object[kind.field] || 0;
+    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    const verb = kind.action === 'smoulder' ? 'smoulders'
+        : kind.action === 'rust' ? 'rusts'
+        : kind.action === 'crack' ? 'cracks'
+        : kind.action === 'rot' ? 'rots' : 'corrodes';
+    if (erosion >= 3) return `Your ${name} ${verb} away!`;
+    const adverb = erosion === 2 ? ' completely'
+        : erosion ? ' further' : '';
+    return `Your ${name} ${verb}${adverb}!`;
+}
+
+export function destroyWornArmor(armor, state = game) {
+    for (const slot of [
+        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
+    ]) {
+        if (state[slot] === armor) state[slot] = null;
+        if (state.u?.[slot] === armor) state.u[slot] = null;
+    }
+    state.inventory = (state.inventory || []).filter(item => item !== armor);
 }
 
 export function armorBaseBonus(otyp) {
