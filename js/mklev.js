@@ -595,17 +595,7 @@ export function mksobj(otyp, init, artif) {
         if (otyp === CORPSE) startCorpseTimeout(otmp);
     }
     if (otyp === EGG && (otmp.corpsenm ?? -1) >= 0) {
-        // timeout.c attach_egg_hatch_timeout(): reproduce the legacy
-        // per-turn hatch trial beginning at age 151.
-        for (let age = 151; age <= 200; age++) {
-            if (rnd(age) > 150) {
-                scheduleObjectTimer(
-                    otmp, OBJECT_TIMER_KIND.HATCH_EGG,
-                    (game.moves ?? 0) + age, game,
-                );
-                break;
-            }
-        }
+        attachEggHatchTimer(otmp);
     }
     if (otyp === NOVEL) {
         // mkobj.c:mksobj() names every novel after class initialization.
@@ -1193,14 +1183,43 @@ function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
     return false;
 }
 
-function set_corpsenm(otmp, pm) {
+function attachEggHatchTimer(egg, remaining = 0) {
+    if (remaining > 0) {
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + remaining, game,
+        );
+        return;
+    }
+    // timeout.c attach_egg_hatch_timeout(): reproduce the legacy per-turn
+    // hatch trial beginning at age 151.
+    for (let age = 151; age <= 200; age++) {
+        if (rnd(age) <= 150) continue;
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + age, game,
+        );
+        return;
+    }
+}
+
+export function set_corpsenm(otmp, pm) {
     if (!otmp) return;
-    // C stops every existing corpse timer before replacing its species.
+    const existingEggTimer = otmp.otyp === EGG
+        ? objectTimers(otmp).find(timer =>
+            timer.kind === OBJECT_TIMER_KIND.HATCH_EGG)
+        : null;
+    const remainingEggTime = existingEggTimer
+        ? Math.max(0, existingEggTimer.deadline - (game.moves ?? 0))
+        : 0;
+    // set_corpsenm() replaces timers which depend on the object's species.
     stopAllObjectTimers(otmp);
     otmp.corpsenm = pm;
     if (otmp.otyp === CORPSE) {
         startCorpseTimeout(otmp);
         otmp.owt = objectWeight(otmp);
+    } else if (otmp.otyp === EGG && pm >= 0) {
+        attachEggHatchTimer(otmp, remainingEggTime);
     }
 }
 

@@ -275,7 +275,7 @@ function damageHeroInLava(state, amount) {
     state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - amount);
 }
 
-async function burnAwayHeroSlime(state, publish) {
+export async function burnAwayHeroSlime(state, publish) {
     const hero = state.u;
     if (!((hero.slimedTurns ?? 0) > 0 || hero.slimed)) return false;
     hero.slimedTurns = 0;

@@ -65,7 +65,8 @@ import {
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import {
     getRumor, makemonNear, mkcorpstat, mklev,
-    mergable, mkgold, mkobj, mksobj, place_object, remove_object, stack_object,
+    mergable, mkgold, mkobj, mksobj, place_object, remove_object,
+    splitHeroMonsterForm, stack_object,
     rndClass,
     u_on_downstairs, u_on_upstairs, undeadToCorpse,
 } from './mklev.js';
@@ -161,6 +162,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
+import { dosit } from './sit.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -1660,6 +1662,17 @@ async function reportFountainWarning(warning) {
     }
     await plineWithContinuation(`${actor} yells:`);
     await plineWithContinuation('"Hey, stop using that fountain!"');
+}
+
+async function splitSittingGremlin() {
+    const clone = await splitHeroMonsterForm(game);
+    if (!clone) return null;
+    await plineWithContinuation('You multiply!');
+    const result = dryFountainTerrain(
+        game.level?.at(game.u.ux, game.u.uy), true,
+    );
+    await reportFountainWarning(result.warning);
+    return clone;
 }
 
 async function discoverFountainGem(loc) {
@@ -4198,18 +4211,6 @@ async function dochat() {
     game.context.move = 0;
 }
 
-async function dosit() {
-    const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
-    const corpse = objects.find(object => object.name?.includes('corpse')
-        || object.corpsenm !== undefined);
-    const surface = game.level?.at(game.u?.ux, game.u?.uy)?.typ === FOUNTAIN
-        ? 'fountain' : 'floor';
-    await pline(corpse
-        ? "You sit on the corpse.  It's not very comfortable..."
-        : `Having fun sitting on the ${surface}?`);
-    game.context.move = 1;
-}
-
 function indefiniteArticle(text) {
     return /^[aeiou]/i.test(text) ? 'an' : 'a';
 }
@@ -5408,7 +5409,10 @@ async function runExtendedCommand(command) {
     if (command === 'twoweapon') return dotwoweapon();
     if (command === 'enhance') return doenhance();
     if (command === 'chat') return dochat();
-    if (command === 'sit') return dosit();
+    if (command === 'sit') return dosit({
+        triggerTrap: triggerTrapBySitting,
+        splitGremlin: splitSittingGremlin,
+    });
     if (command === 'pray') return dopray();
     if (command === 'name') return doname();
     if (command === 'invoke') return doinvoke();
@@ -8862,6 +8866,16 @@ async function triggerBearTrap(trap) {
 
     u.uhp = Math.max(0, (u.uhp || 0) - damage);
     exerciseAttribute(A_DEX, false);
+}
+
+async function triggerTrapBySitting(trap) {
+    if (!trap) return;
+    if (trap.ttyp === TELEP_TRAP) await triggerTeleportTrap(trap);
+    else if (trap.ttyp === DART_TRAP) await triggerDartTrap(trap);
+    else if (trap.ttyp === ROLLING_BOULDER_TRAP)
+        await triggerRollingBoulderTrap(trap);
+    else if (trap.ttyp === BEAR_TRAP) await triggerBearTrap(trap);
+    else if (trap.ttyp === MAGIC_TRAP) await triggerMagicTrap(trap);
 }
 
 async function moveWhileTrapped(dx, dy) {
