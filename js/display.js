@@ -110,6 +110,17 @@ export function canProjectMonster(monster, x, y) {
         || canPhysicallyProjectMonster(monster, x, y);
 }
 
+// C display.h:sensemon().  This excludes ordinary sight so callers can tell
+// whether a disguised monster was noticed by telepathy or detection.
+export function canSenseMonster(monster) {
+    if (!monster) return false;
+    if ((game.u?.uswallow || game.uswallow)
+        && game.u?.ustuck !== monster) return false;
+    return senseWithTelepathy(monster)
+        || !!game.u?.detectMonsters
+        || !!game.detectMonsters;
+}
+
 // C display.h:canspotmon().  Physical/telepathic projection is shared with
 // newsym(); an active monster-detection property senses the actor without
 // making its square optically visible.  Type/class warning can join this
@@ -118,8 +129,7 @@ export function canProjectMonster(monster, x, y) {
 export function canSpotMonster(monster, x = monster?.mx, y = monster?.my) {
     return !!monster && (
         canProjectMonster(monster, x, y)
-        || !!game.u?.detectMonsters
-        || !!game.detectMonsters
+        || canSenseMonster(monster)
     );
 }
 

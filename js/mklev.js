@@ -46,7 +46,7 @@ import {
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
-    M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
+    M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
@@ -104,7 +104,9 @@ import {
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterInAir } from './mon.js';
 import { nhgetch } from './input.js';
-import { flush_screen, newsym, pline } from './display.js';
+import {
+    canSeeMonster, canSenseMonster, flush_screen, newsym, pline,
+} from './display.js';
 import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
@@ -2021,6 +2023,7 @@ function initializeLongWormTail(monster, allowTail) {
 }
 
 async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
+    if (mdat == null && game.level?.flags?.rndmongen === false) return null;
     if (x === 0 && y === 0) {
         const point = randomMonsterPosition(mdat);
         if (!point) return null;
@@ -3226,6 +3229,44 @@ export async function makemonNear(
     // teleport.c:enexto_core() tests every shuffled coordinate through
     // goodpos() for the requested species before makemon() owns construction.
     return makemon(mnum, pos.x, pos.y, flags, requestedByHero);
+}
+
+// C makemon.c:create_critters().  Wands, scrolls, and spells all create
+// monsters through the ordinary constructor.  The return value says whether
+// the hero saw or sensed at least one result.
+export async function createCritters(count, mnum = null) {
+    let known = false;
+    while (count-- > 0) {
+        if (mnum == null && game.level?.flags?.rndmongen === false) continue;
+        let monster = null;
+        if (mnum == null && game.u?.uinwater) {
+            const wetPosition = findMonsterNearPosition(
+                PM_GIANT_EEL, game.u.ux, game.u.uy,
+            );
+            if (wetPosition) {
+                monster = await makemon(
+                    null, wetPosition.x, wetPosition.y, 0, true,
+                );
+            } else {
+                monster = await makemonNear(
+                    null, game.u.ux, game.u.uy, 0, true,
+                );
+            }
+        } else {
+            monster = await makemonNear(
+                mnum, game.u.ux, game.u.uy, 0, true,
+            );
+        }
+        if (!monster) continue;
+
+        newsym(monster.mx, monster.my);
+        const appearance = monster.m_ap_type ?? M_AP_NOTHING;
+        const visible = canSeeMonster(monster, monster.mx, monster.my);
+        const seenInOwnForm = visible
+            && (appearance === M_AP_NOTHING || appearance === M_AP_MONSTER);
+        if (seenInOwnForm || canSenseMonster(monster)) known = true;
+    }
+    return known;
 }
 
 // C mcastu.c:mcast_insects().  enexto() tests positions using the caster's

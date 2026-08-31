@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey } from '../js/input.js';
 import {
-    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_FIRE,
+    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER, WAN_FIRE,
     WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
@@ -156,6 +156,20 @@ test('stasis blocks teleporting until its turns expire', async () => {
     game.moves = game.level.flags.stasis_until + 1;
     assert.equal(heroTeleportRestricted(), false);
 });
+
+test('create monster summons beside the hero without asking for a direction',
+    async () => {
+        freshWeaponArena();
+        const wand = carriedWand(WAN_CREATE_MONSTER, {
+            name: 'create monster',
+        });
+        game.inventory = [wand];
+        pushKey('a');
+
+        await rhack('z'.charCodeAt(0));
+
+        assert.ok(game.level.monsters.length > 0);
+    });
 
 test('a fire ray burns a monster in its path', async () => {
     freshWeaponArena();

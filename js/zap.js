@@ -22,7 +22,7 @@ import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
 import { selectInventoryObject } from './invent.js';
 import { igniteItems } from './light.js';
-import { buryFloorObjectsAt, maketrap } from './mklev.js';
+import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
@@ -37,7 +37,8 @@ import {
     OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL,
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
-    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
+    WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
+    WAN_FIRE,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
     WAN_STASIS,
 } from './object_data.js';
@@ -193,22 +194,30 @@ async function backfireWand(wand) {
     exerciseAttribute(0, false);
 }
 
+function learnNoDirectionWand(wand) {
+    if (!wand.dknown) return;
+    if (!game._knownObjectTypes?.has(wand.otyp))
+        game.u.urexp = (game.u.urexp || 0) + 10;
+    recordObjectKnowledge(wand.otyp);
+    recordObjectEncounter(wand.otyp);
+    wand.typeKnown = true;
+}
+
 async function zapNoDirection(wand) {
     if (wand.otyp === WAN_SECRET_DOOR_DETECTION) {
-        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
         await findit();
-        if (wand.dknown) {
-            if (wasUnknown) game.u.urexp = (game.u.urexp || 0) + 10;
-            recordObjectKnowledge(wand.otyp);
-            recordObjectEncounter(wand.otyp);
-            wand.typeKnown = true;
-        }
+        learnNoDirectionWand(wand);
         return true;
     }
     if (wand.otyp === WAN_STASIS) {
         const until = (game.moves ?? 1) + rn2(21) + 10;
         const current = game.level.flags.stasis_until ?? 0;
         game.level.flags.stasis_until = Math.max(current, until);
+        return true;
+    }
+    if (wand.otyp === WAN_CREATE_MONSTER) {
+        const count = rn2(23) ? 1 : rn2(7) + 2;
+        if (await createCritters(count)) learnNoDirectionWand(wand);
         return true;
     }
     return false;
