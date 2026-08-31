@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
+import { A_CON, A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
@@ -13,9 +14,7 @@ import { freshWeaponArena } from './support/weapon-arena.js';
 const PM_YELLOW_LIGHT = 118;
 
 test('debug wishing creates a live charged polymorph wand', async () => {
-    // Pinned wizcmds.c:wiz_wish() delegates to makewish().  The committed
-    // line must create and carry a real object while leaving command time at
-    // zero; a screen painter cannot satisfy the inventory transaction.
+    // wiz_wish() adds the requested object without using a turn.
     freshWeaponArena();
     game.urole = { key: 'wizard' };
     game.flags.debug = true;
@@ -64,6 +63,30 @@ test('a cursed scroll of light darkens the visible area', async () => {
     assert.equal(level.at(11, 10).lit, false);
 });
 
+test('reading a magical scroll exercises Wisdom', async () => {
+    freshWeaponArena();
+    game.u.acurr.a[A_WIS] = 3;
+    game.u.acurr.a[A_CON] = 3;
+    game.inventory = [{
+        otyp: SCR_LIGHT,
+        invlet: 'a',
+        name: 'light',
+        oclass: 9,
+        quan: 1,
+        quantity: 1,
+        dknown: true,
+    }];
+    pushKey('a');
+    pushKey(' ');
+
+    await rhack('r'.charCodeAt(0));
+
+    assert.deepEqual({
+        wisdom: game.u._exercise[A_WIS],
+        constitution: game.u._exercise[A_CON],
+    }, { wisdom: 2, constitution: 0 });
+});
+
 test('a confused scroll of light creates harmless tame lights', async () => {
     const level = freshWeaponArena();
     game.u.confusionTurns = 5;
@@ -88,10 +111,9 @@ test('a confused scroll of light creates harmless tame lights', async () => {
             && monster.mtame > 0 && monster.mcan));
 });
 
-test('quaffing commits a potion effect, consumption, and elapsed action',
+test('quaffing applies the potion, consumes it, and uses a turn',
     async () => {
-        // Pinned potion.c:dodrink()/dopotion() select one carried identity,
-        // apply its state transition, use it up, and return ECMD_TIME.
+        // potion.c applies the effect before removing the potion.
         freshWeaponArena();
         game.urole = { key: 'wizard' };
         game.u.uen = game.u.uenmax = game.u.uenpeak = 1;

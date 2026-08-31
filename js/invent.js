@@ -230,6 +230,17 @@ export function inventoryItemDescription(item) {
     return description;
 }
 
+export function consumeInventoryItem(item, state = game) {
+    const quantity = item?.quantity ?? item?.quan ?? 1;
+    if (quantity > 1) {
+        item.quantity = quantity - 1;
+        item.quan = quantity - 1;
+        return;
+    }
+    const index = state.inventory?.indexOf(item) ?? -1;
+    if (index >= 0) state.inventory.splice(index, 1);
+}
+
 function rerollItemDescription(item) {
     // invent.c:reroll_menu() brackets distant_name(doname) with
     // override_ID.  Identify a temporary view rather than mutating the live

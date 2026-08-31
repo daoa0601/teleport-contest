@@ -17,6 +17,10 @@ export const BCPOS_DIFFER = 0;
 export const BCPOS_CHAIN = 1;
 export const BCPOS_BALL = 2;
 
+export function heroIsPunished(state = game) {
+    return !!(state.uball || state.u?.uball);
+}
+
 function dist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
     const dy = y1 - y2;

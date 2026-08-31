@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
+    A_WIS, CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
     NO_MINVENT, Upolyd,
 } from './const.js';
 import {
@@ -274,7 +274,7 @@ async function createConfusedLightPets(scroll) {
 export async function readLightScroll(
     scroll, { finishHeroDeath, finishMonsterKill } = {},
 ) {
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_WIS, true);
     const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
     let known = false;
 
@@ -299,7 +299,7 @@ export async function readLightScroll(
     }
 
     if (known && !alreadyKnown) {
-        exerciseAttribute(4, true);
+        exerciseAttribute(A_WIS, true);
         recordObjectKnowledge(scroll.otyp);
         game.u.urexp = (game.u.urexp || 0) + 10;
     }
@@ -522,7 +522,6 @@ export async function igniteItems(
         }
         if (object.otyp === POT_OIL
             && !state._knownObjectTypes?.has(POT_OIL)) {
-            exerciseAttribute(4, true, state);
             recordObjectKnowledge(POT_OIL, state);
         }
         if (beginObjectBurn(object, state, state.moves ?? 0))

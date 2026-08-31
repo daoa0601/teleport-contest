@@ -33,20 +33,22 @@ import {
     vision_reset_new_level,
 } from './vision.js';
 import {
-    beginObjectBurn, endObjectBurn, igniteItems, readLightScroll,
+    beginObjectBurn, endObjectBurn, igniteItems,
     transformMagicLampToOilLamp,
 } from './light.js';
 import {
     destroyFireInventory, dozap,
 } from './zap.js';
 import {
-    bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
+    bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook,
+    inventoryItemDescription,
     dungeonFeatureSentenceAt,
     observeBucForNaming, selectInventoryObject,
 } from './invent.js';
 import {
-    continueSpellbookStudy, docast, dovspell, studyBook,
+    continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
+import { doread } from './read.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
@@ -114,10 +116,7 @@ import {
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
-    SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_GENOCIDE,
-    SCR_LIGHT,
-    SCR_IDENTIFY, SCR_PUNISHMENT, SCR_BLANK_PAPER,
-    SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, NOVEL,
+    NOVEL,
     OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_NUTRITION, OBJECT_WEIGHT,
     OBJECT_SUBTYPE,
@@ -141,8 +140,8 @@ import { initTrack, setTrack } from './track.js';
 import { captureRunmodeDelay } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
-    destroyWornArmor, findArmorClass, heroIsDisplaced,
-    objectErosionKind, objectErosionMessage, wornArmorInDestroyOrder,
+    findArmorClass, heroIsDisplaced,
+    objectErosionKind, objectErosionMessage,
 } from './armor.js';
 import {
     findMonsterArmorClass,
@@ -192,7 +191,7 @@ import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
 } from './senses.js';
 import {
-    beginBallAndChainMove, finishBallAndChainMove,
+    beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
 } from './ball.js';
 import {
     doquit,
@@ -247,9 +246,7 @@ import {
     heroTeleportTrapBlock, moveHeroByTeleport,
     prepareHeroTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
-import {
-    heroTeleportRestricted, monsterTeleportRestricted,
-} from './teleport_rules.js';
+import { monsterTeleportRestricted } from './teleport_rules.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
@@ -266,7 +263,7 @@ import {
     TRAPDOOR, DART_TRAP, ROLLING_BOULDER_TRAP, MAGIC_TRAP,
     TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
     WEB, ANTI_MAGIC,
-    TT_BEARTRAP, G_GENOD, G_GONE, G_NOCORPSE, TAINT_AGE,
+    TT_BEARTRAP, G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
@@ -275,7 +272,7 @@ import {
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
-    WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
+    WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
     P_BOW, P_SLING, P_SKILLED, P_EXPERT, isok,
 } from './const.js';
 
@@ -287,6 +284,8 @@ const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 
 // object.h enum value; object_data currently exposes the two other tools.
 const SKELETON_KEY = 221;
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
 const PM_DJINNI = 315;
 const PM_GHOST = 287;
 const PM_WATER_NYMPH = 68;
@@ -1220,7 +1219,11 @@ export async function rhack(key) {
             wakeMonster: wakeAttackedMonster,
         });
     } else if (ch === 'r') {
-        await doread();
+        await doread({
+            gotoLevel,
+            finishHeroDeath,
+            finishMonsterKill: finishHeroMonsterKill,
+        });
     } else if (ch === 'T') {
         await dotakeoff();
     } else if (ch === 'P') {
@@ -1297,17 +1300,6 @@ async function selectPotionToDrink(potions) {
     }
     game._pending_message = '';
     return potions.find(object => object.invlet === String.fromCharCode(key));
-}
-
-function consumeOneInventoryObject(object) {
-    const quantity = object.quantity ?? object.quan ?? 1;
-    if (quantity > 1) {
-        object.quantity = quantity - 1;
-        object.quan = quantity - 1;
-        return;
-    }
-    const index = game.inventory.indexOf(object);
-    if (index >= 0) game.inventory.splice(index, 1);
 }
 
 async function doquaff() {
@@ -1522,7 +1514,7 @@ async function doquaff() {
             );
             await tryCallObjectType(potion);
     }
-    consumeOneInventoryObject(potion);
+    consumeInventoryItem(potion);
     game._capacityDirty = true;
     game._liveQuietTurnRequested = true;
     game.context.move = 1;
@@ -9373,536 +9365,6 @@ async function moveWhileTrapped(dx, dy) {
     return true;
 }
 
-async function doread() {
-    if (exceedsActionCapacity(game)) {
-        await pline("You can't do that while carrying so much stuff.");
-        game.context.move = 0;
-        return;
-    }
-    const books = (game.inventory || []).filter(item =>
-        item.oclass === 9 || item.oclass === 10
-        || item.class === 'Scrolls' || item.class === 'Spellbooks');
-    const letters = books.map(item => item.invlet).join('');
-    const objectPrompt = `What do you want to read? [${letters} or ?*] `;
-    let key = await promptKey(objectPrompt);
-    for (;;) {
-        if ([27, 32, 10, 13].includes(key)) {
-            await pline('Never mind.');
-            game.context.move = 0;
-            return;
-        }
-        const selected = books.find(item =>
-            item.invlet === String.fromCharCode(key));
-        if (selected || key === 63 || key === 42) break;
-        // invent.c:getobj() retains control after an absent direct letter.
-        // The error owns a tty pager; once dismissed, the same object prompt
-        // is reopened rather than returning bytes to rhack().
-        await moreUntilDismissed("You don't have that object.--More--");
-        game._pending_message = '';
-        key = await promptKey(objectPrompt);
-    }
-    if (String.fromCharCode(key) === '?' && books.length === 1) {
-        const only = books[0];
-        const description = only.otyp === 333
-            ? 'a scroll labeled STRC PRST SKRZ KRK'
-            : `a ${only.name || 'readable object'}`;
-        key = await promptKey(
-            `${only.invlet} - ${description}.--More--`,
-        );
-    }
-    const book = books.find(item => item.invlet === String.fromCharCode(key));
-    game._pending_message = '';
-    // read.c counts the committed reading action before dispatching either a
-    // scroll effect or spellbook study.  Blank paper and the Book of the Dead
-    // are required/non-literate exceptions.
-    if (book && book.otyp !== SCR_BLANK_PAPER
-        && book.otyp !== SPE_BLANK_PAPER
-        && book.otyp !== SPE_BOOK_OF_THE_DEAD) {
-        if (!game.u.uconduct) game.u.uconduct = {};
-        game.u.uconduct.literate = (game.u.uconduct.literate || 0) + 1;
-    }
-    if (book?.otyp === 333) {
-        await readTeleportationScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_LIGHT) {
-        await readLightScroll(book, {
-            finishHeroDeath,
-            finishMonsterKill: finishHeroMonsterKill,
-        });
-        return;
-    }
-    if (book?.otyp === SCR_REMOVE_CURSE) {
-        await readRemoveCurseScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_ENCHANT_WEAPON) {
-        await readEnchantWeaponScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_DESTROY_ARMOR) {
-        await readDestroyArmorScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_PUNISHMENT) {
-        await readPunishmentScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_IDENTIFY) {
-        await readIdentifyScroll(book);
-        return;
-    }
-    if (book?.otyp === SCR_GENOCIDE) {
-        await readGenocideScroll(book);
-        return;
-    }
-    await studyBook(book);
-}
-
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
-
-function heroIsPunished() {
-    return !!(game.uball || game.u?.uball);
-}
-
-function attachBallAndChain() {
-    // read.c:punish() creates and wears the chain first, then the ball.
-    // ball.c:placebc_core() places the ball followed by the chain, leaving
-    // the chain as the visible top object at their shared square.
-    const chain = mkobj(CHAIN_CLASS, true);
-    const ball = mkobj(BALL_CLASS, true);
-    chain.quantity = chain.quan ?? 1;
-    ball.quantity = ball.quan ?? 1;
-    chain.owornmask = W_CHAIN;
-    ball.owornmask = W_BALL;
-    game.uchain = chain;
-    game.uball = ball;
-    game.u.uchain = chain;
-    game.u.uball = ball;
-    game.u.punished = true;
-    place_object(ball, game.u.ux, game.u.uy);
-    place_object(chain, game.u.ux, game.u.uy);
-    game.u.bc_order = 1; // BCPOS_CHAIN
-    newsym(game.u.ux, game.u.uy);
-}
-
-async function readPunishmentScroll(scroll) {
-    const disappearance = 'As you read the scroll, it disappears.';
-    const punishment = 'You are being punished for your misbehavior!';
-    const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
-
-    await pline(disappearance);
-    exerciseAttribute(4, true); // seffects(): exercise(A_WIS, TRUE)
-
-    // punish()'s first line cannot replace the disappearance topline without
-    // acknowledging it.  Object construction resumes only after this pager.
-    await plineWithContinuation(punishment);
-    if (heroIsPunished()) {
-        // A second punishment does not construct replacement objects.
-        // Its weight message similarly waits behind punish()'s first line.
-        await plineWithContinuation('Your iron ball gets heavier.');
-        game.uball.owt = (game.uball.owt ?? 480) + WT_IRON_BALL_INCR;
-    } else {
-        attachBallAndChain();
-    }
-
-    if (!alreadyKnown) {
-        exerciseAttribute(4, true); // learnscroll() -> makeknown()
-        recordObjectKnowledge(scroll.otyp);
-    }
-    consumeOneInventoryObject(scroll);
-    game.context.move = 1;
-}
-
-function objectNeedsFullIdentification(object) {
-    if (!object || object.oclass === 12) return false;
-    return !object.known || !object.bknown || !object.rknown
-        || !object.dknown
-        || (!object.typeKnown
-            && !game._knownObjectTypes?.has(object.otyp));
-}
-
-function fullyIdentifyObject(object) {
-    recordObjectKnowledge(object.otyp);
-    object.typeKnown = true;
-    object.known = true;
-    object.bknown = true;
-    object.rknown = true;
-    object.dknown = true;
-    object.buc = object.blessed ? 'blessed'
-        : object.cursed ? 'cursed' : 'uncursed';
-    const canonical = OBJECT_NAMES[object.otyp];
-    if (canonical && object.oclass === 9) {
-        object.name = `scroll of ${canonical}`;
-        object.plural = `scrolls of ${canonical}`;
-    } else if (canonical && object.oclass === 10) {
-        object.name = `spellbook of ${canonical}`;
-        object.plural = `spellbooks of ${canonical}`;
-    }
-    if (Array.isArray(object.contents)) {
-        object.cknown = true;
-        object.lknown = true;
-    }
-}
-
-async function readIdentifyScroll(scroll) {
-    const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
-    await pline('As you read the scroll, it disappears.');
-    exerciseAttribute(4, true); // seffects(): exercise(A_WIS, TRUE)
-
-    // seffect_identify() removes a scroll before learning its type and before
-    // counting the remaining unidentified inventory.
-    consumeOneInventoryObject(scroll);
-    await plineWithContinuation('This is an identify scroll.');
-    if (!alreadyKnown) {
-        exerciseAttribute(4, true); // learnscrolltyp() -> makeknown()
-        recordObjectKnowledge(scroll.otyp);
-    }
-
-    let identifyLimit = 1;
-    if (scroll.blessed || (!scroll.cursed && rn2(5) === 0)) {
-        identifyLimit = rn2(5);
-        if (identifyLimit === 1 && scroll.blessed && (game.u?.uluck ?? 0) > 0)
-            identifyLimit++;
-    }
-
-    const candidates = (game.inventory || [])
-        .filter(objectNeedsFullIdentification);
-    if (!candidates.length) {
-        await plineWithContinuation(
-            `You have already identified ${
-                alreadyKnown ? 'all' : 'the rest'
-            } of your possessions.`,
-        );
-        game.context.move = 1;
-        return;
-    }
-    const selected = identifyLimit === 0
-        ? candidates : candidates.slice(0, identifyLimit);
-    for (const object of selected) {
-        fullyIdentifyObject(object);
-        await plineWithContinuation(
-            `${object.invlet} - ${inventoryItemDescription(object)}.`,
-        );
-    }
-    game.context.move = 1;
-}
-
-function pluralMonsterName(name) {
-    if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
-    if (/(s|x|z|ch|sh)$/i.test(name)) return `${name}es`;
-    return `${name}s`;
-}
-
-async function readGenocideScroll(scroll) {
-    const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
-    await pline('As you read the scroll, it disappears.');
-    exerciseAttribute(4, true);
-
-    if (!alreadyKnown) {
-        await plineWithContinuation(
-            'You have found a scroll of genocide!',
-        );
-        await moreUntilDismissed(
-            'You have found a scroll of genocide!--More--',
-        );
-    }
-
-    if (!scroll.blessed) {
-        // This block intentionally ports the class-genocide owner required by
-        // the insect fallback.  Ordinary/cursed specific genocide retains an
-        // explicit unsupported boundary rather than borrowing class state.
-        await plineWithContinuation('Nothing happens.');
-        consumeOneInventoryObject(scroll);
-        game.context.move = 1;
-        return;
-    }
-
-    const response = await getLine(
-        'What class of monsters do you want to genocide?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    const wanted = String(response || '').trim().toLowerCase();
-    const monsterClass = wanted === 'a' || wanted === 'ant'
-        || wanted === 'ants' ? 1 : null;
-    if (monsterClass == null) {
-        await plineWithContinuation(
-            'That response does not represent any monster.',
-        );
-    } else {
-        if (!Array.isArray(game.mvitals)) game.mvitals = [];
-        const G_GENO = 0x0020;
-        for (let mnum = 0; mnum < MONSTER_SYMBOL.length; mnum++) {
-            if (MONSTER_SYMBOL[mnum] !== monsterClass
-                || !((MONSTER_GENO[mnum] ?? 0) & G_GENO)) continue;
-            const vital = game.mvitals[mnum] || (game.mvitals[mnum] = {});
-            vital.mvflags = (vital.mvflags ?? 0) | G_GENOD | G_NOCORPSE;
-            await plineWithContinuation(
-                `Wiped out all ${pluralMonsterName(MONSTER_NAME[mnum])}.`,
-            );
-        }
-    }
-
-    if (!alreadyKnown) {
-        exerciseAttribute(4, true);
-        recordObjectKnowledge(scroll.otyp);
-    }
-    consumeOneInventoryObject(scroll);
-    game.context.move = 1;
-}
-
-async function readRemoveCurseScroll(scroll) {
-    // read.c:doread()/seffects() retains a cursed scroll long enough for the
-    // effect prose, then prints the curse-specific disintegration message.
-    // Both tty pagers and the subsequent docall() editor belong to this one
-    // command transaction; only the final call-name newline advances time.
-    exerciseAttribute(4, true);
-
-    if (scroll.cursed) {
-        await moreUntilDismissed(
-            'You read the scroll.  You feel like someone is helping you.--More--',
-        );
-        await moreUntilDismissed('The scroll disintegrates.--More--');
-    } else {
-        await pline(
-            'As you read the scroll, it disappears.  You feel like someone is helping you.',
-        );
-    }
-
-    if (!game._knownObjectTypes?.has(scroll.otyp)
-        && !game._objectCallNames?.[scroll.otyp]) {
-        const description = scroll.name || 'scroll';
-        const callName = await getLine(
-            `Call a ${description}:`,
-            (_ch, key) => key >= 32 && key < 127,
-        );
-        if (callName?.trim()) {
-            recordObjectCall(scroll.otyp, callName.trim());
-        }
-        game._pending_message = '';
-    }
-
-    consumeOneInventoryObject(scroll);
-    game.context.move = 1;
-}
-
-async function readEnchantWeaponScroll(scroll) {
-    // doread() announces an ordinary disappearing scroll before seffects().
-    // chwepon() and its possible makeknown() resume only after that pager.
-    exerciseAttribute(4, true);
-    await moreUntilDismissed('As you read the scroll, it disappears.--More--');
-
-    const weapon = game.uwep || game.u?.uwep;
-    if (!weapon || (weapon.oclass !== 2 && weapon.class !== 'Weapons')) {
-        await pline('Your hands twitch.');
-        exerciseAttribute(1, true);
-    } else {
-        const amount = scroll.cursed ? -1 : scroll.blessed
-            ? rnd(Math.max(1, 3 - Math.trunc((weapon.spe ?? 0) / 3))) : 1;
-        const color = amount < 0 ? 'black' : 'blue';
-        const duration = amount * amount === 1 ? 'moment' : 'while';
-        await pline(`Your ${weapon.name} glows ${color} for a ${duration}.`);
-        weapon.spe = (weapon.spe ?? weapon.enchantment ?? 0) + amount;
-        weapon.enchantment = weapon.spe;
-        if (amount > 0 && weapon.cursed) {
-            weapon.cursed = false;
-            weapon.buc = 'uncursed';
-        }
-
-        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-        if (!game._knownObjectTypes.has(scroll.otyp)
-            && weapon.known !== false && amount > 0) {
-            exerciseAttribute(4, true);
-            game._knownObjectTypes.add(scroll.otyp);
-            game.u.urexp = (game.u.urexp || 0) + 10;
-        }
-    }
-
-    consumeOneInventoryObject(scroll);
-    game.context.move = 1;
-}
-
-async function appendReadEffectMessage(transaction, message, commit) {
-    const columns = game.nhDisplay?.cols ?? 80;
-    if (!transaction.pending) {
-        transaction.pending = message;
-        commit();
-        return;
-    }
-    if (message.length + transaction.pending.length + 3 < columns - 8) {
-        transaction.pending = `${transaction.pending}  ${message}`;
-        commit();
-        return;
-    }
-
-    // tty update_topl() calls more() before installing the new message.
-    // The active scroll effect resumes after acknowledgement and only then
-    // applies erode_obj()'s state mutation.
-    await promptKey(`${transaction.pending}--More--`);
-    transaction.pending = message;
-    commit();
-}
-
-async function readDestroyArmorScroll(scroll) {
-    const transaction = {
-        pending: 'As you read the scroll, it disappears.',
-    };
-
-    // read.c:seffects(): every magical scroll exercises Wisdom once before
-    // dispatching its concrete effect.
-    exerciseAttribute(4, true);
-
-    const armors = wornArmorInDestroyOrder();
-    const hits = rn2(4) + 1;
-    let damaged = false;
-    for (let hit = 0; hit < hits && armors.length; hit++) {
-        const armor = armors[rn2(armors.length)];
-        const kind = objectErosionKind(armor);
-        if (!kind || armor.oerodeproof) continue;
-        const message = objectErosionMessage(armor, kind);
-        await appendReadEffectMessage(transaction, message, () => {
-            if ((armor[kind.field] || 0) >= 3) destroyWornArmor(armor);
-            else armor[kind.field] = (armor[kind.field] || 0) + 1;
-        });
-        damaged = true;
-    }
-
-    if (!damaged) {
-        transaction.pending = `${transaction.pending}  Your skin itches.`;
-        exerciseAttribute(0, false);
-        exerciseAttribute(2, false);
-    } else {
-        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-        if (!game._knownObjectTypes.has(scroll.otyp)) {
-            // learnscrolltyp() -> makeknown() credits Wisdom after the
-            // concrete effect has finished, which can put this draw on the
-            // far side of an erode_obj() tty pager.
-            exerciseAttribute(4, true);
-            game.u.urexp = (game.u.urexp || 0) + 10;
-        }
-        game._knownObjectTypes.add(scroll.otyp);
-    }
-    game.inventory = (game.inventory || []).filter(item => item !== scroll);
-    findArmorClass(game);
-    await pline(transaction.pending);
-    game.context.move = 1;
-}
-
-async function readTeleportationScroll(scroll) {
-    const disappearance = 'As you read the scroll, it disappears.--More--';
-    const confused = (game.u?.confusionTurns || 0) > 0;
-
-    if (confused) {
-        // read.c:doread() emits both lines before seffects(), but tty's first
-        // full line suspends pline() before the second message can replace it.
-        // Acknowledging that pager resumes at the Wisdom exercise, then the
-        // second full line suspends level_tele() before its getlin() prompt.
-        await promptKey(disappearance);
-        exerciseAttribute(4, true);
-        await promptKey(
-            'Being confused, you mispronounce the magic words...--More--',
-        );
-
-        const requested = await getLine('To what level do you want to teleport?');
-        if (requested === null) {
-            learnTeleportationScroll(scroll);
-            removeTeleportationScroll(scroll);
-            game.context.move = 1;
-            return;
-        }
-
-        let target = Number.parseInt(requested, 10);
-        if (rnl(5)) {
-            // teleport.c:random_teleport_level().  Main-dungeon depth starts
-            // at one; choose from [1, current+3] while excluding current.
-            const current = game.u?.uz?.dlevel ?? 1;
-            if (!rn2(5)) target = current;
-            else {
-                target = rn2(current + 2) + 1;
-                if (target >= current) target++;
-            }
-        }
-
-        learnTeleportationScroll(scroll);
-        removeTeleportationScroll(scroll);
-
-        if (target === (game.u?.uz?.dlevel ?? 1)) {
-            await pline('You shudder for a moment.');
-            game.context.move = 1;
-            return;
-        }
-
-        await gotoLevel(
-            { dlevel: Math.max(1, target) },
-            {
-                arrival: 'random',
-                preArrivalPager: 'Oops...--More--',
-                postMessage: 'You materialize on a different level!',
-            },
-        );
-        game._liveQuietTurnRequested = true;
-        game.context.move = 1;
-        return;
-    }
-
-    await pline(disappearance);
-
-    // read.c:seffects() credits trying a magical scroll before scrolltele().
-    exerciseAttribute(4, true);
-
-    if (heroTeleportRestricted() && !game.flags?.debug) {
-        await promptKey(disappearance);
-        await pline('A mysterious force prevents you from teleporting!');
-        learnTeleportationScroll(scroll);
-        removeTeleportationScroll(scroll);
-        game.context.move = 1;
-        return;
-    }
-
-    const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? -1];
-    const inWizardTower = currentDungeon?.dname === "Vlad's Tower";
-    if ((game.u?.uhave?.amulet || inWizardTower) && rn2(3) === 0) {
-        await promptKey(disappearance);
-        await pline('You feel disoriented for a moment.');
-        removeTeleportationScroll(scroll);
-        game.context.move = 1;
-        return;
-    }
-
-    learnTeleportationScroll(scroll);
-
-    const destination = safeTeleportDestination();
-    if (destination) {
-        const movement = moveHeroByTeleport(destination.x, destination.y);
-        newsym(movement.oldx, movement.oldy);
-        vision_reset();
-        vision_recalc(0);
-        newsym(destination.x, destination.y);
-    }
-
-    // C moves the hero before waiting for the teleport message to be
-    // dismissed. The turn continues only after that input.
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(disappearance.length, 0);
-    await nhgetch();
-
-    removeTeleportationScroll(scroll);
-    await pline('You materialize in a different location!');
-    game.context.move = 1;
-}
-
-function learnTeleportationScroll(scroll) {
-    if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-    if (game._knownObjectTypes.has(scroll.otyp)) return;
-    exerciseAttribute(4, true);
-    game._knownObjectTypes.add(scroll.otyp);
-    game.u.urexp = (game.u.urexp || 0) + 10;
-}
-
-function removeTeleportationScroll(scroll) {
-    game.inventory = (game.inventory || []).filter(item => item !== scroll);
-}
 
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
