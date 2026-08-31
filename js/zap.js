@@ -70,6 +70,7 @@ import {
 } from './vision.js';
 import { objectWeight } from './weight.js';
 import { makeWish } from './wish.js';
+import { hasWornProperty } from './properties.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -1660,14 +1661,7 @@ function protectionChance(state, damageType) {
         [INVENTORY_DAMAGE.FIRE]: 'fireResistance',
         [INVENTORY_DAMAGE.ELECTRIC]: 'shockResistance',
     }[damageType];
-    const source = hero._propertySources?.[property];
-    const snakeProperty = property.replace(
-        /[A-Z]/gu, letter => `_${letter.toLowerCase()}`,
-    );
-    if (hero[`${property}FromArmor`]
-        || hero[`${snakeProperty}_from_armor`]
-        || ['worn', 'wielded', 'accessory', 'artifact']
-            .includes(source?.kind)) return 99;
+    if (hasWornProperty(property, state)) return 99;
     const cloak = state.uarmc || hero.uarmc;
     return damageType !== INVENTORY_DAMAGE.ELECTRIC
         && cloak?.otyp === DWARVISH_CLOAK ? 90 : 0;

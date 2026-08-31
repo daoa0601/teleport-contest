@@ -206,6 +206,7 @@ import {
 } from './shk.js';
 import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
+import { refreshProperty } from './properties.js';
 import {
     presentMonsterRustTrap, presentMonsterWebTrap,
 } from './monster_trap_events.js';
@@ -1746,10 +1747,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
         && (game.u?.shockResistanceTurns ?? 0) > 0) {
         game.u.shockResistanceTurns--;
         if (game.u.shockResistanceTurns === 0) {
-            game.u.shockResistance = !!(
-                game.u.shockResistanceFromArmor
-                || game.u.intrinsicShockResistance
-            );
+            refreshProperty('shockResistance', game);
         }
     }
 
@@ -1757,13 +1755,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
         && (game.u?.magicResistanceTurns ?? 0) > 0) {
         game.u.magicResistanceTurns--;
         if (game.u.magicResistanceTurns === 0) {
-            const remains = !!(
-                game.u.antimagicFromArmor
-                || game.u.magicResistanceFromArmor
-                || game.u.intrinsicMagicResistance
-            );
-            game.u.magicResistance = remains;
-            game.u.antimagic = remains;
+            refreshProperty('antimagic', game);
         }
     }
 
@@ -2974,8 +2966,7 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack) {
         return;
     }
 
-    const antimagic = !!(u.antimagic
-        || u.magicResistance || u.magic_resistance);
+    const antimagic = !!u.antimagic;
     let succeeds = false;
     if (!antimagic) {
         const sides = Math.max(1, monsterLevel);
@@ -3026,8 +3017,7 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack) {
 
 async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
     if (!heroAttack?.deferredDestroyArmor) return;
-    const antimagic = !!(game.u?.antimagic
-        || game.u?.magicResistance || game.u?.magic_resistance);
+    const antimagic = !!game.u?.antimagic;
     if (antimagic) {
         await queueTurnMessage('A field of force surrounds you!');
         heroAttack.deferredDestroyArmor = false;

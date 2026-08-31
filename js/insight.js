@@ -29,6 +29,9 @@ import { heroGoldAmount } from './hero_gold.js';
 import {
     blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
 } from './senses.js';
+import {
+    firstWornPropertySource, hasIntrinsicProperty,
+} from './properties.js';
 
 function alignmentName(value) {
     return value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
@@ -190,35 +193,38 @@ function dragonItemProtectionName(object) {
     return name || 'worn equipment';
 }
 
+function wornPropertyObject(property) {
+    const source = firstWornPropertySource(property, game);
+    return source ? game[source.slot] || game.u?.[source.slot] : null;
+}
+
 // Supported slice of insight.c:attributes_enlightenment(), kept in source
 // order.  Effective properties and their provenance come from adjabil(),
 // worn armor, and worn accessories rather than from report-specific flags.
 function liveAttributePropertyLines() {
     const u = game.u;
     const lines = [];
-    const sources = u._propertySources || {};
 
     if (u.antimagic || u.magicProtection) {
-        const source = sources.antimagic;
-        const object = source?.kind === 'worn'
-            ? game[source.slot] || game.uarm : null;
+        const object = wornPropertyObject('antimagic');
         const suffix = object
             ? ` because of your ${wornItemName(object, 'worn equipment')}` : '';
         lines.push(`  You are magic-protected${suffix}.`);
     }
 
-    if (u.fire_resistance || u.fireResistance) {
-        const suffix = sources.fire_resistance === 'experience'
+    if (u.fireResistance) {
+        const suffix = hasIntrinsicProperty(
+            'fireResistance', 'experience', game,
+        )
             ? ' because of your experience' : '';
         lines.push(`  You are fire resistant${suffix}.`);
     }
 
-    const shockArmor = (u.shockResistanceFromArmor
-        || u.shock_resistanceFromArmor) ? game.uarm : null;
-    if (u.shockResistance || u.shock_resistance) {
+    const shockArmor = wornPropertyObject('shockResistance');
+    if (u.shockResistance) {
         const suffix = shockArmor
             ? ` because of your ${wornItemName(shockArmor, 'worn equipment')}`
-            : sources.shock_resistance === 'experience'
+            : hasIntrinsicProperty('shockResistance', 'experience', game)
                 ? ' because of your experience' : '';
         lines.push(`  You are shock resistant${suffix}.`);
     }
@@ -226,14 +232,14 @@ function liveAttributePropertyLines() {
         lines.push(`  Your items are protected from electric shocks by your ${
             dragonItemProtectionName(shockArmor)}.`);
     }
-    if (u.poisonResistance || u.poison_resistance) {
-        const source = sources.poison_resistance;
-        const suffix = source === 'experience'
+    if (u.poisonResistance) {
+        const object = wornPropertyObject('poisonResistance');
+        const suffix = hasIntrinsicProperty(
+            'poisonResistance', 'experience', game,
+        )
             ? ' because of your experience'
-            : source?.kind === 'worn'
-                ? ` because of your ${
-                    wornItemName(game[source.slot], 'worn equipment')
-                }`
+            : object
+                ? ` because of your ${wornItemName(object, 'worn equipment')}`
                 : ' innately';
         lines.push(`  You are poison resistant${suffix}.`);
     }
@@ -250,7 +256,7 @@ function liveAttributePropertyLines() {
             wornItemName(game.uamul, 'amulet')}.`);
     }
     if (u.warning) {
-        const suffix = sources.warning === 'experience'
+        const suffix = hasIntrinsicProperty('warning', 'experience', game)
             ? ' because of your experience' : '';
         lines.push(`  You are warned${suffix}.`);
     }
@@ -264,36 +270,36 @@ function liveAttributePropertyLines() {
         lines.push(`  You are displaced${suffix}.`);
     }
     if (u.searching) {
-        const suffix = sources.searching === 'experience'
+        const object = wornPropertyObject('searching');
+        const suffix = hasIntrinsicProperty('searching', 'experience', game)
             ? ' because of your experience'
-            : sources.searching?.kind === 'worn'
-                ? ` because of your ${
-                    wornItemName(game[sources.searching.slot], 'worn equipment')
-                }`
+            : object
+                ? ` because of your ${wornItemName(object, 'worn equipment')}`
                 : ' innately';
         lines.push(`  You have automatic searching${suffix}.`);
     }
     if (u.stealth) {
-        const suffix = sources.stealth === 'experience'
+        const object = wornPropertyObject('stealth');
+        const suffix = hasIntrinsicProperty('stealth', 'experience', game)
             ? ' because of your experience'
-            : sources.stealth?.kind === 'worn'
-                ? ` because of your ${
-                    wornItemName(game[sources.stealth.slot], 'worn equipment')
-                }`
+            : object
+                ? ` because of your ${wornItemName(object, 'worn equipment')}`
                 : ' innately';
         lines.push(`  You are stealthy${suffix}.`);
     }
     if (u.jumping) {
-        const suffix = sources.jumping === 'experience'
+        const suffix = hasIntrinsicProperty('jumping', 'experience', game)
             ? ' because of your experience'
             : u.extrinsicJumping ? ''
                 : ' intrinsically';
         lines.push(`  You can jump${suffix}.`);
     }
     const teleportRing = game.uright || u.uright;
-    if (u.teleport_control || u.teleportControl
+    if (u.teleportControl
         || teleportRing?.otyp === 195) {
-        const suffix = sources.teleport_control === 'experience'
+        const suffix = hasIntrinsicProperty(
+            'teleportControl', 'experience', game,
+        )
             ? ' because of your experience'
             : teleportRing?.otyp === 195
                 ? ` because of your ${teleportRing.name}` : '';
@@ -318,17 +324,16 @@ function liveAttributePropertyLines() {
             }`
             : u.veryFastFromArmor || u.fastFromArmor
                 ? ' because of worn equipment'
-            : sources.fast === 'experience'
-                ? ' because of your experience' : '';
+                : hasIntrinsicProperty('fast', 'experience', game)
+                    ? ' because of your experience' : '';
         lines.push(`  You are ${speed}${suffix}.`);
     }
     if (u.reflection) {
-        const source = sources.reflection;
-        const object = source?.kind === 'worn'
-            ? game[source.slot] || game.uarm : null;
+        const object = wornPropertyObject('reflection');
         const suffix = object
             ? ` because of your ${wornItemName(object, 'worn equipment')}`
-            : source === 'experience' ? ' because of your experience' : '';
+            : hasIntrinsicProperty('reflection', 'experience', game)
+                ? ' because of your experience' : '';
         lines.push(`  You have reflection${suffix}.`);
     }
     if (game.uamul?.otyp === 202 || u.lifeSaving || u.lifesaved)

@@ -91,9 +91,8 @@ export function heroTeleportTrapBlock(state = game) {
     const level = state?.u?.uz;
     const astral = state?.astral_level;
     if (level && astral && level.dnum === astral.dnum) return 'endgame';
-    if (state?.u?.antimagic || state?.antimagic
-        || state?.u?.magicResistance || state?.u?.magic_resistance
-        || state?.u?.magicProtection) return 'antimagic';
+    if (state?.u?.antimagic || state?.u?.magicProtection)
+        return 'antimagic';
     if (heroTeleportRestricted(state)) return 'level';
     return null;
 }

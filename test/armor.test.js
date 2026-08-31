@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     OBJECT_ARMOR_BONUS, applyArmorOnEffects, armorBaseBonus, armorBonus,
     armorOnIdentifiesType, findArmorClass, heroIsDisplaced,
+    removeArmorProperties,
 } from '../js/armor.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_STR } from '../js/const.js';
@@ -12,8 +13,9 @@ import { weightCapacity } from '../js/weight.js';
 import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
     GAUNTLETS_OF_POWER, LEATHER_GLOVES, RING_MAIL, RIN_PROTECTION, ROBE,
-    SMALL_SHIELD,
+    RED_DRAGON_SCALE_MAIL, SMALL_SHIELD,
 } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 
 test('ARM_BONUS uses complete source a_ac metadata, enchantment, and erosion', () => {
     assert.equal(OBJECT_ARMOR_BONUS.length, 84);
@@ -89,4 +91,17 @@ test('cloak displacement property precedes observable Cloak_on feedback', () => 
         'You feel that monsters have difficulty pinpointing your location.',
     ]);
     assert.equal(armorOnIdentifiesType(cloak, messages), true);
+});
+
+test('taking off dragon armor removes only the armor resistance', () => {
+    const armor = { otyp: RED_DRAGON_SCALE_MAIL, o_id: 42, worn: true };
+    const state = { u: { _propertySources: {} }, uarm: armor };
+    grantIntrinsicProperty('fireResistance', 'race', state);
+
+    applyArmorOnEffects(armor, state);
+    assert.equal(state.u.fireResistanceFromArmor, true);
+
+    removeArmorProperties(armor, state);
+    assert.equal(state.u.fireResistance, true);
+    assert.equal(state.u.fireResistanceFromArmor, false);
 });

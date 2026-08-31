@@ -145,7 +145,7 @@ import { captureRunmodeDelay } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     findArmorClass, heroIsDisplaced,
-    objectErosionKind, objectErosionMessage,
+    objectErosionKind, objectErosionMessage, removeArmorProperties,
 } from './armor.js';
 import {
     findMonsterArmorClass,
@@ -6537,7 +6537,6 @@ async function wizIntrinsic() {
     if (selections.includes('magic resistance')) {
         const oldTimeout = game.u.magicResistanceTurns ?? 0;
         game.u.magicResistanceTurns = oldTimeout + 30;
-        game.u.magicResistance = true;
         game.u.antimagic = true;
         timeoutMessages.push(
             `Timeout for magic resistance ${
@@ -7628,6 +7627,7 @@ export function finishArmorRemoval(object, { silent = false } = {}) {
         if (game[slot] === object) game[slot] = null;
         if (game.u?.[slot] === object) game.u[slot] = null;
     }
+    removeArmorProperties(object, game);
     if (object.otyp === 166) { // SPEED_BOOTS
         object._grantsVeryFastFromArmor = false;
         const otherArmorSpeed = (game.inventory || []).some(candidate =>

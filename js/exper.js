@@ -12,6 +12,7 @@ import {
 import {
     MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON,
 } from './monster_data.js';
+import { grantIntrinsicProperty } from './properties.js';
 
 const NORMAL_SPEED = 12;
 
@@ -124,32 +125,32 @@ const ROLE_LEVEL_ABILITIES = {
     healer: [[15, 'warning', 'sensitive']],
     knight: [[7, 'fast', 'quick']],
     monk: [
-        [3, 'poison_resistance', 'healthy'],
+        [3, 'poisonResistance', 'healthy'],
         [5, 'stealth', 'stealthy'],
         [7, 'warning', 'sensitive'],
         [9, 'searching', 'perceptive'],
-        [11, 'fire_resistance', 'cool'],
-        [13, 'cold_resistance', 'warm'],
-        [15, 'shock_resistance', 'insulated'],
-        [17, 'teleport_control', 'controlled'],
+        [11, 'fireResistance', 'cool'],
+        [13, 'coldResistance', 'warm'],
+        [15, 'shockResistance', 'insulated'],
+        [17, 'teleportControl', 'controlled'],
     ],
     priest: [
-        [15, 'warning', 'sensitive'], [20, 'fire_resistance', 'cool'],
+        [15, 'warning', 'sensitive'], [20, 'fireResistance', 'cool'],
     ],
     ranger: [
-        [7, 'stealth', 'stealthy'], [15, 'see_invisible', ''],
+        [7, 'stealth', 'stealthy'], [15, 'seeInvisible', ''],
     ],
     rogue: [[10, 'searching', 'perceptive']],
     samurai: [[15, 'stealth', 'stealthy']],
     tourist: [
-        [10, 'searching', 'perceptive'], [20, 'poison_resistance', 'hardy'],
+        [10, 'searching', 'perceptive'], [20, 'poisonResistance', 'hardy'],
     ],
     valkyrie: [
         [3, 'stealth', 'stealthy'], [7, 'fast', 'quick'],
     ],
     wizard: [
         [15, 'warning', 'sensitive'],
-        [17, 'teleport_control', 'controlled'],
+        [17, 'teleportControl', 'controlled'],
     ],
 };
 
@@ -158,9 +159,7 @@ export async function gainLevelAbilities(oldLevel, newLevel) {
     for (const [level, property, message] of abilities) {
         if (oldLevel >= level || newLevel < level) continue;
         const alreadyHadAbility = !!game.u[property];
-        game.u[property] = true;
-        if (!game.u._propertySources) game.u._propertySources = {};
-        game.u._propertySources[property] = 'experience';
+        grantIntrinsicProperty(property, 'experience', game);
         if (!alreadyHadAbility && message)
             await plineWithContinuation(`You feel ${message}!`);
     }

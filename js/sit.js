@@ -295,7 +295,7 @@ export async function rndcurse({
         return [];
     }
 
-    const antimagic = !!(hero.antimagic || hero.magicResistance);
+    const antimagic = !!hero.antimagic;
     const halfSpellDamage = !!hero.halfSpellDamage;
     if (antimagic) await shieldeff(hero.ux, hero.uy, state);
     await publish('You feel a malignant aura surround you.');

@@ -73,6 +73,7 @@ import {
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
+import { hasWornProperty } from './properties.js';
 import {
     randomMonsterRelocation, monsterIsScaredAt, teleportMonsterFromTrap,
 } from './teleport.js';
@@ -338,8 +339,7 @@ const MONSTER_WIZARD_SPELLS = [
 ];
 
 function monsterSpellEffectPreview(spell, damage, state) {
-    const antimagic = !!(state?.u?.antimagic
-        || state?.u?.magicResistance || state?.u?.magic_resistance);
+    const antimagic = !!state?.u?.antimagic;
     let effectDamage = damage;
     if (antimagic && ['psi-bolt', 'open-wounds'].includes(spell.key))
         effectDamage = Math.trunc((effectDamage + 1) / 2);
@@ -364,7 +364,6 @@ function monsterSpellEffectPreview(spell, damage, state) {
         effectMessage = 'Scales cover your eyes!';
     } else if (spell.key === 'paralyze') {
         const resisted = !!(state?.u?.antimagic
-            || state?.u?.magicResistance || state?.u?.magic_resistance
             || heroHasFreeAction(state));
         effectMessage = resisted
             ? 'You stiffen briefly.' : 'You are frozen in place!';
@@ -3960,8 +3959,7 @@ function maybeThrowOffensiveSleepingPotion(
 
 function heroHasMagicResistance(state) {
     const cloak = state?.uarmc || state?.u?.uarmc;
-    return !!(state?.antimagic || state?.u?.antimagic
-        || state?.u?.magicResistance || state?.u?.magic_resistance
+    return !!(state?.u?.antimagic
         || cloak?.otyp === CLOAK_OF_MAGIC_RESISTANCE);
 }
 
@@ -7159,12 +7157,7 @@ function heroWornArmor(state, slot) {
 }
 
 function heroHasAcidProtectedInventory(state) {
-    const hero = state?.u || {};
-    const source = hero._propertySources?.acidResistance;
-    return !!(hero.acidResistanceFromArmor
-        || hero.acid_resistance_from_armor
-        || ['worn', 'wielded', 'accessory', 'artifact']
-            .includes(source?.kind));
+    return hasWornProperty('acidResistance', state);
 }
 
 function heroArmorErosionResult(
@@ -7631,7 +7624,6 @@ export function resumeDeferredHeroSpell(
     }
     if (attack.spell === 'paralyze') {
         const resisted = !!(state.u?.antimagic
-            || state.u?.magicResistance || state.u?.magic_resistance
             || heroHasFreeAction(state));
         const monsterLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
@@ -7650,8 +7642,7 @@ export function resumeDeferredHeroSpell(
         return attack;
     }
     if (attack.spell === 'confuse-you') {
-        const antimagic = !!(state.u?.antimagic
-            || state.u?.magicResistance || state.u?.magic_resistance);
+        const antimagic = !!state.u?.antimagic;
         if (!antimagic) {
             const monsterLevel = action.monster?.m_lev
                 ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
@@ -7685,8 +7676,7 @@ export function resumeDeferredHeroSpell(
         return attack;
     }
     if (attack.spell === 'weaken-you') {
-        const antimagic = !!(state.u?.antimagic
-            || state.u?.magicResistance || state.u?.magic_resistance);
+        const antimagic = !!state.u?.antimagic;
         attack.appliedDamage = 0;
         if (antimagic) {
             attack.weakenedHero = false;
@@ -7769,7 +7759,6 @@ export function resumeDeferredHeroSpell(
     }
     if (attack.spell === 'stun-you') {
         const resisted = !!(state.u?.antimagic
-            || state.u?.magicResistance || state.u?.magic_resistance
             || heroHasFreeAction(state));
         let duration = 1;
         if (!resisted) {
@@ -7860,7 +7849,6 @@ function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     }
     if (spell.key === 'death-touch') {
         const resisted = !!(state?.u?.antimagic
-            || state?.u?.magicResistance || state?.u?.magic_resistance
             || state?.u?.hallucinating
             || (state?.u?.hallucinationTurns ?? 0) > 0);
         return resisted && recordRandom(random, calls, 2) === 0;

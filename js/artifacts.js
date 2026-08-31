@@ -289,7 +289,7 @@ export function touchArtifactByHero(object, artifact) {
     if (((badClass || badAlignment) && artifact.selfWilled)
         || (badAlignment && rn2(4) === 0)) {
         blasted = true;
-        const antimagic = !!(game.u?.antimagic || game.antimagic);
+        const antimagic = !!game.u?.antimagic;
         const damage = d(antimagic ? 2 : 4, 4);
         game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
         if (!Array.isArray(game.u._exercise))

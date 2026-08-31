@@ -56,6 +56,7 @@ import { invWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { putSaddleOnMonster } from './steed.js';
+import { grantIntrinsicProperty } from './properties.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -525,21 +526,27 @@ export function uInitMisc(handednessRoll) {
     // C initializes the hero with one ordinary action available.  Samurai
     // also gain intrinsic Fast at level 1 (attrib.c sam_abil[]).
     u.umovement = 12;
-    u.fast = !!g.urole?.intrinsicFast;
+    if (g.urole?.intrinsicFast)
+        grantIntrinsicProperty('fast', 'role', g);
     // C attrib.c race ability tables: dwarves, elves, gnomes, and orcs gain
     // intrinsic infravision at level 1.  It affects monster projection in
     // dark but geometrically visible cells; it does not light the terrain.
-    u.infravision = ['dwarf', 'elf', 'gnome', 'orc'].includes(g.urace?.name);
+    if (['dwarf', 'elf', 'gnome', 'orc'].includes(g.urace?.name))
+        grantIntrinsicProperty('infravision', 'race', g);
     // C attrib.c level-one role/race ability tables.  Keep these properties
     // on the hero rather than reconstructing them from identity during end
     // disclosure; combat and enlightenment must share the same owner.
-    u.poisonResistance = ['barbarian', 'healer'].includes(g.urole?.key)
-        || g.urace?.name === 'orc';
-    u.stealth = g.urole?.key === 'rogue';
-    u.searching = ['archeologist', 'ranger'].includes(g.urole?.key);
+    if (['barbarian', 'healer'].includes(g.urole?.key))
+        grantIntrinsicProperty('poisonResistance', 'role', g);
+    if (g.urace?.name === 'orc')
+        grantIntrinsicProperty('poisonResistance', 'race', g);
+    if (g.urole?.key === 'rogue')
+        grantIntrinsicProperty('stealth', 'role', g);
+    if (['archeologist', 'ranger'].includes(g.urole?.key))
+        grantIntrinsicProperty('searching', 'role', g);
     if (g.urole?.key === 'monk') {
-        u.sleepResistance = true;
-        u.seeInvisible = true;
+        grantIntrinsicProperty('sleepResistance', 'role', g);
+        grantIntrinsicProperty('seeInvisible', 'role', g);
     }
     u.nv_range = 1;
     u.xray_range = -1;

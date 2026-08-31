@@ -9,6 +9,9 @@ import {
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_LEVEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
+import {
+    grantWornProperty, removeWornProperty,
+} from './properties.js';
 
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
@@ -161,6 +164,7 @@ export function destroyWornArmor(armor, state = game) {
         if (state[slot] === armor) state[slot] = null;
         if (state.u?.[slot] === armor) state.u[slot] = null;
     }
+    removeArmorProperties(armor, state);
     state.inventory = (state.inventory || []).filter(item => item !== armor);
 }
 
@@ -225,18 +229,9 @@ function dragonArmorColor(object) {
     return name.match(/^([a-z]+) dragon scale(?: mail|s)$/)?.[1] || null;
 }
 
-function grantArmorProperty(object, hero, property) {
-    if (!object._dragonArmorPriorProperties)
-        object._dragonArmorPriorProperties = {};
-    if (!Object.prototype.hasOwnProperty.call(
-        object._dragonArmorPriorProperties, property,
-    )) object._dragonArmorPriorProperties[property] = !!hero[property];
-    hero[`${property}FromArmor`] = true;
-    hero[property] = true;
-    if (!hero._propertySources) hero._propertySources = {};
-    hero._propertySources[property] = {
-        kind: 'worn', otyp: object.otyp, slot: 'uarm',
-    };
+function grantArmorProperty(object, state, property) {
+    const hero = state.u || (state.u = {});
+    grantWornProperty(property, object, 'uarm', state);
     // C youprop.h distinguishes intrinsic Fast from Very_fast: any worn
     // extrinsic source (including blue dragon armor) owns the 2-in-3 speed
     // gate in u_calc_moveamt().  Keep that distinction in live hero state;
@@ -302,12 +297,12 @@ export function applyArmorOnEffects(object, state = game) {
 
     const hero = state.u || (state.u = {});
     const messages = [];
-    if (primaryProperty) grantArmorProperty(object, hero, primaryProperty);
+    if (primaryProperty) grantArmorProperty(object, state, primaryProperty);
     if (!extraProperty) return messages;
 
     const hadProperty = !!hero[extraProperty];
     const wasVeryFast = !!hero.veryFast;
-    grantArmorProperty(object, hero, extraProperty);
+    grantArmorProperty(object, state, extraProperty);
 
     if (color === 'blue') {
         if (!wasVeryFast)
@@ -326,6 +321,41 @@ export function applyArmorOnEffects(object, state = game) {
         state.vision_full_recalc = 1;
     }
     return messages;
+}
+
+// C do_wear.c:Armor_off() removes both the ordinary dragon resistance and
+// the color-specific extra property after the suit leaves W_ARM.
+export function removeArmorProperties(object, state = game) {
+    const color = dragonArmorColor(object);
+    const primaryProperty = DRAGON_ARMOR_PRIMARY_PROPERTY[color];
+    const extraProperty = DRAGON_ARMOR_EXTRA_PROPERTY[color];
+    if (!primaryProperty && !extraProperty) return;
+
+    if (primaryProperty)
+        removeWornProperty(primaryProperty, object, 'uarm', state);
+    if (extraProperty)
+        removeWornProperty(extraProperty, object, 'uarm', state);
+
+    const hero = state.u || (state.u = {});
+    if (color === 'blue') {
+        object._grantsVeryFastFromArmor = false;
+        hero.veryFastFromArmor = (state.inventory || []).some(candidate =>
+            candidate !== object && candidate.worn
+            && candidate._grantsVeryFastFromArmor);
+        hero.veryFast = hero.veryFastFromArmor
+            || (hero.veryFastTurns ?? 0) > 0;
+    } else if (color === 'gold'
+        && Object.prototype.hasOwnProperty.call(
+            object, '_suppressedHallucinationTurns',
+        )) {
+        const turns = object._suppressedHallucinationTurns || 0;
+        hero.hallucinationTurns = turns;
+        hero.hallucinating = turns > 0;
+        delete object._suppressedHallucinationTurns;
+        state.vision_full_recalc = 1;
+    } else if (color === 'red') {
+        state.vision_full_recalc = 1;
+    }
 }
 
 function equippedObject(state, slot) {
