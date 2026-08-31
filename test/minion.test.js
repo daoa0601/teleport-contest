@@ -1,0 +1,62 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { game } from '../js/gstate.js';
+import { msummon } from '../js/minion.js';
+import {
+    MONSTER_FLAGS2, MONSTER_NAME,
+} from '../js/monster_data.js';
+import { resumeDeferredMovementSpell } from '../js/monmove.js';
+import { initRng } from '../js/rng.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
+
+const M2_DEMON = 0x00000100;
+
+test('the Wizard summons demons beside the hero', async () => {
+    freshWeaponArena();
+    initRng(1n);
+
+    const result = await msummon();
+
+    assert.equal(result.count, 2);
+    assert.ok(result.created.every(monster =>
+        (MONSTER_FLAGS2[monster.mnum] & M2_DEMON)
+        && Math.max(
+            Math.abs(monster.mx - game.u.ux),
+            Math.abs(monster.my - game.u.uy),
+        ) === 1));
+});
+
+test('a monster spell completes its demon summon in Gehennom', async () => {
+    freshWeaponArena();
+    game.dungeons = [{ flags: { hellish: true } }];
+    const wizard = {
+        mnum: MONSTER_NAME.indexOf('Wizard of Yendor'),
+        mx: 12,
+        my: 10,
+        mux: game.u.ux,
+        muy: game.u.uy,
+        mhp: 100,
+        mhpmax: 100,
+        mcanmove: 1,
+    };
+    game.level.monsters.push(wizard);
+    const action = {
+        monster: wizard,
+        calls: [],
+        movement: {
+            deferredAfterMovementSpell: true,
+            spellCast: {
+                spell: 'summon-monsters',
+                deferredSpellEffect: true,
+            },
+        },
+    };
+    initRng(11n);
+
+    const result = await resumeDeferredMovementSpell(action, game);
+
+    assert.ok(result.count > 0);
+    assert.ok(result.created.every(monster =>
+        MONSTER_FLAGS2[monster.mnum] & M2_DEMON));
+});

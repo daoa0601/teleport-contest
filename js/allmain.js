@@ -207,6 +207,7 @@ import {
 import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { refreshProperty } from './properties.js';
+import { msummon } from './minion.js';
 import {
     presentMonsterRustTrap, presentMonsterWebTrap,
 } from './monster_trap_events.js';
@@ -1960,7 +1961,7 @@ async function initialTurnMaintenanceWithTty(
             await resurrectWizard();
             delete game._unresolvedDemigodIntervention;
         } else if (intervention.kind === 4) {
-            const effect = await summonNastyMonsters(null, {
+            let effect = await summonNastyMonsters(null, {
                 onCreate: async monster => {
                     newsym(monster.mx, monster.my);
                     const name = quietMonsterName(monster);
@@ -1976,6 +1977,7 @@ async function initialTurnMaintenanceWithTty(
                         await queueTurnMessage(message);
                 },
             });
+            if (effect.deferredDemonSummon) effect = await msummon();
             game._lastDemigodNasty = (effect.created || []).map(monster =>
                 monster.m_id);
             delete game._unresolvedDemigodIntervention;

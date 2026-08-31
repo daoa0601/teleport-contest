@@ -1282,7 +1282,7 @@ const monsterGenerationOrder = Array.from(
     return leftKey - rightKey || left - right;
 });
 
-function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
+export function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
     const G_FREQ = 0x0007;
     const G_HELL = 0x0400;
     const G_NOHELL = 0x0800;

@@ -74,6 +74,7 @@ import {
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
 import { hasWornProperty } from './properties.js';
+import { msummon } from './minion.js';
 import {
     randomMonsterRelocation, monsterIsScaredAt, teleportMonsterFromTrap,
 } from './teleport.js';
@@ -7935,7 +7936,11 @@ function movementSpellSelections(monster, state, random, calls) {
 async function monsterSummonSpellEffect(monster, state) {
     let effect = { count: 0, created: [], message: null };
     const summoned = await summonNastyMonsters(monster);
-    effect = { ...effect, ...summoned };
+    effect = {
+        ...effect,
+        ...(summoned.deferredDemonSummon
+            ? await msummon(monster) : summoned),
+    };
     for (const created of effect.created || []) {
         const hostileState = created.mpeaceful;
         if (created._nastyBirthPeaceful !== undefined)

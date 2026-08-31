@@ -1,0 +1,225 @@
+// Monster summoning by demons, minions, and the Wizard of Yendor.
+// C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
+
+import { artifactById } from './artifacts.js';
+import {
+    A_NONE, In_endgame, MM_EMIN, MM_NOMSG,
+} from './const.js';
+import { canSeeMonster, pline } from './display.js';
+import { game } from './gstate.js';
+import { makemonNear, mkclassAligned } from './mklev.js';
+import {
+    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
+} from './monster_data.js';
+import { rn1, rn2 } from './rng.js';
+
+const S_DEMON = 56;
+const M2_DEMON = 0x00000100;
+const M2_LORD = 0x00000400;
+const M2_PRINCE = 0x00000800;
+const M2_MINION = 0x00001000;
+const M2_PNAME = 0x00080000;
+const G_GONE = 0x03;
+
+const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
+const PM_ANGEL = MONSTER_NAME.indexOf('Angel');
+const PM_ARCHON = MONSTER_NAME.indexOf('Archon');
+const PM_JUIBLEX = MONSTER_NAME.indexOf('Juiblex');
+const PM_YEENOGHU = MONSTER_NAME.indexOf('Yeenoghu');
+const PM_ORCUS = MONSTER_NAME.indexOf('Orcus');
+const PM_DEMOGORGON = MONSTER_NAME.indexOf('Demogorgon');
+const ELEMENTALS = [
+    'air elemental', 'fire elemental', 'earth elemental', 'water elemental',
+].map(name => MONSTER_NAME.indexOf(name));
+
+function monsterIsGone(mnum) {
+    return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
+}
+
+function matchesAlignment(mnum, alignment) {
+    return alignment === A_NONE
+        || Math.sign(MONSTER_ALIGNMENT[mnum] ?? 0) === Math.sign(alignment);
+}
+
+function normalDemon(alignment) {
+    const mnum = mkclassAligned(S_DEMON, 0, alignment);
+    if (mnum == null) return null;
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    return (flags & M2_DEMON) && !(flags & (M2_LORD | M2_PRINCE))
+        ? mnum : null;
+}
+
+function demonLord(alignment) {
+    const attempts = In_endgame(game.u?.uz) ? 0 : 20;
+    for (let left = attempts; left > 0; left--) {
+        const mnum = rn1(PM_YEENOGHU + 1 - PM_JUIBLEX, PM_JUIBLEX);
+        if (!monsterIsGone(mnum) && matchesAlignment(mnum, alignment))
+            return mnum;
+    }
+    return normalDemon(alignment);
+}
+
+function demonPrince(alignment) {
+    const attempts = In_endgame(game.u?.uz) ? 0 : 20;
+    for (let left = attempts; left > 0; left--) {
+        const mnum = rn1(PM_DEMOGORGON + 1 - PM_ORCUS, PM_ORCUS);
+        if (!monsterIsGone(mnum) && matchesAlignment(mnum, alignment))
+            return mnum;
+    }
+    return demonLord(alignment);
+}
+
+function lawfulMinion() {
+    for (let attempts = 20; attempts > 0; attempts--) {
+        const mnum = mkclassAligned(27, 0, A_NONE);
+        if (mnum != null && !((MONSTER_FLAGS2[mnum] ?? 0) & M2_LORD))
+            return mnum;
+    }
+    return null;
+}
+
+function lawfulLord() {
+    return monsterIsGone(PM_ARCHON) ? lawfulMinion() : PM_ARCHON;
+}
+
+function summonerAlignment(monster) {
+    if (!monster) return Math.sign(
+        MONSTER_ALIGNMENT[PM_WIZARD_OF_YENDOR] ?? A_NONE,
+    );
+    if (monster.ispriest)
+        return monster.epri?.shralign
+            ?? monster.mextra?.epri?.shralign ?? A_NONE;
+    if (monster.isminion)
+        return monster.emin?.min_align
+            ?? monster.mextra?.emin?.min_align ?? A_NONE;
+    const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? A_NONE;
+    return alignment === A_NONE ? A_NONE : Math.sign(alignment);
+}
+
+function summonedType(monster, alignment) {
+    const mnum = monster?.mnum ?? PM_WIZARD_OF_YENDOR;
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    if (((flags & M2_DEMON) && (flags & M2_PRINCE))
+        || mnum === PM_WIZARD_OF_YENDOR) {
+        return {
+            mnum: !rn2(20) ? demonPrince(alignment)
+                : !rn2(4) ? demonLord(alignment) : normalDemon(alignment),
+            mayDouble: true,
+        };
+    }
+    if ((flags & M2_DEMON) && (flags & M2_LORD)) {
+        return {
+            mnum: !rn2(50) ? demonPrince(alignment)
+                : !rn2(20) ? demonLord(alignment) : normalDemon(alignment),
+            mayDouble: true,
+        };
+    }
+    if (MONSTER_NAME[mnum] === 'bone devil')
+        return { mnum: MONSTER_NAME.indexOf('skeleton'), mayDouble: false };
+    if ((flags & M2_DEMON) && !(flags & (M2_LORD | M2_PRINCE))) {
+        return {
+            mnum: !rn2(20) ? demonLord(alignment)
+                : !rn2(6) ? normalDemon(alignment) : mnum,
+            mayDouble: false,
+        };
+    }
+    if ((flags & M2_MINION) && alignment > 0) {
+        const lord = !!(flags & M2_LORD);
+        return {
+            mnum: lord && !rn2(20) ? lawfulLord()
+                : lord || !rn2(6) ? lawfulMinion() : mnum,
+            mayDouble: true,
+        };
+    }
+    if (mnum === PM_ANGEL) {
+        let summoned = PM_ANGEL;
+        if (!rn2(6)) {
+            summoned = alignment === 0
+                ? ELEMENTALS[rn2(ELEMENTALS.length)]
+                : normalDemon(alignment);
+        }
+        return { mnum: summoned, mayDouble: true };
+    }
+    return { mnum: null, mayDouble: false };
+}
+
+function summonedMonsterName(monster) {
+    const name = MONSTER_NAME[monster.mnum] || 'monster';
+    if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME) return name;
+    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
+    return `${article} ${name}`;
+}
+
+function summonEnvironment(monster) {
+    const name = MONSTER_NAME[monster.mnum];
+    if (name === 'air elemental' || name === 'water elemental')
+        return 'cloud of vapor';
+    if (name === 'fire elemental') return 'ball of flame';
+    if (name === 'earth elemental') return 'cloud of dust';
+    if ((MONSTER_SYMBOL[monster.mnum] ?? 0) === 27)
+        return 'flash of light';
+    return 'cloud of smoke';
+}
+
+function existingMonsterName(monster) {
+    const name = MONSTER_NAME[monster.mnum] || 'monster';
+    return (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME
+        ? name : `The ${name}`;
+}
+
+export async function msummon(monster = null) {
+    const summonerFlags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    const weapon = game.uwep || game.u?.uwep;
+    if (monster && (summonerFlags & M2_DEMON)
+        && artifactById(weapon?.oartifact)?.name === 'Demonbane') {
+        if (canSeeMonster(monster, monster.mx, monster.my)) {
+            await pline(
+                `${existingMonsterName(monster)} looks puzzled for a moment.`,
+            );
+        }
+        return { count: 0, created: [] };
+    }
+
+    const alignment = summonerAlignment(monster);
+    const selection = summonedType(monster, alignment);
+    let { mnum } = selection;
+    if (mnum == null) return { count: 0, created: [] };
+
+    let count = 1;
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    if (selection.mayDouble && !(flags & (M2_LORD | M2_PRINCE))
+        && !rn2(4)) count = 2;
+    if (monsterIsGone(mnum)) {
+        mnum = normalDemon(alignment);
+        if (mnum == null) return { count: 0, created: [] };
+    }
+
+    const created = [];
+    while (count-- > 0) {
+        const summoned = await makemonNear(
+            mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG, false,
+        );
+        if (!summoned) continue;
+        summoned.emin = { min_align: 0, renegade: 0 };
+        if (mnum === PM_ANGEL) {
+            summoned.isminion = 1;
+            summoned.emin.min_align = alignment;
+            summoned.emin.renegade = Number(
+                (alignment !== (game.u?.ualign?.type ?? 0))
+                !== !summoned.mpeaceful,
+            );
+        }
+        summoned.mextra = {
+            ...(summoned.mextra || {}),
+            emin: summoned.emin,
+        };
+        created.push(summoned);
+        if (count === 0 && canSeeMonster(
+            summoned, summoned.mx, summoned.my,
+        )) {
+            await pline(`${summonedMonsterName(summoned)} appears in a ${
+                summonEnvironment(summoned)}!`);
+        }
+    }
+    return { count: created.length, created };
+}
