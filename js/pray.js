@@ -5,10 +5,64 @@
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { flush_screen, pline, plineWithContinuation } from './display.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { promptYesNo } from './query.js';
 import { rn2, rnd, rnz } from './rng.js';
 import { loseExperienceLevel } from './exper.js';
 
 const STRIDENT = 4;
+
+export async function dopray() {
+    const answer = await promptYesNo('Are you sure you want to pray? [yn] (n) ');
+    if (answer !== 'y') {
+        game.context.move = 0;
+        return;
+    }
+
+    if (!game.u.uconduct) game.u.uconduct = {};
+    const firstPrayer = !(game.u.uconduct.gnostic || 0);
+    game.u.uconduct.gnostic = (game.u.uconduct.gnostic || 0) + 1;
+    if (firstPrayer)
+        recordGameLogEvent('rejected atheism with a prayer');
+
+    const alignment = game.initAlignment?.name || 'neutral';
+    const deity = game.urole?.gods?.[alignment] || 'your god';
+    const beginMessage = `You begin praying to ${deity}.`;
+    const openingLine = game.flags?.debug
+        ? `${beginMessage}--More--` : beginMessage;
+    await pline(openingLine);
+
+    if (game.flags?.debug) {
+        // Wizard mode asks whether to force a favorable result after showing
+        // the ordinary prayer message.
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(openingLine.length, 0);
+        let key;
+        do key = await nhgetch();
+        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+        const force = await promptYesNo('Force the gods to be pleased? [yn] (n) ');
+        game._prayerForced = force === 'y';
+        if (game._prayerForced && game.u) {
+            game.u.ublesscnt = 0;
+            if ((game.u.uluck ?? 0) < 0) game.u.uluck = 0;
+            if ((game.u.ualign?.record ?? 0) <= 0)
+                game.u.ualign.record = 1;
+            game.u.ugangr = 0;
+            game.u.invulnerable = true;
+            if (!game.blind) {
+                game._prayerOpeningMessage
+                    = 'You are surrounded by a shimmering light.';
+                await pline(game._prayerOpeningMessage);
+            }
+        }
+    }
+    game._prayerDeity = deity;
+    game._prayerAlignment = game.u?.ualign?.type ?? 0;
+    game._prayerCompletionMessage = 'You finish your prayer.';
+    game._prayerTurnsRemaining = 3;
+    game._prayerLastTickMove = game.moves || 1;
+    game.context.move = 1;
+}
 
 // pray.c:angrygods().  This is deliberately a pure projection so every
 // outcome branch shares the same live alignment/anger/Luck calculation.

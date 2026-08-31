@@ -177,6 +177,7 @@ import {
 } from './weight.js';
 import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
+import { dopray } from './pray.js';
 import {
     addHeroGoldObject, detachHeroGold, ensureHeroGoldObject,
     heroGoldAmount, setHeroGoldAmount, syncHeroGoldCache,
@@ -7989,72 +7990,6 @@ async function doride() {
     newsym(u.ux0, u.uy0);
     vision_recalc(1);
     newsym(u.ux, u.uy);
-    game.context.move = 1;
-}
-
-async function dopray() {
-    const answer = await promptYesNo('Are you sure you want to pray? [yn] (n) ');
-    if (answer !== 'y') {
-        game.context.move = 0;
-        return;
-    }
-
-    if (!game.u.uconduct) game.u.uconduct = {};
-    const firstPrayer = !(game.u.uconduct.gnostic || 0);
-    game.u.uconduct.gnostic = (game.u.uconduct.gnostic || 0) + 1;
-    if (firstPrayer)
-        recordGameLogEvent('rejected atheism with a prayer');
-
-    const alignment = game.initAlignment?.name || 'neutral';
-    const deity = game.urole?.gods?.[alignment] || 'your god';
-    const beginMessage = `You begin praying to ${deity}.`;
-    const openingLine = game.flags?.debug
-        ? `${beginMessage}--More--` : beginMessage;
-    await pline(openingLine);
-
-    if (game.flags?.debug) {
-        // C can_pray() emits the opening line before dopray() asks the
-        // wizard-only force question.  tty must expose that line before the
-        // next prompt, but ordinary prayer has no input boundary here: it
-        // enters nomul(-3) immediately and lets unmul() continue the same
-        // physical topline when prayer_done() runs.
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(openingLine.length, 0);
-        let key;
-        do key = await nhgetch();
-        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-        const force = await promptYesNo('Force the gods to be pleased? [yn] (n) ');
-        game._prayerForced = force === 'y';
-        if (game._prayerForced && game.u) {
-            // C dopray(): wizard-forced favor first repairs a non-positive
-            // alignment record, negative Luck, prayer timeout, and divine
-            // anger, then pleased() observes that repaired live state when
-            // the occupation ends.
-            game.u.ublesscnt = 0;
-            if ((game.u.uluck ?? 0) < 0) game.u.uluck = 0;
-            if ((game.u.ualign?.record ?? 0) <= 0)
-                game.u.ualign.record = 1;
-            game.u.ugangr = 0;
-            game.u.invulnerable = true;
-            // pray.c emits this when the favorable occupation starts.  tty
-            // retains it as the physical topline until unmul() emits the
-            // completion message, so prayer_done's pager must preserve this
-            // earlier clause rather than synthesizing it after completion.
-            if (!game.blind) {
-                game._prayerOpeningMessage
-                    = 'You are surrounded by a shimmering light.';
-                await pline(game._prayerOpeningMessage);
-            }
-        }
-    }
-    game._prayerDeity = deity;
-    game._prayerAlignment = game.u?.ualign?.type ?? 0;
-    game._prayerCompletionMessage = 'You finish your prayer.';
-    game._prayerTurnsRemaining = 3;
-    // Multi begins at -3 on this source turn; prayer_done can only advance
-    // after a later global-turn allocation, not from another Fast action in
-    // the current turn.
-    game._prayerLastTickMove = game.moves || 1;
     game.context.move = 1;
 }
 
