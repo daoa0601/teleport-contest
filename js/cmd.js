@@ -230,7 +230,8 @@ import {
 } from './monmove.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, monsterTeleportRestricted, moveHeroByTeleport,
+    heroTeleportRestricted, heroTeleportTrapBlock,
+    monsterTeleportRestricted, moveHeroByTeleport,
     prepareHeroTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
@@ -11424,6 +11425,8 @@ async function readTeleportationScroll(scroll) {
 
         const requested = await getLine('To what level do you want to teleport?');
         if (requested === null) {
+            learnTeleportationScroll(scroll);
+            removeTeleportationScroll(scroll);
             game.context.move = 1;
             return;
         }
@@ -11440,13 +11443,8 @@ async function readTeleportationScroll(scroll) {
             }
         }
 
-        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-        if (!game._knownObjectTypes.has(scroll.otyp)) {
-            exerciseAttribute(4, true);
-            game._knownObjectTypes.add(scroll.otyp);
-            game.u.urexp = (game.u.urexp || 0) + 10;
-        }
-        game.inventory = (game.inventory || []).filter(item => item !== scroll);
+        learnTeleportationScroll(scroll);
+        removeTeleportationScroll(scroll);
 
         if (target === (game.u?.uz?.dlevel ?? 1)) {
             await pline('You shudder for a moment.');
@@ -11469,10 +11467,29 @@ async function readTeleportationScroll(scroll) {
 
     await pline(disappearance);
 
-    // read.c:seffects() credits trying a magical scroll; scrolltele() then
-    // discovers its true type and discover_object() credits Wisdom again.
+    // read.c:seffects() credits trying a magical scroll before scrolltele().
     exerciseAttribute(4, true);
-    exerciseAttribute(4, true);
+
+    if (heroTeleportRestricted() && !game.flags?.debug) {
+        await promptKey(disappearance);
+        await pline('A mysterious force prevents you from teleporting!');
+        learnTeleportationScroll(scroll);
+        removeTeleportationScroll(scroll);
+        game.context.move = 1;
+        return;
+    }
+
+    const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? -1];
+    const inWizardTower = currentDungeon?.dname === "Vlad's Tower";
+    if ((game.u?.uhave?.amulet || inWizardTower) && rn2(3) === 0) {
+        await promptKey(disappearance);
+        await pline('You feel disoriented for a moment.');
+        removeTeleportationScroll(scroll);
+        game.context.move = 1;
+        return;
+    }
+
+    learnTeleportationScroll(scroll);
 
     const destination = safeTeleportDestination();
     if (destination) {
@@ -11489,9 +11506,21 @@ async function readTeleportationScroll(scroll) {
     game.nhDisplay?.setCursor(disappearance.length, 0);
     await nhgetch();
 
-    game.inventory = (game.inventory || []).filter(item => item !== scroll);
+    removeTeleportationScroll(scroll);
     await pline('You materialize in a different location!');
     game.context.move = 1;
+}
+
+function learnTeleportationScroll(scroll) {
+    if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+    if (game._knownObjectTypes.has(scroll.otyp)) return;
+    exerciseAttribute(4, true);
+    game._knownObjectTypes.add(scroll.otyp);
+    game.u.urexp = (game.u.urexp || 0) + 10;
+}
+
+function removeTeleportationScroll(scroll) {
+    game.inventory = (game.inventory || []).filter(item => item !== scroll);
 }
 
 const M1_CARNIVORE = 0x20000000;

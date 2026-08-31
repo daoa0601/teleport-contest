@@ -73,6 +73,12 @@ export function monsterTeleportRestricted(monster, state = game) {
         && stasisUntil >= (state?.moves ?? 1);
 }
 
+export function heroTeleportRestricted(state = game) {
+    const currentForm = state?.u?.mtimedone
+        ? state.u.umonnum : state?.u?.umonster;
+    return monsterTeleportRestricted({ mnum: currentForm }, state);
+}
+
 export function heroTeleportTrapBlock(state = game) {
     const level = state?.u?.uz;
     const astral = state?.astral_level;
@@ -80,9 +86,7 @@ export function heroTeleportTrapBlock(state = game) {
     if (state?.u?.antimagic || state?.antimagic
         || state?.u?.magicResistance || state?.u?.magic_resistance
         || state?.u?.magicProtection) return 'antimagic';
-    const currentForm = state?.u?.mtimedone
-        ? state.u.umonnum : state?.u?.umonster;
-    if (monsterTeleportRestricted({ mnum: currentForm }, state)) return 'level';
+    if (heroTeleportRestricted(state)) return 'level';
     return null;
 }
 
