@@ -228,7 +228,11 @@ import { gameLogEvents, recordGameLogEvent } from './gamelog.js';
 import {
     maybeSmudgeEngravings, readEngravingAt, wipeEngravingAt,
 } from './engrave.js';
-import { isGetposFeatureSymbol } from './getpos.js';
+import {
+    farlookTipUntilDismissed, getposFeatureMissMessage,
+    getposHelpUntilDismissed, isGetposPickCharacter, moveGetposCursor,
+    nextGetposFeature, paintGetposCursor,
+} from './getpos.js';
 import {
     chatWithQuestLeader, displayPreparedQuestArrival, prepareQuestArrival,
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
@@ -334,28 +338,6 @@ function remapConfiguredCommand(key) {
         key: mapped ? mapped.charCodeAt(0) : key,
         disabled: false,
     };
-}
-
-// C getpos.c:truncate_to_map().  A diagonal that crosses one map edge loses
-// the same amount of motion on its other axis; independently clamping x and y
-// would incorrectly slide the cursor along the boundary.
-function moveGetposCursor(cursor, dx, dy) {
-    if (cursor.x + dx < 1) {
-        dy -= Math.sign(dy) * (1 - (cursor.x + dx));
-        dx = 1 - cursor.x;
-    } else if (cursor.x + dx > COLNO - 1) {
-        dy += Math.sign(dy) * ((COLNO - 1) - (cursor.x + dx));
-        dx = (COLNO - 1) - cursor.x;
-    }
-    if (cursor.y + dy < 0) {
-        dx -= Math.sign(dx) * (0 - (cursor.y + dy));
-        dy = -cursor.y;
-    } else if (cursor.y + dy > ROWNO - 1) {
-        dx += Math.sign(dx) * ((ROWNO - 1) - (cursor.y + dy));
-        dy = (ROWNO - 1) - cursor.y;
-    }
-    cursor.x += dx;
-    cursor.y += dy;
 }
 
 const HALLUCINATED_LIQUIDS = [
@@ -5616,7 +5598,7 @@ async function wizKill() {
     let message = firstUse ? 'Move cursor to a monster:'
         : 'Pick first monster to slay.';
     for (;;) {
-        await paintTravelCursor(cursor, message);
+        await paintGetposCursor(cursor, message);
         const key = await nhgetch();
         const ch = String.fromCharCode(key);
         if (key === 27) {
@@ -8314,25 +8296,6 @@ async function dopray() {
     game.context.move = 1;
 }
 
-function farlookTipLines() {
-    return [
-        'Tip: Farlooking or selecting a map location',
-        '',
-        'You are now in a "farlook" mode - the movement keys move the cursor,',
-        'not your character.  Game time does not advance.  This mode is used',
-        'to look around the map, or to select a location on it.',
-        '',
-        'When in this mode, you can press ESC to return to normal game mode,',
-        'and pressing ? will show the key help.',
-    ];
-}
-
-async function farlookTipUntilDismissed() {
-    return showTextMenuOverlay(farlookTipLines(), {
-        validKeys: [27, 32, 10, 13],
-    });
-}
-
 function wizardPositionDescription(x, y) {
     if (x === game.u?.ux && y === game.u?.uy) {
         const polymorphName = heroIsPolymorphed(game)
@@ -8359,64 +8322,6 @@ function wizardPositionDescription(x, y) {
         || loc.remembered_glyph?.kind === 'object'))
         return floorObjectDescription(object);
     return farlookLocationDescription(x, y) || 'unexplored area';
-}
-
-function getposFeatureMatches(x, y, symbol) {
-    const loc = game.level?.at?.(x, y);
-    if (!loc) return false;
-
-    // getpos maps its feature-cycle keys through the active graphics set.
-    // `D` is the semantic open-door key even when DECgraphics projects that
-    // door as `a` on the tty.
-    if (symbol === 'D')
-        return loc.typ === DOOR && loc.doormask === D_ISOPEN
-            && !!loc.remembered_glyph;
-
-    // getpos.c checks the live cmap projection, remembered cmap glyph, and
-    // finally known background terrain.  Monster and object projections do
-    // not qualify merely because their display character happens to match a
-    // dungeon feature.
-    if (loc.remembered_glyph?.kind === 'terrain'
-        && loc.remembered_glyph.ch === symbol) return true;
-    if (loc.seenv) {
-        const background = terrain_glyph(loc, x, y);
-        if (background.ch === symbol) return true;
-    }
-    return false;
-}
-
-// C getpos.c scans just past the cursor through the lower-right remainder of
-// the map, then wraps from the upper-left through the original coordinate.
-// Keep this row-major enumerator shared by controlled teleport and the other
-// getpos callers as they acquire feature-key support.
-function nextGetposFeature(cursor, symbol) {
-    for (let pass = 0; pass <= 1; pass++) {
-        const lowY = pass === 0 ? cursor.y : 0;
-        const highY = pass === 0 ? ROWNO - 1 : cursor.y;
-        for (let y = lowY; y <= highY; y++) {
-            const lowX = pass === 0 && y === lowY ? cursor.x + 1 : 1;
-            const highX = pass === 1 && y === highY
-                ? cursor.x : COLNO - 1;
-            for (let x = lowX; x <= highX; x++) {
-                if (getposFeatureMatches(x, y, symbol)) return { x, y };
-            }
-        }
-    }
-    return null;
-}
-
-function getposFeatureMissMessage(ch) {
-    const code = ch.codePointAt(0);
-    const visible = code < 32
-        ? `^${String.fromCharCode(code + 64)}`
-        : code === 127 ? '^?' : ch;
-    return isGetposFeatureSymbol(ch, game.symset)
-        ? `Can't find dungeon feature '${visible}'.`
-        : `Unknown direction: '${visible}' (use 'h', 'j', 'k', 'l' or '.').`;
-}
-
-function isGetposPickCharacter(ch) {
-    return '.,;:'.includes(ch);
 }
 
 function roomAtPosition(x, y) {
@@ -8467,7 +8372,7 @@ async function wizTeleportPosition() {
             ? "Where do you want to be teleported?  (For instructions type a '?')"
             : 'Where do you want to be teleported?');
     for (;;) {
-        await paintTravelCursor(cursor, message);
+        await paintGetposCursor(cursor, message);
         const key = await nhgetch();
         const ch = String.fromCharCode(key);
         if (key === 27) {
@@ -8792,7 +8697,7 @@ async function dojump() {
     const initialHighlight = lastJumpHighlight();
     let firstPaint = true;
     for (;;) {
-        await paintTravelCursor(cursor, message);
+        await paintGetposCursor(cursor, message);
         if (!firstUse && firstPaint && initialHighlight) {
             // tmp_at() paints each highlighted destination in dx/dy order;
             // tty's cursor remains just after the final glyph until the first
@@ -8882,61 +8787,6 @@ function verboseFarlookDescription(x, y) {
     return farlookLocationDescription(x, y);
 }
 
-async function paintTravelCursor(cursor, message) {
-    game._pending_message = message;
-    await docrt();
-    await bot();
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
-}
-
-// C getpos.c:getpos_help() displays a short NHW_MENU over the right side of
-// the map.  Tty chooses column 10 for this 80-column menu, retains the map
-// west of that boundary, and appends its own --More-- row after the trailing
-// blank putstr().
-async function getposHelpUntilDismissed(goal) {
-    const display = game.nhDisplay;
-    const left = 10;
-    const lines = [
-        `Use 'h', 'j', 'k', 'l' to move the cursor to ${goal}.`,
-        "Use 'H', 'J', 'K', 'L' to fast-move the cursor, 8 units at a time.",
-        "(or prefix normal move with 'G' or 'g' to fast-move)",
-        "Or enter a background symbol (ex. '<').",
-        "Use '@' to move the cursor on yourself.",
-        "Use 'm'/'M' to move the cursor to next/previous monster.",
-        "Use 'o'/'O' to move the cursor to next/previous object.",
-        "Use 'd'/'D' to move the cursor to next/previous door or doorway.",
-        "Use 'x'/'X' to move the cursor next to an unexplored location.",
-        "Use 'a'/'A' to move the cursor to anything interesting.",
-        "Use '*' to change fast-move mode to skipping same glyphs.",
-        "Use '!' to toggle menu listing for possible targets.",
-        `Use '"' to change the mode of limiting possible targets.`,
-        "Use '#' to toggle automatic description.",
-        "Type a '.' when you are at the right place.",
-        '',
-    ];
-
-    game._pending_message = '';
-    display?.clearRow(0);
-    for (let row = 1; row <= lines.length; row++) {
-        for (let col = left - 1; col < (display?.cols ?? 80); col++)
-            display?.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    for (let row = 0; row < lines.length; row++) {
-        for (let col = 0; col < lines[row].length; col++)
-            display?.setCell(left + col, row, lines[row][col], NO_COLOR, 0);
-    }
-    const more = '--More--';
-    for (let col = 0; col < more.length; col++)
-        display?.setCell(left + col, lines.length, more[col], NO_COLOR, 0);
-    display?.setCursor(left + more.length, lines.length);
-
-    let key;
-    do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
-}
-
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
 // dat/nhcore.lua show_getpos_tip().  The tty message window and the Lua text
 // window own distinct input boundaries; after the tutorial, getpos retains
@@ -8961,7 +8811,7 @@ async function dotravel() {
             ? "Where do you want to travel to?  (For instructions type a '?')"
             : 'Where do you want to travel to?';
     for (;;) {
-        await paintTravelCursor(cursor, message);
+        await paintGetposCursor(cursor, message);
         const key = await nhgetch();
         const ch = String.fromCharCode(key);
         if (key === 27) {
@@ -9069,7 +8919,7 @@ async function doFarlook() {
         ? 'Move cursor to a monster, object or location:'
         : 'Pick a monster, object or location.';
     for (;;) {
-        await paintTravelCursor(cursor, message);
+        await paintGetposCursor(cursor, message);
         const key = await nhgetch();
         const ch = String.fromCharCode(key);
         if (key === 27) {
