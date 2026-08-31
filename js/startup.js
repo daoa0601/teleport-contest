@@ -8,10 +8,8 @@ import { init_dungeons } from './dungeon.js';
 import { initializeArtifacts } from './artifacts.js';
 import { rn2, rnd } from './rng.js';
 
-// This boundary owns live operations and their state mutations.  It does not
-// consume a recorded range list.  Role inventory and attribute construction
-// continue in u_init.js after mklev(), so the ownership registry marks the
-// larger startup subsystem partial rather than complete.
+// This is the part of newgame() that runs before level creation. Role
+// inventory and starting attributes run from u_init.js after mklev().
 export function initializeSourceStartup() {
     init_objects();
 
