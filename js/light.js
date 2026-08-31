@@ -215,9 +215,11 @@ function lightSourceName(object) {
 export async function igniteInventoryItems(
     objects,
     {
+        carrierName = null,
         state = game,
         publish = async () => {},
         random = rn2,
+        visible = true,
     } = {},
 ) {
     const ignited = [];
@@ -226,10 +228,15 @@ export async function igniteInventoryItems(
         const name = lightSourceName(object);
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
-        await publish(blind
-            ? `Your ${name} ${plural ? 'feel' : 'feels'} warm.`
-            : `Your ${name} ${plural ? 'catch' : 'catches'} light!`);
-        if (object.otyp === POT_OIL
+        const prefix = carrierName ? `The ${carrierName}'s` : 'Your';
+        if (visible) {
+            await publish(blind
+                ? `${prefix} ${name} ${plural ? 'feel' : 'feels'} warm.`
+                : `${prefix} ${name} ${
+                    plural ? 'catch' : 'catches'
+                } light!`);
+        }
+        if (!carrierName && object.otyp === POT_OIL
             && !state._knownObjectTypes?.has(POT_OIL)) {
             exerciseAttribute(4, true, state);
             recordObjectKnowledge(POT_OIL, state);

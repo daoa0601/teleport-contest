@@ -1,8 +1,10 @@
-// Monster rust-trap effects.
-// C ref: trap.c trapeffect_rust_trap(), water_damage(), and erode_obj().
+// Armor damage from fire and monster rust-trap effects.
+// C ref: trap.c burnarmor(), trapeffect_rust_trap(), water_damage(),
+// and erode_obj().
 
 import {
-    W_ARM, W_ARMC, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP,
+    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP,
+    W_WEP,
 } from './const.js';
 import { endObjectBurn } from './light.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
@@ -15,6 +17,11 @@ import { rnl, rn2 } from './rng.js';
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
+
+function recordRoll(random, calls, range) {
+    calls?.push(range);
+    return random(range);
+}
 
 function inventoryOf(monster) {
     return monster?.minvent || monster?.inventory || [];
@@ -93,6 +100,94 @@ function rustObject(
 function addWaterEffect(event, effect) {
     if (effect?.kind) event.effects.push(effect);
     return effect?.outcome || 'nothing';
+}
+
+function armorAt(monster, state, mask, hero) {
+    if (!hero) return wornObject(monster, mask);
+    return {
+        [W_ARM]: state.uarm,
+        [W_ARMC]: state.uarmc,
+        [W_ARMH]: state.uarmh,
+        [W_ARMS]: state.uarms,
+        [W_ARMG]: state.uarmg,
+        [W_ARMF]: state.uarmf,
+        [W_ARMU]: state.uarmu,
+    }[mask] || null;
+}
+
+function flammableArmor(object) {
+    if (!object) return false;
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    return (material >= 2 && material <= 8) || material === 18;
+}
+
+async function burnArmorObject(
+    object, description, visible, emitMessage, calls,
+) {
+    if (!object || !flammableArmor(object)) return false;
+    if (object.oerodeproof && object.rknown) return false;
+    if (object.oerodeproof || (object.blessed && rnl(4) === 0)) {
+        calls?.push('rnl(4)');
+        return false;
+    }
+    if (object.blessed) calls?.push('rnl(4)');
+    const erosion = object.oeroded ?? 0;
+    if (erosion >= 3) return false;
+    object.oeroded = erosion + 1;
+    if (visible && emitMessage) {
+        const suffix = erosion + 1 === 3 ? ' completely'
+            : erosion ? ' further' : '';
+        await emitMessage(`Your ${description} smoulders${suffix}!`);
+    }
+    return true;
+}
+
+export async function burnArmorByFire(
+    victim, state, emitMessage, calls = [], random = rn2,
+) {
+    const hero = victim === state.u;
+    for (;;) {
+        const slot = recordRoll(random, calls, 5);
+        let object = null;
+        let description = '';
+        let torso = false;
+        if (slot === 0) {
+            object = armorAt(victim, state, W_ARMH, hero);
+            description = 'helmet';
+        } else if (slot === 1) {
+            torso = true;
+            object = armorAt(victim, state, W_ARMC, hero)
+                || armorAt(victim, state, W_ARM, hero)
+                || armorAt(victim, state, W_ARMU, hero);
+            description = object === armorAt(
+                victim, state, W_ARMC, hero,
+            ) ? 'cloak' : object === armorAt(
+                victim, state, W_ARMU, hero,
+            ) ? 'shirt' : object?.name || 'armor';
+        } else if (slot === 2) {
+            object = armorAt(victim, state, W_ARMS, hero);
+            description = 'wooden shield';
+        } else if (slot === 3) {
+            object = armorAt(victim, state, W_ARMG, hero);
+            description = 'gloves';
+        } else {
+            object = armorAt(victim, state, W_ARMF, hero);
+            description = 'boots';
+        }
+
+        const damaged = await burnArmorObject(
+            object, description, hero, emitMessage, calls,
+        );
+        if (hero && damaged) state._armorClassDirty = true;
+        if (torso) return true;
+        if (damaged) return false;
+    }
+}
+
+export function burnHeroArmorByFire(
+    state, emitMessage, calls = [], random = rn2,
+) {
+    return burnArmorByFire(state.u, state, emitMessage, calls, random);
 }
 
 export function applyMonsterRustTrap(

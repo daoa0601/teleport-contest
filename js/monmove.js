@@ -76,7 +76,7 @@ import {
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { applyMonsterRustTrap } from './trap.js';
+import { applyMonsterRustTrap, burnArmorByFire } from './trap.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
     transformWereMonster,
@@ -4371,108 +4371,6 @@ export function fumaroles(state = game) {
         if (dx * dx + dy * dy < 15) loud = true;
     }
     return { heard, loud };
-}
-
-function fireArmorObject(monster, state, mask, hero) {
-    if (hero) {
-        const slots = {
-            [W_ARM]: state.uarm,
-            [W_ARMC]: state.uarmc,
-            [W_ARMH]: state.uarmh,
-            [W_ARMS]: state.uarms,
-            [W_ARMG]: state.uarmg,
-            [W_ARMF]: state.uarmf,
-            [W_ARMU]: state.uarmu,
-        };
-        return slots[mask] || null;
-    }
-    const inventory = monster?.minvent || monster?.inventory || [];
-    return inventory.find(object =>
-        ((object.owornmask ?? 0) & mask) !== 0) || null;
-}
-
-function flammableArmor(object) {
-    if (!object) return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    return (material >= 2 && material <= 8) || material === 18;
-}
-
-async function erodeArmorByFire(
-    object, description, visible, emitMessage, calls,
-) {
-    if (!object || !flammableArmor(object)) return false;
-    if (object.oerodeproof && object.rknown) return false;
-    if (object.oerodeproof || (object.blessed && rnl(4) === 0)) {
-        calls.push('rnl(4)');
-        return false;
-    }
-    if (object.blessed) calls.push('rnl(4)');
-    const erosion = object.oeroded ?? 0;
-    if (erosion >= 3) return false;
-    object.oeroded = erosion + 1;
-    if (visible && emitMessage) {
-        const suffix = erosion + 1 === 3 ? ' completely'
-            : erosion ? ' further' : '';
-        await emitMessage(`Your ${description} smoulders${suffix}!`);
-    }
-    return true;
-}
-
-// trap.c:burnarmor().  Its retry loop is RNG-visible even when every probed
-// slot is empty or fireproof; selecting the torso slot returns TRUE whether
-// or not torso armor exists.
-async function burnArmorByFire(
-    victim, state, emitMessage, calls, random,
-) {
-    const hero = victim === state.u;
-    for (;;) {
-        const slot = recordRandom(random, calls, 5);
-        let object = null;
-        let description = '';
-        let torso = false;
-        if (slot === 0) {
-            object = fireArmorObject(victim, state, W_ARMH, hero);
-            description = 'helmet';
-        } else if (slot === 1) {
-            torso = true;
-            object = fireArmorObject(victim, state, W_ARMC, hero)
-                || fireArmorObject(victim, state, W_ARM, hero)
-                || fireArmorObject(victim, state, W_ARMU, hero);
-            description = object === fireArmorObject(
-                victim, state, W_ARMC, hero,
-            ) ? 'cloak' : object === fireArmorObject(
-                victim, state, W_ARMU, hero,
-            ) ? 'shirt' : object?.name || 'armor';
-        } else if (slot === 2) {
-            object = fireArmorObject(victim, state, W_ARMS, hero);
-            description = 'wooden shield';
-        } else if (slot === 3) {
-            object = fireArmorObject(victim, state, W_ARMG, hero);
-            description = 'gloves';
-        } else {
-            object = fireArmorObject(victim, state, W_ARMF, hero);
-            description = 'boots';
-        }
-
-        const damaged = await erodeArmorByFire(
-            object, description, hero, emitMessage, calls,
-        );
-        if (hero && damaged) {
-            // allmain.c calls find_ac() after the complete monster/global
-            // transaction for this player input.  Keep the worn-object
-            // mutation immediate, but defer the status and attack threshold
-            // refresh until that once-per-input boundary.
-            state._armorClassDirty = true;
-        }
-        if (torso) return true;
-        if (damaged) return false;
-    }
-}
-
-export async function burnHeroArmorByFire(
-    state, emitMessage, calls, random = rn2,
-) {
-    return burnArmorByFire(state.u, state, emitMessage, calls, random);
 }
 
 function rayArmorClass(target, state) {

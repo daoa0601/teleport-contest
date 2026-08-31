@@ -27,7 +27,7 @@ import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
-    getLine, promptYesNo, performQuestExpulsion, discoverReflectingShield,
+    getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack, stopRun, wakeMonstersNear,
     wakeMonstersNearWithMessages,
     wornArmorInDestroyOrder,
@@ -87,6 +87,7 @@ import {
 } from './light.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
+    discoverReflectingShield,
 } from './zap.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
@@ -158,12 +159,12 @@ import {
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
     finishDeferredMonsterCounterattackDeath, fumaroles,
-    burnHeroArmorByFire,
     heroEveryturnEffect, runLevelRegions, runMonsterEveryturnEffects,
     runQuietMonsterActions,
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
+import { burnHeroArmorByFire } from './trap.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
