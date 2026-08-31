@@ -1,23 +1,32 @@
-// Ray attacks and elemental damage to carried objects.
-// C ref: zap.c dobuzz(), zhitm(), zhitu(), and destroy_items().
+// Ray attacks, terrain changes, and elemental item damage.
+// C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), and
+// destroy_items().
 
 import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    COLNO, DOOR, D_CLOSED, D_LOCKED, IS_ROOM, ROWNO, STONE,
-    STRAT_WAITMASK, Upolyd, W_RING, ZAP_POS,
+    COLNO, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR, DRAWBRIDGE_UP,
+    D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL,
+    IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_rogue_level,
+    Is_waterlevel, LAVAWALL, MOAT, PIT, POOL, ROOM, ROWNO, SDOOR, STONE,
+    STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB,
+    WM_MASK, W_RING, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, flush_screen, lastDirtyMapCursor, newsym,
     pline, plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game } from './gstate.js';
-import { igniteInventoryItems } from './light.js';
+import { meltIce } from './ice.js';
+import { igniteItems } from './light.js';
+import { buryFloorObjectsAt, maketrap } from './mklev.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
+import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE,
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_RESISTS, monsterIsNonliving,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
+    monsterIsNonliving,
 } from './monster_data.js';
 import {
     AMULET_OF_REFLECTION, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME,
@@ -27,16 +36,20 @@ import {
     WAN_LIGHTNING,
 } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { objectResistsDestruction } from './object_state.js';
 import {
-    OBJECT_TIMER_KIND, stopObjectTimer,
+    LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, scheduleLevelTimer,
+    stopAllObjectTimers, stopLevelTimer, stopObjectTimer,
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
+import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, NO_COLOR,
 } from './terminal.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
+import { objectWeight } from './weight.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -53,6 +66,10 @@ const PM_DEATH_RIDER = 311;
 const M2_DEMON = 0x00000100;
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
+const RAY_FIRE = 'fire';
+const RAY_COLD = 'cold';
+const RAY_SLEEP = 'sleep';
+const RAY_DEATH = 'death';
 
 export const INVENTORY_DAMAGE = Object.freeze({
     COLD: 'cold',
@@ -171,6 +188,320 @@ export function rayBounceDirection(
     return { dx: -dx, dy: -dy };
 }
 
+function removeWebAt(x, y, state = game) {
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === x && candidate.ty === y && candidate.ttyp === WEB,
+    );
+    if (!trap) return false;
+    if (state.u?.ux === x && state.u?.uy === y) {
+        if (state.u.utraptype !== TT_BURIEDBALL) {
+            state.u.utrap = 0;
+            state.u.utraptype = 0;
+        }
+    } else {
+        const monster = state.level?.monsters?.find(candidate =>
+            candidate.mx === x && candidate.my === y,
+        );
+        if (monster) monster.mtrapped = 0;
+    }
+    state.level.traps.splice(state.level.traps.indexOf(trap), 1);
+    return true;
+}
+
+function revealSecretDoor(location, state = game) {
+    const oldMask = location.doormask ?? 0;
+    location.typ = DOOR;
+    if (Is_rogue_level(state.u?.uz)) {
+        location.doormask = D_NODOOR;
+    } else {
+        location.doormask = oldMask & ~WM_MASK;
+        if (!(location.doormask & D_LOCKED))
+            location.doormask |= D_CLOSED;
+    }
+    location.arboreal_sdoor = 0;
+}
+
+function floorObjectBurns(object) {
+    return object?.otyp === GLOB_OF_GREEN_SLIME
+        || object?.oclass === SCROLL_CLASS
+        || object?.oclass === SPBOOK_CLASS;
+}
+
+function removeBurnedFloorQuantity(pile, object, count) {
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const remaining = quantity - count;
+    if (remaining > 0) {
+        object.quan = remaining;
+        object.quantity = remaining;
+        object.owt = objectWeight(object);
+        return;
+    }
+    const index = pile.indexOf(object);
+    if (index >= 0) pile.splice(index, 1);
+    stopAllObjectTimers(object);
+    object.where = 'gone';
+    object.ox = 0;
+    object.oy = 0;
+}
+
+async function burnFloorObjectsAt(x, y, state = game) {
+    const pile = state.level?.objects?.[x]?.[y] || [];
+    let burned = 0;
+    for (const object of [...pile]) {
+        if (!floorObjectBurns(object)
+            || object.otyp === SCR_FIRE
+            || object.otyp === SPE_FIREBALL
+            || objectResistsDestruction(object, 2, 100)) continue;
+        const quantity = object.quan ?? object.quantity ?? 1;
+        let destroyed = 0;
+        for (let index = 0; index < quantity; index++) {
+            if (rn2(3) === 0) destroyed++;
+        }
+        if (!destroyed) continue;
+        removeBurnedFloorQuantity(pile, object, destroyed);
+        burned += destroyed;
+    }
+
+    await igniteItems(pile, {
+        state,
+        publish: plineWithContinuation,
+        visible: cansee(x, y),
+    });
+    if (burned && couldsee(x, y)) {
+        newsym(x, y);
+        const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+        await plineWithContinuation(blind
+            ? 'You smell a whiff of smoke.'
+            : 'You see a puff of smoke.');
+    }
+    return burned;
+}
+
+export function startMeltIceTimer(
+    x, y, minimumTime = 0, state = game, random = rn2,
+) {
+    let delay = Math.max(minimumTime, 49);
+    while (++delay <= 2000) {
+        if (random(2000 - delay + 50) === 0) break;
+    }
+    if (delay > 2000) return null;
+    return scheduleLevelTimer(
+        x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY,
+        (state.moves ?? 0) + delay, state,
+    );
+}
+
+function firmExistingIce(x, y, state = game) {
+    const timer = state.level?.levelTimers?.find(candidate =>
+        candidate.x === x && candidate.y === y
+        && candidate.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY,
+    );
+    if (!timer) return;
+    const remaining = Math.max(0, timer.deadline - (state.moves ?? 0));
+    stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
+    startMeltIceTimer(x, y, remaining, state);
+}
+
+function liquidMonsterAt(x, y, state = game) {
+    return state.level?.monsters?.find(monster =>
+        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
+    ) || null;
+}
+
+function revealStrandedSwimmer(x, y, state = game) {
+    const monster = liquidMonsterAt(x, y, state);
+    if (!monster || !monster.mundetected
+        || !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000002)) return;
+    monster.mundetected = 0;
+    newsym(x, y);
+}
+
+async function freezeLiquidAt(x, y, state = game) {
+    const location = state.level?.at(x, y);
+    if (!location) return 0;
+    if (location.typ === ICE) {
+        firmExistingIce(x, y, state);
+        return 0;
+    }
+
+    const lavaWall = location.typ === LAVAWALL;
+    const drawbridgeLava = location.typ === DRAWBRIDGE_UP
+        && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_LAVA;
+    const lava = IS_LAVA(location.typ) || drawbridgeLava;
+    if (!IS_POOL(location.typ) && !lava) return 0;
+
+    const visible = cansee(x, y);
+    const deaf = !!(state.u?.deaf || state.deaf);
+    const temperature = state.level?.flags?.temperature || 0;
+    const briefFreeze = IS_WATERWALL(location.typ)
+        || (lavaWall && rn2(Math.max(2, 5 + temperature * 10)) !== 0);
+    if (briefFreeze) {
+        if (visible) {
+            await plineWithContinuation(
+                `The ${lavaWall ? 'lava' : 'water'} freezes for a moment.`,
+            );
+        } else if (!deaf) {
+            await plineWithContinuation('You hear a soft crackling.');
+        }
+        return -1000;
+    }
+
+    const wasMoat = location.typ === MOAT;
+    if (location.typ === DRAWBRIDGE_UP) {
+        location.drawbridgemask = (location.drawbridgemask ?? 0) & ~DB_UNDER;
+        location.drawbridgemask |= lava ? DB_FLOOR : DB_ICE;
+    } else {
+        location.icedpool = lava ? 0
+            : location.typ === POOL ? ICED_POOL : ICED_MOAT;
+        if (lavaWall) {
+            const north = state.level?.at(x, y - 1);
+            const south = state.level?.at(x, y + 1);
+            location.typ = IS_WALL(north?.typ) || IS_WALL(south?.typ)
+                ? VWALL : HWALL;
+        } else {
+            location.typ = lava ? ROOM : ICE;
+        }
+    }
+
+    buryFloorObjectsAt(x, y, state);
+    if (visible) {
+        const message = lava
+            ? 'The lava cools and solidifies.'
+            : wasMoat ? 'The moat is bridged with ice!'
+                : 'The water freezes.';
+        await plineWithContinuation(message);
+        newsym(x, y);
+    } else if (!lava && !deaf) {
+        await plineWithContinuation('You hear a crackling sound.');
+    }
+
+    if (state.u?.ux === x && state.u?.uy === y) {
+        if (state.u.uinwater) {
+            state.u.uinwater = 0;
+            state.u.uundetected = 0;
+            state.vision_full_recalc = 1;
+        } else if (state.u.utrap && state.u.utraptype === TT_LAVA) {
+            if (state.u.passesWalls || state.u.passes_walls) {
+                state.u.utrap = 0;
+                state.u.utraptype = 0;
+                await plineWithContinuation(
+                    'You pass through the now-solid rock.',
+                );
+            } else {
+                state.u.utrap = rnd(50) + 19;
+                state.u.utraptype = TT_INFLOOR;
+                await plineWithContinuation(
+                    'You are firmly stuck in the cooling rock.',
+                );
+            }
+        }
+    } else {
+        revealStrandedSwimmer(x, y, state);
+    }
+
+    if (!lava) startMeltIceTimer(x, y, 0, state);
+    vision_note_blocker_change(x, y);
+    return -3;
+}
+
+async function evaporatePoolAt(x, y, state = game) {
+    const location = state.level?.at(x, y);
+    if (!location || !IS_POOL(location.typ)) return 0;
+    const visible = cansee(x, y);
+    const deaf = !!(state.u?.deaf || state.deaf);
+    const waterLevel = Is_waterlevel(state.u?.uz);
+    if (!waterLevel) createSteamCloud(state, x, y, rnd(5));
+
+    let message = !deaf ? 'You hear hissing gas.'
+        : 'That seemed remarkably uneventful.';
+    let rangeChange = 0;
+    let pit = null;
+    if (location.typ === POOL) {
+        rangeChange = -3;
+        location.typ = ROOM;
+        location.flags = 0;
+        pit = await maketrap(x, y, PIT);
+        if (visible) message = 'The water evaporates.';
+    } else if (waterLevel) {
+        message = visible || !deaf ? 'Some water boils.' : null;
+    } else if (visible) {
+        message = 'Some water evaporates.';
+    }
+    if (message) await plineWithContinuation(message);
+
+    if (location.typ === ROOM) {
+        revealStrandedSwimmer(x, y, state);
+        newsym(x, y);
+        const monster = liquidMonsterAt(x, y, state);
+        if (pit && monster)
+            triggerImmediateMonsterTrap(monster, state);
+    }
+    return rangeChange;
+}
+
+async function applyRayFloorFeatures(
+    kind, x, y, state = game, { wakeMonsters } = {},
+) {
+    const location = state.level?.at(x, y);
+    if (!location) return { absorbed: false, rangeChange: 0 };
+    const visible = cansee(x, y);
+    let rangeChange = 0;
+
+    if (kind === RAY_FIRE && removeWebAt(x, y, state)) {
+        if (visible)
+            await plineWithContinuation('A web bursts into flames!');
+        newsym(x, y);
+    }
+
+    if (kind === RAY_FIRE && location.typ === ICE) {
+        await meltIce(x, y, { wake: wakeMonsters });
+    } else if (kind === RAY_FIRE) {
+        rangeChange += await evaporatePoolAt(x, y, state);
+    }
+
+    if (location.typ === SDOOR) {
+        revealSecretDoor(location, state);
+        vision_note_blocker_change(x, y);
+        newsym(x, y);
+        if (visible) {
+            await plineWithContinuation(
+                'Your bolt reveals a secret door.',
+            );
+        }
+    }
+
+    let absorbed = false;
+
+    if (closedRayDoor(location)) {
+        absorbed = true;
+        if (kind === RAY_FIRE || kind === RAY_COLD) {
+            location.doormask = D_NODOOR;
+            vision_note_blocker_change(x, y);
+            if (visible) {
+                await plineWithContinuation(kind === RAY_FIRE
+                    ? 'The door is consumed in flames!'
+                    : 'The door freezes and shatters!');
+                newsym(x, y);
+            } else if (kind === RAY_FIRE) {
+                await plineWithContinuation('You smell smoke.');
+            } else if (!(state.u?.deaf || state.deaf)) {
+                await plineWithContinuation(
+                    'You hear a deep cracking sound.',
+                );
+            }
+        } else if (visible) {
+            await plineWithContinuation('The door absorbs your bolt!');
+        } else {
+            await plineWithContinuation('You feel vibrations.');
+        }
+    }
+    if (absorbed) rangeChange = -1000;
+    if (kind === RAY_COLD)
+        rangeChange += await freezeLiquidAt(x, y, state);
+    if (kind === RAY_FIRE) await burnFloorObjectsAt(x, y, state);
+    return { absorbed, rangeChange };
+}
+
 function monsterHasElementalResistance(monster, mask, explicit) {
     return !!((MONSTER_RESISTS[monster?.mnum] || 0) & mask)
         || !!monster?.[explicit];
@@ -286,7 +617,7 @@ export async function fireRayDamageMonster(
                 visible: canProjectMonster(monster, monster.mx, monster.my),
             },
         );
-        await igniteInventoryItems(monster.minvent || monster.inventory, {
+        await igniteItems(monster.minvent || monster.inventory, {
             carrierName,
             state,
             publish,
@@ -331,6 +662,7 @@ export async function zapColdRay(
         y += dy;
         const valid = rayPositionIsValid(x, y);
         const location = valid ? game.level?.at(x, y) : null;
+        let absorbedByDoor = false;
 
         if (valid && location?.typ !== STONE) {
             if (cansee(x, y)
@@ -340,6 +672,10 @@ export async function zapColdRay(
                 paintRayCell(beamCells, x, y, dx, dy, CLR_WHITE);
                 await captureRayTraversalFrame();
             }
+
+            const floor = await applyRayFloorFeatures(RAY_COLD, x, y);
+            absorbedByDoor = floor.absorbed;
+            range += floor.rangeChange;
 
             const monster = rayMonsterAt(x, y);
             if (monster) {
@@ -424,6 +760,7 @@ export async function zapColdRay(
         }
 
         if (!rayPositionIsOpen(x, y)) {
+            if (absorbedByDoor) break;
             range--;
             if (range > 0 && rayPositionIsValid(previousX, previousY)
                 && cansee(previousX, previousY)) {
@@ -440,7 +777,7 @@ export async function zapColdRay(
 
 export async function zapFireRay(
     direction,
-    { finishMonsterKill } = {},
+    { finishMonsterKill, wakeMonsters } = {},
 ) {
     exerciseAttribute(2, true);
     let dx = DIR_DX[direction] || 0;
@@ -457,6 +794,7 @@ export async function zapFireRay(
         y += dy;
         const valid = rayPositionIsValid(x, y);
         const location = valid ? game.level?.at(x, y) : null;
+        let absorbedByDoor = false;
 
         if (valid && location?.typ !== STONE) {
             if (cansee(x, y)
@@ -466,6 +804,12 @@ export async function zapFireRay(
                 paintRayCell(beamCells, x, y, dx, dy, CLR_ORANGE);
             }
             await captureRayTraversalFrame();
+
+            const floor = await applyRayFloorFeatures(
+                RAY_FIRE, x, y, game, { wakeMonsters },
+            );
+            absorbedByDoor = floor.absorbed;
+            range += floor.rangeChange;
 
             const monster = rayMonsterAt(x, y);
             if (monster) {
@@ -540,7 +884,7 @@ export async function zapFireRay(
                         if (rn2(3) === 0)
                             await destroyFireInventory(damage);
                         if (rn2(3) === 0) {
-                            await igniteInventoryItems(game.inventory, {
+                            await igniteItems(game.inventory, {
                                 state: game,
                                 publish: plineWithContinuation,
                             });
@@ -564,6 +908,7 @@ export async function zapFireRay(
         }
 
         if (!rayPositionIsOpen(x, y)) {
+            if (absorbedByDoor) break;
             range--;
             if (range > 0 && rayPositionIsValid(previousX, previousY)
                 && cansee(previousX, previousY)) {
@@ -595,6 +940,7 @@ export async function zapSleepRay(direction) {
         y += dy;
         const valid = rayPositionIsValid(x, y);
         const location = valid ? game.level?.at(x, y) : null;
+        let absorbedByDoor = false;
 
         if (valid && location?.typ !== STONE) {
             if (cansee(x, y)
@@ -604,6 +950,9 @@ export async function zapSleepRay(direction) {
                 paintRayCell(beamCells, x, y, dx, dy, CLR_BRIGHT_BLUE);
             }
             await captureRayTraversalFrame();
+            const floor = await applyRayFloorFeatures(RAY_SLEEP, x, y);
+            absorbedByDoor = floor.absorbed;
+            range += floor.rangeChange;
             const monster = rayMonsterAt(x, y);
             if (monster) {
                 monster.mstrategy = (monster.mstrategy || 0)
@@ -655,6 +1004,7 @@ export async function zapSleepRay(direction) {
         }
 
         if (!rayPositionIsOpen(x, y)) {
+            if (absorbedByDoor) break;
             range--;
             if (range > 0 && rayPositionIsValid(previousX, previousY)
                 && cansee(previousX, previousY)) {
@@ -739,11 +1089,9 @@ export async function zapDeathRay(
                 pendingMapCursor = null;
             }
 
-            absorbedByClosedDoor = closedRayDoor(location);
-            if (absorbedByClosedDoor) {
-                range -= 1000;
-                await plineWithContinuation('The door absorbs your bolt!');
-            }
+            const floor = await applyRayFloorFeatures(RAY_DEATH, x, y);
+            absorbedByClosedDoor = floor.absorbed;
+            range += floor.rangeChange;
 
             const monster = absorbedByClosedDoor
                 ? null : rayMonsterAt(x, y);

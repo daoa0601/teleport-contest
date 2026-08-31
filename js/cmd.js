@@ -12793,6 +12793,7 @@ async function dozap() {
         && directionChar !== '.') {
         const fireRay = await zapFireRay(directionChar, {
             finishMonsterKill: finishHeroMonsterKill,
+            wakeMonsters: wakeMonstersNearWithMessages,
         });
         if (fireRay.heroDied && await handleFatalRayHit()) return;
         if (wand.dknown) {

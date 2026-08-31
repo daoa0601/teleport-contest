@@ -92,7 +92,6 @@ import {
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
     MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION,
-    SPE_BOOK_OF_THE_DEAD,
     AMULET_OF_LIFE_SAVING, SADDLE,
     WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
 } from './object_data.js';
@@ -135,7 +134,9 @@ import {
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
-import { curseObjectState } from './object_state.js';
+import {
+    curseObjectState, objectResistsDestruction,
+} from './object_state.js';
 import {
     mergable as objectsMergable, mergeObjectStacks,
 } from './object_merge.js';
@@ -3387,7 +3388,7 @@ export async function summonNastyMonsters(
     return { count: created.length, created };
 }
 
-async function maketrap(x, y, typ) {
+export async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than
     // floor traps and must not occupy the coordinate for later lregions.
@@ -3572,24 +3573,6 @@ function removeBuriedCorpse(corpse, state = game) {
     corpse.ox = corpse.oy = 0;
 }
 
-const RIDER_CORPSE_TYPES = new Set([
-    MONSTER_NAME.indexOf('Death'),
-    MONSTER_NAME.indexOf('Pestilence'),
-    MONSTER_NAME.indexOf('Famine'),
-]);
-
-function objectResists(object, ordinaryChance, artifactChance) {
-    if (object.otyp === AMULET_OF_YENDOR
-        || object.otyp === SPE_BOOK_OF_THE_DEAD
-        || object.otyp === CANDELABRUM_OF_INVOCATION
-        || object.otyp === BELL_OF_OPENING
-        || (object.otyp === CORPSE
-            && RIDER_CORPSE_TYPES.has(object.corpsenm))) return true;
-    const chance = rn2(100);
-    return chance < (object.artifact || object.oartifact
-        ? artifactChance : ordinaryChance);
-}
-
 function containingObject(target, state = game) {
     return objectsInTimerGraph(state).find(object =>
         object !== target && object.contents?.includes(target));
@@ -3646,7 +3629,7 @@ function extractObjectFromGraph(object, state = game) {
 }
 
 function buryContainedObject(object, container, x, y, state = game) {
-    if (objectResists(object, 0, 0)) return false;
+    if (objectResistsDestruction(object, 0, 0)) return false;
     const index = container.contents?.indexOf(object) ?? -1;
     if (index >= 0) container.contents.splice(index, 1);
     container.owt = objectWeight(container);
@@ -3665,7 +3648,7 @@ function buryContainedObject(object, container, x, y, state = game) {
     }
     if (object.otyp !== CORPSE
         && (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8
-        && !objectResists(object, 5, 95)) {
+        && !objectResistsDestruction(object, 5, 95)) {
         scheduleObjectTimer(
             object, OBJECT_TIMER_KIND.ROT_ORGANIC,
             (state.moves ?? 0) + 250 + rnd(250), state,
@@ -3676,7 +3659,8 @@ function buryContainedObject(object, container, x, y, state = game) {
 }
 
 function buryFloorObject(object, state = game) {
-    if (!object || object.where !== 'floor' || objectResists(object, 0, 0))
+    if (!object || object.where !== 'floor'
+        || objectResistsDestruction(object, 0, 0))
         return false;
 
     const x = object.ox;
@@ -3704,7 +3688,7 @@ function buryFloorObject(object, state = game) {
         && (underIce
             ? object.oclass === POTION_CLASS
             : (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8)
-        && !objectResists(object, 5, 95)) {
+        && !objectResistsDestruction(object, 5, 95)) {
         scheduleObjectTimer(
             object, OBJECT_TIMER_KIND.ROT_ORGANIC,
             (underIce ? 0 : 250) + rnd(250) + (state.moves ?? 0), state,
@@ -3719,7 +3703,7 @@ function buryFloorObject(object, state = game) {
     return true;
 }
 
-function buryFloorObjectsAt(x, y, state = game) {
+export function buryFloorObjectsAt(x, y, state = game) {
     const buried = [];
     const pile = state.level?.objects?.[x]?.[y];
     for (const object of [...(pile || [])]) {
@@ -4191,17 +4175,12 @@ export function runNextMeltIceBoulder(event, state = game) {
     return finishMeltIceBoulderOutcome(event, outcome, state);
 }
 
-// C refs: zap.c:melt_ice_away()/melt_ice(), trap.c:trap_ice_effects(),
-// mkobj.c:obj_ice_effects(), and dig.c:unearth_objs(). The shared timer has
-// already been claimed, so this callback owns terrain, trap, corpse-timer,
-// burial, engraving, and repaint state before its conditional message.
-export function runClaimedMeltIceTimer(claimed, state = game) {
-    if (claimed?.timer?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
-        || !claimed.position) return null;
-    const { x, y } = claimed.position;
+// C refs: zap.c:melt_ice(), trap.c:trap_ice_effects(),
+// mkobj.c:obj_ice_effects(), and dig.c:unearth_objs().
+export function meltIceAt(x, y, state = game) {
     const loc = state.level?.at?.(x, y);
     if (!loc || loc.typ !== ICE) {
-        throw new Error(`melt-ice timer at non-ice position ${x},${y}`);
+        throw new Error(`cannot melt non-ice position ${x},${y}`);
     }
     const pile = state.level?.objects?.[x]?.[y] || [];
     const boulder = pile.find(object => object.otyp === BOULDER) || null;
@@ -4243,6 +4222,12 @@ export function runClaimedMeltIceTimer(claimed, state = game) {
         boulderComplete: !floorBoulderAt(x, y, state),
         boulderOutcomes: [],
     };
+}
+
+export function runClaimedMeltIceTimer(claimed, state = game) {
+    if (claimed?.timer?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
+        || !claimed.position) return null;
+    return meltIceAt(claimed.position.x, claimed.position.y, state);
 }
 
 export function runClaimedObjectRotTimer(claimed, state = game) {

@@ -58,7 +58,9 @@ import {
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { inTown } from './room.js';
-import { createHarmlessGasCloudSelection } from './regions.js';
+import {
+    createHarmlessGasCloudSelection, createSteamCloud,
+} from './regions.js';
 import { syncBlindness } from './senses.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -4291,59 +4293,8 @@ function maybeBreatheAtHero(
     };
 }
 
-function validCloudPosition(state, x, y) {
-    if (!isok(x, y)) return false;
-    const typ = state?.level?.at?.(x, y)?.typ;
-    return IS_ROOM(typ) || IS_POOL(typ) || IS_LAVA(typ);
-}
-
-function createSteamCloud(state, x, y, cloudSize, random, calls) {
-    const cells = [{ x, y }];
-    for (let current = 0; current < cells.length; current++) {
-        if (cells.length >= cloudSize) break;
-        const origin = cells[current];
-        const directions = [
-            { x: 0, y: -1 }, { x: 0, y: 1 },
-            { x: -1, y: 0 }, { x: 1, y: 0 },
-        ];
-        for (let count = 4; count > 0; count--) {
-            const swap = recordRandom(random, calls, count);
-            const value = directions[swap];
-            directions[swap] = directions[count - 1];
-            directions[count - 1] = value;
-        }
-        let valid = 0;
-        for (const direction of directions) {
-            const nextX = origin.x + direction.x;
-            const nextY = origin.y + direction.y;
-            if (!validCloudPosition(state, nextX, nextY)) continue;
-            valid++;
-            const unpicked = !cells.some(cell =>
-                cell.x === nextX && cell.y === nextY);
-            if (valid === 4 && recordRandom(random, calls, 2) === 0)
-                continue;
-            if (unpicked) cells.push({ x: nextX, y: nextY });
-            if (cells.length >= cloudSize) break;
-        }
-    }
-    const ttl = Math.trunc(
-        (4 + recordRandom(random, calls, 3)) * cloudSize / cells.length,
-    );
-    const region = {
-        kind: 'gas-cloud', visible: true, damage: 0, ttl, cells,
-    };
-    (state.level.regions ||= []).push(region);
-    if (state.level === game.level) {
-        for (const cell of cells)
-            vision_note_blocker_change(cell.x, cell.y);
-    }
-    return region;
-}
-
-// C ref: mkmaze.c:fumaroles().  The level-change path and the ordinary
-// movement loop share this environmental owner.  Cloud expansion remains in
-// the region-shaped helper above so a sampled lava square consumes the same
-// breadth-first direction and lifetime rolls as create_gas_cloud().
+// C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
+// fire striking water.
 export function fumaroles(state = game) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
@@ -4363,7 +4314,7 @@ export function fumaroles(state = game) {
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL) continue;
         createSteamCloud(
-            state, x, y, rn2(10) + minimumSize, rn2, [],
+            state, x, y, rn2(10) + minimumSize, rn2,
         );
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
@@ -4500,7 +4451,7 @@ export async function resolveDeferredMonsterBreath(
             const cloudSize = rollOne(5);
             calls.push('rnd(5)');
             createSteamCloud(
-                state, breath.x, breath.y, cloudSize, random, calls,
+                state, breath.x, breath.y, cloudSize, random,
             );
             if (breath.lastFloorMessage !== 'hissing') {
                 breath.lastFloorMessage = 'hissing';

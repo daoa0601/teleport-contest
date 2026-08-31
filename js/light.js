@@ -212,7 +212,7 @@ function lightSourceName(object) {
     return quantity > 1 ? makePlural(qualified) : qualified;
 }
 
-export async function igniteInventoryItems(
+export async function igniteItems(
     objects,
     {
         carrierName = null,
@@ -228,7 +228,8 @@ export async function igniteInventoryItems(
         const name = lightSourceName(object);
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
-        const prefix = carrierName ? `The ${carrierName}'s` : 'Your';
+        const prefix = object.where === 'floor'
+            ? 'The' : carrierName ? `The ${carrierName}'s` : 'Your';
         if (visible) {
             await publish(blind
                 ? `${prefix} ${name} ${plural ? 'feel' : 'feels'} warm.`
@@ -236,7 +237,7 @@ export async function igniteInventoryItems(
                     plural ? 'catch' : 'catches'
                 } light!`);
         }
-        if (!carrierName && object.otyp === POT_OIL
+        if (object.otyp === POT_OIL
             && !state._knownObjectTypes?.has(POT_OIL)) {
             exerciseAttribute(4, true, state);
             recordObjectKnowledge(POT_OIL, state);

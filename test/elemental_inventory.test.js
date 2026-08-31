@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { igniteInventoryItems } from '../js/light.js';
+import { igniteItems } from '../js/light.js';
 import {
     POT_HEALING, RIN_PROTECTION, SCR_IDENTIFY, TALLOW_CANDLE,
 } from '../js/object_data.js';
@@ -49,7 +49,7 @@ test('carried paper burns and an exposed candle catches light', async () => {
         publish,
         random: alwaysZero,
     });
-    await igniteInventoryItems(state.inventory, {
+    await igniteItems(state.inventory, {
         state,
         publish,
         random: alwaysZero,
