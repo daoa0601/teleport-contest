@@ -65,6 +65,31 @@ test('a hero can teleport out before trying to crawl', async () => {
     assert.equal(messages.includes('You attempt a teleport spell.'), true);
 });
 
+test('teleport control chooses where a drowning hero lands', async () => {
+    const level = poolAtHero();
+    level.at(24, 6).typ = ROOM;
+    game.u.teleporting = true;
+    game.u.teleportControl = true;
+    game.u.ulevel = 12;
+    game.u.uen = 50;
+    game.u.uhunger = 900;
+    game.u.uluck = -10;
+    game.u.acurr.a[0] = 10;
+    game.inventory = [];
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async () => {},
+        chooseTeleportDestination: async () => ({ x: 24, y: 6 }),
+        die: async () => assert.fail('the hero should teleport'),
+    });
+
+    assert.equal(result.moved, true);
+    assert.deepEqual([game.u.ux, game.u.uy], [24, 6]);
+    assert.equal(game.u.uen, 20);
+    assert.equal(game.u.uhunger, 800);
+});
+
 test('a no-teleport level blocks escape without spending power', async () => {
     poolAtHero();
     game.level.flags.noteleport = true;

@@ -316,6 +316,7 @@ export async function heroEntersPool({
     rollDice = d,
     rollOne = rnd,
     chooseTeleportDestination = null,
+    applyLandingEffects = async () => {},
     die = finishOrdinaryDeath,
 } = {}) {
     const u = state.u;
@@ -390,6 +391,16 @@ export async function heroEntersPool({
                 resetVision();
                 recalculateVision(0);
                 repaint(teleport.movement.x, teleport.movement.y);
+                await applyLandingEffects({
+                    from: {
+                        x: teleport.movement.oldx,
+                        y: teleport.movement.oldy,
+                    },
+                    to: {
+                        x: teleport.movement.x,
+                        y: teleport.movement.y,
+                    },
+                });
                 return {
                     entered: true, moved: true, died: false,
                     from: {
@@ -426,6 +437,10 @@ export async function heroEntersPool({
             repaint(x, y);
             recalculateVision(1);
             repaint(destination.x, destination.y);
+            await applyLandingEffects({
+                from: { x, y },
+                to: destination,
+            });
             return {
                 entered: true, moved: true, died: false,
                 from: { x, y }, to: destination,

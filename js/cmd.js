@@ -8324,11 +8324,7 @@ function roomAtPosition(x, y) {
         && y >= room.ly && y <= room.hy) || null;
 }
 
-// C refs: cmd.c dotelecmd(), teleport.c dotele()/teleds(), getpos.c getpos(),
-// and priest.c intemple().  A successful Wizard position teleport returns
-// ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
-// the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition() {
+async function askTeleportDestination() {
     const firstUse = !game._travelTipShown;
     if (firstUse) {
         const dismissal = await moreUntilDismissed(
@@ -8336,23 +8332,18 @@ async function wizTeleportPosition() {
         );
         if (dismissal === 27) {
             game._pending_message = '';
-            game.context.move = 0;
-            return;
+            return { destination: null, editorOpened: false };
         }
         game._travelTipShown = true;
         const tipDismissal = await farlookTipUntilDismissed();
         if (tipDismissal === 27) {
             game._pending_message = '';
-            game.context.move = 0;
-            return;
+            return { destination: null, editorOpened: false };
         }
     }
 
-    // teleport.c:dotele() clears iflags.travelcc immediately before calling
-    // tele(), so the controlled getpos starts at the hero and cancellation
-    // cannot resurrect an interrupted travel destination.
     game._travelTarget = null;
-    const cursor = await selectMapPosition({
+    const destination = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
         prompt: firstUse
             ? (game.flags?.verbose
@@ -8364,7 +8355,20 @@ async function wizTeleportPosition() {
         goal: 'the desired position',
         describe: wizardPositionDescription,
     });
-    if (!cursor) {
+    return { destination, editorOpened: true };
+}
+
+// C refs: cmd.c dotelecmd(), teleport.c dotele()/teleds(), getpos.c getpos(),
+// and priest.c intemple().  A successful Wizard position teleport returns
+// ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
+// the destination room separately owns entry effects after relocation.
+async function wizTeleportPosition() {
+    const choice = await askTeleportDestination();
+    if (!choice.destination) {
+        if (!choice.editorOpened) {
+            game.context.move = 0;
+            return;
+        }
         // dotele(TRUE) still reaches morehungry(100) and returns a timed
         // command when scrolltele()'s controlled getpos was cancelled.
         game.u.uhunger = (game.u.uhunger ?? 900) - 100;
@@ -8377,7 +8381,7 @@ async function wizTeleportPosition() {
     // append beside it before the floor-pile window opens.
     game._retained_message = game._pending_message;
     game._pending_message = '';
-    let destination = { ...cursor };
+    let destination = { ...choice.destination };
     if (!heroTeleportDestinationOk(destination.x, destination.y)) {
         // teleport.c:scrolltele() rejects the controlled location before
         // entering safe_teleds().  Keep "Sorry..." pending while the random
@@ -16287,7 +16291,20 @@ async function finishMovedHero({
         return true;
     }
 
-    const pool = await heroEntersPool();
+    const pool = await heroEntersPool({
+        chooseTeleportDestination: async () => {
+            const choice = await askTeleportDestination();
+            return choice.destination;
+        },
+        applyLandingEffects: ({ from, to }) => finishDestinationSpotEffects({
+            oldx: from.x,
+            oldy: from.y,
+            newx: to.x,
+            newy: to.y,
+            loc: game.level?.at?.(to.x, to.y),
+            explicitAttempt: false,
+        }),
+    });
     if (pool?.moved && explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     if (pool?.moved || pool?.died) return true;
