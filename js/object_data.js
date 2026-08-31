@@ -258,6 +258,7 @@ export const WAN_LIGHT = 410;
 export const WAN_SECRET_DOOR_DETECTION = 411;
 export const WAN_CREATE_MONSTER = 413;
 export const WAN_WISHING = 414;
+export const WAN_STASIS = 415;
 export const WAN_STRIKING = 417;
 export const WAN_MAKE_INVISIBLE = 418;
 export const WAN_SPEED_MONSTER = 420;

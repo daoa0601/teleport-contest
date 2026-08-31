@@ -39,6 +39,7 @@ import {
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
+    WAN_STASIS,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -192,6 +193,27 @@ async function backfireWand(wand) {
     exerciseAttribute(0, false);
 }
 
+async function zapNoDirection(wand) {
+    if (wand.otyp === WAN_SECRET_DOOR_DETECTION) {
+        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
+        await findit();
+        if (wand.dknown) {
+            if (wasUnknown) game.u.urexp = (game.u.urexp || 0) + 10;
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        return true;
+    }
+    if (wand.otyp === WAN_STASIS) {
+        const until = (game.moves ?? 1) + rn2(21) + 10;
+        const current = game.level.flags.stasis_until ?? 0;
+        game.level.flags.stasis_until = Math.max(current, until);
+        return true;
+    }
+    return false;
+}
+
 // C refs: zap.c dozap(), weffects(), and zapyourself().
 export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     if (heroHasNoHands(game)) {
@@ -236,15 +258,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         return;
     }
 
-    if (wand.otyp === WAN_SECRET_DOOR_DETECTION) {
-        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
-        await findit();
-        if (wand.dknown) {
-            if (wasUnknown) game.u.urexp = (game.u.urexp || 0) + 10;
-            recordObjectKnowledge(wand.otyp);
-            recordObjectEncounter(wand.otyp);
-            wand.typeKnown = true;
-        }
+    if (await zapNoDirection(wand)) {
         wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);

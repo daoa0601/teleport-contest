@@ -11,7 +11,7 @@ import { meltIce } from '../js/ice.js';
 import { pushKey } from '../js/input.js';
 import {
     OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_FIRE,
-    WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
+    WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -19,6 +19,7 @@ import {
 } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
+import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -140,6 +141,20 @@ test('secret door detection reveals nearby hidden terrain and traps', async () =
     assert.equal(hiddenDoor.doormask, D_CLOSED);
     assert.equal(hiddenTrap.tseen, true);
     assert.equal(wand.typeKnown, true);
+});
+
+test('stasis blocks teleporting until its turns expire', async () => {
+    freshWeaponArena();
+    game.moves = 100;
+    const wand = carriedWand(WAN_STASIS, { name: 'stasis' });
+    game.inventory = [wand];
+    pushKey('a');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(heroTeleportRestricted(), true);
+    game.moves = game.level.flags.stasis_until + 1;
+    assert.equal(heroTeleportRestricted(), false);
 });
 
 test('a fire ray burns a monster in its path', async () => {
