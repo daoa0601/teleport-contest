@@ -22,6 +22,7 @@ import {
 import { level_difficulty } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import {
+    A_CHA,
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
@@ -3177,7 +3178,7 @@ export async function splitHeroMonsterForm(state = game) {
         parentmid: clone.m_id,
         droptime: 0,
         dropdist: 10000,
-        apport: u.acurr?.a?.[5] ?? 3,
+        apport: u.acurr?.a?.[A_CHA] ?? 3,
         whistletime: 0,
         hungrytime: (state.moves ?? 0) + 1000,
         ogoal: { x: -1, y: -1 },

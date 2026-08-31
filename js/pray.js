@@ -9,6 +9,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { promptYesNo } from './query.js';
 import { rn2, rnd, rnz } from './rng.js';
 import { loseExperienceLevel } from './exper.js';
+import { A_WIS } from './const.js';
 
 const STRIDENT = 4;
 
@@ -233,7 +234,7 @@ export async function finishPrayerOccupation(state = game) {
         await prayerContinuationLine(
             '"Thou must relearn thy lessons!"', state,
         );
-        if (state.u?.acurr?.a) state.u.acurr.a[4]--;
+        if (state.u?.acurr?.a) state.u.acurr.a[A_WIS]--;
         const loss = loseExperienceLevel(state);
         await prayerContinuationLine('You feel foolish!', state);
         if (loss.oldLevel > 1)

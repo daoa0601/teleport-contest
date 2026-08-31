@@ -5,6 +5,7 @@ import { carriedGold, containedGold, hiddenGold } from '../js/gold.js';
 import { game, resetGame } from '../js/gstate.js';
 import { goldInsightLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
 import {
     BAG_OF_HOLDING, GOLD_PIECE, SACK, SPLINT_MAIL,
 } from '../js/object_data.js';
@@ -93,13 +94,18 @@ test('container weight recursively owns coins and bag-of-holding status', () => 
 
 function carryState({ strength, constitution, strengthMax = 18,
     constitutionMax = 18, inventory }) {
+    const current = Array(6).fill(10);
+    current[A_STR] = strength;
+    current[A_CON] = constitution;
+    const maximum = current.slice();
+    const limits = Array(6).fill(18);
+    limits[A_STR] = strengthMax;
+    limits[A_CON] = constitutionMax;
     return {
-        urace: {
-            attrmax: [strengthMax, 18, 18, 18, constitutionMax, 18],
-        },
+        urace: { attrmax: limits },
         u: {
-            acurr: { a: [strength, 10, constitution, 10, 10, 10] },
-            amax: { a: [strength, 10, constitution, 10, 10, 10] },
+            acurr: { a: current },
+            amax: { a: maximum },
         },
         inventory,
         _goldCount: 0,
@@ -116,8 +122,10 @@ test('startup carry boost exhausts Strength before Constitution', () => {
     assert.deepEqual(uInitCarryAttrBoost(strengthState), {
         strength: 8, constitution: 0, excess: 0,
     });
-    assert.deepEqual(strengthState.u.acurr.a.slice(0, 3), [11, 10, 3]);
-    assert.deepEqual(strengthState.u.amax.a.slice(0, 3), [11, 10, 3]);
+    assert.equal(strengthState.u.acurr.a[A_STR], 11);
+    assert.equal(strengthState.u.acurr.a[A_CON], 3);
+    assert.equal(strengthState.u.amax.a[A_STR], 11);
+    assert.equal(strengthState.u.amax.a[A_CON], 3);
 
     const constitutionState = carryState({
         strength: 18, constitution: 3,
@@ -126,9 +134,36 @@ test('startup carry boost exhausts Strength before Constitution', () => {
     assert.deepEqual(uInitCarryAttrBoost(constitutionState), {
         strength: 0, constitution: 9, excess: 0,
     });
-    assert.deepEqual(
-        constitutionState.u.acurr.a.slice(0, 3), [18, 10, 12],
-    );
+    assert.equal(constitutionState.u.acurr.a[A_STR], 18);
+    assert.equal(constitutionState.u.acurr.a[A_CON], 12);
+});
+
+test('startup keeps each attribute under its C attribute name', () => {
+    resetGame();
+    initRng(124n);
+    const fixedAttributes = [10, 11, 12, 13, 14, 15];
+    game.urole = {
+        ...roles.find(role => role.key === 'priest'),
+        attrbase: fixedAttributes,
+        attrdist: [100, 0, 0, 0, 0, 0],
+    };
+    game.urace = {
+        ...races.find(race => race.name === 'human'),
+        attrmin: fixedAttributes,
+        attrmax: fixedAttributes,
+    };
+    game.initAlignment = aligns.find(alignment => alignment.name === 'neutral');
+    game.flags = {};
+    init_objects();
+    uInitMisc(1);
+
+    assert.equal(uInitInventoryAttrs(), true);
+    assert.equal(game.u.acurr.a[A_STR], 10);
+    assert.equal(game.u.acurr.a[A_INT], 11);
+    assert.equal(game.u.acurr.a[A_WIS], 12);
+    assert.equal(game.u.acurr.a[A_DEX], 13);
+    assert.equal(game.u.acurr.a[A_CON], 14);
+    assert.equal(game.u.acurr.a[A_CHA], 15);
 });
 
 test('startup carry boost stops honestly when both attributes are capped', () => {

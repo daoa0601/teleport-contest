@@ -5,6 +5,7 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { game } from './gstate.js';
+import { A_WIS } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
 import { OBJECT_NAMES } from './object_data.js';
 
@@ -293,7 +294,7 @@ export function touchArtifactByHero(object, artifact) {
         game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
         if (!Array.isArray(game.u._exercise))
             game.u._exercise = Array(6).fill(0);
-        game.u._exercise[4] -= rn2(2);
+        game.u._exercise[A_WIS] -= rn2(2);
     }
 
     return {

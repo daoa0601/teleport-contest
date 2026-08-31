@@ -4,7 +4,8 @@
 import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
-    ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, FAINTED, HEADSTONE,
+    A_STR, ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, FAINTED,
+    HEADSTONE,
     IS_LAVA, IS_POOL, ROWNO, VAULT, VIBRATING_SQUARE,
     WATER, W_NONPASSWALL, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
@@ -313,7 +314,7 @@ function teleportAtWillFailure(state) {
         return 'You are not able to teleport at will.';
     if ((u.uhunger ?? 0) <= 10)
         return 'You are too weak from hunger to teleport.';
-    if (currentAttribute(0, state) < 4)
+    if (currentAttribute(A_STR, state) < 4)
         return 'You lack the strength to teleport.';
 
     const energy = 5 * OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];

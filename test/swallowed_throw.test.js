@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { LOST_STOLEN, ROOM, W_AMUL } from '../js/const.js';
+import {
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, ROOM, W_AMUL,
+} from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
@@ -103,8 +105,8 @@ function installHumanWerewolfState() {
 }
 
 function installLowCapacityRockBurden(quantity) {
-    game.u.acurr.a[0] = game.u.acurr.a[2] = 3;
-    game.u.amax.a[0] = game.u.amax.a[2] = 3;
+    game.u.acurr.a[A_STR] = game.u.acurr.a[A_CON] = 3;
+    game.u.amax.a[A_STR] = game.u.amax.a[A_CON] = 3;
     const burdenRaw = mksobj(ROCK, true, false);
     burdenRaw.quan = burdenRaw.quantity = quantity;
     burdenRaw.owt = 10 * quantity;
@@ -284,7 +286,7 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
         assert.equal(dagger.how_lost, LOST_STOLEN);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game.u._weaponPracticeBySkill[skill], 1);
-        assert.equal(game.u._exercise[1], 1);
+        assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(game._pending_message,
             'The dagger hits the trapper.');
         assert.equal((game.level.objects || []).flat(2).length, 0);
@@ -312,7 +314,7 @@ test('swallowed weapon-tool preserves minimal-damage skill cadence',
         assert.equal(pick.how_lost, LOST_STOLEN);
         assert.equal(game.u.weaponSkills[skill].advance, 0);
         assert.equal(game.u._weaponPracticeBySkill, undefined);
-        assert.equal(game.u._exercise[1], 0);
+        assert.equal(game.u._exercise[A_DEX], 0);
         assert.equal(game._pending_message,
             'The pick-axe hits the trapper.');
         assert.equal((game.level.objects || []).flat(2).length, 0);
@@ -338,7 +340,7 @@ test('swallowed multi-die weapon uses the shared physical damage owner',
         assert.equal(sword.where, 'minvent');
         assert.equal(sword.how_lost, LOST_STOLEN);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
-        assert.equal(game.u._exercise[1], 0);
+        assert.equal(game.u._exercise[A_DEX], 0);
         assert.equal(game._pending_message,
             'The two-handed sword hits the trapper!');
         assert.equal((game.level.objects || []).flat(2).length, 0);
@@ -470,7 +472,7 @@ test('swallowed launched arrow uses launcher skill and excludes Strength',
         rawArrow.spe = rawArrow.enchantment = 0;
         rawArrow.oeroded = rawArrow.oeroded2 = 0;
         const arrow = addInventoryItem(rawArrow);
-        game.u.acurr.a[0] = 18;
+        game.u.acurr.a[A_STR] = 18;
 
         initRng(2413n);
         await throwThroughLiveCommand(arrow, 'k');
@@ -497,7 +499,7 @@ test('swallowed hand-thrown arrow uses ranged damage and Strength without skill'
         raw.oeroded = raw.oeroded2 = 0;
         const arrow = addInventoryItem(raw);
         const skill = setBasicWeaponSkill(arrow);
-        game.u.acurr.a[0] = 18;
+        game.u.acurr.a[A_STR] = 18;
 
         initRng(2413n);
         await throwThroughLiveCommand(arrow, 'j');
@@ -525,7 +527,7 @@ test('swallowed sickness harms both the engulfer and hero',
 
         assert.equal(engulfer.mhp, 19);
         assert.equal(game.u.uhp, 35);
-        assert.equal(game.u._exercise[2], -1);
+        assert.equal(game.u._exercise[A_CON], -1);
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
@@ -894,7 +896,7 @@ test('stressed low-HP hero drops then completes swallowed potion contact',
         await throwThroughLiveCommand(
             potion, 'l', Array(20).fill(' '),
         );
-        assert.equal(game.u._exercise[2], -1);
+        assert.equal(game.u._exercise[A_CON], -1);
         assert.deepEqual(game.inventory, [rocks]);
         assert.equal(potion.where, 'gone');
         assert.equal(game.u.dx, 0);
@@ -913,8 +915,8 @@ test('stressed four-HP gremlin drops without physical exercise then contacts',
             mh: 4,
             mhmax: 1,
         });
-        game.u.acurr.a[0] = game.u.acurr.a[2] = 3;
-        game.u.amax.a[0] = game.u.amax.a[2] = 3;
+        game.u.acurr.a[A_STR] = game.u.acurr.a[A_CON] = 3;
+        game.u.amax.a[A_STR] = game.u.amax.a[A_CON] = 3;
         const raw = mksobj(POT_WATER, true, false);
         raw.cursed = raw.blessed = false;
         raw.bknown = raw.dknown = raw.known = true;
@@ -1005,7 +1007,7 @@ test('swallowed acid damages the engulfer and exercises hero Constitution',
 
         assert.ok(engulfer.mhp >= 31 && engulfer.mhp <= 39);
         assert.equal(game.u.uhp, 40);
-        assert.equal(game.u._exercise[2], -1);
+        assert.equal(game.u._exercise[A_CON], -1);
         assert.equal(potion.where, 'gone');
     });
 
@@ -1087,7 +1089,10 @@ test('swallowed blessed gain ability restores every reduced base attribute',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 11;
-        game.u.acurr.a = [10, 12, 9, 12, 8, 12];
+        game.u.acurr.a = Array(6).fill(12);
+        game.u.acurr.a[A_STR] = 10;
+        game.u.acurr.a[A_WIS] = 9;
+        game.u.acurr.a[A_CON] = 8;
         game.u.amax.a = [12, 12, 12, 12, 12, 12];
         const raw = mksobj(POT_GAIN_ABILITY, true, false);
         raw.cursed = false;
@@ -1099,7 +1104,9 @@ test('swallowed blessed gain ability restores every reduced base attribute',
         initRng(2824n);
         await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ', ' ']);
         assert.equal(engulfer.mhp, engulfer.mhpmax);
-        assert.deepEqual(game.u.acurr.a, [11, 12, 10, 12, 9, 12]);
+        assert.equal(game.u.acurr.a[A_STR], 11);
+        assert.equal(game.u.acurr.a[A_WIS], 10);
+        assert.equal(game.u.acurr.a[A_CON], 9);
         assert.equal(potion.where, 'gone');
     });
 
@@ -1107,7 +1114,10 @@ test('cursed restore ability vapor smells but cannot restore attributes',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 12;
-        game.u.acurr.a = [10, 12, 9, 12, 8, 12];
+        game.u.acurr.a = Array(6).fill(12);
+        game.u.acurr.a[A_STR] = 10;
+        game.u.acurr.a[A_WIS] = 9;
+        game.u.acurr.a[A_CON] = 8;
         game.u.amax.a = [12, 12, 12, 12, 12, 12];
         const raw = mksobj(POT_RESTORE_ABILITY, true, false);
         raw.cursed = true;
@@ -1119,7 +1129,9 @@ test('cursed restore ability vapor smells but cannot restore attributes',
         initRng(2820n);
         await throwThroughLiveCommand(potion, 'l', [' ', ' ', ' ', ' ']);
         assert.equal(engulfer.mhp, engulfer.mhpmax);
-        assert.deepEqual(game.u.acurr.a, [10, 12, 9, 12, 8, 12]);
+        assert.equal(game.u.acurr.a[A_STR], 10);
+        assert.equal(game.u.acurr.a[A_WIS], 9);
+        assert.equal(game.u.acurr.a[A_CON], 8);
         assert.equal(game._pending_message,
             'Crash!  Ulch!  That potion smells terrible!');
         assert.equal(potion.where, 'gone');
@@ -1304,7 +1316,7 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
         assert.equal('carrierMid' in dart, false);
         assert.equal((game.level.objects || []).flat(2).includes(dart), false);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
-        assert.equal(game.u._exercise[1], 1);
+        assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(game.u.uconduct.killer, 1);
         assert.equal(game._vanquishedCounts.get(PM_TRAPPER).count, 1);
         assert.ok((game.u.uexp ?? 0) > 0);

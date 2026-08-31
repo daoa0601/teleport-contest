@@ -85,6 +85,7 @@ import {
     transformWereMonster,
 } from './were.js';
 import {
+    A_CHA, A_DEX, A_STR,
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
     ALLOW_SSM,
     ALLOW_TRAPS, ALLOW_U, ALLOW_WALL,
@@ -1786,7 +1787,7 @@ export function monsterAvoidsSokobanPushLocation(
 }
 
 function resistConflict(monster, state, rollOne, calls) {
-    const charisma = state?.u?.acurr?.a?.[5] ?? 3;
+    const charisma = state?.u?.acurr?.a?.[A_CHA] ?? 3;
     const monsterLevel = monster?.m_lev
         ?? MONSTER_LEVEL[monster?.mnum] ?? 0;
     const heroLevel = state?.u?.ulevel ?? 1;
@@ -3711,7 +3712,7 @@ function moveHostile(
     } else {
         const inLine = hostileLinedUp(monster, state, random, calls)
             && distmin(oldx, oldy, gx, gy)
-                <= (currentAttribute(0, state) / 2 + 1);
+                <= (currentAttribute(A_STR, state) / 2 + 1);
         searchForItems = appr !== 1 || !inLine;
     }
     if (searchForItems && !state?.level?.flags?.is_rogue_level) {
@@ -3913,7 +3914,7 @@ function maybeThrowOffensiveSleepingPotion(
     for (let index = 0; index < path.length; index++)
         recordRandom(random, calls, 5);
 
-    const dexterity = state?.u?.acurr?.a?.[1] ?? 10;
+    const dexterity = state?.u?.acurr?.a?.[A_DEX] ?? 10;
     const catchChance = Math.max(
         1, 100 - dexterity
             - (['monk', 'rogue'].includes(state?.urole?.key) ? 20 : 0),
@@ -4100,7 +4101,7 @@ function maybeThrowRangedWeapon(
             && candidate.mx === x && candidate.my === y);
         if (!target) {
             if (x === heroX && y === heroY) {
-                const dexterity = state?.u?.acurr?.a?.[1] ?? 10;
+                const dexterity = state?.u?.acurr?.a?.[A_DEX] ?? 10;
                 const catchChance = 100 - dexterity
                     - (['monk', 'rogue'].includes(state?.urole?.key)
                         ? 20 : 0);
@@ -7424,7 +7425,7 @@ export function resumeDeferredHeroLegs(
     const attack = action?.movement?.attack;
     if (!attack?.deferredLegEffect) return action;
     const u = state?.u;
-    const dexterity = u?.acurr?.a?.[1] ?? 10;
+    const dexterity = u?.acurr?.a?.[A_DEX] ?? 10;
     const durationSides = Math.max(1, 60 - dexterity);
     const duration = rollOne(durationSides);
     action.calls.push(`rnd(${durationSides})`);
@@ -7437,12 +7438,12 @@ export function resumeDeferredHeroLegs(
         } else if (u._woundedLegSide !== attack.legSide) {
             u._woundedLegSide = 'both';
         }
-        if (!wasWounded && u.acurr?.a) u.acurr.a[1]--;
+        if (!wasWounded && u.acurr?.a) u.acurr.a[A_DEX]--;
         if (!Array.isArray(u._exercise)) u._exercise = Array(6).fill(0);
         // attrib.c:exercise() suppresses physical exercise in monster form.
         if (!Upolyd(u)) {
-            u._exercise[0] -= recordRandom(random, action.calls, 2);
-            u._exercise[1] -= recordRandom(random, action.calls, 2);
+            u._exercise[A_STR] -= recordRandom(random, action.calls, 2);
+            u._exercise[A_DEX] -= recordRandom(random, action.calls, 2);
         }
     }
     attack.deferredLegEffect = false;
@@ -7702,7 +7703,7 @@ export function resumeDeferredHeroSpell(
 
         const wasPolymorphed = Upolyd(state.u);
         const attributes = state.u?.acurr?.a;
-        const currentStrength = attributes?.[0] ?? 3;
+        const currentStrength = attributes?.[A_STR] ?? 3;
         let reducedStrength = currentStrength - strengthLoss;
         let frailtyDamage = 0;
         while (reducedStrength < 3) {
@@ -7729,10 +7730,10 @@ export function resumeDeferredHeroSpell(
 
         const rehumanize = wasPolymorphed && (state.u.mh ?? 0) < 1;
         if (attributes && strengthLoss > 0 && !rehumanize) {
-            attributes[0] = reducedStrength;
+            attributes[A_STR] = reducedStrength;
             if (!Array.isArray(state.u._exercise))
                 state.u._exercise = Array(6).fill(0);
-            state.u._exercise[0] = 0;
+            state.u._exercise[A_STR] = 0;
         }
         attack.strengthLoss = strengthLoss;
         attack.frailtyDamage = frailtyDamage;
@@ -7772,7 +7773,7 @@ export function resumeDeferredHeroSpell(
             || heroHasFreeAction(state));
         let duration = 1;
         if (!resisted) {
-            const dexterity = state.u?.acurr?.a?.[1] ?? 10;
+            const dexterity = state.u?.acurr?.a?.[A_DEX] ?? 10;
             const dice = dexterity < 12 ? 6 : 4;
             duration = d(dice, 4);
             action.calls.push('d(' + dice + ',4)');

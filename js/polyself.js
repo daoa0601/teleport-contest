@@ -17,7 +17,10 @@ import { findArmorClass } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
-import { STAIRS } from './const.js';
+import {
+    A_CHA, A_CON, A_DEX, A_STR, A_WIS, STAIRS,
+} from './const.js';
+import { exerciseAttribute } from './attrib.js';
 import { syncBlindness } from './senses.js';
 
 const M1_NOEYES = 0x00001000;
@@ -160,16 +163,6 @@ export function rehumanizeHero(state = game) {
     };
 }
 
-function exerciseAttribute(index, improving) {
-    // attrib.c:exercise() ignores physical exercise while polymorphed; only
-    // Wisdom can affect the saved human body from a temporary form.
-    if (heroIsPolymorphed(game) && index !== 4) return;
-    const current = game.u?.acurr?.a?.[index] ?? 10;
-    const amount = improving ? (rn2(19) > current ? 1 : 0) : -rn2(2);
-    if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
-    game.u._exercise[index] += amount;
-}
-
 function clearEquipmentSlot(slot, object) {
     if (game[slot] === object) game[slot] = null;
     if (game.u?.[slot] === object) game.u[slot] = null;
@@ -228,8 +221,8 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
 
     // polymon() exercises the human attributes before installing the
     // monster form, so these two calls belong ahead of duration and HP.
-    exerciseAttribute(2, false);
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_CON, false);
+    exerciseAttribute(A_WIS, true);
 
     if (wasPolymorphed) {
         u.acurr = { a: [...(u.macurr?.a || u.acurr?.a || [])] };
@@ -272,13 +265,15 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
     if (strong) {
         // polyself.c:uasmon_maxStr(): ordinary strong forms use STR18(100).
-        if (u.amax?.a) u.amax.a[0] = 118;
-        if (u.acurr?.a) u.acurr.a[0] = 118;
+        if (u.amax?.a) u.amax.a[A_STR] = 118;
+        if (u.acurr?.a) u.acurr.a[A_STR] = 118;
     } else {
         // Non-strong forms retain current Strength but cap exceptional
         // Strength at 18 for the duration of the polymorph.
-        if (u.amax?.a) u.amax.a[0] = Math.min(u.amax.a[0] ?? 18, 18);
-        if (u.acurr?.a) u.acurr.a[0] = Math.min(u.acurr.a[0] ?? 18, 18);
+        if (u.amax?.a)
+            u.amax.a[A_STR] = Math.min(u.amax.a[A_STR] ?? 18, 18);
+        if (u.acurr?.a)
+            u.acurr.a[A_STR] = Math.min(u.acurr.a[A_STR] ?? 18, 18);
     }
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
@@ -542,9 +537,7 @@ function redistributeActiveAttributes() {
         for (let i = 0; i < 4; i++) rn2(5);
         return;
     }
-    // JS status arrays use Str, Dex, Con, Int, Wis, Cha.  C skips the mental
-    // Int/Wis fields, leaving these four physical/body indices.
-    for (const index of [0, 1, 2, 5]) {
+    for (const index of [A_STR, A_DEX, A_CON, A_CHA]) {
         const oldMax = max[index] || 1;
         const raceMin = game.urace?.attrmin?.[index] ?? 3;
         const raceMax = game.urace?.attrmax?.[index] ?? 18;
@@ -590,7 +583,7 @@ function newmanHpIncrement(level) {
         hp = (role[fixedKey] || 0) + (race[fixedKey] || 0);
         if ((role[randomKey] || 0) > 0) hp += rnd(role[randomKey]);
         if ((race[randomKey] || 0) > 0) hp += rnd(race[randomKey]);
-        hp += constitutionHpBonus(game.u?.acurr?.a?.[2] || 0);
+        hp += constitutionHpBonus(game.u?.acurr?.a?.[A_CON] || 0);
     }
     hp = Math.max(1, hp);
     if (!Array.isArray(game.u.uhpinc))
@@ -633,7 +626,7 @@ function newmanPowerIncrement(level) {
         const lower = level < (game.urole?.xlev ?? 10);
         const fixedKey = lower ? 'lofix' : 'hifix';
         const randomKey = lower ? 'lornd' : 'hirnd';
-        const range = Math.trunc((game.u?.acurr?.a?.[4] || 0) / 2)
+        const range = Math.trunc((game.u?.acurr?.a?.[A_WIS] || 0) / 2)
             + (role[randomKey] || 0) + (race[randomKey] || 0);
         const fixed = (role[fixedKey] || 0) + (race[fixedKey] || 0);
         power = energyModifier(rn2(range) + fixed);
@@ -728,11 +721,11 @@ export async function polyselfControlledNewman() {
 
 // Ordinary uncontrolled polymorph into a legal monster form.
 export async function polyselfRandomOrdinary() {
-    const constitution = game.u?.acurr?.a?.[2] ?? 10;
+    const constitution = game.u?.acurr?.a?.[A_CON] ?? 10;
     if (rn2(20) > constitution) {
         await pline('You shudder for a moment.');
         game.u.uhp = Math.max(0, (game.u.uhp || 0) - rnd(30));
-        exerciseAttribute(2, false);
+        exerciseAttribute(A_CON, false);
         return { transformed: false, learnEffect: true };
     }
 

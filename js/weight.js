@@ -7,7 +7,7 @@ import {
 import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { Is_airlevel } from './const.js';
+import { A_CON, A_STR, Is_airlevel } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 
@@ -93,8 +93,8 @@ export function inventoryWeight(state) {
 
 export function weightCapacity(state) {
     const stats = state.u?.acurr?.a || [];
-    const strength = condensedStrength(currentAttribute(0, state));
-    const constitution = stats[2] ?? 3;
+    const strength = condensedStrength(currentAttribute(A_STR, state));
+    const constitution = stats[A_CON] ?? 3;
     let capacity = 25 * (strength + constitution) + 50;
     if ((state.u?.mtimedone ?? 0) > 0
         && Number.isInteger(state.u?.umonnum)) {

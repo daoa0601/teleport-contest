@@ -2,7 +2,7 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { W_SADDLE } from './const.js';
+import { A_DEX, A_STR, W_SADDLE } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -155,7 +155,7 @@ function swallowedWeaponEligibility(
         1,
         baseMaximum
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + strengthDamageBonus(currentAttribute(0, state))
+            + strengthDamageBonus(currentAttribute(A_STR, state))
             + weaponSkillDamageBonus(state, skill),
     );
     if (!Number.isFinite(engulfer.mhp)) return null;
@@ -209,7 +209,8 @@ function swallowedProjectileEligibility(
         1,
         baseMaximum
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + (launcher ? 0 : strengthDamageBonus(currentAttribute(0, state)))
+            + (launcher ? 0
+                : strengthDamageBonus(currentAttribute(A_STR, state)))
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
     if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
@@ -322,7 +323,8 @@ export async function resolveSwallowedProjectileThrow({
         1,
         physicalDamage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + (launcher ? 0 : strengthDamageBonus(currentAttribute(0, state)))
+            + (launcher ? 0
+                : strengthDamageBonus(currentAttribute(A_STR, state)))
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
     engulfer.mhp -= damage;
@@ -338,12 +340,12 @@ export async function resolveSwallowedProjectileThrow({
         // hmon()->xkilled() consumes the killing missile through mpickobj(),
         // then thitmonst() returns past exercise without mulch or passive_obj.
         await finishKill(engulfer, thrown);
-        exerciseAttribute(1, true, state);
+        exerciseAttribute(A_DEX, true, state);
         state.context.move = 1;
         return true;
     }
     await wakeMonster(engulfer);
-    exerciseAttribute(1, true, state);
+    exerciseAttribute(A_DEX, true, state);
 
     if (shouldMulchMissile(thrown)) {
         destroyMulchedProjectile(thrown);
@@ -393,7 +395,7 @@ export async function resolveSwallowedWeaponThrow({
         1,
         physicalDamage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + strengthDamageBonus(currentAttribute(0, state))
+            + strengthDamageBonus(currentAttribute(A_STR, state))
             + weaponSkillDamageBonus(state, skill),
     );
     engulfer.mhp -= damage;
@@ -407,12 +409,12 @@ export async function resolveSwallowedWeaponThrow({
     );
     if (engulfer.mhp <= 0) {
         await finishKill(engulfer, thrown);
-        exerciseAttribute(1, true, state);
+        exerciseAttribute(A_DEX, true, state);
         state.context.move = 1;
         return true;
     }
     await wakeMonster(engulfer);
-    exerciseAttribute(1, true, state);
+    exerciseAttribute(A_DEX, true, state);
 
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },

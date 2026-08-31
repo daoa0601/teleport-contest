@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { GameMap } from '../js/game.js';
+import { A_CON, A_DEX, A_INT } from '../js/const.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
@@ -953,8 +954,11 @@ test('ability potion heals a peaceful monster without angering it', async () => 
 test('uncursed restore-ability vapor repairs only the first reduced attribute',
     async () => {
         resetGame();
+        const current = Array(6).fill(12);
+        current[A_INT] = 10;
+        current[A_CON] = 8;
         game.u = {
-            acurr: { a: [12, 10, 12, 12, 8, 12] },
+            acurr: { a: current },
             amax: { a: [12, 12, 12, 12, 12, 12] },
         };
         const potion = potionObject(POT_RESTORE_ABILITY);
@@ -965,11 +969,12 @@ test('uncursed restore-ability vapor repairs only the first reduced attribute',
             potion,
             publish: async () => {},
         });
-        assert.equal(result.abilityStart, 4);
-        assert.deepEqual(game.u.acurr.a, [12, 10, 12, 12, 9, 12]);
+        assert.equal(result.abilityStart, A_CON);
+        assert.equal(game.u.acurr.a[A_INT], 10);
+        assert.equal(game.u.acurr.a[A_CON], 9);
     });
 
-test('full-healing vapor heals both polymorph and base HP per fallthrough',
+test('full-healing vapor heals both HP pools without exercising a temporary body',
     async () => {
         resetGame();
         game.u = {
@@ -996,32 +1001,33 @@ test('full-healing vapor heals both polymorph and base HP per fallthrough',
         assert.equal(game.u.uhp, 23);
         assert.equal(game.u.blindTurns, 0);
         assert.equal(game.u.deafTurns, 0);
-        assert.equal(game.u._exercise[2], 1);
+        assert.equal(game.u._exercise, undefined);
     });
 
-test('sickness vapor damages only the active polymorph form', async () => {
-    resetGame();
-    game.urole = { key: 'tourist' };
-    game.u = {
-        mtimedone: 10,
-        mh: 12,
-        mhmax: 20,
-        uhp: 30,
-        uhpmax: 30,
-        acurr: { a: [12, 12, 12, 12, 12, 12] },
-        amax: { a: [12, 12, 12, 12, 12, 12] },
-    };
+test('sickness vapor damages a temporary form without exercising Constitution',
+    async () => {
+        resetGame();
+        game.urole = { key: 'tourist' };
+        game.u = {
+            mtimedone: 10,
+            mh: 12,
+            mhmax: 20,
+            uhp: 30,
+            uhpmax: 30,
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            amax: { a: [12, 12, 12, 12, 12, 12] },
+        };
 
-    initRng(2864n);
-    await applySupportedPotionVapor({
-        state: game,
-        potion: potionObject(POT_SICKNESS),
-        publish: async () => {},
+        initRng(2864n);
+        await applySupportedPotionVapor({
+            state: game,
+            potion: potionObject(POT_SICKNESS),
+            publish: async () => {},
+        });
+        assert.equal(game.u.mh, 7);
+        assert.equal(game.u.uhp, 30);
+        assert.equal(game.u._exercise, undefined);
     });
-    assert.equal(game.u.mh, 7);
-    assert.equal(game.u.uhp, 30);
-    assert.equal(game.u._exercise[2], -1);
-});
 
 test('Healer role is immune to sickness vapor', async () => {
     resetGame();
@@ -1061,7 +1067,7 @@ test('sickness vapor cannot reduce base HP below one', async () => {
         publish: async () => {},
     });
     assert.equal(game.u.uhp, 1);
-    assert.equal(game.u._exercise[2], -1);
+    assert.equal(game.u._exercise[A_CON], -1);
 });
 
 test('confusion vapor announces and increments a clear hero timeout',
@@ -1117,7 +1123,7 @@ test('paralysis vapor installs live helpless state and Dexterity exercise',
         assert.equal(game._helplessTurns, 5);
         assert.equal(game._helplessReason, 'frozen by a potion');
         assert.equal(game._helplessDoneMessage, 'You can move again.');
-        assert.equal(game.u._exercise[1], -1);
+        assert.equal(game.u._exercise[A_DEX], -1);
         assert.equal(result.helplessDuration, 5);
     });
 
@@ -1187,7 +1193,7 @@ test('sleeping vapor installs its distinct helpless reason', async () => {
     assert.equal(game._helplessTurns, 5);
     assert.equal(game._helplessReason, 'sleeping off a magical draught');
     assert.equal(game._helplessDoneMessage, 'You can move again.');
-    assert.equal(game.u._exercise[1], 0);
+    assert.equal(game.u._exercise[A_DEX], 0);
     assert.equal(result.helplessDuration, 5);
 });
 
@@ -1240,7 +1246,7 @@ test('speed vapor installs timed very-fast movement and exercises Dexterity',
         assert.deepEqual(messages, ['Your knees seem more flexible now.']);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 1);
-        assert.equal(game.u._exercise[1], 1);
+        assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(result.speedDuration, 1);
     });
 
@@ -1265,7 +1271,7 @@ test('existing intrinsic speed suppresses prose but not duration or exercise',
         assert.deepEqual(messages, []);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 4);
-        assert.equal(game.u._exercise[1], 1);
+        assert.equal(game.u._exercise[A_DEX], 1);
     });
 
 test('speed vapor saturates the timed very-fast counter', async () => {
@@ -1285,7 +1291,7 @@ test('speed vapor saturates the timed very-fast counter', async () => {
         publish: async () => {},
     });
     assert.equal(game.u.veryFastTurns, 0x00ffffff);
-    assert.equal(game.u._exercise[1], 1);
+    assert.equal(game.u._exercise[A_DEX], 1);
 });
 
 test('blindness vapor darkens sight immediately and extends the live timeout',

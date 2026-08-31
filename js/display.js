@@ -6,6 +6,7 @@ import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
@@ -1433,7 +1434,10 @@ export function _statusLine1() {
         ? (rank?.f || rank?.m || game.urole?.name?.f || game.urole?.name?.m)
         : (rank?.m || game.urole?.name?.m));
     const title = `${name} the ${role}`;
-    const stats = `St:${formatStrength(currentAttribute(0))} Dx:${u.acurr?.a?.[1] || '?'} Co:${u.acurr?.a?.[2] || '?'} In:${u.acurr?.a?.[3] || '?'} Wi:${u.acurr?.a?.[4] || '?'} Ch:${u.acurr?.a?.[5] || '?'}`;
+    const stats = `St:${formatStrength(currentAttribute(A_STR))} `
+        + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
+        + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
+        + `Ch:${currentAttribute(A_CHA)}`;
     const align = u.ualign?.type === 0 ? 'Neutral' : u.ualign?.type > 0 ? 'Lawful' : 'Chaotic';
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM } from '../js/const.js';
+import { A_DEX, A_STR, ROOM } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
@@ -62,8 +62,8 @@ async function twoWeaponLichenOutcome(role) {
         oclass: 2, name: 'wakizashi',
         spe: 0, enchantment: 0, worn: true, owornmask: 2,
     };
-    game.u.acurr.a[0] = 18;
-    game.u.acurr.a[1] = 14;
+    game.u.acurr.a[A_STR] = 18;
+    game.u.acurr.a[A_DEX] = 14;
     game.u.weaponSkills = Array.from({ length: 38 }, () => ({
         skill: 0, maxSkill: 0, advance: 0,
     }));

@@ -6,9 +6,13 @@ import {
     bot, docrtRecalc, flush_screen, formatStrength, pline,
 } from './display.js';
 import { showDisclosureOverlay, showTextPages } from './windows.js';
-import { In_endgame } from './const.js';
+import {
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, In_endgame,
+} from './const.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import {
+    ATTRIBUTE_DISPLAY_ORDER, currentAttribute, exerciseAttribute,
+} from './attrib.js';
 import { heroIsDisplaced, magicNegation } from './armor.js';
 import { invWeight, nearCapacity } from './weight.js';
 import {
@@ -342,34 +346,36 @@ function liveAttributePropertyLines() {
     return lines;
 }
 
-function characteristicLine(index) {
+function characteristicLine(attribute) {
     const u = game.u;
-    const names = [
-        'strength', 'dexterity', 'constitution',
-        'intelligence', 'wisdom', 'charisma',
-    ];
-    const rawCurrent = u.acurr?.a?.[index] ?? 0;
-    const current = currentAttribute(index, game);
+    const names = new Map([
+        [A_STR, 'strength'], [A_DEX, 'dexterity'],
+        [A_CON, 'constitution'], [A_INT, 'intelligence'],
+        [A_WIS, 'wisdom'], [A_CHA, 'charisma'],
+    ]);
+    const rawCurrent = u.acurr?.a?.[attribute] ?? 0;
+    const current = currentAttribute(attribute, game);
     // ABASE is still implicit in older saves.  Wounded legs are the current
     // temporary ACURR-only mutation exercised here; permanent exercise and
     // poison changes already leave current equal to their live base.
-    const woundedDexterity = index === 1
+    const woundedDexterity = attribute === A_DEX
         && (u._woundedLegTurns ?? 0) > 0 && u._woundedLegSide;
-    const base = u.abase?.a?.[index]
+    const base = u.abase?.a?.[attribute]
         ?? (woundedDexterity ? rawCurrent + 1 : rawCurrent);
-    const peak = u.amax?.a?.[index] ?? base;
-    const internalIndex = [0, 3, 4, 1, 2, 5][index];
-    const limit = game.urace?.attrmax?.[internalIndex];
-    const humanLimit = [118, 18, 18, 18, 18, 18][internalIndex];
+    const peak = u.amax?.a?.[attribute] ?? base;
+    const limit = game.urace?.attrmax?.[attribute];
+    const humanLimit = attribute === A_STR ? 118 : 18;
     const showLimit = limit != null && limit !== humanLimit;
-    const format = value => index === 0 ? formatStrength(value) : value;
+    const format = value => attribute === A_STR
+        ? formatStrength(value) : value;
     const details = [];
     if (current !== base) details.push(`base:${format(base)}`);
     if (base !== peak) details.push(`peak:${format(peak)}`);
     if (showLimit) details.push(`limit:${format(limit)}`);
     const annotation = details.length
         ? ` (current; ${details.join(', ')})` : '';
-    return `  Your ${names[index]} is ${format(current)}${annotation}.`;
+    return `  Your ${names.get(attribute)} is ${
+        format(current)}${annotation}.`;
 }
 
 function killedCountPhrase(count) {
@@ -500,8 +506,8 @@ function basicEnlightenmentLines(roleName) {
         '',
         ' Characteristics:',
     );
-    for (let index = 0; index < 6; index++)
-        lines.push(characteristicLine(index));
+    for (const attribute of ATTRIBUTE_DISPLAY_ORDER)
+        lines.push(characteristicLine(attribute));
     return lines;
 }
 
@@ -583,14 +589,13 @@ export async function doEnlightenmentEffect() {
     await flush_screen(1);
     await showEnlightenment({ basic: false, magic: true });
     await pline('The feeling subsides.');
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_WIS, true);
 }
 
-function finalAttributeLimit(displayIndex) {
-    const internalIndex = [0, 3, 4, 1, 2, 5][displayIndex];
-    const limit = game.urace?.attrmax?.[internalIndex]
-        ?? [118, 18, 18, 18, 18, 18][internalIndex];
-    return displayIndex === 0 ? formatStrength(limit) : limit;
+function finalAttributeLimit(attribute) {
+    const limit = game.urace?.attrmax?.[attribute]
+        ?? (attribute === A_STR ? 118 : 18);
+    return attribute === A_STR ? formatStrength(limit) : limit;
 }
 
 function finalAttributePages() {
@@ -654,15 +659,15 @@ function finalAttributePages() {
             ? ` Autopickup was on for '${game.flags.pickup_types}' plus thrown.`
             : ` Autopickup was ${game.flags?.pickup ? 'on' : 'off'}.`;
         page1[20] = 'Final Characteristics:';
-        page1[21] = ` Your strength was ${formatStrength(stats[0])} (limit:${finalAttributeLimit(0)}).`;
-        page1[22] = ` Your dexterity was ${stats[1]} (limit:${finalAttributeLimit(1)}).`;
+        page1[21] = ` Your strength was ${formatStrength(stats[A_STR])} (limit:${finalAttributeLimit(A_STR)}).`;
+        page1[22] = ` Your dexterity was ${stats[A_DEX]} (limit:${finalAttributeLimit(A_DEX)}).`;
         page1[23] = ' --More--';
 
         const page2 = Array(24).fill('');
-        page2[0] = ` Your constitution was ${stats[2]} (limit:${finalAttributeLimit(2)}).`;
-        page2[1] = ` Your intelligence was ${stats[3]} (limit:${finalAttributeLimit(3)}).`;
-        page2[2] = ` Your wisdom was ${stats[4]} (limit:${finalAttributeLimit(4)}).`;
-        page2[3] = ` Your charisma was ${stats[5]} (limit:${finalAttributeLimit(5)}).`;
+        page2[0] = ` Your constitution was ${stats[A_CON]} (limit:${finalAttributeLimit(A_CON)}).`;
+        page2[1] = ` Your intelligence was ${stats[A_INT]} (limit:${finalAttributeLimit(A_INT)}).`;
+        page2[2] = ` Your wisdom was ${stats[A_WIS]} (limit:${finalAttributeLimit(A_WIS)}).`;
+        page2[3] = ` Your charisma was ${stats[A_CHA]} (limit:${finalAttributeLimit(A_CHA)}).`;
         page2[5] = 'Final Status:';
         if ((u._sleepyTimeout || 0) > 0) {
             page2[6] = ' You fell asleep uncontrollably.';
@@ -777,12 +782,12 @@ function finalAttributePages() {
     lines.push(
         '',
         'Final Characteristics:',
-        ` Your strength was ${formatStrength(stats[0])} (limit:${finalAttributeLimit(0)}).`,
-        ` Your dexterity was ${stats[1]} (limit:${finalAttributeLimit(1)}).`,
-        ` Your constitution was ${stats[2]} (limit:${finalAttributeLimit(2)}).`,
-        ` Your intelligence was ${stats[3]} (limit:${finalAttributeLimit(3)}).`,
-        ` Your wisdom was ${stats[4]} (limit:${finalAttributeLimit(4)}).`,
-        ` Your charisma was ${stats[5]} (limit:${finalAttributeLimit(5)}).`,
+        ` Your strength was ${formatStrength(stats[A_STR])} (limit:${finalAttributeLimit(A_STR)}).`,
+        ` Your dexterity was ${stats[A_DEX]} (limit:${finalAttributeLimit(A_DEX)}).`,
+        ` Your constitution was ${stats[A_CON]} (limit:${finalAttributeLimit(A_CON)}).`,
+        ` Your intelligence was ${stats[A_INT]} (limit:${finalAttributeLimit(A_INT)}).`,
+        ` Your wisdom was ${stats[A_WIS]} (limit:${finalAttributeLimit(A_WIS)}).`,
+        ` Your charisma was ${stats[A_CHA]} (limit:${finalAttributeLimit(A_CHA)}).`,
         '',
         'Final Status:',
         " You weren't hungry.",

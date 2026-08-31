@@ -2,7 +2,7 @@
 // C refs: dothrow.c throwit(); attrib.c exercise().
 
 import { exerciseAttribute } from './attrib.js';
-import { Is_airlevel } from './const.js';
+import { A_CON, Is_airlevel } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import {
@@ -108,7 +108,7 @@ export async function applyLowStaminaThrow({
         } drops from your grasp.`,
     );
     // exercise() ignores physical attributes while polymorphed.
-    if (!polymorphed) exerciseAttribute(2, false, state);
+    if (!polymorphed) exerciseAttribute(A_CON, false, state);
     u.dx = u.dy = 0;
     u.dz = 1;
     return true;

@@ -3,7 +3,8 @@
 // dokick.c:ghitm().
 
 import {
-    DOOR, D_CLOSED, D_LOCKED, IS_SOFT, IS_WATERWALL, Is_airlevel,
+    A_CHA, A_STR, DOOR, D_CLOSED, D_LOCKED, IS_SOFT, IS_WATERWALL,
+    Is_airlevel,
     Is_waterlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -40,7 +41,7 @@ const MERCENARY_BASE_BRIBE = new Map([
 ]);
 
 function sourceStrength(state) {
-    const strength = currentAttribute(0, state);
+    const strength = currentAttribute(A_STR, state);
     if (strength <= 18) return Math.max(strength, 3);
     if (strength <= 121) return 19 + Math.trunc(strength / 50);
     return Math.min(strength, 125) - 100;
@@ -167,7 +168,7 @@ async function finishMercenaryCatch(monster, value, state) {
     const wasAngry = !monster.mpeaceful;
     let required = MERCENARY_BASE_BRIBE.get(monster.mnum) ?? 0;
     if (required && rn2(3) !== 0) {
-        const charisma = Math.max(3, currentAttribute(5, state));
+        const charisma = Math.max(3, currentAttribute(A_CHA, state));
         required += Math.trunc((heroGoldAmount(state)
             + (state.u?.ulevel ?? 1) * rn2(5)) / charisma);
         if (value > required) monster.mpeaceful = 1;

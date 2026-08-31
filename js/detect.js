@@ -2,12 +2,14 @@
 // C ref: detect.c — dosearch(), dosearch0().
 
 import { game } from './gstate.js';
+import { exerciseAttribute } from './attrib.js';
 import {
     canSpotMonster, feel_location, map_background, map_invisible,
     map_object, map_trap, newsym, pline, unmap_invisible,
 } from './display.js';
 import {
-    BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, Is_rogue_level,
+    A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR,
+    Is_rogue_level,
     D_CLOSED, D_LOCKED, D_TRAPPED,
     STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS,
     W_NONDIGGABLE, W_NONPASSWALL,
@@ -45,10 +47,7 @@ export function premap_detect() {
 }
 
 function exerciseWisdom() {
-    const wisdom = game.u?.acurr?.a?.[4] ?? 10;
-    const amount = rn2(19) > wisdom ? 1 : 0;
-    if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
-    game.u._exercise[4] += amount;
+    exerciseAttribute(A_WIS, true);
 }
 
 function foundTrapMessage(trap) {

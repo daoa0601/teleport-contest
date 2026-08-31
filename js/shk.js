@@ -10,7 +10,7 @@ import { rn2 } from './rng.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsDeaf } from './senses.js';
-import { MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
+import { A_CHA, A_WIS, MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
 import { roomForRoomno } from './room.js';
 import { intemple, templeRoomAt } from './priest.js';
 import {
@@ -356,7 +356,7 @@ export function shopObjectUnitCost(object, resident = null, state = game) {
         divisor *= 3;
     }
 
-    const charisma = state?.u?.acurr?.a?.[5] ?? 10;
+    const charisma = state?.u?.acurr?.a?.[A_CHA] ?? 10;
     if (charisma > 18) divisor *= 2;
     else if (charisma === 18) multiplier *= 2, divisor *= 3;
     else if (charisma >= 16) multiplier *= 3, divisor *= 4;
@@ -403,7 +403,7 @@ export async function chargeUnpaidLampUse(object, state = game) {
         : null;
     if (message) {
         await pline(message);
-        exerciseAttribute(4, true, state);
+        exerciseAttribute(A_WIS, true, state);
     }
     resident.eshk.debit = (resident.eshk.debit ?? 0) + amount;
     return { resident, amount, message };

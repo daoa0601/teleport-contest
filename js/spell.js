@@ -8,7 +8,8 @@ import {
 import { nhgetch } from './input.js';
 import { NO_COLOR, ATR_INVERSE } from './terminal.js';
 import { rnd, rn2, d } from './rng.js';
-import { STRAT_APPEARMSG, STRAT_WAITFORU } from './const.js';
+import { A_INT, A_WIS, STRAT_APPEARMSG, STRAT_WAITFORU } from './const.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
     OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
@@ -34,19 +35,12 @@ function isMetallic(object) {
 }
 
 function castingStat(config) {
-    // The live JS status vector uses display order: Str, Dex, Con, Int, Wis,
-    // Cha.  Role metadata names the C casting statistic so this conversion
-    // remains explicit at the boundary.
-    const index = config.stat === 'wisdom' ? 4 : 3;
-    return game.u?.acurr?.a?.[index] ?? 10;
+    const attribute = config.stat === 'wisdom' ? A_WIS : A_INT;
+    return currentAttribute(attribute);
 }
 
 function exerciseWisdom(improving = true, g = game) {
-    const index = 4;
-    const current = g.u?.acurr?.a?.[index] ?? 10;
-    const amount = improving ? (rn2(19) > current ? 1 : 0) : -rn2(2);
-    if (!Array.isArray(g.u._exercise)) g.u._exercise = Array(6).fill(0);
-    g.u._exercise[index] += amount;
+    exerciseAttribute(A_WIS, improving, g);
 }
 
 function spellbookDetails(book) {
@@ -152,7 +146,7 @@ export async function studyBook(book, g = game) {
     book.in_use = true;
     let tooHard = !!book.cursed;
     if (!book.blessed && !book.cursed) {
-        const intelligence = g.u?.acurr?.a?.[3] ?? 10;
+        const intelligence = currentAttribute(A_INT, g);
         const readAbility = intelligence + 4
             + Math.trunc((g.u?.ulevel ?? 1) / 2)
             - 2 * details.level;

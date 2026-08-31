@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ICE, ROOM } from '../js/const.js';
+import { A_CON, A_STR, ICE, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import {
     finishInventoryGlobTimer, runClaimedFloorGlobTimer,
@@ -216,8 +216,8 @@ test('inventory threshold prose precedes reschedule and retains live mass', () =
 
 test('inventory dissolution precedes deletion and then relieves capacity', () => {
     freshGlobState(12);
-    game.u.acurr.a[0] = game.u.amax.a[0] = 3;
-    game.u.acurr.a[2] = game.u.amax.a[2] = 3;
+    game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 3;
+    game.u.acurr.a[A_CON] = game.u.amax.a[A_CON] = 3;
     const ballast = {
         otyp: 0, oclass: 1, owt: 200, quan: 1,
         quantity: 1, where: 'inventory',

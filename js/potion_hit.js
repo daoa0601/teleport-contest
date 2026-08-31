@@ -4,7 +4,8 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import {
-    M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, W_ARMC, W_ARMOR,
+    A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd,
+    W_ARMC, W_ARMOR,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
@@ -328,7 +329,7 @@ function installPotionHelplessness(state, duration, reason) {
     state._helplessTurns = duration;
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
-    exerciseAttribute(1, false, state);
+    exerciseAttribute(A_DEX, false, state);
 }
 
 function monsterWearsSpeedBoots(monster) {
@@ -472,7 +473,7 @@ async function finishPotionVaporKnowledge(state, potion, identifiesType) {
     if (identifiesType) {
         if (!objectTypeKnown(potion, state)) {
             // makeknown()->discover_object(..., credit_hero=TRUE)
-            exerciseAttribute(4, true, state);
+            exerciseAttribute(A_WIS, true, state);
             recordObjectKnowledge(potion.otyp, state);
             recordObjectEncounter(potion.otyp, state);
         }
@@ -531,13 +532,13 @@ export async function applySupportedPotionVapor({
             syncBlindness(state);
             syncDeafness(state);
         }
-        exerciseAttribute(2, true, state);
+        exerciseAttribute(A_CON, true, state);
     } else if (potion.otyp === POT_SICKNESS
         && state.urole?.key !== 'healer') {
         const hero = state.u || (state.u = {});
         if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
         else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
-        exerciseAttribute(2, false, state);
+        exerciseAttribute(A_CON, false, state);
     } else if (potion.otyp === POT_HALLUCINATION) {
         await publish('You have a momentary vision.');
     } else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
@@ -588,7 +589,7 @@ export async function applySupportedPotionVapor({
             Math.max(0, hero.veryFastTurns ?? 0) + speedDuration,
         );
         hero.veryFast = true;
-        exerciseAttribute(1, true, state);
+        exerciseAttribute(A_DEX, true, state);
     } else if (potion.otyp === POT_BLINDNESS) {
         const hero = state.u || (state.u = {});
         const wasBlind = heroIsBlind(state);
@@ -624,7 +625,7 @@ export async function applySupportedPotionVapor({
             state, potion, publish,
         });
     } else if ([POT_ACID, POT_POLYMORPH].includes(potion.otyp)) {
-        exerciseAttribute(2, false, state);
+        exerciseAttribute(A_CON, false, state);
     } else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
@@ -1085,7 +1086,7 @@ export async function hitMonsterWithSupportedPotion({
         breathedVapor = distance === 0;
         if (!breathedVapor && distance > 0 && distance < 3) {
             breathedVapor = rn2(
-                Math.trunc((1 + currentAttribute(1, state)) / 2),
+                Math.trunc((1 + currentAttribute(A_DEX, state)) / 2),
             ) === 0;
         }
         if (breathedVapor) {

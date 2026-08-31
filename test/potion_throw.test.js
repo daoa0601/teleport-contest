@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ROOM, STONE, W_ARM, W_ARMC } from '../js/const.js';
+import {
+    A_CON, A_DEX, ROOM, STONE, W_ARM, W_ARMC,
+} from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
@@ -24,6 +26,8 @@ const PM_PURPLE_WORM = 115;
 
 function freshMapPotionState(distance = 2) {
     resetGame();
+    const attributes = Array(6).fill(12);
+    attributes[A_DEX] = 18;
     const monster = {
         m_id: 2700 + distance,
         mnum: PM_PURPLE_WORM,
@@ -45,8 +49,8 @@ function freshMapPotionState(distance = 2) {
         ulevel: 4,
         uhp: 30,
         uhpmax: 30,
-        acurr: { a: [12, 18, 12, 12, 12, 12] },
-        amax: { a: [12, 18, 12, 12, 12, 12] },
+        acurr: { a: attributes.slice() },
+        amax: { a: attributes.slice() },
         ualign: { type: 0, record: 0 },
         uconduct: {},
         uhave: {},
@@ -208,7 +212,7 @@ test('map extra healing contact heals monster then hero through nearby vapor',
         assert.equal(game.u.blindTurns, 0);
         assert.equal(game.u.deafTurns, 0);
         assert.equal(potion.where, 'gone');
-        assert.equal(game.u._exercise[2], 1);
+        assert.equal(game.u._exercise[A_CON], 1);
     });
 
 test('map sickness contact harms monster before nearby hero vapor', async () => {
@@ -223,7 +227,7 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
     assert.equal(monster.mhp, 5);
     assert.equal(monster.msleeping, 0);
     assert.equal(game.u.uhp, 25);
-    assert.equal(game.u._exercise[2], -1);
+    assert.equal(game.u._exercise[A_CON], -1);
     assert.equal(potion.where, 'gone');
 });
 
@@ -303,7 +307,7 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         assert.equal(monster.msleeping, 0);
         assert.equal(game.u.veryFast, true);
         assert.equal(game.u.veryFastTurns, 5);
-        assert.equal(game.u._exercise[1], 0);
+        assert.equal(game.u._exercise[A_DEX], 0);
         assert.equal(potion.where, 'gone');
     });
 

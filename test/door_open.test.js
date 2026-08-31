@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { D_CLOSED, D_ISOPEN, DOOR, ROOM, STONE } from '../js/const.js';
+import {
+    A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, DOOR, ROOM, STONE,
+} from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
@@ -30,7 +32,9 @@ async function openDoorOutcome(role) {
         });
     }
     installLiveCommandHero({ role, level, x: 42, y: 18 });
-    game.u.acurr.a[0] = game.u.acurr.a[1] = game.u.acurr.a[2] = 25;
+    game.u.acurr.a[A_STR] = 25;
+    game.u.acurr.a[A_DEX] = 25;
+    game.u.acurr.a[A_CON] = 25;
 
     initRng(902n);
     await rhack('l'.charCodeAt(0));

@@ -2,6 +2,7 @@
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 
 import { game } from './gstate.js';
+import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import {
     bot, consumeHallucinatedMenuObjectGlyph, docrtRecalc, flush_screen,
     formatStrength, pline,
@@ -259,8 +260,12 @@ function rerollItemDescription(item) {
 
 function rerollAttributeLine() {
     const values = game.u?.acurr?.a || [];
-    return `St:${formatStrength(values[0])} Dx:${values[1] ?? '?'} Co:${values[2] ?? '?'} `
-        + `In:${values[3] ?? '?'} Wi:${values[4] ?? '?'} Ch:${values[5] ?? '?'}`;
+    const displayed = ATTRIBUTE_DISPLAY_ORDER.map(
+        attribute => values[attribute] ?? '?',
+    );
+    return `St:${formatStrength(displayed[0])} Dx:${displayed[1]} `
+        + `Co:${displayed[2]} In:${displayed[3]} Wi:${displayed[4]} `
+        + `Ch:${displayed[5]}`;
 }
 
 async function rerollFallbackPrompt() {

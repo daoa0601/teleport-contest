@@ -3,7 +3,9 @@
 // breaktest(), breakmsg(), breakobj(); zap.c bhit().
 
 import { currentAttribute } from './attrib.js';
-import { CORR, DOOR, Is_airlevel, ROOM, W_SADDLE } from './const.js';
+import {
+    A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM, W_SADDLE,
+} from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { place_object, stack_object } from './mklev.js';
@@ -139,7 +141,7 @@ function ordinaryEligibility({
         ?? Math.max(1, Math.trunc((item.owt ?? 1) / selectedQuantity));
     const range = Math.max(
         1,
-        Math.trunc(currentAttribute(0, state) / 2)
+        Math.trunc(currentAttribute(A_STR, state) / 2)
             - Math.trunc(weight / 40),
     );
     const flight = traceOrdinaryPath(state, dx, dy, range, blocksMove);
@@ -262,7 +264,7 @@ export async function resolveMapPotionThrow({
 
     if (flight.contact) {
         rnd(20); // thitmonst() computes this before the potion class test
-        if (currentAttribute(1, state) > rnd(25)) {
+        if (currentAttribute(A_DEX, state) > rnd(25)) {
             await hitMonsterWithSupportedPotion({
                 state,
                 monster: flight.contact,

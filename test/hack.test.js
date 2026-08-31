@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    LAVAPOOL, PARANOID_SWIM, POOL, ROOM, TT_LAVA, WATER,
+    A_CON, A_STR, LAVAPOOL, PARANOID_SWIM, POOL, ROOM, TT_LAVA, WATER,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
@@ -19,8 +19,8 @@ function liquidAtHero(terrain) {
     const level = freshWeaponArena();
     const { ux, uy } = game.u;
     level.at(ux, uy).typ = terrain;
-    game.u.acurr.a[0] = 3;
-    game.u.acurr.a[2] = 3;
+    game.u.acurr.a[A_STR] = 3;
+    game.u.acurr.a[A_CON] = 3;
     game.u.uhp = 20;
     return level;
 }
@@ -184,7 +184,7 @@ test('a hero can teleport out before trying to crawl', async () => {
     game.u.uen = 50;
     game.u.uhunger = 900;
     game.u.uluck = 0;
-    game.u.acurr.a[0] = 10;
+    game.u.acurr.a[A_STR] = 10;
     game.inventory = [];
     const messages = [];
 
@@ -212,7 +212,7 @@ test('teleport control chooses where a drowning hero lands', async () => {
     game.u.uen = 50;
     game.u.uhunger = 900;
     game.u.uluck = -10;
-    game.u.acurr.a[0] = 10;
+    game.u.acurr.a[A_STR] = 10;
     game.inventory = [];
 
     const result = await heroLiquidEffects({

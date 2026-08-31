@@ -65,6 +65,7 @@ import {
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import {
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
     STONE, ZAP_POS,
     VAULT, SHOPBASE, ROOMOFFSET,
@@ -1208,7 +1209,7 @@ function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
 // This covers the first quiet turn: monster movement allotments, random
 // monster generation, ambient feature sounds, hunger, and engraving wear.
 function finishInitialTurnMaintenanceRng(sourceTurn) {
-    if (!rn2(40 + ((game.u?.acurr?.a?.[1] || 0) * 3))) rnd(3);
+    if (!rn2(40 + ((game.u?.acurr?.a?.[A_DEX] || 0) * 3))) rnd(3);
     // allmain.c's demigod intervention clock advances after engraving wear
     // and before environmental level motion.  Nervous outcomes 0/1 are
     // synchronous; outcome2's black-glow pline can suspend before rndcurse,
@@ -1250,16 +1251,6 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
     finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
 }
 
-function periodicExercise(index, improving) {
-    // attrib.c:exercise() suppresses physical exercise while polymorphed;
-    // Wisdom alone belongs to the persistent mind rather than temporary body.
-    if ((game.u?.mtimedone ?? 0) > 0 && index !== 4) return;
-    const current = game.u?.acurr?.a?.[index] ?? 10;
-    const amount = improving ? (rn2(19) > current ? 1 : 0) : -rn2(2);
-    if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
-    game.u._exercise[index] += amount;
-}
-
 // C ref: attrib.c:exerper().  Hunger is read after gethungry() has applied
 // this turn's decrement, so a completed meal can change the periodic RNG
 // branch even when no other status or monster state changed.
@@ -1267,30 +1258,32 @@ function periodicTurnExercise(sourceTurn) {
     if (!(sourceTurn % 10)) {
         const hunger = game.u?.uhunger ?? 900;
         if (hunger > 1000) {
-            periodicExercise(1, false); // Satiated: abuse Dexterity
-            if (game.urole?.key === 'monk') periodicExercise(4, false);
+            exerciseAttribute(A_DEX, false); // Satiated: abuse Dexterity
+            if (game.urole?.key === 'monk')
+                exerciseAttribute(A_WIS, false);
         } else if (hunger > 150) {
-            periodicExercise(2, true); // Not Hungry: exercise Constitution
+            exerciseAttribute(A_CON, true); // Not Hungry: exercise Constitution
         } else if (hunger > 50) {
             // Hungry has no hunger-driven exercise.
         } else if (hunger > 0) {
-            periodicExercise(0, false); // Weak: abuse Strength
-            if (game.urole?.key === 'monk') periodicExercise(4, true);
+            exerciseAttribute(A_STR, false); // Weak: abuse Strength
+            if (game.urole?.key === 'monk')
+                exerciseAttribute(A_WIS, true);
         } else {
-            periodicExercise(2, false); // Fainting/Fainted
+            exerciseAttribute(A_CON, false); // Fainting/Fainted
         }
 
         switch (game.u?._encumbrance) {
         case 'Stressed':
-            periodicExercise(0, true);
+            exerciseAttribute(A_STR, true);
             break;
         case 'Strained':
-            periodicExercise(0, true);
-            periodicExercise(1, false);
+            exerciseAttribute(A_STR, true);
+            exerciseAttribute(A_DEX, false);
             break;
         case 'Overtaxed':
-            periodicExercise(1, false);
-            periodicExercise(2, false);
+            exerciseAttribute(A_DEX, false);
+            exerciseAttribute(A_CON, false);
             break;
         default:
             break;
@@ -1303,21 +1296,21 @@ function periodicTurnExercise(sourceTurn) {
         // independent conditions: a confused hero with wounded legs abuses
         // both Wisdom and Dexterity, consuming one exercise draw for each.
         if ((u.clairvoyanceTurns ?? 0) > 0 && !u.clairvoyanceBlocked)
-            periodicExercise(4, true);
+            exerciseAttribute(A_WIS, true);
         // attrib.c checks HRegeneration here, not the combined Regeneration
         // property.  A worn ring supplies ERegeneration: it heals and raises
         // metabolism, but it does not exercise Strength every fifth turn.
-        if (u.regenerationIntrinsic) periodicExercise(0, true);
+        if (u.regenerationIntrinsic) exerciseAttribute(A_STR, true);
         if (u.sick || (u.sickTurns ?? 0) > 0
             || u.vomiting || (u.vomitingTurns ?? 0) > 0)
-            periodicExercise(2, false);
+            exerciseAttribute(A_CON, false);
         if ((u.confusionTurns ?? 0) > 0
             || u.hallucinating || (u.hallucinationTurns ?? 0) > 0)
-            periodicExercise(4, false);
+            exerciseAttribute(A_WIS, false);
         if ((u._woundedLegTurns ?? 0) > 0
             || u.fumbling || (u.fumblingTurns ?? 0) > 0
             || u.stunned || (u.stunnedTurns ?? 0) > 0)
-            periodicExercise(1, false);
+            exerciseAttribute(A_DEX, false);
     }
 }
 
@@ -1334,8 +1327,7 @@ function effectiveMultiNonzero(state = game) {
         || state._occupation?.key === 'study-book';
 }
 
-// C ref: attrib.c:exerchk().  Runtime attributes use status/display order in
-// JS, so project C's Str, Int, Wis, Dex, Con, Cha iteration explicitly.
+// C ref: attrib.c:exerchk().
 function checkAttributeExercise(sourceTurn) {
     if (!Number.isInteger(game._nextAttribCheck))
         game._nextAttribCheck = 600;
@@ -1343,18 +1335,18 @@ function checkAttributeExercise(sourceTurn) {
         return;
 
     const exercise = game.u?._exercise || [];
-    const cOrder = [0, 3, 4, 1, 2, 5];
+    const cOrder = [A_STR, A_INT, A_WIS, A_DEX, A_CON, A_CHA];
     const explanations = new Map([
-        [0, ['exercising diligently', 'exercising properly']],
-        [4, ['very observant', 'paying attention']],
-        [1, ['working on your reflexes', 'working on reflexes lately']],
-        [2, ['leading a healthy life-style', 'watching your health']],
+        [A_STR, ['exercising diligently', 'exercising properly']],
+        [A_WIS, ['very observant', 'paying attention']],
+        [A_DEX, ['working on your reflexes', 'working on reflexes lately']],
+        [A_CON, ['leading a healthy life-style', 'watching your health']],
     ]);
     for (const index of cOrder) {
         const accumulated = exercise[index] ?? 0;
         if (!accumulated) continue;
         const direction = Math.sign(accumulated);
-        const threshold = index === 4
+        const threshold = index === A_WIS
             ? Math.abs(accumulated)
             : Math.trunc(Math.abs(accumulated) * 2 / 3);
         if (rn2(50) <= threshold) {
@@ -1443,7 +1435,7 @@ function finishInitialTurnMaintenanceAfterTimeout({
             shouldHeal = nonEel && (game.u.regeneration
                 || (encumbranceOk && sourceTurn % 20 === 0));
         } else {
-            const constitution = game.u?.acurr?.a?.[2] || 0;
+            const constitution = game.u?.acurr?.a?.[A_CON] || 0;
             shouldHeal = (game.u.ulevel + constitution) > rn2(100)
                 || game.u.regeneration;
         }
@@ -1473,7 +1465,7 @@ function finishInitialTurnMaintenanceAfterTimeout({
             || energyRegeneration) {
             const attributes = game.u?.acurr?.a || [];
             let upper = Math.trunc(
-                ((attributes[4] ?? 0) + (attributes[3] ?? 0)) / 15,
+                ((attributes[A_WIS] ?? 0) + (attributes[A_INT] ?? 0)) / 15,
             ) + 1;
             if (game.u?.magicalBreathingExtrinsic) upper += 2;
             game.u.uen = Math.min(
@@ -1788,7 +1780,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
         if (game.u._woundedLegTurns === 0) {
             const wasBurdened = game.u._encumbrance === 'Burdened';
             game.u._woundedLegSide = null;
-            if (game.u.acurr?.a) game.u.acurr.a[1]++;
+            if (game.u.acurr?.a) game.u.acurr.a[A_DEX]++;
             // C heal_legs()->encumber_msg() both emits the capacity change
             // and advances go.oldcap.  Keep that persistent comparison state
             // synchronized here so a later pickup does not repeat it.
@@ -3146,14 +3138,14 @@ async function resumeOffensivePotionVapor(potion) {
         game._helplessTurns = rnd(5);
         game._helplessReason = 'sleeping off a magical draught';
         game._helplessDoneMessage = 'You can move again.';
-        exerciseAttribute(1, false);
+        exerciseAttribute(A_DEX, false);
     } else {
         await queueTurnMessage('You yawn.');
     }
 
     const object = potion.object;
     if (object.dknown && !game._knownObjectTypes?.has(object.otyp)) {
-        exerciseAttribute(4, true);
+        exerciseAttribute(A_WIS, true);
         recordObjectKnowledge(object.otyp);
     }
 }
@@ -3472,7 +3464,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                             hpValueEnd >= 0 ? hpValueEnd : status.length,
                             23,
                         ];
-                        exerciseAttribute(0, false);
+                        exerciseAttribute(A_STR, false);
                     } else {
                         await queueTurnMessage(
                             'The magic missile whizzes by you!',
@@ -3588,7 +3580,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 };
                 actions.push(action);
                 await chatWithQuestLeader(actor, {
-                    exerciseWisdom: () => exerciseAttribute(2, true),
+                    exerciseWisdom: () => exerciseAttribute(A_WIS, true),
                 });
                 if (game._questExpulsionPending) {
                     await performQuestExpulsion(game);
@@ -4153,7 +4145,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
 
             if ((actorWasSeen || monsterIsSeen)
                 && !game._knownObjectTypes?.has(offensive.object.otyp)) {
-                exerciseAttribute(2, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(offensive.object.otyp);
             }
             resumeDeferredMonsterMagicMissileWand(action, game);
@@ -4241,7 +4233,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             }
             if (effect?.identifiesType
                 && !game._knownObjectTypes?.has(effect.object.otyp)) {
-                exerciseAttribute(2, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(effect.object.otyp);
             }
             monster.mwandexp = true;
@@ -5598,7 +5590,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // after that pager is dismissed does losehp() exercise
                         // Strength, so this draw belongs to the continuation
                         // input rather than the launch input.
-                        exerciseAttribute(0, false);
+                        exerciseAttribute(A_STR, false);
                         finishDeferredRangedProjectileHit(action, game);
                         // losehp() dirties the bottom line.  The launch pager
                         // must retain pre-hit HP, but once thitu() resumes the
@@ -5806,7 +5798,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         `${visibleMonsterSubject(monster)} seems more experienced.`,
                     );
                     if (!game._knownObjectTypes?.has(misc.object.otyp)) {
-                        exerciseAttribute(2, true);
+                        exerciseAttribute(A_WIS, true);
                         recordObjectKnowledge(misc.object.otyp);
                     }
                 }
@@ -5848,7 +5840,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         map_invisible(monster.mx, monster.my);
                 }
                 if (!game._knownObjectTypes?.has(misc.object.otyp)) {
-                    exerciseAttribute(4, true);
+                    exerciseAttribute(A_WIS, true);
                     recordObjectKnowledge(misc.object.otyp);
                 }
             } else if (actorWasSeen && !monster.minvis) {
@@ -5918,7 +5910,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 );
                 if (misc.object.dknown
                     && !game._knownObjectTypes?.has(misc.object.otyp)) {
-                    exerciseAttribute(4, true);
+                    exerciseAttribute(A_WIS, true);
                     recordObjectKnowledge(misc.object.otyp);
                 }
             }
@@ -5953,7 +5945,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }faster.`,
                 );
                 if (misc.object.dknown) {
-                    exerciseAttribute(4, true);
+                    exerciseAttribute(A_WIS, true);
                     recordObjectKnowledge(misc.object.otyp);
                 }
             }
@@ -6420,7 +6412,7 @@ export async function moveloop_core() {
                 = delayed.object.otyp === 166;
             if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
                 recordObjectKnowledge(delayed.object.otyp);
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
             }
             const completionMessage = [
                 delayed.finishMessage, ...effectMessages,
@@ -6433,7 +6425,7 @@ export async function moveloop_core() {
             // which displayed the actor pager.
             if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
                 recordObjectKnowledge(delayed.object.otyp);
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
             }
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.

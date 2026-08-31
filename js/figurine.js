@@ -4,7 +4,7 @@
 
 import { currentAttribute } from './attrib.js';
 import {
-    G_EXTINCT, G_GENOD, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE,
+    A_CHA, G_EXTINCT, G_GENOD, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE,
     MM_NOMSG, NO_MINVENT, IS_OBSTRUCTED, IS_POOL, W_NONPASSWALL, isok,
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
@@ -84,7 +84,7 @@ function initializeFigurineDog(monster, state, currentTurn) {
         parentmid: monster.m_id,
         droptime: 0,
         dropdist: 10000,
-        apport: currentAttribute(5, state),
+        apport: currentAttribute(A_CHA, state),
         whistletime: 0,
         hungrytime: currentTurn + 1000,
         ogoal: { x: -1, y: -1 },

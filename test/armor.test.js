@@ -6,6 +6,7 @@ import {
     armorOnIdentifiesType, findArmorClass, heroIsDisplaced,
 } from '../js/armor.js';
 import { currentAttribute } from '../js/attrib.js';
+import { A_STR } from '../js/const.js';
 import { formatStrength } from '../js/display.js';
 import { weightCapacity } from '../js/weight.js';
 import {
@@ -61,13 +62,13 @@ test('gauntlets of power project Strength 25 without mutating the base', () => {
         inventory: [],
     };
 
-    assert.equal(currentAttribute(0, state), 125);
-    assert.equal(formatStrength(currentAttribute(0, state)), '25');
-    assert.equal(state.u.acurr.a[0], 9);
+    assert.equal(currentAttribute(A_STR, state), 125);
+    assert.equal(formatStrength(currentAttribute(A_STR, state)), '25');
+    assert.equal(state.u.acurr.a[A_STR], 9);
     assert.equal(weightCapacity(state), 925);
     state.uarmg = null;
-    assert.equal(currentAttribute(0, state), 9);
-    assert.equal(state.u.acurr.a[0], 9);
+    assert.equal(currentAttribute(A_STR, state), 9);
+    assert.equal(state.u.acurr.a[A_STR], 9);
 });
 
 test('cloak displacement property precedes observable Cloak_on feedback', () => {

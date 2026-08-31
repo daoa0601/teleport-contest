@@ -9,7 +9,7 @@ import { monsterGoodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { armorSlotFor, findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
-import { COLNO, ROWNO } from './const.js';
+import { A_CHA, A_CON, A_STR, COLNO, ROWNO } from './const.js';
 import {
     ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE,
     SHORT_SWORD,
@@ -652,7 +652,7 @@ export function makedog() {
             // The pet is created before u_init_inventory_attrs(). At this
             // point C's ACURR(A_CHA) clamps the zeroed attribute to 3; the
             // finalized hero Charisma must not be read retroactively.
-            apport: g.u?.acurr?.a?.[5] ?? 3,
+            apport: g.u?.acurr?.a?.[A_CHA] ?? 3,
             whistletime: 0,
             hungrytime: (g.moves ?? 0) + 1000,
             ogoal: { x: -1, y: -1 },
@@ -1230,11 +1230,8 @@ function initAttributes() {
         }
     }
 
-    // JS status code stores the traditional display order rather than the
-    // internal C order: Str, Dex, Con, Int, Wis, Cha.
-    const displayOrder = [values[0], values[3], values[4], values[1], values[2], values[5]];
-    game.u.acurr = { a: displayOrder.slice() };
-    game.u.amax = { a: displayOrder.slice() };
+    game.u.acurr = { a: values.slice() };
+    game.u.amax = { a: values.slice() };
 }
 
 // C ref: u_init_carry_attr_boost(). Starting inventory must not leave the
@@ -1245,20 +1242,20 @@ export function uInitCarryAttrBoost(state = game) {
     if (!Array.isArray(current) || !Array.isArray(maximum)) {
         return { strength: 0, constitution: 0, excess: invWeight(state) };
     }
-    const strengthMax = state.urace?.attrmax?.[0] ?? current[0];
-    const constitutionMax = state.urace?.attrmax?.[4] ?? current[2];
+    const strengthMax = state.urace?.attrmax?.[A_STR] ?? current[A_STR];
+    const constitutionMax = state.urace?.attrmax?.[A_CON] ?? current[A_CON];
     let strength = 0;
     let constitution = 0;
     while (invWeight(state) > 0) {
-        if (current[0] < strengthMax) {
-            current[0]++;
-            maximum[0] = Math.max(maximum[0], current[0]);
+        if (current[A_STR] < strengthMax) {
+            current[A_STR]++;
+            maximum[A_STR] = Math.max(maximum[A_STR], current[A_STR]);
             strength++;
             continue;
         }
-        if (current[2] < constitutionMax) {
-            current[2]++;
-            maximum[2] = Math.max(maximum[2], current[2]);
+        if (current[A_CON] < constitutionMax) {
+            current[A_CON]++;
+            maximum[A_CON] = Math.max(maximum[A_CON], current[A_CON]);
             constitution++;
             continue;
         }

@@ -19,7 +19,8 @@ import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
-    ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME, isok,
+    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME,
+    isok,
 } from './const.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE } from './object_data.js';
 import {
@@ -144,11 +145,11 @@ export function beginHeroLifeSaving(random = rn2) {
     game.u.umortality = (game.u.umortality || 0) + 1;
     if (!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)) {
         recordObjectKnowledge(AMULET_OF_LIFE_SAVING);
-        const wisdom = game.u?.acurr?.a?.[4] ?? 10;
+        const wisdom = game.u?.acurr?.a?.[A_WIS] ?? 10;
         const amount = random(19) > wisdom ? 1 : 0;
         if (!Array.isArray(game.u._exercise))
             game.u._exercise = Array(6).fill(0);
-        game.u._exercise[4] += amount;
+        game.u._exercise[A_WIS] += amount;
     }
     return { amulet };
 }
@@ -164,11 +165,12 @@ export function completeHeroLifeSaving(transaction) {
     amulet.wornSlot = null;
 
     const attributes = game.u?.acurr?.a;
-    if (attributes) attributes[2] = Math.max(3, (attributes[2] ?? 3) - 1);
+    if (attributes)
+        attributes[A_CON] = Math.max(3, (attributes[A_CON] ?? 3) - 1);
     if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
-    game.u._exercise[2] = 0;
+    game.u._exercise[A_CON] = 0;
 
-    const constitution = attributes?.[2] ?? 3;
+    const constitution = attributes?.[A_CON] ?? 3;
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;
@@ -184,7 +186,7 @@ export function completeHeroLifeSaving(transaction) {
 // C ref: end.c:savelife().  Wizard/explore refusal and amulet life saving
 // share this viability repair after their distinct prompt/item transactions.
 export function restoreHeroAfterDeath() {
-    const constitution = game.u?.acurr?.a?.[2] ?? 3;
+    const constitution = game.u?.acurr?.a?.[A_CON] ?? 3;
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;

@@ -6,7 +6,8 @@ import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { findit } from './detect.js';
 import {
-    COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR, DRAWBRIDGE_UP,
+    A_STR, A_WIS, COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR,
+    DRAWBRIDGE_UP,
     D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL,
     IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_rogue_level,
     Is_waterlevel, LAVAWALL, MOAT, PIT, POOL, ROOM, ROWNO, SDOOR, STONE,
@@ -97,7 +98,7 @@ export const INVENTORY_DAMAGE = Object.freeze({
 });
 
 async function zapDig(direction) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
     const dx = DIR_DX[direction] || 0;
     const dy = DIR_DY[direction] || 0;
     let x = game.u.ux + dx;
@@ -140,7 +141,7 @@ async function zapDig(direction) {
     for (const cell of traversedCells) newsym(cell.x, cell.y);
     vision_reset();
     vision_recalc(1);
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
 }
 
 function wandChargeCount(wand) {
@@ -195,7 +196,7 @@ async function backfireWand(wand) {
             if (died) return;
         }
     }
-    exerciseAttribute(0, false);
+    exerciseAttribute(A_STR, false);
 }
 
 function learnNoDirectionWand(wand) {
@@ -348,7 +349,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         });
         if (deathRay.gameEnded) return;
         if (wand.dknown) {
-            if (wasUnknown) exerciseAttribute(4, true);
+            if (wasUnknown) exerciseAttribute(A_WIS, true);
             recordObjectKnowledge(wand.otyp);
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
@@ -366,7 +367,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             game._knownObjectTypes.add(wand.otyp);
             wand.typeKnown = true;
-            exerciseAttribute(4, true);
+            exerciseAttribute(A_WIS, true);
         }
         wand.chargesKnown = false;
         game.context.move = 1;
@@ -375,7 +376,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     }
 
     if (wand.otyp === WAN_SLEEP && directionChar === '.') {
-        exerciseAttribute(2, true);
+        exerciseAttribute(A_WIS, true);
         if (game.u?.sleepResistance) {
             await shieldeff(game.u.ux, game.u.uy);
             await pline("You don't feel sleepy!");
@@ -418,7 +419,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         if (coldRay.heroDied
             && await finishHeroDeath({ killer: 'bolt of cold' })) return;
         if (wand.dknown) {
-            if (wasUnknown) exerciseAttribute(2, true);
+            if (wasUnknown) exerciseAttribute(A_WIS, true);
             recordObjectKnowledge(wand.otyp);
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
@@ -536,7 +537,7 @@ export function discoverHeroReflectionSource(
 ) {
     const object = source?.object;
     if (!object || state._knownObjectTypes?.has(object.otyp)) return;
-    exerciseAttribute(4, true, state);
+    exerciseAttribute(A_WIS, true, state);
     recordObjectKnowledge(object.otyp, state);
     object.typeKnown = true;
 }
@@ -1033,7 +1034,7 @@ export async function zapColdRay(
     direction,
     { finishMonsterKill } = {},
 ) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1165,7 +1166,7 @@ export async function zapFireRay(
     direction,
     { finishMonsterKill, wakeMonsters } = {},
 ) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1310,7 +1311,7 @@ export async function zapFireRay(
 }
 
 export async function zapSleepRay(direction) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1428,7 +1429,7 @@ export async function zapDeathRay(
         finishMonsterKill,
     } = {},
 ) {
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1594,7 +1595,7 @@ export async function zapCancellationRay(
     direction,
     { wakeMonster = async () => {} } = {},
 ) {
-    exerciseAttribute(2, true);
+    exerciseAttribute(A_WIS, true);
     const dx = DIR_DX[direction] || 0;
     const dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1890,7 +1891,7 @@ async function destroyChosenItem(
         return 0;
     }
     damageHero(state, damage);
-    exerciseAttribute(0, false, state);
+    exerciseAttribute(A_STR, false, state);
     return damage;
 }
 

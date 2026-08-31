@@ -251,6 +251,7 @@ import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
+    A_CON, A_DEX, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, SCORR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
     FOUNTAIN, SINK,
@@ -865,7 +866,9 @@ export async function continueCountedCommand(g = game) {
         if (usedtime >= 50 || !g.uwep || heroHasNoHands(g)) {
             await pline('You give up your attempt to force the lock.');
             if (occupation.usedtime >= 50)
-                exerciseAttribute(occupation.picktyp ? 1 : 0, true);
+                exerciseAttribute(
+                    occupation.picktyp ? A_DEX : A_STR, true,
+                );
             g._occupation = null;
             g.context.move = 1;
             return true;
@@ -880,7 +883,9 @@ export async function continueCountedCommand(g = game) {
 
         if (rn2(100) < occupation.chance) {
             await plineWithContinuation('You succeed in forcing the lock.');
-            exerciseAttribute(occupation.picktyp ? 1 : 0, true);
+            exerciseAttribute(
+                occupation.picktyp ? A_DEX : A_STR, true,
+            );
             const destroyed = !occupation.picktyp && rn2(3) === 0;
             await breakChestLock(box, destroyed, g);
             newsym(g.u.ux, g.u.uy);
@@ -897,7 +902,7 @@ export async function continueCountedCommand(g = game) {
         occupation.usedtime = (occupation.usedtime ?? 0) + 1;
         if (occupation.usedtime > 50) {
             await pline('You give up your attempt at picking the lock.');
-            exerciseAttribute(1, true);
+            exerciseAttribute(A_DEX, true);
             g._occupation = null;
         } else if (rn2(100) < occupation.chance) {
             await pline('You succeed in picking the lock.');
@@ -911,7 +916,7 @@ export async function continueCountedCommand(g = game) {
                 occupation.door.doormask &= ~D_CLOSED;
                 occupation.door.doormask |= D_LOCKED;
             }
-            exerciseAttribute(1, true);
+            exerciseAttribute(A_DEX, true);
             newsym(occupation.x, occupation.y);
             g._occupation = null;
         }
@@ -1368,7 +1373,7 @@ async function doquaff() {
             }
             if (potion.dknown !== false
                 && !game._knownObjectTypes?.has(potion.otyp)) {
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(potion.otyp);
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
@@ -1383,10 +1388,10 @@ async function doquaff() {
             game.u.uen = (game.u.uen ?? 0) + 3 * amount;
             if (game.u.uen > game.u.uenmax) game.u.uen = game.u.uenmax;
             else if (game.u.uen <= 0) game.u.uen = 0;
-            exerciseAttribute(4, true);
+            exerciseAttribute(A_WIS, true);
             if (potion.dknown !== false
                 && !game._knownObjectTypes?.has(potion.otyp)) {
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(potion.otyp);
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
@@ -1415,7 +1420,7 @@ async function doquaff() {
                 game.u.sick = false;
                 game.u.sickTurns = 0;
             }
-            exerciseAttribute(2, true);
+            exerciseAttribute(A_CON, true);
     } else if (potion.otyp === POT_EXTRA_HEALING) {
             await pline('You feel much better.');
             const bucSign = potion.blessed ? 1 : potion.cursed ? -1 : 0;
@@ -1452,11 +1457,11 @@ async function doquaff() {
                 game.u.hallucinationTurns = 0;
                 game.vision_full_recalc = 1;
             }
-            exerciseAttribute(2, true);
-            exerciseAttribute(0, true);
+            exerciseAttribute(A_CON, true);
+            exerciseAttribute(A_STR, true);
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             if (!game._knownObjectTypes.has(potion.otyp)) {
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(potion.otyp);
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
@@ -1466,12 +1471,12 @@ async function doquaff() {
             game._helplessTurns = 25 + rn2(10);
             game._helplessReason = 'frozen by a potion';
             game._helplessDoneMessage = 'You can move again.';
-            exerciseAttribute(1, false);
+            exerciseAttribute(A_DEX, false);
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             if (!game._knownObjectTypes.has(potion.otyp)) {
                 // makeknown() -> discover_object(..., credit_hero=TRUE)
                 // exercises Wisdom before the elapsed turn starts.
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
                 game._knownObjectTypes.add(potion.otyp);
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
@@ -1499,7 +1504,7 @@ async function doquaff() {
                 game.u.uhp = Math.min(game.u.uhpmax, (game.u.uhp || 0) + 1);
             game.u.uhunger = (game.u.uhunger ?? 900)
                 + 10 * (2 + (potion.blessed ? 1 : potion.cursed ? -1 : 0));
-            exerciseAttribute(4, false);
+            exerciseAttribute(A_WIS, false);
             if (potion.cursed) {
                 game._helplessTurns = rnd(15);
                 game._helplessReason = 'unconscious from drinking';
@@ -1550,7 +1555,7 @@ async function drinkSink(loc) {
         game.u.uexp = (game.u.uexp || 0) + 1;
     } else if (result === 9) {
         await pline('Gaggg... this tastes like sewage!  You vomit.');
-        const constitution = game.u?.acurr?.a?.[2] ?? 10;
+        const constitution = game.u?.acurr?.a?.[A_CON] ?? 10;
         game.u.uhunger = (game.u.uhunger ?? 900)
             - (11 + rn2(Math.max(1, 30 - constitution)));
         beginVomiting();
@@ -1787,7 +1792,7 @@ async function discoverFountainGem(loc) {
         createGem: gemType => mksobj(gemType, false, false),
         placeGem: gem => place_object(gem, game.u.ux, game.u.uy),
         repaint: () => newsym(game.u.ux, game.u.uy),
-        exerciseWisdom: () => exerciseAttribute(4, true),
+        exerciseWisdom: () => exerciseAttribute(A_WIS, true),
     });
 }
 
@@ -1933,7 +1938,7 @@ async function drinkFountain(loc) {
             // damage before committing the remaining attribute reduction.
             let strengthLoss = 3 + rn2(4);
             const attributes = game.u?.acurr?.a;
-            const currentStrength = attributes?.[0] ?? 3;
+            const currentStrength = attributes?.[A_STR] ?? 3;
             let reducedStrength = currentStrength - strengthLoss;
             let frailtyDamage = 0;
             while (reducedStrength < 3) {
@@ -1950,13 +1955,13 @@ async function drinkFountain(loc) {
                 );
             }
             if (attributes && strengthLoss > 0) {
-                attributes[0] = reducedStrength;
+                attributes[A_STR] = reducedStrength;
                 if (!Array.isArray(game.u._exercise))
                     game.u._exercise = Array(6).fill(0);
-                game.u._exercise[0] = 0;
+                game.u._exercise[A_STR] = 0;
             }
             game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - rnd(10));
-            exerciseAttribute(2, false);
+            exerciseAttribute(A_CON, false);
         }
     } else if (fate === 22) {
         continueFountainMessage = !!(await summonFountainSnakes()).message;
@@ -1964,7 +1969,7 @@ async function drinkFountain(loc) {
         continueFountainMessage = !!(await summonFountainDemon()).message;
     } else if (fate === 26) {
         await fountainMonsterDetection();
-        exerciseAttribute(4, true);
+        exerciseAttribute(A_WIS, true);
     } else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
         continueFountainMessage = (await discoverFountainGem(loc)).discovered;
     } else if (fate === 27 || fate === 28) {
@@ -2233,7 +2238,7 @@ async function ordinaryDescend() {
         if (rn2(2)) {
             ballImpactMessage = 'The iron ball smacks into you!';
             loseHitPoints(rnd(20));
-            exerciseAttribute(0, false);
+            exerciseAttribute(A_STR, false);
             dragChance -= 2;
         }
         if (dragChance >= rnd(6)) {
@@ -2241,7 +2246,7 @@ async function ordinaryDescend() {
                 ? `${ballImpactMessage}  The iron ball drags you downstairs!`
                 : 'The iron ball drags you downstairs!';
             loseHitPoints(rnd(3));
-            exerciseAttribute(0, false);
+            exerciseAttribute(A_STR, false);
         }
         loseHitPoints(rnd(3));
     }
@@ -3630,22 +3635,22 @@ async function doTerrainOverview() {
 
 async function kickOuch(x, y) {
     await pline('Ouch!  That hurts!');
-    exerciseAttribute(1, false);
-    exerciseAttribute(0, false);
+    exerciseAttribute(A_DEX, false);
+    exerciseAttribute(A_STR, false);
     wakeMonstersNear(x, y, 25);
     if (rn2(3) === 0) {
         const duration = 5 + rnd(5);
         if (!(game.u?._woundedLegTurns > 0)) {
             game.u._woundedLegSide = 'right';
             game.u._woundedLegTurns = duration;
-            if (game.u.acurr?.a) game.u.acurr.a[1]--;
+            if (game.u.acurr?.a) game.u.acurr.a[A_DEX]--;
         } else {
             game.u._woundedLegTurns = Math.max(
                 game.u._woundedLegTurns, duration,
             );
         }
     }
-    let damage = rnd(currentAttribute(2) > 15 ? 3 : 5);
+    let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
     game.u.uhp = Math.max(0, (game.u?.uhp ?? 1) - damage);
@@ -3703,8 +3708,8 @@ async function kickLiveMonster(monster, x, y) {
     }
 
     let damage = Math.trunc(
-        (currentAttribute(0) + currentAttribute(1)
-            + currentAttribute(2)) / 15,
+        (currentAttribute(A_STR) + currentAttribute(A_DEX)
+            + currentAttribute(A_CON)) / 15,
     );
     if (game.uarmf?.otyp === KICKING_BOOTS) damage += 5;
     if (clumsy) damage = Math.trunc(damage / 2);
@@ -3713,9 +3718,9 @@ async function kickLiveMonster(monster, x, y) {
     if (damage > 0) {
         damage = rnd(damage);
         if (martial) damage += rn2(
-            Math.trunc(currentAttribute(1) / 2) + 1,
+            Math.trunc(currentAttribute(A_DEX) / 2) + 1,
         );
-        exerciseAttribute(1, true);
+        exerciseAttribute(A_DEX, true);
     }
     if (game.uarmf) damage += game.uarmf.spe ?? 0;
     damage += game.u?.udaminc ?? 0;
@@ -3774,12 +3779,12 @@ async function dokick() {
     }
     if (location?.typ === DOOR
         && (location.doormask & (D_CLOSED | D_LOCKED))) {
-        exerciseAttribute(1, true);
+        exerciseAttribute(A_DEX, true);
         const attributes = game.u?.acurr?.a || [10, 10, 10];
-        const strength = currentAttribute(0);
+        const strength = currentAttribute(A_STR);
         const average = Math.trunc(
-            (strength + (attributes[1] ?? 10)
-                + (attributes[2] ?? 10)) / 3,
+            (strength + (attributes[A_DEX] ?? 10)
+                + (attributes[A_CON] ?? 10)) / 3,
         );
         if (rnl(35) < average) {
             // in_rooms(..., SHOPBASE) includes a shop immediately across a
@@ -3797,12 +3802,12 @@ async function dokick() {
             await pline(shatters
                 ? 'As you kick the door, it shatters to pieces!'
                 : 'As you kick the door, it crashes open!');
-            exerciseAttribute(0, true);
+            exerciseAttribute(A_STR, true);
             vision_reset();
             vision_recalc(0);
             newsym(x, y);
         } else {
-            exerciseAttribute(0, true);
+            exerciseAttribute(A_STR, true);
             await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
         }
         game.context.move = 1;
@@ -3810,14 +3815,14 @@ async function dokick() {
     }
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
-    exerciseAttribute(1, false);
+    exerciseAttribute(A_DEX, false);
     const martial = ['monk', 'samurai'].includes(game.urole?.key)
         || game.uarmf?.otyp === KICKING_BOOTS;
-    if (martial || currentAttribute(1) >= 16 || rn2(3) !== 0) {
+    if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
     } else {
         await pline('Dumb move!  You strain a muscle.');
-        exerciseAttribute(0, false);
+        exerciseAttribute(A_STR, false);
         game.u._woundedLegSide = 'right';
         game.u._woundedLegTurns = Math.max(
             game.u._woundedLegTurns ?? 0, 5 + rnd(5),
@@ -4184,7 +4189,7 @@ async function dotwoweapon() {
     game.u.twoweap = true;
     await pline('You begin two-weapon combat.');
     // wield.c: a clumsy toggle only takes time when rnd(20) exceeds Dex.
-    game.context.move = rnd(20) > (game.u?.acurr?.a?.[1] || 0) ? 1 : 0;
+    game.context.move = rnd(20) > (game.u?.acurr?.a?.[A_DEX] || 0) ? 1 : 0;
 }
 
 // C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
@@ -4337,7 +4342,7 @@ async function dochat() {
         // after assigning the quest.
         if (monster) monster.mstrategy &= ~STRAT_WAITMASK;
         if (monster && await chatWithQuestLeader(monster, {
-            exerciseWisdom: () => exerciseAttribute(2, true),
+            exerciseWisdom: () => exerciseAttribute(A_WIS, true),
         })) {
             game.context.move = 1;
             return;
@@ -4464,7 +4469,7 @@ function levelHpIncrease() {
     let hp = (role[fixKey] || 0) + (race[fixKey] || 0);
     if ((role[rndKey] || 0) > 0) hp += rnd(role[rndKey]);
     if ((race[rndKey] || 0) > 0) hp += rnd(race[rndKey]);
-    return Math.max(1, hp + conHpBonus(u.acurr?.a?.[2] || 0));
+    return Math.max(1, hp + conHpBonus(u.acurr?.a?.[A_CON] || 0));
 }
 
 function energyModifier(energy) {
@@ -4483,7 +4488,7 @@ function levelEnergyIncrease() {
     const lower = u.ulevel < (game.urole?.xlev ?? 10);
     const fixKey = lower ? 'lofix' : 'hifix';
     const rndKey = lower ? 'lornd' : 'hirnd';
-    const range = Math.trunc((u.acurr?.a?.[4] || 0) / 2)
+    const range = Math.trunc((u.acurr?.a?.[A_WIS] || 0) / 2)
         + (role[rndKey] || 0) + (race[rndKey] || 0);
     const fixed = (role[fixKey] || 0) + (race[fixKey] || 0);
     return Math.max(1, energyModifier(rn2(range) + fixed));
@@ -5994,7 +5999,7 @@ async function dorub(cannedInvlet = null) {
             );
             await djinniFromLamp(object);
             if (!game._knownObjectTypes?.has(MAGIC_LAMP)) {
-                exerciseAttribute(4, true);
+                exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(MAGIC_LAMP);
             }
             game.context.move = 1;
@@ -6114,7 +6119,7 @@ async function wizMap() {
     }
     recordMappedOverviewState({ mapped: true });
 
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_WIS, true);
     if (game.u) {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
@@ -6264,7 +6269,7 @@ async function doturn() {
     await pline(
         `Calling upon ${deity || 'your god'}, you chant an arcane formula.`,
     );
-    exerciseAttribute(4, true);
+    exerciseAttribute(A_WIS, true);
 
     game._helplessTurns = Math.max(
         1,
@@ -6330,7 +6335,7 @@ async function dipFountain(object, loc) {
             mkgold(quantity, game.u.ux, game.u.uy);
         },
         liquidName: () => displayLiquidName('water'),
-        exerciseWisdom: () => exerciseAttribute(4, true),
+        exerciseWisdom: () => exerciseAttribute(A_WIS, true),
         repaint: () => newsym(game.u.ux, game.u.uy),
     });
     if (bucEffect.handled) {
@@ -6365,7 +6370,7 @@ async function dipFountain(object, loc) {
             setHeroGoldAmount(game, wallet - loss);
             await pline('You lost some of your gold in the fountain!');
             loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
-            exerciseAttribute(4, false);
+            exerciseAttribute(A_WIS, false);
         }
 
         const dryup = dryFountainTerrain(loc);
@@ -6767,7 +6772,7 @@ async function wizIdentify() {
     for (const item of selected) {
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
-        if (learnedType) exerciseAttribute(4, true);
+        if (learnedType) exerciseAttribute(A_WIS, true);
         await plineWithContinuation(
             `${item.invlet} - ${inventoryItemDescription(item)}.`,
         );
@@ -8015,7 +8020,7 @@ async function putOnAccessoryObject(object) {
         if (enchantment !== 0
             && !game._knownObjectTypes?.has(object.otyp)) {
             recordObjectKnowledge(object.otyp);
-            exerciseAttribute(4, true);
+            exerciseAttribute(A_WIS, true);
         }
         object.known = true;
         findArmorClass(game);
@@ -8303,7 +8308,7 @@ async function putOnArmorObject(object) {
             && !game._knownObjectTypes?.has(object.otyp);
         if (identifiesType) {
             recordObjectKnowledge(object.otyp);
-            exerciseAttribute(4, true);
+            exerciseAttribute(A_WIS, true);
         }
         object.known = true;
         object._armorApplied = true;
@@ -9189,7 +9194,7 @@ async function triggerDartTrap(trap) {
         // thitu() abuses Strength after committing ordinary missile damage.
         // exercise() always consumes this draw even when the accumulated
         // score does not yet change the visible attribute.
-        exerciseAttribute(0, false);
+        exerciseAttribute(A_STR, false);
         const punctuation = damage <= 4 ? '.' : '!';
         game._pending_message = `A little dart shoots out at you!  You are hit by a little dart${punctuation}`;
         return;
@@ -9325,7 +9330,7 @@ async function triggerBearTrap(trap) {
     u._woundedLegTurns = Math.max(u._woundedLegTurns ?? 0, legTurns);
     if (!u._woundedLegSide) u._woundedLegSide = legSide;
     else if (u._woundedLegSide !== legSide) u._woundedLegSide = 'both';
-    if (!wasWounded && u.acurr?.a) u.acurr.a[1]--;
+    if (!wasWounded && u.acurr?.a) u.acurr.a[A_DEX]--;
 
     const currentCapacity = nearCapacity(game);
     const capacityMessage = encumbranceMessage(
@@ -9337,7 +9342,7 @@ async function triggerBearTrap(trap) {
     if (capacityMessage) await plineWithContinuation(capacityMessage);
 
     u.uhp = Math.max(0, (u.uhp || 0) - damage);
-    exerciseAttribute(1, false);
+    exerciseAttribute(A_DEX, false);
 }
 
 async function moveWhileTrapped(dx, dy) {
@@ -9549,7 +9554,7 @@ async function resolvePhysicalMonsterExplosion(
         if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
             appliedDamage = Math.trunc((appliedDamage + 1) / 2);
         game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
-        exerciseAttribute(0, false);
+        exerciseAttribute(A_STR, false);
     }
 
     const wakeDistance = Math.max(50, damage * damage);
@@ -9846,7 +9851,7 @@ function normalCorpseMeal(corpse, corpseName) {
 function applyCorpsePoisonDamage(meal) {
     let strengthLoss = meal.poisonStrengthLoss ?? 0;
     const attributes = game.u?.acurr?.a;
-    const currentStrength = attributes?.[0] ?? 3;
+    const currentStrength = attributes?.[A_STR] ?? 3;
     let reducedStrength = currentStrength - strengthLoss;
     let frailtyDamage = 0;
     while (reducedStrength < 3) {
@@ -9860,10 +9865,10 @@ function applyCorpsePoisonDamage(meal) {
             (game.u.uhpmax ?? 1) - frailtyDamage);
     }
     if (attributes && strengthLoss > 0) {
-        attributes[0] = reducedStrength;
+        attributes[A_STR] = reducedStrength;
         if (!Array.isArray(game.u._exercise))
             game.u._exercise = Array(6).fill(0);
-        game.u._exercise[0] = 0;
+        game.u._exercise[A_STR] = 0;
     }
     if ((meal.poisonDamage ?? 0) > 0) {
         game.u.uhp = Math.max(
@@ -10450,7 +10455,7 @@ async function playLeatherDrum(item) {
     } else {
         await plineWithContinuation('You pound on the drum.');
     }
-    exerciseAttribute(2, false);
+    exerciseAttribute(A_CON, false);
     try {
         await awakenMonstersFromInstrument((game.u?.ulevel || 1) * 40);
     } finally {
@@ -10663,9 +10668,9 @@ async function doopen() {
     }
 
     // TODO: replace rn2(20) with rnl(20) so Luck affects this check.
-    if (rn2(20) < Math.trunc((currentAttribute(0)
-        + (game.u?.acurr?.a?.[1] ?? 10)
-        + (game.u?.acurr?.a?.[2] ?? 10)) / 3)) {
+    if (rn2(20) < Math.trunc((currentAttribute(A_STR)
+        + (game.u?.acurr?.a?.[A_DEX] ?? 10)
+        + (game.u?.acurr?.a?.[A_CON] ?? 10)) / 3)) {
         loc.doormask = D_ISOPEN;
         newsym(x, y);
         vision_reset();
@@ -11368,7 +11373,7 @@ function matchingSlingVolleyCount(item, selectedQuantity, shotLimit = 0) {
     const weakMultishot = ['wizard', 'priest', 'healer', 'tourist']
         .includes(role)
         || fumbling
-        || (game.u?.acurr?.a?.[1] ?? 10) <= 6;
+        || (game.u?.acurr?.a?.[A_DEX] ?? 10) <= 6;
     const level = ensureHeroSkills(game)?.[P_SLING]?.skill ?? 0;
     let maximum = 1;
     if (level >= P_EXPERT) maximum++;
@@ -11573,7 +11578,7 @@ async function dothrow(
         // to decide contact; hmon_hitmon_misc_obj() then consumes the pie,
         // blinds without damage, and never reaches drop_throw()/obj_resists().
         rnd(20);
-        if ((game.u?.acurr?.a?.[1] ?? 10) > rnd(25)) {
+        if ((game.u?.acurr?.a?.[A_DEX] ?? 10) > rnd(25)) {
             const monsterName = MONSTER_NAME[adjacentMonster.mnum]
                 || 'monster';
             await pline(
@@ -11821,7 +11826,7 @@ async function dothrow(
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
         let range = Math.max(
             1,
-            Math.trunc(currentAttribute(0) / 2)
+            Math.trunc(currentAttribute(A_STR) / 2)
                 - Math.trunc(unitWeight / 40),
         );
         if (handThrownArrow) range = Math.max(1, Math.trunc(range / 2));
@@ -11888,7 +11893,7 @@ async function dothrow(
         if (arrowFlight.ordinaryPath && arrowFlight.contact) {
             const monster = arrowFlight.contact;
             const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
-            const dexterity = currentAttribute(1);
+            const dexterity = currentAttribute(A_DEX);
             let threshold = -1 + luck + findMonsterArmorClass(monster)
                 + (game.u?.uhitinc ?? 0) + (game.u?.ulevel ?? 1);
             if (dexterity < 4) threshold -= 3;
@@ -12004,7 +12009,7 @@ async function dothrow(
                     { weaponHit: true },
                 );
             }
-            exerciseAttribute(1, true);
+            exerciseAttribute(A_DEX, true);
             if (shouldMulchMissile(thrown)) {
                 destroyMulchedProjectile(thrown);
                 return;
@@ -12109,7 +12114,7 @@ async function dothrow(
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
         let range = Math.max(
             1,
-            Math.trunc(currentAttribute(0) / 2)
+            Math.trunc(currentAttribute(A_STR) / 2)
                 - Math.trunc(unitWeight / 40),
         );
         if (matchingSlingGem) range++;
@@ -12453,7 +12458,7 @@ async function dothrow(
             // dothrow.c:thitmonst()->tmiss(). ROCK is sling ammunition, but
             // throwing it without a sling applies the unlaunched-ammo penalty.
             const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
-            const dexterity = currentAttribute(1);
+            const dexterity = currentAttribute(A_DEX);
             let threshold = -1 + luck + findMonsterArmorClass(contact)
                 + (game.u?.uhitinc ?? 0) + (game.u?.ulevel ?? 1);
             if (dexterity < 4) threshold -= 3;
@@ -12575,7 +12580,7 @@ async function dothrow(
                 // thitmonst()'s Dexterity exercise and mulch probe.
                 await wakeAttackedMonster(contact);
             }
-            exerciseAttribute(1, true);
+            exerciseAttribute(A_DEX, true);
             const mulched = shouldMulchMissile(thrownMineral);
             if (mulched) {
                 destroyMulchedProjectile(thrownMineral);
@@ -12770,7 +12775,7 @@ function lockToolPresentation(tool) {
 }
 
 function lockPickChance(tool, g = game, container = null) {
-    const dexterity = g.u?.acurr?.a?.[1] ?? 10;
+    const dexterity = g.u?.acurr?.a?.[A_DEX] ?? 10;
     const rogueBonus = g.urole?.key === 'rogue';
     let chance;
     if (container) {
@@ -12834,7 +12839,7 @@ async function pushBoulder(boulder, x, y, dx, dy) {
     game._lastBoulderPushMove = sourceMove;
     if (giveMessage) await pline('With great effort you move the boulder.');
 
-    exerciseAttribute(0, true);
+    exerciseAttribute(A_STR, true);
     // C dopush() invalidates an invisible-monster memory glyph at the
     // destination before movobj().  Otherwise newsym() must continue to
     // honor `I` and cannot reveal the boulder which now occupies the square.
@@ -12864,8 +12869,8 @@ async function pushBoulder(boulder, x, y, dx, dy) {
 }
 
 function meleeAttributeBonus() {
-    const strength = currentAttribute(0);
-    const dexterity = game.u?.acurr?.a?.[1] ?? 10;
+    const strength = currentAttribute(A_STR);
+    const dexterity = game.u?.acurr?.a?.[A_DEX] ?? 10;
     let bonus = strength < 6 ? -2
         : strength < 8 ? -1
             : strength < 17 ? 0
@@ -13678,7 +13683,7 @@ async function attackHostileMonster(monster, x, y, {
         }
     }
 
-    if (primaryStrike) exerciseAttribute(0, true); // exercise(A_STR, TRUE)
+    if (primaryStrike) exerciseAttribute(A_STR, true);
     // uhitm.c find_roll_to_hit() checks role conduct before rolling the
     // attack die.  A lawful Knight striking a helpless, non-undead target
     // gets the caitiff message even when the subsequent attack misses.
@@ -13759,7 +13764,7 @@ async function attackHostileMonster(monster, x, y, {
         return finishStrike();
     }
 
-    if (primaryStrike) exerciseAttribute(1, true); // exercise(A_DEX, TRUE)
+    if (primaryStrike) exerciseAttribute(A_DEX, true);
     if (attackWeapon) {
         if (!game.u.uconduct) game.u.uconduct = {};
         const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
@@ -13817,7 +13822,7 @@ async function attackHostileMonster(monster, x, y, {
         game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
     );
     const ordinaryStrengthDamage = polymorphed ? 0
-        : strengthDamageBonus(currentAttribute(0));
+        : strengthDamageBonus(currentAttribute(A_STR));
     const strengthDamage = twoWeaponActive
         ? Math.sign(ordinaryStrengthDamage) * Math.trunc(
             (3 * Math.abs(ordinaryStrengthDamage) + 2) / 4,
@@ -14245,7 +14250,7 @@ async function domove(dx, dy, explicitAttempt = true) {
         } else {
             await pline("You don't have enough stamina to move.");
             // exercise() suppresses physical attributes while polymorphed.
-            if (!polymorphed) exerciseAttribute(2, false);
+            if (!polymorphed) exerciseAttribute(A_CON, false);
         }
         stopRun(game);
         // carrying_too_much() returns from domove_core() without clearing
@@ -14415,7 +14420,7 @@ async function domove(dx, dy, explicitAttempt = true) {
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
         const blind = !!(u?.blind || (u?.blindTurns || 0) > 0);
-        const dexterity = u?.acurr?.a?.[1] ?? 10;
+        const dexterity = u?.acurr?.a?.[A_DEX] ?? 10;
         const autoopenEligible = (game.flags?.autoopen ?? true)
             && !game._runState
             && !confused
@@ -14433,7 +14438,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             if (!dx || !dy) {
                 if (blind || stunned || dexterity < 10 || fumbling) {
                     await pline('Ouch!  You bump into a door.');
-                    exerciseAttribute(1, false);
+                    exerciseAttribute(A_DEX, false);
                     // C sets context.move despite returning false from
                     // test_move(), then nomul(0).  `true` is this port's
                     // scheduler-facing "time elapsed" result; the hero's
@@ -14479,11 +14484,11 @@ async function domove(dx, dy, explicitAttempt = true) {
         const openRoll = rnl(20);
         const attributes = game.u?.acurr?.a || [10, 10, 10];
         const openThreshold = Math.trunc(
-            ((attributes[0] ?? 10) + (attributes[1] ?? 10)
-                + (attributes[2] ?? 10)) / 3,
+            ((attributes[A_STR] ?? 10) + (attributes[A_DEX] ?? 10)
+                + (attributes[A_CON] ?? 10)) / 3,
         );
         if (openRoll >= openThreshold) {
-            exerciseAttribute(0, true);
+            exerciseAttribute(A_STR, true);
             await pline('The door resists!');
             return false;
         }

@@ -1,7 +1,7 @@
 // mondeath.js — shared monster fatality interception.
 // C refs: mon.c mlifesaver(), lifesaved_monster(), mondead().
 
-import { W_AMUL } from './const.js';
+import { A_WIS, W_AMUL } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
@@ -149,7 +149,7 @@ export async function lifeSaveMonster(
 
         const alreadyKnown = game._knownObjectTypes instanceof Set
             && game._knownObjectTypes.has(amulet.otyp);
-        if (!alreadyKnown) exerciseAttribute(4, true);
+        if (!alreadyKnown) exerciseAttribute(A_WIS, true);
         recordObjectEncounter(amulet.otyp);
         recordObjectKnowledge(amulet.otyp);
         await page(
