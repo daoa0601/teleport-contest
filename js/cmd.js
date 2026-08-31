@@ -31,10 +31,11 @@ import {
     vision_reset_new_level,
 } from './vision.js';
 import {
-    beginObjectBurn, endObjectBurn, transformMagicLampToOilLamp,
+    beginObjectBurn, endObjectBurn, igniteItems, transformMagicLampToOilLamp,
 } from './light.js';
 import {
-    zapCancellationRay, zapColdRay, zapDeathRay, zapFireRay, zapSleepRay,
+    destroyFireInventory, zapCancellationRay, zapColdRay, zapDeathRay,
+    zapFireRay, zapSleepRay,
 } from './zap.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
@@ -8267,7 +8268,7 @@ function roomAtPosition(x, y) {
         && y >= room.ly && y <= room.hy) || null;
 }
 
-async function askTeleportDestination() {
+export async function askTeleportDestination() {
     const firstUse = !game._travelTipShown;
     if (firstUse) {
         const dismissal = await moreUntilDismissed(
@@ -16075,7 +16076,7 @@ async function fightEmptyDestination(x, y) {
 // look_here(), engraving, and trap handling behind that shared boundary;
 // returning directly from a special movement helper would silently skip the
 // floor transaction even though the hero has changed squares.
-async function finishDestinationSpotEffects({
+export async function finishDestinationSpotEffects({
     oldx, oldy, newx, newy, loc, explicitAttempt,
 }) {
     // C spoteffects() updates special-room/shop membership after liquid entry
@@ -16217,24 +16218,7 @@ async function finishMovedHero({
     newsym(newx, newy);
     if (ballChainMove) finishBallAndChainMove(ballChainMove);
 
-    // C trap.c:lava_effects() rolls its water-walking damage before checking
-    // whether this hero can survive.  For an unprotected hero entering a
-    // lava wall, the fatal message then suspends before disclose() starts.
-    if (IS_LAVA(loc?.typ) && !game.u?.fire_resistance) {
-        d(6, 6);
-        const lava = loc.typ === LAVAWALL ? 'wall of lava' : 'molten lava';
-        await promptKey(
-            `You fall into the ${lava}!  You burn to a crisp...--More--`,
-        );
-        game.u.uhp = 0;
-        await finishOrdinaryDeath({
-            killer: 'molten lava', possessionAnswer: 'n', deathVerb: 'burned',
-        });
-        game.context.move = 0;
-        return true;
-    }
-
-    const pool = await heroLiquidEffects({
+    const liquid = await heroLiquidEffects({
         chooseTeleportDestination: async () => {
             const choice = await askTeleportDestination();
             return choice.destination;
@@ -16247,10 +16231,18 @@ async function finishMovedHero({
             loc: game.level?.at?.(to.x, to.y),
             explicitAttempt: false,
         }),
+        burnInventory: damage => destroyFireInventory(damage, {
+            state: game,
+            publish: plineWithContinuation,
+        }),
+        igniteInventory: () => igniteItems(game.inventory, {
+            state: game,
+            publish: plineWithContinuation,
+        }),
     });
-    if (pool?.moved && explicitAttempt)
+    if (liquid?.moved && explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
-    if (pool?.moved || pool?.died) return true;
+    if (liquid?.moved || liquid?.died) return true;
 
     const finished = await finishDestinationSpotEffects({
         oldx, oldy, newx, newy, loc, explicitAttempt,

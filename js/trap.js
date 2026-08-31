@@ -1,11 +1,12 @@
-// Water damage, fire damage, and monster rust-trap effects.
-// C ref: trap.c burnarmor(), trapeffect_rust_trap(), water_damage(),
-// and erode_obj().
+// Water, lava, fire, and monster rust-trap effects.
+// C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
+// water_damage(), and erode_obj().
 
 import {
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP,
     W_WEP,
 } from './const.js';
+import { findArmorClass } from './armor.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -14,14 +15,113 @@ import { splitMonster } from './monster_clone.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX,
     LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OILSKIN_SACK,
-    POT_ACID, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, TOWEL,
+    POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
+    RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL,
 } from './object_data.js';
+import { objectResistsDestruction } from './object_state.js';
+import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
 
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
+const POTION_CLASS = 8;
+const FIRE_RESISTANT_OBJECTS = new Set([
+    RED_DRAGON_SCALE_MAIL,
+    RED_DRAGON_SCALES,
+    RIN_FIRE_RESISTANCE,
+]);
+
+function objectClass(object) {
+    if (Number.isInteger(object?.oclass)) return object.oclass;
+    return object?.class === 'Potions' ? POTION_CLASS : 0;
+}
+
+function lavaCanBurnObject(object, random) {
+    if (!object || object.in_use || object.oerodeproof) return false;
+    const organic = (OBJECT_MATERIAL[object.otyp] ?? 0) <= 8;
+    if (!organic && objectClass(object) !== POTION_CLASS) return false;
+    if (FIRE_RESISTANT_OBJECTS.has(object.otyp)
+        || object.otyp === SCR_FIRE || object.otyp === SPE_FIREBALL)
+        return false;
+    return !objectResistsDestruction(object, 0, 0, random);
+}
+
+function removeLavaBurnedObject(state, object) {
+    let armorChanged = false;
+    for (const slot of [
+        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
+        'uleft', 'uright', 'uamul', 'ublindf',
+    ]) {
+        if (state[slot] === object) {
+            state[slot] = null;
+            armorChanged ||= slot.startsWith('uarm');
+        }
+        if (state.u?.[slot] === object) {
+            state.u[slot] = null;
+            armorChanged ||= slot.startsWith('uarm');
+        }
+    }
+    for (const slot of ['uwep', 'uswapwep', 'uquiver']) {
+        if (state[slot] === object) state[slot] = null;
+        if (state.u?.[slot] === object) state.u[slot] = null;
+    }
+    state.inventory = (state.inventory || []).filter(item => item !== object);
+    stopAllObjectTimers(object);
+    object.worn = false;
+    object.wornSlot = null;
+    object.owornmask = 0;
+    object.lamplit = false;
+    object.where = 'gone';
+    if (armorChanged) findArmorClass(state);
+}
+
+export async function destroyLavaInventory({
+    state = game,
+    publish = async () => {},
+    random = rn2,
+    showMessages = false,
+    previouslyAnnounced = 0,
+} = {}) {
+    let named = previouslyAnnounced;
+    let unnamed = 0;
+    for (const object of [...(state.inventory || [])]) {
+        if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
+            if (showMessages && !state.blind
+                && !(state.u?.blindTurns > 0)) {
+                await publish(
+                    'The Book of the Dead glows a strange dark red, but remains intact.',
+                );
+            }
+            continue;
+        }
+        if (!lavaCanBurnObject(object, random)) continue;
+        const wasWorn = !!object.worn || !!object.owornmask;
+        if (showMessages && wasWorn) {
+            const name = object.name || OBJECT_NAMES[object.otyp] || 'item';
+            const plural = (object.quan ?? object.quantity ?? 1) > 1
+                || name.endsWith('s');
+            await publish(
+                `Your ${name} ${plural ? 'burst' : 'bursts'} into flame!`,
+            );
+            named++;
+        } else {
+            unnamed++;
+        }
+        removeLavaBurnedObject(state, object);
+    }
+
+    if (showMessages && unnamed) {
+        const subject = named
+            ? unnamed === 1 ? 'Another item' : 'Other items'
+            : unnamed === 1 ? 'An item' : 'Some items';
+        await publish(`${subject} in your inventory ${
+            unnamed === 1 ? 'has' : 'have'
+        } been destroyed.`);
+    }
+    return named + unnamed - previouslyAnnounced;
+}
 
 function recordRoll(random, calls, range) {
     calls?.push(range);

@@ -21,7 +21,9 @@ import {
 } from './muse.js';
 import {
     animateRollingBoulderCell,
+    askTeleportDestination,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
+    finishDestinationSpotEffects,
     finishArmorRemoval, grantAmuletWish,
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack, stopRun,
@@ -68,6 +70,7 @@ import {
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel, Is_waterlevel,
+    TT_LAVA,
 } from './const.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
@@ -162,6 +165,7 @@ import {
     resolveMonsterLiquid, wakeMonstersNear, wakeMonstersNearWithMessages,
 } from './mon.js';
 import { burnHeroArmorByFire } from './trap.js';
+import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
@@ -2033,6 +2037,44 @@ async function initialTurnMaintenanceWithTty(
         delete game._statusProjectedAc;
     }
     return result;
+}
+
+async function settleHeroLiquidAfterAction() {
+    const finishLanding = ({ from, to }) => finishDestinationSpotEffects({
+        oldx: from.x,
+        oldy: from.y,
+        newx: to.x,
+        newy: to.y,
+        loc: game.level?.at?.(to.x, to.y),
+        explicitAttempt: false,
+    });
+
+    if (game.u?.utrap && game.u.utraptype === TT_LAVA) {
+        return sinkHeroIntoLava({
+            state: game,
+            publish: queueTurnMessage,
+            applyLandingEffects: finishLanding,
+        });
+    }
+    if (game.u?.umoved) return null;
+
+    return heroLiquidEffects({
+        state: game,
+        publish: queueTurnMessage,
+        chooseTeleportDestination: async () => {
+            const choice = await askTeleportDestination();
+            return choice.destination;
+        },
+        applyLandingEffects: finishLanding,
+        burnInventory: damage => destroyFireInventory(damage, {
+            state: game,
+            publish: queueTurnMessage,
+        }),
+        igniteInventory: () => igniteItems(game.inventory, {
+            state: game,
+            publish: queueTurnMessage,
+        }),
+    });
 }
 
 async function drainQueuedHelplessRecoveryMessage() {
@@ -6112,6 +6154,7 @@ export async function moveloop_core() {
     }
 
     await moveloopPreamble();
+    const movementRationActionPending = !!g._heroTimePending;
 
     // C allmain.c calls encumber_msg() immediately after a time-consuming
     // command and before monster movement.  If its new message cannot share
@@ -6221,6 +6264,11 @@ export async function moveloop_core() {
             finishOrDeferHeroTookTimeRng(g.moves || 1);
     }
 
+    if (movementRationActionPending && !g.program_state?.gameover) {
+        await settleHeroLiquidAfterAction();
+        if (g.program_state?.gameover) return;
+    }
+
     // C end.c installs the declined-debug-death recovery text as nomovemsg.
     // The interrupted monster finishes every remaining attack slot, then
     // moveloop completes the actor scan and any required global allocation
@@ -6303,6 +6351,10 @@ export async function moveloop_core() {
             initialTurnMaintenanceRng();
         }
         g._maintenanceMove = g.moves || 1;
+        if (!g.program_state?.gameover) {
+            await settleHeroLiquidAfterAction();
+            if (g.program_state?.gameover) return;
+        }
     }
 
     // A generic live-role actor scan is reached from the maintenance block

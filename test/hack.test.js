@@ -1,26 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PARANOID_SWIM, POOL, ROOM, WATER } from '../js/const.js';
+import {
+    LAVAPOOL, PARANOID_SWIM, POOL, ROOM, TT_LAVA, WATER,
+} from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { heroLiquidEffects } from '../js/hack.js';
+import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, LEASH, LOADSTONE, POT_ACID,
+    AMULET_OF_LIFE_SAVING, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID,
     WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-function poolAtHero() {
+function liquidAtHero(terrain) {
     const level = freshWeaponArena();
     const { ux, uy } = game.u;
-    level.at(ux, uy).typ = POOL;
+    level.at(ux, uy).typ = terrain;
     game.u.acurr.a[0] = 3;
     game.u.acurr.a[2] = 3;
     game.u.uhp = 20;
     return level;
+}
+
+function poolAtHero() {
+    return liquidAtHero(POOL);
 }
 
 function inventoryObject(otyp, overrides = {}) {
@@ -59,6 +65,115 @@ test('leaving a pool clears the underwater state', async () => {
     assert.equal(!!game.u.uinwater, false);
     assert.equal(game.underwater, false);
     assert.equal(messages.at(-1), 'You are back on solid ground.');
+});
+
+test('fire resistance leaves the hero stuck in lava', async () => {
+    liquidAtHero(LAVAPOOL);
+    game.u.fireResistance = true;
+    const messages = [];
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        random: () => 0,
+        rollDice: () => 12,
+    });
+
+    assert.equal(game.u.uhp, 19);
+    assert.equal(game.u.utraptype, TT_LAVA);
+    assert.ok(game.u.utrap > 0);
+    assert.equal(
+        messages.includes(
+            'You sink into the molten lava, but it only burns slightly!',
+        ),
+        true,
+    );
+});
+
+test('a trapped hero sinks deeper after another action in lava', async () => {
+    liquidAtHero(LAVAPOOL);
+    game.u.fireResistance = true;
+    game.u.utrap = 2 << 8;
+    game.u.utraptype = TT_LAVA;
+    game.u.umoved = false;
+    const messages = [];
+
+    await sinkHeroIntoLava({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        rollOne: () => 1,
+    });
+
+    assert.ok(game.u.utrap < 2 << 8);
+    assert.equal(messages.includes('You sink deeper into the lava.'), true);
+});
+
+test('fireproof water-walking boots hold the hero above lava', async () => {
+    liquidAtHero(LAVAPOOL);
+    const boots = inventoryObject(WATER_WALKING_BOOTS, {
+        oclass: 3,
+        worn: true,
+        oerodeproof: true,
+    });
+    game.inventory = [boots];
+    game.uarmf = boots;
+    game.u.uarmf = boots;
+    const messages = [];
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        rollDice: () => 8,
+        die: async () => assert.fail('the hero should survive'),
+    });
+
+    assert.equal(game.u.uhp, 12);
+    assert.equal(game.u.utrap, undefined);
+    assert.equal(game.inventory.includes(boots), true);
+    assert.equal(messages.includes('The lava here burns you!'), true);
+});
+
+test('an unprotected hero burns in lava', async () => {
+    liquidAtHero(LAVAPOOL);
+    const messages = [];
+    let death = null;
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        rollDice: () => 10,
+        die: async details => { death = details; },
+    });
+
+    assert.equal(death.killer, 'molten lava');
+    assert.equal(messages.includes('You fall into the molten lava!'), true);
+    assert.equal(messages.includes('You burn to a crisp...'), true);
+});
+
+test('life saving pulls the hero out after flammable gear burns', async () => {
+    const level = liquidAtHero(LAVAPOOL);
+    level.at(20, 5).typ = ROOM;
+    const armor = inventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, {
+        oclass: 5,
+        worn: true,
+    });
+    game.inventory = [armor, amulet];
+    game.uamul = amulet;
+    game.u.uamul = amulet;
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async () => {},
+        random: range => range === 21 ? 5 : range - 1,
+        rollDice: () => 10,
+        rollOne: () => 20,
+        die: async () => assert.fail('life saving should prevent death'),
+    });
+
+    assert.deepEqual([game.u.ux, game.u.uy], [20, 5]);
+    assert.equal(game.inventory.includes(armor), false);
+    assert.equal(game.inventory.includes(amulet), false);
 });
 
 test('a hero can teleport out before trying to crawl', async () => {
