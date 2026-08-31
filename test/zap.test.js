@@ -5,6 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { WAN_FIRE, WAN_SLEEP } from '../js/object_data.js';
+import { zapDeathRay } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sleep resistance prevents self-zap helplessness', async () => {
@@ -78,4 +79,31 @@ test('a fire ray burns a monster in its path', async () => {
     assert.equal(monster.msleeping, 0);
     assert.equal(wand.typeKnown, true);
     assert.equal(game.context.move, 1);
+});
+
+test('a death ray makes Death stronger instead of killing him', async () => {
+    freshWeaponArena();
+    game.blind = true;
+    game.u.blindTurns = 10;
+    game.u.unblind_telepat_range = -1;
+    game.viz_array[10][11] = 0;
+    const death = {
+        mnum: 311,
+        m_id: 9002,
+        mx: 11,
+        my: 10,
+        mac: 100,
+        m_lev: 30,
+        mhp: 5,
+        mhpmax: 20,
+        minvent: [],
+        inventory: [],
+    };
+    game.level.monsters = [death];
+
+    await zapDeathRay('l');
+
+    assert.equal(death.mhp, 30);
+    assert.equal(death.mhpmax, 30);
+    assert.ok(game.level.monsters.includes(death));
 });
