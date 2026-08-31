@@ -6,7 +6,7 @@ import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     SHIELD_OF_DRAIN_RESISTANCE,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_LEVEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
 
@@ -70,6 +70,29 @@ export function heroHasFreeAction(state = game) {
     return !!(hero.freeAction || hero.free_action
         || left?.otyp === RIN_FREE_ACTION
         || right?.otyp === RIN_FREE_ACTION);
+}
+
+export function heroHasWaterWalking(state = game) {
+    const hero = state?.u || {};
+    const boots = state?.uarmf || hero.uarmf;
+    return !!(hero.waterWalking || hero.water_walking
+        || boots?.otyp === WATER_WALKING_BOOTS);
+}
+
+export function heroKnowsWaterWalking(state = game) {
+    const hero = state?.u || {};
+    const boots = state?.uarmf || hero.uarmf;
+    const typeKnown = boots?.typeKnown
+        || state?._knownObjectTypes?.has(WATER_WALKING_BOOTS);
+    return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && typeKnown;
+}
+
+export function heroKnowsLavaWalking(state = game) {
+    if (!heroKnowsWaterWalking(state)) return false;
+    const hero = state?.u || {};
+    const boots = state?.uarmf || hero.uarmf;
+    const fireResistant = hero.fireResistance || hero.fire_resistance;
+    return !!fireResistant && !!boots.oerodeproof && !!boots.rknown;
 }
 
 // do_wear.c's *_on() callbacks distinguish the physical worn property from

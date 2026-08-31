@@ -20,7 +20,7 @@ import { currentAttribute } from './attrib.js';
 import {
     beginBallAndChainTeleport, finishBallAndChainTeleport,
 } from './ball.js';
-import { heroIsDisplaced } from './armor.js';
+import { heroHasWaterWalking, heroIsDisplaced } from './armor.js';
 import { engravingAt } from './engrave.js';
 import { somexyspace } from './mkroom.js';
 import { priestAlignment, priestIsInOwnTemple } from './priest.js';
@@ -170,8 +170,7 @@ function heroCanEnterTerrain(state, location) {
     const flying = !!(state?.u?.flying || state?.u?.flight
         || (flags1 & M1_FLY));
     const levitating = !!(state?.u?.levitating || state?.u?.levitation);
-    const waterWalking = !!(state?.u?.waterWalking
-        || state?.u?.water_walking);
+    const waterWalking = heroHasWaterWalking(state);
     const waterLevel = state?.u?.uz && state?.water_level
         && state.u.uz.dnum === state.water_level.dnum
         && state.u.uz.dlevel === state.water_level.dlevel;

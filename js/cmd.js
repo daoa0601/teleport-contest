@@ -4,6 +4,7 @@
 import { game } from './gstate.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroLiquidEffects,
+    heroShouldAvoidLiquid,
     heroTightDiagonalReason,
 } from './hack.js';
 import { defaultCommandKey } from './command_keys.js';
@@ -16595,13 +16596,10 @@ async function domove(dx, dy, explicitAttempt = true) {
 
     if (await moveWhileTrapped(dx, dy)) return true;
 
-    // C hack.c:swim_move_danger().  A visible transition onto liquid is
-    // declined by default; the request-menu (`m`) prefix deliberately
-    // bypasses this guard and suppresses the one-time tip on that path.
-    if ((IS_POOL(loc?.typ) || IS_LAVA(loc?.typ))
-        && loc?.seenv
-        && loc.typ !== game.level?.at(u.ux, u.uy)?.typ
-        && !game.context.nopick) {
+    // C hack.c:swim_move_danger().  Known walking equipment and the swim
+    // confirmation option decide whether a visible liquid edge stops us.
+    // The request-menu (`m`) prefix deliberately accepts that step.
+    if (heroShouldAvoidLiquid(newx, newy)) {
         const sameLevelAs = level => level
             && level.dnum === game.u?.uz?.dnum
             && level.dlevel === game.u?.uz?.dlevel;
@@ -16619,7 +16617,7 @@ async function domove(dx, dy, explicitAttempt = true) {
                                 ? 'moat'
                                 : `pool of ${displayLiquidName('water')}`;
         const warning = `You avoid stepping into the ${liquid}.`;
-        if (!game._tipSwimShown) {
+        if (game.flags?.tips !== false && !game._tipSwimShown) {
             await promptKey(`${warning}--More--`);
             game._tipSwimShown = true;
             await pline("(Tip: use 'm' prefix to step in if you really want to.)");

@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { POOL, ROOM, WATER } from '../js/const.js';
+import { PARANOID_SWIM, POOL, ROOM, WATER } from '../js/const.js';
+import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, LEASH, LOADSTONE, POT_ACID,
+    WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
+import { vision_reset } from '../js/vision.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function poolAtHero() {
@@ -53,7 +56,7 @@ test('leaving a pool clears the underwater state', async () => {
         publish: async message => messages.push(message),
     });
 
-    assert.equal(game.u.uinwater, 0);
+    assert.equal(!!game.u.uinwater, false);
     assert.equal(game.underwater, false);
     assert.equal(messages.at(-1), 'You are back on solid ground.');
 });
@@ -188,6 +191,26 @@ test('a flying steed keeps its rider above the pool', async () => {
     assert.equal(result, null);
     assert.equal(game.u.usteed, steed);
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+});
+
+test('known water-walking boots let the hero step onto a pool', async () => {
+    const level = freshWeaponArena();
+    level.at(11, 10).typ = POOL;
+    vision_reset();
+    const boots = inventoryObject(WATER_WALKING_BOOTS, {
+        oclass: 3,
+        worn: true,
+        typeKnown: true,
+    });
+    game.inventory = [boots];
+    game.uarmf = boots;
+    game.u.uarmf = boots;
+    game.flags.paranoia_bits = PARANOID_SWIM;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(!!game.u.uinwater, false);
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
 
 test('a burdened hero drops gear before crawling out of a pool', async () => {

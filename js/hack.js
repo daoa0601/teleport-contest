@@ -3,7 +3,8 @@
 
 import {
     D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DOOR, ICE, IS_LAVA,
-    IS_OBSTRUCTED, IS_POOL, IS_WALL, Is_waterlevel, STONE, TREE, WATER,
+    IS_OBSTRUCTED, IS_POOL, IS_WALL, IS_WATERWALL, Is_waterlevel,
+    LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, TREE, WATER,
     W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
@@ -30,20 +31,28 @@ import { vision_recalc, vision_reset } from './vision.js';
 import {
     inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED,
 } from './weight.js';
-import { findArmorClass } from './armor.js';
+import {
+    findArmorClass, heroHasWaterWalking, heroKnowsLavaWalking,
+    heroKnowsWaterWalking,
+} from './armor.js';
+import { levelHasCeiling } from './mon.js';
 
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
+const M1_FLY = 0x00000001;
+const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
+const M1_CLING = 0x00000010;
 const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
-const M1_SWIM = 0x00000002;
 const M1_SLITHY = 0x00080000;
 const M1_UNSOLID = 0x00100000;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_BREATHLESS = 0x00000400;
+const S_EYE = 5;
 const S_VORTEX = 22;
+const S_LIGHT = 25;
 const PM_GREMLIN = 40;
 const PM_GRID_BUG = 112;
 const PM_AIR_ELEMENTAL = 154;
@@ -53,6 +62,61 @@ function heroFormFlags(state) {
     if (!(state.u?.mtimedone > 0)
         || !Number.isInteger(state.u?.umonnum)) return 0;
     return MONSTER_FLAGS1[state.u.umonnum] ?? 0;
+}
+
+function heroIsInAir(state) {
+    const hero = state.u || {};
+    if (hero.levitating || hero.levitation
+        || hero.flying || hero.flight) return true;
+    const flags = heroFormFlags(state);
+    const symbol = hero.mtimedone > 0
+        ? MONSTER_SYMBOL[hero.umonnum] : null;
+    return !!(flags & M1_FLY)
+        || symbol === S_EYE
+        || symbol === S_LIGHT
+        || (!!(flags & M1_CLING) && levelHasCeiling(state));
+}
+
+function heroFloorType(state, x, y) {
+    const terrain = state.level?.at?.(x, y)?.typ;
+    if (IS_WATERWALL(terrain)) return WATER;
+    if (terrain === LAVAWALL) return LAVAWALL;
+    if (!heroIsInAir(state)) {
+        if (IS_POOL(terrain)) return POOL;
+        if (IS_LAVA(terrain)) return LAVAPOOL;
+    }
+    return ROOM;
+}
+
+export function heroShouldAvoidLiquid(x, y, state = game) {
+    const hero = state.u;
+    const destination = state.level?.at?.(x, y);
+    if (!hero || !destination) return false;
+
+    const newFloor = heroFloorType(state, x, y);
+    const liquidWall = IS_WATERWALL(newFloor) || newFloor === LAVAWALL;
+    if (hero.uinwater && (IS_POOL(destination.typ)
+        || IS_WATERWALL(newFloor))) return false;
+    if (newFloor === heroFloorType(state, hero.ux, hero.uy)
+        || hero.stunned || (hero.stunnedTurns ?? 0) > 0
+        || hero.confused || (hero.confusionTurns ?? 0) > 0
+        || !destination.seenv
+        || (!IS_POOL(destination.typ) && !IS_LAVA(destination.typ)
+            && !liquidWall)) return false;
+
+    const dangerousPool = IS_POOL(destination.typ)
+        && !heroKnowsWaterWalking(state);
+    const dangerousLava = IS_LAVA(destination.typ)
+        && !heroKnowsLavaWalking(state)
+        && !IS_LAVA(state.level?.at?.(hero.ux, hero.uy)?.typ);
+    if (!dangerousPool && !dangerousLava && !liquidWall) return false;
+
+    if (state.context?.nopick) {
+        state._tipSwimShown = true;
+        return false;
+    }
+    return liquidWall
+        || !!((state.flags?.paranoia_bits ?? 0) & PARANOID_SWIM);
 }
 
 function squareBlocksHero(state, x, y) {
@@ -148,8 +212,7 @@ function crawlDestination(state, x, y, random) {
 function heroStaysAboveWater(state, location) {
     const u = state.u || {};
     if (u.levitating || u.levitation || u.flying || u.flight) return true;
-    const waterWalking = !!(u.waterWalking || u.water_walking);
-    return waterWalking && location?.typ !== WATER;
+    return heroHasWaterWalking(state) && location?.typ !== WATER;
 }
 
 function heroCanLiveUnderwater(state) {
@@ -361,7 +424,7 @@ async function leaveWater({
         message = 'You pop out of the water like a cork!';
     } else if (u.flying || u.flight) {
         message = 'You fly out of the water.';
-    } else if (u.waterWalking || u.water_walking) {
+    } else if (heroHasWaterWalking(state)) {
         message = 'You slowly rise above the surface.';
     } else {
         stillInWater = true;

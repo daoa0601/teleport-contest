@@ -98,6 +98,7 @@ export const LEATHER_GLOVES = 159;
 export const GAUNTLETS_OF_POWER = 161;
 export const IRON_SHOES = 164;
 export const SPEED_BOOTS = 166;
+export const WATER_WALKING_BOOTS = 167;
 export const ELVEN_BOOTS = 169;
 export const WORM_TOOTH = 42;
 export const CRYSKNIFE = 43;
