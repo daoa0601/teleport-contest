@@ -229,9 +229,7 @@ import {
     maybeSmudgeEngravings, readEngravingAt, wipeEngravingAt,
 } from './engrave.js';
 import {
-    farlookTipUntilDismissed, getposFeatureMissMessage,
-    getposHelpUntilDismissed, isGetposPickCharacter, moveGetposCursor,
-    nextGetposFeature, paintGetposCursor,
+    farlookTipUntilDismissed, moveGetposCursor, selectMapPosition,
 } from './getpos.js';
 import {
     chatWithQuestLeader, displayPreparedQuestArrival, prepareQuestArrival,
@@ -5594,25 +5592,16 @@ async function wizKill() {
         await farlookTipUntilDismissed();
     }
 
-    const cursor = { x: game.u.ux, y: game.u.uy };
-    let message = firstUse ? 'Move cursor to a monster:'
-        : 'Pick first monster to slay.';
-    for (;;) {
-        await paintGetposCursor(cursor, message);
-        const key = await nhgetch();
-        const ch = String.fromCharCode(key);
-        if (key === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
-        if (isGetposPickCharacter(ch)) break;
-        if (isMovementKey(ch)) {
-            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
-            message = farlookLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        message = getposFeatureMissMessage(ch);
+    const cursor = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy },
+        prompt: firstUse ? 'Move cursor to a monster:'
+            : 'Pick first monster to slay.',
+        goal: 'a monster',
+        describe: farlookLocationDescription,
+    });
+    if (!cursor) {
+        game.context.move = 0;
+        return;
     }
 
     game._pending_message = '';
@@ -8363,59 +8352,24 @@ async function wizTeleportPosition() {
     // tele(), so the controlled getpos starts at the hero and cancellation
     // cannot resurrect an interrupted travel destination.
     game._travelTarget = null;
-    const cursor = { x: game.u.ux, y: game.u.uy };
-    let message = firstUse
-        ? (game.flags?.verbose
-            ? "(For instructions type a '?')  Move cursor to the desired position:"
-            : 'Move cursor to the desired position:')
-        : (game.flags?.verbose
-            ? "Where do you want to be teleported?  (For instructions type a '?')"
-            : 'Where do you want to be teleported?');
-    for (;;) {
-        await paintGetposCursor(cursor, message);
-        const key = await nhgetch();
-        const ch = String.fromCharCode(key);
-        if (key === 27) {
-            game._pending_message = '';
-            // dotele(TRUE) still reaches morehungry(100) and returns a timed
-            // command when scrolltele()'s controlled getpos was cancelled.
-            game.u.uhunger = (game.u.uhunger ?? 900) - 100;
-            game.context.move = 1;
-            return;
-        }
-        if (isGetposPickCharacter(ch)) break;
-        if (ch === ' ') {
-            message = wizardPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        // C cmd.c/getpos.c: '$' is NHKF_GETPOS_SHOWVALID.  Position
-        // teleportation has no getpos highlighting callback installed, so
-        // the toggle changes no map cells but still requests the canonical
-        // goal prompt on the next editor iteration.
-        if (ch === '$') {
-            message = 'Move cursor to the desired position:';
-            continue;
-        }
-        // Return is bound to a southward rush.  getpos handles rush movement
-        // in eight-cell chunks when getloc_moveskip is off.
-        if (key === 10 || key === 13) {
-            moveGetposCursor(cursor, 0, 8);
-            message = wizardPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        if (isMovementKey(ch)) {
-            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
-            message = wizardPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        const feature = nextGetposFeature(cursor, ch);
-        if (feature) {
-            cursor.x = feature.x;
-            cursor.y = feature.y;
-            message = wizardPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        message = getposFeatureMissMessage(ch);
+    const cursor = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy },
+        prompt: firstUse
+            ? (game.flags?.verbose
+                ? "(For instructions type a '?')  Move cursor to the desired position:"
+                : 'Move cursor to the desired position:')
+            : (game.flags?.verbose
+                ? "Where do you want to be teleported?  (For instructions type a '?')"
+                : 'Where do you want to be teleported?'),
+        goal: 'the desired position',
+        describe: wizardPositionDescription,
+    });
+    if (!cursor) {
+        // dotele(TRUE) still reaches morehungry(100) and returns a timed
+        // command when scrolltele()'s controlled getpos was cancelled.
+        game.u.uhunger = (game.u.uhunger ?? 900) - 100;
+        game.context.move = 1;
+        return;
     }
 
     // getpos removes its auto-description from the logical topline while
@@ -8688,41 +8642,29 @@ async function dojump() {
         }
     }
 
-    const cursor = { x: game.u.ux, y: game.u.uy };
-    let message = firstUse
-        ? 'Move cursor to the desired position:'
-        : (game.flags?.verbose
-            ? "Where do you want to jump?  (For instructions type a '?')"
-            : 'Where do you want to jump?');
     const initialHighlight = lastJumpHighlight();
-    let firstPaint = true;
-    for (;;) {
-        await paintGetposCursor(cursor, message);
-        if (!firstUse && firstPaint && initialHighlight) {
+    const cursor = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy },
+        prompt: firstUse
+            ? 'Move cursor to the desired position:'
+            : (game.flags?.verbose
+                ? "Where do you want to jump?  (For instructions type a '?')"
+                : 'Where do you want to jump?'),
+        goal: 'the desired position',
+        describe: jumpLocationDescription,
+        afterPaint: (_cursor, firstPaint) => {
+            if (firstUse || !firstPaint || !initialHighlight) return;
             // tmp_at() paints each highlighted destination in dx/dy order;
             // tty's cursor remains just after the final glyph until the first
             // getpos input causes curs() to restore the selection cursor.
             game.nhDisplay?.setCursor(
                 initialHighlight.x, initialHighlight.y + 1,
             );
-        }
-        firstPaint = false;
-        const key = await nhgetch();
-        const ch = String.fromCharCode(key);
-        if (key === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
-        if (isGetposPickCharacter(ch)) break;
-        if (ch === ' ') {
-            message = jumpLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        if (isMovementKey(ch)) {
-            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
-            message = jumpLocationDescription(cursor.x, cursor.y);
-        }
+        },
+    });
+    if (!cursor) {
+        game.context.move = 0;
+        return;
     }
 
     if (!physicalJumpTargetValid(cursor.x, cursor.y)) {
@@ -8803,60 +8745,20 @@ async function dotravel() {
         await farlookTipUntilDismissed();
     }
 
-    const cursor = game._travelTarget
-        ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy };
-    let message = firstUse
-        ? "(For instructions type a '?')  Move cursor to the desired destination:"
-        : game.flags?.verbose
-            ? "Where do you want to travel to?  (For instructions type a '?')"
-            : 'Where do you want to travel to?';
-    for (;;) {
-        await paintGetposCursor(cursor, message);
-        const key = await nhgetch();
-        const ch = String.fromCharCode(key);
-        if (key === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
-        if (isGetposPickCharacter(ch)) break;
-        if (key === 18) { // Ctrl-R: redraw the getpos prompt.
-            message = 'Move cursor to a monster, object or location:';
-            continue;
-        }
-        if (ch === '?') {
-            await getposHelpUntilDismissed('the desired destination');
-            message = 'Move cursor to the desired destination:';
-            continue;
-        }
-        if (ch === ' ') {
-            // getpos maps space to its auto-description command.  It does
-            // not enter the cmap feature-cycle path even though the default
-            // stone glyph is also a literal space.
-            message = travelPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        // Return is getpos's southward rush command, not an unknown newline.
-        // With move-skip disabled it advances eight map rows and immediately
-        // auto-describes the new cursor location.
-        if (key === 10 || key === 13) {
-            moveGetposCursor(cursor, 0, 8);
-            message = travelPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        if (isMovementKey(ch)) {
-            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
-            message = travelPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        const feature = nextGetposFeature(cursor, ch);
-        if (feature) {
-            cursor.x = feature.x;
-            cursor.y = feature.y;
-            message = travelPositionDescription(cursor.x, cursor.y);
-            continue;
-        }
-        message = getposFeatureMissMessage(ch);
+    const cursor = await selectMapPosition({
+        start: game._travelTarget
+            ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
+        prompt: firstUse
+            ? "(For instructions type a '?')  Move cursor to the desired destination:"
+            : game.flags?.verbose
+                ? "Where do you want to travel to?  (For instructions type a '?')"
+                : 'Where do you want to travel to?',
+        goal: 'the desired destination',
+        describe: travelPositionDescription,
+    });
+    if (!cursor) {
+        game.context.move = 0;
+        return;
     }
 
     // getpos() leaves its painted location description on the physical tty
@@ -8913,38 +8815,18 @@ async function doFarlook() {
         await farlookTipUntilDismissed();
     }
 
-    const cursor = game._travelTarget
-        ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy };
-    let message = firstUse
-        ? 'Move cursor to a monster, object or location:'
-        : 'Pick a monster, object or location.';
-    for (;;) {
-        await paintGetposCursor(cursor, message);
-        const key = await nhgetch();
-        const ch = String.fromCharCode(key);
-        if (key === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
-        if (isGetposPickCharacter(ch)) break;
-        if (key === 18) { // Ctrl-R: redraw the getpos prompt.
-            message = 'Move cursor to a monster, object or location:';
-            continue;
-        }
-        if (isMovementKey(ch)) {
-            moveGetposCursor(cursor, DIR_DX[ch], DIR_DY[ch]);
-            message = farlookLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        const feature = nextGetposFeature(cursor, ch);
-        if (feature) {
-            cursor.x = feature.x;
-            cursor.y = feature.y;
-            message = farlookLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        message = getposFeatureMissMessage(ch);
+    const cursor = await selectMapPosition({
+        start: game._travelTarget
+            ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
+        prompt: firstUse
+            ? 'Move cursor to a monster, object or location:'
+            : 'Pick a monster, object or location.',
+        goal: 'a monster, object or location',
+        describe: farlookLocationDescription,
+    });
+    if (!cursor) {
+        game.context.move = 0;
+        return;
     }
     // getpos has already handed its short automatic label back to the
     // message window.  pager.c then uses putmixed(WIN_MESSAGE), whose long

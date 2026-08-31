@@ -183,3 +183,86 @@ export async function getposHelpUntilDismissed(goal) {
     while (![27, 32, 10, 13].includes(key));
     return key;
 }
+
+const GETPOS_DIRECTIONS = {
+    h: [-1, 0], j: [0, 1], k: [0, -1], l: [1, 0],
+    y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
+};
+
+function describeSelectedPosition(describe, cursor, fallback) {
+    return describe?.(cursor.x, cursor.y) || fallback;
+}
+
+export async function selectMapPosition({
+    start,
+    prompt,
+    goal,
+    describe,
+    afterPaint = null,
+}) {
+    const cursor = { ...start };
+    const movePrompt = `Move cursor to ${goal}:`;
+    let message = prompt;
+    let firstPaint = true;
+
+    for (;;) {
+        await paintGetposCursor(cursor, message);
+        if (afterPaint) await afterPaint(cursor, firstPaint);
+        firstPaint = false;
+
+        const key = await nhgetch();
+        const ch = String.fromCharCode(key);
+        if (key === 27) {
+            game._pending_message = '';
+            return null;
+        }
+        if (isGetposPickCharacter(ch)) return cursor;
+        if (key === 18) {
+            message = movePrompt;
+            continue;
+        }
+        if (ch === '?') {
+            await getposHelpUntilDismissed(goal);
+            message = movePrompt;
+            continue;
+        }
+        if (ch === ' ') {
+            message = describeSelectedPosition(describe, cursor, movePrompt);
+            continue;
+        }
+        if (ch === '$') {
+            message = movePrompt;
+            continue;
+        }
+        if (ch === '@') {
+            cursor.x = game.u.ux;
+            cursor.y = game.u.uy;
+            message = describeSelectedPosition(describe, cursor, movePrompt);
+            continue;
+        }
+        if (key === 10 || key === 13) {
+            moveGetposCursor(cursor, 0, 8);
+            message = describeSelectedPosition(describe, cursor, movePrompt);
+            continue;
+        }
+
+        const direction = GETPOS_DIRECTIONS[ch.toLowerCase()];
+        if (direction) {
+            const distance = ch === ch.toUpperCase() ? 8 : 1;
+            moveGetposCursor(
+                cursor, direction[0] * distance, direction[1] * distance,
+            );
+            message = describeSelectedPosition(describe, cursor, movePrompt);
+            continue;
+        }
+
+        const feature = nextGetposFeature(cursor, ch);
+        if (feature) {
+            cursor.x = feature.x;
+            cursor.y = feature.y;
+            message = describeSelectedPosition(describe, cursor, movePrompt);
+            continue;
+        }
+        message = getposFeatureMissMessage(ch);
+    }
+}
