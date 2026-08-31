@@ -163,7 +163,7 @@ import {
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
-import { resolveMonsterLiquidBeforeMove } from './mon.js';
+import { resolveMonsterLiquid } from './mon.js';
 import { burnHeroArmorByFire } from './trap.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
@@ -3515,7 +3515,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             actor.mx, actor.my,
             game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my,
         );
-        const liquid = await resolveMonsterLiquidBeforeMove(actor, game, {
+        const liquid = await resolveMonsterLiquid(actor, game, {
             announce: queueTurnMessage,
             finishDeath: finishMonsterLiquidDeath,
         });

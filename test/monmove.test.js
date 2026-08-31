@@ -7,7 +7,7 @@ import {
 } from '../js/monmove.js';
 import { LAVAPOOL } from '../js/const.js';
 import { GameMap } from '../js/game.js';
-import { resolveMonsterLiquidBeforeMove } from '../js/mon.js';
+import { resolveMonsterLiquid } from '../js/mon.js';
 import { ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 
@@ -66,7 +66,7 @@ test('a land monster in lava burns and drops what it carried', async () => {
         moves: 1,
     };
 
-    const result = await resolveMonsterLiquidBeforeMove(ant, state, {
+    const result = await resolveMonsterLiquid(ant, state, {
         finishDeath: finishMonsterLiquidDeath,
     });
 

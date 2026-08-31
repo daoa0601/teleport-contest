@@ -122,11 +122,13 @@ function monsterLiquidName(monster) {
     return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
 }
 
-async function tryMonsterLifeSaving(monster, state) {
+async function tryMonsterLifeSaving(
+    monster, state, saveMonster = lifeSaveMonster,
+) {
     const amulet = wornMonsterLifeSaver(monster);
     if (!amulet || state !== game) return null;
     monster.mhp = 0;
-    return lifeSaveMonster(monster, amulet, {
+    return saveMonster(monster, amulet, {
         visible: cansee(monster.mx, monster.my),
         spotted: canSeeMonster(monster, monster.mx, monster.my),
         genocided: !!((state.mvitals?.[monster.mnum]?.mvflags ?? 0)
@@ -135,21 +137,24 @@ async function tryMonsterLifeSaving(monster, state) {
     });
 }
 
-export async function resolveMonsterLiquidBeforeMove(
+export async function resolveMonsterLiquid(
     monster,
     state = game,
     {
         announce = async () => {},
         finishDeath,
+        monsterMoving = true,
         random = rn2,
         rollDice = d,
+        saveMonster = lifeSaveMonster,
     } = {},
 ) {
     const calls = [];
     const x = monster?.mx;
     const y = monster?.my;
     const location = state.level?.at?.(x, y);
-    if (!monster || !location) return null;
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0 || !location)
+        return null;
     if (typeof finishDeath !== 'function') {
         throw new TypeError('minliquid requires the monster death handler');
     }
@@ -169,7 +174,9 @@ export async function resolveMonsterLiquidBeforeMove(
             if (state === game && cansee(x, y))
                 await announce(`The ${monsterLiquidName(monster)} rusts.`);
             if (monster.mhp <= 0) {
-                const saved = await tryMonsterLifeSaving(monster, state);
+                const saved = await tryMonsterLifeSaving(
+                    monster, state, saveMonster,
+                );
                 if (!saved?.survived) {
                     await waterDamageChain(
                         monster.minvent || monster.inventory || [], [], state,
@@ -190,9 +197,13 @@ export async function resolveMonsterLiquidBeforeMove(
                 if (relocation) return { survived: true, relocation };
             }
             if (state === game && cansee(x, y))
-                await announce(`The ${monsterLiquidName(monster)} drowns.`);
+                await announce(monsterMoving
+                    ? `The ${monsterLiquidName(monster)} drowns.`
+                    : `You drown the ${monsterLiquidName(monster)}.`);
             monster.mhp = 0;
-            const saved = await tryMonsterLifeSaving(monster, state);
+            const saved = await tryMonsterLifeSaving(
+                monster, state, saveMonster,
+            );
             if (!saved?.survived) {
                 await waterDamageChain(
                     monster.minvent || monster.inventory || [], [], state,
@@ -243,7 +254,9 @@ export async function resolveMonsterLiquidBeforeMove(
             }
 
             if (monster.mhp <= 0) {
-                const saved = await tryMonsterLifeSaving(monster, state);
+                const saved = await tryMonsterLifeSaving(
+                    monster, state, saveMonster,
+                );
                 if (!saved?.survived)
                     return finishDeath(monster, state, random, calls, false);
             }
