@@ -23,7 +23,7 @@ import {
     MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, APPLE, BANANA,
+    ACID_VENOM, AMULET_OF_YENDOR, APPLE, BANANA,
     BELL_OF_OPENING, BULLWHIP,
     BLINDING_VENOM, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION,
     CLOAK_OF_MAGIC_RESISTANCE,
@@ -105,7 +105,7 @@ import {
     NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED,
     MM_NOWAIT, NOTONL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
     UNLOCKDOOR, VIBRATING_SQUARE,
-    WATER, W_ACCESSORY, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
+    WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMOR,
     W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL,
     Upolyd, is_pit, isok,
@@ -139,7 +139,6 @@ const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
-const MR_FIRE = 0x01;
 const MR_SLEEP = 0x04;
 const M2_WANDER = 0x00800000;
 const M2_LORD = 0x00000400;
@@ -9308,57 +9307,24 @@ function attemptMonsterRestrap(monster, state, random, calls) {
     return false;
 }
 
-// C mon.c:minliquid(), fatal unseen-lava slice.  movemon_singlemon() has
-// already debited the actor's movement when this runs, but liquid death
-// precedes equipment, concealment, Conflict, and dochug().  Visible death
-// prose, monster life saving, fire-resistant attrition, teleport escape, and
-// inventory release each cross additional owners; leave those actors for
-// their dedicated branches instead of consuming their later movement RNG.
-function fatalUnseenLavaDeathBeforeMove(monster, state) {
-    const x = monster?.mx;
-    const y = monster?.my;
-    const loc = state?.level?.at?.(x, y);
-    if (!loc || !IS_LAVA(loc.typ)) return null;
-
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster?.mnum];
-    const airborne = !!(flags & M1_FLY)
-        || symbol === S_EYE || symbol === S_LIGHT;
-    const likesLava = monster?.mnum === PM_FIRE_ELEMENTAL
-        || monster?.mnum === PM_SALAMANDER;
-    const teleportEscape = !!(flags & M1_TPORT)
-        && !monsterTeleportRestricted(monster, state);
-    const fireResistant = !!(
-        (MONSTER_RESISTS[monster?.mnum] ?? 0) & MR_FIRE
-    );
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const wornLifeSaver = inventory.some(object =>
-        object?.otyp === AMULET_OF_LIFE_SAVING
-        && (((object?.owornmask ?? 0) & W_AMUL) !== 0
-            || object?.wornSlot === 'amulet'));
-    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-    const locationVisible = !blind
-        && !!(state?.viz_array?.[y]?.[x] & 0x2);
-
-    if (airborne || (flags & M1_CLING) || likesLava
-        || teleportEscape || fireResistant || wornLifeSaver
-        || inventory.length || locationVisible) return null;
-
-    monster.mhp = 0;
-    monster.dead = true;
-    state.level.monsters = (state.level.monsters || []).filter(candidate =>
-        candidate !== monster);
-    recordVanquished(
-        monster, MONSTER_NAME[monster.mnum] || 'monster', { state },
-    );
+export function finishMonsterLiquidDeath(
+    monster, state, random, calls, leaveCorpse,
+) {
+    const x = monster.mx;
+    const y = monster.my;
+    detachDeadMonster(monster, state);
+    const corpse = leaveCorpse
+        ? createOrdinaryMonsterCorpse(monster, state, random, calls)
+        : null;
     if (state === game) {
         unmap_invisible(x, y, false);
         newsym(x, y);
     }
     return {
         oldx: x, oldy: y, x, y,
-        moved: false, dead: true, liquidDeath: 'lava',
+        moved: false, dead: true,
         actionCompleted: true,
+        corpse,
     };
 }
 
@@ -9367,30 +9333,6 @@ export function runQuietMonsterActions(
 ) {
     return actors.map(monster => {
         const calls = DISCARDED_CALL_LOG;
-        const liquidDeath = fatalUnseenLavaDeathBeforeMove(monster, state);
-        if (liquidDeath)
-            return { monster, calls, movement: liquidDeath };
-        // C mon.c:minliquid(), called by movemon_singlemon() after movement
-        // debit.  A non-breathless eel stranded on land can lose one HP and
-        // begins a short flee before concealment and dochug() are evaluated.
-        const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-        const eel = MONSTER_SYMBOL[monster?.mnum] === S_EEL;
-        if (eel
-            && !IS_POOL(state?.level?.at?.(monster.mx, monster.my)?.typ)
-            && !(speciesFlags & M1_BREATHLESS)) {
-            if ((monster.mhp ?? 0) > 1
-                && recordRandom(random, calls, monster.mhp)
-                    > recordRandom(random, calls, 8)) {
-                monster.mhp--;
-            }
-            if (!monster.mflee || (monster.mfleetim ?? 0) > 0) {
-                let fleeTime = 2 + (monster.mfleetim ?? 0);
-                if (fleeTime === 1) fleeTime++;
-                monster.mfleetim = Math.min(fleeTime, 127);
-            }
-            monster.mflee = 1;
-            monster.mtrack = [];
-        }
         // C movemon_singlemon() reassesses newly acquired/replacement armor
         // after movement debit but before hider state, Conflict, or dochug().
         // Dressing is RNG-free and may freeze the actor for the armor delay.

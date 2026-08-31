@@ -156,12 +156,14 @@ import {
     resumeDeferredPetEating, resumeDeferredPetMove,
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
-    finishDeferredMonsterCounterattackDeath, fumaroles,
+    finishDeferredMonsterCounterattackDeath, finishMonsterLiquidDeath,
+    fumaroles,
     heroEveryturnEffect, runLevelRegions, runMonsterEveryturnEffects,
     runQuietMonsterActions,
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
+import { resolveMonsterLiquidBeforeMove } from './mon.js';
 import { burnHeroArmorByFire } from './trap.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
@@ -3513,6 +3515,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             actor.mx, actor.my,
             game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my,
         );
+        const liquid = await resolveMonsterLiquidBeforeMove(actor, game, {
+            announce: queueTurnMessage,
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        if (liquid?.dead) {
+            actions.push({ monster: actor, calls: [], movement: liquid });
+            continue;
+        }
         // C monmove.c:dochug() clears STRAT_WAITFORU when the quest leader
         // can see the adjacent hero, but STRAT_CLOSE remains a wait-mask bit.
         // That sends the actor through quest_talk() without ordinary movement

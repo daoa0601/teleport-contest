@@ -2,8 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    allocateMonsterMovement, mcalcmove, naturalMonsterSpeed,
+    allocateMonsterMovement, finishMonsterLiquidDeath,
+    mcalcmove, naturalMonsterSpeed,
 } from '../js/monmove.js';
+import { LAVAPOOL } from '../js/const.js';
+import { GameMap } from '../js/game.js';
+import { resolveMonsterLiquidBeforeMove } from '../js/mon.js';
+import { ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 
 function rolls(values) {
@@ -34,4 +39,38 @@ test('monster allocation applies newest-first movement to current actors',
 
 test('Knight starts with the source pony species', () => {
     assert.equal(roles.find(role => role.key === 'knight').petnum, 100);
+});
+
+test('a land monster in lava burns and drops what it carried', async () => {
+    const level = new GameMap();
+    level.at(12, 10).typ = LAVAPOOL;
+    const rock = {
+        otyp: ROCK,
+        quan: 1,
+        quantity: 1,
+        where: 'monster',
+    };
+    const ant = {
+        mnum: 0,
+        mx: 12,
+        my: 10,
+        mhp: 4,
+        mhpmax: 4,
+        minvent: [rock],
+        inventory: [rock],
+    };
+    level.monsters = [ant];
+    const state = {
+        level,
+        u: { ux: 10, uy: 10, uz: { dnum: 0, dlevel: 1 } },
+        moves: 1,
+    };
+
+    const result = await resolveMonsterLiquidBeforeMove(ant, state, {
+        finishDeath: finishMonsterLiquidDeath,
+    });
+
+    assert.equal(result.dead, true);
+    assert.equal(level.monsters.includes(ant), false);
+    assert.equal(level.objects[12][10].includes(rock), true);
 });
