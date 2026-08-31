@@ -8,10 +8,11 @@ import {
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import {
-    OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER, WAN_FIRE,
+    APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER, WAN_FIRE,
     WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS,
+    WAN_WISHING,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
 import {
@@ -169,6 +170,21 @@ test('create monster summons beside the hero without asking for a direction',
         await rhack('z'.charCodeAt(0));
 
         assert.ok(game.level.monsters.length > 0);
+    });
+
+test('wishing creates the requested object without asking for a direction',
+    async () => {
+        freshWeaponArena();
+        game.u.uluck = 10;
+        const wand = carriedWand(WAN_WISHING, { name: 'wishing' });
+        game.inventory = [wand];
+        pushKey('a');
+        pushKey(' ');
+        pushKeys('apple\n');
+
+        await rhack('z'.charCodeAt(0));
+
+        assert.ok(game.inventory.some(object => object.otyp === APPLE));
     });
 
 test('a fire ray burns a monster in its path', async () => {

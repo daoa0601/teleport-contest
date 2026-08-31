@@ -24,10 +24,11 @@ import {
     askTeleportDestination,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     finishDestinationSpotEffects,
-    finishArmorRemoval, grantAmuletWish,
+    finishArmorRemoval,
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack, stopRun,
 } from './cmd.js';
+import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import {

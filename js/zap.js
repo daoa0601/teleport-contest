@@ -40,7 +40,7 @@ import {
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
     WAN_FIRE,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
-    WAN_STASIS,
+    WAN_STASIS, WAN_WISHING,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -65,6 +65,7 @@ import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
 } from './vision.js';
 import { objectWeight } from './weight.js';
+import { makeWish } from './wish.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -218,6 +219,15 @@ async function zapNoDirection(wand) {
     if (wand.otyp === WAN_CREATE_MONSTER) {
         const count = rn2(23) ? 1 : rn2(7) + 2;
         if (await createCritters(count)) learnNoDirectionWand(wand);
+        return true;
+    }
+    if (wand.otyp === WAN_WISHING) {
+        if ((game.u?.uluck ?? 0) + rn2(5) < 0) {
+            await pline('Unfortunately, nothing happens.');
+        } else {
+            await makeWish({ announce: game.flags?.verbose !== false });
+            learnNoDirectionWand(wand);
+        }
         return true;
     }
     return false;
