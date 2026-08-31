@@ -70,6 +70,7 @@ import {
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
+import { monsterTeleportRestricted } from './teleport.js';
 import {
     heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
     transformWereMonster,
@@ -166,7 +167,6 @@ const M3_WANTSBELL = 0x0002;
 const M3_WANTSBOOK = 0x0004;
 const M3_WANTSCAND = 0x0008;
 const M3_WANTSARTI = 0x0010;
-const S_DEMON = 56;
 const PM_FOG_CLOUD = 106;
 const PM_ENERGY_VORTEX = 109;
 const PM_TENGU = 55;
@@ -1645,26 +1645,6 @@ function isUnicorn(monster) {
 
 function monsterIsCovetous(monster) {
     return !!((MONSTER_FLAGS3[monster?.mnum] ?? 0) & M3_COVETOUS);
-}
-
-function monsterIsDemonRuler(monster) {
-    const flags2 = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
-        && !!(flags2 & (M2_LORD | M2_PRINCE));
-}
-
-export function monsterTeleportRestricted(monster, state) {
-    const flags = state?.level?.flags || {};
-    const moves = state?.moves ?? 1;
-    const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
-        ?.flags?.hellish;
-    if (inHell && !monsterIsDemonRuler(monster)
-        && state?.level?.monsters?.some(candidate =>
-            candidate !== monster && (candidate.mhp ?? 1) > 0
-            && monsterIsDemonRuler(candidate))) return true;
-    if (flags.noteleport && !monsterIsCovetous(monster)) return true;
-    return Number.isFinite(flags.stasis_until)
-        && flags.stasis_until >= moves;
 }
 
 function levelHasCeiling(state) {
@@ -3816,7 +3796,7 @@ function moveHostile(
     }
     const trackCount = Math.min(4, Math.max(0, candidates.length - 1));
     const avoidHeroLine = isUnicorn(monster)
-        && monsterTeleportRestricted(state)
+        && monsterTeleportRestricted(monster, state)
         && candidates.some(candidate => !(candidate.info & NOTONL));
     let choiceCount = 0;
     candidateLoop:

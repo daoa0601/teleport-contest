@@ -133,7 +133,7 @@ import {
     awardMonsterExperience, newExperienceThreshold,
 } from './exper.js';
 import { saveGame } from './save.js';
-import { initTrack } from './track.js';
+import { initTrack, setTrack } from './track.js';
 import { captureRunmodeDelay } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
@@ -181,8 +181,7 @@ import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
 } from './senses.js';
 import {
-    beginBallAndChainMove, beginBallAndChainTeleport,
-    finishBallAndChainMove, finishBallAndChainTeleport,
+    beginBallAndChainMove, finishBallAndChainMove,
 } from './ball.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving,
@@ -227,9 +226,14 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    fumaroles, monsterTeleportRestricted, randomMonsterRelocation,
+    fumaroles, randomMonsterRelocation,
     sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import {
+    clearFixedTeleportDestination, heroTeleportDestinationOk,
+    heroTeleportTrapBlock, monsterTeleportRestricted, moveHeroByTeleport,
+    prepareHeroTeleport, safeTeleportDestination,
+} from './teleport.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
@@ -256,7 +260,7 @@ import {
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, W_NONDIGGABLE, W_NONPASSWALL, LOST_THROWN,
     WT_IRON_BALL_INCR, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    WT_TOOMUCH_DIAGONAL, P_BOW, P_SLING, P_SKILLED, P_EXPERT,
+    WT_TOOMUCH_DIAGONAL, P_BOW, P_SLING, P_SKILLED, P_EXPERT, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -8715,20 +8719,13 @@ async function wizTeleportPosition() {
     game._retained_message = game._pending_message;
     game._pending_message = '';
     let destination = { ...cursor };
-    if (!teleportDestinationOk(destination.x, destination.y)) {
+    if (!heroTeleportDestinationOk(destination.x, destination.y)) {
         // teleport.c:scrolltele() rejects the controlled location before
         // entering safe_teleds().  Keep "Sorry..." pending while the random
         // selector and teleds() update the map; a destination floor pager can
         // then suspend this line at the same tty boundary as C.
         await pline('Sorry...');
-        destination = null;
-        for (let attempt = 0; attempt < 40; attempt++) {
-            const x = rnd(COLNO - 1);
-            const y = rn2(ROWNO);
-            if (!teleportDestinationOk(x, y)) continue;
-            destination = { x, y };
-            break;
-        }
+        destination = safeTeleportDestination();
         if (!destination) {
             game.u.uhunger = (game.u.uhunger ?? 900) - 100;
             game.context.move = 1;
@@ -8736,16 +8733,8 @@ async function wizTeleportPosition() {
         }
     }
 
-    const oldx = game.u.ux, oldy = game.u.uy;
-    const ballChainTeleport = beginBallAndChainTeleport(
-        destination.x, destination.y,
-    );
-    game.u.ux0 = oldx;
-    game.u.uy0 = oldy;
-    game.u.ux = destination.x;
-    game.u.uy = destination.y;
-    finishBallAndChainTeleport(ballChainTeleport);
-    newsym(oldx, oldy);
+    const movement = moveHeroByTeleport(destination.x, destination.y);
+    newsym(movement.oldx, movement.oldy);
     vision_reset();
     vision_recalc(0);
     newsym(destination.x, destination.y);
@@ -10572,63 +10561,94 @@ function teleportTrapAt(x, y) {
         && trap.ttyp === TELEP_TRAP);
 }
 
-// C refs: trap.c:trapeffect_telep_trap(), teleport.c:tele_trap(),
-// vault_tele(), and teleds().  A once-only niche teleporter is a vault
-// teleporter: room coordinate selection, map relocation, destination pickup,
-// and tty message suspension are one spoteffects() transaction.
-async function triggerTeleportTrap(trap) {
-    trap.tseen = true;
-    stopRun();
-
-    // TODO: use tele() for ordinary teleport traps. A once-only trap sends the
-    // hero to a vault.
-    const vault = trap.once
-        ? game.level?.rooms?.find(room => room?.rtype === VAULT) : null;
-    if (!vault) return false;
-
-    const destination = { x: 0, y: 0 };
-    if (!somexyspace(vault, destination)) return false;
-
-    const trapIndex = game.level.traps.indexOf(trap);
-    if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
-
-    const oldx = game.u.ux;
-    const oldy = game.u.uy;
-    game.u.ux0 = oldx;
-    game.u.uy0 = oldy;
-    game.u.ux = destination.x;
-    game.u.uy = destination.y;
-    newsym(oldx, oldy);
+async function finishTeleportArrival(movement) {
+    newsym(movement.oldx, movement.oldy);
     vision_reset();
     vision_recalc(0);
-
-    // Destination spoteffects() performs autopickup before tty can replace
-    // the pending materialization line.  Commit the pile first so the pager's
-    // status and map already show the new gold total, then reveal the pickup
-    // message after the pager is dismissed.
-    const pile = game.level?.objects?.[destination.x]?.[destination.y] || [];
-    const selected = game.flags?.pickup
-        ? pile.filter(autopickupAllows) : [];
-    const { messages: pickupMessages, shopQuotes } = selected.length
-        ? collectFloorPickupMessages(pile, selected)
-        : { messages: [], shopQuotes: [] };
-    newsym(destination.x, destination.y);
+    newsym(movement.x, movement.y);
     await docrt();
     await bot();
+    if (game.flags?.verbose !== false) {
+        const place = movement.oldx === movement.x
+            && movement.oldy === movement.y ? 'the same' : 'a different';
+        await plineWithContinuation(`You materialize in ${place} location!`);
+    }
+    await finishDestinationSpotEffects({
+        ...movement,
+        newx: movement.x,
+        newy: movement.y,
+        loc: game.level?.at?.(movement.x, movement.y),
+        explicitAttempt: false,
+    });
+}
 
-    const materialized = 'You materialize in a different location!--More--';
-    await pline(materialized);
-    let key;
-    do {
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(materialized.length, 0);
-        key = await nhgetch();
-    } while (![27, 10, 13, 32].includes(key));
+// C refs: teleport.c tele_trap(), vault_tele(), and teleds().
+async function triggerTeleportTrap(trap) {
+    trap.tseen = true;
+    if (game._inTeleportTrap) return false;
 
-    game._pending_message = '';
-    for (const quote of shopQuotes) await plineWithContinuation(quote);
-    if (pickupMessages.length) await pline(pickupMessages.join('  '));
-    return true;
+    game._inTeleportTrap = true;
+    stopRun();
+    try {
+        const blocked = heroTeleportTrapBlock();
+        if (blocked) {
+            if (blocked === 'antimagic')
+                await shieldeff(game.u.ux, game.u.uy);
+            await plineWithContinuation('You feel a wrenching sensation.');
+            return true;
+        }
+
+        const preparation = prepareHeroTeleport();
+        for (const message of preparation.messages)
+            await plineWithContinuation(message);
+        if (!preparation.allowed) {
+            await plineWithContinuation('You shudder for a moment.');
+            return true;
+        }
+
+        let destination = null;
+        if (trap.once) {
+            const trapIndex = game.level.traps.indexOf(trap);
+            if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
+            newsym(game.u.ux, game.u.uy);
+
+            const vault = game.level?.rooms?.find(
+                room => room?.rtype === VAULT,
+            );
+            if (vault) {
+                const vaultSquare = { x: 0, y: 0 };
+                if (somexyspace(vault, vaultSquare)
+                    && heroTeleportDestinationOk(
+                        vaultSquare.x, vaultSquare.y,
+                    )) destination = vaultSquare;
+            }
+            destination ||= safeTeleportDestination();
+        } else if (trap.teledest
+            && isok(trap.teledest.x, trap.teledest.y)) {
+            setTrack(game);
+            const cleared = clearFixedTeleportDestination(
+                trap.teledest.x, trap.teledest.y,
+            );
+            if (!cleared.cleared) {
+                await plineWithContinuation('You shudder for a moment.');
+                return true;
+            }
+            if (cleared.relocation) {
+                newsym(cleared.relocation.oldx, cleared.relocation.oldy);
+                newsym(cleared.relocation.x, cleared.relocation.y);
+            }
+            destination = trap.teledest;
+        } else {
+            destination = safeTeleportDestination();
+        }
+
+        if (!destination) return true;
+        const movement = moveHeroByTeleport(destination.x, destination.y);
+        await finishTeleportArrival(movement);
+        return true;
+    } finally {
+        game._inTeleportTrap = false;
+    }
 }
 
 // C ref: trap.c:trapeffect_magic_trap()/domagictrap().  This runs inside
@@ -11388,35 +11408,6 @@ async function readDestroyArmorScroll(scroll) {
     game.context.move = 1;
 }
 
-function teleportDestinationOk(x, y) {
-    const location = game.level?.at?.(x, y);
-    if (!location || IS_OBSTRUCTED(location.typ)
-        || IS_POOL(location.typ) || IS_LAVA(location.typ)) return false;
-    if (game.level?.monsters?.some(monster =>
-        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y)) {
-        return false;
-    }
-    if (game.level?.traps?.some(trap => trap.tx === x && trap.ty === y))
-        return false;
-    return !(game.level?.objects?.[x]?.[y] || [])
-        .some(object => object.otyp === BOULDER);
-}
-
-function teleportHeroTo(x, y) {
-    const u = game.u;
-    const oldx = u.ux, oldy = u.uy;
-    u.ux0 = oldx;
-    u.uy0 = oldy;
-    u.ux = x;
-    u.uy = y;
-    u.utrap = 0;
-    u.utraptype = 0;
-    stopRun();
-    newsym(oldx, oldy);
-    vision_recalc(0);
-    newsym(x, y);
-}
-
 async function readTeleportationScroll(scroll) {
     const disappearance = 'As you read the scroll, it disappears.--More--';
     const confused = (game.u?.confusionTurns || 0) > 0;
@@ -11484,12 +11475,13 @@ async function readTeleportationScroll(scroll) {
     exerciseAttribute(4, true);
     exerciseAttribute(4, true);
 
-    for (let attempt = 0; attempt < 40; attempt++) {
-        const x = rnd(COLNO - 1);
-        const y = rn2(ROWNO);
-        if (!teleportDestinationOk(x, y)) continue;
-        teleportHeroTo(x, y);
-        break;
+    const destination = safeTeleportDestination();
+    if (destination) {
+        const movement = moveHeroByTeleport(destination.x, destination.y);
+        newsym(movement.oldx, movement.oldy);
+        vision_reset();
+        vision_recalc(0);
+        newsym(destination.x, destination.y);
     }
 
     // C moves the hero before waiting for the teleport message to be
