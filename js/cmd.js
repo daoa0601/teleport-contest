@@ -33,7 +33,9 @@ import {
     beginObjectBurn, endObjectBurn, igniteInventoryItems,
     transformMagicLampToOilLamp,
 } from './light.js';
-import { destroyFireInventory } from './zap.js';
+import {
+    destroyColdMonsterInventory, destroyFireInventory,
+} from './zap.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
     dungeonFeatureSentenceAt,
@@ -13077,76 +13079,6 @@ function monsterHasElementalResistance(monster, mask, explicit) {
         || !!monster?.[explicit];
 }
 
-function coldDestroyable(item) {
-    return item?.oclass === 8 && item?.otyp !== POT_OIL
-        && !item?.oartifact && !item?.artifact
-        && !(item?.in_use && (item?.quan ?? item?.quantity ?? 1) === 1);
-}
-
-function removeMonsterInventoryQuantity(monster, item, count) {
-    const quantity = Math.max(
-        0, (item?.quan ?? item?.quantity ?? 1) - count,
-    );
-    item.quan = quantity;
-    item.quantity = quantity;
-    if (quantity > 0) return;
-    const inventory = (monster.minvent || monster.inventory || [])
-        .filter(candidate => candidate !== item);
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    monster.hasInventory = inventory.length > 0;
-}
-
-// C refs: zap.c:destroy_items(AD_COLD), maybe_destroy_item(). The bounded
-// stack reservoir is evaluated even for an empty monster inventory, so the
-// rn2(5) call precedes wand resistance and xkilled().
-async function destroyColdMonsterInventory(monster, sourceDamage) {
-    let limit = Math.trunc(sourceDamage / 5);
-    if (sourceDamage % 5 > rn2(5)) limit++;
-    limit = Math.max(0, Math.min(20, limit));
-    if (!limit) return 0;
-
-    const chosen = Array(limit).fill(null);
-    let eligible = 0;
-    for (const item of monster.minvent || monster.inventory || []) {
-        if (!coldDestroyable(item)) continue;
-        const index = eligible < limit ? eligible : rn2(eligible);
-        eligible++;
-        if (index < limit) chosen[index] = item;
-    }
-
-    let damage = 0;
-    for (const item of chosen.slice(0, Math.min(eligible, limit))) {
-        if (!item) continue;
-        const stackDamage = rnd(4);
-        const quantity = Math.max(
-            0, (item.quan ?? item.quantity ?? 1) - (item.in_use ? 1 : 0),
-        );
-        let destroyed = 0;
-        for (let index = 0; index < quantity; index++) {
-            if (rn2(3) === 0) destroyed++;
-        }
-        if (!destroyed) continue;
-
-        if (canProjectMonster(monster, monster.mx, monster.my)) {
-            const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-            const objectName = item.name || OBJECT_NAMES[item.otyp] || 'potion';
-            const subject = destroyed === 1 && quantity === 1
-                ? `The ${monsterName}'s ${objectName}`
-                : destroyed === quantity
-                    ? `All of the ${monsterName}'s ${objectName}s`
-                    : `Some of the ${monsterName}'s ${objectName}s`;
-            await plineWithContinuation(
-                `${subject} ${destroyed === 1
-                    ? 'freezes and shatters' : 'freeze and shatter'}!`,
-            );
-        }
-        removeMonsterInventoryQuantity(monster, item, destroyed);
-        damage += stackDamage;
-    }
-    return damage;
-}
-
 function monsterResistsWandDamage(monster) {
     const attackLevel = 12;
     const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
@@ -13163,8 +13095,13 @@ async function coldRayDamageMonster(monster) {
     const sourceDamage = damage;
     if (monsterHasElementalResistance(monster, MR_FIRE, 'defendedFire'))
         damage += d(6, 3);
-    if (rn2(3) === 0)
-        damage += await destroyColdMonsterInventory(monster, sourceDamage);
+    if (rn2(3) === 0) {
+        damage += await destroyColdMonsterInventory(monster, sourceDamage, {
+            carrierName: MONSTER_NAME[monster.mnum] || 'monster',
+            publish: plineWithContinuation,
+            visible: canProjectMonster(monster, monster.mx, monster.my),
+        });
+    }
     if (damage > 0 && monsterResistsWandDamage(monster))
         damage = Math.trunc(damage / 2);
     monster.mhp = (monster.mhp ?? 1) - damage;

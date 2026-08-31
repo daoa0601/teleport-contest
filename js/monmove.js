@@ -6856,21 +6856,33 @@ export function resumeDeferredHeroEngulf(
     return { message, duration: state.u.uswldtim };
 }
 
-// Resume mhitm_ad_cold() after hitmsg() has either fitted on the current tty
-// topline or had its pager acknowledged.  The frost/avoid-harm message is a
-// second independently suspendable pline; hitmu() remains deferred beyond it.
+// Continue mhitm_ad_cold() after its hit message.
 export function resumeDeferredHeroColdSpecial(
     action, state, random = rn2,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredColdNegation) return action;
     const armorProtection = state?.u?._magicNegation ?? 0;
-    attack.negated = recordRandom(random, action.calls, 10)
-        < 3 * armorProtection;
-    if (attack.negated) attack.damage = 0;
-    attack.coldEffectMessage = attack.negated
-        ? 'You avoid harm.' : "You're covered in frost!";
+    const cancelled = !!action.monster?.mcan;
+    attack.coldOriginalDamage = attack.damage ?? 0;
+    attack.negated = cancelled
+        || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+    if (cancelled) {
+        attack.damage = 0;
+        attack.coldEffectMessage = null;
+    } else if (attack.negated) {
+        attack.damage = 0;
+        attack.coldEffectMessage = 'You avoid harm.';
+    } else {
+        attack.coldEffectMessage = "You're covered in frost!";
+        if (state.u.coldResistance || state.u.cold_resistance) {
+            attack.damage = 0;
+            attack.coldResistanceMessage
+                = "The frost doesn't seem cold!";
+        }
+    }
     attack.deferredColdInventory = !attack.negated;
+    if (attack.negated) delete attack.coldOriginalDamage;
     attack.deferredPostHit = true;
     attack.deferredColdNegation = false;
     return action;
@@ -6915,8 +6927,7 @@ export function resumeDeferredHeroFireSpecial(
     return action;
 }
 
-// Resume mhitm_ad_elec() after hitmsg().  The zap line is independently
-// suspendable; its inventory-destruction gate and common hit tail follow it.
+// Continue mhitm_ad_elec() after its hit message.
 export function resumeDeferredHeroElectricSpecial(
     action, state, random = rn2,
 ) {
@@ -6924,6 +6935,7 @@ export function resumeDeferredHeroElectricSpecial(
     if (!attack?.deferredElectricNegation) return action;
     const armorProtection = state?.u?._magicNegation ?? 0;
     const cancelled = !!action.monster?.mcan;
+    attack.electricOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled
         || recordRandom(random, action.calls, 10) < 3 * armorProtection;
     if (cancelled) {
@@ -6934,12 +6946,13 @@ export function resumeDeferredHeroElectricSpecial(
         attack.electricEffectMessage = 'You avoid harm.';
     } else if (state.u.shockResistance || state.u.shock_resistance) {
         attack.damage = 0;
-        attack.electricEffectMessage
-            = "You get zapped!  The zap doesn't shock you!";
+        attack.electricEffectMessage = 'You get zapped!';
+        attack.electricResistanceMessage = "The zap doesn't shock you!";
     } else {
         attack.electricEffectMessage = 'You get zapped!';
     }
     attack.deferredElectricInventory = !attack.negated;
+    if (attack.negated) delete attack.electricOriginalDamage;
     attack.deferredPostHit = true;
     attack.deferredElectricNegation = false;
     return action;
@@ -7234,23 +7247,29 @@ export function resumeDeferredHeroContact(
     }
     if (attack.deferredAmuletTheft) return action;
     if (attack.deferredColdInventory) {
-        // mhitm_ad_cold() checks the attacker's level against this roll even
-        // when no inventory stack is ultimately destroyed.  A successful
-        // gate then enters destroy_items(); its first cold-vulnerable class
-        // probe is independently random even when nothing is destroyed.
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate)
-            recordRandom(random, calls, 5);
+        if (attackerLevel > destructionGate) {
+            attack.deferredElementalInventory = {
+                damageType: 'cold',
+                sourceDamage: attack.coldOriginalDamage ?? 0,
+            };
+            attack.deferredColdInventory = false;
+            return action;
+        }
         attack.deferredColdInventory = false;
+        delete attack.coldOriginalDamage;
     }
     if (attack.deferredFireInventory) {
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
         if (attackerLevel > destructionGate) {
-            attack.deferredFireInventoryEffect = true;
+            attack.deferredElementalInventory = {
+                damageType: 'fire',
+                sourceDamage: attack.fireOriginalDamage ?? 0,
+            };
             attack.deferredFireInventory = false;
             return action;
         }
@@ -7262,40 +7281,15 @@ export function resumeDeferredHeroContact(
         const attackerLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
         if (attackerLevel > destructionGate) {
-            const scaleRoll = recordRandom(random, calls, 5);
-            const baseDamage = attack.damage ?? 0;
-            const destructionLimit = Math.trunc(baseDamage / 5)
-                + (baseDamage % 5 > scaleRoll ? 1 : 0);
-            if (destructionLimit > 0) {
-                const wand = (state.inventory || []).find(object =>
-                    (object.oclass ?? object.class) === WAND_CLASS
-                    || object.class === 'Wands');
-                if (wand) {
-                    const explosionDamage = rollOne(10);
-                    calls.push('rnd(10)');
-                    if (recordRandom(random, calls, 3) === 0) {
-                        attack.electricDestroyedObject = wand;
-                        attack.electricExplosionDamage = explosionDamage;
-                        attack.electricInventoryMessage
-                            = `Your ${wand.name || OBJECT_NAMES[wand.otyp]
-                                || 'wand'} breaks apart and explodes!`;
-                        attack.electricInventoryMessagePending = true;
-                    }
-                }
-            }
+            attack.deferredElementalInventory = {
+                damageType: 'electric',
+                sourceDamage: attack.electricOriginalDamage ?? 0,
+            };
+            attack.deferredElectricInventory = false;
+            return action;
         }
         attack.deferredElectricInventory = false;
-        if (attack.electricInventoryMessagePending) return action;
-    }
-    if (attack.electricInventoryMessagePending) return action;
-    if (attack.electricDestroyedObject) {
-        const object = attack.electricDestroyedObject;
-        const index = state.inventory?.indexOf(object) ?? -1;
-        if (index >= 0) state.inventory.splice(index, 1);
-        applyHeroContactDamage(state, attack.electricExplosionDamage ?? 0);
-        recordRandom(random, calls, 2); // exercise(A_STR, FALSE)
-        attack.electricDestroyedObject = null;
-        attack.electricExplosionDamage = 0;
+        delete attack.electricOriginalDamage;
     }
     recordRandom(random, calls, 3);
     recordRandom(random, calls, 6);

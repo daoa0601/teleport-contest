@@ -85,7 +85,9 @@ import { syncBlindness, syncDeafness } from './senses.js';
 import {
     igniteInventoryItems, runClaimedObjectBurnTimer,
 } from './light.js';
-import { destroyFireInventory } from './zap.js';
+import {
+    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
+} from './zap.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
@@ -2979,54 +2981,10 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
     if (game.u?.halfSpellDamage || game.u?.half_spell_damage)
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
 
-    const scaleRoll = rn2(5);
-    action.calls.push('rn2(5)');
-    const destructionLimit = Math.min(20,
-        Math.trunc(originalDamage / 5)
-        + (originalDamage % 5 > scaleRoll ? 1 : 0));
-    if (destructionLimit > 0) {
-        const wand = (game.inventory || []).find(object =>
-            (object.oclass ?? object.class) === 11
-            || object.class === 'Wands');
-        if (wand) {
-            const explosionDamage = rnd(10);
-            action.calls.push('rnd(10)');
-            const destroyed = rn2(3) === 0;
-            action.calls.push('rn2(3)');
-            if (destroyed) {
-                heroAttack.deferredLightningWandExplosion = wand;
-                heroAttack.lightningWandExplosionDamage = explosionDamage;
-            }
-        }
-    }
-
-    const explodingWand = heroAttack.deferredLightningWandExplosion;
-    if (explodingWand) {
-        await queueTurnMessage(
-            `Your ${explodingWand.name
-                || OBJECT_NAMES[explodingWand.otyp]
-                || 'wand'} breaks apart and explodes!`,
-        );
-        const index = game.inventory?.indexOf(explodingWand) ?? -1;
-        if (index >= 0) game.inventory.splice(index, 1);
-        if (!shockResistant) {
-            game.u.uhp = Math.max(
-                0,
-                (game.u.uhp ?? 1)
-                    - (heroAttack.lightningWandExplosionDamage ?? 0),
-            );
-            exerciseAttribute(0, false);
-        } else {
-            // maybe_destroy_item() destroys the wand even when the carrier's
-            // shock resistance prevents its secondary HP damage.  This line
-            // can fit beside the explosion, but the following flash cannot;
-            // preserving both queue attempts keeps flash RNG/state behind the
-            // combined pager.
-            await queueTurnMessage("You aren't hurt!");
-        }
-        heroAttack.deferredLightningWandExplosion = null;
-        heroAttack.lightningWandExplosionDamage = 0;
-    }
+    await destroyElectricInventory(originalDamage, {
+        state: game,
+        publish: queueTurnMessage,
+    });
 
     const flashDuration = rnd(100);
     action.calls.push('rnd(100)');
@@ -4648,6 +4606,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         actorContactPagerOwned = true;
                     }
                 }
+                if (heroAttack.coldResistanceMessage) {
+                    const coldResistanceDismissal = await queueTurnMessage(
+                        heroAttack.coldResistanceMessage,
+                    );
+                    heroAttack.coldResistanceMessage = null;
+                    if (coldResistanceDismissal !== null
+                        && coldResistanceDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
                 if (heroAttack.deferredFireNegation)
                     resumeDeferredHeroFireSpecial(action, game);
                 if (heroAttack.fireEffectMessage) {
@@ -4689,6 +4657,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     heroAttack.electricEffectMessage = null;
                     if (electricDismissal !== null
                         && electricDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.electricResistanceMessage) {
+                    const electricResistanceDismissal = await queueTurnMessage(
+                        heroAttack.electricResistanceMessage,
+                    );
+                    heroAttack.electricResistanceMessage = null;
+                    if (electricResistanceDismissal !== null
+                        && electricResistanceDismissal !== undefined) {
                         actorContactPagerOwned = true;
                     }
                 }
@@ -4829,20 +4807,28 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
                     resumeDeferredHeroContact(action, game);
-                    if (heroAttack.deferredFireInventoryEffect) {
-                        await destroyFireInventory(
-                            heroAttack.fireOriginalDamage ?? 0,
-                            {
+                    if (heroAttack.deferredElementalInventory) {
+                        const inventoryDamage
+                            = heroAttack.deferredElementalInventory;
+                        const destroyInventory = {
+                            cold: destroyColdInventory,
+                            fire: destroyFireInventory,
+                            electric: destroyElectricInventory,
+                        }[inventoryDamage.damageType];
+                        await destroyInventory(
+                            inventoryDamage.sourceDamage,
+                            { state: game, publish: queueTurnMessage },
+                        );
+                        if (inventoryDamage.damageType === 'fire') {
+                            await igniteInventoryItems(game.inventory, {
                                 state: game,
                                 publish: queueTurnMessage,
-                            },
-                        );
-                        await igniteInventoryItems(game.inventory, {
-                            state: game,
-                            publish: queueTurnMessage,
-                        });
-                        heroAttack.deferredFireInventoryEffect = false;
+                            });
+                        }
+                        heroAttack.deferredElementalInventory = null;
+                        delete heroAttack.coldOriginalDamage;
                         delete heroAttack.fireOriginalDamage;
+                        delete heroAttack.electricOriginalDamage;
                         const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
                         if ((game.u?.[hitPoints] ?? 1) > 0) {
                             resumeDeferredHeroContact(action, game);
@@ -4850,18 +4836,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             heroAttack.heroDied = true;
                             heroAttack.deferredPostHit = false;
                         }
-                    }
-                    if (heroAttack.electricInventoryMessage) {
-                        const electricItemDismissal = await queueTurnMessage(
-                            heroAttack.electricInventoryMessage,
-                        );
-                        heroAttack.electricInventoryMessage = null;
-                        heroAttack.electricInventoryMessagePending = false;
-                        if (electricItemDismissal !== null
-                            && electricItemDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                        resumeDeferredHeroContact(action, game);
                     }
                     if (heroAttack.deferredPoisonEffect) {
                         const poisonPagerOwned
