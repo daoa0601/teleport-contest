@@ -2,7 +2,6 @@
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
 
 import { game } from './gstate.js';
-import { nhgetch } from './input.js';
 import { d, rnd, rn2 } from './rng.js';
 import { newExperienceThreshold } from './exper.js';
 import {
@@ -11,9 +10,8 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
 import { LENSES, OBJECT_MATERIAL } from './object_data.js';
-import {
-    flush_screen, newsym, pline, plineWithContinuation,
-} from './display.js';
+import { newsym, pline, plineWithContinuation } from './display.js';
+import { moreUntilDismissed } from './tty_prompts.js';
 import { place_object } from './mklev.js';
 import { findArmorClass } from './armor.js';
 import {
@@ -170,16 +168,6 @@ function exerciseAttribute(index, improving) {
     const amount = improving ? (rn2(19) > current ? 1 : 0) : -rn2(2);
     if (!Array.isArray(game.u._exercise)) game.u._exercise = Array(6).fill(0);
     game.u._exercise[index] += amount;
-}
-
-async function moreUntilDismissed(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
 }
 
 function clearEquipmentSlot(slot, object) {

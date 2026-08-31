@@ -5,21 +5,24 @@
 import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    COLNO, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR, DRAWBRIDGE_UP,
+    COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR, DRAWBRIDGE_UP,
     D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL,
     IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_rogue_level,
     Is_waterlevel, LAVAWALL, MOAT, PIT, POOL, ROOM, ROWNO, SDOOR, STONE,
-    STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB,
-    WM_MASK, W_RING, ZAP_POS,
+    SCORR, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd,
+    VWALL, WEB, WM_MASK, W_RING, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, flush_screen, lastDirtyMapCursor, newsym,
     pline, plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game } from './gstate.js';
+import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
+import { selectInventoryObject } from './invent.js';
 import { igniteItems } from './light.js';
 import { buryFloorObjectsAt, maketrap } from './mklev.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
@@ -33,22 +36,29 @@ import {
     OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL,
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
-    WAN_LIGHTNING,
+    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
+    WAN_LIGHTNING, WAN_POLYMORPH, WAN_SLEEP,
 } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import {
+    recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
 import { objectResistsDestruction } from './object_state.js';
 import {
     LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, scheduleLevelTimer,
     stopAllObjectTimers, stopLevelTimer, stopObjectTimer,
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
+import { heroHasNoHands, polyselfRandomOrdinary } from './polyself.js';
 import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, NO_COLOR,
 } from './terminal.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
-import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
+import { moreUntilDismissed, promptKey } from './tty_prompts.js';
+import {
+    cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
+} from './vision.js';
 import { objectWeight } from './weight.js';
 
 const RING_CLASS = 4;
@@ -76,6 +86,238 @@ export const INVENTORY_DAMAGE = Object.freeze({
     FIRE: 'fire',
     ELECTRIC: 'electric',
 });
+
+async function zapDig(direction) {
+    exerciseAttribute(2, true);
+    const dx = DIR_DX[direction] || 0;
+    const dy = DIR_DY[direction] || 0;
+    let x = game.u.ux + dx;
+    let y = game.u.uy + dy;
+    let depth = 8 + rn2(18);
+    const traversedCells = [];
+    let lastBeamCursor = null;
+
+    while (--depth >= 0 && x >= 1 && x < COLNO && y >= 0 && y < ROWNO) {
+        const location = game.level?.at(x, y);
+        if (!location) break;
+        traversedCells.push({ x, y });
+        if (cansee(x, y))
+            show_glyph_cell(x, y, '*', CLR_WHITE, false);
+        const frameCursor = lastDirtyMapCursor();
+        await flush_screen(1);
+        if (frameCursor) lastBeamCursor = frameCursor;
+        if (lastBeamCursor)
+            game.nhDisplay?.setCursor(...lastBeamCursor);
+        await game.animationFrame?.();
+        if ((location.typ === DOOR
+            && (location.doormask & (D_CLOSED | D_LOCKED)))
+            || location.typ === SDOOR) {
+            location.typ = DOOR;
+            location.doormask = D_NODOOR;
+            depth -= 2;
+        } else if (IS_WALL(location.typ)) {
+            location.typ = DOOR;
+            location.doormask = D_NODOOR;
+            location.flags = 0;
+            depth -= 2;
+        } else if (location.typ === STONE || location.typ === SCORR) {
+            location.typ = CORR;
+            location.flags = 0;
+            depth -= 1;
+        }
+        x += dx;
+        y += dy;
+    }
+    for (const cell of traversedCells) newsym(cell.x, cell.y);
+    vision_reset();
+    vision_recalc(1);
+    exerciseAttribute(2, true);
+}
+
+// C refs: zap.c dozap(), weffects(), and zapyourself().
+export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
+    if (heroHasNoHands(game)) {
+        await pline("You aren't able to zap anything in your current form.");
+        game.context.move = 0;
+        return;
+    }
+
+    const wands = (game.inventory || []).filter(
+        item => item.oclass === WAND_CLASS,
+    );
+    const letters = wands.map(item => item.invlet).join('');
+    let key = await promptKey(
+        `What do you want to zap? [${letters} or ?*] `,
+    );
+    if (key === 63 || key === 42) {
+        key = await selectInventoryObject({
+            items: wands, includeGold: false, loopUntilValid: true,
+        });
+    }
+    if (key === 27) {
+        game.context.move = 0;
+        return;
+    }
+    const wand = wands.find(item =>
+        item.invlet === String.fromCharCode(key));
+    if (!wand) {
+        game.context.move = 0;
+        return;
+    }
+
+    if (wand.charges) wand.charges.current--;
+    wand.spe = (wand.spe ?? wand.charges?.current ?? 0) - 1;
+    if (wand.cursed && rn2(100) === 0) {
+        await pline('The wand suddenly explodes!');
+        game.context.move = 1;
+        return;
+    }
+
+    const direction = await promptKey('In what direction? ');
+    game._pending_message = '';
+    const directionChar = String.fromCharCode(direction);
+    if (wand.otyp === WAN_DIGGING && DIR_DX[directionChar] !== undefined) {
+        await zapDig(directionChar);
+        wand.known = true;
+        wand.typeKnown = true;
+        recordObjectKnowledge(wand.otyp);
+        recordObjectEncounter(wand.otyp);
+        wand.chargesKnown = false;
+        game._pending_message = '';
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_DEATH && directionChar === '.') {
+        if ((game.u?.confusionTurns || 0) > 0) rn2(5);
+        await promptKey('You irradiate yourself with pure energy!--More--');
+        await promptKey('You die.--More--');
+        game.u.uhp = 0;
+        const reflexive = game.flags?.female ? 'herself' : 'himself';
+        await finishHeroDeath({
+            killer: 'death ray',
+            deathCause: `shot ${reflexive} with a death ray`,
+            deathLineShown: true,
+        });
+        return;
+    }
+
+    if (wand.otyp === WAN_DEATH && DIR_DX[directionChar] !== undefined
+        && directionChar !== '.') {
+        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
+        const deathRay = await zapDeathRay(directionChar, {
+            dismissMessage: moreUntilDismissed,
+            finishHeroHit: () => finishHeroDeath({ killer: 'death ray' }),
+            finishMonsterKill,
+        });
+        if (deathRay.gameEnded) return;
+        if (wand.dknown) {
+            if (wasUnknown) exerciseAttribute(4, true);
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_POLYMORPH && directionChar === '.') {
+        const alreadyKnown = game._knownObjectTypes?.has(wand.otyp);
+        const result = await polyselfRandomOrdinary();
+        if (result.learnEffect && wand.dknown && !alreadyKnown) {
+            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+            game._knownObjectTypes.add(wand.otyp);
+            wand.typeKnown = true;
+            exerciseAttribute(4, true);
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_SLEEP && directionChar === '.') {
+        exerciseAttribute(2, true);
+        if (game.u?.sleepResistance) {
+            await shieldeff(game.u.ux, game.u.uy);
+            await pline("You don't feel sleepy!");
+        } else {
+            await pline('The sleep ray hits you!');
+            game._helplessTurns = rnd(50);
+            game._helplessReason = 'sleeping';
+            game._helplessDoneMessage = 'You wake up.';
+            game.u.usleep = game.moves || 1;
+        }
+        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+        game._knownObjectTypes.add(wand.otyp);
+        wand.typeKnown = true;
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_SLEEP && DIR_DX[directionChar] !== undefined
+        && directionChar !== '.') {
+        await zapSleepRay(directionChar);
+        if (wand.dknown) {
+            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+            game._knownObjectTypes.add(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_COLD && DIR_DX[directionChar] !== undefined
+        && directionChar !== '.') {
+        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
+        const coldRay = await zapColdRay(directionChar, {
+            finishMonsterKill,
+        });
+        if (coldRay.heroDied
+            && await finishHeroDeath({ killer: 'bolt of cold' })) return;
+        if (wand.dknown) {
+            if (wasUnknown) exerciseAttribute(2, true);
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        if (wasUnknown)
+            game.u.urexp = (game.u.urexp || 0) + 10;
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_FIRE && DIR_DX[directionChar] !== undefined
+        && directionChar !== '.') {
+        const fireRay = await zapFireRay(directionChar, {
+            finishMonsterKill,
+            wakeMonsters: wakeMonstersNearWithMessages,
+        });
+        if (fireRay.heroDied
+            && await finishHeroDeath({ killer: 'bolt of fire' })) return;
+        if (wand.dknown) {
+            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
+            game._knownObjectTypes.add(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    if (wand.otyp === WAN_CANCELLATION
+        && DIR_DX[directionChar] !== undefined && directionChar !== '.') {
+        await zapCancellationRay(directionChar, { wakeMonster });
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        return;
+    }
+
+    game.context.move = direction === 27 ? 0 : 1;
+}
 
 export function rayPositionIsValid(x, y) {
     return x >= 1 && x < COLNO && y >= 0 && y < ROWNO;

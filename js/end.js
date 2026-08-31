@@ -24,6 +24,7 @@ import {
     bonesLevelExists, makemonAt, mksobj, place_object, saveBonesLevel,
     stack_object,
 } from './mklev.js';
+import { moreUntilDismissed } from './tty_prompts.js';
 
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
 
@@ -197,13 +198,6 @@ export function restoreHeroAfterDeath() {
     return game.u.uhp;
 }
 
-async function showDeathMore(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    await waitForCurrentMore();
-}
-
 export async function finishHeroDeath({
     killer,
     deathCause = null,
@@ -216,7 +210,7 @@ export async function finishHeroDeath({
         game.u.uhp = 0;
         const recovery = beginHeroLifeSaving();
         const prefix = pending && !deathLineShown ? `${pending}  ` : '';
-        await showDeathMore(`${prefix}But wait...`);
+        await moreUntilDismissed(`${prefix}But wait...--More--`);
         await pline('Your medallion begins to glow!');
         await plineWithContinuation('You feel much better!');
         await plineWithContinuation('The medallion crumbles to dust!');
@@ -226,8 +220,8 @@ export async function finishHeroDeath({
     }
 
     if (!deathLineShown) {
-        if (pending) await showDeathMore(pending);
-        await showDeathMore('You die...');
+        if (pending) await moreUntilDismissed(`${pending}--More--`);
+        await moreUntilDismissed('You die...--More--');
     }
     game.u.uhp = 0;
     game.u.umortality = (game.u.umortality || 0) + 1;

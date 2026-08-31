@@ -10,6 +10,7 @@ import {
 import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
+import { moreUntilDismissed, promptKey } from './tty_prompts.js';
 import { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
@@ -34,8 +35,7 @@ import {
     beginObjectBurn, endObjectBurn, igniteItems, transformMagicLampToOilLamp,
 } from './light.js';
 import {
-    destroyFireInventory, zapCancellationRay, zapColdRay, zapDeathRay,
-    zapFireRay, zapSleepRay,
+    destroyFireInventory, dozap,
 } from './zap.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
@@ -96,7 +96,7 @@ import {
     LEMBAS_WAFER, CRAM_RATION,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
-    WAN_SLEEP, GOLD_PIECE, CORPSE, BOULDER, ROCK,
+    GOLD_PIECE, CORPSE, BOULDER, ROCK,
     ARROW, BOW, DART,
     LONG_SWORD,
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
@@ -107,12 +107,9 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_GAIN_ENERGY,
-    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE,
-    WAN_POLYMORPH,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
     LEATHER_DRUM, MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
     SCR_DESTROY_ARMOR, SCR_REMOVE_CURSE, SCR_ENCHANT_WEAPON, SCR_GENOCIDE,
@@ -194,7 +191,7 @@ import {
     beginBallAndChainMove, finishBallAndChainMove,
 } from './ball.js';
 import {
-    finishHeroDeath, finishOrdinaryQuit,
+    finishOrdinaryQuit,
     recordHeroKillConduct, recordVanquished,
     vanquishedLines,
 } from './end.js';
@@ -205,7 +202,7 @@ import { getHungry } from './hunger.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
     heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
-    polyselfControlledNewman, polyselfRandomOrdinary,
+    polyselfControlledNewman,
 } from './polyself.js';
 import {
     advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance,
@@ -1853,7 +1850,10 @@ export async function rhack(key) {
     } else if (ch === '<') {
         await ordinaryAscend();
     } else if (ch === 'z') {
-        await dozap();
+        await dozap({
+            finishMonsterKill: finishHeroMonsterKill,
+            wakeMonster: wakeAttackedMonster,
+        });
     } else if (ch === 'r') {
         await doread();
     } else if (ch === 'T') {
@@ -4193,16 +4193,6 @@ function showKnownTerrain() {
             loc.disp_attr = 0;
         }
     }
-}
-
-async function moreUntilDismissed(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
 }
 
 async function doTerrainOverview() {
@@ -8864,14 +8854,6 @@ async function dohelp() {
     game.context.move = 0;
 }
 
-async function promptKey(message, cursorOffset = 0) {
-    await pline(message);
-    await flush_screen(1);
-    // tty_nhgetch() leaves the cursor immediately after a top-line prompt.
-    game.nhDisplay?.setCursor(message.length + cursorOffset, 0);
-    return nhgetch();
-}
-
 async function promptYnq(message, defaultAnswer = 'q') {
     game._suppressMessagesUntilInput = false;
     await pline(message);
@@ -11800,241 +11782,6 @@ async function doeat() {
     await pline([conductMessage, `This ${item.name} is delicious!`]
         .filter(Boolean).join('  '));
     game.context.move = 1;
-}
-
-async function zapDig(direction) {
-    exerciseAttribute(2, true); // weffects(): exercise(A_WIS, TRUE)
-    const dx = DIR_DX[direction] || 0;
-    const dy = DIR_DY[direction] || 0;
-    let x = game.u.ux + dx;
-    let y = game.u.uy + dy;
-    let depth = 8 + rn2(18); // rn1(18, 8)
-    const traversedCells = [];
-    let lastBeamCursor = null;
-
-    while (--depth >= 0 && x >= 1 && x < COLNO && y >= 0 && y < ROWNO) {
-        const loc = game.level?.at(x, y);
-        if (!loc) break;
-        traversedCells.push({ x, y });
-        if (cansee(x, y))
-            show_glyph_cell(x, y, '*', CLR_WHITE, false);
-        const frameCursor = lastDirtyMapCursor();
-        await flush_screen(1);
-        if (frameCursor) lastBeamCursor = frameCursor;
-        if (lastBeamCursor)
-            game.nhDisplay?.setCursor(...lastBeamCursor);
-        await game.animationFrame?.();
-        if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
-            || loc.typ === SDOOR) {
-            loc.typ = DOOR;
-            loc.doormask = D_NODOOR;
-            depth -= 2;
-        } else if (IS_WALL(loc.typ)) {
-            loc.typ = DOOR;
-            loc.doormask = D_NODOOR;
-            loc.flags = 0;
-            depth -= 2;
-        } else if (loc.typ === STONE || loc.typ === SCORR) {
-            loc.typ = CORR;
-            loc.flags = 0;
-            depth -= 1;
-        }
-        x += dx;
-        y += dy;
-    }
-    for (const cell of traversedCells) newsym(cell.x, cell.y);
-    vision_reset();
-    vision_recalc(1);
-    exerciseAttribute(2, true); // learnwand(): discovery exercise
-}
-
-// C refs: zap.c dozap(), weffects(); timeout.c nh_timeout().
-async function dozap() {
-    if (heroHasNoHands(game)) {
-        await pline("You aren't able to zap anything in your current form.");
-        game.context.move = 0;
-        return;
-    }
-    const wands = (game.inventory || []).filter(item => item.oclass === 11);
-    const letters = wands.map(item => item.invlet).join('');
-    let key = await promptKey(`What do you want to zap? [${letters} or ?*] `);
-    if (key === 63 || key === 42) {
-        key = await selectInventoryObject({
-            items: wands, includeGold: false, loopUntilValid: true,
-        });
-    }
-    if (key === 27) {
-        game.context.move = 0;
-        return;
-    }
-    const wand = wands.find(item => item.invlet === String.fromCharCode(key));
-    if (!wand) {
-        game.context.move = 0;
-        return;
-    }
-
-    // zap.c:zappable() decrements a charge, then cursed wands test their
-    // backfire gate before getdir() displays its prompt.
-    if (wand.charges) wand.charges.current--;
-    wand.spe = (wand.spe ?? wand.charges?.current ?? 0) - 1;
-    if (wand.cursed && rn2(100) === 0) {
-        await pline('The wand suddenly explodes!');
-        game.context.move = 1;
-        return;
-    }
-
-    const direction = await promptKey('In what direction? ');
-    // cmd.c:getdir() clears its prompt window before returning to the effect.
-    game._pending_message = '';
-    const directionChar = String.fromCharCode(direction);
-    if (wand.otyp === WAN_DIGGING && DIR_DX[directionChar] !== undefined) {
-        await zapDig(directionChar);
-        wand.known = true;
-        wand.typeKnown = true;
-        recordObjectKnowledge(wand.otyp);
-        recordObjectEncounter(wand.otyp);
-        // Learning the wand's type does not reveal its remaining charges.
-        wand.chargesKnown = false;
-        game._pending_message = '';
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_DEATH && directionChar === '.') {
-        // getdir() consults u_maybe_impaired() while confused before keeping
-        // this self direction.  The resulting urgent death lines are
-        // independent tty continuation boundaries.
-        if ((game.u?.confusionTurns || 0) > 0) rn2(5);
-        await promptKey('You irradiate yourself with pure energy!--More--');
-        await promptKey('You die.--More--');
-        game.u.uhp = 0;
-        const reflexive = game.flags?.female ? 'herself' : 'himself';
-        await finishHeroDeath({
-            killer: 'death ray',
-            deathCause: `shot ${reflexive} with a death ray`,
-            deathLineShown: true,
-        });
-        return;
-    }
-    if (wand.otyp === WAN_DEATH && DIR_DX[directionChar] !== undefined
-        && directionChar !== '.') {
-        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
-        const deathRay = await zapDeathRay(directionChar, {
-            dismissMessage: moreUntilDismissed,
-            finishHeroHit: () => finishHeroDeath({
-                killer: 'death ray',
-            }),
-            finishMonsterKill: finishHeroMonsterKill,
-        });
-        if (deathRay.gameEnded) return;
-        if (wand.dknown) {
-            if (wasUnknown) exerciseAttribute(4, true);
-            recordObjectKnowledge(wand.otyp);
-            recordObjectEncounter(wand.otyp);
-            wand.typeKnown = true;
-        }
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_POLYMORPH && directionChar === '.') {
-        const alreadyKnown = game._knownObjectTypes?.has(wand.otyp);
-        const result = await polyselfRandomOrdinary();
-        if (result.learnEffect && wand.dknown && !alreadyKnown) {
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            game._knownObjectTypes.add(wand.otyp);
-            wand.typeKnown = true;
-            exerciseAttribute(4, true); // learnwand() -> makeknown()
-        }
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_SLEEP && directionChar === '.') {
-        // C zap.c:zapyourself(WAN_SLEEP) identifies the effect before either
-        // resistance or fall_asleep().  The duration becomes ordinary
-        // negative multi: moveloop_core owns each current actor/global turn
-        // and timeout.c supplies the wake message when the counter expires.
-        exerciseAttribute(2, true);
-        if (game.u?.sleepResistance) {
-            await shieldeff(game.u.ux, game.u.uy);
-            await pline("You don't feel sleepy!");
-        } else {
-            await pline('The sleep ray hits you!');
-            game._helplessTurns = rnd(50);
-            game._helplessReason = 'sleeping';
-            game._helplessDoneMessage = 'You wake up.';
-            game.u.usleep = game.moves || 1;
-        }
-        if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-        game._knownObjectTypes.add(wand.otyp);
-        wand.typeKnown = true;
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_SLEEP && DIR_DX[directionChar] !== undefined
-        && directionChar !== '.') {
-        await zapSleepRay(directionChar);
-        if (wand.dknown) {
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            game._knownObjectTypes.add(wand.otyp);
-            wand.typeKnown = true;
-        }
-        // Observing the effect identifies the type, not this wand's charges.
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_COLD && DIR_DX[directionChar] !== undefined
-        && directionChar !== '.') {
-        const wasUnknown = !game._knownObjectTypes?.has(wand.otyp);
-        const coldRay = await zapColdRay(directionChar, {
-            finishMonsterKill: finishHeroMonsterKill,
-        });
-        if (coldRay.heroDied && await finishHeroDeath({
-            killer: 'bolt of cold',
-        })) return;
-        if (wand.dknown) {
-            if (wasUnknown) exerciseAttribute(2, true);
-            recordObjectKnowledge(wand.otyp);
-            recordObjectEncounter(wand.otyp);
-            wand.typeKnown = true;
-        }
-        if (wasUnknown)
-            game.u.urexp = (game.u.urexp || 0) + 10;
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_FIRE && DIR_DX[directionChar] !== undefined
-        && directionChar !== '.') {
-        const fireRay = await zapFireRay(directionChar, {
-            finishMonsterKill: finishHeroMonsterKill,
-            wakeMonsters: wakeMonstersNearWithMessages,
-        });
-        if (fireRay.heroDied && await finishHeroDeath({
-            killer: 'bolt of fire',
-        })) return;
-        if (wand.dknown) {
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            game._knownObjectTypes.add(wand.otyp);
-            wand.typeKnown = true;
-        }
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-    if (wand.otyp === WAN_CANCELLATION
-        && DIR_DX[directionChar] !== undefined && directionChar !== '.') {
-        await zapCancellationRay(directionChar, {
-            wakeMonster: wakeAttackedMonster,
-        });
-        wand.chargesKnown = false;
-        game.context.move = 1;
-        return;
-    }
-
-    game.context.move = direction === 27 ? 0 : 1;
 }
 
 // C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
