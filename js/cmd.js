@@ -56,9 +56,9 @@ import {
     mergable, mkgold, mkobj, mksobj, place_object, remove_object, stack_object,
     rndClass,
     saveBonesLevel,
-    somexyspace,
     u_on_downstairs, u_on_upstairs, level_difficulty, undeadToCorpse,
 } from './mklev.js';
+import { somexyspace } from './mkroom.js';
 import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';

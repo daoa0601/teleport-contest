@@ -20,7 +20,8 @@ import {
 } from './ball.js';
 import { heroIsDisplaced } from './armor.js';
 import { engravingAt } from './engrave.js';
-import { monsterGoodPosition, somexyspace } from './mklev.js';
+import { monsterGoodPosition } from './mklev.js';
+import { somexyspace } from './mkroom.js';
 import { priestAlignment, priestIsInOwnTemple } from './priest.js';
 import { shopkeeperInOwnShop } from './shk.js';
 

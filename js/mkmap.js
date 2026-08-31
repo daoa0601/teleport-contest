@@ -6,7 +6,8 @@ import {
     OROOM, ROOM, ROOMOFFSET, ROWNO, STONE, TREE,
 } from './const.js';
 import { game } from './gstate.js';
-import { dig_corridor, somexy, wallifyMap } from './mklev.js';
+import { dig_corridor, wallifyMap } from './mklev.js';
+import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 export function mkmap({
     lit,

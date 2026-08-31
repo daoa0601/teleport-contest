@@ -120,6 +120,9 @@ import {
 import { setupElementalBubbles } from './elemental.js';
 import { putSaddleOnMonster } from './steed.js';
 import { roomForIndex } from './room.js';
+import {
+    occupied, somex, somey, somexy, somexyspace,
+} from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginOilLampBurn } from './light.js';
 import {
@@ -10754,82 +10757,6 @@ function makecorridors() {
             join(a, b, true);
         }
     }
-}
-
-// ============================================================
-// Room helper functions
-// ============================================================
-
-function somex(croom) { return rn1(croom.hx - croom.lx + 1, croom.lx); }
-function somey(croom) { return rn1(croom.hy - croom.ly + 1, croom.ly); }
-
-function insideRoomForGeneration(croom, x, y) {
-    if (croom.irregular) {
-        const loc = game.level.at(x, y);
-        return !!loc && !loc.edge
-            && loc.roomno === (croom.roomnoidx ?? -1) + ROOMOFFSET;
-    }
-    return x >= croom.lx - 1 && x <= croom.hx + 1
-        && y >= croom.ly - 1 && y <= croom.hy + 1;
-}
-
-export function somexy(croom, c) {
-    if (croom.irregular) {
-        const roomNumber = (croom.roomnoidx ?? -1) + ROOMOFFSET;
-        let try_cnt = 0;
-        while (try_cnt++ < 100) {
-            c.x = somex(croom);
-            c.y = somey(croom);
-            const loc = game.level.at(c.x, c.y);
-            if (loc && !loc.edge && loc.roomno === roomNumber)
-                return true;
-        }
-        for (c.x = croom.lx; c.x <= croom.hx; c.x++) {
-            for (c.y = croom.ly; c.y <= croom.hy; c.y++) {
-                const loc = game.level.at(c.x, c.y);
-                if (loc && !loc.edge && loc.roomno === roomNumber)
-                    return true;
-            }
-        }
-        return false;
-    }
-    if (!croom.nsubrooms) {
-        c.x = somex(croom);
-        c.y = somey(croom);
-        return true;
-    }
-    let try_cnt = 0;
-    while (try_cnt++ < 100) {
-        c.x = somex(croom);
-        c.y = somey(croom);
-        const loc = game.level.at(c.x, c.y);
-        if (loc && IS_WALL(loc.typ)) continue;
-        if ((croom.sbrooms || []).some(subroom =>
-            insideRoomForGeneration(subroom, c.x, c.y))) continue;
-        return true;
-    }
-    return false;
-}
-
-function occupied(x, y) {
-    const loc = game.level.at(x, y);
-    if (!loc) return false;
-    const trapped = game.level.traps?.some(trap => trap.tx === x && trap.ty === y);
-    return !!(trapped || IS_FURNITURE(loc.typ)
-        || IS_LAVA(loc.typ) || IS_POOL(loc.typ));
-}
-
-export function somexyspace(croom, c) {
-    let trycnt = 0;
-    let okay;
-    do {
-        okay = somexy(croom, c) && isok(c.x, c.y) && !occupied(c.x, c.y);
-        if (okay) {
-            const loc = game.level.at(c.x, c.y);
-            okay = loc && (loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
-        }
-    } while (trycnt++ < 100 && !okay);
-    return okay;
 }
 
 // ============================================================
