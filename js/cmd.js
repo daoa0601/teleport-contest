@@ -152,6 +152,9 @@ import {
 import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
+import {
+    wakeMonstersNear, wakeMonstersNearWithMessages,
+} from './mon.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
@@ -950,16 +953,7 @@ export async function continueCountedCommand(g = game) {
             // mon.c:wake_nearby(FALSE): hammering wakes every live monster
             // within ulevel*20 squared distance without angering it.
             const wakeDistance = (g.u?.ulevel ?? 1) * 20;
-            for (const monster of g.level?.monsters || []) {
-                if (!monster || (monster.mhp ?? 1) <= 0) continue;
-                const dx = (monster.mx ?? 0) - (g.u?.ux ?? 0);
-                const dy = (monster.my ?? 0) - (g.u?.uy ?? 0);
-                if (dx * dx + dy * dy >= wakeDistance) continue;
-                monster.msleeping = 0;
-                if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
-                    monster.mstrategy = (monster.mstrategy || 0)
-                        & ~STRAT_WAITMASK;
-            }
+            wakeMonstersNear(g.u?.ux ?? 0, g.u?.uy ?? 0, wakeDistance, g);
         }
 
         if (rn2(100) < occupation.chance) {
@@ -4385,37 +4379,6 @@ async function dosave() {
     game._saveExitPending = true;
     game.program_state.gameover = true;
     game.context.move = 0;
-}
-
-export function wakeMonstersNear(x, y, distance) {
-    for (const monster of game.level?.monsters || []) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        const dx = (monster.mx ?? 0) - x;
-        const dy = (monster.my ?? 0) - y;
-        if (distance && dx * dx + dy * dy >= distance) continue;
-        monster.msleeping = 0;
-        if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
-            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    }
-}
-
-// C mon.c:wake_nearto_core() prints wake_msg() before clearing each sleeper.
-export async function wakeMonstersNearWithMessages(x, y, distance) {
-    for (const monster of game.level?.monsters || []) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        const dx = (monster.mx ?? 0) - x;
-        const dy = (monster.my ?? 0) - y;
-        if (distance && dx * dx + dy * dy >= distance) continue;
-        if (monster.msleeping
-            && canSeeMonster(monster, monster.mx, monster.my)) {
-            const name = monster.name
-                || `The ${monsterInstanceDisplayName(monster)}`;
-            await plineWithContinuation(`${name} wakes up.`);
-        }
-        monster.msleeping = 0;
-        if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
-            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    }
 }
 
 async function kickOuch(x, y) {

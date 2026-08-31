@@ -26,8 +26,7 @@ import {
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     finishArmorRemoval, grantAmuletWish,
     getLine, promptYesNo, performQuestExpulsion,
-    resurrectWizard, rhack, stopRun, wakeMonstersNear,
-    wakeMonstersNearWithMessages,
+    resurrectWizard, rhack, stopRun,
 } from './cmd.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById } from './artifacts.js';
@@ -161,7 +160,9 @@ import {
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
-import { resolveMonsterLiquid } from './mon.js';
+import {
+    resolveMonsterLiquid, wakeMonstersNear, wakeMonstersNearWithMessages,
+} from './mon.js';
 import { burnHeroArmorByFire } from './trap.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
