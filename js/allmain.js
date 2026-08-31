@@ -30,10 +30,7 @@ import {
 } from './cmd.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
-import { artifactById } from './artifacts.js';
-import {
-    curseObjectState, unblessObjectState,
-} from './object_state.js';
+import { rndcurse } from './sit.js';
 import {
     docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym,
     map_invisible,
@@ -3065,47 +3062,11 @@ async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
     heroAttack.deferredDestroyArmor = false;
 }
 
-// C mcastu.c:MCAST_CURSE_ITEMS delegates to sit.c:rndcurse().  The aura pline
-// precedes every inventory-selection roll, so the tty driver must publish it
-// before mutating object beatitude.  This selected ordinary branch has no
-// Magicbane, intelligent artifact, Antimagic, or steed saddle; those source
-// controls remain named continuations rather than being approximated here.
-async function resolveDeferredHeroCurseItems(action, heroAttack) {
+async function resolveDeferredHeroCurseItems(heroAttack) {
     if (!heroAttack?.deferredCurseItems) return;
-    await queueTurnMessage('You feel a malignant aura surround you.');
-
-    const objects = (game.inventory || []).filter(object =>
-        (object.oclass ?? object.class) !== 12
-        && object.class !== 'Coins');
-    const antimagic = !!(game.u?.antimagic
-        || game.u?.magicResistance || game.u?.magic_resistance);
-    const halfSpellDamage = !!(game.u?.halfSpellDamage
-        || game.u?.half_spell_damage);
-    const sides = Math.trunc(6
-        / (Number(antimagic) + Number(halfSpellDamage) + 1));
-    const count = rnd(Math.max(1, sides));
-    action.calls.push(`rnd(${Math.max(1, sides)})`);
-
-    const changed = [];
-    if (objects.length) {
-        for (let remaining = count; remaining > 0; remaining--) {
-            const selected = rnd(objects.length);
-            action.calls.push(`rnd(${objects.length})`);
-            const object = objects[selected - 1];
-            if (!object || object.cursed) continue;
-            const artifact = object.oartifact
-                ? artifactById(object.oartifact) : null;
-            if (artifact?.selfWilled) {
-                heroAttack.deferredCurseArtifactResistance = object;
-                continue;
-            }
-            if (object.blessed) unblessObjectState(object);
-            else curseObjectState(object);
-            changed.push(object);
-        }
-    }
-
-    heroAttack.cursedInventory = changed;
+    heroAttack.cursedInventory = await rndcurse({
+        publish: queueTurnMessage,
+    });
     heroAttack.deferredCurseItems = false;
 }
 
@@ -4355,9 +4316,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 action, heroAttack,
                             );
                         if (heroAttack.deferredCurseItems)
-                            await resolveDeferredHeroCurseItems(
-                                action, heroAttack,
-                            );
+                            await resolveDeferredHeroCurseItems(heroAttack);
                         if (heroAttack.deferredSummonMonsters) {
                             const summoned
                                 = await resolveDeferredHeroSummonMonsters(

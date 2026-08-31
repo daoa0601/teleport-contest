@@ -5,8 +5,11 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR, Align2amask } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { CREAM_PIE } from '../js/object_data.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { CLUB, CREAM_PIE } from '../js/object_data.js';
+import { rndcurse } from '../js/sit.js';
+import {
+    freshWeaponArena, inventoryObject,
+} from './support/weapon-arena.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
     const level = freshWeaponArena();
@@ -42,4 +45,15 @@ test('sitting on your own altar costs Wisdom and alignment', async () => {
 
     assert.equal(game.u.acurr.a[2], 9);
     assert.equal(game.u.ualign.record, 9);
+});
+
+test('a malignant aura curses an ordinary inventory item', async () => {
+    freshWeaponArena();
+    const club = inventoryObject(CLUB, 'a');
+    game.inventory = [club];
+
+    await rndcurse();
+
+    assert.equal(club.cursed, true);
+    assert.equal(club.buc, 'cursed');
 });

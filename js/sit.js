@@ -7,7 +7,8 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { pline } from './display.js';
+import { pline, shieldeff } from './display.js';
+import { artifactById } from './artifacts.js';
 import { game } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import {
@@ -22,10 +23,12 @@ import {
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { curseObjectState, unblessObjectState } from './object_state.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
+import { monsterSaddle } from './steed.js';
 import { objectWeight } from './weight.js';
 
 const COIN_CLASS = 12;
@@ -277,6 +280,64 @@ function formLikesLava() {
     return [
         PM_FIRE_VORTEX, PM_FLAMING_SPHERE, PM_FIRE_ELEMENTAL, PM_SALAMANDER,
     ].includes(currentForm());
+}
+
+export async function rndcurse({
+    publish = pline,
+} = {}) {
+    const state = game;
+    const hero = state.u || {};
+    const weapon = state.uwep || hero.uwep;
+    if (artifactById(weapon?.oartifact)?.name === 'Magicbane' && rn2(20)) {
+        await publish(
+            'You feel a malignant aura surround the magic-absorbing blade.',
+        );
+        return [];
+    }
+
+    const antimagic = !!(hero.antimagic || hero.magicResistance);
+    const halfSpellDamage = !!hero.halfSpellDamage;
+    if (antimagic) await shieldeff(hero.ux, hero.uy, state);
+    await publish('You feel a malignant aura surround you.');
+
+    const inventory = (state.inventory || []).filter(object =>
+        object.oclass !== COIN_CLASS);
+    const sides = Math.trunc(6
+        / (Number(antimagic) + Number(halfSpellDamage) + 1));
+    const count = rnd(sides);
+    const changed = [];
+
+    for (let remaining = count; inventory.length && remaining > 0;
+        remaining--) {
+        const object = inventory[rnd(inventory.length) - 1];
+        if (!object || object.cursed) continue;
+        if (artifactById(object.oartifact)?.selfWilled && rn2(10) < 8) {
+            const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+            await publish(`The ${name} resists!`);
+            continue;
+        }
+        if (object.blessed) unblessObjectState(object);
+        else curseObjectState(object);
+        changed.push(object);
+    }
+
+    let saddle = null;
+    if (hero.usteed && rn2(4) === 0)
+        saddle = monsterSaddle(hero.usteed);
+    if (saddle && !saddle.cursed) {
+        if (saddle.blessed) unblessObjectState(saddle);
+        else curseObjectState(saddle);
+        if (state.blind) {
+            saddle.bknown = false;
+        } else {
+            const color = saddle.cursed ? 'black' : 'brown';
+            await publish(`The saddle glows ${color}.`);
+            saddle.bknown = !(hero.hallucinating
+                || (hero.hallucinationTurns ?? 0) > 0);
+        }
+        changed.push(saddle);
+    }
+    return changed;
 }
 
 export async function dosit({
