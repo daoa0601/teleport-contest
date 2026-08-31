@@ -4863,6 +4863,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             actorContactPagerOwned = true;
                         }
                     }
+                    if (heroAttack.stoningSpecialFollowup) {
+                        const kissDismissal = await queueTurnMessage(
+                            heroAttack.stoningSpecialFollowup,
+                        );
+                        heroAttack.stoningSpecialFollowup = null;
+                        if (kissDismissal !== null
+                            && kissDismissal !== undefined) {
+                            actorContactPagerOwned = true;
+                        }
+                    }
                 }
                 if (heroAttack.passive?.messageKind) {
                     const passiveDismissal = await queueTurnMessage(

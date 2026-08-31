@@ -7660,8 +7660,9 @@ export function resumeDeferredHeroStoning(
             if (!deaf)
                 attack.stoningSpecialMessage = `You hear a cough from the ${name}!`;
         } else if (hallucinating && !blind) {
-            if (!deaf) attack.stoningSpecialMessage = 'You hear hissing!';
-            attack.unimplementedHallucinatedStoningKiss = true;
+            if (!deaf) attack.stoningSpecialMessage = 'You hear hissing.';
+            attack.stoningSpecialFollowup
+                = `The ${name} appears to be blowing you a kiss...`;
         } else if (!deaf) {
             attack.stoningSpecialMessage
                 = `You hear the ${name}'s hissing!`;
