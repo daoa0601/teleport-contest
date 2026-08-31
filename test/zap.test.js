@@ -16,8 +16,25 @@ import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { initRng } from '../js/rng.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
+
+function carriedWand(otyp, overrides = {}) {
+    return {
+        otyp,
+        invlet: 'a',
+        name: 'sleep',
+        oclass: 11,
+        quan: 1,
+        quantity: 1,
+        charges: { current: 3, recharged: 0 },
+        spe: 3,
+        dknown: true,
+        bknown: true,
+        ...overrides,
+    };
+}
 
 test('sleep resistance prevents self-zap helplessness', async () => {
     freshWeaponArena();
@@ -45,6 +62,58 @@ test('sleep resistance prevents self-zap helplessness', async () => {
     assert.equal(wand.typeKnown, true);
     assert.equal(game._helplessTurns, undefined);
     assert.equal(game._pending_message, "You don't feel sleepy!");
+    assert.equal(game.context.move, 1);
+});
+
+test('an empty wand does nothing without asking for a direction', async () => {
+    freshWeaponArena();
+    const wand = carriedWand(WAN_SLEEP, {
+        charges: { current: 0, recharged: 0 },
+        spe: 0,
+    });
+    game.inventory = [wand];
+    pushKey('a');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(wand), true);
+    assert.equal(wand.spe, 0);
+    assert.equal(wand.charges.current, 0);
+    assert.equal(game._pending_message, 'Nothing happens.');
+    assert.equal(game.context.move, 1);
+});
+
+test('a wrested final charge consumes the wand', async () => {
+    freshWeaponArena();
+    initRng(49n);
+    game.u.sleepResistance = true;
+    const wand = carriedWand(WAN_SLEEP, {
+        charges: { current: 0, recharged: 0 },
+        spe: 0,
+    });
+    game.inventory = [wand];
+    pushKey('a');
+    pushKey('.');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(wand), false);
+    assert.equal(wand.where, 'gone');
+    assert.equal(game.context.move, 1);
+});
+
+test('a cursed wand can explode before asking for a direction', async () => {
+    freshWeaponArena();
+    initRng(167n);
+    game.u.uhp = game.u.uhpmax = 100;
+    const wand = carriedWand(WAN_SLEEP, { cursed: true });
+    game.inventory = [wand];
+    pushKey('a');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(wand), false);
+    assert.ok(game.u.uhp < 100);
     assert.equal(game.context.move, 1);
 });
 

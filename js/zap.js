@@ -48,7 +48,9 @@ import {
     stopAllObjectTimers, stopLevelTimer, stopObjectTimer,
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
-import { heroHasNoHands, polyselfRandomOrdinary } from './polyself.js';
+import {
+    heroHasNoHands, polyselfRandomOrdinary, rehumanizeHero,
+} from './polyself.js';
 import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
 import {
@@ -134,6 +136,61 @@ async function zapDig(direction) {
     exerciseAttribute(2, true);
 }
 
+function wandChargeCount(wand) {
+    return Number.isInteger(wand?.spe)
+        ? wand.spe : wand?.charges?.current ?? -1;
+}
+
+function setWandChargeCount(wand, count) {
+    wand.spe = count;
+    if (wand.charges) wand.charges.current = count;
+}
+
+async function zappable(wand) {
+    const charges = wandChargeCount(wand);
+    if (charges < 0 || (charges === 0 && rn2(121) !== 0)) return false;
+    if (charges === 0)
+        await pline('You wrest one last charge from the worn-out wand.');
+    setWandChargeCount(wand, charges - 1);
+    return true;
+}
+
+function removeWand(wand) {
+    removeDestroyedQuantity(
+        game, wand, wand.quan ?? wand.quantity ?? 1,
+    );
+}
+
+async function finishWandUse(wand) {
+    if (!wand || wandChargeCount(wand) >= 0) return;
+    await pline(`The ${className(wand)} turns to dust.`);
+    removeWand(wand);
+}
+
+async function backfireWand(wand) {
+    wand.in_use = true;
+    await pline(`The ${className(wand)} suddenly explodes!`);
+    let damage = d(Math.max(1, wandChargeCount(wand) + 2), 6);
+    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+        damage = Math.trunc((damage + 1) / 2);
+    removeWand(wand);
+    damageHero(game, damage);
+
+    const polymorphed = Upolyd(game.u);
+    const remainingHitPoints = polymorphed ? game.u.mh : game.u.uhp;
+    if (remainingHitPoints <= 0) {
+        if (polymorphed) {
+            const restored = rehumanizeHero(game);
+            if (restored.changed)
+                await pline(`You return to ${restored.race} form!`);
+        } else {
+            const died = await finishHeroDeath({ killer: 'exploding wand' });
+            if (died) return;
+        }
+    }
+    exerciseAttribute(0, false);
+}
+
 // C refs: zap.c dozap(), weffects(), and zapyourself().
 export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     if (heroHasNoHands(game)) {
@@ -164,17 +221,29 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         game.context.move = 0;
         return;
     }
+    game._pending_message = '';
 
-    if (wand.charges) wand.charges.current--;
-    wand.spe = (wand.spe ?? wand.charges?.current ?? 0) - 1;
-    if (wand.cursed && rn2(100) === 0) {
-        await pline('The wand suddenly explodes!');
+    if (!await zappable(wand)) {
+        await pline('Nothing happens.');
         game.context.move = 1;
+        await finishWandUse(wand);
+        return;
+    }
+    if (wand.cursed && rn2(100) === 0) {
+        await backfireWand(wand);
+        if (!game.program_state?.gameover) game.context.move = 1;
         return;
     }
 
     const direction = await promptKey('In what direction? ');
     game._pending_message = '';
+    if (direction === 27) {
+        if (!game.blind && !(game.u?.blindTurns > 0))
+            await pline(`The ${className(wand)} glows and fades.`);
+        game.context.move = 1;
+        await finishWandUse(wand);
+        return;
+    }
     const directionChar = String.fromCharCode(direction);
     if (wand.otyp === WAN_DIGGING && DIR_DX[directionChar] !== undefined) {
         await zapDig(directionChar);
@@ -185,6 +254,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         wand.chargesKnown = false;
         game._pending_message = '';
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -199,6 +269,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
             deathCause: `shot ${reflexive} with a death ray`,
             deathLineShown: true,
         });
+        if (!game.program_state?.gameover) await finishWandUse(wand);
         return;
     }
 
@@ -219,6 +290,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         }
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -233,6 +305,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         }
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -253,6 +326,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         wand.typeKnown = true;
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -266,6 +340,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         }
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -287,6 +362,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
             game.u.urexp = (game.u.urexp || 0) + 10;
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -305,6 +381,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         }
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
@@ -313,10 +390,12 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         await zapCancellationRay(directionChar, { wakeMonster });
         wand.chargesKnown = false;
         game.context.move = 1;
+        await finishWandUse(wand);
         return;
     }
 
-    game.context.move = direction === 27 ? 0 : 1;
+    game.context.move = 1;
+    await finishWandUse(wand);
 }
 
 export function rayPositionIsValid(x, y) {
