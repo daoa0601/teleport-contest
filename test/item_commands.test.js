@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
-import { POT_GAIN_ENERGY, WAN_POLYMORPH } from '../js/object_data.js';
+import { APPLE, POT_GAIN_ENERGY, WAN_POLYMORPH } from '../js/object_data.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('debug wishing creates a live charged polymorph wand', async () => {
@@ -24,6 +24,16 @@ test('debug wishing creates a live charged polymorph wand', async () => {
     assert.equal(wand.spe, 30);
     assert.equal(game.u.uconduct.wishes, 1);
     assert.equal(game.context.move, 0);
+});
+
+test('an invalid wish can be replaced by a valid wish', async () => {
+    freshWeaponArena();
+    game.flags.debug = true;
+    pushKeys('not a NetHack object\napple\n');
+
+    await rhack(23);
+
+    assert.ok(game.inventory.some(object => object.otyp === APPLE));
 });
 
 test('quaffing commits a potion effect, consumption, and elapsed action',

@@ -5,7 +5,8 @@
 import { touchArtifactByHero } from './artifacts.js';
 import { IRONBARS, POOL, WATER } from './const.js';
 import {
-    flushPendingTopline, newsym, pline, plineWithContinuation,
+    bot, docrtRecalc, flushPendingTopline, flush_screen, newsym, pline,
+    plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
 import { addHeroGoldObject, heroGoldAmount } from './hero_gold.js';
@@ -20,9 +21,51 @@ import { addInventoryItem } from './u_init.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
+import { showTextPages } from './windows.js';
 
 function indefiniteArticle(text) {
     return /^[aeiou]/i.test(text) ? 'an' : 'a';
+}
+
+async function showWishHelp(triesLeft) {
+    const countNames = ['zero', 'one', 'two', 'three', 'four', 'five'];
+    const count = countNames[triesLeft] ?? String(triesLeft);
+    const retry = triesLeft < 5 ? ' more' : '';
+    const lines = [
+        'Wish details:',
+        '',
+        'Enter the name of an object, such as "potion of monster detection",',
+        '"scroll labeled README", "elven mithril-coat", or "Grimtooth"',
+        '(without the quotes).',
+        '',
+        'For object types which come in stacks, you may specify a plural name',
+        'such as "potions of healing", or specify a count, such as "1000 gold',
+        'pieces", although that aspect of your wish might not be granted.',
+        '',
+        'You may also specify various prefix values which might be used to',
+        'modify the item, such as "uncursed" or "rustproof" or "+1".',
+        'Most modifiers shown when viewing your inventory can be specified.',
+        '',
+        "You may specify 'nothing' to explicitly decline this wish.",
+    ];
+    if (!(game.u?.uconduct?.wishes ?? 0))
+        lines.push("Doing so will preserve 'wishless' conduct.");
+    lines.push(
+        '',
+        `If you specify an unrecognized object name ${count}${retry} time${
+            triesLeft === 1 ? '' : 's'},`,
+        'a randomly chosen item will be granted.',
+        '',
+    );
+    if (game.flags?.cmdassist !== false) {
+        lines.push(
+            '(Suppress this assistance with !cmdassist in your config file.)',
+        );
+    }
+    await showTextPages([{ lines, cursor: [0, lines.length - 1] }]);
+    await docrtRecalc();
+    await bot();
+    await flush_screen(1);
 }
 
 export async function makeWish({
@@ -32,42 +75,60 @@ export async function makeWish({
         await plineWithContinuation('You may wish for an object.');
         await flushPendingTopline();
     }
-    const value = await getLine(
-        'For what do you wish?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    const result = readObjectName(value ?? '', {
-        wizardWish: allowWizardTerrain,
-    });
-    const wizardTerrain = allowWizardTerrain
-        ? (value ?? '').trim().toLowerCase() : '';
-    const wizardTerrainSpec = {
-        'iron bars': { typ: IRONBARS, message: 'Iron bars.' },
-        'wall of water': { typ: WATER, message: 'A wall of water.' },
-        pool: { typ: POOL, message: 'A pool of water.' },
-    }[wizardTerrain];
-    if (!result && wizardTerrainSpec) {
-        const loc = game.level?.at?.(game.u.ux, game.u.uy);
-        if (loc) {
-            loc.typ = wizardTerrainSpec.typ;
-            loc.flags = 0;
-            loc.doormask = 0;
-            loc.wall_info = 0;
-            loc.ladder = 0;
-            newsym(game.u.ux, game.u.uy);
-            await pline(wizardTerrainSpec.message);
+    let value = '';
+    let result = null;
+    let failedAttempts = 0;
+    while (failedAttempts < 5) {
+        const assistance = failedAttempts > 0
+            && game.flags?.cmdassist !== false
+            ? " (enter 'help' for assistance)" : '';
+        value = await getLine(
+            `For what do you wish${assistance}?`,
+            (_ch, key) => key >= 32 && key < 127,
+        );
+        if ((value ?? '').trim().toLowerCase() === 'help') {
+            await showWishHelp(5 - failedAttempts);
+            continue;
+        }
+        result = readObjectName(value ?? '', {
+            wizardWish: allowWizardTerrain,
+        });
+        const wizardTerrain = allowWizardTerrain
+            ? (value ?? '').trim().toLowerCase() : '';
+        const wizardTerrainSpec = {
+            'iron bars': { typ: IRONBARS, message: 'Iron bars.' },
+            'wall of water': { typ: WATER, message: 'A wall of water.' },
+            pool: { typ: POOL, message: 'A pool of water.' },
+        }[wizardTerrain];
+        if (!result && wizardTerrainSpec) {
+            const loc = game.level?.at?.(game.u.ux, game.u.uy);
+            if (loc) {
+                loc.typ = wizardTerrainSpec.typ;
+                loc.flags = 0;
+                loc.doormask = 0;
+                loc.wall_info = 0;
+                loc.ladder = 0;
+                newsym(game.u.ux, game.u.uy);
+                await pline(wizardTerrainSpec.message);
+                game.context.move = 0;
+                return;
+            }
+        }
+        if (result?.noWish) {
             game.context.move = 0;
             return;
         }
-    }
-    if (result?.noWish) {
-        game.context.move = 0;
-        return;
+        if (result) break;
+        await pline('Nothing fitting that description exists in the game.');
+        failedAttempts++;
     }
     if (!result) {
-        await pline('Nothing fitting that description exists in the game.');
-        game.context.move = 0;
-        return;
+        await pline("That's enough tries!");
+        result = readObjectName('');
+        if (!result) {
+            game.context.move = 0;
+            return;
+        }
     }
 
     if (!game.u.uconduct) game.u.uconduct = {};
