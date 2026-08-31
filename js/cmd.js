@@ -133,7 +133,7 @@ import {
 import {
     awardMonsterExperience, newExperienceThreshold,
 } from './exper.js';
-import { saveGame } from './save.js';
+import { dosave } from './save.js';
 import { initTrack, setTrack } from './track.js';
 import { captureRunmodeDelay } from './runmode.js';
 import {
@@ -4268,26 +4268,6 @@ async function doTerrainOverview() {
     restoreMapDisplay(displaySnapshot);
     game._pending_message = '';
     await flush_screen(1);
-    game.context.move = 0;
-}
-
-async function dosave() {
-    const prompt = 'Really save? [yn] (n) ';
-    let answer;
-    let choice;
-    do {
-        answer = await promptKey(prompt);
-        choice = String.fromCharCode(answer).toLowerCase();
-    } while (choice !== 'y' && choice !== 'n'
-        && answer !== 27 && answer !== 32 && answer !== 10 && answer !== 13);
-    if (choice !== 'y') {
-        game._pending_message = '';
-        game.context.move = 0;
-        return;
-    }
-    saveGame();
-    game._saveExitPending = true;
-    game.program_state.gameover = true;
     game.context.move = 0;
 }
 

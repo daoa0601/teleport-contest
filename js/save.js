@@ -2,8 +2,10 @@
 // C refs: save.c and restore.c.
 
 import { game } from './gstate.js';
+import { docrt, pline } from './display.js';
 import { GameMap } from './game.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { promptKey } from './tty_prompts.js';
 import { copyPersistentState, SAVE_VERSION } from './state_schema.js';
 
 const SAVE_PREFIX = 'teleport-save:';
@@ -160,6 +162,35 @@ function rehydrateLevels(state) {
     const entries = cached instanceof Map
         ? cached.values() : Object.values(cached || {});
     for (const entry of entries) rehydrateLevel(entry?.level || entry);
+}
+
+export async function dosave() {
+    let key;
+    let answer;
+    do {
+        key = await promptKey('Really save? [yn] (n) ');
+        answer = String.fromCharCode(key).toLowerCase();
+    } while (!['y', 'n'].includes(answer)
+        && ![27, 32, 10, 13].includes(key));
+    if (answer !== 'y') {
+        game._pending_message = '';
+        game.context.move = 0;
+        return;
+    }
+
+    game._pending_message = '';
+    await pline('Saving...');
+    if (!saveGame()) {
+        await docrt();
+        game.context.move = 0;
+        return;
+    }
+    game.program_state.savefile_completed
+        = (game.program_state.savefile_completed || 0) + 1;
+    game.u.uhp = -1;
+    game._saveExitPending = true;
+    game.program_state.gameover = true;
+    game.context.move = 0;
 }
 
 export function saveGame(storage = game.storage) {
