@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
+import { ALTAR, Align2amask } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { CREAM_PIE } from '../js/object_data.js';
@@ -28,4 +29,17 @@ test('sitting on cream pies crushes the whole floor stack', async () => {
 
     assert.equal(level.objects[10][10].includes(pies), false);
     assert.match(game._pending_message, /Squelch!/);
+});
+
+test('sitting on your own altar costs Wisdom and alignment', async () => {
+    const level = freshWeaponArena();
+    level.at(10, 10).typ = ALTAR;
+    level.at(10, 10).flags = Align2amask(game.u.ualign.type);
+    game.u.amax = { a: [...game.u.acurr.a] };
+    pushKeys('sit\n ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.acurr.a[2], 9);
+    assert.equal(game.u.ualign.record, 9);
 });

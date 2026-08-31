@@ -23,6 +23,7 @@ import {
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
 import { objectWeight } from './weight.js';
@@ -280,7 +281,6 @@ function formLikesLava() {
 
 export async function dosit({
     triggerTrap = null,
-    angerAltar = null,
     throneEffect = null,
     splitGremlin = null,
 } = {}) {
@@ -350,7 +350,7 @@ export async function dosit({
         await pline(`Your ${formIsHumanoid() ? 'rump' : 'underside'} gets wet.`);
     } else if (typ === ALTAR) {
         await pline('You sit on the altar.');
-        await angerAltar?.(x, y);
+        await altarWrath(x, y);
     } else if (typ === GRAVE) {
         await pline('You sit on the grave.');
     } else if (typ === STAIRS) {

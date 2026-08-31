@@ -9,9 +9,44 @@ import { recordGameLogEvent } from './gamelog.js';
 import { promptYesNo } from './query.js';
 import { rn2, rnd, rnz } from './rng.js';
 import { loseExperienceLevel } from './exper.js';
-import { A_WIS } from './const.js';
+import { A_WIS, Amask2align } from './const.js';
+import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 
 const STRIDENT = 4;
+const GOD_VOICES = ['booms out', 'thunders', 'rings out', 'booms'];
+
+function deityForAlignment(alignment, state = game) {
+    const key = alignment > 0 ? 'lawful'
+        : alignment < 0 ? 'chaotic' : 'neutral';
+    return state.urole?.gods?.[key] || 'your god';
+}
+
+export async function altarWrath(x, y, state = game) {
+    const altarAlignment = Amask2align(state.level?.at(x, y)?.flags ?? 0);
+    const heroAlignment = state.u?.ualign?.type ?? 0;
+    const alignmentRecord = state.u?.ualign?.record ?? 0;
+    const deity = deityForAlignment(altarAlignment, state);
+
+    if (heroAlignment === altarAlignment && alignmentRecord > -rn2(4)) {
+        const voice = GOD_VOICES[rn2(GOD_VOICES.length)];
+        await pline(
+            `The voice of ${deity} ${voice}: "How darest thou desecrate my altar!"`,
+        );
+        const change = adjustAttribute(A_WIS, -1, state);
+        const message = attributeChangeMessage(A_WIS, change);
+        if (message) await pline(message);
+        state.u.ualign.record = alignmentRecord - 1;
+        return;
+    }
+
+    await pline(state.deaf || state.u?.deaf
+        ? `Despite your deafness, you seem to hear ${deity} say:`
+        : `A voice (could it be ${deity}?) whispers:`);
+    await pline('"Thou shalt pay, infidel!"');
+    const luck = state.u?.uluck ?? 0;
+    if (luck > -5 && rn2(luck + 6))
+        state.u.uluck = luck - (rn2(20) ? 1 : 2);
+}
 
 export async function dopray() {
     const answer = await promptYesNo('Are you sure you want to pray? [yn] (n) ');
