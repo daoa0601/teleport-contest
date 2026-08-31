@@ -6,7 +6,7 @@ import { W_SADDLE } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { endLampBurn } from './light.js';
+import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_MATERIAL,
@@ -509,7 +509,7 @@ export async function resolveGenericSwallowedThrow({
     );
     // steal.c:mpickobj() deliberately waits until add_to_minv() has linked
     // the carrier before snuff_light_source() resolves that mobile light.
-    if (snuffLamp) endLampBurn(thrown, state, state.moves ?? 0);
+    if (snuffLamp) endObjectBurn(thrown, state, state.moves ?? 0);
     state.context.move = 1;
     return true;
 }

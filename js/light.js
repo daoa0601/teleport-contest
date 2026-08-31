@@ -1,17 +1,30 @@
-// light.js — Mobile object light and the supported timed-lamp burn owner.
+// Object light and burn timers.
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { game } from './gstate.js';
-import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP } from './object_data.js';
+import { exerciseAttribute } from './attrib.js';
+import {
+    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
+    OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+} from './object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer,
     stopObjectTimer,
 } from './object_timers.js';
+import { rn2 } from './rng.js';
+import { makePlural } from './object_grammar.js';
+import { recordObjectKnowledge } from './object_knowledge.js';
+import { objectWeight } from './weight.js';
 
-const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
-const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
+const CANDLE_TYPES = new Set([
+    CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
+]);
+const TIMED_LIGHT_TYPES = new Set([
+    BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
+]);
+const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
 
-function lampBreakpoint(age) {
+function lampBurnTurns(age) {
     if (age > 150) return age - 150;
     if (age > 100) return age - 100;
     if (age > 50) return age - 50;
@@ -19,20 +32,39 @@ function lampBreakpoint(age) {
     return age;
 }
 
+function candleBurnTurns(age) {
+    if (age > 75) return age - 75;
+    if (age > 15) return age - 15;
+    return age;
+}
+
+function objectBurnTurns(object) {
+    if (object.otyp === POT_OIL) {
+        const age = object.age ?? 0;
+        return object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
+    }
+    if (CANDLE_TYPES.has(object.otyp))
+        return candleBurnTurns(object.age ?? 0);
+    return lampBurnTurns(object.age ?? 0);
+}
+
 // begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
-export function beginLampBurn(
+export function beginObjectBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !LAMP_TYPES.has(object.otyp)) return false;
+    if (!object || !LIGHT_TYPES.has(object.otyp)) return false;
     if (object.otyp === MAGIC_LAMP) {
+        if ((object.spe ?? 0) <= 0) return false;
         object.lamplit = true;
         state.vision_full_recalc = 1;
         return true;
     }
+    if (object.otyp === CANDELABRUM_OF_INVOCATION
+        && (object.spe ?? 0) <= 0) return false;
     if ((object.age ?? 0) <= 0) return false;
-    const turns = lampBreakpoint(object.age);
+    const turns = objectBurnTurns(object);
     object.lamplit = true;
     object.age -= turns;
     scheduleObjectTimer(
@@ -40,15 +72,6 @@ export function beginLampBurn(
     );
     state.vision_full_recalc = 1;
     return true;
-}
-
-// The themed-room callback historically used this narrow name.  Retain the
-// API while routing its source-identical lamp state through the shared owner.
-export function beginOilLampBurn(
-    object, state = game, currentTurn = state.moves ?? 0,
-) {
-    if (object?.otyp !== OIL_LAMP) return false;
-    return beginLampBurn(object, state, currentTurn);
 }
 
 // apply.c:dorub() performs this type change before the released djinni can
@@ -65,7 +88,7 @@ export function transformMagicLampToOilLamp(
     object.plural = 'oil lamps';
     object.spe = 0;
     object.age = oilAge;
-    if (object.lamplit) beginLampBurn(object, state, currentTurn);
+    if (object.lamplit) beginObjectBurn(object, state, currentTurn);
     return true;
 }
 
@@ -74,10 +97,10 @@ export function transformMagicLampToOilLamp(
 // manual switch-off must restore the still-unspent portion before darkening
 // the source.  Natural expiry has already claimed its timer and deliberately
 // uses extinguishTimedLamp() below instead.
-export function endLampBurn(
+export function endObjectBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !LAMP_TYPES.has(object.otyp) || !object.lamplit)
+    if (!object || !LIGHT_TYPES.has(object.otyp) || !object.lamplit)
         return false;
     if (object.otyp === MAGIC_LAMP) {
         object.lamplit = false;
@@ -93,38 +116,128 @@ export function endLampBurn(
     return true;
 }
 
-function extinguishTimedLamp(object, state) {
+function extinguishTimedLight(object, state) {
     object.lamplit = false;
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }
 
-// C run_timers() removes the timer before burn_object() runs.  This focused
-// dispatcher owns oil-lamp and brass-lantern fuel state; warning text and
-// non-lamp burn types remain outside its deliberately narrow scope.
+function removeBurnedObject(object, state) {
+    const remove = list => {
+        const index = list?.indexOf(object) ?? -1;
+        if (index >= 0) list.splice(index, 1);
+        return index >= 0;
+    };
+    remove(state.inventory);
+    for (const monster of state.level?.monsters || []) {
+        const inventory = monster.minvent || monster.inventory;
+        if (!remove(inventory)) continue;
+        monster.minvent = inventory;
+        monster.inventory = inventory;
+        monster.hasInventory = inventory.length > 0;
+        if (monster.mw === object) monster.mw = null;
+    }
+    for (const column of state.level?.objects || []) {
+        for (const pile of column || []) remove(pile);
+    }
+    if (state.uwep === object) state.uwep = null;
+    if (state.uswapwep === object) state.uswapwep = null;
+    object.where = 'gone';
+    object.ox = object.oy = 0;
+    object.ocarry = null;
+}
+
+function finishBurnedObject(object, state) {
+    extinguishTimedLight(object, state);
+    if (object.otyp === CANDELABRUM_OF_INVOCATION) {
+        object.spe = 0;
+        object.owt = objectWeight(object);
+        return false;
+    }
+    if (object.otyp === POT_OIL
+        || object.otyp === TALLOW_CANDLE
+        || object.otyp === WAX_CANDLE) {
+        removeBurnedObject(object, state);
+        return true;
+    }
+    return false;
+}
+
+// C run_timers() removes the timer before burn_object() runs.
 export function runClaimedObjectBurnTimer(
     claimed, state = game, currentTurn = state.moves ?? 0,
 ) {
     const object = claimed?.object;
     const timeout = claimed?.timer?.deadline;
-    if (!object || !TIMED_LAMP_TYPES.has(object.otyp) || !object.lamplit
+    if (!object || !TIMED_LIGHT_TYPES.has(object.otyp) || !object.lamplit
         || !Number.isFinite(timeout)) return null;
     if (timeout !== currentTurn) {
         const elapsed = currentTurn - timeout;
         if (elapsed >= (object.age ?? 0)) {
             object.age = 0;
-            extinguishTimedLamp(object, state);
-            return { object, threshold: 0, overdue: true };
+            const destroyed = finishBurnedObject(object, state);
+            return { object, threshold: 0, overdue: true, destroyed };
         } else {
             object.age -= elapsed;
-            beginLampBurn(object, state, currentTurn);
+            beginObjectBurn(object, state, currentTurn);
             return { object, threshold: object.age, overdue: true };
         }
     }
     const threshold = object.age ?? 0;
-    if (threshold === 0) extinguishTimedLamp(object, state);
-    else beginLampBurn(object, state, currentTurn);
-    return { object, threshold, overdue: false };
+    let destroyed = false;
+    if (threshold === 0) destroyed = finishBurnedObject(object, state);
+    else beginObjectBurn(object, state, currentTurn);
+    return { object, threshold, overdue: false, destroyed };
+}
+
+function catchesFire(object, random) {
+    if (!object || object.lamplit || object.in_use
+        || !LIGHT_TYPES.has(object.otyp)
+        || object.otyp === BRASS_LANTERN) return false;
+    if ((object.otyp === MAGIC_LAMP
+            || object.otyp === CANDELABRUM_OF_INVOCATION)
+        && (object.spe ?? 0) <= 0) return false;
+    if (TIMED_LIGHT_TYPES.has(object.otyp) && (object.age ?? 0) <= 0)
+        return false;
+    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.cursed)
+        return false;
+    return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
+        && object.cursed && random(2) === 0);
+}
+
+function lightSourceName(object) {
+    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    const qualified = object.oclass === 8 ? `potion of ${name}` : name;
+    const quantity = object.quan ?? object.quantity ?? 1;
+    return quantity > 1 ? makePlural(qualified) : qualified;
+}
+
+export async function igniteInventoryItems(
+    objects,
+    {
+        state = game,
+        publish = async () => {},
+        random = rn2,
+    } = {},
+) {
+    const ignited = [];
+    for (const object of objects || []) {
+        if (!catchesFire(object, random)) continue;
+        const name = lightSourceName(object);
+        const plural = (object.quan ?? object.quantity ?? 1) > 1;
+        const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+        await publish(blind
+            ? `Your ${name} ${plural ? 'feel' : 'feels'} warm.`
+            : `Your ${name} ${plural ? 'catch' : 'catches'} light!`);
+        if (object.otyp === POT_OIL
+            && !state._knownObjectTypes?.has(POT_OIL)) {
+            exerciseAttribute(4, true, state);
+            recordObjectKnowledge(POT_OIL, state);
+        }
+        if (beginObjectBurn(object, state, state.moves ?? 0))
+            ignited.push(object);
+    }
+    return ignited;
 }
 
 export function runObjectBurnTimers(state = game, currentTurn = state.moves ?? 0) {

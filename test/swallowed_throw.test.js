@@ -7,7 +7,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginLampBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
@@ -211,7 +211,7 @@ test('swallowed timed lamp links before snuffing and restores unused fuel',
         const lamp = addInventoryItem(raw);
         assert.equal(lamp.invlet, 'a');
         assert.equal(lamp.oclass, 6);
-        assert.equal(beginLampBurn(lamp, game, game.moves), true);
+        assert.equal(beginObjectBurn(lamp, game, game.moves), true);
         assert.equal(lamp.age, 150);
         assert.equal(objectTimers(lamp)[0].deadline, 90);
 
@@ -245,7 +245,7 @@ test('blind swallowed contact silently snuffs an untimed magic lamp',
         const lamp = addInventoryItem(raw);
         assert.equal(lamp.invlet, 'a');
         assert.equal(lamp.oclass, 6);
-        assert.equal(beginLampBurn(lamp, game, game.moves), true);
+        assert.equal(beginObjectBurn(lamp, game, game.moves), true);
         assert.equal(lamp.lamplit, true);
         assert.deepEqual(objectTimers(lamp), []);
 

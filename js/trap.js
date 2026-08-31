@@ -4,7 +4,7 @@
 import {
     W_ARM, W_ARMC, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP,
 } from './const.js';
-import { endLampBurn } from './light.js';
+import { endObjectBurn } from './light.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import {
@@ -39,7 +39,7 @@ function extinguishLitObject(object, monster, state) {
     if (object.otyp === BRASS_LANTERN && humanoid) {
         return { kind: 'lantern-flickers', object };
     }
-    if (!endLampBurn(object, state, state.moves ?? 0))
+    if (!endObjectBurn(object, state, state.moves ?? 0))
         object.lamplit = false;
     return { kind: 'extinguished', object };
 }

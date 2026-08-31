@@ -21,7 +21,8 @@ import {
     POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
-    POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION,
+    POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION,
+    POT_OBJECT_DETECTION, POT_POLYMORPH,
     POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING,
     POT_SPEED,
     POT_WATER, SPEED_BOOTS, TOWEL,
@@ -105,6 +106,12 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_WATER,
     POT_ACID,
     POT_OIL,
+]);
+
+const SUPPORTED_POTION_VAPOR_TYPES = new Set([
+    ...SUPPORTED_MONSTER_POTION_TYPES,
+    POT_HALLUCINATION,
+    POT_POLYMORPH,
 ]);
 
 const ABILITY_POTION_TYPES = new Set([
@@ -484,7 +491,7 @@ export async function applySupportedPotionVapor({
     monsterCanSeeHero,
     recalculateVision,
 }) {
-    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
+    if (!SUPPORTED_POTION_VAPOR_TYPES.has(potion?.otyp)) return null;
 
     const profile = heroVaporProfile(state);
     if (!profile.canReceive) return { received: false };
@@ -531,6 +538,8 @@ export async function applySupportedPotionVapor({
         if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
         else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
         exerciseAttribute(2, false, state);
+    } else if (potion.otyp === POT_HALLUCINATION) {
+        await publish('You have a momentary vision.');
     } else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
         const hero = state.u || (state.u = {});
         if ((hero.confusionTurns ?? 0) <= 0)
@@ -614,7 +623,7 @@ export async function applySupportedPotionVapor({
         waterEffect = await applyHeroWaterVaporChange({
             state, potion, publish,
         });
-    } else if (potion.otyp === POT_ACID) {
+    } else if ([POT_ACID, POT_POLYMORPH].includes(potion.otyp)) {
         exerciseAttribute(2, false, state);
     } else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.

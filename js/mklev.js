@@ -126,7 +126,7 @@ import {
     occupied, somex, somey, somexy, somexyspace,
 } from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
-import { beginOilLampBurn } from './light.js';
+import { beginObjectBurn } from './light.js';
 import {
     claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
     objectTimers, objectsInTimerGraph, peekNextDueObjectTimer,
@@ -7053,7 +7053,7 @@ async function createLuaObject(
             || !putSaddleOnMonster(object, parentMonster))
             addObjectToMonsterInventory(parentMonster, object, game);
     } else {
-        if (options.lit) beginOilLampBurn(object);
+        if (options.lit) beginObjectBurn(object);
         if (options.buried && buryFloorObject(object) === null) object = null;
     }
     if (!object) return null;

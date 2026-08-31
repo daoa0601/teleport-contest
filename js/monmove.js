@@ -4413,7 +4413,7 @@ async function erodeArmorByFire(
     if (visible && emitMessage) {
         const suffix = erosion + 1 === 3 ? ' completely'
             : erosion ? ' further' : '';
-        await emitMessage(`Your ${description} smoulder${suffix}!`);
+        await emitMessage(`Your ${description} smoulders${suffix}!`);
     }
     return true;
 }
@@ -6876,8 +6876,8 @@ export function resumeDeferredHeroColdSpecial(
     return action;
 }
 
-// Resume mhitm_ad_fire() after hitmsg().  The fire line is independently
-// suspendable; inventory destruction, knockback, and HP follow it.
+// Continue mhitm_ad_fire() after its hit message. Fire can burn slime and
+// carried objects before the ordinary contact damage is applied.
 export function resumeDeferredHeroFireSpecial(
     action, state, random = rn2,
 ) {
@@ -6885,6 +6885,7 @@ export function resumeDeferredHeroFireSpecial(
     if (!attack?.deferredFireNegation) return action;
     const armorProtection = state?.u?._magicNegation ?? 0;
     const cancelled = !!action.monster?.mcan;
+    attack.fireOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled
         || recordRandom(random, action.calls, 10) < 3 * armorProtection;
     if (cancelled) {
@@ -6900,7 +6901,15 @@ export function resumeDeferredHeroFireSpecial(
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
         }
     }
+    if (!attack.negated
+        && ((state.u?.slimedTurns ?? 0) > 0 || state.u?.slimed)) {
+        state.u.slimedTurns = 0;
+        state.u.slimed = false;
+        attack.slimeBurnedMessage
+            = 'The slime that covers you is burned away!';
+    }
     attack.deferredFireInventory = !attack.negated;
+    if (attack.negated) delete attack.fireOriginalDamage;
     attack.deferredPostHit = true;
     attack.deferredFireNegation = false;
     return action;
@@ -7240,9 +7249,13 @@ export function resumeDeferredHeroContact(
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev
             ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate)
-            attack.unimplementedFireInventory = true;
+        if (attackerLevel > destructionGate) {
+            attack.deferredFireInventoryEffect = true;
+            attack.deferredFireInventory = false;
+            return action;
+        }
         attack.deferredFireInventory = false;
+        delete attack.fireOriginalDamage;
     }
     if (attack.deferredElectricInventory) {
         const destructionGate = recordRandom(random, calls, 20);

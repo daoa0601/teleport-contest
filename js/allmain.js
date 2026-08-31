@@ -25,7 +25,7 @@ import {
 import {
     animateRollingBoulderCell,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
-    destroyFireInventory, finishArmorRemoval, grantAmuletWish,
+    finishArmorRemoval, grantAmuletWish,
     destroyWornArmor, objectErosionKind, objectErosionMessage,
     getLine, promptYesNo, performQuestExpulsion, discoverReflectingShield,
     resurrectWizard, rhack, stopRun, wakeMonstersNear,
@@ -82,7 +82,10 @@ import {
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { syncBlindness, syncDeafness } from './senses.js';
-import { runClaimedObjectBurnTimer } from './light.js';
+import {
+    igniteInventoryItems, runClaimedObjectBurnTimer,
+} from './light.js';
+import { destroyFireInventory } from './zap.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
@@ -2932,8 +2935,22 @@ async function resolveDeferredHeroFirePillar(action, heroAttack) {
     if (game.u?.halfSpellDamage || game.u?.half_spell_damage)
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
 
+    if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
+        game.u.slimedTurns = 0;
+        game.u.slimed = false;
+        await queueTurnMessage(
+            'The slime that covers you is burned away!',
+        );
+    }
     await burnHeroArmorByFire(game, queueTurnMessage, action.calls, rn2);
-    await destroyFireInventory(originalDamage);
+    await destroyFireInventory(originalDamage, {
+        state: game,
+        publish: queueTurnMessage,
+    });
+    await igniteInventoryItems(game.inventory, {
+        state: game,
+        publish: queueTurnMessage,
+    });
 
     game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
     heroAttack.appliedDamage = appliedDamage;
@@ -4653,6 +4670,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         actorContactPagerOwned = true;
                     }
                 }
+                if (heroAttack.slimeBurnedMessage) {
+                    const slimeDismissal = await queueTurnMessage(
+                        heroAttack.slimeBurnedMessage,
+                    );
+                    heroAttack.slimeBurnedMessage = null;
+                    if (slimeDismissal !== null
+                        && slimeDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
                 if (heroAttack.deferredElectricNegation)
                     resumeDeferredHeroElectricSpecial(action, game);
                 if (heroAttack.electricEffectMessage) {
@@ -4802,6 +4829,28 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
                     resumeDeferredHeroContact(action, game);
+                    if (heroAttack.deferredFireInventoryEffect) {
+                        await destroyFireInventory(
+                            heroAttack.fireOriginalDamage ?? 0,
+                            {
+                                state: game,
+                                publish: queueTurnMessage,
+                            },
+                        );
+                        await igniteInventoryItems(game.inventory, {
+                            state: game,
+                            publish: queueTurnMessage,
+                        });
+                        heroAttack.deferredFireInventoryEffect = false;
+                        delete heroAttack.fireOriginalDamage;
+                        const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
+                        if ((game.u?.[hitPoints] ?? 1) > 0) {
+                            resumeDeferredHeroContact(action, game);
+                        } else {
+                            heroAttack.heroDied = true;
+                            heroAttack.deferredPostHit = false;
+                        }
+                    }
                     if (heroAttack.electricInventoryMessage) {
                         const electricItemDismissal = await queueTurnMessage(
                             heroAttack.electricInventoryMessage,

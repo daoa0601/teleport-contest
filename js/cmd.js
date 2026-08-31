@@ -30,8 +30,10 @@ import {
     vision_reset_new_level,
 } from './vision.js';
 import {
-    beginLampBurn, endLampBurn, transformMagicLampToOilLamp,
+    beginObjectBurn, endObjectBurn, igniteInventoryItems,
+    transformMagicLampToOilLamp,
 } from './light.js';
+import { destroyFireInventory } from './zap.js';
 import {
     bucAdjectiveForName, ddoinv, dolook, inventoryItemDescription,
     dungeonFeatureSentenceAt,
@@ -227,7 +229,8 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
+    burnHeroArmorByFire, fumaroles, sessionIsNight,
+    triggerImmediateMonsterTrap,
 } from './monmove.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
@@ -12716,114 +12719,6 @@ function rayBounceDirection(x, y, dx, dy, bounceback) {
     return { dx: -dx, dy: -dy };
 }
 
-function fireDestroyable(item) {
-    // zap.c:destroyable(AD_FIRE): exposed potions, scrolls, and spellbooks
-    // are the ordinary vulnerable classes.  Artifact/fire-specific
-    // exceptions remain outside this reached branch.
-    return item?.oclass === 8 || item?.oclass === 9 || item?.oclass === 10;
-}
-
-function removeDestroyedQuantity(item, count) {
-    const quantity = item.quan ?? item.quantity ?? 1;
-    const remaining = quantity - count;
-    if (remaining > 0) {
-        item.quan = remaining;
-        item.quantity = remaining;
-        return;
-    }
-    const index = game.inventory.indexOf(item);
-    if (index >= 0) game.inventory.splice(index, 1);
-}
-
-function fireDestructionMessage(item, count, quantity) {
-    const one = count === 1;
-    const prefix = one && quantity === 1 ? 'Your '
-        : one ? 'One of your '
-            : count < quantity ? 'Some of your '
-                : quantity === 2 ? 'Both of your ' : 'All of your ';
-    let name = item.name || OBJECT_NAMES[item.otyp] || 'item';
-    if (!one && /^potion of /u.test(name))
-        name = name.replace(/^potion/u, 'potions');
-    if (item.oclass === 8) {
-        const verb = item.otyp === POT_OIL
-            ? one ? 'ignites and explodes' : 'ignite and explode'
-            : one ? 'boils and explodes' : 'boil and explode';
-        return `${prefix}${name} ${verb}!`;
-    }
-    const verb = one ? 'catches fire and burns' : 'catch fire and burn';
-    return `${prefix}${name} ${verb}!`;
-}
-
-async function maybeDestroyFireItem(item) {
-    const quantity = Math.max(0,
-        (item.quan ?? item.quantity ?? 1) - (item.in_use ? 1 : 0));
-    const damage = item.oclass === 8 ? rnd(6) : 1;
-    let destroyed = 0;
-    for (let i = 0; i < quantity; i++) {
-        if (rn2(3) === 0) destroyed++;
-    }
-    if (!destroyed) return 0;
-
-    await plineWithContinuation(
-        fireDestructionMessage(item, destroyed, quantity),
-    );
-    if ([POT_HEALING, POT_EXTRA_HEALING].includes(item.otyp)) {
-        const healing = item.otyp === POT_EXTRA_HEALING ? 2 : 1;
-        game.u.uhp = Math.min(
-            game.u.uhpmax ?? game.u.uhp,
-            (game.u.uhp ?? 0) + healing,
-        );
-        if (item.otyp === POT_EXTRA_HEALING && !item.cursed) {
-            game.u.blindTurns = 0;
-            syncBlindness(game);
-            game.u.deafTurns = 0;
-            syncDeafness(game);
-        } else if (item.otyp === POT_HEALING && item.blessed) {
-            game.u.blindTurns = 0;
-            syncBlindness(game);
-            game.u.deafTurns = 0;
-            syncDeafness(game);
-        }
-        exerciseAttribute(2, true);
-    }
-    if (item.otyp === POT_INVISIBILITY) {
-        // potionbreathe(): vapor effects are emitted before useup() and the
-        // exploding-potion damage/exercise which follow it.
-        await plineWithContinuation(
-            "For an instant you couldn't see yourself!",
-        );
-    }
-    removeDestroyedQuantity(item, destroyed);
-    if (damage > 0) {
-        game.u.uhp = Math.max(0, (game.u.uhp || 0) - damage);
-        exerciseAttribute(0, false);
-    }
-    return damage;
-}
-
-export async function destroyFireInventory(sourceDamage) {
-    let limit = Math.trunc(sourceDamage / 5);
-    if (sourceDamage % 5 > rn2(5)) limit++;
-    limit = Math.max(0, Math.min(20, limit));
-    if (!limit) return 0;
-
-    const chosen = Array(limit).fill(null);
-    let eligible = 0;
-    for (const item of game.inventory || []) {
-        if (!fireDestroyable(item)) continue;
-        const index = eligible < limit ? eligible : rn2(eligible);
-        eligible++;
-        if (index < limit) chosen[index] = item;
-    }
-
-    let damage = 0;
-    for (const item of chosen.slice(0, Math.min(eligible, limit))) {
-        if (item && game.inventory?.includes(item))
-            damage += await maybeDestroyFireItem(item);
-    }
-    return damage;
-}
-
 // C ref: zap.c:weffects() -> ubuzz() -> dobuzz(ZT_SLEEP).  Floor effects are
 // empty for sleep rays; this path owns range, collision, resistance, sleep,
 // and wall/door bounce behavior before the ordinary timed-turn scheduler.
@@ -13372,10 +13267,6 @@ async function zapColdRay(direction) {
 }
 
 // C refs: zap.c:weffects()/dobuzz()/zhitu(ZT_FIRE), trap.c:burnarmor().
-// The ray and armor hit are one resumable command transaction: tty can stop
-// the third clause while the accumulated beam is still physically painted.
-// Inventory destruction resumes after that boundary and is intentionally the
-// next owner rather than part of the traversal helper.
 async function zapFireRay(direction) {
     exerciseAttribute(2, true);
     let dx = DIR_DX[direction] || 0;
@@ -13424,24 +13315,42 @@ async function zapFireRay(direction) {
                 range -= 2;
                 await plineWithContinuation('The bolt of fire hits you!');
                 const damage = d(6, 6);
-                const armorRoll = rn2(5);
-                if (armorRoll === 1) {
-                    const cloak = game.uarmc || game.u?.uarmc;
-                    if (cloak) {
-                        // erode_obj() owns the mutation after tty has made
-                        // room for this new clause.  Until then status and the
-                        // painted ray remain at the collision boundary.
-                        await plineWithContinuation('Your cloak smoulders!');
-                        cloak.oeroded = Math.min(3, (cloak.oeroded || 0) + 1);
+                const fireResistant = !!(game.u?.fireResistance
+                    || game.u?.fire_resistance);
+                if (fireResistant) {
+                    await shieldeff(game.u.ux, game.u.uy);
+                    await plineWithContinuation("You don't feel hot!");
+                }
+                if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
+                    game.u.slimedTurns = 0;
+                    game.u.slimed = false;
+                    await plineWithContinuation(
+                        'The slime that covers you is burned away!',
+                    );
+                }
+                const bodyHit = await burnHeroArmorByFire(
+                    game, plineWithContinuation, [], rn2,
+                );
+                if (bodyHit) {
+                    if (rn2(3) === 0)
+                        await destroyFireInventory(damage);
+                    if (rn2(3) === 0) {
+                        await igniteInventoryItems(game.inventory, {
+                            state: game,
+                            publish: plineWithContinuation,
+                        });
                     }
                 }
-                if (armorRoll === 1 && rn2(3) === 0)
-                    await destroyFireInventory(damage);
-                if (armorRoll === 1) rn2(3); // zhitu(): ignite_items gate
 
-                // zhitu() commits the original ray damage only after armor,
-                // inventory destruction, and ignition have returned.
-                game.u.uhp = Math.max(0, (game.u.uhp || 0) - damage);
+                let appliedDamage = fireResistant ? 0 : damage;
+                if (appliedDamage
+                    && (game.u?.halfSpellDamage
+                        || game.u?.half_spell_damage)) {
+                    appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+                }
+                game.u.uhp = Math.max(
+                    0, (game.u.uhp || 0) - appliedDamage,
+                );
                 game._pendingFireRayDamage = null;
                 if (game.u.uhp <= 0) {
                     // done() uses urgent output: flush the pending item line
@@ -14166,7 +14075,7 @@ async function useLamp(object) {
     const lamp = object.otyp === BRASS_LANTERN ? 'lantern' : 'lamp';
     if (object.lamplit) {
         await pline(`Your ${lamp} is now off.`);
-        endLampBurn(object, game, game.moves ?? 0);
+        endObjectBurn(object, game, game.moves ?? 0);
         game.context.move = 1;
         return;
     }
@@ -14214,7 +14123,7 @@ async function useLamp(object) {
     if (usageFee?.message)
         await plineWithContinuation(`Your ${lamp} is now on.`);
     else await pline(`Your ${lamp} is now on.`);
-    beginLampBurn(object, game, game.moves ?? 0);
+    beginObjectBurn(object, game, game.moves ?? 0);
     game.context.move = 1;
 }
 
