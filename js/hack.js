@@ -16,9 +16,14 @@ import {
 } from './monster_data.js';
 import { BOULDER, LEASH, LOADSTONE } from './object_data.js';
 import { rehumanizeHero } from './polyself.js';
-import { d, rn2 } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { waterDamageChain } from './trap.js';
-import { vision_recalc } from './vision.js';
+import {
+    heroCanTeleport, heroControlsTeleport, heroIsUnaware,
+    teleportHeroAtWill,
+} from './teleport.js';
+import { heroTeleportRestricted } from './teleport_rules.js';
+import { vision_recalc, vision_reset } from './vision.js';
 import {
     inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED,
 } from './weight.js';
@@ -306,8 +311,11 @@ export async function heroEntersPool({
     publish = plineWithContinuation,
     random = rn2,
     recalculateVision = vision_recalc,
+    resetVision = vision_reset,
     repaint = newsym,
     rollDice = d,
+    rollOne = rnd,
+    chooseTeleportDestination = null,
     die = finishOrdinaryDeath,
 } = {}) {
     const u = state.u;
@@ -360,6 +368,41 @@ export async function heroEntersPool({
         u.uinwater = 1;
         recalculateVision(1);
         return { entered: true, moved: false, died: false };
+    }
+
+    const luck = u.uluck ?? u.luck ?? 0;
+    if (heroCanTeleport(state) && !heroIsUnaware(state)
+        && (heroControlsTeleport(state) || random(3) < luck + 2)) {
+        await publish('You attempt a teleport spell.');
+        if (heroTeleportRestricted(state)) {
+            await publish('The attempted teleport spell fails.');
+        } else {
+            const teleport = await teleportHeroAtWill({
+                state, random, rollOne,
+                chooseDestination: chooseTeleportDestination,
+            });
+            for (const message of teleport.messages)
+                await publish(message);
+            if (teleport.moved) {
+                u.uinwater = 0;
+                state.underwater = false;
+                repaint(teleport.movement.oldx, teleport.movement.oldy);
+                resetVision();
+                recalculateVision(0);
+                repaint(teleport.movement.x, teleport.movement.y);
+                return {
+                    entered: true, moved: true, died: false,
+                    from: {
+                        x: teleport.movement.oldx,
+                        y: teleport.movement.oldy,
+                    },
+                    to: {
+                        x: teleport.movement.x,
+                        y: teleport.movement.y,
+                    },
+                };
+            }
+        }
     }
 
     await wakeHeroForCrawl(state, publish);

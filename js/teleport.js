@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
-    ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, HEADSTONE,
+    ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, FAINTED, HEADSTONE,
     IS_LAVA, IS_POOL, ROWNO, VAULT, VIBRATING_SQUARE,
     WATER, W_NONPASSWALL, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
@@ -12,8 +12,11 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    AMULET_OF_YENDOR, BOULDER, LEASH, SCR_SCARE_MONSTER,
+    AMULET_OF_YENDOR, BOULDER, LEASH, OBJECT_SPELL_LEVEL,
+    RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER,
+    SPE_TELEPORT_AWAY,
 } from './object_data.js';
+import { currentAttribute } from './attrib.js';
 import {
     beginBallAndChainTeleport, finishBallAndChainTeleport,
 } from './ball.js';
@@ -25,11 +28,14 @@ import { shopkeeperInOwnShop } from './shk.js';
 import {
     heroTeleportRestricted, monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
+import { exceedsActionCapacity } from './weight.js';
 
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
+const M1_TPORT = 0x02000000;
+const M1_TPORT_CNTRL = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
 const S_HUMAN = 53;
 const S_VAMPIRE = 48;
@@ -42,6 +48,43 @@ const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const G_UNIQ = 0x1000;
+
+function wornRing(state, objectType) {
+    return [
+        state?.uleft, state?.uright,
+        state?.u?.uleft, state?.u?.uright,
+    ].some(ring => ring?.otyp === objectType);
+}
+
+function heroHasTeleportation(state) {
+    const u = state?.u;
+    return !!(u?.teleporting || u?.teleportation
+        || (u?.teleportingTurns ?? 0) > 0
+        || wornRing(state, RIN_TELEPORTATION));
+}
+
+function heroFormCanTeleport(state) {
+    return !!(heroFormFlags(state).flags1 & M1_TPORT);
+}
+
+export function heroCanTeleport(state = game) {
+    return heroHasTeleportation(state) || heroFormCanTeleport(state);
+}
+
+export function heroControlsTeleport(state = game) {
+    const u = state?.u;
+    return !!(u?.teleport_control || u?.teleportControl
+        || wornRing(state, RIN_TELEPORT_CONTROL)
+        || (heroFormFlags(state).flags1 & M1_TPORT_CNTRL));
+}
+
+export function heroIsUnaware(state = game) {
+    if (!((state?._helplessTurns ?? 0) > 0)) return false;
+    const reason = state?._helplessReason || '';
+    return !!state?.u?.usleep || state?.u?.uhs === FAINTED
+        || reason.startsWith('unconscious from')
+        || reason === 'sleeping off a magical draught';
+}
 
 export function heroTeleportTrapBlock(state = game) {
     const level = state?.u?.uz;
@@ -255,6 +298,88 @@ export function safeTeleportDestination(
             })) trappedFallback = point;
     }
     return trappedFallback;
+}
+
+function heroIsStunned(state) {
+    return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
+}
+
+function teleportAtWillFailure(state) {
+    const u = state.u;
+    const nativeForm = heroFormCanTeleport(state);
+    const requiredLevel = state.urole?.key === 'wizard' ? 8 : 12;
+    if (!heroHasTeleportation(state) && !nativeForm)
+        return "You don't know that spell.";
+    if ((u.ulevel ?? 1) < requiredLevel && !nativeForm)
+        return 'You are not able to teleport at will.';
+    if ((u.uhunger ?? 0) <= 10)
+        return 'You are too weak from hunger to teleport.';
+    if (currentAttribute(0, state) < 4)
+        return 'You lack the strength to teleport.';
+
+    const energy = 5 * OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
+    if (energy > (u.uen ?? 0))
+        return 'You lack the energy to teleport.';
+    return null;
+}
+
+export async function teleportHeroAtWill({
+    state = game,
+    random = rn2,
+    rollOne = rnd,
+    chooseDestination = null,
+} = {}) {
+    const failure = teleportAtWillFailure(state);
+    if (failure) return { moved: false, messages: [failure] };
+    if (exceedsActionCapacity(state)) {
+        return {
+            moved: false,
+            messages: [
+                'Your concentration falters from carrying so much.',
+            ],
+        };
+    }
+
+    const canChoose = heroControlsTeleport(state)
+        && !heroIsStunned(state) && !heroIsUnaware(state);
+    if (canChoose && !chooseDestination)
+        return { moved: false, needsDestination: true, messages: [] };
+
+    const energy = 5 * OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
+    state.u.uen -= energy;
+
+    const preparation = prepareHeroTeleport(state, random);
+    const messages = [...preparation.messages];
+    if (!preparation.allowed) {
+        messages.push('You shudder for a moment.');
+        return { moved: false, messages };
+    }
+
+    let destination = canChoose ? await chooseDestination() : null;
+    if (canChoose && !destination) {
+        state.u.uhunger = (state.u.uhunger ?? 900) - 100;
+        return { moved: false, cancelled: true, messages };
+    }
+    if (!destination || !heroTeleportDestinationOk(
+        destination.x, destination.y, { state },
+    )) {
+        if (destination) messages.push('Sorry...');
+        destination = safeTeleportDestination(state, random, rollOne);
+    }
+
+    state.u.uhunger = (state.u.uhunger ?? 900) - 100;
+    if (!destination) return { moved: false, messages };
+
+    const movement = moveHeroByTeleport(
+        destination.x, destination.y, state,
+    );
+    if (state.flags?.verbose !== false) {
+        messages.push(`You materialize in ${
+            movement.oldx === movement.x && movement.oldy === movement.y
+                ? 'the same' : 'a different'
+        } location!`);
+    }
+    return { moved: true, movement, messages };
 }
 
 export function randomMonsterRelocation(

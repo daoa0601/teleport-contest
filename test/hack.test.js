@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { POOL, WATER } from '../js/const.js';
+import { POOL, ROOM, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroEntersPool } from '../js/hack.js';
 import { LEASH, LOADSTONE, POT_ACID } from '../js/object_data.js';
@@ -34,8 +34,61 @@ function inventoryObject(otyp, overrides = {}) {
 
 const noDisplay = {
     recalculateVision: () => {},
+    resetVision: () => {},
     repaint: () => {},
 };
+
+test('a hero can teleport out before trying to crawl', async () => {
+    const level = poolAtHero();
+    level.at(20, 5).typ = ROOM;
+    game.u.teleporting = true;
+    game.u.ulevel = 12;
+    game.u.uen = 50;
+    game.u.uhunger = 900;
+    game.u.uluck = 0;
+    game.u.acurr.a[0] = 10;
+    game.inventory = [];
+    const messages = [];
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        random: range => range === 3 ? 0 : 5,
+        rollOne: () => 20,
+        die: async () => assert.fail('the hero should teleport'),
+    });
+
+    assert.equal(result.moved, true);
+    assert.deepEqual([game.u.ux, game.u.uy], [20, 5]);
+    assert.equal(game.u.uen, 20);
+    assert.equal(game.u.uhunger, 800);
+    assert.equal(messages.includes('You attempt a teleport spell.'), true);
+});
+
+test('a no-teleport level blocks escape without spending power', async () => {
+    poolAtHero();
+    game.level.flags.noteleport = true;
+    game.u.teleporting = true;
+    game.u.ulevel = 12;
+    game.u.uen = 50;
+    game.u.uhunger = 900;
+    game.u.uluck = 0;
+    const messages = [];
+
+    const result = await heroEntersPool({
+        ...noDisplay,
+        publish: async message => messages.push(message),
+        random: range => range === 3 ? 0 : range - 1,
+        die: async () => assert.fail('the hero should crawl out'),
+    });
+
+    assert.equal(result.moved, true);
+    assert.equal(game.u.uen, 50);
+    assert.equal(game.u.uhunger, 900);
+    assert.equal(
+        messages.includes('The attempted teleport spell fails.'), true,
+    );
+});
 
 test('a burdened hero drops gear before crawling out of a pool', async () => {
     const level = poolAtHero();
