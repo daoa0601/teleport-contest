@@ -42,7 +42,8 @@ import {
     SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT,
-    WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
+    WAN_LIGHTNING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
+    WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
     WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS,
     WAN_UNDEAD_TURNING, WAN_WISHING,
 } from './object_data.js';
@@ -72,6 +73,7 @@ import { objectWeight } from './weight.js';
 import { makeWish } from './wish.js';
 import { hasWornProperty } from './properties.js';
 import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
+import { makeInvisibleInDirection } from './monster_invisibility_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
 
 const RING_CLASS = 4;
@@ -322,6 +324,19 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
             source: 'wand',
         });
         if (observed && wand.dknown) {
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        await finishWandUse(wand);
+        return;
+    }
+    if (wand.otyp === WAN_MAKE_INVISIBLE) {
+        exerciseAttribute(A_WIS, true);
+        const identified = await makeInvisibleInDirection(directionChar);
+        if (identified && wand.dknown) {
             recordObjectKnowledge(wand.otyp);
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;

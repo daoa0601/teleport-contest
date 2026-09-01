@@ -36,6 +36,9 @@ import {
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
+import {
+    setMonsterPermanentInvisibility,
+} from './monster_invisibility.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
@@ -783,9 +786,10 @@ async function applySupportedDirectEffect({
         const cursedPotion = !!potion.cursed;
         const angered = !!monster.minvis && cursedPotion;
 
-        monster.perminvis = cursedPotion ? 0 : 1;
-        if (!monster.invis_blkd) {
-            monster.minvis = monster.perminvis;
+        const invisibility = setMonsterPermanentInvisibility(
+            monster, !cursedPotion,
+        );
+        if (!monster.invis_blkd && invisibility.changed) {
             await repaintMonster(monster);
         }
 

@@ -26,6 +26,14 @@ export function engravingAt(x, y, level = game.level) {
         engraving.x === x && engraving.y === y) || null;
 }
 
+export function deleteEngravingAt(x, y, level = game.level) {
+    const engraving = engravingAt(x, y, level);
+    if (!engraving || engraving.engr_type === HEADSTONE) return false;
+    level.engravings = level.engravings
+        .filter(candidate => candidate !== engraving);
+    return true;
+}
+
 export function makeEngravingAt(
     x, y, text, pristine = null, epoch = 0, engrType = ENGRAVE,
     { nowipeout = false, guardobjects = false } = {},

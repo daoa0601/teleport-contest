@@ -51,6 +51,7 @@ import {
 import {
     castKnownSpell, continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
+import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueCorpseMeal, doeat } from './eat.js';
@@ -259,7 +260,8 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
+    aggravateMonsters, fumaroles, sessionIsNight,
+    triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
@@ -1322,6 +1324,26 @@ async function doquaff() {
                 game.u.urexp = (game.u.urexp || 0) + 10;
             }
             recordObjectEncounter(potion.otyp);
+    } else if (potion.otyp === POT_INVISIBILITY) {
+            const effect = await applyPotionLikeInvisibility({
+                blessed: !!potion.blessed,
+                cursed: !!potion.cursed,
+            });
+            if (effect.aggravates) aggravateMonsters(game);
+            if (!effect.showedInvisibility) {
+                const feeling = game.u?.hallucinating
+                    || (game.u?.hallucinationTurns ?? 0) > 0
+                    ? 'normal' : 'peculiar';
+                await pline(
+                    `You have a ${feeling} feeling for a moment, then it passes.`,
+                );
+                await tryCallObjectType(potion);
+            } else if (potion.dknown !== false
+                && !game._knownObjectTypes?.has(potion.otyp)) {
+                exerciseAttribute(A_WIS, true);
+                recordObjectKnowledge(potion.otyp);
+                game.u.urexp = (game.u.urexp || 0) + 10;
+            }
     } else if (potion.otyp === POT_HEALING) {
             await pline('You feel better.');
             const bucSign = potion.blessed ? 1 : potion.cursed ? -1 : 0;

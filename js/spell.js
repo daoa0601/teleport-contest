@@ -15,8 +15,9 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
     OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
-    SPE_HASTE_SELF, SPE_SLOW_MONSTER, SPE_TURN_UNDEAD,
+    SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_SLOW_MONSTER, SPE_TURN_UNDEAD,
 } from './object_data.js';
+import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
@@ -437,6 +438,12 @@ export async function castKnownSpell(spell) {
         );
         game.u.veryFast = true;
         exerciseAttribute(A_DEX, true);
+        game.context.move = 1;
+        return;
+    }
+
+    if (spell.otyp === SPE_INVISIBILITY || spell.name === 'invisibility') {
+        await applyPotionLikeInvisibility({ spell: true });
         game.context.move = 1;
         return;
     }

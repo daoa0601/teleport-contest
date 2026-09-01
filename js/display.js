@@ -85,10 +85,15 @@ function senseWithTelepathy(monster) {
 }
 
 function canPhysicallyProjectMonster(monster, x, y) {
-    if (cansee(x, y)) return !monster.minvis && !monster.mundetected;
+    const seesInvisible = !!(game.u?.seeInvisible
+        || game.u?.see_invisible
+        || (game.u?.seeInvisibleTurns ?? 0) > 0);
+    const visible = (!monster.minvis || seesInvisible)
+        && !monster.mundetected;
+    if (cansee(x, y)) return visible;
     return !game.blind && !!game.u?.infravision
         && !!((MONSTER_FLAGS3[monster.mnum] ?? 0) & M3_INFRAVISIBLE)
-        && couldsee(x, y) && !monster.minvis && !monster.mundetected;
+        && couldsee(x, y) && visible;
 }
 
 // C display.h:canseemon().  Keep optical visibility distinct from sensory

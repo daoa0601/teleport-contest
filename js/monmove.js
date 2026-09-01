@@ -80,6 +80,9 @@ import { randomBottleName } from './potion_hit.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
+import {
+    setMonsterPermanentInvisibility,
+} from './monster_invisibility.js';
 import { hasWornProperty } from './properties.js';
 import { msummon } from './minion.js';
 import {
@@ -1195,8 +1198,7 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
     if (!monster || !misc?.deferredEffect || misc.effectApplied) return misc;
 
     if (misc.kind === 'potion-invisibility') {
-        monster.perminvis = misc.object.cursed ? 0 : 1;
-        if (!monster.invis_blkd) monster.minvis = monster.perminvis;
+        setMonsterPermanentInvisibility(monster, !misc.object.cursed);
         removeMonsterInventoryObject(monster, misc.object);
         misc.effectApplied = true;
         return misc;
@@ -7786,8 +7788,7 @@ export function resumeDeferredHeroSpell(
     }
     if (attack.spell === 'disappear') {
         const monster = action.monster;
-        monster.perminvis = 1;
-        if (!monster.invis_blkd) monster.minvis = 1;
+        setMonsterPermanentInvisibility(monster);
         attack.monsterDisappeared = true;
         attack.appliedDamage = 0;
         return attack;
@@ -8268,8 +8269,7 @@ export async function resumeDeferredMovementSpell(
             || state?.u?.see_invisible);
         const wasVisible = inSight && !monster.mundetected
             && (!monster.minvis || canSeeInvisible);
-        monster.perminvis = 1;
-        if (!monster.invis_blkd) monster.minvis = 1;
+        setMonsterPermanentInvisibility(monster);
         newsym(monster.mx, monster.my);
         const stillVisible = inSight && !monster.mundetected
             && (!monster.minvis || canSeeInvisible);

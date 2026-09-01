@@ -255,6 +255,7 @@ export const SPE_CONFUSE_MONSTER = 377;
 export const SPE_SLOW_MONSTER = 380;
 export const SPE_HASTE_SELF = 388;
 export const SPE_EXTRA_HEALING = 391;
+export const SPE_INVISIBILITY = 393;
 export const SPE_TURN_UNDEAD = 398;
 export const SPE_POLYMORPH = 399;
 export const SPE_TELEPORT_AWAY = 400;
