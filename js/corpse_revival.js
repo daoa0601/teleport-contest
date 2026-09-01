@@ -374,8 +374,9 @@ async function createRevivedMonster(corpse, location, state) {
     if (replacement == null) flags |= MM_NOCOUNTBIRTH;
     if (savedTraits) flags |= MM_NOTAIL;
     const heroAt = state.u?.ux === x && state.u?.uy === y;
-    const monster = heroAt
-        ? await makemonNear(targetMnum, x, y, flags, true)
+    const occupied = heroAt || monsterAt(x, y, state);
+    const monster = occupied
+        ? await makemonNear(targetMnum, x, y, flags, heroAt)
         : await makemonAt(targetMnum, x, y, flags);
     if (!monster) return { monster: null, twitchMessage: null };
 
@@ -460,7 +461,9 @@ function stopCorpseMeal(corpse, state) {
     state._occupation = null;
 }
 
-async function reviveCorpse(corpse, state, currentTurn) {
+async function reviveCorpse(
+    corpse, state, currentTurn, { announce = true } = {},
+) {
     const originalWhere = corpse.where;
     stopCorpseMeal(corpse, state);
     const digsOut = originalWhere === 'buried'
@@ -486,10 +489,12 @@ async function reviveCorpse(corpse, state, currentTurn) {
     mergeGhostIntoBody(monster, corpse, state);
     restoreCorpseNameAndHealth(monster, corpse);
     monster.mrevived = 1;
-    const message = revivalMessage(
-        corpse, monster, location, originalWhere, state,
-    );
-    if (message) messages.push(message);
+    if (announce) {
+        const message = revivalMessage(
+            corpse, monster, location, originalWhere, state,
+        );
+        if (message) messages.push(message);
+    }
     removeCorpse(corpse, location, state);
     newsym(monster.mx, monster.my);
 
@@ -499,6 +504,17 @@ async function reviveCorpse(corpse, state, currentTurn) {
         kind: 'revived', corpse, monster, trap,
         buried: digsOut, originalWhere, location, messages,
     };
+}
+
+export async function reviveCorpseByMagic(corpse, state = game) {
+    if (!corpse) return null;
+    const noRevive = corpse.norevive;
+    corpse.norevive = false;
+    const event = await reviveCorpse(
+        corpse, state, state.moves ?? 0, { announce: false },
+    );
+    if (event.kind !== 'revived') corpse.norevive = noRevive;
+    return event;
 }
 
 function rotCorpseNow(corpse, state) {

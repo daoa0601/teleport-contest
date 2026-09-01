@@ -3,7 +3,7 @@
 
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_WIS, BOLT_LIM, M_AP_FURNITURE, M_AP_OBJECT, MAXULEV,
+    A_WIS, BOLT_LIM, MAXULEV,
 } from './const.js';
 import {
     canProjectMonster, pline, shieldeff,
@@ -11,9 +11,10 @@ import {
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
 import { setMonsterMalign } from './monster_alignment.js';
+import { makeMonsterFlee } from './monster_flee.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SOUND, MONSTER_SYMBOL, monsterIsUndead,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND, MONSTER_SYMBOL,
+    monsterIsUndead,
     monsterIsVampireShifter,
 } from './monster_data.js';
 import { aggravateMonsters } from './monmove.js';
@@ -75,26 +76,6 @@ function eligibleTarget(monster, heroLevel) {
     return monsterIsUndead(monster.mnum)
         || monsterIsVampireShifter(monster)
         || (heroLevel > MAXULEV / 2 && !!(flags & M2_DEMON));
-}
-
-async function makeMonsterFlee(monster, state) {
-    if (state.u?.ustuck === monster) {
-        state.u.ustuck = null;
-        state.u.uswallow = false;
-    }
-    if (!monster.mflee
-        && canProjectMonster(monster, monster.mx, monster.my)
-        && monster.m_ap_type !== M_AP_FURNITURE
-        && monster.m_ap_type !== M_AP_OBJECT) {
-        const name = MONSTER_NAME[monster.mnum] || 'monster';
-        await pline((monster.mcanmove === 0
-            || (MONSTER_MOVE[monster.mnum] ?? 0) === 0)
-            ? `The immobile ${name} seems to flinch.`
-            : `The ${name} turns to flee.`);
-    }
-    monster.mfleetim = 0;
-    monster.mflee = 1;
-    monster.mtrack = [];
 }
 
 async function turnOneMonster(monster, state, options) {

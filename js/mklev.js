@@ -1239,6 +1239,14 @@ function attachEggHatchTimer(egg, remaining = 0) {
     }
 }
 
+export function restartEggHatchTimer(egg) {
+    if (!egg || egg.otyp !== EGG) return null;
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+    attachEggHatchTimer(egg);
+    return objectTimers(egg).find(timer =>
+        timer.kind === OBJECT_TIMER_KIND.HATCH_EGG) || null;
+}
+
 export function set_corpsenm(otmp, pm) {
     if (!otmp) return;
     const existingEggTimer = otmp.otyp === EGG

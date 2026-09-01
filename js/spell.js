@@ -13,8 +13,10 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
     OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
+    SPE_TURN_UNDEAD,
 } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { turnUndeadInDirection } from './undead_turning.js';
 
 const HEALING_SPELLS = new Set([
     'healing', 'extra healing', 'cure blindness', 'cure sickness',
@@ -383,15 +385,7 @@ async function spellMenu(casting) {
     }
 }
 
-export async function docast() {
-    if (!(game.spells || []).length) {
-        await pline("You don't know any spells right now.");
-        game.context.move = 0;
-        return;
-    }
-    const selection = await spellMenu(true);
-    const index = String.fromCharCode(selection).toLowerCase().charCodeAt(0) - 97;
-    const spell = game.spells[index];
+export async function castKnownSpell(spell) {
     if (!spell) {
         game.context.move = 0;
         return;
@@ -425,7 +419,7 @@ export async function docast() {
     rnd(2);
     await pline('In what direction? ');
     await flush_screen(1);
-    game.nhDisplay.setCursor(19, 0);
+    game.nhDisplay?.setCursor(19, 0);
     const direction = await nhgetch();
     if (direction === 27) {
         game.context.move = 0;
@@ -443,7 +437,25 @@ export async function docast() {
         game.context.move = 1;
         return;
     }
+    if (spell.otyp === SPE_TURN_UNDEAD || spell.name === 'turn undead') {
+        await turnUndeadInDirection(String.fromCharCode(direction), {
+            source: 'spell',
+        });
+        game.context.move = 1;
+        return;
+    }
     game.context.move = 0;
+}
+
+export async function docast() {
+    if (!(game.spells || []).length) {
+        await pline("You don't know any spells right now.");
+        game.context.move = 0;
+        return;
+    }
+    const selection = await spellMenu(true);
+    const index = String.fromCharCode(selection).toLowerCase().charCodeAt(0) - 97;
+    await castKnownSpell(game.spells[index]);
 }
 
 export async function dovspell() {

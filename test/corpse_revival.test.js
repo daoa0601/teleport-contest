@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
+import {
+    reviveCorpseByMagic, runClaimedCorpseRevivalTimer,
+} from '../js/corpse_revival.js';
 import { MFAST, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
@@ -103,6 +105,18 @@ test('a troll corpse on the floor rises as a live troll', async () => {
     assert.equal(event.monster.mnum, PM_TROLL);
     assert.equal(event.monster.mrevived, 1);
     assert.equal(event.messages.at(-1), 'The troll rises from the dead!');
+    assert.equal(corpse.where, 'gone');
+});
+
+test('explicit revival magic overrides a corpse no-revive flag', async () => {
+    freshState();
+    const corpse = place_object(trollCorpse(), 12, 10);
+    corpse.norevive = true;
+
+    const event = await reviveCorpseByMagic(corpse, game);
+
+    assert.equal(event.kind, 'revived');
+    assert.equal(event.monster.mnum, PM_TROLL);
     assert.equal(corpse.where, 'gone');
 });
 

@@ -43,7 +43,7 @@ import {
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT,
     WAN_LIGHTNING, WAN_POLYMORPH, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP,
-    WAN_STASIS, WAN_WISHING,
+    WAN_STASIS, WAN_UNDEAD_TURNING, WAN_WISHING,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -70,6 +70,7 @@ import {
 import { objectWeight } from './weight.js';
 import { makeWish } from './wish.js';
 import { hasWornProperty } from './properties.js';
+import { turnUndeadInDirection } from './undead_turning.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -311,6 +312,21 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
         return;
     }
     const directionChar = String.fromCharCode(direction);
+    if (wand.otyp === WAN_UNDEAD_TURNING) {
+        exerciseAttribute(A_WIS, true);
+        await turnUndeadInDirection(directionChar, {
+            source: 'wand', finishMonsterKill, wakeMonster,
+        });
+        if (directionChar === '.') {
+            recordObjectKnowledge(wand.otyp);
+            recordObjectEncounter(wand.otyp);
+            wand.typeKnown = true;
+        }
+        wand.chargesKnown = false;
+        game.context.move = 1;
+        await finishWandUse(wand);
+        return;
+    }
     if (wand.otyp === WAN_DIGGING && DIR_DX[directionChar] !== undefined) {
         await zapDig(directionChar);
         wand.known = true;

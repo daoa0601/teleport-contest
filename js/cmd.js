@@ -49,7 +49,7 @@ import {
     observeBucForNaming, selectInventoryObject,
 } from './invent.js';
 import {
-    continueSpellbookStudy, docast, dovspell,
+    castKnownSpell, continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
@@ -5861,16 +5861,14 @@ async function doadjust() {
 async function doturn() {
     const role = game.urole?.key;
     if (role !== 'priest' && role !== 'knight') {
-        const knowsTurnUndead = (game.spells || []).some(spell =>
-            spell.name === 'turn undead');
-        if (!knowsTurnUndead) {
+        const spell = (game.spells || []).find(known =>
+            known.name === 'turn undead');
+        if (!spell) {
             await pline("You don't know how to turn undead!");
             game.context.move = 0;
             return;
         }
-        // TODO: cast the known turn-undead spell through spelleffects().
-        await pline("You don't know how to turn undead!");
-        game.context.move = 0;
+        await castKnownSpell(spell);
         return;
     }
 
