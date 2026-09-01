@@ -78,7 +78,7 @@ function dropGenocidedMonsterInventory(monster, state) {
     return dropped;
 }
 
-async function killGenocidedMonster(monster, state) {
+export async function killGenocidedMonster(monster, state) {
     const lifeSaver = wornMonsterLifeSaver(monster);
     if (lifeSaver) {
         await lifeSaveMonster(monster, lifeSaver, {

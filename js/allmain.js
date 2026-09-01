@@ -2,6 +2,7 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 
 import { game } from './gstate.js';
+import { finishMonsterGrowth } from './monster_growth.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rnd } from './rng.js';
@@ -162,7 +163,8 @@ import {
     updateMonsterDistress,
 } from './monmove.js';
 import {
-    resolveMonsterLiquid, wakeMonstersNear, wakeMonstersNearWithMessages,
+    killGenocidedMonster, resolveMonsterLiquid, wakeMonstersNear,
+    wakeMonstersNearWithMessages,
 } from './mon.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
@@ -2834,6 +2836,16 @@ async function queueTurnMessage(message) {
     return plineWithContinuation(message);
 }
 
+async function presentMonsterGrowth(monster, growth) {
+    if (!growth?.changedSpecies || growth.applied) return;
+    if (canProjectMonster(monster, monster.mx, monster.my))
+        await queueTurnMessage(growth.message);
+    finishMonsterGrowth(monster, growth);
+    newsym(monster.mx, monster.my);
+    if (growth.genocided)
+        await killGenocidedMonster(monster, game);
+}
+
 async function resolveErosionFormRehumanization(
     heroAttack, effectMessage,
 ) {
@@ -5055,6 +5067,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 if (movement.attack.defenderDied) break;
             } while (movement.attack.deferredContact);
+            await presentMonsterGrowth(
+                movement.attack.aggressor,
+                movement.attack.death?.growth,
+            );
             if (movement.attack.counterattack?.deferredContact) {
                 const counterattack = movement.attack.counterattack;
                 do {
@@ -5107,6 +5123,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 resumeDeferredMonsterCounterWield(action, game);
             }
+            const counterattack = movement.attack.counterattack;
+            await presentMonsterGrowth(
+                counterattack?.aggressor,
+                counterattack?.death?.growth,
+            );
         }
         // monmove.c:dochug() performs the vile-monster emotional attack only
         // after the complete standard attack set.  Even a nonzero result is
@@ -5758,6 +5779,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 await queueTurnMessage('You hear a chugging sound.');
             }
             finishDeferredMonsterMiscItem(action, game);
+            await presentMonsterGrowth(monster, misc.growth);
             movement = action.movement;
         }
         if (movement?.usedMisc?.kind === 'potion-invisibility') {

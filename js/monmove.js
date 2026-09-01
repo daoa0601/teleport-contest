@@ -5,6 +5,7 @@
 import { d, rnl, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
+import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
 import { loseExperienceLevel } from './exper.js';
 import {
@@ -1199,16 +1200,13 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
             misc.effectApplied = true;
             return misc;
         }
-        const increase = rnd(8);
-        action.calls?.push('rnd(8)');
-        monster.mhpmax = (monster.mhpmax ?? monster.mhp ?? 1) + increase;
-        monster.mhp = Math.min(
-            monster.mhpmax,
-            (monster.mhp ?? 1) + increase,
-        );
-        // TODO: apply species changes when growth crosses their thresholds.
-        monster.m_lev = Math.min(49, (monster.m_lev ?? 0) + 1);
-        misc.increase = increase;
+        misc.growth = growMonster(monster, {
+            state,
+            rollOne: rnd,
+            random: rn2,
+            calls: action.calls,
+        });
+        misc.increase = misc.growth.maxIncrease;
         misc.effectApplied = true;
         return misc;
     }
@@ -2855,29 +2853,15 @@ function finishPetMonsterKill(
     const corpse = createOrdinaryMonsterCorpse(
         defender, state, random, calls,
     );
-    const victimLevel = defender.m_lev
-        ?? MONSTER_LEVEL[defender.mnum] ?? 0;
-    const growthRange = victimLevel + 1;
-    let maxIncrease = rollOne(growthRange);
-    calls.push(`rnd(${growthRange})`);
-    const hpThreshold = (aggressor.m_lev ?? 0)
-        ? (aggressor.m_lev ?? 0) * 8 : 4;
-    if ((aggressor.mhpmax ?? 0) + maxIncrease > hpThreshold + 1) {
-        maxIncrease = Math.max(
-            (hpThreshold + 1) - (aggressor.mhpmax ?? 0), 0,
-        );
-    }
-    const currentIncrease = maxIncrease > 1
-        ? recordRandom(random, calls, maxIncrease) : 0;
-    aggressor.mhpmax = (aggressor.mhpmax ?? aggressor.mhp ?? 1)
-        + maxIncrease;
-    aggressor.mhp = Math.min(
-        aggressor.mhpmax, (aggressor.mhp ?? 1) + currentIncrease,
-    );
-    // grow_up() can also raise the pet's level when it crosses the threshold.
+    const growth = growMonster(aggressor, {
+        victim: defender,
+        state,
+        random,
+        rollOne,
+        calls,
+    });
     return {
-        corpseCreated: !!corpse, corpse, growth: maxIncrease,
-        currentIncrease, aggressor,
+        corpseCreated: !!corpse, corpse, growth, aggressor,
     };
 }
 
