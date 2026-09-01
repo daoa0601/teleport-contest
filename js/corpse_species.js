@@ -18,3 +18,10 @@ export function isRider(mnum) {
 export function isReviver(mnum) {
     return isRider(mnum) || MONSTER_SYMBOL[mnum] === 46; // S_TROLL
 }
+
+export function isZombieMaker(mnum, cancelled = false) {
+    if (cancelled) return false;
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === 38) return true; // S_LICH
+    return symbol === 52 && mnum !== 246 && mnum !== 248; // ghoul, skeleton
+}

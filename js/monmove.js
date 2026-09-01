@@ -44,6 +44,8 @@ import {
     makemonNear, mkcorpstat, mksobj, place_object, shapechangeMonster,
     summonNastyMonsters, stack_object, undeadToCorpse,
 } from './mklev.js';
+import { isZombieMaker, zombieForm } from './corpse_species.js';
+import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
 import { rehumanizeHero } from './polyself.js';
 import {
@@ -2857,11 +2859,15 @@ export function monstersSeeTrap(state, trap) {
 }
 
 function finishPetMonsterKill(
-    aggressor, defender, state, random, rollOne, calls,
+    aggressor, defender, state, random, rollOne, calls, killingAttack = null,
 ) {
     detachDeadMonster(defender, state);
     const corpse = createOrdinaryMonsterCorpse(
-        defender, state, random, calls,
+        defender, state, random, calls, {
+            zombify: killingAttackMakesZombie(
+                aggressor, defender, killingAttack,
+            ),
+        },
     );
     const growth = growMonster(aggressor, {
         victim: defender,
@@ -2875,10 +2881,19 @@ function finishPetMonsterKill(
     };
 }
 
+function killingAttackMakesZombie(aggressor, defender, attack) {
+    return !monsterWieldedWeapon(aggressor)
+        && isZombieMaker(aggressor?.mnum, aggressor?.mcan)
+        && [1, 2, AT_TUCH].includes(attack?.attackType)
+        && zombieForm(defender?.mnum) != null;
+}
+
 // C mon.c:mondied() owns ordinary corpse eligibility and construction before
 // the dead actor is detached.  Pet combat and environmental trap deaths share
 // this producer; grow_up() remains exclusively with the pet-combat caller.
-function createOrdinaryMonsterCorpse(defender, state, random, calls) {
+function createOrdinaryMonsterCorpse(
+    defender, state, random, calls, { zombify = false } = {},
+) {
     const x = defender.mx, y = defender.my;
     if (defender.mnum === PM_IRON_GOLEM) {
         const chainCount = d(2, 6);
@@ -2909,10 +2924,18 @@ function createOrdinaryMonsterCorpse(defender, state, random, calls) {
         // corpsenm assignment.  If mksobj() chose a timerless lichen/lizard
         // as its temporary identity, this override must rebuild the ordinary
         // corpse timer before grow_up().
-        const corpse = mkcorpstat(CORPSE, null, corpseForm, x, y, 8);
+        const leaderId = state.quest_status?.leader_m_id
+            ?? state.u?.quest_status?.leader_m_id;
+        const savedMonster = corpseForm !== defender.mnum
+            || corpseKeepsMonsterTraits(defender, leaderId)
+            ? defender : null;
+        const corpse = mkcorpstat(
+            CORPSE, savedMonster, corpseForm, x, y, 8, { zombify },
+        );
         // C make_corpse() converts zombies and mummies back to their living
         // corpse form and backdates it past TAINT_AGE.
         corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
+        if (defender.name) corpse.oname = defender.name;
         const sourceMove = Math.max(1, (state?.moves ?? 1)
             - Number(state?.urole?.key === 'wizard'));
         if (corpseForm !== defender.mnum) corpse.age = sourceMove - 51;
@@ -3029,6 +3052,7 @@ function monsterMeleeAttack(
     if ((defender?.mhp ?? 0) <= 0) {
         death = finishPetMonsterKill(
             aggressor, defender, state, random, rollOne, calls,
+            results.at(-1),
         );
     }
     return {
@@ -9627,7 +9651,7 @@ export function finishDeferredMonsterCounterattackDeath(
     if (!counterattack?.deathPending || counterattack.death) return action;
     counterattack.death = finishPetMonsterKill(
         counterattack.aggressor, counterattack.defender, state,
-        random, rollOne, action.calls,
+        random, rollOne, action.calls, counterattack.results?.at(-1),
     );
     counterattack.deathPending = false;
     attack.postCounterFleePending = false;
@@ -9641,7 +9665,7 @@ export function finishDeferredMonsterDeath(
     if (!attack?.deathPending || attack.death) return action;
     attack.death = finishPetMonsterKill(
         attack.aggressor, attack.defender, state,
-        random, rollOne, action.calls,
+        random, rollOne, action.calls, attack.results?.at(-1),
     );
     if (attack.postDeathFleePending) {
         recordRandom(random, action.calls, 5);

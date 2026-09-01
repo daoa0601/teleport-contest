@@ -5,6 +5,7 @@ import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
 import { ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import {
     mkcorpstat, mksobj, place_object, set_corpsenm,
 } from '../js/mklev.js';
@@ -22,6 +23,8 @@ const PM_TROLL = 220;
 const PM_HUMAN = 260;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_LEOCROTTA = 83;
+const PM_GIANT = 169;
+const PM_GIANT_ZOMBIE = 247;
 
 function freshState() {
     resetGame();
@@ -226,4 +229,43 @@ test('a buried human corpse on a zombify timer rises as a zombie', async () => {
     assert.equal(event.monster.mnum, PM_HUMAN_ZOMBIE);
     assert.equal(event.buried, true);
     assert.equal(corpse.where, 'gone');
+});
+
+test('a zombifying kill leaves a corpse which will rise', async () => {
+    freshState();
+    const victim = {
+        m_id: 801,
+        mnum: PM_GIANT,
+        mx: 12, my: 10,
+        m_lev: 6,
+        mhp: 0, mhpmax: 36,
+        mpeaceful: 0,
+        mtame: 0,
+        name: 'Gorm',
+        minvent: [], inventory: [],
+    };
+    game.level.monsters.push(victim);
+    initRng(6n);
+
+    await finishHeroMonsterKill(victim, victim.mx, victim.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        zombifyCorpse: true,
+    });
+
+    const corpse = game.level.objects[12][10].find(
+        object => object.otyp === CORPSE,
+    );
+    const [timer] = objectTimers(corpse);
+    assert.equal(timer.kind, OBJECT_TIMER_KIND.ZOMBIFY_MON);
+    assert.ok(timer.deadline >= game.moves + 5);
+    assert.ok(timer.deadline <= game.moves + 19);
+    assert.equal(corpse.oextra?.omonst, undefined);
+
+    game.moves = timer.deadline;
+    const event = await runClaimedCorpseRevivalTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+    assert.equal(event.monster.mnum, PM_GIANT_ZOMBIE);
+    assert.equal(event.monster.name, victim.name);
 });

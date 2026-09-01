@@ -1258,7 +1258,9 @@ export function set_corpsenm(otmp, pm) {
 }
 
 // C ref: mkobj.c mkcorpstat().
-export function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
+export function mkcorpstat(
+    objtyp, mtmp, pm, x, y, flags, { zombify = false } = {},
+) {
     // C ref: mkcorpstat() creates and initializes a statue, including its
     // random monster identity and possible container roll.
     const otmp = mksobj(objtyp, !!(flags & 0x08), false);
@@ -1280,10 +1282,11 @@ export function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
         // Replacing a timerless/specially-timed corpse requires rebuilding
         // its timer for the overriding species.
         if (objtyp === CORPSE
-            && (corpseHasSpecialTiming(oldCorpsenm)
+            && (zombify
+                || corpseHasSpecialTiming(oldCorpsenm)
                 || corpseHasSpecialTiming(pm))) {
             stopAllObjectTimers(otmp);
-            startCorpseTimeout(otmp);
+            startCorpseTimeout(otmp, { zombify });
         }
     }
     return place_object(otmp, x, y);

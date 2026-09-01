@@ -19,6 +19,7 @@ import { game } from './gstate.js';
 import {
     mkcorpstat, mkobj, mksobj, place_object, stack_object, undeadToCorpse,
 } from './mklev.js';
+import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { wakeMonstersNear } from './mon.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import {
@@ -254,6 +255,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     deathContext = null,
     noCorpse = false,
     recordConduct = true,
+    zombifyCorpse = false,
 } = {}) {
     const wasInside = deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion';
@@ -398,11 +400,21 @@ export async function finishHeroMonsterKill(monster, x, y, {
         delete monster.name;
     } else if (leavesCorpse
         && (convertedUndeadCorpse || !(generationFlags & G_NOCORPSE))) {
-        const corpse = mkcorpstat(CORPSE, monster, corpseForm, x, y, 8);
+        const leaderId = game.quest_status?.leader_m_id
+            ?? game.u?.quest_status?.leader_m_id;
+        const savedMonster = convertedUndeadCorpse
+            || corpseKeepsMonsterTraits(monster, leaderId)
+            ? monster : null;
+        const corpse = mkcorpstat(
+            CORPSE, savedMonster, corpseForm, x, y, 8, {
+                zombify: zombifyCorpse,
+            },
+        );
         Object.assign(corpse, {
             name: `${MONSTER_NAME[corpseForm] || monsterName} corpse`,
             quantity: 1, quan: 1, ox: x, oy: y,
         });
+        if (monster.name) corpse.oname = monster.name;
         if (convertedUndeadCorpse)
             corpse.age = (corpse.age ?? game.moves ?? 1) - (TAINT_AGE + 1);
     }

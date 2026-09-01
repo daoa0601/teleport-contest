@@ -159,6 +159,7 @@ import {
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { isZombieMaker } from './corpse_species.js';
 import {
     killGenocidedMonsters, wakeMonstersNear,
 } from './mon.js';
@@ -11426,6 +11427,9 @@ async function attackHostileMonster(monster, x, y, {
     return finishHeroMonsterKill(monster, x, y, {
         wasTame,
         hallucinating,
+        zombifyCorpse: bareHanded && isZombieMaker(
+            game.u?.umonnum, game.u?.mcan,
+        ),
         // xkilled() renders the victim after abuse_dog(), so preserve this
         // lazy Hallucination-name boundary rather than precomputing it.
         nameMonster: displayedMonsterName,

@@ -1,6 +1,20 @@
 // Monster state stored in a corpse or statue.
 // C refs: mkobj.c save_mtraits() and zap.c montraits().
 
+import { isReviver } from './corpse_species.js';
+import { MONSTER_ATTACKS, MONSTER_GENO } from './monster_data.js';
+
+const G_UNIQ = 0x1000;
+const AD_SEDU = 22;
+const AD_SSEX = 35;
+
+function monsterHasSeductionAttack(mnum) {
+    return (MONSTER_ATTACKS[mnum] || []).some(
+        ([, damageType]) => damageType === AD_SEDU
+            || damageType === AD_SSEX,
+    );
+}
+
 function copyRecord(value) {
     if (!value || typeof value !== 'object') return value;
     const copy = { ...value };
@@ -31,6 +45,16 @@ export function saveMonsterTraits(monster) {
     if (monster.emin) saved.emin = copyRecord(monster.emin);
     if (monster.epri) saved.epri = copyRecord(monster.epri);
     return saved;
+}
+
+export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
+    if (!monster) return false;
+    return !!monster.isshk
+        || (monster.mtame ?? 0) > 0
+        || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
+        || isReviver(monster.mnum)
+        || (!!questLeaderId && monster.m_id === questLeaderId)
+        || monsterHasSeductionAttack(monster.mnum);
 }
 
 export function restoreMonsterTraits(monster, saved) {
@@ -79,7 +103,7 @@ export function restoreMonsterTraits(monster, saved) {
     monster.msleeping = 0;
     monster.mfrozen = 0;
     monster.mcanmove = 1;
-    monster.mcan = 0;
+    if (!monsterHasSeductionAttack(monster.mnum)) monster.mcan = 0;
     monster.mcansee = 1;
     monster.mblinded = 0;
     monster.mstun = 0;
