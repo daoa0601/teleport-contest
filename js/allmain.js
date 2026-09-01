@@ -31,6 +31,7 @@ import {
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
+import { resolvePoisonedHero } from './poison.js';
 import { rndcurse } from './throne.js';
 import { stopRun } from './runmode.js';
 import {
@@ -2478,64 +2479,18 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
 // damage tail.  Keep this async so tty can suspend on each intervening pline
 // without letting the actor advance to that tail.
 async function resolveDeferredHeroPoison(action, monster, attack) {
-    let pagerOwned = false;
-    const queuePoisonMessage = async message => {
-        const dismissal = await queueTurnMessage(message);
-        if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
-    };
     const subject = game.blind ? 'Its'
         : `The ${quietMonsterName(monster)}'s`;
-    await queuePoisonMessage(
-        `${subject} ${poisonAttackNoun(attack)} was poisoned!`,
-    );
-
-    if (game.u?.poisonResistance) {
-        await queuePoisonMessage("The poison doesn't seem to affect you.");
-        return pagerOwned;
-    }
-
-    const outcome = recordContactRn2(action, 30);
-    if (outcome > 5) {
-        const damage = 6 + recordContactRn2(action, 10);
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-        return;
-    }
-
-    if (outcome === 0 && attack.poisonAttribute !== 5) {
-        // poisoned(): the severe branch begins with the same 6+4d6 roll.
-        // TODO: apply its maximum-HP and attribute effects.
-        const damage = 6 + recordContactDice(action, 4, 6);
-        if ((game.u.uhp ?? 1) <= damage) {
-            game.u.uhp = 0;
-            await queuePoisonMessage('The poison was deadly...');
-        } else {
-            game.u.uhp -= damage;
-        }
-        return pagerOwned;
-    }
-
-    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-    const loss = recordContactDice(action, 2, 2);
-    const index = attack.poisonAttribute ?? 0;
-    const attributes = game.u?.acurr?.a;
-    if (attributes) attributes[index] = Math.max(3,
-        (attributes[index] ?? 3) - loss);
-
-    const currentCapacity = nearCapacity(game);
-    const capacityMessage = encumbranceMessage(
-        previousCapacity, currentCapacity,
-    );
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
-    if (capacityMessage) await queuePoisonMessage(capacityMessage);
-
-    const effectMessage = [
-        'You feel weaker!', 'Your brain is on fire!',
-        'Your judgement is impaired!', "Your muscles won't obey you!",
-        'You feel very sick!', 'You break out in hives!',
-    ][index];
-    if (effectMessage) await queuePoisonMessage(effectMessage);
-    return pagerOwned;
+    const result = await resolvePoisonedHero({
+        reason: `${subject} ${poisonAttackNoun(attack)}`,
+        attribute: attack.poisonAttribute ?? 0,
+        state: game,
+        random: range => recordContactRn2(action, range),
+        rollDice: (count, sides) =>
+            recordContactDice(action, count, sides),
+        publish: queueTurnMessage,
+    });
+    return result.pagerOwned;
 }
 
 function quietMonsterName(monster) {
