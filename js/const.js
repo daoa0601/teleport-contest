@@ -2845,4 +2845,10 @@ export function Invocation_lev(uz) {
 export function Is_rogue_level(uz) { const g = game; return g?.rogue_level && (uz ?? g?.u?.uz)?.dnum === g.rogue_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.rogue_level.dlevel; }
 export function Is_oracle_level(uz) { const g = game; return g?.oracle_level && (uz ?? g?.u?.uz)?.dnum === g.oracle_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.oracle_level.dlevel; }
 export function Is_knox_level(uz) { const g = game; return g?.knox_level && (uz ?? g?.u?.uz)?.dnum === g.knox_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.knox_level.dlevel; }
-export function Is_juiblex_level(uz) { return false; /* TODO */ }
+export function Is_juiblex_level(uz) {
+    const level = uz ?? game?.u?.uz;
+    const juiblexLevel = game?.juiblex_level;
+    return !!level && !!juiblexLevel
+        && level.dnum === juiblexLevel.dnum
+        && level.dlevel === juiblexLevel.dlevel;
+}
