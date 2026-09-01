@@ -165,7 +165,9 @@ import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
 import { dosit } from './sit.js';
-import { triggerHeroTrapAt } from './hero_traps.js';
+import {
+    heroCanMoveFromTrap, triggerHeroTrapAt,
+} from './hero_traps.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -274,7 +276,7 @@ import {
     TRAPDOOR, DART_TRAP, MAGIC_TRAP,
     TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
     WEB, ANTI_MAGIC,
-    TT_BEARTRAP, G_GONE, G_NOCORPSE, TAINT_AGE,
+    G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
@@ -8337,32 +8339,6 @@ async function finishTeleportArrival(movement) {
     });
 }
 
-async function moveWhileTrapped(dx, dy) {
-    const u = game.u;
-    if (!u?.utrap || u.utraptype !== TT_BEARTRAP) return false;
-    // hack.c:trapmove() issues this Norep before attempting escape.  Its
-    // suppression is relative to the most recently emitted message, not the
-    // lifetime of the trap; intervening monster prose can make it eligible
-    // again on the successful attempt.
-    const predicament = 'You are caught in a bear trap.';
-    if (game._last_message !== predicament) await pline(predicament);
-    else game._pending_message = '';
-    if ((dx && dy) || rn2(5) === 0) u.utrap--;
-    stopRun();
-    if (u.utrap <= 0) {
-        u.utrap = 0;
-        u.utraptype = 0;
-        const escaped = 'You finally wriggle free.';
-        await pline(game._pending_message
-            ? `${game._pending_message}  ${escaped}` : escaped);
-    }
-    // Escaping or struggling consumes the action but normally leaves the hero
-    // on the trap square.  Return true to the JS scheduler's "turn elapsed"
-    // contract; coordinate mutation is deliberately absent.
-    return true;
-}
-
-
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_OMNIVORE = M1_CARNIVORE | M1_HERBIVORE;
@@ -13366,6 +13342,8 @@ async function domove(dx, dy, explicitAttempt = true) {
                 await pline(`You stop.  ${displayName} is in the way!`);
                 return true;
             }
+            if (u.utrap
+                && !await heroCanMoveFromTrap(newx, newy)) return true;
             const ballChainMove = beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 await pline(ballChainMove.blockedMessage);
@@ -13400,6 +13378,8 @@ async function domove(dx, dy, explicitAttempt = true) {
 
     if (await fightEmptyDestination(newx, newy))
         return true;
+
+    if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
@@ -13537,8 +13517,6 @@ async function domove(dx, dy, explicitAttempt = true) {
         // running must not auto-push the same boulder down the whole corridor.
         stopRun(game);
     }
-
-    if (await moveWhileTrapped(dx, dy)) return true;
 
     // C hack.c:swim_move_danger().  Known walking equipment and the swim
     // confirmation option decide whether a visible liquid edge stops us.

@@ -6,8 +6,9 @@ import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import {
-    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, LANDMINE, MAGIC_TRAP, PIT,
-    ROLLING_BOULDER_TRAP, SPIKED_PIT, TELEP_TRAP, TT_BEARTRAP, TT_PIT,
+    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, ICE, IS_LAVA, IS_POOL,
+    LANDMINE, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP, SPIKED_PIT,
+    TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, WEB, isok,
 } from './const.js';
 import {
@@ -19,12 +20,16 @@ import { game } from './gstate.js';
 import { distmin } from './hacklib.js';
 import { mksobj, place_object, remove_object } from './mklev.js';
 import { somexyspace } from './mkroom.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
 import {
-    BOULDER, DART, OBJECT_MATERIAL, OBJECT_SMALL_DAMAGE,
+    MONSTER_FLAGS1, MONSTER_SIZE,
+} from './monster_data.js';
+import {
+    BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_SMALL_DAMAGE,
 } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { stopRun } from './runmode.js';
+import { artifactById } from './artifacts.js';
+import { attachBuriedBall } from './ball.js';
 import { setTrack } from './track.js';
 import {
     clearFixedTeleportDestination, heroTeleportDestinationOk,
@@ -38,12 +43,19 @@ import {
 } from './weight.js';
 
 const M1_CLING = 0x00000010;
+const M1_WALLWALK = 0x00000008;
 const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
+const PM_PIT_FIEND = 300;
 const IRON = 11;
+const MZ_HUGE = 4;
 
 function heroMonsterForm() {
     return Number.isInteger(game.u?.umonnum) ? game.u.umonnum : null;
+}
+
+function heroFormFlags() {
+    return MONSTER_FLAGS1[heroMonsterForm()] ?? 0;
 }
 
 function loseHitPoints(amount) {
@@ -93,7 +105,7 @@ async function applySpikePoison() {
 
 async function triggerPit(trap, { viaSitting = false } = {}) {
     const hero = game.u;
-    const formFlags = MONSTER_FLAGS1[heroMonsterForm()] ?? 0;
+    const formFlags = heroFormFlags();
     if (hero.levitating || game.levitating
         || ((hero.flying || game.flying) && !viaSitting)) return;
     trap.tseen = true;
@@ -192,6 +204,210 @@ async function triggerLandmine(trap) {
     losePhysicalHitPoints(damage);
     await triggerPit(trap);
     newsym(hero.ux, hero.uy);
+}
+
+function clearHeroTrap() {
+    game.u.utrap = 0;
+    game.u.utraptype = 0;
+}
+
+async function repeatableTrapMessage(message) {
+    if (game._last_message !== message) await pline(message);
+    else game._pending_message = '';
+}
+
+function objectAtHero(type) {
+    const hero = game.u;
+    return (game.level?.objects?.[hero.ux]?.[hero.uy] || [])
+        .find(object => object.otyp === type) || null;
+}
+
+function trapAtHero() {
+    const hero = game.u;
+    return game.level?.traps?.find(
+        trap => trap.tx === hero.ux && trap.ty === hero.uy,
+    ) || null;
+}
+
+function fillHeroPitWithBoulder() {
+    const boulder = objectAtHero(BOULDER);
+    const trap = trapAtHero();
+    if (!boulder || !trap
+        || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT)) return;
+    remove_object(boulder);
+    const trapIndex = game.level.traps.indexOf(trap);
+    if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
+    newsym(game.u.ux, game.u.uy);
+}
+
+function heroEscapesPitEasily() {
+    const form = heroMonsterForm();
+    return form === PM_PIT_FIEND || (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE;
+}
+
+async function climbOutOfPit() {
+    const hero = game.u;
+    const passesWalls = hero.passesWalls || hero.passes_walls
+        || !!(heroFormFlags() & M1_WALLWALK);
+    if (passesWalls) {
+        await pline('You ascend from the pit.');
+        clearHeroTrap();
+        fillHeroPitWithBoulder();
+        game.vision_full_recalc = 1;
+        return;
+    }
+
+    const creviceRoll = rn2(2);
+    if (creviceRoll === 0 && objectAtHero(BOULDER)) {
+        await plineWithContinuation('Your leg gets stuck in a crevice.');
+        await pline('You free your leg.');
+        return;
+    }
+
+    const canLeaveByAir = hero.flying || game.flying
+        || !!(heroFormFlags() & M1_CLING);
+    if (canLeaveByAir && !game.level?.flags?.sokoban_rules) {
+        await pline('You climb from the pit.');
+        clearHeroTrap();
+        fillHeroPitWithBoulder();
+        game.vision_full_recalc = 1;
+        return;
+    }
+
+    hero.utrap--;
+    if (hero.utrap <= 0 || heroEscapesPitEasily()) {
+        await pline('You crawl to the edge of the pit.');
+        clearHeroTrap();
+        fillHeroPitWithBoulder();
+        game.vision_full_recalc = 1;
+        return;
+    }
+    if (game.flags?.verbose !== false) {
+        const hallucinating = hero.hallucinating
+            || (hero.hallucinationTurns ?? 0) > 0;
+        const message = hallucinating && rn2(5) === 0
+            ? "You've fallen, and you can't get up."
+            : 'You are still in a pit.';
+        await repeatableTrapMessage(message);
+    }
+}
+
+function heroWieldsSting() {
+    const weapon = game.uwep || game.u?.uwep;
+    return artifactById(weapon?.oartifact)?.name === 'Sting';
+}
+
+async function struggleInWeb() {
+    const hero = game.u;
+    if (heroWieldsSting()) {
+        clearHeroTrap();
+        await pline('Sting cuts through the web!');
+        return;
+    }
+    hero.utrap--;
+    if (hero.utrap <= 0) {
+        clearHeroTrap();
+        await pline('You disentangle yourself.');
+    } else if (game.flags?.verbose !== false) {
+        await repeatableTrapMessage('You are stuck to the web.');
+    }
+}
+
+function surfaceAtHero() {
+    const terrain = game.level?.at?.(game.u.ux, game.u.uy)?.typ;
+    if (IS_LAVA(terrain)) return 'lava';
+    if (IS_POOL(terrain)) return 'water';
+    if (terrain === ICE) return 'ice';
+    return 'floor';
+}
+
+function nearestBuriedBall() {
+    const hero = game.u;
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (const object of game.level?.buriedObjects || []) {
+        if (object.otyp !== HEAVY_IRON_BALL) continue;
+        const dx = object.ox - hero.ux;
+        const dy = object.oy - hero.uy;
+        const distance = dx * dx + dy * dy;
+        if (distance <= 8 && distance < nearestDistance) {
+            nearest = object;
+            nearestDistance = distance;
+        }
+    }
+    return nearest;
+}
+
+async function struggleInFloor(targetX, targetY, anchored) {
+    const hero = game.u;
+    const ball = anchored ? nearestBuriedBall() : null;
+    if (ball) {
+        const dx = targetX - ball.ox;
+        const dy = targetY - ball.oy;
+        if (dx * dx + dy * dy <= 2) {
+            if (game.flags?.verbose !== false)
+                await repeatableTrapMessage("You move within the chain's reach.");
+            return true;
+        }
+    }
+
+    hero.utrap--;
+    if (hero.utrap > 0) {
+        if (game.flags?.verbose !== false) {
+            const message = anchored
+                ? 'You are chained to the buried ball.'
+                : `You are stuck in the ${surfaceAtHero()}.`;
+            await repeatableTrapMessage(message);
+        }
+        return false;
+    }
+
+    await pline(anchored
+        ? 'You finally wrench the ball free.'
+        : 'You finally wriggle free.');
+    clearHeroTrap();
+    if (ball) attachBuriedBall(ball);
+    return false;
+}
+
+export async function heroCanMoveFromTrap(targetX, targetY) {
+    const hero = game.u;
+    if (!hero?.utrap) return true;
+    switch (hero.utraptype) {
+    case TT_BEARTRAP:
+        if (game.flags?.verbose !== false)
+            await repeatableTrapMessage('You are caught in a bear trap.');
+        if ((hero.dx && hero.dy) || rn2(5) === 0) hero.utrap--;
+        if (hero.utrap <= 0) {
+            clearHeroTrap();
+            await pline('You finally wriggle free.');
+        }
+        return false;
+    case TT_PIT:
+        await climbOutOfPit();
+        return false;
+    case TT_WEB:
+        await struggleInWeb();
+        return false;
+    case TT_LAVA:
+        if (game.flags?.verbose !== false)
+            await repeatableTrapMessage('You are stuck in the lava.');
+        if (!IS_LAVA(game.level?.at?.(targetX, targetY)?.typ)) {
+            hero.utrap--;
+            if ((hero.utrap & 0xff) === 0) {
+                clearHeroTrap();
+                await pline('You pull yourself to the edge of the lava.');
+            }
+        }
+        hero.umoved = true;
+        return false;
+    case TT_INFLOOR:
+        return struggleInFloor(targetX, targetY, false);
+    case TT_BURIEDBALL:
+        return struggleInFloor(targetX, targetY, true);
+    default:
+        return false;
+    }
 }
 
 async function triggerTeleportTrap(trap, finishTeleport) {

@@ -3,11 +3,12 @@
 
 import { game } from './gstate.js';
 import { map_object, newsym } from './display.js';
-import { place_object, remove_object } from './mklev.js';
+import { mksobj, place_object, remove_object } from './mklev.js';
 import { rn2 } from './rng.js';
 import {
-    D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED,
+    D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, W_BALL, W_CHAIN,
 } from './const.js';
+import { IRON_CHAIN } from './object_data.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 
 export const BC_BALL = 0x01;
@@ -19,6 +20,32 @@ export const BCPOS_BALL = 2;
 
 export function heroIsPunished(state = game) {
     return !!(state.uball || state.u?.uball);
+}
+
+export function attachBuriedBall(ball) {
+    const state = game;
+    if (!ball || !state.u) return false;
+    const buried = state.level?.buriedObjects || [];
+    const buriedIndex = buried.indexOf(ball);
+    if (buriedIndex >= 0) buried.splice(buriedIndex, 1);
+
+    const oldX = ball.ox;
+    const oldY = ball.oy;
+    const chain = mksobj(IRON_CHAIN, true, false);
+    chain.owornmask = W_CHAIN;
+    ball.owornmask = W_BALL;
+    state.uchain = state.u.uchain = chain;
+    state.uball = state.u.uball = ball;
+    state.u.punished = true;
+    place_object(ball, state.u.ux, state.u.uy);
+    place_object(chain, state.u.ux, state.u.uy);
+    state.u.bc_order = BCPOS_CHAIN;
+    state.level.engravings = (state.level.engravings || []).filter(
+        engraving => engraving.x !== oldX || engraving.y !== oldY,
+    );
+    newsym(oldX, oldY);
+    newsym(state.u.ux, state.u.uy);
+    return true;
 }
 
 function dist2(x1, y1, x2, y2) {
