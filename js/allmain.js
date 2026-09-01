@@ -26,11 +26,12 @@ import {
     finishDestinationSpotEffects,
     finishArmorRemoval,
     getLine, promptYesNo, performQuestExpulsion,
-    resurrectWizard, rhack, stopRun,
+    resurrectWizard, rhack,
 } from './cmd.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
 import { rndcurse } from './throne.js';
+import { stopRun } from './runmode.js';
 import {
     docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym,
     map_invisible,

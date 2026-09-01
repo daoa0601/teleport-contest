@@ -144,7 +144,7 @@ import {
 } from './exper.js';
 import { dosave } from './save.js';
 import { initTrack, setTrack } from './track.js';
-import { captureRunmodeDelay } from './runmode.js';
+import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     findArmorClass, heroIsDisplaced,
@@ -417,32 +417,6 @@ function runDist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
     const dy = y1 - y2;
     return dx * dx + dy * dy;
-}
-
-// C refs: cmd.c set_move_cmd(run=1), hack.c lookaround(), and
-// allmain.c moveloop_core().  Shift-direction movement is not one large
-// command: it leaves a pending run which moveloop_core resumes after every
-// intervening monster/global turn.  Keep the scheduler state separate from
-// domove() so ordinary one-square movement remains reusable.
-export function startRun(dx, dy, g = game, mode = 1) {
-    g._runState = {
-        dx, dy,
-        mode,
-        multi: Math.max(COLNO, ROWNO),
-        lastStrTurn: 0,
-    };
-    g.context.run = mode;
-    g.context.mv = true;
-    return g._runState;
-}
-
-export function stopRun(g = game) {
-    g._runState = null;
-    g.context.run = 0;
-    g.context.mv = false;
-    g.context.travel = false;
-    g.context.travel1 = false;
-    g.context.nopick = false;
 }
 
 // C refs: hack.c findtravelpath(TRAVP_TRAVEL), test_move(TEST_TRAV).

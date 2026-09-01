@@ -3,6 +3,29 @@
 
 import { game } from './gstate.js';
 import { flush_screen } from './display.js';
+import { COLNO, ROWNO } from './const.js';
+
+// C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
+export function startRun(dx, dy, g = game, mode = 1) {
+    g._runState = {
+        dx, dy,
+        mode,
+        multi: Math.max(COLNO, ROWNO),
+        lastStrTurn: 0,
+    };
+    g.context.run = mode;
+    g.context.mv = true;
+    return g._runState;
+}
+
+export function stopRun(g = game) {
+    g._runState = null;
+    g.context.run = 0;
+    g.context.mv = false;
+    g.context.travel = false;
+    g.context.travel1 = false;
+    g.context.nopick = false;
+}
 
 export function runmodeDelayFrameCount(
     g = game, enabled = false, sourceTurn = g.moves || 0,
