@@ -6,7 +6,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
     D_TRAPPED, CORPSTAT_HISTORIC, Is_airlevel, Is_waterlevel,
-    M_AP_MONSTER, ROWNO, SDOOR, Upolyd, ZAP_POS,
+    HOLE, M_AP_MONSTER, ROWNO, SDOOR, TRAPDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
@@ -14,6 +14,7 @@ import {
 import { finishHeroDeath } from './end.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { game } from './gstate.js';
+import { prepareHoleFall } from './hero_traps.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
     mksobj, place_object, remove_object, stack_object,
@@ -162,6 +163,29 @@ async function breakRockObjects(x, y, state, random) {
     return { hit, identified };
 }
 
+async function breakTrapdoor(state) {
+    const trap = state.level?.traps?.find(candidate =>
+        candidate.tx === state.u.ux && candidate.ty === state.u.uy
+        && candidate.ttyp === TRAPDOOR,
+    );
+    if (!trap) return null;
+
+    const identified = !!trap.tseen;
+    if (state.blind && !trap.tseen)
+        await pline('Something beneath you shatters.');
+    else if (!trap.tseen)
+        await pline("There's a trapdoor beneath you; it shatters.");
+    else
+        await pline('The trapdoor beneath you shatters.');
+    trap.ttyp = HOLE;
+    trap.tseen = true;
+    newsym(state.u.ux, state.u.uy);
+    return {
+        fall: await prepareHoleFall(trap),
+        identified,
+    };
+}
+
 function revealMimic(monster, revealMonsterDisguise = true) {
     if (!monster.m_ap_type) return;
     if (!revealMonsterDisguise && monster.m_ap_type === M_AP_MONSTER)
@@ -308,6 +332,7 @@ export async function forceBoltInDirection(direction, {
     roll = rnd,
     rollDice = d,
     finishMonsterKill = finishHeroMonsterKill,
+    gotoLevel = null,
 } = {}) {
     const options = { random, roll, rollDice, finishMonsterKill };
     if (state.u?.uswallow && state.u?.ustuck) {
@@ -319,6 +344,7 @@ export async function forceBoltInDirection(direction, {
         return true;
     }
     if (direction === '>') {
+        const trapdoor = await breakTrapdoor(state);
         const objects = await breakRockObjects(
             state.u.ux, state.u.uy, state, random,
         );
@@ -327,7 +353,13 @@ export async function forceBoltInDirection(direction, {
                 state.u.ux, state.u.uy, rollDice(2, 4), true, state.level,
             );
         }
-        return objects.identified;
+        if (trapdoor?.fall && gotoLevel) {
+            await gotoLevel(
+                trapdoor.fall.destination,
+                { arrival: trapdoor.fall.arrival },
+            );
+        }
+        return objects.identified || !!trapdoor?.identified;
     }
     if (direction === '<') {
         await dropRockFromCeiling(state, random, roll);

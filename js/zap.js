@@ -256,7 +256,9 @@ async function zapNoDirection(wand, { finishMonsterKill } = {}) {
 }
 
 // C refs: zap.c dozap(), weffects(), and zapyourself().
-export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
+export async function dozap({
+    finishMonsterKill, wakeMonster, gotoLevel,
+} = {}) {
     if (heroHasNoHands(game)) {
         await pline("You aren't able to zap anything in your current form.");
         game.context.move = 0;
@@ -320,7 +322,7 @@ export async function dozap({ finishMonsterKill, wakeMonster } = {}) {
     if (wand.otyp === WAN_STRIKING) {
         exerciseAttribute(A_WIS, true);
         const identified = await forceBoltInDirection(directionChar, {
-            source: 'wand', finishMonsterKill,
+            source: 'wand', finishMonsterKill, gotoLevel,
         });
         if (identified && wand.dknown) {
             recordObjectKnowledge(wand.otyp);

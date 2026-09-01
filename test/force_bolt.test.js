@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { DOOR, DUST, D_BROKEN, D_LOCKED } from '../js/const.js';
+import {
+    DOOR, DUST, D_BROKEN, D_LOCKED, HOLE, TRAPDOOR,
+} from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -183,4 +185,41 @@ test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
     assert.ok(game.u.uhp < 100);
     assert.ok(game.level.objects[game.u.ux][game.u.uy]
         .some(object => object.otyp === ROCK));
+});
+
+test('force bolt shatters a trapdoor and schedules the fall', async () => {
+    freshWeaponArena();
+    game.urole = { key: 'wizard' };
+    game.u.ulevel = 8;
+    game.u.uen = 40;
+    game.u.uz = { dnum: 0, dlevel: 1 };
+    game.dungeons = [{ num_dunlevs: 3 }];
+    const trap = {
+        ttyp: TRAPDOOR,
+        tx: game.u.ux,
+        ty: game.u.uy,
+        tseen: true,
+        dst: { dnum: 0, dlevel: 2 },
+    };
+    game.level.traps.push(trap);
+    let levelChange = null;
+    pushKeys('>');
+
+    await castKnownSpell({
+        name: 'force bolt',
+        otyp: SPE_FORCE_BOLT,
+        level: 1,
+        category: 'attack',
+        fail: 0,
+    }, {
+        gotoLevel: async (destination, options) => {
+            levelChange = { destination, options };
+        },
+    });
+
+    assert.equal(trap.ttyp, HOLE);
+    assert.deepEqual(levelChange, {
+        destination: { dnum: 0, dlevel: 2 },
+        options: { arrival: 'falling' },
+    });
 });

@@ -391,7 +391,7 @@ async function spellMenu(casting) {
     }
 }
 
-export async function castKnownSpell(spell) {
+export async function castKnownSpell(spell, { gotoLevel = null } = {}) {
     if (!spell) {
         game.context.move = 0;
         return;
@@ -472,7 +472,7 @@ export async function castKnownSpell(spell) {
     }
     if (spell.otyp === SPE_FORCE_BOLT || spell.name === 'force bolt') {
         await forceBoltInDirection(String.fromCharCode(direction), {
-            source: 'spell',
+            source: 'spell', gotoLevel,
         });
         game.context.move = 1;
         return;
@@ -494,7 +494,7 @@ export async function castKnownSpell(spell) {
     game.context.move = 0;
 }
 
-export async function docast() {
+export async function docast({ gotoLevel = null } = {}) {
     if (!(game.spells || []).length) {
         await pline("You don't know any spells right now.");
         game.context.move = 0;
@@ -502,7 +502,7 @@ export async function docast() {
     }
     const selection = await spellMenu(true);
     const index = String.fromCharCode(selection).toLowerCase().charCodeAt(0) - 97;
-    await castKnownSpell(game.spells[index]);
+    await castKnownSpell(game.spells[index], { gotoLevel });
 }
 
 export async function dovspell() {

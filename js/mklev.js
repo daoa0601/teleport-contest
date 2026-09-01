@@ -461,7 +461,7 @@ function canDigDown(uz = game.u?.uz) {
         && !Invocation_lev(uz);
 }
 
-function canFallThrough(uz = game.u?.uz) {
+export function canFallThrough(uz = game.u?.uz) {
     return canDigDown(uz) || Is_stronghold(uz);
 }
 

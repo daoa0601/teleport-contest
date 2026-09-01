@@ -1097,7 +1097,7 @@ export async function rhack(key) {
     } else if (ch === 'O') {
         await doOptions();
     } else if (ch === 'Z') {
-        await docast();
+        await docast({ gotoLevel });
     } else if (ch === '+') {
         await dovspell();
     } else if (ch === '\\') {
@@ -1150,6 +1150,7 @@ export async function rhack(key) {
         await dozap({
             finishMonsterKill: finishHeroMonsterKill,
             wakeMonster: wakeAttackedMonster,
+            gotoLevel,
         });
     } else if (ch === 'r') {
         await doread({

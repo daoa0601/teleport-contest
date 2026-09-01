@@ -7,9 +7,9 @@ import {
 } from './attrib.js';
 import {
     A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, FIRE_TRAP, ICE, IS_LAVA,
-    IS_POOL,
+    HOLE, IS_POOL,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP,
-    SPIKED_PIT,
+    SPIKED_PIT, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
 } from './const.js';
@@ -20,7 +20,9 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import { distmin } from './hacklib.js';
-import { mksobj, place_object, remove_object } from './mklev.js';
+import {
+    canFallThrough, mksobj, place_object, remove_object,
+} from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {
     MONSTER_FLAGS1, MONSTER_SIZE,
@@ -717,6 +719,48 @@ async function triggerBearTrap(trap) {
     exerciseAttribute(A_DEX, false);
 }
 
+export async function prepareHoleFall(trap) {
+    if (!trap || (trap.ttyp !== HOLE && trap.ttyp !== TRAPDOOR)) return null;
+    if (!canFallThrough(game.u?.uz)) {
+        trap.tseen = true;
+        return null;
+    }
+
+    const sokoban = !!game.level?.flags?.sokoban_rules;
+    const levitating = !!(game.u?.levitating || game.levitating);
+    if (game.blind && levitating && !sokoban) return null;
+
+    trap.tseen = true;
+    await pline(trap.ttyp === TRAPDOOR
+        ? 'A trap door opens up under you!'
+        : "There's a gaping hole under you!");
+
+    const form = heroMonsterForm();
+    const clinging = !!(heroFormFlags() & M1_CLING);
+    const tooLarge = Number.isInteger(form)
+        && (MONSTER_SIZE[form] ?? 0) >= MZ_HUGE;
+    const avoidsFall = !sokoban && (
+        levitating || game.u?.flying || game.flying || clinging
+        || game.u?.ustuck
+    );
+    if (avoidsFall || tooLarge) {
+        await pline(tooLarge ? "You don't fit through." : "You don't fall in.");
+        return null;
+    }
+
+    const current = game.u?.uz || { dnum: 0, dlevel: 1 };
+    const bottom = game.dungeons?.[current.dnum]?.num_dunlevs
+        ?? current.dlevel + 1;
+    const destination = {
+        dnum: trap.dst?.dnum ?? current.dnum,
+        dlevel: Math.min(
+            trap.dst?.dlevel ?? current.dlevel + 1,
+            bottom,
+        ),
+    };
+    return { destination, arrival: 'falling' };
+}
+
 export async function triggerHeroTrap(trap, {
     finishTeleport = null,
     gotoLevel = null,
@@ -725,6 +769,13 @@ export async function triggerHeroTrap(trap, {
     if (!trap) return false;
     stopRun();
     switch (trap.ttyp) {
+    case HOLE:
+    case TRAPDOOR: {
+        const fall = await prepareHoleFall(trap);
+        if (!fall || !gotoLevel) break;
+        await gotoLevel(fall.destination, { arrival: fall.arrival });
+        return true;
+    }
     case TELEP_TRAP:
         return triggerTeleportTrap(trap, finishTeleport);
     case DART_TRAP:
