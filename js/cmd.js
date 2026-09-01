@@ -256,7 +256,9 @@ import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
-import { tryKickEvasion } from './kick_evasion.js';
+import {
+    prepareKick, rollKickDamage, tryKickEvasion, tryKickReel,
+} from './monster_kick.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
     heroTeleportDestinationOk, moveHeroByTeleport,
@@ -309,7 +311,6 @@ const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M1_WALLWALK = 0x00000008;
-const M1_THICK_HIDE = 0x00200000;
 const M2_ROCKTHROW = 0x08000000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
@@ -3472,12 +3473,19 @@ async function kickLiveMonster(monster, x, y) {
         ? monsterInstanceDisplayName(monster) : 'it';
     const martial = ['monk', 'samurai'].includes(game.urole?.key)
         || game.uarmf?.otyp === KICKING_BOOTS;
-    const clumsy = !!(game.u?.fumbling
-        || (game.u?.fumblingTurns ?? 0) > 0);
+    const kick = await prepareKick({
+        martial,
+        announce: pline,
+    });
+    if (kick.stopped) {
+        passiveContact(monster, false);
+        game.context.move = 1;
+        return;
+    }
 
     await pline(`You kick ${target}.`);
     const evaded = await tryKickEvasion(monster, {
-        clumsy,
+        clumsy: kick.clumsy,
         martial,
         announce: pline,
         nameMonster: actor => canProjectMonster(actor, actor.mx, actor.my)
@@ -3491,29 +3499,45 @@ async function kickLiveMonster(monster, x, y) {
         return;
     }
 
-    let damage = Math.trunc(
-        (currentAttribute(A_STR) + currentAttribute(A_DEX)
-            + currentAttribute(A_CON)) / 15,
-    );
-    if (game.uarmf?.otyp === KICKING_BOOTS) damage += 5;
-    if (clumsy) damage = Math.trunc(damage / 2);
-    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_THICK_HIDE)
-        damage = 0;
-    if (damage > 0) {
-        damage = rnd(damage);
-        if (martial) damage += rn2(
-            Math.trunc(currentAttribute(A_DEX) / 2) + 1,
-        );
-        exerciseAttribute(A_DEX, true);
+    const damage = rollKickDamage(monster, {
+        clumsy: kick.clumsy,
+        martial,
+    });
+    if (damage.passesThroughShade) {
+        await pline('The kick passes harmlessly through the shade.');
+        game.context.move = 1;
+        return;
     }
-    if (game.uarmf) damage += game.uarmf.spe ?? 0;
-    damage += game.u?.udaminc ?? 0;
-    if (damage > 0)
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    if (damage.damage > 0)
+        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
+
+    const reel = await tryKickReel(
+        monster,
+        x - (game.u?.ux ?? x),
+        y - (game.u?.uy ?? y),
+        {
+            martial,
+            announce: pline,
+            nameMonster: actor => canProjectMonster(
+                actor, actor.mx, actor.my,
+            ) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+        },
+    );
 
     passiveContact(monster, (monster.mhp ?? 1) > 0);
-    if ((monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y
-        && !canProjectMonster(monster, x, y)) map_invisible(x, y);
+    if ((monster.mhp ?? 1) <= 0) {
+        await finishHeroMonsterKill(monster, monster.mx, monster.my, {
+            showKillMessage: !reel?.dead,
+            hallucinating: !!(game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0),
+            nameMonster: () => monsterInstanceDisplayName(monster),
+            weaponHit: false,
+        });
+    } else if (monster.mx === x && monster.my === y
+        && !canProjectMonster(monster, x, y)) {
+        map_invisible(x, y);
+    }
+    if (damage.trainSkill) recordWeaponPractice(game, 35, 1);
     game.context.move = 1;
 }
 

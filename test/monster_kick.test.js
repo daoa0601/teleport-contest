@@ -6,10 +6,11 @@ import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
+import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
 
-function installSnakeArena() {
+function installKickArena(mnum) {
     resetGame();
     resetInputState();
     const level = new GameMap();
@@ -20,21 +21,21 @@ function installSnakeArena() {
             });
         }
     }
-    const snake = {
-        mnum: 215, m_id: 55, mx: 11, my: 10,
+    const monster = {
+        mnum, m_id: 55, mx: 11, my: 10,
         mhp: 20, mhpmax: 20, m_lev: 4, mac: 3,
         mpeaceful: 0, mtame: 0, mcanmove: 1, mcansee: 1,
         msleeping: 0, mstrategy: 0, minvis: 0, mundetected: 0,
         movement: 12,
     };
-    level.monsters = [snake];
+    level.monsters = [monster];
     installLiveCommandHero({ role: 'tourist', level, x: 10, y: 10 });
     for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
-    return snake;
+    return monster;
 }
 
 test('a quick snake can slide away from a kick', async () => {
-    const snake = installSnakeArena();
+    const snake = installKickArena(215);
     initRng(7n);
     pushKey('l');
 
@@ -43,4 +44,19 @@ test('a quick snake can slide away from a kick', async () => {
     assert.notDeepEqual([snake.mx, snake.my], [11, 10]);
     assert.equal(snake.mhp, 20);
     assert.match(game._pending_message, /slides, nimbly evading your kick/);
+});
+
+test('a heavy load can leave a clumsy kick harmless', async () => {
+    const lichen = installKickArena(158);
+    game.inventory = [
+        { otyp: OBJECT_NAMES.indexOf('plate mail'), quan: 1 },
+        { otyp: OBJECT_NAMES.indexOf('food ration'), quan: 2 },
+    ];
+    initRng(2n);
+    pushKey('l');
+
+    await rhack(4);
+
+    assert.equal(lichen.mhp, 20);
+    assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
 });
