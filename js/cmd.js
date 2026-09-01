@@ -239,6 +239,7 @@ import { useCreamPie } from './cream_pie.js';
 import {
     isRoyalJelly, useRoyalJelly,
 } from './royal_jelly.js';
+import { wieldTool } from './wield_tool.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
     weaponSkillDamageBonus, weaponSkillHitBonus,
@@ -5585,13 +5586,6 @@ function rubEligibleObject(object) {
         || object?.otyp === BRASS_LANTERN || isRoyalJelly(object);
 }
 
-function rubObjectName(object) {
-    if ([OIL_LAMP, MAGIC_LAMP].includes(object?.otyp)) return 'a lamp';
-    if (object?.otyp === BRASS_LANTERN) return 'a brass lantern';
-    const description = inventoryItemDescription(object);
-    return `${indefiniteArticle(description)} ${description}`;
-}
-
 async function rubRoyalJelly(jelly) {
     const eggs = (game.inventory || []).filter(object => object.otyp === EGG);
     const used = await useRoyalJelly(jelly, async () => {
@@ -5711,13 +5705,17 @@ async function dorub(cannedInvlet = null) {
         await rubRoyalJelly(object);
         return;
     }
-    if (object !== (game.uwep || game.u?.uwep)) {
-        const oldPrimary = game.uwep || game.u?.uwep || null;
-        if (oldPrimary) oldPrimary.wielded = false;
-        game.uwep = object;
-        if (game.u) game.u.uwep = object;
-        object.wielded = true;
-        await pline(`You now wield ${rubObjectName(object)}.`);
+    const wielded = await wieldTool(
+        object,
+        'rub',
+        { swapWeapons: doswapweapon },
+        game,
+    );
+    if (!wielded.ready) {
+        game.context.move = 0;
+        return;
+    }
+    if (wielded.newlyWielded) {
         game._cannedCommands ||= [];
         game._cannedCommands.push({ kind: 'rub', invlet: object.invlet });
         game.context.move = 1;
