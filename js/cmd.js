@@ -108,7 +108,7 @@ import {
     touchArtifactByHero,
 } from './artifacts.js';
 import {
-    SLING, CARROT,
+    SLING, CARROT, BULLWHIP,
     CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
@@ -239,6 +239,7 @@ import { useCreamPie } from './cream_pie.js';
 import {
     isRoyalJelly, useRoyalJelly,
 } from './royal_jelly.js';
+import { useBullwhip } from './bullwhip.js';
 import { wieldTool } from './wield_tool.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
@@ -1005,6 +1006,11 @@ export async function rhack(key) {
     if (cannedCommand?.kind === 'rub') {
         game._pending_message = previousMessage;
         await dorub(cannedCommand.invlet);
+        return;
+    }
+    if (cannedCommand?.kind === 'apply') {
+        game._pending_message = previousMessage;
+        await doapply(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'swap-weapon') {
@@ -8943,7 +8949,7 @@ async function useLamp(object) {
     game.context.move = 1;
 }
 
-async function doapply() {
+async function doapply(cannedInvlet = null) {
     // apply.c:doapply() rejects the current body and excessive load before
     // building the applicable-object set or exposing getobj().
     if (heroHasNoHands(game)) {
@@ -8961,7 +8967,7 @@ async function doapply() {
 
     const applicable = (game.inventory || []).filter(item => item.oclass === 6
         || item.oclass === 10 || item.oclass === 11
-        || item.otyp === 72
+        || item.otyp === 72 || item.otyp === BULLWHIP
         || [CREAM_PIE, LUMP_OF_ROYAL_JELLY].includes(item.otyp)
         || game.urole?.key === 'healer' && [10, 11].includes(item.oclass));
     if (!applicable.length) {
@@ -8974,7 +8980,8 @@ async function doapply() {
     );
     const prompt = `What do you want to use or apply? [${letters} or ?*] `;
     const underlay = snapshotInventoryUnderlay();
-    let key = await promptKey(prompt);
+    let key = cannedInvlet === null
+        ? await promptKey(prompt) : cannedInvlet.charCodeAt(0);
 
     for (;;) {
         if ([27, 32, 10, 13].includes(key)) {
@@ -8991,6 +8998,44 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if (item.otyp === BULLWHIP) {
+                const wielded = await wieldTool(
+                    item,
+                    'lash',
+                    { swapWeapons: doswapweapon },
+                    game,
+                );
+                if (!wielded.ready) {
+                    game.context.move = 0;
+                    return;
+                }
+                if (wielded.newlyWielded) {
+                    game._cannedCommands ||= [];
+                    game._cannedCommands.push({
+                        kind: 'apply', invlet: item.invlet,
+                    });
+                    game.context.move = 1;
+                    return;
+                }
+                const direction = await getAdjacentLocation(
+                    'In what direction?', null, game.u.ux, game.u.uy,
+                );
+                if (!direction) return;
+                game._pending_message = '';
+                const result = await useBullwhip(item, direction, {
+                    state: game,
+                    attackMonster: monster => attackHostileMonster(
+                        monster, monster.mx, monster.my,
+                    ),
+                    holdObject: object => {
+                        preparePickedInventoryObject(object);
+                        game._capacityDirty = true;
+                        return true;
+                    },
+                });
+                game.context.move = result.spentTime ? 1 : 0;
+                return;
+            }
             if ([BLINDFOLD, LENSES].includes(item.otyp)) {
                 game._pending_message = '';
                 const changed = await applyEyewear(item);
@@ -9049,6 +9094,11 @@ async function doapply() {
             }
             await pline(`You use ${item.invlet} - ${item.name}.`);
             game.context.move = 1;
+            return;
+        }
+
+        if (cannedInvlet !== null) {
+            game.context.move = 0;
             return;
         }
 

@@ -2,8 +2,8 @@
 // C ref: steed.c.
 
 import {
-    ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BYCHOICE, DOOR, IS_POOL,
-    MGIVENNAME, W_SADDLE, isok,
+    ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BYCHOICE, DISMOUNT_THROWN,
+    DOOR, IS_POOL, MGIVENNAME, W_SADDLE, isok,
 } from './const.js';
 import { game } from './gstate.js';
 import { newsym, pline } from './display.js';
@@ -13,7 +13,7 @@ import {
     MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, LEASH } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { promptKey } from './tty_prompts.js';
@@ -234,6 +234,20 @@ function unnamedSteedMessage(steed) {
     return `You've been through the dungeon on ${article} ${name} with no name.`;
 }
 
+async function releaseSteedLeash(steed, state, announce) {
+    if (!steed.mleashed) return;
+    steed.mleashed = 0;
+    const leash = (state.inventory || []).find(object =>
+        object.otyp === LEASH && object.leashmon === steed.m_id);
+    if (leash) leash.leashmon = 0;
+
+    const name = steed.name || `The ${monsterTypeName(
+        steed.mnum, !!steed.female,
+    )}`;
+    const pronoun = steed.female ? 'her' : 'its';
+    await announce(`${name} pulls free of ${pronoun} leash!`);
+}
+
 export async function dismountHero(
     reason,
     {
@@ -306,4 +320,67 @@ export async function dismountHero(
         movement,
         liquid,
     };
+}
+
+// Kicks and bullwhips share steed.c:kick_steed().  The caller prints the
+// initial hit; this function owns the steed's response and riding state.
+export async function strikeSteed({
+    state = game,
+    random = rn2,
+    roll = rnd,
+    announce = async () => {},
+} = {}) {
+    const hero = state.u;
+    const steed = hero?.usteed;
+    if (!steed) return { struck: false };
+
+    const helpless = !!(steed.msleeping || steed.mcanmove === 0
+        || (steed.mfrozen ?? 0) > 0);
+    if (helpless) {
+        const canRecover = steed.mcanmove !== 0 || (steed.mfrozen ?? 0) > 0;
+        const stirred = canRecover && random(2) === 0;
+        if (!stirred) {
+            await announce('It does not respond.');
+            return { struck: true, helpless: true };
+        }
+        if (steed.mcanmove !== 0) steed.msleeping = 0;
+        else if (steed.mfrozen > 2) steed.mfrozen -= 2;
+        else {
+            steed.mfrozen = 0;
+            steed.mcanmove = 1;
+        }
+        const remainsHelpless = !!(steed.msleeping || steed.mcanmove === 0
+            || (steed.mfrozen ?? 0) > 0);
+        await announce(remainsHelpless ? 'It stirs.' : 'It rouses itself!');
+        return { struck: true, helpless: remainsHelpless };
+    }
+
+    if (steed.mtame > 0) steed.mtame--;
+    steed.pet = steed.mtame > 0;
+    if (!steed.mtame) await releaseSteedLeash(steed, state, announce);
+    const resisted = steed.mtame > 0
+        && (hero.ulevel ?? 1) + steed.mtame >= roll(20);
+    if (!resisted) {
+        const oldx = hero.ux;
+        const oldy = hero.uy;
+        newsym(steed.mx, steed.my);
+        const dismount = await dismountHero(DISMOUNT_THROWN, {
+            state,
+            random,
+            announce,
+        });
+        if (dismount.movement) {
+            newsym(oldx, oldy);
+            vision_recalc(1);
+            newsym(hero.ux, hero.uy);
+        }
+        return { struck: true, thrown: dismount.dismounted };
+    }
+
+    const name = steed.name || `The ${monsterTypeName(
+        steed.mnum, !!steed.female,
+    )}`;
+    await announce(`${name} gallops!`);
+    hero.ugallop = (hero.ugallop ?? 0) + random(20) + 30;
+    return { struck: true, galloped: true };
 }

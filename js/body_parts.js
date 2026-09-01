@@ -1,10 +1,10 @@
 // body_parts.js — Current-form anatomy projections used by source messages.
-// C ref: polyself.c mbodypart().  Only ARM is mapped here; do not infer the
-// other bodypart_types from this narrower source-complete projection.
+// C ref: polyself.c mbodypart().  Keep each exported body part tied to the
+// corresponding source table rather than deriving one part from another.
 
 import { game } from './gstate.js';
 import {
-    MONSTER_FLAGS1, MONSTER_SYMBOL, SPECIAL_PM,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
 
 const M1_HUMANOID = 0x00020000;
@@ -36,6 +36,29 @@ const PM_OWLBEAR = 235;
 const PM_HUMAN = 260;
 const PM_JELLYFISH = 316;
 const PM_KRAKEN = 321;
+const PM_STONE_GOLEM = 257;
+const PM_AMOROUS_DEMON = 290;
+const AT_CLAW = 1;
+const HUMANOIDS_WITH_HANDS = new Set([
+    53, // human
+    39, // mummy
+    52, // zombie
+    27, // angel
+    14, // nymph
+    12, // leprechaun
+    43, // quantum mechanic
+    48, // vampire
+    15, // orc
+    34, // giant
+]);
+
+function humanoidHasClaws(mnum) {
+    return (MONSTER_ATTACKS[mnum] || []).some(
+        ([attackType]) => attackType === AT_CLAW,
+    ) && !HUMANOIDS_WITH_HANDS.has(MONSTER_SYMBOL[mnum])
+        && mnum !== PM_STONE_GOLEM
+        && mnum !== PM_AMOROUS_DEMON;
+}
 
 export function monsterArmName(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
@@ -88,6 +111,32 @@ export function monsterFootName(mnum) {
     return 'rear claw';
 }
 
+export function monsterHandName(mnum) {
+    const symbol = MONSTER_SYMBOL[mnum];
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+
+    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
+        || mnum === PM_OWLBEAR) return 'paw';
+    if (symbol === S_YETI) return 'hand';
+    if ((flags & M1_HUMANOID) && humanoidHasClaws(mnum)) return 'claw';
+    if (mnum === PM_JELLYFISH || mnum === PM_KRAKEN) return 'tentacle';
+    if (flags & M1_HUMANOID) return 'hand';
+    if (symbol === S_COCKATRICE || mnum === PM_RAVEN) return 'wing';
+    if (symbol === S_CENTAUR || symbol === S_UNICORN
+        || mnum === PM_KI_RIN || mnum === PM_ROTHE) return 'forehoof';
+    if (symbol === S_LIGHT) return 'ray';
+    if (symbol === S_EEL) return 'pectoral fin';
+    if (symbol === S_WORM) return 'segment';
+    if (symbol === S_SPIDER) return 'pedipalp';
+    if (flags & M1_SLITHY) return 'scale gap';
+    if (symbol === S_EYE) return 'tentacle';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB)
+        return 'grasp';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL) return 'swirl';
+    if (symbol === S_FUNGUS) return 'strand';
+    return 'foreclaw';
+}
+
 function currentHeroMonsterNumber(state) {
     if (Number.isInteger(state.u?.umonnum)) return state.u.umonnum;
     if (Number.isInteger(state.u?.umonster)) return state.u.umonster;
@@ -102,4 +151,8 @@ export function heroArmName(state = game) {
 
 export function heroFootName(state = game) {
     return monsterFootName(currentHeroMonsterNumber(state));
+}
+
+export function heroHandName(state = game) {
+    return monsterHandName(currentHeroMonsterNumber(state));
 }
