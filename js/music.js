@@ -27,9 +27,10 @@ import {
 import {
     recordObjectEncounter, recordObjectKnowledge,
 } from './object_knowledge.js';
+import { askForTune, playTune } from './passtune.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
-import { getLine, promptYesNoQuit } from './query.js';
+import { promptYesNoQuit } from './query.js';
 import { syncDeafness } from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { cansee } from './vision.js';
@@ -587,23 +588,13 @@ export async function playInstrument(instrument, options = {}) {
             return;
         }
         if (answer === 'n') {
-            const tune = await getLine(
-                'What tune are you playing? [5 notes, A-G]',
-                ch => /^[A-Ha-h]$/u.test(ch),
-            );
+            const tune = await askForTune();
             if (tune === null) {
                 await pline('Never mind.');
                 game.context.move = 0;
                 return;
             }
-            await pline(heroIsDeaf()
-                ? `You can feel your ${
-                    instrumentName(instrument)
-                } emitting vibrations.`
-                : `You extract a strange sound from your ${
-                    instrumentName(instrument)
-                }!`);
-            game.context.move = 1;
+            await playTune(instrument, tune);
             return;
         }
     }
