@@ -203,6 +203,7 @@ import {
     recordObjectKnowledge,
 } from './object_knowledge.js';
 import { automaticSearch } from './detect.js';
+import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry } from './hunger.js';
 import { chatWithQuestLeader, isQuestLeader } from './quest.js';
@@ -1449,6 +1450,32 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         || (game.u?.fumblingTurns ?? 0) > 0);
 }
 
+function finishInitialTurnMaintenanceAfterAutomaticSearch({
+    sourceTurn, moveAmount, deferAmbientMessage,
+}) {
+    const flags = game.level?.flags || {};
+    const pendingBeforeAmbient = game._pending_message || '';
+    const lastBeforeAmbient = game._last_message || '';
+    ambientFeatureSounds(flags);
+    if (deferAmbientMessage
+        && (game._pending_message || '') !== pendingBeforeAmbient) {
+        const combined = game._pending_message || '';
+        const prefix = pendingBeforeAmbient
+            ? `${pendingBeforeAmbient}  ` : '';
+        const message = prefix && combined.startsWith(prefix)
+            ? combined.slice(prefix.length) : combined;
+        game._pending_message = pendingBeforeAmbient;
+        game._last_message = lastBeforeAmbient;
+        return {
+            deferredAmbientMessage: true,
+            message, sourceTurn, moveAmount,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterAmbient({
+        sourceTurn, moveAmount,
+    });
+}
+
 function finishInitialTurnMaintenanceAfterTimeout({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
 }) {
@@ -1515,29 +1542,20 @@ function finishInitialTurnMaintenanceAfterTimeout({
     }
 
     if (game.u?.searching && !game.level?.flags?.noautosearch
-        && !game._delayedAction)
-        automaticSearch();
-
-    const flags = game.level?.flags || {};
-    const pendingBeforeAmbient = game._pending_message || '';
-    const lastBeforeAmbient = game._last_message || '';
-    ambientFeatureSounds(flags);
-    if (deferAmbientMessage
-        && (game._pending_message || '') !== pendingBeforeAmbient) {
-        const combined = game._pending_message || '';
-        const prefix = pendingBeforeAmbient
-            ? `${pendingBeforeAmbient}  ` : '';
-        const message = prefix && combined.startsWith(prefix)
-            ? combined.slice(prefix.length) : combined;
-        game._pending_message = pendingBeforeAmbient;
-        game._last_message = lastBeforeAmbient;
-        return {
-            deferredAmbientMessage: true,
-            message, sourceTurn, moveAmount,
-        };
+        && !game._delayedAction) {
+        const search = automaticSearch();
+        if (search?.statueTrap) {
+            const { x, y } = search.statueTrap;
+            return {
+                deferredStatueTrap: true,
+                x, y, sourceTurn, moveAmount,
+                deferAmbientMessage, polymorphed,
+            };
+        }
     }
-    return finishInitialTurnMaintenanceAfterAmbient({
-        sourceTurn, moveAmount,
+
+    return finishInitialTurnMaintenanceAfterAutomaticSearch({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
     });
 }
 
@@ -1987,6 +2005,11 @@ async function initialTurnMaintenanceWithTty(
             finishFumblingExpiryAfterMessage({ fumbled: true });
             phase = finishInitialTurnMaintenanceAfterTimeout(phase);
         }
+    }
+    while (phase?.deferredStatueTrap) {
+        const monster = await activateStatueTrapAt(phase.x, phase.y);
+        if (monster) exerciseAttribute(A_WIS, true);
+        phase = finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
     }
     let result = phase;
     if (phase?.deferredAmbientMessage) {
@@ -6307,11 +6330,11 @@ export async function moveloop_core() {
             // tut-1's three actors are created with STRAT_WAITFORU.  They
             // receive ordinary movement allocations every global turn but
             // do not act while the hero traverses the instructional rooms.
-            initialTurnMaintenanceRng();
+            await initialTurnMaintenanceWithTty();
         } else {
             // A turn with no full-ration actor still executes ordinary global
             // maintenance, including recovery from negative multi.
-            initialTurnMaintenanceRng();
+            await initialTurnMaintenanceWithTty();
         }
         g._maintenanceMove = g.moves || 1;
         if (!g.program_state?.gameover) {

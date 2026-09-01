@@ -17,6 +17,7 @@ import {
 } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { activateStatueTrapAt } from './statue_trap.js';
 import { rnl, rn2 } from './rng.js';
 import {
     commandSafetyPrevention, threateningMonsterNearby,
@@ -127,8 +128,8 @@ function revealSecretCorridor(x, y) {
 }
 
 // C detect.c:dosearch0(1), invoked once per global turn by intrinsic
-// Searching.  This synchronous branch owns the maintenance RNG and immediate
-// map/state changes; it never consumes another hero action.
+// Searching. This function owns the search roll. Statue animation resumes in
+// the async turn loop because creating the monster can write to the terminal.
 export function automaticSearch() {
     const u = game.u;
     for (let x = u.ux - 1; x <= u.ux + 1; x++) {
@@ -155,6 +156,8 @@ export function automaticSearch() {
             const trap = game.level?.traps?.find(candidate =>
                 candidate.tx === x && candidate.ty === y);
             if (trap && !trap.tseen && !rnl(8)) {
+                if (trap.ttyp === STATUE_TRAP)
+                    return { statueTrap: { x, y } };
                 // detect.c:find_trap() marks the trap and exercises Wisdom
                 // before repainting it, for both intrinsic and explicit
                 // search callers.
@@ -240,10 +243,15 @@ async function searchAdjacentSecrets() {
                 candidate.tx === x && candidate.ty === y);
             if (trap && !trap.tseen) {
                 if (rnl(8)) continue;
+                game._occupation = null;
+                if (trap.ttyp === STATUE_TRAP) {
+                    const monster = await activateStatueTrapAt(x, y);
+                    if (monster) exerciseWisdom();
+                    return true;
+                }
                 trap.tseen = true;
                 exerciseWisdom();
                 map_trap(trap, true);
-                game._occupation = null;
                 await pline(foundTrapMessage(trap));
                 return true;
             }

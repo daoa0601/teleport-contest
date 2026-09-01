@@ -178,6 +178,7 @@ import { dosit } from './sit.js';
 import {
     heroCanMoveFromTrap, triggerHeroTrapAt,
 } from './hero_traps.js';
+import { activateStatueTrapAt } from './statue_trap.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -292,7 +293,7 @@ import {
     ZAP_POS,
     SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE,
     TRAPDOOR, DART_TRAP, MAGIC_TRAP,
-    TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
+    TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL, STATUE_TRAP,
     WEB, ANTI_MAGIC,
     G_GONE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
@@ -3738,6 +3739,19 @@ async function dokick() {
     wakeMonstersNear(
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
+    const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
+    const ball = game.uball || game.u?.uball;
+    const chain = game.uchain || game.u?.uchain;
+    if (kickedObject && kickedObject.otyp !== BOULDER
+        && kickedObject !== ball && kickedObject !== chain) {
+        const trap = game.level?.traps?.find(candidate =>
+            candidate.tx === x && candidate.ty === y);
+        if (trap?.ttyp === STATUE_TRAP) {
+            await activateStatueTrapAt(x, y);
+            game.context.move = 1;
+            return;
+        }
+    }
     if (!location || IS_STWALL(location.typ)) {
         await kickOuch(x, y);
         game.context.move = 1;

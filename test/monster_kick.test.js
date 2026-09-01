@@ -2,33 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    COULD_SEE, IN_SIGHT, ROOM, STONE, W_AMUL,
+    COULD_SEE, IN_SIGHT, STATUE_TRAP, STONE, W_AMUL,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { pushKey, pushKeys, resetInputState } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
+import { mkcorpstat } from '../js/mklev.js';
 import {
     AMULET_OF_LIFE_SAVING, OBJECT_NAMES, STATUE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { carriedObject } from './support/game-objects.js';
-import { installLiveCommandHero } from './support/live-command-state.js';
 import { liveMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
+
+const PM_JACKAL = 12;
+
+function freshKickArena() {
+    const level = freshPlayableRoom({
+        left: 6,
+        right: 14,
+        top: 6,
+        bottom: 14,
+        role: 'tourist',
+    });
+    for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
+    vision_reset();
+    return level;
+}
 
 function installKickArena(mnum) {
-    resetGame();
-    resetInputState();
-    const level = new GameMap();
-    for (let x = 6; x <= 14; x++) {
-        for (let y = 6; y <= 14; y++) {
-            Object.assign(level.at(x, y), {
-                typ: ROOM, lit: true, waslit: true, seenv: 255,
-            });
-        }
-    }
+    const level = freshKickArena();
     const monster = liveMonster({
         mnum, m_id: 55, x: 11, y: 10,
         hitPoints: 20, level: 4, mac: 3,
@@ -36,9 +42,6 @@ function installKickArena(mnum) {
         movement: 12,
     });
     level.monsters = [monster];
-    installLiveCommandHero({ role: 'tourist', level, x: 10, y: 10 });
-    for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
-    vision_reset();
     return monster;
 }
 
@@ -140,6 +143,33 @@ test('kicking a wall while levitating throws the hero backward', async () => {
     await rhack(4);
 
     assert.deepEqual([game.u.ux, game.u.uy], [6, 10]);
+});
+
+test('kicking a statue trap releases its monster', async () => {
+    const level = freshKickArena();
+    const x = 11;
+    const y = 10;
+    initRng(9403n);
+    const statue = mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
+    level.traps.push({
+        ttyp: STATUE_TRAP,
+        tx: x,
+        ty: y,
+        tseen: false,
+    });
+    initRng(17n);
+    pushKey('l');
+
+    await rhack(4);
+
+    const jackal = level.monsters.find(monster =>
+        monster.mnum === PM_JACKAL && monster.mx === x && monster.my === y,
+    );
+    assert.ok(jackal);
+    assert.equal(jackal.mpeaceful, 0);
+    assert.equal(statue.where, 'gone');
+    assert.equal(level.traps.length, 0);
+    assert.equal(game.context.move, 1);
 });
 
 test('hurtling into a peaceful monster wakes and angers it', async () => {
