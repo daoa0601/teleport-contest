@@ -2,25 +2,34 @@
 // C refs: zap.c bhit(), bhitm(), zap_steed(), and zapyourself().
 
 import { exerciseAttribute } from './attrib.js';
+import { adjustHeroAlignment } from './alignment.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
-    D_TRAPPED, M_AP_MONSTER, ROWNO, SDOOR, Upolyd, ZAP_POS,
+    D_TRAPPED, CORPSTAT_HISTORIC, M_AP_MONSTER, ROWNO, SDOOR,
+    Upolyd, ZAP_POS,
 } from './const.js';
 import {
-    canProjectMonster, newsym, pline, shieldeff,
+    canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { place_object, remove_object } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { findMonsterArmorClass } from './monworn.js';
+import {
+    BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE,
+} from './object_data.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
+import { objectWeight } from './weight.js';
+
+const GEM_CLASS = 13;
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -72,6 +81,77 @@ async function breakDoor(x, y, state) {
         wakeMonstersNear(x, y, 20, state);
     }
     return true;
+}
+
+function recordSokobanBoulderBreak(state) {
+    if (!state.level?.flags?.sokoban_rules) return;
+    if (!state.u.uconduct) state.u.uconduct = {};
+    state.u.uconduct.sokocheat = (state.u.uconduct.sokocheat ?? 0) + 1;
+    state.u.uluck = (state.u.uluck ?? 0) - 1;
+}
+
+function dropStatueContents(statue, x, y) {
+    for (const object of statue.contents || []) {
+        object.where = 'free';
+        place_object(object, x, y);
+    }
+    statue.contents = [];
+}
+
+async function turnIntoRocks(object, x, y, state, random) {
+    if (object.otyp === BOULDER) recordSokobanBoulderBreak(state);
+    if (object.otyp === STATUE) {
+        dropStatueContents(object, x, y);
+        if (state.urole?.key === 'archeologist'
+            && ((object.spe ?? 0) & CORPSTAT_HISTORIC)) {
+            await pline(
+                'You feel guilty about damaging such a historic statue.',
+            );
+            adjustHeroAlignment(-1, state);
+        }
+        object.spe = 0;
+    }
+
+    remove_object(object);
+    object.otyp = ROCK;
+    object.oclass = GEM_CLASS;
+    object.quan = object.quantity = 7 + random(60);
+    object.dknown = object.bknown = object.rknown = false;
+    object.known = OBJECT_USES_KNOWN[ROCK] ? 0 : 1;
+    delete object.oextra;
+    delete object.corpsenm;
+    object.owt = objectWeight(object);
+    place_object(object, x, y);
+    vision_note_blocker_change(x, y);
+    newsym(x, y);
+}
+
+async function breakRockObjects(x, y, state, random) {
+    const pile = [...(state.level?.objects?.[x]?.[y] || [])];
+    let hit = false;
+    let identified = false;
+    for (const object of pile) {
+        if (object.otyp !== BOULDER && object.otyp !== STATUE) continue;
+        const visible = cansee(x, y);
+        const audible = !state.u?.deaf && !state.deaf;
+        if (object.otyp === BOULDER) {
+            if (visible) await pline('The boulder falls apart.');
+            else if (audible) await pline('You hear a crumbling sound.');
+            await turnIntoRocks(object, x, y, state, random);
+        } else {
+            await turnIntoRocks(object, x, y, state, random);
+            if (visible) {
+                const subject = state.u?.hallucinating
+                    ? randomDisplayMonsterName() : 'statue';
+                await pline(`The ${subject} shatters.`);
+            } else if (audible) {
+                await pline('You hear a crumbling sound.');
+            }
+        }
+        hit = true;
+        if (visible || audible) identified = true;
+    }
+    return { hit, identified };
 }
 
 function revealMimic(monster, revealMonsterDisguise = true) {
@@ -199,6 +279,9 @@ export async function forceBoltInDirection(direction, {
                 identified = true;
             range -= 3;
         }
+        const objects = await breakRockObjects(x, y, state, random);
+        if (objects.hit) range--;
+        if (objects.identified) identified = true;
         if (await breakDoor(x, y, state)) identified = true;
         if (!rayCellIsOpen(x, y, state)) break;
     }

@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import { DOOR, D_BROKEN, D_LOCKED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { SPE_FORCE_BOLT, WAN_STRIKING } from '../js/object_data.js';
+import {
+    BOULDER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
+} from '../js/object_data.js';
+import { place_object } from '../js/mklev.js';
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
@@ -100,3 +103,30 @@ test('force bolt breaks a locked door and continues through its square',
         assert.equal(door.doormask, D_BROKEN);
         assert.equal(game.context.move, 1);
     });
+
+test('force bolt fractures a boulder into rocks', async () => {
+    freshWeaponArena();
+    game.urole = { key: 'wizard' };
+    game.u.ulevel = 8;
+    game.u.uen = 40;
+    const boulder = place_object({
+        otyp: BOULDER,
+        oclass: 14,
+        quan: 1,
+        quantity: 1,
+        dknown: true,
+    }, 12, 10);
+    pushKeys('l');
+
+    await castKnownSpell({
+        name: 'force bolt',
+        otyp: SPE_FORCE_BOLT,
+        level: 1,
+        category: 'attack',
+        fail: 0,
+    });
+
+    assert.equal(boulder.otyp, ROCK);
+    assert.ok(boulder.quan >= 7 && boulder.quan <= 66);
+    assert.equal(game.level.objects[12][10].includes(boulder), true);
+});
