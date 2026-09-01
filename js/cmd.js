@@ -82,7 +82,9 @@ import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import {
+    addObjectToMonsterInventory, clearMonsterCarriedObjectState,
+} from './monster_inventory.js';
 import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
     resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
@@ -3507,6 +3509,13 @@ async function recoilFromKick(range) {
         finishTeleport: finishTeleportArrival,
         gotoLevel,
         chooseTeleportDestination: askTeleportDestination,
+        finishPetrifiedMonster: monster => finishHeroMonsterKill(
+            monster, monster.mx, monster.my, {
+                showKillMessage: false,
+                noCorpse: true,
+                recordConduct: false,
+            },
+        ),
     });
 }
 
@@ -11281,22 +11290,6 @@ function observeMonsterDropName(object, x, y) {
     recordObjectEncounter(object.otyp);
 }
 
-// C refs: steal.c:mdrop_obj() and worn.c:extract_from_minvent().  Monster
-// equipment bits belong to the carrier, not to the object once it reaches the
-// floor.  Clear them before the same identity can be picked up by the hero;
-// otherwise getobj() mistakes the former monster gear for hero equipment.
-function releaseMonsterInventoryObject(object) {
-    if (!object) return;
-    object.owornmask = 0;
-    object.worn = false;
-    object.wornSlot = null;
-    object.wielded = false;
-    object.alternate = false;
-    object.ready = false;
-    object.ocarry = null;
-    delete object.carrierMid;
-}
-
 export async function finishHeroMonsterKill(monster, x, y, {
     wasTame = (monster?.mtame ?? (monster?.pet ? 1 : 0)) > 0,
     hallucinating = !!(game.u?.hallucinating
@@ -11308,6 +11301,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     weaponHit = !!game.uwep,
     deathContext = null,
     noCorpse = false,
+    recordConduct = true,
 } = {}) {
     const wasInside = deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion';
@@ -11324,7 +11318,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     // mondead() can detach the actor.  If an older topline owns tty, this
     // await must suspend before Wizard bookkeeping, inventory release,
     // corpse policy, experience, or vanquished counts change.
-    recordHeroKillConduct();
+    if (recordConduct) recordHeroKillConduct();
     if (showKillMessage) {
         const deathVerb = monsterIsNonliving(monster.mnum)
             ? 'destroy' : 'kill';
@@ -11385,7 +11379,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         // will be printed.  A visible nearby carrier therefore teaches the
         // object type before place_object reverses the final floor chain.
         observeMonsterDropName(object, x, y);
-        releaseMonsterInventoryObject(object);
+        clearMonsterCarriedObjectState(object);
         place_object(object, x, y);
         stack_object(object, game);
     }
@@ -11393,7 +11387,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
 
-    const permitsDeathDrops = !levelSpecificNoCorpse(monster);
+    const permitsDeathDrops = !noCorpse && !levelSpecificNoCorpse(monster);
     if (permitsDeathDrops) {
         const extraObjectRoll = rn2(6);
         if (extraObjectRoll === 0

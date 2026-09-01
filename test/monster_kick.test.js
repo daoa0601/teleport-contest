@@ -1,13 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COULD_SEE, IN_SIGHT, ROOM, STONE } from '../js/const.js';
+import {
+    COULD_SEE, IN_SIGHT, ROOM, STONE, W_AMUL,
+} from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { pushKey, resetInputState } from '../js/input.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { pushKey, pushKeys, resetInputState } from '../js/input.js';
+import {
+    AMULET_OF_LIFE_SAVING, OBJECT_NAMES, STATUE,
+} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
@@ -151,3 +155,69 @@ test('hurtling into a peaceful monster wakes and angers it', async () => {
     assert.equal(human.mpeaceful, 0);
     assert.equal(game.u.ualign.record, 9);
 });
+
+test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
+    async () => {
+        const human = installKickArena(260);
+        human.mx = 9;
+        const club = {
+            otyp: OBJECT_NAMES.indexOf('club'),
+            owornmask: 0,
+            where: 'minvent',
+            owt: 30,
+        };
+        human.minvent = human.inventory = [club];
+        human.hasInventory = true;
+        game.level.at(11, 10).typ = STONE;
+        game.u.levitating = true;
+        game.u.mtimedone = 100;
+        game.u.umonnum = 10;
+        game.u.mh = game.u.mhmax = 20;
+        game.u.uhp = game.u.uhpmax = 100;
+        vision_reset();
+        initRng(19n);
+        pushKeys(`l${' '.repeat(20)}`);
+
+        await rhack(4);
+
+        assert.equal(game.level.monsters.includes(human), false);
+        const statue = game.level.objects[9][10]
+            .find(object => object.otyp === STATUE);
+        assert.equal(statue.corpsenm, 260);
+        assert.equal(statue.contents.includes(club), true);
+        assert.equal(game.u.uconduct.killer, 1);
+    });
+
+test('a worn life-saving amulet saves a monster from petrifying recoil',
+    async () => {
+        const human = installKickArena(260);
+        human.mx = 9;
+        const amulet = {
+            otyp: AMULET_OF_LIFE_SAVING,
+            owornmask: W_AMUL,
+            worn: true,
+            where: 'minvent',
+        };
+        human.minvent = human.inventory = [amulet];
+        human.hasInventory = true;
+        human.misc_worn_check = W_AMUL;
+        game.level.at(11, 10).typ = STONE;
+        game.u.levitating = true;
+        game.u.mtimedone = 100;
+        game.u.umonnum = 10;
+        game.u.mh = game.u.mhmax = 20;
+        game.u.uhp = game.u.uhpmax = 100;
+        vision_reset();
+        initRng(19n);
+        pushKeys(`l${' '.repeat(30)}`);
+
+        await rhack(4);
+
+        assert.equal(game.level.monsters.includes(human), true);
+        assert.equal(human.mhp, human.mhpmax);
+        assert.equal(human.minvent.includes(amulet), false);
+        const statue = game.level.objects?.[9]?.[10]
+            ?.find(object => object.otyp === STATUE);
+        assert.equal(statue, undefined);
+        assert.equal(game.u.uconduct.killer, 1);
+    });

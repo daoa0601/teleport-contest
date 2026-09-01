@@ -8,6 +8,18 @@ import {
 import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 
+export function clearMonsterCarriedObjectState(object) {
+    if (!object) return;
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    object.ocarry = null;
+    delete object.carrierMid;
+}
+
 // Runtime monster inventories mirror C's minvent chain head-to-tail.  Every
 // unmerged add_to_minv() acquisition becomes the new head; callers may request
 // tail insertion only for a source boundary which explicitly constructs one.

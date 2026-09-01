@@ -27,6 +27,9 @@ import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import {
+    monsterWearsTorsoArmor, petrifyMonster,
+} from './monster_stoning.js';
+import {
     MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
 import { BOULDER } from './object_data.js';
@@ -201,7 +204,7 @@ function touchPetrifies(mnum) {
     return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
 }
 
-async function collideWithMonster(monster, x, y) {
+async function collideWithMonster(monster, x, y, options) {
     monster.mundetected = 0;
     const spotted = canSpotMonster(monster, x, y);
     await plineWithContinuation(spotted
@@ -214,12 +217,22 @@ async function collideWithMonster(monster, x, y) {
     if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()
         && !(game.u?.stoneResistance || game.u?.stone_resistance)) {
         await plineWithContinuation('You turn to stone...');
-        await finishHeroDeath({
+        const died = await finishHeroDeath({
             killer: `bumping into ${indefiniteName(monsterTypeName(
                 monster.mnum, !!monster.female,
             ))}`,
             deathVerb: 'turned to stone',
             deathLineShown: true,
+        });
+        if (died) {
+            wakeMonstersNear(x, y, 10);
+            return;
+        }
+    }
+    if (touchPetrifies(heroForm()) && !monsterWearsTorsoArmor(monster)) {
+        await petrifyMonster(monster, {
+            creditHero: true,
+            finishDeath: options.finishPetrifiedMonster,
         });
     }
     wakeMonstersNear(x, y, 10);
@@ -327,7 +340,7 @@ async function moveOneSquare(x, y, options, remaining) {
 
     const monster = monsterAt(x, y);
     if (monster) {
-        await collideWithMonster(monster, x, y);
+        await collideWithMonster(monster, x, y, options);
         return false;
     }
 
@@ -382,6 +395,7 @@ export async function hurtleHero(dx, dy, range, {
     finishTeleport = null,
     gotoLevel = null,
     chooseTeleportDestination = null,
+    finishPetrifiedMonster = null,
 } = {}) {
     if (heroIsPunished()
         && !game.inventory?.includes(game.uball || game.u?.uball)) {
@@ -413,6 +427,7 @@ export async function hurtleHero(dx, dy, range, {
     const remaining = { value: range };
     const options = {
         finishTeleport, gotoLevel, chooseTeleportDestination,
+        finishPetrifiedMonster,
     };
     while (remaining.value) {
         const x = game.u.ux + dx;
