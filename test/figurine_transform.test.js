@@ -445,6 +445,24 @@ test('occupied floor square consumes figurine as construction failure',
         assert.equal(game.level.monsters.length, 1);
     });
 
+test('a floor figurine over water creates a monster which immediately drowns',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine({ species: PM_LEOCROTTA });
+        await dropFigurineThroughCommand(figurine);
+        const x = figurine.ox, y = figurine.oy;
+        game.u.ux = x + 2;
+        game.level.at(x, y).typ = POOL;
+        vision_recalc(0);
+
+        const event = await claimTransform(figurine, 37);
+
+        assert.equal(event.monster, null);
+        assert.deepEqual(event.waterMessages, ['You drown the leocrotta.']);
+        assert.equal(figurine.where, 'gone');
+        assert.equal(game.level.monsters.length, 0);
+    });
+
 test('carried figurine uses whole-map enexto fallback before retrying',
     async () => {
         freshFigurineState();

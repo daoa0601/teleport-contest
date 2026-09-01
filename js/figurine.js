@@ -12,6 +12,8 @@ import { game } from './gstate.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, remove_object,
 } from './mklev.js';
+import { resolveMonsterLiquid } from './mon.js';
+import { finishMonsterLiquidDeath } from './monmove.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_MOVE, MONSTER_SYMBOL,
@@ -285,6 +287,22 @@ export async function runClaimedFigurineTimer(
         delete monster.emin;
         if (monster.mextra) delete monster.mextra.emin;
     }
+    const waterMessages = [];
+    if (IS_POOL(state.level?.at?.(monster.mx, monster.my)?.typ)) {
+        const liquid = await resolveMonsterLiquid(monster, state, {
+            announce: async message => waterMessages.push(message),
+            finishDeath: finishMonsterLiquidDeath,
+            monsterMoving: false,
+        });
+        if (liquid?.dead) {
+            deleteFigurine(figurine, state);
+            return {
+                figurine, monster: null, transformed: false,
+                finishPending: false, message: null,
+                waterMessages, carrier,
+            };
+        }
+    }
     const dog = { parentmid: monster.m_id };
     monster.edog = dog;
     monster.mextra = { ...(monster.mextra || {}), edog: dog };
@@ -313,6 +331,7 @@ export async function runClaimedFigurineTimer(
     return {
         figurine, monster, chance, disposition,
         transformed: true, finishPending: true, message,
+        waterMessages,
         overdue,
         carrier,
         x: onFloor ? location.x : monster.mx,

@@ -1930,6 +1930,8 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         const event = await runClaimedFigurineTimer(
             claimed, game, sourceTurn,
         );
+        for (const message of event?.waterMessages || [])
+            await queueTurnMessage(message);
         if (event?.message) await queueTurnMessage(event.message);
         return finishFigurineTimer(event, game);
     }
