@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { DOOR, D_BROKEN, D_LOCKED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { SPE_FORCE_BOLT, WAN_STRIKING } from '../js/object_data.js';
@@ -76,3 +77,26 @@ test('magic resistance bounces a self-zapped wand of striking', async () => {
     assert.equal(wand.typeKnown, true);
     assert.equal(wand.charges.current, 1);
 });
+
+test('force bolt breaks a locked door and continues through its square',
+    async () => {
+        freshWeaponArena();
+        game.urole = { key: 'wizard' };
+        game.u.ulevel = 8;
+        game.u.uen = 40;
+        const door = game.level.at(12, 10);
+        door.typ = DOOR;
+        door.doormask = D_LOCKED;
+        pushKeys('l');
+
+        await castKnownSpell({
+            name: 'force bolt',
+            otyp: SPE_FORCE_BOLT,
+            level: 1,
+            category: 'attack',
+            fail: 0,
+        });
+
+        assert.equal(door.doormask, D_BROKEN);
+        assert.equal(game.context.move, 1);
+    });

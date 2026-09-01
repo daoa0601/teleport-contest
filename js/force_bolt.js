@@ -3,8 +3,8 @@
 
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_STR, COLNO, DOOR, D_CLOSED, D_LOCKED, M_AP_MONSTER, ROWNO,
-    Upolyd, ZAP_POS,
+    A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
+    D_TRAPPED, M_AP_MONSTER, ROWNO, SDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, newsym, pline, shieldeff,
@@ -12,6 +12,7 @@ import {
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
@@ -19,7 +20,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustSpellDamage } from './spell_damage.js';
-import { cansee } from './vision.js';
+import { cansee, vision_note_blocker_change } from './vision.js';
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -39,6 +40,38 @@ function rayCellIsOpen(x, y, state) {
     if (!location || !ZAP_POS(location.typ)) return false;
     return location.typ !== DOOR
         || !(location.doormask & (D_CLOSED | D_LOCKED));
+}
+
+async function breakDoor(x, y, state) {
+    const door = state.level?.at(x, y);
+    if (!door || door.typ !== DOOR && door.typ !== SDOOR) return false;
+
+    if (door.typ === SDOOR) {
+        const trapped = (door.doormask ?? 0) & D_TRAPPED;
+        door.typ = DOOR;
+        door.doormask = D_CLOSED | trapped;
+        newsym(x, y);
+        if (cansee(x, y)) await pline('A door appears in the wall!');
+    }
+    if (!(door.doormask & (D_CLOSED | D_LOCKED))) return false;
+
+    const visible = cansee(x, y) && !state.u?.unaware;
+    const trapped = !!(door.doormask & D_TRAPPED);
+    door.doormask = trapped ? D_NODOOR : D_BROKEN;
+    vision_note_blocker_change(x, y);
+    newsym(x, y);
+    if (trapped) {
+        if (visible) await pline('KABOOM!!  You see a door explode.');
+        else if (!state.u?.deaf && !state.deaf)
+            await pline('You hear an explosion.');
+        wakeMonstersNear(x, y, 40, state);
+    } else {
+        if (visible) await pline('The door crashes open!');
+        else if (!state.u?.deaf && !state.deaf)
+            await pline('You hear a crashing sound.');
+        wakeMonstersNear(x, y, 20, state);
+    }
+    return true;
 }
 
 function revealMimic(monster, revealMonsterDisguise = true) {
@@ -166,6 +199,7 @@ export async function forceBoltInDirection(direction, {
                 identified = true;
             range -= 3;
         }
+        if (await breakDoor(x, y, state)) identified = true;
         if (!rayCellIsOpen(x, y, state)) break;
     }
     return identified;
