@@ -91,7 +91,8 @@ export async function destroyLavaInventory({
             if (showMessages && !state.blind
                 && !(state.u?.blindTurns > 0)) {
                 await publish(
-                    'The Book of the Dead glows a strange dark red, but remains intact.',
+                    'The Book of the Dead glows a strange dark red, '
+                    + 'but remains intact.',
                 );
             }
             continue;
@@ -121,6 +122,42 @@ export async function destroyLavaInventory({
         } been destroyed.`);
     }
     return named + unnamed - previouslyAnnounced;
+}
+
+export async function destroyLavaFloorObjects(
+    objects,
+    {
+        publish = async () => {},
+        random = rn2,
+        visible = false,
+    } = {},
+) {
+    if (!Array.isArray(objects)) return 0;
+    let destroyed = 0;
+    for (const object of [...objects]) {
+        if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
+            if (visible) {
+                await publish(
+                    'The Book of the Dead glows a strange dark red, but remains intact.',
+                );
+            }
+            continue;
+        }
+        if (!lavaCanBurnObject(object, random)) continue;
+        if (visible) {
+            const name = object.name || OBJECT_NAMES[object.otyp] || 'item';
+            await publish(`The ${name} burns up!`);
+        }
+        const index = objects.indexOf(object);
+        if (index >= 0) objects.splice(index, 1);
+        stopAllObjectTimers(object);
+        object.lamplit = false;
+        object.where = 'gone';
+        object.ox = 0;
+        object.oy = 0;
+        destroyed++;
+    }
+    return destroyed;
 }
 
 function recordRoll(random, calls, range) {

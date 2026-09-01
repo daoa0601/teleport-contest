@@ -3,13 +3,15 @@
 
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
-    A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITMASK,
+    A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
+    Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, ROWNO, STRAT_WAITMASK,
 } from './const.js';
 import { tameMonster } from './dog.js';
 import {
     newsym, pline, plineWithContinuation,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
@@ -18,8 +20,9 @@ import {
 } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import {
-    BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP,
-    OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP,
+    BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,
+    MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE,
+    WOODEN_HARP,
 } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -50,10 +53,10 @@ const TOOL_ATTACK_LEVEL = 10;
 
 export const PLAYABLE_INSTRUMENTS = new Set([
     WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN,
-    WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
+    WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, DRUM_OF_EARTHQUAKE,
 ]);
 
-const DRUMS = new Set([LEATHER_DRUM]);
+const DRUMS = new Set([LEATHER_DRUM, DRUM_OF_EARTHQUAKE]);
 const WIND_INSTRUMENTS = new Set([
     WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, BUGLE,
 ]);
@@ -362,7 +365,7 @@ async function readHornDirection() {
     }
 }
 
-function learnElementalHorn(instrument) {
+function learnInstrumentType(instrument) {
     instrument.typeKnown = true;
     recordObjectKnowledge(instrument.otyp);
     recordObjectEncounter(instrument.otyp);
@@ -386,7 +389,7 @@ async function playElementalHorn(
     game._pending_message = '';
     if (direction === null) {
         await pline(`The ${instrumentName(instrument)} vibrates.`);
-        learnElementalHorn(instrument);
+        learnInstrumentType(instrument);
         return;
     }
 
@@ -417,7 +420,7 @@ async function playElementalHorn(
         result = { heroDied: false };
     }
 
-    learnElementalHorn(instrument);
+    learnInstrumentType(instrument);
     if (result?.heroDied)
         await finishHornDeath(element, direction === '.');
 }
@@ -461,7 +464,19 @@ async function playWoodenHarp(instrument, familiar, canUseSpecial) {
     exerciseAttribute(A_DEX, true);
 }
 
-async function playLeatherDrum(familiar) {
+const DRUM_BEATS = [
+    'stepper', 'one drop', 'slow two', 'triple stroke roll',
+    'double shuffle', 'half-time shuffle', 'second line', 'train',
+];
+
+async function playLeatherDrum(familiar, mundane = false) {
+    if (mundane) {
+        const verb = rn2(2) ? 'butcher' : rn2(2) ? 'manage' : 'pull off';
+        const beat = DRUM_BEATS[rn2(DRUM_BEATS.length)];
+        await plineWithContinuation(`You ${verb} a ${beat}.`);
+        await awakenMonsters((game.u?.ulevel || 1) * 5);
+        return;
+    }
     if (!heroIsDeaf()) {
         await plineWithContinuation(
             `You beat a ${familiar ? 'familiar ' : ''}deafening row!`,
@@ -480,15 +495,44 @@ async function playLeatherDrum(familiar) {
     }
 }
 
+function levelDescription() {
+    const here = game.u?.uz;
+    if (Is_astralevel(here)) return 'astral plane';
+    if (In_endgame(here)) return 'plane';
+    if (game.sanctum_level
+        && here?.dnum === game.sanctum_level.dnum
+        && here?.dlevel === game.sanctum_level.dlevel) return 'sanctum';
+    if (In_sokoban(here)) return 'puzzle';
+    if (In_V_tower(here)) return 'tower';
+    return 'dungeon';
+}
+
+async function playEarthquakeDrum(instrument, options) {
+    consumeCharge(instrument);
+    await plineWithContinuation('You produce a heavy, thunderous rolling!');
+    await plineWithContinuation(
+        `The entire ${levelDescription()} is shaking around you!`,
+    );
+    const force = Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1;
+    await createEarthquake(force, options);
+    await awakenMonsters(ROWNO * COLNO);
+    learnInstrumentType(instrument);
+}
+
 async function improvise(instrument, options) {
     const canUseSpecial = !heroIsImpaired();
     let effectiveType = instrument.otyp;
+    let mundaneDrum = false;
     const charges = instrument.spe ?? instrument.charges?.current ?? 0;
     if (!canUseSpecial || charges <= 0) {
         if (effectiveType === MAGIC_FLUTE) effectiveType = WOODEN_FLUTE;
         if (effectiveType === MAGIC_HARP) effectiveType = WOODEN_HARP;
         if (effectiveType === FIRE_HORN || effectiveType === FROST_HORN)
             effectiveType = TOOLED_HORN;
+        if (effectiveType === DRUM_OF_EARTHQUAKE) {
+            effectiveType = LEATHER_DRUM;
+            mundaneDrum = true;
+        }
     }
 
     await announceImprovisation(instrument);
@@ -503,6 +547,8 @@ async function improvise(instrument, options) {
         await playElementalHorn(instrument, 'fire', options);
     else if (effectiveType === FROST_HORN)
         await playElementalHorn(instrument, 'cold', options);
+    else if (effectiveType === DRUM_OF_EARTHQUAKE)
+        await playEarthquakeDrum(instrument, options);
     else if (effectiveType === BUGLE)
         await playBugle(instrument, familiar);
     else if (effectiveType === MAGIC_HARP)
@@ -510,7 +556,7 @@ async function improvise(instrument, options) {
     else if (effectiveType === WOODEN_HARP)
         await playWoodenHarp(instrument, familiar, canUseSpecial);
     else if (effectiveType === LEATHER_DRUM)
-        await playLeatherDrum(familiar);
+        await playLeatherDrum(familiar, mundaneDrum);
     else
         throw new RangeError(`unsupported instrument ${instrument.otyp}`);
     game.context.move = 1;
