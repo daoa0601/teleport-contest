@@ -1,0 +1,172 @@
+// Force-bolt and striking-wand combat.
+// C refs: zap.c bhit(), bhitm(), zap_steed(), and zapyourself().
+
+import { exerciseAttribute } from './attrib.js';
+import {
+    A_STR, COLNO, DOOR, D_CLOSED, D_LOCKED, M_AP_MONSTER, ROWNO,
+    Upolyd, ZAP_POS,
+} from './const.js';
+import {
+    canProjectMonster, newsym, pline, shieldeff,
+} from './display.js';
+import { finishHeroDeath } from './end.js';
+import { game } from './gstate.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { wakeAttackedMonster } from './monster_anger.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { monsterResistsEffect } from './monster_resistance.js';
+import { findMonsterArmorClass } from './monworn.js';
+import { rehumanizeHero } from './polyself.js';
+import { d, rn2, rnd } from './rng.js';
+import { adjustSpellDamage } from './spell_damage.js';
+import { cansee } from './vision.js';
+
+const DIR_DX = {
+    h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
+};
+const DIR_DY = {
+    h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1,
+};
+
+function monsterAt(x, y, state) {
+    return state.level?.monsters?.find(monster =>
+        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
+    ) || null;
+}
+
+function rayCellIsOpen(x, y, state) {
+    const location = state.level?.at(x, y);
+    if (!location || !ZAP_POS(location.typ)) return false;
+    return location.typ !== DOOR
+        || !(location.doormask & (D_CLOSED | D_LOCKED));
+}
+
+function revealMimic(monster, revealMonsterDisguise = true) {
+    if (!monster.m_ap_type) return;
+    if (!revealMonsterDisguise && monster.m_ap_type === M_AP_MONSTER)
+        return;
+    monster.m_ap_type = 0;
+    monster.mappearance = 0;
+    newsym(monster.mx, monster.my);
+}
+
+function monsterName(monster) {
+    return MONSTER_NAME[monster.mnum] || 'monster';
+}
+
+async function hitMonster(monster, source, state, options) {
+    const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
+    const targetCellWasVisible = cansee(monster.mx, monster.my);
+    if (monsterResistsEffect(monster, attackLevel, options.random)) {
+        revealMimic(monster, false);
+        await shieldeff(monster.mx, monster.my, state);
+        await pline('Boing!');
+        await wakeAttackedMonster(monster);
+        return targetCellWasVisible;
+    }
+
+    const hit = (state.u?.uswallow && state.u?.ustuck === monster)
+        || options.roll(20) < 10 + findMonsterArmorClass(monster);
+    if (!hit) {
+        if (!monster.m_ap_type
+            && canProjectMonster(monster, monster.mx, monster.my)) {
+            await pline(`The ${source} misses the ${monsterName(monster)}.`);
+        }
+        await wakeAttackedMonster(monster);
+        return false;
+    }
+
+    revealMimic(monster);
+    let damage = options.rollDice(2, 12);
+    if (state.urole?.key === 'knight' && state.u?.uhave?.questart)
+        damage *= 2;
+    if (source === 'spell') damage = adjustSpellDamage(damage, state);
+
+    if (canProjectMonster(monster, monster.mx, monster.my)) {
+        await pline(
+            `The ${source} hits the ${monsterName(monster)}${
+                damage <= 4 ? '.' : '!'
+            }`,
+        );
+    }
+    if (monsterResistsEffect(monster, attackLevel, options.random)) {
+        damage = Math.ceil(damage / 2);
+        await shieldeff(monster.mx, monster.my, state);
+    }
+    monster.mhp = (monster.mhp ?? 1) - damage;
+    if (monster.mhp <= 0) {
+        await options.finishMonsterKill(monster, monster.mx, monster.my, {
+            weaponHit: false,
+        });
+    } else {
+        await wakeAttackedMonster(monster);
+    }
+    return targetCellWasVisible;
+}
+
+async function hitHero(state, options) {
+    if (state.u?.antimagic || state.u?.magicProtection) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        await pline('Boing!');
+        return true;
+    }
+
+    await pline('You bash yourself!');
+    let damage = options.rollDice(2, 12);
+    if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
+        damage = Math.ceil(damage / 2);
+    exerciseAttribute(A_STR, false, state);
+
+    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
+    state.u[hitPoints] = Math.max(
+        0, (state.u[hitPoints] ?? 1) - damage,
+    );
+    if (state.u[hitPoints] > 0) return true;
+    if (Upolyd(state.u)) {
+        const restored = rehumanizeHero(state);
+        if (restored.changed)
+            await pline(`You return to ${restored.race} form!`);
+        return true;
+    }
+    await finishHeroDeath({ killer: 'self-inflicted injury' });
+    return true;
+}
+
+export async function forceBoltInDirection(direction, {
+    source = 'wand',
+    state = game,
+    random = rn2,
+    roll = rnd,
+    rollDice = d,
+    finishMonsterKill = finishHeroMonsterKill,
+} = {}) {
+    const options = { random, roll, rollDice, finishMonsterKill };
+    if (state.u?.uswallow && state.u?.ustuck) {
+        return hitMonster(state.u.ustuck, source, state, options);
+    }
+    if (direction === '.') return hitHero(state, options);
+    if (direction === '>' && state.u?.usteed) {
+        await hitMonster(state.u.usteed, source, state, options);
+        return true;
+    }
+    if (direction === '<' || direction === '>') return false;
+
+    const dx = DIR_DX[direction], dy = DIR_DY[direction];
+    if (dx === undefined || dy === undefined) return false;
+    let x = state.u.ux, y = state.u.uy;
+    let range = 6 + random(8);
+    let identified = false;
+    while (range-- > 0) {
+        x += dx;
+        y += dy;
+        if (x < 1 || x >= COLNO || y < 0 || y >= ROWNO) break;
+        const monster = monsterAt(x, y, state);
+        if (monster) {
+            if (await hitMonster(monster, source, state, options))
+                identified = true;
+            range -= 3;
+        }
+        if (!rayCellIsOpen(x, y, state)) break;
+    }
+    return identified;
+}

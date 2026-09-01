@@ -1,9 +1,8 @@
 // Directional undead turning from a spell or wand.
 // C refs: zap.c bhit(), bhitm(), bhito(), unturn_dead(), and unturn_you().
 
-import { currentAttribute } from './attrib.js';
 import {
-    A_INT, COLNO, DOOR, D_CLOSED, D_LOCKED, G_GENOD, ROWNO, ZAP_POS,
+    COLNO, DOOR, D_CLOSED, D_LOCKED, G_GENOD, ROWNO, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, pline, shieldeff,
@@ -21,6 +20,7 @@ import {
 import { monsterResistsEffect } from './monster_resistance.js';
 import { CORPSE, EGG } from './object_data.js';
 import { rn2, rnd } from './rng.js';
+import { adjustSpellDamage } from './spell_damage.js';
 import { cansee } from './vision.js';
 
 const M1_CONCEAL = 0x00000080;
@@ -43,17 +43,6 @@ function eggCanHatch(egg, state) {
     const younger = monsterYoungerForm(mnum);
     return [mnum, younger].filter(Number.isInteger).every(species =>
         !((state.mvitals?.[species]?.mvflags ?? 0) & G_GENOD));
-}
-
-function spellDamage(base, state) {
-    const intelligence = currentAttribute(A_INT, state) ?? 10;
-    const level = state.u?.ulevel ?? 1;
-    if (intelligence <= 9)
-        return base > 1 ? Math.max(1, base - 3) : base;
-    if (intelligence <= 13 || level < 5) return base;
-    if (intelligence <= 18) return base + 1;
-    if (intelligence <= 24 || level < 14) return base + 2;
-    return base + 3;
 }
 
 async function announceRevival(event) {
@@ -114,7 +103,7 @@ async function turnMonster(monster, source, state, options) {
     let damage = options.roll(8);
     if (state.urole?.key === 'knight' && state.u?.uhave?.questart)
         damage *= 2;
-    if (source === 'spell') damage = spellDamage(damage, state);
+    if (source === 'spell') damage = adjustSpellDamage(damage, state);
 
     const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
     const resisted = monsterResistsEffect(
