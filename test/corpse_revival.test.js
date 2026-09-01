@@ -126,6 +126,42 @@ test('a corpse made from a named monster restores that monster', async () => {
     assert.equal(event.monster.mhp, deadTroll.mhpmax);
 });
 
+test('a pet killed by the hero does not revive tame', async () => {
+    freshState();
+    const deadPet = {
+        m_id: 92,
+        mnum: PM_TROLL,
+        mx: 12, my: 10,
+        m_lev: 9,
+        mhp: 0, mhpmax: 20,
+        mpeaceful: 1,
+        mtame: 10,
+        pet: true,
+        meating: 4,
+        minvent: [], inventory: [],
+        edog: {
+            abuse: 0,
+            killed_by_u: 1,
+            mhpmax_penalty: 5,
+            revivals: 0,
+            ogoal: { x: 8, y: 8 },
+        },
+    };
+    const corpse = mkcorpstat(
+        CORPSE, deadPet, PM_TROLL, 12, 10, 8,
+    );
+    stopAllObjectTimers(corpse);
+
+    const event = await reviveNow(corpse);
+
+    assert.equal(event.monster.mtame, 0);
+    assert.equal(event.monster.pet, false);
+    assert.equal(event.monster.mpeaceful, 1);
+    assert.equal(event.monster.meating, 0);
+    assert.equal(event.monster.mhpmax, 25);
+    assert.equal(event.monster.edog.mhpmax_penalty, 0);
+});
+
 test('a troll corpse in the pack revives beside the hero', async () => {
     freshState();
     const corpse = trollCorpse();

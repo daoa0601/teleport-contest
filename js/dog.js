@@ -5,6 +5,7 @@ import { currentAttribute } from './attrib.js';
 import { A_CHA } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
+import { rn2 } from './rng.js';
 
 const M2_DOMESTIC = 0x00400000;
 
@@ -43,4 +44,50 @@ export function tameMonster(monster, state = game) {
     if (!state.u.uconduct) state.u.uconduct = {};
     state.u.uconduct.pets = (state.u.uconduct.pets || 0) + 1;
     return true;
+}
+
+export function waryPetAfterRevival(
+    monster, state = game, random = rn2,
+) {
+    if (!monster) return;
+    monster.meating = 0;
+    if (!(monster.mtame > 0)) return;
+
+    const dog = monster.isminion
+        ? null : monster.edog || monster.mextra?.edog;
+    if (dog?.mhpmax_penalty) {
+        monster.mhpmax = (monster.mhpmax ?? 1) + dog.mhpmax_penalty;
+        monster.mhp = (monster.mhp ?? 1) + dog.mhpmax_penalty;
+        dog.mhpmax_penalty = 0;
+    }
+
+    if (dog && (dog.killed_by_u === 1 || (dog.abuse ?? 0) > 2)) {
+        monster.mtame = 0;
+        monster.mpeaceful = 0;
+        if ((dog.abuse ?? 0) >= 0 && (dog.abuse ?? 0) < 10
+            && random((dog.abuse ?? 0) + 1) === 0) {
+            monster.mpeaceful = 1;
+        }
+    } else {
+        monster.mtame = random(monster.mtame + 1);
+        if (!monster.mtame) monster.mpeaceful = random(2);
+    }
+
+    monster.pet = monster.mtame > 0;
+    if (!monster.mtame) {
+        monster.mleashed = 0;
+        return;
+    }
+
+    if (dog) {
+        dog.revivals = (dog.revivals ?? 0) + 1;
+        dog.killed_by_u = 0;
+        dog.abuse = 0;
+        dog.ogoal = { x: -1, y: -1 };
+        dog.hungrytime = (state.moves ?? 0) + 500;
+        dog.droptime = 0;
+        dog.dropdist = 10000;
+        dog.whistletime = 0;
+        dog.apport = 5;
+    }
 }

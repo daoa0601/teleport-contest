@@ -8,7 +8,7 @@ import {
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { tameMonster } from './dog.js';
+import { tameMonster, waryPetAfterRevival } from './dog.js';
 import { game } from './gstate.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, maketrap,
@@ -346,9 +346,11 @@ async function createRevivedMonster(corpse, location, state) {
         : await makemonAt(targetMnum, x, y, flags);
     if (!monster) return { monster: null, twitchMessage: null };
 
-    if (savedTraits && replacement == null)
+    if (savedTraits && replacement == null) {
         restoreMonsterTraits(monster, savedTraits);
-    else if (replacement === PM_DOPPELGANGER)
+        if (monster.mtame && !monster.isminion)
+            waryPetAfterRevival(monster, state);
+    } else if (replacement === PM_DOPPELGANGER)
         shapechangeMonster(monster, originalMnum);
     else if (replacement === PM_HUMAN_ZOMBIE) {
         monster.mhp = monster.mhpmax = 100;
