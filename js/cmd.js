@@ -224,7 +224,7 @@ import { getHungry } from './hunger.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
     heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
-    polyselfControlledNewman,
+    polyselfControlledNewman, rehumanizeHero,
 } from './polyself.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
@@ -257,6 +257,7 @@ import {
 import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
 import {
@@ -3456,7 +3457,53 @@ async function kickOuch(x, y) {
     let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
-    game.u.uhp = Math.max(0, (game.u?.uhp ?? 1) - damage);
+    const died = await damageHeroFromKick(damage, x, y);
+    if (!died && kickCausesRecoil())
+        await recoilFromKick(4 + rn2(2));
+}
+
+function kickCausesRecoil() {
+    return Is_airlevel(game.u?.uz) || game.u?.levitating
+        || game.u?.levitation || game.levitating;
+}
+
+function kickDeathReason(x, y) {
+    const location = game.level?.at?.(x, y);
+    if (!location) return 'kicking nothing';
+    if (location.typ === DOOR) return 'kicking a door';
+    if (IS_STWALL(location.typ)) return 'kicking a wall';
+    if (location.typ === TREE) return 'kicking a tree';
+    if (location.typ === IRONBARS) return 'kicking an iron bar';
+    return 'kicking something weird';
+}
+
+async function damageHeroFromKick(amount, x, y) {
+    if (heroIsPolymorphed(game)) {
+        game.u.mh = (game.u.mh ?? 1) - amount;
+        if (game.u.mh > 0) return false;
+        if (!(game.u.unchanging || game.unchanging)) {
+            const restored = rehumanizeHero(game);
+            if (restored.changed) {
+                await plineWithContinuation(
+                    `You return to ${restored.race} form!`,
+                );
+            }
+            return false;
+        }
+    } else {
+        game.u.uhp = (game.u.uhp ?? 1) - amount;
+        if (game.u.uhp > 0) return false;
+    }
+    return finishHeroDeath({ killer: kickDeathReason(x, y) });
+}
+
+async function recoilFromKick(range) {
+    return hurtleHero(-game.u.dx, -game.u.dy, range, {
+        verbose: true,
+        finishTeleport: finishTeleportArrival,
+        gotoLevel,
+        chooseTeleportDestination: askTeleportDestination,
+    });
 }
 
 function kickPromptTargetName(monster) {
@@ -3631,8 +3678,10 @@ async function dokick() {
         return;
     }
     game._pending_message = '';
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
+    game.u.dx = DIR_DX[direction];
+    game.u.dy = DIR_DY[direction];
+    const x = game.u.ux + game.u.dx;
+    const y = game.u.uy + game.u.dy;
     // C dokick() records gk.kickedloc for every valid directed kick before
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
@@ -3641,7 +3690,10 @@ async function dokick() {
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === x && candidate.my === y);
     if (monster) {
+        const recoilRange = kickRecoilRange(monster.mnum);
         await kickLiveMonster(monster, x, y);
+        if (kickCausesRecoil() && game.context.move)
+            await recoilFromKick(recoilRange);
         return;
     }
     const location = game.level?.at(x, y);
@@ -3658,6 +3710,11 @@ async function dokick() {
     }
     if (location?.typ === DOOR
         && (location.doormask & (D_CLOSED | D_LOCKED))) {
+        if (game.u?.levitating) {
+            await kickOuch(x, y);
+            game.context.move = 1;
+            return;
+        }
         exerciseAttribute(A_DEX, true);
         const attributes = game.u?.acurr?.a || [10, 10, 10];
         const strength = currentAttribute(A_STR);
@@ -3707,6 +3764,8 @@ async function dokick() {
             game.u._woundedLegTurns ?? 0, 5 + rnd(5),
         );
     }
+    if (kickCausesRecoil() && rn2(2) !== 0)
+        await recoilFromKick(1);
     game.context.move = 1;
 }
 

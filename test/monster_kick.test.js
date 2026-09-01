@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COULD_SEE, IN_SIGHT, ROOM } from '../js/const.js';
+import { COULD_SEE, IN_SIGHT, ROOM, STONE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { vision_reset } from '../js/vision.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
 
 function installKickArena(mnum) {
@@ -31,6 +32,7 @@ function installKickArena(mnum) {
     level.monsters = [monster];
     installLiveCommandHero({ role: 'tourist', level, x: 10, y: 10 });
     for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
+    vision_reset();
     return monster;
 }
 
@@ -61,20 +63,22 @@ test('a heavy load can leave a clumsy kick harmless', async () => {
     assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
 });
 
-test('levitation can spoil a kick against a tiny grounded monster',
+test('a levitating hero can miss a tiny monster and recoil',
     async () => {
         const garterSnake = installKickArena(214);
         game.u.levitating = true;
         initRng(2n);
         pushKey('l');
+        pushKey(' ');
 
         await rhack(4);
 
         assert.equal(garterSnake.mhp, 20);
         assert.deepEqual([garterSnake.mx, garterSnake.my], [11, 10]);
+        assert.deepEqual([game.u.ux, game.u.uy], [9, 10]);
         assert.equal(
             game._pending_message,
-            'Floating in the air, you miss wildly!',
+            'You float in the opposite direction.',
         );
     });
 
@@ -113,4 +117,21 @@ test('declining a pet kick leaves the pet alone and takes no turn', async () => 
     assert.equal(dog.mhp, 20);
     assert.equal(dog.mtame, 10);
     assert.equal(game.context.move, 0);
+});
+
+test('kicking a wall while levitating throws the hero backward', async () => {
+    installKickArena(16);
+    game.level.monsters = [];
+    game.level.at(11, 10).typ = STONE;
+    vision_reset();
+    game.u.levitating = true;
+    game.u.uhp = game.u.uhpmax = 100;
+    initRng(19n);
+    pushKey('l');
+    pushKey(' ');
+    pushKey(' ');
+
+    await rhack(4);
+
+    assert.deepEqual([game.u.ux, game.u.uy], [6, 10]);
 });
