@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
     allocateMonsterMovement, finishMonsterLiquidDeath,
-    mcalcmove, naturalMonsterSpeed,
+    mcalcmove, mfndpos, naturalMonsterSpeed,
 } from '../js/monmove.js';
-import { LAVAPOOL } from '../js/const.js';
+import { IRONBARS, LAVAPOOL, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { ROCK } from '../js/object_data.js';
@@ -73,4 +73,38 @@ test('a land monster in lava burns and drops what it carried', async () => {
     assert.equal(result.dead, true);
     assert.equal(level.monsters.includes(ant), false);
     assert.equal(level.objects[12][10].includes(rock), true);
+});
+
+test('an engulfer carries only a form which fits through iron bars', () => {
+    const level = new GameMap();
+    level.at(10, 10).typ = ROOM;
+    level.at(11, 10).typ = IRONBARS;
+    const fogCloud = {
+        mnum: 106,
+        mx: 10,
+        my: 10,
+        mux: 10,
+        muy: 10,
+        mhp: 8,
+        mcansee: 1,
+    };
+    level.monsters = [fogCloud];
+    const state = {
+        level,
+        u: {
+            ux: 10,
+            uy: 10,
+            ustuck: fogCloud,
+            uswallow: 1,
+            mtimedone: 0,
+        },
+    };
+
+    assert.equal(mfndpos(fogCloud, state).some(position =>
+        position.x === 11 && position.y === 10), false);
+
+    state.u.mtimedone = 10;
+    state.u.umonnum = 106;
+    assert.equal(mfndpos(fogCloud, state).some(position =>
+        position.x === 11 && position.y === 10), true);
 });

@@ -1685,6 +1685,14 @@ function monsterPassesBars(monster) {
         || !!(flags & M1_SLITHY) && size < 3;
 }
 
+function carriedHeroPassesBars(state) {
+    const hero = state?.u;
+    if (!Upolyd(hero)) return false;
+    const flags = MONSTER_FLAGS1[hero.umonnum] ?? 0;
+    const size = MONSTER_SIZE[hero.umonnum] ?? 2;
+    return !!(flags & M1_UNSOLID) || size === 0;
+}
+
 function monAllowFlags(monster, state) {
     let flags = monster?.pet || monster?.mtame
         ? ALLOW_M | ALLOW_TRAPS | ALLOW_SANCT | ALLOW_SSM
@@ -1700,10 +1708,12 @@ function monAllowFlags(monster, state) {
     // cut; m_move() may then spend the action wielding that tool before the
     // monster enters the selected square.
     if (monsterCanTunnel(monster, state)) flags |= ALLOW_DIG;
-    // C mon.c:mon_allowflags() grants this independently of wall passage.
-    // TODO: handle bar passage by an engulfer carrying the hero.
-    if (monster !== state?.u?.ustuck && monsterPassesBars(monster))
+    // An engulfer or holder can carry the hero through bars only when the
+    // hero's current form could fit through too.
+    if (monsterPassesBars(monster)
+        && (monster !== state?.u?.ustuck || carriedHeroPassesBars(state))) {
         flags |= ALLOW_BARS;
+    }
     // A unicorn which can escape by teleporting refuses every square directly
     // lined up with its perceived hero position.  On a no-teleport level,
     // mfndpos() retains and marks those squares so m_move() can use one only
