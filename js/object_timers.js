@@ -6,6 +6,7 @@ import { game } from './gstate.js';
 export const OBJECT_TIMER_KIND = Object.freeze({
     ROT_ORGANIC: 'rot-organic',
     ROT_CORPSE: 'rot-corpse',
+    REVIVE_MON: 'revive-mon',
     ZOMBIFY_MON: 'zombify-mon',
     BURN_OBJECT: 'burn-object',
     HATCH_EGG: 'hatch-egg',
@@ -17,43 +18,12 @@ export const LEVEL_TIMER_KIND = Object.freeze({
     MELT_ICE_AWAY: 'melt-ice-away',
 });
 
-const TIMER_FIELDS = new Map([
-    [OBJECT_TIMER_KIND.ROT_ORGANIC,
-        { deadline: 'rotOrganicAt', order: 'rotOrganicOrder' }],
-    [OBJECT_TIMER_KIND.ROT_CORPSE,
-        { deadline: 'rotAt', order: 'rotOrder' }],
-    [OBJECT_TIMER_KIND.ZOMBIFY_MON,
-        { deadline: 'zombifyAt', order: 'zombifyOrder' }],
-    [OBJECT_TIMER_KIND.BURN_OBJECT,
-        { deadline: 'burnAt', order: 'burnOrder' }],
-    [OBJECT_TIMER_KIND.HATCH_EGG,
-        { deadline: 'hatchAt', order: 'hatchOrder' }],
-    [OBJECT_TIMER_KIND.SHRINK_GLOB,
-        { deadline: 'shrinkAt', order: 'shrinkOrder' }],
-    [OBJECT_TIMER_KIND.FIG_TRANSFORM,
-        { deadline: 'figTransformAt', order: 'figTransformOrder' }],
-]);
-
-function legacyTimerEntries(object) {
-    const entries = [];
-    for (const [kind, fields] of TIMER_FIELDS) {
-        const deadline = object?.[fields.deadline];
-        if (!Number.isFinite(deadline)) continue;
-        entries.push({
-            kind,
-            deadline,
-            // Old saves did not retain timer ids.  Object identity is the
-            // only stable reconstruction; new schedules always own real ids.
-            id: object[fields.order] ?? object.o_id ?? 0,
-        });
-    }
-    return entries;
-}
+const OBJECT_TIMER_KINDS = new Set(Object.values(OBJECT_TIMER_KIND));
 
 function timersFor(object) {
     if (!object) return [];
     if (!Array.isArray(object.objectTimers))
-        object.objectTimers = legacyTimerEntries(object);
+        object.objectTimers = [];
     object.timed = object.objectTimers.length;
     return object.objectTimers;
 }
@@ -66,41 +36,21 @@ function levelTimersFor(state = game) {
 }
 
 function allocateTimerId(state = game) {
-    const prior = Math.max(
-        state._nextObjectTimerId ?? 0,
-        state._nextObjectTimerOrder ?? 0,
-    );
+    const prior = state._nextObjectTimerId ?? 0;
     const id = prior + 1;
     state._nextObjectTimerId = id;
-    // Compatibility with the first focused zombify slice and old snapshots.
-    state._nextObjectTimerOrder = id;
     return id;
-}
-
-function syncLegacyTimer(object, timer) {
-    const fields = TIMER_FIELDS.get(timer.kind);
-    if (!fields) return;
-    object[fields.deadline] = timer.deadline;
-    object[fields.order] = timer.id;
-}
-
-function clearLegacyTimer(object, kind) {
-    const fields = TIMER_FIELDS.get(kind);
-    if (!fields) return;
-    delete object[fields.deadline];
-    delete object[fields.order];
 }
 
 export function scheduleObjectTimer(
     object, kind, deadline, state = game,
 ) {
-    if (!object || !TIMER_FIELDS.has(kind) || !Number.isFinite(deadline))
+    if (!object || !OBJECT_TIMER_KINDS.has(kind) || !Number.isFinite(deadline))
         return null;
     stopObjectTimer(object, kind);
     const timer = { kind, deadline, id: allocateTimerId(state) };
     timersFor(object).push(timer);
     object.timed = object.objectTimers.length;
-    syncLegacyTimer(object, timer);
     return timer;
 }
 
@@ -133,12 +83,8 @@ export function stopObjectTimer(object, kind) {
     if (!object) return null;
     const timers = timersFor(object);
     const index = timers.findIndex(timer => timer.kind === kind);
-    if (index < 0) {
-        clearLegacyTimer(object, kind);
-        return null;
-    }
+    if (index < 0) return null;
     const [timer] = timers.splice(index, 1);
-    clearLegacyTimer(object, kind);
     object.timed = timers.length;
     return timer;
 }
@@ -146,7 +92,6 @@ export function stopObjectTimer(object, kind) {
 export function stopAllObjectTimers(object) {
     if (!object) return [];
     const timers = timersFor(object).splice(0);
-    for (const kind of TIMER_FIELDS.keys()) clearLegacyTimer(object, kind);
     object.timed = 0;
     return timers;
 }
@@ -219,7 +164,6 @@ export function claimNextDueObjectTimer(
         const timers = timersFor(next.object);
         const index = timers.indexOf(next.timer);
         if (index >= 0) timers.splice(index, 1);
-        clearLegacyTimer(next.object, next.timer.kind);
         next.object.timed = timers.length;
     } else {
         const timers = levelTimersFor(state);

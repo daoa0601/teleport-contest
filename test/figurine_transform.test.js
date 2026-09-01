@@ -79,7 +79,6 @@ function figTimer(figurine) {
     const timers = objectTimers(figurine);
     assert.equal(timers.length, 1);
     assert.equal(timers[0].kind, OBJECT_TIMER_KIND.FIG_TRANSFORM);
-    assert.equal(timers[0].deadline, figurine.figTransformAt);
     return timers[0];
 }
 

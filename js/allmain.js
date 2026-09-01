@@ -12,9 +12,10 @@ import {
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     finishBuriedZombieTimer,
-    runClaimedBuriedZombieTimer, runClaimedMeltIceTimer,
+    runClaimedMeltIceTimer,
     runClaimedObjectRotTimer,
 } from './mklev.js';
+import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
 import { level_difficulty } from './dungeon.js';
 import {
     randomDefensiveMonsterItem, randomMiscMonsterItem,
@@ -1860,7 +1861,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
 }
 
 export function buriedZombieTimerMessage(event, options = {}) {
-    if (event?.kind !== 'revived' || !event.monster) return;
+    if (event?.kind !== 'revived' || !event.buried || !event.monster) return;
     const { monster, trap } = event;
     const visible = options.visible
         ?? cansee(monster.mx, monster.my);
@@ -1935,11 +1936,14 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
         if (event?.message) await queueTurnMessage(event.message);
         return finishFigurineTimer(event, game);
     }
-    if (kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
-        const event = await runClaimedBuriedZombieTimer(
+    if (kind === OBJECT_TIMER_KIND.REVIVE_MON
+        || kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
+        const event = await runClaimedCorpseRevivalTimer(
             claimed, game, sourceTurn,
         );
-        await presentBuriedZombieTimer(event);
+        for (const message of event?.messages || [])
+            await queueTurnMessage(message);
+        if (event?.buried) await presentBuriedZombieTimer(event);
         return finishBuriedZombieTimer(event, game);
     }
     if (kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY) {

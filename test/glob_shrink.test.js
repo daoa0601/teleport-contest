@@ -63,7 +63,6 @@ function shrinkTimer(glob) {
     const timers = objectTimers(glob);
     assert.equal(timers.length, 1);
     assert.equal(timers[0].kind, OBJECT_TIMER_KIND.SHRINK_GLOB);
-    assert.equal(timers[0].deadline, glob.shrinkAt);
     return timers[0];
 }
 

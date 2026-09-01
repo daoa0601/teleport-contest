@@ -65,7 +65,6 @@ function hatchTimer(egg) {
     const timers = objectTimers(egg);
     assert.equal(timers.length, 1);
     assert.equal(timers[0].kind, OBJECT_TIMER_KIND.HATCH_EGG);
-    assert.equal(timers[0].deadline, egg.hatchAt);
     return timers[0];
 }
 

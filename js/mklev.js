@@ -52,6 +52,7 @@ import {
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_NOCORPSE,
+    ROT_AGE, TROLL_REVIVE_CHANCE,
     CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_HISTORIC, CORPSTAT_INIT,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR,
@@ -102,6 +103,10 @@ import {
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
     SPECIAL_PM,
 } from './monster_data.js';
+import {
+    isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
+} from './corpse_species.js';
+import { saveMonsterTraits } from './monster_traits.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterInAir } from './mon.js';
 import { nhgetch } from './input.js';
@@ -129,8 +134,8 @@ import {
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginObjectBurn } from './light.js';
 import {
-    claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
-    objectTimers, objectsInTimerGraph, peekNextDueObjectTimer,
+    LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
+    objectTimers, objectsInTimerGraph,
     scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers,
     stopLevelTimer, stopObjectTimer,
 } from './object_timers.js';
@@ -1127,23 +1132,50 @@ export function undeadToCorpse(mndx) {
     return UNDEAD_CORPSE_TYPES.get(mndx) ?? mndx;
 }
 
-function isSpecialCorpse(mndx) {
+function corpseHasNoTimer(mndx) {
     return mndx === PM_LICHEN || mndx === PM_LIZARD;
 }
 
-// C ref: mkobj.c start_corpse_timeout().  Ordinary corpses use rnz() to
-// vary their rot time; lichen and lizard corpses never receive a timer.
-function startCorpseTimeout(body) {
-    if (!body || isSpecialCorpse(body.corpsenm)) return;
+function corpseHasSpecialTiming(mndx) {
+    return corpseHasNoTimer(mndx) || isReviver(mndx);
+}
+
+export function riderRevivalTime(body, retry = false) {
+    const firstTurn = retry ? 3 : body.corpsenm === PM_DEATH ? 6 : 12;
+    let turn = firstTurn;
+    while (turn < 67 && rn2(3)) turn++;
+    return turn;
+}
+
+// C mkobj.c:start_corpse_timeout(). Troll and Rider corpses can revive;
+// other corpses rot unless their creator requested zombification.
+function startCorpseTimeout(body, { zombify = false } = {}) {
+    if (!body || corpseHasNoTimer(body.corpsenm)) return;
     const rotAdjust = game.in_mklev ? 25 : 10;
     const currentMove = Math.max(game.moves ?? 1, 1);
     if (body.age == null) body.age = currentMove;
     const age = currentMove - body.age;
-    const baseDelay = age > 250 ? rotAdjust : 250 - age;
+    const baseDelay = age > ROT_AGE ? rotAdjust : ROT_AGE - age;
+    let kind = OBJECT_TIMER_KIND.ROT_CORPSE;
+    let delay = baseDelay + rnz(rotAdjust) - rotAdjust;
+
+    if (body.corpsenm >= PM_DEATH && body.corpsenm <= PM_FAMINE) {
+        kind = OBJECT_TIMER_KIND.REVIVE_MON;
+        delay = riderRevivalTime(body);
+    } else if (MONSTER_SYMBOL[body.corpsenm] === 46) { // S_TROLL
+        for (let turn = 2; turn <= 50; turn++) {
+            if (rn2(TROLL_REVIVE_CHANCE)) continue;
+            kind = OBJECT_TIMER_KIND.REVIVE_MON;
+            delay = turn;
+            break;
+        }
+    } else if (zombify && ZOMBIE_FORM_BY_LIVING_CORPSE.has(body.corpsenm)
+        && !body.norevive) {
+        kind = OBJECT_TIMER_KIND.ZOMBIFY_MON;
+        delay = rn1(15, 5);
+    }
     scheduleObjectTimer(
-        body, OBJECT_TIMER_KIND.ROT_CORPSE,
-        currentMove + baseDelay + rnz(rotAdjust) - rotAdjust,
-        game,
+        body, kind, currentMove + delay, game,
     );
 }
 
@@ -1153,29 +1185,31 @@ function startCorpseTimeout(body) {
 function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
     if (!body || body.otyp !== CORPSE) return false;
     const timer = objectTimers(body).find(candidate =>
-        candidate.kind === OBJECT_TIMER_KIND.ROT_CORPSE);
+        candidate.kind === OBJECT_TIMER_KIND.ROT_CORPSE)
+        || objectTimers(body).find(candidate =>
+            candidate.kind === OBJECT_TIMER_KIND.REVIVE_MON);
     if (!timer) return false;
     const currentMove = state.moves ?? 0;
     if (isOnIce && !body.on_ice) {
         const remaining = Math.max(0, timer.deadline - currentMove);
-        stopObjectTimer(body, OBJECT_TIMER_KIND.ROT_CORPSE);
+        stopObjectTimer(body, timer.kind);
         body.on_ice = true;
         const age = currentMove - (body.age ?? currentMove);
         body.age = currentMove - age * 2;
         scheduleObjectTimer(
-            body, OBJECT_TIMER_KIND.ROT_CORPSE,
+            body, timer.kind,
             currentMove + remaining * 2, state,
         );
         return true;
     }
     if (!isOnIce && body.on_ice) {
         const remaining = Math.max(0, timer.deadline - currentMove);
-        stopObjectTimer(body, OBJECT_TIMER_KIND.ROT_CORPSE);
+        stopObjectTimer(body, timer.kind);
         body.on_ice = false;
         const age = currentMove - (body.age ?? currentMove);
         body.age += Math.trunc(age / 2);
         scheduleObjectTimer(
-            body, OBJECT_TIMER_KIND.ROT_CORPSE,
+            body, timer.kind,
             currentMove + Math.trunc(remaining / 2), state,
         );
         return true;
@@ -1231,13 +1265,24 @@ export function mkcorpstat(objtyp, mtmp, pm, x, y, flags) {
     // mkobj.c records gender and historic-statue bits in the overloaded spe
     // field after mksobj() initialization and before the species override.
     otmp.spe = flags & 0x07;
+    if (mtmp) {
+        otmp.oextra = {
+            ...(otmp.oextra || {}),
+            omonst: saveMonsterTraits(mtmp),
+        };
+        if (pm == null) pm = mtmp.mnum;
+        if (mtmp.mcan && !isRider(pm)) otmp.norevive = true;
+    }
     if (pm != null) {
         const oldCorpsenm = otmp.corpsenm;
         otmp.corpsenm = pm;
+        otmp.owt = objectWeight(otmp);
         // Replacing a timerless/specially-timed corpse requires rebuilding
         // its timer for the overriding species.
         if (objtyp === CORPSE
-            && (isSpecialCorpse(oldCorpsenm) || isSpecialCorpse(pm))) {
+            && (corpseHasSpecialTiming(oldCorpsenm)
+                || corpseHasSpecialTiming(pm))) {
+            stopAllObjectTimers(otmp);
             startCorpseTimeout(otmp);
         }
     }
@@ -3612,29 +3657,6 @@ export async function maketrap(x, y, typ) {
     return trap;
 }
 
-const ZOMBIE_FORM_BY_LIVING_CORPSE = new Map([
-    [59, 239], [165, 240], [72, 241], [44, 242],
-    [264, 243], [260, 244], [174, 245], [169, 247],
-]);
-
-export function hasDueBuriedZombieTimer(
-    state = game, currentTurn = state.moves ?? 0,
-) {
-    return !!peekNextDueObjectTimer(
-        state, currentTurn,
-        new Set([OBJECT_TIMER_KIND.ZOMBIFY_MON]),
-    );
-}
-
-function removeBuriedCorpse(corpse, state = game) {
-    const index = state.level?.buriedObjects?.indexOf(corpse) ?? -1;
-    if (index >= 0) state.level.buriedObjects.splice(index, 1);
-    stopAllObjectTimers(corpse);
-    corpse.where = 'gone';
-    corpse.buried = false;
-    corpse.ox = corpse.oy = 0;
-}
-
 function containingObject(target, state = game) {
     return objectsInTimerGraph(state).find(object =>
         object !== target && object.contents?.includes(target));
@@ -4198,63 +4220,6 @@ export function runClaimedObjectRotTimer(claimed, state = game) {
     }
     const location = extractObjectFromGraph(object, state);
     return { kind, object, ...location };
-}
-
-// C refs: timeout.c:run_timers(), do.c:zombify_mon()/revive_mon(), and
-// zap.c:revive().  Claiming removes the ZOMBIFY_MON timer before its callback;
-// a failed dig or birth retains the replacement zombie corpse and its newly
-// installed ROT_CORPSE timer.
-export async function runClaimedBuriedZombieTimer(
-    claimed, state = game, currentTurn = state.moves ?? 0,
-) {
-    const corpse = claimed?.object;
-    if (!corpse || claimed?.timer?.kind !== OBJECT_TIMER_KIND.ZOMBIFY_MON)
-        return null;
-
-    const zombieForm = ZOMBIE_FORM_BY_LIVING_CORPSE.get(corpse.corpsenm);
-    if (zombieForm == null
-        || ((state.mvitals?.[zombieForm]?.mvflags ?? 0) & G_GENOD)) {
-        removeBuriedCorpse(corpse, state);
-        return { kind: 'rotted', corpse, monster: null, trap: null };
-    }
-
-    set_corpsenm(corpse, zombieForm);
-    const x = corpse.ox, y = corpse.oy;
-    const location = state.level?.at(x, y);
-    const hasTrap = state.level?.traps?.some(trap =>
-        trap.tx === x && trap.ty === y);
-    if (!location || hasTrap
-        || ![ROOM, CORR, GRAVE].includes(location.typ)) {
-        return { kind: 'failed', corpse, monster: null, trap: null };
-    }
-
-    const flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH
-        | (corpse.female ? MM_FEMALE : MM_MALE);
-    const occupied = !!levelMonsterAt(x, y);
-    const monster = occupied
-        ? await makemonNear(zombieForm, x, y, flags)
-        : await makemonAt(zombieForm, x, y, flags);
-    if (!monster)
-        return { kind: 'failed', corpse, monster: null, trap: null };
-
-    monster.mrevived = 1;
-    removeBuriedCorpse(corpse, state);
-    const trap = await maketrap(monster.mx, monster.my, PIT);
-    return { kind: 'revived', corpse, monster, trap };
-}
-
-export async function runNextBuriedZombieTimer(
-    state = game, currentTurn = state.moves ?? 0,
-) {
-    const claimed = claimNextDueObjectTimer(
-        state, currentTurn,
-        new Set([OBJECT_TIMER_KIND.ZOMBIFY_MON]),
-    );
-    if (!claimed) return null;
-    const event = await runClaimedBuriedZombieTimer(
-        claimed, state, currentTurn,
-    );
-    return finishBuriedZombieTimer(event, state);
 }
 
 function make_engr_at(

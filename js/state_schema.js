@@ -11,7 +11,7 @@ const persistentNames = `
     _helplessRunmodeDelayPending _helplessTurns _heroActionSeq _heroTrack _initialGoldCount _initialPwBonus _kickedLoc
     _knownObjectTypes _lastBoulderPushMove _lastDemigodAggravation _lastDemigodNasty _lastInvNr _lastPushedBoulder _lastRandomMonsterGeneration
     _last_message _levelAnnotations _levelCache _lifeSavedCount _maintenanceMove _monsterMovementInitialized
-    _monsterNoiseTime _moveloopStarted _nextAttribCheck _nextIdent _nextObjectTimerId _nextObjectTimerOrder _objectCallNames
+    _monsterNoiseTime _moveloopStarted _nextAttribCheck _nextIdent _nextObjectTimerId _objectCallNames
     _objectDiscoveryOrder _objectPriceQuotes _optionsInitialized _overviewRecords _prayerAlignment _prayerCompletionMessage _prayerDeity
     _prayerForced _prayerLastTickMove _prayerOpeningMessage _prayerTurnsRemaining _preserveLeadingStyledBlanks _prevDecorType _priestPantheonIndex
     _questExpulsionPending _restoredBones _rndmonstAlignment _rndmonstAlignmentMove _runtimeVersionInfoInitialized _shopRooms _specialLevelPrototype
