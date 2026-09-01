@@ -92,7 +92,7 @@ import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
 import {
-    finishInventoryGlobTimer, runClaimedGlobTimer,
+    finishGlobTimer, runClaimedGlobTimer,
 } from './glob.js';
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
@@ -1921,7 +1921,7 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
     if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
         const event = runClaimedGlobTimer(claimed, game, sourceTurn);
         if (event?.message) await queueTurnMessage(event.message);
-        const finished = finishInventoryGlobTimer(event, game, sourceTurn);
+        const finished = finishGlobTimer(event, game, sourceTurn);
         if (finished?.followupMessage)
             await queueTurnMessage(finished.followupMessage);
         return finished;
