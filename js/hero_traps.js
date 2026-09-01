@@ -6,7 +6,8 @@ import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import {
-    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, ICE, IS_LAVA, IS_POOL,
+    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, FIRE_TRAP, ICE, IS_LAVA,
+    IS_POOL,
     LANDMINE, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP, SPIKED_PIT,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
@@ -42,6 +43,7 @@ import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import { revealVibratingSquare } from './invocation.js';
+import { triggerHeroFireTrap } from './fire_trap.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -726,6 +728,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case BEAR_TRAP:
         await triggerBearTrap(trap);
+        break;
+    case FIRE_TRAP:
+        await triggerHeroFireTrap(trap);
         break;
     case MAGIC_TRAP:
         await triggerMagicTrap(trap);

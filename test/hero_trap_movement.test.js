@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    TT_BURIEDBALL, TT_PIT, TT_WEB, VIBRATING_SQUARE,
+    FIRE_TRAP, TT_BURIEDBALL, TT_PIT, TT_WEB, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { HEAVY_IRON_BALL } from '../js/object_data.js';
@@ -102,3 +102,18 @@ test('the invocation square reveals itself when the hero steps on it',
             'You feel a strange vibration under your feet.',
         );
     });
+
+test('stepping on a fire trap burns the hero', async () => {
+    const level = freshWeaponArena();
+    const trap = {
+        ttyp: FIRE_TRAP, tx: 11, ty: 10, tseen: false,
+    };
+    level.traps = [trap];
+    game.u.uhp = game.u.uhpmax = 40;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(trap.tseen, true);
+    assert.ok(game.u.uhp < 40);
+});

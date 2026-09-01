@@ -632,7 +632,20 @@ function removeBurnedFloorQuantity(pile, object, count) {
     object.oy = 0;
 }
 
-async function burnFloorObjectsAt(x, y, state = game) {
+function floorBurnMessage(object, destroyed) {
+    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    if (destroyed === 1) return `A ${name} burns.`;
+    return `${destroyed} ${makePlural(name)} burn.`;
+}
+
+export async function burnFloorObjectsAt(
+    x,
+    y,
+    {
+        state = game,
+        giveFeedback = false,
+    } = {},
+) {
     const pile = state.level?.objects?.[x]?.[y] || [];
     let burned = 0;
     for (const object of [...pile]) {
@@ -648,6 +661,8 @@ async function burnFloorObjectsAt(x, y, state = game) {
         if (!destroyed) continue;
         removeBurnedFloorQuantity(pile, object, destroyed);
         burned += destroyed;
+        if (giveFeedback)
+            await plineWithContinuation(floorBurnMessage(object, destroyed));
     }
 
     await igniteItems(pile, {
@@ -655,13 +670,7 @@ async function burnFloorObjectsAt(x, y, state = game) {
         publish: plineWithContinuation,
         visible: cansee(x, y),
     });
-    if (burned && couldsee(x, y)) {
-        newsym(x, y);
-        const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
-        await plineWithContinuation(blind
-            ? 'You smell a whiff of smoke.'
-            : 'You see a puff of smoke.');
-    }
+    if (burned && couldsee(x, y)) newsym(x, y);
     return burned;
 }
 
@@ -886,7 +895,16 @@ async function applyRayFloorFeatures(
     if (absorbed) rangeChange = -1000;
     if (kind === RAY_COLD)
         rangeChange += await freezeLiquidAt(x, y, state);
-    if (kind === RAY_FIRE) await burnFloorObjectsAt(x, y, state);
+    if (kind === RAY_FIRE) {
+        const burned = await burnFloorObjectsAt(x, y, { state });
+        if (burned && couldsee(x, y)) {
+            const blind = !!state.blind
+                || (state.u?.blindTurns ?? 0) > 0;
+            await plineWithContinuation(blind
+                ? 'You smell a whiff of smoke.'
+                : 'You see a puff of smoke.');
+        }
+    }
     return { absorbed, rangeChange };
 }
 
