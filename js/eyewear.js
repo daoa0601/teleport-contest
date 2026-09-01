@@ -1,14 +1,9 @@
 // Wearing and removing blindfolds, towels, and lenses.
 // C ref: do_wear.c Blindf_on(), Blindf_off().
 
+import { W_TOOL, W_WEAPONS } from './const.js';
 import {
-    COLNO, ROWNO, W_TOOL, W_WEAPONS,
-} from './const.js';
-import {
-    cansee, vision_recalc,
-} from './vision.js';
-import {
-    docrt, pline, plineWithContinuation, terrain_glyph,
+    pline, plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
@@ -17,6 +12,7 @@ import { heroHasNoHead } from './polyself.js';
 import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';
+import { redrawSight, rememberVisibleTerrain } from './sight_change.js';
 
 function currentEyewear() {
     return game.ublindf || game.u?.ublindf || null;
@@ -59,28 +55,6 @@ function unequipEyewear(object) {
     object.worn = false;
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~W_TOOL;
-}
-
-function preserveVisibleTerrain() {
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const location = game.level?.at(x, y);
-            if (!location || location.remembered_glyph || !cansee(x, y))
-                continue;
-            const terrain = terrain_glyph(location, x, y);
-            location.remembered_glyph = {
-                ch: terrain.ch,
-                color: terrain.color,
-                decgfx: terrain.dec,
-            };
-        }
-    }
-}
-
-async function redrawSight() {
-    game.vision_full_recalc = 1;
-    vision_recalc(0);
-    await docrt();
 }
 
 async function announceWorn(object) {
@@ -136,7 +110,7 @@ export async function wearEyewear(object, { checkHead = true } = {}) {
     }
 
     const wasBlind = heroIsBlind(game);
-    if (!wasBlind && object.otyp !== LENSES) preserveVisibleTerrain();
+    if (!wasBlind && object.otyp !== LENSES) rememberVisibleTerrain();
     equipEyewear(object);
     await announceWorn(object);
     const blind = syncBlindness(game);

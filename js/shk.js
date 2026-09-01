@@ -19,6 +19,7 @@ import {
 } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_TOWN, recordAchievement } from './achievements.js';
+import { nextIdent } from './ident.js';
 
 export const SHOP_TYPE_NAMES = [
     'general store',
@@ -121,6 +122,7 @@ function clearShopDebtOnDeath(resident, state) {
         if (billedIds.has(object.o_id)) object.unpaid = false;
     }
     eshk.bill = [];
+    eshk.billObjects = [];
     eshk.billct = 0;
     eshk.credit = 0;
     eshk.debit = 0;
@@ -257,13 +259,13 @@ export function shopkeeperForHero(state = game) {
 export function carriedShopBill(resident, state = game) {
     if (!resident?.eshk) return [];
     const inventory = state?.inventory || [];
+    const usedObjects = resident.eshk.billObjects || [];
     return (resident.eshk.bill || []).map(entry => ({
         entry,
-        object: inventory.find(object => object.o_id === entry.bo_id),
-        price: entry.price * (inventory.find(
-            object => object.o_id === entry.bo_id,
-        )?.quan ?? entry.bquan ?? 1),
-    })).filter(item => item.object && !item.entry.useup);
+        object: inventory.find(object => object.o_id === entry.bo_id)
+            || usedObjects.find(object => object.o_id === entry.bo_id),
+        price: entry.price * (entry.bquan ?? 1),
+    })).filter(item => item.object);
 }
 
 // C refs: shk.c:pay(), sub_one_frombill(), and update_bill().  Gold is a
@@ -279,6 +281,8 @@ export function settleCarriedShopBillItem(resident, item, state = game) {
     object.unpaid = false;
     resident.eshk.bill = (resident.eshk.bill || [])
         .filter(candidate => candidate !== entry);
+    resident.eshk.billObjects = (resident.eshk.billObjects || [])
+        .filter(candidate => candidate !== object);
     resident.eshk.billct = resident.eshk.bill.length;
     return true;
 }
@@ -444,6 +448,61 @@ function billForObject(object, state = game) {
         if (entry) return { resident, entry };
     }
     return null;
+}
+
+export function splitShopBill(object, split, state = game) {
+    if (!object?.unpaid || !split) return null;
+    const billed = billForObject(object, state);
+    if (!billed) return null;
+    const quantity = split.quan ?? split.quantity ?? 1;
+    billed.entry.bquan = Math.max(
+        0, (billed.entry.bquan ?? 1) - quantity,
+    );
+    const entry = {
+        bo_id: split.o_id,
+        bquan: quantity,
+        useup: false,
+        price: billed.entry.price,
+    };
+    billed.resident.eshk.bill.push(entry);
+    billed.resident.eshk.billct = billed.resident.eshk.bill.length;
+    split.unpaid = true;
+    return { resident: billed.resident, entry, object: split };
+}
+
+export async function chargeAlteredUnpaidObject(
+    object, verb, state = game,
+) {
+    if (!object?.unpaid) return null;
+    const billed = billForObject(object, state);
+    if (!billed) return null;
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const pronoun = quantity === 1 ? 'it' : 'them';
+    const demonstrative = quantity === 1 ? 'that' : 'those';
+    const name = quantity === 1
+        ? OBJECT_NAMES[object.otyp] || object.name || 'object'
+        : object.plural || `${OBJECT_NAMES[object.otyp] || 'object'}s`;
+    if (!heroIsDeaf(state) && !billed.resident.mute) {
+        await plineWithContinuation(
+            `"You ${verb} ${demonstrative} ${name}, you pay for ${pronoun}!"`,
+        );
+    }
+
+    const dummy = {
+        ...object,
+        o_id: nextIdent(state),
+        where: 'onbill',
+        unpaid: false,
+        owornmask: 0,
+        worn: false,
+    };
+    billed.entry.bo_id = dummy.o_id;
+    billed.entry.bquan = quantity;
+    billed.entry.useup = true;
+    billed.resident.eshk.billObjects ||= [];
+    billed.resident.eshk.billObjects.push(dummy);
+    object.unpaid = false;
+    return { ...billed, object: dummy };
 }
 
 export function unpaidObjectCost(object, state = game) {

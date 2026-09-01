@@ -235,6 +235,7 @@ import {
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
 } from './eyewear.js';
+import { useCreamPie } from './cream_pie.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
     weaponSkillDamageBonus, weaponSkillHitBonus,
@@ -8992,33 +8993,8 @@ async function doapply() {
                 return;
             }
             if (item.otyp === CREAM_PIE) {
-                // C apply.c:use_cream_pie().  The first line owns the old
-                // topline; make_blinded() commits the duration before the
-                // blindness line forces tty's --More-- continuation.
-                await pline('You immerse your face in the cream pie.');
-                const blindIncrement = rnd(25);
-                game.u.ucreamed = (game.u.ucreamed || 0) + blindIncrement;
-                game.u.blindTurns = (game.u.blindTurns || 0) + blindIncrement;
-                syncBlindness(game);
-                game.vision_full_recalc = 1;
-                // potion.c:toggle_blindness() performs this repaint
-                // synchronously, before the sticky-goop pline can force the
-                // first line through tty's --More-- boundary.
-                vision_recalc(0);
-                await plineWithContinuation(
-                    "You can't see through all the sticky goop on your face.",
-                );
-                // costly_alteration()->delobj() reaches obj_resists() only
-                // after the continuation has been acknowledged.
-                rn2(100);
-                const quantity = item.quantity ?? item.quan ?? 1;
-                if (quantity > 1) {
-                    item.quantity = quantity - 1;
-                    item.quan = item.quantity;
-                } else {
-                    game.inventory = (game.inventory || [])
-                        .filter(candidate => candidate !== item);
-                }
+                game._pending_message = '';
+                await useCreamPie(item);
                 game.context.move = 0;
                 return;
             }
