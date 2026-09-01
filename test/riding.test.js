@@ -2,49 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKeys, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset_new_level } from '../js/vision.js';
-import { installLiveCommandHero } from './support/live-command-state.js';
+import { liveMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshKnightArena() {
-    resetGame();
-    const level = new GameMap();
-    for (let x = 8; x <= 14; x++) {
-        for (let y = 8; y <= 12; y++) {
-            Object.assign(level.at(x, y), {
-                typ: ROOM, lit: true, waslit: true, seenv: 255,
-            });
-        }
-    }
-    installLiveCommandHero({ role: 'knight', level, x: 10, y: 10 });
+    const level = freshPlayableRoom({ right: 14, role: 'knight' });
     vision_reset_new_level();
-    game.inventory = [];
-    game.animationFrame = async () => {};
-    resetInputState();
     initRng(46001n);
     return level;
 }
 
 function pony(overrides = {}) {
-    return {
+    return liveMonster({
         mnum: 100,
         name: 'pony',
-        mx: 11,
-        my: 10,
-        mhp: 8,
-        mhpmax: 8,
+        x: 11,
+        y: 10,
+        hitPoints: 8,
         mtame: 20,
         mpeaceful: true,
         pet: true,
         saddled: true,
-        minvent: [],
         edog: { hungrytime: 1001 },
         ...overrides,
-    };
+    });
 }
 
 async function extended(command, suffix = '') {

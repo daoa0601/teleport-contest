@@ -1,47 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
 
 function freshPriest(alignment = 1) {
-    resetGame();
-    game.urole = {
-        key: 'priest',
-        gods: { lawful: 'Athena', neutral: 'Hermes', chaotic: 'Loki' },
-    };
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 6 },
-        ulevel: 6,
-        uhp: 40, uhpmax: 40,
-        ualign: { type: alignment, record: 0 },
-        uconduct: {}, uhave: {},
+    freshPlayableRoom({
+        left: 6, right: 14, top: 6, bottom: 14,
+        role: 'priest',
+        hero: {
+            uz: { dnum: 0, dlevel: 6 },
+            ulevel: 6,
+            uhp: 40,
+            uhpmax: 40,
+            ualign: { type: alignment, record: 0 },
+            uconduct: {},
+            uhave: {},
+        },
+    });
+    game.urole.gods = {
+        lawful: 'Athena', neutral: 'Hermes', chaotic: 'Loki',
     };
     game.moves = 50;
     game.context = {};
     game.flags = {};
-    game.inventory = [];
     game.mvitals = [];
     game.dungeons = [{ dname: 'The Dungeons of Doom' }];
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 6; x <= 14; x++) {
-        for (let y = 6; y <= 14; y++) {
-            const spot = game.level.at(x, y);
-            spot.typ = ROOM;
-            spot.lit = true;
-        }
-    }
     vision_reset_new_level();
     vision_recalc(0);
     initRng(44n);

@@ -3,36 +3,35 @@ import assert from 'node:assert/strict';
 
 import { A_DEX, A_STR, ROOM } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { installLiveCommandHero } from './support/live-command-state.js';
+import { inventoryObject } from './support/game-objects.js';
+import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 function installLichenArena(role) {
-    resetGame();
-    const level = new GameMap();
-    for (const [x, y] of [[10, 10], [11, 10]]) {
-        Object.assign(level.at(x, y), {
-            typ: ROOM, lit: true, waslit: true, seenv: 255,
-        });
-    }
-    const lichen = {
-        mnum: 158, m_id: 77, mx: 11, my: 10,
-        mhp: 100, mhpmax: 100, m_lev: 0, mac: 10,
-        mpeaceful: 0, mtame: 0, mcanmove: 1, msleeping: 0,
-        mstrategy: 0, minvis: 0, mundetected: 0,
-    };
-    level.monsters = [lichen];
-    installLiveCommandHero({ role, level, x: 10, y: 10 });
+    const level = freshPlayableRoom({
+        left: 10, right: 11, top: 10, bottom: 10, role,
+    });
+    const lichen = addMonster({
+        mnum: 158, m_id: 77,
+        x: 11, y: 10,
+        hitPoints: 100,
+        level: 0,
+        mac: 10,
+        minvis: 0,
+        mundetected: 0,
+    });
     return { level, lichen };
 }
 
 function equipKatana() {
-    const katana = {
-        otyp: OBJECT_NAMES.indexOf('katana'), oclass: 2, name: 'katana',
-        spe: 0, enchantment: 0, worn: true, owornmask: 1,
-    };
+    const katana = inventoryObject(
+        OBJECT_NAMES.indexOf('katana'), 'a', {
+            spe: 0, enchantment: 0, worn: true, owornmask: 1,
+        },
+    );
     game.inventory = [katana];
     game.uwep = katana;
     return katana;
@@ -55,13 +54,14 @@ async function lichenMeleeOutcome(role) {
 async function twoWeaponLichenOutcome(role) {
     const { level, lichen } = installLichenArena(role);
     const katana = equipKatana();
-    const wakizashi = {
-        // NetHack represents the Samurai's wakizashi as a short sword with a
-        // role-specific display name.
-        otyp: OBJECT_NAMES.indexOf('short sword'),
-        oclass: 2, name: 'wakizashi',
-        spe: 0, enchantment: 0, worn: true, owornmask: 2,
-    };
+    const wakizashi = inventoryObject(
+        OBJECT_NAMES.indexOf('short sword'), 'b', {
+            // NetHack represents the Samurai's wakizashi as a short sword
+            // with a role-specific display name.
+            name: 'wakizashi',
+            spe: 0, enchantment: 0, worn: true, owornmask: 2,
+        },
+    );
     game.u.acurr.a[A_STR] = 18;
     game.u.acurr.a[A_DEX] = 14;
     game.u.weaponSkills = Array.from({ length: 38 }, () => ({

@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, A_STR, ICE, ROOM, W_WEP } from '../js/const.js';
-import { GameMap } from '../js/game.js';
+import { A_CON, A_STR, ICE, W_WEP } from '../js/const.js';
 import {
     finishGlobTimer, runClaimedGlobTimer,
 } from '../js/glob.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { mksobj, place_object, stack_object } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
@@ -23,31 +22,25 @@ import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 
 function freshGlobState(seed = 1) {
-    resetGame();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-        uhave: {},
-        blindTurns: 0,
-    };
+    freshPlayableRoom({
+        left: 8, right: 16, top: 7, bottom: 13,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            acurr: { a: Array(6).fill(12) },
+            amax: { a: Array(6).fill(12) },
+            uhave: {},
+            blindTurns: 0,
+        },
+    });
     game.context = { move: 0, nopick: false };
     game.moves = 40;
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 8; x <= 16; x++) {
-        for (let y = 7; y <= 13; y++) {
-            const location = game.level.at(x, y);
-            location.typ = ROOM;
-            location.lit = true;
-        }
-    }
     game.in_mklev = false;
     vision_reset_new_level();
     vision_recalc(0);

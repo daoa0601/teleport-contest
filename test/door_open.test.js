@@ -2,27 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, DOOR, ROOM, STONE,
+    A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, DOOR, STONE,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
-import { installLiveCommandHero } from './support/live-command-state.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 async function openDoorOutcome(role) {
-    resetGame();
-    const level = new GameMap();
-    Object.assign(level.at(42, 18), {
-        typ: ROOM, lit: true, waslit: true, seenv: 255, disp_ch: '.',
+    const level = freshPlayableRoom({
+        left: 42, right: 44, top: 18, bottom: 18,
+        heroX: 42, heroY: 18, role,
     });
+    level.at(42, 18).disp_ch = '.';
     Object.assign(level.at(43, 18), {
         typ: DOOR, doormask: D_CLOSED,
         lit: true, waslit: true, seenv: 255, disp_ch: '+',
     });
-    Object.assign(level.at(44, 18), {
-        typ: ROOM, lit: true, waslit: true, seenv: 255, disp_ch: '.',
-    });
+    level.at(44, 18).disp_ch = '.';
     for (const y of [17, 19]) {
         Object.assign(level.at(43, y), {
             typ: STONE, seenv: 1, disp_ch: '#',
@@ -31,7 +28,6 @@ async function openDoorOutcome(role) {
             },
         });
     }
-    installLiveCommandHero({ role, level, x: 42, y: 18 });
     game.u.acurr.a[A_STR] = 25;
     game.u.acurr.a[A_DEX] = 25;
     game.u.acurr.a[A_CON] = 25;

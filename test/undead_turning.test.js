@@ -1,10 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKeys, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { mksobj, place_object, set_corpsenm } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
@@ -19,37 +17,32 @@ import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN_ZOMBIE = 244;
 
 function freshState() {
-    resetGame();
-    resetInputState();
-    game.urole = { key: 'wizard' };
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        uen: 40, uenmax: 40,
-        uhunger: 900,
-        ualign: { type: 0, record: 0 },
-        uconduct: {}, uhave: {},
-    };
+    freshPlayableRoom({
+        left: 7, right: 18, top: 6, bottom: 14,
+        role: 'wizard',
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            uen: 40,
+            uenmax: 40,
+            uhunger: 900,
+            ualign: { type: 0, record: 0 },
+            uconduct: {},
+            uhave: {},
+        },
+    });
     game.moves = 40;
     game.mvitals = [];
-    game.inventory = [];
     game.flags = {};
     game.context = {};
-    game.level = new GameMap();
-    for (let x = 7; x <= 18; x++) {
-        for (let y = 6; y <= 14; y++) {
-            const location = game.level.at(x, y);
-            location.typ = ROOM;
-            location.lit = true;
-        }
-    }
     vision_reset_new_level();
     vision_recalc(0);
     initRng(700n);

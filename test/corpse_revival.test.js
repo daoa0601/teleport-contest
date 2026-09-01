@@ -4,9 +4,8 @@ import assert from 'node:assert/strict';
 import {
     reviveCorpseByMagic, runClaimedCorpseRevivalTimer,
 } from '../js/corpse_revival.js';
-import { MFAST, ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { MFAST } from '../js/const.js';
+import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import {
     mkcorpstat, mksobj, place_object, set_corpsenm,
@@ -22,6 +21,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { deadMonster, liveMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN = 260;
@@ -37,30 +37,23 @@ const PM_DOPPELGANGER = 270;
 const PM_WIZARD_OF_YENDOR = 285;
 
 function freshState() {
-    resetGame();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        ualign: { type: 0, record: 0 },
-        uconduct: {}, uhave: {},
-        blindTurns: 0,
-    };
+    freshPlayableRoom({
+        left: 7, right: 16, top: 6, bottom: 14,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            ualign: { type: 0, record: 0 },
+            uconduct: {},
+            uhave: {},
+            blindTurns: 0,
+        },
+    });
     game.moves = 40;
     game.mvitals = [];
-    game.inventory = [];
     game.flags = {};
     game.context = {};
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 7; x <= 16; x++) {
-        for (let y = 6; y <= 14; y++) {
-            const location = game.level.at(x, y);
-            location.typ = ROOM;
-            location.lit = true;
-        }
-    }
     game.in_mklev = false;
     vision_reset_new_level();
     vision_recalc(0);
