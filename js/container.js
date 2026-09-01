@@ -2,6 +2,7 @@
 // C refs: pickup.c use_container(), in_container(), out_container().
 
 import { bot, docrt, flush_screen, pline, plineWithContinuation } from './display.js';
+import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
 import {
@@ -11,9 +12,10 @@ import { nhgetch } from './input.js';
 import { inventoryItemDescription } from './invent.js';
 import { endObjectBurn } from './light.js';
 import {
-    makemonNear, place_object, remove_object, startCorpseTimeout,
+    makemonNear, place_object, startCorpseTimeout,
 } from './mklev.js';
 import { MONSTER_SIZE } from './monster_data.js';
+import { deleteObject } from './object_delete.js';
 import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
     BAG_OF_TRICKS, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
@@ -23,7 +25,7 @@ import {
 } from './object_data.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import {
-    OBJECT_TIMER_KIND, stopAllObjectTimers, stopObjectTimer,
+    OBJECT_TIMER_KIND, stopObjectTimer,
 } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
 import { d, rn2 } from './rng.js';
@@ -254,26 +256,6 @@ function updateContainerWeights(container) {
     }
 }
 
-function removeFromContainer(object) {
-    const parent = object.container;
-    if (!parent) return;
-    parent.contents = (parent.contents || [])
-        .filter(candidate => candidate !== object);
-    updateContainerWeights(parent);
-}
-
-function removeFromWorld(object, state) {
-    if (!object) return;
-    if (object.where === 'inventory') removeFromInventory(object, state);
-    else if (object.where === 'floor') remove_object(object);
-    else if (object.where === 'contained') removeFromContainer(object);
-    stopAllObjectTimers(object);
-    object.where = 'gone';
-    object.container = null;
-    object.ox = 0;
-    object.oy = 0;
-}
-
 function magicBagExplodes(object, depth = 0) {
     if ((object.otyp === WAN_CANCELLATION
             || object.otyp === BAG_OF_TRICKS)
@@ -293,7 +275,7 @@ function scatterBagContents(container, state) {
     for (const object of contents) {
         object.container = null;
         if (rn2(13) === 0) {
-            removeFromWorld(object, state);
+            deleteObject(object, state);
             continue;
         }
         place_object(object, state.u.ux, state.u.uy);
@@ -304,9 +286,9 @@ function explodeBag(container, trigger, state) {
     const triggerDescription = objectDescription(trigger);
     if (trigger.otyp === BAG_OF_HOLDING)
         scatterBagContents(trigger, state);
-    removeFromWorld(trigger, state);
+    deleteObject(trigger, state);
     scatterBagContents(container, state);
-    removeFromWorld(container, state);
+    deleteObject(container, state);
     const damage = d(6, 6);
     state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
     return {
@@ -323,7 +305,7 @@ async function loseCursedBagContents(container, state) {
     for (const object of [...container.contents]) {
         if (rn2(13) !== 0) continue;
         vanished.push(objectDescription(object));
-        removeFromWorld(object, state);
+        deleteObject(object, state);
     }
     if (!vanished.length) return false;
     updateContainerWeights(container);
@@ -346,7 +328,7 @@ async function observeQuantumCat(container, state) {
         if (!cat) return false;
         cat.mpeaceful = 1;
         cat.name = "Schroedinger's Cat";
-        if (corpse) removeFromWorld(corpse, state);
+        if (corpse) deleteObject(corpse, state);
         container.spe = 0;
         state.u.uexp = (state.u.uexp ?? 0) + 10;
         state.score = (state.score ?? 0) + 20;
@@ -687,10 +669,11 @@ export async function useContainer(container, {
         return { spentTime: false, container };
     }
     if (container.otrapped) {
-        container.otrapped = false;
-        container.tknown = true;
-        await pline('You trigger a trap!');
-        return { spentTime: true, container };
+        const trap = await triggerChestTrap(container);
+        return {
+            spentTime: true,
+            container: trap?.destroyed ? null : container,
+        };
     }
 
     let spentTime = await observeQuantumCat(container, game);

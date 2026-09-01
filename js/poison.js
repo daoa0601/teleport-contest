@@ -55,6 +55,7 @@ async function updateEncumbrance(previous, state, publish) {
 export async function resolvePoisonedHero({
     reason,
     attribute,
+    fatal = 30,
     state = game,
     random = rn2,
     rollDice = d,
@@ -75,7 +76,7 @@ export async function resolvePoisonedHero({
     }
 
     const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
-    const outcome = random(30);
+    const outcome = fatal ? random(fatal) : 1;
     let damage = 0;
     if (outcome === 0 && attribute !== A_CHA) {
         damage = 6 + rollDice(4, 6);
@@ -108,6 +109,10 @@ export async function resolvePoisonedHero({
         }
     } else if (outcome > 5) {
         damage = 6 + random(10);
+        if (/^(?:the )?gas cloud$/iu.test(reason)
+            && (hero.halfGasDamage || hero.half_gas_damage)) {
+            damage = Math.trunc((damage + 1) / 2);
+        }
         hero.uhp = Math.max(0, (hero.uhp ?? 1) - damage);
     } else {
         const loss = rollDice(2, 2);

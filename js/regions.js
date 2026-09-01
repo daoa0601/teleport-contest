@@ -44,9 +44,7 @@ function validCloudPosition(state, x, y) {
     return IS_ROOM(typ) || IS_POOL(typ) || IS_LAVA(typ);
 }
 
-export function createSteamCloud(
-    state, x, y, cloudSize, random = rn2,
-) {
+function gasCloudCells(state, x, y, cloudSize, random) {
     const cells = [{ x, y }];
     for (let current = 0; current < cells.length; current++) {
         if (cells.length >= cloudSize) break;
@@ -74,6 +72,30 @@ export function createSteamCloud(
             if (cells.length >= cloudSize) break;
         }
     }
-    const ttl = Math.trunc((4 + random(3)) * cloudSize / cells.length);
+    return cells;
+}
+
+function gasCloudTtl(cloudSize, cellCount, random) {
+    return Math.trunc((4 + random(3)) * cloudSize / cellCount);
+}
+
+export function createSteamCloud(
+    state, x, y, cloudSize, random = rn2,
+) {
+    const cells = gasCloudCells(state, x, y, cloudSize, random);
+    const ttl = gasCloudTtl(cloudSize, cells.length, random);
     return createHarmlessGasCloudSelection(state, cells, { ttl });
+}
+
+export function createPoisonGasCloud(
+    state, x, y, cloudSize, damage, random = rn2,
+) {
+    if (!state?.level) return null;
+    const cells = gasCloudCells(state, x, y, cloudSize, random);
+    const region = createHarmlessGasCloudSelection(state, cells, {
+        ttl: gasCloudTtl(cloudSize, cells.length, random),
+    });
+    region.damage = damage;
+    region.heroFault = !state.context?.mon_moving;
+    return region;
 }

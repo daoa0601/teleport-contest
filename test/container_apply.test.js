@@ -80,6 +80,20 @@ test('a carried locked chest must be put down before it can be opened',
         assert.match(game._pending_message, /put it down to unlock/);
     });
 
+test('applying a trapped chest discharges its trap and spends the turn',
+    async () => {
+        const chest = inventoryObject(CHEST, 'a', { otrapped: true });
+        freshContainerGame(chest);
+        initRng(1n);
+
+        await applyObject('a ');
+
+        assert.equal(chest.otrapped, false);
+        assert.equal(chest.tknown, true);
+        assert.equal(game.context.move, 1);
+        assert.match(game._pending_message, /explosive charge is a dud/);
+    });
+
 test('invocation items cannot be hidden in a container', async () => {
     const chest = inventoryObject(CHEST, 'a', { cknown: true });
     const amulet = inventoryObject(AMULET_OF_YENDOR, 'b');
