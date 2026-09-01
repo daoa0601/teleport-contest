@@ -3,19 +3,16 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { mksobj, place_object, set_corpsenm } from '../js/mklev.js';
+import { place_object } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import {
-    CORPSE, SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING,
-} from '../js/object_data.js';
+import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
-import { stopAllObjectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { turnUndeadInDirection } from '../js/undead_turning.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dozap } from '../js/zap.js';
-import { chargedWand } from './support/game-objects.js';
+import { chargedWand, untimedCorpse } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -50,10 +47,7 @@ function freshState() {
 }
 
 function trollCorpse() {
-    const corpse = mksobj(CORPSE, true, false);
-    set_corpsenm(corpse, PM_TROLL);
-    stopAllObjectTimers(corpse);
-    return corpse;
+    return untimedCorpse(PM_TROLL);
 }
 
 function addZombie(x, y) {

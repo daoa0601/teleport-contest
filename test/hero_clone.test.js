@@ -1,41 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_EXTINCT, ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { G_EXTINCT, STONE } from '../js/const.js';
+import { game } from '../js/gstate.js';
 import { splitHeroMonsterForm } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_GREMLIN = 40;
 
 function gremlinHeroState({ openMap = true } = {}) {
-    resetGame();
+    freshPlayableRoom({
+        left: 8,
+        right: 12,
+        top: 8,
+        bottom: 12,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            umonster: 331,
+            umonnum: PM_GREMLIN,
+            mtimedone: 300,
+            mh: 17,
+            mhmax: 17,
+            ulevel: 8,
+            ualign: { type: 0, record: 0 },
+            acurr: { a: Array(6).fill(12) },
+            uconduct: {},
+            uhave: {},
+        },
+    });
     game.plname = 'Splitter';
     game.moves = 40;
     game.flags = { female: false };
     game.context = {};
-    game.inventory = [];
     game.mvitals = [];
-    game.level = new GameMap();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        umonster: 331,
-        umonnum: PM_GREMLIN,
-        mtimedone: 300,
-        mh: 17,
-        mhmax: 17,
-        ulevel: 8,
-        ualign: { type: 0, record: 0 },
-        acurr: { a: Array(6).fill(12) },
-        uconduct: {},
-        uhave: {},
-    };
-    if (openMap) {
+    if (!openMap) {
         for (let x = 8; x <= 12; x++) {
             for (let y = 8; y <= 12; y++)
-                game.level.at(x, y).typ = ROOM;
+                game.level.at(x, y).typ = STONE;
         }
     }
     initRng(3510n);

@@ -1,7 +1,9 @@
 import {
-    CLUB, DART, FLINT, LOADSTONE, OBJECT_BASES, OBJECT_NAMES, ROCK, SLING,
+    CLUB, CORPSE, DART, FLINT, LOADSTONE, OBJECT_BASES, OBJECT_NAMES, ROCK,
+    SLING,
 } from '../../js/object_data.js';
-import { place_object } from '../../js/mklev.js';
+import { mksobj, place_object, set_corpsenm } from '../../js/mklev.js';
+import { stopAllObjectTimers } from '../../js/object_timers.js';
 
 const WEAPON_NAMES = new Map([
     [CLUB, ['club', 'clubs']],
@@ -79,4 +81,11 @@ export function chargedWand(otyp, { charges = 3, ...overrides } = {}) {
         charges: { current: charges, recharged: 0 },
         ...overrides,
     });
+}
+
+export function untimedCorpse(species, overrides = {}) {
+    const corpse = mksobj(CORPSE, true, false);
+    set_corpsenm(corpse, species);
+    stopAllObjectTimers(corpse);
+    return Object.assign(corpse, overrides);
 }

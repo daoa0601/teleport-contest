@@ -20,6 +20,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { untimedCorpse } from './support/game-objects.js';
 import { deadMonster, liveMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -62,11 +63,7 @@ function freshState() {
 }
 
 function trollCorpse() {
-    const corpse = mksobj(CORPSE, true, false);
-    set_corpsenm(corpse, PM_TROLL);
-    stopAllObjectTimers(corpse);
-    corpse.age = game.moves;
-    return corpse;
+    return untimedCorpse(PM_TROLL, { age: game.moves });
 }
 
 async function reviveNow(corpse, seed = 12) {

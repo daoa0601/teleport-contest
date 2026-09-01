@@ -2,9 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
-import { ROOM } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import {
     finishDeferredMonsterDeath, quietMonsterActionRng,
     resumeDeferredMonsterContact,
@@ -16,34 +14,33 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { liveMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_GIANT = 169;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_GIANT_ZOMBIE = 247;
 
 function freshState() {
-    resetGame();
-    game.u = {
-        ux: 13, uy: 10,
-        ux0: 13, uy0: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        acurr: { a: [12, 12, 12, 12, 12, 12] },
-        ualign: { type: 0, record: 0 },
-    };
+    freshPlayableRoom({
+        left: 7,
+        right: 16,
+        top: 6,
+        bottom: 14,
+        heroX: 13,
+        heroY: 10,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            acurr: { a: [12, 12, 12, 12, 12, 12] },
+            ualign: { type: 0, record: 0 },
+        },
+    });
     game.moves = 40;
     game.flags = {};
     game.context = {};
-    game.inventory = [];
     game.mvitals = [];
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 7; x <= 16; x++) {
-        for (let y = 6; y <= 14; y++) {
-            game.level.at(x, y).typ = ROOM;
-        }
-    }
     game.in_mklev = false;
     initRng(700n);
     init_objects();
