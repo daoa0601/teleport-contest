@@ -467,7 +467,42 @@ export function splitShopBill(object, split, state = game) {
     billed.resident.eshk.bill.push(entry);
     billed.resident.eshk.billct = billed.resident.eshk.bill.length;
     split.unpaid = true;
-    return { resident: billed.resident, entry, object: split };
+    return {
+        resident: billed.resident,
+        parentEntry: billed.entry,
+        entry,
+        object: split,
+    };
+}
+
+export function rejoinShopBill(billSplit) {
+    if (!billSplit?.resident?.eshk
+        || !billSplit.parentEntry || !billSplit.entry)
+        return false;
+    const bill = billSplit.resident.eshk.bill || [];
+    if (!bill.includes(billSplit.parentEntry)
+        || !bill.includes(billSplit.entry))
+        return false;
+    billSplit.parentEntry.bquan = (billSplit.parentEntry.bquan ?? 0)
+        + (billSplit.entry.bquan ?? 0);
+    billSplit.resident.eshk.bill = bill.filter(entry =>
+        entry !== billSplit.entry);
+    billSplit.resident.eshk.billct = billSplit.resident.eshk.bill.length;
+    if (billSplit.object) billSplit.object.unpaid = false;
+    return true;
+}
+
+export function moveUsedObjectToBill(object, state = game) {
+    if (!object?.unpaid) return null;
+    const billed = billForObject(object, state);
+    if (!billed) return null;
+    billed.entry.bquan = object.quan ?? object.quantity ?? 1;
+    billed.entry.useup = true;
+    billed.resident.eshk.billObjects ||= [];
+    billed.resident.eshk.billObjects.push(object);
+    object.where = 'onbill';
+    object.unpaid = false;
+    return { ...billed, object };
 }
 
 export async function chargeAlteredUnpaidObject(

@@ -200,6 +200,7 @@ export const CARROT = 282;
 export const SPRIG_OF_WOLFSBANE = 283;
 export const CLOVE_OF_GARLIC = 284;
 export const SLIME_MOLD = 285;
+export const LUMP_OF_ROYAL_JELLY = 286;
 export const CREAM_PIE = 287;
 export const CANDY_BAR = 288;
 export const FORTUNE_COOKIE = 289;

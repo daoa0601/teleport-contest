@@ -14,6 +14,7 @@ import {
     chargeAlteredUnpaidObject, splitShopBill,
 } from './shk.js';
 import { redrawSight, rememberVisibleTerrain } from './sight_change.js';
+import { releaseWeaponSlots } from './weapon_slots.js';
 import { objectWeight } from './weight.js';
 
 function splitOnePie(stack) {
@@ -42,26 +43,10 @@ function splitOnePie(stack) {
     return { pie, several: true };
 }
 
-function clearConsumedSlots(pie) {
-    const primary = game.uwep === pie || game.u?.uwep === pie;
-    const secondary = game.uswapwep === pie || game.u?.uswapwep === pie;
-    if (game.uwep === pie) game.uwep = null;
-    if (game.u?.uwep === pie) game.u.uwep = null;
-    if (game.uswapwep === pie) game.uswapwep = null;
-    if (game.u?.uswapwep === pie) game.u.uswapwep = null;
-    if (game.uquiver === pie) game.uquiver = null;
-    if (game.u?.uquiver === pie) game.u.uquiver = null;
-    if (primary) game._unweapon = true;
-    if ((primary || secondary) && game.u) game.u.twoweap = false;
+function deletePie(pie) {
+    releaseWeaponSlots(pie);
     pie.owornmask = 0;
     pie.worn = false;
-    pie.wielded = false;
-    pie.alternate = false;
-    pie.ready = false;
-}
-
-function deletePie(pie) {
-    clearConsumedSlots(pie);
     const index = game.inventory?.indexOf(pie) ?? -1;
     if (index >= 0) game.inventory.splice(index, 1);
     pie.where = 'gone';

@@ -1,7 +1,7 @@
 // Wearing and removing blindfolds, towels, and lenses.
 // C ref: do_wear.c Blindf_on(), Blindf_off().
 
-import { W_TOOL, W_WEAPONS } from './const.js';
+import { W_TOOL } from './const.js';
 import {
     pline, plineWithContinuation,
 } from './display.js';
@@ -13,6 +13,7 @@ import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';
 import { redrawSight, rememberVisibleTerrain } from './sight_change.js';
+import { releaseWeaponSlots } from './weapon_slots.js';
 
 function currentEyewear() {
     return game.ublindf || game.u?.ublindf || null;
@@ -25,23 +26,8 @@ function simpleEyewearName(object) {
     return 'a blindfold';
 }
 
-function releaseWeaponSlot(object) {
-    const primary = game.uwep === object || game.u?.uwep === object;
-    if (game.uwep === object) game.uwep = null;
-    if (game.u?.uwep === object) game.u.uwep = null;
-    if (game.uswapwep === object) game.uswapwep = null;
-    if (game.u?.uswapwep === object) game.u.uswapwep = null;
-    if (game.uquiver === object) game.uquiver = null;
-    if (game.u?.uquiver === object) game.u.uquiver = null;
-    object.wielded = false;
-    object.alternate = false;
-    object.ready = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_WEAPONS;
-    if (primary) game._unweapon = true;
-}
-
 function equipEyewear(object) {
-    releaseWeaponSlot(object);
+    releaseWeaponSlots(object);
     game.ublindf = object;
     if (game.u) game.u.ublindf = object;
     object.worn = true;

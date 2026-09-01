@@ -109,7 +109,7 @@ import {
 } from './artifacts.js';
 import {
     SLING, CARROT,
-    CREAM_PIE, EGG, SLIME_MOLD, TIN,
+    CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
     GOLD_PIECE, CORPSE, BOULDER, ROCK,
@@ -236,6 +236,9 @@ import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
 } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
+import {
+    isRoyalJelly, useRoyalJelly,
+} from './royal_jelly.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
     weaponSkillDamageBonus, weaponSkillHitBonus,
@@ -5579,7 +5582,7 @@ async function doinvoke() {
 
 function rubEligibleObject(object) {
     return object?.otyp === OIL_LAMP || object?.otyp === MAGIC_LAMP
-        || object?.otyp === BRASS_LANTERN;
+        || object?.otyp === BRASS_LANTERN || isRoyalJelly(object);
 }
 
 function rubObjectName(object) {
@@ -5587,6 +5590,30 @@ function rubObjectName(object) {
     if (object?.otyp === BRASS_LANTERN) return 'a brass lantern';
     const description = inventoryItemDescription(object);
     return `${indefiniteArticle(description)} ${description}`;
+}
+
+async function rubRoyalJelly(jelly) {
+    const eggs = (game.inventory || []).filter(object => object.otyp === EGG);
+    const used = await useRoyalJelly(jelly, async () => {
+        if (!eggs.length) {
+            game._pending_message = '';
+            await pline(
+                "You don't have anything to rub the royal jelly on.",
+            );
+            return null;
+        }
+        const letters = compactInventoryLetters(
+            eggs.map(egg => egg.invlet).join(''),
+        );
+        const selection = await promptInventoryObject(
+            `What do you want to rub the royal jelly on? [${letters} or ?*] `,
+            eggs,
+            { allowMenu: true },
+        );
+        if (!selection.cancelled) game._pending_message = '';
+        return selection.object;
+    });
+    game.context.move = used ? 1 : 0;
 }
 
 async function djinniFromLamp(object) {
@@ -5680,6 +5707,10 @@ async function dorub(cannedInvlet = null) {
     // Canned re-entry happens before the next physical key and inherits the
     // wield/scheduler topline, so its result must append to that message.
     if (cannedInvlet === null) game._pending_message = '';
+    if (isRoyalJelly(object)) {
+        await rubRoyalJelly(object);
+        return;
+    }
     if (object !== (game.uwep || game.u?.uwep)) {
         const oldPrimary = game.uwep || game.u?.uwep || null;
         if (oldPrimary) oldPrimary.wielded = false;
@@ -8932,7 +8963,8 @@ async function doapply() {
 
     const applicable = (game.inventory || []).filter(item => item.oclass === 6
         || item.oclass === 10 || item.oclass === 11
-        || item.otyp === 72 || item.otyp === CREAM_PIE
+        || item.otyp === 72
+        || [CREAM_PIE, LUMP_OF_ROYAL_JELLY].includes(item.otyp)
         || game.urole?.key === 'healer' && [10, 11].includes(item.oclass));
     if (!applicable.length) {
         await pline("You don't have anything to use or apply.");
@@ -8996,6 +9028,10 @@ async function doapply() {
                 game._pending_message = '';
                 await useCreamPie(item);
                 game.context.move = 0;
+                return;
+            }
+            if (isRoyalJelly(item)) {
+                await rubRoyalJelly(item);
                 return;
             }
             if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
