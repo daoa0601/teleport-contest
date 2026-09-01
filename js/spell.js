@@ -8,12 +8,14 @@ import {
 import { nhgetch } from './input.js';
 import { NO_COLOR, ATR_INVERSE } from './terminal.js';
 import { rnd, rn2, d } from './rng.js';
-import { A_INT, A_WIS, STRAT_APPEARMSG, STRAT_WAITFORU } from './const.js';
+import {
+    A_DEX, A_INT, A_WIS, STRAT_APPEARMSG, STRAT_WAITFORU, TIMEOUT,
+} from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
     OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
-    SPE_TURN_UNDEAD,
+    SPE_HASTE_SELF, SPE_TURN_UNDEAD,
 } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { turnUndeadInDirection } from './undead_turning.js';
@@ -417,6 +419,27 @@ export async function castKnownSpell(spell) {
     game.u.uen = Math.max(0, (game.u.uen || 0) - energy);
     exerciseWisdom(true);
     rnd(2);
+
+    if (spell.otyp === SPE_HASTE_SELF || spell.name === 'haste self') {
+        if (!game.u.veryFast) {
+            const much = game.u.fast ? '' : 'much ';
+            await pline(`You are suddenly moving ${much}faster.`);
+        } else {
+            await pline('Your legs get new energy.');
+        }
+        const skill = SPELL_SKILL[spell.skill] ?? SPELL_SKILL.unskilled;
+        const duration = 100 + (skill >= SPELL_SKILL.skilled ? 60 : 0)
+            + rn2(10);
+        game.u.veryFastTurns = Math.min(
+            TIMEOUT,
+            (game.u.veryFastTurns ?? 0) + duration,
+        );
+        game.u.veryFast = true;
+        exerciseAttribute(A_DEX, true);
+        game.context.move = 1;
+        return;
+    }
+
     await pline('In what direction? ');
     await flush_screen(1);
     game.nhDisplay?.setCursor(19, 0);

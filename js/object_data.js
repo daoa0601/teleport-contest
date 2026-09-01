@@ -252,6 +252,7 @@ export const SPE_DETECT_MONSTERS = 373;
 export const SPE_HEALING = 374;
 export const SPE_FORCE_BOLT = 376;
 export const SPE_CONFUSE_MONSTER = 377;
+export const SPE_HASTE_SELF = 388;
 export const SPE_EXTRA_HEALING = 391;
 export const SPE_TURN_UNDEAD = 398;
 export const SPE_POLYMORPH = 399;
