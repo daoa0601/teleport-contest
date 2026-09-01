@@ -7,7 +7,7 @@ import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
     D_TRAPPED, CORPSTAT_HISTORIC, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
     Is_airlevel, Is_waterlevel, HOLE, M_AP_MONSTER, ROWNO, SDOOR,
-    TRAPDOOR, Upolyd, ZAP_POS,
+    STATUE_TRAP, TRAPDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
@@ -23,7 +23,7 @@ import {
 } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { breakFloorObject } from './object_breakage.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -34,6 +34,7 @@ import {
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustSpellDamage } from './spell_damage.js';
+import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { objectWeight } from './weight.js';
 
@@ -42,6 +43,7 @@ const ARM_HELM = 2;
 const IRON = 11;
 const MITHRIL = 17;
 const GLASS = 19;
+const M1_CONCEAL = 0x00000080;
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -138,10 +140,46 @@ async function turnIntoRocks(object, x, y, state, random) {
     newsym(x, y);
 }
 
-async function breakFloorObjects(x, y, state, options) {
-    const pile = [...(state.level?.objects?.[x]?.[y] || [])];
+function heroHidesUnderFloorObject(state) {
+    return !!state.u?.uundetected
+        && !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_CONCEAL);
+}
+
+async function breakFloorObjects(x, y, state, options, direction = null) {
+    const originalPile = state.level?.objects?.[x]?.[y] || [];
+    if (!originalPile.length) return { rangeHit: false, identified: false };
+
     let rangeHit = false;
     let identified = false;
+    const hidingUnder = heroHidesUnderFloorObject(state);
+    const originalTop = originalPile[0];
+    const upward = direction === '<';
+    const downward = direction === '>';
+    if (upward && !hidingUnder)
+        return { rangeHit: false, identified: false };
+
+    const statueTrap = state.level?.traps?.some(trap =>
+        trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP,
+    );
+    let releasedMonster = null;
+    if (statueTrap && (!upward || originalTop.otyp === STATUE)) {
+        releasedMonster = await activateStatueTrapAt(
+            x, y, { state, shatter: true },
+        );
+        if (releasedMonster && !upward) identified = true;
+    }
+
+    if (upward && releasedMonster)
+        return { rangeHit: false, identified };
+
+    let pile;
+    if (upward) {
+        pile = [originalTop];
+    } else {
+        pile = [...(state.level?.objects?.[x]?.[y] || [])];
+        const topChanged = pile[0] !== originalTop;
+        if (downward && hidingUnder && !topChanged) pile = pile.slice(1);
+    }
     for (const object of pile) {
         if (object.where !== 'floor' || object.ox !== x || object.oy !== y)
             continue;
@@ -381,7 +419,7 @@ export async function forceBoltInDirection(direction, {
         );
         const trapdoor = bridgeDestroyed ? null : await breakTrapdoor(state);
         const objects = await breakFloorObjects(
-            state.u.ux, state.u.uy, state, options,
+            state.u.ux, state.u.uy, state, options, direction,
         );
         if (engravingAt(state.u.ux, state.u.uy, state.level)) {
             wipeEngravingAt(
@@ -397,10 +435,14 @@ export async function forceBoltInDirection(direction, {
         return bridgeDestroyed || objects.identified || !!trapdoor?.identified;
     }
     if (direction === '<') {
-        if (await destroyVerticalDrawbridge(direction, state, options))
-            return true;
-        await dropRockFromCeiling(state, random, roll);
-        return false;
+        const bridgeDestroyed = await destroyVerticalDrawbridge(
+            direction, state, options,
+        );
+        if (!bridgeDestroyed) await dropRockFromCeiling(state, random, roll);
+        const objects = await breakFloorObjects(
+            state.u.ux, state.u.uy, state, options, direction,
+        );
+        return bridgeDestroyed || objects.identified;
     }
 
     const dx = DIR_DX[direction], dy = DIR_DY[direction];

@@ -3,18 +3,23 @@ import assert from 'node:assert/strict';
 
 import {
     DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DUST, D_BROKEN, D_LOCKED,
-    HOLE, MOAT, TRAPDOOR,
+    HOLE, MOAT, STATUE_TRAP, TRAPDOOR,
 } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
+import { forceBoltInDirection } from '../js/force_bolt.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { mkcorpstat } from '../js/mklev.js';
 import {
-    BOULDER, CLUB, EGG, POT_WATER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
+    BOULDER, CLUB, EGG, MIRROR, POT_WATER, ROCK, SPE_FORCE_BOLT, STATUE,
+    WAN_STRIKING,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
-import { chargedWand, floorObject } from './support/game-objects.js';
+import {
+    chargedWand, floorObject, looseObject,
+} from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -147,6 +152,35 @@ test('force bolt detonates a pyrolisk egg through the fire explosion rules',
         assert.ok(game.u.uhp < 100);
     });
 
+test('force bolt releases the monster from a statue trap', async () => {
+    freshWizard();
+    initRng(9401n);
+    const statue = mkcorpstat(STATUE, null, PM_JACKAL, 12, 10, 0);
+    const club = looseObject(CLUB, { where: 'contained' });
+    club.container = statue;
+    statue.contents = [club];
+    game.level.traps.push({
+        ttyp: STATUE_TRAP,
+        tx: 12,
+        ty: 10,
+        tseen: false,
+    });
+    pushKeys('l');
+
+    await castKnownSpell(forceBoltSpell());
+
+    const released = game.level.monsters.find(monster =>
+        monster.mnum === PM_JACKAL && monster.mx === 12 && monster.my === 10,
+    );
+    assert.ok(released);
+    assert.equal(released.mpeaceful, 0);
+    assert.equal(released.mtame, 0);
+    assert.ok(released.minvent.includes(club));
+    assert.equal(statue.where, 'gone');
+    assert.equal(game.level.traps.some(trap =>
+        trap.tx === 12 && trap.ty === 10), false);
+});
+
 test('force bolt aimed down strikes the floor pile and engraving', async () => {
     freshWizard();
     const boulder = floorObject(BOULDER, game.u.ux, game.u.uy, {
@@ -163,6 +197,37 @@ test('force bolt aimed down strikes the floor pile and engraving', async () => {
         'Elbereth',
     );
 });
+
+test('a downward force bolt skips the object concealing the hero', async () => {
+    freshWizard();
+    game.u.umonnum = 94;
+    game.u.mtimedone = 20;
+    game.u.uundetected = 1;
+    const mirror = floorObject(MIRROR, game.u.ux, game.u.uy);
+    const cover = floorObject(CLUB, game.u.ux, game.u.uy);
+
+    await forceBoltInDirection('>', { random: () => 1 });
+
+    assert.equal(cover.where, 'floor');
+    assert.equal(mirror.where, 'gone');
+});
+
+test('an upward force bolt hits only the object concealing the hero',
+    async () => {
+        freshWizard();
+        game.u.umonnum = 94;
+        game.u.mtimedone = 20;
+        game.u.uundetected = 1;
+        const lowerObject = floorObject(CLUB, game.u.ux, game.u.uy);
+        const cover = floorObject(MIRROR, game.u.ux, game.u.uy);
+
+        await forceBoltInDirection('<', {
+            random: range => range === 3 ? 0 : 1,
+        });
+
+        assert.equal(cover.where, 'gone');
+        assert.equal(lowerObject.where, 'floor');
+    });
 
 test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
     freshWizard();

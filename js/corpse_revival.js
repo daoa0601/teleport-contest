@@ -3,7 +3,7 @@
 
 import {
     CORR, G_GENOD, GRAVE, IS_POOL, MFAST,
-    MM_FEMALE, MM_MALE, MM_NOCOUNTBIRTH, MM_NOTAIL,
+    MM_NOCOUNTBIRTH, MM_NOTAIL,
     MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, ROOM,
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
@@ -15,7 +15,7 @@ import {
     riderRevivalTime, set_corpsenm, shapechangeMonster,
 } from './mklev.js';
 import {
-    MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
+    MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME,
     MONSTER_SYMBOL,
     monsterTypeName,
 } from './monster_data.js';
@@ -33,20 +33,15 @@ import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 import { markQuestLeaderAlive } from './quest.js';
+import {
+    bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE,
+    revivalReplacement, restoreRevivedShapechanger,
+} from './revival_species.js';
 
 const S_EEL = 57;
 const S_ZOMBIE = 52;
 const G_UNIQ = 0x1000;
-const M2_SHAPESHIFTER = 0x00004000;
-const PM_ANGEL = 123;
-const PM_HUMAN_ZOMBIE = 244;
-const PM_DOPPELGANGER = 270;
-const PM_GUARD = 272;
-const PM_ALIGNED_CLERIC = 275;
-const PM_HIGH_CLERIC = 276;
 const PM_GHOST = 287;
-const PM_LONG_WORM = 114;
-const PM_LONG_WORM_TAIL = 330;
 
 function parentContainer(object, state) {
     if (object?.container) return object.container;
@@ -113,22 +108,6 @@ function monsterAt(x, y, state) {
     return (state.level?.monsters || []).find(monster =>
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y);
-}
-
-function revivalReplacement(mnum, corpse) {
-    if ([PM_GUARD, PM_HIGH_CLERIC, PM_ALIGNED_CLERIC, PM_ANGEL]
-        .includes(mnum)) return PM_HUMAN_ZOMBIE;
-    if (mnum === PM_LONG_WORM_TAIL) return PM_LONG_WORM;
-    if ((MONSTER_GENO[mnum] ?? 0) & G_UNIQ
-        && !corpse.oextra?.omonst) return PM_DOPPELGANGER;
-    return null;
-}
-
-function genderFlags(corpse) {
-    const gender = (corpse.spe ?? 0) & 0x03;
-    if (gender === 1) return MM_FEMALE;
-    if (gender === 2) return MM_MALE;
-    return 0;
 }
 
 function corpseName(corpse) {
@@ -292,28 +271,6 @@ function restoreCorpseNameAndHealth(monster, corpse) {
     }
 }
 
-function restoreShapechangerState(monster, state) {
-    const naturalForm = Number.isInteger(monster.cham)
-        && monster.cham >= 0 ? monster.cham : null;
-    const protectedFromShapechangers = !!(
-        state.u?.protectionFromShapeChangers
-        || state.protectionFromShapeChangers
-    );
-    if (protectedFromShapechangers || monster.mcan) {
-        if (naturalForm != null) {
-            const cancelled = monster.mcan;
-            shapechangeMonster(monster, naturalForm);
-            monster.cham = -1;
-            if (cancelled) monster.mcan = 1;
-        }
-        return;
-    }
-    if (naturalForm == null
-        && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_SHAPESHIFTER)) {
-        monster.cham = monster.mnum;
-    }
-}
-
 function mergeGhostIntoBody(monster, corpse, state) {
     const ghostId = corpse.oextra?.omid ?? corpse.omid;
     if (!ghostId) return;
@@ -370,7 +327,8 @@ async function createRevivedMonster(corpse, location, state) {
 
     const replacement = revivalReplacement(originalMnum, corpse);
     const targetMnum = replacement ?? savedTraits?.mnum ?? originalMnum;
-    let flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG | genderFlags(corpse);
+    let flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG
+        | bodyGenderFlags(corpse);
     if (replacement == null) flags |= MM_NOCOUNTBIRTH;
     if (savedTraits) flags |= MM_NOTAIL;
     const heroAt = state.u?.ux === x && state.u?.uy === y;
@@ -383,7 +341,7 @@ async function createRevivedMonster(corpse, location, state) {
     if (replacement != null) discardSavedBody(corpse);
     if (savedTraits && replacement == null) {
         restoreMonsterTraits(monster, savedTraits);
-        restoreShapechangerState(monster, state);
+        restoreRevivedShapechanger(monster, state);
         markQuestLeaderAlive(monster, state);
         if (monster.mtame && !monster.isminion)
             makePetWary(monster, { wasDead: true, state });
