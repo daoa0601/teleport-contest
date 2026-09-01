@@ -155,6 +155,10 @@ export async function changeMonsterSpeedInDirection(direction, {
     if (direction === '.') {
         return kind === 'speed' ? speedHero(state, random) : slowHero(state);
     }
+    if (direction === '>' && state.u?.usteed) {
+        await affectMonster(state.u.usteed, kind, source, state, options);
+        return true;
+    }
     if (direction === '<' || direction === '>') return false;
 
     const dx = DIR_DX[direction], dy = DIR_DY[direction];

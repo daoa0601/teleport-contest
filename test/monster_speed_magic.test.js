@@ -93,3 +93,27 @@ test('slow monster aimed at yourself removes intrinsic speed', async () => {
     assert.equal(game.u.veryFast, false);
     assert.equal(game.context.move, 1);
 });
+
+test('a speed-monster wand aimed down hastens the hero\'s mount', async () => {
+    freshWeaponArena();
+    const steed = addJackal();
+    game.u.usteed = steed;
+    const wand = {
+        otyp: WAN_SPEED_MONSTER,
+        name: 'speed monster',
+        oclass: 11,
+        invlet: 'a',
+        spe: 2,
+        charges: { current: 2, recharged: 0 },
+        quan: 1,
+        quantity: 1,
+        dknown: true,
+    };
+    game.inventory = [wand];
+    pushKeys('a>');
+
+    await dozap();
+
+    assert.equal(steed.mspeed, 2);
+    assert.equal(wand.charges.current, 1);
+});
