@@ -1,7 +1,6 @@
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
 
-import { adjustHeroAlignment } from './alignment.js';
 import { heroHasWaterWalking } from './armor.js';
 import {
     beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
@@ -9,7 +8,7 @@ import {
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
     IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WATERWALL, Is_waterlevel,
-    MAGIC_PORTAL, MOAT, STRAT_WAITMASK, TREE, TRAP_EXPLANATIONS,
+    MAGIC_PORTAL, MOAT, TREE, TRAP_EXPLANATIONS,
     TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
     VIBRATING_SQUARE, W_NONPASSWALL,
     is_hole, is_pit, isok,
@@ -26,11 +25,11 @@ import {
 import { triggerHeroTrap } from './hero_traps.js';
 import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
+import { angerMonster, wakeMonster } from './monster_anger.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
 import { BOULDER } from './object_data.js';
-import { priestIsCoaligned } from './priest.js';
 import { rehumanizeHero } from './polyself.js';
 import { rnd } from './rng.js';
 import { stopRun } from './runmode.js';
@@ -184,10 +183,6 @@ function monsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
 
-function namedMonsterSubject(monster) {
-    return monster.name || `The ${monsterName(monster)}`;
-}
-
 function indefiniteName(name) {
     return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 }
@@ -206,33 +201,15 @@ function touchPetrifies(mnum) {
     return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
 }
 
-async function angerCollidedMonster(monster) {
-    monster.msleeping = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!monster.mpeaceful || (monster.mtame ?? 0) > 0) return;
-    monster.mpeaceful = 0;
-    adjustHeroAlignment(monster.ispriest
-        ? (priestIsCoaligned(monster, game) ? -5 : 2)
-        : -1);
-    if (canSpotMonster(monster, monster.mx, monster.my)) {
-        await plineWithContinuation(
-            `${namedMonsterSubject(monster)} gets angry!`,
-        );
-    }
-}
-
 async function collideWithMonster(monster, x, y) {
     monster.mundetected = 0;
-    if (monster.m_ap_type) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-    }
     const spotted = canSpotMonster(monster, x, y);
     await plineWithContinuation(spotted
         ? `You bump into ${indefiniteMonsterName(monster)}.`
         : 'You find something by bumping into it.');
-    if (!spotted) map_invisible(x, y);
-    await angerCollidedMonster(monster);
+    await wakeMonster(monster);
+    if (!canSpotMonster(monster, x, y)) map_invisible(x, y);
+    await angerMonster(monster);
 
     if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()
         && !(game.u?.stoneResistance || game.u?.stone_resistance)) {

@@ -1,7 +1,7 @@
 import { rhack } from '../../js/cmd.js';
 import { game } from '../../js/gstate.js';
 import { addHeroGoldObject } from '../../js/hero_gold.js';
-import { pushKey } from '../../js/input.js';
+import { pushKey, pushKeys } from '../../js/input.js';
 import { mksobj } from '../../js/mklev.js';
 import { GOLD_PIECE } from '../../js/object_data.js';
 
@@ -54,7 +54,8 @@ export async function throwGold(direction = 'l') {
     await rhack('t'.charCodeAt(0));
 }
 
-export async function fireQuiveredGold(direction = 'l') {
+export async function fireQuiveredGold(direction = 'l', moreKeys = '') {
     pushKey(direction);
+    pushKeys(moreKeys);
     await rhack('f'.charCodeAt(0));
 }

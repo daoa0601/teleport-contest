@@ -132,7 +132,7 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
         level.monsters.push(leprechaun);
         initRng(1n);
 
-        await fireQuiveredGold('l');
+        await fireQuiveredGold('l', ' ');
 
         const coin = detachedCoin(level, purse);
         assert.equal(leprechaun.msleeping, 0);
@@ -175,7 +175,7 @@ test('a swallowed quivered coin wakes the engulfer and enters its inventory',
         game.u.uswallow = true;
         game.u.ustuck = engulfer;
 
-        await fireQuiveredGold('l');
+        await fireQuiveredGold('l', ' ');
 
         assert.equal(heroGoldObject(game), purse);
         assert.equal(purse.quantity, 4);

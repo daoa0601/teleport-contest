@@ -5,6 +5,7 @@ import { COULD_SEE, IN_SIGHT, ROOM, STONE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
+import { hurtleHero } from '../js/hero_hurtle.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -134,4 +135,19 @@ test('kicking a wall while levitating throws the hero backward', async () => {
     await rhack(4);
 
     assert.deepEqual([game.u.ux, game.u.uy], [6, 10]);
+});
+
+test('hurtling into a peaceful monster wakes and angers it', async () => {
+    const human = installKickArena(260);
+    human.mx = 9;
+    human.mpeaceful = 1;
+    human.msleeping = 1;
+    pushKey(' ');
+
+    await hurtleHero(-1, 0, 1);
+
+    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.equal(human.msleeping, 0);
+    assert.equal(human.mpeaceful, 0);
+    assert.equal(game.u.ualign.record, 9);
 });
