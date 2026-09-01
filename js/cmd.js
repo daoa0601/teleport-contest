@@ -24,8 +24,8 @@ import {
     monsterHasWarningProjection,
     see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName,
     randomDisplayMonsterSubject, see_monsters, see_objects, see_traps,
-    transientObjectGlyph, lastDirtyMapCursor, shieldeff,
-    map_object, map_trap, map_invisible,
+    transientObjectGlyph, lastDirtyMapCursor,
+    map_object, map_invisible,
     unmap_invisible,
 } from './display.js';
 import {
@@ -73,7 +73,6 @@ import {
 import {
     level_difficulty, recordMappedOverviewState,
 } from './dungeon.js';
-import { somexyspace } from './mkroom.js';
 import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
 } from './u_init.js';
@@ -143,7 +142,7 @@ import {
     newExperienceThreshold,
 } from './exper.js';
 import { dosave } from './save.js';
-import { initTrack, setTrack } from './track.js';
+import { initTrack } from './track.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
@@ -166,6 +165,7 @@ import { strengthDamageBonus } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
 import { dosit } from './sit.js';
+import { triggerHeroTrapAt } from './hero_traps.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -253,9 +253,8 @@ import {
 } from './monmove.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
-    clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, moveHeroByTeleport,
-    prepareHeroTeleport, randomMonsterRelocation, safeTeleportDestination,
+    heroTeleportDestinationOk, moveHeroByTeleport,
+    randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
@@ -272,14 +271,14 @@ import {
     IS_LAVA, IS_ROOM,
     ZAP_POS,
     SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE,
-    TRAPDOOR, DART_TRAP, ROLLING_BOULDER_TRAP, MAGIC_TRAP,
+    TRAPDOOR, DART_TRAP, MAGIC_TRAP,
     TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
     WEB, ANTI_MAGIC,
     TT_BEARTRAP, G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
-    VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
+    TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
@@ -5304,7 +5303,7 @@ async function runExtendedCommand(command) {
     if (command === 'enhance') return doenhance();
     if (command === 'chat') return dochat();
     if (command === 'sit') return dosit({
-        triggerTrap: triggerTrapBySitting,
+        finishTeleport: finishTeleportArrival,
         gotoLevel,
         chooseTeleportDestination: askTeleportDestination,
     });
@@ -8317,31 +8316,6 @@ async function showFloorPile(
     while (![27, 32, 10, 13].includes(key));
 }
 
-function bearTrapAt(x, y) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y
-        && trap.ttyp === BEAR_TRAP);
-}
-
-function dartTrapAt(x, y) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y
-        && trap.ttyp === DART_TRAP);
-}
-
-function rollingBoulderTrapAt(x, y) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y
-        && trap.ttyp === ROLLING_BOULDER_TRAP);
-}
-
-function magicTrapAt(x, y) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y
-        && trap.ttyp === MAGIC_TRAP);
-}
-
-function teleportTrapAt(x, y) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y
-        && trap.ttyp === TELEP_TRAP);
-}
-
 async function finishTeleportArrival(movement) {
     newsym(movement.oldx, movement.oldy);
     vision_reset();
@@ -8361,334 +8335,6 @@ async function finishTeleportArrival(movement) {
         loc: game.level?.at?.(movement.x, movement.y),
         explicitAttempt: false,
     });
-}
-
-// C refs: teleport.c tele_trap(), vault_tele(), and teleds().
-async function triggerTeleportTrap(trap) {
-    trap.tseen = true;
-    if (game._inTeleportTrap) return false;
-
-    game._inTeleportTrap = true;
-    stopRun();
-    try {
-        const blocked = heroTeleportTrapBlock();
-        if (blocked) {
-            if (blocked === 'antimagic')
-                await shieldeff(game.u.ux, game.u.uy);
-            await plineWithContinuation('You feel a wrenching sensation.');
-            return true;
-        }
-
-        const preparation = prepareHeroTeleport();
-        for (const message of preparation.messages)
-            await plineWithContinuation(message);
-        if (!preparation.allowed) {
-            await plineWithContinuation('You shudder for a moment.');
-            return true;
-        }
-
-        let destination = null;
-        if (trap.once) {
-            const trapIndex = game.level.traps.indexOf(trap);
-            if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
-            newsym(game.u.ux, game.u.uy);
-
-            const vault = game.level?.rooms?.find(
-                room => room?.rtype === VAULT,
-            );
-            if (vault) {
-                const vaultSquare = { x: 0, y: 0 };
-                if (somexyspace(vault, vaultSquare)
-                    && heroTeleportDestinationOk(
-                        vaultSquare.x, vaultSquare.y,
-                    )) destination = vaultSquare;
-            }
-            destination ||= safeTeleportDestination();
-        } else if (trap.teledest
-            && isok(trap.teledest.x, trap.teledest.y)) {
-            setTrack(game);
-            const cleared = clearFixedTeleportDestination(
-                trap.teledest.x, trap.teledest.y,
-            );
-            if (!cleared.cleared) {
-                await plineWithContinuation('You shudder for a moment.');
-                return true;
-            }
-            if (cleared.relocation) {
-                newsym(cleared.relocation.oldx, cleared.relocation.oldy);
-                newsym(cleared.relocation.x, cleared.relocation.y);
-            }
-            destination = trap.teledest;
-        } else {
-            destination = safeTeleportDestination();
-        }
-
-        if (!destination) return true;
-        const movement = moveHeroByTeleport(destination.x, destination.y);
-        await finishTeleportArrival(movement);
-        return true;
-    } finally {
-        game._inTeleportTrap = false;
-    }
-}
-
-// C ref: trap.c:trapeffect_magic_trap()/domagictrap().  This runs inside
-// postmov(), after an underfoot pile pager has been dismissed but before the
-// elapsed hero action returns to moveloop_core().
-async function triggerMagicTrap(trap) {
-    trap.tseen = true;
-    stopRun();
-    if (rn2(30) === 0) {
-        const index = game.level.traps.indexOf(trap);
-        if (index >= 0) game.level.traps.splice(index, 1);
-        const damage = rnd(10);
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-        game.u.uenmax = (game.u.uenmax ?? 0) + 2;
-        game.u.uen = game.u.uenmax;
-        game.u.uenpeak = Math.max(game.u.uenpeak ?? 0, game.u.uenmax);
-        newsym(trap.tx, trap.ty);
-        await pline('You are caught in a magical explosion!  Your body absorbs some of the magical energy!');
-        return;
-    }
-
-    const fate = rnd(20);
-    if (fate === 11) {
-        // trap.c:domagictrap(), intrinsic-invisibility toggle. The sound is
-        // a separate pline before self_invis_message(), so an older
-        // look_here() summary can combine with it and page before the
-        // visibility message is installed.
-        await plineWithContinuation('You hear a low hum.');
-        const intrinsicInvisible = !!(
-            game.u?.intrinsicInvisible
-            ?? game.u?.invisible
-            ?? game.u?.invis
-        );
-        const otherInvisible = !!(
-            game.u?.extrinsicInvisible || game.u?.formInvisible
-        );
-        const currentlyInvisible = intrinsicInvisible || otherInvisible;
-        if (!currentlyInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible || game.u?.see_invisible
-                        ? 'Gee!  All of a sudden, you can see right through yourself.'
-                        : "Gee!  All of a sudden, you can't see yourself.",
-                );
-            }
-        } else if (!otherInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible || game.u?.see_invisible
-                        ? "You can't see through yourself anymore."
-                        : 'You can see yourself again!',
-                );
-            }
-        } else {
-            await plineWithContinuation(
-                `You feel a little more ${
-                    intrinsicInvisible ? 'obvious' : 'hidden'
-                } now.`,
-            );
-        }
-        const nextIntrinsic = !intrinsicInvisible;
-        game.u.intrinsicInvisible = nextIntrinsic;
-        game.u.invisible = nextIntrinsic || otherInvisible;
-        game.u.invis = game.u.invisible;
-        newsym(game.u.ux, game.u.uy);
-        return;
-    }
-    const message = fate === 13
-        ? 'A shiver runs up and down your spine!'
-        : fate === 14 ? 'You hear distant howling.'
-            : fate === 15 ? 'You suddenly yearn for your distant homeland.'
-                : fate === 16 ? 'Your pack shakes violently!'
-                    : fate === 17 ? 'You smell charred flesh.'
-                        : fate === 18 ? 'You feel tired.' : null;
-    if (message) await pline(message);
-}
-
-// C ref: trap.c:trapeffect_dart_trap(). The trap owns a newly constructed
-// projectile; a miss places that same object into the hero's floor pile.
-async function triggerDartTrap(trap) {
-    const u = game.u;
-    trap.once = true;
-    trap.tseen = true;
-    stopRun();
-
-    const dart = mksobj(DART, true, false);
-    dart.quan = dart.quantity = 1;
-    dart.owt = 1;
-    dart.opoisoned = 0;
-    dart.ox = trap.tx;
-    dart.oy = trap.ty;
-    if (rn2(6) === 0) dart.opoisoned = 1;
-    const damage = rnd(3) + (dart.spe ?? 0);
-    const dieroll = rnd(20);
-    const hit = (u.uac ?? 10) + 7 > dieroll;
-    if (hit) {
-        u.uhp = Math.max(0, (u.uhp ?? 1) - damage);
-        // thitu() abuses Strength after committing ordinary missile damage.
-        // exercise() always consumes this draw even when the accumulated
-        // score does not yet change the visible attribute.
-        exerciseAttribute(A_STR, false);
-        const punctuation = damage <= 4 ? '.' : '!';
-        game._pending_message = `A little dart shoots out at you!  You are hit by a little dart${punctuation}`;
-        return;
-    }
-
-    place_object(dart, trap.tx, trap.ty);
-    newsym(trap.tx, trap.ty);
-    game._pending_message = dieroll - ((u.uac ?? 10) + 7) < 2
-        ? 'A little dart shoots out at you!  You are almost hit by a little dart.'
-        : 'A little dart shoots out at you!  A little dart misses you.';
-}
-
-function boulderAt(x, y) {
-    return game.level?.objects?.[x]?.[y]
-        ?.find(object => object.otyp === BOULDER) ?? null;
-}
-
-export async function animateRollingBoulderCell(
-    boulder, glyph, x, y, previous,
-) {
-    if (previous) newsym(previous.x, previous.y);
-    if (!cansee(x, y)) return null;
-
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
-    // ROLL uses delaycnt=2.  C's tmp_at cursor sits immediately after the
-    // last dirty map cell.  That is the new projectile cell while rolling
-    // right, but the just-cleared previous cell while rolling left.
-    const frameCursor = previous
-        ? lastDirtyMapCursor() ?? [x, y + 1]
-        : [x, y + 1];
-    for (let delay = 0; delay < 2; delay++) {
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(...frameCursor);
-        await game.animationFrame?.();
-    }
-    return { x, y };
-}
-
-// C refs: trap.c:trapeffect_rolling_boulder_trap()/launch_obj().  Trap
-// discovery, the trigger line, extracted boulder identity, transient flight,
-// hero missile check, and final floor placement form one spoteffects()
-// transaction.  The general launch path remains coordinate-driven so a trap
-// which retained its boulder on the opposite endpoint still rolls correctly.
-async function triggerRollingBoulderTrap(trap) {
-    const wasKnown = !!trap.tseen;
-    map_trap(trap, false);
-    newsym(trap.tx, trap.ty);
-    stopRun();
-
-    await pline(`${game.u?.deaf ? '' : 'Click!  '}You trigger a rolling boulder trap!`);
-
-    let start = { ...trap.launch };
-    let finish = { ...(trap.launch2 || trap.launch) };
-    let boulder = boulderAt(start.x, start.y);
-    if (!boulder) {
-        boulder = boulderAt(finish.x, finish.y);
-        if (boulder) [start, finish] = [finish, start];
-    }
-    if (!boulder) {
-        await plineWithContinuation(wasKnown
-            ? 'No boulder was released.'
-            : 'Fortunately for you, no boulder was released.');
-        return;
-    }
-
-    remove_object(boulder);
-    newsym(start.x, start.y);
-    const glyph = transientObjectGlyph(boulder);
-    const dx = Math.sign(finish.x - start.x);
-    const dy = Math.sign(finish.y - start.y);
-    let remaining = distmin(start.x, start.y, finish.x, finish.y);
-    let x = start.x;
-    let y = start.y;
-    let transient = null;
-
-    while (remaining-- > 0) {
-        transient = await animateRollingBoulderCell(
-            boulder, glyph, x, y, transient,
-        );
-        x += dx;
-        y += dy;
-
-        if (game.u?.ux === x && game.u?.uy === y) {
-            // launch_obj() computes damage before thitu() rolls to hit.
-            const damage = rnd(OBJECT_SMALL_DAMAGE[BOULDER] || 1);
-            const dieroll = rnd(20);
-            const threshold = (game.u?.uac ?? 10) + 9 + (boulder.spe ?? 0);
-            if (threshold <= dieroll) {
-                const miss = game.blind || game.flags?.verbose === false
-                    ? 'It misses.'
-                    : threshold <= dieroll - 2
-                        ? 'A boulder misses you.'
-                        : 'You are almost hit by a boulder.';
-                await plineWithContinuation(miss);
-            } else {
-                const punctuation = damage <= 4 ? '.' : '!';
-                await plineWithContinuation(
-                    game.blind || game.flags?.verbose === false
-                        ? `You are hit${punctuation}`
-                        : `You are hit by a boulder${punctuation}`,
-                );
-                game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-            }
-        }
-
-        // TODO: handle monsters, landmines, teleports, pits, bars, and other
-        // boulders along the launch path.
-    }
-
-    if (transient) newsym(transient.x, transient.y);
-    place_object(boulder, finish.x, finish.y);
-    newsym(finish.x, finish.y);
-}
-
-async function triggerBearTrap(trap) {
-    const u = game.u;
-    const damage = d(2, 4);
-    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-    trap.tseen = true;
-    u.utrap = 4 + rn2(4);
-    u.utraptype = TT_BEARTRAP;
-    stopRun();
-
-    // C trapeffect_bear_trap() leaves this as an ordinary topline, then
-    // set_wounded_legs() performs its immediate encumber_msg() before
-    // losehp().  A capacity transition can therefore page this line and
-    // suspend the trap transaction before damage; an unchanged load cannot.
-    await pline('A bear trap closes on your foot!');
-
-    const legSide = rn2(2) ? 'right' : 'left';
-    const legTurns = 10 + rn2(10);
-    const wasWounded = (u._woundedLegTurns ?? 0) > 0;
-    u._woundedLegTurns = Math.max(u._woundedLegTurns ?? 0, legTurns);
-    if (!u._woundedLegSide) u._woundedLegSide = legSide;
-    else if (u._woundedLegSide !== legSide) u._woundedLegSide = 'both';
-    if (!wasWounded && u.acurr?.a) u.acurr.a[A_DEX]--;
-
-    const currentCapacity = nearCapacity(game);
-    const capacityMessage = encumbranceMessage(
-        previousCapacity, currentCapacity,
-    );
-    game._encumbranceLevel = currentCapacity;
-    u._encumbrance = encumbranceLabel(currentCapacity);
-    game._capacityDirty = false;
-    if (capacityMessage) await plineWithContinuation(capacityMessage);
-
-    u.uhp = Math.max(0, (u.uhp || 0) - damage);
-    exerciseAttribute(A_DEX, false);
-}
-
-async function triggerTrapBySitting(trap) {
-    if (!trap) return;
-    if (trap.ttyp === TELEP_TRAP) await triggerTeleportTrap(trap);
-    else if (trap.ttyp === DART_TRAP) await triggerDartTrap(trap);
-    else if (trap.ttyp === ROLLING_BOULDER_TRAP)
-        await triggerRollingBoulderTrap(trap);
-    else if (trap.ttyp === BEAR_TRAP) await triggerBearTrap(trap);
-    else if (trap.ttyp === MAGIC_TRAP) await triggerMagicTrap(trap);
 }
 
 async function moveWhileTrapped(dx, dy) {
@@ -13490,17 +13136,9 @@ export async function finishDestinationSpotEffects({
         });
         if (read && game._runState) stopRun();
     }
-    const teleportTrap = teleportTrapAt(newx, newy);
-    if (teleportTrap && await triggerTeleportTrap(teleportTrap)) return true;
-    const dartTrap = dartTrapAt(newx, newy);
-    if (dartTrap) await triggerDartTrap(dartTrap);
-    const rollingBoulderTrap = rollingBoulderTrapAt(newx, newy);
-    if (rollingBoulderTrap)
-        await triggerRollingBoulderTrap(rollingBoulderTrap);
-    const bearTrap = bearTrapAt(newx, newy);
-    if (bearTrap) await triggerBearTrap(bearTrap);
-    const magicTrap = magicTrapAt(newx, newy);
-    if (magicTrap) await triggerMagicTrap(magicTrap);
+    if (await triggerHeroTrapAt(newx, newy, {
+        finishTeleport: finishTeleportArrival,
+    })) return true;
     if (explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, newx, newy);
     return true;

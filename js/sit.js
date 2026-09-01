@@ -29,6 +29,7 @@ import { waterDamageObject } from './trap.js';
 import { objectWeight } from './weight.js';
 import { throneSitEffect } from './throne.js';
 import { splitSittingGremlin } from './fountain.js';
+import { triggerHeroTrap } from './hero_traps.js';
 
 const COIN_CLASS = 12;
 const CLOTH = 6;
@@ -282,7 +283,7 @@ function formLikesLava() {
 }
 
 export async function dosit({
-    triggerTrap = null,
+    finishTeleport = null,
     gotoLevel = null,
     chooseTeleportDestination = null,
 } = {}) {
@@ -338,7 +339,7 @@ export async function dosit({
         if (u?.utrap) await sitWhileTrapped(trap);
         else {
             await pline(`You ${u?.flying || game.flying ? 'land' : 'sit down'}.`);
-            await triggerTrap?.(trap);
+            await triggerHeroTrap(trap, { finishTeleport });
         }
     } else if ((game.underwater || u?.uinwater
         || game.level?.flags?.is_waterlevel) && !waterEggLayer()) {

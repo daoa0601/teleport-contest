@@ -20,7 +20,6 @@ import {
     randomOffensiveMonsterItem,
 } from './muse.js';
 import {
-    animateRollingBoulderCell,
     askTeleportDestination,
     continueCountedCommand, continueRun, finishHeroMonsterKill,
     finishDestinationSpotEffects,
@@ -28,6 +27,7 @@ import {
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack,
 } from './cmd.js';
+import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
 import { rndcurse } from './throne.js';

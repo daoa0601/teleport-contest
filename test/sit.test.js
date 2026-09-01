@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ALTAR, Align2amask, FOUNTAIN, THRONE } from '../js/const.js';
+import {
+    ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, TELEP_TRAP, THRONE,
+    TT_BEARTRAP,
+} from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
@@ -102,6 +105,31 @@ test('a gremlin sitting in water creates a tame clone', async () => {
 
     assert.ok(level.monsters.some(monster =>
         monster.mnum === 40 && monster.mtame > 0));
+});
+
+test('sitting on a bear trap catches the hero', async () => {
+    const level = freshWeaponArena();
+    level.traps.push({ tx: 10, ty: 10, ttyp: BEAR_TRAP });
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.utraptype, TT_BEARTRAP);
+});
+
+test('sitting on a teleport trap moves the hero', async () => {
+    const level = freshWeaponArena();
+    level.traps.push({
+        tx: 10,
+        ty: 10,
+        ttyp: TELEP_TRAP,
+        teledest: { x: 12, y: 10 },
+    });
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
 });
 
 test('a malignant aura curses an ordinary inventory item', async () => {
