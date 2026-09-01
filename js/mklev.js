@@ -5510,7 +5510,7 @@ async function fillZooRoom(room) {
     game.level.flags.has_zoo = true;
 }
 
-function courtMonsterType() {
+export function courtMonsterType() {
     const roll = rn2(60) + rn2(3 * level_difficulty());
     if (roll > 100) return mkclass(30, 0); // S_DRAGON
     if (roll > 95) return mkclass(34, 0); // S_GIANT

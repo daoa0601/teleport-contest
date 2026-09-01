@@ -5402,6 +5402,8 @@ async function runExtendedCommand(command) {
     if (command === 'sit') return dosit({
         triggerTrap: triggerTrapBySitting,
         splitGremlin: splitSittingGremlin,
+        gotoLevel,
+        chooseTeleportDestination: askTeleportDestination,
     });
     if (command === 'pray') return dopray();
     if (command === 'name') return doname();

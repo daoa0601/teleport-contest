@@ -2,18 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ALTAR, Align2amask } from '../js/const.js';
+import { ALTAR, Align2amask, THRONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
     CLUB, CREAM_PIE, WHITE_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
-import { attrcurse, rndcurse } from '../js/sit.js';
+import { attrcurse, rndcurse } from '../js/throne.js';
 import { applyArmorOnEffects } from '../js/armor.js';
 import {
     grantIntrinsicProperty, hasIntrinsicProperty,
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import {
     freshWeaponArena, inventoryObject,
 } from './support/weapon-arena.js';
@@ -52,6 +53,34 @@ test('sitting on your own altar costs Wisdom and alignment', async () => {
 
     assert.equal(game.u.acurr.a[2], 9);
     assert.equal(game.u.ualign.record, 9);
+});
+
+test('a throne can take all carried gold', async () => {
+    const level = freshWeaponArena();
+    level.at(10, 10).typ = THRONE;
+    setHeroGoldAmount(game, 250);
+    initRng(125n);
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(heroGoldAmount(game), 0);
+});
+
+test("Vlad's throne greases carried equipment", async () => {
+    const level = freshWeaponArena();
+    level.at(10, 10).typ = THRONE;
+    game.u.uz = { dnum: 0, dlevel: 1 };
+    game.dungeons = [{ dname: "Vlad's Tower" }];
+    const club = inventoryObject(CLUB, 'a');
+    game.inventory = [club];
+    initRng(21n);
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(club.greased, true);
+    assert.ok(game.u.glibTurns >= 100 && game.u.glibTurns <= 200);
 });
 
 test('a malignant aura curses an ordinary inventory item', async () => {

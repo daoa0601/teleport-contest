@@ -7,8 +7,7 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { newsym, pline, see_monsters, shieldeff } from './display.js';
-import { artifactById } from './artifacts.js';
+import { pline } from './display.js';
 import { game } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import {
@@ -23,16 +22,12 @@ import {
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
-import { curseObjectState, unblessObjectState } from './object_state.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
-import { monsterSaddle } from './steed.js';
 import { objectWeight } from './weight.js';
-import {
-    hasIntrinsicProperty, removeIntrinsicProperty,
-} from './properties.js';
+import { throneSitEffect } from './throne.js';
 
 const COIN_CLASS = 12;
 const CLOTH = 6;
@@ -285,117 +280,11 @@ function formLikesLava() {
     ].includes(currentForm());
 }
 
-const CURSEABLE_INTRINSICS = Object.freeze([
-    ['fireResistance', 'You feel warmer.'],
-    ['teleportation', 'You feel less jumpy.'],
-    ['poisonResistance', 'You feel a little sick!'],
-    ['telepathy', 'Your senses fail!'],
-    ['coldResistance', 'You feel cooler.'],
-    ['intrinsicInvisible', 'You feel paranoid.'],
-    ['seeInvisible', null],
-    ['fast', 'You feel slower.'],
-    ['stealth', 'You feel clumsy.'],
-    ['intrinsicProtection', 'You feel vulnerable.'],
-    ['aggravateMonster', 'You feel less attractive.'],
-]);
-
-// C sit.c:attrcurse().  Selection falls through the source list until it
-// finds an intrinsic the hero actually has; worn sources stay active.
-export async function attrcurse() {
-    const hero = game.u || {};
-    const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
-    for (let index = start; index < CURSEABLE_INTRINSICS.length; index++) {
-        const [property, ordinaryMessage] = CURSEABLE_INTRINSICS[index];
-        if (!hasIntrinsicProperty(property, null, game)) continue;
-        removeIntrinsicProperty(property, game);
-
-        if (property === 'telepathy' && game.blind
-            && !hero.blindTelepathy) see_monsters();
-        if (property === 'intrinsicInvisible') {
-            hero.invisible = !!(hero.intrinsicInvisible
-                || hero.extrinsicInvisible || hero.formInvisible
-                || (hero.invisibleTurns ?? 0) > 0);
-            hero.invis = hero.invisible;
-        }
-        if (property === 'seeInvisible') {
-            if (!hero.seeInvisible) {
-                see_monsters();
-                newsym(hero.ux, hero.uy);
-            }
-            await pline(hero.hallucinating
-                || (hero.hallucinationTurns ?? 0) > 0
-                ? 'You tawt you taw a puttie tat!'
-                : 'You thought you saw something!');
-        } else {
-            await pline(ordinaryMessage);
-        }
-        return property;
-    }
-    return null;
-}
-
-export async function rndcurse({
-    publish = pline,
-} = {}) {
-    const state = game;
-    const hero = state.u || {};
-    const weapon = state.uwep || hero.uwep;
-    if (artifactById(weapon?.oartifact)?.name === 'Magicbane' && rn2(20)) {
-        await publish(
-            'You feel a malignant aura surround the magic-absorbing blade.',
-        );
-        return [];
-    }
-
-    const antimagic = !!hero.antimagic;
-    const halfSpellDamage = !!hero.halfSpellDamage;
-    if (antimagic) await shieldeff(hero.ux, hero.uy, state);
-    await publish('You feel a malignant aura surround you.');
-
-    const inventory = (state.inventory || []).filter(object =>
-        object.oclass !== COIN_CLASS);
-    const sides = Math.trunc(6
-        / (Number(antimagic) + Number(halfSpellDamage) + 1));
-    const count = rnd(sides);
-    const changed = [];
-
-    for (let remaining = count; inventory.length && remaining > 0;
-        remaining--) {
-        const object = inventory[rnd(inventory.length) - 1];
-        if (!object || object.cursed) continue;
-        if (artifactById(object.oartifact)?.selfWilled && rn2(10) < 8) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-            await publish(`The ${name} resists!`);
-            continue;
-        }
-        if (object.blessed) unblessObjectState(object);
-        else curseObjectState(object);
-        changed.push(object);
-    }
-
-    let saddle = null;
-    if (hero.usteed && rn2(4) === 0)
-        saddle = monsterSaddle(hero.usteed);
-    if (saddle && !saddle.cursed) {
-        if (saddle.blessed) unblessObjectState(saddle);
-        else curseObjectState(saddle);
-        if (state.blind) {
-            saddle.bknown = false;
-        } else {
-            const color = saddle.cursed ? 'black' : 'brown';
-            await publish(`The saddle glows ${color}.`);
-            saddle.bknown = !(hero.hallucinating
-                || (hero.hallucinationTurns ?? 0) > 0);
-        }
-        changed.push(saddle);
-    }
-    return changed;
-}
-
 export async function dosit({
     triggerTrap = null,
-    throneEffect = null,
     splitGremlin = null,
+    gotoLevel = null,
+    chooseTeleportDestination = null,
 } = {}) {
     const u = game.u;
     const x = u?.ux;
@@ -488,7 +377,7 @@ export async function dosit({
         await pline('You sit on the drawbridge.');
     } else if (typ === THRONE) {
         await pline('You sit on the throne.');
-        await throneEffect?.(x, y);
+        await throneSitEffect({ gotoLevel, chooseTeleportDestination });
     } else if (formFlags() & M1_OVIPAROUS) {
         if (!await layEgg()) {
             game.context.move = 0;

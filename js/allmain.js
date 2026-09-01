@@ -30,7 +30,7 @@ import {
 } from './cmd.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
-import { rndcurse } from './sit.js';
+import { rndcurse } from './throne.js';
 import {
     docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym,
     map_invisible,
