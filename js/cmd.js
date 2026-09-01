@@ -13,7 +13,9 @@ import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
 import { moreUntilDismissed, promptKey } from './tty_prompts.js';
-import { getLine, promptYesNo, promptYesNoQuit } from './query.js';
+import {
+    getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
+} from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
     objectTypeCallNoun, tryCallObjectType,
@@ -295,7 +297,7 @@ import {
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    P_BOW, P_SLING, P_SKILLED, P_EXPERT, isok,
+    P_BOW, P_SLING, P_SKILLED, P_EXPERT, PARANOID_HIT, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -3456,6 +3458,26 @@ async function kickOuch(x, y) {
     game.u.uhp = Math.max(0, (game.u?.uhp ?? 1) - damage);
 }
 
+function kickPromptTargetName(monster) {
+    if (monster.name) return monster.name;
+    const article = monster.mtame > 0 ? 'your' : 'the';
+    return `${article} ${monsterInstanceDisplayName(monster)}`;
+}
+
+async function confirmKickTarget(monster) {
+    const hero = game.u;
+    const impaired = hero?.confused || (hero?.confusionTurns ?? 0) > 0
+        || hero?.hallucinating || (hero?.hallucinationTurns ?? 0) > 0
+        || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0;
+    if (game.flags?.confirm === false || !monster.mpeaceful || impaired
+        || game.context?.forcefight || !canSpotMonster(monster)) return true;
+
+    const paranoid = !!((game.flags?.paranoia_bits ?? 0) & PARANOID_HIT);
+    return paranoidQuery(
+        paranoid, `Really attack ${kickPromptTargetName(monster)}?`,
+    );
+}
+
 // C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
 // This owns the ordinary humanoid kick path.  Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
@@ -3464,6 +3486,10 @@ async function kickLiveMonster(monster, x, y) {
         || monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0);
     const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    if (!await confirmKickTarget(monster)) {
+        game.context.move = 0;
+        return;
+    }
     // maybe_kick_monster() temporarily force-fights hostile or unspotted
     // actors, then overexertion() charges combat metabolism.
     getHungry();

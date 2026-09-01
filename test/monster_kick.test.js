@@ -87,6 +87,7 @@ test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
     dog.edog = {};
     initRng(2n);
     pushKey('l');
+    pushKey('y');
     pushKey(' ');
     pushKey(' ');
 
@@ -95,4 +96,21 @@ test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
     assert.equal(game.u.ualign.record, 9);
     assert.equal(dog.mtame, 9);
     assert.equal(dog.mflee, 1);
+});
+
+test('declining a pet kick leaves the pet alone and takes no turn', async () => {
+    const dog = installKickArena(16);
+    dog.mpeaceful = 1;
+    dog.mtame = 10;
+    dog.pet = true;
+    dog.edog = {};
+    initRng(2n);
+    pushKey('l');
+    pushKey('n');
+
+    await rhack(4);
+
+    assert.equal(dog.mhp, 20);
+    assert.equal(dog.mtame, 10);
+    assert.equal(game.context.move, 0);
 });
