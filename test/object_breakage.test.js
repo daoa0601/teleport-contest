@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { objectBreaksOnImpact } from '../js/object_breakage.js';
+import {
+    breakFloorObject, objectBreaksOnImpact,
+} from '../js/object_breakage.js';
 import {
     OBJECT_NAMES, POT_WATER,
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
-import { looseObject } from './support/game-objects.js';
+import { floorObject, looseObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('ordinary potions break unless their impact resistance succeeds', () => {
     const potion = looseObject(POT_WATER);
@@ -25,3 +28,23 @@ test('glass armor resists most impacts but glass gems do not shatter', () => {
     assert.equal(objectBreaksOnImpact(crystalPlateMail, () => 90), true);
     assert.equal(objectBreaksOnImpact(glassGem, () => 99), false);
 });
+
+test('crystal armor cracks three times before the next impact destroys it',
+    async () => {
+        freshWeaponArena();
+        const armor = floorObject(
+            OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10,
+        );
+        const options = {
+            publish: async () => {},
+            random: () => 90,
+        };
+
+        for (let impact = 0; impact < 3; impact++)
+            await breakFloorObject(armor, options);
+        assert.equal(armor.where, 'floor');
+        assert.equal(armor.oeroded, 3);
+
+        await breakFloorObject(armor, options);
+        assert.equal(armor.where, 'gone');
+    });

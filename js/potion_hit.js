@@ -222,7 +222,7 @@ function restoreBaseAttributes(state, potion) {
     return start;
 }
 
-function heroVaporProfile(state) {
+export function heroPotionVaporProfile(state) {
     const mnum = Number.isInteger(state.u?.umonnum)
         ? state.u.umonnum
         : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
@@ -488,7 +488,7 @@ export async function applySupportedPotionVapor({
 }) {
     if (!SUPPORTED_POTION_VAPOR_TYPES.has(potion?.otyp)) return null;
 
-    const profile = heroVaporProfile(state);
+    const profile = heroPotionVaporProfile(state);
     if (!profile.canReceive) return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');

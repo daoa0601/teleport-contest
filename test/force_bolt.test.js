@@ -9,7 +9,7 @@ import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
-    BOULDER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
+    BOULDER, CLUB, EGG, POT_WATER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
@@ -20,11 +20,11 @@ import { freshWeaponArena } from './support/weapon-arena.js';
 
 const PM_JACKAL = 12;
 
-function addJackal() {
+function addJackal(x = 12) {
     return addMonster({
         m_id: 921,
         mnum: PM_JACKAL,
-        x: 12,
+        x,
         y: 10,
         hitPoints: 100,
         mac: 100,
@@ -118,6 +118,34 @@ test('force bolt fractures a boulder into rocks', async () => {
     assert.ok(boulder.quan >= 7 && boulder.quan <= 66);
     assert.equal(game.level.objects[12][10].includes(boulder), true);
 });
+
+test('force bolt breaks fragile floor objects and continues past them',
+    async () => {
+        freshWizard();
+        const potion = floorObject(POT_WATER, 12, 10);
+        const club = floorObject(CLUB, 12, 10);
+        const monster = addJackal(13);
+        pushKeys(`l${' '.repeat(20)}`);
+
+        await castKnownSpell(forceBoltSpell());
+
+        assert.equal(potion.where, 'gone');
+        assert.equal(club.where, 'floor');
+        assert.ok(monster.mhp < 100);
+    });
+
+test('force bolt detonates a pyrolisk egg through the fire explosion rules',
+    async () => {
+        freshWizard();
+        game.u.uhp = game.u.uhpmax = 100;
+        const egg = floorObject(EGG, 11, 10, { corpsenm: 11 });
+        pushKeys(`l${' '.repeat(60)}`);
+
+        await castKnownSpell(forceBoltSpell());
+
+        assert.equal(egg.where, 'gone');
+        assert.ok(game.u.uhp < 100);
+    });
 
 test('force bolt aimed down strikes the floor pile and engraving', async () => {
     freshWizard();

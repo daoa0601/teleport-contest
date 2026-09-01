@@ -25,6 +25,7 @@ import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
+import { breakFloorObject } from './object_breakage.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
     BOULDER, OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_USES_KNOWN,
@@ -137,20 +138,31 @@ async function turnIntoRocks(object, x, y, state, random) {
     newsym(x, y);
 }
 
-async function breakRockObjects(x, y, state, random) {
+async function breakFloorObjects(x, y, state, options) {
     const pile = [...(state.level?.objects?.[x]?.[y] || [])];
-    let hit = false;
+    let rangeHit = false;
     let identified = false;
     for (const object of pile) {
-        if (object.otyp !== BOULDER && object.otyp !== STATUE) continue;
+        if (object.where !== 'floor' || object.ox !== x || object.oy !== y)
+            continue;
+        if (object.otyp !== BOULDER && object.otyp !== STATUE) {
+            const result = await breakFloorObject(object, {
+                state,
+                random: options.random,
+                rollDice: options.rollDice,
+                finishMonsterKill: options.finishMonsterKill,
+            });
+            if (result.observed) identified = true;
+            continue;
+        }
         const visible = cansee(x, y);
         const audible = !state.u?.deaf && !state.deaf;
         if (object.otyp === BOULDER) {
             if (visible) await pline('The boulder falls apart.');
             else if (audible) await pline('You hear a crumbling sound.');
-            await turnIntoRocks(object, x, y, state, random);
+            await turnIntoRocks(object, x, y, state, options.random);
         } else {
-            await turnIntoRocks(object, x, y, state, random);
+            await turnIntoRocks(object, x, y, state, options.random);
             if (visible) {
                 const subject = state.u?.hallucinating
                     ? randomDisplayMonsterName() : 'statue';
@@ -159,10 +171,10 @@ async function breakRockObjects(x, y, state, random) {
                 await pline('You hear a crumbling sound.');
             }
         }
-        hit = true;
+        rangeHit = true;
         if (visible || audible) identified = true;
     }
-    return { hit, identified };
+    return { rangeHit, identified };
 }
 
 async function breakTrapdoor(state) {
@@ -368,8 +380,8 @@ export async function forceBoltInDirection(direction, {
             direction, state, options,
         );
         const trapdoor = bridgeDestroyed ? null : await breakTrapdoor(state);
-        const objects = await breakRockObjects(
-            state.u.ux, state.u.uy, state, random,
+        const objects = await breakFloorObjects(
+            state.u.ux, state.u.uy, state, options,
         );
         if (engravingAt(state.u.ux, state.u.uy, state.level)) {
             wipeEngravingAt(
@@ -408,8 +420,8 @@ export async function forceBoltInDirection(direction, {
                 identified = true;
             range -= 3;
         }
-        const objects = await breakRockObjects(x, y, state, random);
-        if (objects.hit) range--;
+        const objects = await breakFloorObjects(x, y, state, options);
+        if (objects.rangeHit) range--;
         if (objects.identified) identified = true;
         if (await breakDoor(x, y, state)) identified = true;
         if (!rayCellIsOpen(x, y, state)) break;

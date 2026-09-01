@@ -975,6 +975,10 @@ async function applyRayFloorFeatures(
     return { absorbed, rangeChange };
 }
 
+export function applyFireToFloorAt(x, y, state = game) {
+    return applyRayFloorFeatures(RAY_FIRE, x, y, state);
+}
+
 function monsterHasElementalResistance(monster, mask, explicit) {
     return !!((MONSTER_RESISTS[monster?.mnum] || 0) & mask)
         || !!monster?.[explicit];
