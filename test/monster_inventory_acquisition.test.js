@@ -2,10 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, ROOM,
+    MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { initializeRandomMonsterInventory } from '../js/allmain.js';
 import {
     giveSpecialMonsterObject, makemonAt, mksobj, place_object,
@@ -27,6 +26,8 @@ import {
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 
 const PM_LEPRECHAUN = 63;
@@ -34,40 +35,46 @@ const PM_SHOPKEEPER = 271;
 const SKELETON_KEY = 221;
 
 function freshInventoryState(seed = 1) {
-    resetGame();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        ualign: { type: 0, record: 0 },
-        uhave: {},
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-    };
+    freshPlayableRoom({
+        left: 7,
+        right: 17,
+        top: 6,
+        bottom: 14,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            ualign: { type: 0, record: 0 },
+            uhave: {},
+            acurr: { a: Array(6).fill(12) },
+            amax: { a: Array(6).fill(12) },
+        },
+    });
     game.flags = {};
     game.context = {};
     game.moves = 40;
     game.mvitals = [];
-    game.inventory = [];
     game.dungeons = [{
         dname: 'The Dungeons of Doom',
         depth_start: 1,
         num_dunlevs: 30,
     }];
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 7; x <= 17; x++) {
-        for (let y = 6; y <= 14; y++) {
-            const location = game.level.at(x, y);
-            location.typ = ROOM;
-            location.lit = true;
-        }
-    }
     game.in_mklev = false;
     initRng(999n);
     init_objects();
     initRng(BigInt(seed));
+}
+
+function inventoryMonster(m_id, overrides = {}) {
+    return addMonster({
+        m_id,
+        mnum: PM_LEPRECHAUN,
+        x: 12,
+        y: 10,
+        hasInventory: false,
+        ...overrides,
+    });
 }
 
 function assertMonsterOwns(monster, object) {
@@ -97,17 +104,7 @@ test('makemon startup inventory links every identity to the final actor',
 test('ambient m_initinv links direct monster money without carrying effects',
     () => {
         freshInventoryState(2102);
-        const monster = {
-            m_id: 702,
-            mnum: PM_LEPRECHAUN,
-            mx: 12, my: 10,
-            m_lev: 0,
-            mpeaceful: 0,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(monster);
+        const monster = inventoryMonster(702, { level: 0 });
 
         initializeRandomMonsterInventory(monster);
 
@@ -120,15 +117,7 @@ test('ambient m_initinv links direct monster money without carrying effects',
 
 test('direct add_to_minv linkage does not invent carrying effects', () => {
     freshInventoryState(2104);
-    const monster = {
-        m_id: 704,
-        mnum: PM_LEPRECHAUN,
-        mx: 12, my: 10,
-        minvent: [],
-        inventory: [],
-        hasInventory: false,
-    };
-    game.level.monsters.push(monster);
+    const monster = inventoryMonster(704);
     const figurine = {
         otyp: FIGURINE,
         cursed: true,
@@ -143,15 +132,7 @@ test('direct add_to_minv linkage does not invent carrying effects', () => {
 
 test('ordinary add_to_minv head-links each unmerged identity by default', () => {
     freshInventoryState(2112);
-    const monster = {
-        m_id: 712,
-        mnum: PM_LEPRECHAUN,
-        mx: 12, my: 10,
-        minvent: [],
-        inventory: [],
-        hasInventory: false,
-    };
-    game.level.monsters.push(monster);
+    const monster = inventoryMonster(712);
     const oldest = mksobj(DAGGER, true, false);
     const newest = mksobj(MACE, true, false);
 
@@ -167,15 +148,9 @@ test('ordinary add_to_minv head-links each unmerged identity by default', () => 
 test('special-level inventory transfer removes floor ownership and head-links',
     () => {
         freshInventoryState(2103);
-        const monster = {
-            m_id: 703,
+        const monster = inventoryMonster(703, {
             mnum: PM_SHOPKEEPER,
-            mx: 12, my: 10,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(monster);
+        });
         const prior = mksobj(DAGGER, true, false);
         addObjectToMonsterInventory(monster, prior, game);
         const context = { xstart: 8, ystart: 7, width: 4, height: 4 };
@@ -195,22 +170,16 @@ test('special-level inventory transfer removes floor ownership and head-links',
 test('pet mpickobj ownership survives the complete pickup and release cycle',
     () => {
         freshInventoryState(2105);
-        const pet = {
-            m_id: 705,
+        const pet = inventoryMonster(705, {
             mnum: 100,
-            mx: 13, my: 10,
+            x: 13,
             mux: game.u.ux, muy: game.u.uy,
-            m_lev: 4,
-            mhp: 20, mhpmax: 20,
-            mcanmove: 1,
+            level: 4,
+            hitPoints: 20,
             pet: true,
             mtame: 10,
             edog: { apport: 1 },
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(pet);
+        });
         const dagger = mksobj(DAGGER, true, false);
         dagger.blessed = false;
         dagger.cursed = false;
@@ -248,21 +217,15 @@ test('pet mpickobj ownership survives the complete pickup and release cycle',
 test('covetous ground tactics head-link the source artifact through mpickobj',
     () => {
         freshInventoryState(2106);
-        const wizard = {
-            m_id: 706,
+        const wizard = inventoryMonster(706, {
             mnum: 285,
-            mx: 16, my: 12,
+            x: 16,
+            y: 12,
             mux: game.u.ux, muy: game.u.uy,
-            m_lev: 30,
-            mhp: 120, mhpmax: 120,
-            mcanmove: 1,
-            mpeaceful: 0,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
+            level: 30,
+            hitPoints: 120,
             iswiz: true,
-        };
-        game.level.monsters.push(wizard);
+        });
         const prior = mksobj(DAGGER, true, false);
         addObjectToMonsterInventory(wizard, prior, game);
         const book = mksobj(SPE_BOOK_OF_THE_DEAD, true, false);
@@ -285,15 +248,9 @@ test('covetous ground tactics head-link the source artifact through mpickobj',
 
 test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
     freshInventoryState(2107);
-    const monster = {
-        m_id: 707,
+    const monster = inventoryMonster(707, {
         mnum: 285,
-        mx: 12, my: 10,
-        minvent: [],
-        inventory: [],
-        hasInventory: false,
-    };
-    game.level.monsters.push(monster);
+    });
     const dagger = mksobj(DAGGER, true, false);
     dagger.where = 'invent';
     dagger.wielded = true;
@@ -326,15 +283,9 @@ test('clonewiz direct add_to_minv links its minted fake without effects',
     () => {
         freshInventoryState(2108);
         game.u.protectionFromShapeChangers = true;
-        const clone = {
-            m_id: 708,
+        const clone = inventoryMonster(708, {
             mnum: 285,
-            mx: 12, my: 10,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(clone);
+        });
         const action = {
             calls: [],
             movement: {
@@ -363,15 +314,7 @@ test('clonewiz direct add_to_minv links its minted fake without effects',
 test('direct add_to_minv merges monster gold into the first live identity',
     () => {
         freshInventoryState(2109);
-        const monster = {
-            m_id: 709,
-            mnum: PM_LEPRECHAUN,
-            mx: 12, my: 10,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(monster);
+        const monster = inventoryMonster(709);
         const first = mksobj(GOLD_PIECE, true, false);
         first.quan = first.quantity = 75;
         first.owt = 1;
@@ -400,15 +343,9 @@ test('direct add_to_minv merges monster gold into the first live identity',
 test('bullwhip mpickobj frees a compatible incoming weapon after merging',
     () => {
         freshInventoryState(2110);
-        const monster = {
-            m_id: 710,
+        const monster = inventoryMonster(710, {
             mnum: 285,
-            mx: 12, my: 10,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(monster);
+        });
         const survivor = mksobj(DAGGER, true, false);
         survivor.blessed = survivor.cursed = false;
         survivor.spe = 0;
@@ -457,15 +394,7 @@ test('bullwhip mpickobj frees a compatible incoming weapon after merging',
 test('monster glob absorption averages live shrink delays onto the survivor',
     () => {
         freshInventoryState(2111);
-        const monster = {
-            m_id: 711,
-            mnum: PM_LEPRECHAUN,
-            mx: 12, my: 10,
-            minvent: [],
-            inventory: [],
-            hasInventory: false,
-        };
-        game.level.monsters.push(monster);
+        const monster = inventoryMonster(711);
         const survivor = mksobj(GLOB_OF_GRAY_OOZE, true, false);
         const incoming = mksobj(GLOB_OF_GRAY_OOZE, true, false);
         survivor.owt = 20;

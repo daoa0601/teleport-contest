@@ -6,9 +6,8 @@ import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE } from '../js/const.js';
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
 } from '../js/figurine.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKey, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { FIGURINE } from '../js/object_data.js';
@@ -19,6 +18,8 @@ import {
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 
 const PM_WUMPUS = 84;
@@ -26,38 +27,33 @@ const PM_LEOCROTTA = 83;
 const PM_FLOATING_EYE = 28;
 
 function freshFigurineState() {
-    resetGame();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        ualign: { type: 0, record: 0 },
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-        uconduct: {}, uhave: {},
-        blindTurns: 0,
-    };
+    freshPlayableRoom({
+        left: 7,
+        right: 16,
+        top: 6,
+        bottom: 14,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            ualign: { type: 0, record: 0 },
+            acurr: { a: Array(6).fill(12) },
+            amax: { a: Array(6).fill(12) },
+            uconduct: {},
+            uhave: {},
+            blindTurns: 0,
+        },
+    });
     game.moves = 40;
     game.mvitals = [];
-    game.inventory = [];
     game.flags = {};
     game.context = {};
-    game.level = new GameMap();
-    game.level.monsters = [];
-    for (let x = 7; x <= 16; x++) {
-        for (let y = 6; y <= 14; y++) {
-            const location = game.level.at(x, y);
-            location.typ = ROOM;
-            location.lit = true;
-        }
-    }
     game.in_mklev = false;
     vision_reset_new_level();
     vision_recalc(0);
     initRng(999n);
     init_objects();
-    resetInputState();
 }
 
 function carriedFigurine({
@@ -106,20 +102,17 @@ async function dropFigurineThroughCommand(figurine) {
 }
 
 function ordinaryMonsterCarrier({ x = 12, y = 10, invisible = false } = {}) {
-    const monster = {
+    return addMonster({
         m_id: 700,
         mnum: PM_LEOCROTTA,
-        mx: x, my: y,
-        mhp: 30, mhpmax: 30,
+        x,
+        y,
+        hitPoints: 30,
         female: false,
         minvis: invisible ? 1 : 0,
         mundetected: 0,
-        minvent: [],
-        inventory: [],
         hasInventory: false,
-    };
-    game.level.monsters.push(monster);
-    return monster;
+    });
 }
 
 function transferFigurineToMonster(figurine, monster, timerSeed = 321) {

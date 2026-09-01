@@ -3,11 +3,10 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, ROOM, STONE, W_ARM, W_ARMC,
+    A_CON, A_DEX, STONE, W_ARM, W_ARMC,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKey, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mklev.js';
 import {
@@ -20,62 +19,46 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 
 const PM_PURPLE_WORM = 115;
 
 function freshMapPotionState(distance = 2) {
-    resetGame();
     const attributes = Array(6).fill(12);
     attributes[A_DEX] = 18;
-    const monster = {
+
+    freshPlayableRoom({
+        hero: {
+            uz: { dnum: 0, dlevel: 4 },
+            ulevel: 4,
+            uhp: 30,
+            uhpmax: 30,
+            acurr: { a: attributes.slice() },
+            amax: { a: attributes.slice() },
+            ualign: { type: 0, record: 0 },
+            uconduct: {},
+            uhave: {},
+            uswallow: 0,
+            ustuck: null,
+        },
+    });
+    const monster = addMonster({
         m_id: 2700 + distance,
         mnum: PM_PURPLE_WORM,
-        mx: 10 + distance,
-        my: 10,
-        mhp: 12,
-        mhpmax: 12,
-        mcanmove: 1,
-        msleeping: 0,
-        mpeaceful: 0,
-        mtame: 0,
-        minvent: [],
-        inventory: [],
-    };
-    game.u = {
-        ux: 10,
-        uy: 10,
-        uz: { dnum: 0, dlevel: 4 },
-        ulevel: 4,
-        uhp: 30,
-        uhpmax: 30,
-        acurr: { a: attributes.slice() },
-        amax: { a: attributes.slice() },
-        ualign: { type: 0, record: 0 },
-        uconduct: {},
-        uhave: {},
-        uswallow: 0,
-        ustuck: null,
-    };
+        x: 10 + distance,
+        y: 10,
+        hitPoints: 12,
+    });
     game.flags = {};
     game.context = { move: 0 };
     game.moves = 60;
-    game.inventory = [];
-    game.level = new GameMap();
-    game.level.monsters = [monster];
-    for (let x = 8; x <= 18; x++) {
-        for (let y = 8; y <= 12; y++) {
-            game.level.at(x, y).typ = ROOM;
-            game.level.at(x, y).lit = true;
-        }
-    }
     game.in_mklev = false;
-    game.animationFrame = async () => {};
     vision_reset_new_level();
     vision_recalc(0);
     initRng(1n);
     init_objects();
-    resetInputState();
     return monster;
 }
 
@@ -106,22 +89,15 @@ function floorObjects() {
 }
 
 function addSleepingNeighbor(m_id, { strategy = null } = {}) {
-    const neighbor = {
+    return addMonster({
         m_id,
         mnum: PM_PURPLE_WORM,
-        mx: 13,
-        my: 10,
-        mhp: 12,
-        mhpmax: 12,
+        x: 13,
+        y: 10,
+        hitPoints: 12,
         msleeping: 1,
-        mpeaceful: 0,
-        mtame: 0,
-        minvent: [],
-        inventory: [],
-    };
-    if (strategy !== null) neighbor.mstrategy = strategy;
-    game.level.monsters.push(neighbor);
-    return neighbor;
+        ...(strategy === null ? {} : { mstrategy: strategy }),
+    });
 }
 
 test('live map potion crosses bhit and consumes a successful inert contact',

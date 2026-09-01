@@ -3,11 +3,10 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, ROOM, W_AMUL,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, W_AMUL,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKey, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { mksobj } from '../js/mklev.js';
@@ -30,6 +29,8 @@ import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_reset_new_level } from '../js/vision.js';
+import { addMonster } from './support/monsters.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 
 const PM_ENERGY_VORTEX = 109;
@@ -42,52 +43,42 @@ const PM_GREMLIN = 40;
 const PM_ARCHEOLOGIST = 331;
 
 function freshSwallowedState(mnum) {
-    resetGame();
-    const engulfer = {
+    freshPlayableRoom({
+        right: 12,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 8,
+            uhp: 40,
+            uhpmax: 40,
+            uhitinc: 0,
+            uluck: 0,
+            ualign: { type: 0, record: 0 },
+            acurr: { a: Array(6).fill(12) },
+            amax: { a: Array(6).fill(12) },
+            uconduct: {},
+            uhave: {},
+        },
+    });
+    const engulfer = addMonster({
         m_id: 2300 + mnum,
         mnum,
-        mx: 10, my: 10,
-        mhp: 40, mhpmax: 40,
-        mcanmove: 1,
-        msleeping: 0,
-        mpeaceful: 0,
-        mtame: 0,
-        minvent: [],
-        inventory: [],
+        x: 10,
+        y: 10,
+        hitPoints: 40,
         hasInventory: false,
-    };
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 8 },
-        ulevel: 8,
-        uhp: 40, uhpmax: 40,
-        uhitinc: 0,
-        uluck: 0,
-        ualign: { type: 0, record: 0 },
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-        uconduct: {}, uhave: {},
+    });
+    Object.assign(game.u, {
         uswallow: 1,
         ustuck: engulfer,
-    };
+    });
     game.flags = {};
     game.context = { move: 0 };
     game.moves = 40;
     game.mvitals = [];
-    game.inventory = [];
-    game.level = new GameMap();
-    game.level.monsters = [engulfer];
-    for (let x = 8; x <= 12; x++) {
-        for (let y = 8; y <= 12; y++) {
-            game.level.at(x, y).typ = ROOM;
-            game.level.at(x, y).lit = true;
-        }
-    }
     game.in_mklev = false;
     vision_reset_new_level();
     initRng(999n);
     init_objects();
-    resetInputState();
     return engulfer;
 }
 
