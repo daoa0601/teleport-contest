@@ -67,7 +67,7 @@ import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
     STONE, ZAP_POS,
-    VAULT, SHOPBASE, ROOMOFFSET,
+    COURT, VAULT, SHOPBASE, ROOMOFFSET,
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel, Is_waterlevel,
@@ -216,6 +216,7 @@ import {
 } from './monster_trap_events.js';
 import { captureRunmodeDelay } from './runmode.js';
 
+const M1_ANIMAL = 0x00040000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_NASTY = 0x02000000;
@@ -1013,6 +1014,25 @@ function interruptCountedActivity(message) {
     }
 }
 
+function monsterInRoom(monster, roomType) {
+    const roomNumber = game.level?.at(monster.mx, monster.my)?.roomno;
+    if (!Number.isInteger(roomNumber) || roomNumber < ROOMOFFSET)
+        return false;
+    return game.level?.rooms?.[roomNumber - ROOMOFFSET]?.rtype === roomType;
+}
+
+function courtResident() {
+    return (game.level?.monsters || []).find(monster => {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+            return false;
+        const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
+        const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
+        return !!(monster.msleeping || (flags2 & (M2_LORD | M2_PRINCE)))
+            && !(flags1 & M1_ANIMAL)
+            && monsterInRoom(monster, COURT);
+    });
+}
+
 // C ref: sounds.c:dosounds().  Feature checks are ordered and several
 // successful branches return from dosounds(), so later feature flags must not
 // be sampled after an audible vault/shop/swamp event.
@@ -1037,7 +1057,19 @@ function ambientFeatureSounds(flags) {
         appendTurnMessage(messages[rn2(2)]);
     }
     if (flags.has_court && rn2(200) === 0) {
-        // TODO: choose the throne-room resident and print the matching sound.
+        if (courtResident()) {
+            const hallucinating = !!(game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0);
+            const sound = rn2(3) + Number(hallucinating);
+            const messages = [
+                'You hear the tones of courtly conversation.',
+                'You hear a sceptre pounded in judgment.',
+                'Someone shouts "Off with your head!"',
+                "You hear Queen Beruthiel's cats!",
+            ];
+            appendTurnMessage(messages[sound]);
+            return;
+        }
     }
     if (flags.has_swamp && rn2(200) === 0) {
         const messages = ['You hear mosquitoes!', 'You smell marsh gas!'];
