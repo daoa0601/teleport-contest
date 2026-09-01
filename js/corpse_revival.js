@@ -441,8 +441,17 @@ function containerBlocksRevival(location) {
     return container.otyp === BAG_OF_HOLDING && rn2(40) !== 0;
 }
 
+function stopCorpseMeal(corpse, state) {
+    const occupation = state._occupation;
+    if (occupation?.key !== 'eat-corpse' || occupation.object !== corpse)
+        return;
+    if (!corpse.oeaten) corpse.oeaten = 1;
+    state._occupation = null;
+}
+
 async function reviveCorpse(corpse, state, currentTurn) {
     const originalWhere = corpse.where;
+    stopCorpseMeal(corpse, state);
     const digsOut = originalWhere === 'buried'
         && (isReviver(corpse.corpsenm)
             || MONSTER_SYMBOL[corpse.corpsenm] === S_ZOMBIE);

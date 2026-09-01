@@ -191,6 +191,23 @@ test('a level-drained troll can recover when it revives', async () => {
     assert.equal(event.monster.mhp, event.monster.mhpmax);
 });
 
+test('a reviving corpse stops being the hero\'s meal', async () => {
+    freshState();
+    const corpse = place_object(trollCorpse(), 12, 10);
+    corpse.oeaten = 30;
+    game._occupation = {
+        key: 'eat-corpse',
+        object: corpse,
+        remaining: 3,
+    };
+
+    const event = await reviveNow(corpse);
+
+    assert.equal(game._occupation, null);
+    assert.equal(corpse.where, 'gone');
+    assert.ok(event.monster.mhp < event.monster.mhpmax);
+});
+
 test('reviving the quest leader clears the dead-leader state', async () => {
     freshState();
     const leader = {
