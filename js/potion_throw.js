@@ -13,6 +13,7 @@ import {
     MONSTER_GENO, monsterTypeName,
 } from './monster_data.js';
 import { OBJECT_WEIGHT } from './object_data.js';
+import { objectBreaksOnImpact } from './object_breakage.js';
 import {
     applySupportedPotionVapor, destroyPotionIdentity,
     hitMonsterWithSupportedPotion, potionImpactObjectName,
@@ -185,9 +186,7 @@ function distanceFromHero(state, x, y) {
 async function settlePotionAfterMiss({
     state, potion, x, y, publish,
 }) {
-    // breaktest()->obj_resists(obj, 1, 99): ordinary potions survive one
-    // percent of hard-floor arrivals and otherwise break unconditionally.
-    if (rn2(100) < 1) {
+    if (!objectBreaksOnImpact(potion)) {
         place_object(potion, x, y);
         stack_object(potion, state);
         newsym(x, y);
