@@ -15,8 +15,15 @@ import {
 import { splitMonster } from './monster_clone.js';
 import {
     MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS,
-    MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
 } from './monster_data.js';
+import {
+    place_object, shapechangeMonster, stack_object,
+} from './mklev.js';
+import { EGG } from './object_data.js';
+import {
+    OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
+} from './object_timers.js';
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
@@ -38,6 +45,98 @@ const PM_SALAMANDER = 329;
 const MR_FIRE = 0x01;
 const S_EEL = 57;
 const G_UNIQ = 0x1000;
+
+function speciesWasGenocided(mnum, state) {
+    return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);
+}
+
+function eggSpeciesWasGenocided(egg, state) {
+    const mnum = egg?.corpsenm;
+    if (!Number.isInteger(mnum) || mnum < 0) return true;
+    return speciesWasGenocided(mnum, state)
+        || speciesWasGenocided(monsterYoungerForm(mnum), state);
+}
+
+function dropGenocidedMonsterInventory(monster, state) {
+    const dropped = [];
+    for (const object of monster.minvent || monster.inventory || []) {
+        object.owornmask = 0;
+        object.worn = false;
+        object.wornSlot = null;
+        object.wielded = false;
+        object.alternate = false;
+        object.ready = false;
+        object.ocarry = null;
+        delete object.carrierMid;
+        place_object(object, monster.mx, monster.my);
+        dropped.push(stack_object(object, state));
+    }
+    monster.minvent = [];
+    monster.inventory = monster.minvent;
+    monster.hasInventory = false;
+    monster.mw = null;
+    return dropped;
+}
+
+async function killGenocidedMonster(monster, state) {
+    const lifeSaver = wornMonsterLifeSaver(monster);
+    if (lifeSaver) {
+        await lifeSaveMonster(monster, lifeSaver, {
+            visible: cansee(monster.mx, monster.my),
+            spotted: canSeeMonster(monster, monster.mx, monster.my),
+            genocided: true,
+        });
+    }
+
+    const x = monster.mx, y = monster.my;
+    const dropped = dropGenocidedMonsterInventory(monster, state);
+    monster.mhp = 0;
+    monster.dead = true;
+    monster.mundetected = 0;
+    if (state.u?.usteed === monster) state.u.usteed = null;
+    if (state.u?.ustuck === monster) {
+        state.u.ustuck = null;
+        state.u.uswallow = false;
+        state.u.uswldtim = 0;
+    }
+    state.level.monsters = (state.level.monsters || []).filter(
+        candidate => candidate !== monster,
+    );
+    newsym(x, y);
+    return { monster, dropped };
+}
+
+// C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
+// carried objects, creates no corpse or experience, and sterilizes eggs.
+export async function killGenocidedMonsters(state = game) {
+    if (state !== game)
+        throw new Error('genocide removal requires the live game state');
+    const killed = [];
+    const reshaped = [];
+    for (const monster of [...(state.level?.monsters || [])]) {
+        if (monster.dead || (monster.mhp ?? 1) <= 0) continue;
+        const baseWasGenocided = Number.isInteger(monster.cham)
+            && monster.cham >= 0
+            && speciesWasGenocided(monster.cham, state);
+        if (!speciesWasGenocided(monster.mnum, state)
+            && !baseWasGenocided) continue;
+        if (Number.isInteger(monster.cham) && monster.cham >= 0
+            && !baseWasGenocided) {
+            if (shapechangeMonster(monster)) reshaped.push(monster);
+            continue;
+        }
+        killed.push(await killGenocidedMonster(monster, state));
+    }
+
+    const sterileEggs = [];
+    for (const object of objectsInTimerGraph(state)) {
+        if (object.otyp !== EGG || !eggSpeciesWasGenocided(object, state))
+            continue;
+        stopObjectTimer(object, OBJECT_TIMER_KIND.HATCH_EGG);
+        sterileEggs.push(object);
+    }
+    return { killed, reshaped, sterileEggs };
+}
 
 export function levelHasCeiling(state = game) {
     const flags = state.level?.flags || {};

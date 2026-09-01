@@ -137,6 +137,7 @@ import {
     MONSTER_SOUND, MONSTER_SYMBOL, MONSTER_ALIGNMENT,
     monsterGrowthFamilyMatch, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
+import { nameToMonster } from './mondata.js';
 import {
     awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
     newExperienceThreshold,
@@ -157,7 +158,7 @@ import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
 import {
-    wakeMonstersNear, wakeMonstersNearWithMessages,
+    killGenocidedMonsters, wakeMonstersNear, wakeMonstersNearWithMessages,
 } from './mon.js';
 import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -2686,6 +2687,7 @@ async function gotoLevel(targetDepth, {
         );
     }
     for (const follower of followers) arriveWithHero(follower);
+    await killGenocidedMonsters();
     resolveHeroArrivalCollision();
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
         moveElementalBubbles();
@@ -4222,14 +4224,7 @@ async function wizWish() {
 }
 
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
-// create_particular().  Name lookup and placement are shared by the raw key
-// and extended spelling; the debug command remains zero-time.
-const MONSTER_NAME_ALIASES = new Map([
-    // mondata.c disambiguates the duplicate beast and human were forms with
-    // explicit prefixes.  Keep aliases here so every controlled selector
-    // shares name_to_mon() ownership rather than patching Wizard genesis.
-    ['human werejackal', 262],
-]);
+// create_particular().  The debug command remains zero-time.
 const WIZGENESIS_SUBSTITUTIONS = new Map([
     [123, 'human zombie'], // Angel
     [271, 'human zombie'], // shopkeeper
@@ -4238,13 +4233,6 @@ const WIZGENESIS_SUBSTITUTIONS = new Map([
     [276, 'human zombie'], // high cleric
     [285, 'doppelganger'], // Wizard of Yendor
 ]);
-
-function monsterTypeByName(value) {
-    const requested = value.trim().toLowerCase().replace(/\s+/g, ' ');
-    if (MONSTER_NAME_ALIASES.has(requested))
-        return MONSTER_NAME_ALIASES.get(requested);
-    return MONSTER_NAME.findIndex(name => name?.toLowerCase() === requested);
-}
 
 // C wizcmds.c:wiz_polyself() forces the controlled selector even without a
 // polymorph-control property.  The wizard command is zero-time; getlin owns
@@ -4259,7 +4247,7 @@ async function wizPolyself() {
         game.context.move = 0;
         return;
     }
-    const mnum = monsterTypeByName(value);
+    const mnum = nameToMonster(value);
     if (mnum < 0) {
         await pline("I've never heard of such monsters.");
         game.context.move = 0;
@@ -4304,7 +4292,7 @@ async function wizGenesis() {
     const monsterName = hostile
         ? peacefulStrippedName.replace(hostilePattern, '')
         : peacefulStrippedName;
-    let mnum = monsterTypeByName(monsterName);
+    let mnum = nameToMonster(monsterName);
     if (mnum < 0) {
         await pline("I've never heard of such monsters.");
         game.context.move = 0;
@@ -4322,7 +4310,7 @@ async function wizGenesis() {
         const force = await promptYesNo(
             `Creating ${substituteName} instead; force ${requestedName}? [yn] (n) `,
         );
-        if (force !== 'y') mnum = monsterTypeByName(substituteName);
+        if (force !== 'y') mnum = nameToMonster(substituteName);
     }
 
     const monster = await makemonNear(
@@ -12792,7 +12780,7 @@ function maybeGenericHumanoidGasp(observer) {
         const currentForm = (game.u?.mtimedone ?? 0) > 0
             && Number.isInteger(game.u?.umonnum)
             ? game.u.umonnum
-            : monsterTypeByName(game.urace?.name || 'human');
+            : nameToMonster(game.urace?.name || 'human');
         if (MONSTER_SYMBOL[observer.mnum] !== MONSTER_SYMBOL[currentForm])
             return null;
     } else if (!HUMANOID_GASP_SOUNDS.has(sound)) {

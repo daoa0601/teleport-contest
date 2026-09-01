@@ -4,8 +4,8 @@
 import { exerciseAttribute } from './attrib.js';
 import { BCPOS_CHAIN, heroIsPunished } from './ball.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, G_GENOD, G_NOCORPSE,
-    TT_BURIEDBALL, W_ART, W_ARTI, W_BALL, W_CHAIN,
+    A_CON, A_DEX, A_STR, A_WIS, TT_BURIEDBALL,
+    W_ART, W_ARTI, W_BALL, W_CHAIN,
     WT_IRON_BALL_INCR,
 } from './const.js';
 import {
@@ -20,9 +20,7 @@ import { readLightScroll } from './light.js';
 import {
     mkobj, place_object, remove_object, stack_object,
 } from './mklev.js';
-import {
-    MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
-} from './monster_data.js';
+import { doClassGenocide, doGenocide } from './genocide.js';
 import {
     HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, SLING,
     SCR_BLANK_PAPER, SCR_DESTROY_ARMOR,
@@ -137,7 +135,7 @@ export async function doread({
         return;
     }
     if (book?.otyp === SCR_GENOCIDE) {
-        await readGenocideScroll(book);
+        await readGenocideScroll(book, { finishHeroDeath });
         return;
     }
     await studyBook(book);
@@ -220,13 +218,7 @@ async function readIdentifyScroll(scroll) {
     game.context.move = 1;
 }
 
-function pluralMonsterName(name) {
-    if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
-    if (/(s|x|z|ch|sh)$/i.test(name)) return `${name}es`;
-    return `${name}s`;
-}
-
-async function readGenocideScroll(scroll) {
+async function readGenocideScroll(scroll, { finishHeroDeath } = {}) {
     const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
     await pline('As you read the scroll, it disappears.');
     exerciseAttribute(A_WIS, true);
@@ -240,38 +232,13 @@ async function readGenocideScroll(scroll) {
         );
     }
 
-    if (!scroll.blessed) {
-        // Ordinary and cursed genocide still need the chosen-monster rules
-        // from read.c do_genocide().
-        await plineWithContinuation('Nothing happens.');
-        consumeInventoryItem(scroll);
-        game.context.move = 1;
-        return;
-    }
-
-    const response = await getLine(
-        'What class of monsters do you want to genocide?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    const wanted = String(response || '').trim().toLowerCase();
-    const monsterClass = wanted === 'a' || wanted === 'ant'
-        || wanted === 'ants' ? 1 : null;
-    if (monsterClass == null) {
-        await plineWithContinuation(
-            'That response does not represent any monster.',
+    if (scroll.blessed) await doClassGenocide({ finishHeroDeath });
+    else {
+        const confused = (game.u?.confusionTurns ?? 0) > 0;
+        await doGenocide(
+            Number(!scroll.cursed) | (2 * Number(confused)),
+            { finishHeroDeath },
         );
-    } else {
-        if (!Array.isArray(game.mvitals)) game.mvitals = [];
-        const G_GENO = 0x0020;
-        for (let mnum = 0; mnum < MONSTER_SYMBOL.length; mnum++) {
-            if (MONSTER_SYMBOL[mnum] !== monsterClass
-                || !((MONSTER_GENO[mnum] ?? 0) & G_GENO)) continue;
-            const vital = game.mvitals[mnum] || (game.mvitals[mnum] = {});
-            vital.mvflags = (vital.mvflags ?? 0) | G_GENOD | G_NOCORPSE;
-            await plineWithContinuation(
-                `Wiped out all ${pluralMonsterName(MONSTER_NAME[mnum])}.`,
-            );
-        }
     }
 
     if (!alreadyKnown) {
