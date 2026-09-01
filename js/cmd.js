@@ -257,7 +257,8 @@ import {
 } from './monmove.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
 import {
-    prepareKick, rollKickDamage, tryKickEvasion, tryKickReel,
+    levitatingKickMisses, prepareKick, rollKickDamage,
+    tryKickEvasion, tryKickReel,
 } from './monster_kick.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
@@ -284,7 +285,8 @@ import {
     WEB, ANTI_MAGIC,
     G_GONE, G_NOCORPSE, TAINT_AGE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
-    M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
+    STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
     TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED,
@@ -3469,6 +3471,30 @@ async function kickLiveMonster(monster, x, y) {
     monster.msleeping = 0;
     if (monster.mpeaceful) monster.mpeaceful = 0;
 
+    if (levitatingKickMisses(monster)) {
+        await pline('Floating in the air, you miss wildly!');
+        passiveContact(monster, false);
+        game.context.move = 1;
+        return;
+    }
+
+    if (monster.mundetected
+        || (monster.m_ap_type && monster.m_ap_type !== M_AP_MONSTER)) {
+        monster.mundetected = 0;
+        monster.m_ap_type = 0;
+        monster.mappearance = 0;
+        if (canSpotMonster(monster, x, y)) {
+            newsym(x, y);
+            const name = monsterInstanceDisplayName(monster);
+            await plineWithContinuation(
+                `There is ${indefiniteArticle(name)} ${name} here.`,
+            );
+        } else {
+            map_invisible(x, y);
+            await plineWithContinuation('There is something hidden here.');
+        }
+    }
+
     const target = canProjectMonster(monster, x, y)
         ? monsterInstanceDisplayName(monster) : 'it';
     const martial = ['monk', 'samurai'].includes(game.urole?.key)
@@ -3483,11 +3509,11 @@ async function kickLiveMonster(monster, x, y) {
         return;
     }
 
-    await pline(`You kick ${target}.`);
+    await plineWithContinuation(`You kick ${target}.`);
     const evaded = await tryKickEvasion(monster, {
         clumsy: kick.clumsy,
         martial,
-        announce: pline,
+        announce: plineWithContinuation,
         nameMonster: actor => canProjectMonster(actor, actor.mx, actor.my)
             ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
     });
@@ -3504,7 +3530,9 @@ async function kickLiveMonster(monster, x, y) {
         martial,
     });
     if (damage.passesThroughShade) {
-        await pline('The kick passes harmlessly through the shade.');
+        await plineWithContinuation(
+            'The kick passes harmlessly through the shade.',
+        );
         game.context.move = 1;
         return;
     }
@@ -3517,7 +3545,7 @@ async function kickLiveMonster(monster, x, y) {
         y - (game.u?.uy ?? y),
         {
             martial,
-            announce: pline,
+            announce: plineWithContinuation,
             nameMonster: actor => canProjectMonster(
                 actor, actor.mx, actor.my,
             ) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
@@ -3560,6 +3588,7 @@ async function dokick() {
         game.context.move = 0;
         return;
     }
+    game._pending_message = '';
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     // C dokick() records gk.kickedloc for every valid directed kick before

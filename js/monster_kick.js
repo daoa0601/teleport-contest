@@ -145,6 +145,16 @@ export async function prepareKick({
     return { stopped: false, clumsy };
 }
 
+export function levitatingKickMisses(monster, state = game) {
+    const levitating = !!(state.u?.levitating || state.u?.levitation
+        || state.levitating);
+    if (!levitating || rn2(3) !== 0) return false;
+    if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 1
+        || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) return false;
+    exerciseAttribute(A_DEX, false, state);
+    return true;
+}
+
 export async function tryKickEvasion(monster, {
     clumsy = false,
     martial = false,

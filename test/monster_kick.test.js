@@ -60,3 +60,20 @@ test('a heavy load can leave a clumsy kick harmless', async () => {
     assert.equal(lichen.mhp, 20);
     assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
 });
+
+test('levitation can spoil a kick against a tiny grounded monster',
+    async () => {
+        const garterSnake = installKickArena(214);
+        game.u.levitating = true;
+        initRng(2n);
+        pushKey('l');
+
+        await rhack(4);
+
+        assert.equal(garterSnake.mhp, 20);
+        assert.deepEqual([garterSnake.mx, garterSnake.my], [11, 10]);
+        assert.equal(
+            game._pending_message,
+            'Floating in the air, you miss wildly!',
+        );
+    });
