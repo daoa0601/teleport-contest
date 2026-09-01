@@ -77,6 +77,9 @@ import {
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { randomBottleName } from './potion_hit.js';
+import {
+    adjustMonsterSpeed, monsterSpeedMessage,
+} from './monster_speed.js';
 import { hasWornProperty } from './properties.js';
 import { msummon } from './minion.js';
 import {
@@ -1219,20 +1222,16 @@ export function finishDeferredMonsterMiscItem(action, state = game) {
 
     if (misc.kind === 'wand-speed-monster'
         || misc.kind === 'potion-speed') {
-        const oldSpeed = monster.mspeed ?? 0;
         if (misc.kind === 'wand-speed-monster') {
             misc.object.spe--;
         } else {
             removeMonsterInventoryObject(monster, misc.object);
         }
-        monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
-        monster.mspeed = monster.permspeed;
-        misc.oldSpeed = oldSpeed;
-        misc.speedChanged = monster.mspeed !== oldSpeed
-            && naturalMonsterSpeed(monster) !== 0
-            && monster.mcanmove !== 0 && !monster.msleeping
-            && !(monster.mfrozen ?? 0);
-        misc.speedMuch = monster.mspeed + oldSpeed === MFAST + MSLOW;
+        const speed = adjustMonsterSpeed(monster, 1);
+        misc.oldSpeed = speed.oldSpeed;
+        misc.speedChanged = speed.changed && speed.canDescribe
+            && monster.mcanmove !== 0;
+        misc.speedMuch = speed.much;
         misc.effectApplied = true;
         return misc;
     }
@@ -8177,9 +8176,7 @@ export function finishDeferredHeroCloneWizard(action, state, random = rn2) {
 }
 
 function monsterHasteSelfEffect(monster, state) {
-    const oldSpeed = monster.mspeed ?? 0;
-    monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
-    monster.mspeed = monster.permspeed;
+    const speed = adjustMonsterSpeed(monster, 1);
     const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
     const inSight = !blind
         && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
@@ -8187,17 +8184,10 @@ function monsterHasteSelfEffect(monster, state) {
         || state?.u?.see_invisible);
     const visible = inSight && !monster.mundetected
         && (!monster.minvis || canSeeInvisible);
-    let message = null;
-    if (visible && monster.mspeed !== oldSpeed
-        && naturalMonsterSpeed(monster) !== 0
-        && monster.mcanmove !== 0 && !monster.msleeping
-        && !(monster.mfrozen ?? 0)) {
-        const much = monster.mspeed + oldSpeed === MFAST + MSLOW
-            ? 'much ' : '';
-        message = 'The ' + MONSTER_NAME[monster.mnum]
-            + ' is suddenly moving ' + much + 'faster.';
-    }
-    return { message, oldSpeed, speed: monster.mspeed };
+    const subject = `The ${MONSTER_NAME[monster.mnum]}`;
+    const message = visible && monster.mcanmove !== 0
+        ? monsterSpeedMessage(speed, subject) : null;
+    return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
 }
 
 export function resolveDeferredHeroHasteSelf(action, state) {

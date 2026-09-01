@@ -26,13 +26,16 @@ import {
     POT_OBJECT_DETECTION, POT_POLYMORPH,
     POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING,
     POT_SPEED,
-    POT_WATER, SPEED_BOOTS, TOWEL,
+    POT_WATER, TOWEL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_MOVE, MONSTER_RESISTS, MONSTER_SOUND,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
     monsterTypeName,
 } from './monster_data.js';
+import {
+    adjustMonsterSpeed, monsterSpeedMessage,
+} from './monster_speed.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
@@ -67,8 +70,6 @@ const MR_ACID = 0x40;
 const YELLOW_DRAGON_SCALE_MAIL = 110;
 const YELLOW_DRAGON_SCALES = 120;
 const ALCHEMY_SMOCK = 144;
-const MSLOW = 1;
-const MFAST = 2;
 const AT_HUGS = 7;
 const AT_ENGL = 11;
 const AD_WRAP = 18;
@@ -330,16 +331,6 @@ function installPotionHelplessness(state, duration, reason) {
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
     exerciseAttribute(A_DEX, false, state);
-}
-
-function monsterWearsSpeedBoots(monster) {
-    return (monster?.minvent || monster?.inventory || []).some(object =>
-        object?.otyp === SPEED_BOOTS && (object.owornmask ?? 0) !== 0);
-}
-
-function monsterNaturalSpeed(monster) {
-    return Number.isFinite(monster?.mmove)
-        ? monster.mmove : MONSTER_MOVE[monster?.mnum] ?? 0;
 }
 
 function heroIsFast(state) {
@@ -885,28 +876,19 @@ async function applySupportedDirectEffect({
     }
 
     if (potion.otyp === POT_SPEED) {
-        const oldSpeed = monster.mspeed ?? 0;
-        monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
-        monster.mspeed = monsterWearsSpeedBoots(monster)
-            ? MFAST : monster.permspeed;
-        const speedChanged = monster.mspeed !== oldSpeed;
-        let speedMessage = null;
-        if (targetSpotted && speedChanged && monsterNaturalSpeed(monster) !== 0
-            && !(monster.mfrozen ?? 0) && !monster.msleeping) {
-            const much = monster.mspeed + oldSpeed === MFAST + MSLOW
-                ? 'much ' : '';
-            speedMessage = `${sentenceSubject(monster)} is suddenly moving `
-                + `${much}faster.`;
-            await publish(speedMessage);
-        }
+        const speed = adjustMonsterSpeed(monster, 1);
+        const speedMessage = targetSpotted
+            ? monsterSpeedMessage(speed, sentenceSubject(monster))
+            : null;
+        if (speedMessage) await publish(speedMessage);
         monster.msleeping = 0;
         return {
             angered: false,
             healed: 0,
             curedBlindness: false,
-            oldSpeed,
-            speed: monster.mspeed,
-            speedChanged,
+            oldSpeed: speed.oldSpeed,
+            speed: speed.speed,
+            speedChanged: speed.changed,
             speedMessage,
         };
     }

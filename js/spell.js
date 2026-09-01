@@ -15,9 +15,10 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
     OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
-    SPE_HASTE_SELF, SPE_TURN_UNDEAD,
+    SPE_HASTE_SELF, SPE_SLOW_MONSTER, SPE_TURN_UNDEAD,
 } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
 
 const HEALING_SPELLS = new Set([
@@ -457,6 +458,13 @@ export async function castKnownSpell(spell) {
             spell.retention = 76;
         }
         await pline('You feel better.');
+        game.context.move = 1;
+        return;
+    }
+    if (spell.otyp === SPE_SLOW_MONSTER || spell.name === 'slow monster') {
+        await changeMonsterSpeedInDirection(String.fromCharCode(direction), {
+            kind: 'slow', source: 'spell',
+        });
         game.context.move = 1;
         return;
     }
