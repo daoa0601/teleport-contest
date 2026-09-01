@@ -29,7 +29,6 @@ function freshKickArena() {
         role: 'tourist',
     });
     for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
-    vision_reset();
     return level;
 }
 

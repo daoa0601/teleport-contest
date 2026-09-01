@@ -213,7 +213,7 @@ import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
 } from './gold_throw.js';
 import {
-    heroIsBlind, isEyesOfTheOverworld, syncBlindness, syncDeafness,
+    heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
 import {
     beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
@@ -232,6 +232,9 @@ import {
     heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
     polyselfControlledNewman, rehumanizeHero,
 } from './polyself.js';
+import {
+    applyEyewear, isEyewear, removeEyewear, wearEyewear,
+} from './eyewear.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
     weaponSkillDamageBonus, weaponSkillHitBonus,
@@ -7400,59 +7403,10 @@ async function putOnAccessoryObject(object) {
         return;
     }
 
-    if ([LENSES, BLINDFOLD, TOWEL].includes(object.otyp)) {
-        if (game.ublindf) {
-            await pline('You are already wearing a blindfold.');
-            game.context.move = 0;
-            return;
-        }
-        const wasBlind = heroIsBlind(game);
-        game.ublindf = object;
-        if (game.u) game.u.ublindf = object;
-        object.worn = true;
-        object.wornSlot = 'ublindf';
-        if (object.otyp === LENSES) {
-            const eyes = isEyesOfTheOverworld(object);
-            syncBlindness(game);
-            await pline(eyes
-                ? 'You are now wearing the Eyes of the Overworld.'
-                : 'You are now wearing a pair of lenses.');
-            if (eyes && wasBlind && !game.blind) {
-                if (game.u?.uroleplay?.blind) {
-                    game.u.uroleplay.blind = false;
-                    await plineWithContinuation(
-                        'For the first time in your life, you can see!',
-                    );
-                } else {
-                    await plineWithContinuation('You can see!');
-                }
-                game.vision_full_recalc = 1;
-                vision_recalc(0);
-                await docrt();
-            }
-            game._liveQuietTurnRequested = true;
-            game.context.move = 1;
-            return;
-        }
-        // Preserve terrain beneath currently visible actors before blindness
-        // clears their glyphs; C's hero memory already owns those cells.
-        for (let y = 0; y < ROWNO; y++) {
-            for (let x = 1; x < COLNO; x++) {
-                const loc = game.level?.at(x, y);
-                if (!loc || loc.remembered_glyph || !cansee(x, y)) continue;
-                const terrain = terrain_glyph(loc, x, y);
-                loc.remembered_glyph = {
-                    ch: terrain.ch, color: terrain.color, decgfx: terrain.dec,
-                };
-            }
-        }
-        syncBlindness(game);
-        game.vision_full_recalc = 1;
-        vision_recalc(0);
-        await docrt();
-        await pline('You are now wearing a blindfold.  You can\'t see any more.');
-        game._liveQuietTurnRequested = true;
-        game.context.move = 1;
+    if (isEyewear(object)) {
+        const worn = await wearEyewear(object);
+        if (worn) game._liveQuietTurnRequested = true;
+        game.context.move = worn ? 1 : 0;
         return;
     }
 
@@ -7666,28 +7620,10 @@ async function dotakeoff() {
     }
 
     if (object === game.ublindf) {
-        const eyes = isEyesOfTheOverworld(object);
-        game.ublindf = null;
-        if (game.u) game.u.ublindf = null;
-        object.worn = false;
-        object.wornSlot = null;
-        syncBlindness(game);
-        game.vision_full_recalc = 1;
-        vision_recalc(0);
         game._pending_message = '';
-        if (object.otyp === LENSES) {
-            await pline(eyes
-                ? 'You were wearing the Eyes of the Overworld.'
-                : 'You were wearing a pair of lenses.');
-            if (eyes && game.blind)
-                await plineWithContinuation("You can't see anything now!");
-        } else if (game.blind) {
-            await pline('You were wearing a blindfold.  You still cannot see.');
-        } else {
-            await pline('You were wearing a blindfold.  You can see again.');
-        }
-        game._liveQuietTurnRequested = true;
-        game.context.move = 1;
+        const removed = await removeEyewear(object);
+        if (removed) game._liveQuietTurnRequested = true;
+        game.context.move = removed ? 1 : 0;
         return;
     }
 
@@ -9024,6 +8960,13 @@ async function doapply() {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if ([BLINDFOLD, LENSES].includes(item.otyp)) {
+                game._pending_message = '';
+                const changed = await applyEyewear(item);
+                if (changed) game._liveQuietTurnRequested = true;
+                game.context.move = 1;
+                return;
+            }
             if ([OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(item.otyp)) {
                 await useLamp(item);
                 return;

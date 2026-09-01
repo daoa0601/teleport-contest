@@ -2,6 +2,7 @@ import { ROOM } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { game, resetGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
+import { vision_reset } from '../../js/vision.js';
 import { installLiveCommandHero } from './live-command-state.js';
 
 export function freshPlayableRoom({
@@ -29,6 +30,7 @@ export function freshPlayableRoom({
     }
 
     installLiveCommandHero({ role, level, x: heroX, y: heroY });
+    vision_reset();
     Object.assign(game.u, hero);
     game.inventory = [];
     game.uwep = null;

@@ -92,6 +92,11 @@ export function heroHasNoLimbs(state = game) {
         === M1_NOLIMBS;
 }
 
+export function heroHasNoHead(state = game) {
+    if (!heroIsPolymorphed(state)) return false;
+    return !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_NOHEAD);
+}
+
 export function heroIsVerySmall(state = game) {
     if (!heroIsPolymorphed(state)) return false;
     return (MONSTER_SIZE[state.u?.umonnum] ?? MZ_SMALL) < MZ_SMALL;
