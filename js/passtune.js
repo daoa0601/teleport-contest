@@ -107,7 +107,7 @@ function recordKnownPasstune() {
     recordAchievement(game, ACH_TUNE);
 }
 
-export async function playTune(instrument, tune) {
+export async function playTune(instrument, tune, options = {}) {
     await pline(heroIsDeaf()
         ? `You can feel your ${instrumentName(instrument)} emitting vibrations.`
         : `You extract a strange sound from your ${instrumentName(instrument)}!`);
@@ -121,7 +121,7 @@ export async function playTune(instrument, tune) {
     const bridge = nearbyDrawbridge();
     if (tune === expected && bridge) {
         recordKnownPasstune();
-        await toggleDrawbridge(bridge.x, bridge.y, game);
+        await toggleDrawbridge(bridge.x, bridge.y, game, options);
         game.context.move = 1;
         return;
     }

@@ -594,7 +594,7 @@ export async function playInstrument(instrument, options = {}) {
                 game.context.move = 0;
                 return;
             }
-            await playTune(instrument, tune);
+            await playTune(instrument, tune, options);
             return;
         }
     }

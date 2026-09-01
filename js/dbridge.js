@@ -4,11 +4,12 @@
 import {
     DBWALL, DB_DIR, DB_EAST, DB_NORTH, DB_SOUTH, DB_WEST, DOOR,
     DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, IS_DRAWBRIDGE,
-    W_NONDIGGABLE, isok,
+    Is_stronghold, W_NONDIGGABLE, isok,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
 } from './display.js';
+import { moveDrawbridgeOccupants } from './drawbridge_occupants.js';
 import { game } from './gstate.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -125,7 +126,7 @@ async function announceBridgeMovement(bridge, wall, opening, state) {
         : 'You hear chains rattling and gears turning.');
 }
 
-export async function openDrawbridge(x, y, state = game) {
+export async function openDrawbridge(x, y, state = game, options = {}) {
     const bridgeLocation = state.level?.at(x, y);
     if (bridgeLocation?.typ !== DRAWBRIDGE_UP) return false;
     const wall = drawbridgeWallAt(x, y, state);
@@ -136,16 +137,19 @@ export async function openDrawbridge(x, y, state = game) {
     bridgeLocation.typ = DRAWBRIDGE_DOWN;
     wall.location.typ = DOOR;
     wall.location.doormask = D_NODOOR;
+    await moveDrawbridgeOccupants(bridge, wall, state, options);
     clearDrawbridgeSquares(bridge, wall, false, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
-    if (!state.u.uevent) state.u.uevent = {};
-    state.u.uevent.uopened_dbridge = true;
+    if (Is_stronghold(state.u?.uz)) {
+        if (!state.u.uevent) state.u.uevent = {};
+        state.u.uevent.uopened_dbridge = true;
+    }
     return true;
 }
 
-export async function closeDrawbridge(x, y, state = game) {
+export async function closeDrawbridge(x, y, state = game, options = {}) {
     const bridgeLocation = state.level?.at(x, y);
     if (bridgeLocation?.typ !== DRAWBRIDGE_DOWN) return false;
     const wall = drawbridgeWallAt(x, y, state);
@@ -159,6 +163,7 @@ export async function closeDrawbridge(x, y, state = game) {
         (bridgeLocation.drawbridgemask || 0) & DB_DIR,
     );
     wall.location.wall_info = W_NONDIGGABLE;
+    await moveDrawbridgeOccupants(bridge, wall, state, options);
     clearDrawbridgeSquares(bridge, wall, true, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
@@ -166,11 +171,11 @@ export async function closeDrawbridge(x, y, state = game) {
     return true;
 }
 
-export async function toggleDrawbridge(x, y, state = game) {
+export async function toggleDrawbridge(x, y, state = game, options = {}) {
     const location = state.level?.at(x, y);
     if (location?.typ === DRAWBRIDGE_UP)
-        return await openDrawbridge(x, y, state);
+        return await openDrawbridge(x, y, state, options);
     if (location?.typ === DRAWBRIDGE_DOWN)
-        return await closeDrawbridge(x, y, state);
+        return await closeDrawbridge(x, y, state, options);
     return false;
 }
