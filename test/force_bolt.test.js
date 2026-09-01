@@ -11,11 +11,10 @@ import { pushKeys } from '../js/input.js';
 import {
     BOULDER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
 } from '../js/object_data.js';
-import { place_object } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
-import { chargedWand } from './support/game-objects.js';
+import { chargedWand, floorObject } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -108,13 +107,9 @@ test('force bolt collapses a lowered drawbridge', async () => {
 
 test('force bolt fractures a boulder into rocks', async () => {
     freshWizard();
-    const boulder = place_object({
-        otyp: BOULDER,
-        oclass: 14,
-        quan: 1,
-        quantity: 1,
+    const boulder = floorObject(BOULDER, 12, 10, {
         dknown: true,
-    }, 12, 10);
+    });
     pushKeys('l');
 
     await castKnownSpell(forceBoltSpell());
@@ -126,13 +121,9 @@ test('force bolt fractures a boulder into rocks', async () => {
 
 test('force bolt aimed down strikes the floor pile and engraving', async () => {
     freshWizard();
-    const boulder = place_object({
-        otyp: BOULDER,
-        oclass: 14,
-        quan: 1,
-        quantity: 1,
+    const boulder = floorObject(BOULDER, game.u.ux, game.u.uy, {
         dknown: true,
-    }, game.u.ux, game.u.uy);
+    });
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth', null, 0, DUST);
     pushKeys('>');
 

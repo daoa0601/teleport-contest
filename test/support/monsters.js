@@ -29,6 +29,13 @@ export function liveMonster({
     };
 }
 
+export function deadMonster(options) {
+    return liveMonster({
+        ...options,
+        mhp: 0,
+    });
+}
+
 export function addMonster(options, state = game) {
     const monster = liveMonster(options);
     if (monster.m_id === undefined)

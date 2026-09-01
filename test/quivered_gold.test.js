@@ -7,7 +7,7 @@ import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedGold, fireQuiveredGold, floorAt, floorObjects, liveMonster,
+    carriedGold, fireQuiveredGold, floorAt, floorObjects, goldMonster,
     readyGold, throwGold,
 } from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
@@ -107,7 +107,7 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29105);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29106, mpeaceful: 1, msleeping: 1,
         });
         level.monsters.push(leprechaun);
@@ -126,7 +126,7 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29107);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29108, mpeaceful: 1, msleeping: 1,
         });
         level.monsters.push(leprechaun);
@@ -145,7 +145,7 @@ test('targeting can thaw an immobilized monster before the coin misses',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29109);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29110, mpeaceful: 1, msleeping: 1,
             mcanmove: 0, mfrozen: 6,
         });
@@ -167,7 +167,7 @@ test('a swallowed quivered coin wakes the engulfer and enters its inventory',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29111);
-        const engulfer = liveMonster({
+        const engulfer = goldMonster({
             m_id: 29112, mnum: 202, mx: 10, my: 10,
             mpeaceful: 1, msleeping: 1,
         });

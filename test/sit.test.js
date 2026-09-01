@@ -18,24 +18,16 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { inventoryObject } from './support/game-objects.js';
+import { floorObject, inventoryObject } from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
     const level = freshWeaponArena();
-    const pies = {
-        otyp: CREAM_PIE,
-        oclass: 7,
-        name: 'cream pie',
+    const pies = floorObject(CREAM_PIE, 10, 10, {
         plural: 'cream pies',
         quan: 2,
         quantity: 2,
-        ox: 10,
-        oy: 10,
-        where: 'floor',
-    };
-    level.objects[10] = [];
-    level.objects[10][10] = [pies];
+    });
     pushKeys('sit\n');
 
     await rhack('#'.charCodeAt(0));

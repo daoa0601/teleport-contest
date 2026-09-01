@@ -1,6 +1,7 @@
 import {
     CLUB, DART, FLINT, LOADSTONE, OBJECT_BASES, OBJECT_NAMES, ROCK, SLING,
 } from '../../js/object_data.js';
+import { place_object } from '../../js/mklev.js';
 
 const WEAPON_NAMES = new Map([
     [CLUB, ['club', 'clubs']],
@@ -19,15 +20,13 @@ function objectClass(otyp) {
     return 1;
 }
 
-export function carriedObject(otyp, overrides = {}) {
+function testObject(otyp, overrides = {}) {
     return {
         otyp,
         name: OBJECT_NAMES[otyp],
         oclass: objectClass(otyp),
-        invlet: 'a',
         quan: 1,
         quantity: 1,
-        where: 'inventory',
         blessed: false,
         cursed: false,
         bknown: true,
@@ -37,6 +36,25 @@ export function carriedObject(otyp, overrides = {}) {
         timed: 0,
         ...overrides,
     };
+}
+
+export function carriedObject(otyp, overrides = {}) {
+    return testObject(otyp, {
+        invlet: 'a',
+        where: 'inventory',
+        ...overrides,
+    });
+}
+
+export function looseObject(otyp, overrides = {}) {
+    return testObject(otyp, {
+        where: 'free',
+        ...overrides,
+    });
+}
+
+export function floorObject(otyp, x, y, overrides = {}) {
+    return place_object(looseObject(otyp, overrides), x, y);
 }
 
 export function inventoryObject(otyp, invlet, overrides = {}) {

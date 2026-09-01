@@ -17,21 +17,27 @@ import {
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
+import { looseObject } from './support/game-objects.js';
+import { liveMonster } from './support/monsters.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
 
 function potionObject(otyp) {
-    return {
-        otyp,
-        oclass: 8,
-        quan: 1,
-        quantity: 1,
+    return looseObject(otyp, {
         dknown: true,
         typeKnown: true,
-        where: 'free',
-        objectTimers: [],
-    };
+    });
+}
+
+function potionTarget(mnum, overrides = {}) {
+    return liveMonster({
+        mnum,
+        x: 10,
+        y: 10,
+        hitPoints: 20,
+        ...overrides,
+    });
 }
 
 function installDirectWereHero({ beast = false } = {}) {
@@ -69,9 +75,7 @@ test('visible inert potion impact names a headed monster and evaporates',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM, mx: 10, my: 10, mhp: 8, mhpmax: 8,
-        };
+        const monster = potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
         const potion = potionObject(POT_FRUIT_JUICE);
         const messages = [];
 
@@ -100,9 +104,7 @@ test('an existing potion call name suppresses trycall and remains visible',
         game.u = { hallucinationTurns: 0 };
         game._knownObjectTypes = new Set();
         game._objectCallNames = { [POT_FRUIT_JUICE]: 'mystery' };
-        const monster = {
-            mnum: PM_PURPLE_WORM, mx: 10, my: 10, mhp: 8, mhpmax: 8,
-        };
+        const monster = potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
         const potion = potionObject(POT_FRUIT_JUICE);
         potion.typeKnown = false;
         const messages = [];
@@ -126,9 +128,7 @@ test('hallucinated inert potion impact names a visible headless monster',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 4 };
-        const monster = {
-            mnum: PM_ENERGY_VORTEX, mx: 10, my: 10, mhp: 8, mhpmax: 8,
-        };
+        const monster = potionTarget(PM_ENERGY_VORTEX, { hitPoints: 8 });
         const potion = potionObject(POT_GAIN_LEVEL);
         const messages = [];
 
@@ -153,15 +153,12 @@ test('healing potion makes Pestilence ill and retains hostile wake policy',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 312,
-            mx: 10,
-            my: 10,
+        const monster = potionTarget(312, {
+            hitPoints: 40,
             mhp: 20,
-            mhpmax: 40,
             mcansee: 1,
             msleeping: 1,
-        };
+        });
         const potion = potionObject(POT_HEALING);
         const messages = [];
 
@@ -187,14 +184,11 @@ test('sickness halves a susceptible monster after the common impact chip',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
+        const monster = potionTarget(PM_PURPLE_WORM, {
+            hitPoints: 40,
             mhp: 20,
-            mhpmax: 40,
             msleeping: 1,
-        };
+        });
         const potion = potionObject(POT_SICKNESS);
         const messages = [];
 
@@ -220,13 +214,7 @@ test('sickness leaves poison-resistant monsters unharmed after impact',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-        };
+        const monster = potionTarget(1);
         const potion = potionObject(POT_SICKNESS);
         const messages = [];
 
@@ -251,14 +239,11 @@ test('sickness leaves poison-resistant monsters unharmed after impact',
 test('sickness heals Pestilence and clears sleep without anger', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0 };
-    const monster = {
-        mnum: 312,
-        mx: 10,
-        my: 10,
+    const monster = potionTarget(312, {
+        hitPoints: 40,
         mhp: 20,
-        mhpmax: 40,
         msleeping: 1,
-    };
+    });
     const potion = potionObject(POT_SICKNESS);
     const messages = [];
 
@@ -285,15 +270,10 @@ test('confusion potion leaves a susceptible monster confused',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            m_lev: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(1, {
+            level: 1,
             mconf: 0,
-        };
+        });
         const potion = potionObject(POT_CONFUSION);
         const messages = [];
 
@@ -319,15 +299,10 @@ test('booze leaves a magic-resistant monster unconfused but hostile',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 312,
-            m_lev: 30,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(312, {
+            level: 30,
             mconf: 0,
-        };
+        });
         const potion = potionObject(POT_BOOZE);
         const messages = [];
 
@@ -354,17 +329,11 @@ test('paralysis freezes a moving monster and clears its wait strategy',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
+        const monster = potionTarget(1, {
             mfrozen: 0,
             meating: 3,
             mstrategy: 0x20000020,
-        };
+        });
 
         initRng(3002n);
         const result = await hitMonsterWithSupportedPotion({
@@ -385,17 +354,12 @@ test('paralysis does not reroll or replace an existing frozen duration',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(1, {
             mcanmove: 0,
             mfrozen: 9,
             meating: 2,
             mstrategy: 0x20000020,
-        };
+        });
 
         initRng(3003n);
         const result = await hitMonsterWithSupportedPotion({
@@ -417,18 +381,12 @@ test('sleeping potion pays duration then resistance and freezes a target',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            m_lev: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
+        const monster = potionTarget(1, {
+            level: 1,
             mfrozen: 2,
             meating: 4,
             mstrategy: 0x20000020,
-        };
+        });
         const messages = [];
 
         initRng(3050n);
@@ -451,16 +409,10 @@ test('sleep-resistant monster shields and remains awake',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_ENERGY_VORTEX,
-            m_lev: 6,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
+        const monster = potionTarget(PM_ENERGY_VORTEX, {
+            level: 6,
             mfrozen: 0,
-        };
+        });
         let shieldCount = 0;
 
         initRng(3051n);
@@ -487,16 +439,10 @@ test('magic-resistant sleep target shields and remains awake',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 48,
-            m_lev: 9,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
+        const monster = potionTarget(48, {
+            level: 9,
             mfrozen: 0,
-        };
+        });
         let shieldCount = 0;
 
         initRng(3050n);
@@ -519,16 +465,10 @@ test('magic-resistant sleep target shields and remains awake',
 test('successful sleeping potion releases a non-engulfing monster grip',
     async () => {
         resetGame();
-        const monster = {
-            mnum: 1,
-            m_lev: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
+        const monster = potionTarget(1, {
+            level: 1,
             mfrozen: 0,
-        };
+        });
         game.u = {
             hallucinationTurns: 0,
             uswallow: 0,
@@ -556,19 +496,11 @@ test('speed potion makes an active normal-speed monster permanently fast',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
-            msleeping: 0,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             mfrozen: 0,
             permspeed: 0,
             mspeed: 0,
-            minvent: [],
-        };
+        });
         const messages = [];
 
         initRng(3200n);
@@ -592,19 +524,12 @@ test('worn speed boots keep effective speed fast while potion removes slow',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcanmove: 1,
-            msleeping: 0,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             mfrozen: 0,
             permspeed: 1,
             mspeed: 2,
             minvent: [{ otyp: SPEED_BOOTS, owornmask: 0x20 }],
-        };
+        });
         const messages = [];
 
         initRng(3200n);
@@ -628,18 +553,12 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             msleeping: 1,
             mfrozen: 0,
             permspeed: 0,
             mspeed: 0,
-            minvent: [],
-        };
+        });
         const messages = [];
 
         initRng(3200n);
@@ -663,16 +582,10 @@ test('a resistant monster remains sighted after blindness impact',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 1,
-            m_lev: 1,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcansee: 1,
+        const monster = potionTarget(1, {
+            level: 1,
             mblinded: 10,
-        };
+        });
 
         initRng(3202n);
         const result = await hitMonsterWithSupportedPotion({
@@ -693,16 +606,10 @@ test('resisted blindness excludes only the second already-consumed duration',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: 48,
-            m_lev: 9,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            mcansee: 1,
+        const monster = potionTarget(48, {
+            level: 9,
             mblinded: 5,
-        };
+        });
 
         initRng(3210n);
         const result = await hitMonsterWithSupportedPotion({
@@ -727,10 +634,7 @@ test('eyeless and permanently blind monsters retain their sight state',
         ]) {
             resetGame();
             game.u = { hallucinationTurns: 0 };
-            const monster = {
-                mnum, mx: 10, my: 10, mhp: 20, mhpmax: 20,
-                mcansee, mblinded,
-            };
+            const monster = potionTarget(mnum, { mcansee, mblinded });
             initRng(3202n);
             const result = await hitMonsterWithSupportedPotion({
                 state: game,
@@ -748,17 +652,12 @@ test('uncursed invisibility hides a spotted monster without anger',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             minvis: 0,
             perminvis: 0,
             invis_blkd: 0,
             msleeping: 1,
-        };
+        });
         const messages = [];
 
         initRng(3200n);
@@ -786,17 +685,12 @@ test('cursed invisibility reveals an unseen invisible monster and angers it',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             minvis: 1,
             perminvis: 1,
             invis_blkd: 0,
             msleeping: 1,
-        };
+        });
         const potion = potionObject(POT_INVISIBILITY);
         potion.cursed = true;
         const messages = [];
@@ -822,16 +716,11 @@ test('cursed invisibility uses sensor-spotted transparency presentation',
     async () => {
         resetGame();
         game.u = { hallucinationTurns: 0 };
-        const monster = {
-            mnum: PM_PURPLE_WORM,
-            mx: 10,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
+        const monster = potionTarget(PM_PURPLE_WORM, {
             minvis: 1,
             perminvis: 1,
             invis_blkd: 0,
-        };
+        });
         const potion = potionObject(POT_INVISIBILITY);
         potion.cursed = true;
         const messages = [];
@@ -857,17 +746,12 @@ test('cursed invisibility uses sensor-spotted transparency presentation',
 test('blocked invisibility changes only the permanent property', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0 };
-    const monster = {
-        mnum: PM_PURPLE_WORM,
-        mx: 10,
-        my: 10,
-        mhp: 20,
-        mhpmax: 20,
+    const monster = potionTarget(PM_PURPLE_WORM, {
         minvis: 0,
         perminvis: 0,
         invis_blkd: 1,
         msleeping: 1,
-    };
+    });
 
     initRng(3200n);
     const result = await hitMonsterWithSupportedPotion({
@@ -889,15 +773,10 @@ test('blocked invisibility changes only the permanent property', async () => {
 test('zero-level player monsters defend with the hero level', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0, ulevel: 20 };
-    const monster = {
-        mnum: 343,
-        m_lev: 0,
-        mx: 10,
-        my: 10,
-        mhp: 20,
-        mhpmax: 20,
+    const monster = potionTarget(343, {
+        level: 0,
         mconf: 0,
-    };
+    });
     const potion = potionObject(POT_CONFUSION);
 
     initRng(3004n);
@@ -918,16 +797,12 @@ test('zero-level player monsters defend with the hero level', async () => {
 test('ability potion heals a peaceful monster without angering it', async () => {
     resetGame();
     game.u = { hallucinationTurns: 0 };
-    const monster = {
-        mnum: PM_PURPLE_WORM,
-        mx: 10,
-        my: 10,
+    const monster = potionTarget(PM_PURPLE_WORM, {
+        hitPoints: 12,
         mhp: 3,
-        mhpmax: 12,
-        mcansee: 1,
         msleeping: 1,
         mpeaceful: 1,
-    };
+    });
     const potion = potionObject(POT_RESTORE_ABILITY);
     const messages = [];
 

@@ -8,7 +8,7 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedGold, floorAt, floorObjects, liveMonster, looseGold, throwGold,
+    carriedGold, floorAt, floorObjects, goldMonster, looseGold, throwGold,
 } from './support/gold-arena.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -132,7 +132,7 @@ test('self-directed gold cancellation preserves the purse and spends no time',
 test('a non-greedy monster wakes but does not catch thrown gold', async () => {
     const level = freshWeaponArena();
     const purse = carriedGold(25, 29004);
-    const jackal = liveMonster({
+    const jackal = goldMonster({
         m_id: 29005, mnum: 12, mpeaceful: 1, msleeping: 1,
     });
     level.monsters.push(jackal);
@@ -151,7 +151,7 @@ test('an immobilized greedy monster is hit harmlessly and cannot catch gold',
     async () => {
         const level = freshWeaponArena();
         const purse = carriedGold(31, 29006);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29007, mcanmove: 0, mfrozen: 3,
         });
         level.monsters.push(leprechaun);
@@ -169,7 +169,7 @@ test('a sleeping greedy monster catches the purse and abandons its meal',
     async () => {
         const level = freshWeaponArena();
         const purse = carriedGold(41, 29008);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29009, msleeping: 1, meating: 4,
             m_ap_type: 1, mappearance: 30,
         });
@@ -192,7 +192,7 @@ test('the ordinary catch anger probe can turn a peaceful greedy monster hostile'
     async () => {
         freshWeaponArena();
         const purse = carriedGold(11, 29034);
-        const leprechaun = liveMonster({
+        const leprechaun = goldMonster({
             m_id: 29035, mpeaceful: 1,
         });
         game.level.monsters.push(leprechaun);
@@ -208,7 +208,7 @@ test('a greedy catch merges into the prior monster purse and frees the incoming 
     async () => {
         freshWeaponArena();
         const purse = carriedGold(11, 29030);
-        const leprechaun = liveMonster({ m_id: 29031 });
+        const leprechaun = goldMonster({ m_id: 29031 });
         const prior = looseGold(9);
         linkObjectToMonsterInventory(leprechaun, prior, { state: game });
         game.level.monsters.push(leprechaun);
@@ -227,7 +227,7 @@ test('covering a shopkeeper robbery restores peace and preserves payment identit
     async () => {
         freshWeaponArena();
         const purse = carriedGold(50, 29010);
-        const shopkeeper = liveMonster({
+        const shopkeeper = goldMonster({
             m_id: 29011, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 0,
             eshk: { robbed: 30, credit: 0, following: 1, surcharge: true },
         });
@@ -249,7 +249,7 @@ test('a peaceful shopkeeper turns caught gold into exact customer credit',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(7, 29012);
-        const shopkeeper = liveMonster({
+        const shopkeeper = goldMonster({
             m_id: 29013, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 1,
             eshk: { robbed: 0, credit: 11, following: 0 },
         });
@@ -266,7 +266,7 @@ test('a peaceful shopkeeper turns caught gold into exact customer credit',
 test('a temple priest catches the same whole-purse identity', async () => {
     freshWeaponArena();
     const purse = carriedGold(13, 29014);
-    const priest = liveMonster({
+    const priest = goldMonster({
         m_id: 29015, mnum: PM_ALIGNED_CLERIC,
         ispriest: 1, mpeaceful: 1,
     });
@@ -284,7 +284,7 @@ test('the catch anger probe applies the coaligned priest alignment penalty',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(13, 29036);
-        const priest = liveMonster({
+        const priest = goldMonster({
             m_id: 29037, mnum: PM_ALIGNED_CLERIC,
             ispriest: 1, mpeaceful: 1,
             epri: { shralign: 1 },
@@ -304,7 +304,7 @@ test('the catch anger probe rewards angering a cross-aligned priest',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(13, 29038);
-        const priest = liveMonster({
+        const priest = goldMonster({
             m_id: 29039, mnum: PM_ALIGNED_CLERIC,
             ispriest: 1, mpeaceful: 1,
             epri: { shralign: -1 },
@@ -324,7 +324,7 @@ test('a vault guard catches the purse without the ordinary anger probe',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(19, 29016);
-        const guard = liveMonster({
+        const guard = goldMonster({
             m_id: 29017, mnum: PM_GUARD, isgd: 1, mpeaceful: 1,
         });
         game.level.monsters.push(guard);
@@ -340,7 +340,7 @@ test('a sufficient soldier bribe changes an angry soldier to peaceful',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(150, 29018);
-        const soldier = liveMonster({
+        const soldier = goldMonster({
             m_id: 29019, mnum: PM_SOLDIER, mpeaceful: 0,
         });
         game.level.monsters.push(soldier);
@@ -356,7 +356,7 @@ test('an insufficient soldier bribe is still caught but leaves hostility',
     async () => {
         freshWeaponArena();
         const purse = carriedGold(50, 29020);
-        const soldier = liveMonster({
+        const soldier = goldMonster({
             m_id: 29021, mnum: PM_SOLDIER, mpeaceful: 0,
         });
         game.level.monsters.push(soldier);
@@ -371,7 +371,7 @@ test('an insufficient soldier bribe is still caught but leaves hostility',
 test('a watchman catches gold but remains unbribable', async () => {
     freshWeaponArena();
     const purse = carriedGold(500, 29022);
-    const watchman = liveMonster({
+    const watchman = goldMonster({
         m_id: 29023, mnum: PM_WATCHMAN, mpeaceful: 0,
     });
     game.level.monsters.push(watchman);
@@ -386,7 +386,7 @@ test('a watchman catches gold but remains unbribable', async () => {
 test('swallowed gold moves whole into the engulfer inventory', async () => {
     freshWeaponArena();
     const purse = carriedGold(29, 29024);
-    const engulfer = liveMonster({
+    const engulfer = goldMonster({
         m_id: 29025, mnum: 202, mx: 10, my: 10,
     });
     game.level.monsters.push(engulfer);

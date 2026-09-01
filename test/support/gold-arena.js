@@ -4,6 +4,7 @@ import { addHeroGoldObject } from '../../js/hero_gold.js';
 import { pushKey, pushKeys } from '../../js/input.js';
 import { mksobj } from '../../js/mklev.js';
 import { GOLD_PIECE } from '../../js/object_data.js';
+import { liveMonster } from './monsters.js';
 
 const PM_LEPRECHAUN = 63;
 
@@ -20,18 +21,14 @@ export function looseGold(amount, id = undefined) {
     return gold;
 }
 
-export function liveMonster(overrides = {}) {
-    return {
+export function goldMonster(overrides = {}) {
+    return liveMonster({
         m_id: 29000,
-        mnum: PM_LEPRECHAUN,
-        mx: 13, my: 10,
-        mhp: 12, mhpmax: 12, m_lev: 5,
-        mpeaceful: 0, mtame: 0,
-        msleeping: 0, mcanmove: 1, mfrozen: 0, meating: 0,
-        mcansee: 1, mcan: 0, mstrategy: 0,
-        minvent: [], inventory: [], hasInventory: false,
+        mnum: PM_LEPRECHAUN, x: 13, y: 10,
+        hitPoints: 12, level: 5,
+        mfrozen: 0, meating: 0, mcan: 0, hasInventory: false,
         ...overrides,
-    };
+    });
 }
 
 export function floorObjects(level) {

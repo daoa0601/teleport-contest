@@ -15,6 +15,7 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { liveMonster } from './support/monsters.js';
 
 const PM_GIANT = 169;
 const PM_HUMAN_ZOMBIE = 244;
@@ -48,26 +49,31 @@ function freshState() {
     init_objects();
 }
 
-function monster(m_id, mnum, mx, my, hp, level) {
-    return {
-        m_id, mnum, mx, my,
+function arenaMonster(options) {
+    return liveMonster({
         mux: game.u.ux, muy: game.u.uy,
-        m_lev: level,
-        mhp: hp, mhpmax: hp,
         movement: 12,
-        mcanmove: 1,
-        mcansee: 1,
-        mpeaceful: 0,
-        mtame: 0,
-        minvent: [], inventory: [],
-    };
+        ...options,
+    });
 }
 
 test('a zombie attacks a nearby giant and the giant rises as a zombie',
     async () => {
         freshState();
-        const zombie = monster(901, PM_HUMAN_ZOMBIE, 10, 10, 30, 8);
-        const giant = monster(902, PM_GIANT, 11, 10, 8, 6);
+        const zombie = arenaMonster({
+            m_id: 901,
+            mnum: PM_HUMAN_ZOMBIE,
+            x: 10, y: 10,
+            hitPoints: 30,
+            level: 8,
+        });
+        const giant = arenaMonster({
+            m_id: 902,
+            mnum: PM_GIANT,
+            x: 11, y: 10,
+            hitPoints: 8,
+            level: 6,
+        });
         giant.name = 'Bram';
         game.level.monsters.push(zombie, giant);
         game._deferVisibleMonsterContact = true;

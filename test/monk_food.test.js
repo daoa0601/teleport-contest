@@ -6,6 +6,9 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CORPSE, MEATBALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import {
+    carriedObject, floorObject,
+} from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('a carried meat corpse applies the live Monk conduct penalty', async () => {
@@ -15,17 +18,11 @@ test('a carried meat corpse applies the live Monk conduct penalty', async () => 
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
     game.u.uhunger = 900;
-    const corpse = {
-        otyp: CORPSE,
-        oclass: 7,
+    const corpse = carriedObject(CORPSE, {
         corpsenm: 70,
         name: 'goblin corpse',
-        invlet: 'a',
-        quan: 1,
-        quantity: 1,
         age: game.moves,
-        where: 'inventory',
-    };
+    });
     game.inventory = [corpse];
     pushKey('a');
 
@@ -53,20 +50,11 @@ test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
         game.urole = { key: 'monk' };
         game.u.ualign = { type: 0, record: 10, abuse: 0 };
         game.u.uconduct = {};
-        const corpse = {
-            otyp: CORPSE,
-            oclass: 7,
+        const corpse = floorObject(CORPSE, 10, 10, {
             corpsenm: 70,
             name: 'goblin corpse',
-            quan: 1,
-            quantity: 1,
             age: game.moves,
-            ox: 10,
-            oy: 10,
-            where: 'floor',
-        };
-        if (!level.objects[10]) level.objects[10] = [];
-        level.objects[10][10] = [corpse];
+        });
         pushKey('y');
 
         await rhack('e'.charCodeAt(0));
@@ -90,16 +78,9 @@ test('ordinary carried meat uses the same Monk vegetarian rule', async () => {
     game.urole = { key: 'monk' };
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = {
-        otyp: MEATBALL,
-        oclass: 7,
-        name: 'meatball',
-        invlet: 'a',
-        quan: 1,
-        quantity: 1,
+    const meatball = carriedObject(MEATBALL, {
         age: game.moves,
-        where: 'inventory',
-    };
+    });
     game.inventory = [meatball];
     pushKey('a');
 
@@ -121,16 +102,9 @@ test('the vegetarian alignment penalty remains Monk-specific', async () => {
     game.urole = { key: 'rogue' };
     game.u.ualign = { type: -1, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = {
-        otyp: MEATBALL,
-        oclass: 7,
-        name: 'meatball',
-        invlet: 'a',
-        quan: 1,
-        quantity: 1,
+    const meatball = carriedObject(MEATBALL, {
         age: game.moves,
-        where: 'inventory',
-    };
+    });
     game.inventory = [meatball];
     pushKey('a');
 
@@ -149,17 +123,10 @@ test('rotten carried meat retains the preceding Monk guilt outcome',
         game.urole = { key: 'monk' };
         game.u.ualign = { type: 0, record: 10, abuse: 0 };
         game.u.uconduct = {};
-        const meatball = {
-            otyp: MEATBALL,
-            oclass: 7,
-            name: 'meatball',
-            invlet: 'a',
-            quan: 1,
-            quantity: 1,
+        const meatball = carriedObject(MEATBALL, {
             age: game.moves,
-            where: 'inventory',
             cursed: true,
-        };
+        });
         game.inventory = [meatball];
         pushKey('a');
 

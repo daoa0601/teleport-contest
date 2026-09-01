@@ -21,6 +21,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { deadMonster, liveMonster } from './support/monsters.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN = 260;
@@ -122,18 +123,15 @@ test('explicit revival magic overrides a corpse no-revive flag', async () => {
 
 test('a corpse made from a named monster restores that monster', async () => {
     freshState();
-    const deadTroll = {
+    const deadTroll = deadMonster({
         m_id: 91,
         mnum: PM_TROLL,
-        mx: 12, my: 10,
-        m_lev: 9,
-        mhp: 0, mhpmax: 47,
+        x: 12, y: 10,
+        level: 9,
+        hitPoints: 47,
         female: true,
-        mpeaceful: 0,
-        mtame: 0,
         name: 'Grond',
-        minvent: [], inventory: [],
-    };
+    });
     const corpse = mkcorpstat(
         CORPSE, deadTroll, PM_TROLL, 12, 10, 8,
     );
@@ -149,17 +147,16 @@ test('a corpse made from a named monster restores that monster', async () => {
 
 test('a pet killed by the hero does not revive tame', async () => {
     freshState();
-    const deadPet = {
+    const deadPet = deadMonster({
         m_id: 92,
         mnum: PM_TROLL,
-        mx: 12, my: 10,
-        m_lev: 9,
-        mhp: 0, mhpmax: 20,
+        x: 12, y: 10,
+        level: 9,
+        hitPoints: 20,
         mpeaceful: 1,
         mtame: 10,
         pet: true,
         meating: 4,
-        minvent: [], inventory: [],
         edog: {
             abuse: 0,
             killed_by_u: 1,
@@ -167,7 +164,7 @@ test('a pet killed by the hero does not revive tame', async () => {
             revivals: 0,
             ogoal: { x: 8, y: 8 },
         },
-    };
+    });
     const corpse = mkcorpstat(
         CORPSE, deadPet, PM_TROLL, 12, 10, 8,
     );
@@ -185,16 +182,13 @@ test('a pet killed by the hero does not revive tame', async () => {
 });
 
 test('a level-drained troll can recover when it revives', () => {
-    const drainedTroll = {
+    const drainedTroll = deadMonster({
         m_id: 95,
         mnum: PM_TROLL,
-        mx: 12, my: 10,
-        m_lev: 0,
-        mhp: 0, mhpmax: 1,
-        mpeaceful: 0,
-        mtame: 0,
-        minvent: [], inventory: [],
-    };
+        x: 12, y: 10,
+        level: 0,
+        hitPoints: 1,
+    });
     const revivedTroll = {
         ...drainedTroll,
         m_id: 96,
@@ -230,16 +224,15 @@ test('a reviving corpse stops being the hero\'s meal', async () => {
 
 test('a substitute revival does not absorb the linked ghost', async () => {
     freshState();
-    const ghost = {
+    const ghost = liveMonster({
         m_id: 96,
         mnum: PM_GHOST,
-        mx: 12, my: 10,
-        m_lev: 10,
-        mhp: 40, mhpmax: 40,
+        x: 12, y: 10,
+        level: 10,
+        hitPoints: 40,
         mpeaceful: 1,
         mtame: 6,
-        minvent: [], inventory: [],
-    };
+    });
     const sack = mksobj(SACK, false, false);
     addObjectToMonsterInventory(ghost, sack, game);
     game.level.monsters.push(ghost);
@@ -277,16 +270,14 @@ test('shapechanger protection keeps a unique corpse as a doppelganger',
 
 test('reviving the quest leader clears the dead-leader state', async () => {
     freshState();
-    const leader = {
+    const leader = deadMonster({
         m_id: 93,
         mnum: PM_GIANT,
-        mx: 12, my: 10,
-        m_lev: 8,
-        mhp: 0, mhpmax: 45,
+        x: 12, y: 10,
+        level: 8,
+        hitPoints: 45,
         mpeaceful: 1,
-        mtame: 0,
-        minvent: [], inventory: [],
-    };
+    });
     game.quest_status = {
         leader_m_id: leader.m_id,
         leader_is_dead: false,
@@ -314,17 +305,14 @@ test('shapechanger protection restores a revived chameleon to itself',
     async () => {
         freshState();
         game.u.protectionFromShapeChangers = true;
-        const disguisedChameleon = {
+        const disguisedChameleon = deadMonster({
             m_id: 94,
             mnum: PM_JACKAL,
             cham: PM_CHAMELEON,
-            mx: 12, my: 10,
-            m_lev: 5,
-            mhp: 0, mhpmax: 24,
-            mpeaceful: 0,
-            mtame: 0,
-            minvent: [], inventory: [],
-        };
+            x: 12, y: 10,
+            level: 5,
+            hitPoints: 24,
+        });
         const corpse = mkcorpstat(
             CORPSE, disguisedChameleon, PM_CHAMELEON, 12, 10, 8,
         );
@@ -376,15 +364,14 @@ test('a troll corpse revives from a sack in the hero pack', async () => {
 
 test('a monster drops a corpse when it revives from its pack', async () => {
     freshState();
-    const carrier = {
+    const carrier = liveMonster({
         m_id: 700,
         mnum: PM_LEOCROTTA,
-        mx: 12, my: 10,
-        mhp: 30, mhpmax: 30,
+        x: 12, y: 10,
+        hitPoints: 30,
         female: false,
         minvis: 0, mundetected: 0,
-        minvent: [], inventory: [],
-    };
+    });
     game.level.monsters.push(carrier);
     const corpse = trollCorpse();
     addObjectToMonsterInventory(carrier, corpse, game);
@@ -443,17 +430,14 @@ test('a buried human corpse on a zombify timer rises as a zombie', async () => {
 
 test('a zombifying kill leaves a corpse which will rise', async () => {
     freshState();
-    const victim = {
+    const victim = deadMonster({
         m_id: 801,
         mnum: PM_GIANT,
-        mx: 12, my: 10,
-        m_lev: 6,
-        mhp: 0, mhpmax: 36,
-        mpeaceful: 0,
-        mtame: 0,
+        x: 12, y: 10,
+        level: 6,
+        hitPoints: 36,
         name: 'Gorm',
-        minvent: [], inventory: [],
-    };
+    });
     game.level.monsters.push(victim);
     initRng(6n);
 

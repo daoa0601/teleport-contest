@@ -12,22 +12,26 @@ import { playInstrument } from '../js/music.js';
 import {
     BOULDER, DRUM_OF_EARTHQUAKE,
 } from '../js/object_data.js';
-import { place_object } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
+import { floorObject } from './support/game-objects.js';
+import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function targetMonster(x, y) {
-    return {
-        mnum: 0,
-        mx: x,
-        my: y,
-        mhp: 100,
-        mhpmax: 100,
-        mcanmove: 1,
+    return liveMonster({
+        mnum: 0, x, y, hitPoints: 100,
         mfrozen: 0,
         msleeping: 1,
         mstrategy: 0,
-        minvent: [],
+    });
+}
+
+function earthquakeDrum(charges) {
+    return {
+        otyp: DRUM_OF_EARTHQUAKE,
+        name: 'drum of earthquake',
+        spe: charges,
+        charges: { current: charges, recharged: 0 },
     };
 }
 
@@ -56,14 +60,7 @@ test('an earthquake collapses doors and drops boulders into chasms',
         const door = level.at(11, 10);
         door.typ = DOOR;
         door.doormask = D_CLOSED;
-        const boulder = {
-            otyp: BOULDER,
-            name: 'boulder',
-            quan: 1,
-            quantity: 1,
-            where: 'free',
-        };
-        place_object(boulder, 12, 10);
+        const boulder = floorObject(BOULDER, 12, 10);
         pushKeys(' '.repeat(100));
 
         await createEarthquake(13);
@@ -104,12 +101,7 @@ test('a charged earthquake drum shakes the level and spends one charge',
         const level = freshWeaponArena();
         game.u.ulevel = 30;
         game.u.uhp = game.u.uhpmax = 1000;
-        const drum = {
-            otyp: DRUM_OF_EARTHQUAKE,
-            name: 'drum of earthquake',
-            spe: 2,
-            charges: { current: 2, recharged: 0 },
-        };
+        const drum = earthquakeDrum(2);
         pushKeys(' '.repeat(200));
 
         await playInstrument(drum);
@@ -123,12 +115,7 @@ test('an empty earthquake drum acts like an ordinary drum', async () => {
     const level = freshWeaponArena();
     const monster = targetMonster(11, 10);
     level.monsters = [monster];
-    const drum = {
-        otyp: DRUM_OF_EARTHQUAKE,
-        name: 'drum of earthquake',
-        spe: 0,
-        charges: { current: 0, recharged: 0 },
-    };
+    const drum = earthquakeDrum(0);
     pushKeys(' '.repeat(20));
 
     await playInstrument(drum);

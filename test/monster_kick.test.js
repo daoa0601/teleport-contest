@@ -14,7 +14,9 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
+import { carriedObject } from './support/game-objects.js';
 import { installLiveCommandHero } from './support/live-command-state.js';
+import { liveMonster } from './support/monsters.js';
 
 function installKickArena(mnum) {
     resetGame();
@@ -27,13 +29,12 @@ function installKickArena(mnum) {
             });
         }
     }
-    const monster = {
-        mnum, m_id: 55, mx: 11, my: 10,
-        mhp: 20, mhpmax: 20, m_lev: 4, mac: 3,
-        mpeaceful: 0, mtame: 0, mcanmove: 1, mcansee: 1,
-        msleeping: 0, mstrategy: 0, minvis: 0, mundetected: 0,
+    const monster = liveMonster({
+        mnum, m_id: 55, x: 11, y: 10,
+        hitPoints: 20, level: 4, mac: 3,
+        minvis: 0, mundetected: 0,
         movement: 12,
-    };
+    });
     level.monsters = [monster];
     installLiveCommandHero({ role: 'tourist', level, x: 10, y: 10 });
     for (const row of game.viz_array) row.fill(IN_SIGHT | COULD_SEE);
@@ -160,12 +161,11 @@ test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
     async () => {
         const human = installKickArena(260);
         human.mx = 9;
-        const club = {
-            otyp: OBJECT_NAMES.indexOf('club'),
+        const club = carriedObject(OBJECT_NAMES.indexOf('club'), {
             owornmask: 0,
             where: 'minvent',
             owt: 30,
-        };
+        });
         human.minvent = human.inventory = [club];
         human.hasInventory = true;
         game.level.at(11, 10).typ = STONE;
@@ -192,12 +192,11 @@ test('a worn life-saving amulet saves a monster from petrifying recoil',
     async () => {
         const human = installKickArena(260);
         human.mx = 9;
-        const amulet = {
-            otyp: AMULET_OF_LIFE_SAVING,
+        const amulet = carriedObject(AMULET_OF_LIFE_SAVING, {
             owornmask: W_AMUL,
             worn: true,
             where: 'minvent',
-        };
+        });
         human.minvent = human.inventory = [amulet];
         human.hasInventory = true;
         human.misc_worn_check = W_AMUL;
