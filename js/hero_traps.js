@@ -8,7 +8,8 @@ import {
 import {
     A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, FIRE_TRAP, ICE, IS_LAVA,
     IS_POOL,
-    LANDMINE, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP, SPIKED_PIT,
+    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP,
+    SPIKED_PIT,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
 } from './const.js';
@@ -44,6 +45,7 @@ import {
 } from './weight.js';
 import { revealVibratingSquare } from './invocation.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
+import { activateMagicPortal } from './magic_portal.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -341,6 +343,14 @@ function nearestBuriedBall() {
     return nearest;
 }
 
+function releaseBuriedBallForLevelChange() {
+    if (game.u?.utraptype !== TT_BURIEDBALL) return;
+    const ball = nearestBuriedBall();
+    if (!ball) return;
+    clearHeroTrap();
+    attachBuriedBall(ball);
+}
+
 async function struggleInFloor(targetX, targetY, anchored) {
     const hero = game.u;
     const ball = anchored ? nearestBuriedBall() : null;
@@ -420,7 +430,6 @@ async function triggerTeleportTrap(trap, finishTeleport) {
         throw new TypeError('teleport trap needs an arrival handler');
 
     game._inTeleportTrap = true;
-    stopRun();
     try {
         const blocked = heroTeleportTrapBlock();
         if (blocked) {
@@ -485,7 +494,6 @@ async function triggerTeleportTrap(trap, finishTeleport) {
 
 async function triggerMagicTrap(trap) {
     trap.tseen = true;
-    stopRun();
     if (rn2(30) === 0) {
         const index = game.level.traps.indexOf(trap);
         if (index >= 0) game.level.traps.splice(index, 1);
@@ -557,7 +565,6 @@ async function triggerDartTrap(trap) {
     const hero = game.u;
     trap.once = true;
     trap.tseen = true;
-    stopRun();
 
     const dart = mksobj(DART, true, false);
     dart.quan = dart.quantity = 1;
@@ -612,7 +619,6 @@ async function triggerRollingBoulderTrap(trap) {
     const wasKnown = !!trap.tseen;
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
-    stopRun();
 
     const click = game.u?.deaf ? '' : 'Click!  ';
     await pline(`${click}You trigger a rolling boulder trap!`);
@@ -684,7 +690,6 @@ async function triggerBearTrap(trap) {
     trap.tseen = true;
     hero.utrap = 4 + rn2(4);
     hero.utraptype = TT_BEARTRAP;
-    stopRun();
 
     await pline('A bear trap closes on your foot!');
 
@@ -714,9 +719,11 @@ async function triggerBearTrap(trap) {
 
 export async function triggerHeroTrap(trap, {
     finishTeleport = null,
+    gotoLevel = null,
     viaSitting = false,
 } = {}) {
     if (!trap) return false;
+    stopRun();
     switch (trap.ttyp) {
     case TELEP_TRAP:
         return triggerTeleportTrap(trap, finishTeleport);
@@ -732,6 +739,10 @@ export async function triggerHeroTrap(trap, {
     case FIRE_TRAP:
         await triggerHeroFireTrap(trap);
         break;
+    case MAGIC_PORTAL:
+        trap.tseen = true;
+        releaseBuriedBallForLevelChange();
+        return activateMagicPortal(trap, gotoLevel);
     case MAGIC_TRAP:
         await triggerMagicTrap(trap);
         break;

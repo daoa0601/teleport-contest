@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    FIRE_TRAP, TT_BURIEDBALL, TT_PIT, TT_WEB, VIBRATING_SQUARE,
+    FIRE_TRAP, MAGIC_PORTAL, ROOM, TT_BURIEDBALL, TT_PIT, TT_WEB,
+    VIBRATING_SQUARE,
 } from '../js/const.js';
+import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { HEAVY_IRON_BALL } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
@@ -117,3 +119,41 @@ test('stepping on a fire trap burns the hero', async () => {
     assert.equal(trap.tseen, true);
     assert.ok(game.u.uhp < 40);
 });
+
+test('stepping into a magic portal moves the hero to its other end',
+    async () => {
+        const source = freshWeaponArena();
+        const destination = new GameMap();
+        for (let x = 8; x <= 18; x++) {
+            for (let y = 8; y <= 12; y++) {
+                Object.assign(destination.at(x, y), {
+                    typ: ROOM, lit: true, waslit: true, seenv: 255,
+                });
+            }
+        }
+        const sourcePortal = {
+            ttyp: MAGIC_PORTAL, tx: 11, ty: 10,
+            dst: { dnum: 0, dlevel: 2 }, tseen: false,
+        };
+        const destinationPortal = {
+            ttyp: MAGIC_PORTAL, tx: 15, ty: 10,
+            dst: { dnum: 0, dlevel: 1 }, tseen: false,
+        };
+        source.traps = [sourcePortal];
+        destination.traps = [destinationPortal];
+        game.u.uz = { dnum: 0, dlevel: 1 };
+        game.dungeons = [{
+            dname: 'The Dungeons of Doom', num_dunlevs: 2, flags: {},
+        }];
+        game._levelCache = new Map([[
+            '0:2', { level: destination, stairs: null, heroTrack: [] },
+        ]]);
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.deepEqual(game.u.uz, { dnum: 0, dlevel: 2 });
+        assert.equal(game.level, destination);
+        assert.deepEqual([game.u.ux, game.u.uy], [15, 10]);
+        assert.equal(sourcePortal.tseen, true);
+        assert.equal(destinationPortal.tseen, true);
+    });

@@ -341,6 +341,7 @@ export async function dosit({
             await pline(`You ${u?.flying || game.flying ? 'land' : 'sit down'}.`);
             await triggerHeroTrap(trap, {
                 finishTeleport,
+                gotoLevel,
                 viaSitting: true,
             });
         }

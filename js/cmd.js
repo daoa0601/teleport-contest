@@ -12475,6 +12475,7 @@ export async function finishDestinationSpotEffects({
     }
     if (await triggerHeroTrapAt(newx, newy, {
         finishTeleport: finishTeleportArrival,
+        gotoLevel,
     })) return true;
     if (explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, newx, newy);
