@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { DOOR, D_BROKEN, D_LOCKED } from '../js/const.js';
+import { DOOR, DUST, D_BROKEN, D_LOCKED } from '../js/const.js';
+import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
@@ -129,4 +130,34 @@ test('force bolt fractures a boulder into rocks', async () => {
     assert.equal(boulder.otyp, ROCK);
     assert.ok(boulder.quan >= 7 && boulder.quan <= 66);
     assert.equal(game.level.objects[12][10].includes(boulder), true);
+});
+
+test('force bolt aimed down strikes the floor pile and engraving', async () => {
+    freshWeaponArena();
+    game.urole = { key: 'wizard' };
+    game.u.ulevel = 8;
+    game.u.uen = 40;
+    const boulder = place_object({
+        otyp: BOULDER,
+        oclass: 14,
+        quan: 1,
+        quantity: 1,
+        dknown: true,
+    }, game.u.ux, game.u.uy);
+    makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth', null, 0, DUST);
+    pushKeys('>');
+
+    await castKnownSpell({
+        name: 'force bolt',
+        otyp: SPE_FORCE_BOLT,
+        level: 1,
+        category: 'attack',
+        fail: 0,
+    });
+
+    assert.equal(boulder.otyp, ROCK);
+    assert.notEqual(
+        engravingAt(game.u.ux, game.u.uy)?.text,
+        'Elbereth',
+    );
 });

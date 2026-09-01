@@ -12,6 +12,7 @@ import {
     canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { place_object, remove_object } from './mklev.js';
@@ -262,7 +263,18 @@ export async function forceBoltInDirection(direction, {
         await hitMonster(state.u.usteed, source, state, options);
         return true;
     }
-    if (direction === '<' || direction === '>') return false;
+    if (direction === '>') {
+        const objects = await breakRockObjects(
+            state.u.ux, state.u.uy, state, random,
+        );
+        if (engravingAt(state.u.ux, state.u.uy, state.level)) {
+            wipeEngravingAt(
+                state.u.ux, state.u.uy, rollDice(2, 4), true, state.level,
+            );
+        }
+        return objects.identified;
+    }
+    if (direction === '<') return false;
 
     const dx = DIR_DX[direction], dy = DIR_DY[direction];
     if (dx === undefined || dy === undefined) return false;
