@@ -10,6 +10,7 @@ import {
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { mksobj, place_object } from '../js/mklev.js';
+import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { EGG } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import {
@@ -223,3 +224,71 @@ test('carried egg stack keeps its remainder and short timer after pack prose',
         assert.ok(hatchTimer(egg).deadline >= game.moves + 1);
         assert.ok(hatchTimer(egg).deadline <= game.moves + 12);
     });
+
+test('a hero-laid floor egg hatches a tame monster', async () => {
+    freshEggState(2);
+    const egg = place_object(mksobj(EGG, true, false), 12, 10);
+    egg.spe = 1;
+    const timer = hatchTimer(egg);
+    game.moves = timer.deadline;
+
+    const event = await runClaimedEggHatchTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+
+    assert.ok(event.monster.mtame > 0);
+    assert.equal(event.monster.mpeaceful, 1);
+    finishEggHatchTimer(event, game, game.moves);
+});
+
+test('a dragon egg in the pack hatches a tame dragon', async () => {
+    freshEggState(2);
+    const egg = mksobj(EGG, true, false);
+    egg.corpsenm = 143; // gray dragon
+    egg.quan = egg.quantity = 1;
+    egg.where = 'inventory';
+    game.inventory = [egg];
+    const timer = hatchTimer(egg);
+    game.moves = timer.deadline;
+
+    const event = await runClaimedEggHatchTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+
+    assert.equal(event.mnum, 133); // baby gray dragon
+    assert.ok(event.monster.mtame > 0);
+    assert.equal(event.followupMessage, 'Gleep!');
+    finishEggHatchTimer(event, game, game.moves);
+});
+
+test('an egg hatches out of a visible monster pack', async () => {
+    freshEggState(2);
+    const carrier = {
+        mnum: 260,
+        m_id: 7001,
+        mx: 12,
+        my: 10,
+        mhp: 10,
+        mhpmax: 10,
+        minvent: [],
+        inventory: [],
+    };
+    game.level.monsters = [carrier];
+    const egg = mksobj(EGG, true, false);
+    egg.quan = egg.quantity = 1;
+    linkObjectToMonsterInventory(carrier, egg);
+    const timer = hatchTimer(egg);
+    game.moves = timer.deadline;
+
+    const event = await runClaimedEggHatchTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+
+    assert.equal(
+        event.message,
+        "You see a cave spider drop out of a human's pack!",
+    );
+    finishEggHatchTimer(event, game, game.moves);
+    assert.equal(carrier.minvent.includes(egg), false);
+    assert.equal(egg.where, 'gone');
+});

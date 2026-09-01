@@ -1914,6 +1914,8 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
             claimed, game, sourceTurn,
         );
         if (event?.message) await queueTurnMessage(event.message);
+        if (event?.followupMessage)
+            await queueTurnMessage(event.followupMessage);
         return finishEggHatchTimer(event, game, sourceTurn);
     }
     if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {

@@ -1,22 +1,24 @@
-// egg.js — Source-owned egg hatch timers for the visible floor carrier.
+// Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 
 import {
-    G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
+    G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
 } from './const.js';
-import { newsym } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { tameMonster } from './dog.js';
 import { game } from './gstate.js';
 import { makemonNear, remove_object } from './mklev.js';
 import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL,
-    monsterTypeName, monsterYoungerForm,
+    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND,
+    MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
 } from './monster_data.js';
+import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { EGG } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from './object_timers.js';
-import { rnd } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 
@@ -25,7 +27,10 @@ const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
 const M1_NOLIMBS = 0x00006000;
 const M1_SLITHY = 0x00080000;
-const S_DRAGON = 21;
+const S_EYE = 5;
+const S_DRAGON = 30;
+const S_LIGHT = 25;
+const S_EEL = 57;
 
 function indefiniteArticle(noun) {
     return /^[aeiou]/i.test(noun) ? 'an' : 'a';
@@ -38,26 +43,128 @@ function floorHatchMessage(mnum, count) {
         : `You see ${indefiniteArticle(name)} ${name} hatch.`;
 }
 
-function inventoryHatchMessage(mnum, count, blind) {
-    if (blind) return 'You feel something drop from your pack!';
+function hatchLocomotion(mnum) {
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_EYE || symbol === S_LIGHT) return 'float';
+    if (flags & M1_FLY) return 'fly';
+    if (flags & M1_SLITHY) return 'slither';
+    if (flags & M1_AMORPHOUS) return 'ooze';
+    if ((MONSTER_MOVE[mnum] ?? 0) === 0) return 'wiggle';
+    if ((flags & M1_NOLIMBS) === M1_NOLIMBS) return 'crawl';
+    return 'drop';
+}
+
+function inventoryHatchMessage(mnum, count, visible) {
+    const motion = hatchLocomotion(mnum);
+    if (!visible) return `You feel something ${motion} from your pack!`;
     const name = monsterTypeName(mnum);
     const newborn = count > 1
         ? `some ${makePlural(name)}`
         : `${indefiniteArticle(name)} ${name}`;
-    return `You see ${newborn} drop out of your pack!`;
+    return `You see ${newborn} ${motion} out of your pack!`;
 }
 
-function ordinaryPackLocomotion(mnum) {
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
-    return !(flags & (M1_FLY | M1_AMORPHOUS | M1_SLITHY))
-        && (flags & M1_NOLIMBS) !== M1_NOLIMBS
-        && (MONSTER_MOVE[mnum] ?? 0) > 0;
+function possessive(noun) {
+    return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
 }
 
-// run_timers() claims the timer before this callback.  Quantity reduction and
-// monster creation precede hatch prose in C; learning, remainder scheduling,
-// deletion, and repaint follow it, so finishEggHatchTimer() owns that second
-// half after tty has accepted any message.
+function monsterPackName(monster) {
+    if (monster.name) return `${possessive(monster.name)} pack`;
+    const species = monsterTypeName(monster.mnum, !!monster.female);
+    return `${possessive(`${indefiniteArticle(species)} ${species}`)} pack`;
+}
+
+function eggCarrier(egg, state) {
+    if (egg.ocarry) return egg.ocarry;
+    return (state.level?.monsters || []).find(monster =>
+        monster.m_id === egg.carrierMid
+        || (monster.minvent || monster.inventory || []).includes(egg));
+}
+
+function hatchLocation(egg, state) {
+    if (egg.where === 'floor')
+        return { kind: 'floor', x: egg.ox, y: egg.oy, carrier: null };
+    if (egg.where === 'inventory') {
+        return {
+            kind: 'inventory',
+            x: state.u?.ux,
+            y: state.u?.uy,
+            carrier: null,
+        };
+    }
+    if (egg.where === 'minvent') {
+        const carrier = eggCarrier(egg, state);
+        if (carrier) {
+            return {
+                kind: 'minvent',
+                x: carrier.mx,
+                y: carrier.my,
+                carrier,
+            };
+        }
+    }
+    return null;
+}
+
+function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
+    const name = monsterTypeName(mnum);
+    const newborn = count > 1
+        ? `some ${makePlural(name)}`
+        : `${indefiniteArticle(name)} ${name}`;
+    const carrierIsVisible = canSeeMonster(carrier, carrier.mx, carrier.my)
+        && (!carrier.wormno || cansee(carrier.mx, carrier.my));
+    let source;
+    if (carrierIsVisible) {
+        source = monsterPackName(carrier);
+    } else if (IS_POOL(state.level?.at?.(x, y)?.typ)) {
+        source = 'empty water';
+    } else {
+        source = 'thin air';
+    }
+    return {
+        message: `You see ${newborn} ${hatchLocomotion(mnum)} out of ${source}!`,
+        knowsEgg: carrierIsVisible,
+    };
+}
+
+function hatchlingCry(mnum) {
+    const sound = MONSTER_SOUND[mnum] ?? 0;
+    if (sound === 9) return 'hiss';
+    if (sound === 3 || sound === 5) return 'growl';
+    if (sound === 8) return 'chirp';
+    if (sound === 10) return 'buzz';
+    if (sound === 7) return 'screech';
+    if (sound === 11) return 'grunt';
+    if (sound === 21) return 'mumble';
+    return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
+}
+
+function ingForm(verb) {
+    return verb.endsWith('e')
+        ? `${verb.slice(0, -1)}ing`
+        : `${verb}ing`;
+}
+
+function heroIsDeaf(state) {
+    return !!(state.deaf || state.u?.deaf
+        || (state.u?.deafTurns ?? 0) > 0);
+}
+
+function parentHatchMessage(mnum, count, egg, state) {
+    const subject = count > 1 ? 'Their' : 'Its';
+    const description = (MONSTER_SOUND[mnum] ?? 0) === 0
+        || heroIsDeaf(state)
+        ? 'seems' : 'sounds';
+    const parent = state.flags?.female ? 'mommy' : 'daddy';
+    const punctuation = egg.spe ? '.' : '?';
+    return `${subject} ${ingForm(hatchlingCry(mnum))} ${
+        description} like "${parent}${punctuation}"`;
+}
+
+// C creates the monsters and reduces the egg stack before it prints the hatch
+// message. The caller prints that message before finishEggHatchTimer() updates
+// knowledge, schedules the remaining eggs, or removes the empty stack.
 export async function runClaimedEggHatchTimer(
     claimed, state = game, currentTurn = state.moves ?? 0,
 ) {
@@ -69,38 +176,22 @@ export async function runClaimedEggHatchTimer(
         return { egg, sterile: true, hatched: 0, finishPending: false };
     }
 
-    const onFloor = egg.where === 'floor';
     const inInventory = egg.where === 'inventory';
-    if (!onFloor && !inInventory) {
-        throw new Error(
-            'HATCH_EGG owner excludes monster-carried and non-live carriers',
-        );
-    }
+    const yours = !!egg.spe
+        || (!state.flags?.female && inInventory && rn2(2) === 0);
     const silent = claimed.timer.deadline !== currentTurn;
-    if (onFloor && (egg.spe ?? 0) !== 0)
-        throw new Error('HATCH_EGG floor owner excludes owned-egg taming');
-    if (inInventory) {
-        if ((egg.spe ?? 0) !== 0 || state.flags?.female !== true) {
-            throw new Error(
-                'HATCH_EGG inventory owner excludes owned or male-parentage taming',
-            );
-        }
-        if (silent)
-            throw new Error('HATCH_EGG inventory owner excludes overdue carrier state');
+    const location = hatchLocation(egg, state);
+    if (!location) {
+        return {
+            egg, sterile: false, cannotHatchHere: true,
+            hatched: 0, finishPending: false,
+        };
     }
-
-    const x = onFloor ? egg.ox : state.u?.ux;
-    const y = onFloor ? egg.oy : state.u?.uy;
+    const { x, y } = location;
     const quantity = egg.quan ?? egg.quantity ?? 1;
     if (!Number.isInteger(quantity) || quantity < 1)
         throw new Error('HATCH_EGG requires a positive egg quantity');
     const mnum = monsterYoungerForm(egg.corpsenm);
-    if (inInventory && (MONSTER_SYMBOL[mnum] === S_DRAGON
-        || !ordinaryPackLocomotion(mnum))) {
-        throw new Error(
-            'HATCH_EGG inventory owner excludes dragon taming and special locomotion',
-        );
-    }
     const visible = !silent && cansee(x, y);
     const desired = rnd(quantity);
     const unavailable = !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)
@@ -120,6 +211,12 @@ export async function runClaimedEggHatchTimer(
             mnum, x, y, NO_MINVENT | MM_NOMSG, false,
         );
         if (!monster) break;
+        const inventoryDragon = inInventory
+            && MONSTER_SYMBOL[mnum] === S_DRAGON;
+        if ((yours && !silent) || inventoryDragon) {
+            if (tameMonster(monster)
+                && inInventory && !inventoryDragon) monster.mtame = 20;
+        }
         lastMonster = monster;
         hatched++;
         if ((state.mvitals?.[mnum]?.mvflags ?? 0) & G_EXTINCT) break;
@@ -133,17 +230,36 @@ export async function runClaimedEggHatchTimer(
 
     egg.quan = quantity - hatched;
     egg.quantity = egg.quan;
+    let message = null;
+    let knowsEgg = false;
+    if (location.kind === 'floor' && visible) {
+        message = floorHatchMessage(mnum, hatched);
+        knowsEgg = true;
+    } else if (location.kind === 'inventory') {
+        message = inventoryHatchMessage(mnum, hatched, visible);
+        knowsEgg = true;
+    } else if (location.kind === 'minvent' && visible) {
+        const presentation = monsterInventoryHatchMessage(
+            mnum, hatched, location.carrier, x, y, state,
+        );
+        message = presentation.message;
+        knowsEgg = presentation.knowsEgg;
+    }
+
+    let followupMessage = null;
+    if (location.kind === 'inventory') {
+        if (yours) {
+            followupMessage = parentHatchMessage(mnum, hatched, egg, state);
+        } else if (MONSTER_SYMBOL[mnum] === S_DRAGON
+            && !heroIsDeaf(state)) {
+            followupMessage = 'Gleep!';
+        }
+    }
     return {
-        egg, x, y, mnum, monster: lastMonster,
-        desired, hatched,
-        message: onFloor
-            ? (visible ? floorHatchMessage(mnum, hatched) : null)
-            : inventoryHatchMessage(
-                mnum, hatched,
-                !!state.blind || (state.u?.blindTurns ?? 0) > 0,
-            ),
-        learnPending: visible,
-        redraw: onFloor && visible,
+        egg, x, y, mnum, monster: lastMonster, carrier: location.carrier,
+        desired, hatched, message, followupMessage,
+        learnPending: visible && knowsEgg,
+        redraw: location.kind === 'floor' && visible,
         finishPending: true,
     };
 }
@@ -168,12 +284,18 @@ export function finishEggHatchTimer(
         );
         egg.owt = objectWeight(egg);
     } else {
-        if (egg.where === 'floor') remove_object(egg);
-        else {
+        if (egg.where === 'floor') {
+            remove_object(egg);
+        } else if (egg.where === 'inventory') {
             const index = (state.inventory || []).indexOf(egg);
             if (index >= 0) state.inventory.splice(index, 1);
+        } else if (egg.where === 'minvent') {
+            const carrier = event.carrier || eggCarrier(egg, state);
+            if (carrier) removeObjectFromMonsterInventory(carrier, egg);
         }
         egg.where = 'gone';
+        egg.ocarry = null;
+        delete egg.carrierMid;
         egg.ox = egg.oy = 0;
     }
     if (event.redraw) newsym(event.x, event.y);
