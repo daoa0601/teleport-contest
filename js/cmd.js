@@ -9044,7 +9044,9 @@ async function doapply() {
             if (PLAYABLE_INSTRUMENTS.has(item.otyp)) {
                 game._pending_message = '';
                 game._retained_message = '';
-                await playInstrument(item);
+                await playInstrument(item, {
+                    finishMonsterKill: finishHeroMonsterKill,
+                });
                 return;
             }
             if (item.otyp === CREAM_PIE) {

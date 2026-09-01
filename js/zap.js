@@ -1033,9 +1033,9 @@ function clearRayCells(cells) {
 
 export async function zapColdRay(
     direction,
-    { finishMonsterKill } = {},
+    { finishMonsterKill, exerciseWisdom = true } = {},
 ) {
-    exerciseAttribute(A_WIS, true);
+    if (exerciseWisdom) exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -1165,9 +1165,9 @@ export async function zapColdRay(
 
 export async function zapFireRay(
     direction,
-    { finishMonsterKill, wakeMonsters } = {},
+    { finishMonsterKill, wakeMonsters, exerciseWisdom = true } = {},
 ) {
-    exerciseAttribute(A_WIS, true);
+    if (exerciseWisdom) exerciseAttribute(A_WIS, true);
     let dx = DIR_DX[direction] || 0;
     let dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
@@ -2031,6 +2031,51 @@ export function destroyColdInventory(sourceDamage, options) {
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.COLD, sourceDamage, options,
     );
+}
+
+export async function zapHeroWithFire() {
+    const damage = d(12, 6);
+    const resistant = !!(game.u?.fireResistance
+        || game.u?.fire_resistance);
+    if (resistant) {
+        await shieldeff(game.u.ux, game.u.uy);
+        await plineWithContinuation('You feel rather warm.');
+    } else {
+        await plineWithContinuation("You've set yourself afire!");
+    }
+
+    if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
+        game.u.slimedTurns = 0;
+        game.u.slimed = false;
+        await plineWithContinuation(
+            'The slime that covers you is burned away!',
+        );
+    }
+    await burnHeroArmorByFire(game, plineWithContinuation, [], rn2);
+    await destroyFireInventory(damage);
+    await igniteItems(game.inventory, {
+        state: game,
+        publish: plineWithContinuation,
+    });
+    if (!resistant)
+        game.u.uhp = Math.max(0, (game.u.uhp || 0) - damage);
+    return { damage: resistant ? 0 : damage, heroDied: game.u.uhp <= 0 };
+}
+
+export async function zapHeroWithCold() {
+    const damage = d(12, 6);
+    const resistant = !!(game.u?.coldResistance
+        || game.u?.cold_resistance);
+    if (resistant) {
+        await shieldeff(game.u.ux, game.u.uy);
+        await plineWithContinuation('You feel a little chill.');
+    } else {
+        await plineWithContinuation('You imitate a popsicle!');
+    }
+    await destroyColdInventory(damage);
+    if (!resistant)
+        game.u.uhp = Math.max(0, (game.u.uhp || 0) - damage);
+    return { damage: resistant ? 0 : damage, heroDied: game.u.uhp <= 0 };
 }
 
 export function destroyElectricInventory(sourceDamage, options) {

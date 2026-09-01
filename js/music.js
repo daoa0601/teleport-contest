@@ -9,21 +9,30 @@ import { tameMonster } from './dog.js';
 import {
     newsym, pline, plineWithContinuation,
 } from './display.js';
+import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import {
-    BUGLE, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES,
-    TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP,
+    BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP,
+    OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP,
 } from './object_data.js';
+import {
+    recordObjectEncounter, recordObjectKnowledge,
+} from './object_knowledge.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { syncDeafness } from './senses.js';
+import { promptKey } from './tty_prompts.js';
 import { cansee } from './vision.js';
+import {
+    zapColdRay, zapFireRay, zapHeroWithCold, zapHeroWithFire,
+} from './zap.js';
 
 const G_UNIQ = 0x1000;
 const M1_MINDLESS = 0x00010000;
@@ -40,13 +49,13 @@ const MZ_TINY = 0;
 const TOOL_ATTACK_LEVEL = 10;
 
 export const PLAYABLE_INSTRUMENTS = new Set([
-    WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
+    WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN,
     WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
 ]);
 
 const DRUMS = new Set([LEATHER_DRUM]);
 const WIND_INSTRUMENTS = new Set([
-    WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, BUGLE,
+    WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, BUGLE,
 ]);
 
 function instrumentName(instrument) {
@@ -344,6 +353,75 @@ async function playTooledHorn(familiar) {
     exerciseAttribute(A_WIS, false);
 }
 
+async function readHornDirection() {
+    for (;;) {
+        const key = await promptKey('In what direction? ');
+        if (key === 27) return null;
+        const direction = String.fromCharCode(key).toLowerCase();
+        if ('hjklyubn.<>'.includes(direction)) return direction;
+    }
+}
+
+function learnElementalHorn(instrument) {
+    instrument.typeKnown = true;
+    recordObjectKnowledge(instrument.otyp);
+    recordObjectEncounter(instrument.otyp);
+}
+
+async function finishHornDeath(element, aimedAtSelf) {
+    const reflexive = game.flags?.female ? 'herself' : 'himself';
+    const killer = aimedAtSelf
+        ? `using a magical horn on ${reflexive}`
+        : `bolt of ${element}`;
+    return await finishHeroDeath({ killer });
+}
+
+async function playElementalHorn(
+    instrument,
+    element,
+    { finishMonsterKill } = {},
+) {
+    consumeCharge(instrument);
+    const direction = await readHornDirection();
+    game._pending_message = '';
+    if (direction === null) {
+        await pline(`The ${instrumentName(instrument)} vibrates.`);
+        learnElementalHorn(instrument);
+        return;
+    }
+
+    let result;
+    if (direction === '.') {
+        result = element === 'fire'
+            ? await zapHeroWithFire() : await zapHeroWithCold();
+    } else if ('hjklyubn'.includes(direction)) {
+        if (!(game.blind || (game.u?.blindTurns ?? 0) > 0)) {
+            await plineWithContinuation(
+                `A bolt of ${element} blasts out of the horn!`,
+            );
+        }
+        const options = {
+            finishMonsterKill,
+            exerciseWisdom: false,
+        };
+        if (element === 'fire') {
+            result = await zapFireRay(direction, {
+                ...options,
+                wakeMonsters: wakeMonstersNearWithMessages,
+            });
+        } else {
+            result = await zapColdRay(direction, options);
+        }
+    } else {
+        await pline(`The ${instrumentName(instrument)} vibrates.`);
+        result = { heroDied: false };
+    }
+
+    learnElementalHorn(instrument);
+    if (result?.heroDied)
+        await finishHornDeath(element, direction === '.');
+}
+
 async function playBugle(instrument, familiar) {
     await plineWithContinuation(heroIsDeaf()
         ? 'You blow into the bugle.'
@@ -402,13 +480,15 @@ async function playLeatherDrum(familiar) {
     }
 }
 
-async function improvise(instrument) {
+async function improvise(instrument, options) {
     const canUseSpecial = !heroIsImpaired();
     let effectiveType = instrument.otyp;
     const charges = instrument.spe ?? instrument.charges?.current ?? 0;
     if (!canUseSpecial || charges <= 0) {
         if (effectiveType === MAGIC_FLUTE) effectiveType = WOODEN_FLUTE;
         if (effectiveType === MAGIC_HARP) effectiveType = WOODEN_HARP;
+        if (effectiveType === FIRE_HORN || effectiveType === FROST_HORN)
+            effectiveType = TOOLED_HORN;
     }
 
     await announceImprovisation(instrument);
@@ -419,6 +499,10 @@ async function improvise(instrument) {
         await playWoodenFlute(instrument, familiar, canUseSpecial);
     else if (effectiveType === TOOLED_HORN)
         await playTooledHorn(familiar);
+    else if (effectiveType === FIRE_HORN)
+        await playElementalHorn(instrument, 'fire', options);
+    else if (effectiveType === FROST_HORN)
+        await playElementalHorn(instrument, 'cold', options);
     else if (effectiveType === BUGLE)
         await playBugle(instrument, familiar);
     else if (effectiveType === MAGIC_HARP)
@@ -432,7 +516,7 @@ async function improvise(instrument) {
     game.context.move = 1;
 }
 
-export async function playInstrument(instrument) {
+export async function playInstrument(instrument, options = {}) {
     if (game.underwater || game.u?.uinwater) {
         await pline("You can't play music underwater!");
         game.context.move = 0;
@@ -477,5 +561,5 @@ export async function playInstrument(instrument) {
             return;
         }
     }
-    await improvise(instrument);
+    await improvise(instrument, options);
 }

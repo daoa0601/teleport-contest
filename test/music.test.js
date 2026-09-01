@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { playInstrument } from '../js/music.js';
 import {
-    BUGLE, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP,
+    BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP,
 } from '../js/object_data.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -99,4 +99,46 @@ test('applying a leather drum plays it', async () => {
 
     assert.ok(game.u.deafTurns >= 30);
     assert.equal(game.context.move, 1);
+});
+
+test('a fire horn shoots a ray and spends one charge', async () => {
+    const level = freshWeaponArena();
+    const target = monster(0, 11, 10, { mac: 100, mhp: 100, mhpmax: 100 });
+    level.monsters = [target];
+    const horn = instrument(FIRE_HORN, 'fire horn', 2);
+    pushKeys('y          l          ');
+
+    await playInstrument(horn);
+
+    assert.equal(horn.spe, 1);
+    assert.ok(target.mhp < 100);
+    assert.equal(horn.typeKnown, true);
+});
+
+test('cold resistance protects against a frost horn aimed at yourself',
+    async () => {
+        freshWeaponArena();
+        game.u.coldResistance = true;
+        game.u.uhp = game.u.uhpmax = 100;
+        const horn = instrument(FROST_HORN, 'frost horn', 1);
+        pushKeys('y          .          ');
+
+        await playInstrument(horn);
+
+        assert.equal(game.u.uhp, 100);
+        assert.equal(horn.spe, 0);
+        assert.equal(horn.typeKnown, true);
+    });
+
+test('an empty fire horn behaves like an ordinary horn', async () => {
+    const level = freshWeaponArena();
+    const target = monster(0, 11, 10, { msleeping: 1 });
+    level.monsters = [target];
+    const horn = instrument(FIRE_HORN, 'fire horn');
+    pushKeys('y          ');
+
+    await playInstrument(horn);
+
+    assert.equal(target.msleeping, 0);
+    assert.equal(horn.typeKnown, undefined);
 });
