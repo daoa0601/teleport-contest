@@ -2,7 +2,7 @@
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
 import {
-    CORR, G_GENOD, GRAVE, IS_POOL,
+    CORR, G_GENOD, GRAVE, IS_POOL, MFAST,
     MM_FEMALE, MM_MALE, MM_NOCOUNTBIRTH, MM_NOTAIL,
     MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, ROOM,
 } from './const.js';
@@ -386,11 +386,13 @@ async function createRevivedMonster(corpse, location, state) {
         markQuestLeaderAlive(monster, state);
         if (monster.mtame && !monster.isminion)
             makePetWary(monster, { wasDead: true, state });
-    } else if (replacement === PM_DOPPELGANGER)
-        shapechangeMonster(monster, originalMnum);
-    else if (replacement === PM_HUMAN_ZOMBIE) {
+    } else if (replacement === PM_DOPPELGANGER) {
+        if (monster.cham === PM_DOPPELGANGER)
+            shapechangeMonster(monster, originalMnum);
+    } else if (replacement === PM_HUMAN_ZOMBIE) {
         monster.mhp = monster.mhpmax = 100;
-        monster.mspeed = 2;
+        monster.permspeed = MFAST;
+        monster.mspeed = MFAST;
     }
     monster.mundetected = 0;
     monster.m_ap_type = 0;

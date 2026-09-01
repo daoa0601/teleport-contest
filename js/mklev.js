@@ -1503,6 +1503,7 @@ const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
 const M2_GIANT = 0x00002000;
+const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
@@ -1889,6 +1890,17 @@ function pickVampireShape(monster) {
     return targetMndx;
 }
 
+function shapechangerProtectionActive() {
+    return !!(
+        game.u?.protectionFromShapeChangers
+        || game.protectionFromShapeChangers
+    );
+}
+
+function naturalShapechanger(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
+}
+
 function initialShapechangedMonster({
     monsterId, baseMndx, targetMndx, x, y, female, sleeping, peaceful,
 }) {
@@ -1915,6 +1927,8 @@ function initialShapechangedMonster({
 // reroll gender/HP for that form, and suppress all starting inventory.
 export function initialShapechangedBirth(monster) {
     const baseMndx = monster?.mnum;
+    if (!naturalShapechanger(baseMndx) || shapechangerProtectionActive())
+        return null;
     let targetMndx = null;
     if (baseMndx === PM_DOPPELGANGER) {
         targetMndx = selectInitialDoppelgangerForm();
@@ -1928,7 +1942,10 @@ export function initialShapechangedBirth(monster) {
         else
             targetMndx = !rn2(4) ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
     }
-    if (targetMndx == null) return null;
+    if (targetMndx == null) {
+        monster.cham = baseMndx;
+        return null;
+    }
     return initialShapechangedMonster({
         monsterId: monster.m_id,
         baseMndx,
@@ -2159,14 +2176,17 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         generatedGhostName = useGhostList ? rn2(34) : -1;
     }
 
+    const canShapechange = naturalShapechanger(mndx)
+        && !shapechangerProtectionActive();
     let initialShape = null;
-    if (mndx === PM_DOPPELGANGER) {
+    if (canShapechange && mndx === PM_DOPPELGANGER) {
         initialShape = selectInitialDoppelgangerForm();
-    } else if (mndx === PM_CHAMELEON) {
+    } else if (canShapechange && mndx === PM_CHAMELEON) {
         initialShape = selectInitialChameleonForm();
-    } else if (mndx === PM_SANDESTIN) {
+    } else if (canShapechange && mndx === PM_SANDESTIN) {
         initialShape = selectInitialSandestinForm();
-    } else if (mndx === PM_VAMPIRE || mndx === PM_VAMPIRE_LEADER) {
+    } else if (canShapechange
+        && (mndx === PM_VAMPIRE || mndx === PM_VAMPIRE_LEADER)) {
         // mon.c pickvampshape()/newcham(): initial vampire shapechanging
         // happens after birth gender but suppresses all starting inventory.
         if (mndx === PM_VAMPIRE_LEADER && !rn2(10))
@@ -3084,7 +3104,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         monster.wormno = pendingMonster.wormno;
         monster.wormSegments = pendingMonster.wormSegments;
     }
-    if (mndx === PM_DOPPELGANGER) monster.cham = PM_DOPPELGANGER;
+    if (canShapechange) monster.cham = mndx;
     if (mndx === PM_WIZARD_OF_YENDOR) {
         monster.iswiz = true;
         game.context.no_of_wizards =

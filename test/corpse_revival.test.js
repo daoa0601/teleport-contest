@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
-import { ROOM } from '../js/const.js';
+import { MFAST, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
@@ -30,6 +30,8 @@ const PM_JACKAL = 12;
 const PM_CHAMELEON = 327;
 const PM_GUARD = 272;
 const PM_GHOST = 287;
+const PM_DOPPELGANGER = 270;
+const PM_WIZARD_OF_YENDOR = 285;
 
 function freshState() {
     resetGame();
@@ -236,11 +238,28 @@ test('a substitute revival does not absorb the linked ghost', async () => {
     const event = await reviveNow(corpse);
 
     assert.equal(event.monster.mnum, PM_HUMAN_ZOMBIE);
+    assert.equal(event.monster.permspeed, MFAST);
     assert.ok(!event.monster.mtame);
     assert.ok(game.level.monsters.includes(ghost));
     assert.ok(ghost.minvent.includes(sack));
     assert.ok(!event.monster.minvent.includes(sack));
 });
+
+test('shapechanger protection keeps a unique corpse as a doppelganger',
+    async () => {
+        freshState();
+        game.u.protectionFromShapeChangers = true;
+        const corpse = mksobj(CORPSE, true, false);
+        set_corpsenm(corpse, PM_WIZARD_OF_YENDOR);
+        stopAllObjectTimers(corpse);
+        place_object(corpse, 12, 10);
+
+        const event = await reviveNow(corpse);
+
+        assert.equal(event.monster.mnum, PM_DOPPELGANGER);
+        assert.ok(!Number.isInteger(event.monster.cham)
+            || event.monster.cham < 0);
+    });
 
 test('reviving the quest leader clears the dead-leader state', async () => {
     freshState();
