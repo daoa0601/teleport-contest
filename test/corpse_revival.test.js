@@ -10,6 +10,7 @@ import {
     mkcorpstat, mksobj, place_object, set_corpsenm,
 } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { restoreMonsterTraits } from '../js/monster_traits.js';
 import { CORPSE, SACK } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import {
@@ -27,6 +28,8 @@ const PM_GIANT = 169;
 const PM_GIANT_ZOMBIE = 247;
 const PM_JACKAL = 12;
 const PM_CHAMELEON = 327;
+const PM_GUARD = 272;
+const PM_GHOST = 287;
 
 function freshState() {
     resetGame();
@@ -165,10 +168,7 @@ test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
 });
 
-test('a level-drained troll can recover when it revives', async () => {
-    freshState();
-    game.u.uz.dlevel = 1;
-    game.u.ulevel = 1;
+test('a level-drained troll can recover when it revives', () => {
     const drainedTroll = {
         m_id: 95,
         mnum: PM_TROLL,
@@ -179,16 +179,20 @@ test('a level-drained troll can recover when it revives', async () => {
         mtame: 0,
         minvent: [], inventory: [],
     };
-    const corpse = mkcorpstat(
-        CORPSE, drainedTroll, PM_TROLL, 12, 10, 8,
-    );
-    stopAllObjectTimers(corpse);
+    const revivedTroll = {
+        ...drainedTroll,
+        m_id: 96,
+        m_lev: 6,
+        mhp: 30, mhpmax: 30,
+    };
 
-    const event = await reviveNow(corpse, 2);
+    restoreMonsterTraits(revivedTroll, drainedTroll, {
+        rollOne: maximum => maximum,
+    });
 
-    assert.ok(event.monster.m_lev > drainedTroll.m_lev);
-    assert.ok(event.monster.mhpmax > drainedTroll.mhpmax);
-    assert.equal(event.monster.mhp, event.monster.mhpmax);
+    assert.ok(revivedTroll.m_lev > drainedTroll.m_lev);
+    assert.ok(revivedTroll.mhpmax > drainedTroll.mhpmax);
+    assert.equal(revivedTroll.mhp, revivedTroll.mhpmax);
 });
 
 test('a reviving corpse stops being the hero\'s meal', async () => {
@@ -206,6 +210,36 @@ test('a reviving corpse stops being the hero\'s meal', async () => {
     assert.equal(game._occupation, null);
     assert.equal(corpse.where, 'gone');
     assert.ok(event.monster.mhp < event.monster.mhpmax);
+});
+
+test('a substitute revival does not absorb the linked ghost', async () => {
+    freshState();
+    const ghost = {
+        m_id: 96,
+        mnum: PM_GHOST,
+        mx: 12, my: 10,
+        m_lev: 10,
+        mhp: 40, mhpmax: 40,
+        mpeaceful: 1,
+        mtame: 6,
+        minvent: [], inventory: [],
+    };
+    const sack = mksobj(SACK, false, false);
+    addObjectToMonsterInventory(ghost, sack, game);
+    game.level.monsters.push(ghost);
+    const corpse = mksobj(CORPSE, true, false);
+    set_corpsenm(corpse, PM_GUARD);
+    stopAllObjectTimers(corpse);
+    corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
+    place_object(corpse, 12, 10);
+
+    const event = await reviveNow(corpse);
+
+    assert.equal(event.monster.mnum, PM_HUMAN_ZOMBIE);
+    assert.ok(!event.monster.mtame);
+    assert.ok(game.level.monsters.includes(ghost));
+    assert.ok(ghost.minvent.includes(sack));
+    assert.ok(!event.monster.minvent.includes(sack));
 });
 
 test('reviving the quest leader clears the dead-leader state', async () => {

@@ -126,8 +126,8 @@ function revivalReplacement(mnum, corpse) {
 
 function genderFlags(corpse) {
     const gender = (corpse.spe ?? 0) & 0x03;
-    if (gender === 1 || corpse.female === true) return MM_FEMALE;
-    if (gender === 2 || corpse.female === false) return MM_MALE;
+    if (gender === 1) return MM_FEMALE;
+    if (gender === 2) return MM_MALE;
     return 0;
 }
 
@@ -339,6 +339,14 @@ function mergeGhostIntoBody(monster, corpse, state) {
     delete corpse.omid;
 }
 
+function discardSavedBody(corpse) {
+    if (corpse.oextra) {
+        delete corpse.oextra.omid;
+        delete corpse.oextra.omonst;
+    }
+    delete corpse.omid;
+}
+
 async function createRevivedMonster(corpse, location, state) {
     const originalMnum = corpse.corpsenm;
     const savedTraits = corpse.oextra?.omonst;
@@ -371,6 +379,7 @@ async function createRevivedMonster(corpse, location, state) {
         : await makemonAt(targetMnum, x, y, flags);
     if (!monster) return { monster: null, twitchMessage: null };
 
+    if (replacement != null) discardSavedBody(corpse);
     if (savedTraits && replacement == null) {
         restoreMonsterTraits(monster, savedTraits);
         restoreShapechangerState(monster, state);
