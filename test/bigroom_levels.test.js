@@ -10,6 +10,9 @@ import { game } from '../js/gstate.js';
 import { generateBigRoom } from '../js/mklev.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import {
+    countTerrain, floorObjects, levelStairs,
+} from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 function newBigRoom(variant, seed = variant * 17) {
@@ -24,25 +27,6 @@ async function buildBigRoom(variant, seed) {
     return active;
 }
 
-function terrainCount(typ) {
-    let count = 0;
-    for (let x = 1; x < 80; x++)
-        for (let y = 0; y < 21; y++)
-            if (game.level.at(x, y)?.typ === typ) count++;
-    return count;
-}
-
-function stairs() {
-    const result = [];
-    for (let stair = game.stairs; stair; stair = stair.next)
-        result.push(stair);
-    return result;
-}
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
-
 test('the first Lua Big Rooms build their maps and apply their wall rules',
     async () => {
         for (let variant = 1; variant <= 3; variant++) {
@@ -54,7 +38,7 @@ test('the first Lua Big Rooms build their maps and apply their wall rules',
             assert.equal(game.level.flags.is_special, true);
             assert.equal(game.level.flags.is_maze_lev, true);
             assert.equal(active.allowFlips, 0);
-            assert.equal(stairs().length, 2);
+            assert.equal(levelStairs(game).length, 2);
             assert.ok(game.level.at(
                 active.context.xstart, active.context.ystart,
             ).wall_info);
@@ -102,11 +86,11 @@ test('bigrm-12 keeps its tall map in bounds and permits horizontal flip',
 
 test('the fog maze keeps arrivals and its up stair outside the fog', async () => {
     await buildBigRoom(10);
-    assert.ok(terrainCount(CLOUD) > 300);
+    assert.ok(countTerrain(game.level, CLOUD) > 300);
 
     const region = game.level.downTeleportRegion;
     assert.ok(region?.exclude);
-    const up = stairs().find(stair => stair.up);
+    const up = levelStairs(game).find(stair => stair.up);
     assert.ok(up);
     assert.equal(
         up.sx >= region.exclude.lx && up.sx <= region.exclude.hx
@@ -127,7 +111,8 @@ test('the fog maze keeps arrivals and its up stair outside the fog', async () =>
 
 test('the wide maze uses boulders and rolling-boulder traps', async () => {
     await buildBigRoom(11);
-    const boulders = floorObjects().filter(object => object.otyp === BOULDER);
+    const boulders = floorObjects(game.level)
+        .filter(object => object.otyp === BOULDER);
     const rollingTraps = game.level.traps.filter(
         trap => trap.ttyp === ROLLING_BOULDER_TRAP,
     );

@@ -6,6 +6,7 @@ import { game } from '../js/gstate.js';
 import { generateOracleLevel } from '../js/mklev.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
+import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 test('the Oracle lives among the historic centaur statues', async () => {
@@ -18,7 +19,7 @@ test('the Oracle lives among the historic centaur statues', async () => {
         monster => MONSTER_NAME[monster.mnum] === 'Oracle',
     ).length, 1);
 
-    const statues = (game.level.objects || []).flat(2).filter(
+    const statues = floorObjects(game.level).filter(
         object => object?.otyp === STATUE
             && (object.spe & CORPSTAT_HISTORIC)
             && MONSTER_SYMBOL[object.corpsenm] === 29,
@@ -36,7 +37,5 @@ test('the Oracle lives among the historic centaur statues', async () => {
     assert.equal(fountains, 4);
     assert.ok(corridors > 0);
 
-    let stairs = 0;
-    for (let stair = game.stairs; stair; stair = stair.next) stairs++;
-    assert.equal(stairs, 2);
+    assert.equal(levelStairs(game).length, 2);
 });

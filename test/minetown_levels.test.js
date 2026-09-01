@@ -8,6 +8,9 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     CORPSE, TALLOW_CANDLE, WAX_CANDLE,
 } from '../js/object_data.js';
+import {
+    countTerrain, floorObjects, levelStairs,
+} from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 async function buildMinetown(variant) {
@@ -16,24 +19,6 @@ async function buildMinetown(variant) {
     });
     game.urole = { key: 'wizard' };
     await generateMinetown(active);
-}
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
-
-function terrainCount(typ) {
-    let count = 0;
-    for (let x = 1; x < 80; x++)
-        for (let y = 0; y < 21; y++)
-            if (game.level.at(x, y)?.typ === typ) count++;
-    return count;
-}
-
-function stairCount() {
-    let count = 0;
-    for (let stair = game.stairs; stair; stair = stair.next) count++;
-    return count;
 }
 
 function liveMonsterCount(name) {
@@ -48,9 +33,11 @@ test('all seven Minetown layouts build a populated town', async () => {
         await buildMinetown(variant);
         assert.equal(game.level.flags.is_special, true, `variant ${variant}`);
         assert.equal(game.level.flags.has_town, true, `variant ${variant}`);
-        assert.equal(stairCount(), 2, `variant ${variant} stairs`);
-        assert.ok(terrainCount(FOUNTAIN) >= 2, `variant ${variant} fountains`);
-        assert.equal(terrainCount(ALTAR), 1, `variant ${variant} altar`);
+        assert.equal(levelStairs(game).length, 2, `variant ${variant} stairs`);
+        assert.ok(countTerrain(game.level, FOUNTAIN) >= 2,
+            `variant ${variant} fountains`);
+        assert.equal(countTerrain(game.level, ALTAR), 1,
+            `variant ${variant} altar`);
         assert.ok(game.level.monsters.length >= 15,
             `variant ${variant} population`);
     }
@@ -59,7 +46,7 @@ test('all seven Minetown layouts build a populated town', async () => {
 test('Orcish Town contains the dead residents and replacement candles',
     async () => {
         await buildMinetown(1);
-        const objects = floorObjects();
+        const objects = floorObjects(game.level);
         const candleQuantity = objects
             .filter(object => [WAX_CANDLE, TALLOW_CANDLE].includes(object.otyp))
             .reduce((total, candle) => total + (candle.quan ?? 1), 0);
@@ -73,6 +60,6 @@ test('Orcish Town contains the dead residents and replacement candles',
 
 test('Bazaar Town can include its furnished sink room', async () => {
     await buildMinetown(7);
-    assert.equal(terrainCount(SINK), 1);
+    assert.equal(countTerrain(game.level, SINK), 1);
     assert.ok(game.level.nsubroom > 10);
 });

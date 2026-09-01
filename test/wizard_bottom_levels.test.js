@@ -6,17 +6,8 @@ import { game } from '../js/gstate.js';
 import {
     generateFakeWizardLevel, generateWizard3Level,
 } from '../js/mklev.js';
+import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
-
-function stairCount() {
-    let count = 0;
-    for (let stair = game.stairs; stair; stair = stair.next) count++;
-    return count;
-}
 
 function portalCount() {
     return game.level.traps.filter(
@@ -44,7 +35,7 @@ test('the bottom Wizard tower connects its fortress to false Wizard 1',
         assert.equal(game.level.flags.noteleport, true);
         assert.equal(game.level.flags.hardfloor, true);
         assert.equal(portalCount(), 1);
-        assert.equal(stairCount(), 3);
+        assert.equal(levelStairs(game).length, 3);
         assert.ok(game.level.traps.filter(
             trap => trap.ttyp === SQKY_BOARD,
         ).length >= 4);
@@ -56,14 +47,14 @@ test('false Wizard 1 returns by portal while false Wizard 2 holds an amulet',
     async () => {
         await build('fakewiz1', 2011);
         assert.equal(portalCount(), 1);
-        assert.equal(stairCount(), 2);
+        assert.equal(levelStairs(game).length, 2);
         assert.ok(game.level.traps.filter(
             trap => trap.ttyp === SQKY_BOARD,
         ).length >= 4);
 
         await build('fakewiz2', 2017);
         assert.equal(portalCount(), 0);
-        assert.equal(stairCount(), 2);
-        assert.ok(floorObjects().some(object => object.oclass === 5));
+        assert.equal(levelStairs(game).length, 2);
+        assert.ok(floorObjects(game.level).some(object => object.oclass === 5));
         assert.ok(game.level.monsters.length >= 3);
     });

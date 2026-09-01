@@ -9,6 +9,7 @@ import { CORPSE } from '../js/object_data.js';
 import {
     levelTimers, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
+import { levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 async function buildRegularLevel(seed) {
@@ -29,13 +30,6 @@ async function buildRegularLevel(seed) {
     await mklev();
 }
 
-function stairs() {
-    const result = [];
-    for (let stair = game.stairs; stair; stair = stair.next)
-        result.push(stair);
-    return result;
-}
-
 test('an irregular themed room joins an ordinary dungeon level', async () => {
     await buildRegularLevel(7);
 
@@ -45,7 +39,7 @@ test('an irregular themed room joins an ordinary dungeon level', async () => {
 
     assert.ok(themedRoom);
     assert.equal(themedRoom.irregular, true);
-    assert.equal(stairs().length, 2);
+    assert.equal(levelStairs(game).length, 2);
 });
 
 test('a cloud room creates fog clouds inside its gas region', async () => {

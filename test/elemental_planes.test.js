@@ -11,19 +11,8 @@ import {
 } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER } from '../js/object_data.js';
+import { countTerrain, floorObjects } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
-
-function terrainCount(typ) {
-    let count = 0;
-    for (let x = 1; x < 80; x++)
-        for (let y = 0; y < 21; y++)
-            if (game.level.at(x, y)?.typ === typ) count++;
-    return count;
-}
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
 
 function firstBubbleCell(bubble) {
     for (let dy = 0; dy < bubble.height; dy++) {
@@ -51,7 +40,7 @@ test('the Astral Plane builds three sanctums and all three Riders', async () => 
 
     assert.equal(game.level.flags.noteleport, true);
     assert.equal(game.level.flags.nommap, true);
-    assert.equal(terrainCount(ALTAR), 3);
+    assert.equal(countTerrain(game.level, ALTAR), 3);
     const sanctums = [];
     for (let x = 1; x < 80; x++) {
         for (let y = 0; y < 21; y++) {
@@ -82,9 +71,9 @@ test('the Plane of Earth builds its caverns, defenders, and air portal',
 
         assert.equal(game.level.flags.noteleport, true);
         assert.equal(game.level.flags.hardfloor, true);
-        assert.ok(terrainCount(ROOM) > 150);
+        assert.ok(countTerrain(game.level, ROOM) > 150);
         assert.equal(game.level.monsters.length, 62);
-        assert.equal(floorObjects().filter(
+        assert.equal(floorObjects(game.level).filter(
             object => object.otyp === BOULDER,
         ).length, 1);
         assert.equal(game.level.traps.filter(
@@ -107,8 +96,8 @@ test('the Plane of Water builds moving air bubbles and its Astral portal',
 
         assert.equal(game.level.flags.waterlevel, true);
         assert.equal(game.level.flags.hero_memory, false);
-        assert.ok(terrainCount(WATER) > 1000);
-        assert.ok(terrainCount(AIR) > 20);
+        assert.ok(countTerrain(game.level, WATER) > 1000);
+        assert.ok(countTerrain(game.level, AIR) > 20);
         assert.ok(game.level.elementalBubbles.length > 5);
         assert.equal(game.level.monsters.length, 60);
         assert.equal(game.level.traps.filter(

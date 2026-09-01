@@ -6,6 +6,9 @@ import { game } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
+import {
+    countTerrain, floorObjects, levelStairs,
+} from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 test('the Barbarian quest ends at Thoth Amon and the Heart of Ahriman',
@@ -27,7 +30,7 @@ test('the Barbarian quest ends at Thoth Amon and the Heart of Ahriman',
         assert.ok(monsters.filter(name => name === 'ogre').length >= 16);
         assert.ok(monsters.filter(name => name === 'rock troll').length >= 8);
 
-        const objects = (game.level.objects || []).flat(2).filter(Boolean);
+        const objects = floorObjects(game.level);
         const heart = objects.find(
             object => object.oextra?.oname === 'The Heart of Ahriman',
         );
@@ -35,11 +38,7 @@ test('the Barbarian quest ends at Thoth Amon and the Heart of Ahriman',
         assert.equal(heart?.blessed, true);
         assert.equal(heart?.questArtifact, true);
 
-        let altars = 0;
-        for (let x = 1; x < 80; x++)
-            for (let y = 0; y < 21; y++)
-                if (game.level.at(x, y)?.typ === ALTAR) altars++;
-        assert.equal(altars, 1);
+        assert.equal(countTerrain(game.level, ALTAR), 1);
         assert.equal(game.level.traps.length, 6);
     });
 
@@ -51,8 +50,6 @@ test('the Barbarian filler levels have both stairways', async () => {
 
         await mklev();
 
-        let stairways = 0;
-        for (let stair = game.stairs; stair; stair = stair.next) stairways++;
-        assert.equal(stairways, 2, prototype);
+        assert.equal(levelStairs(game).length, 2, prototype);
     }
 });

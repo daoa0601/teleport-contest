@@ -31,15 +31,6 @@ export function goldMonster(overrides = {}) {
     });
 }
 
-export function floorObjects(level) {
-    return (level.objects || []).flatMap(column =>
-        (column || []).flatMap(pile => pile || []));
-}
-
-export function floorAt(level, x, y) {
-    return level.objects?.[x]?.[y] || [];
-}
-
 export async function readyGold() {
     pushKey('$');
     await rhack('Q'.charCodeAt(0));

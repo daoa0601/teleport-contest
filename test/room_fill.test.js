@@ -17,6 +17,7 @@ import {
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
+import { floorObjects } from './support/level-state.js';
 
 
 const PM_GIANT_SPIDER = 96;
@@ -62,10 +63,6 @@ function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
     init_objects();
     initRng(BigInt(seed));
     return room;
-}
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
 }
 
 function roomTerrain(room) {
@@ -160,7 +157,7 @@ test('supply chest weight includes its contents', async () => {
     const room = roomState({ seed: 1 });
     await fill_ordinary_room(room, true);
 
-    const supplyChest = floorObjects().find(object =>
+    const supplyChest = floorObjects(game.level).find(object =>
         [CHEST, LARGE_BOX].includes(object.otyp)
         && object.contents?.length > 0);
     assert.ok(supplyChest);

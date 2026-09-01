@@ -7,9 +7,11 @@ import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedGold, fireQuiveredGold, floorAt, floorObjects, goldMonster,
-    readyGold, throwGold,
+    carriedGold, fireQuiveredGold, goldMonster, readyGold, throwGold,
 } from './support/gold-arena.js';
+import {
+    floorObjects, floorObjectsAt,
+} from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 
@@ -41,7 +43,7 @@ test('f fires one quivered coin through the ordinary strength range',
         assert.equal(purse.quantity, 4);
         assert.notEqual(coin.o_id, purse.o_id);
         assert.deepEqual([coin.ox, coin.oy], [15, 10]);
-        assert.equal(floorAt(level, 15, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 15, 10).includes(coin), true);
         assert.equal(game.context.move, 1);
     });
 
@@ -56,7 +58,7 @@ test('t selects the same one-coin quivered path rather than whole-purse gold',
         assert.equal(game.uquiver, purse);
         assert.equal(purse.quantity, 4);
         assert.deepEqual([coin.ox, coin.oy], [15, 10]);
-        assert.equal(floorAt(level, 15, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 15, 10).includes(coin), true);
     });
 
 test('splitting a heavy coin stack recalculates parent and child weight',
@@ -86,7 +88,7 @@ test('a later wall leaves a quivered coin on the last open path cell',
 
         const coin = detachedCoin(level, purse);
         assert.deepEqual([coin.ox, coin.oy], [13, 10]);
-        assert.equal(floorAt(level, 13, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
 test('underwater limits a quivered coin to one horizontal cell', async () => {
@@ -98,7 +100,7 @@ test('underwater limits a quivered coin to one horizontal cell', async () => {
 
     const coin = detachedCoin(level, purse);
     assert.deepEqual([coin.ox, coin.oy], [11, 10]);
-    assert.equal(floorAt(level, 11, 10).includes(coin), true);
+    assert.equal(floorObjectsAt(level, 11, 10).includes(coin), true);
     assert.equal(purse.quantity, 4);
     assert.equal(game.uquiver, purse);
 });
@@ -119,7 +121,7 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
         assert.equal(leprechaun.msleeping, 1);
         assert.equal(leprechaun.mpeaceful, 1);
         assert.equal(leprechaun.minvent.length, 0);
-        assert.equal(floorAt(level, 13, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
 test('the one-in-three miss wakeup angers but still does not transfer the coin',
@@ -138,7 +140,7 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
         assert.equal(leprechaun.msleeping, 0);
         assert.equal(leprechaun.mpeaceful, 0);
         assert.equal(leprechaun.minvent.length, 0);
-        assert.equal(floorAt(level, 13, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
 test('targeting can thaw an immobilized monster before the coin misses',
@@ -160,7 +162,7 @@ test('targeting can thaw an immobilized monster before the coin misses',
         assert.equal(leprechaun.msleeping, 1);
         assert.equal(leprechaun.mpeaceful, 1);
         assert.equal(leprechaun.minvent.length, 0);
-        assert.equal(floorAt(level, 13, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
 test('a swallowed quivered coin wakes the engulfer and enters its inventory',
@@ -201,7 +203,7 @@ test('an upward quivered coin falls back, hurts the hero, and leaves the parent 
         assert.equal(purse.quantity, 4);
         assert.equal(game.uquiver, purse);
         assert.deepEqual([coin.ox, coin.oy], [10, 10]);
-        assert.equal(floorAt(level, 10, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 10, 10).includes(coin), true);
         assert.equal(game.context.move, 1);
     });
 
@@ -215,7 +217,7 @@ test('a greased quivered coin can slip into a one-coin floor drop', async () => 
 
     const coin = detachedCoin(level, purse);
     assert.deepEqual([coin.ox, coin.oy], [10, 10]);
-    assert.equal(floorAt(level, 10, 10).includes(coin), true);
+    assert.equal(floorObjectsAt(level, 10, 10).includes(coin), true);
     assert.equal(purse.quantity, 4);
     assert.equal(game.uquiver, purse);
 });
@@ -234,7 +236,7 @@ test('throwing the last quivered coin transfers its original identity',
         assert.equal(coin.quantity, 1);
         assert.equal(coin.where, 'floor');
         assert.deepEqual([coin.ox, coin.oy], [15, 10]);
-        assert.equal(floorAt(level, 15, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 15, 10).includes(coin), true);
     });
 
 test('a web can stop the live detached coin without disturbing the parent',
@@ -252,5 +254,5 @@ test('a web can stop the live detached coin without disturbing the parent',
         assert.equal(purse.quantity, 4);
         assert.equal(game.uquiver, purse);
         assert.deepEqual([coin.ox, coin.oy], [12, 10]);
-        assert.equal(floorAt(level, 12, 10).includes(coin), true);
+        assert.equal(floorObjectsAt(level, 12, 10).includes(coin), true);
     });

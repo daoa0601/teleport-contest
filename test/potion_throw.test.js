@@ -19,6 +19,7 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -80,14 +81,6 @@ async function throwEast(potion, continuationKeys = []) {
 }
 
 
-function floorObjects() {
-    const objects = [];
-    for (const column of game.level.objects || []) {
-        for (const pile of column || []) objects.push(...(pile || []));
-    }
-    return objects;
-}
-
 function addSleepingNeighbor(m_id, { strategy = null } = {}) {
     return addMonster({
         m_id,
@@ -113,7 +106,7 @@ test('live map potion crosses bhit and consumes a successful inert contact',
         assert.equal(monster.msleeping, 0);
         assert.equal(potion.where, 'gone');
         assert.equal(game.inventory.includes(potion), false);
-        assert.equal(floorObjects().includes(potion), false);
+        assert.equal(floorObjects(game.level).includes(potion), false);
     });
 
 test('live map potion miss wakes conditionally then shatters at bhitpos',
@@ -129,7 +122,7 @@ test('live map potion miss wakes conditionally then shatters at bhitpos',
         assert.equal(monster.msleeping, 0);
         assert.equal(potion.where, 'gone');
         assert.equal(game.inventory.includes(potion), false);
-        assert.equal(floorObjects().includes(potion), false);
+        assert.equal(floorObjects(game.level).includes(potion), false);
         assert.match(game._pending_message,
             /potion of gain level shatters!$/);
     });
@@ -147,7 +140,7 @@ test('map potion stack allocates and consumes one split identity', async () => {
     assert.equal(potion.quantity, 1);
     assert.equal(potion.where, 'inventory');
     assert.equal(monster.mhp, 11);
-    assert.equal(floorObjects().length, 0);
+    assert.equal(floorObjects(game.level).length, 0);
 });
 
 test('one-percent map potion break resistance preserves the thrown identity',
@@ -162,7 +155,7 @@ test('one-percent map potion break resistance preserves the thrown identity',
         assert.equal(potion.where, 'floor');
         assert.equal(potion.ox, 16);
         assert.equal(potion.oy, 10);
-        assert.ok(floorObjects().includes(potion));
+        assert.ok(floorObjects(game.level).includes(potion));
     });
 
 test('map extra healing contact heals monster then hero through nearby vapor',
@@ -238,7 +231,7 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         await throwEast(potion, [' ', ' ']);
         assert.equal(game.u.uhp, 22);
         assert.equal(potion.where, 'gone');
-        assert.equal(floorObjects().length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
         assert.match(game._pending_message, /You smell a peculiar odor\.\.\.$/);
     });
 
@@ -741,7 +734,7 @@ test('live fatal iron-golem water creates source special chain drops',
         initRng(2702n);
         await throwEast(potion, Array(40).fill(' '));
 
-        const drops = floorObjects();
+        const drops = floorObjects(game.level);
         const chains = drops.filter(object => object.otyp === IRON_CHAIN);
         assert.equal(monster.dead, true);
         assert.equal(game.level.monsters.includes(monster), false);
@@ -791,7 +784,7 @@ test('greased map potion reroutes live flight after stack detachment',
         assert.equal(potion.quan, 1);
         assert.equal(potion.quantity, 1);
         assert.equal(potion.where, 'inventory');
-        assert.equal(floorObjects().length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
         assert.equal(monster.mhp, 12);
         assert.deepEqual(
             [game.u.dx, game.u.dy, game.u.dz], [-1, 0, 0],
@@ -811,7 +804,7 @@ test('greased map potion can reroute vertically through live hitfloor',
         await throwEast(potion, Array(20).fill(' '));
         assert.deepEqual(game.inventory, []);
         assert.equal(potion.where, 'gone');
-        assert.equal(floorObjects().length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
         assert.equal(monster.mhp, 12);
         assert.deepEqual(
             [game.u.dx, game.u.dy, game.u.dz], [0, 0, 1],
@@ -833,7 +826,7 @@ test('live unlit oil breaks without evaporation and wakes its target', async () 
     assert.ok(monster.mhp <= 12 && monster.mhp >= 11);
     assert.equal(monster.msleeping, 0);
     assert.equal(potion.where, 'gone');
-    assert.equal(floorObjects().includes(potion), false);
+    assert.equal(floorObjects(game.level).includes(potion), false);
 });
 
 test('unknown inert map potion records a live type call after visible impact',
@@ -863,5 +856,5 @@ test('unknown inert map potion records a live type call after visible impact',
                 `${appearance} potion called mystery`,
             ),
         );
-        assert.equal(floorObjects().length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });

@@ -26,6 +26,7 @@ import {
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -164,7 +165,7 @@ test('special-level inventory transfer removes floor ownership and head-links',
         assert.deepEqual(monster.minvent, [object, prior]);
         assert.strictEqual(monster.inventory, monster.minvent);
         assertMonsterOwns(monster, object);
-        assert.equal((game.level.objects || []).flat(2).includes(object), false);
+        assert.equal(floorObjects(game.level).includes(object), false);
     });
 
 test('pet mpickobj ownership survives the complete pickup and release cycle',

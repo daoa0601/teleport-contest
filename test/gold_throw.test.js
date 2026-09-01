@@ -8,8 +8,11 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedGold, floorAt, floorObjects, goldMonster, looseGold, throwGold,
+    carriedGold, goldMonster, looseGold, throwGold,
 } from './support/gold-arena.js';
+import {
+    floorObjects, floorObjectsAt,
+} from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 
@@ -32,7 +35,7 @@ test('direct throw moves the whole purse through its strength-weight range',
         assert.equal(purse.quantity, 100);
         assert.equal(purse.where, 'floor');
         assert.deepEqual([purse.ox, purse.oy], [15, 10]);
-        assert.equal(floorAt(level, 15, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 15, 10).includes(purse), true);
         assert.equal(floorObjects(level).filter(object =>
             object.otyp === GOLD_PIECE).length, 1);
         assert.equal(game.context.move, 1);
@@ -49,7 +52,7 @@ test('an adjacent blocked cell leaves the whole thrown purse at the hero',
         assert.equal(heroGoldObject(game), null);
         assert.equal(purse.quantity, 4000);
         assert.deepEqual([purse.ox, purse.oy], [10, 10]);
-        assert.equal(floorAt(level, 10, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 10, 10).includes(purse), true);
         assert.equal(game.context.move, 1);
     });
 
@@ -62,7 +65,7 @@ test('coin weight shortens direct range using source integer division',
 
         assert.equal(purse.owt, 40);
         assert.deepEqual([purse.ox, purse.oy], [14, 10]);
-        assert.equal(floorAt(level, 14, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 14, 10).includes(purse), true);
     });
 
 test('a later wall leaves direct gold on the last open path cell',
@@ -74,7 +77,7 @@ test('a later wall leaves direct gold on the last open path cell',
         await throwGold('l');
 
         assert.deepEqual([purse.ox, purse.oy], [13, 10]);
-        assert.equal(floorAt(level, 13, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(purse), true);
     });
 
 test('coin-class direct gold passes through iron bars', async () => {
@@ -85,7 +88,7 @@ test('coin-class direct gold passes through iron bars', async () => {
     await throwGold('l');
 
     assert.deepEqual([purse.ox, purse.oy], [15, 10]);
-    assert.equal(floorAt(level, 15, 10).includes(purse), true);
+    assert.equal(floorObjectsAt(level, 15, 10).includes(purse), true);
 });
 
 test('a web can stop the whole purse at its live trap identity', async () => {
@@ -99,7 +102,7 @@ test('a web can stop the whole purse at its live trap identity', async () => {
 
     assert.equal(web.tseen, true);
     assert.deepEqual([purse.ox, purse.oy], [12, 10]);
-    assert.equal(floorAt(level, 12, 10).includes(purse), true);
+    assert.equal(floorObjectsAt(level, 12, 10).includes(purse), true);
 });
 
 test('downward gold throw moves the whole purse to the hero square',
@@ -112,7 +115,7 @@ test('downward gold throw moves the whole purse to the hero square',
         assert.equal(heroGoldObject(game), null);
         assert.equal(purse.quantity, 17);
         assert.deepEqual([purse.ox, purse.oy], [10, 10]);
-        assert.equal(floorAt(level, 10, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 10, 10).includes(purse), true);
         assert.equal(game.context.move, 1);
     });
 
@@ -142,7 +145,7 @@ test('a non-greedy monster wakes but does not catch thrown gold', async () => {
     assert.equal(jackal.msleeping, 0);
     assert.equal(jackal.mpeaceful, 0);
     assert.equal(jackal.minvent.length, 0);
-    assert.equal(floorAt(level, 13, 10).includes(purse), true);
+    assert.equal(floorObjectsAt(level, 13, 10).includes(purse), true);
     assert.equal(purse.where, 'floor');
     assert.equal(purse.quantity, 25);
 });
@@ -161,7 +164,7 @@ test('an immobilized greedy monster is hit harmlessly and cannot catch gold',
         assert.equal(leprechaun.mcanmove, 0);
         assert.equal(leprechaun.mfrozen, 3);
         assert.equal(leprechaun.minvent.length, 0);
-        assert.equal(floorAt(level, 13, 10).includes(purse), true);
+        assert.equal(floorObjectsAt(level, 13, 10).includes(purse), true);
         assert.equal(purse.where, 'floor');
     });
 

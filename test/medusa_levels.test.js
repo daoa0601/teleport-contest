@@ -8,6 +8,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     BOULDER, CRYSTAL_BALL, EGG, STATUE,
 } from '../js/object_data.js';
+import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 const monsterType = name => MONSTER_NAME.indexOf(name);
@@ -21,17 +22,6 @@ async function buildMedusa(variant, seed = variant * 71) {
     return active;
 }
 
-function stairs() {
-    const result = [];
-    for (let stair = game.stairs; stair; stair = stair.next)
-        result.push(stair);
-    return result;
-}
-
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
-
 function liveMonsters(name) {
     const type = monsterType(name);
     return game.level.monsters.filter(monster =>
@@ -41,15 +31,15 @@ function liveMonsters(name) {
 test('all four Medusa scripts build their island and stair pair', async () => {
     for (let variant = 1; variant <= 4; variant++) {
         await buildMedusa(variant);
-        const levelStairs = stairs();
-        const down = levelStairs.find(stair => !stair.up);
+        const stairs = levelStairs(game);
+        const down = stairs.find(stair => !stair.up);
         const medusa = liveMonsters('Medusa')[0];
 
         assert.equal(game.level.flags.is_special, true, `variant ${variant}`);
         assert.equal(game.level.flags.is_maze_lev, true, `variant ${variant}`);
         assert.equal(game.level.flags.noteleport, true, `variant ${variant}`);
         assert.ok(game.level.nroom > 0, `variant ${variant} arrival room`);
-        assert.equal(levelStairs.length, 2, `variant ${variant} stairs`);
+        assert.equal(stairs.length, 2, `variant ${variant} stairs`);
         assert.ok(medusa, `variant ${variant} Medusa`);
         assert.deepEqual([medusa.mx, medusa.my], [down.sx, down.sy],
             `variant ${variant} downstairs`);
@@ -65,7 +55,7 @@ test('the second island contains its guards, statues, and fixed hazard',
         assert.equal(liveMonsters('stone golem').length, 4);
         assert.ok(liveMonsters('cobra').length >= 2);
 
-        const objects = floorObjects();
+        const objects = floorObjects(game.level);
         assert.ok(objects.filter(object => object.otyp === STATUE).length >= 9);
         assert.ok(objects.filter(object => object.otyp === BOULDER).length >= 2);
         assert.ok(game.level.traps.some(trap => trap.ttyp === MAGIC_TRAP));
@@ -79,7 +69,7 @@ test('the fourth island contains the dragon nest and palace treasure',
         assert.ok(dragon);
         assert.ok(kraken);
 
-        const objects = floorObjects();
+        const objects = floorObjects(game.level);
         const eggs = objects.filter(object => object.otyp === EGG);
         assert.ok(objects.some(object => object.otyp === CRYSTAL_BALL));
         assert.ok(eggs.length >= 1 && eggs.length <= 3);

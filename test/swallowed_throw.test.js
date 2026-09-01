@@ -29,6 +29,7 @@ import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_reset_new_level } from '../js/vision.js';
+import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -189,7 +190,7 @@ test('swallowed split stack merges only after thrown ownership becomes stolen',
         assert.equal(survivor.how_lost, LOST_STOLEN);
         assert.match(game._pending_message,
             /^The scroll of blank paper vanishes into the purple worm's entrails\.$/);
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed timed lamp links before snuffing and restores unused fuel',
@@ -280,7 +281,7 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
         assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(game._pending_message,
             'The dagger hits the trapper.');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
@@ -308,7 +309,7 @@ test('swallowed weapon-tool preserves minimal-damage skill cadence',
         assert.equal(game.u._exercise[A_DEX], 0);
         assert.equal(game._pending_message,
             'The pick-axe hits the trapper.');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed multi-die weapon uses the shared physical damage owner',
@@ -334,7 +335,7 @@ test('swallowed multi-die weapon uses the shared physical damage owner',
         assert.equal(game.u._exercise[A_DEX], 0);
         assert.equal(game._pending_message,
             'The two-handed sword hits the trapper!');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('cursed swallowed throwing weapon slips before hitting the engulfer',
@@ -362,7 +363,7 @@ test('cursed swallowed throwing weapon slips before hitting the engulfer',
         assert.equal(game.u.dx, -1);
         assert.equal(game.u.dy, -1);
         assert.equal(game.u.dz, 0);
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed dart survives mulch and transfers after live missile damage',
@@ -389,7 +390,7 @@ test('swallowed dart survives mulch and transfers after live missile damage',
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game.u._weaponPracticeBySkill[skill], 1);
         assert.equal(game._pending_message, 'The dart hits the trapper.');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed dart mulch removes the detached identity after damage',
@@ -414,7 +415,7 @@ test('swallowed dart mulch removes the detached identity after damage',
         assert.equal(dart.where, 'gone');
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game._pending_message, 'The dart hits the trapper.');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed projectile passive follows mulch survival before acquisition',
@@ -522,7 +523,7 @@ test('swallowed sickness harms both the engulfer and hero',
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed booze confuses both the engulfer and hero',
@@ -546,7 +547,7 @@ test('swallowed booze confuses both the engulfer and hero',
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
         assert.equal(game._pending_message, 'Crash!  You feel somewhat dizzy.');
     });
 
@@ -628,7 +629,7 @@ test('swallowed cursed invisibility reveals and angers an invisible engulfer',
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed blessed water damages a demonic engulfer through the live owner',
@@ -1024,7 +1025,7 @@ test('swallowed unlit oil breaks without evaporation or floor fallback',
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(potion.where, 'gone');
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('swallowed healing family heals both monster and hero through vapor',
@@ -1156,7 +1157,7 @@ test('all monster-inert potions crash unseen, chip, and disappear live',
             assert.equal(potion.ox, 0);
             assert.equal(potion.oy, 0);
             assert.equal(game._pending_message, 'Crash!');
-            assert.equal((game.level.objects || []).flat(2).length, 0);
+            assert.equal(floorObjects(game.level).length, 0);
         }
     });
 
@@ -1197,7 +1198,7 @@ test('swallowed inert potion stack splits one consumed identity', async () => {
     assert.equal(potion.quantity, 1);
     assert.equal(potion.where, 'inventory');
     assert.deepEqual(engulfer.minvent, []);
-    assert.equal((game.level.objects || []).flat(2).length, 0);
+    assert.equal(floorObjects(game.level).length, 0);
 });
 
 test('dknown unknown swallowed potion records a live type call after impact',
@@ -1231,7 +1232,7 @@ test('dknown unknown swallowed potion records a live type call after impact',
                 `${appearance} potion called mystery`,
             ),
         );
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('unseen unknown inert potion needs no naming continuation', async () => {
@@ -1305,13 +1306,13 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
         assert.equal(dart.where, 'inventory');
         assert.equal(dart.how_lost, 0);
         assert.equal('carrierMid' in dart, false);
-        assert.equal((game.level.objects || []).flat(2).includes(dart), false);
+        assert.equal(floorObjects(game.level).includes(dart), false);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(game.u.uconduct.killer, 1);
         assert.equal(game._vanquishedCounts.get(PM_TRAPPER).count, 1);
         assert.ok((game.u.uexp ?? 0) > 0);
-        assert.equal((game.level.objects || []).flat(2)
+        assert.equal(floorObjects(game.level)
             .some(object => /corpse/.test(object.name || '')), false);
         assert.match(game._pending_message, /a - (?:an? )?dart\./);
     });
@@ -1376,7 +1377,7 @@ test('a killing projectile releases prior minvent ahead of itself into autopicku
         assert.equal('carrierMid' in prior, false);
         assert.equal('carrierMid' in dart, false);
         assert.deepEqual(engulfer.minvent, []);
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });
 
 test('a killing projectile merges in minvent before the survivor is released',
@@ -1417,5 +1418,5 @@ test('a killing projectile merges in minvent before the survivor is released',
         assert.equal('carrierMid' in survivor, false);
         assert.equal('carrierMid' in dart, false);
         assert.deepEqual(engulfer.minvent, []);
-        assert.equal((game.level.objects || []).flat(2).length, 0);
+        assert.equal(floorObjects(game.level).length, 0);
     });

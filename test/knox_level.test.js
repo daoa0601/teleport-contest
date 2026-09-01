@@ -6,17 +6,8 @@ import { game } from '../js/gstate.js';
 import { generateKnoxLevel } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
+import { countTerrain, floorObjects } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
-
-function terrainCount(type) {
-    let count = 0;
-    for (let x = 1; x < 80; x++) {
-        for (let y = 0; y < 21; y++) {
-            if (game.level.at(x, y)?.typ === type) count++;
-        }
-    }
-    return count;
-}
 
 test('Fort Ludios contains its defended treasury and Croesus court',
     async () => {
@@ -31,8 +22,8 @@ test('Fort Ludios contains its defended treasury and Croesus court',
         assert.equal(game.level.flags.has_court, true);
         assert.equal(game.level.flags.has_zoo, true);
         assert.equal(game.level.flags.has_barracks, true);
-        assert.ok(terrainCount(MOAT) > 80);
-        assert.equal(terrainCount(THRONE), 1);
+        assert.ok(countTerrain(game.level, MOAT) > 80);
+        assert.equal(countTerrain(game.level, THRONE), 1);
 
         const monsterNames = game.level.monsters.map(
             monster => MONSTER_NAME[monster.mnum],
@@ -42,7 +33,7 @@ test('Fort Ludios contains its defended treasury and Croesus court',
         assert.equal(monsterNames.filter(name => name === 'giant eel').length, 4);
         assert.ok(monsterNames.filter(name => name?.includes('dragon')).length >= 4);
 
-        const objects = (game.level.objects || []).flat(2).filter(Boolean);
+        const objects = floorObjects(game.level);
         assert.ok(objects.filter(object => object.otyp === GOLD_PIECE
             && object.quan >= 600 && object.quan <= 900).length >= 60);
         const gems = objects.map(object => OBJECT_NAMES[object.otyp]);

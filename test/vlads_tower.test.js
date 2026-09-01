@@ -8,6 +8,7 @@ import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION,
     TALLOW_CANDLE, WAX_CANDLE,
 } from '../js/object_data.js';
+import { floorObjects } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 async function buildTower(floor) {
@@ -19,12 +20,8 @@ async function buildTower(floor) {
     return active;
 }
 
-function floorObjects() {
-    return (game.level.objects || []).flat(2).filter(Boolean);
-}
-
 function containedObjects() {
-    return floorObjects().flatMap(object => object.contents || []);
+    return floorObjects(game.level).flatMap(object => object.contents || []);
 }
 
 function ladderCount() {
