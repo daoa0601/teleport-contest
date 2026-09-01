@@ -20,6 +20,7 @@ import {
     mkcorpstat, mkobj, mksobj, place_object, stack_object, undeadToCorpse,
 } from './mklev.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
+import { markQuestLeaderDead } from './quest.js';
 import { wakeMonstersNear } from './mon.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import {
@@ -385,6 +386,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     }
     unmap_invisible(x, y, false);
     monster.dead = true;
+    markQuestLeaderDead(monster, game);
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
@@ -400,8 +402,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         delete monster.name;
     } else if (leavesCorpse
         && (convertedUndeadCorpse || !(generationFlags & G_NOCORPSE))) {
-        const leaderId = game.quest_status?.leader_m_id
-            ?? game.u?.quest_status?.leader_m_id;
+        const leaderId = game.quest_status?.leader_m_id;
         const savedMonster = convertedUndeadCorpse
             || corpseKeepsMonsterTraits(monster, leaderId)
             ? monster : null;

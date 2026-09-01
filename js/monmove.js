@@ -54,6 +54,7 @@ import {
 } from './vision.js';
 import { recordVanquished } from './end.js';
 import { wipeEngravingAt } from './engrave.js';
+import { markQuestLeaderDead } from './quest.js';
 import { moveVaultGuard } from './vault.js';
 import { collectNearbyCoords } from './u_init.js';
 import { shopkeeperInOwnShop } from './shk.js';
@@ -2956,8 +2957,7 @@ function createOrdinaryMonsterCorpse(
         // corpsenm assignment.  If mksobj() chose a timerless lichen/lizard
         // as its temporary identity, this override must rebuild the ordinary
         // corpse timer before grow_up().
-        const leaderId = state.quest_status?.leader_m_id
-            ?? state.u?.quest_status?.leader_m_id;
+        const leaderId = state.quest_status?.leader_m_id;
         const savedMonster = corpseForm !== defender.mnum
             || corpseKeepsMonsterTraits(defender, leaderId)
             ? defender : null;
@@ -3010,6 +3010,7 @@ function detachDeadMonster(defender, state) {
     releaseDeadMonsterInventory(defender, state);
     defender.mhp = 0;
     defender.dead = true;
+    markQuestLeaderDead(defender, state);
     if (state === game) unmap_invisible(x, y, false);
     state.level.monsters = state.level.monsters.filter(monster =>
         monster !== defender);

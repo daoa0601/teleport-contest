@@ -25,6 +25,8 @@ const PM_HUMAN_ZOMBIE = 244;
 const PM_LEOCROTTA = 83;
 const PM_GIANT = 169;
 const PM_GIANT_ZOMBIE = 247;
+const PM_JACKAL = 12;
+const PM_CHAMELEON = 327;
 
 function freshState() {
     resetGame();
@@ -161,6 +163,67 @@ test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.mhpmax, 25);
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
 });
+
+test('reviving the quest leader clears the dead-leader state', async () => {
+    freshState();
+    const leader = {
+        m_id: 93,
+        mnum: PM_GIANT,
+        mx: 12, my: 10,
+        m_lev: 8,
+        mhp: 0, mhpmax: 45,
+        mpeaceful: 1,
+        mtame: 0,
+        minvent: [], inventory: [],
+    };
+    game.quest_status = {
+        leader_m_id: leader.m_id,
+        leader_is_dead: false,
+    };
+    game.level.monsters.push(leader);
+    initRng(8n);
+
+    await finishHeroMonsterKill(leader, leader.mx, leader.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+    assert.equal(game.quest_status.leader_is_dead, true);
+    const corpse = game.level.objects[12][10].find(
+        object => object.otyp === CORPSE,
+    );
+    stopAllObjectTimers(corpse);
+
+    const event = await reviveNow(corpse);
+
+    assert.equal(event.monster.m_id, leader.m_id);
+    assert.equal(game.quest_status.leader_is_dead, false);
+});
+
+test('shapechanger protection restores a revived chameleon to itself',
+    async () => {
+        freshState();
+        game.u.protectionFromShapeChangers = true;
+        const disguisedChameleon = {
+            m_id: 94,
+            mnum: PM_JACKAL,
+            cham: PM_CHAMELEON,
+            mx: 12, my: 10,
+            m_lev: 5,
+            mhp: 0, mhpmax: 24,
+            mpeaceful: 0,
+            mtame: 0,
+            minvent: [], inventory: [],
+        };
+        const corpse = mkcorpstat(
+            CORPSE, disguisedChameleon, PM_CHAMELEON, 12, 10, 8,
+        );
+        stopAllObjectTimers(corpse);
+
+        const event = await reviveNow(corpse);
+
+        assert.equal(event.monster.mnum, PM_CHAMELEON);
+        assert.equal(event.monster.cham, -1);
+    });
 
 test('a troll corpse in the pack revives beside the hero', async () => {
     freshState();

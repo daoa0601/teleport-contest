@@ -46,8 +46,8 @@ export function tameMonster(monster, state = game) {
     return true;
 }
 
-export function waryPetAfterRevival(
-    monster, state = game, random = rn2,
+export function makePetWary(
+    monster, { wasDead = true, state = game, random = rn2 } = {},
 ) {
     if (!monster) return;
     monster.meating = 0;
@@ -76,7 +76,19 @@ export function waryPetAfterRevival(
     monster.pet = monster.mtame > 0;
     if (!monster.mtame) {
         monster.mleashed = 0;
-        return;
+        for (const object of state.inventory || []) {
+            if (object.leashmon === monster.m_id) object.leashmon = 0;
+        }
+        if (state.u?.usteed === monster) state.u.usteed = null;
+        if (state.u?.ustuck === monster) {
+            state.u.ustuck = null;
+            state.u.uswallow = false;
+        }
+        return {
+            tame: false,
+            disposition: monster.mpeaceful
+                ? 'is no longer tame' : 'has become feral',
+        };
     }
 
     if (dog) {
@@ -84,10 +96,15 @@ export function waryPetAfterRevival(
         dog.killed_by_u = 0;
         dog.abuse = 0;
         dog.ogoal = { x: -1, y: -1 };
-        dog.hungrytime = (state.moves ?? 0) + 500;
-        dog.droptime = 0;
-        dog.dropdist = 10000;
-        dog.whistletime = 0;
-        dog.apport = 5;
+        const hungerFloor = (state.moves ?? 0) + 500;
+        if (wasDead || (dog.hungrytime ?? 0) < hungerFloor)
+            dog.hungrytime = hungerFloor;
+        if (wasDead) {
+            dog.droptime = 0;
+            dog.dropdist = 10000;
+            dog.whistletime = 0;
+            dog.apport = 5;
+        }
     }
+    return { tame: true };
 }

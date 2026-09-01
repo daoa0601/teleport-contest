@@ -62,12 +62,20 @@ export function registerQuestLeader(monster, g = game) {
 export function isQuestLeader(monster, g = game) {
     if (!monster) return false;
     const status = ensureQuestStatus(g);
-    if (status.leader_m_id)
-        return monster.m_id === status.leader_m_id;
-    // Old saves can predate q_score registration.  Recover only from the
-    // selected role's semantic leader identity, then make the state durable.
-    return monster.mnum === g.urole?.ldrnum
-        && registerQuestLeader(monster, g);
+    return !!status.leader_m_id
+        && monster.m_id === status.leader_m_id;
+}
+
+export function markQuestLeaderDead(monster, g = game) {
+    if (!isQuestLeader(monster, g)) return false;
+    ensureQuestStatus(g).leader_is_dead = true;
+    return true;
+}
+
+export function markQuestLeaderAlive(monster, g = game) {
+    if (!isQuestLeader(monster, g)) return false;
+    ensureQuestStatus(g).leader_is_dead = false;
+    return true;
 }
 
 function questPage(lines) {

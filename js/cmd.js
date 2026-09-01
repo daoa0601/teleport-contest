@@ -9464,8 +9464,7 @@ function canFinishOrdinaryThrownKill(monster, { swallowed = false } = {}) {
         if (game.u?.ustuck !== monster || !game.u?.uswallow) return false;
     } else if (game.u?.uswallow || game.u?.ustuck) return false;
     const location = game.level?.at?.(monster.mx, monster.my);
-    const leaderId = game.quest_status?.leader_m_id
-        ?? game.u?.quest_status?.leader_m_id;
+    const leaderId = game.quest_status?.leader_m_id;
     const carried = monster.minvent || monster.inventory || [];
     const ordinaryPriorInventory = carried.every(object => {
         const objectClass = object.oclass || objectClassForType(object.otyp);

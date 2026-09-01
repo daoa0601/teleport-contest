@@ -8,14 +8,15 @@ import {
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { tameMonster, waryPetAfterRevival } from './dog.js';
+import { makePetWary, tameMonster } from './dog.js';
 import { game } from './gstate.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, maketrap,
     riderRevivalTime, set_corpsenm, shapechangeMonster,
 } from './mklev.js';
 import {
-    MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
+    MONSTER_SYMBOL,
     monsterTypeName,
 } from './monster_data.js';
 import { restoreMonsterTraits } from './monster_traits.js';
@@ -31,10 +32,12 @@ import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
+import { markQuestLeaderAlive } from './quest.js';
 
 const S_EEL = 57;
 const S_ZOMBIE = 52;
 const G_UNIQ = 0x1000;
+const M2_SHAPESHIFTER = 0x00004000;
 const PM_ANGEL = 123;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_DOPPELGANGER = 270;
@@ -289,6 +292,28 @@ function restoreCorpseNameAndHealth(monster, corpse) {
     }
 }
 
+function restoreShapechangerState(monster, state) {
+    const naturalForm = Number.isInteger(monster.cham)
+        && monster.cham >= 0 ? monster.cham : null;
+    const protectedFromShapechangers = !!(
+        state.u?.protectionFromShapeChangers
+        || state.protectionFromShapeChangers
+    );
+    if (protectedFromShapechangers || monster.mcan) {
+        if (naturalForm != null) {
+            const cancelled = monster.mcan;
+            shapechangeMonster(monster, naturalForm);
+            monster.cham = -1;
+            if (cancelled) monster.mcan = 1;
+        }
+        return;
+    }
+    if (naturalForm == null
+        && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_SHAPESHIFTER)) {
+        monster.cham = monster.mnum;
+    }
+}
+
 function mergeGhostIntoBody(monster, corpse, state) {
     const ghostId = corpse.oextra?.omid ?? corpse.omid;
     if (!ghostId) return;
@@ -348,8 +373,10 @@ async function createRevivedMonster(corpse, location, state) {
 
     if (savedTraits && replacement == null) {
         restoreMonsterTraits(monster, savedTraits);
+        restoreShapechangerState(monster, state);
+        markQuestLeaderAlive(monster, state);
         if (monster.mtame && !monster.isminion)
-            waryPetAfterRevival(monster, state);
+            makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER)
         shapechangeMonster(monster, originalMnum);
     else if (replacement === PM_HUMAN_ZOMBIE) {

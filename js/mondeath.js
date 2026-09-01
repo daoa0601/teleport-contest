@@ -9,6 +9,7 @@ import {
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
+import { makePetWary } from './dog.js';
 import {
     MONSTER_ATTACKS, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
@@ -16,7 +17,6 @@ import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
 } from './object_knowledge.js';
-import { rn2 } from './rng.js';
 
 async function lifeSavingPage(message) {
     await pline(message);
@@ -61,10 +61,6 @@ function monsterReconstitutesAfterLifeSaving(monster) {
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
 
-function monsterPetRecord(monster) {
-    return monster?.edog || monster?.mextra?.edog || null;
-}
-
 async function waryDogAfterLifeSaving(
     monster, {
         wasDead = false, spotted = true,
@@ -72,61 +68,13 @@ async function waryDogAfterLifeSaving(
     } = {},
 ) {
     if (!(monster?.mtame > 0)) return;
-    const edog = monsterPetRecord(monster);
-    monster.meating = 0;
-    const penalty = edog?.mhpmax_penalty ?? 0;
-    if (penalty) {
-        monster.mhpmax = (monster.mhpmax ?? 0) + penalty;
-        monster.mhp = (monster.mhp ?? 0) + penalty;
-        edog.mhpmax_penalty = 0;
+    const result = makePetWary(monster, { wasDead, state });
+    if (result?.tame !== false) return;
+    if (!wasDead && spotted) {
+        const subject = lifeSavingSubject(monster, true);
+        await line(`${subject} ${result.disposition}.`);
     }
-
-    if (edog && (edog.killed_by_u === 1 || (edog.abuse ?? 0) > 2)) {
-        monster.mtame = 0;
-        monster.mpeaceful = 0;
-        if ((edog.abuse ?? -1) >= 0 && (edog.abuse ?? 10) < 10
-            && rn2((edog.abuse ?? 0) + 1) === 0) monster.mpeaceful = 1;
-    } else {
-        monster.mtame = rn2((monster.mtame ?? 0) + 1);
-        if (!monster.mtame) monster.mpeaceful = rn2(2);
-    }
-
-    if (!monster.mtame) {
-        monster.pet = false;
-        monster.mleashed = 0;
-        for (const object of state.inventory || []) {
-            if (object.leashmon === monster.m_id) object.leashmon = 0;
-        }
-        if (state.u?.usteed === monster) state.u.usteed = null;
-        if (state.u?.ustuck === monster) {
-            state.u.ustuck = null;
-            state.u.uswallow = false;
-        }
-        if (!wasDead && spotted) {
-            const subject = lifeSavingSubject(monster, true);
-            const disposition = monster.mpeaceful
-                ? 'is no longer tame' : 'has become feral';
-            await line(`${subject} ${disposition}.`);
-        }
-        repaint(monster.mx, monster.my);
-        return;
-    }
-
-    monster.pet = true;
-    if (!edog) return;
-    edog.revivals = (edog.revivals ?? 0) + 1;
-    edog.killed_by_u = 0;
-    edog.abuse = 0;
-    edog.ogoal = { x: -1, y: -1 };
-    const hungerFloor = (state.moves ?? 0) + 500;
-    if (wasDead || (edog.hungrytime ?? 0) < hungerFloor)
-        edog.hungrytime = hungerFloor;
-    if (wasDead) {
-        edog.droptime = 0;
-        edog.dropdist = 10000;
-        edog.whistletime = 0;
-        edog.apport = 5;
-    }
+    repaint(monster.mx, monster.my);
 }
 
 // Run the source pre-detach revival transaction.  The fatal caller owns the
