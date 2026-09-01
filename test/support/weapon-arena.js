@@ -30,7 +30,9 @@ export function inventoryObject(otyp, invlet, overrides = {}) {
     };
 }
 
-export function freshWeaponArena() {
+export function freshWeaponArena({
+    role = 'caveman', heroLevel = 1, energy = 0,
+} = {}) {
     resetGame();
     const level = new GameMap();
     for (let x = 8; x <= 18; x++) {
@@ -40,7 +42,10 @@ export function freshWeaponArena() {
             });
         }
     }
-    installLiveCommandHero({ role: 'caveman', level, x: 10, y: 10 });
+    installLiveCommandHero({ role, level, x: 10, y: 10 });
+    game.u.ulevel = heroLevel;
+    game.u.uen = energy;
+    game.u.uenmax = energy;
     game.flags = {
         fireassist: true,
         pushweapon: true,

@@ -8,6 +8,7 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { addMonster } from './support/monsters.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
@@ -47,27 +48,17 @@ function freshPriest(alignment = 1) {
     init_objects();
 }
 
-function addMonster(mnum, x, y) {
-    const monster = {
-        m_id: 100 + game.level.monsters.length,
-        mnum, mx: x, my: y,
-        m_lev: 4,
-        mhp: 20, mhpmax: 20,
-        mpeaceful: 0,
-        mtame: 0,
-        msleeping: 1,
-        mcanmove: 1,
-        minvent: [], inventory: [],
-    };
-    game.level.monsters.push(monster);
-    return monster;
-}
-
 test('a lawful priest destroys a zombie and frightens a tougher mummy',
     async () => {
         freshPriest(1);
-        const zombie = addMonster(PM_HUMAN_ZOMBIE, 11, 10);
-        const mummy = addMonster(PM_HUMAN_MUMMY, 12, 10);
+        const zombie = addMonster({
+            mnum: PM_HUMAN_ZOMBIE, x: 11, y: 10,
+            level: 4, msleeping: 1,
+        });
+        const mummy = addMonster({
+            mnum: PM_HUMAN_MUMMY, x: 12, y: 10,
+            level: 4, msleeping: 1,
+        });
 
         await turnUndeadByCallingOnDeity(game, {
             random: range => range - 1,
@@ -82,7 +73,10 @@ test('a lawful priest destroys a zombie and frightens a tougher mummy',
 
 test('a chaotic priest makes a weak undead monster peaceful', async () => {
     freshPriest(-1);
-    const zombie = addMonster(PM_HUMAN_ZOMBIE, 11, 10);
+    const zombie = addMonster({
+        mnum: PM_HUMAN_ZOMBIE, x: 11, y: 10,
+        level: 4, msleeping: 1,
+    });
 
     await turnUndeadByCallingOnDeity(game, {
         random: range => range - 1,

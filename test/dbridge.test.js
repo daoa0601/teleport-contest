@@ -10,6 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { playInstrument } from '../js/music.js';
 import { ROCK, WOODEN_HARP } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
+import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 const PM_WATER_ELEMENTAL = 157;
@@ -36,22 +37,6 @@ function harp() {
         name: 'wooden harp',
         spe: 0,
         charges: { current: 0, recharged: 0 },
-    };
-}
-
-function bridgeMonster(mnum, x, y, overrides = {}) {
-    return {
-        mnum,
-        mx: x,
-        my: y,
-        mhp: 20,
-        mhpmax: 20,
-        mcanmove: 1,
-        mfrozen: 0,
-        msleeping: 0,
-        mstrategy: 0,
-        minvent: [],
-        ...overrides,
     };
 }
 
@@ -100,7 +85,7 @@ test('opening a drawbridge destroys objects and traps on the span',
 test('a lowering drawbridge crushes a grounded monster on the span',
     async () => {
         const { level, bridge } = installStrongholdDrawbridge();
-        const monster = bridgeMonster(0, 12, 10);
+        const monster = liveMonster({ mnum: 0, x: 12, y: 10 });
         level.monsters = [monster];
         pushKeys(`nABCDE\n${' '.repeat(30)}`);
 
@@ -113,7 +98,8 @@ test('a lowering drawbridge crushes a grounded monster on the span',
 test('an opening portcullis releases its occupant onto the bridge',
     async () => {
         const { level } = installStrongholdDrawbridge();
-        const monster = bridgeMonster(PM_WATER_ELEMENTAL, 12, 9, {
+        const monster = liveMonster({
+            mnum: PM_WATER_ELEMENTAL, x: 12, y: 9,
             mcanmove: 0,
             msleeping: 1,
         });
@@ -133,7 +119,8 @@ test('a closing portcullis crushes a helpless monster', async () => {
     wall.typ = DOOR;
     wall.doormask = D_NODOOR;
     game.u.uevent = { uheard_tune: 2 };
-    const monster = bridgeMonster(0, 12, 9, {
+    const monster = liveMonster({
+        mnum: 0, x: 12, y: 9,
         mcanmove: 0,
         msleeping: 1,
     });
@@ -148,7 +135,7 @@ test('a closing portcullis crushes a helpless monster', async () => {
 
 test('a ghost passes through a lowering drawbridge', async () => {
     const { level, bridge } = installStrongholdDrawbridge();
-    const ghost = bridgeMonster(PM_GHOST, 12, 10);
+    const ghost = liveMonster({ mnum: PM_GHOST, x: 12, y: 10 });
     level.monsters = [ghost];
     pushKeys(`nABCDE\n${' '.repeat(30)}`);
 

@@ -25,40 +25,14 @@ import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
+import { chargedWand } from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
-
-function carriedWand(otyp, overrides = {}) {
-    return {
-        otyp,
-        invlet: 'a',
-        name: 'sleep',
-        oclass: 11,
-        quan: 1,
-        quantity: 1,
-        charges: { current: 3, recharged: 0 },
-        spe: 3,
-        dknown: true,
-        bknown: true,
-        ...overrides,
-    };
-}
 
 test('sleep resistance prevents self-zap helplessness', async () => {
     freshWeaponArena();
     game.urole = { key: 'healer' };
     game.u.sleepResistance = true;
-    const wand = {
-        otyp: WAN_SLEEP,
-        invlet: 'a',
-        name: 'sleep',
-        oclass: 11,
-        quan: 1,
-        quantity: 1,
-        charges: { current: 3, recharged: 0 },
-        spe: 3,
-        dknown: true,
-        bknown: true,
-    };
+    const wand = chargedWand(WAN_SLEEP);
     game.inventory = [wand];
     pushKey('a');
     pushKey('.');
@@ -74,10 +48,7 @@ test('sleep resistance prevents self-zap helplessness', async () => {
 
 test('an empty wand does nothing without asking for a direction', async () => {
     freshWeaponArena();
-    const wand = carriedWand(WAN_SLEEP, {
-        charges: { current: 0, recharged: 0 },
-        spe: 0,
-    });
+    const wand = chargedWand(WAN_SLEEP, { charges: 0 });
     game.inventory = [wand];
     pushKey('a');
 
@@ -94,10 +65,7 @@ test('a wrested final charge consumes the wand', async () => {
     freshWeaponArena();
     initRng(49n);
     game.u.sleepResistance = true;
-    const wand = carriedWand(WAN_SLEEP, {
-        charges: { current: 0, recharged: 0 },
-        spe: 0,
-    });
+    const wand = chargedWand(WAN_SLEEP, { charges: 0 });
     game.inventory = [wand];
     pushKey('a');
     pushKey('.');
@@ -113,7 +81,7 @@ test('a cursed wand can explode before asking for a direction', async () => {
     freshWeaponArena();
     initRng(167n);
     game.u.uhp = game.u.uhpmax = 100;
-    const wand = carriedWand(WAN_SLEEP, { cursed: true });
+    const wand = chargedWand(WAN_SLEEP, { cursed: true });
     game.inventory = [wand];
     pushKey('a');
 
@@ -133,9 +101,7 @@ test('secret door detection reveals nearby hidden terrain and traps', async () =
     level.traps.push(hiddenTrap);
     game.viz_array[10][12] |= COULD_SEE;
     game.viz_array[11][11] |= COULD_SEE;
-    const wand = carriedWand(WAN_SECRET_DOOR_DETECTION, {
-        name: 'secret door detection',
-    });
+    const wand = chargedWand(WAN_SECRET_DOOR_DETECTION);
     game.inventory = [wand];
     pushKey('a');
 
@@ -164,7 +130,7 @@ test('light illuminates the visible area and burns a nearby gremlin',
             minvent: [],
         };
         level.monsters = [gremlin];
-        const wand = carriedWand(WAN_LIGHT, { name: 'light' });
+        const wand = chargedWand(WAN_LIGHT);
         game.inventory = [wand];
         pushKey('a');
 
@@ -178,7 +144,7 @@ test('light illuminates the visible area and burns a nearby gremlin',
 test('stasis blocks teleporting until its turns expire', async () => {
     freshWeaponArena();
     game.moves = 100;
-    const wand = carriedWand(WAN_STASIS, { name: 'stasis' });
+    const wand = chargedWand(WAN_STASIS);
     game.inventory = [wand];
     pushKey('a');
 
@@ -192,9 +158,7 @@ test('stasis blocks teleporting until its turns expire', async () => {
 test('create monster summons beside the hero without asking for a direction',
     async () => {
         freshWeaponArena();
-        const wand = carriedWand(WAN_CREATE_MONSTER, {
-            name: 'create monster',
-        });
+        const wand = chargedWand(WAN_CREATE_MONSTER);
         game.inventory = [wand];
         pushKey('a');
 
@@ -207,7 +171,7 @@ test('wishing creates the requested object without asking for a direction',
     async () => {
         freshWeaponArena();
         game.u.uluck = 10;
-        const wand = carriedWand(WAN_WISHING, { name: 'wishing' });
+        const wand = chargedWand(WAN_WISHING);
         game.inventory = [wand];
         pushKey('a');
         pushKey(' ');
@@ -221,9 +185,7 @@ test('wishing creates the requested object without asking for a direction',
 test('enlightenment describes the hero without asking for a direction',
     async () => {
         freshWeaponArena();
-        const wand = carriedWand(WAN_ENLIGHTENMENT, {
-            name: 'enlightenment',
-        });
+        const wand = chargedWand(WAN_ENLIGHTENMENT);
         game.inventory = [wand];
         pushKey('a');
         pushKey(' ');

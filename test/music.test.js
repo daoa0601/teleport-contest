@@ -8,6 +8,7 @@ import { playInstrument } from '../js/music.js';
 import {
     BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP,
 } from '../js/object_data.js';
+import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function instrument(otyp, name, spe = 0) {
@@ -19,27 +20,10 @@ function instrument(otyp, name, spe = 0) {
     };
 }
 
-function monster(mnum, x, y, overrides = {}) {
-    return {
-        mnum,
-        mx: x,
-        my: y,
-        mhp: 20,
-        mhpmax: 20,
-        m_lev: 1,
-        mcanmove: 1,
-        mfrozen: 0,
-        msleeping: 0,
-        mstrategy: 0,
-        minvent: [],
-        ...overrides,
-    };
-}
-
 test('a charged magic flute puts nearby monsters to sleep', async () => {
     const level = freshWeaponArena();
     game.u.ulevel = 5;
-    const target = monster(0, 11, 10);
+    const target = liveMonster({ mnum: 0, x: 11, y: 10 });
     level.monsters = [target];
     const flute = instrument(MAGIC_FLUTE, 'magic flute', 2);
     pushKeys('y          ');
@@ -54,7 +38,9 @@ test('a charged magic flute puts nearby monsters to sleep', async () => {
 test('a skilled harp player calms nearby nymphs', async () => {
     const level = freshWeaponArena();
     game.u.ulevel = 30;
-    const nymph = monster(68, 11, 10, { mpeaceful: 0 });
+    const nymph = liveMonster({
+        mnum: 68, x: 11, y: 10, mpeaceful: 0,
+    });
     level.monsters = [nymph];
     pushKeys('y          ');
 
@@ -65,7 +51,8 @@ test('a skilled harp player calms nearby nymphs', async () => {
 
 test('a bugle calls every soldier on the level to battle', async () => {
     const level = freshWeaponArena();
-    const soldier = monster(277, 18, 12, {
+    const soldier = liveMonster({
+        mnum: 277, x: 18, y: 12,
         mpeaceful: 1,
         msleeping: 1,
         mcanmove: 0,
@@ -103,7 +90,9 @@ test('applying a leather drum plays it', async () => {
 
 test('a fire horn shoots a ray and spends one charge', async () => {
     const level = freshWeaponArena();
-    const target = monster(0, 11, 10, { mac: 100, mhp: 100, mhpmax: 100 });
+    const target = liveMonster({
+        mnum: 0, x: 11, y: 10, hitPoints: 100, mac: 100,
+    });
     level.monsters = [target];
     const horn = instrument(FIRE_HORN, 'fire horn', 2);
     pushKeys('y          l          ');
@@ -132,7 +121,9 @@ test('cold resistance protects against a frost horn aimed at yourself',
 
 test('an empty fire horn behaves like an ordinary horn', async () => {
     const level = freshWeaponArena();
-    const target = monster(0, 11, 10, { msleeping: 1 });
+    const target = liveMonster({
+        mnum: 0, x: 11, y: 10, msleeping: 1,
+    });
     level.monsters = [target];
     const horn = instrument(FIRE_HORN, 'fire horn');
     pushKeys('y          ');

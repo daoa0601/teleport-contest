@@ -17,6 +17,8 @@ import { castKnownSpell } from '../js/spell.js';
 import { turnUndeadInDirection } from '../js/undead_turning.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dozap } from '../js/zap.js';
+import { chargedWand } from './support/game-objects.js';
+import { addMonster } from './support/monsters.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN_ZOMBIE = 244;
@@ -62,20 +64,12 @@ function trollCorpse() {
 }
 
 function addZombie(x, y) {
-    const monster = {
+    return addMonster({
         m_id: 901,
         mnum: PM_HUMAN_ZOMBIE,
-        mx: x, my: y,
-        m_lev: 4,
-        mhp: 20, mhpmax: 20,
-        mpeaceful: 0,
-        mtame: 0,
-        msleeping: 0,
-        mcanmove: 1,
-        minvent: [], inventory: [],
-    };
-    game.level.monsters.push(monster);
-    return monster;
+        x, y,
+        level: 4,
+    });
 }
 
 test('undead turning revives floor and carried corpses along its path',
@@ -126,17 +120,7 @@ test('a wand of undead turning revives a corpse carried by the hero',
         freshState();
         const corpse = trollCorpse();
         corpse.where = 'inventory';
-        const wand = {
-            otyp: WAN_UNDEAD_TURNING,
-            name: 'undead turning',
-            oclass: 11,
-            invlet: 'a',
-            spe: 2,
-            charges: { current: 2, recharged: 0 },
-            quan: 1,
-            quantity: 1,
-            dknown: true,
-        };
+        const wand = chargedWand(WAN_UNDEAD_TURNING, { charges: 2 });
         game.inventory.push(corpse, wand);
         pushKeys('a.');
 
