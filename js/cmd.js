@@ -51,6 +51,7 @@ import {
 } from './spell.js';
 import { doread } from './read.js';
 import { continueCorpseMeal, doeat } from './eat.js';
+import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
@@ -117,7 +118,7 @@ import {
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_GAIN_ENERGY,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
-    LEATHER_DRUM, MAGIC_MARKER,
+    MAGIC_MARKER,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
@@ -8651,99 +8652,6 @@ async function useCarriedBag(container, underlay) {
 
 const M1_MINDLESS = 0x00010000;
 const G_UNIQ = 0x1000;
-const TOOL_ATTACK_LEVEL = 10;
-
-function instrumentScareAllowed(monster) {
-    if (monster.iswiz || monster.is_lminion || monster.lawfulMinion
-        || monster.isAngel || monster.isRider) return false;
-    if (monster.isshk && monster.inShop) return false;
-    if (monster.ispriest && monster.inTemple) return false;
-    return true;
-}
-
-function monsterResistsInstrument(monster) {
-    const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
-    const magicResistance = MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0;
-    return rn2(100 + TOOL_ATTACK_LEVEL - defenseLevel) < magicResistance;
-}
-
-async function makeMonsterFleeFromInstrument(monster) {
-    monster.mfleetim = 0;
-    if (!monster.mflee && cansee(monster.mx, monster.my)
-        && monster.m_ap_type !== M_AP_FURNITURE
-        && monster.m_ap_type !== M_AP_OBJECT) {
-        const name = MONSTER_NAME[monster.mnum] || 'monster';
-        await plineWithContinuation(monster.mcanmove === 0
-            ? `The immobile ${name} seems to flinch.`
-            : `The ${name} turns to flee.`);
-    }
-    monster.mflee = 1;
-    monster._track = [];
-}
-
-// C refs: music.c awaken_scare()/awaken_monsters(); zap.c resist().
-// JS appends monsters while C prepends to fmon, so traverse in reverse.
-async function awakenMonstersFromInstrument(distance) {
-    const monsters = Array.from(game.level?.monsters || []).reverse();
-    for (const monster of monsters) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
-        const dy = (monster.my ?? 0) - (game.u?.uy ?? 0);
-        const squaredDistance = dx * dx + dy * dy;
-        if (squaredDistance >= distance) continue;
-
-        monster.msleeping = 0;
-        monster.mcanmove = 1;
-        monster.mfrozen = 0;
-        if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ)
-            && ((monster.mstrategy || 0) & STRAT_WAITMASK)) {
-            monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
-            continue;
-        }
-        if (squaredDistance >= distance / 3
-            || ((MONSTER_FLAGS1[monster.mnum] || 0) & M1_MINDLESS)
-            || monsterResistsInstrument(monster)
-            || !instrumentScareAllowed(monster)) continue;
-        await makeMonsterFleeFromInstrument(monster);
-    }
-}
-
-function generatedImprovisedNotes() {
-    const notes = 'ABCDEFG';
-    const count = rnd(5);
-    let jingle = '';
-    for (let index = 0; index < count; index++)
-        jingle += notes[rn2(notes.length)];
-    game.context.jingle = jingle;
-    return jingle;
-}
-
-// C refs: music.c do_play_instrument()/do_improvisation().
-// TODO: implement the other instruments and their magical effects.
-async function playLeatherDrum(item) {
-    rn2(2); // mode selection, even for an unimpaired hero
-    await plineWithContinuation(`You start playing your ${item.name}.`);
-    generatedImprovisedNotes();
-
-    if (!game.deaf) {
-        await plineWithContinuation('You beat a deafening row!');
-        game.u.deafTurns = (game.u.deafTurns ?? 0) + rn2(20) + 30;
-        syncDeafness(game);
-        // C has changed HDeaf here, but tty does not refresh the status line
-        // until the pending topline pager has completed.
-        game._statusDeafOverride = false;
-    } else {
-        await plineWithContinuation('You pound on the drum.');
-    }
-    exerciseAttribute(A_CON, false);
-    try {
-        await awakenMonstersFromInstrument((game.u?.ulevel || 1) * 40);
-    } finally {
-        delete game._statusDeafOverride;
-    }
-    game.context.move = 1;
-}
-
 // C refs: apply.c use_stethoscope(); insight.c piousness().  hero_seq is
 // distinct after every time-taking hero action, including actions which do
 // not advance the global `moves` counter because the hero has movement left.
@@ -9133,10 +9041,10 @@ async function doapply() {
                 await useMagicMarker();
                 return;
             }
-            if (item.otyp === LEATHER_DRUM) {
+            if (PLAYABLE_INSTRUMENTS.has(item.otyp)) {
                 game._pending_message = '';
                 game._retained_message = '';
-                await playLeatherDrum(item);
+                await playInstrument(item);
                 return;
             }
             if (item.otyp === CREAM_PIE) {
