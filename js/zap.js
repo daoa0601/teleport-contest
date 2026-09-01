@@ -28,7 +28,6 @@ import {
 import { doEnlightenmentEffect } from './insight.js';
 import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
 import {
@@ -1541,20 +1540,12 @@ export async function zapDeathRay(
                             await shieldeff(x, y);
                         }
                     } else {
-                        const name = MONSTER_NAME[monster.mnum] || 'monster';
                         const deathCursor = [monster.mx, monster.my + 1];
                         monster.mhp = 0;
-                        const amulet = wornMonsterLifeSaver(monster);
-                        if (amulet) {
-                            await lifeSaveMonster(monster, amulet, {
-                                creditedKill: `You kill the ${name}!`,
-                            });
-                        } else {
-                            await finishMonsterKill(monster, x, y, {
-                                showKillMessage: true,
-                                weaponHit: false,
-                            });
-                        }
+                        await finishMonsterKill(monster, x, y, {
+                            showKillMessage: true,
+                            weaponHit: false,
+                        });
                         pendingMapCursor = deathCursor;
                     }
                     range -= 2;

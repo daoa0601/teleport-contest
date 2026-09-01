@@ -69,11 +69,11 @@ import {
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import {
-    makemonNear, mkcorpstat, mklev,
+    makemonNear, mklev,
     mergable, mkgold, mkobj, mksobj, place_object, remove_object,
     stack_object,
     rndClass,
-    u_on_downstairs, u_on_upstairs, undeadToCorpse,
+    u_on_downstairs, u_on_upstairs,
 } from './mklev.js';
 import {
     level_difficulty, recordMappedOverviewState,
@@ -83,7 +83,7 @@ import {
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
-    addObjectToMonsterInventory, clearMonsterCarriedObjectState,
+    addObjectToMonsterInventory,
 } from './monster_inventory.js';
 import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
@@ -133,19 +133,18 @@ import {
     OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE, OBJECT_HIT_BONUS,
 } from './object_data.js';
 import {
-    CLR_WHITE, CLR_GREEN, NO_COLOR,
+    CLR_WHITE, NO_COLOR,
 } from './terminal.js';
 import {
     MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_EXPERIENCE_META,
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MAGIC_RESISTANCE,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SOUND, MONSTER_SYMBOL, MONSTER_ALIGNMENT,
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import { nameToMonster } from './mondata.js';
 import {
-    awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
-    newExperienceThreshold,
+    gainExperienceLevel, gainLevelAbilities,
 } from './exper.js';
 import { dosave } from './save.js';
 import { initTrack } from './track.js';
@@ -159,9 +158,7 @@ import {
     findMonsterArmorClass,
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
-import {
-    lifeSaveMonster, wornMonsterLifeSaver,
-} from './mondeath.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
     killGenocidedMonsters, wakeMonstersNear,
 } from './mon.js';
@@ -220,7 +217,6 @@ import {
 import {
     doquit,
     finishHeroDeath,
-    recordHeroKillConduct, recordVanquished,
     vanquishedLines,
 } from './end.js';
 import {
@@ -294,7 +290,7 @@ import {
     TRAPDOOR, DART_TRAP, MAGIC_TRAP,
     TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL,
     WEB, ANTI_MAGIC,
-    G_GONE, G_NOCORPSE, TAINT_AGE,
+    G_GONE,
     ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
     STRAT_WAITFORU, STRAT_WAITMASK,
@@ -325,6 +321,7 @@ const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M1_WALLWALK = 0x00000008;
 const M2_ROCKTHROW = 0x08000000;
+const AT_BOOM = 14;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 
@@ -4455,19 +4452,14 @@ async function wizKill() {
     }
 
     monster.mhp = 0;
-    const amulet = wornMonsterLifeSaver(monster);
-    if (amulet) {
-        const name = MONSTER_NAME[monster.mnum] || 'monster';
-        await lifeSaveMonster(monster, amulet, {
-            creditedKill: `You kill the ${name}!`,
-            retainCursor: true,
-        });
-    } else {
-        await finishHeroMonsterKill(monster, monster.mx, monster.my, {
+    const killed = await finishHeroMonsterKill(
+        monster, monster.mx, monster.my, {
             showKillMessage: true,
             weaponHit: false,
-        });
-    }
+        },
+    );
+    if (!killed)
+        game._cursorOverride = [monster.mx - 1, monster.my + 1];
     game.context.move = 0;
 }
 
@@ -8489,171 +8481,6 @@ async function finishTeleportArrival(movement) {
     });
 }
 
-const PM_IRON_GOLEM = 259;
-const PM_DEATH = 311;
-const PM_FAMINE = 313;
-const PM_LIZARD = 326;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
-
-const AT_BOOM = 14;
-const S_GOLEM = 55;
-
-// C mon.c:LEVEL_SPECIFIC_NOCORPSE().  xkilled() owns this gate before both
-// the rare treasure branch and corpse_chance(); corpse_chance() evaluates it
-// again when the first graveyard roll allowed the transaction to continue.
-function levelSpecificNoCorpse(monster) {
-    if (Is_rogue_level(game.u?.uz)
-        || game.level?.flags?.deathdrops === false) return true;
-    const isUndead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
-    return !!(game.level?.flags?.graveyard && isUndead && rn2(3));
-}
-
-// C mon.c:corpse_chance().  G_NOCORPSE is deliberately absent: it is
-// consulted later by make_corpse(), while large monsters and the other
-// guaranteed classes return without consuming the ordinary probability roll.
-function corpseChance(monster) {
-    if (levelSpecificNoCorpse(monster)) return false;
-    const mnum = monster.mnum;
-    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
-            || mnum === PM_LIZARD) && !monster.mcloned)
-        || MONSTER_SYMBOL[mnum] === S_GOLEM
-        || (mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD)
-        || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
-        || !!monster.isshk;
-    if (guaranteed) return true;
-    const corpseRange = 2
-        + (((MONSTER_GENO[mnum] ?? 0) & 0x7) < 2 ? 1 : 0)
-        + ((MONSTER_SIZE[mnum] ?? 2) < 1 ? 1 : 0);
-    return rn2(corpseRange) === 0;
-}
-
-function rollMonsterAttackDamage(monster, attack) {
-    const [, , dice = 0, sides = 0] = attack || [];
-    if (dice > 0) return d(dice, sides);
-    if (sides > 0)
-        return d((monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) + 1,
-            sides);
-    return 0;
-}
-
-function physicalExplosionInventoryProbe(damage) {
-    // zap.c:destroy_items() computes its bounded stack limit before walking
-    // the inventory.  AD_PHYS has no destroyable item class, so this
-    // remainder probe is the complete physical-inventory transaction.
-    const remainder = damage % 5;
-    const limit = Math.trunc(damage / 5) + (remainder > rn2(5) ? 1 : 0);
-    return Math.min(20, Math.max(0, limit));
-}
-
-function monsterResistsPhysicalExplosion(monster) {
-    // zap.c:resist() uses the hero's level for a non-object-class source such
-    // as MON_EXPLODE, then compares against the target species' magic
-    // resistance.  Physical resistance itself is not an explosion shield.
-    const attackLevel = game.u?.ulevel ?? 1;
-    const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
-    const range = Math.max(1, 100 + attackLevel - defenseLevel);
-    return rn2(range)
-        < (MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0);
-}
-
-async function captureNoxiousPhysicalExplosion(x, y) {
-    const cells = [];
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const tx = x + dx;
-            const ty = y + dy;
-            if (tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) continue;
-            cells.push({ x: tx, y: ty });
-        }
-    }
-    if (!cells.some(cell => cansee(cell.x, cell.y))) return;
-
-    const mask = [
-        ['/', false], ['o', true], ['\\', false],
-        ['x', true], [' ', false], ['x', true],
-        ['\\', false], ['s', true], ['/', false],
-    ];
-    try {
-        for (const cell of cells) {
-            const index = (cell.y - (y - 1)) * 3
-                + (cell.x - (x - 1));
-            const [ch, decgfx] = mask[index];
-            show_glyph_cell(cell.x, cell.y, ch, CLR_GREEN, decgfx);
-        }
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(
-            (game.u?.ux ?? 1) - 1,
-            (game.u?.uy ?? 0) + 1,
-        );
-        await game.animationFrame?.();
-        await game.animationFrame?.();
-    } finally {
-        for (const cell of cells) newsym(cell.x, cell.y);
-    }
-}
-
-async function resolvePhysicalMonsterExplosion(
-    sourceMonster, x, y, damage,
-) {
-    const sourceName = MONSTER_NAME[sourceMonster.mnum] || 'monster';
-    const explosionName = `${sourceName}'s explosion`;
-    await captureNoxiousPhysicalExplosion(x, y);
-    await plineWithContinuation('Boom!');
-
-    // explode.c stores its 3-by-3 mask column-first and applies every
-    // monster effect before the hero's deferred injury.
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const tx = x + dx;
-            const ty = y + dy;
-            const target = game.level?.monsters?.find(monster =>
-                (monster.mhp ?? 1) > 0
-                && monster.mx === tx && monster.my === ty);
-            if (!target) continue;
-
-            if (cansee(tx, ty)) {
-                const targetName = MONSTER_NAME[target.mnum] || 'monster';
-                await plineWithContinuation(
-                    `The ${targetName} is caught in the ${explosionName}!`,
-                );
-            }
-            physicalExplosionInventoryProbe(damage);
-            let appliedDamage = damage;
-            if (monsterResistsPhysicalExplosion(target)) {
-                appliedDamage = Math.trunc((damage + 1) / 2);
-                if (cansee(tx, ty)) {
-                    const targetName = MONSTER_NAME[target.mnum] || 'monster';
-                    await plineWithContinuation(
-                        `The ${targetName} resists the ${explosionName}!`,
-                    );
-                }
-            }
-            target.mhp = Math.max(0, (target.mhp ?? 1) - appliedDamage);
-            if (target.mhp <= 0) {
-                await finishHeroMonsterKill(target, tx, ty);
-            }
-        }
-    }
-
-    const heroInBlast = Math.abs((game.u?.ux ?? x) - x) <= 1
-        && Math.abs((game.u?.uy ?? y) - y) <= 1;
-    if (heroInBlast) {
-        await plineWithContinuation(
-            `You are caught in the ${explosionName}!`,
-        );
-        physicalExplosionInventoryProbe(damage);
-        let appliedDamage = damage;
-        if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
-            appliedDamage = Math.trunc((appliedDamage + 1) / 2);
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
-        exerciseAttribute(A_STR, false);
-    }
-
-    const wakeDistance = Math.max(50, damage * damage);
-    wakeMonstersNear(x, y, wakeDistance);
-}
-
 // C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
 // selection message visible while collecting the key that dismisses --More--;
 // a non-space printable key is then treated as another selection attempt.
@@ -9663,7 +9490,6 @@ function canFinishOrdinaryThrownKill(monster, { swallowed = false } = {}) {
         && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
         && !MONSTER_ATTACKS[monster.mnum]?.some(attack =>
             attack[0] === AT_BOOM)
-        && !wornMonsterLifeSaver(monster)
         // Weapon and scroll identities exercise ordinary minvent order and
         // stack absorption.  Worn, timed, lit, billed, contained, artifact,
         // and other class-specific release effects remain fail-loud.
@@ -9681,14 +9507,21 @@ function canFinishOrdinaryMapPotionKill(monster) {
 async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         weaponHit: false,
-        deathContext: { kind: 'swallowed-projectile', projectile },
+        deathContext: {
+            kind: 'swallowed-projectile',
+            projectile,
+            finishDestinationEffects: finishDestinationSpotEffects,
+        },
     });
 }
 
 async function finishOrdinarySwallowedPotionKill(monster) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         weaponHit: false,
-        deathContext: { kind: 'swallowed-potion' },
+        deathContext: {
+            kind: 'swallowed-potion',
+            finishDestinationEffects: finishDestinationSpotEffects,
+        },
     });
 }
 
@@ -11234,295 +11067,6 @@ function meleeEncumbrancePenalty() {
         ['Overtaxed', 4], ['Overloaded', 5],
     ]).get(game.u?._encumbrance) || 0;
     return level ? level * 2 - 1 : 0;
-}
-
-const M2_ALWAYS_HOSTILE = 0x00100000;
-const M2_ALWAYS_PEACEFUL = 0x00200000;
-const A_NONE = -128;
-
-// C ref: makemon.c:set_malign().  Several older JS monster constructors do
-// not retain mtmp->malign, so xkilled() has to reconstruct the ordinary
-// species/attitude cases at their shared death boundary.  Quest and priest
-// actors can publish an explicit `malign` until their individual-alignment
-// birth metadata is consolidated.
-function monsterDeathMalign(monster) {
-    if (Number.isInteger(monster?.malign)) return monster.malign;
-    if (monster?.mnum === game.urole?.ldrnum) return -20;
-
-    const mnum = monster?.mnum ?? -1;
-    const speciesAlignment = MONSTER_ALIGNMENT[mnum] ?? 0;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    const peaceful = !!monster?.mpeaceful;
-    const coaligned = Math.sign(speciesAlignment)
-        === Math.sign(game.u?.ualign?.type ?? 0);
-    const absoluteAlignment = Math.abs(speciesAlignment);
-
-    if (speciesAlignment === A_NONE) return peaceful ? 0 : 20;
-    if (flags & M2_ALWAYS_PEACEFUL) {
-        return (peaceful ? -3 : 3) * Math.max(5, absoluteAlignment);
-    }
-    if (flags & M2_ALWAYS_HOSTILE) {
-        return coaligned ? 0 : Math.max(5, absoluteAlignment);
-    }
-    if (coaligned) {
-        return peaceful
-            ? -3 * Math.max(3, absoluteAlignment)
-            : Math.max(3, absoluteAlignment);
-    }
-    return absoluteAlignment;
-}
-
-// C mon.c:xkilled(). Hero melee and passive polymorph retaliation converge
-// here after their distinct damage and death-message producers. The caller
-// supplies a lazy name projection because pet abuse and Hallucination can
-// affect the name immediately before xkilled() renders it.
-function observeMonsterDropName(object, x, y) {
-    if (!object || !cansee(x, y)
-        || game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0) return;
-    const range = Math.max(game.u?.xray_range ?? -1, 2);
-    const dx = x - (game.u?.ux ?? x);
-    const dy = y - (game.u?.uy ?? y);
-    const closeNameDistance = range * range * 2 - range;
-    if (!object.oartifact && !object.artifact
-        && dx * dx + dy * dy > closeNameDistance) return;
-    object.dknown = true;
-    recordObjectEncounter(object.otyp);
-}
-
-export async function finishHeroMonsterKill(monster, x, y, {
-    wasTame = (monster?.mtame ?? (monster?.pet ? 1 : 0)) > 0,
-    hallucinating = !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0),
-    nameMonster = () => hallucinating
-        ? randomDisplayMonsterName()
-        : MONSTER_NAME[monster?.mnum] || 'monster',
-    showKillMessage = true,
-    weaponHit = !!game.uwep,
-    deathContext = null,
-    noCorpse = false,
-    recordConduct = true,
-} = {}) {
-    const wasInside = deathContext?.kind === 'swallowed-projectile'
-        || deathContext?.kind === 'swallowed-potion';
-    if (deathContext && !wasInside)
-        throw new Error(`unsupported monster death context ${deathContext.kind}`);
-    if (wasInside) monster.mhp = 0;
-    // xkilled() snapshots visibility before mondead() detaches the actor.
-    const deathWasSpotted = wasInside || canProjectMonster(
-        monster, monster.mx, monster.my,
-    );
-    const monsterName = nameMonster();
-
-    // xkilled() breaks killer conduct and publishes the credited line before
-    // mondead() can detach the actor.  If an older topline owns tty, this
-    // await must suspend before Wizard bookkeeping, inventory release,
-    // corpse policy, experience, or vanquished counts change.
-    if (recordConduct) recordHeroKillConduct();
-    if (showKillMessage) {
-        const deathVerb = monsterIsNonliving(monster.mnum)
-            ? 'destroy' : 'kill';
-        const deathTarget = deathWasSpotted
-            ? `the ${monster.mtame ? 'poor ' : ''}${monsterName}`
-            : 'it';
-        await plineWithContinuation(
-            `You ${deathVerb} ${deathTarget}!`,
-        );
-    }
-
-    if (deathContext?.kind === 'swallowed-projectile') {
-        // xkilled() gives the killing missile to the engulfer after the kill
-        // line but before mondead()->m_detach().  relobj() below must therefore
-        // release the acquired identity with the rest of minvent rather than
-        // letting thitmonst() mulch it or apply passive_obj().
-        addObjectToMonsterInventory(
-            monster, deathContext.projectile, game, { atFront: true },
-        );
-    }
-
-    if (wasInside) {
-
-        // mon_leaving_level()->unstuck() clears attachment first so docrt()'s
-        // status is accurate, restores the shared map coordinate and sight,
-        // then installs the engulfer cooldown before relobj() drops inventory.
-        game.u.ustuck = null;
-        game.u.uswallow = 0;
-        game.u.uswldtim = 0;
-        game.u.ux = x;
-        game.u.uy = y;
-        game.vision_full_recalc = 1;
-        vision_recalc(0);
-        await docrt();
-        if (!(monster.mspec_used ?? 0)) monster.mspec_used = rnd(2);
-    }
-
-    // mon.c:m_detach() calls wizdeadorgone() before relobj() releases the
-    // inventory and before xkilled() reaches treasure/corpse policy.  The
-    // first true Wizard removal starts the demigod intervention countdown;
-    // later Wizard deaths still decrement the live-instance count but do not
-    // reroll that countdown.
-    if (monster.iswiz) {
-        game.context.no_of_wizards = (game.context.no_of_wizards || 0) - 1;
-        if (!game.u.uevent) game.u.uevent = {};
-        if (!game.u.uevent.udemigod) {
-            game.u.uevent.udemigod = true;
-            game.u.udg_cnt = 50 + rn2(250);
-        }
-    }
-
-    // mondead()->m_detach()->relobj() releases the complete inventory before
-    // xkilled() evaluates treasure and corpse creation.
-    const carried = monster.minvent || monster.inventory || [];
-    for (const object of carried) {
-        // steal.c:mdrop_obj() calls distant_name(obj, doname) before it
-        // extracts each newest-first minvent object, even when no drop line
-        // will be printed.  A visible nearby carrier therefore teaches the
-        // object type before place_object reverses the final floor chain.
-        observeMonsterDropName(object, x, y);
-        clearMonsterCarriedObjectState(object);
-        place_object(object, x, y);
-        stack_object(object, game);
-    }
-    monster.minvent = [];
-    monster.inventory = monster.minvent;
-    monster.hasInventory = false;
-
-    const permitsDeathDrops = !noCorpse && !levelSpecificNoCorpse(monster);
-    if (permitsDeathDrops) {
-        const extraObjectRoll = rn2(6);
-        if (extraObjectRoll === 0
-            && !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)
-            && (x !== game.u?.ux || y !== game.u?.uy)) {
-            const extra = mkobj(0, true);
-            const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
-                & 0x40000000); // M2_COLLECT
-            const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) < 3
-                && ((extra.owt ?? 1) > 30);
-            const disposableFood = extra.oclass === 7 && !collectsFood
-                && !extra.artifact;
-            if (tooLarge || disposableFood) {
-                rn2(100);
-            } else {
-                const mergeCandidate = (game.level?.objects?.[x]?.[y] || [])
-                    .some(object => object.otyp === extra.otyp);
-                place_object(extra, x, y);
-                if (mergeCandidate) rn2(100);
-            }
-        }
-    }
-
-    const generationFlags = MONSTER_GENO[monster.mnum] ?? 0;
-    const boomAttack = permitsDeathDrops
-        ? MONSTER_ATTACKS[monster.mnum]
-            ?.find(attack => attack[0] === AT_BOOM)
-        : null;
-    let explosion = null;
-    let leavesCorpse = false;
-    if (boomAttack) {
-        // corpse_chance() first rolls the contained/engulfer damage even for
-        // an ordinary floor death; mon_explodes() then rolls the actual blast
-        // independently before explode() starts producing messages.
-        const containedDamage = rollMonsterAttackDamage(monster, boomAttack);
-        const blastDamage = rollMonsterAttackDamage(monster, boomAttack);
-        explosion = { containedDamage, blastDamage };
-    } else {
-        // xkilled() explicitly suppresses a corpse when the hero was inside
-        // the monster; the killing projectile is the only ordinary drop.
-        leavesCorpse = !noCorpse && !wasInside
-            && permitsDeathDrops && corpseChance(monster);
-    }
-    unmap_invisible(x, y, false);
-    monster.dead = true;
-    game.level.monsters = game.level.monsters.filter(
-        candidate => candidate !== monster,
-    );
-    recordVanquished(monster, monsterName, { weaponHit });
-    const corpseForm = undeadToCorpse(monster.mnum);
-    const convertedUndeadCorpse = corpseForm !== monster.mnum;
-    // mon.c:make_corpse() substitutes material drops for several golems.
-    // Iron golems produce independent, non-stacking mksobj_at() identities;
-    // unlike ordinary corpses this branch precedes the G_NOCORPSE default.
-    // The remaining live special cases are zombies, mummies, and vampires;
-    // their generation flag suppresses the undead species, not the old
-    // living-form cadaver created here.
-    if (leavesCorpse && monster.mnum === PM_IRON_GOLEM) {
-        const chainCount = d(2, 6);
-        for (let index = 0; index < chainCount; index++) {
-            const chain = mksobj(IRON_CHAIN, true, false);
-            place_object(chain, x, y);
-        }
-        delete monster.name;
-    } else if (leavesCorpse
-        && (convertedUndeadCorpse || !(generationFlags & G_NOCORPSE))) {
-        const corpse = mkcorpstat(CORPSE, monster, corpseForm, x, y, 8);
-        Object.assign(corpse, {
-            name: `${MONSTER_NAME[corpseForm] || monsterName} corpse`,
-            quantity: 1, quan: 1, ox: x, oy: y,
-        });
-        if (convertedUndeadCorpse)
-            corpse.age = (corpse.age ?? game.moves ?? 1) - (TAINT_AGE + 1);
-    }
-
-    if (wasInside) {
-        // xkilled() calls spoteffects(TRUE) after death drops but before luck,
-        // experience, and alignment cleanup.  Rejoin the same destination
-        // owner used by ordinary movement so autopickup, look_here, engraving,
-        // and trap ordering cannot drift into a death-only approximation.
-        await finishDestinationSpotEffects({
-            oldx: game.u.ux0 ?? x,
-            oldy: game.u.uy0 ?? y,
-            newx: x,
-            newy: y,
-            loc: game.level?.at?.(x, y),
-            explicitAttempt: false,
-        });
-        newsym(x, y);
-    }
-
-    if (monster.mpeaceful) {
-        rn2(2);
-        if (wasTame || monster.mtame)
-            game.u.uluck = (game.u.uluck || 0) - 1;
-    }
-    const killCount = game._vanquishedCounts?.get(monster.mnum)?.count || 1;
-    awardMonsterExperience(monster, {
-        killCount,
-        amphibious: !!game.u?.amphibious,
-    });
-    if ((game.u?.ulevel ?? 1) < 30
-        && (game.u?.uexp ?? 0)
-            >= newExperienceThreshold(game.u?.ulevel ?? 1)) {
-        const oldLevel = game.u.ulevel;
-        const returning = (game.u.ulevelmax ?? oldLevel) >= oldLevel + 1;
-        gainExperienceLevel({ incremental: true });
-        await plineWithContinuation(
-            `Welcome ${returning ? 'back ' : ''}to experience level ${
-                game.u.ulevel}.`,
-        );
-        await gainLevelAbilities(oldLevel, game.u.ulevel);
-    }
-    // mondead()->m_detach()->mon_leaving_level() repaints the vacated map
-    // square after xkilled()'s kill line and before corpse_chance() can enter
-    // a resumable death effect.  Keep the later repaint too: it exposes any
-    // corpse or floor mutation produced by that effect transaction.
-    if (!wasInside) newsym(x, y);
-    if (!wasInside && explosion) {
-        await resolvePhysicalMonsterExplosion(
-            monster, x, y, explosion.blastDamage,
-        );
-    }
-    if (!wasInside) newsym(x, y);
-
-    if (monster.mtame) {
-        adjustHeroAlignment(-15);
-        await plineWithContinuation(hallucinating
-            ? 'You hear the studio audience applaud!'
-            : 'You hear the rumble of distant thunder...');
-    } else if (monster.mpeaceful) {
-        adjustHeroAlignment(-5);
-    }
-    adjustHeroAlignment(monsterDeathMalign(monster));
-    return true;
 }
 
 // C refs: hack.c:overexertion(), uhitm.c:do_attack()/hitum(),

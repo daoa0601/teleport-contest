@@ -22,12 +22,13 @@ import {
 } from './muse.js';
 import {
     askTeleportDestination,
-    continueCountedCommand, continueRun, finishHeroMonsterKill,
+    continueCountedCommand, continueRun,
     finishDestinationSpotEffects,
     finishArmorRemoval,
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack,
 } from './cmd.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';

@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 
 import {
     COULD_SEE, DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT,
-    POOL, ROOM, SDOOR, WEB,
+    POOL, ROOM, SDOOR, W_AMUL, WEB,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
-    APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CREATE_MONSTER,
+    AMULET_OF_LIFE_SAVING, APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY,
+    WAN_CREATE_MONSTER,
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
     WAN_SLEEP, WAN_STASIS, WAN_WISHING,
 } from '../js/object_data.js';
@@ -300,6 +302,37 @@ test('a death ray makes Death stronger instead of killing him', async () => {
     assert.equal(death.mhp, 30);
     assert.equal(death.mhpmax, 30);
     assert.ok(game.level.monsters.includes(death));
+});
+
+test('a worn life-saving amulet saves a monster from a death ray', async () => {
+    freshWeaponArena();
+    const amulet = {
+        otyp: AMULET_OF_LIFE_SAVING,
+        owornmask: W_AMUL,
+        worn: true,
+        where: 'minvent',
+    };
+    const monster = {
+        mnum: 0,
+        m_id: 9003,
+        mx: 11,
+        my: 10,
+        mac: 100,
+        m_lev: 1,
+        mhp: 5,
+        mhpmax: 5,
+        minvent: [amulet],
+        inventory: [amulet],
+        misc_worn_check: W_AMUL,
+    };
+    game.level.monsters = [monster];
+    pushKeys(' '.repeat(20));
+
+    await zapDeathRay('l', { finishMonsterKill: finishHeroMonsterKill });
+
+    assert.equal(game.level.monsters.includes(monster), true);
+    assert.equal(monster.mhp, monster.mhpmax);
+    assert.equal(monster.minvent.includes(amulet), false);
 });
 
 test('a fire ray burns a web and consumes the closed door behind it', async () => {
