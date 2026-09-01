@@ -9,7 +9,7 @@ import {
     A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, FIRE_TRAP, ICE, IS_LAVA,
     HOLE, IS_POOL,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP,
-    SPIKED_PIT, TRAPDOOR,
+    SPIKED_PIT, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
 } from './const.js';
@@ -48,6 +48,7 @@ import {
 import { revealVibratingSquare } from './invocation.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
+import { activateStatueTrapAt } from './statue_trap.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -803,6 +804,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case WEB:
         await triggerWeb(trap, { viaSitting });
+        break;
+    case STATUE_TRAP:
+        await activateStatueTrapAt(trap.tx, trap.ty);
         break;
     case LANDMINE:
         await triggerLandmine(trap);

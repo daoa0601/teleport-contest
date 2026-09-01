@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import {
     FIRE_TRAP, MAGIC_PORTAL, ROOM, TT_BURIEDBALL, TT_PIT, TT_WEB,
-    VIBRATING_SQUARE,
+    STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
-import { HEAVY_IRON_BALL } from '../js/object_data.js';
+import { mkcorpstat } from '../js/mklev.js';
+import { HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -118,6 +120,27 @@ test('stepping on a fire trap burns the hero', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(trap.tseen, true);
     assert.ok(game.u.uhp < 40);
+});
+
+test('stepping on a statue trap releases its monster', async () => {
+    const level = freshWeaponArena();
+    initRng(9402n);
+    const statue = mkcorpstat(STATUE, null, 12, 11, 10, 0);
+    level.traps = [{
+        ttyp: STATUE_TRAP,
+        tx: 11,
+        ty: 10,
+        tseen: false,
+    }];
+
+    await rhack('l'.charCodeAt(0));
+
+    const released = level.monsters.find(monster => monster.mnum === 12);
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.ok(released);
+    assert.equal(released.mpeaceful, 0);
+    assert.equal(statue.where, 'gone');
+    assert.equal(level.traps.length, 0);
 });
 
 test('stepping into a magic portal moves the hero to its other end',
