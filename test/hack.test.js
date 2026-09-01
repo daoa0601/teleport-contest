@@ -13,6 +13,7 @@ import {
     WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
+import { carriedObject as inventoryObject } from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function liquidAtHero(terrain) {
@@ -27,21 +28,6 @@ function liquidAtHero(terrain) {
 
 function poolAtHero() {
     return liquidAtHero(POOL);
-}
-
-function inventoryObject(otyp, overrides = {}) {
-    return {
-        otyp,
-        oclass: 13,
-        quan: 1,
-        quantity: 1,
-        where: 'inventory',
-        cursed: false,
-        blessed: false,
-        worn: false,
-        owornmask: 0,
-        ...overrides,
-    };
 }
 
 const noDisplay = {

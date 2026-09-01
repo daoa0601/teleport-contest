@@ -18,9 +18,8 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import {
-    freshWeaponArena, inventoryObject,
-} from './support/weapon-arena.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
     const level = freshWeaponArena();

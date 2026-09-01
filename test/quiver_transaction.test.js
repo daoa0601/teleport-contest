@@ -6,9 +6,8 @@ import { W_ARMOR, W_QUIVER, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CLUB, DART, LOADSTONE } from '../js/object_data.js';
-import {
-    freshWeaponArena, inventoryObject,
-} from './support/weapon-arena.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 
 test('explicit empty selection clears the live quiver without spending time',

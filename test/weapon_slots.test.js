@@ -6,9 +6,8 @@ import { W_QUIVER, W_SWAPWEP, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CLUB, DART, FLINT, ROCK, SLING } from '../js/object_data.js';
-import {
-    freshWeaponArena, inventoryObject,
-} from './support/weapon-arena.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 
 test('fireassist prefers a known-safe launcher over unknown and known-cursed matches',

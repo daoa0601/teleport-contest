@@ -10,9 +10,8 @@ import { CLUB, EGG } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from '../js/object_timers.js';
-import {
-    freshWeaponArena, inventoryObject,
-} from './support/weapon-arena.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('monster lookup accepts source names, plurals, and class descriptions', () => {
     assert.equal(nameToMonster('giant ants'), 0);

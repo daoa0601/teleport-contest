@@ -8,9 +8,8 @@ import {
     CLUB, HEAVY_IRON_BALL, IRON_CHAIN, LOADSTONE, SCR_REMOVE_CURSE,
 } from '../js/object_data.js';
 import { removeCurseEffect } from '../js/read.js';
-import {
-    freshWeaponArena, inventoryObject,
-} from './support/weapon-arena.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshWeaponArena } from './support/weapon-arena.js';
 
 function cursedObject(otyp, invlet, overrides = {}) {
     return inventoryObject(otyp, invlet, {
