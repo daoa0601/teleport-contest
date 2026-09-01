@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, TELEP_TRAP, THRONE,
-    TT_BEARTRAP,
+    ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, LANDMINE, PIT, TELEP_TRAP,
+    THRONE, TT_BEARTRAP, TT_PIT, TT_WEB, WEB,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -130,6 +130,38 @@ test('sitting on a teleport trap moves the hero', async () => {
     await rhack('#'.charCodeAt(0));
 
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
+});
+
+test('sitting over a pit leaves the hero trapped in it', async () => {
+    const level = freshWeaponArena();
+    level.traps.push({ tx: 10, ty: 10, ttyp: PIT });
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.utraptype, TT_PIT);
+});
+
+test('sitting on a web entangles the hero', async () => {
+    const level = freshWeaponArena();
+    level.traps.push({ tx: 10, ty: 10, ttyp: WEB });
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.utraptype, TT_WEB);
+});
+
+test('sitting on a land mine blasts a pit under the hero', async () => {
+    const level = freshWeaponArena();
+    const mine = { tx: 10, ty: 10, ttyp: LANDMINE };
+    level.traps.push(mine);
+    pushKeys('sit\n  ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(mine.ttyp, PIT);
+    assert.equal(game.u.utraptype, TT_PIT);
 });
 
 test('a malignant aura curses an ordinary inventory item', async () => {

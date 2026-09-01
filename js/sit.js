@@ -339,7 +339,10 @@ export async function dosit({
         if (u?.utrap) await sitWhileTrapped(trap);
         else {
             await pline(`You ${u?.flying || game.flying ? 'land' : 'sit down'}.`);
-            await triggerHeroTrap(trap, { finishTeleport });
+            await triggerHeroTrap(trap, {
+                finishTeleport,
+                viaSitting: true,
+            });
         }
     } else if ((game.underwater || u?.uinwater
         || game.level?.flags?.is_waterlevel) && !waterEggLayer()) {

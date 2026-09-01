@@ -2,10 +2,13 @@
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
 // tele_trap().
 
-import { exerciseAttribute } from './attrib.js';
 import {
-    A_DEX, A_STR, BEAR_TRAP, DART_TRAP, MAGIC_TRAP,
-    ROLLING_BOULDER_TRAP, TELEP_TRAP, TT_BEARTRAP, VAULT, isok,
+    adjustAttribute, currentAttribute, exerciseAttribute,
+} from './attrib.js';
+import {
+    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, LANDMINE, MAGIC_TRAP, PIT,
+    ROLLING_BOULDER_TRAP, SPIKED_PIT, TELEP_TRAP, TT_BEARTRAP, TT_PIT,
+    TT_WEB, VAULT, WEB, isok,
 } from './const.js';
 import {
     flush_screen, lastDirtyMapCursor, map_trap, newsym, pline,
@@ -16,8 +19,9 @@ import { game } from './gstate.js';
 import { distmin } from './hacklib.js';
 import { mksobj, place_object, remove_object } from './mklev.js';
 import { somexyspace } from './mkroom.js';
+import { MONSTER_FLAGS1 } from './monster_data.js';
 import {
-    BOULDER, DART, OBJECT_SMALL_DAMAGE,
+    BOULDER, DART, OBJECT_MATERIAL, OBJECT_SMALL_DAMAGE,
 } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { stopRun } from './runmode.js';
@@ -32,6 +36,163 @@ import { cansee } from './vision.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
+
+const M1_CLING = 0x00000010;
+const PM_CAVE_SPIDER = 94;
+const PM_GIANT_SPIDER = 96;
+const IRON = 11;
+
+function heroMonsterForm() {
+    return Number.isInteger(game.u?.umonnum) ? game.u.umonnum : null;
+}
+
+function loseHitPoints(amount) {
+    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - amount);
+}
+
+function losePhysicalHitPoints(amount) {
+    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+        amount = Math.trunc((amount + 1) / 2);
+    loseHitPoints(amount);
+}
+
+function heroWearsIronShoes() {
+    const boots = game.uarmf || game.u?.uarmf;
+    return !!boots && OBJECT_MATERIAL[boots.otyp] === IRON;
+}
+
+async function applySpikePoison() {
+    if (rn2(6) !== 0) return;
+    await plineWithContinuation('The spikes were poisoned!');
+    if (game.u?.poisonResistance || game.u?.poison_resistance) {
+        await plineWithContinuation("The poison doesn't seem to affect you.");
+        return;
+    }
+    const outcome = rn2(8);
+    if (outcome === 0) {
+        const loss = 6 + d(4, 6);
+        if ((game.u.uhp ?? 1) <= loss) {
+            game.u.uhp = 0;
+            await plineWithContinuation('The poison was deadly...');
+            return;
+        }
+        const minimumMaximumHitPoints = Math.max(game.u.ulevel ?? 1, 3);
+        game.u.uhpmax = Math.max(
+            minimumMaximumHitPoints,
+            (game.u.uhpmax ?? 1) - Math.trunc(loss / 2),
+        );
+        loseHitPoints(loss);
+        adjustAttribute(A_CON, -1, game);
+        adjustAttribute(A_STR, -3, game);
+    } else if (outcome > 5) {
+        loseHitPoints(rn2(10) + 6);
+    } else {
+        adjustAttribute(A_STR, -d(2, 2), game);
+    }
+}
+
+async function triggerPit(trap, { viaSitting = false } = {}) {
+    const hero = game.u;
+    const formFlags = MONSTER_FLAGS1[heroMonsterForm()] ?? 0;
+    if (hero.levitating || game.levitating
+        || ((hero.flying || game.flying) && !viaSitting)) return;
+    trap.tseen = true;
+    if (formFlags & M1_CLING) {
+        await plineWithContinuation(
+            `You see ${trap.ttyp === SPIKED_PIT ? 'a spiked pit' : 'a pit'} below you.`,
+        );
+        return;
+    }
+
+    await plineWithContinuation('You fall into a pit!');
+    let spiked = trap.ttyp === SPIKED_PIT;
+    if (spiked && heroWearsIronShoes()) {
+        await plineWithContinuation(
+            'Your boots protect you from the sharp iron spikes.',
+        );
+        spiked = false;
+    } else if (spiked) {
+        await plineWithContinuation(
+            'You land on a set of sharp iron spikes!',
+        );
+    }
+    hero.utrap = rn2(6) + 2;
+    hero.utraptype = TT_PIT;
+    losePhysicalHitPoints(spiked ? rnd(10) : rnd(6));
+    if (spiked) await applySpikePoison();
+    game.vision_full_recalc = 1;
+    exerciseAttribute(A_STR, false);
+    exerciseAttribute(A_DEX, false);
+}
+
+function webTrapDuration() {
+    const strength = currentAttribute(A_STR, game);
+    if (strength <= 3) return rn2(6) + 6;
+    if (strength < 6) return rn2(6) + 4;
+    if (strength < 9) return rn2(4) + 4;
+    if (strength < 12) return rn2(4) + 2;
+    if (strength < 15) return rn2(2) + 2;
+    if (strength < 18) return rnd(2);
+    if (strength < 69) return 1;
+    return 0;
+}
+
+async function triggerWeb(trap, { viaSitting = false } = {}) {
+    const hero = game.u;
+    trap.tseen = true;
+    const form = heroMonsterForm();
+    if (form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER) {
+        await plineWithContinuation(trap.madeby_u
+            ? 'You take a walk on your web.'
+            : 'There is a spider web here.');
+        return;
+    }
+    await plineWithContinuation(viaSitting
+        ? 'You are caught by a spider web!'
+        : 'You stumble into a spider web!');
+    const turns = webTrapDuration();
+    hero.utrap = turns;
+    hero.utraptype = TT_WEB;
+    if (!turns) {
+        await plineWithContinuation('You tear through the web!');
+        const index = game.level.traps.indexOf(trap);
+        if (index >= 0) game.level.traps.splice(index, 1);
+        newsym(hero.ux, hero.uy);
+    }
+}
+
+async function triggerLandmine(trap) {
+    const hero = game.u;
+    let damage = rnd(16);
+    if (heroWearsIronShoes()) damage = Math.trunc((damage + 3) / 4);
+    const airborne = hero.levitating || game.levitating
+        || hero.flying || game.flying;
+    if (airborne) {
+        const alreadySeen = !!trap.tseen;
+        if (!alreadySeen && rn2(3) !== 0) return;
+        trap.tseen = true;
+        await plineWithContinuation(alreadySeen
+            ? 'There is a trigger in a pile of soil below you.'
+            : 'You discover a trigger in a pile of soil below you.');
+        if (alreadySeen && rn2(3) !== 0) return;
+        await plineWithContinuation('The air currents set the land mine off!');
+    } else {
+        trap.tseen = true;
+        await plineWithContinuation(
+            'KAABLAMM!!!  You triggered a land mine!',
+        );
+        hero._woundedLegTurns = Math.max(
+            hero._woundedLegTurns ?? 0, rn2(35) + 41, rn2(35) + 41,
+        );
+        hero._woundedLegSide = 'both';
+        exerciseAttribute(A_DEX, false);
+    }
+    trap.ttyp = PIT;
+    trap.madeby_u = false;
+    losePhysicalHitPoints(damage);
+    await triggerPit(trap);
+    newsym(hero.ux, hero.uy);
+}
 
 async function triggerTeleportTrap(trap, finishTeleport) {
     trap.tseen = true;
@@ -334,6 +495,7 @@ async function triggerBearTrap(trap) {
 
 export async function triggerHeroTrap(trap, {
     finishTeleport = null,
+    viaSitting = false,
 } = {}) {
     if (!trap) return false;
     switch (trap.ttyp) {
@@ -350,6 +512,16 @@ export async function triggerHeroTrap(trap, {
         break;
     case MAGIC_TRAP:
         await triggerMagicTrap(trap);
+        break;
+    case PIT:
+    case SPIKED_PIT:
+        await triggerPit(trap, { viaSitting });
+        break;
+    case WEB:
+        await triggerWeb(trap, { viaSitting });
+        break;
+    case LANDMINE:
+        await triggerLandmine(trap);
         break;
     }
     return false;
