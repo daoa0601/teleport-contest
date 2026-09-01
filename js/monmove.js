@@ -184,6 +184,9 @@ const M3_WANTSARTI = 0x0010;
 const PM_FOG_CLOUD = 106;
 const PM_ENERGY_VORTEX = 109;
 const PM_TENGU = 55;
+const PM_BABY_PURPLE_WORM = 113;
+const PM_PURPLE_WORM = 115;
+const PM_SHRIEKER = 163;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
 const PM_VLAD_THE_IMPALER = 228;
@@ -1645,6 +1648,29 @@ function monsterAt(state, x, y, ignore = null) {
         && (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y);
 }
 
+function speciesIsUnique(mnum) {
+    return !!((MONSTER_GENO[mnum] ?? 0) & 0x1000);
+}
+
+function zombiePairIsAggressive(attacker, defender, state) {
+    if (!isZombieMaker(attacker?.mnum, attacker?.mcan)
+        || zombieForm(defender?.mnum) == null) return false;
+    if (attacker.mgenmklev && defender.mgenmklev) return false;
+    if (sameDungeonLevel(state?.stronghold_level, state?.u?.uz)) return false;
+    return !speciesIsUnique(attacker.mnum)
+        && !speciesIsUnique(defender.mnum);
+}
+
+function monstersAreAggressive(attacker, defender, state) {
+    if (!attacker || !defender
+        || attacker === defender
+        || attacker.mtame && defender.mtame) return false;
+    if ([PM_BABY_PURPLE_WORM, PM_PURPLE_WORM].includes(attacker.mnum)
+        && defender.mnum === PM_SHRIEKER) return true;
+    return zombiePairIsAggressive(attacker, defender, state)
+        || zombiePairIsAggressive(defender, attacker, state);
+}
+
 function isUnicorn(monster) {
     return monster?.mnum >= 101 && monster?.mnum <= 103;
 }
@@ -1967,9 +1993,15 @@ export function mfndpos(monster, state, flags = monAllowFlags(monster, state)) {
                 monster.muy = state.u.uy;
                 if (!(flags & ALLOW_U)) continue;
                 info |= ALLOW_U;
-            } else if (monsterAt(state, nx, ny, monster)) {
-                if (!(flags & ALLOW_M)) continue;
-                info |= ALLOW_M;
+            } else {
+                const occupant = monsterAt(state, nx, ny, monster);
+                if (occupant) {
+                    if (!(flags & ALLOW_M)
+                        && !monstersAreAggressive(
+                            monster, occupant, state,
+                        )) continue;
+                    info |= ALLOW_M;
+                }
             }
             const pile = state?.level?.objects?.[nx]?.[ny] || [];
             if (pile.some(object => object.otyp === BOULDER)) {
@@ -3085,57 +3117,101 @@ function sourceMonsterTurn(state) {
     return state?.moves ?? 1;
 }
 
-function petAttacksMonster(
-    pet, target, state, random, rollDice, rollOne, calls,
+function defenderCanAnswerPetAttack(
+    aggressor, defender, state, random, calls,
 ) {
-    const attacks = pet.mnum === 100
-        ? [{ type: 'kick', damn: 1, damd: 6 },
-            { type: 'bite', damn: 1, damd: 2 }]
-        : pet.mnum === 16 || pet.mnum === 32
-            ? [{ type: 'bite', damn: 1, damd: 6 }]
-            : [];
-    if (state?._deferVisibleMonsterContact && attacks.length) {
-        // The deferred tty path has entered mattackm() but has not yet
-        // committed the first slot's damage/passive effects.  Its movement
-        // stamp is already observable to any later actor in the same
-        // movemon() scan.  Keep the remaining slots on this transaction:
-        // each slot's hit/miss pline can independently suspend before its
-        // damage and passivemm() tail.
-        pet.mlstmv = sourceMonsterTurn(state);
-        const attack = attacks[0];
-        const threshold = findMonsterArmorClass(target)
-            + (pet.m_lev ?? MONSTER_LEVEL[pet.mnum] ?? 0);
+    return recordRandom(random, calls, 4) !== 0
+        && defender.mlstmv !== sourceMonsterTurn(state)
+        && !monsterIsScaredAt(
+            defender, state, aggressor.mx, aggressor.my,
+        )
+        && distmin(defender.mx, defender.my,
+            aggressor.mx, aggressor.my) <= 1;
+}
+
+function defenderCanAnswerMovementAttack(defender, random, calls) {
+    if (recordRandom(random, calls, 4) === 0) return false;
+    if ((defender.movement ?? 0)
+        <= recordRandom(random, calls, NORMAL_SPEED)) return false;
+    defender.movement = defender.movement > NORMAL_SPEED
+        ? defender.movement - NORMAL_SPEED : 0;
+    return true;
+}
+
+function defenderCanCounterattack(
+    attack, state, random, calls,
+) {
+    if (!attack.struck || attack.defenderDied) return false;
+    if (attack.retaliationRule === 'movement') {
+        return defenderCanAnswerMovementAttack(
+            attack.defender, random, calls,
+        );
+    }
+    return attack.retaliationRule === 'pet'
+        && defenderCanAnswerPetAttack(
+            attack.aggressor, attack.defender, state, random, calls,
+        );
+}
+
+function beginMonsterMeleeAttack(
+    aggressor, defender, attacks, state, random, rollDice, rollOne, calls,
+    retaliationRule,
+) {
+    const firstAttack = attacks[0];
+    const wield = monsterVersusMonsterWieldAction(
+        aggressor, defender, firstAttack,
+    );
+    if (wield) return wield;
+
+    if (state?._deferVisibleMonsterContact && firstAttack) {
+        aggressor.mlstmv = sourceMonsterTurn(state);
+        const threshold = findMonsterArmorClass(defender)
+            + (aggressor.m_lev ?? MONSTER_LEVEL[aggressor.mnum] ?? 0);
         const roll = rollOne(20);
         calls.push('rnd(20)');
-        const result = {
-            kind: 'monster-attack', aggressor: pet, defender: target,
-            results: [{ ...attack, roll, threshold, hit: threshold > roll, damage: 0 }],
+        return {
+            kind: 'monster-attack', aggressor, defender,
+            results: [{
+                ...firstAttack, roll, threshold,
+                hit: threshold > roll, damage: 0,
+            }],
             struck: false, defenderDied: false, death: null,
             deferredContact: true,
             contactAttacks: attacks,
             pendingResultIndex: 0,
             nextAttackIndex: 1,
+            retaliationRule,
         };
-        return result;
     }
-    const result = monsterMeleeAttack(
-        pet, target, attacks, state, random, rollDice, rollOne, calls,
-    );
 
-    // dog_move() gives a surviving defender a probabilistic immediate
-    // counterattack only when the pet actually struck it.
-    if (result.struck && !result.defenderDied
-        && recordRandom(random, calls, 4) !== 0
-        && target.mlstmv !== sourceMonsterTurn(state)
-        && !monsterIsScaredAt(target, state, pet.mx, pet.my)
-        && distmin(target.mx, target.my, pet.mx, pet.my) <= 1) {
-        const counterattacks = sourceMonsterMeleeAttacks(target);
+    const result = monsterMeleeAttack(
+        aggressor, defender, attacks, state,
+        random, rollDice, rollOne, calls,
+    );
+    if (result.kind !== 'monster-attack') return result;
+    result.retaliationRule = retaliationRule;
+    if (defenderCanCounterattack(result, state, random, calls)) {
         result.counterattack = monsterMeleeAttack(
-            target, pet, counterattacks, state,
+            defender, aggressor, sourceMonsterMeleeAttacks(defender), state,
             random, rollDice, rollOne, calls,
         );
     }
     return result;
+}
+
+function petAttacksMonster(
+    pet, target, state, random, rollDice, rollOne, calls,
+) {
+    const attacks = pet.mnum === 100
+        ? [{ type: 'kick', attackType: 3, damn: 1, damd: 6 },
+            { type: 'bite', attackType: 2, damn: 1, damd: 2 }]
+        : pet.mnum === 16 || pet.mnum === 32
+            ? [{ type: 'bite', attackType: 2, damn: 1, damd: 6 }]
+            : [];
+    return beginMonsterMeleeAttack(
+        pet, target, attacks, state, random, rollDice, rollOne, calls,
+        'pet',
+    );
 }
 
 // C mondata.c:max_passive_dmg().  dog_move() uses the defender's maximum
@@ -3852,6 +3928,28 @@ function moveHostile(
             oldx, oldy, x: oldx, y: oldy, moved: false,
             attemptedHero: true,
         });
+    }
+    if (selectedInfo & ALLOW_M) {
+        const defender = monsterAt(state, nix, niy, monster);
+        if (defender) {
+            const attack = beginMonsterMeleeAttack(
+                monster, defender, sourceMonsterMeleeAttacks(monster),
+                state, random, rollDice, rollOne, calls, 'movement',
+            );
+            if (attack.kind === 'monster-wield') {
+                return finishMovement({
+                    oldx, oldy, x: oldx, y: oldy, moved: false,
+                    actionCompleted: true,
+                    wieldedWeapon: attack.weapon,
+                });
+            }
+            return finishMovement({
+                oldx, oldy, x: oldx, y: oldy, moved: false,
+                actionCompleted: true,
+                attack,
+                deferredPostFlee: !!attack.deferredContact,
+            });
+        }
     }
     const diggingWeapon = selected
         ? readyMonsterDiggingWeapon(monster, state, nix, niy) : null;
@@ -9533,13 +9631,7 @@ export function resumeDeferredMonsterContact(
     }
 
     if (attack.deathPending) attack.postDeathFleePending = true;
-    else if (attack.struck && recordRandom(random, calls, 4) !== 0
-        && defender.mlstmv !== sourceMonsterTurn(state)
-        && !monsterIsScaredAt(
-            defender, state, aggressor.mx, aggressor.my,
-        )
-        && distmin(defender.mx, defender.my,
-            aggressor.mx, aggressor.my) <= 1) {
+    else if (defenderCanCounterattack(attack, state, random, calls)) {
         const counterattacks = sourceMonsterMeleeAttacks(defender);
         const counterattack = counterattacks[0];
         if (counterattack) {
