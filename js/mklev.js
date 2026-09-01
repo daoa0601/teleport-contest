@@ -1151,7 +1151,7 @@ export function riderRevivalTime(body, retry = false) {
 
 // C mkobj.c:start_corpse_timeout(). Troll and Rider corpses can revive;
 // other corpses rot unless their creator requested zombification.
-function startCorpseTimeout(body, { zombify = false } = {}) {
+export function startCorpseTimeout(body, { zombify = false } = {}) {
     if (!body || corpseHasNoTimer(body.corpsenm)) return;
     const rotAdjust = game.in_mklev ? 25 : 10;
     const currentMove = Math.max(game.moves ?? 1, 1);

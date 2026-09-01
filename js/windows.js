@@ -37,6 +37,23 @@ function clearRect(left, top, right, bottom) {
     }
 }
 
+export function snapshotMenuUnderlay() {
+    const d = display();
+    return d?.grid?.map(row => row.map(cell => ({ ...cell }))) || null;
+}
+
+export function restoreMenuUnderlay(snapshot) {
+    const d = display();
+    if (!d || !snapshot) return;
+    for (let row = 0; row < Math.min(d.rows, snapshot.length); row++) {
+        for (let col = 0; col < Math.min(d.cols, snapshot[row].length); col++) {
+            const cell = snapshot[row][col];
+            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+        }
+    }
+    d.clearRow(0);
+}
+
 /**
  * Display the tty inventory menu at the right edge of the map.
  * `sections` is [{ heading, items: ["a - item", ...] }, ...].

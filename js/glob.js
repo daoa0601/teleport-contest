@@ -30,6 +30,12 @@ function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
     );
 }
 
+export function startGlobTimeout(
+    glob, state = game, currentTurn = state.moves ?? 0,
+) {
+    return scheduleNextGlobAttempt(glob, state, currentTurn);
+}
+
 function floorGlobName(glob) {
     const partlyEaten = (glob.oeaten ?? 0) > 0 ? 'partly eaten ' : '';
     const type = OBJECT_NAMES[glob.otyp] || 'glob';

@@ -2,6 +2,7 @@
 // C ref: cmd.c rhack(), hack.c domove().
 
 import { game } from './gstate.js';
+import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import {
@@ -68,6 +69,7 @@ import {
     ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
     showTextMenuOverlay, showTextPages,
+    restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import {
@@ -82,6 +84,7 @@ import {
 } from './dungeon.js';
 import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
+    inventoryItem,
 } from './u_init.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
@@ -3147,7 +3150,12 @@ function preparePickedInventoryObject(object) {
         // Floor descriptions already include articles and stack counts.
         // Inventory owns a singular/plural presentation instead; retaining
         // "2 white gems" as the noun would later render "2 2 white gemss".
-        Object.assign(object, containedInventoryPresentation(object));
+        const presentation = inventoryItem(object);
+        Object.assign(object, {
+            name: presentation.name,
+            plural: presentation.plural,
+            class: presentation.class,
+        });
     } else if (object.otyp === DART) {
         object.name = 'dart';
         object.plural = 'darts';
@@ -3907,7 +3915,7 @@ async function doherecmdmenu() {
     game._pending_message = '';
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
-    const underlay = snapshotInventoryUnderlay();
+    const underlay = snapshotMenuUnderlay();
     const validKeys = [
         27,
         ...entries.map((_, index) => 97 + index),
@@ -3918,7 +3926,7 @@ async function doherecmdmenu() {
         left: 41,
         validKeys,
     });
-    restoreInventoryUnderlay(underlay);
+    restoreMenuUnderlay(underlay);
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1,
         (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
@@ -4903,9 +4911,7 @@ async function doloot() {
     }
     const x = game.u?.ux, y = game.u?.uy;
     const pile = game.level?.objects?.[x]?.[y] || [];
-    const container = pile.find(object => [
-        LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
-    ].includes(object.otyp));
+    const container = pile.find(isContainer);
     if (!container && monsterBeside(x, y)) {
         const target = await getAdjacentLocation(
             'Loot in what direction?', 'Invalid loot location', x, y,
@@ -4913,9 +4919,7 @@ async function doloot() {
         if (!target) return;
 
         const targetPile = game.level?.objects?.[target.x]?.[target.y] || [];
-        const targetContainer = targetPile.some(object => [
-            LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
-        ].includes(object.otyp));
+        const targetContainer = targetPile.some(isContainer);
         const targetMonster = game.level?.monsters?.find(monster =>
             (monster.mhp ?? 1) > 0
             && monster.mx === target.x && monster.my === target.y);
@@ -4984,77 +4988,10 @@ async function doloot() {
 
     game._pending_message = '';
     await flush_screen(1);
-    let key;
-    let lookedInside = false;
-    let usedTime = false;
-    const lootabc = !!game.flags?.lootabc;
-    const actionKeys = lootabc
-        ? { takeOut: 'a', putIn: 'b', both: 'c', reverse: 'd', stash: 'e' }
-        : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
-    for (;;) {
-        key = await showChoiceWindow({
-            title: `Do what with the ${containerName}?`,
-            left: 38,
-            entries: [
-                `: - Look inside the ${containerName}`,
-                `${actionKeys.takeOut} - take something out`,
-                `${actionKeys.putIn} - put something in`,
-                `${actionKeys.both} - both; take out, then put in`,
-                `${actionKeys.reverse} - both reversed; put in, then take out`,
-                `${actionKeys.stash} - stash one item into the ${containerName}`,
-                '',
-                `q * ${lookedInside ? 'done' : 'do nothing'}`,
-            ],
-            validKeys: [27, 58, 113,
-                ...Object.values(actionKeys).map(value => value.charCodeAt(0))],
-        });
-        if (String.fromCharCode(key) !== ':') break;
-        // C pickup.c:use_container(): revealing previously unknown contents
-        // makes the whole #loot command consume time, even if the player then
-        // quits both the contents pager and the repeated action menu.
-        if (!container.cknown) usedTime = true;
-        container.cknown = true;
-        await showContainerContents(container, containerName);
-        lookedInside = true;
-    }
-
-    await docrt();
-    await bot();
-    await flush_screen(1);
-    if (String.fromCharCode(key) === actionKeys.takeOut) {
-        if (!container.contents?.length) {
-            // pickup.c:use_container(): trying to take from an empty
-            // container reveals that emptiness for all later xname() calls.
-            // The information gain itself returns ECMD_TIME; test cknown
-            // before mutating it, as the C owner does.
-            if (!container.cknown) usedTime = true;
-            container.cknown = true;
-            await pline(`The ${containerName} is empty.`);
-        } else {
-            const underlay = snapshotInventoryUnderlay();
-            const classes = await selectContainerObjectClasses(
-                container, underlay,
-            );
-            restoreInventoryUnderlay(underlay);
-            const selections = classes.size
-                ? await selectContainedObjects(container, classes) : [];
-            restoreInventoryUnderlay(underlay);
-            if (selections.length) {
-                const messages = transferContainedObjects(
-                    container, selections,
-                );
-                await bot();
-                await reportContainerTransfer(messages);
-                usedTime = true;
-            }
-        }
-        // pickup.c:menu_loot() returns ECMD_OK when query_category() is
-        // cancelled.  Merely opening and dismissing the category menu must
-        // not advance the scheduler.
-        game.context.move = usedTime ? 1 : 0;
-    } else {
-        game.context.move = usedTime ? 1 : 0;
-    }
+    const result = await useContainer(container, {
+        underlay: snapshotMenuUnderlay(),
+    });
+    game.context.move = result.spentTime ? 1 : 0;
 }
 
 // C refs: pickup.c:dotip(), safe_qbuf(), and ynq().  Floor containers are
@@ -5063,9 +5000,7 @@ async function doloot() {
 async function dotip() {
     const x = game.u?.ux, y = game.u?.uy;
     const pile = game.level?.objects?.[x]?.[y] || [];
-    const containers = pile.filter(object => [
-        LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
-    ].includes(object.otyp));
+    const containers = pile.filter(isContainer);
 
     if (containers.length === 1 && !heroHasNoLimbs(game)
         && !exceedsActionCapacity(game)) {
@@ -5089,324 +5024,6 @@ async function dotip() {
     game.context.move = 0;
 }
 
-function containerCorpseName(corpsenm) {
-    return MONSTER_NAME[corpsenm] || 'monster';
-}
-
-function containerContentLines(container) {
-    const records = [];
-    const corpseGroups = new Map();
-    let gold = 0;
-    for (let index = 0; index < (container.contents || []).length; index++) {
-        const object = container.contents[index];
-        if (object.otyp === GOLD_PIECE) {
-            gold += objectQuantity(object);
-        } else if (object.otyp === CORPSE) {
-            const key = `${object.corpsenm}:${object.female ? 1 : 0}`;
-            const group = corpseGroups.get(key) || {
-                name: containerCorpseName(object.corpsenm), quantity: 0,
-                lastIndex: -1,
-            };
-            group.quantity += objectQuantity(object);
-            group.lastIndex = index;
-            corpseGroups.set(key, group);
-        } else {
-            records.push({
-                order: containedClassOrder(object),
-                index,
-                sortKey: floorObjectDescription(object)
-                    .replace(/^\d+\s+/, '').replace(/^(?:an?|the)\s+/, ''),
-                text: floorObjectDescription(object),
-            });
-        }
-    }
-    if (gold) records.push({ order: 0, index: -1, text: `${gold} gold pieces` });
-    for (const { name, quantity, lastIndex } of corpseGroups.values()) {
-        records.push({
-            order: 3,
-            index: lastIndex,
-            sortKey: `${name} corpse`,
-            quantity,
-            text: quantity === 1
-                ? `${indefiniteArticle(`${name} corpse`)} ${name} corpse`
-                : `${quantity} ${name} corpses`,
-        });
-    }
-    return records.sort((a, b) => a.order - b.order
-        || (a.sortKey || a.text).localeCompare(b.sortKey || b.text)
-        // C's container chain is traversed newest-first; preserve that
-        // stable order when two gender-distinct corpse groups share a noun.
-        || b.index - a.index)
-        .map(record => record.text);
-}
-
-function containedClassOrder(object) {
-    const order = PICKUP_CLASS_ORDER.indexOf(containedClassName(object));
-    return order < 0 ? PICKUP_CLASS_ORDER.length : order;
-}
-
-function containedClassName(object) {
-    if (object.otyp === GOLD_PIECE || object.oclass === 12) return 'Coins';
-    const names = {
-        2: 'Weapons',
-        3: 'Armor',
-        4: 'Rings',
-        5: 'Amulets',
-        6: 'Tools',
-        7: 'Comestibles',
-        8: 'Potions',
-        9: 'Scrolls',
-        10: 'Spellbooks',
-        11: 'Wands',
-        13: 'Gems/Stones',
-        14: 'Rocks',
-        15: 'Balls',
-        16: 'Chains',
-    };
-    return names[object.oclass] || object.class || 'Other';
-}
-
-function containedClassEntries(container) {
-    const byName = new Map();
-    for (const object of container.contents || []) {
-        const name = containedClassName(object);
-        if (!byName.has(name)) byName.set(name, {
-            name, order: containedClassOrder(object), objects: [],
-        });
-        byName.get(name).objects.push(object);
-    }
-    return [...byName.values()].sort((a, b) => a.order - b.order
-        || a.name.localeCompare(b.name));
-}
-
-// invent.c:count_buc().  Coins do not consult bknown: goldX chooses whether
-// query_category() presents them as unknown or uncursed.  Naming an object as
-// a Priest also observes its BUC state before classification.
-function containedObjectBucCategory(object) {
-    if (object.oclass === 12)
-        return game.flags?.goldX ? 'X' : 'U';
-    if (game.urole?.key === 'priest') object.bknown = true;
-    if (!object.bknown) return 'X';
-    if (object.blessed) return 'B';
-    if (object.cursed) return 'C';
-    return 'U';
-}
-
-async function selectContainerObjectClasses(container, underlay) {
-    const entries = containedClassEntries(container).map((entry, index) => ({
-        ...entry, key: String.fromCharCode(98 + index),
-    }));
-    const qualifiers = [
-        {
-            key: 'B', name: 'BUC:B', label: 'Items known to be Blessed',
-            matches: object => containedObjectBucCategory(object) === 'B',
-        },
-        {
-            key: 'C', name: 'BUC:C', label: 'Items known to be Cursed',
-            matches: object => containedObjectBucCategory(object) === 'C',
-        },
-        {
-            key: 'U', name: 'BUC:U', label: 'Items known to be Uncursed',
-            matches: object => containedObjectBucCategory(object) === 'U',
-        },
-        {
-            key: 'X', name: 'BUC:X',
-            label: 'Items of unknown Bless/Curse status',
-            matches: object => containedObjectBucCategory(object) === 'X',
-        },
-    ].filter(qualifier => (container.contents || []).some(qualifier.matches));
-    // C pickup.c:query_category() returns the sole concrete object class
-    // without creating a temporary menu.  BUC filtering does not prevent the
-    // shortcut when all eligible objects share at most one BUC category.
-    if (entries.length === 1) return new Set([entries[0].name]);
-    const selected = new Set();
-    let autoSelect = false;
-    const left = 23;
-    for (;;) {
-        restoreInventoryUnderlay(underlay);
-        clearInventoryOverlay(left - 1, 14);
-        paintInventoryOverlayLine(
-            left, 0, 'Take out what type of objects?', ATR_INVERSE,
-        );
-        paintInventoryOverlayLine(left, 2,
-            `A ${autoSelect ? '+' : '-'} Auto-select every relevant item`);
-        paintInventoryOverlayLine(left, 3,
-            '    (ignored unless some other choices are also picked)');
-        paintInventoryOverlayLine(left, 5, 'a - All types');
-        entries.forEach((entry, index) => paintInventoryOverlayLine(
-            left, 6 + index,
-            `${entry.key} ${selected.has(entry.name) ? '+' : '-'} ${entry.name}`,
-        ));
-        const qualifierRow = 7 + entries.length;
-        qualifiers.forEach((qualifier, index) => paintInventoryOverlayLine(
-            left, qualifierRow + index,
-            `${qualifier.key} ${selected.has(qualifier.name) ? '+' : '-'} ${
-                qualifier.label}`,
-        ));
-        const endRow = qualifierRow + qualifiers.length;
-        paintInventoryOverlayLine(left, endRow, '(end)');
-        game.nhDisplay?.setCursor(left + 6, endRow);
-        const key = await nhgetch();
-        if (key === 27) return new Set();
-        if (key === 10 || key === 13) return selected;
-        const letter = String.fromCharCode(key);
-        if (letter === 'A') {
-            autoSelect = !autoSelect;
-            continue;
-        }
-        if (letter === '@' || letter === 'a') {
-            if (selected.size === entries.length) selected.clear();
-            else for (const entry of entries) selected.add(entry.name);
-            continue;
-        }
-        const choice = entries.find(candidate => candidate.key === letter)
-            || qualifiers.find(candidate => candidate.key === letter);
-        if (!choice) continue;
-        if (selected.has(choice.name)) selected.delete(choice.name);
-        else selected.add(choice.name);
-    }
-}
-
-function containedObjectMatchesQualifier(object, selectedClasses) {
-    return selectedClasses.has(
-        `BUC:${containedObjectBucCategory(object)}`,
-    );
-}
-
-function containedObjectSections(container, selectedClasses) {
-    const sections = [];
-    let nextLetter = 0;
-    for (const entry of containedClassEntries(container)) {
-        const objects = entry.objects.filter(object =>
-            selectedClasses.has(entry.name)
-            || containedObjectMatchesQualifier(object, selectedClasses));
-        if (!objects.length) continue;
-        let items;
-        if (entry.name === 'Coins') {
-            const amount = objects.reduce(
-                (sum, object) => sum + objectQuantity(object), 0,
-            );
-            items = [{
-                key: '$', text: `${amount} gold pieces`,
-                value: { kind: 'gold', objects, amount },
-            }];
-        } else {
-            // C query_objlist()->sortloot(SORTLOOT_LOOT) alphabetizes
-            // same-class container contents before assigning menu letters.
-            const sortName = object => floorObjectDescription(object)
-                .replace(/^(?:an?|the)\s+/, '');
-            const sortedObjects = [...objects].sort((a, b) =>
-                sortName(a).localeCompare(sortName(b)));
-            items = sortedObjects.map(object => ({
-                key: String.fromCharCode(97 + nextLetter++),
-                text: floorObjectDescription(object),
-                value: { kind: 'object', object },
-            }));
-        }
-        sections.push({ heading: entry.name, items });
-    }
-    return sections;
-}
-
-async function selectContainedObjects(container, selectedClasses) {
-    return showMultiSelectWindow({
-        title: 'Take out what?',
-        sections: containedObjectSections(container, selectedClasses),
-        left: 41,
-    });
-}
-
-function containedInventoryPresentation(object) {
-    const appearance = game.objectDescriptions?.[object.otyp]
-        ?? OBJECT_DESCRIPTIONS[object.otyp] ?? 'unknown';
-    if (object.oclass === 9) {
-        const name = appearance === 'unlabeled'
-            ? 'unlabeled scroll' : `scroll labeled ${appearance}`;
-        return { class: 'Scrolls', name, plural: `${name}s`, showBuc: false };
-    }
-    if (object.oclass === 10) {
-        const name = `${appearance} spellbook`;
-        return { class: 'Spellbooks', name, plural: `${name}s`, showBuc: false };
-    }
-    if (object.oclass === 13) {
-        const name = `${appearance} gem`;
-        return { class: 'Gems/Stones', name, plural: `${name}s`, showBuc: false };
-    }
-    return null;
-}
-
-function transferContainedObjects(container, selections) {
-    const messages = [];
-    for (const selection of selections) {
-        if (selection.kind === 'gold') {
-            for (const object of selection.objects)
-                container.contents = container.contents.filter(item => item !== object);
-            for (const object of selection.objects)
-                addHeroGoldObject(game, object);
-            messages.push(`$ - ${selection.amount} gold pieces.`);
-            continue;
-        }
-        const { object } = selection;
-        container.contents = container.contents.filter(item => item !== object);
-        const item = addInventoryItem(
-            object, containedInventoryPresentation(object),
-        );
-        messages.push(`${item.invlet} - ${pickupObjectDescription(item)}.`);
-    }
-    container.cknown = true;
-    return messages;
-}
-
-async function reportContainerTransfer(messages) {
-    let pending = '';
-    const columns = game.nhDisplay?.cols ?? 80;
-    for (const message of messages) {
-        if (!pending) {
-            pending = message;
-            continue;
-        }
-        if (message.length + pending.length + 3 < columns - 8) {
-            pending = `${pending}  ${message}`;
-            continue;
-        }
-        const more = `${pending}--More--`;
-        await pline(more);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(more.length, 0);
-        let key;
-        do key = await nhgetch();
-        while (![27, 32, 10, 13].includes(key));
-        pending = message;
-    }
-    if (pending) await pline(pending);
-}
-
-async function showContainerContents(container, containerName) {
-    const display = game.nhDisplay;
-    const left = 41;
-    const clearLeft = 38;
-    const rows = [
-        { text: `Contents of the ${containerName}:`, attr: 0 },
-        { text: '', attr: 0 },
-        ...containerContentLines(container).map(text => ({
-            text: `  ${text}`, attr: 0,
-        })),
-        { text: '--More--', attr: 0 },
-    ];
-    for (let row = 0; row <= 10; row++) {
-        for (let col = clearLeft; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    for (let row = 0; row < rows.length; row++) {
-        for (let col = 0; col < rows[row].text.length; col++)
-            display.setCell(
-                left + col, row, rows[row].text[col],
-                NO_COLOR, rows[row].attr,
-            );
-    }
-    display.setCursor(left + 8, rows.length - 1);
-    await nhgetch();
-}
 
 function completeExtendedCommand(command) {
     // cast/chat/conduct share `c`; once `co` is typed, conduct is the sole
@@ -8472,158 +8089,6 @@ async function finishTeleportArrival(movement) {
     });
 }
 
-// C refs: apply.c doapply(); invent.c getobj().  getobj keeps an invalid
-// selection message visible while collecting the key that dismisses --More--;
-// a non-space printable key is then treated as another selection attempt.
-function paintInventoryOverlayLine(left, row, text, attr = 0) {
-    const display = game.nhDisplay;
-    for (let col = 0; col < text.length && left + col < display.cols; col++)
-        display.setCell(left + col, row, text[col], NO_COLOR, attr);
-}
-
-function clearInventoryOverlay(left, rows) {
-    const display = game.nhDisplay;
-    for (let row = 0; row < rows; row++)
-        for (let col = left; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-}
-
-function snapshotInventoryUnderlay() {
-    return game.nhDisplay?.grid?.map(row => row.map(cell => ({ ...cell })))
-        || null;
-}
-
-function restoreInventoryUnderlay(snapshot) {
-    const display = game.nhDisplay;
-    if (!display || !snapshot) return;
-    for (let row = 0; row < Math.min(display.rows, snapshot.length); row++) {
-        for (let col = 0; col < Math.min(display.cols, snapshot[row].length); col++) {
-            const cell = snapshot[row][col];
-            display.setCell(col, row, cell.ch, cell.color, cell.attr);
-        }
-    }
-    display.clearRow(0);
-}
-
-async function selectBagObjectClasses(underlay) {
-    let coins = false;
-    restoreInventoryUnderlay(underlay);
-    for (;;) {
-        const left = 23;
-        clearInventoryOverlay(left - 1, 19);
-        paintInventoryOverlayLine(
-            left, 0, 'Put in what type of objects?', ATR_INVERSE,
-        );
-        paintInventoryOverlayLine(left, 2,
-            'A - Auto-select every relevant item');
-        paintInventoryOverlayLine(left, 3,
-            '    (ignored unless some other choices are also picked)');
-        const rows = [
-            ['a', 'All types'], ['b', 'Coins'], ['c', 'Armor'],
-            ['d', 'Comestibles'], ['e', 'Scrolls'], ['f', 'Spellbooks'],
-            ['g', 'Potions'], ['h', 'Tools'],
-        ];
-        rows.forEach(([key, label], index) =>
-            paintInventoryOverlayLine(
-                left, 5 + index,
-                `${key} ${key === 'b' && coins ? '+' : '-'} ${label}`,
-            ));
-        paintInventoryOverlayLine(left, 14,
-            'B - Items known to be Blessed');
-        paintInventoryOverlayLine(left, 15,
-            'U - Items known to be Uncursed');
-        paintInventoryOverlayLine(left, 16,
-            'X - Items of unknown Bless/Curse status');
-        paintInventoryOverlayLine(left, 17,
-            `P - Just picked up: ${heroGoldAmount(game)} gold pieces`);
-        paintInventoryOverlayLine(left, 18, '(end)');
-        game.nhDisplay?.setCursor(left + 6, 18);
-        const key = await nhgetch();
-        if (key === 27) return false;
-        if (key === 10 || key === 13) return coins;
-        if (String.fromCharCode(key) === '$'
-            || String.fromCharCode(key).toLowerCase() === 'b') coins = !coins;
-    }
-}
-
-async function selectBagGold(title, amount, underlay) {
-    let selected = false;
-    restoreInventoryUnderlay(underlay);
-    for (;;) {
-        const left = 41;
-        clearInventoryOverlay(left - 1, 5);
-        paintInventoryOverlayLine(left, 0, title, ATR_INVERSE);
-        paintInventoryOverlayLine(left, 2, 'Coins', ATR_INVERSE);
-        paintInventoryOverlayLine(left, 3,
-            `$ ${selected ? '+' : '-'} ${amount} gold pieces`);
-        paintInventoryOverlayLine(left, 4, '(end)');
-        game.nhDisplay?.setCursor(left + 6, 4);
-        const key = await nhgetch();
-        if (key === 27) return false;
-        if (key === 10 || key === 13) return selected;
-        if (String.fromCharCode(key) === '$') selected = !selected;
-    }
-}
-
-// C refs: pickup.c:use_container()/in_container()/out_container().  Wallet
-// gold is stored as a real contained coin stack so hidden_gold() and later
-// guard behavior observe the same identity.
-async function useCarriedBag(container, underlay) {
-    container.contents ||= [];
-    container.cknown = true;
-    restoreInventoryUnderlay(underlay);
-    clearInventoryOverlay(37, 11);
-    const action = String.fromCharCode(await showChoiceWindow({
-        title: 'Do what with your bag?',
-        left: 38,
-        entries: [
-            ': - Look inside the bag',
-            'o - take something out',
-            'i - put something in',
-            'b - both; take out, then put in',
-            'r - both reversed; put in, then take out',
-            's - stash one item into the bag',
-            '',
-            'q * do nothing',
-        ],
-        validKeys: [27, 58, 98, 105, 111, 113, 114, 115],
-    }));
-
-    let message = '';
-    if (action === 'i') {
-        const amount = heroGoldAmount(game);
-        const choseCoins = await selectBagObjectClasses(underlay);
-        if (choseCoins && amount
-            && await selectBagGold('Put in what?', amount, underlay)) {
-            const gold = detachHeroGold(game);
-            gold.where = 'contained';
-            gold.container = container;
-            container.contents.push(gold);
-            game._vaultHiddenGold = amount;
-            message = `You put ${amount} gold pieces into the bag.`;
-        }
-    } else if (action === 'o') {
-        const gold = container.contents.find(object => object.otyp === GOLD_PIECE);
-        const amount = objectQuantity(gold);
-        if (gold && await selectBagGold('Take out what?', amount, underlay)) {
-            container.contents = container.contents.filter(object => object !== gold);
-            addHeroGoldObject(game, gold);
-            game._vaultHiddenGold = Math.max(
-                0, (game._vaultHiddenGold || 0) - amount,
-            );
-            message = `$ - ${amount} gold pieces.`;
-        }
-    }
-
-    restoreInventoryUnderlay(underlay);
-    await bot();
-    if (message) {
-        await pline(message);
-        game.context.move = 1;
-    } else {
-        game.context.move = 0;
-    }
-}
 
 const G_UNIQ = 0x1000;
 // C refs: apply.c use_stethoscope(); insight.c piousness().  hero_seq is
@@ -8981,7 +8446,7 @@ async function doapply(cannedInvlet = null) {
         applicable.map(item => item.invlet).join(''),
     );
     const prompt = `What do you want to use or apply? [${letters} or ?*] `;
-    const underlay = snapshotInventoryUnderlay();
+    const underlay = snapshotMenuUnderlay();
     let key = cannedInvlet === null
         ? await promptKey(prompt) : cannedInvlet.charCodeAt(0);
 
@@ -9088,8 +8553,12 @@ async function doapply(cannedInvlet = null) {
                 await useLamp(item);
                 return;
             }
-            if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(item.otyp)) {
-                await useCarriedBag(item, underlay);
+            if (isContainer(item)) {
+                const result = await useContainer(item, {
+                    held: true,
+                    underlay,
+                });
+                game.context.move = result.spentTime ? 1 : 0;
                 return;
             }
             if (item.otyp === STETHOSCOPE) {

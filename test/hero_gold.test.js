@@ -134,8 +134,6 @@ test('putting gold into a bag and taking it out moves the same identity',
 
         pushKey('a');
         pushKey('i');
-        pushKey('b');
-        pushKey(13);
         pushKey('$');
         pushKey(13);
         await rhack('a'.charCodeAt(0));
