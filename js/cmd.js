@@ -255,6 +255,7 @@ import {
 import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import { tryUnarmedStagger } from './monster_hurtle.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
     heroTeleportDestinationOk, moveHeroByTeleport,
@@ -11981,9 +11982,6 @@ async function attackHostileMonster(monster, x, y, {
         damage += Math.trunc(
             ((trained + 1) * (martialArtist ? 3 : 1)) / 2,
         );
-        // uhitm.c checks for an unarmed stagger before subtracting HP.
-        // TODO: apply the knockback when this roll succeeds.
-        if (!game.uarm && !game.uarms && damage > 1) rnd(100);
     }
     // uhitm.c:hmon_hitmon_dmg_recalc() applies intrinsic/ring damage and
     // Strength and weapon skill after the weapon die and enchantment.
@@ -12004,7 +12002,67 @@ async function attackHostileMonster(monster, x, y, {
         + strengthDamage
         + weaponSkillDamage;
     damage = Math.max(1, damage);
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    const wakeMonsterAfterHit = async () => {
+        if (!monster.msleeping) return;
+        const wakeMessage = canProjectMonster(
+            monster, monster.mx, monster.my,
+        ) ? `The ${displayedMonsterName()} wakes up!` : '';
+        if (wakeMessage) await plineWithContinuation(wakeMessage);
+        if (canProjectMonster(monster, monster.mx, monster.my)
+            && caitiffMessage) {
+            await promptKey(`${game._pending_message}--More--`);
+            game._pending_message = '';
+        }
+        monster.msleeping = 0;
+
+        await plineWithContinuation(
+            `The ${displayedMonsterName()} screams!`,
+        );
+        const wakeDistance = (monster.m_lev
+            ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 18;
+        for (const nearby of [...(game.level?.monsters || [])].reverse()) {
+            if (!nearby.msleeping || (nearby.mhp ?? 1) <= 0) continue;
+            const nearbyDx = nearby.mx - monster.mx;
+            const nearbyDy = nearby.my - monster.my;
+            if (nearbyDx * nearbyDx + nearbyDy * nearbyDy >= wakeDistance)
+                continue;
+            if (canProjectMonster(nearby, nearby.mx, nearby.my)) {
+                await plineWithContinuation(
+                    `The ${MONSTER_NAME[nearby.mnum] || 'monster'} wakes up.`,
+                );
+            }
+            nearby.msleeping = 0;
+            nearby.mstrategy = (nearby.mstrategy ?? 0) & ~STRAT_WAITMASK;
+        }
+    };
+    let stagger = { staggered: false };
+    if (bareHanded && !game.uarm && !game.uarms && damage > 1
+        && !polymorphed) {
+        stagger = await tryUnarmedStagger(monster, {
+            skill: bareHandedSkill,
+            damage,
+            dx: x - (game.u?.ux ?? x),
+            dy: y - (game.u?.uy ?? y),
+            announce: plineWithContinuation,
+            nameMonster: target => target === monster
+                ? `The ${displayedMonsterName()}`
+                : monsterInstanceDisplayName(target),
+            wakeMonster: wakeMonsterAfterHit,
+            finishLiquidDeath: async (victim, state, random, calls,
+                leaveCorpse) => {
+                await finishHeroMonsterKill(victim, victim.mx, victim.my, {
+                    showKillMessage: false,
+                    noCorpse: !leaveCorpse,
+                    hallucinating,
+                    nameMonster: displayedMonsterName,
+                });
+                return { dead: true, calls };
+            },
+        });
+    }
+    if (!stagger.dead)
+        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    if (stagger.dead) return true;
     if (monster.mhp > 0) {
         // C uhitm.c:hmon_hitmon_msg_hit() uses canseemon(), not canspotmon():
         // telepathy can supply the target noun without exposing damage
@@ -12012,52 +12070,12 @@ async function attackHostileMonster(monster, x, y, {
         const hitPunctuation = game.flags?.verbose !== false
             && canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
-        await plineWithContinuation(
-            `You hit ${displayedMonsterObject()}${hitPunctuation}`,
-        );
-        if (monster.msleeping) {
-            const wakeMessage = canProjectMonster(
-                monster, monster.mx, monster.my,
-            ) ? `The ${displayedMonsterName()} wakes up!` : '';
-            if (wakeMessage) await plineWithContinuation(wakeMessage);
-            if (canProjectMonster(monster, monster.mx, monster.my)) {
-                // tty stops after the third coordinate-bearing attack
-                // message even when the resulting line still fits.
-                if (caitiffMessage) {
-                    await promptKey(`${game._pending_message}--More--`);
-                    game._pending_message = '';
-                }
-            }
-            monster.msleeping = 0;
-
-            // C mon.c:wakeup(via_attack=TRUE) resumes after wake_msg() by
-            // making the newly awakened target growl.  The nymph sound is
-            // the default scream, and growl() wakes every nearby sleeper
-            // before hmon_hitmon() reaches knockback.  Both pline calls can
-            // suspend this same hit transaction at a second tty pager.
+        if (!stagger.staggered) {
             await plineWithContinuation(
-                `The ${displayedMonsterName()} screams!`,
+                `You hit ${displayedMonsterObject()}${hitPunctuation}`,
             );
-            const wakeDistance = (monster.m_lev
-                ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 18;
-            for (const nearby of [...(game.level?.monsters || [])].reverse()) {
-                if (!nearby.msleeping || (nearby.mhp ?? 1) <= 0) continue;
-                const dx = nearby.mx - monster.mx;
-                const dy = nearby.my - monster.my;
-                if (dx * dx + dy * dy >= wakeDistance) continue;
-                if (canProjectMonster(nearby, nearby.mx, nearby.my)) {
-                    await plineWithContinuation(
-                        `The ${MONSTER_NAME[nearby.mnum] || 'monster'} wakes up.`,
-                    );
-                }
-                nearby.msleeping = 0;
-                nearby.mstrategy = (nearby.mstrategy ?? 0) & ~STRAT_WAITMASK;
-            }
-            // wake_nearto() leaves this combined growl/wakeup line pending.
-            // A later pline in the same monster scan is what overflows it and
-            // requests acknowledgement; forcing nhgetch here would attach
-            // the entire intervening scan to the following input boundary.
         }
+        await wakeMonsterAfterHit();
         // hmon_hitmon() reaches generic knockback only after wakeup() has
         // completed.  known_hitum() then checks whether the wounded survivor
         // flees, followed by passive().  Keeping this tail after both pager

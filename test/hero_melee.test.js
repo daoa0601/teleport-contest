@@ -109,3 +109,21 @@ test('two-weapon combat attempts an off-hand strike for every role',
         assert.match(samurai.message, /You miss the lichen\./);
         assert.match(samurai.message, /You hit the lichen\./);
     });
+
+test('a powerful unarmed strike can shove a small monster', async () => {
+    const { lichen } = installLichenArena('samurai');
+    Object.assign(game.level.at(12, 10), {
+        typ: ROOM, lit: true, waslit: true, seenv: 255,
+    });
+    game.u.acurr.a[A_STR] = 18;
+
+    initRng(105n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(lichen.mx, 12);
+    assert.equal(lichen.my, 10);
+    assert.equal(lichen.mstun, 1);
+    assert.equal(lichen.movement, 0);
+    assert.ok(lichen.mhp < 100);
+    assert.match(game._pending_message, /powerful strike/);
+});
