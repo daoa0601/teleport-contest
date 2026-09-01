@@ -96,12 +96,24 @@ export function monsterTypeName(mnum, female = false) {
 
 // C ref: mondata.h nonliving().  Symbol numbers use the generated S_* order.
 const M2_UNDEAD = 0x00000002;
+const PM_VAMPIRE = 226;
+const PM_VAMPIRE_LEADER = 227;
+const PM_VLAD_THE_IMPALER = 228;
 const PM_MANES = 50;
 const S_VORTEX = 22;
 const S_GOLEM = 55;
 
+export function monsterIsUndead(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_UNDEAD);
+}
+
+export function monsterIsVampireShifter(monster) {
+    return [PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER]
+        .includes(monster?.cham);
+}
+
 export function monsterIsNonliving(mnum) {
-    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_UNDEAD)
+    return monsterIsUndead(mnum)
         || mnum === PM_MANES
         || MONSTER_SYMBOL[mnum] === S_VORTEX
         || MONSTER_SYMBOL[mnum] === S_GOLEM;

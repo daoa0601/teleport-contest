@@ -51,6 +51,7 @@ import {
 import {
     continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
+import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueCorpseMeal, doeat } from './eat.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
@@ -5873,27 +5874,7 @@ async function doturn() {
         return;
     }
 
-    if (!game.u.uconduct) game.u.uconduct = {};
-    game.u.uconduct.gnostic = (game.u.uconduct.gnostic || 0) + 1;
-
-    const alignment = game.u?.ualign?.type ?? 0;
-    const deity = alignment > 0
-        ? game.urole?.gods?.lawful
-        : alignment < 0
-            ? game.urole?.gods?.chaotic
-            : game.urole?.gods?.neutral;
-    await pline(
-        `Calling upon ${deity || 'your god'}, you chant an arcane formula.`,
-    );
-    exerciseAttribute(A_WIS, true);
-
-    game._helplessTurns = Math.max(
-        1,
-        5 - Math.trunc(((game.u?.ulevel ?? 1) - 1) / 6),
-    );
-    game._helplessReason = 'trying to turn the monsters';
-    game._helplessDoneMessage = 'You can move again.';
-    game.context.move = 1;
+    await turnUndeadByCallingOnDeity(game);
 }
 
 // C refs: trap.c water_damage()/erode_obj().  Fountain dipping forces the
