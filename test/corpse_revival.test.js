@@ -160,8 +160,35 @@ test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.pet, false);
     assert.equal(event.monster.mpeaceful, 1);
     assert.equal(event.monster.meating, 0);
-    assert.equal(event.monster.mhpmax, 25);
+    assert.ok(event.monster.mhpmax > deadPet.mhpmax);
+    assert.equal(event.monster.mhp, event.monster.mhpmax);
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
+});
+
+test('a level-drained troll can recover when it revives', async () => {
+    freshState();
+    game.u.uz.dlevel = 1;
+    game.u.ulevel = 1;
+    const drainedTroll = {
+        m_id: 95,
+        mnum: PM_TROLL,
+        mx: 12, my: 10,
+        m_lev: 0,
+        mhp: 0, mhpmax: 1,
+        mpeaceful: 0,
+        mtame: 0,
+        minvent: [], inventory: [],
+    };
+    const corpse = mkcorpstat(
+        CORPSE, drainedTroll, PM_TROLL, 12, 10, 8,
+    );
+    stopAllObjectTimers(corpse);
+
+    const event = await reviveNow(corpse, 2);
+
+    assert.ok(event.monster.m_lev > drainedTroll.m_lev);
+    assert.ok(event.monster.mhpmax > drainedTroll.mhpmax);
+    assert.equal(event.monster.mhp, event.monster.mhpmax);
 });
 
 test('reviving the quest leader clears the dead-leader state', async () => {

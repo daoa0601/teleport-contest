@@ -106,6 +106,7 @@ import {
 import {
     isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
 } from './corpse_species.js';
+import { golemHitPoints } from './monster_hit_points.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterInAir } from './mon.js';
@@ -1514,18 +1515,6 @@ const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
 const G_LGROUP = 0x0040;
 const G_SGROUP = 0x0080;
-
-const GOLEM_HIT_POINTS = new Map([
-    ['straw golem', 20], ['paper golem', 20], ['rope golem', 30],
-    ['leather golem', 40], ['gold golem', 60], ['wood golem', 50],
-    ['flesh golem', 40], ['clay golem', 70], ['stone golem', 100],
-    ['glass golem', 80], ['iron golem', 120],
-]);
-
-function golemHitPoints(mndx) {
-    if (MONSTER_SYMBOL[mndx] !== 55) return null;
-    return GOLEM_HIT_POINTS.get(MONSTER_NAME[mndx]) ?? null;
-}
 
 // C ref: makemon.c peace_minded().  Random level monsters must resolve their
 // attitude before inventory creation; the live hero alignment record is an

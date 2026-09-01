@@ -22,6 +22,7 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { syncBlindness } from './senses.js';
+import { golemHitPoints } from './monster_hit_points.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
@@ -54,11 +55,6 @@ const LEATHER = 7;
 const HORN_COUNTS = new Map([
     [291, 2], [177, 2], [309, 2], [302, 2],
     [101, 1], [102, 1], [103, 1], [124, 1],
-]);
-const GOLEM_HIT_POINTS = new Map([
-    [249, 20], [250, 20], [251, 30], [252, 60], [253, 40],
-    [254, 50], [255, 40], [256, 70], [257, 100], [258, 80],
-    [259, 120],
 ]);
 const OLFACTIONLESS_SYMBOLS = new Set([
     2,  // S_BLOB
@@ -277,8 +273,8 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     }
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
-    const golemHitPoints = GOLEM_HIT_POINTS.get(mnum);
-    if (golemHitPoints) u.mhmax = golemHitPoints;
+    const fixedGolemHitPoints = golemHitPoints(mnum);
+    if (fixedGolemHitPoints) u.mhmax = fixedGolemHitPoints;
     else if (MONSTER_SYMBOL[mnum] === S_DRAGON && monsterLevel > 0)
         u.mhmax = 4 * monsterLevel + d(monsterLevel, 4);
     else u.mhmax = monsterLevel > 0 ? d(monsterLevel, 8) : rnd(4);

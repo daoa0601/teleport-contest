@@ -2,7 +2,11 @@
 // C refs: mkobj.c save_mtraits() and zap.c montraits().
 
 import { isReviver } from './corpse_species.js';
-import { MONSTER_ATTACKS, MONSTER_GENO } from './monster_data.js';
+import {
+    MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL,
+} from './monster_data.js';
+import { monsterHitPointsPerLevel } from './monster_hit_points.js';
+import { rnd, rn2 } from './rng.js';
 
 const G_UNIQ = 0x1000;
 const AD_SEDU = 22;
@@ -57,7 +61,10 @@ export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
         || monsterHasSeductionAttack(monster.mnum);
 }
 
-export function restoreMonsterTraits(monster, saved) {
+export function restoreMonsterTraits(monster, saved, {
+    rollOne = rnd,
+    randomBelow = rn2,
+} = {}) {
     if (!monster || !saved) return monster;
     const created = {
         m_id: monster.m_id,
@@ -72,9 +79,30 @@ export function restoreMonsterTraits(monster, saved) {
         mtrapseen: monster.mtrapseen,
         mflee: monster.mflee,
         mfleetim: monster.mfleetim,
+        mburied: monster.mburied,
+        mlstmv: monster.mlstmv,
         mundetected: monster.mundetected,
         m_ap_type: monster.m_ap_type,
+        m_lev: monster.m_lev ?? 0,
+        mhpmax: monster.mhpmax ?? 1,
     };
+
+    let restoredLevel = saved.m_lev ?? created.m_lev;
+    const speciesLevel = MONSTER_LEVEL[saved.mnum] ?? 0;
+    if (created.m_lev < speciesLevel) {
+        const targetLevel = rollOne(speciesLevel + 1);
+        if (targetLevel > created.m_lev) {
+            while (created.m_lev < targetLevel) {
+                created.m_lev++;
+                created.mhpmax += monsterHitPointsPerLevel(
+                    { mnum: saved.mnum, m_lev: created.m_lev },
+                    { rollOne, randomBelow },
+                );
+            }
+            restoredLevel = created.m_lev;
+        }
+    }
+
     Object.assign(monster, saved);
     monster.m_id = saved.m_id || created.m_id;
     monster.mx = created.mx;
@@ -91,9 +119,12 @@ export function restoreMonsterTraits(monster, saved) {
     monster.mtrapseen = created.mtrapseen ?? 0;
     monster.mflee = created.mflee ?? 0;
     monster.mfleetim = created.mfleetim ?? 0;
+    monster.mburied = created.mburied ?? 0;
+    monster.mlstmv = created.mlstmv ?? 0;
     monster.mundetected = created.mundetected ?? 0;
     monster.m_ap_type = created.m_ap_type ?? 0;
-    monster.mhpmax = Math.max(monster.mhpmax ?? 1, saved.mhpmax ?? 1);
+    monster.m_lev = restoredLevel;
+    monster.mhpmax = Math.max(created.mhpmax, saved.mhpmax ?? 1);
     monster.mhp = monster.mhpmax;
     monster.mrevived = 1;
     monster.mavenge = 0;
