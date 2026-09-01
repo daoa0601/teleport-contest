@@ -66,7 +66,7 @@ import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import {
     getRumor, makemonNear, mkcorpstat, mklev,
     mergable, mkgold, mkobj, mksobj, place_object, remove_object,
-    splitHeroMonsterForm, stack_object,
+    stack_object,
     rndClass,
     u_on_downstairs, u_on_upstairs, undeadToCorpse,
 } from './mklev.js';
@@ -172,10 +172,13 @@ import {
     applyFountainSnakeActors,
     resolveDippedBucFate, resolveDippedSensationFate,
 } from './fountain_effects.js';
+import {
+    dryFountainTerrain, reportFountainWarning,
+} from './fountain.js';
 import { heroArmName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { dist2, distmin, dungeonDepth } from './hacklib.js';
-import { inTown, roomForRoomno } from './room.js';
+import { roomForRoomno } from './room.js';
 import {
     OBJECT_CLASS_LABELS, objectClassForType, recordObjectCall,
     recordObjectEncounter,
@@ -277,7 +280,7 @@ import {
     M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITFORU, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
     VAULT, TEMPLE, SHOPBASE, ROOMOFFSET,
-    F_LOOTED, F_WARNED,
+    F_LOOTED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
@@ -300,8 +303,6 @@ const PM_GHOST = 287;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
-const PM_WATCHMAN = 282;
-const PM_WATCH_CAPTAIN = 283;
 const M1_WALLWALK = 0x00000008;
 const M1_THICK_HIDE = 0x00200000;
 const M2_ROCKTHROW = 0x08000000;
@@ -1605,77 +1606,6 @@ function someGold(amount) {
                 : gold < 5000 ? 500
                     : gold < 10000 ? 1000 : 5000;
     return floor + rn2(gold - floor + 1);
-}
-
-function visiblePeacefulWatchman() {
-    return (game.level?.monsters || []).find(monster =>
-        (monster?.mhp ?? 1) > 0
-        && (monster.mnum === PM_WATCHMAN
-            || monster.mnum === PM_WATCH_CAPTAIN)
-        && !!monster.mpeaceful
-        && couldsee(monster.mx, monster.my));
-}
-
-function dryFountainTerrain(loc, isYou = true) {
-    if (loc?.typ !== FOUNTAIN)
-        return { dried: false, warning: null };
-    const alreadyWarned = !!((loc.looted ?? 0) & F_WARNED);
-    if (rn2(3) !== 0 && !alreadyWarned)
-        return { dried: false, warning: null };
-
-    if (isYou
-        && inTown(game.level, game.u.ux, game.u.uy)
-        && !alreadyWarned) {
-        loc.looted = (loc.looted ?? 0) | F_WARNED;
-        return {
-            dried: false,
-            warning: visiblePeacefulWatchman() || 'trickle',
-        };
-    }
-
-    loc.typ = ROOM;
-    loc.flags = 0;
-    loc.looted = 0;
-    loc.blessedftn = 0;
-    game.level.flags.nfountains = Math.max(
-        0, (game.level.flags.nfountains ?? 1) - 1,
-    );
-    newsym(game.u.ux, game.u.uy);
-    return { dried: true, warning: null };
-}
-
-async function reportFountainWarning(warning) {
-    if (!warning) return;
-    if (warning === 'trickle') {
-        await plineWithContinuation('The flow reduces to a trickle.');
-        return;
-    }
-
-    const name = monsterInstanceDisplayName(warning);
-    const subject = warning.name
-        ? name
-        : `${indefiniteArticle(name)} ${name}`;
-    const actor = `${subject[0].toUpperCase()}${subject.slice(1)}`;
-    if (game.deaf || game.u?.deaf) {
-        const pronoun = warning.female ? 'her' : 'his';
-        await plineWithContinuation(
-            `${actor} earnestly waves ${pronoun} arms!`,
-        );
-        return;
-    }
-    await plineWithContinuation(`${actor} yells:`);
-    await plineWithContinuation('"Hey, stop using that fountain!"');
-}
-
-async function splitSittingGremlin() {
-    const clone = await splitHeroMonsterForm(game);
-    if (!clone) return null;
-    await plineWithContinuation('You multiply!');
-    const result = dryFountainTerrain(
-        game.level?.at(game.u.ux, game.u.uy), true,
-    );
-    await reportFountainWarning(result.warning);
-    return clone;
 }
 
 async function discoverFountainGem(loc) {
@@ -5401,7 +5331,6 @@ async function runExtendedCommand(command) {
     if (command === 'chat') return dochat();
     if (command === 'sit') return dosit({
         triggerTrap: triggerTrapBySitting,
-        splitGremlin: splitSittingGremlin,
         gotoLevel,
         chooseTeleportDestination: askTeleportDestination,
     });

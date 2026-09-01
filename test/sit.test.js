@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ALTAR, Align2amask, THRONE } from '../js/const.js';
+import { ALTAR, Align2amask, FOUNTAIN, THRONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
@@ -81,6 +81,27 @@ test("Vlad's throne greases carried equipment", async () => {
 
     assert.equal(club.greased, true);
     assert.ok(game.u.glibTurns >= 100 && game.u.glibTurns <= 200);
+});
+
+test('a gremlin sitting in water creates a tame clone', async () => {
+    const level = freshWeaponArena();
+    level.at(10, 10).typ = FOUNTAIN;
+    game.plname = 'Splitter';
+    game.mvitals = [];
+    Object.assign(game.u, {
+        umonster: 331,
+        umonnum: 40,
+        mtimedone: 300,
+        mh: 17,
+        mhmax: 17,
+    });
+    initRng(3510n);
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.ok(level.monsters.some(monster =>
+        monster.mnum === 40 && monster.mtame > 0));
 });
 
 test('a malignant aura curses an ordinary inventory item', async () => {

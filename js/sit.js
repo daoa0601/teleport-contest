@@ -28,6 +28,7 @@ import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
 import { objectWeight } from './weight.js';
 import { throneSitEffect } from './throne.js';
+import { splitSittingGremlin } from './fountain.js';
 
 const COIN_CLASS = 12;
 const CLOTH = 6;
@@ -253,10 +254,10 @@ async function sitWhileTrapped(trap) {
     }
 }
 
-async function sitInWater(splitGremlin) {
+async function sitInWater() {
     await pline('You sit in the water.');
     if (currentForm() === PM_GREMLIN) {
-        await splitGremlin?.();
+        await splitSittingGremlin();
         return;
     }
 
@@ -282,7 +283,6 @@ function formLikesLava() {
 
 export async function dosit({
     triggerTrap = null,
-    splitGremlin = null,
     gotoLevel = null,
     chooseTeleportDestination = null,
 } = {}) {
@@ -326,7 +326,7 @@ export async function dosit({
     if ((onPool && !(game.underwater || u?.uinwater))
         || (currentForm() === PM_GREMLIN
             && (typ === FOUNTAIN || onPool))) {
-        await sitInWater(splitGremlin);
+        await sitInWater();
         game.context.move = 1;
         return;
     }
@@ -346,7 +346,7 @@ export async function dosit({
             ? 'There are no cushions floating nearby.'
             : 'You sit down on the muddy bottom.');
     } else if (onPool && !waterEggLayer()) {
-        await sitInWater(splitGremlin);
+        await sitInWater();
     } else if (typ === SINK) {
         await pline('You sit on the sink.');
         await pline(`Your ${formIsHumanoid() ? 'rump' : 'underside'} gets wet.`);
