@@ -1,9 +1,12 @@
-import { COLNO, IN_SIGHT, ROWNO } from '../../js/const.js';
+import {
+    COLNO, COULD_SEE, IN_SIGHT, ROWNO,
+} from '../../js/const.js';
 import { game } from '../../js/gstate.js';
 
 function visibleGrid() {
     return Array.from(
-        { length: ROWNO }, () => new Uint8Array(COLNO).fill(IN_SIGHT),
+        { length: ROWNO },
+        () => new Uint8Array(COLNO).fill(COULD_SEE | IN_SIGHT),
     );
 }
 

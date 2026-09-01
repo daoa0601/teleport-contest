@@ -108,6 +108,7 @@ export const WORM_TOOTH = 42;
 export const CRYSKNIFE = 43;
 export const DWARVISH_SHORT_SWORD = 49;
 export const DWARVISH_MATTOCK = 71;
+export const GRAPPLING_HOOK = 260;
 export const UNICORN_HORN = 261;
 export const HELM_OF_OPPOSITE_ALIGNMENT = 99;
 export const GAUNTLETS_OF_FUMBLING = 160;

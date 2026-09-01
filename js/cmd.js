@@ -108,7 +108,7 @@ import {
     touchArtifactByHero,
 } from './artifacts.js';
 import {
-    SLING, CARROT, BULLWHIP,
+    SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
     CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
@@ -161,6 +161,7 @@ import {
     snapshotMonsterCreationWearNames,
 } from './monworn.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { isZombieMaker } from './corpse_species.js';
 import {
     killGenocidedMonsters, wakeMonstersNear,
@@ -240,6 +241,7 @@ import {
     isRoyalJelly, useRoyalJelly,
 } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
+import { useGrapplingHook } from './grappling_hook.js';
 import { wieldTool } from './wield_tool.js';
 import {
     doenhance, ensureHeroSkills, recordWeaponPractice,
@@ -9036,6 +9038,45 @@ async function doapply(cannedInvlet = null) {
                 game.context.move = result.spentTime ? 1 : 0;
                 return;
             }
+            if (item.otyp === GRAPPLING_HOOK) {
+                const result = await useGrapplingHook(item, {
+                    state: game,
+                    ensureWielded: () => wieldTool(
+                        item,
+                        'cast',
+                        { swapWeapons: doswapweapon },
+                        game,
+                    ),
+                    describeTarget: wizardPositionDescription,
+                    holdObject: async object => {
+                        const prepared = preparePickedInventoryObject(object);
+                        game._capacityDirty = true;
+                        await plineWithContinuation(prepared.message);
+                        return true;
+                    },
+                    hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
+                        finishTeleport: finishTeleportArrival,
+                        gotoLevel,
+                        chooseTeleportDestination: askTeleportDestination,
+                        finishPetrifiedMonster: monster =>
+                            finishHeroMonsterKill(
+                                monster, monster.mx, monster.my, {
+                                    showKillMessage: false,
+                                    noCorpse: true,
+                                    recordConduct: false,
+                                },
+                            ),
+                    }),
+                });
+                if (result.resume) {
+                    game._cannedCommands ||= [];
+                    game._cannedCommands.push({
+                        kind: 'apply', invlet: item.invlet,
+                    });
+                }
+                game.context.move = result.spentTime ? 1 : 0;
+                return;
+            }
             if ([BLINDFOLD, LENSES].includes(item.otyp)) {
                 game._pending_message = '';
                 const changed = await applyEyewear(item);
@@ -9092,8 +9133,8 @@ async function doapply(cannedInvlet = null) {
                 game.context.move = 1;
                 return;
             }
-            await pline(`You use ${item.invlet} - ${item.name}.`);
-            game.context.move = 1;
+            await pline("Sorry, I don't know how to use that.");
+            game.context.move = 0;
             return;
         }
 
@@ -11176,20 +11217,8 @@ async function attackHostileMonster(monster, x, y, {
     // gets the caitiff message even when the subsequent attack misses.
     const helpless = !!(monster.msleeping || monster.mcanmove === 0
         || (monster.mfrozen ?? 0) > 0);
-    const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
-    let caitiffMessage = false;
-    if (primaryStrike && game.urole?.key === 'knight'
-        && (game.u?.ualign?.type ?? 0) > 0
-        && (game.u?.ualign?.record ?? 0) > -10
-        && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x00000002)
-        && (helpless || fleeingFromBehind)) {
-        await plineWithContinuation('You caitiff!');
-        caitiffMessage = true;
-        game.u.ualign.record = Math.max(
-            -127, (game.u.ualign.record ?? 0) - 1,
-        );
-        game.u.ualign.abuse = (game.u.ualign.abuse ?? 0) + 1;
-    }
+    const caitiffMessage = primaryStrike
+        ? await applyCaitiffPenalty(monster, game) : false;
     // weapon.c:hitval() asks the wielded artifact for its special accuracy
     // before hitum() rolls the ordinary d20.
     const artifactHitBonus = attackWeapon

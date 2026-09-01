@@ -6,17 +6,16 @@ import {
     heroFootName, heroHandName, monsterHandName,
 } from './body_parts.js';
 import {
-    ACCESSIBLE, A_DEX, A_STR, ALTAR, CLOUD, COLNO, DOOR, DRAWBRIDGE_DOWN,
-    FOUNTAIN, GRAVE, ICE, IS_AIR, IS_FURNITURE, IS_LAVA, IS_POOL,
-    IS_ROOM, IS_WALL, IS_WATERWALL, Is_airlevel, Is_waterlevel,
+    ACCESSIBLE, A_DEX, A_STR, COLNO, DOOR, IS_AIR, IS_FURNITURE, IS_LAVA,
+    IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_airlevel, Is_waterlevel,
     LAVAWALL, ROWNO, SDOOR, TT_PIT, W_NONPASSWALL, isok,
 } from './const.js';
 import {
     canSpotMonster, map_invisible, newsym, pline,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { detachFloorObjectUnit } from './floor_object.js';
 import { game } from './gstate.js';
-import { nextIdent } from './ident.js';
 import { inventoryItemDescription } from './invent.js';
 import {
     place_object, remove_object, stack_object,
@@ -28,7 +27,7 @@ import {
 } from './monster_data.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, CORPSE, OBJECT_BIMANUAL, OBJECT_WEIGHT,
+    BOULDER, CORPSE, OBJECT_BIMANUAL,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import {
@@ -36,6 +35,7 @@ import {
 } from './polyself.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
+import { surfaceName } from './terrain_name.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { collectNearbyCoords } from './u_init.js';
 import { vision_recalc, vision_reset } from './vision.js';
@@ -129,21 +129,6 @@ function monsterAt(x, y, state) {
         && monster.mx === x && monster.my === y) || null;
 }
 
-function surfaceName(x, y, state) {
-    const type = state.level?.at?.(x, y)?.typ;
-    if (IS_AIR(type)) return type === CLOUD ? 'cloud' : 'air';
-    if (IS_POOL(type)) return state.underwater ? 'bottom' : 'water';
-    if (type === ICE) return 'ice';
-    if (IS_LAVA(type)) return 'lava';
-    if (type === DRAWBRIDGE_DOWN) return 'bridge';
-    if (type === ALTAR) return 'altar';
-    if (type === GRAVE) return 'headstone';
-    if (type === FOUNTAIN) return 'fountain';
-    if (IS_WALL(type) || type === SDOOR) return 'wall';
-    if (type === DOOR) return 'doorway';
-    return IS_ROOM(type) ? 'floor' : 'ground';
-}
-
 function ceilingName(state) {
     const type = state.level?.at?.(state.u.ux, state.u.uy)?.typ;
     if (Is_waterlevel(state.u?.uz)) return 'water above';
@@ -194,30 +179,6 @@ async function burnWhip(whip, state) {
     return true;
 }
 
-function detachFloorUnit(object, state) {
-    const quantity = quantityOf(object);
-    if (quantity <= 1) {
-        remove_object(object);
-        return object;
-    }
-
-    const unitWeight = Number.isFinite(OBJECT_WEIGHT[object.otyp])
-        ? OBJECT_WEIGHT[object.otyp]
-        : Math.max(1, Math.trunc((object.owt ?? quantity) / quantity));
-    object.quan = object.quantity = quantity - 1;
-    object.owt = Math.max(unitWeight, (object.owt ?? unitWeight) - unitWeight);
-    return {
-        ...object,
-        o_id: nextIdent(state),
-        quan: 1,
-        quantity: 1,
-        owt: unitWeight,
-        where: 'free',
-        objectTimers: [],
-        timed: 0,
-    };
-}
-
 function isHorseCorpse(object) {
     if (object?.otyp !== CORPSE) return false;
     const species = monsterTypeName(object.corpsenm).toLowerCase();
@@ -241,7 +202,7 @@ async function snagFloorObject(proficiency, holdObject, state) {
         await pline('The bullwhip slips free.');
         return true;
     }
-    const unit = detachFloorUnit(object, state);
+    const unit = detachFloorObjectUnit(object, state);
     if (!await holdObject(unit)) {
         place_object(unit, state.u.ux, state.u.uy);
         stack_object(unit, state);
