@@ -7,13 +7,18 @@
 
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    CORPSE, SPE_BOOK_OF_THE_DEAD,
+    BAG_OF_HOLDING, CORPSE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { rn2 } from './rng.js';
+import { objectWeight } from './weight.js';
 
 const COIN_CLASS = 12;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
+
+function updateStateDependentWeight(object) {
+    if (object?.otyp === BAG_OF_HOLDING) object.owt = objectWeight(object);
+}
 
 export function objectResistsDestruction(
     object, ordinaryChance, artifactChance, random = rn2,
@@ -36,6 +41,17 @@ export function curseObjectState(object) {
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
+    updateStateDependentWeight(object);
+    return changed;
+}
+
+export function blessObjectState(object) {
+    if (!object || object.oclass === COIN_CLASS) return false;
+    const changed = !object.blessed || !!object.cursed;
+    object.blessed = true;
+    object.cursed = false;
+    object.buc = 'blessed';
+    updateStateDependentWeight(object);
     return changed;
 }
 
@@ -44,6 +60,7 @@ export function uncurseObjectState(object) {
     const changed = !!object.cursed;
     object.cursed = false;
     object.buc = object.blessed ? 'blessed' : 'uncursed';
+    updateStateDependentWeight(object);
     return changed;
 }
 
@@ -52,5 +69,6 @@ export function unblessObjectState(object) {
     const changed = !!object.blessed;
     object.blessed = false;
     object.buc = object.cursed ? 'cursed' : 'uncursed';
+    updateStateDependentWeight(object);
     return changed;
 }

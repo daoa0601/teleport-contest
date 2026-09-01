@@ -5,7 +5,8 @@ import { exerciseAttribute } from './attrib.js';
 import { BCPOS_CHAIN, heroIsPunished } from './ball.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, G_GENOD, G_NOCORPSE,
-    W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
+    TT_BURIEDBALL, W_ART, W_ARTI, W_BALL, W_CHAIN,
+    WT_IRON_BALL_INCR,
 } from './const.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
@@ -16,16 +17,22 @@ import {
 } from './invent.js';
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
-import { mkobj, place_object } from './mklev.js';
+import {
+    mkobj, place_object, remove_object, stack_object,
+} from './mklev.js';
 import {
     MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
+    HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, SLING,
     SCR_BLANK_PAPER, SCR_DESTROY_ARMOR,
     SCR_ENCHANT_WEAPON, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT,
     SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_TELEPORTATION,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
+import {
+    blessObjectState, curseObjectState, uncurseObjectState,
+} from './object_state.js';
 import { recordObjectCall, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine } from './query.js';
 import { rnd, rn2, rnl } from './rng.js';
@@ -41,9 +48,12 @@ import {
     objectErosionMessage, wornArmorInDestroyOrder,
 } from './armor.js';
 import { exceedsActionCapacity } from './weight.js';
+import { monsterSaddle } from './steed.js';
 
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
+const COIN_CLASS = 12;
+const GEM_CLASS = 13;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const WEAPON_CLASS = 2;
@@ -272,22 +282,166 @@ async function readGenocideScroll(scroll) {
     game.context.move = 1;
 }
 
+function removeCurseWornMask(object) {
+    let mask = (object.owornmask ?? 0) & ~(W_BALL | W_ART | W_ARTI);
+    const swapWeapon = game.uswapwep || game.u?.uswapwep;
+    const quiver = game.uquiver || game.u?.uquiver;
+    if (object === swapWeapon && !(game.u?.twoweap || game.twoweap)) {
+        mask = 0;
+    } else if (object === quiver) {
+        if (object.oclass === WEAPON_CLASS) {
+            if (!OBJECT_MERGE[object.otyp]) mask = 0;
+        } else if (object.oclass === GEM_CLASS) {
+            if ((game.uwep || game.u?.uwep)?.otyp !== SLING) mask = 0;
+        } else {
+            mask = 0;
+        }
+    }
+    return mask;
+}
+
+function removeCurseAppliesTo(object, blessed) {
+    return blessed || removeCurseWornMask(object)
+        || object.otyp === LOADSTONE
+        || (object.otyp === LEASH && object.leashmon);
+}
+
+function randomlyBlessOrCurse(object) {
+    if (object.blessed || object.cursed || rn2(2)) return false;
+    return rn2(2) ? blessObjectState(object) : curseObjectState(object);
+}
+
+function removeCurseFeeling(confused) {
+    const hallucinating = game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0;
+    if (hallucinating) {
+        return confused
+            ? 'the power of the Force against you!'
+            : 'in touch with the Universal Oneness.';
+    }
+    return confused ? 'like you need some help.'
+        : 'like someone is helping you.';
+}
+
+function unpunishHero() {
+    const chain = game.uchain || game.u?.uchain;
+    const ball = game.uball || game.u?.uball;
+    if (chain) {
+        const x = chain.ox;
+        const y = chain.oy;
+        remove_object(chain);
+        chain.owornmask = (chain.owornmask ?? 0) & ~W_CHAIN;
+        chain.where = 'gone';
+        chain.ox = chain.oy = 0;
+        if (Number.isInteger(x) && Number.isInteger(y)) newsym(x, y);
+    }
+    if (ball) ball.owornmask = (ball.owornmask ?? 0) & ~W_BALL;
+    game.uchain = game.uball = null;
+    if (game.u) {
+        game.u.uchain = game.u.uball = null;
+        game.u.punished = false;
+    }
+}
+
+async function releaseBuriedBall(publish) {
+    const u = game.u;
+    if (!u?.utrap || u.utraptype !== TT_BURIEDBALL) return;
+    const buried = game.level?.buriedObjects || [];
+    const ball = buried.find(object => object.otyp === HEAVY_IRON_BALL
+        && object.ox === u.ux && object.oy === u.uy);
+    if (ball) {
+        buried.splice(buried.indexOf(ball), 1);
+        place_object(ball, u.ux, u.uy);
+        stack_object(ball);
+        game.level.engravings = (game.level.engravings || []).filter(
+            engraving => engraving.x !== u.ux || engraving.y !== u.uy,
+        );
+        newsym(u.ux, u.uy);
+    }
+    u.utrap = 0;
+    u.utraptype = 0;
+    await publish('The clasp on your leg vanishes.');
+}
+
+// C read.c:seffect_remove_curse().  The caller owns scroll consumption and
+// its reading message; this function owns the effect on carried equipment.
+export async function removeCurseEffect({
+    source = null,
+    blessed = !!source?.blessed,
+    cursed = !!source?.cursed,
+    confused = (game.u?.confusionTurns ?? 0) > 0,
+    publish = pline,
+    announce = true,
+} = {}) {
+    if (announce) await publish(`You feel ${removeCurseFeeling(confused)}`);
+    if (cursed && announce) await publish('The scroll disintegrates.');
+    if (cursed) return [];
+
+    const changed = [];
+    for (const object of [...(game.inventory || [])]) {
+        const quantity = object.quan ?? object.quantity ?? 1;
+        if (object.oclass === COIN_CLASS
+            || (object === source && quantity === 1)
+            || !removeCurseAppliesTo(object, blessed)) continue;
+        if (confused) {
+            if (randomlyBlessOrCurse(object)) changed.push(object);
+            object.bknown = false;
+        } else if (object.cursed) {
+            if (object.bknown && source?.otyp === SCR_REMOVE_CURSE
+                && !game._knownObjectTypes?.has(SCR_REMOVE_CURSE)) {
+                exerciseAttribute(A_WIS, true);
+                recordObjectKnowledge(SCR_REMOVE_CURSE);
+            }
+            uncurseObjectState(object);
+            changed.push(object);
+        }
+    }
+
+    const saddle = monsterSaddle(game.u?.usteed);
+    if (saddle && confused) {
+        if (randomlyBlessOrCurse(saddle)) changed.push(saddle);
+        saddle.bknown = false;
+    } else if (saddle?.cursed) {
+        uncurseObjectState(saddle);
+        changed.push(saddle);
+        if (!(game.blind || game.u?.blind)) {
+            await publish('The saddle glows amber.');
+            saddle.bknown = !(
+                game.u?.hallucinating
+                || (game.u?.hallucinationTurns ?? 0) > 0
+            );
+        } else {
+            saddle.bknown = false;
+        }
+    }
+
+    if (heroIsPunished() && !confused) unpunishHero();
+    await releaseBuriedBall(publish);
+    return changed;
+}
+
 async function readRemoveCurseScroll(scroll) {
     // read.c:doread()/seffects() retains a cursed scroll long enough for the
     // effect prose, then prints the curse-specific disintegration message.
     // The call-name prompt finishes before the reading turn ends.
     exerciseAttribute(A_WIS, true);
 
+    const confused = (game.u?.confusionTurns ?? 0) > 0;
+    const feeling = removeCurseFeeling(confused);
     if (scroll.cursed) {
         await moreUntilDismissed(
-            'You read the scroll.  You feel like someone is helping you.--More--',
+            `You read the scroll.  You feel ${feeling}--More--`,
         );
         await moreUntilDismissed('The scroll disintegrates.--More--');
     } else {
         await pline(
-            'As you read the scroll, it disappears.  You feel like someone is helping you.',
+            `As you read the scroll, it disappears.  You feel ${feeling}`,
         );
     }
+
+    await removeCurseEffect({
+        source: scroll, confused, announce: false,
+    });
 
     if (!game._knownObjectTypes?.has(scroll.otyp)
         && !game._objectCallNames?.[scroll.otyp]) {
