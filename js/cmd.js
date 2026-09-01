@@ -256,6 +256,7 @@ import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
+import { tryKickEvasion } from './kick_evasion.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
     heroTeleportDestinationOk, moveHeroByTeleport,
@@ -3475,31 +3476,19 @@ async function kickLiveMonster(monster, x, y) {
         || (game.u?.fumblingTurns ?? 0) > 0);
 
     await pline(`You kick ${target}.`);
-    const evasionProbe = rn2(clumsy ? 3 : 4);
-    // TODO: show blocking and jumping when this evasion check succeeds.
-    if (evasionProbe === 0) {
-        const thickSkinned = !!((MONSTER_FLAGS1[monster.mnum] ?? 0)
-            & M1_THICK_HIDE);
-        const canTryEvading = (clumsy
-            || (MONSTER_SIZE[monster.mnum] ?? 2) < 3)
-            && monster.mcansee !== 0 && !monster.mtrapped
-            && !thickSkinned && monster.mcanmove !== 0
-            && !monster.mstun && !monster.mconf && !monster.msleeping
-            && (MONSTER_MOVE[monster.mnum] ?? 0) >= 12;
-        if (canTryEvading) {
-            const blockProbe = rn2(martial ? 5 : 3);
-            if (blockProbe === 0) {
-                const subject = canProjectMonster(monster, x, y)
-                    ? `The ${monsterInstanceDisplayName(monster)}` : 'It';
-                await pline(
-                    `${subject} blocks your ${clumsy ? 'clumsy ' : ''}kick.`,
-                );
-                passiveContact(monster, true);
-                if (!canProjectMonster(monster, x, y)) map_invisible(x, y);
-                game.context.move = 1;
-                return;
-            }
-        }
+    const evaded = await tryKickEvasion(monster, {
+        clumsy,
+        martial,
+        announce: pline,
+        nameMonster: actor => canProjectMonster(actor, actor.mx, actor.my)
+            ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+    });
+    if (evaded) {
+        passiveContact(monster, true);
+        if (monster.mx === x && monster.my === y
+            && !canProjectMonster(monster, x, y)) map_invisible(x, y);
+        game.context.move = 1;
+        return;
     }
 
     let damage = Math.trunc(
