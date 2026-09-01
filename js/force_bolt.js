@@ -5,12 +5,14 @@ import { exerciseAttribute } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
-    D_TRAPPED, CORPSTAT_HISTORIC, Is_airlevel, Is_waterlevel,
-    HOLE, M_AP_MONSTER, ROWNO, SDOOR, TRAPDOOR, Upolyd, ZAP_POS,
+    D_TRAPPED, CORPSTAT_HISTORIC, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
+    Is_airlevel, Is_waterlevel, HOLE, M_AP_MONSTER, ROWNO, SDOOR,
+    TRAPDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
 } from './display.js';
+import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
 import { finishHeroDeath } from './end.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { game } from './gstate.js';
@@ -325,6 +327,24 @@ async function dropRockFromCeiling(state, random, roll) {
     return true;
 }
 
+async function destroyVerticalDrawbridge(direction, state, options) {
+    const x = state.u.ux;
+    const y = state.u.uy;
+    const bridge = findDrawbridgeAt(x, y, state);
+    if (!bridge) return false;
+    const location = state.level.at(x, y);
+    const loweredSpan = location.typ === DRAWBRIDGE_DOWN && direction === '>';
+    const openPortcullis = location.typ === DOOR;
+    if (!loweredSpan && !openPortcullis) return false;
+    return destroyDrawbridge(bridge.x, bridge.y, state, options);
+}
+
+async function destroyHorizontalDrawbridge(x, y, state, options) {
+    const bridge = findDrawbridgeAt(x, y, state);
+    if (!bridge || state.level.at(x, y).typ === DRAWBRIDGE_UP) return false;
+    return destroyDrawbridge(bridge.x, bridge.y, state, options);
+}
+
 export async function forceBoltInDirection(direction, {
     source = 'wand',
     state = game,
@@ -344,7 +364,10 @@ export async function forceBoltInDirection(direction, {
         return true;
     }
     if (direction === '>') {
-        const trapdoor = await breakTrapdoor(state);
+        const bridgeDestroyed = await destroyVerticalDrawbridge(
+            direction, state, options,
+        );
+        const trapdoor = bridgeDestroyed ? null : await breakTrapdoor(state);
         const objects = await breakRockObjects(
             state.u.ux, state.u.uy, state, random,
         );
@@ -359,9 +382,11 @@ export async function forceBoltInDirection(direction, {
                 { arrival: trapdoor.fall.arrival },
             );
         }
-        return objects.identified || !!trapdoor?.identified;
+        return bridgeDestroyed || objects.identified || !!trapdoor?.identified;
     }
     if (direction === '<') {
+        if (await destroyVerticalDrawbridge(direction, state, options))
+            return true;
         await dropRockFromCeiling(state, random, roll);
         return false;
     }
@@ -375,6 +400,8 @@ export async function forceBoltInDirection(direction, {
         x += dx;
         y += dy;
         if (x < 1 || x >= COLNO || y < 0 || y >= ROWNO) break;
+        if (await destroyHorizontalDrawbridge(x, y, state, options))
+            identified = true;
         const monster = monsterAt(x, y, state);
         if (monster) {
             if (await hitMonster(monster, source, state, options))

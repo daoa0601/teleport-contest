@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DOOR, DUST, D_BROKEN, D_LOCKED, HOLE, TRAPDOOR,
+    DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DUST, D_BROKEN, D_LOCKED,
+    HOLE, MOAT, TRAPDOOR,
 } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
@@ -87,6 +88,23 @@ test('force bolt breaks a locked door and continues through its square',
         assert.equal(door.doormask, D_BROKEN);
         assert.equal(game.context.move, 1);
     });
+
+test('force bolt collapses a lowered drawbridge', async () => {
+    const level = freshWizard();
+    const bridge = level.at(12, 10);
+    bridge.typ = DRAWBRIDGE_DOWN;
+    bridge.drawbridgemask = DB_NORTH | DB_MOAT;
+    const wall = level.at(12, 9);
+    wall.typ = DOOR;
+    wall.doormask = 0;
+    pushKeys(`l${' '.repeat(20)}`);
+
+    await castKnownSpell(forceBoltSpell());
+
+    assert.equal(bridge.typ, MOAT);
+    assert.equal(wall.typ, DOOR);
+    assert.equal(game.context.move, 1);
+});
 
 test('force bolt fractures a boulder into rocks', async () => {
     freshWizard();

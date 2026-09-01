@@ -2,17 +2,26 @@
 // C ref: dbridge.c find_drawbridge(), open_drawbridge(), close_drawbridge().
 
 import {
-    DBWALL, DB_DIR, DB_EAST, DB_NORTH, DB_SOUTH, DB_WEST, DOOR,
-    DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, IS_DRAWBRIDGE,
-    Is_stronghold, W_NONDIGGABLE, isok,
+    DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH,
+    DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
+    D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL,
+    MOAT, ROOM, W_NONDIGGABLE, isok,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
 } from './display.js';
-import { moveDrawbridgeOccupants } from './drawbridge_occupants.js';
+import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import {
+    destroyDrawbridgeOccupants, moveDrawbridgeOccupants,
+} from './drawbridge_occupants.js';
+import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game } from './gstate.js';
+import { BOULDER } from './object_data.js';
+import { wakeMonstersNear } from './mon.js';
 import { stopAllObjectTimers } from './object_timers.js';
-import { cansee, vision_note_blocker_change } from './vision.js';
+import {
+    cansee, vision_note_blocker_change, vision_recalc,
+} from './vision.js';
 
 function directionFromBridgeToWall(bridge) {
     const direction = (bridge.drawbridgemask || 0) & DB_DIR;
@@ -126,6 +135,33 @@ async function announceBridgeMovement(bridge, wall, opening, state) {
         : 'You hear chains rattling and gears turning.');
 }
 
+function heroAt(point, state) {
+    return state.u?.ux === point.x && state.u?.uy === point.y;
+}
+
+async function announceBridgeDestruction(bridge, wall, under, state) {
+    const overLava = under === DB_LAVA;
+    if (under === DB_MOAT || overLava) {
+        const liquid = overLava ? 'lava' : 'moat';
+        const raised = bridge.location.typ === DRAWBRIDGE_UP;
+        const visiblePoint = raised ? wall : bridge;
+        if (cansee(visiblePoint.x, visiblePoint.y)
+            || heroAt(visiblePoint, state)) {
+            await plineWithContinuation(raised
+                ? `The portcullis of the drawbridge falls into the ${liquid}!`
+                : `The drawbridge collapses into the ${liquid}!`);
+        } else if (!state.u?.deaf && !state.deaf) {
+            await plineWithContinuation('You hear a loud *SPLASH*!');
+        }
+        return;
+    }
+
+    if (cansee(bridge.x, bridge.y) || heroAt(bridge, state))
+        await plineWithContinuation('The drawbridge disintegrates!');
+    else if (!state.u?.deaf && !state.deaf)
+        await plineWithContinuation('You hear a loud *CRASH*!');
+}
+
 export async function openDrawbridge(x, y, state = game, options = {}) {
     const bridgeLocation = state.level?.at(x, y);
     if (bridgeLocation?.typ !== DRAWBRIDGE_UP) return false;
@@ -168,6 +204,50 @@ export async function closeDrawbridge(x, y, state = game, options = {}) {
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
+    return true;
+}
+
+export async function destroyDrawbridge(x, y, state = game, options = {}) {
+    const bridgeLocation = state.level?.at(x, y);
+    if (!bridgeLocation || !IS_DRAWBRIDGE(bridgeLocation.typ)) return false;
+    const wall = drawbridgeWallAt(x, y, state);
+    if (!wall) return false;
+    const bridge = { x, y, location: bridgeLocation };
+    const under = (bridgeLocation.drawbridgemask || 0) & DB_UNDER;
+
+    await announceBridgeDestruction(bridge, wall, under, state);
+    if (under === DB_MOAT || under === DB_LAVA) {
+        bridgeLocation.typ = under === DB_LAVA ? LAVAPOOL : MOAT;
+        bridgeLocation.drawbridgemask = 0;
+        const boulder = state.level.objects?.[x]?.[y]?.find(
+            object => object.otyp === BOULDER,
+        );
+        if (boulder)
+            await dropBoulderIntoLiquid(boulder, x, y, state);
+    } else {
+        bridgeLocation.typ = under === DB_ICE ? ICE : ROOM;
+        bridgeLocation.icedpool = under === DB_ICE ? ICED_MOAT : 0;
+    }
+    wakeMonstersNear(x, y, 500, state);
+    wall.location.typ = DOOR;
+    wall.location.doormask = D_NODOOR;
+    removeTrapAt(bridge.x, bridge.y, state);
+    removeTrapAt(wall.x, wall.y, state);
+    removeEngravingAt(bridge.x, bridge.y, state);
+    removeEngravingAt(wall.x, wall.y, state);
+    await scatterDrawbridgeDebris(bridge, wall, state, options);
+    newsym(bridge.x, bridge.y);
+    newsym(wall.x, wall.y);
+    vision_note_blocker_change(wall.x, wall.y);
+    vision_recalc(0);
+
+    if (Is_stronghold(state.u?.uz)) {
+        if (!state.u.uevent) state.u.uevent = {};
+        state.u.uevent.uopened_dbridge = true;
+    }
+    await destroyDrawbridgeOccupants(bridge, wall, state, options);
+    if (Is_stronghold(state.u?.uz))
+        state.u.uevent.uheard_tune = 3;
     return true;
 }
 

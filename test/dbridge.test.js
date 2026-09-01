@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 
 import {
     ACH_TUNE, DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN,
-    DRAWBRIDGE_UP, D_NODOOR, PIT,
+    DRAWBRIDGE_UP, D_NODOOR, MOAT, PIT,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { playInstrument } from '../js/music.js';
-import { ROCK, WOODEN_HARP } from '../js/object_data.js';
-import { place_object } from '../js/mklev.js';
+import { destroyDrawbridge } from '../js/dbridge.js';
+import { BOULDER, ROCK, WOODEN_HARP } from '../js/object_data.js';
+import { mksobj, place_object } from '../js/mklev.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -145,4 +146,31 @@ test('a ghost passes through a lowering drawbridge', async () => {
     assert.equal(level.monsters.includes(ghost), true);
     assert.equal(ghost.mx, 12);
     assert.equal(ghost.my, 10);
+});
+
+test('destroying a drawbridge drops its span and portcullis into the moat',
+    async () => {
+        const { level, bridge, wall } = installStrongholdDrawbridge();
+        const monster = liveMonster({ mnum: 0, x: 12, y: 9 });
+        level.monsters = [monster];
+        pushKeys(' '.repeat(20));
+
+        await destroyDrawbridge(12, 10);
+
+        assert.equal(bridge.typ, MOAT);
+        assert.equal(wall.typ, DOOR);
+        assert.equal(wall.doormask, D_NODOOR);
+        assert.equal(level.monsters.includes(monster), false);
+        assert.equal(game.u.uevent.uheard_tune, 3);
+    });
+
+test('a boulder on a collapsing drawbridge falls into the water', async () => {
+    const { level } = installStrongholdDrawbridge();
+    const boulder = place_object(mksobj(BOULDER, false, false), 12, 10);
+    pushKeys(' '.repeat(20));
+
+    await destroyDrawbridge(12, 10);
+
+    assert.equal(boulder.where, 'gone');
+    assert.equal(level.objects[12][10].includes(boulder), false);
 });

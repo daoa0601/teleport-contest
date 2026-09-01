@@ -178,7 +178,7 @@ function entityAutomaticallyMissed(entity, state) {
         || entityIsNoncorporeal(entity, state);
 }
 
-function entityMissed(entity, state) {
+function entityMissed(entity, state, chunks = false) {
     if (entityAutomaticallyMissed(entity, state)) return true;
     let misses = 0;
     const flyingCanReact = entity.hero
@@ -186,6 +186,9 @@ function entityMissed(entity, state) {
     if (entityIsFlying(entity, state) && flyingCanReact)
         misses = 5;
     else if (entityIsFloating(entity, state)) misses = 3;
+    else if (chunks && terrainIsPool(
+        state.level.at(entity.x, entity.y).typ,
+    )) misses = 2;
     if (state.level.at(entity.x, entity.y).typ === DBWALL) misses -= 3;
     return misses >= rnd(8);
 }
@@ -418,5 +421,66 @@ export async function moveDrawbridgeOccupants(
     await handleEntity(
         entityAt(wall.x, wall.y, state),
         bridge, wall, state, options, handled,
+    );
+}
+
+async function settleEntityAfterCollapse(entity, state) {
+    const terrain = state.level.at(entity.x, entity.y).typ;
+    if (!terrainIsPool(terrain) && terrain !== LAVAPOOL) return;
+    if (entity.hero) {
+        await heroLiquidEffects({
+            state,
+            burnInventory: damage => destroyFireInventory(damage, {
+                state,
+                publish: plineWithContinuation,
+            }),
+            igniteInventory: () => igniteItems(state.inventory, {
+                state,
+                publish: plineWithContinuation,
+            }),
+        });
+        return;
+    }
+    await resolveMonsterLiquid(entity.actor, state, {
+        announce: plineWithContinuation,
+        finishDeath: finishMonsterLiquidDeath,
+        monsterMoving: false,
+    });
+}
+
+async function killCollapseVictim(entity, bridge, state, options, killer) {
+    if (entityIsVisible(entity)) {
+        await plineWithContinuation(entity.hero
+            ? `You are ${killer === 'exploding drawbridge'
+                ? 'blown apart by flying debris'
+                : 'hit by a huge chunk of metal'}!`
+            : `${entityName(entity)} is ${killer === 'exploding drawbridge'
+                ? 'blown apart by flying debris'
+                : 'hit by a huge chunk of metal'}!`);
+    }
+    await crushEntity(entity, bridge, state, options, killer);
+}
+
+export async function destroyDrawbridgeOccupants(
+    bridge,
+    wall,
+    state,
+    options = {},
+) {
+    const atWall = entityAt(wall.x, wall.y, state);
+    if (atWall && !entityAutomaticallyMissed(atWall, state)) {
+        await killCollapseVictim(
+            atWall, bridge, state, options, 'exploding drawbridge',
+        );
+    }
+
+    const onSpan = entityAt(bridge.x, bridge.y, state);
+    if (!onSpan) return;
+    if (entityMissed(onSpan, state, true)) {
+        await settleEntityAfterCollapse(onSpan, state);
+        return;
+    }
+    await killCollapseVictim(
+        onSpan, bridge, state, options, 'collapsing drawbridge',
     );
 }
