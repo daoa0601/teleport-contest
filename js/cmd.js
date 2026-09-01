@@ -8855,8 +8855,7 @@ async function doopen() {
         return;
     }
 
-    // TODO: replace rn2(20) with rnl(20) so Luck affects this check.
-    if (rn2(20) < Math.trunc((currentAttribute(A_STR)
+    if (rnl(20) < Math.trunc((currentAttribute(A_STR)
         + (game.u?.acurr?.a?.[A_DEX] ?? 10)
         + (game.u?.acurr?.a?.[A_CON] ?? 10)) / 3)) {
         loc.doormask = D_ISOPEN;
