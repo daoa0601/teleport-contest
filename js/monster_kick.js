@@ -8,10 +8,11 @@ import { couldsee } from './vision.js';
 import { newsym, unmap_invisible } from './display.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE,
-    MONSTER_SYMBOL,
+    MONSTER_SOUND, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL,
+    RIN_AGGRAVATE_MONSTER, RIN_CONFLICT,
 } from './object_data.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rnd, rn2 } from './rng.js';
@@ -109,6 +110,73 @@ function specialBootDamage(monster, boots) {
     return damage;
 }
 
+function heroWearsRing(state, objectType) {
+    const rings = [
+        state.uleft, state.uright,
+        state.u?.uleft, state.u?.uright,
+    ];
+    return rings.some(ring => ring?.otyp === objectType);
+}
+
+export function kickConductViolation(monster, {
+    helpless = false,
+    fleeingFromBehind = false,
+    state = game,
+} = {}) {
+    if ((state.u?.ualign?.record ?? 0) <= -10) return null;
+    const role = state.urole?.key;
+    const lawful = (state.u?.ualign?.type ?? 0) > 0;
+    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
+    if (role === 'knight' && lawful && !undead
+        && (helpless || fleeingFromBehind)) return 'You caitiff!';
+    if (role === 'samurai' && monster.mpeaceful)
+        return 'You dishonorably attack the innocent!';
+    return null;
+}
+
+export async function abuseKickedPet(monster, potentialDamage, {
+    state = game,
+    yelp = async () => {},
+    growl = async () => {},
+} = {}) {
+    if (!(monster.mtame > 0)) return false;
+    const aggravates = !!(state.u?.aggravateMonster
+        || state.u?.aggravate_monster || state.aggravateMonster
+        || state.aggravate_monster
+        || heroWearsRing(state, RIN_AGGRAVATE_MONSTER)
+        || heroWearsRing(state, RIN_CONFLICT));
+    monster.mtame = aggravates
+        ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
+    monster.pet = monster.mtame > 0;
+    if (monster.mtame > 0 && !monster.isminion) {
+        if (!monster.edog) monster.edog = {};
+        monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
+    }
+    if (!monster.mtame && monster.mleashed) monster.mleashed = false;
+
+    if (monster.mx !== 0) {
+        const yelps = monster.mtame > 0 && rn2(monster.mtame) !== 0;
+        if (yelps) await yelp(monster, MONSTER_SOUND[monster.mnum] ?? 0);
+        else await growl(monster);
+    }
+
+    if (!monster.mtame) {
+        monster.mflee = 0;
+        return true;
+    }
+
+    let fleeTime = potentialDamage > 0 ? rnd(potentialDamage) : 1;
+    if (monster === state.u?.ustuck) state.u.ustuck = null;
+    if (!monster.mflee || monster.mfleetim) {
+        fleeTime += monster.mfleetim ?? 0;
+        if (fleeTime === 1) fleeTime = 2;
+        monster.mfleetim = Math.min(fleeTime, 127);
+    }
+    monster.mflee = 1;
+    monster.mtrack = [];
+    return true;
+}
+
 export async function prepareKick({
     martial = false,
     state = game,
@@ -191,9 +259,8 @@ export async function tryKickEvasion(monster, {
     return true;
 }
 
-export function rollKickDamage(monster, {
+export function prepareKickDamage(monster, {
     clumsy = false,
-    martial = false,
     state = game,
 } = {}) {
     const boots = state.uarmf || state.u?.uarmf;
@@ -209,8 +276,22 @@ export function rollKickDamage(monster, {
     if (thickSkinned || monster.mnum === PM_SHADE) damage = 0;
     const specialDamage = specialBootDamage(monster, boots);
     if (monster.mnum === PM_SHADE && specialDamage === 0) {
-        return { damage: 0, passesThroughShade: true, trainSkill: false };
+        return {
+            potentialDamage: 0,
+            specialDamage: 0,
+            passesThroughShade: true,
+        };
     }
+
+    return { potentialDamage: damage, specialDamage, passesThroughShade: false };
+}
+
+export function rollKickDamage(prepared, {
+    martial = false,
+    state = game,
+} = {}) {
+    const boots = state.uarmf || state.u?.uarmf;
+    let damage = prepared.potentialDamage;
 
     let trainSkill = false;
     if (damage > 0) {
@@ -221,9 +302,9 @@ export function rollKickDamage(monster, {
         }
         exerciseAttribute(A_DEX, true, state);
     }
-    damage += specialDamage + (boots?.spe ?? 0)
+    damage += prepared.specialDamage + (boots?.spe ?? 0)
         + (state.u?.udaminc ?? state.udaminc ?? 0);
-    return { damage: Math.max(0, damage), passesThroughShade: false, trainSkill };
+    return { damage: Math.max(0, damage), trainSkill };
 }
 
 export async function tryKickReel(monster, dx, dy, {

@@ -77,3 +77,22 @@ test('levitation can spoil a kick against a tiny grounded monster',
             'Floating in the air, you miss wildly!',
         );
     });
+
+test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
+    const dog = installKickArena(16);
+    game.urole = { key: 'samurai' };
+    dog.mpeaceful = 1;
+    dog.mtame = 10;
+    dog.pet = true;
+    dog.edog = {};
+    initRng(2n);
+    pushKey('l');
+    pushKey(' ');
+    pushKey(' ');
+
+    await rhack(4);
+
+    assert.equal(game.u.ualign.record, 9);
+    assert.equal(dog.mtame, 9);
+    assert.equal(dog.mflee, 1);
+});

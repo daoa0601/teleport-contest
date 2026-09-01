@@ -257,8 +257,9 @@ import {
 } from './monmove.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
 import {
-    levitatingKickMisses, prepareKick, rollKickDamage,
-    tryKickEvasion, tryKickReel,
+    abuseKickedPet, kickConductViolation, levitatingKickMisses,
+    prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
+    tryKickReel,
 } from './monster_kick.js';
 import { waterDamageChain, waterDamageObject } from './trap.js';
 import {
@@ -3459,6 +3460,9 @@ async function kickOuch(x, y) {
 // This owns the ordinary humanoid kick path.  Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster, x, y) {
+    const helplessBeforeKick = !!(monster.msleeping
+        || monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0);
+    const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     // maybe_kick_monster() temporarily force-fights hostile or unspotted
     // actors, then overexertion() charges combat metabolism.
@@ -3468,8 +3472,7 @@ async function kickLiveMonster(monster, x, y) {
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     wipeEngravingAt(game.u.ux, game.u.uy, 2, false);
-    monster.msleeping = 0;
-    if (monster.mpeaceful) monster.mpeaceful = 0;
+    await setMonsterAngryFromAttack(monster);
 
     if (levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
@@ -3525,17 +3528,29 @@ async function kickLiveMonster(monster, x, y) {
         return;
     }
 
-    const damage = rollKickDamage(monster, {
+    const preparedDamage = prepareKickDamage(monster, {
         clumsy: kick.clumsy,
-        martial,
     });
-    if (damage.passesThroughShade) {
+    if (preparedDamage.passesThroughShade) {
         await plineWithContinuation(
             'The kick passes harmlessly through the shade.',
         );
         game.context.move = 1;
         return;
     }
+    const conductMessage = kickConductViolation(monster, {
+        helpless: helplessBeforeKick,
+        fleeingFromBehind,
+    });
+    if (conductMessage) {
+        await plineWithContinuation(conductMessage);
+        adjustHeroAlignment(-1);
+    }
+    await abuseKickedPet(monster, preparedDamage.potentialDamage, {
+        yelp: publishKickedPetYelp,
+        growl: publishMonsterGrowl,
+    });
+    const damage = rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
 
@@ -11455,6 +11470,13 @@ async function wakeAttackedShopkeeper(monster) {
 
 const M1_HUMANOID = 0x00020000;
 const M1_SEE_INVIS = 0x01000000;
+const MS_BARK = 1;
+const MS_MEW = 2;
+const MS_ROAR = 3;
+const MS_GROWL = 5;
+const MS_SQEEK = 6;
+const MS_SQAWK = 7;
+const MS_WAIL = 14;
 const HALLUCINATED_GROWL_VERBS = [
     'beep', 'boing', 'sing', 'belche', 'creak', 'cough',
     'rattle', 'ululate', 'pop', 'jingle', 'sniffle', 'tinkle',
@@ -11509,27 +11531,75 @@ function thirdPersonSoundVerb(verb) {
     return `${verb}s`;
 }
 
+function monsterMessageSubject(monster) {
+    if (monster.name) return monster.name;
+    const article = monster.mtame > 0 ? 'Your' : 'The';
+    return `${article} ${monsterInstanceDisplayName(monster)}`;
+}
+
+async function publishKickedPetYelp(monster, sound) {
+    const helpless = monster.msleeping || monster.mcanmove === 0
+        || (monster.mfrozen ?? 0) > 0;
+    if (helpless || !sound) return;
+
+    const hallucinating = !!(game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0);
+    const deaf = !!(game.deaf || game.u?.deaf);
+    const ordinaryVerb = new Map([
+        [MS_BARK, deaf ? 'recoil' : 'yelp'],
+        [MS_MEW, deaf ? 'arch' : 'yowl'],
+        [MS_ROAR, deaf ? 'bluff' : 'snarl'],
+        [MS_GROWL, deaf ? 'recoil' : 'yelp'],
+        [MS_SQEEK, deaf ? 'quiver' : 'squeal'],
+        [MS_SQAWK, deaf ? 'thrash' : 'screak'],
+        [MS_WAIL, deaf ? 'cringe' : 'wail'],
+    ]).get(sound);
+    const verb = hallucinating
+        ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
+        : ordinaryVerb;
+    if (!verb) return;
+
+    const name = !canSpotMonster(monster)
+        ? 'It'
+        : hallucinating
+            ? randomDisplayMonsterSubject()
+            : monsterMessageSubject(monster);
+    await plineWithContinuation(
+        `${name} ${thirdPersonSoundVerb(verb)}!`,
+    );
+    await wakeMonstersNearWithMessages(
+        monster.mx, monster.my,
+        (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 12,
+    );
+}
+
 async function publishMonsterGrowl(monster) {
+    const helpless = monster.msleeping || monster.mcanmove === 0
+        || (monster.mfrozen ?? 0) > 0;
     const sound = MONSTER_SOUND[monster.mnum] ?? 0;
-    if (!sound) return false;
+    if (helpless || !sound) return false;
     const hallucinating = !!(game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0);
     const verb = hallucinating
         ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
         : MONSTER_GROWL_VERBS.get(sound) || 'scream';
-    const monsterName = !canSpotMonster(monster)
+    const spotted = canSpotMonster(monster);
+    const monsterName = !spotted
         ? 'It'
         : hallucinating
             ? randomDisplayMonsterSubject()
-            : monster.name || `The ${monsterInstanceDisplayName(monster)}`;
-    await plineWithContinuation(
-        `${monsterName} ${thirdPersonSoundVerb(verb)}!`,
-    );
+            : monsterMessageSubject(monster);
+    const noticed = spotted || !(game.deaf || game.u?.deaf);
+    if (noticed) {
+        await plineWithContinuation(
+            `${monsterName} ${thirdPersonSoundVerb(verb)}!`,
+        );
+    }
     await wakeMonstersNearWithMessages(
         monster.mx, monster.my,
         (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 18,
     );
-    return true;
+    return noticed;
 }
 
 function observerDisplayName(observer) {
