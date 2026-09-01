@@ -9,6 +9,7 @@ import {
     BOULDER, ROCK, SPE_FORCE_BOLT, WAN_STRIKING,
 } from '../js/object_data.js';
 import { place_object } from '../js/mklev.js';
+import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
@@ -160,4 +161,26 @@ test('force bolt aimed down strikes the floor pile and engraving', async () => {
         engravingAt(game.u.ux, game.u.uy)?.text,
         'Elbereth',
     );
+});
+
+test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
+    freshWeaponArena();
+    game.urole = { key: 'wizard' };
+    game.u.ulevel = 8;
+    game.u.uen = 40;
+    game.u.uhp = game.u.uhpmax = 100;
+    initRng(1n);
+    pushKeys('<');
+
+    await castKnownSpell({
+        name: 'force bolt',
+        otyp: SPE_FORCE_BOLT,
+        level: 1,
+        category: 'attack',
+        fail: 0,
+    });
+
+    assert.ok(game.u.uhp < 100);
+    assert.ok(game.level.objects[game.u.ux][game.u.uy]
+        .some(object => object.otyp === ROCK));
 });

@@ -5,8 +5,8 @@ import { exerciseAttribute } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
-    D_TRAPPED, CORPSTAT_HISTORIC, M_AP_MONSTER, ROWNO, SDOOR,
-    Upolyd, ZAP_POS,
+    D_TRAPPED, CORPSTAT_HISTORIC, Is_airlevel, Is_waterlevel,
+    M_AP_MONSTER, ROWNO, SDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
     canProjectMonster, newsym, pline, randomDisplayMonsterName, shieldeff,
@@ -15,14 +15,17 @@ import { finishHeroDeath } from './end.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { place_object, remove_object } from './mklev.js';
+import {
+    mksobj, place_object, remove_object, stack_object,
+} from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE,
+    BOULDER, OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_USES_KNOWN,
+    ROCK, STATUE,
 } from './object_data.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
@@ -31,6 +34,10 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { objectWeight } from './weight.js';
 
 const GEM_CLASS = 13;
+const ARM_HELM = 2;
+const IRON = 11;
+const MITHRIL = 17;
+const GLASS = 19;
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -246,6 +253,54 @@ async function hitHero(state, options) {
     return true;
 }
 
+function hardHelmet(state) {
+    const helmet = state.uarmh || state.u?.uarmh;
+    if (!helmet || OBJECT_SUBTYPE[helmet.otyp] !== ARM_HELM) return false;
+    const material = OBJECT_MATERIAL[helmet.otyp] ?? 0;
+    return material >= IRON && material <= MITHRIL || material === GLASS;
+}
+
+function onQuestStartLevel(state) {
+    const level = state.u?.uz;
+    return !!level && level.dnum === state.quest_dnum
+        && level.dlevel === 1;
+}
+
+async function dropRockFromCeiling(state, random, roll) {
+    if (random(3) === 0) return false;
+    if (Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz)
+        || state.underwater || state.u?.uinwater
+        || onQuestStartLevel(state)) return false;
+
+    await pline(
+        'A rock is dislodged from the ceiling and falls on your head.',
+    );
+    let damage = roll(hardHelmet(state) ? 2 : 6);
+    if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
+        damage = Math.ceil(damage / 2);
+    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
+    state.u[hitPoints] = Math.max(
+        0, (state.u[hitPoints] ?? 1) - damage,
+    );
+    if (state.u[hitPoints] <= 0) {
+        if (Upolyd(state.u)) {
+            const restored = rehumanizeHero(state);
+            if (restored.changed)
+                await pline(`You return to ${restored.race} form!`);
+        } else {
+            await finishHeroDeath({ killer: 'falling rock' });
+            return true;
+        }
+    }
+
+    const rock = mksobj(ROCK, false, false);
+    rock.dknown = true;
+    place_object(rock, state.u.ux, state.u.uy);
+    stack_object(rock, state);
+    newsym(state.u.ux, state.u.uy);
+    return true;
+}
+
 export async function forceBoltInDirection(direction, {
     source = 'wand',
     state = game,
@@ -274,7 +329,10 @@ export async function forceBoltInDirection(direction, {
         }
         return objects.identified;
     }
-    if (direction === '<') return false;
+    if (direction === '<') {
+        await dropRockFromCeiling(state, random, roll);
+        return false;
+    }
 
     const dx = DIR_DX[direction], dy = DIR_DY[direction];
     if (dx === undefined || dy === undefined) return false;
