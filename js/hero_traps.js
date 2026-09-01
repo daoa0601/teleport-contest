@@ -9,7 +9,7 @@ import {
     A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, ICE, IS_LAVA, IS_POOL,
     LANDMINE, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP, SPIKED_PIT,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
-    TT_WEB, VAULT, WEB, isok,
+    TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
 } from './const.js';
 import {
     flush_screen, lastDirtyMapCursor, map_trap, newsym, pline,
@@ -41,6 +41,7 @@ import { cansee } from './vision.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
+import { revealVibratingSquare } from './invocation.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -738,6 +739,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case LANDMINE:
         await triggerLandmine(trap);
+        break;
+    case VIBRATING_SQUARE:
+        revealVibratingSquare(trap);
         break;
     }
     return false;

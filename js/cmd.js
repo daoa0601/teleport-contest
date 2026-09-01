@@ -258,6 +258,7 @@ import {
     fumaroles, sessionIsNight, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
+import { announceInvocationSquare } from './invocation.js';
 import {
     abuseKickedPet, kickConductViolation, levitatingKickMisses,
     prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
@@ -12504,6 +12505,7 @@ async function finishMovedHero({
     newsym(oldx, oldy);
     vision_recalc(1);
     newsym(newx, newy);
+    await announceInvocationSquare();
     if (ballChainMove) finishBallAndChainMove(ballChainMove);
 
     const liquid = await heroLiquidEffects({

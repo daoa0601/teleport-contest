@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    TT_BURIEDBALL, TT_PIT, TT_WEB,
+    TT_BURIEDBALL, TT_PIT, TT_WEB, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { HEAVY_IRON_BALL } from '../js/object_data.js';
@@ -82,3 +82,23 @@ test('pulling a buried ball free restores the ball and chain', async () => {
     assert.ok(game.uchain);
     assert.equal(level.buriedObjects.includes(ball), false);
 });
+
+test('the invocation square reveals itself when the hero steps on it',
+    async () => {
+        const level = freshWeaponArena();
+        const square = {
+            ttyp: VIBRATING_SQUARE, tx: 11, ty: 10, tseen: false,
+        };
+        level.traps = [square];
+        game.dungeons = [{ num_dunlevs: 30, flags: { hellish: true } }];
+        game.u.uz = { dnum: 0, dlevel: 29 };
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(square.tseen, true);
+        assert.equal(game.u.uevent.uvibrated, 1);
+        assert.equal(
+            game._pending_message,
+            'You feel a strange vibration under your feet.',
+        );
+    });

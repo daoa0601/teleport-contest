@@ -62,6 +62,32 @@ export function monsterArmName(mnum) {
     return 'forelimb';
 }
 
+export function monsterFootName(mnum) {
+    const symbol = MONSTER_SYMBOL[mnum];
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+
+    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
+        || mnum === PM_OWLBEAR) return 'rear paw';
+    if (symbol === S_YETI) return 'foot';
+    if (mnum === PM_JELLYFISH || mnum === PM_KRAKEN) return 'tentacle';
+    if (symbol === S_COCKATRICE || mnum === PM_RAVEN) return 'foot';
+    if (symbol === S_CENTAUR || symbol === S_UNICORN
+        || mnum === PM_KI_RIN || mnum === PM_ROTHE) return 'rear hoof';
+    if (symbol === S_LIGHT) return 'beam';
+    if (symbol === S_EEL) return 'anal fin';
+    if (symbol === S_WORM) return 'posterior segment';
+    if (symbol === S_SPIDER) return 'claw';
+    if (flags & M1_SLITHY) return 'rear region';
+    if (symbol === S_EYE) return 'lower appendage';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB)
+        return 'pseudopod root';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'lower current';
+    if (symbol === S_FUNGUS) return 'root';
+    if (flags & M1_HUMANOID) return 'foot';
+    return 'rear claw';
+}
+
 function currentHeroMonsterNumber(state) {
     if (Number.isInteger(state.u?.umonnum)) return state.u.umonnum;
     if (Number.isInteger(state.u?.umonster)) return state.u.umonster;
@@ -72,4 +98,8 @@ function currentHeroMonsterNumber(state) {
 
 export function heroArmName(state = game) {
     return monsterArmName(currentHeroMonsterNumber(state));
+}
+
+export function heroFootName(state = game) {
+    return monsterFootName(currentHeroMonsterNumber(state));
 }
