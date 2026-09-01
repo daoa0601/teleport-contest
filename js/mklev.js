@@ -2064,6 +2064,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             ++tryCount;
         } while (tryCount <= 50 && !monsterGoodPosition(mndx, x, y));
     }
+    if (mdat != null
+        && ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD)) return null;
     const monsterId = nextIdent();
     const { level: baseLevel, hp } = newMonsterHitPoints(mndx);
 

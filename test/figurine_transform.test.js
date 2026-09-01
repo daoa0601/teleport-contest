@@ -23,7 +23,7 @@ import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 
 const PM_WUMPUS = 84;
 const PM_LEOCROTTA = 83;
-const PM_CHAMELEON = 327;
+const PM_FLOATING_EYE = 28;
 
 function freshFigurineState() {
     resetGame();
@@ -148,6 +148,19 @@ test('only a viable cursed carried figurine receives a fresh timer', () => {
     assert.equal(objectTimers(genocided).length, 0);
 });
 
+test('genocide before transformation consumes the figurine without a monster',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine();
+        game.mvitals[PM_WUMPUS] = { mvflags: G_GENOD };
+
+        const event = await claimTransform(figurine, 1);
+
+        assert.equal(event.monster, null);
+        assert.equal(figurine.where, 'gone');
+        assert.equal(game.level.monsters.length, 0);
+    });
+
 test('monster acquisition replaces the timer before visible pack transform',
     async () => {
         freshFigurineState();
@@ -263,6 +276,19 @@ test('cursed carried figurine creates a hostile actor before pack prose',
         finishFigurineTimer(event, game);
         assert.equal(figurine.where, 'gone');
         assert.equal(game.inventory.includes(figurine), false);
+    });
+
+test('a named floating-eye figurine keeps its name and floats from the pack',
+    async () => {
+        freshFigurineState();
+        const { figurine } = carriedFigurine({ species: PM_FLOATING_EYE });
+        figurine.oextra = { ...(figurine.oextra || {}), oname: 'Iris' };
+
+        const event = await claimTransform(figurine, 1);
+
+        assert.equal(event.monster.name, 'Iris');
+        assert.equal(event.message, 'You see Iris float out of your pack!');
+        finishFigurineTimer(event, game);
     });
 
 test('zero disposition initializes a complete non-domestic figurine pet',

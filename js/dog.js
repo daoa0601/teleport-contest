@@ -8,7 +8,7 @@ import { MONSTER_FLAGS2 } from './monster_data.js';
 
 const M2_DOMESTIC = 0x00400000;
 
-export function tameMonster(monster) {
+export function tameMonster(monster, state = game) {
     if (!monster) return false;
     if (monster.mfrozen)
         monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
@@ -29,9 +29,9 @@ export function tameMonster(monster) {
         parentmid: monster.m_id,
         droptime: 0,
         dropdist: 10000,
-        apport: currentAttribute(A_CHA),
+        apport: currentAttribute(A_CHA, state),
         whistletime: 0,
-        hungrytime: (game.moves ?? 0) + 1000,
+        hungrytime: (state.moves ?? 0) + 1000,
         ogoal: { x: -1, y: -1 },
         abuse: 0,
         revivals: 0,
@@ -40,7 +40,7 @@ export function tameMonster(monster) {
     };
     monster.edog = dog;
     monster.mextra = { ...(monster.mextra || {}), edog: dog };
-    if (!game.u.uconduct) game.u.uconduct = {};
-    game.u.uconduct.pets = (game.u.uconduct.pets || 0) + 1;
+    if (!state.u.uconduct) state.u.uconduct = {};
+    state.u.uconduct.pets = (state.u.uconduct.pets || 0) + 1;
     return true;
 }
