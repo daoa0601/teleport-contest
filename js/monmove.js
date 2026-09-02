@@ -28,8 +28,10 @@ import { heroHasConflict } from './hero_conflict.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import {
     applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap,
-    monsterAntiMagicTrapVisibility,
 } from './anti_magic_trap.js';
+import {
+    beginMonsterFireTrap, finishMonsterFireTrap,
+} from './fire_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -133,7 +135,9 @@ import {
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { applyMonsterRustTrap, burnArmorByFire } from './trap.js';
+import {
+    applyMonsterRustTrap, burnArmorByFire, monsterTrapVisibility,
+} from './trap.js';
 import {
     isHumanWereMonster, isWereMonster, transformWereMonster,
 } from './were.js';
@@ -4812,54 +4816,15 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const originalDamage = rollDice(2, 4);
-        calls.push('d(2,4)');
-        let appliedDamage = 0;
-        if (!((MONSTER_RESISTS[monster.mnum] ?? 0) & 0x01)) {
-            appliedDamage = originalDamage;
-            monster.mhp = Math.max(
-                0, (monster.mhp ?? 1) - appliedDamage,
-            );
-            const maximumLoss = recordRandom(
-                random, calls, originalDamage + 1,
-            );
-            monster.mhpmax = Math.max(
-                1, (monster.mhpmax ?? monster.mhp) - maximumLoss,
-            );
-            if (monster.mhp > monster.mhpmax)
-                monster.mhp = monster.mhpmax;
-        }
-
-        // trap.c:burnarmor() samples equipment slots until erosion succeeds.
-        // The cloak/suit/shirt case terminates even when all three are empty.
-        let burnArmorReturnedTrue = false;
-        for (;;) {
-            const slot = recordRandom(random, calls, 5);
-            if (slot === 1) {
-                burnArmorReturnedTrue = true;
-                break;
-            }
-            const mask = [W_ARMH, 0, W_ARMS, W_ARMG, W_ARMF][slot];
-            const armor = (monster.minvent || monster.inventory || [])
-                .find(object => mask && (object.owornmask & mask));
-            if (armor) {
-                armor.oeroded = Math.min(3, (armor.oeroded ?? 0) + 1);
-                break;
-            }
-        }
-        if (burnArmorReturnedTrue
-            || recordRandom(random, calls, 3) !== 0) {
-            // destroy_items() computes its bounded stack limit before
-            // inspecting inventory.  A 2d4 fire-trap hit always owns this
-            // remainder probe, including when the inventory is empty.
-            recordRandom(random, calls, 5);
-        }
-        const event = {
-            kind: 'fire-trap', trap,
-            damage: appliedDamage,
-            killed: monster.mhp <= 0,
-        };
+        const event = beginMonsterFireTrap(monster, trap, state, {
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+        });
         movement.trap = event;
+        movement.deferredAfterMonsterFireTrap = true;
         return event;
     }
     if (trap.ttyp === WEB) {
@@ -4897,14 +4862,21 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        // trap.c:trapeffect_magic_trap(): monsters are unaffected on twenty
-        // of twenty-one results.  The zero result delegates to the much
-        // larger fire-trap/item-destruction transaction, retained as an
-        // explicit unported sub-branch rather than inventing its RNG graph.
         const fire = recordRandom(random, calls, 21) === 0;
+        if (fire) {
+            const event = beginMonsterFireTrap(monster, trap, state, {
+                rollDice: (count, sides) => {
+                    const result = rollDice(count, sides);
+                    calls.push(`d(${count},${sides})`);
+                    return result;
+                },
+            });
+            movement.trap = event;
+            movement.deferredAfterMonsterFireTrap = true;
+            return event;
+        }
         const event = {
-            kind: fire ? 'magic-trap-fire-pending' : 'magic-trap',
-            trap, damage: 0, killed: false, fire,
+            kind: 'magic-trap', trap, damage: 0, killed: false,
         };
         movement.trap = event;
         return event;
@@ -4930,8 +4902,7 @@ function triggerMonsterTrap(
                 return result;
             },
         });
-        const { inSight, seeSquare }
-            = monsterAntiMagicTrapVisibility(monster, state);
+        const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
         const visibleEffect = effect.resisted || effect.energyDrain > 0;
         if (inSight && visibleEffect) trap.tseen = true;
         const event = {
@@ -7557,6 +7528,7 @@ function distantPhaseFourAttackSetup(
 
 function monsterTrapResultIsDeferred(movement) {
     return !!(movement.deferredAfterProjectileTrapMessage
+        || movement.deferredAfterMonsterFireTrap
         || movement.deferredAfterAntiMagicTrapMessage
         || movement.deferredAfterAntiMagicTrapDeath);
 }
@@ -7656,7 +7628,7 @@ export function resumeDeferredMonsterProjectileTrap(
     );
     completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
-        action.calls, { trapAlreadyHandled: true },
+        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
     );
     return action;
 }
@@ -7697,7 +7669,45 @@ export async function resumeDeferredMonsterAntiMagicTrap(
 
     completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
-        action.calls, { trapAlreadyHandled: true },
+        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterFireTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        monsterName,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterFireTrap
+        || event?.kind !== 'fire-trap') return action;
+    delete movement.deferredAfterMonsterFireTrap;
+
+    await finishMonsterFireTrap(action.monster, event, state, {
+        finishDeath: (monster, options) =>
+            finishEnvironmentalMonsterDeath(monster, state, options),
+        publish,
+        random,
+        rollOne,
+        monsterName,
+        describeMonster,
+    });
+    if (event.killed) {
+        movement.actorDied = true;
+        movement.actionCompleted = true;
+        return action;
+    }
+
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
     );
     return action;
 }

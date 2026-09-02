@@ -156,6 +156,7 @@ import {
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterAntiMagicTrap,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
+    resumeDeferredMonsterFireTrap,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -4036,6 +4037,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             );
             resumeDeferredMonsterProjectileTrap(action, game);
             movement = action.movement;
+        }
+        if (movement?.trap?.kind === 'fire-trap'
+            && movement.deferredAfterMonsterFireTrap) {
+            const event = movement.trap;
+            await resumeDeferredMonsterFireTrap(action, game, {
+                publish: queueTurnMessage,
+                monsterName: quietMonsterName,
+                describeMonster: visibleMonsterSubject,
+            });
+            movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
         if (movement?.trap?.kind === 'anti-magic-drain'
             || movement?.trap?.kind === 'anti-magic-damage') {

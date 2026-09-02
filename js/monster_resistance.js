@@ -1,13 +1,17 @@
 // Monster resistance checks shared by attacks and item effects.
 // C refs: zap.c resist() and mondata.c Resists_Elem().
 
-import { W_ARM, W_ARMC, W_ARMOR } from './const.js';
+import {
+    W_ACCESSORY, W_ARM, W_ARMC, W_ARMOR, W_WEP,
+} from './const.js';
+import { ARTIFACT_DATA } from './artifact_data.js';
 import {
     MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     monsterIsVampireShifter,
 } from './monster_data.js';
 import {
     ALCHEMY_SMOCK, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
+    RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
 } from './object_data.js';
 import { rn2 } from './rng.js';
@@ -23,6 +27,27 @@ const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const PM_DEATH = 311;
 const PM_BLACK_DRAGON = MONSTER_NAME.indexOf('black dragon');
+const ARTIFACT_BY_ID = new Map(
+    ARTIFACT_DATA.map(artifact => [artifact.id, artifact]),
+);
+const FIRE_RESISTANCE_OBJECTS = new Set([
+    RED_DRAGON_SCALE_MAIL,
+    RED_DRAGON_SCALES,
+    RIN_FIRE_RESISTANCE,
+]);
+
+function artifactForObject(object) {
+    return ARTIFACT_BY_ID.get(object?.oartifact) || null;
+}
+
+function monsterInventory(monster) {
+    return monster?.minvent || monster?.inventory || [];
+}
+
+function monsterWeapon(monster) {
+    return monster?.mw || monsterInventory(monster).find(object =>
+        object?.wielded || ((object?.owornmask ?? 0) & W_WEP));
+}
 
 function monsterWearsOneOf(monster, objectTypes, mask) {
     return (monster?.minvent || monster?.inventory || []).some(object =>
@@ -36,10 +61,19 @@ function monsterResistanceBits(monster) {
 }
 
 export function monsterHasFireResistance(monster) {
-    return !!(monsterResistanceBits(monster) & MR_FIRE)
-        || !!monster?.fireResistance
-        || !!monster?.fire_resistance
-        || !!monster?.defendedFire;
+    if ((monsterResistanceBits(monster) & MR_FIRE)
+        || monster?.fireResistance
+        || monster?.fire_resistance
+        || monster?.defendedFire) return true;
+    if (artifactForObject(monsterWeapon(monster))?.defense === 'fire')
+        return true;
+
+    const wornSlots = W_ARMOR | W_ACCESSORY | W_WEP;
+    return monsterInventory(monster).some(object => {
+        if (artifactForObject(object)?.carriedDefense === 'fire') return true;
+        return FIRE_RESISTANCE_OBJECTS.has(object?.otyp)
+            && !!((object?.owornmask ?? 0) & wornSlots);
+    });
 }
 
 export function monsterHasColdResistance(monster) {

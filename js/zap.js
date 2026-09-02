@@ -616,6 +616,10 @@ export async function burnFloorObjectsAt(
     {
         state = game,
         giveFeedback = false,
+        publish = plineWithContinuation,
+        random = rn2,
+        visible = cansee(x, y),
+        repaint = newsym,
     } = {},
 ) {
     const pile = state.level?.objects?.[x]?.[y] || [];
@@ -624,25 +628,26 @@ export async function burnFloorObjectsAt(
         if (!floorObjectBurns(object)
             || object.otyp === SCR_FIRE
             || object.otyp === SPE_FIREBALL
-            || objectResistsDestruction(object, 2, 100)) continue;
+            || objectResistsDestruction(object, 2, 100, random)) continue;
         const quantity = object.quan ?? object.quantity ?? 1;
         let destroyed = 0;
         for (let index = 0; index < quantity; index++) {
-            if (rn2(3) === 0) destroyed++;
+            if (random(3) === 0) destroyed++;
         }
         if (!destroyed) continue;
         removeBurnedFloorQuantity(pile, object, destroyed);
         burned += destroyed;
         if (giveFeedback)
-            await plineWithContinuation(floorBurnMessage(object, destroyed));
+            await publish(floorBurnMessage(object, destroyed));
     }
 
     await igniteItems(pile, {
         state,
-        publish: plineWithContinuation,
-        visible: cansee(x, y),
+        publish,
+        random,
+        visible,
     });
-    if (burned && couldsee(x, y)) newsym(x, y);
+    if (burned && couldsee(x, y)) repaint(x, y);
     return burned;
 }
 

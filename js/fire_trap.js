@@ -1,5 +1,5 @@
-// Fire traps under the hero.
-// C ref: trap.c dofiretrap().
+// Fire-trap effects on the hero and monsters.
+// C refs: trap.c dofiretrap() and trapeffect_fire_trap().
 
 import { heroHasDrainResistance } from './armor.js';
 import { ICE, IS_LAVA, IS_POOL, Upolyd } from './const.js';
@@ -7,12 +7,22 @@ import { plineWithContinuation, shieldeff } from './display.js';
 import { loseExperienceLevel } from './exper.js';
 import { game } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
+import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
 import { igniteItems } from './light.js';
-import { MONSTER_LEVEL } from './monster_data.js';
+import {
+    MONSTER_LEVEL, monsterIsNonliving, monsterTypeName,
+} from './monster_data.js';
+import { monsterHasFireResistance } from './monster_resistance.js';
 import { d, rn2, rnd } from './rng.js';
-import { burnHeroArmorByFire } from './trap.js';
-import { burnFloorObjectsAt, destroyFireInventory } from './zap.js';
+import {
+    burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility,
+} from './trap.js';
+import { surfaceName } from './terrain_name.js';
+import {
+    burnFloorObjectsAt, destroyFireInventory,
+    destroyFireMonsterInventory,
+} from './zap.js';
 
 const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
@@ -42,14 +52,14 @@ function loseHeroHitPoints(amount) {
     );
 }
 
-function golemFireDamage(hero) {
-    if (hero.umonnum === PM_PAPER_GOLEM) return hero.mhmax;
-    if (hero.umonnum === PM_STRAW_GOLEM)
-        return Math.trunc(hero.mhmax / 2);
-    if (hero.umonnum === PM_WOOD_GOLEM)
-        return Math.trunc(hero.mhmax / 4);
-    if (hero.umonnum === PM_LEATHER_GOLEM)
-        return Math.trunc(hero.mhmax / 8);
+function golemFireDamage(form, maximumHitPoints) {
+    if (form === PM_PAPER_GOLEM) return maximumHitPoints;
+    if (form === PM_STRAW_GOLEM)
+        return Math.trunc(maximumHitPoints / 2);
+    if (form === PM_WOOD_GOLEM)
+        return Math.trunc(maximumHitPoints / 4);
+    if (form === PM_LEATHER_GOLEM)
+        return Math.trunc(maximumHitPoints / 8);
     return 0;
 }
 
@@ -108,6 +118,176 @@ async function burnFloorAndIce() {
         await meltIce(hero.ux, hero.uy);
 }
 
+function ordinaryMonsterName(monster) {
+    return monster?.name
+        || monsterTypeName(monster?.mnum, !!monster?.female);
+}
+
+function ordinaryMonsterSubject(monster) {
+    return monster?.name || `The ${ordinaryMonsterName(monster)}`;
+}
+
+function monsterFireDeathMessage(monster, event, describeMonster) {
+    if (!event.seeSquare) return null;
+    const verb = monsterIsNonliving(monster.mnum)
+        ? 'destroyed' : 'killed';
+    return `${describeMonster(monster)} is ${verb}!`;
+}
+
+async function finishMonsterFireDeath(
+    monster, event, {
+        finishDeath, publish, random, describeMonster, noCorpse,
+    },
+) {
+    const death = await finishDeath(monster, {
+        deathMessage: monsterFireDeathMessage(
+            monster, event, describeMonster,
+        ),
+        visible: event.seeSquare,
+        spotted: event.inSight,
+        noCorpse,
+        random,
+        publish,
+    });
+    event.death = death;
+    if (death.survived) event.lifeSaved = true;
+    return !death.survived;
+}
+
+export function beginMonsterFireTrap(
+    monster, trap, state, { rollDice = d } = {},
+) {
+    const visibility = monsterTrapVisibility(monster, state);
+    return {
+        kind: 'fire-trap',
+        trap,
+        originalDamage: rollDice(2, 4),
+        damage: 0,
+        itemDamage: 0,
+        killed: false,
+        finished: false,
+        ...visibility,
+        visible: visibility.inSight,
+    };
+}
+
+export async function finishMonsterFireTrap(
+    monster, event, state = game, {
+        finishDeath,
+        publish = plineWithContinuation,
+        random = rn2,
+        rollOne = rnd,
+        monsterName = ordinaryMonsterName,
+        describeMonster = ordinaryMonsterSubject,
+    } = {},
+) {
+    if (event.finished) return event;
+    const x = event.trap.tx;
+    const y = event.trap.ty;
+    const surface = surfaceName(x, y, state);
+    if (event.inSight) {
+        await publish(
+            `A tower of flame erupts from the ${surface} under ${
+                monsterName(monster)
+            }!`,
+        );
+    } else if (event.seeSquare) {
+        await publish(`You see a tower of flame erupt from the ${surface}!`);
+    }
+
+    event.resisted = monsterHasFireResistance(monster);
+    if (event.resisted) {
+        if (event.inSight) {
+            await shieldeff(monster.mx, monster.my, state);
+            await publish(`${describeMonster(monster)} is uninjured.`);
+        }
+    } else {
+        event.damage = Math.max(
+            event.originalDamage,
+            golemFireDamage(monster.mnum, monster.mhpmax ?? 1),
+        );
+        monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
+        let dead = false;
+        if (monster.mhp <= 0) {
+            dead = await finishMonsterFireDeath(monster, event, {
+                finishDeath,
+                publish,
+                random,
+                describeMonster,
+                noCorpse: monster.mnum === PM_PAPER_GOLEM,
+            });
+        }
+        if (!dead) {
+            event.maximumLoss = random(event.damage + 1);
+            monster.mhpmax = Math.max(
+                1, (monster.mhpmax ?? monster.mhp) - event.maximumLoss,
+            );
+            monster.mhp = Math.min(monster.mhp, monster.mhpmax);
+        }
+    }
+
+    const torsoBurned = await burnArmorByFire(
+        monster, state, publish, [], random, {
+            visible: event.inSight,
+            ownerName: describeMonster(monster),
+        },
+    );
+    event.possessionsBurned = torsoBurned || random(3) !== 0;
+    if (event.possessionsBurned) {
+        event.itemDamage = await destroyFireMonsterInventory(
+            monster, event.originalDamage, {
+                carrierName: monsterName(monster),
+                publish,
+                random,
+                rollOne,
+                visible: event.inSight,
+            },
+        );
+        await igniteItems(monster.minvent || monster.inventory, {
+            carrierName: monsterName(monster),
+            state,
+            publish,
+            random,
+            visible: event.inSight,
+        });
+        if ((monster.mhp ?? 0) > 0 && event.itemDamage > 0) {
+            monster.mhp = Math.max(0, monster.mhp - event.itemDamage);
+            if (monster.mhp <= 0) {
+                await finishMonsterFireDeath(monster, event, {
+                    finishDeath,
+                    publish,
+                    random,
+                    describeMonster,
+                    noCorpse: monster.mnum === PM_PAPER_GOLEM
+                        || monster.mnum === PM_STRAW_GOLEM,
+                });
+            }
+        }
+    }
+
+    event.floorObjectsBurned = await burnFloorObjectsAt(x, y, {
+        state,
+        giveFeedback: event.seeSquare,
+        publish,
+        random,
+        visible: event.seeSquare,
+    });
+    const heroX = state.u?.ux ?? x;
+    const heroY = state.u?.uy ?? y;
+    if (event.floorObjectsBurned && !event.seeSquare
+        && dist2(x, y, heroX, heroY) <= 9) {
+        await publish('You smell smoke.');
+    }
+    if (state.level?.at?.(x, y)?.typ === ICE)
+        await meltIce(x, y);
+    if (event.seeSquare && state.level?.traps?.includes(event.trap))
+        event.trap.tseen = true;
+
+    event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
+    event.finished = true;
+    return event;
+}
+
 export async function triggerHeroFireTrap(trap) {
     const hero = game.u;
     trap.tseen = true;
@@ -134,7 +314,9 @@ export async function triggerHeroFireTrap(trap) {
         await shieldeff(hero.ux, hero.uy);
         damage = rn2(2);
     } else if (Upolyd(hero)) {
-        damage = Math.max(damage, golemFireDamage(hero));
+        damage = Math.max(
+            damage, golemFireDamage(hero.umonnum, hero.mhmax),
+        );
         reduceMonsterFormMaximumHitPoints(damage);
     } else {
         damage = d(2, 4);

@@ -133,18 +133,6 @@ export function applyMonsterAntiMagicTrap(
     };
 }
 
-export function monsterAntiMagicTrapVisibility(monster, state) {
-    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-    const seeSquare = !blind
-        && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-    const seesInvisible = !!(state?.u?.seeInvisible
-        || state?.u?.see_invisible);
-    const inSight = state?.u?.usteed === monster
-        || (seeSquare && !monster.mundetected
-            && (!monster.minvis || seesInvisible));
-    return { inSight, seeSquare };
-}
-
 export async function finishMonsterAntiMagicTrap(
     monster, event, {
         finishDeath,

@@ -171,6 +171,18 @@ function inventoryOf(monster) {
     return monster?.minvent || monster?.inventory || [];
 }
 
+export function monsterTrapVisibility(monster, state = game) {
+    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+    const seeSquare = !blind
+        && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
+    const seesInvisible = !!(state?.u?.seeInvisible
+        || state?.u?.see_invisible);
+    const inSight = state?.u?.usteed === monster
+        || (seeSquare && !monster.mundetected
+            && (!monster.minvis || seesInvisible));
+    return { inSight, seeSquare };
+}
+
 function wornObject(monster, mask) {
     return inventoryOf(monster).find(object =>
         ((object.owornmask ?? 0) & mask) !== 0) || null;
@@ -509,30 +521,56 @@ function flammableArmor(object) {
 }
 
 async function burnArmorObject(
-    object, description, visible, emitMessage, calls,
+    object, description, owner, emitMessage, calls,
 ) {
     if (!object || !flammableArmor(object)) return false;
     if (object.oerodeproof && object.rknown) return false;
     if (object.oerodeproof || (object.blessed && rnl(4) === 0)) {
         calls?.push('rnl(4)');
+        if (object.oerodeproof) object.rknown = true;
         return false;
     }
     if (object.blessed) calls?.push('rnl(4)');
     const erosion = object.oeroded ?? 0;
     if (erosion >= 3) return false;
     object.oeroded = erosion + 1;
-    if (visible && emitMessage) {
+    if (owner && emitMessage) {
         const suffix = erosion + 1 === 3 ? ' completely'
             : erosion ? ' further' : '';
-        await emitMessage(`Your ${description} smoulders${suffix}!`);
+        const verb = /(?:boots|gloves|shoes|scales)$/iu.test(description)
+            ? 'smoulder' : 'smoulders';
+        await emitMessage(`${owner} ${description} ${verb}${suffix}!`);
     }
     return true;
 }
 
+function possessiveOwner(name) {
+    if (/s$/iu.test(name)) return `${name}'`;
+    return `${name}'s`;
+}
+
 export async function burnArmorByFire(
-    victim, state, emitMessage, calls = [], random = rn2,
+    victim, state, emitMessage, calls = [], random = rn2, {
+        visible = victim === state.u,
+        ownerName = null,
+    } = {},
 ) {
     const hero = victim === state.u;
+    const owner = hero ? 'Your'
+        : visible && ownerName ? possessiveOwner(ownerName) : null;
+    for (const towel of inventoryOf(victim)) {
+        const wetness = towel.otyp === TOWEL ? towel.spe ?? 0 : 0;
+        if (wetness <= 0) continue;
+        const newWetness = recordRoll(random, calls, wetness + 1);
+        if (newWetness === wetness) continue;
+        towel.spe = newWetness;
+        if (visible && emitMessage) {
+            await emitMessage(
+                `${owner} towel dries${newWetness ? '' : ' out'}.`,
+            );
+        }
+        break;
+    }
     for (;;) {
         const slot = recordRoll(random, calls, 5);
         let object = null;
@@ -563,7 +601,7 @@ export async function burnArmorByFire(
         }
 
         const damaged = await burnArmorObject(
-            object, description, hero, emitMessage, calls,
+            object, description, owner, emitMessage, calls,
         );
         if (hero && damaged) state._armorClassDirty = true;
         if (torso) return true;
