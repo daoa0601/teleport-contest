@@ -30,6 +30,9 @@ import {
     resurrectWizard, rhack,
 } from './cmd.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import {
+    monsterBreathMessage, monsterCoughMessage, resolveMonsterBreathAttack,
+} from './dogmove.js';
 import { angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
@@ -148,12 +151,13 @@ import {
     resumeDeferredMonsterMagicMissileWand,
     resolveMonsterMagicMissileContact,
     finishMonsterMagicMissileDeath,
-    finishEnvironmentalMonsterDeath,
+    finishEnvironmentalMonsterDeath, finishMonsterRayDeath,
     beginHeroMagicMissileContact,
     finishHeroMagicMissileDamage,
     resumeDeferredMonsterStrikingWand,
     finishDeferredMonsterStrikingWandHit,
     relocateMonsterAfterTheft,
+    resumeDeferredPetBreathCough,
     resumeDeferredPetEating, resumeDeferredPetMove,
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
@@ -3865,6 +3869,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             }
             movement = action.movement;
         }
+        if (movement?.deferredPetBreathCough) {
+            const message = monsterCoughMessage(monster, game);
+            if (message) await queueTurnMessage(message);
+            resumeDeferredPetBreathCough(action, game);
+            movement = action.movement;
+        }
         if (movement?.deferredPetEating) {
             // dog_move() has committed the destination before dog_eat() emits
             // its line.  If an older combat topline is full, tty suspends here
@@ -5342,6 +5352,25 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 await queueTurnMessage(cussMessage);
                 wakeMonstersNear(monster.mx, monster.my, 25);
             }
+        }
+        if (movement?.petBreath?.launched) {
+            const message = monsterBreathMessage(
+                monster, movement.petBreath,
+            );
+            if (message) await queueTurnMessage(message);
+            await resolveMonsterBreathAttack(
+                monster, movement.petBreath, game, {
+                    publish: queueTurnMessage,
+                    finishMonsterKill: (target, death) =>
+                        finishMonsterRayDeath(
+                            target, death, game, queueTurnMessage,
+                        ),
+                },
+            );
+            if (game._occupation)
+                game._interruptedMultiActionDebt = true;
+            game._occupation = null;
+            if (game._runState) stopRun(game);
         }
         if (movement?.breathAttack) {
             const breath = movement.breathAttack;

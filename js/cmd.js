@@ -59,6 +59,10 @@ import {
 } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
 import { useHeroBreath } from './hero_breath_command.js';
+import {
+    beginPetBreathAttack, monsterBreathAttack, monsterBreathMessage,
+    monsterCoughMessage, resolveMonsterBreathAttack,
+} from './dogmove.js';
 import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
 import { heroGazeAttack, useHeroGaze } from './hero_gaze.js';
 import {
@@ -186,7 +190,7 @@ import {
     MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_EXPERIENCE_META,
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SOUND, MONSTER_SYMBOL, MONSTER_ALIGNMENT,
+    MONSTER_SYMBOL, MONSTER_ALIGNMENT,
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import { nameToMonster } from './mondata.js';
@@ -216,6 +220,7 @@ import {
     angerAttackedMonster, publishKickedPetYelp, publishMonsterGrowl,
     wakeAttackedMonster, wakeAttackedShopkeeper,
 } from './monster_anger.js';
+import { monsterNoiseMessage } from './monster_sound.js';
 import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { strengthDamageBonus } from './weapon_damage.js';
@@ -319,7 +324,7 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    aggravateMonsters, fumaroles, sessionIsNight,
+    aggravateMonsters, finishMonsterRayDeath, fumaroles,
     triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
@@ -4467,6 +4472,7 @@ async function dochat() {
         const x = game.u.ux + DIR_DX[direction];
         const y = game.u.uy + DIR_DY[direction];
         const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
+        const noiseMessage = monsterNoiseMessage(monster, game);
         // sounds.c:dochat() prods any responsive target into action before
         // domonnoise()/quest_chat().  This clears both CLOSE and WAITFORU, so
         // the quest leader can take its ordinary scheduler turn immediately
@@ -4490,42 +4496,8 @@ async function dochat() {
                 ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
                 : `The ${monsterInstanceDisplayName(monster)}`
             } is eating noisily.`);
-        } else if (monster && !(game.deaf || game.u?.deaf)
-            && [1, 2, 12].includes(MONSTER_SOUND[monster.mnum] ?? 0)) {
-            const sound = MONSTER_SOUND[monster.mnum];
-            const hungryTime = monster.edog?.hungrytime ?? 0;
-            const moves = game.moves ?? 1;
-            let noise = null;
-            if (sound === 1) { // MS_BARK
-                if (game.flags?.moonphase === 4
-                    && sessionIsNight(game.datetime)) noise = 'howls.';
-                else if (!monster.mpeaceful) noise = 'growls.';
-                else if (monster.mtame && (monster.mconf || monster.mflee
-                    || monster.mtrapped || moves > hungryTime
-                    || monster.mtame < 5)) noise = 'whines.';
-                else if (monster.mtame && hungryTime > moves + 1000)
-                    noise = 'yips.';
-                else if (MONSTER_NAME[monster.mnum] !== 'dingo')
-                    noise = 'barks.';
-            } else if (sound === 2) { // MS_MEW
-                if (monster.mtame && (monster.mconf || monster.mflee
-                    || monster.mtrapped || monster.mtame < 5)) noise = 'yowls.';
-                else if (monster.mtame && moves > hungryTime) noise = 'meows.';
-                else if (monster.mtame && hungryTime > moves + 1000)
-                    noise = 'purrs.';
-                else noise = monster.mtame ? 'mews.'
-                    : monster.mpeaceful ? 'snarls.' : 'growls!';
-            } else if (sound === 12) { // MS_NEIGH
-                noise = monster.mtame < 5 ? 'neighs.'
-                    : moves > hungryTime ? 'whinnies.' : 'whickers.';
-            }
-            if (noise) {
-                const subject = monster.name
-                    ? monster.name.charAt(0).toUpperCase()
-                        + monster.name.slice(1)
-                    : `The ${monsterInstanceDisplayName(monster)}`;
-                await pline(`${subject} ${noise}`);
-            }
+        } else if (noiseMessage) {
+            await pline(noiseMessage);
             game.context.move = 1;
             return;
         } else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
@@ -5691,12 +5663,29 @@ async function wizMap() {
 }
 
 // C ref: cmd.c:domonability().
-async function domonability() {
-    if ((game.u?.mtimedone ?? 0) <= 0) {
-        await pline("You don't have a special ability in your normal form!");
-        game.context.move = 0;
-        return;
+async function useSteedBreathAbility(steed) {
+    const breath = beginPetBreathAttack(steed, game, { forced: true });
+    if (breath.makeNoise) {
+        const noise = monsterNoiseMessage(steed, game);
+        if (noise) await pline(noise);
+    } else if (breath.cough) {
+        const message = monsterCoughMessage(steed, game);
+        if (message) await pline(message);
+    } else if (breath.launched) {
+        const message = monsterBreathMessage(steed, breath);
+        if (message) await plineWithContinuation(message);
+        await resolveMonsterBreathAttack(steed, breath, game, {
+            publish: plineWithContinuation,
+            finishMonsterKill: (target, death) =>
+                finishMonsterRayDeath(
+                    target, death, game, plineWithContinuation,
+                ),
+        });
     }
+    game.context.move = 1;
+}
+
+async function domonability() {
     const canHide = heroHasHidingAbility(game);
     const canSpinWeb = heroCanSpinWeb(game);
     const spiderChoice = canHide && canSpinWeb
@@ -5772,7 +5761,14 @@ async function domonability() {
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
-    await pline('Any special ability you may have is purely reflexive.');
+    const steed = game.u?.usteed;
+    if (steed && monsterBreathAttack(steed)) {
+        await useSteedBreathAbility(steed);
+        return;
+    }
+    await pline(heroIsPolymorphed(game)
+        ? 'Any special ability you may have is purely reflexive.'
+        : "You don't have a special ability in your normal form!");
     game.context.move = 0;
 }
 

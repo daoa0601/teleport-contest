@@ -4,6 +4,9 @@
 
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
+import { beginPetBreathAttack } from './dogmove.js';
+import { sessionIsNight } from './monster_sound.js';
+export { sessionIsNight } from './monster_sound.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -18,7 +21,7 @@ import {
 } from './hero_expulsion.js';
 import { splitObjectStack } from './object_stack.js';
 import {
-    map_invisible, newsym, randomDisplayMonsterName,
+    canProjectMonster, map_invisible, newsym, randomDisplayMonsterName,
     randomDisplayMonsterSubject, swallowed, unmap_invisible,
     plineWithContinuation,
 } from './display.js';
@@ -1305,12 +1308,6 @@ export function heroEveryturnEffect(state = game, random = rn2) {
     return createFogEveryturnRegion(
         state, state.u.ux, state.u.uy, random,
     );
-}
-
-// C ref: calendar.c night(). Session timestamps use YYYYMMDDhhmmss.
-export function sessionIsNight(datetime) {
-    const hour = Number(String(datetime || '').slice(8, 10));
-    return Number.isInteger(hour) && (hour < 6 || hour > 21);
 }
 
 // C refs: were.c counter_were()/new_were()/were_change().  The shared owner
@@ -3087,83 +3084,6 @@ export function maxPassiveMonsterDamage(defender, aggressor) {
     return 0;
 }
 
-function petRangedTargetScan(pet, state, rollOne, calls) {
-    // dogmove.c:best_target()/score_targ() runs even when a pet has no
-    // ranged-capable attack.  A kitten therefore scores lined-up monsters,
-    // consuming rnd(5), before mattackm() rejects its bite for being out of
-    // melee range and ordinary dog movement resumes.
-    if (pet.mcansee === 0) return null;
-    const visible = new Set(visibleCellsFrom(
-        pet.mx, pet.my, 15,
-    ).map(cell => `${cell.x},${cell.y}`));
-    let best = null;
-    let bestScore = -40000;
-
-    for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-            if (!dx && !dy) continue;
-            let target = null;
-            let tx = pet.mx;
-            let ty = pet.my;
-            for (let distance = 0; distance < 7; distance++) {
-                tx += dx;
-                ty += dy;
-                if (!isok(tx, ty) || !visible.has(`${tx},${ty}`)) break;
-                if (tx === state?.u?.ux && ty === state?.u?.uy) {
-                    target = state.u;
-                    break;
-                }
-                target = monsterAt(state, tx, ty, pet);
-                if (target) break;
-            }
-            if (!target) continue;
-
-            const adjacent = distmin(pet.mx, pet.my,
-                target.mx ?? state.u.ux, target.my ?? state.u.uy) <= 1;
-            if (adjacent || target === state.u || target.mtame || target.pet)
-                continue;
-
-            // A friend behind the prospective target makes score_targ()
-            // return before its fuzz draw.
-            let friendBehind = false;
-            let fx = target.mx;
-            let fy = target.my;
-            for (let distance = distmin(
-                pet.mx, pet.my, target.mx, target.my,
-            ); distance <= 15; distance++) {
-                fx += dx;
-                fy += dy;
-                if (!isok(fx, fy) || !visible.has(`${fx},${fy}`)) break;
-                if (fx === state?.u?.ux && fy === state?.u?.uy) {
-                    friendBehind = true;
-                    break;
-                }
-                const friend = monsterAt(state, fx, fy, pet);
-                if (friend?.mtame || friend?.pet) {
-                    friendBehind = true;
-                    break;
-                }
-            }
-            if (friendBehind) continue;
-
-            let score = target.mpeaceful ? 0 : 10;
-            const targetLevel = target.m_lev
-                ?? MONSTER_LEVEL[target.mnum] ?? 0;
-            if (targetLevel > (pet.m_lev ?? 0) + 4)
-                score -= (targetLevel - (pet.m_lev ?? 0)) * 20;
-            score += targetLevel * 2 + Math.trunc((target.mhp ?? 0) / 3);
-            const fuzz = rollOne(5);
-            calls.push('rnd(5)');
-            score += fuzz;
-            if (score > bestScore) {
-                bestScore = score;
-                best = target;
-            }
-        }
-    }
-    return bestScore < 0 ? null : best;
-}
-
 function petAttacksHero(pet, state, random, rollDice, rollOne, calls) {
     // PM_PONY: AT_KICK 1d6 followed by AT_BITE 1d2. mattacku() raises the
     // to-hit die from rnd(20) to rnd(21) for the second attack.
@@ -3194,6 +3114,39 @@ function petAttacksHero(pet, state, random, rollDice, rollOne, calls) {
         results.push({ ...attack, roll, threshold, hit, damage });
     }
     return { kind: 'pet-hero-attack', aggressor: pet, results };
+}
+
+function finishPetMovePlan(
+    monster, state, plan, random, rollDice, rollOne, calls,
+) {
+    const {
+        oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
+    } = plan;
+    if (selectedInfo & ALLOW_U) {
+        const attack = petAttacksHero(
+            monster, state, random, rollDice, rollOne, calls,
+        );
+        return {
+            oldx, oldy, x: oldx, y: oldy, moved: false, attack,
+            deferredPostFlee: true,
+            ...inventoryAction,
+        };
+    }
+
+    monster.mx = nix;
+    monster.my = niy;
+    if (nix !== oldx || niy !== oldy) {
+        if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
+        monster.mtrack.unshift({ x: oldx, y: oldy });
+        monster.mtrack.length = Math.min(monster.mtrack.length, 4);
+    }
+    const movement = {
+        oldx, oldy, x: nix, y: niy,
+        moved: nix !== oldx || niy !== oldy,
+        ...inventoryAction,
+    };
+    if (movement.moved && reluctant) movement.reluctant = true;
+    return movement;
 }
 
 function movePet(
@@ -3371,35 +3324,35 @@ function movePet(
         if (direction < 0) chcnt = 0;
     }
 
-    petRangedTargetScan(monster, state, rollOne, calls);
-
-    if (selectedInfo & ALLOW_U) {
-        const attack = petAttacksHero(
-            monster, state, random, rollDice, rollOne, calls,
-        );
+    const movePlan = {
+        oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
+    };
+    const breath = beginPetBreathAttack(monster, state, {
+        random: range => recordRandom(random, calls, range),
+        rollOne: range => {
+            const result = rollOne(range);
+            calls.push(`rnd(${range})`);
+            return result;
+        },
+    });
+    if (breath.launched) {
         return {
-            oldx, oldy, x: oldx, y: oldy, moved: false, attack,
-            // C reaches the second distfleeck() after its tty attack messages.
-            // When an older message is pending, tty pauses at --More-- first.
-            deferredPostFlee: true,
-            ...inventoryAction,
+            oldx, oldy, x: oldx, y: oldy, moved: false,
+            petBreath: breath,
+            actionCompleted: true,
         };
     }
-
-    monster.mx = nix;
-    monster.my = niy;
-    if (nix !== oldx || niy !== oldy) {
-        if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
-        monster.mtrack.unshift({ x: oldx, y: oldy });
-        monster.mtrack.length = Math.min(monster.mtrack.length, 4);
+    if (breath.cough) {
+        return {
+            oldx, oldy, x: oldx, y: oldy, moved: false,
+            petBreath: breath,
+            petMovePlan: movePlan,
+            deferredPetBreathCough: true,
+        };
     }
-    const movement = {
-        oldx, oldy, x: nix, y: niy,
-        moved: nix !== oldx || niy !== oldy,
-        ...inventoryAction,
-    };
-    if (movement.moved && reluctant) movement.reluctant = true;
-    return movement;
+    return finishPetMovePlan(
+        monster, state, movePlan, random, rollDice, rollOne, calls,
+    );
 }
 
 function monsterCouldReachFloorItem(monster, x, y, state) {
@@ -8542,6 +8495,8 @@ export function quietMonsterActionRng(
             // check, while movement-only door and tracking branches do not.
             if (!movement.deferredPetMove
                 && !movement.deferredPetEating
+                && !movement.deferredPetBreathCough
+                && !movement.petBreath?.launched
                 && !movement.actorDied && !movement.actorLeftLevel)
                 movement.petPostmov = true;
         } else if (monster?.isgd && monster?._egd) {
@@ -8556,6 +8511,8 @@ export function quietMonsterActionRng(
         if (trapRelease?.escaped) movement.trapEscape = trapRelease;
         if (movement.deferredPetMove
             || movement.deferredPetEating
+            || movement.deferredPetBreathCough
+            || movement.petBreath?.launched
             || movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement };
         completeMovedMonsterAction(
@@ -8868,6 +8825,25 @@ export function resumeDeferredMonsterRollingBoulder(
     return finishDeferredMonsterRollingBoulderPlacement(action, state);
 }
 
+export function resumeDeferredPetBreathCough(
+    action, state, random = rn2, rollDice = d, rollOne = rnd,
+) {
+    const deferred = action?.movement;
+    if (!deferred?.deferredPetBreathCough) return action;
+    const monster = action.monster;
+    const movement = finishPetMovePlan(
+        monster, state, deferred.petMovePlan,
+        random, rollDice, rollOne, action.calls,
+    );
+    if (!movement.actorDied && !movement.actorLeftLevel)
+        movement.petPostmov = true;
+    action.movement = movement;
+    completeMovedMonsterAction(
+        monster, movement, state, random, rollDice, rollOne, action.calls,
+    );
+    return action;
+}
+
 // Resume dog_move() after dog_invent() has committed and tty has had the
 // chance to acknowledge its pickup/drop message.  C remains inside the same
 // actor transaction here: dog_goal(), destination choice, postmov(), the
@@ -9023,6 +8999,7 @@ export async function finishEnvironmentalMonsterDeath(
         deathMessage = null,
         visible = true,
         spotted = visible,
+        noCorpse = false,
         random = rn2,
         publish = plineWithContinuation,
     } = {},
@@ -9044,11 +9021,24 @@ export async function finishEnvironmentalMonsterDeath(
     const x = monster.mx;
     const y = monster.my;
     detachDeadMonster(monster, state);
-    const corpse = createOrdinaryMonsterCorpse(
+    const corpse = noCorpse ? null : createOrdinaryMonsterCorpse(
         monster, state, random, calls,
     );
     if (state === game) newsym(x, y);
     return { monster, survived: false, corpse };
+}
+
+export function finishMonsterRayDeath(
+    monster, death, state = game, publish = plineWithContinuation,
+    random = rn2,
+) {
+    return finishEnvironmentalMonsterDeath(monster, state, {
+        random,
+        publish,
+        noCorpse: death.noCorpse,
+        visible: cansee(monster.mx, monster.my),
+        spotted: canProjectMonster(monster, monster.mx, monster.my),
+    });
 }
 
 export function runQuietMonsterActions(

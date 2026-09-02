@@ -4,7 +4,7 @@
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroBreathAttack, hitHeroWithBreath } from './hero_breath.js';
-import { breatheInDirection } from './hero_breath_ray.js';
+import { breatheInDirection } from './breath_ray.js';
 import { d, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 

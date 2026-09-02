@@ -1,5 +1,5 @@
-// Directional breath rays fired by a polymorphed hero.
-// C refs: polyself.c dobreathe() and zap.c ubuzz()/dobuzz()/zhitm().
+// Breath rays fired by the hero or a monster.
+// C refs: polyself.c dobreathe(), mthrowu.c breamm(), and zap.c dobuzz().
 
 import {
     G_NOCORPSE, STRAT_WAITMASK,
@@ -73,6 +73,9 @@ export async function breatheInDirection(
         rollDice = d,
         rollOne = rnd,
         finishMonsterKill = finishHeroMonsterKill,
+        sourceMonster = null,
+        originX = state.u.ux,
+        originY = state.u.uy,
     } = {},
 ) {
     const delta = DIRECTIONS[direction];
@@ -85,15 +88,16 @@ export async function breatheInDirection(
         state,
         attack,
         damageType,
-        name: breathName(damageType),
+        name: breathRayName(damageType),
         publish,
         random,
         rollDice,
         rollOne,
         finishMonsterKill,
+        sourceMonster,
         hits: 0,
     };
-    if (state.u.uswallow && state.u.ustuck)
+    if (!sourceMonster && state.u.uswallow && state.u.ustuck)
         return breatheWhileSwallowed(context);
 
     const stopped = await runRay({
@@ -101,6 +105,8 @@ export async function breatheInDirection(
         direction,
         range: dx || dy ? 7 + random(7) : 1,
         color: breathColor(damageType),
+        originX,
+        originY,
         random,
         canSee: (x, y) => cellIsVisible(state, x, y),
         onCell: cell => hitBreathCell(cell, context),
@@ -114,6 +120,24 @@ export async function breatheInDirection(
         heroDied: false,
         hits: context.hits,
     };
+}
+
+export function breatheFromMonster(
+    sourceMonster, target, options = {},
+) {
+    const dx = Math.sign(target.mx - sourceMonster.mx);
+    const dy = Math.sign(target.my - sourceMonster.my);
+    const direction = Object.entries(DIRECTIONS).find(
+        ([, delta]) => delta[0] === dx && delta[1] === dy,
+    )?.[0];
+    if (!direction)
+        return { used: false, heroDied: false, hits: 0 };
+    return breatheInDirection(direction, {
+        ...options,
+        sourceMonster,
+        originX: sourceMonster.mx,
+        originY: sourceMonster.my,
+    });
 }
 
 async function hitBreathCell(
@@ -153,7 +177,7 @@ async function hitBreathCell(
                 await finishMonsterBreathHit(
                     monster, hit, {
                         state, breath: name, finishMonsterKill, publish,
-                        random,
+                        random, sourceMonster: context.sourceMonster,
                     },
                 );
                 if (hit.reintegrated) {
@@ -228,13 +252,14 @@ async function breatheWhileSwallowed(context) {
 
 function breathTargetAt(x, y, floor, context) {
     if (floor.absorbed) return null;
-    const { state, random } = context;
+    const { state, random, sourceMonster } = context;
     const monster = rayMonsterAt(x, y, state);
     if (monster) return monster;
     if (x !== state.u.ux || y !== state.u.uy) return null;
 
     const steed = state.u.usteed;
-    if (steed && random(3) === 0 && !monsterReflectsRay(steed, state))
+    if (steed && steed !== sourceMonster
+        && random(3) === 0 && !monsterReflectsRay(steed, state))
         return steed;
     return null;
 }
@@ -410,7 +435,8 @@ function monsterResistsDisintegration(monster) {
 
 async function finishMonsterBreathHit(
     monster, hit, {
-        state, breath, finishMonsterKill, publish, random, deathContext = null,
+        state, breath, finishMonsterKill, publish, random,
+        sourceMonster = null, deathContext = null,
     },
 ) {
     const visible = canProjectMonster(monster, monster.mx, monster.my);
@@ -432,7 +458,7 @@ async function finishMonsterBreathHit(
                 || 'armor';
             await publish(`The ${name}'s ${armor} is disintegrated!`);
         }
-        wakeMonster(monster);
+        wakeMonster(monster, !sourceMonster);
         return;
     }
     if ((monster.mhp ?? 0) <= 0) {
@@ -451,12 +477,12 @@ async function finishMonsterBreathHit(
     }
     if (visible)
         await publish(`${capitalize(breath)} hits the ${name}!`);
-    if (!hit.sleepEffect) wakeMonster(monster);
+    if (!hit.sleepEffect) wakeMonster(monster, !sourceMonster);
 }
 
-function wakeMonster(monster) {
+function wakeMonster(monster, angered) {
     monster.msleeping = 0;
-    monster.mpeaceful = 0;
+    if (angered) monster.mpeaceful = 0;
 }
 
 function removeMonsterObject(monster, object) {
@@ -580,12 +606,19 @@ function floorKind(damageType) {
     return 'breath';
 }
 
-function breathName(damageType) {
+export function breathRayName(damageType) {
     return [
         '', 'blast of missiles', 'blast of fire', 'blast of frost',
         'blast of sleep gas', 'blast of disintegration',
         'blast of lightning', 'blast of poison gas', 'blast of acid',
     ][damageType] || 'blast';
+}
+
+export function breathWeaponName(damageType) {
+    return [
+        '', 'fragments', 'fire', 'frost', 'sleep gas',
+        'a disintegration blast', 'lightning', 'poison gas', 'acid',
+    ][damageType] || 'strange breath';
 }
 
 function breathColor(damageType) {

@@ -166,6 +166,8 @@ export async function runRay({
     direction,
     range,
     color,
+    originX = state.u.ux,
+    originY = state.u.uy,
     random = rn2,
     canSee = (x, y) => cansee(x, y),
     onCell,
@@ -174,8 +176,8 @@ export async function runRay({
 }) {
     let dx = DIRECTION_X[direction] || 0;
     let dy = DIRECTION_Y[direction] || 0;
-    let x = state.u.ux;
-    let y = state.u.uy;
+    let x = originX;
+    let y = originY;
     const beamCells = new Map();
 
     try {
