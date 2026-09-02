@@ -2,9 +2,10 @@
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
 import {
-    A_DEX, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
+    A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
     P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
+import { exerciseAttribute } from './attrib.js';
 import {
     canProjectMonster, flush_screen, newsym, show_glyph_cell,
 } from './display.js';
@@ -16,15 +17,17 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
+    FLINT, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { finishHeroDeath } from './end.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
+const GEM_CLASS = 13;
 const VENOM_CLASS = 17;
 const M2_ELF = 0x00000010;
 const M2_GNOME = 0x00000040;
@@ -239,6 +242,65 @@ export function placeAndStackThrownObject(state, object, x, y) {
     stack_object(object, state);
     clearThrownObject(state, object);
     return object;
+}
+
+export function finishDeferredRangedProjectileHit(
+    shot, state, random = rn2,
+) {
+    if (!shot?.deferredFloorResolution || !shot.weapon) return shot;
+    shot.deferredFloorResolution = false;
+    const object = shot.weapon;
+    const subtype = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const ammo = (object.oclass === WEAPON_CLASS
+            || object.oclass === GEM_CLASS)
+        && subtype >= -22 && subtype <= -20;
+    const missile = (object.oclass === WEAPON_CLASS
+            || object.oclass === TOOL_CLASS)
+        && subtype >= -24 && subtype <= -23;
+    const magicStone = objectTypeName(object) === 'loadstone'
+        || objectTypeName(object) === 'luckstone';
+    let broken = false;
+    if ((ammo || missile) && !magicStone) {
+        const chance = 3 + Math.max(
+            object.oeroded ?? 0, object.oeroded2 ?? 0,
+        ) - (object.spe ?? 0);
+        broken = chance > 1 ? random(chance) !== 0 : random(4) === 0;
+        if (object.blessed && random(3) === 0) broken = false;
+        if (object.otyp === FLINT && random(2) === 0) broken = false;
+    }
+    if (broken) {
+        random(100);
+        object.where = 'gone';
+        object.ox = object.oy = 0;
+        clearThrownObject(state, object);
+    } else {
+        placeAndStackThrownObject(
+            state, object, state.u?.ux ?? 0, state.u?.uy ?? 0,
+        );
+    }
+    shot.floorResolved = true;
+    shot.projectileBroken = broken;
+    return shot;
+}
+
+export async function finishHeroProjectileHit(
+    shot, state, {
+        beforeFinalDeath,
+        finishDeath = finishHeroDeath,
+        random = rn2,
+    } = {},
+) {
+    const fatal = (state.u?.uhp ?? 1) < 1;
+    if (fatal && await finishDeath({
+        killer: shot.appearance || 'weapon',
+        beforeFinalDeath,
+    })) {
+        return { died: true, lifeSaved: false };
+    }
+
+    exerciseAttribute(A_STR, false, state);
+    finishDeferredRangedProjectileHit(shot, state, random);
+    return { died: false, lifeSaved: fatal };
 }
 
 export async function presentMonsterProjectileContact(contact, publish) {

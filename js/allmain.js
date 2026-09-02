@@ -77,6 +77,7 @@ import {
 } from './object_grammar.js';
 import {
     continueMonsterWeaponVolleyAtHero,
+    finishHeroProjectileHit,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
 import {
@@ -127,7 +128,6 @@ import {
     allocateMonsterMovement, beginDeferredHeroCloneWizard,
     continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
-    finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
@@ -3665,6 +3665,15 @@ async function resolvePetRangedResponse(monster, target, movement) {
     return response;
 }
 
+function restoreUnvisitedMonsterMovement(monsterScan, actorIndex) {
+    for (let index = actorIndex + 1;
+        index < monsterScan.actors.length;
+        index++) {
+        const monster = monsterScan.actors[index];
+        monster.movement = (monster.movement ?? 0) + 12;
+    }
+}
+
 async function executeLiveQuietMonsterScan(monsterScan) {
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
@@ -5817,39 +5826,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     : `You are hit by ${rangedArticle} ${
                                         rangedAppearance}${impactSuffix}`,
                             );
-                            if ((game.u?.uhp ?? 1) < 1) {
-                                // losehp() calls urgent_pline("You die...")
-                                // before thitu() can exercise Strength or
-                                // drop the projectile.  That second pline
-                                // first forces the hit line through tty, so
-                                // invalid More keys consume no source work.
+                            const fatal = (game.u?.uhp ?? 1) < 1;
+                            if (fatal) {
                                 await waitForCurrentMonsterMore();
-                                game.u.umortality
-                                    = (game.u.umortality || 0) + 1;
-                                if (!game.flags?.debug
-                                    && !game.flags?.explore) {
-                                    game._canMakeBones = probeCanMakeBones();
-                                }
-                                await queueTurnMessage('You die...');
-                                await waitForCurrentMonsterMore('You die...');
                                 delete game._statusHpOverride;
-                                // scanMonsterMovement() currently plans a
-                                // complete movemon pass and pre-debits each
-                                // planned actor.  C movemon_singlemon() debits
-                                // lazily, so really_done() preserves every
-                                // later actor's unspent ration in bones.
-                                // Restore one debit per unvisited occurrence
-                                // before death serializes the level graph.
-                                for (let pending = actorIndex + 1;
-                                    pending < monsterScan.actors.length;
-                                    pending++) {
-                                    monsterScan.actors[pending].movement
-                                        = (monsterScan.actors[pending]
-                                            .movement ?? 0) + 12;
-                                }
-                                await finishOrdinaryDeath({
-                                    killer: rangedAppearance,
-                                });
+                            }
+                            const result = await finishHeroProjectileHit(
+                                ranged, game, {
+                                    beforeFinalDeath: () =>
+                                        restoreUnvisitedMonsterMovement(
+                                            monsterScan, actorIndex,
+                                        ),
+                                },
+                            );
+                            if (result.died) {
                                 game.context.move = 0;
                                 return;
                             }
@@ -5858,16 +5848,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         } finally {
                             delete game._statusHpOverride;
                         }
-                        // mthrowu.c:thitu() suspends inside the hit pline when
-                        // the launch line already owns tty's topline.  Only
-                        // after that pager is dismissed does losehp() exercise
-                        // Strength, so this draw belongs to the continuation
-                        // input rather than the launch input.
-                        exerciseAttribute(A_STR, false);
-                        finishDeferredRangedProjectileHit(ranged, game);
-                        // losehp() dirties the bottom line.  The launch pager
-                        // must retain pre-hit HP, but once thitu() resumes the
-                        // committed HP is painted before the next input.
                         await bot();
                         await flush_screen(1);
                     } else {

@@ -139,6 +139,7 @@ export function restoreHeroAfterDeath() {
 
 export async function finishHeroDeath({
     killer,
+    beforeFinalDeath = null,
     deathCause = null,
     deathVerb = 'died',
     deathLineShown = false,
@@ -150,7 +151,10 @@ export async function finishHeroDeath({
         game.u.uhp = 0;
         const recovery = beginHeroLifeSaving();
         const prefix = pending && !deathLineShown ? `${pending}  ` : '';
-        await moreUntilDismissed(`${prefix}But wait...--More--`);
+        const deathLine = deathLineShown ? '' : 'You die...  ';
+        await moreUntilDismissed(
+            `${prefix}${deathLine}But wait...--More--`,
+        );
         await pline('Your medallion begins to glow!');
         await plineWithContinuation('You feel much better!');
         await plineWithContinuation('The medallion crumbles to dust!');
@@ -176,6 +180,7 @@ export async function finishHeroDeath({
         }
     }
 
+    await beforeFinalDeath?.();
     setHeroRemainsFromDeath(deathType, game);
     game._canMakeBones = probeCanMakeBones();
     await finishOrdinaryDeath({ killer, deathCause, deathVerb });

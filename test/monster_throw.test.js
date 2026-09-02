@@ -3,20 +3,27 @@ import assert from 'node:assert/strict';
 
 import {
     continueMonsterWeaponVolleyAtHero,
+    finishDeferredRangedProjectileHit,
+    finishHeroProjectileHit,
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
-import { NEED_WEAPON } from '../js/const.js';
+import { NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
-    ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER, ELVEN_ARROW, ELVEN_BOW,
+    AMULET_OF_LIFE_SAVING, ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER,
+    ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import {
-    finishDeferredRangedProjectileHit, quietMonsterActionRng,
+    quietMonsterActionRng,
 } from '../js/monmove.js';
-import { carriedObject } from './support/game-objects.js';
+import {
+    carriedObject, knownInventoryObject,
+} from './support/game-objects.js';
+import { wearHeroObject } from './support/hero-state.js';
 import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
@@ -146,6 +153,50 @@ test('a hostile rogue throws its full dagger volley at the hero', () => {
         3,
     );
     assert.equal(daggers.quan, 1);
+});
+
+test('life saving lets a hostile monster finish its dagger volley', async () => {
+    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
+    game.nhDisplay = new GameDisplay(null);
+    const amulet = wearHeroObject(
+        knownInventoryObject(AMULET_OF_LIFE_SAVING),
+        'uamul',
+        W_AMUL,
+    );
+    game.u.uhp = 1;
+    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const rogue = addMonsterToLevel(rangedMonster('rogue', {
+        inventory: [daggers],
+    }));
+    const rolls = [2, 1, 1, 1, 1, 1, 1];
+    const options = {
+        random: () => 1,
+        rollOne: () => rolls.shift(),
+    };
+    const attack = throwMonsterWeaponAtHero(
+        rogue, game, daggers, options,
+    );
+    pushKeys(' '.repeat(12));
+
+    const result = await finishHeroProjectileHit(
+        attack.shots[0], game, { random: () => 0 },
+    );
+    let nextShot;
+    while ((nextShot = continueMonsterWeaponVolleyAtHero(
+        attack, game, options,
+    ))) {
+        await finishHeroProjectileHit(nextShot, game, { random: () => 0 });
+    }
+
+    assert.equal(result.lifeSaved, true);
+    assert.equal(result.died, false);
+    assert.ok(game.u.uhp > 0);
+    assert.equal(game.inventory.includes(amulet), false);
+    assert.equal(attack.shots.length, 3);
+    assert.equal(
+        floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
+        3,
+    );
 });
 
 test('a missed intervening monster does not hide the later hit', async () => {

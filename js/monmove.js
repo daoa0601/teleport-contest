@@ -9,7 +9,7 @@ import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
 import {
-    clearThrownObject, MONSTER_POLEARMS,
+    MONSTER_POLEARMS,
     monsterWieldedWeapon, objectTypeName, placeAndStackThrownObject,
     placeThrownObject,
     RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
@@ -503,60 +503,6 @@ function readyMonsterDiggingWeapon(monster, state, x, y) {
     tool.wielded = true;
     monster.weaponCheck = NO_WEAPON_WANTED;
     return tool;
-}
-
-// C mthrowu.c:drop_throw()->should_mulch_missile().  A projectile which hit
-// the hero does not reach this floor lifecycle until thitu()'s hit line and
-// Strength exercise have completed.  Keep the same split identity free across
-// that tty boundary, then either destroy or place it here.
-export function finishDeferredRangedProjectileHit(
-    ranged, state, random = rn2,
-) {
-    if (!ranged?.deferredFloorResolution || !ranged.weapon) return ranged;
-    ranged.deferredFloorResolution = false;
-    const object = ranged.weapon;
-    const subtype = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    const ammo = (object.oclass === WEAPON_CLASS
-            || object.oclass === GEM_CLASS)
-        && subtype >= -22 && subtype <= -20;
-    const missile = (object.oclass === WEAPON_CLASS
-            || object.oclass === TOOL_CLASS)
-        && subtype >= -24 && subtype <= -23;
-    const magicStone = objectTypeName(object) === 'loadstone'
-        || objectTypeName(object) === 'luckstone';
-    let broken = false;
-    if ((ammo || missile) && !magicStone) {
-        const chance = 3 + Math.max(
-            object.oeroded ?? 0, object.oeroded2 ?? 0,
-        ) - (object.spe ?? 0);
-        broken = chance > 1 ? random(chance) !== 0 : random(4) === 0;
-        if (object.blessed
-            && random(3) === 0) {
-            broken = false;
-        }
-        if (object.otyp === FLINT
-            && random(2) === 0) {
-            broken = false;
-        }
-    }
-    if (broken) {
-        // mthrowu.c:drop_throw()->delobj()->delobj_core() still consults
-        // obj_resists(obj, 0, 0) for an ordinary destroyed missile.  The
-        // zero-percent decision cannot save it, but its rn2(100) call is part
-        // of the source transaction before global movement allocation.
-        if (!objectResistsWithoutRoll(object))
-            random(100);
-        object.where = 'gone';
-        object.ox = object.oy = 0;
-        clearThrownObject(state, object);
-    } else {
-        placeAndStackThrownObject(
-            state, object, state.u?.ux ?? 0, state.u?.uy ?? 0,
-        );
-    }
-    ranged.floorResolved = true;
-    ranged.projectileBroken = broken;
-    return ranged;
 }
 
 function monsterHasLauncherAndAmmo(monster) {
