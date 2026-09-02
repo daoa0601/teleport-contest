@@ -1,10 +1,34 @@
-// Monster magic resistance.
-// C ref: zap.c resist().
+// Monster resistance checks shared by attacks and item effects.
+// C refs: zap.c resist() and mondata.c Resists_Elem().
 
+import { W_ARMC, W_ARMOR } from './const.js';
 import {
-    MONSTER_MAGIC_RESISTANCE,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS,
 } from './monster_data.js';
+import {
+    ALCHEMY_SMOCK, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+} from './object_data.js';
 import { rn2 } from './rng.js';
+
+const MR_ACID = 0x40;
+
+export function monsterHasAcidResistance(monster) {
+    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
+        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+    if ((resistanceBits & MR_ACID) || monster?.acidResistance
+        || monster?.acid_resistance) return true;
+
+    return (monster?.minvent || monster?.inventory || []).some(object => {
+        const wornMask = object?.owornmask ?? 0;
+        const dragonArmor = [
+            YELLOW_DRAGON_SCALE_MAIL,
+            YELLOW_DRAGON_SCALES,
+        ].includes(object?.otyp) && !!(wornMask & W_ARMOR);
+        const smock = object?.otyp === ALCHEMY_SMOCK
+            && !!(wornMask & W_ARMC);
+        return dragonArmor || smock;
+    });
+}
 
 export function monsterResistsEffect(
     monster, attackLevel, random = rn2,

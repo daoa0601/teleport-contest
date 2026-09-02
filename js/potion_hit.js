@@ -5,7 +5,6 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import {
     A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd,
-    W_ARMC, W_ARMOR,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
@@ -33,6 +32,7 @@ import {
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
     monsterTypeName,
 } from './monster_data.js';
+import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
@@ -69,10 +69,6 @@ const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
-const MR_ACID = 0x40;
-const YELLOW_DRAGON_SCALE_MAIL = 110;
-const YELLOW_DRAGON_SCALES = 120;
-const ALCHEMY_SMOCK = 144;
 const AT_HUGS = 7;
 const AT_ENGL = 11;
 const AD_WRAP = 18;
@@ -244,26 +240,6 @@ function sicknessCannotHarmMonster(monster) {
         || !!monster?.poisonResistance
         || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
             attack[1] === AD_DISE || attack[1] === AD_PEST);
-}
-
-// C mondata.c:Resists_Elem(ACID_RES).  Species and runtime resistance bits
-// precede worn yellow dragon armor and the alchemy smock.  No NetHack 5.0
-// artifact has AD_ACID in its defense or carried-defense field.
-function monsterHasAcidResistance(monster) {
-    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
-        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
-    if ((resistanceBits & MR_ACID) || monster?.acidResistance
-        || monster?.acid_resistance) return true;
-    return (monster?.minvent || monster?.inventory || []).some(object => {
-        const wornMask = object?.owornmask ?? 0;
-        const dragonArmor = [
-            YELLOW_DRAGON_SCALE_MAIL,
-            YELLOW_DRAGON_SCALES,
-        ].includes(object?.otyp) && !!(wornMask & W_ARMOR);
-        const smock = object?.otyp === ALCHEMY_SMOCK
-            && !!(wornMask & W_ARMC);
-        return dragonArmor || smock;
-    });
 }
 
 // zap.c:resist() uses potion attack level 6 and the target's runtime level.
