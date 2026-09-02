@@ -20,12 +20,12 @@ import { place_object } from '../js/mklev.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
+import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sleep resistance prevents self-zap helplessness', async () => {
@@ -121,14 +121,9 @@ test('light illuminates the visible area and burns a nearby gremlin',
         }
         vision_reset_new_level();
         vision_recalc(0);
-        const gremlin = {
-            mnum: MONSTER_NAME.indexOf('gremlin'),
-            mx: 11,
-            my: 10,
-            mhp: 20,
-            mhpmax: 20,
-            minvent: [],
-        };
+        const gremlin = liveMonster({
+            species: 'gremlin', x: 11, y: 10, hitPoints: 20,
+        });
         level.monsters = [gremlin];
         const wand = chargedWand(WAN_LIGHT);
         game.inventory = [wand];
@@ -199,33 +194,19 @@ test('a fire ray burns a monster in its path', async () => {
     freshWeaponArena();
     game.u.fireResistance = true;
     game.u.uhp = game.u.uhpmax = 100;
-    const monster = {
+    const monster = liveMonster({
         mnum: 0,
         m_id: 9001,
-        mx: 11,
-        my: 10,
+        x: 11,
+        y: 10,
         mac: 100,
-        m_lev: 1,
-        mhp: 100,
-        mhpmax: 100,
+        level: 1,
+        hitPoints: 100,
         msleeping: 1,
         mstrategy: 0x20000000,
-        minvent: [],
-        inventory: [],
-    };
+    });
     game.level.monsters = [monster];
-    const wand = {
-        otyp: WAN_FIRE,
-        invlet: 'a',
-        name: 'fire',
-        oclass: 11,
-        quan: 1,
-        quantity: 1,
-        charges: { current: 3, recharged: 0 },
-        spe: 3,
-        dknown: true,
-        bknown: true,
-    };
+    const wand = chargedWand(WAN_FIRE);
     game.inventory = [wand];
     pushKey('a');
     pushKey('l');
@@ -245,18 +226,16 @@ test('a death ray makes Death stronger instead of killing him', async () => {
     game.u.blindTurns = 10;
     game.u.unblind_telepat_range = -1;
     game.viz_array[10][11] = 0;
-    const death = {
+    const death = liveMonster({
         mnum: 311,
         m_id: 9002,
-        mx: 11,
-        my: 10,
+        x: 11,
+        y: 10,
         mac: 100,
-        m_lev: 30,
-        mhp: 5,
+        level: 30,
+        hitPoints: 5,
         mhpmax: 20,
-        minvent: [],
-        inventory: [],
-    };
+    });
     game.level.monsters = [death];
 
     await zapDeathRay('l');
@@ -274,19 +253,17 @@ test('a worn life-saving amulet saves a monster from a death ray', async () => {
         worn: true,
         where: 'minvent',
     };
-    const monster = {
+    const monster = liveMonster({
         mnum: 0,
         m_id: 9003,
-        mx: 11,
-        my: 10,
+        x: 11,
+        y: 10,
         mac: 100,
-        m_lev: 1,
-        mhp: 5,
-        mhpmax: 5,
-        minvent: [amulet],
+        level: 1,
+        hitPoints: 5,
         inventory: [amulet],
         misc_worn_check: W_AMUL,
-    };
+    });
     game.level.monsters = [monster];
     pushKeys(' '.repeat(20));
 
@@ -437,26 +414,20 @@ test('melting ice drowns a land monster but not a swimmer', async () => {
     const level = freshWeaponArena();
     game.blind = true;
     game.u.blindTurns = 10;
-    const ant = {
-        mnum: MONSTER_NAME.indexOf('giant ant'),
+    const ant = liveMonster({
+        species: 'giant ant',
         m_id: 9101,
-        mx: 11,
-        my: 10,
-        mhp: 4,
-        mhpmax: 4,
-        minvent: [],
-        inventory: [],
-    };
-    const shark = {
-        mnum: MONSTER_NAME.indexOf('shark'),
+        x: 11,
+        y: 10,
+        hitPoints: 4,
+    });
+    const shark = liveMonster({
+        species: 'shark',
         m_id: 9102,
-        mx: 12,
-        my: 10,
-        mhp: 20,
-        mhpmax: 20,
-        minvent: [],
-        inventory: [],
-    };
+        x: 12,
+        y: 10,
+        hitPoints: 20,
+    });
     game.level.monsters = [ant, shark];
     for (const x of [11, 12]) {
         const ice = level.at(x, 10);

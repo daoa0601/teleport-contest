@@ -15,6 +15,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
+import { liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -232,16 +233,13 @@ test('a dragon egg in the pack hatches a tame dragon', async () => {
 
 test('an egg hatches out of a visible monster pack', async () => {
     freshEggState(2);
-    const carrier = {
+    const carrier = liveMonster({
         mnum: 260,
         m_id: 7001,
-        mx: 12,
-        my: 10,
-        mhp: 10,
-        mhpmax: 10,
-        minvent: [],
-        inventory: [],
-    };
+        x: 12,
+        y: 10,
+        hitPoints: 10,
+    });
     game.level.monsters = [carrier];
     const egg = mksobj(EGG, true, false);
     egg.quan = egg.quantity = 1;

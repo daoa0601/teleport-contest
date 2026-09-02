@@ -18,6 +18,7 @@ import {
 } from '../js/object_timers.js';
 import { cansee } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
+import { liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -301,14 +302,12 @@ test('a glob inside a carried sack makes the sack lighter', () => {
 
 test('a monster-carried glob disappears from its pack', () => {
     freshGlobState(17);
-    const carrier = {
+    const carrier = liveMonster({
         mnum: 260,
         m_id: 8100,
-        mx: 12,
-        my: 10,
-        minvent: [],
-        inventory: [],
-    };
+        x: 12,
+        y: 10,
+    });
     game.level.monsters = [carrier];
     const glob = mksobj(GLOB_OF_GREEN_SLIME, true, false);
     glob.owt = 1;

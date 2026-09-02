@@ -10,6 +10,7 @@ import { GameMap } from '../js/game.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
+import { liveMonster } from './support/monsters.js';
 
 function rolls(values) {
     let index = 0;
@@ -27,8 +28,12 @@ test('natural monster speed and randomized movement use species data', () => {
 
 test('monster allocation applies newest-first movement to current actors',
     () => {
-        const kobold = { mnum: 59, mx: 66, my: 16, mhp: 1 };
-        const pony = { mnum: 100, mx: 67, my: 9, mhp: 8, pet: true };
+        const kobold = liveMonster({
+            mnum: 59, x: 66, y: 16, hitPoints: 1,
+        });
+        const pony = liveMonster({
+            mnum: 100, x: 67, y: 9, hitPoints: 8, pet: true,
+        });
         const monsters = [kobold, pony];
 
         allocateMonsterMovement(monsters, rolls([2, 3]));
@@ -50,15 +55,13 @@ test('a land monster in lava burns and drops what it carried', async () => {
         quantity: 1,
         where: 'monster',
     };
-    const ant = {
+    const ant = liveMonster({
         mnum: 0,
-        mx: 12,
-        my: 10,
-        mhp: 4,
-        mhpmax: 4,
-        minvent: [rock],
+        x: 12,
+        y: 10,
+        hitPoints: 4,
         inventory: [rock],
-    };
+    });
     level.monsters = [ant];
     const state = {
         level,
@@ -79,15 +82,15 @@ test('an engulfer carries only a form which fits through iron bars', () => {
     const level = new GameMap();
     level.at(10, 10).typ = ROOM;
     level.at(11, 10).typ = IRONBARS;
-    const fogCloud = {
+    const fogCloud = liveMonster({
         mnum: 106,
-        mx: 10,
-        my: 10,
+        x: 10,
+        y: 10,
         mux: 10,
         muy: 10,
-        mhp: 8,
+        hitPoints: 8,
         mcansee: 1,
-    };
+    });
     level.monsters = [fogCloud];
     const state = {
         level,
