@@ -154,6 +154,7 @@ import {
     resumeDeferredMovementSpell,
     resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterCounterWield,
+    resumeDeferredMonsterAntiMagicTrap,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
@@ -4035,6 +4036,19 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             );
             resumeDeferredMonsterProjectileTrap(action, game);
             movement = action.movement;
+        }
+        if (movement?.trap?.kind === 'anti-magic-drain'
+            || movement?.trap?.kind === 'anti-magic-damage') {
+            const event = movement.trap;
+            if (movement.deferredAfterAntiMagicTrapMessage
+                || movement.deferredAfterAntiMagicTrapDeath) {
+                await resumeDeferredMonsterAntiMagicTrap(action, game, {
+                    publish: queueTurnMessage,
+                    describeMonster: visibleMonsterSubject,
+                });
+                movement = action.movement;
+            }
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
         if (movement?.trap?.kind === 'teleport-trap') {
             const event = movement.trap;

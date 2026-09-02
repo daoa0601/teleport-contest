@@ -26,6 +26,10 @@ import {
 } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { drainHeroEnergy } from './hero_energy.js';
+import {
+    applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap,
+    monsterAntiMagicTrapVisibility,
+} from './anti_magic_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -4906,10 +4910,6 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === ANTI_MAGIC) {
-        // mintrap() records the type even when the field has no effect.  A
-        // non-resistant monster which can cast or breathe loses spell energy.
-        // An ordinary nonmagical monster learns the field without consuming
-        // another core RNG call.
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4918,19 +4918,32 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const hasMagicOrBreath = (MONSTER_ATTACKS[monster.mnum] || [])
-            .some(([attackType]) =>
-                attackType === AT_MAGC || attackType === AT_BREA);
-        let energyDrain = 0;
-        if (!monster.mcan && hasMagicOrBreath) {
-            energyDrain = rollDice(2, 6);
-            calls.push('d(2,6)');
-            monster.mspec_used = (monster.mspec_used ?? 0) + energyDrain;
-        }
+        const effect = applyMonsterAntiMagicTrap(monster, {
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+            rollOne: sides => {
+                const result = rollOne(sides);
+                calls.push(`rnd(${sides})`);
+                return result;
+            },
+        });
+        const { inSight, seeSquare }
+            = monsterAntiMagicTrapVisibility(monster, state);
+        const visibleEffect = effect.resisted || effect.energyDrain > 0;
+        if (inSight && visibleEffect) trap.tseen = true;
         const event = {
-            kind: energyDrain ? 'anti-magic-drain' : 'anti-magic',
-            trap, damage: 0, killed: false, energyDrain,
+            trap, ...effect, inSight, seeSquare, visible: inSight,
         };
+        if (inSight && effect.energyDrain > 0)
+            movement.deferredAfterAntiMagicTrapMessage = true;
+        if (effect.killed) {
+            movement.actorDied = true;
+            movement.actionCompleted = true;
+            movement.deferredAfterAntiMagicTrapDeath = true;
+        }
         movement.trap = event;
         return event;
     }
@@ -7542,6 +7555,12 @@ function distantPhaseFourAttackSetup(
     }
 }
 
+function monsterTrapResultIsDeferred(movement) {
+    return !!(movement.deferredAfterProjectileTrapMessage
+        || movement.deferredAfterAntiMagicTrapMessage
+        || movement.deferredAfterAntiMagicTrapDeath);
+}
+
 // Complete the portion of m_move()/postmov()/dochug() which follows an
 // ordinary hostile or pet destination choice. Message-producing movement
 // can resume here without repeating set_apparxy(), species checks, or path
@@ -7569,7 +7588,7 @@ function completeMovedMonsterAction(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
-    if (movement.deferredAfterProjectileTrapMessage) return movement;
+    if (monsterTrapResultIsDeferred(movement)) return movement;
     // postmov() maps both a trap-killed actor and an actor moved off-level to
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
@@ -7635,6 +7654,47 @@ export function resumeDeferredMonsterProjectileTrap(
         movement.trap, action.monster, state, movement,
         random, rollOne, action.calls,
     );
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        action.calls, { trapAlreadyHandled: true },
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterAntiMagicTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (event?.kind !== 'anti-magic-drain'
+        && event?.kind !== 'anti-magic-damage') return action;
+
+    const deferred = monsterTrapResultIsDeferred(movement);
+    if (!deferred) return action;
+    delete movement.deferredAfterAntiMagicTrapMessage;
+    delete movement.deferredAfterAntiMagicTrapDeath;
+
+    const death = await finishMonsterAntiMagicTrap(action.monster, event, {
+        finishDeath: (monster, options) =>
+            finishEnvironmentalMonsterDeath(monster, state, options),
+        random,
+        publish,
+        describeMonster,
+    });
+    if (death) {
+        event.death = death;
+        if (!death.survived) return action;
+        event.killed = false;
+        movement.actorDied = false;
+        movement.actionCompleted = false;
+    }
+
     completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
         action.calls, { trapAlreadyHandled: true },
@@ -8282,6 +8342,10 @@ export function resumeDeferredPetMove(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
+    if (monsterTrapResultIsDeferred(movement)) {
+        action.movement = movement;
+        return action;
+    }
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder)
         finishDochugAfterMovement(
