@@ -3,8 +3,8 @@
 
 import { newsym } from './display.js';
 import { ICE } from './const.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { remove_object } from './mklev.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES,

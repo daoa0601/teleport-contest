@@ -6,8 +6,9 @@ import {
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { tameMonster } from './dog.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { makemonNear, remove_object } from './mklev.js';
+import { makemonNear } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,

@@ -10,10 +10,9 @@ import {
     canSpotMonster, newsym, pline, randomDisplayMonsterName,
 } from './display.js';
 import { makePetWary } from './dog.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import {
-    makemonAt, makemonNear, remove_object,
-} from './mklev.js';
+import { makemonAt, makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_GENO, MONSTER_SOUND,

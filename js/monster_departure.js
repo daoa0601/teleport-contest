@@ -5,7 +5,7 @@
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym } from './display.js';
-import { place_object, stack_object } from './mklev.js';
+import { place_object, stack_object } from './floor_object.js';
 import { artifactById } from './artifacts.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,

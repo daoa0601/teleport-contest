@@ -7,7 +7,8 @@ import {
 import { G_EXTINCT, HOLE, PIT, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { mklev, place_object, saveBonesLevel } from '../js/mklev.js';
+import { place_object } from '../js/floor_object.js';
+import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR,

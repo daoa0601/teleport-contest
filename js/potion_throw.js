@@ -7,8 +7,8 @@ import {
     A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM, W_SADDLE,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { place_object, stack_object } from './mklev.js';
 import {
     MONSTER_GENO, monsterTypeName,
 } from './monster_data.js';

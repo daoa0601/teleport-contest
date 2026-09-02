@@ -3,7 +3,8 @@
 
 import { game } from './gstate.js';
 import { map_object, newsym } from './display.js';
-import { mksobj, place_object, remove_object } from './mklev.js';
+import { place_object, remove_object } from './floor_object.js';
+import { mksobj } from './mklev.js';
 import { rn2 } from './rng.js';
 import {
     D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, W_BALL, W_CHAIN,

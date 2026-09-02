@@ -13,8 +13,9 @@ import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
+import { place_object } from './floor_object.js';
 import {
-    makemonNear, place_object, startCorpseTimeout,
+    makemonNear, startCorpseTimeout,
 } from './mklev.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';

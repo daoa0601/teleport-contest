@@ -14,7 +14,7 @@ import {
 } from './display.js';
 import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
-import { stack_object } from './mklev.js';
+import { stack_object } from './floor_object.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME,

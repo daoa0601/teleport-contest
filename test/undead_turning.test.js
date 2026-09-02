@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { place_object } from '../js/mklev.js';
+import { place_object } from '../js/floor_object.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
 import { castKnownSpell } from '../js/spell.js';

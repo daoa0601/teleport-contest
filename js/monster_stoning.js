@@ -9,13 +9,12 @@ import { recordHeroKillConduct } from './end.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
+import { place_object, stack_object } from './floor_object.js';
 import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
 import { clearMonsterCarriedObjectState } from './monster_inventory.js';
-import {
-    mkcorpstat, mksobj, place_object, stack_object,
-} from './mklev.js';
+import { mkcorpstat, mksobj } from './mklev.js';
 import {
     MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';

@@ -8,10 +8,9 @@ import {
 import { exerciseAttribute } from './attrib.js';
 import { newsym } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { place_object, remove_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import {
-    fillPitWithBoulderAt, place_object, remove_object, stack_object,
-} from './mklev.js';
+import { fillPitWithBoulderAt } from './mklev.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './mon.js';
 import {

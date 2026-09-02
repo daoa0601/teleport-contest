@@ -8,8 +8,9 @@ import {
 } from './bones_monster.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
+import { place_object } from './floor_object.js';
 import {
-    bonesLevelExists, makemonAt, mkcorpstat, mksobj, place_object,
+    bonesLevelExists, makemonAt, mkcorpstat, mksobj,
     saveBonesLevel,
 } from './mklev.js';
 import {

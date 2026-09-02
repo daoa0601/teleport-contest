@@ -2,8 +2,8 @@
 // C ref: trap.c:trapeffect_arrow_trap() and trapeffect_dart_trap().
 
 import { ARROW_TRAP, DART_TRAP } from './const.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { place_object, stack_object } from './mklev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ARROW, DART, OBJECT_NAMES } from './object_data.js';

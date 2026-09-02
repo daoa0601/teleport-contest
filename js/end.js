@@ -18,11 +18,11 @@ import { depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { place_object, stack_object } from './floor_object.js';
 import {
     A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, Upolyd, isok,
 } from './const.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import { place_object, stack_object } from './mklev.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { promptYesNo } from './query.js';

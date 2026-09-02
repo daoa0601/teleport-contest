@@ -24,8 +24,9 @@ import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
+import { place_object, stack_object } from './floor_object.js';
 import {
-    buryFloorObjectsAt, mksobj, place_object, stack_object,
+    buryFloorObjectsAt, mksobj,
 } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { finishEnvironmentalMonsterDeath } from './monmove.js';

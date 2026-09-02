@@ -32,9 +32,9 @@ import { distmin } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { igniteItems } from './light.js';
+import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
-    canFallThrough, fillPitWithBoulderAt, place_object, remove_object,
-    splitHeroMonsterForm, stack_object,
+    canFallThrough, fillPitWithBoulderAt, splitHeroMonsterForm,
 } from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {

@@ -11,8 +11,9 @@ import {
     randomDisplayMonsterName,
 } from './display.js';
 import { createFireExplosion } from './fire_explosion.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { makemonAt, remove_object } from './mklev.js';
+import { makemonAt } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { objectResistsDestruction } from './object_state.js';
 import { stopAllObjectTimers } from './object_timers.js';

@@ -7,11 +7,11 @@ import {
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { newsym, pline } from './display.js';
+import { place_object, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
 import {
     detachHeroGold, heroGoldAmount, heroGoldObject,
 } from './hero_gold.js';
-import { place_object, stack_object } from './mklev.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';

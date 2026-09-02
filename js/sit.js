@@ -11,8 +11,9 @@ import { pline } from './display.js';
 import { game } from './gstate.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
+import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
-    mksobj, place_object, remove_object, set_corpsenm, stack_object,
+    mksobj, set_corpsenm,
 } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,

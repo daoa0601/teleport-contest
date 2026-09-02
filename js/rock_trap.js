@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_rocktrap().
 
 import { game } from './gstate.js';
-import { place_object, stack_object } from './mklev.js';
+import { place_object, stack_object } from './floor_object.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { ROCK } from './object_data.js';
 import { d, rn2 } from './rng.js';

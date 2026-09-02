@@ -14,6 +14,9 @@ import {
     LuaUserdata, luaTableToArray, objectToLuaTable,
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
+import {
+    place_object, remove_object, stack_object, updateCorpseIceTimer,
+} from './floor_object.js';
 import { GameMap } from './game.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -163,9 +166,6 @@ import {
 import {
     isMultiGeneratedWeapon, isPoisonableObject,
 } from './object_properties.js';
-import {
-    mergable as objectsMergable, mergeObjectStacks,
-} from './object_merge.js';
 import { addObjectToContainer } from './object_container.js';
 import { vision_note_blocker_change } from './vision.js';
 import { monsterGoodPosition } from './teleport_rules.js';
@@ -1062,60 +1062,6 @@ export function mkgold(amount, x, y) {
     }, x, y);
 }
 
-export function place_object(otmp, x, y) {
-    if (!otmp || !game.level) return otmp;
-    otmp.ox = x;
-    otmp.oy = y;
-    otmp.where = 'floor';
-    // C place_object() links the same identity at the head of both the
-    // square's nexthere pile and the level-wide fobj chain.  The arrays below
-    // retain the local projection; a monotonic serial retains global
-    // newest-first traversal for dog_goal() and other fobj consumers.
-    game._fobjSerial = (game._fobjSerial || 0) + 1;
-    otmp._fobjOrder = game._fobjSerial;
-    if (!game.level.objects[x]) game.level.objects[x] = [];
-    if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-    // C links newly placed objects at the head of the square's object chain.
-    game.level.objects[x][y].unshift(otmp);
-    updateCorpseIceTimer(otmp, x, y, game.level.at(x, y)?.typ === ICE);
-    return otmp;
-}
-
-// C ref: invent.c:mergable().  Floor stacking is an object-lifecycle
-// operation, not a presentation shortcut: the surviving identity is the
-// newly placed object passed to stackobj(), while a compatible older identity
-// is extracted from the pile.
-export function mergable(otmp, obj, state = game) {
-    return objectsMergable(otmp, obj, state);
-}
-
-// C ref: invent.c:merged()/stackobj().  `obj` remains the live identity
-// because place_object() linked it at the head before this scan.
-export function stack_object(obj, state = game) {
-    const pile = state?.level?.objects?.[obj?.ox]?.[obj?.oy];
-    if (!obj || !pile) return obj;
-    const existing = pile.find(candidate =>
-        candidate !== obj && mergable(obj, candidate, state));
-    if (!existing) return obj;
-
-    const index = pile.indexOf(existing);
-    if (index >= 0) pile.splice(index, 1);
-    return mergeObjectStacks(obj, existing, state) || obj;
-}
-
-// C ref: mkobj.c:remove_object().  Extract one floor-object identity while
-// retaining its coordinates for callers which are about to move and re-place
-// it.  Keeping this paired with place_object() gives ball/chain movement and
-// later floor transactions one authoritative pile-lifecycle boundary.
-export function remove_object(otmp, state = game) {
-    if (!otmp || !state.level) return otmp;
-    const pile = state.level.objects?.[otmp.ox]?.[otmp.oy];
-    const index = pile?.indexOf(otmp) ?? -1;
-    if (index >= 0) pile.splice(index, 1);
-    otmp.where = 'free';
-    updateCorpseIceTimer(otmp, otmp.ox, otmp.oy, false, state);
-    return otmp;
-}
 const PM_LICHEN = 158;
 const PM_LIZARD = 326;
 
@@ -1179,44 +1125,6 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
     scheduleObjectTimer(
         body, kind, currentMove + delay, game,
     );
-}
-
-// C ref: mkobj.c:obj_timer_checks(). Corpse rot/revival time doubles while a
-// floor or buried corpse is on ice and contracts by the inverse adjustment
-// when it leaves. Stopping and restarting also assigns a new source timer id.
-function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
-    if (!body || body.otyp !== CORPSE) return false;
-    const timer = objectTimers(body).find(candidate =>
-        candidate.kind === OBJECT_TIMER_KIND.ROT_CORPSE)
-        || objectTimers(body).find(candidate =>
-            candidate.kind === OBJECT_TIMER_KIND.REVIVE_MON);
-    if (!timer) return false;
-    const currentMove = state.moves ?? 0;
-    if (isOnIce && !body.on_ice) {
-        const remaining = Math.max(0, timer.deadline - currentMove);
-        stopObjectTimer(body, timer.kind);
-        body.on_ice = true;
-        const age = currentMove - (body.age ?? currentMove);
-        body.age = currentMove - age * 2;
-        scheduleObjectTimer(
-            body, timer.kind,
-            currentMove + remaining * 2, state,
-        );
-        return true;
-    }
-    if (!isOnIce && body.on_ice) {
-        const remaining = Math.max(0, timer.deadline - currentMove);
-        stopObjectTimer(body, timer.kind);
-        body.on_ice = false;
-        const age = currentMove - (body.age ?? currentMove);
-        body.age += Math.trunc(age / 2);
-        scheduleObjectTimer(
-            body, timer.kind,
-            currentMove + Math.trunc(remaining / 2), state,
-        );
-        return true;
-    }
-    return false;
 }
 
 function attachEggHatchTimer(egg, remaining = 0) {

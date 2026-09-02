@@ -16,7 +16,7 @@ import {
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
     WAN_SLEEP, WAN_STASIS, WAN_WISHING,
 } from '../js/object_data.js';
-import { place_object } from '../js/mklev.js';
+import { place_object } from '../js/floor_object.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';

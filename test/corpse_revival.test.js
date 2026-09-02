@@ -5,10 +5,11 @@ import {
     reviveCorpseByMagic, runClaimedCorpseRevivalTimer,
 } from '../js/corpse_revival.js';
 import { MFAST } from '../js/const.js';
+import { place_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import {
-    mkcorpstat, mksobj, place_object, set_corpsenm,
+    mkcorpstat, mksobj, set_corpsenm,
 } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { restoreMonsterTraits } from '../js/monster_traits.js';

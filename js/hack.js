@@ -12,9 +12,10 @@ import { newsym, plineWithContinuation } from './display.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
 } from './end.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
-import { splitHeroMonsterForm, place_object, stack_object } from './mklev.js';
+import { splitHeroMonsterForm } from './mklev.js';
 import {
     MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';

@@ -7,16 +7,16 @@ import {
 import { docrt, newsym, pline } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { wipeEngravingAt } from './engrave.js';
-import { detachFloorObjectUnit } from './floor_object.js';
+import {
+    detachFloorObjectUnit, place_object, stack_object,
+} from './floor_object.js';
 import { game } from './gstate.js';
 import {
     farlookTipUntilDismissed, selectMapPosition,
 } from './getpos.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
-import {
-    findMonsterNearPosition, place_object, stack_object,
-} from './mklev.js';
+import { findMonsterNearPosition } from './mklev.js';
 import {
     MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';

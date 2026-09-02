@@ -3,7 +3,8 @@ import {
 } from '../../js/object_data.js';
 import { objectClassForType } from '../../js/object_knowledge.js';
 import { artifactByName } from '../../js/artifacts.js';
-import { mksobj, place_object, set_corpsenm } from '../../js/mklev.js';
+import { place_object } from '../../js/floor_object.js';
+import { mksobj, set_corpsenm } from '../../js/mklev.js';
 import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
 import { objectWeight } from '../../js/weight.js';

@@ -15,9 +15,10 @@ import {
     awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
     newExperienceThreshold,
 } from './exper.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import {
-    mkcorpstat, mkobj, mksobj, place_object, stack_object, undeadToCorpse,
+    mkcorpstat, mkobj, mksobj, undeadToCorpse,
 } from './mklev.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { markQuestLeaderDead } from './quest.js';

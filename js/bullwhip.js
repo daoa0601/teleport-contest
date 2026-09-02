@@ -14,12 +14,11 @@ import {
     canSpotMonster, map_invisible, newsym, pline,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { detachFloorObjectUnit } from './floor_object.js';
+import {
+    detachFloorObjectUnit, place_object, remove_object, stack_object,
+} from './floor_object.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
-import {
-    place_object, remove_object, stack_object,
-} from './mklev.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,

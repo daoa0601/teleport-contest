@@ -2,7 +2,7 @@ import { game } from '../../js/gstate.js';
 import {
     P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN, W_RINGR,
 } from '../../js/const.js';
-import { place_object } from '../../js/mklev.js';
+import { place_object } from '../../js/floor_object.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import {
     HEAVY_IRON_BALL, IRON_CHAIN, RIN_POLYMORPH_CONTROL,

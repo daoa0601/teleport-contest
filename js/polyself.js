@@ -18,8 +18,8 @@ import {
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
+import { place_object } from './floor_object.js';
 import { moreUntilDismissed } from './tty_prompts.js';
-import { place_object } from './mklev.js';
 import { findArmorClass } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,

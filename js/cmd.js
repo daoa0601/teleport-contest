@@ -110,13 +110,14 @@ import {
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
+import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
     makemonNear, mklev,
-    mergable, mkgold, mkobj, mksobj, place_object, remove_object,
-    stack_object,
+    mkgold, mkobj, mksobj,
     rndClass,
     u_on_downstairs, u_on_upstairs,
 } from './mklev.js';
+import { mergable } from './object_merge.js';
 import {
     level_difficulty, recordMappedOverviewState,
 } from './dungeon.js';

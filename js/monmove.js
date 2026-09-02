@@ -98,9 +98,10 @@ import {
     SLIME_MOLD,
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from './object_data.js';
+import { place_object, stack_object } from './floor_object.js';
 import {
-    makemonNear, mkcorpstat, mksobj, place_object,
-    summonNastyMonsters, stack_object, undeadToCorpse,
+    makemonNear, mkcorpstat, mksobj,
+    summonNastyMonsters, undeadToCorpse,
 } from './mklev.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';

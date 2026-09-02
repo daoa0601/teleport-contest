@@ -5,9 +5,10 @@ import {
     MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { place_object } from '../js/floor_object.js';
 import { initializeRandomMonsterInventory } from '../js/allmain.js';
 import {
-    giveSpecialMonsterObject, makemonAt, mksobj, place_object,
+    giveSpecialMonsterObject, makemonAt, mksobj,
 } from '../js/mklev.js';
 import {
     finishDeferredHeroCloneWizard, finishDeferredMonsterMiscItem,

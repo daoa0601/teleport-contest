@@ -6,7 +6,8 @@ import {
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { buryFloorObjectsAt, remove_object } from './mklev.js';
+import { remove_object } from './floor_object.js';
+import { buryFloorObjectsAt } from './mklev.js';
 import { monsterInAir, wakeMonstersNear } from './mon.js';
 import { finishMonsterLiquidDeath } from './monmove.js';
 import { stopAllObjectTimers } from './object_timers.js';

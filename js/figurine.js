@@ -8,9 +8,10 @@ import {
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { tameMonster } from './dog.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import {
-    findMonsterNearPosition, makemonAt, makemonNear, remove_object,
+    findMonsterNearPosition, makemonAt, makemonNear,
 } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monmove.js';

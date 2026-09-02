@@ -5,8 +5,9 @@ import { A_CON, A_STR, ICE, W_WEP } from '../js/const.js';
 import {
     finishGlobTimer, runClaimedGlobTimer,
 } from '../js/glob.js';
+import { place_object, stack_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
-import { mksobj, place_object, stack_object } from '../js/mklev.js';
+import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,

@@ -3,8 +3,8 @@
 
 import { W_BALL, W_CHAIN } from './const.js';
 import { newsym } from './display.js';
+import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { remove_object } from './mklev.js';
 
 export function unpunishHero(state = game) {
     const chain = state.uchain || state.u?.uchain;

@@ -13,7 +13,8 @@ import {
 import { game } from './gstate.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { place_object, mksobj, stack_object } from './mklev.js';
+import { place_object, stack_object } from './floor_object.js';
+import { mksobj } from './mklev.js';
 import { levelHasCeiling } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {

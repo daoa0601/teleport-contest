@@ -17,9 +17,8 @@ import {
 } from './invent.js';
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
-import {
-    mkobj, place_object, stack_object,
-} from './mklev.js';
+import { place_object, stack_object } from './floor_object.js';
+import { mkobj } from './mklev.js';
 import { doClassGenocide, doGenocide } from './genocide.js';
 import {
     HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, SLING,

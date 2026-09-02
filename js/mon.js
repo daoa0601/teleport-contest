@@ -17,9 +17,7 @@ import {
     MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS,
     MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
 } from './monster_data.js';
-import {
-    place_object, stack_object,
-} from './mklev.js';
+import { place_object, stack_object } from './floor_object.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { EGG } from './object_data.js';
 import {

@@ -18,9 +18,8 @@ import { game } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
 import { liquidForHole } from './hole.js';
 import { igniteItems } from './light.js';
-import {
-    buryFloorObjectsAt, maketrap, remove_object,
-} from './mklev.js';
+import { remove_object } from './floor_object.js';
+import { buryFloorObjectsAt, maketrap } from './mklev.js';
 import { monsterInAir, resolveMonsterLiquid } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { finishMonsterLiquidDeath } from './monmove.js';

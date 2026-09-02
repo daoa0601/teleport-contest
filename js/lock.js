@@ -10,8 +10,8 @@ import {
 import {
     flushPendingTopline, newsym, pline, plineWithContinuation,
 } from './display.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { place_object, stack_object } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import {
     CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,

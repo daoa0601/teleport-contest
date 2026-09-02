@@ -3,7 +3,8 @@
 
 import { plineWithContinuation } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { mksobj, place_object } from './mklev.js';
+import { place_object } from './floor_object.js';
+import { mksobj } from './mklev.js';
 import { IRON_CHAIN } from './object_data.js';
 import { rn2 } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
