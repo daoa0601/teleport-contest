@@ -1,15 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName } from '../js/artifacts.js';
 import {
-    ACID_VENOM, AXE, BOW, BULLWHIP, DAGGER, HEAVY_IRON_BALL, LONG_SWORD,
-    OBJECT_NAMES, OBJECT_WEIGHT,
+    ACID_VENOM, AXE, BOW, BULLWHIP, DAGGER, HEAVY_IRON_BALL, OBJECT_WEIGHT,
 } from '../js/object_data.js';
 import {
     rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
 } from '../js/weapon_damage.js';
-import { carriedObject } from './support/game-objects.js';
+import { artifactObject, carriedObject } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
@@ -84,8 +82,7 @@ test('an overweight iron ball gains damage up to the source cap', () => {
 });
 
 test('a lit Sunsword gets its light damage against a gremlin', () => {
-    const sunsword = carriedObject(LONG_SWORD, {
-        oartifact: artifactByName('Sunsword').id,
+    const sunsword = artifactObject('Sunsword', {
         lamplit: true,
     });
 
@@ -95,10 +92,7 @@ test('a lit Sunsword gets its light damage against a gremlin', () => {
 });
 
 test('Grayswandir halves its silver bonus before doubling weapon damage', () => {
-    const grayswandir = carriedObject(
-        OBJECT_NAMES.indexOf('silver saber'),
-        { oartifact: artifactByName('Grayswandir').id },
-    );
+    const grayswandir = artifactObject('Grayswandir');
 
     const damage = maximumDamage(grayswandir, 'vampire');
 

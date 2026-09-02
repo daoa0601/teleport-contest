@@ -2,6 +2,7 @@ import {
     CLUB, CORPSE, DART, FLINT, LOADSTONE, OBJECT_BASES, OBJECT_NAMES, ROCK,
     SLING,
 } from '../../js/object_data.js';
+import { artifactByName } from '../../js/artifacts.js';
 import { mksobj, place_object, set_corpsenm } from '../../js/mklev.js';
 import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
@@ -60,6 +61,16 @@ export function looseObject(otyp, overrides = {}) {
     });
 }
 
+export function artifactObject(name, overrides = {}) {
+    const artifact = artifactByName(name);
+    if (!artifact) throw new Error(`Unknown artifact: ${name}`);
+    return testObject(artifact.baseType, {
+        oartifact: artifact.id,
+        oextra: { oname: artifact.name },
+        ...overrides,
+    });
+}
+
 export function knownObject(otyp, overrides = {}) {
     const quantity = overrides.quan ?? overrides.quantity ?? 1;
     const object = Object.assign(mksobj(otyp, true, false), {
@@ -97,6 +108,10 @@ export function knownInventoryWeapon(otyp, overrides = {}) {
 
 export function floorObject(otyp, x, y, overrides = {}) {
     return place_object(looseObject(otyp, overrides), x, y);
+}
+
+export function floorArtifact(name, x, y, overrides = {}) {
+    return place_object(artifactObject(name, overrides), x, y);
 }
 
 export function inventoryObject(otyp, invlet, overrides = {}) {

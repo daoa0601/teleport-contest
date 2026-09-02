@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName } from '../js/artifacts.js';
 import { _statusLine2 } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
@@ -12,6 +11,7 @@ import {
     blindnessBlocked, blindfolded, syncBlindness, syncDeafness,
 } from '../js/senses.js';
 import { cansee, couldsee } from '../js/vision.js';
+import { artifactObject } from './support/game-objects.js';
 import { prepareHeroStartup } from './support/startup.js';
 
 
@@ -83,10 +83,7 @@ test('temporary expiry and ordinary lenses cannot cure permanent blindness', () 
 
 test('Eyes block but do not erase the permanent blindness source', () => {
     const state = initializeSenses({ blind: true });
-    const eyes = {
-        otyp: LENSES,
-        oartifact: artifactByName('The Eyes of the Overworld').id,
-    };
+    const eyes = artifactObject('The Eyes of the Overworld');
 
     state.ublindf = state.u.ublindf = eyes;
     assert.equal(blindnessBlocked(state), true);

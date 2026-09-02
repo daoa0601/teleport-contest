@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -13,7 +12,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorObject, inventoryObject, looseObject,
+    floorArtifact, floorObject, inventoryObject, looseObject,
 } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
@@ -169,12 +168,8 @@ test('container removal uses the same partial-stack limit', async () => {
 });
 
 test('a floor artifact can blast the hero and evade pickup', async () => {
-    const artifact = artifactByName('The Orb of Detection');
     freshPickupGame();
-    const orb = floorObject(artifact.baseType, 10, 10, {
-        oartifact: artifact.id,
-        oextra: { oname: artifact.name },
-    });
+    const orb = floorArtifact('The Orb of Detection', 10, 10);
     game.u.ualign.type = -1;
     game.u.ualign.record = 0;
     game.u.uhp = game.u.uhpmax = 100;

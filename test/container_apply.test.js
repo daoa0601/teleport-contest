@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -16,7 +15,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorObject, inventoryObject,
+    artifactObject, floorObject, inventoryObject,
 } from './support/game-objects.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
@@ -171,13 +170,10 @@ test('gloves make a cockatrice corpse safe to put away', async () => {
 });
 
 test('a self-willed artifact can refuse to leave a container', async () => {
-    const artifact = artifactByName('The Orb of Detection');
     const chest = inventoryObject(CHEST, 'a', { cknown: true });
-    const orb = inventoryObject(artifact.baseType, null, {
+    const orb = artifactObject('The Orb of Detection', {
         where: 'contained',
         container: chest,
-        oartifact: artifact.id,
-        oextra: { oname: artifact.name },
     });
     chest.contents = [orb];
     freshContainerGame(chest);
