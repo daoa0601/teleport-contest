@@ -8,13 +8,12 @@ import {
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
-import { carriedObject } from './support/game-objects.js';
+import { carriedObject, looseObject } from './support/game-objects.js';
 import {
     addMonster, addPet, equipMonsterObject, liveMonster,
 } from './support/monsters.js';
@@ -134,29 +133,18 @@ test('a silver weapon sears a lycanthropic hero in melee', () => {
 });
 
 test('a land monster in lava burns and drops what it carried', async () => {
-    const level = new GameMap();
+    const level = freshObjectRoom({ recalculateVision: false });
     level.at(12, 10).typ = LAVAPOOL;
-    const rock = {
-        otyp: ROCK,
-        quan: 1,
-        quantity: 1,
-        where: 'monster',
-    };
-    const ant = liveMonster({
+    const rock = looseObject(ROCK, { where: 'monster' });
+    const ant = addMonster({
         mnum: 0,
         x: 12,
         y: 10,
         hitPoints: 4,
         inventory: [rock],
     });
-    level.monsters = [ant];
-    const state = {
-        level,
-        u: { ux: 10, uy: 10, uz: { dnum: 0, dlevel: 1 } },
-        moves: 1,
-    };
 
-    const result = await resolveMonsterLiquid(ant, state, {
+    const result = await resolveMonsterLiquid(ant, game, {
         finishDeath: finishMonsterLiquidDeath,
     });
 
@@ -256,10 +244,9 @@ test('a water wall drowns a monster clinging to the ceiling', async () => {
 });
 
 test('an engulfer carries only a form which fits through iron bars', () => {
-    const level = new GameMap();
-    level.at(10, 10).typ = ROOM;
+    const level = freshObjectRoom({ recalculateVision: false });
     level.at(11, 10).typ = IRONBARS;
-    const fogCloud = liveMonster({
+    const fogCloud = addMonster({
         mnum: 106,
         x: 10,
         y: 10,
@@ -268,23 +255,17 @@ test('an engulfer carries only a form which fits through iron bars', () => {
         hitPoints: 8,
         mcansee: 1,
     });
-    level.monsters = [fogCloud];
-    const state = {
-        level,
-        u: {
-            ux: 10,
-            uy: 10,
-            ustuck: fogCloud,
-            uswallow: 1,
-            mtimedone: 0,
-        },
-    };
+    Object.assign(game.u, {
+        ustuck: fogCloud,
+        uswallow: 1,
+        mtimedone: 0,
+    });
 
-    assert.equal(mfndpos(fogCloud, state).some(position =>
+    assert.equal(mfndpos(fogCloud, game).some(position =>
         position.x === 11 && position.y === 10), false);
 
-    state.u.mtimedone = 10;
-    state.u.umonnum = 106;
-    assert.equal(mfndpos(fogCloud, state).some(position =>
+    game.u.mtimedone = 10;
+    game.u.umonnum = 106;
+    assert.equal(mfndpos(fogCloud, game).some(position =>
         position.x === 11 && position.y === 10), true);
 });
