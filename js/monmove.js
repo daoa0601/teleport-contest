@@ -1133,7 +1133,9 @@ export function* monsterDistressEvents(
 
 // C ref: mon.c mcalcmove(). `random` is injectable for deterministic unit
 // tests; production always uses the core PRNG wrapper.
-export function mcalcmove(monster, moving = true, random = rn2) {
+export function mcalcmove(
+    monster, moving = true, random = rn2, state = game,
+) {
     initializeMonsterMovement(monster);
     let mmove = naturalMonsterSpeed(monster);
 
@@ -1145,6 +1147,12 @@ export function mcalcmove(monster, moving = true, random = rn2) {
         mmove = Math.trunc((4 * mmove + 2) / 3);
     }
 
+    if (monster === state.u?.usteed
+        && (state.u?.ugallop ?? 0) > 0
+        && state.context?.mv) {
+        mmove = Math.trunc((random(2) ? 4 : 5) * mmove / 3);
+    }
+
     if (moving) {
         const adjustment = mmove % NORMAL_SPEED;
         mmove -= adjustment;
@@ -1154,10 +1162,12 @@ export function mcalcmove(monster, moving = true, random = rn2) {
     return mmove;
 }
 
-export function allocateMonsterMovement(monsters = [], random = rn2) {
+export function allocateMonsterMovement(
+    monsters = [], random = rn2, state = game,
+) {
     const allocations = [];
     for (const monster of monstersInFmonOrder(monsters)) {
-        const amount = mcalcmove(monster, true, random);
+        const amount = mcalcmove(monster, true, random, state);
         monster.movement += amount;
         allocations.push({ monster, amount, movement: monster.movement });
     }

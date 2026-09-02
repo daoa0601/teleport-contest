@@ -1679,7 +1679,9 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
 function finishInitialTurnMaintenanceAfterMonsterDistress(
     completedTurn, deferAmbientMessage,
 ) {
-    const allocations = allocateMonsterMovement(game.level?.monsters || []);
+    const allocations = allocateMonsterMovement(
+        game.level?.monsters || [], rn2, game,
+    );
     game._monsterMovementInitialized = true;
     game._lastMonsterAllocations = allocations.map(({ monster, amount, movement }) => ({
         mnum: monster.mnum, pet: !!monster.pet, amount, movement,

@@ -49,6 +49,24 @@ test('monster allocation applies newest-first movement to current actors',
         assert.equal(kobold.movement, 12);
     });
 
+test('galloping gives the mounted steed extra movement', () => {
+    freshObjectRoom({
+        context: { mv: true },
+        recalculateVision: false,
+    });
+    const pony = addPet({
+        species: 'pony',
+        x: 11,
+        y: 10,
+    });
+    game.u.usteed = pony;
+    game.u.ugallop = 30;
+
+    allocateMonsterMovement([pony], rolls([0, 0]), game);
+
+    assert.equal(pony.movement, 36);
+});
+
 test('Knight starts with the source pony species', () => {
     assert.equal(roles.find(role => role.key === 'knight').petnum, 100);
 });
