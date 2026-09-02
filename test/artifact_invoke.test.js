@@ -6,6 +6,7 @@ import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { ARROW } from '../js/object_data.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -62,4 +63,48 @@ test('the Mitre restores a small energy deficit completely', async () => {
 
     assert.equal(game.u.uen, 20);
     assert.equal(mitre.age, 170);
+});
+
+test('the Longbow creates arrows through the normal inventory path',
+    async () => {
+        freshObjectRoom({
+            role: 'ranger',
+            hero: { ualign: { type: -1, record: 10 } },
+            moves: 90,
+        });
+        const bow = artifactObject('The Longbow of Diana', {
+            invlet: 'a',
+            where: 'inventory',
+            blessed: true,
+            bknown: true,
+        });
+        game.inventory = [bow];
+        pushKeys('invoke\na');
+
+        await rhack('#'.charCodeAt(0));
+
+        const arrows = game.inventory.find(object => object.otyp === ARROW);
+        assert.ok(arrows);
+        assert.ok(arrows.quan >= 7 && arrows.quan <= 21);
+        assert.equal(arrows.blessed, true);
+        assert.equal(arrows.bknown, true);
+        assert.equal(arrows.where, 'inventory');
+        assert.ok(bow.age > game.moves);
+        assert.equal(game.context.move, 1);
+    });
+
+test('the Eyes show magical enlightenment when invoked', async () => {
+    freshObjectRoom({ role: 'monk', moves: 110 });
+    const eyes = artifactObject('The Eyes of the Overworld', {
+        invlet: 'a',
+        where: 'inventory',
+    });
+    game.inventory = [eyes];
+    pushKeys(`invoke\na${' '.repeat(20)}`);
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.ok(eyes.age > game.moves);
+    assert.equal(game.context.move, 1);
+    assert.equal(game._pending_message, 'The feeling subsides.');
 });

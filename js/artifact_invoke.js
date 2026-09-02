@@ -5,11 +5,18 @@ import { Upolyd } from './const.js';
 import { pline } from './display.js';
 import { game } from './gstate.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
-import { d, rnz } from './rng.js';
+import { doEnlightenmentEffect } from './insight.js';
+import { mksobj } from './mklev.js';
+import { ARROW } from './object_data.js';
+import { d, rnd, rnz } from './rng.js';
 import { setHeroBlindnessTurns } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
+import { addInventoryItem } from './u_init.js';
+import { objectWeight } from './weight.js';
 
-const SUPPORTED_POWERS = new Set(['healing', 'energy-boost']);
+const SUPPORTED_POWERS = new Set([
+    'healing', 'energy-boost', 'enlightening', 'create-ammo',
+]);
 
 async function nothingSpecial(object, state, publish) {
     if ((state.inventory || []).includes(object)) {
@@ -71,11 +78,32 @@ async function invokeEnergyBoost(object, state, publish) {
     await publish('You feel re-energized.');
 }
 
+function invokeCreateAmmo(object, rollOne) {
+    const arrows = mksobj(ARROW, true, false);
+    arrows.blessed = !!object.blessed;
+    arrows.cursed = !!object.cursed;
+    arrows.bknown = !!object.bknown;
+    arrows.oeroded = 0;
+    arrows.oeroded2 = 0;
+    if (object.blessed) {
+        if (arrows.spe < 0) arrows.spe = 0;
+        arrows.quan += rollOne(10);
+    } else if (object.cursed) {
+        if (arrows.spe > 0) arrows.spe = 0;
+    } else {
+        arrows.quan += rollOne(5);
+    }
+    arrows.quantity = arrows.quan;
+    arrows.owt = objectWeight(arrows);
+    return addInventoryItem(arrows);
+}
+
 export async function invokeArtifactPower(
     object, artifact, {
         state = game,
         publish = pline,
         rollDice = d,
+        rollOne = rnd,
         scaledRandom = rnz,
     } = {},
 ) {
@@ -86,7 +114,14 @@ export async function invokeArtifactPower(
     );
     if (!ready) return { used: true, ready: false };
 
-    if (power === 'healing') await invokeHealing(object, state, publish);
-    else await invokeEnergyBoost(object, state, publish);
+    if (power === 'healing') {
+        await invokeHealing(object, state, publish);
+    } else if (power === 'energy-boost') {
+        await invokeEnergyBoost(object, state, publish);
+    } else if (power === 'enlightening') {
+        await doEnlightenmentEffect();
+    } else {
+        invokeCreateAmmo(object, rollOne);
+    }
     return { used: true, ready: true };
 }
