@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterPitTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
@@ -19,7 +19,7 @@ test('a grounded monster falls into a pit', async () => {
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterPitTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         rollOne: () => 3,
         publish: async message => messages.push(message),
     });

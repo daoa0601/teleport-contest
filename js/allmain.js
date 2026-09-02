@@ -154,14 +154,8 @@ import {
     resumeDeferredMovementSpell,
     resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterCounterWield,
-    resumeDeferredMonsterAntiMagicTrap,
+    resumeDeferredMonsterTrap,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
-    resumeDeferredMonsterFireTrap,
-    resumeDeferredMonsterLandMine,
-    resumeDeferredMonsterPitTrap,
-    resumeDeferredMonsterRockTrap,
-    resumeDeferredMonsterSleepGasTrap,
-    resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     finishDeferredMonsterRollingBoulderPlacement,
@@ -4025,82 +4019,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 newsym(movement.x, movement.y);
             }
         }
-        if ((movement?.trap?.kind === 'projectile-trap'
-            || movement?.trap?.kind === 'spent-projectile-trap')
-            && movement.deferredAfterMonsterProjectileTrap) {
+        if (movement.deferredAfterMonsterTrap) {
             const event = movement.trap;
-            await resumeDeferredMonsterProjectileTrap(action, game, {
-                publish: queueTurnMessage,
-                describeMonster: visibleMonsterSubject,
-            });
-            movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if ((movement?.trap?.kind === 'falling-rock'
-            || movement?.trap?.kind === 'spent-rock-trap')
-            && movement.deferredAfterMonsterRockTrap) {
-            const event = movement.trap;
-            await resumeDeferredMonsterRockTrap(action, game, {
+            await resumeDeferredMonsterTrap(action, game, {
                 publish: queueTurnMessage,
                 monsterName: quietMonsterName,
                 describeMonster: visibleMonsterSubject,
             });
             movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if (movement?.trap?.kind === 'sleep-gas'
-            && movement.deferredAfterMonsterSleepGasTrap) {
-            const event = movement.trap;
-            await resumeDeferredMonsterSleepGasTrap(action, game, {
-                publish: queueTurnMessage,
-                describeMonster: visibleMonsterSubject,
-            });
-            movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if (movement?.trap?.kind === 'fire-trap'
-            && movement.deferredAfterMonsterFireTrap) {
-            const event = movement.trap;
-            await resumeDeferredMonsterFireTrap(action, game, {
-                publish: queueTurnMessage,
-                monsterName: quietMonsterName,
-                describeMonster: visibleMonsterSubject,
-            });
-            movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if (movement?.trap?.kind === 'land-mine'
-            && movement.deferredAfterMonsterLandMine) {
-            const event = movement.trap;
-            await resumeDeferredMonsterLandMine(action, game, {
-                publish: queueTurnMessage,
-                monsterName: quietMonsterName,
-                describeMonster: visibleMonsterSubject,
-            });
-            movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if (movement?.trap?.kind === 'pit-trap'
-            && movement.deferredAfterMonsterPitTrap) {
-            const event = movement.trap;
-            await resumeDeferredMonsterPitTrap(action, game, {
-                publish: queueTurnMessage,
-                describeMonster: visibleMonsterSubject,
-            });
-            movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
-        }
-        if (movement?.trap?.kind === 'anti-magic-drain'
-            || movement?.trap?.kind === 'anti-magic-damage') {
-            const event = movement.trap;
-            if (movement.deferredAfterAntiMagicTrapMessage
-                || movement.deferredAfterAntiMagicTrapDeath) {
-                await resumeDeferredMonsterAntiMagicTrap(action, game, {
-                    publish: queueTurnMessage,
-                    describeMonster: visibleMonsterSubject,
-                });
-                movement = action.movement;
-            }
             if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
         if (movement?.trap?.kind === 'teleport-trap') {

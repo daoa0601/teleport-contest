@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ROCKTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterRockTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -23,7 +23,7 @@ test('a falling-rock trap hits a visible monster and drops its rock',
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterRockTrap(action, game, {
+        await resumeDeferredMonsterTrap(action, game, {
             publish: async message => messages.push(message),
         });
 
@@ -40,7 +40,7 @@ test('a falling rock passes harmlessly through a xorn', async () => {
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterRockTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 

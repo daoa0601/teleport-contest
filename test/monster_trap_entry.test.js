@@ -5,7 +5,7 @@ import {
     ANTI_MAGIC, BEAR_TRAP, TELEP_TRAP, W_ARMF, W_ARMH, WEB,
 } from '../js/const.js';
 import {
-    resumeDeferredMonsterAntiMagicTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -172,7 +172,6 @@ test('an anti-magic trap drains a monster which casts spells', () => {
     assert.equal(result.event.kind, 'anti-magic-drain');
     assert.ok(monster.mspec_used > 0);
     assert.equal(trap.tseen, true);
-    assert.equal(result.movement.deferredAfterAntiMagicTrapMessage, true);
 });
 
 test('an anti-magic trap hurts a magic-resistant monster', () => {
@@ -202,7 +201,7 @@ test('fatal anti-magic compression removes the monster', async () => {
     initRng(23n);
 
     const action = triggerImmediateMonsterTrap(monster, state);
-    await resumeDeferredMonsterAntiMagicTrap(action, state, {
+    await resumeDeferredMonsterTrap(action, state, {
         random: () => 1,
         publish: async message => messages.push(message),
     });

@@ -4413,7 +4413,7 @@ function triggerMonsterTrap(
         monstersSeeTrap(state, trap);
         const event = beginMonsterPitTrap(monster, trap, state);
         movement.trap = event;
-        movement.deferredAfterMonsterPitTrap = true;
+        movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
@@ -4567,7 +4567,7 @@ function triggerMonsterTrap(
         });
         movement.trap = event;
         if (sleepGasTrapNeedsResume(event))
-            movement.deferredAfterMonsterSleepGasTrap = true;
+            movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
@@ -4589,7 +4589,7 @@ function triggerMonsterTrap(
         });
         movement.trap = event;
         if (projectileTrapNeedsResume(event))
-            movement.deferredAfterMonsterProjectileTrap = true;
+            movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === ROCKTRAP) {
@@ -4611,7 +4611,7 @@ function triggerMonsterTrap(
         });
         movement.trap = event;
         if (rockTrapNeedsResume(event))
-            movement.deferredAfterMonsterRockTrap = true;
+            movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === LANDMINE) {
@@ -4634,7 +4634,7 @@ function triggerMonsterTrap(
         });
         movement.trap = event;
         if (landMineNeedsResume(event))
-            movement.deferredAfterMonsterLandMine = true;
+            movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === FIRE_TRAP) {
@@ -4654,7 +4654,7 @@ function triggerMonsterTrap(
             },
         });
         movement.trap = event;
-        movement.deferredAfterMonsterFireTrap = true;
+        movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === WEB) {
@@ -4702,7 +4702,7 @@ function triggerMonsterTrap(
                 },
             });
             movement.trap = event;
-            movement.deferredAfterMonsterFireTrap = true;
+            movement.deferredAfterMonsterTrap = true;
             return event;
         }
         const event = {
@@ -4739,11 +4739,11 @@ function triggerMonsterTrap(
             trap, ...effect, inSight, seeSquare, visible: inSight,
         };
         if (inSight && effect.energyDrain > 0)
-            movement.deferredAfterAntiMagicTrapMessage = true;
+            movement.deferredAfterMonsterTrap = true;
         if (effect.killed) {
             movement.actorDied = true;
             movement.actionCompleted = true;
-            movement.deferredAfterAntiMagicTrapDeath = true;
+            movement.deferredAfterMonsterTrap = true;
         }
         movement.trap = event;
         return event;
@@ -7356,17 +7356,6 @@ function distantPhaseFourAttackSetup(
     }
 }
 
-function monsterTrapResultIsDeferred(movement) {
-    return !!(movement.deferredAfterMonsterProjectileTrap
-        || movement.deferredAfterMonsterFireTrap
-        || movement.deferredAfterMonsterLandMine
-        || movement.deferredAfterMonsterPitTrap
-        || movement.deferredAfterMonsterRockTrap
-        || movement.deferredAfterMonsterSleepGasTrap
-        || movement.deferredAfterAntiMagicTrapMessage
-        || movement.deferredAfterAntiMagicTrapDeath);
-}
-
 // Complete the portion of m_move()/postmov()/dochug() which follows an
 // ordinary hostile or pet destination choice. Message-producing movement
 // can resume here without repeating set_apparxy(), species checks, or path
@@ -7394,7 +7383,7 @@ function completeMovedMonsterAction(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
-    if (monsterTrapResultIsDeferred(movement)) return movement;
+    if (movement.deferredAfterMonsterTrap) return movement;
     // postmov() maps both a trap-killed actor and an actor moved off-level to
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
@@ -7462,140 +7451,24 @@ function continueAfterMonsterTrap(
     return action;
 }
 
-export async function resumeDeferredMonsterProjectileTrap(
+export async function resumeDeferredMonsterTrap(
     action, state, {
         random = rn2,
         rollDice = d,
         rollOne = rnd,
         publish = plineWithContinuation,
+        monsterName,
         describeMonster,
     } = {},
 ) {
     const movement = action?.movement;
-    if (!movement?.deferredAfterMonsterProjectileTrap) return action;
-    delete movement.deferredAfterMonsterProjectileTrap;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterTrap) return action;
+    delete movement.deferredAfterMonsterTrap;
+
     const calls = action.calls || DISCARDED_CALL_LOG;
-    const recordedRollOne = range => {
-        const result = rollOne(range);
-        calls.push(`rnd(${range})`);
-        return result;
-    };
-    await finishMonsterProjectileTrap(
-        action.monster, movement.trap, state, {
-            finishDeath: (monster, options) =>
-                finishEnvironmentalMonsterDeath(monster, state, options),
-            publish,
-            random,
-            rollOne: recordedRollOne,
-            describeMonster,
-        },
-    );
-    if (movement.trap.killed) {
-        movement.actorDied = true;
-        movement.actionCompleted = true;
-        return action;
-    }
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne, calls,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterAntiMagicTrap(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (event?.kind !== 'anti-magic-drain'
-        && event?.kind !== 'anti-magic-damage') return action;
-
-    const deferred = monsterTrapResultIsDeferred(movement);
-    if (!deferred) return action;
-    delete movement.deferredAfterAntiMagicTrapMessage;
-    delete movement.deferredAfterAntiMagicTrapDeath;
-
-    const death = await finishMonsterAntiMagicTrap(action.monster, event, {
-        finishDeath: (monster, options) =>
-            finishEnvironmentalMonsterDeath(monster, state, options),
-        random,
-        publish,
-        describeMonster,
-    });
-    if (death) {
-        event.death = death;
-        if (!death.survived) return action;
-        event.killed = false;
-        movement.actorDied = false;
-        movement.actionCompleted = false;
-    }
-
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterFireTrap(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        monsterName,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterFireTrap
-        || event?.kind !== 'fire-trap') return action;
-    delete movement.deferredAfterMonsterFireTrap;
-
-    await finishMonsterFireTrap(action.monster, event, state, {
-        finishDeath: (monster, options) =>
-            finishEnvironmentalMonsterDeath(monster, state, options),
-        publish,
-        random,
-        rollOne,
-        monsterName,
-        describeMonster,
-    });
-    if (event.killed) {
-        movement.actorDied = true;
-        movement.actionCompleted = true;
-        return action;
-    }
-
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterLandMine(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        monsterName,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterLandMine
-        || event?.kind !== 'land-mine') return action;
-    delete movement.deferredAfterMonsterLandMine;
-    const calls = action.calls || DISCARDED_CALL_LOG;
+    const finishDeath = (monster, options) =>
+        finishEnvironmentalMonsterDeath(monster, state, options);
     const recordedRandom = range => recordRandom(random, calls, range);
     const recordedRollOne = range => {
         const result = rollOne(range);
@@ -7603,127 +7476,95 @@ export async function resumeDeferredMonsterLandMine(
         return result;
     };
 
-    await finishMonsterLandMine(action.monster, event, state, {
-        finishDeath: (monster, options) =>
-            finishEnvironmentalMonsterDeath(monster, state, options),
-        publish,
-        random: recordedRandom,
-        rollOne: recordedRollOne,
-        monsterName,
-        describeMonster,
-    });
+    switch (event?.kind) {
+    case 'projectile-trap':
+    case 'spent-projectile-trap':
+        await finishMonsterProjectileTrap(
+            action.monster, event, state, {
+                finishDeath,
+                publish,
+                random,
+                rollOne: recordedRollOne,
+                describeMonster,
+            },
+        );
+        break;
+    case 'anti-magic-drain':
+    case 'anti-magic-damage': {
+        const death = await finishMonsterAntiMagicTrap(
+            action.monster, event, {
+                finishDeath,
+                random,
+                publish,
+                describeMonster,
+            },
+        );
+        if (death) {
+            event.death = death;
+            if (death.survived) {
+                event.killed = false;
+                movement.actorDied = false;
+                movement.actionCompleted = false;
+            }
+        }
+        break;
+    }
+    case 'fire-trap':
+        await finishMonsterFireTrap(action.monster, event, state, {
+            finishDeath,
+            publish,
+            random,
+            rollOne,
+            monsterName,
+            describeMonster,
+        });
+        break;
+    case 'land-mine':
+        await finishMonsterLandMine(action.monster, event, state, {
+            finishDeath,
+            publish,
+            random: recordedRandom,
+            rollOne: recordedRollOne,
+            monsterName,
+            describeMonster,
+        });
+        break;
+    case 'pit-trap':
+        await finishMonsterPitTrap(action.monster, event, {
+            finishDeath,
+            publish,
+            random,
+            rollOne: recordedRollOne,
+            describeMonster,
+        });
+        break;
+    case 'falling-rock':
+    case 'spent-rock-trap':
+        await finishMonsterRockTrap(action.monster, event, state, {
+            finishDeath,
+            publish,
+            random,
+            monsterName,
+            describeMonster,
+        });
+        break;
+    case 'sleep-gas':
+        await finishMonsterSleepGasTrap(action.monster, event, {
+            publish,
+            describeMonster,
+        });
+        break;
+    default:
+        throw new Error(`Unknown deferred monster trap: ${event?.kind}`);
+    }
+
     if (event.killed) {
         movement.actorDied = true;
         movement.actionCompleted = true;
         return action;
     }
-
     continueAfterMonsterTrap(
         action, state, random, rollDice, rollOne, calls,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterPitTrap(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterPitTrap
-        || event?.kind !== 'pit-trap') return action;
-    delete movement.deferredAfterMonsterPitTrap;
-    const calls = action.calls || DISCARDED_CALL_LOG;
-    const recordedRollOne = range => {
-        const result = rollOne(range);
-        calls.push(`rnd(${range})`);
-        return result;
-    };
-
-    await finishMonsterPitTrap(action.monster, event, {
-        finishDeath: (monster, options) =>
-            finishEnvironmentalMonsterDeath(monster, state, options),
-        publish,
-        random,
-        rollOne: recordedRollOne,
-        describeMonster,
-    });
-    if (event.killed) {
-        movement.actorDied = true;
-        movement.actionCompleted = true;
-        return action;
-    }
-
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne, calls,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterRockTrap(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        monsterName,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterRockTrap
-        || !['falling-rock', 'spent-rock-trap'].includes(event?.kind)) {
-        return action;
-    }
-    delete movement.deferredAfterMonsterRockTrap;
-    await finishMonsterRockTrap(action.monster, event, state, {
-        finishDeath: (monster, options) =>
-            finishEnvironmentalMonsterDeath(monster, state, options),
-        publish,
-        random,
-        monsterName,
-        describeMonster,
-    });
-    if (event.killed) {
-        movement.actorDied = true;
-        movement.actionCompleted = true;
-        return action;
-    }
-
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG,
-    );
-    return action;
-}
-
-export async function resumeDeferredMonsterSleepGasTrap(
-    action, state, {
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-        describeMonster,
-    } = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterSleepGasTrap
-        || event?.kind !== 'sleep-gas') return action;
-    delete movement.deferredAfterMonsterSleepGasTrap;
-    await finishMonsterSleepGasTrap(action.monster, event, {
-        publish,
-        describeMonster,
-    });
-    continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG,
     );
     return action;
 }

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SLP_GAS_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterSleepGasTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
@@ -15,7 +15,7 @@ test('sleeping gas puts a susceptible visible monster to sleep', async () => {
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterSleepGasTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 

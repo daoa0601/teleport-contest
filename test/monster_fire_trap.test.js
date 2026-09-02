@@ -6,7 +6,7 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterFireTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
@@ -52,7 +52,7 @@ test('a fire trap burns a vulnerable monster', async () => {
     initRng(29n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterFireTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         random: quietFireRandom,
         publish: async message => messages.push(message),
     });
@@ -83,7 +83,7 @@ test('worn fire resistance stops the flame but not an exploding potion',
         initRng(31n);
 
         const action = triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterFireTrap(action, game, {
+        await resumeDeferredMonsterTrap(action, game, {
             random,
             rollOne: () => 2,
             publish: async message => messages.push(message),
@@ -103,7 +103,7 @@ test('a fire trap completely burns a paper golem', async () => {
     initRng(37n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterFireTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         random: quietFireRandom,
         publish: async () => {},
     });
@@ -129,7 +129,7 @@ test('a life-saving amulet lets a monster survive a fire trap', async () => {
     initRng(41n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterFireTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         random: quietFireRandom,
         publish: async () => {},
     });
@@ -146,7 +146,7 @@ test('a fire trap burns scrolls lying under the monster', async () => {
     initRng(43n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterFireTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         random: range => range === 5 ? 1 : range === 100 ? 99 : 0,
         publish: async () => {},
     });
@@ -163,7 +163,7 @@ test('a magic trap can produce the complete fire-trap effect', async () => {
 
     const action = triggerImmediateMonsterTrap(monster, game);
 
-    await resumeDeferredMonsterFireTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         random: quietFireRandom,
         publish: async () => {},
     });

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ARROW_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterProjectileTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ARROW } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -19,7 +19,7 @@ test('an arrow trap hits a visible monster', async () => {
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterProjectileTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 
@@ -36,7 +36,7 @@ test('an arrow that misses remains on the floor', async () => {
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterProjectileTrap(action, game, {
+    await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 

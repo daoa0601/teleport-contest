@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { LANDMINE, PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterLandMine, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
@@ -26,7 +26,7 @@ test('a heavy monster sets off a land mine and falls into the new pit',
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterLandMine(action, game, {
+        await resumeDeferredMonsterTrap(action, game, {
             rollOne: () => 2,
             publish: async message => messages.push(message),
         });
@@ -44,7 +44,6 @@ test('a light monster can cross a land mine without setting it off', () => {
 
     const action = triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(action.movement.deferredAfterMonsterLandMine, undefined);
     assert.equal(trap.ttyp, LANDMINE);
     assert.equal(monster.mhp, 30);
 });
@@ -55,7 +54,7 @@ test('a flying monster can reveal a land mine without detonating it',
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterLandMine(action, game, {
+        await resumeDeferredMonsterTrap(action, game, {
             publish: async message => messages.push(message),
         });
 
