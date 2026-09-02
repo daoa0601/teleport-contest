@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    presentMonsterProjectileShot,
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
 import { NEED_WEAPON } from '../js/const.js';
+import { GameDisplay } from '../js/game_display.js';
 import {
     ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER, ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
@@ -83,6 +85,44 @@ test('a tame orc shoots an arrow with its bow', () => {
         ),
         true,
     );
+});
+
+test('a missed intervening monster does not hide the later hit', async () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
+    game.nhDisplay = new GameDisplay(null);
+    const dagger = carriedObject(DAGGER);
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dagger],
+    }));
+    const bystander = addMonsterToLevel(rangedTarget('goblin', {
+        x: 11,
+        hitPoints: 12,
+        mac: -10,
+    }));
+    const target = addMonsterToLevel(rangedTarget('jackal', {
+        x: 13,
+        hitPoints: 12,
+    }));
+    const rolls = [20, 1, 1];
+
+    const attack = throwMonsterWeaponAtMonster(orc, target, game, {
+        random: () => 1,
+        rollOne: () => rolls.shift(),
+    });
+    const messages = [];
+    await presentMonsterProjectileShot(
+        attack.shots[0],
+        { ch: ')', color: 0, decgfx: false, attr: 0 },
+        game,
+        { publish: async message => messages.push(message) },
+    );
+
+    assert.equal(bystander.mhp, 12);
+    assert.equal(target.mhp, 11);
+    assert.deepEqual(messages, [
+        'The dagger misses the goblin.',
+        'The dagger hits the jackal.',
+    ]);
 });
 
 test('a crossbow bolt gets its source damage against a large monster', () => {

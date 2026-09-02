@@ -155,12 +155,13 @@ export function monsterVolleyCount(
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
     const missileName = objectTypeName(missile);
     const launcherNames = RANGED_LAUNCHERS.get(missileName);
+    const ammunition = !!launcherNames;
     const matchingLauncher = !!(launcherNames
         && launcherNames.has(objectTypeName(launcher)));
     const stackableWeapon = missile?.oclass === WEAPON_CLASS
         || missile?.class === 'Weapons';
     if (quantity <= 1 || monster?.mconf
-        || (!matchingLauncher && !stackableWeapon)) return 1;
+        || (ammunition ? !matchingLauncher : !stackableWeapon)) return 1;
 
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     let maximum = 1;
@@ -238,6 +239,28 @@ export function placeAndStackThrownObject(state, object, x, y) {
     return object;
 }
 
+async function presentMonsterProjectileContact(contact, publish) {
+    const x = contact.x ?? contact.impactX ?? contact.target?.mx;
+    const y = contact.y ?? contact.impactY ?? contact.target?.my;
+    if (!cansee(x, y)) return;
+    const spotted = canProjectMonster(
+        contact.target, x, y,
+    );
+    const target = spotted
+        ? `the ${monsterTypeName(
+            contact.target.mnum, !!contact.target.female,
+        )}`
+        : 'it';
+    await publish(contact.hit
+        ? `The ${contact.appearance} hits ${target}.`
+        : `The ${contact.appearance} misses ${target}.`);
+    if (contact.targetDied) {
+        const subject = target === 'it'
+            ? 'It' : `The ${target.slice(4)}`;
+        await publish(`${subject} is killed!`);
+    }
+}
+
 export async function presentMonsterProjectileShot(
     shot, projectileGlyph, state, {
         publish,
@@ -246,6 +269,8 @@ export async function presentMonsterProjectileShot(
 ) {
     let transientFlightCell = null;
     for (const cell of shot.flightPath || []) {
+        if (cell.contact)
+            await presentMonsterProjectileContact(cell.contact, publish);
         if (transientFlightCell)
             newsym(transientFlightCell.x, transientFlightCell.y);
         transientFlightCell = null;
@@ -267,28 +292,10 @@ export async function presentMonsterProjectileShot(
     const targetVisible = shot.target
         ? cansee(shot.target.mx, shot.target.my) : false;
     try {
-        if (shot.target) {
-            if (targetVisible) {
-                const spotted = canProjectMonster(
-                    shot.target, shot.target.mx, shot.target.my,
-                );
-                const target = spotted
-                    ? `the ${monsterTypeName(
-                        shot.target.mnum, !!shot.target.female,
-                    )}`
-                    : 'it';
-                await publish(shot.hit
-                    ? `The ${shot.appearance} hits ${target}.`
-                    : `The ${shot.appearance} misses ${target}.`);
-                if (shot.targetDied) {
-                    const subject = target === 'it'
-                        ? 'It' : `The ${target.slice(4)}`;
-                    await publish(`${subject} is killed!`);
-                }
-            }
-        } else if (showMissWithoutTarget) {
+        if (shot.target)
+            await presentMonsterProjectileContact(shot, publish);
+        else if (showMissWithoutTarget)
             await publish(`The ${shot.appearance} misses.`);
-        }
 
         if (transientFlightCell)
             newsym(transientFlightCell.x, transientFlightCell.y);
@@ -389,10 +396,19 @@ function throwOneMonsterMissile(
         if (hit) {
             defender.msleeping = 0;
             defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
-        } else {
+        }
+        const contact = {
+            appearance: objectTypeName(missile) || 'weapon',
+            target: defender,
+            x,
+            y,
+            hit,
+            targetDied: hit && (defender.mhp ?? 0) <= 0,
+        };
+        if (!hit) {
             random(5);
             if (remaining > 1) {
-                flightPath.push({ x, y });
+                flightPath.push({ x, y, contact });
                 continue;
             }
         }
