@@ -1,7 +1,10 @@
 // Weapons thrown or shot by monsters.
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
-import { BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON } from './const.js';
+import {
+    BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
+    P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
+} from './const.js';
 import {
     canProjectMonster, flush_screen, newsym, show_glyph_cell,
 } from './display.js';
@@ -9,7 +12,7 @@ import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
 import {
-    MONSTER_FLAGS2, MONSTER_LEVEL, monsterTypeName,
+    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
@@ -21,8 +24,19 @@ import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
+const M2_ELF = 0x00000010;
+const M2_GNOME = 0x00000040;
+const M2_ORC = 0x00000080;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
+const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
+const PM_CAVE_DWELLER = MONSTER_NAME.indexOf('cave dweller');
+const PM_MONK = MONSTER_NAME.indexOf('monk');
+const PM_RANGER = MONSTER_NAME.indexOf('ranger');
+const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
+const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
+const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
+const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
 const RANGED_WEAPON_PREFERENCE = [
@@ -109,6 +123,32 @@ export function readyRangedMonsterWeapon(monster) {
     return launcher;
 }
 
+function isPlayerMonster(mnum) {
+    return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
+}
+
+function monsterClassVolleyBonus(monster, missile, launcher) {
+    const skill = OBJECT_SUBTYPE[missile.otyp] ?? 0;
+    if (monster.mnum === PM_CAVE_DWELLER)
+        return skill === -P_SLING || skill === P_SPEAR ? 1 : 0;
+    if (monster.mnum === PM_MONK)
+        return skill === -P_SHURIKEN ? 1 : 0;
+    if (monster.mnum === PM_RANGER) return skill !== P_DAGGER ? 1 : 0;
+    if (monster.mnum === PM_ROGUE) return skill === P_DAGGER ? 1 : 0;
+
+    let bonus = 0;
+    if (monster.mnum === PM_NINJA
+        && (skill === -P_SHURIKEN || skill === -P_DART)) {
+        bonus++;
+    }
+    if ((monster.mnum === PM_NINJA || monster.mnum === PM_SAMURAI)
+        && objectTypeName(missile) === 'ya'
+        && objectTypeName(launcher) === 'yumi') {
+        bonus++;
+    }
+    return bonus;
+}
+
 export function monsterVolleyCount(
     monster, missile, launcher, rollOne = rnd,
 ) {
@@ -126,6 +166,7 @@ export function monsterVolleyCount(
     let maximum = 1;
     if (flags & M2_PRINCE) maximum += 2;
     else if (flags & M2_LORD) maximum++;
+    else if (isPlayerMonster(monster.mnum)) maximum++;
     if (missileName === 'elven arrow' && !missile.cursed) maximum++;
     if (objectTypeName(launcher) === 'elven bow'
         && matchingLauncher && !launcher?.cursed) maximum++;
@@ -133,14 +174,14 @@ export function monsterVolleyCount(
         maximum += Math.trunc(((launcher.spe ?? 0) + 1) / 3);
 
     let volley = rollOne(maximum);
-    volley += monster.multishotClassBonus ?? 0;
-    if (((flags & 0x00000010)
+    volley += monsterClassVolleyBonus(monster, missile, launcher);
+    if (((flags & M2_ELF)
             && missileName === 'elven arrow'
             && objectTypeName(launcher) === 'elven bow')
-        || ((flags & 0x00000080)
+        || ((flags & M2_ORC)
             && missileName === 'orcish arrow'
             && objectTypeName(launcher) === 'orcish bow')
-        || ((flags & 0x00000040)
+        || ((flags & M2_GNOME)
             && missileName === 'crossbow bolt'
             && objectTypeName(launcher) === 'crossbow')) {
         volley++;

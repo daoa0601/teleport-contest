@@ -130,6 +130,28 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
     assert.ok(target.mhp < 100);
 });
 
+test('a rogue player monster gets its dagger volley bonus', () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n });
+    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const rogue = addMonsterToLevel(rangedPet('rogue', {
+        inventory: [daggers],
+    }));
+    const target = addMonsterToLevel(rangedTarget('jackal', {
+        hitPoints: 100,
+    }));
+
+    throwMonsterWeaponAtMonster(rogue, target, game, {
+        random: () => 1,
+        rollOne: range => range,
+    });
+
+    const landedDaggers = floorObjectsAt(game.level, 12, 10)
+        .filter(object => object.otyp === DAGGER)
+        .reduce((total, object) => total + object.quan, 0);
+    assert.equal(landedDaggers, 3);
+    assert.equal(daggers.quan, 1);
+});
+
 test('an orc captain uses both of its weapon attacks', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const daggers = carriedObject(DAGGER, { quan: 2 });
