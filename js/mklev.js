@@ -14,6 +14,7 @@ import {
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
+import { restoreBonesMonsters } from './bones_monster.js';
 import {
     prepareBonesObjectForRestore, prepareBonesObjectForSave,
 } from './bones_object.js';
@@ -4608,6 +4609,7 @@ async function getbones() {
         x: point.x, y: point.y,
     }));
     renewBonesIdentities(game.level);
+    restoreBonesMonsters(game.level, game);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
     game.fmon = game.level.monsters?.[0] || null;

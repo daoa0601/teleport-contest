@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     artifactByName, initializeArtifacts, nameArtifact,
 } from '../js/artifacts.js';
-import { HOLE, PIT, SHOPBASE } from '../js/const.js';
+import { G_EXTINCT, HOLE, PIT, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mklev, place_object, saveBonesLevel } from '../js/mklev.js';
@@ -35,6 +35,7 @@ function freshBonesRoom(storage) {
     game.storage = storage;
     game.flags.debug = true;
     init_objects();
+    initializeArtifacts(game);
 }
 
 test('bones restore resets old hero state and repairs entity links',
@@ -96,7 +97,6 @@ test('bones restore resets old hero state and repairs entity links',
         assert.equal(saveBonesLevel(), true);
 
         freshBonesRoom(storage);
-        initializeArtifacts(game);
         const currentArtifact = knownObject(grayswandir.baseType);
         assert.equal(nameArtifact(currentArtifact, grayswandir), true);
         currentArtifact.where = 'inventory';
@@ -186,4 +186,45 @@ test('bones keep partly eaten food free in its staffed shop', async () => {
     const restoredChest = floorObjects(game.level).find(object =>
         object.otyp === CHEST);
     assert.equal(restoredChest.contents[0].no_charge, true);
+});
+
+test('bones clean monster names and remove extinct species', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    addMonster({
+        mnum: PM_GHOST,
+        x: 12,
+        y: 10,
+        name: 'old\u0001ghost',
+        mgivenname: 'old\u0001ghost',
+        mextra: { mgivenname: 'old\u0001ghost' },
+    });
+    const troll = addMonster({
+        mnum: 220,
+        x: 13,
+        y: 10,
+    });
+    const questArtifact = artifactByName('The Orb of Detection');
+    const orb = knownObject(questArtifact.baseType);
+    assert.equal(nameArtifact(orb, questArtifact), true);
+    linkObjectToMonsterInventory(troll, orb);
+    linkObjectToMonsterInventory(troll, knownObject(DAGGER));
+    assert.equal(saveBonesLevel(), true);
+
+    freshBonesRoom(storage);
+    game.mvitals = [];
+    game.mvitals[220] = { mvflags: G_EXTINCT };
+    pushKeys('yn');
+    await mklev();
+
+    const restoredGhost = game.level.monsters.find(monster =>
+        monster.mnum === PM_GHOST);
+    assert.equal(restoredGhost.name, 'old.ghost');
+    assert.equal(game.level.monsters.some(monster => monster.mnum === 220),
+        false);
+    const restoredObjects = floorObjects(game.level);
+    const restoredOrb = restoredObjects.find(object =>
+        object.otyp === questArtifact.baseType);
+    assert.equal(restoredOrb.oartifact, 0);
+    assert.equal(restoredObjects.some(object => object.otyp === DAGGER), false);
 });

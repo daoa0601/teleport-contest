@@ -1,4 +1,5 @@
 import { artifactById, nameArtifact } from './artifacts.js';
+import { sanitizeBonesName } from './bones_name.js';
 import { ROOMOFFSET, SHOPBASE } from './const.js';
 import { game } from './gstate.js';
 import {
@@ -106,15 +107,6 @@ export function prepareBonesObjectForSave(object) {
     }
     delete object.buc;
     return object;
-}
-
-function sanitizeBonesName(name) {
-    return [...String(name || '')].map(character => {
-        const code = character.charCodeAt(0);
-        if (code < 32 || code === 127) return '.';
-        if (code > 127) return '_';
-        return character;
-    }).join('');
 }
 
 function removeArtifactIdentity(object) {
