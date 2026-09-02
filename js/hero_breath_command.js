@@ -6,15 +6,13 @@ import { game } from './gstate.js';
 import { heroBreathAttack, hitHeroWithBreath } from './hero_breath.js';
 import { breatheInDirection } from './hero_breath_ray.js';
 import { d, rn2, rnd } from './rng.js';
-import { promptKey } from './tty_prompts.js';
-
-const VALID_DIRECTIONS = new Set('hjklyubn.<>');
+import { promptDirection } from './tty_prompts.js';
 
 export async function useHeroBreath({
     state = game,
     attack = heroBreathAttack(state),
     publish = plineWithContinuation,
-    readKey = promptKey,
+    readDirection = promptDirection,
     finishMonsterKill,
     random = rn2,
     rollDice = d,
@@ -34,28 +32,17 @@ export async function useHeroBreath({
     }
 
     hero.uen -= 15;
-    const direction = await readBreathDirection(readKey);
+    const direction = await readDirection();
     if (direction === null)
         return { used: false, spentTime: false, reason: 'cancelled' };
 
-    const result = direction === '.'
+    const result = direction.key === '.'
         ? await hitHeroWithBreath({
             state, attack, publish, random, rollDice, rollOne,
         })
-        : await breatheInDirection(direction, {
+        : await breatheInDirection(direction.key, {
             state, attack, publish, finishMonsterKill,
             random, rollDice, rollOne,
         });
     return { ...result, spentTime: true };
-}
-
-async function readBreathDirection(readKey) {
-    for (;;) {
-        const key = await readKey('In what direction? ');
-        if (key === 27) return null;
-        const direction = typeof key === 'number'
-            ? String.fromCharCode(key).toLowerCase()
-            : String(key).toLowerCase();
-        if (VALID_DIRECTIONS.has(direction)) return direction;
-    }
 }

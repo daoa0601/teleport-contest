@@ -4,7 +4,8 @@
 
 import {
     A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_WATERWALL,
-    LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS, isok,
+    Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
+    isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import {
@@ -13,7 +14,9 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import { wakeMonstersNear } from './mon.js';
-import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
+import {
+    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
+} from './monster_data.js';
 import { breakFloorObject } from './object_breakage.js';
 import {
     BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL,
@@ -155,15 +158,44 @@ async function hitIronBars(object, x, y, barsX, barsY, {
     return false;
 }
 
-export function heroThrowRange(object, state = game) {
+function heroThrowStrength(state) {
     let strength = currentAttribute(A_STR, state);
     if (strength <= 18) strength = Math.max(strength, 3);
     else if (strength <= 121) strength = 19 + Math.trunc(strength / 50);
     else strength = Math.min(strength, 125) - 100;
+    return strength;
+}
+
+export function heroThrowRange(object, state = game) {
     return Math.max(
         1,
-        Math.trunc(strength / 2) - Math.trunc((object.owt ?? 1) / 40),
+        Math.trunc(heroThrowStrength(state) / 2)
+            - Math.trunc((object.owt ?? 1) / 40),
     );
+}
+
+export function heroThrowTrajectory(object, state = game) {
+    const ordinaryRange = heroThrowRange(object, state);
+    const floating = Is_airlevel(state.u?.uz)
+        || state.u?.levitating || state.u?.levitation || state.levitating;
+    if (!floating) return { range: ordinaryRange, recoil: 0 };
+
+    const unweightedRange = Math.trunc(heroThrowStrength(state) / 2);
+    const recoil = Math.max(1, unweightedRange - ordinaryRange);
+    return {
+        range: Math.max(1, ordinaryRange - recoil),
+        recoil,
+    };
+}
+
+export function prepareHeroThrownTarget(monster, random = rn2) {
+    const immobilized = monster.mcanmove === 0 || monster.mcanmove === false;
+    const speciesCanMove = (MONSTER_MOVE[monster.mnum]
+        ?? monster.mmove ?? 0) > 0;
+    if (immobilized && speciesCanMove && random(10) === 0) {
+        monster.mcanmove = 1;
+        monster.mfrozen = 0;
+    }
 }
 
 export async function flyHeroThrownObject({

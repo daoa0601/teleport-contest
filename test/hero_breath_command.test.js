@@ -38,7 +38,12 @@ function breathe(direction, options = {}) {
     return useHeroBreath({
         state: game,
         attack: heroBreathAttack(game),
-        readKey: async () => direction,
+        readDirection: async () => direction === 27 ? null : ({
+            key: direction,
+            dx: 0,
+            dy: 0,
+            dz: 0,
+        }),
         ...options,
     });
 }

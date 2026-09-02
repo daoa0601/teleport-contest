@@ -16,13 +16,15 @@ import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
 import {
-    MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { OBJECT_COST } from './object_data.js';
 import { visiblePriestName } from './priest.js';
 import { rn2, rnd } from './rng.js';
 import { shopkeeperName } from './shk.js';
-import { flyHeroThrownObject, heroThrowRange } from './thrown_object.js';
+import {
+    flyHeroThrownObject, heroThrowRange, prepareHeroThrownTarget,
+} from './thrown_object.js';
 import { cansee } from './vision.js';
 
 const M2_MERC = 0x00000200;
@@ -214,12 +216,7 @@ async function resolveQuiveredGoldMonsterContact({
     // consumes its ordinary d20 targeting roll.  Coins do not enter any of
     // thitmonst()'s damaging classes, so a non-swallowed coin always reaches
     // tmiss() regardless of that targeting result or the monster's greed.
-    if ((monster.mcanmove === 0 || monster.mcanmove === false)
-        && (MONSTER_MOVE[monster.mnum] ?? monster.mmove ?? 0) > 0
-        && rn2(10) === 0) {
-        monster.mcanmove = 1;
-        monster.mfrozen = 0;
-    }
+    prepareHeroThrownTarget(monster);
     rnd(20);
 
     if (swallowed) {
