@@ -1,8 +1,14 @@
-// Rubbing royal jelly on eggs.
-// C ref: apply.c use_royal_jelly().
+// Applying and eating royal jelly.
+// C refs: apply.c use_royal_jelly(), eat.c fpostfx().
 
-import { pline } from './display.js';
+import {
+    adjustAttribute, attributeChangeMessage,
+} from './attrib.js';
+import { A_STR, POISONING } from './const.js';
+import { pline, plineWithContinuation } from './display.js';
+import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { healHeroLegs } from './hero_legs.js';
 import { nextIdent } from './ident.js';
 import { restartEggHatchTimer } from './mklev.js';
 import { LUMP_OF_ROYAL_JELLY } from './object_data.js';
@@ -14,6 +20,11 @@ import {
 } from './shk.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { objectWeight } from './weight.js';
+import {
+    heroIsPolymorphed, polymonHero, rehumanizeHero,
+} from './polyself.js';
+import { rn2, rnd } from './rng.js';
+import { heroIsUnchanging } from './were.js';
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
@@ -140,4 +151,66 @@ export async function useRoyalJelly(stack, chooseEgg) {
 
 export function isRoyalJelly(object) {
     return object?.otyp === LUMP_OF_ROYAL_JELLY;
+}
+
+async function publishHumanForm(restored, publish) {
+    if (!restored.changed) return;
+    await publish(`You return to ${restored.race} form!${
+        restored.regainedSight ? '  You can see again.' : ''
+    }`);
+    if (restored.encumbranceMessage)
+        await publish(restored.encumbranceMessage);
+}
+
+export async function eatRoyalJelly(jelly, {
+    state = game,
+    publish = plineWithContinuation,
+    die = finishHeroDeath,
+} = {}) {
+    const hero = state.u || (state.u = {});
+    if (heroIsPolymorphed(state) && hero.umonnum === PM_KILLER_BEE
+        && !heroIsUnchanging(state)) {
+        await polymonHero(PM_QUEEN_BEE);
+        return { transformed: true, died: false };
+    }
+
+    const strength = adjustAttribute(
+        A_STR, jelly.cursed ? -1 : 1, state,
+    );
+    const strengthMessage = attributeChangeMessage(A_STR, strength);
+    if (strengthMessage) await publish(strengthMessage);
+
+    const hitPointChange = rnd(20) * (jelly.cursed ? -1 : 1);
+    if (heroIsPolymorphed(state)) {
+        hero.mh = (hero.mh ?? 0) + hitPointChange;
+        if (hero.mh > (hero.mhmax ?? 0)) {
+            if (rn2(17) === 0) hero.mhmax = (hero.mhmax ?? 0) + 1;
+            hero.mh = hero.mhmax;
+        } else if (hero.mh <= 0) {
+            await publishHumanForm(rehumanizeHero(state), publish);
+        }
+    } else {
+        hero.uhp = (hero.uhp ?? 0) + hitPointChange;
+        if (hero.uhp > (hero.uhpmax ?? 0)) {
+            if (rn2(17) === 0) {
+                hero.uhpmax = (hero.uhpmax ?? 0) + 1;
+                hero.uhppeak = Math.max(
+                    hero.uhppeak ?? 0, hero.uhpmax,
+                );
+            }
+            hero.uhp = hero.uhpmax;
+        } else if (hero.uhp <= 0) {
+            const died = await die({
+                killer: 'rotten lump of royal jelly',
+                deathType: POISONING,
+            });
+            return { transformed: false, died: !!died };
+        }
+    }
+
+    if (!jelly.cursed) {
+        const healing = healHeroLegs(state);
+        for (const message of healing.messages) await publish(message);
+    }
+    return { transformed: false, died: false };
 }

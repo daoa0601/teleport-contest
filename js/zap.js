@@ -19,6 +19,7 @@ import {
     pline, plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game } from './gstate.js';
+import { putHeroToSleep } from './hero_sleep.js';
 import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
 import { selectInventoryObject } from './invent.js';
@@ -451,10 +452,7 @@ export async function dozap({
             await pline("You don't feel sleepy!");
         } else {
             await pline('The sleep ray hits you!');
-            game._helplessTurns = rnd(50);
-            game._helplessReason = 'sleeping';
-            game._helplessDoneMessage = 'You wake up.';
-            game.u.usleep = game.moves || 1;
+            putHeroToSleep(rnd(50));
         }
         if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
         game._knownObjectTypes.add(wand.otyp);

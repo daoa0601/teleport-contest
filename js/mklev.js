@@ -4,6 +4,7 @@
 // Level construction uses the game's main random-number stream.
 
 import { game } from './gstate.js';
+import { exerciseAttribute } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
     createDesBindings, mapOrigin, objectTypeForName, regionCoordinates,
@@ -27,7 +28,7 @@ import {
 import { level_difficulty } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import {
-    A_CHA,
+    A_CHA, A_WIS,
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
@@ -4286,11 +4287,13 @@ function getRandomTextLine(lines) {
 export function getRumor(excludeCookie, exerciseWisdom = false, truth = 0) {
     let rumor = '';
     let count = 0;
+    let trueRumor = false;
     do {
-        rumor = getRandomTextLine(truth + rn2(2) > 0
+        trueRumor = truth + rn2(2) > 0;
+        rumor = getRandomTextLine(trueRumor
             ? TRUE_RUMORS : FALSE_RUMORS);
     } while (count++ < 50 && excludeCookie && rumor.startsWith('[cookie] '));
-    if (exerciseWisdom) rn2(19);
+    if (exerciseWisdom) exerciseAttribute(A_WIS, trueRumor);
     if (!excludeCookie && rumor.startsWith('[cookie] '))
         rumor = rumor.slice('[cookie] '.length);
     return rumor;

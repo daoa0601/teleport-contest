@@ -177,6 +177,7 @@ import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
 import { polymonHero, rehumanizeHero } from './polyself.js';
+import { healHeroLegs } from './hero_legs.js';
 import {
     advanceHeroSliming, clearHeroSliming,
     finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
@@ -1911,19 +1912,8 @@ function finishInitialTurnMaintenanceAfterConfusion({
     if (!prayerTimeoutFreeze && (game.u?._woundedLegTurns ?? 0) > 0) {
         game.u._woundedLegTurns--;
         if (game.u._woundedLegTurns === 0) {
-            const wasBurdened = game.u._encumbrance === 'Burdened';
-            game.u._woundedLegSide = null;
-            if (game.u.acurr?.a) game.u.acurr.a[A_DEX]++;
-            // C heal_legs()->encumber_msg() both emits the capacity change
-            // and advances go.oldcap.  Keep that persistent comparison state
-            // synchronized here so a later pickup does not repeat it.
-            game._encumbranceLevel = nearCapacity(game);
-            game.u._encumbrance = encumbranceLabel(
-                game._encumbranceLevel,
-            );
-            game._pending_message = wasBurdened
-                ? 'Your leg feels better.  Your movements are now unencumbered.'
-                : 'Your leg feels better.';
+            const healing = healHeroLegs(game);
+            game._pending_message = healing.messages.join('  ');
             game._last_message = game._pending_message;
         }
     }

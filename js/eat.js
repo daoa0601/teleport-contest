@@ -14,17 +14,21 @@ import { getRumor } from './mklev.js';
 import {
     cureHeroSickness, cureHeroVomiting,
 } from './hero_illness.js';
+import { putHeroToSleep } from './hero_sleep.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, EGG, EUCALYPTUS_LEAF,
-    FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, OBJECT_DELAY,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION, SPRIG_OF_WOLFSBANE,
+    APPLE, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, EGG,
+    EUCALYPTUS_LEAF, FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER,
+    LUMP_OF_ROYAL_JELLY, OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_NUTRITION, SPRIG_OF_WOLFSBANE,
 } from './object_data.js';
-import { d, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd } from './rng.js';
+import { eatRoyalJelly } from './royal_jelly.js';
 import {
-    setHeroBlindnessTurns, syncBlindness, syncDeafness,
+    heroIsBlind, heroIsDeaf, setHeroBlindnessTurns,
+    syncBlindness, syncDeafness,
 } from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
@@ -432,6 +436,32 @@ function applyCorpsePostEffects(g, corpse) {
 }
 
 async function applyOrdinaryFoodPostEffects(g, food) {
+    if (food.otyp === FORTUNE_COOKIE) {
+        await applyFortuneCookiePostEffect(g, food);
+        return;
+    }
+    if (food.otyp === LUMP_OF_ROYAL_JELLY) {
+        await eatRoyalJelly(food, { state: g });
+        return;
+    }
+    if (food.otyp === APPLE && food.cursed
+        && !(g.u?.sleepResistance || g.u?.sleep_resistance)) {
+        const hallucinating = !!g.u?.hallucinating
+            || (g.u?.hallucinationTurns ?? 0) > 0;
+        if (g.urace?.name === 'dwarf' && hallucinating) {
+            await plineWithContinuation(
+                '"Heigh-ho, ho-hum, I think I\'ll skip work today."',
+            );
+        } else if (heroIsDeaf(g) || g.flags?.acoustics === false) {
+            await plineWithContinuation('You fall asleep.');
+        } else {
+            await plineWithContinuation(
+                'You hear sinister laughter as you fall asleep...',
+            );
+        }
+        putHeroToSleep(rn1(11, 20), { state: g });
+        return;
+    }
     if (food.otyp === EGG) {
         await eatPetrifyingEgg(food);
         return;
@@ -455,6 +485,28 @@ async function applyOrdinaryFoodPostEffects(g, food) {
         if (cureHeroVomiting(g))
             await plineWithContinuation('You feel much less nauseated now.');
     }
+}
+
+async function applyFortuneCookiePostEffect(g, cookie) {
+    if (heroIsBlind(g)) {
+        await plineWithContinuation(
+            'This cookie has a scrap of paper inside.',
+        );
+        await plineWithContinuation(
+            'What a pity that you cannot read it!',
+        );
+        return;
+    }
+
+    const truth = cookie.blessed ? 1 : cookie.cursed ? -1 : 0;
+    const rumor = getRumor(false, true, truth);
+    await plineWithContinuation(
+        'This cookie has a scrap of paper inside.',
+    );
+    await plineWithContinuation('It reads:');
+    await plineWithContinuation(rumor);
+    if (!g.u.uconduct) g.u.uconduct = {};
+    g.u.uconduct.literate = (g.u.uconduct.literate || 0) + 1;
 }
 
 async function finishFoodMeal(g, meal, showFinishMessage) {
@@ -786,17 +838,6 @@ export async function doeat() {
 
     if (corpseLike) {
         await beginCorpseMeal(item, itemFloorPile);
-        return;
-    }
-
-    if (item.otyp === FORTUNE_COOKIE) {
-        const rumor = getRumor(false, true);
-        game._useInitialMaintenance = true;
-        consumeTouchedFood(item, itemFloorPile);
-        await promptKey('This fortune cookie is delicious!--More--');
-        await promptKey('This cookie has a scrap of paper inside.  It reads:--More--');
-        await pline(rumor);
-        game.context.move = 1;
         return;
     }
 

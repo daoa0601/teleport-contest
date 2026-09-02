@@ -18,6 +18,7 @@ import { loseExperienceLevel } from './exper.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game } from './gstate.js';
 import { cureHeroSickness } from './hero_illness.js';
+import { healHeroLegs } from './hero_legs.js';
 import {
     heroGoldAmount, setHeroGoldAmount,
 } from './hero_gold.js';
@@ -144,8 +145,7 @@ function healHeroCompletely() {
     hero.ucreamed = 0;
     hero.blindTurns = 0;
     cureHeroSickness(game);
-    hero._woundedLegTurns = 0;
-    hero._woundedLegSide = null;
+    healHeroLegs(game, { showBodyMessage: false });
     syncBlindness(game);
 }
 

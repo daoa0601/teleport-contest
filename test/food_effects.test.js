@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
+import { A_DEX, A_STR } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import {
-    CARROT, EGG, EUCALYPTUS_LEAF, SPRIG_OF_WOLFSBANE,
+    APPLE, CARROT, EGG, EUCALYPTUS_LEAF, FORTUNE_COOKIE,
+    LUMP_OF_ROYAL_JELLY, SPRIG_OF_WOLFSBANE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
@@ -88,4 +90,63 @@ test('eating a cockatrice egg starts petrification', async () => {
     assert.equal(game.u.stonedTurns, 5);
     assert.equal(game.u.stoned, true);
     assert.equal(game.inventory.includes(egg), false);
+});
+
+test('eating royal jelly strengthens and heals the hero', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    game.u.uhp = 5;
+    game.u.uhpmax = 40;
+    game.u._woundedLegTurns = 12;
+    game.u._woundedLegSide = 'left';
+    game.u.acurr.a[A_DEX]--;
+    const strength = game.u.acurr.a[A_STR];
+    const jelly = carriedObject(LUMP_OF_ROYAL_JELLY, {
+        age: game.moves,
+    });
+    game.inventory = [jelly];
+    pushKeys('a   ');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.u.acurr.a[A_STR], strength + 1);
+    assert.ok(game.u.uhp > 5);
+    assert.equal(game.u._woundedLegTurns, 0);
+    assert.equal(game.inventory.includes(jelly), false);
+});
+
+test('eating a cursed apple puts the hero to sleep', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    const apple = carriedObject(APPLE, {
+        age: game.moves,
+        cursed: true,
+    });
+    game.inventory = [apple];
+    pushKeys('a  ');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game._helplessReason, 'sleeping');
+    assert.ok(game._helplessTurns >= 20);
+    assert.ok(game._helplessTurns <= 30);
+    assert.equal(game.inventory.includes(apple), false);
+});
+
+test('reading a fortune cookie grants nutrition and literacy', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    game.u.uhunger = 900;
+    game.u.uconduct = {};
+    const cookie = carriedObject(FORTUNE_COOKIE, {
+        age: game.moves,
+    });
+    game.inventory = [cookie];
+    pushKeys('a    ');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.u.uhunger, 940);
+    assert.equal(game.u.uconduct.literate, 1);
+    assert.equal(game.inventory.includes(cookie), false);
 });

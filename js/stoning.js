@@ -9,6 +9,7 @@ import { pline, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
+import { healHeroLegs } from './hero_legs.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { CORPSE, EGG } from './object_data.js';
 import {
@@ -83,14 +84,6 @@ function removeHeroSpeed(state) {
     hero.veryFast = !!hero.veryFastFromArmor;
 }
 
-function healStoneStiffenedLegs(state) {
-    const hero = state.u;
-    if (!(hero._woundedLegTurns > 0) || hero.usteed) return;
-    hero._woundedLegTurns = 0;
-    hero._woundedLegSide = null;
-    if (hero.acurr?.a) hero.acurr.a[A_DEX]++;
-}
-
 function petrificationMessage(turns, state) {
     if (turns === 5) return 'You are slowing down.';
     if (turns === 4) {
@@ -129,7 +122,7 @@ export async function advanceHeroPetrification({
         state._helplessTurns = 3;
         state._helplessReason = 'getting stoned';
         state._helplessDoneMessage = 'You can move again.';
-        healStoneStiffenedLegs(state);
+        healHeroLegs(state, { showBodyMessage: false });
     } else if (turns === 2) {
         if ((hero.deafTurns ?? 0) > 0 && hero.deafTurns < 5)
             hero.deafTurns = 5;
