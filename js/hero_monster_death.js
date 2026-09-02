@@ -260,13 +260,15 @@ export async function finishHeroMonsterKill(monster, x, y, {
 } = {}) {
     const wasInside = deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion'
-        || deathContext?.kind === 'swallowed-breath';
+        || deathContext?.kind === 'swallowed-breath'
+        || deathContext?.kind === 'swallowed-venom';
     if (deathContext && !wasInside) {
         throw new Error(
             `unsupported monster death context ${deathContext.kind}`,
         );
     }
-    if (wasInside && deathContext.kind !== 'swallowed-breath'
+    if (wasInside && !['swallowed-breath', 'swallowed-venom']
+        .includes(deathContext.kind)
         && typeof deathContext.finishDestinationEffects !== 'function') {
         throw new TypeError(
             'swallowed monster death requires destination effects',

@@ -58,6 +58,7 @@ import {
 } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
 import { useHeroBreath } from './hero_breath_command.js';
+import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
 import {
     heroCanMindBlast, useHeroMindBlast,
 } from './hero_mind_blast.js';
@@ -5685,6 +5686,12 @@ async function domonability() {
             attack: breath,
             finishMonsterKill: finishHeroMonsterKill,
         });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    const spit = heroSpitAttack(game);
+    if (spit) {
+        const result = await useHeroSpit({ state: game, attack: spit });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
