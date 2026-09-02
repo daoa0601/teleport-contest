@@ -136,8 +136,7 @@ import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import {
-    addObjectToMonsterInventory, clearMonsterCarriedObjectState,
-    removeObjectFromMonsterInventory,
+    addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
@@ -3239,10 +3238,8 @@ function preparePickedInventoryObject(object) {
 
 function removePickupObjects(source, selected) {
     if (source.monster) {
-        for (const object of selected) {
+        for (const object of selected)
             removeObjectFromMonsterInventory(source.monster, object);
-            clearMonsterCarriedObjectState(object);
-        }
         return;
     }
 

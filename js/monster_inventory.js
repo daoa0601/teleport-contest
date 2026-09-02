@@ -3,10 +3,13 @@
 
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
-    LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
+    I_SPECIAL, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
+    NEED_WEAPON, W_SADDLE, W_WEP,
 } from './const.js';
+import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
+import { deleteObject } from './object_delete.js';
 
 export function clearMonsterCarriedObjectState(object) {
     if (!object) return;
@@ -84,10 +87,37 @@ export function removeObjectFromMonsterInventory(monster, object) {
     const inventory = monster.minvent || monster.inventory || [];
     const index = inventory.indexOf(object);
     if (index < 0) return false;
+
+    const wornMask = object.owornmask ?? 0;
     inventory.splice(index, 1);
     monster.minvent = inventory;
     monster.inventory = inventory;
     monster.hasInventory = inventory.length > 0;
-    delete object.carrierMid;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~wornMask;
+    if (wornMask) monster.misc_worn_check |= I_SPECIAL;
+    if (monster.mw === object || object.wielded || (wornMask & W_WEP)) {
+        monster.mw = null;
+        monster.weaponCheck = NEED_WEAPON;
+    }
+    if (monster.saddle === object || (wornMask & W_SADDLE)) {
+        monster.saddle = null;
+        monster.saddled = false;
+    }
+    clearMonsterCarriedObjectState(object);
+    object.where = 'free';
     return true;
+}
+
+export function dropObjectFromMonsterInventory(
+    monster, object, state = game,
+) {
+    if (!removeObjectFromMonsterInventory(monster, object)) return null;
+    return place_object(object, monster.mx, monster.my, state);
+}
+
+export function destroyObjectFromMonsterInventory(
+    monster, object, state = game,
+) {
+    if (!removeObjectFromMonsterInventory(monster, object)) return false;
+    return deleteObject(object, state);
 }

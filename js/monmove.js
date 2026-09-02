@@ -133,7 +133,8 @@ import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+    addObjectToMonsterInventory, dropObjectFromMonsterInventory,
+    linkObjectToMonsterInventory,
     removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
@@ -2387,19 +2388,8 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
         if (!release) release = recordRandom(random, calls, apport) === 0;
         if (release && recordRandom(random, calls, 10) < apport) {
             const dropped = [...carried];
-            for (const object of dropped) {
-                removeObjectFromMonsterInventory(monster, object);
-                object.ox = monster.mx;
-                object.oy = monster.my;
-                object.where = 'floor';
-                state._fobjSerial = (state._fobjSerial || 0) + 1;
-                object._fobjOrder = state._fobjSerial;
-                if (!state.level.objects[monster.mx])
-                    state.level.objects[monster.mx] = [];
-                if (!state.level.objects[monster.mx][monster.my])
-                    state.level.objects[monster.mx][monster.my] = [];
-                state.level.objects[monster.mx][monster.my].unshift(object);
-            }
+            for (const object of dropped)
+                dropObjectFromMonsterInventory(monster, object, state);
             if ((monster.edog?.apport ?? 1) > 1) monster.edog.apport--;
             if (monster.edog) {
                 monster.edog.dropdist = udist;

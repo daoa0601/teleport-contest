@@ -236,12 +236,8 @@ function monsterWeapon(monster) {
 
 function clearMonsterWeapon(monster, object) {
     removeObjectFromMonsterInventory(monster, object);
-    if (monster.mw === object) monster.mw = null;
     if (monster.weapon === object) monster.weapon = null;
     if (monster.wieldedWeapon === object) monster.wieldedWeapon = null;
-    object.wielded = false;
-    object.owornmask = 0;
-    object.where = 'free';
 }
 
 async function snatchPetrifyingCorpse(weapon, state) {

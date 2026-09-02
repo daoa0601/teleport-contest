@@ -6,7 +6,6 @@ import {
 } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { deleteObject } from './object_delete.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL, monsterIsAnimal, monsterTypeName,
@@ -15,7 +14,7 @@ import {
     monsterHasAcidResistance, monsterHasStoneResistance,
 } from './monster_resistance.js';
 import {
-    clearMonsterCarriedObjectState, removeObjectFromMonsterInventory,
+    destroyObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
@@ -117,12 +116,7 @@ function monsterFoodNutrition(monster, object) {
 function consumeOneCure(monster, object, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) {
-        if (monster.mw === object) monster.mw = null;
-        object.wielded = false;
-        removeObjectFromMonsterInventory(monster, object);
-        clearMonsterCarriedObjectState(object);
-        object.where = 'free';
-        deleteObject(object, state);
+        destroyObjectFromMonsterInventory(monster, object, state);
         return;
     }
     object.quan = object.quantity = quantity - 1;

@@ -148,10 +148,7 @@ function deleteGlob(glob, state, carrier = null) {
         glob.container = null;
     } else if (where === 'minvent') {
         const monster = carrier || carryingMonster(glob, state);
-        if (monster) {
-            removeObjectFromMonsterInventory(monster, glob);
-            if (monster.mw === glob) monster.mw = null;
-        }
+        if (monster) removeObjectFromMonsterInventory(monster, glob);
     } else if (where === 'buried') {
         const index = state.level?.buriedObjects?.indexOf(glob) ?? -1;
         if (index >= 0) state.level.buriedObjects.splice(index, 1);
