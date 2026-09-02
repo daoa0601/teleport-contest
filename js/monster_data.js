@@ -102,11 +102,17 @@ const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
 const M1_AMORPHOUS = 0x00000004;
+const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00004000;
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
+const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
+const M1_SLITHY = 0x00080000;
 const M1_THICK_HIDE = 0x00200000;
+const MZ_SMALL = 1;
+const MZ_LARGE = 3;
+const MZ_HUGE = 4;
 const PM_FLOATING_EYE = 28;
 const PM_MIND_FLAYER = 48;
 const PM_MASTER_MIND_FLAYER = 49;
@@ -120,14 +126,22 @@ const PM_GREMLIN = 40;
 const PM_TENGU = 55;
 const PM_WOOD_GOLEM = 254;
 const PM_SHADE = 288;
+const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
+const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
 const S_IMP = 9;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
+const S_CENTAUR = 29;
 const S_VAMPIRE = 48;
 const S_GHOST = 54;
 const S_GOLEM = 55;
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
+const MONSTER_HORNS = new Map([
+    ['horned devil', 2], ['minotaur', 2], ['Asmodeus', 2], ['balrog', 2],
+    ['white unicorn', 1], ['gray unicorn', 1], ['black unicorn', 1],
+    ['ki-rin', 1],
+].map(([name, count]) => [MONSTER_NAME.indexOf(name), count]));
 
 export function monsterClassSymbol(mnum) {
     return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] ?? '?';
@@ -143,6 +157,26 @@ export function monsterIsMindless(mnum) {
 
 export function monsterHasNoLimbs(mnum) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOLIMBS);
+}
+
+export function monsterHasNoHands(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOHANDS);
+}
+
+export function monsterIsVerySmall(mnum) {
+    return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;
+}
+
+export function monsterIsSlithy(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
+}
+
+export function monsterIsCentaur(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_CENTAUR;
+}
+
+export function monsterHornCount(mnum) {
+    return MONSTER_HORNS.get(mnum) ?? 0;
 }
 
 export function monsterIsAnimal(monster) {
@@ -164,6 +198,32 @@ export function monsterIsNoncorporeal(monster) {
 export function monsterIsWhirly(monster) {
     return monster?.mnum === PM_AIR_ELEMENTAL
         || MONSTER_SYMBOL[monster?.mnum] === S_VORTEX;
+}
+
+export function monsterSlipsArmor(mnum) {
+    const monster = { mnum };
+    return monsterIsWhirly(monster)
+        || monsterIsNoncorporeal(monster)
+        || (MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL;
+}
+
+export function monsterBreaksArmor(mnum) {
+    if (monsterSlipsArmor(mnum)) return false;
+    const size = MONSTER_SIZE[mnum] ?? 0;
+    return size >= MZ_LARGE
+        || (size > MZ_SMALL && !((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID))
+        || mnum === PM_WINGED_GARGOYLE
+        || mnum === PM_MARILITH;
+}
+
+export function monsterWrappingAllowed(mnum) {
+    const size = MONSTER_SIZE[mnum] ?? 0;
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
+        && size >= MZ_SMALL && size <= MZ_HUGE
+        && !monsterIsNoncorporeal({ mnum })
+        && !monsterIsCentaur(mnum)
+        && mnum !== PM_WINGED_GARGOYLE
+        && mnum !== PM_MARILITH;
 }
 
 export function monsterIsUnicorn(mnum) {

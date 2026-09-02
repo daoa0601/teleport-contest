@@ -7,7 +7,10 @@ import { newExperienceThreshold } from './exper.js';
 import {
     MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterIsVampire,
+    MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
+    monsterHasNoHands, monsterHornCount, monsterIsCentaur,
+    monsterIsSlithy, monsterIsVampire, monsterIsVerySmall,
+    monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed,
     validVampireShiftForm,
 } from './monster_data.js';
 import {
@@ -33,40 +36,24 @@ import { golemHitPoints } from './monster_hit_points.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
-const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00006000;
 const M1_NOHEAD = 0x00008000;
-const M1_SLITHY = 0x00080000;
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_CONCEAL = 0x00000080;
 const M1_HIDE = 0x00000100;
 const M1_OVIPAROUS = 0x00400000;
-const M1_HUMANOID = 0x00020000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
 const M2_STRONG = 0x04000000;
 const MZ_SMALL = 1;
-const MZ_HUMAN = 2;
-const MZ_LARGE = 3;
-const MZ_HUGE = 4;
 const S_MIMIC = 13;
-const S_VORTEX = 22;
-const S_CENTAUR = 29;
 const S_DRAGON = 30;
-const S_GHOST = 54;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
-const PM_WINGED_GARGOYLE = 42;
-const PM_MARILITH = 294;
-const PM_AIR_ELEMENTAL = 154;
 const LEATHER = 7;
-const HORN_COUNTS = new Map([
-    [291, 2], [177, 2], [309, 2], [302, 2],
-    [101, 1], [102, 1], [103, 1], [124, 1],
-]);
 const OLFACTIONLESS_SYMBOLS = new Set([
     2,  // S_BLOB
     5,  // S_EYE
@@ -174,7 +161,7 @@ export function heroFormSticks(state = game) {
 
 export function heroHasNoHands(state = game) {
     if (!heroIsPolymorphed(state)) return false;
-    return !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_NOHANDS);
+    return monsterHasNoHands(state.u?.umonnum);
 }
 
 export function heroCannotTake(state = game) {
@@ -195,7 +182,7 @@ export function heroHasNoHead(state = game) {
 
 export function heroIsVerySmall(state = game) {
     if (!heroIsPolymorphed(state)) return false;
-    return (MONSTER_SIZE[state.u?.umonnum] ?? MZ_SMALL) < MZ_SMALL;
+    return monsterIsVerySmall(state.u?.umonnum);
 }
 
 export function heroHasEyes(state = game) {
@@ -287,16 +274,6 @@ function destroyCarriedObject(object, slots = []) {
     object.wornSlot = null;
     object.owornmask = 0;
     object.where = 'gone';
-}
-
-function wrappingAllowed(mnum) {
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
-    const size = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
-    const symbol = MONSTER_SYMBOL[mnum];
-    return !!(flags & M1_HUMANOID)
-        && size >= MZ_SMALL && size <= MZ_HUGE
-        && symbol !== S_GHOST && symbol !== S_CENTAUR
-        && mnum !== PM_WINGED_GARGOYLE && mnum !== PM_MARILITH;
 }
 
 function heroSurfaceName() {
@@ -433,18 +410,13 @@ export async function polymonHero(mnum, {
     const boots = game.uarmf || game.u?.uarmf;
     const eyewear = game.ublindf || game.u?.ublindf;
     const weapon = game.uwep || game.u?.uwep;
-    const formSize = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
     const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
-    const whirly = MONSTER_SYMBOL[mnum] === S_VORTEX
-        || mnum === PM_AIR_ELEMENTAL;
-    const noncorporeal = MONSTER_SYMBOL[mnum] === S_GHOST;
-    const verySmall = formSize < MZ_SMALL;
-    const slithy = !!(formFlags & M1_SLITHY);
-    const centaur = MONSTER_SYMBOL[mnum] === S_CENTAUR;
-    const slipsArmor = whirly || noncorporeal || formSize <= MZ_SMALL;
-    const breaksArmor = !slipsArmor && (formSize >= MZ_LARGE
-        || (formSize > MZ_SMALL && !(formFlags & M1_HUMANOID))
-        || mnum === PM_WINGED_GARGOYLE || mnum === PM_MARILITH);
+    const whirly = monsterIsWhirly({ mnum });
+    const verySmall = monsterIsVerySmall(mnum);
+    const slithy = monsterIsSlithy(mnum);
+    const centaur = monsterIsCentaur(mnum);
+    const slipsArmor = monsterSlipsArmor(mnum);
+    const breaksArmor = monsterBreaksArmor(mnum);
     const noHands = heroHasNoHands(game);
     const canBreathe = (MONSTER_ATTACKS[mnum] || [])
         .some(([attackType]) => attackType === 12);
@@ -484,7 +456,8 @@ export async function polymonHero(mnum, {
             destroyCarriedObject(suit, ['uarm']);
         }
         if (cloak) {
-            if (cloak.otyp === MUMMY_WRAPPING && wrappingAllowed(mnum)) {
+            if (cloak.otyp === MUMMY_WRAPPING
+                && monsterWrappingAllowed(mnum)) {
                 // The source wrapping spans eligible humanoid forms and stays
                 // worn even though their ordinary armor must break.
             } else if (cloak.otyp === MUMMY_WRAPPING) {
@@ -520,7 +493,7 @@ export async function polymonHero(mnum, {
         await pline(formMessage);
     }
 
-    const hornCount = HORN_COUNTS.get(mnum) || 0;
+    const hornCount = monsterHornCount(mnum);
     if (hornCount && helmet) {
         const flimsy = (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
         if (flimsy) {

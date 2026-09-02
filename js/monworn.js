@@ -4,7 +4,9 @@
 
 import { armorBonus, armorSlotFor } from './armor.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE,
+    monsterBreaksArmor, monsterHasNoHands, monsterIsCentaur,
+    monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
@@ -15,20 +17,11 @@ import {
     W_ARMS, W_ARMU,
 } from './const.js';
 
-const M1_NOHANDS = 0x00002000;
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
-const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
-const M1_SLITHY = 0x00080000;
 const MZ_SMALL = 1;
-const MZ_LARGE = 3;
-const MZ_HUGE = 4;
-const S_CENTAUR = 29;
-const S_GHOST = 54;
 const SPEED_BOOTS = 166;
-const PM_WINGED_GARGOYLE = 42;
-const PM_MARILITH = 295;
 
 const SLOT_MASK = Object.freeze({
     uamul: W_AMUL,
@@ -50,7 +43,8 @@ const WEAR_ORDER = Object.freeze([
 function monsterCanDress(monster, creation) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
-    if (size < MZ_SMALL || (flags & (M1_NOHANDS | M1_ANIMAL))) return false;
+    if (size < MZ_SMALL || monsterHasNoHands(monster.mnum)
+        || (flags & M1_ANIMAL)) return false;
     // Creation is the source exception for skeletons and mummies. Other
     // mindless monsters cannot dress themselves later.
     if ((flags & M1_MINDLESS) && !creation) return false;
@@ -58,23 +52,8 @@ function monsterCanDress(monster, creation) {
 }
 
 function monsterCanWearSuit(monster) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const size = MONSTER_SIZE[monster?.mnum] ?? 0;
-    return size > MZ_SMALL && size < MZ_LARGE
-        && !!(flags & M1_HUMANOID)
-        && monster.mnum !== PM_MARILITH
-        && monster.mnum !== PM_WINGED_GARGOYLE;
-}
-
-function monsterWrappingAllowed(monster) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const size = MONSTER_SIZE[monster?.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster?.mnum];
-    return !!(flags & M1_HUMANOID)
-        && size >= MZ_SMALL && size <= MZ_HUGE
-        && symbol !== S_GHOST && symbol !== S_CENTAUR
-        && monster.mnum !== PM_WINGED_GARGOYLE
-        && monster.mnum !== PM_MARILITH;
+    return !monsterSlipsArmor(monster.mnum)
+        && !monsterBreaksArmor(monster.mnum);
 }
 
 function monsterCreationWearSnapshotSlots(monster) {
@@ -85,12 +64,12 @@ function monsterCreationWearSnapshotSlots(monster) {
     const slots = ['uamul'];
     if (canWearSuit && !((monster.misc_worn_check ?? 0) & W_ARM))
         slots.push('uarmu');
-    if (canWearSuit || monsterWrappingAllowed(monster)) slots.push('uarmc');
+    if (canWearSuit || monsterWrappingAllowed(monster.mnum)) slots.push('uarmc');
     slots.push('uarmh');
     if (!weapon || !OBJECT_BIMANUAL[weapon.otyp]) slots.push('uarms');
     slots.push('uarmg');
-    if (!(flags & M1_SLITHY)
-        && MONSTER_SYMBOL[monster?.mnum] !== S_CENTAUR) slots.push('uarmf');
+    if (!monsterIsSlithy(monster.mnum)
+        && !monsterIsCentaur(monster.mnum)) slots.push('uarmf');
     slots.push('uarm');
     return slots;
 }
@@ -103,8 +82,8 @@ function slotAllowed(monster, slot) {
     if (slot === 'uarmc') return monsterCanWearSuit(monster);
     if (slot === 'uarmh') return !(flags & M1_NOHEAD);
     if (slot === 'uarmf')
-        return !(flags & M1_SLITHY)
-            && MONSTER_SYMBOL[monster?.mnum] !== S_CENTAUR;
+        return !monsterIsSlithy(monster.mnum)
+            && !monsterIsCentaur(monster.mnum);
     return true;
 }
 
