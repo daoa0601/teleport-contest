@@ -5,6 +5,7 @@ import {
 import { mksobj, place_object, set_corpsenm } from '../../js/mklev.js';
 import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
+import { objectWeight } from '../../js/weight.js';
 
 const WEAPON_NAMES = new Map([
     [CLUB, ['club', 'clubs']],
@@ -60,14 +61,22 @@ export function looseObject(otyp, overrides = {}) {
 }
 
 export function knownObject(otyp, overrides = {}) {
-    return Object.assign(mksobj(otyp, true, false), {
+    const quantity = overrides.quan ?? overrides.quantity ?? 1;
+    const object = Object.assign(mksobj(otyp, true, false), {
         blessed: false,
         cursed: false,
         bknown: true,
         dknown: true,
         known: true,
         typeKnown: true,
-    }, overrides);
+        quan: quantity,
+        quantity,
+    }, overrides, {
+        quan: quantity,
+        quantity,
+    });
+    if (overrides.owt === undefined) object.owt = objectWeight(object);
+    return object;
 }
 
 export function knownInventoryObject(otyp, overrides = {}) {

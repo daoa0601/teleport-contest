@@ -6,7 +6,7 @@ import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
 import { monsterGoodPosition } from './teleport_rules.js';
-import { MONSTER_MOVE } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { armorSlotFor, findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
 import { A_CHA, A_CON, A_STR, COLNO, ROWNO } from './const.js';
@@ -18,7 +18,8 @@ import {
     HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET,
     LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
-    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, STATUE,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, CORPSE,
+    STATUE,
     LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH,
     STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT,
@@ -57,6 +58,7 @@ import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
+import { makePlural } from './object_grammar.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -696,6 +698,8 @@ const CLASS_PRESENTATION = {
 };
 
 function qualifiedObjectName(raw) {
+    if (raw.otyp === CORPSE && MONSTER_NAME[raw.corpsenm])
+        return `${MONSTER_NAME[raw.corpsenm]} corpse`;
     const name = OBJECT_NAMES[raw.otyp] || `object ${raw.otyp}`;
     switch (raw.oclass) {
     case RING_CLASS: return `ring of ${name}`;
@@ -714,7 +718,7 @@ function sourceKnownPresentation(raw) {
         : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJECT_NAMES[raw.otyp]}`
         : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJECT_NAMES[raw.otyp]}`
         : raw.oclass === WAND_CLASS ? `wands of ${OBJECT_NAMES[raw.otyp]}`
-        : `${name}s`;
+        : makePlural(name);
     return {
         class: CLASS_PRESENTATION[raw.oclass] || 'Other',
         name, plural,
@@ -875,7 +879,8 @@ export function finishStartingDiscoveries() {
 
 export function inventoryItem(raw, presentation = null) {
     let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
-        || (raw._startingInventory ? sourceKnownPresentation(raw) : null) || {
+        || (raw._startingInventory || raw.typeKnown
+            ? sourceKnownPresentation(raw) : null) || {
         class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
     };
     if (game.urole?.key === 'knight'

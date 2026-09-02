@@ -7,26 +7,23 @@ import { pushKey } from '../js/input.js';
 import {
     CORPSE, FOOD_RATION, GLOB_OF_GREEN_SLIME, MEATBALL,
 } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
 import { PM_GREEN_SLIME } from '../js/slime.js';
 import {
-    carriedObject, floorObject, knownObject,
+    floorObject, knownInventoryObject,
 } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 test('a carried meat corpse applies the live Monk conduct penalty', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.urole = { key: 'monk' };
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
     game.u.uhunger = 900;
-    const corpse = carriedObject(CORPSE, {
+    const corpse = knownInventoryObject(CORPSE, {
         corpsenm: 70,
         name: 'goblin corpse',
         age: game.moves,
     });
-    game.inventory = [corpse];
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -48,14 +45,12 @@ test('a carried meat corpse applies the live Monk conduct penalty', async () => 
 
 test('the first bite of green slime starts the transformation countdown',
     async () => {
-        freshWeaponArena();
-        initRng(45300n);
-        const corpse = carriedObject(CORPSE, {
+        freshObjectRoom({ gameplaySeed: 45300n });
+        const corpse = knownInventoryObject(CORPSE, {
             corpsenm: PM_GREEN_SLIME,
             name: 'green slime corpse',
             age: game.moves,
         });
-        game.inventory = [corpse];
         pushKey('a');
 
         await rhack('e'.charCodeAt(0));
@@ -77,11 +72,9 @@ test('the first bite of green slime starts the transformation countdown',
     });
 
 test('a food ration remains in the pack until its last bite', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.u.uhunger = 900;
-    const ration = carriedObject(FOOD_RATION, { age: game.moves });
-    game.inventory = [ration];
+    const ration = knownInventoryObject(FOOD_RATION, { age: game.moves });
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -105,14 +98,10 @@ test('a food ration remains in the pack until its last bite', async () => {
 });
 
 test('a green slime glob is a multi-turn slime meal', async () => {
-    freshWeaponArena();
-    initRng(45300n);
-    const glob = knownObject(GLOB_OF_GREEN_SLIME, {
-        invlet: 'a',
-        where: 'inventory',
+    freshObjectRoom({ gameplaySeed: 45300n });
+    const glob = knownInventoryObject(GLOB_OF_GREEN_SLIME, {
         age: game.moves,
     });
-    game.inventory = [glob];
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -135,8 +124,7 @@ test('a green slime glob is a multi-turn slime meal', async () => {
 
 test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     async () => {
-        const level = freshWeaponArena();
-        initRng(45300n);
+        const level = freshObjectRoom({ gameplaySeed: 45300n });
         game.urole = { key: 'monk' };
         game.u.ualign = { type: 0, record: 10, abuse: 0 };
         game.u.uconduct = {};
@@ -163,15 +151,13 @@ test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     });
 
 test('ordinary carried meat uses the same Monk vegetarian rule', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.urole = { key: 'monk' };
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = carriedObject(MEATBALL, {
+    const meatball = knownInventoryObject(MEATBALL, {
         age: game.moves,
     });
-    game.inventory = [meatball];
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -187,15 +173,13 @@ test('ordinary carried meat uses the same Monk vegetarian rule', async () => {
 });
 
 test('the vegetarian alignment penalty remains Monk-specific', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.urole = { key: 'rogue' };
     game.u.ualign = { type: -1, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = carriedObject(MEATBALL, {
+    const meatball = knownInventoryObject(MEATBALL, {
         age: game.moves,
     });
-    game.inventory = [meatball];
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -208,16 +192,14 @@ test('the vegetarian alignment penalty remains Monk-specific', async () => {
 
 test('rotten carried meat retains the preceding Monk guilt outcome',
     async () => {
-        freshWeaponArena();
-        initRng(45300n);
+        freshObjectRoom({ gameplaySeed: 45300n });
         game.urole = { key: 'monk' };
         game.u.ualign = { type: 0, record: 10, abuse: 0 };
         game.u.uconduct = {};
-        const meatball = carriedObject(MEATBALL, {
+        const meatball = knownInventoryObject(MEATBALL, {
             age: game.moves,
             cursed: true,
         });
-        game.inventory = [meatball];
         pushKey('a');
 
         await rhack('e'.charCodeAt(0));
