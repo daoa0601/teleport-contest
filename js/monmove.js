@@ -35,6 +35,9 @@ import {
 import {
     beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume,
 } from './landmine_trap.js';
+import {
+    beginMonsterPitTrap, finishMonsterPitTrap, monsterAvoidsPit,
+} from './monster_pit_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -4440,16 +4443,7 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
-        // trap.c:mintrap()->trapeffect_pit().  Destination admission and pit
-        // contact are separate phases: mfndpos() can select the square, then
-        // mintrap() applies knowledge, caught state, damage, and ordinary
-        // corpse construction before postmov() decides whether dochug()
-        // continues.
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        const symbol = MONSTER_SYMBOL[monster.mnum];
-        const airborne = !!(flags & M1_FLY)
-            || symbol === S_EYE || symbol === S_LIGHT;
-        if (airborne || (flags & M1_CLING)) return null;
+        if (monsterAvoidsPit(monster)) return null;
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4458,40 +4452,9 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-
-        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
-            && (!monster.minvis || state?.u?.seeInvisible
-                || state?.u?.see_invisible);
-        if (!(flags & M1_WALLWALK)) monster.mtrapped = 1;
-
-        const ironShoes = (monster.minvent || monster.inventory || [])
-            .some(object => object?.otyp === IRON_SHOES
-                && ((object?.owornmask ?? 0) & W_ARMF));
-        const spiked = trap.ttyp === SPIKED_PIT;
-        const relevantSpikes = spiked && !ironShoes;
-        const damageSides = relevantSpikes ? 10 : 6;
-        const monsterHpBefore = monster.mhp ?? 1;
-        const damage = rollOne(damageSides);
-        calls.push(`rnd(${damageSides})`);
-        monster.mhp = Math.max(0, monsterHpBefore - damage);
-        const killed = monster.mhp <= 0;
-        let death = null;
-        if (killed) {
-            detachDeadMonster(monster, state);
-            const corpse = createOrdinaryMonsterCorpse(
-                monster, state, random, calls,
-            );
-            death = { corpseCreated: !!corpse, corpse };
-            movement.actorDied = true;
-            movement.actionCompleted = true;
-        }
-        const event = {
-            kind: 'pit-trap', trap, visible, spiked, relevantSpikes,
-            damageSides, monsterHpBefore, monsterHpAfter: monster.mhp,
-            damage, killed, death,
-        };
+        const event = beginMonsterPitTrap(monster, trap, state);
         movement.trap = event;
+        movement.deferredAfterMonsterPitTrap = true;
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
@@ -7511,6 +7474,7 @@ function monsterTrapResultIsDeferred(movement) {
     return !!(movement.deferredAfterProjectileTrapMessage
         || movement.deferredAfterMonsterFireTrap
         || movement.deferredAfterMonsterLandMine
+        || movement.deferredAfterMonsterPitTrap
         || movement.deferredAfterAntiMagicTrapMessage
         || movement.deferredAfterAntiMagicTrapDeath);
 }
@@ -7724,6 +7688,48 @@ export async function resumeDeferredMonsterLandMine(
         random: recordedRandom,
         rollOne: recordedRollOne,
         monsterName,
+        describeMonster,
+    });
+    if (event.killed) {
+        movement.actorDied = true;
+        movement.actionCompleted = true;
+        return action;
+    }
+
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        calls, { trapAlreadyHandled: true },
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterPitTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterPitTrap
+        || event?.kind !== 'pit-trap') return action;
+    delete movement.deferredAfterMonsterPitTrap;
+    const calls = action.calls || DISCARDED_CALL_LOG;
+    const recordedRollOne = range => {
+        const result = rollOne(range);
+        calls.push(`rnd(${range})`);
+        return result;
+    };
+
+    await finishMonsterPitTrap(action.monster, event, {
+        finishDeath: (monster, options) =>
+            finishEnvironmentalMonsterDeath(monster, state, options),
+        publish,
+        random,
+        rollOne: recordedRollOne,
         describeMonster,
     });
     if (event.killed) {

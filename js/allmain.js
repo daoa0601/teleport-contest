@@ -158,6 +158,7 @@ import {
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterFireTrap,
     resumeDeferredMonsterLandMine,
+    resumeDeferredMonsterPitTrap,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -4056,6 +4057,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             await resumeDeferredMonsterLandMine(action, game, {
                 publish: queueTurnMessage,
                 monsterName: quietMonsterName,
+                describeMonster: visibleMonsterSubject,
+            });
+            movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
+        }
+        if (movement?.trap?.kind === 'pit-trap'
+            && movement.deferredAfterMonsterPitTrap) {
+            const event = movement.trap;
+            await resumeDeferredMonsterPitTrap(action, game, {
+                publish: queueTurnMessage,
                 describeMonster: visibleMonsterSubject,
             });
             movement = action.movement;

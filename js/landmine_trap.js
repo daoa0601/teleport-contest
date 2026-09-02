@@ -15,8 +15,11 @@ import {
     monsterInAir, resolveMonsterLiquid, wakeMonstersNear,
 } from './mon.js';
 import {
-    MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME,
+    MONSTER_BODY_META, MONSTER_NAME,
 } from './monster_data.js';
+import {
+    beginMonsterPitTrap, finishMonsterPitTrap,
+} from './monster_pit_trap.js';
 import { IRON_SHOES } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
@@ -24,8 +27,6 @@ import {
     destroyLavaFloorObjects, monsterTrapVisibility, waterDamageChain,
 } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
-
-const M1_WALLWALK = 0x00000008;
 
 function inventoryOf(monster) {
     return monster.minvent || monster.inventory || [];
@@ -183,18 +184,19 @@ async function finishMineDeath(monster, event, options) {
 }
 
 async function fallIntoMinePit(monster, trap, event, state, options) {
-    if (!trap || monsterInAir(monster, state)) return;
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
-        monster.mtrapped = 1;
-    if (event.inSight) {
-        await options.publish(
-            `${options.describeMonster(monster)} falls into a pit!`,
-        );
-    }
-    const damage = options.rollOne(6);
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    if (monster.mhp <= 0)
-        await finishMineDeath(monster, event, options);
+    const pit = beginMonsterPitTrap(
+        monster, trap, state, { forced: true },
+    );
+    if (!pit) return;
+    await finishMonsterPitTrap(monster, pit, {
+        finishDeath: options.finishDeath,
+        publish: options.publish,
+        random: options.random,
+        rollOne: options.rollOne,
+        describeMonster: options.describeMonster,
+    });
+    if (pit.death) event.death = pit.death;
+    if (pit.killed) event.killed = true;
 }
 
 export function beginMonsterLandMine(
