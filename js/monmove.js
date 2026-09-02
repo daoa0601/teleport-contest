@@ -25,6 +25,7 @@ import {
     heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced,
 } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
+import { drainHeroEnergy } from './hero_energy.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -5945,31 +5946,6 @@ function energyDrainDice(state, dice = 2, sides = 6) {
     return { dice, sides };
 }
 
-function applyHeroEnergyDrain(state, amount, rollOne, calls) {
-    const hero = state.u;
-    if ((hero.uenmax ?? 0) < 1) {
-        hero.uen = hero.uenmax = 0;
-        return 'You feel momentarily lethargic.';
-    }
-    if (amount > ((hero.uen ?? 0) + (hero.uenmax ?? 0)) / 3) {
-        const originalAmount = amount;
-        amount = rollOne(originalAmount);
-        calls.push(`rnd(${originalAmount})`);
-    }
-    const punctuation = amount > (hero.uen ?? 0) ? '!' : '.';
-    hero.uen = (hero.uen ?? 0) - amount;
-    if (hero.uen < 0) {
-        const deficit = -hero.uen;
-        const maximumLoss = rollOne(deficit);
-        calls.push(`rnd(${deficit})`);
-        hero.uenmax = Math.max(0, (hero.uenmax ?? 0) - maximumLoss);
-        hero.uen = 0;
-    } else if (hero.uen > (hero.uenmax ?? 0)) {
-        hero.uen = hero.uenmax;
-    }
-    return `You feel your magical energy drain away${punctuation}`;
-}
-
 function resolveEnergyVortexDrainSlot(
     monster, state, calls, random = rn2, rollOne = rnd, rollDice = d,
 ) {
@@ -5978,8 +5954,15 @@ function resolveEnergyVortexDrainSlot(
     const amount = rollDice(adjusted.dice, adjusted.sides);
     calls.push(`d(${adjusted.dice},${adjusted.sides})`);
     let message = null;
-    if (!monster?.mcan && recordRandom(random, calls, 4) !== 0)
-        message = applyHeroEnergyDrain(state, amount, rollOne, calls);
+    if (!monster?.mcan && recordRandom(random, calls, 4) !== 0) {
+        message = drainHeroEnergy(state, amount, {
+            rollOne: sides => {
+                const result = rollOne(sides);
+                calls.push(`rnd(${sides})`);
+                return result;
+            },
+        });
+    }
     return {
         message,
         deferredExpulsion: (state.u?.uswldtim ?? 0) === 0,

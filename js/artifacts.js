@@ -188,6 +188,15 @@ function artifactDefenseApplies(defender, damageType, hero, state) {
     return carriedArtifactDefends(inventory, damageType, state);
 }
 
+export function heroHasArtifactDefense(damageType, state = game) {
+    return artifactDefenseApplies(state.u, damageType, true, state);
+}
+
+export function heroHasCarriedArtifactFlag(flag, state = game) {
+    return (state.inventory || []).some(object =>
+        artifactById(object?.oartifact, state)?.carriedFlags.includes(flag));
+}
+
 function resistanceAttackApplies(
     artifact, defender, { hero, random, state },
 ) {

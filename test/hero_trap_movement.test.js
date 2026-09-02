@@ -1,24 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import {
-    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM, SLP_GAS_TRAP,
-    RUST_TRAP, SQKY_BOARD, W_ARMH,
+    ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM,
+    SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, W_ARMF, W_ARMH, W_WEP,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
 import {
-    ARROW, HEAVY_IRON_BALL, ORCISH_HELM, ROCK, STATUE,
+    ARROW, HEAVY_IRON_BALL, IRON_SHOES, ORCISH_HELM, ROCK, STATUE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
-import { inventoryObject } from './support/game-objects.js';
+import {
+    inventoryObject, knownInventoryObject,
+} from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { addMonster, addPet } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('escaping a web takes a movement attempt without moving the hero',
@@ -191,6 +195,60 @@ test('a rust trap can rust the helmet worn by the hero', async () => {
     assert.equal(trap.tseen, true);
     assert.equal(helmet.oeroded, 1);
 });
+
+test('enchanted iron shoes absorb an anti-magic field', async () => {
+    const level = freshObjectRoom({
+        hero: { uen: 20, uenmax: 20 },
+    });
+    const shoes = knownInventoryObject(IRON_SHOES, { spe: 1 });
+    wearHeroObject(shoes, 'uarmf', W_ARMF);
+    const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(trap.tseen, true);
+    assert.equal(shoes.spe, 0);
+    assert.deepEqual([game.u.uen, game.u.uenmax], [20, 20]);
+});
+
+test('an anti-magic field drains energy from an unprotected hero', async () => {
+    const level = freshWeaponArena({ energy: 20 });
+    const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
+    const hitPoints = game.u.uhp;
+    initRng(8201n);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(trap.tseen, true);
+    assert.equal(game.u.uhp, hitPoints);
+    assert.ok(game.u.uen < 20);
+    assert.ok(game.u.uenmax < 20);
+});
+
+test('wielding Magicbane turns an anti-magic field into an implosion',
+    async () => {
+        const level = freshObjectRoom({
+            hero: { uen: 20, uenmax: 20 },
+        });
+        const artifact = artifactByName('Magicbane');
+        const magicbane = knownInventoryObject(artifact.baseType, { spe: 0 });
+        nameArtifact(magicbane, artifact);
+        magicbane.wielded = true;
+        wearHeroObject(magicbane, 'uwep', W_WEP);
+        const trap = addTrap(
+            level, ANTI_MAGIC, 11, 10, { tseen: false },
+        );
+        const hitPoints = game.u.uhp;
+        initRng(8202n);
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(trap.tseen, true);
+        assert.ok(game.u.uhp < hitPoints);
+        assert.ok(game.u.uen < 20);
+        assert.ok(game.u.uenmax < 20);
+    });
 
 test('stepping on a statue trap releases its monster', async () => {
     const level = freshWeaponArena();

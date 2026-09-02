@@ -8,7 +8,8 @@ import {
 import { objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroHeadName } from './body_parts.js';
 import {
-    A_CON, A_DEX, A_STR, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
+    A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
+    FIRE_TRAP,
     HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP,
     ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
@@ -79,6 +80,7 @@ import {
 import { splashLitObject, waterDamageObject } from './trap.js';
 import { heroIsPolymorphed, rehumanizeHero } from './polyself.js';
 import { finishHeroDeath } from './end.js';
+import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -114,9 +116,21 @@ function losePhysicalHitPoints(amount) {
     loseHitPoints(physicalDamage(amount));
 }
 
+function heroObject(slot) {
+    return game[slot] || game.u?.[slot] || null;
+}
+
+function heroIronShoes() {
+    const boots = heroObject('uarmf');
+    return boots && OBJECT_MATERIAL[boots.otyp] === IRON ? boots : null;
+}
+
 function heroWearsIronShoes() {
-    const boots = game.uarmf || game.u?.uarmf;
-    return !!boots && OBJECT_MATERIAL[boots.otyp] === IRON;
+    return !!heroIronShoes();
+}
+
+function heroPassesWalls() {
+    return !!game.u?.passesWalls || !!(heroFormFlags() & M1_WALLWALK);
 }
 
 async function applySpikePoison() {
@@ -299,9 +313,7 @@ function heroEscapesPitEasily() {
 
 async function climbOutOfPit() {
     const hero = game.u;
-    const passesWalls = hero.passesWalls || hero.passes_walls
-        || !!(heroFormFlags() & M1_WALLWALK);
-    if (passesWalls) {
+    if (heroPassesWalls()) {
         await pline('You ascend from the pit.');
         clearHeroTrap();
         fillHeroPitWithBoulder();
@@ -923,10 +935,6 @@ async function triggerBearTrap(trap, { failedUntrap = false } = {}) {
     exerciseAttribute(A_DEX, false);
 }
 
-function heroObject(slot) {
-    return game[slot] || game.u?.[slot] || null;
-}
-
 function rustTargetName(object, fallback) {
     return object?.name || OBJECT_NAMES[object?.otyp] || fallback;
 }
@@ -1112,6 +1120,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case RUST_TRAP:
         await triggerRustTrap(trap);
+        break;
+    case ANTI_MAGIC:
+        await triggerHeroAntiMagicTrap(trap);
         break;
     case BEAR_TRAP:
         await triggerBearTrap(trap, { failedUntrap });
