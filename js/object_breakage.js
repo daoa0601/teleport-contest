@@ -169,12 +169,29 @@ export async function breakFloorObject(object, {
     explodeFire = createFireExplosion,
     finishMonsterKill,
 } = {}) {
-    const x = object.ox, y = object.oy;
-    const visible = cansee(x, y);
-    const audible = !heroIsDeaf(state);
     if (!objectBreaksOnImpact(object, random)) {
         return { destroyed: false, observed: false };
     }
+    return breakObjectAtLocation(object, {
+        state, heroCaused, publish, random, luckRandom, rollDice,
+        summonMonster, explodeFire, finishMonsterKill,
+    });
+}
+
+export async function breakObjectAtLocation(object, {
+    state = game,
+    heroCaused = true,
+    publish = plineWithContinuation,
+    random = rn2,
+    luckRandom = rnl,
+    rollDice = d,
+    summonMonster = makemonAt,
+    explodeFire = createFireExplosion,
+    finishMonsterKill,
+} = {}) {
+    const x = object.ox, y = object.oy;
+    const visible = cansee(x, y);
+    const audible = !heroIsDeaf(state);
 
     const glassArmor = object.oclass === ARMOR_CLASS
         && OBJECT_MATERIAL[object.otyp] === GLASS;
