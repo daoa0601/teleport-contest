@@ -7,8 +7,9 @@ import {
 } from './const.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { heroFormFlags, heroMonsterForm } from './polyself.js';
 
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
@@ -20,16 +21,8 @@ const AT_ENGL = 11;
 const AD_WRAP = 18;
 const AD_STCK = 19;
 
-function currentForm(state) {
-    const hero = state.u;
-    if (!Number.isInteger(hero?.umonnum)) return null;
-    if ((hero.mtimedone ?? 0) > 0) return hero.umonnum;
-    return Number.isInteger(hero.umonster)
-        && hero.umonnum !== hero.umonster ? hero.umonnum : null;
-}
-
 function formSticks(state) {
-    const attacks = MONSTER_ATTACKS[currentForm(state)] || [];
+    const attacks = MONSTER_ATTACKS[heroMonsterForm(state)] || [];
     return attacks.some(([attackType, damageType]) =>
         damageType === AD_STCK
         || (damageType === AD_WRAP && attackType !== AT_ENGL)
@@ -42,9 +35,9 @@ function holderHugs(holder) {
 }
 
 function heroHidesOnCeiling(state) {
-    const form = currentForm(state);
+    const form = heroMonsterForm(state);
     if (form == null || !state.u?.uundetected) return false;
-    const flags = MONSTER_FLAGS1[form] ?? 0;
+    const flags = heroFormFlags(state);
     const symbol = MONSTER_SYMBOL[form];
     return !!(flags & M1_HIDE)
         && (!!(flags & M1_FLY)
@@ -76,32 +69,40 @@ function heroEscapedShaft(trap) {
     return is_hole(trap?.ttyp) && !!(trap.tseen ?? trap.seen);
 }
 
-export function heroCanReachFloor(
+export function floorReachProblem(
     state = game,
     { checkPit = false } = {},
 ) {
     const hero = state.u || {};
-    if (hero.uswallow) return false;
+    if (hero.uswallow) return 'swallowed';
     if (hero.ustuck && !formSticks(state) && holderHugs(hero.ustuck))
-        return false;
+        return 'held';
 
     const airLevel = state.level?.flags?.is_airlevel
         || sameDungeonLevel(hero.uz, state.air_level);
     const waterLevel = state.level?.flags?.is_waterlevel
         || sameDungeonLevel(hero.uz, state.water_level);
     if ((hero.levitating || hero.levitation || state.levitating)
-        && !airLevel && !waterLevel) return false;
-    if (hero.usteed && ridingSkill(state) < 2) return false;
-    if (heroHidesOnCeiling(state)) return false;
+        && !airLevel && !waterLevel) return 'levitating';
+    if (hero.usteed && ridingSkill(state) < 2) return 'riding';
+    if (heroHidesOnCeiling(state)) return 'ceiling';
 
-    const form = currentForm(state);
-    const flags = form == null ? 0 : MONSTER_FLAGS1[form] ?? 0;
+    const form = heroMonsterForm(state);
+    const flags = heroFormFlags(state);
     if (hero.flying || hero.flight || state.flying || (flags & M1_FLY)
         || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
-        return true;
+        return null;
     }
 
     const trap = checkPit ? trapAtHero(state) : null;
-    return !trap
-        || (!heroTeetersAtPit(state, trap) && !heroEscapedShaft(trap));
+    if (heroTeetersAtPit(state, trap)) return 'pit-edge';
+    if (heroEscapedShaft(trap)) return 'shaft-edge';
+    return null;
+}
+
+export function heroCanReachFloor(
+    state = game,
+    options = {},
+) {
+    return floorReachProblem(state, options) === null;
 }

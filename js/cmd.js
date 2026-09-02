@@ -93,6 +93,7 @@ import { splitObjectStack } from './object_stack.js';
 import { deleteObject } from './object_delete.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { heroCanReachFloor } from './floor_reach.js';
+import { pickupLocationProblem } from './pickup_location.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
     removeObjectFromMonsterInventory,
@@ -3437,22 +3438,23 @@ function pickupSourceAtHero() {
 }
 
 async function pickupAtHero() {
+    const commandCount = Math.max(0, game._commandCount || 0);
+    game._commandCount = 0;
     const source = pickupSourceAtHero();
-    if (!source.monster) {
-        const trap = game.level?.traps?.find(candidate =>
-            candidate.tx === source.x && candidate.ty === source.y);
-        if (!heroCanReachFloor(game, {
-            checkPit: is_pit(trap?.ttyp),
-        })) {
-            game.context.move = 0;
-            return;
-        }
-    }
     // pickup.c excludes the hero's attached chain from object counts and
     // selection.  It remains linked to the floor pile for ball.c.
     const objects = source.monster ? [...source.objects]
         : source.objects.filter(object => object !== game.uchain
             && object !== game.u?.uchain);
+    const locationProblem = pickupLocationProblem({
+        state: game, objects, monster: source.monster,
+    });
+    if (locationProblem) {
+        for (const message of locationProblem.messages)
+            await plineWithContinuation(message);
+        game.context.move = locationProblem.spendsTurn ? 1 : 0;
+        return;
+    }
     if (!source.monster && heroCannotTake(game)) {
         await pline(
             'You are physically incapable of picking anything up.',
@@ -3460,18 +3462,32 @@ async function pickupAtHero() {
         game.context.move = 0;
         return;
     }
-    if (!objects.length) {
-        await pline('There is nothing here to pick up.');
+    if (objects.length === 1) {
+        if (commandCount > objectQuantity(objects[0])) {
+            game.context.move = 0;
+            return;
+        }
+        await commitPickup(source, [{
+            value: objects[0],
+            count: commandCount || objectQuantity(objects[0]),
+        }]);
+        return;
+    }
+
+    const eligible = commandCount
+        ? objects.filter(object => objectQuantity(object) >= commandCount)
+        : objects;
+    if (!eligible.length) {
         game.context.move = 0;
         return;
     }
-
-    if (objects.length === 1) {
-        await commitPickup(source, [objects[0]]);
+    if (commandCount && eligible.length === 1) {
+        await commitPickup(source, [{
+            value: eligible[0], count: commandCount,
+        }]);
         return;
     }
-
-    const ordered = orderedPickupObjects(objects);
+    const ordered = orderedPickupObjects(eligible);
     const sections = [];
     let letterCode = 'a'.charCodeAt(0);
     let goldAcceleratorUsed = false;
@@ -3495,9 +3511,16 @@ async function pickupAtHero() {
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
-        title: 'Pick up what?', sections, left: 41, returnCounts: true,
+        title: commandCount
+            ? `Pick ${commandCount} of what?` : 'Pick up what?',
+        sections,
+        left: 41,
+        returnCounts: !commandCount,
+        pickOne: !!commandCount,
     });
-    await commitPickup(source, selected);
+    const counted = commandCount && selected.length
+        ? [{ value: selected[0], count: commandCount }] : selected;
+    await commitPickup(source, counted);
 }
 
 async function doWalletQuery() {

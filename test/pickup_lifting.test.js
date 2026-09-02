@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
-import { PIT, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -344,4 +344,56 @@ test('autopickup leaves an unreachable floor object behind', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.level.objects[11][10].includes(club), true);
     assert.equal(game.inventory.includes(club), false);
+});
+
+test('a pickup command count takes that many objects', async () => {
+    freshPickupGame();
+    const darts = floorObject(DART, 10, 10, { quantity: 10 });
+
+    await rhack('3'.charCodeAt(0));
+    await rhack(','.charCodeAt(0));
+
+    const carried = game.inventory.find(object => object.otyp === DART);
+    assert.equal(carried.quan, 3);
+    assert.equal(darts.quan, 7);
+    assert.equal(game._commandCount, 0);
+});
+
+test('a pickup command count chooses one matching stack', async () => {
+    freshPickupGame();
+    const darts = floorObject(DART, 10, 10, { quantity: 10 });
+    const rocks = floorObject(ROCK, 10, 10, { quantity: 10 });
+    pushKey('a');
+
+    await rhack('3'.charCodeAt(0));
+    await rhack(','.charCodeAt(0));
+
+    const carried = game.inventory.find(object => object.otyp === DART);
+    assert.equal(carried.quan, 3);
+    assert.equal(darts.quan, 7);
+    assert.equal(rocks.quan, 10);
+});
+
+test('an empty digesting monster still consumes a pickup turn', async () => {
+    freshPickupGame();
+    swallowHeroWith();
+    pushKeys(' '.repeat(3));
+
+    await rhack(','.charCodeAt(0));
+
+    assert.deepEqual(game.inventory, []);
+    assert.equal(game.context.move, 1);
+});
+
+test('water walking cannot reach objects at the bottom of a pool', async () => {
+    freshPickupGame();
+    game.level.at(10, 10).typ = POOL;
+    game.u.waterWalking = true;
+    const club = floorObject(CLUB, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.level.objects[10][10].includes(club), true);
+    assert.equal(game.inventory.includes(club), false);
+    assert.equal(game.context.move, 0);
 });

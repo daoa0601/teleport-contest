@@ -76,6 +76,15 @@ export function heroIsPolymorphed(state = game) {
         && u.umonnum !== u.umonster;
 }
 
+export function heroMonsterForm(state = game) {
+    return heroIsPolymorphed(state) ? state.u.umonnum : null;
+}
+
+export function heroFormFlags(state = game) {
+    const form = heroMonsterForm(state);
+    return form == null ? 0 : MONSTER_FLAGS1[form] ?? 0;
+}
+
 export function heroHasNoHands(state = game) {
     if (!heroIsPolymorphed(state)) return false;
     return !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_NOHANDS);

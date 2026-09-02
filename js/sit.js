@@ -24,6 +24,7 @@ import {
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { heroFormFlags, heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
@@ -59,21 +60,8 @@ const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
 const PM_SALAMANDER = 329;
 
-function currentForm() {
-    const u = game.u;
-    if (!Number.isInteger(u?.umonnum)) return null;
-    return (u.mtimedone ?? 0) > 0
-        || (Number.isInteger(u.umonster) && u.umonnum !== u.umonster)
-        ? u.umonnum : null;
-}
-
-function formFlags() {
-    const form = currentForm();
-    return form == null ? 0 : (MONSTER_FLAGS1[form] ?? 0);
-}
-
 function formSticks() {
-    const attacks = MONSTER_ATTACKS[currentForm()] || [];
+    const attacks = MONSTER_ATTACKS[heroMonsterForm(game)] || [];
     return attacks.some(([attackType, damageType]) =>
         damageType === AD_STCK
         || (damageType === AD_WRAP && attackType !== AT_ENGL)
@@ -97,7 +85,8 @@ function holderPossessive(monster) {
 }
 
 function formIsHumanoid() {
-    return currentForm() == null || !!(formFlags() & M1_HUMANOID);
+    return heroMonsterForm(game) == null
+        || !!(heroFormFlags(game) & M1_HUMANOID);
 }
 
 function objectQuantity(object) {
@@ -124,9 +113,9 @@ function surfaceName(typ) {
 }
 
 function waterEggLayer() {
-    const form = currentForm();
+    const form = heroMonsterForm(game);
     return form != null
-        && (formFlags() & (M1_OVIPAROUS | M1_SWIM))
+        && (heroFormFlags(game) & (M1_OVIPAROUS | M1_SWIM))
             === (M1_OVIPAROUS | M1_SWIM)
         && MONSTER_SYMBOL[form] === S_EEL;
 }
@@ -139,7 +128,7 @@ function eggTypeFromParent(parent) {
 }
 
 async function layEgg() {
-    const form = currentForm();
+    const form = heroMonsterForm(game);
     if (game.flags?.female !== true) {
         await pline('Males can\'t lay eggs!');
         return false;
@@ -177,7 +166,7 @@ async function layEgg() {
 }
 
 async function sitOnObject(object) {
-    if (MONSTER_SYMBOL[currentForm()] === S_DRAGON
+    if (MONSTER_SYMBOL[heroMonsterForm(game)] === S_DRAGON
         && object.oclass === COIN_CLASS) {
         const wealth = objectQuantity(object) + heroGoldAmount(game);
         const meager = wealth < (game.u?.ulevel ?? 1) * 1000 ? 'meager ' : '';
@@ -190,7 +179,7 @@ async function sitOnObject(object) {
     }
 
     const name = objectName(object);
-    await pline(formFlags() & M1_SLITHY
+    await pline(heroFormFlags(game) & M1_SLITHY
         ? `You coil up around the ${name}.`
         : `You sit on the ${name}.`);
     if (object.otyp === CORPSE
@@ -242,7 +231,7 @@ async function sitWhileTrapped(trap) {
 
 async function sitInWater() {
     await pline('You sit in the water.');
-    if (currentForm() === PM_GREMLIN) {
+    if (heroMonsterForm(game) === PM_GREMLIN) {
         await splitSittingGremlin();
         return;
     }
@@ -264,7 +253,7 @@ async function sitInWater() {
 function formLikesLava() {
     return [
         PM_FIRE_VORTEX, PM_FLAMING_SPHERE, PM_FIRE_ELEMENTAL, PM_SALAMANDER,
-    ].includes(currentForm());
+    ].includes(heroMonsterForm(game));
 }
 
 export async function dosit({
@@ -285,8 +274,8 @@ export async function dosit({
         game.context.move = 0;
         return;
     }
-    if (u?.uundetected && (formFlags() & M1_HIDE)
-        && currentForm() !== PM_TRAPPER) u.uundetected = 0;
+    if (u?.uundetected && (heroFormFlags(game) & M1_HIDE)
+        && heroMonsterForm(game) !== PM_TRAPPER) u.uundetected = 0;
 
     if (!heroCanReachFloor(game)) {
         if (u?.uswallow) await pline('There are no seats in here!');
@@ -310,7 +299,7 @@ export async function dosit({
 
     const onPool = IS_POOL(typ);
     if ((onPool && !(game.underwater || u?.uinwater))
-        || (currentForm() === PM_GREMLIN
+        || (heroMonsterForm(game) === PM_GREMLIN
             && (typ === FOUNTAIN || onPool))) {
         await sitInWater();
         game.context.move = 1;
@@ -368,7 +357,7 @@ export async function dosit({
     } else if (typ === THRONE) {
         await pline('You sit on the throne.');
         await throneSitEffect({ gotoLevel, chooseTeleportDestination });
-    } else if (formFlags() & M1_OVIPAROUS) {
+    } else if (heroFormFlags(game) & M1_OVIPAROUS) {
         if (!await layEgg()) {
             game.context.move = 0;
             return;

@@ -275,7 +275,7 @@ export async function showChoiceWindow({
 export async function showMultiSelectWindow({
     title, sections, left = null, omitHeadings = false, introLines = [],
     blankAfterTitle = true, pageLocalKeys = false,
-    titleAttr = ATR_INVERSE, returnCounts = false,
+    titleAttr = ATR_INVERSE, returnCounts = false, pickOne = false,
 }) {
     const d = display();
     if (!d) return [];
@@ -400,6 +400,7 @@ export async function showMultiSelectWindow({
             continue;
         }
         if (letter === '@') {
+            if (pickOne) continue;
             if (selected.size === allItems.length) {
                 selected.clear();
                 selectedCounts.clear();
@@ -410,6 +411,7 @@ export async function showMultiSelectWindow({
             continue;
         }
         if (letter === '.') {
+            if (pickOne) continue;
             for (const candidate of pageItems) {
                 selected.add(candidate);
                 selectedCounts.delete(candidate);
@@ -420,6 +422,12 @@ export async function showMultiSelectWindow({
             ? pageItems.find(candidate => pageKeys.get(candidate) === letter)
             : allItems.find(candidate => candidate.key === letter);
         if (!item) continue;
+        if (pickOne) {
+            return [returnCounts ? {
+                value: item.value,
+                count: count ?? -1,
+            } : item.value];
+        }
         if (selected.has(item) && count === null) {
             selected.delete(item);
             selectedCounts.delete(item);
