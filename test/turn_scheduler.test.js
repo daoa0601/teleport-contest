@@ -82,3 +82,27 @@ test('a burdened hero waits for a complete movement ration',
         assert.equal(game.moves, before.moves + 2);
         assert.equal(game.u.uhunger, before.hunger - 2);
     });
+
+test('poison clouds act after old blindness expires for the turn', async () => {
+    const inputGate = freshTurnArena();
+    game.u.uhp = game.u.uhpmax = 40;
+    game.u.blindTurns = 1;
+    game.blind = true;
+    game.level.regions = [{
+        kind: 'gas-cloud',
+        visible: true,
+        damage: 8,
+        ttl: 3,
+        heroFault: false,
+        cells: [{ x: game.u.ux, y: game.u.uy }],
+    }];
+    pushKeys('.   ');
+
+    const returnedToInput = await runUntilInput(inputGate, 6);
+
+    assert.equal(returnedToInput, true);
+    assert.ok(game.u.uhp < 40);
+    assert.equal(game.u.blindTurns, 1);
+    assert.equal(game.blind, true);
+    assert.equal(game.level.regions[0].ttl, 2);
+});

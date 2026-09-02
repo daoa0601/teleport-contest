@@ -16,6 +16,7 @@ import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     map_invisible, newsym, randomDisplayMonsterName,
     randomDisplayMonsterSubject, swallowed, unmap_invisible,
+    plineWithContinuation,
 } from './display.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
@@ -67,6 +68,7 @@ import {
     createHarmlessGasCloudSelection, createSteamCloud,
 } from './regions.js';
 import { syncBlindness } from './senses.js';
+import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
@@ -1405,49 +1407,6 @@ export function heroEveryturnEffect(state = game, random = rn2) {
     return createFogEveryturnRegion(
         state, state.u.ux, state.u.uy, random,
     );
-}
-
-// C region.c:run_regions() removes an already-expired region, then ages each
-// remaining positive TTL once per newly allocated global turn.
-export function runLevelRegions(state) {
-    if (!state?.level?.regions?.length) return [];
-    const expired = state.level.regions.filter(region => region.ttl === 0);
-    state.level.regions = state.level.regions.filter(region => region.ttl !== 0);
-    if (state.level === game.level) {
-        for (const region of expired) {
-            for (const cell of region.cells || [])
-                vision_note_blocker_change(cell.x, cell.y);
-        }
-    }
-    for (const region of state.level.regions) {
-        if (region.ttl > 0) region.ttl--;
-        // C region.c:inside_gas_cloud().  A fog cloud standing in any gas
-        // cloud maintains that region after its normal age decrement.  This
-        // is independent of damage and prevents its harmless one-cell vapor
-        // from repeatedly expiring and consuming a fresh rn1(3,4).
-        if (region.kind === 'gas-cloud') {
-            const contains = (x, y) => region.cells?.some(cell =>
-                cell.x === x && cell.y === y);
-            // region.c:run_regions() invokes inside_gas_cloud() for the hero
-            // first and then for every tracked monster.  Each fog-cloud
-            // occupant independently adds five while the current TTL is
-            // below 20; `some()` would undercount a populated Cloud room.
-            if ((state.u?.mtimedone ?? 0) > 0
-                && state.u?.umonnum === PM_FOG_CLOUD
-                && contains(state.u.ux, state.u.uy)
-                && region.ttl < 20) {
-                region.ttl += 5;
-            }
-            for (const monster of state.level.monsters || []) {
-                if (!monster.dead && monster.mnum === PM_FOG_CLOUD
-                    && contains(monster.mx, monster.my)
-                    && region.ttl < 20) {
-                    region.ttl += 5;
-                }
-            }
-        }
-    }
-    return state.level.regions;
 }
 
 // C ref: calendar.c night(). Session timestamps use YYYYMMDDhhmmss.
@@ -9425,6 +9384,39 @@ export function finishMonsterLiquidDeath(
         actionCompleted: true,
         corpse,
     };
+}
+
+export async function finishEnvironmentalMonsterDeath(
+    monster, state, {
+        deathMessage = null,
+        visible = true,
+        spotted = visible,
+        random = rn2,
+        publish = plineWithContinuation,
+    } = {},
+) {
+    const lifeSaver = wornMonsterLifeSaver(monster);
+    if (lifeSaver) {
+        const saved = await lifeSaveMonster(monster, lifeSaver, {
+            creditedKill: deathMessage,
+            visible,
+            spotted,
+            petSpotted: spotted,
+        });
+        if (saved.survived) return { monster, survived: true, corpse: null };
+    } else if (deathMessage) {
+        await publish(deathMessage);
+    }
+
+    const calls = [];
+    const x = monster.mx;
+    const y = monster.my;
+    detachDeadMonster(monster, state);
+    const corpse = createOrdinaryMonsterCorpse(
+        monster, state, random, calls,
+    );
+    if (state === game) newsym(x, y);
+    return { monster, survived: false, corpse };
 }
 
 export function runQuietMonsterActions(

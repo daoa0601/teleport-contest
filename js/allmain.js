@@ -30,6 +30,7 @@ import {
     resurrectWizard, rhack,
 } from './cmd.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
@@ -150,6 +151,7 @@ import {
     resumeDeferredMonsterMagicMissileWand,
     resolveMonsterMagicMissileContact,
     finishMonsterMagicMissileDeath,
+    finishEnvironmentalMonsterDeath,
     beginHeroMagicMissileContact,
     finishHeroMagicMissileDamage,
     resumeDeferredMonsterStrikingWand,
@@ -160,7 +162,7 @@ import {
     finishDeferredMonsterDeath,
     finishDeferredMonsterCounterattackDeath, finishMonsterLiquidDeath,
     fumaroles,
-    heroEveryturnEffect, runLevelRegions, runMonsterEveryturnEffects,
+    heroEveryturnEffect, runMonsterEveryturnEffects,
     runQuietMonsterActions,
     scanMonsterMovement,
     updateMonsterDistress,
@@ -191,9 +193,11 @@ import {
     MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
+    finishOrdinaryDeath,
     probeCanMakeBones, restoreHeroAfterDeath,
 } from './end.js';
+import { runLevelRegions } from './regions.js';
 import {
     maintainVaultResidence, continueVaultGuardArrival,
     rememberVaultCorridorUnderHero,
@@ -1476,7 +1480,7 @@ function finishInitialTurnMaintenanceAfterAutomaticSearch({
     });
 }
 
-function finishInitialTurnMaintenanceAfterTimeout({
+function finishInitialTurnMaintenanceAfterRegions({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
 }) {
     // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
@@ -1559,6 +1563,39 @@ function finishInitialTurnMaintenanceAfterTimeout({
     });
 }
 
+function finishInitialTurnMaintenanceAfterTimeout({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}) {
+    return {
+        deferredRegions: true,
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    };
+}
+
+async function runLevelRegionTurn() {
+    return runLevelRegions(game, {
+        wake: wakeMonstersNearWithMessages,
+        onHeroDeath: () => finishHeroDeath({ killer: 'gas cloud' }),
+        onAnger: monster => angerMonster(monster, { attacked: true }),
+        onMonsterDeath: async (monster, event) => {
+            if (event.heroFault) {
+                const killed = await finishHeroMonsterKill(
+                    monster, monster.mx, monster.my, { weaponHit: false },
+                );
+                return { monster, survived: !killed };
+            }
+            const subject = monster.name
+                || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
+            return finishEnvironmentalMonsterDeath(monster, game, {
+                deathMessage: event.visible
+                    ? `${subject} dies from the gas cloud!` : null,
+                visible: event.visible,
+                spotted: event.visible,
+            });
+        },
+    });
+}
+
 function initialTurnMaintenanceRng(
     completedTurn = game.moves || 1, deferAmbientMessage = false,
 ) {
@@ -1589,8 +1626,6 @@ function initialTurnMaintenanceRng(
     const generationRate = game.u?.uevent?.udemigod ? 25
         : currentDepth > strongholdDepth ? 50 : 70;
     if (rn2(generationRate) === 0) generateRandomMonster();
-    runLevelRegions(game);
-
     // C allmain.c: ublesscnt ages once per newly allocated global turn,
     // before prayer eligibility or enlightenment can observe it.
     if ((game.u?.ublesscnt ?? 0) > 0) game.u.ublesscnt--;
@@ -2005,6 +2040,11 @@ async function initialTurnMaintenanceWithTty(
             finishFumblingExpiryAfterMessage({ fumbled: true });
             phase = finishInitialTurnMaintenanceAfterTimeout(phase);
         }
+    }
+    while (phase?.deferredRegions) {
+        await runLevelRegionTurn();
+        if (game.program_state?.gameover) return phase.moveAmount;
+        phase = finishInitialTurnMaintenanceAfterRegions(phase);
     }
     while (phase?.deferredStatueTrap) {
         const monster = await activateStatueTrapAt(phase.x, phase.y);

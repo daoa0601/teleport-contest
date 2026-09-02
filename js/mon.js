@@ -236,7 +236,7 @@ export function wakeMonstersNear(x, y, distance, state = game) {
 
 // wake_nearto_core() reports each visible sleeper before waking it.
 export async function wakeMonstersNearWithMessages(
-    x, y, distance, state = game,
+    x, y, distance, state = game, publish = plineWithContinuation,
 ) {
     for (const monster of state.level?.monsters || []) {
         if (!monster || (monster.mhp ?? 1) <= 0) continue;
@@ -247,7 +247,7 @@ export async function wakeMonstersNearWithMessages(
             && canSeeMonster(monster, monster.mx, monster.my)) {
             const name = monster.name
                 || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
-            await plineWithContinuation(`${name} wakes up.`);
+            await publish(`${name} wakes up.`);
         }
         monster.msleeping = 0;
         if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
