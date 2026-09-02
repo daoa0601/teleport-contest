@@ -14,7 +14,7 @@ import { place_object, mksobj, stack_object } from './mklev.js';
 import { levelHasCeiling } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, monsterTypeName,
+    MONSTER_ATTACKS, monsterTypeName,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_DRST, AT_SPIT,
@@ -37,10 +37,9 @@ import {
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
 import {
-    acidVenomDamage, monsterCanBeBlindedByVenom,
+    acidVenomDamage, heroCanBeBlindedByVenom,
+    monsterCanBeBlindedByVenom,
 } from './venom.js';
-
-const M1_NOEYES = 0x00001000;
 
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
@@ -60,14 +59,6 @@ function targetName(monster) {
     if (!canProjectMonster(monster, monster.mx, monster.my)) return 'it';
     return monster.name
         || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
-
-function heroCanBeBlinded(state) {
-    const form = heroMonsterForm(state);
-    const noEyes = form !== null
-        && !!((MONSTER_FLAGS1[form] ?? 0) & M1_NOEYES);
-    return !noEyes && !(state.ublindf || state.u?.ublindf)
-        && !(state.u?.ucreamed ?? 0);
 }
 
 function settleVenom(venom, x, y, state) {
@@ -133,7 +124,7 @@ async function tossVenomUp(venom, state, publish, random, rollOne) {
 
     if (objectBreaksOnImpact(venom, random)) {
         const canBlind = venom.otyp === BLINDING_VENOM
-            && heroCanBeBlinded(state);
+            && heroCanBeBlindedByVenom(state);
         const blindIncrement = canBlind ? rollOne(25) : 0;
         const wasBlind = heroIsBlind(state);
         await breakObjectAtLocation(venom, { state, publish, random });
@@ -169,6 +160,7 @@ async function hitMonsterWithVenom({
         const further = monster.mcansee ? '' : ' further';
         if (monsterCanBeBlindedByVenom(monster, {
             heroInsideTarget: !!state.u?.uswallow,
+            state,
         })) {
             await publish(heroIsBlind(state)
                 ? 'Splash!'

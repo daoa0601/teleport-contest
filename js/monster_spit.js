@@ -14,12 +14,13 @@ import {
     ACID_VENOM, BLINDING_VENOM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { syncBlindness } from './senses.js';
+import { heroIsBlind, syncBlindness } from './senses.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import { finishHeroDeath } from './end.js';
 import {
-    acidVenomDamage, monsterCanBeBlindedByVenom,
+    acidVenomDamage, heroCanBeBlindedByVenom,
+    monsterCanBeBlindedByVenom,
 } from './venom.js';
 
 export function monsterSpitAttack(monster) {
@@ -100,7 +101,7 @@ function livingMonsterAt(state, source, x, y) {
         && monster.mx === x && monster.my === y) || null;
 }
 
-function hitMonster(monster, spit, random, rollOne) {
+function hitMonster(monster, spit, state, random, rollOne) {
     const hitRoll = rollOne(20);
     const hitThreshold = 5 + findMonsterArmorClass(monster);
     const hit = hitThreshold >= hitRoll;
@@ -116,7 +117,7 @@ function hitMonster(monster, spit, random, rollOne) {
             spit.resisted = true;
         }
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - spit.damage);
-    } else if (monsterCanBeBlindedByVenom(monster)) {
+    } else if (monsterCanBeBlindedByVenom(monster, { state })) {
         const blindIncrement = rollOne(25) + 20;
         spit.newlyBlinded = !!monster.mcansee;
         monster.mcansee = 0;
@@ -132,7 +133,7 @@ function hitMonster(monster, spit, random, rollOne) {
 function hitHero(source, spit, state, random, rollOne) {
     let damage = 0;
     let hitLevel = 8;
-    spit.heroWasBlind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+    spit.heroWasBlind = heroIsBlind(state);
     if (spit.venom.otyp === ACID_VENOM) {
         damage = acidVenomDamage(rollOne);
         const distance = distmin(
@@ -161,8 +162,10 @@ function hitHero(source, spit, state, random, rollOne) {
         } else {
             state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
         }
-    } else if (!state.u.noEyes) {
+    } else if (heroCanBeBlindedByVenom(state)) {
         const blindIncrement = rollOne(25);
+        spit.blindMessage = spit.heroWasBlind
+            ? 'Your eyes sting.' : 'The venom blinds you.';
         state.u.ucreamed = (state.u.ucreamed ?? 0) + blindIncrement;
         state.u.blindTurns = (state.u.blindTurns ?? 0) + blindIncrement;
         syncBlindness(state);
@@ -193,7 +196,7 @@ function flyMonsterVenom(
         const target = livingMonsterAt(state, source, x, y);
 
         if (target) {
-            hitMonster(target, spit, random, rollOne);
+            hitMonster(target, spit, state, random, rollOne);
             if (spit.hit || remaining === 0) {
                 if (!spit.venom.destroyed)
                     destroyVenom(spit.venom, random);

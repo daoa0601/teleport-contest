@@ -5500,7 +5500,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             }
                             if (spit.blindIncrement) {
                                 await queueTurnMessage(
-                                    'The venom blinds you.',
+                                    spit.blindMessage,
                                 );
                             }
                             const died = await finishHeroSpitHit(

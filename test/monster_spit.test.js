@@ -4,11 +4,11 @@ import assert from 'node:assert/strict';
 import {
     beginMonsterSpitAttack, finishHeroSpitHit, resolveMonsterSpitFlight,
 } from '../js/monster_spit.js';
-import { W_AMUL } from '../js/const.js';
+import { W_AMUL, W_ARMH } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { knownInventoryObject } from './support/game-objects.js';
@@ -130,6 +130,32 @@ test('life saving rescues the hero from fatal acid venom', async () => {
     assert.equal(died, false);
     assert.ok(game.u.uhp > 0);
     assert.equal(game.inventory.includes(amulet), false);
+});
+
+test('a visored helmet blocks blinding venom', () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        gameplaySeed: 1n,
+    });
+    game.objectDescriptions[HELMET] = 'visored helmet';
+    wearHeroObject(
+        knownInventoryObject(HELMET),
+        'uarmh',
+        W_ARMH,
+    );
+    const cobra = addMonsterToLevel(rangedMonster('cobra'));
+    const spit = beginMonsterSpitAttack(
+        cobra, game.u.ux, game.u.uy, { random: () => 0 },
+    );
+
+    resolveMonsterSpitFlight(cobra, spit, game, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+
+    assert.equal(game.u.blindTurns ?? 0, 0);
+    assert.equal(game.u.ucreamed ?? 0, 0);
 });
 
 test('a tame black naga spits at a distant monster instead of moving', () => {
