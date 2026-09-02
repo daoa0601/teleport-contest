@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM, SQKY_BOARD,
+    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM, SLP_GAS_TRAP,
+    SQKY_BOARD,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
@@ -159,6 +160,17 @@ test('a falling-rock trap drops a rock and hurts the hero', async () => {
     assert.ok(floorObjectsAt(level, 11, 10).some(
         object => object.otyp === ROCK && object.where === 'floor',
     ));
+});
+
+test('sleeping gas stops a susceptible hero', async () => {
+    const level = freshWeaponArena();
+    const trap = addTrap(level, SLP_GAS_TRAP, 11, 10, { tseen: false });
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(trap.tseen, true);
+    assert.ok(game._helplessTurns >= 1 && game._helplessTurns <= 25);
+    assert.equal(game._helplessReason, 'sleeping');
 });
 
 test('stepping on a statue trap releases its monster', async () => {

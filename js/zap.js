@@ -35,6 +35,9 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { cancelMonster } from './monster_cancellation.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
+import {
+    monsterResistsSleep, putMonsterToSleep,
+} from './monster_sleep.js';
 import { makePlural } from './object_grammar.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE,
@@ -99,7 +102,6 @@ const WAND_CLASS = 11;
 const MAX_ITEMS_DESTROYED = 20;
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
-const MR_SLEEP = 0x04;
 const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
 const PM_DEATH_RIDER = 311;
@@ -954,9 +956,7 @@ export function sleepMonsterFromRay(
     } = {},
 ) {
     const duration = rollDice(dice, 25);
-    const inherentlyResistant = !!((MONSTER_RESISTS[monster.mnum] || 0)
-        & MR_SLEEP);
-    let resisted = inherentlyResistant || !!monster.defendedSleep;
+    let resisted = monsterResistsSleep(monster);
     if (!resisted) {
         const attackLevel = 12;
         const defenseLevel = Math.max(1, Math.min(
@@ -967,10 +967,7 @@ export function sleepMonsterFromRay(
     }
     if (resisted || monster.mcanmove === 0) return false;
 
-    monster.mcanmove = 0;
-    monster.mfrozen = Math.min(duration + (monster.mfrozen || 0), 127);
-    monster.meating = 0;
-    return true;
+    return putMonsterToSleep(monster, duration);
 }
 
 export async function coldRayDamageMonster(

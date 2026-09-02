@@ -9,9 +9,9 @@ import { objectIsHardHelmet } from './armor.js';
 import { heroHeadName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
-    HOLE, ICE, IS_LAVA, IS_POOL,
+    HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP,
-    ROLLING_BOULDER_TRAP,
+    ROLLING_BOULDER_TRAP, SLP_GAS_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
@@ -32,7 +32,7 @@ import {
 } from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {
-    MONSTER_FLAGS1, MONSTER_SIZE,
+    MONSTER_FLAGS1, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';
 import {
     ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -67,9 +67,18 @@ import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { wakeMonstersNear } from './mon.js';
 import { ceilingName } from './terrain_name.js';
 import { simpleObjectNameWithArticle } from './object_grammar.js';
+import { putHeroToSleep } from './hero_sleep.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance,
+} from './monster_perception.js';
+import {
+    monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
+    putMonsterToSleep,
+} from './monster_sleep.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
+const M1_BREATHLESS = 0x00000400;
 const M1_UNSOLID = 0x00100000;
 const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
@@ -754,6 +763,32 @@ async function triggerFallingRockTrap(trap) {
     }
 }
 
+async function triggerSleepingGasTrap(trap) {
+    const hero = game.u;
+    trap.tseen = true;
+    const breathless = !!hero.breathless
+        || !!(heroFormFlags() & M1_BREATHLESS);
+    if (hero.sleepResistance || hero.sleep_resistance || breathless) {
+        await plineWithContinuation('You are enveloped in a cloud of gas!');
+        monstersObserveHeroResistance(M_SEEN_SLEEP, game);
+    } else {
+        await plineWithContinuation('A cloud of gas puts you to sleep!');
+        putHeroToSleep(rnd(25), { state: game });
+        monstersForgetHeroResistance(M_SEEN_SLEEP, game);
+    }
+
+    const steed = hero.usteed;
+    if (!steed || monsterResistsSleep(steed)
+        || monsterIsBreathless(steed) || monsterIsHelpless(steed)) return;
+    steed.mx = hero.ux;
+    steed.my = hero.uy;
+    if (!putMonsterToSleep(steed, rnd(25))) return;
+    const name = steed.name || `The ${monsterTypeName(
+        steed.mnum, !!steed.female,
+    )}`;
+    await plineWithContinuation(`${name} suddenly falls asleep!`);
+}
+
 function boulderAt(x, y) {
     return game.level?.objects?.[x]?.[y]
         ?.find(object => object.otyp === BOULDER) ?? null;
@@ -954,6 +989,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case ROLLING_BOULDER_TRAP:
         await triggerRollingBoulderTrap(trap);
+        break;
+    case SLP_GAS_TRAP:
+        await triggerSleepingGasTrap(trap);
         break;
     case BEAR_TRAP:
         await triggerBearTrap(trap, { failedUntrap });

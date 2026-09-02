@@ -45,12 +45,13 @@ import {
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
+import { monstersObserveHeroResistance } from './monster_perception.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
 import { objectTypeKnown } from './shk.js';
-import { cansee, couldsee, vision_recalc } from './vision.js';
+import { cansee, vision_recalc } from './vision.js';
 import {
     applyHeroWaterVaporChange, transformWereMonster,
 } from './were.js';
@@ -69,7 +70,6 @@ const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
-const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
@@ -257,31 +257,6 @@ function monsterHasSleepDefense(monster) {
         || !!monster?.sleepResistance
         || !!monster?.sleep_resistance
         || !!monster?.defendedSleep;
-}
-
-function defaultMonsterCanSeeHero(monster, state) {
-    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) return false;
-    if (state.underwater || state.u?.uinwater) return false;
-    if (heroIsInvisible(state)
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
-        return false;
-    }
-    return couldsee(monster.mx, monster.my);
-}
-
-function teachVisibleMonstersSleepResistance(
-    state, monsterCanSeeHero = monster => defaultMonsterCanSeeHero(monster, state),
-) {
-    if (state.u?.uswallow) return 0;
-    let taught = 0;
-    for (const monster of state.level?.monsters || []) {
-        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
-            || !monsterCanSeeHero(monster)) continue;
-        monster.seen_resistance = (monster.seen_resistance ?? 0)
-            | M_SEEN_SLEEP;
-        taught++;
-    }
-    return taught;
 }
 
 function installPotionHelplessness(state, duration, reason) {
@@ -491,8 +466,8 @@ export async function applySupportedPotionVapor({
             await publish(potion.otyp === POT_PARALYSIS
                 ? 'You stiffen momentarily.' : 'You yawn.');
             if (potion.otyp === POT_SLEEPING) {
-                teachVisibleMonstersSleepResistance(
-                    state, monsterCanSeeHero,
+                monstersObserveHeroResistance(
+                    M_SEEN_SLEEP, state, monsterCanSeeHero,
                 );
             }
         } else {

@@ -1,11 +1,14 @@
-// monster_perception.js — shared monster target-perception state.
-// C refs: monmove.c:set_apparxy() and hack.c:cant_squeeze_thru().
+// Monster target perception and remembered hero resistances.
+// C refs: monmove.c set_apparxy(), hack.c cant_squeeze_thru(),
+// mondata.c monstseesu() and monstunseesu().
 
 import { heroIsDisplaced } from './armor.js';
+import { game } from './gstate.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { couldsee } from './vision.js';
+import { clearPath, couldsee } from './vision.js';
 import {
-    ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, isok,
+    ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_NOTHING, isok,
 } from './const.js';
 
 const M1_AMORPHOUS = 0x00000004;
@@ -38,6 +41,58 @@ export function monsterCanFogWithEmptyInventory(monster, state) {
 export function monsterCanOozeWithEmptyInventory(monster) {
     return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_AMORPHOUS)
         && !(monster?.minvent || monster?.inventory || []).length;
+}
+
+function monsterCanSeeHero(monster, state) {
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
+        || monster.mcansee === 0) return false;
+    if (!Number.isFinite(state.u?.ux) || !Number.isFinite(state.u?.uy))
+        return false;
+    if (state.underwater || state.u?.uinwater) return false;
+    if (heroIsInvisible(state)
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
+        return false;
+    }
+    return clearPath(
+        monster.mx, monster.my, state.u?.ux, state.u?.uy,
+    );
+}
+
+function monstersThatCanSeeHero(state, canSeeHero) {
+    if (state.u?.uswallow) return [];
+    const seesHero = canSeeHero
+        || (monster => monsterCanSeeHero(monster, state));
+    return (state.level?.monsters || []).filter(monster =>
+        monster && !monster.dead && (monster.mhp ?? 1) > 0
+        && seesHero(monster));
+}
+
+export function monstersObserveHeroResistance(
+    resistance,
+    state = game,
+    canSeeHero = null,
+) {
+    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+    const observers = monstersThatCanSeeHero(state, canSeeHero);
+    for (const monster of observers) {
+        monster.seen_resistance = (monster.seen_resistance ?? 0)
+            | resistance;
+    }
+    return observers.length;
+}
+
+export function monstersForgetHeroResistance(
+    resistance,
+    state = game,
+    canSeeHero = null,
+) {
+    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+    const observers = monstersThatCanSeeHero(state, canSeeHero);
+    for (const monster of observers) {
+        monster.seen_resistance = (monster.seen_resistance ?? 0)
+            & ~resistance;
+    }
+    return observers.length;
 }
 
 // makemon() initializes this state once when its requested coordinate was the

@@ -110,6 +110,10 @@ import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
+import {
+    monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
+    putMonsterToSleep,
+} from './monster_sleep.js';
 import { randomBottleName } from './potion_hit.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
@@ -171,7 +175,6 @@ const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
 const M1_CONCEAL = 0x00000080;
 const M1_HIDE = 0x00000100;
-const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHANDS = 0x00002000;
 const M1_MINDLESS = 0x00010000;
@@ -185,7 +188,6 @@ const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
-const MR_SLEEP = 0x04;
 const M2_WANDER = 0x00800000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
@@ -4625,27 +4627,19 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const speciesFlags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        const resistant = !!((MONSTER_RESISTS[monster.mnum] ?? 0) & MR_SLEEP);
-        const helpless = monster.mcanmove === 0 || monster.msleeping
-            || (monster.mfrozen ?? 0) > 0 || monster.helpless;
+        const resistant = monsterResistsSleep(monster);
+        const breathless = monsterIsBreathless(monster);
+        const helpless = monsterIsHelpless(monster);
         let duration = 0;
         let slept = false;
-        if (!resistant && !(speciesFlags & M1_BREATHLESS) && !helpless) {
+        if (!resistant && !breathless && !helpless) {
             duration = rollOne(25);
             calls.push('rnd(25)');
             // sleep_monst() repeats intrinsic resistance and additionally
             // checks defended(AD_SLEE).  With how=-1 it performs no magic-
             // resistance roll; a successful timed sleep is stored in
             // mcanmove/mfrozen and terminates any meal.
-            if (!monster.defendedSleep && monster.mcanmove !== 0) {
-                monster.mcanmove = 0;
-                monster.mfrozen = Math.min(
-                    duration + (monster.mfrozen ?? 0), 127,
-                );
-                monster.meating = 0;
-                slept = true;
-            }
+            slept = putMonsterToSleep(monster, duration);
         }
         const event = {
             kind: 'sleep-gas', trap, duration, slept,
