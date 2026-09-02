@@ -627,6 +627,8 @@ function displayMonsterGlyph(mnum) {
 }
 
 function heroDisplayGlyph() {
+    if (game.u?.m_ap_type === M_AP_OBJECT)
+        return apparentObjectGlyph(game.u);
     if ((game.u?.mtimedone ?? 0) > 0
         && Number.isInteger(game.u?.umonnum))
         return displayMonsterGlyph(game.u.umonnum);

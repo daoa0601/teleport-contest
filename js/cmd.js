@@ -68,6 +68,7 @@ import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import {
     heroCanSummonWerePack, useHeroWereSummon,
 } from './were.js';
+import { heroCanHideDirectly, useHeroHide } from './hero_hide.js';
 import {
     heroCanMindBlast, useHeroMindBlast,
 } from './hero_mind_blast.js';
@@ -5716,6 +5717,11 @@ async function domonability() {
     }
     if (heroCanSummonWerePack(game)) {
         const result = await useHeroWereSummon({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (heroCanHideDirectly(game)) {
+        const result = await useHeroHide({ state: game });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
