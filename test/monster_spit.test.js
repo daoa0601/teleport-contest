@@ -8,7 +8,10 @@ import { game } from '../js/gstate.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addMonster, addPet } from './support/monsters.js';
+import { addMonster, addMonsterToLevel, addPet } from './support/monsters.js';
+import {
+    freshRangedCombatRoom, rangedPet, rangedTarget,
+} from './support/ranged-combat.js';
 
 test('a black naga can spit acid at another monster', () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
@@ -39,28 +42,9 @@ test('a black naga can spit acid at another monster', () => {
 });
 
 test('a tame black naga spits at a distant monster instead of moving', () => {
-    freshObjectRoom({
-        right: 20,
-        heroX: 18,
-        heroY: 12,
-        recalculateVision: false,
-        gameplaySeed: 3n,
-    });
-    const naga = addPet({
-        species: 'black naga',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-        edog: { hungrytime: 1000 },
-    });
-    const target = addMonster({
-        species: 'jackal',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-        level: 8,
-    });
+    freshRangedCombatRoom({ gameplaySeed: 3n });
+    const naga = addMonsterToLevel(rangedPet('black naga'));
+    const target = addMonsterToLevel(rangedTarget());
 
     const action = quietMonsterActionRng(naga, game);
     resolveMonsterSpitFlight(naga, action.movement.spitAttack, game);

@@ -57,7 +57,7 @@ export function deadPet(options) {
     });
 }
 
-function addToLevel(monster, state) {
+export function addMonsterToLevel(monster, state = game) {
     if (monster.m_id === undefined)
         monster.m_id = 1000 + state.level.monsters.length;
     state.level.monsters.push(monster);
@@ -65,9 +65,9 @@ function addToLevel(monster, state) {
 }
 
 export function addMonster(options, state = game) {
-    return addToLevel(liveMonster(options), state);
+    return addMonsterToLevel(liveMonster(options), state);
 }
 
 export function addPet(options, state = game) {
-    return addToLevel(livePet(options), state);
+    return addMonsterToLevel(livePet(options), state);
 }

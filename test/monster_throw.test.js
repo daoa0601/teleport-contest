@@ -13,42 +13,12 @@ import { game } from '../js/gstate.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { carriedObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { freshObjectRoom } from './support/object-room.js';
-import { addMonster, addPet, liveMonster } from './support/monsters.js';
-
-function freshRangedPetRoom() {
-    freshObjectRoom({
-        right: 20,
-        heroX: 18,
-        heroY: 12,
-        gameplaySeed: 1n,
-        recalculateVision: false,
-    });
-}
-
-function addOrcPet(inventory, options = {}) {
-    return addPet({
-        species: 'orc',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-        inventory,
-        edog: { hungrytime: 1000 },
-        ...options,
-    });
-}
-
-function addRangedTarget() {
-    return addMonster({
-        species: 'jackal',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-        level: 8,
-        mac: 20,
-    });
-}
+import {
+    addMonsterToLevel, liveMonster,
+} from './support/monsters.js';
+import {
+    freshRangedCombatRoom, rangedPet, rangedTarget,
+} from './support/ranged-combat.js';
 
 test('a monster readies the launcher required by its ammunition', () => {
     const bow = carriedObject(BOW);
@@ -70,10 +40,12 @@ test('a monster readies the launcher required by its ammunition', () => {
 });
 
 test('a tame orc throws a dagger at a distant monster', () => {
-    freshRangedPetRoom();
+    freshRangedCombatRoom({ gameplaySeed: 1n });
     const dagger = carriedObject(DAGGER);
-    const orc = addOrcPet([dagger]);
-    const target = addRangedTarget();
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dagger],
+    }));
+    const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 1;
 
     quietMonsterActionRng(orc, game);
@@ -90,11 +62,14 @@ test('a tame orc throws a dagger at a distant monster', () => {
 });
 
 test('a tame orc shoots an arrow with its bow', () => {
-    freshRangedPetRoom();
+    freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrow = carriedObject(ARROW);
     const bow = carriedObject(BOW, { wielded: true });
-    const orc = addOrcPet([arrow, bow], { mw: bow });
-    const target = addRangedTarget();
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [arrow, bow],
+        mw: bow,
+    }));
+    const target = addMonsterToLevel(rangedTarget());
 
     quietMonsterActionRng(orc, game);
 
@@ -111,19 +86,14 @@ test('a tame orc shoots an arrow with its bow', () => {
 });
 
 test('an elven lord fires every arrow in a three-shot volley', () => {
-    freshRangedPetRoom();
+    freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrows = carriedObject(ELVEN_ARROW, { quan: 3 });
     const bow = carriedObject(ELVEN_BOW, { wielded: true });
-    const archer = addPet({
-        species: 'elf-noble',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
+    const archer = addMonsterToLevel(rangedPet('elf-noble', {
         inventory: [arrows, bow],
         mw: bow,
-    });
-    const target = addRangedTarget();
+    }));
+    const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 100;
 
     throwMonsterWeaponAtMonster(archer, target, game, {
@@ -140,10 +110,12 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
 });
 
 test('an orc captain uses both of its weapon attacks', () => {
-    freshRangedPetRoom();
+    freshRangedCombatRoom({ gameplaySeed: 1n });
     const daggers = carriedObject(DAGGER, { quan: 2 });
-    const captain = addOrcPet([daggers], { species: 'orc-captain' });
-    const target = addRangedTarget();
+    const captain = addMonsterToLevel(rangedPet('orc-captain', {
+        inventory: [daggers],
+    }));
+    const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 100;
 
     quietMonsterActionRng(captain, game);
