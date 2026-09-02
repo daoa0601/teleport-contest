@@ -5,13 +5,12 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
 import { pushKeys } from '../js/input.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
 
 function installSpittingHero(formName) {
-    const level = freshObjectRoom({
+    return freshRoomWithPolymorphedHero(formName, {
         left: 2,
         right: 30,
         top: 4,
@@ -19,9 +18,6 @@ function installSpittingHero(formName) {
         heroX: 10,
         heroY: 10,
     });
-    installPolymorphedHero(formName);
-    game.context.move = 0;
-    return level;
 }
 
 function direction(key, dx = 0, dy = 0, dz = 0) {

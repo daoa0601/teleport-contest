@@ -6,11 +6,10 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { useHeroWereSummon } from '../js/were.js';
-import { installPolymorphedHero } from './support/hero-state.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 function installWerewolfHero(energy) {
-    const level = freshObjectRoom({
+    return freshRoomWithPolymorphedHero('werewolf', {
         left: 2,
         right: 30,
         top: 3,
@@ -18,13 +17,11 @@ function installWerewolfHero(energy) {
         heroX: 10,
         heroY: 10,
         gameplaySeed: 314,
+        polymorph: {
+            uen: energy,
+            uenmax: energy,
+        },
     });
-    installPolymorphedHero('werewolf', {
-        uen: energy,
-        uenmax: energy,
-    });
-    game.context.move = 0;
-    return level;
 }
 
 test('a werewolf uses #monster to call tame wolves', async () => {

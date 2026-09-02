@@ -12,26 +12,23 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
 
 function installBreathingHero(formName) {
-    const level = freshObjectRoom({
+    return freshRoomWithPolymorphedHero(formName, {
         left: 2,
         right: 30,
         top: 4,
         bottom: 16,
         heroX: 10,
         heroY: 10,
+        polymorph: {
+            uen: 30,
+            uenmax: 30,
+        },
     });
-    installPolymorphedHero(formName, {
-        uen: 30,
-        uenmax: 30,
-    });
-    game.context.move = 0;
-    return level;
 }
 
 function breathe(direction, options = {}) {

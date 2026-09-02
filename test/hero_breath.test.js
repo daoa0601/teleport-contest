@@ -4,12 +4,10 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { hitHeroWithBreath } from '../js/hero_breath.js';
 import { startHeroSliming } from '../js/slime.js';
-import { installPolymorphedHero } from './support/hero-state.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 function polymorphHeroInto(name) {
-    freshObjectRoom({ recalculateVision: false });
-    installPolymorphedHero(name);
+    freshRoomWithPolymorphedHero(name, { recalculateVision: false });
 }
 
 test('red-dragon breath burns slime without hurting its fireproof body',

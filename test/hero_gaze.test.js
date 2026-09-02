@@ -5,25 +5,23 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
 import { pushKeys } from '../js/input.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
 
 function installGazingHero(formName, hero = {}) {
-    freshObjectRoom({
+    freshRoomWithPolymorphedHero(formName, {
         left: 2,
         right: 30,
         top: 4,
         bottom: 16,
         heroX: 10,
         heroY: 10,
+        polymorph: {
+            uen: 30,
+            uenmax: 30,
+            ...hero,
+        },
     });
-    installPolymorphedHero(formName, {
-        uen: 30,
-        uenmax: 30,
-        ...hero,
-    });
-    game.context.move = 0;
 }
 
 function gaze(options = {}) {

@@ -7,14 +7,11 @@ import { game } from '../js/gstate.js';
 import { useHeroNymphAbility } from '../js/hero_nymph_ability.js';
 import { pushKeys } from '../js/input.js';
 import {
-    installPolymorphedHero, installPunishedHero,
+    freshRoomWithPolymorphedHero, installPunishedHero,
 } from './support/hero-state.js';
-import { freshObjectRoom } from './support/object-room.js';
 
 function installNymphHero() {
-    freshObjectRoom();
-    installPolymorphedHero('water nymph');
-    game.context.move = 0;
+    freshRoomWithPolymorphedHero('water nymph');
 }
 
 test('a nymph uses #monster to remove her ball and chain', async () => {

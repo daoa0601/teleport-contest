@@ -6,22 +6,20 @@ import { game } from '../js/gstate.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
 
 function installMindFlayerHero(energy = 20) {
-    freshObjectRoom({
+    freshRoomWithPolymorphedHero('mind flayer', {
         left: 2,
         right: 24,
         top: 4,
         bottom: 16,
+        polymorph: {
+            uen: energy,
+            uenmax: energy,
+        },
     });
-    installPolymorphedHero('mind flayer', {
-        uen: energy,
-        uenmax: energy,
-    });
-    game.context.move = 0;
 }
 
 test('a mind flayer uses #monster to strike nearby hostile minds', async () => {

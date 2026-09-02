@@ -6,6 +6,7 @@ import {
     HEAVY_IRON_BALL, IRON_CHAIN, RIN_POLYMORPH_CONTROL,
 } from '../../js/object_data.js';
 import { knownInventoryObject, knownObject } from './game-objects.js';
+import { freshObjectRoom } from './object-room.js';
 
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
@@ -25,6 +26,16 @@ export function installPolymorphedHero(formName, {
         ...overrides,
     });
     return game.u;
+}
+
+export function freshRoomWithPolymorphedHero(formName, {
+    polymorph = {},
+    ...room
+} = {}) {
+    const level = freshObjectRoom(room);
+    installPolymorphedHero(formName, polymorph);
+    game.context.move = 0;
+    return level;
 }
 
 export function installHumanWerewolfHero({ beast = false } = {}) {
