@@ -3054,12 +3054,7 @@ function beginMonsterMeleeAttack(
 function petAttacksMonster(
     pet, target, state, random, rollDice, rollOne, calls,
 ) {
-    const attacks = pet.mnum === 100
-        ? [{ type: 'kick', attackType: 3, damn: 1, damd: 6 },
-            { type: 'bite', attackType: 2, damn: 1, damd: 2 }]
-        : pet.mnum === 16 || pet.mnum === 32
-            ? [{ type: 'bite', attackType: 2, damn: 1, damd: 6 }]
-            : [];
+    const attacks = sourceMonsterMeleeAttacks(pet);
     return beginMonsterMeleeAttack(
         pet, target, attacks, state, random, rollDice, rollOne, calls,
         'pet',

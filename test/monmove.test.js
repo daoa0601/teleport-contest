@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 
 import {
     allocateMonsterMovement, finishMonsterLiquidDeath,
-    mcalcmove, mfndpos, naturalMonsterSpeed,
+    mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
 } from '../js/monmove.js';
 import { IRONBARS, LAVAPOOL, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
+import { game } from '../js/gstate.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster, liveMonster } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 function rolls(values) {
     let index = 0;
@@ -44,6 +46,48 @@ test('monster allocation applies newest-first movement to current actors',
 
 test('Knight starts with the source pony species', () => {
     assert.equal(roles.find(role => role.key === 'knight').petnum, 100);
+});
+
+test('a tame red dragon bites and claws an adjacent enemy', () => {
+    freshObjectRoom({
+        right: 20,
+        heroX: 18,
+        heroY: 10,
+        recalculateVision: false,
+    });
+    const dragon = addMonster({
+        species: 'red dragon',
+        x: 10,
+        y: 10,
+        hitPoints: 100,
+        level: 15,
+        mtame: 20,
+        pet: true,
+        mpeaceful: 1,
+        edog: { hungrytime: 1000 },
+    });
+    const goblin = addMonster({
+        species: 'goblin',
+        x: 11,
+        y: 10,
+        hitPoints: 100,
+        level: 1,
+        mac: 100,
+    });
+
+    const action = quietMonsterActionRng(
+        dragon,
+        game,
+        () => 1,
+        (count, sides) => count * sides,
+        () => 1,
+    );
+
+    assert.deepEqual(
+        action.movement.attack.results.map(attack => attack.type),
+        ['bite', 'claw', 'claw'],
+    );
+    assert.equal(goblin.mhp, 68);
 });
 
 test('a land monster in lava burns and drops what it carried', async () => {
