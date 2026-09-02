@@ -3,9 +3,7 @@
 // dokick.c:ghitm().
 
 import {
-    A_CHA, A_STR, DOOR, D_CLOSED, D_LOCKED, IS_SOFT, IS_WATERWALL,
-    Is_airlevel,
-    Is_waterlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
+    A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { newsym, pline } from './display.js';
@@ -24,6 +22,7 @@ import { OBJECT_COST } from './object_data.js';
 import { visiblePriestName } from './priest.js';
 import { rn2, rnd } from './rng.js';
 import { shopkeeperName } from './shk.js';
+import { flyHeroThrownObject, heroThrowRange } from './thrown_object.js';
 import { cansee } from './vision.js';
 
 const M2_MERC = 0x00000200;
@@ -40,46 +39,10 @@ const MERCENARY_BASE_BRIBE = new Map([
     [PM_CAPTAIN, 750],
 ]);
 
-function sourceStrength(state) {
-    const strength = currentAttribute(A_STR, state);
-    if (strength <= 18) return Math.max(strength, 3);
-    if (strength <= 121) return 19 + Math.trunc(strength / 50);
-    return Math.min(strength, 125) - 100;
-}
-
 function quantity(object) {
     return Math.max(0, Math.trunc(
         object?.quan ?? object?.quantity ?? 0,
     ));
-}
-
-function closedDoor(location) {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
-}
-
-function liveMonsterAt(state, x, y) {
-    return (state.level?.monsters || []).find(monster =>
-        monster && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
-
-function trapAt(state, x, y) {
-    return (state.level?.traps || []).find(trap =>
-        (trap.tx ?? trap.x) === x && (trap.ty ?? trap.y) === y) || null;
-}
-
-function visibleProjectileMonster(state, monster, x, y) {
-    if (!monster) return null;
-    // bhit() lets ordinary missiles pass through shades and through an
-    // unrevealed mimic which still looks like an object.
-    if (MONSTER_NAME[monster.mnum] === 'shade') return null;
-    if (monster.m_ap_type === M_AP_OBJECT) {
-        const remembered = state.level?.at?.(x, y)?.remembered_glyph;
-        if (!['monster', 'warning', 'invisible'].includes(remembered?.kind))
-            return null;
-    }
-    return monster;
 }
 
 function capitalize(value) {
@@ -244,58 +207,6 @@ function settleGoldOnFloor(state, gold, x, y) {
     return survivor;
 }
 
-async function traceGoldFlight({
-    state, gold, dx, dy, range, captureFlight = null,
-}) {
-    let x = state.u?.ux ?? 0;
-    let y = state.u?.uy ?? 0;
-    const first = state.level?.at?.(x + dx, y + dy);
-    if (!first || !ZAP_POS(first.typ) || closedDoor(first))
-        return { x, y, contact: null };
-
-    const flightPath = [];
-    let contact = null;
-    for (let step = 0; step < range; step++) {
-        const nx = x + dx;
-        const ny = y + dy;
-        const location = state.level?.at?.(nx, ny);
-        if (!location) break;
-
-        const previousX = x;
-        const previousY = y;
-        x = nx;
-        y = ny;
-        if (IS_WATERWALL(location.typ) || location.typ === LAVAWALL) break;
-
-        contact = visibleProjectileMonster(
-            state, liveMonsterAt(state, x, y), x, y,
-        );
-        const trap = !contact ? trapAt(state, x, y) : null;
-        if (trap?.ttyp === WEB && rn2(3) === 0) {
-            if (cansee(x, y)) {
-                trap.tseen = true;
-                await pline('The gold gets stuck in a web!');
-                newsym(x, y);
-            }
-            flightPath.push({ x, y });
-            break;
-        }
-        if (contact) break;
-
-        if (!ZAP_POS(location.typ) || closedDoor(location)) {
-            x = previousX;
-            y = previousY;
-            break;
-        }
-        flightPath.push({ x, y });
-        if (location.typ === SINK) break;
-    }
-
-    if (captureFlight && flightPath.length)
-        await captureFlight(gold, flightPath);
-    return { x, y, contact };
-}
-
 async function resolveQuiveredGoldMonsterContact({
     state, monster, gold, swallowed = false, wakeMonster = null,
 }) {
@@ -348,11 +259,9 @@ export async function resolveDirectGoldThrow({
         return true;
     }
 
-    const range = Math.max(0,
-        Math.trunc(sourceStrength(state) / 2)
-        - Math.trunc((gold.owt ?? 1) / 40));
-    const { x, y, contact } = await traceGoldFlight({
-        state, gold, dx, dy, range, captureFlight,
+    const range = heroThrowRange(gold, state);
+    const { x, y, contact } = await flyHeroThrownObject({
+        state, object: gold, dx, dy, range, captureFlight,
     });
     if (contact) {
         const caught = await resolveGoldMonsterContact({
@@ -429,11 +338,9 @@ export async function resolveQuiveredGoldThrow({
     }
 
     const underwater = !!(state.underwater || state.u?.uinwater);
-    const range = underwater ? 1 : Math.max(1,
-        Math.trunc(sourceStrength(state) / 2)
-        - Math.trunc((gold.owt ?? 1) / 40));
-    const { x, y, contact } = await traceGoldFlight({
-        state, gold, dx, dy, range, captureFlight,
+    const range = underwater ? 1 : heroThrowRange(gold, state);
+    const { x, y, contact } = await flyHeroThrownObject({
+        state, object: gold, dx, dy, range, captureFlight,
     });
     if (contact) {
         await resolveQuiveredGoldMonsterContact({

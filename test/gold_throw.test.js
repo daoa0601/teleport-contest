@@ -91,6 +91,19 @@ test('coin-class direct gold passes through iron bars', async () => {
     assert.equal(floorObjectsAt(level, 15, 10).includes(purse), true);
 });
 
+test('distant iron bars can stop thrown gold on the preceding square',
+    async () => {
+        const level = freshWeaponArena();
+        level.at(12, 10).typ = IRONBARS;
+        const purse = carriedGold(100, 29030);
+        initRng(1n);
+
+        await throwGold('l');
+
+        assert.deepEqual([purse.ox, purse.oy], [11, 10]);
+        assert.equal(floorObjectsAt(level, 11, 10).includes(purse), true);
+    });
+
 test('a web can stop the whole purse at its live trap identity', async () => {
     const level = freshWeaponArena();
     const web = { tx: 12, ty: 10, ttyp: WEB, tseen: false };
