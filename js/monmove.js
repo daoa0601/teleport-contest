@@ -24,6 +24,7 @@ import { loseExperienceLevel } from './exper.js';
 import {
     heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced,
 } from './armor.js';
+import { heroHasConflict } from './hero_conflict.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -1286,7 +1287,7 @@ function monsterCanTunnel(monster, state) {
         ? monster.mux : state?.u?.ux;
     const targetY = Number.isFinite(monster?.muy)
         ? monster.muy : state?.u?.uy;
-    const prefersCloseWeapon = (!monster?.mpeaceful || conflictActive(state))
+    const prefersCloseWeapon = (!monster?.mpeaceful || heroHasConflict(state))
         && Number.isFinite(targetX) && Number.isFinite(targetY)
         && dist2(monster.mx, monster.my, targetX, targetY) <= 8;
     return !prefersCloseWeapon;
@@ -1349,12 +1350,6 @@ function monAllowFlags(monster, state) {
     return flags;
 }
 
-function conflictActive(state) {
-    const right = state?.uright ?? state?.u?.uright;
-    const left = state?.uleft ?? state?.u?.uleft;
-    return right?.otyp === 186 || left?.otyp === 186;
-}
-
 // C ref: trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
 // candidate info; dog_move() then applies its separate hero-seen 1/40 rule.
 function monsterTrapIsHarmless(monster, trap, state) {
@@ -1394,7 +1389,7 @@ export function monsterAvoidsKickedLocation(monster, x, y, state = {}) {
     return !!(kicked
         && (monster?.mpeaceful || monster?.mtame || monster?.pet)
         && monster?.mcansee !== false && monster?.mcansee !== 0
-        && !monster?.mconf && !monster?.mstun && !conflictActive(state)
+        && !monster?.mconf && !monster?.mstun && !heroHasConflict(state)
         && kicked.x === x && kicked.y === y
         && Number.isFinite(heroX) && Number.isFinite(heroY)
         && distmin(x, y, heroX, heroY) <= 1);
@@ -1408,7 +1403,7 @@ export function monsterAvoidsSokobanPushLocation(
 ) {
     if (!state.level?.flags?.sokoban_rules
         || !(monster?.mpeaceful || monster?.mtame || monster?.pet)
-        || monster?.mconf || monster?.mstun || conflictActive(state)
+        || monster?.mconf || monster?.mstun || heroHasConflict(state)
         || dist2(x, y, state.u?.ux ?? x, state.u?.uy ?? y) !== 4) {
         return false;
     }
@@ -2919,7 +2914,7 @@ function movePet(
     }
     const goal = dogGoal(monster, state, random, calls);
     let allowFlags = monAllowFlags(monster, state);
-    if (conflictActive(state)) {
+    if (heroHasConflict(state)) {
         // dog_move() first tests the pet's own resistance. Ordinary edogs keep
         // moving either way; the result matters for guardian angels.
         resistConflict(monster, state, rollOne, calls);
@@ -2953,7 +2948,7 @@ function movePet(
             // are allies even when mfndpos() marks the occupied square with
             // ALLOW_M.  Keep scanning movement candidates rather than
             // manufacturing a zero-hit attack transaction between pets.
-            if (target.mtame && monster.mtame && !conflictActive(state))
+            if (target.mtame && monster.mtame && !heroHasConflict(state))
                 continue;
             if (maxPassiveMonsterDamage(target, monster)
                 >= (monster.mhp ?? 1)) continue;
@@ -3286,7 +3281,7 @@ function moveHostile(
     }
     // mon_allowflags() owns Conflict resistance after m_move()'s swallowed
     // early-return and special-monster branches, but before mfndpos().
-    if (conflictActive(state))
+    if (heroHasConflict(state))
         resistConflict(monster, state, rollOne, calls);
     const heroX = state?.u?.ux ?? oldx;
     const heroY = state?.u?.uy ?? oldy;
@@ -7464,7 +7459,7 @@ function finishDochugAfterMovement(
         const hostile = !monster?.mpeaceful && !monster?.pet
             && !monster?.mtame;
         if (!movement.moved && !movement.eating && !movement.attack
-            && adjacent && hostile && !conflictActive(state)) {
+            && adjacent && hostile && !heroHasConflict(state)) {
             if (state?.u?.uswallow && state.u.ustuck !== monster) {
                 movement.swallowedAttackSkipped = true;
             } else {
@@ -7857,7 +7852,7 @@ export function quietMonsterActionRng(
     // pets still enter dog_move(), including its pre-move mintrap check.
     if (nearby && !monster?.pet && !monster?.mtame && !monster?.mpeaceful
         && !monster?.mflee && !monster?.mconf && !monster?.mstun
-        && !invisibleMoves && !wandererMoves && !conflictActive(state)) {
+        && !invisibleMoves && !wandererMoves && !heroHasConflict(state)) {
         if (state?.u?.uswallow && state.u.ustuck !== monster) {
             // mhitu.c:mattacku() computes its non-random range state, then
             // returns immediately: only u.ustuck can affect a swallowed hero.
@@ -8575,7 +8570,7 @@ export function runQuietMonsterActions(
         // for fightm() to attack.
         const inSight = !state?.viz_array
             || !!(state.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-        if (conflictActive(state) && !monster.iswiz
+        if (heroHasConflict(state) && !monster.iswiz
             && couldSeeFromHero(state, monster.mx, monster.my)
             && inSight
             && dist2(monster.mx, monster.my,

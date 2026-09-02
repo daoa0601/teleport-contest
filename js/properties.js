@@ -10,9 +10,13 @@ function propertyRecord(property, state = game) {
         hero._propertySources[property] = {
             intrinsic: {},
             worn: [],
+            invoked: null,
         };
     }
-    return hero._propertySources[property];
+    const record = hero._propertySources[property];
+    if (!Object.prototype.hasOwnProperty.call(record, 'invoked'))
+        record.invoked = null;
+    return record;
 }
 
 function existingPropertyRecord(property, state = game) {
@@ -25,15 +29,50 @@ function timedSourceIsActive(property, hero) {
     return (hero[`${property}Turns`] ?? 0) > 0;
 }
 
+function intrinsicSourceIsActive(record) {
+    return Object.keys(record?.intrinsic || {}).length > 0;
+}
+
+export function propertyIsActive(property, state = game) {
+    const hero = state.u || {};
+    const record = existingPropertyRecord(property, state);
+    return intrinsicSourceIsActive(record)
+        || (record?.worn.length ?? 0) > 0
+        || !!record?.invoked
+        || timedSourceIsActive(property, hero);
+}
+
+export function propertyHasOtherSources(property, state = game) {
+    const hero = state.u || {};
+    const record = existingPropertyRecord(property, state);
+    return intrinsicSourceIsActive(record)
+        || (record?.worn.length ?? 0) > 0
+        || timedSourceIsActive(property, hero);
+}
+
 export function refreshProperty(property, state = game) {
     const record = propertyRecord(property, state);
     const hero = state.u;
-    const intrinsic = Object.keys(record.intrinsic).length > 0;
-    hero[property] = intrinsic || record.worn.length > 0
-        || timedSourceIsActive(property, hero);
+    hero[property] = propertyIsActive(property, state);
     hero[`${property}FromArmor`] = record.worn.some(source =>
         source.slot?.startsWith('uarm'));
     return hero[property];
+}
+
+export function hasInvokedProperty(property, state = game) {
+    return !!existingPropertyRecord(property, state)?.invoked;
+}
+
+export function setInvokedProperty(
+    property, object, active, state = game,
+) {
+    const record = propertyRecord(property, state);
+    record.invoked = active ? {
+        objectId: object?.o_id ?? null,
+        artifactId: object?.oartifact ?? null,
+        objectType: object?.otyp ?? null,
+    } : null;
+    return refreshProperty(property, state);
 }
 
 export function grantIntrinsicProperty(property, origin, state = game) {

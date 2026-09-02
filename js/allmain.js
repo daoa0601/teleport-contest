@@ -98,6 +98,7 @@ import {
     setInitialArmorClass, finishStartingDiscoveries,
 } from './u_init.js';
 import { syncBlindness, syncDeafness } from './senses.js';
+import { syncHeroInvisibility } from './hero_invisibility.js';
 import {
     igniteItems, runClaimedObjectBurnTimer,
 } from './light.js';
@@ -1910,12 +1911,7 @@ function finishInitialTurnMaintenanceAfterConfusion({
     if (!prayerTimeoutFreeze && (game.u?.invisibleTurns ?? 0) > 0) {
         game.u.invisibleTurns--;
         if (game.u.invisibleTurns === 0) {
-            const stillInvisible = !!(
-                game.u.intrinsicInvisible || game.u.extrinsicInvisible
-                || game.u.formInvisible
-            );
-            game.u.invisible = stillInvisible;
-            game.u.invis = stillInvisible;
+            const stillInvisible = syncHeroInvisibility(game);
             newsym(game.u.ux, game.u.uy);
             if (!stillInvisible && !game.blind) {
                 appendTurnMessage(game.u.seeInvisible || game.u.see_invisible

@@ -156,7 +156,9 @@ import {
     artifactById, artifactToHitBonus,
 } from './artifacts.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
-import { invokeArtifactPower } from './artifact_invoke.js';
+import {
+    deactivateArtifactProperty, invokeArtifactPower,
+} from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
@@ -8149,6 +8151,11 @@ async function dodrop() {
     const { object } = selection;
 
     game.inventory = inventory.filter(candidate => candidate !== object);
+    if (object.oartifact) {
+        await deactivateArtifactProperty(
+            object, artifactById(object.oartifact), { state: game },
+        );
+    }
     for (const slot of [
         'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
         'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',

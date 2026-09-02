@@ -5,14 +5,13 @@ import { TIMEOUT } from './const.js';
 import { newsym, pline } from './display.js';
 import { game } from './gstate.js';
 import { MUMMY_WRAPPING } from './object_data.js';
+import {
+    hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive,
+} from './properties.js';
 import { d, rn2 } from './rng.js';
+import { heroIsBlind } from './senses.js';
 
-function isBlind(state) {
-    return !!(state.blind || state.u?.blind
-        || (state.u?.blindTurns ?? 0) > 0);
-}
-
-function invisibilityIsBlocked(state) {
+export function invisibilityIsBlocked(state = game) {
     const hero = state.u || {};
     return !!(hero.invisibilityBlocked || hero.invisBlocked
         || hero.invis_blkd);
@@ -23,19 +22,28 @@ function wearsMummyWrapping(state) {
     return cloak?.otyp === MUMMY_WRAPPING;
 }
 
-function hasInternalInvisibility(state) {
+export function hasInternalInvisibility(state = game) {
     return !!(state.u?.intrinsicInvisible
+        || hasIntrinsicProperty('invisible', null, state)
         || (state.u?.invisibleTurns ?? 0) > 0);
+}
+
+export function hasNonArtifactInvisibility(state = game) {
+    const hero = state.u || {};
+    return !!(hero.intrinsicInvisible || hero.extrinsicInvisible
+        || hero.formInvisible || (hero.invisibleTurns ?? 0) > 0
+        || propertyHasOtherSources('invisible', state));
 }
 
 export function heroIsInvisible(state = game) {
     const hero = state.u || {};
     const active = !!(hero.intrinsicInvisible || hero.extrinsicInvisible
-        || hero.formInvisible || (hero.invisibleTurns ?? 0) > 0);
+        || hero.formInvisible || (hero.invisibleTurns ?? 0) > 0
+        || propertyIsActive('invisible', state));
     return active && !invisibilityIsBlocked(state);
 }
 
-function syncHeroInvisibility(state) {
+export function syncHeroInvisibility(state = game) {
     const invisible = heroIsInvisible(state);
     state.u.invisible = invisible;
     state.u.invis = invisible;
@@ -73,7 +81,7 @@ export async function applyPotionLikeInvisibility({
     }
 
     const wasInvisible = heroIsInvisible(state);
-    const showedInvisibility = !wasInvisible && !isBlind(state)
+    const showedInvisibility = !wasInvisible && !heroIsBlind(state)
         && !invisibilityIsBlocked(state);
     if (showedInvisibility) await showInvisibilityMessage(state);
 
@@ -115,7 +123,7 @@ export async function zapHeroInvisible(
         await pline('You feel rather itchy under your mummy wrapping.');
         return false;
     }
-    const observed = !heroIsInvisible(state) && !isBlind(state)
+    const observed = !heroIsInvisible(state) && !heroIsBlind(state)
         && !invisibilityIsBlocked(state);
     state.u.invisibleTurns = Math.min(
         TIMEOUT,

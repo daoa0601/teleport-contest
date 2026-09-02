@@ -13,6 +13,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { heroHasConflict } from './hero_conflict.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_SIZE,
@@ -147,7 +148,7 @@ function recordWeaponHit(weapon, damage, state) {
 
 async function abusePet(monster, damage, state) {
     if (!(monster.mtame > 0) || damage <= 0) return;
-    if (state.u?.aggravateMonster || state.u?.conflict || state.conflict)
+    if (state.u?.aggravateMonster || heroHasConflict(state))
         monster.mtame = Math.trunc(monster.mtame / 2);
     else monster.mtame--;
     monster.pet = monster.mtame > 0;

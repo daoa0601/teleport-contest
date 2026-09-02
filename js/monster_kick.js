@@ -2,6 +2,7 @@
 // C refs: dokick.c:kick_monster() and kickdmg().
 
 import { game } from './gstate.js';
+import { heroHasConflict } from './hero_conflict.js';
 import { A_CON, A_DEX, A_STR } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { couldsee } from './vision.js';
@@ -13,7 +14,7 @@ import {
 } from './monster_data.js';
 import {
     KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL,
-    RIN_AGGRAVATE_MONSTER, RIN_CONFLICT,
+    RIN_AGGRAVATE_MONSTER,
 } from './object_data.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rnd, rn2 } from './rng.js';
@@ -120,7 +121,7 @@ export async function abuseKickedPet(monster, potentialDamage, {
         || state.u?.aggravate_monster || state.aggravateMonster
         || state.aggravate_monster
         || heroWearsRing(state, RIN_AGGRAVATE_MONSTER)
-        || heroWearsRing(state, RIN_CONFLICT));
+        || heroHasConflict(state));
     monster.mtame = aggravates
         ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
     monster.pet = monster.mtame > 0;

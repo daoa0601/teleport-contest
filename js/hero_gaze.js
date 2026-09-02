@@ -10,6 +10,7 @@ import {
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster } from './monster_anger.js';
@@ -50,11 +51,6 @@ function heroIsHallucinating(state) {
 function heroCanSeeInvisible(state) {
     return !!(state.u?.seeInvisible || state.u?.see_invisible
         || (state.u?.seeInvisibleTurns ?? 0) > 0);
-}
-
-function heroIsInvisible(state) {
-    return !!(state.u?.invisible || state.u?.invis
-        || (state.u?.invisibleTurns ?? 0) > 0);
 }
 
 function heroIsConfused(state) {

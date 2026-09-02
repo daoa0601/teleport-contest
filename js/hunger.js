@@ -2,6 +2,7 @@
 // C ref: eat.c:gethungry(), called by allmain.c and hack.c.
 
 import { game } from './gstate.js';
+import { heroHasConflict } from './hero_conflict.js';
 import { rn2 } from './rng.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { nearCapacity } from './weight.js';
@@ -34,7 +35,7 @@ function accessoryNutritionCost(accessoryTime) {
 
     // Hunger and Conflict are independent C properties and can both charge.
     if (u.hunger) cost++;
-    if (u.conflict) cost++;
+    if (heroHasConflict(game)) cost++;
     switch (accessoryTime) {
     case 0:
         if (u.slowDigestion

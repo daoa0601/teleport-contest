@@ -11,6 +11,7 @@ import {
     plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';
 import { tryCallObjectType } from './object_call.js';
 import {
@@ -261,9 +262,7 @@ function monsterHasSleepDefense(monster) {
 function defaultMonsterCanSeeHero(monster, state) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) return false;
     if (state.underwater || state.u?.uinwater) return false;
-    const heroInvisible = !!(state.u?.invisible || state.u?.invis
-        || (state.u?.invisibleTurns ?? 0) > 0);
-    if (heroInvisible
+    if (heroIsInvisible(state)
         && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
         return false;
     }
@@ -302,15 +301,6 @@ function heroIsUnaware(state) {
     return !!(state.unaware || state.u?.unaware
         || state._helplessReason === 'unconscious from rotten food'
         || state._helplessReason === 'sleeping off a magical draught');
-}
-
-function heroIsInvisible(state) {
-    const hero = state.u || {};
-    const active = !!(hero.invisible || hero.invis
-        || (hero.invisibleTurns ?? 0) > 0);
-    const blocked = !!(hero.invisibilityBlocked || hero.invisBlocked
-        || hero.invis_blkd);
-    return active && !blocked;
 }
 
 function heroSeesInvisible(state) {

@@ -1,22 +1,46 @@
 // Artifact powers used by the #invoke command.
-// C ref: artifact.c arti_invoke(), invoke_healing(), and invoke_energy_boost().
+// C ref: artifact.c arti_invoke() and its invoke_* helpers.
 
 import { Upolyd } from './const.js';
-import { pline } from './display.js';
+import { newsym, pline } from './display.js';
 import { game } from './gstate.js';
+import {
+    hasNonArtifactConflict, syncHeroConflict,
+} from './hero_conflict.js';
+import {
+    hasNonArtifactInvisibility, invisibilityIsBlocked,
+    syncHeroInvisibility,
+} from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { doEnlightenmentEffect } from './insight.js';
 import { mksobj } from './mklev.js';
 import { ARROW } from './object_data.js';
+import {
+    hasInvokedProperty, setInvokedProperty,
+} from './properties.js';
 import { d, rnd, rnz } from './rng.js';
-import { setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { addInventoryItem } from './u_init.js';
 import { objectWeight } from './weight.js';
 
 const SUPPORTED_POWERS = new Set([
     'healing', 'energy-boost', 'enlightening', 'create-ammo',
+    'invisibility', 'conflict',
 ]);
+
+const PROPERTY_POWERS = Object.freeze({
+    conflict: {
+        property: 'conflict',
+        hasOtherSource: hasNonArtifactConflict,
+        sync: syncHeroConflict,
+    },
+    invisibility: {
+        property: 'invisible',
+        hasOtherSource: hasNonArtifactInvisibility,
+        sync: syncHeroInvisibility,
+    },
+});
 
 async function nothingSpecial(object, state, publish) {
     if ((state.inventory || []).includes(object)) {
@@ -37,6 +61,53 @@ async function beginInvocation(
     }
     object.age = turn + scaledRandom(100);
     return true;
+}
+
+async function invokeProperty(
+    object, artifact, state, publish, rollDice, scaledRandom,
+) {
+    const power = PROPERTY_POWERS[artifact.invokePower];
+    const turn = state.moves ?? 0;
+    const on = !hasInvokedProperty(power.property, state);
+    setInvokedProperty(power.property, object, on, state);
+
+    if (on && (object.age ?? 0) > turn) {
+        setInvokedProperty(power.property, object, false, state);
+        power.sync(state);
+        await publish(`You feel that ${artifact.name} is ignoring you.`);
+        object.age += rollDice(3, 10);
+        return { used: true, ready: false, on: false };
+    }
+    if (!on) object.age = turn + scaledRandom(100);
+
+    const hasOtherSource = power.hasOtherSource(state);
+    power.sync(state);
+    if (hasOtherSource) {
+        await nothingSpecial(object, state, publish);
+        return { used: true, ready: true, on };
+    }
+
+    if (artifact.invokePower === 'conflict') {
+        await publish(on
+            ? 'You feel like a rabble-rouser.'
+            : 'You feel the tension decrease around you.');
+        return { used: true, ready: true, on };
+    }
+
+    if (invisibilityIsBlocked(state) || heroIsBlind(state)) {
+        await nothingSpecial(object, state, publish);
+        return { used: true, ready: true, on };
+    }
+    newsym(state.u.ux, state.u.uy);
+    if (on) {
+        const transparency = state.u?.hallucinating
+            || (state.u?.hallucinationTurns ?? 0) > 0
+            ? 'normal' : 'strange';
+        await publish(`Your body takes on a ${transparency} transparency...`);
+    } else {
+        await publish('Your body seems to unfade...');
+    }
+    return { used: true, ready: true, on };
 }
 
 async function invokeHealing(object, state, publish) {
@@ -109,19 +180,45 @@ export async function invokeArtifactPower(
 ) {
     const power = artifact?.invokePower;
     if (!SUPPORTED_POWERS.has(power)) return { used: false };
+    if (PROPERTY_POWERS[power]) {
+        return invokeProperty(
+            object, artifact, state, publish, rollDice, scaledRandom,
+        );
+    }
     const ready = await beginInvocation(
         object, artifact, state, publish, rollDice, scaledRandom,
     );
     if (!ready) return { used: true, ready: false };
 
-    if (power === 'healing') {
+    switch (power) {
+    case 'healing':
         await invokeHealing(object, state, publish);
-    } else if (power === 'energy-boost') {
+        break;
+    case 'energy-boost':
         await invokeEnergyBoost(object, state, publish);
-    } else if (power === 'enlightening') {
+        break;
+    case 'enlightening':
         await doEnlightenmentEffect();
-    } else {
+        break;
+    case 'create-ammo':
         invokeCreateAmmo(object, rollOne);
+        break;
     }
     return { used: true, ready: true };
+}
+
+export async function deactivateArtifactProperty(
+    object, artifact, {
+        state = game,
+        publish = pline,
+        rollDice = d,
+        scaledRandom = rnz,
+    } = {},
+) {
+    const power = PROPERTY_POWERS[artifact?.invokePower];
+    if (!power || !hasInvokedProperty(power.property, state)) return false;
+    await invokeProperty(
+        object, artifact, state, publish, rollDice, scaledRandom,
+    );
+    return true;
 }

@@ -19,6 +19,9 @@ import {
     transientObjectGlyph,
 } from './display.js';
 import { game } from './gstate.js';
+import {
+    hasInternalInvisibility, syncHeroInvisibility,
+} from './hero_invisibility.js';
 import { distmin } from './hacklib.js';
 import {
     canFallThrough, mksobj, place_object, remove_object,
@@ -46,6 +49,7 @@ import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import { revealVibratingSquare } from './invocation.js';
+import { hasInvokedProperty } from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -515,13 +519,10 @@ async function triggerMagicTrap(trap) {
     const fate = rnd(20);
     if (fate === 11) {
         await plineWithContinuation('You hear a low hum.');
-        const intrinsicInvisible = !!(
-            game.u?.intrinsicInvisible
-            ?? game.u?.invisible
-            ?? game.u?.invis
-        );
+        const intrinsicInvisible = hasInternalInvisibility(game);
         const otherInvisible = !!(
             game.u?.extrinsicInvisible || game.u?.formInvisible
+            || hasInvokedProperty('invisible', game)
         );
         const currentlyInvisible = intrinsicInvisible || otherInvisible;
         if (!currentlyInvisible) {
@@ -549,8 +550,8 @@ async function triggerMagicTrap(trap) {
         }
         const nextIntrinsic = !intrinsicInvisible;
         game.u.intrinsicInvisible = nextIntrinsic;
-        game.u.invisible = nextIntrinsic || otherInvisible;
-        game.u.invis = game.u.invisible;
+        if (!nextIntrinsic) game.u.invisibleTurns = 0;
+        syncHeroInvisibility(game);
         newsym(game.u.ux, game.u.uy);
         return;
     }

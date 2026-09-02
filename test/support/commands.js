@@ -22,3 +22,16 @@ export async function runMonsterAbilityCommand(followupKeys = '') {
     pushKeys(`monster\n${followupKeys}`);
     await rhack('#'.charCodeAt(0));
 }
+
+export async function invokeInventoryObject(object = 'a', followupKeys = '') {
+    const letter = typeof object === 'string' ? object : object.invlet;
+    pushKeys(`invoke\n${letter}${followupKeys}`);
+    await rhack('#'.charCodeAt(0));
+}
+
+export async function dropInventoryObject(object = 'a', followupKeys = '') {
+    const letter = typeof object === 'string' ? object : object.invlet;
+    pushKey(letter);
+    pushKeys(followupKeys);
+    await rhack('d'.charCodeAt(0));
+}
