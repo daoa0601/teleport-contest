@@ -6,18 +6,10 @@ import { game } from '../js/gstate.js';
 import {
     advanceHeroPetrification, startHeroPetrification,
 } from '../js/stoning.js';
-import { freshObjectRoom } from './support/object-room.js';
-
-function freshStoningRoom() {
-    freshObjectRoom({
-        heroX: 13,
-        heroY: 10,
-        recalculateVision: false,
-    });
-}
+import { freshHeroConditionRoom } from './support/hero-state.js';
 
 test('petrification stops actions as the hero stiffens', async () => {
-    freshStoningRoom();
+    freshHeroConditionRoom();
     game.u.fast = true;
     game.u.veryFast = true;
     game.u.veryFastTurns = 30;
@@ -49,7 +41,7 @@ test('petrification stops actions as the hero stiffens', async () => {
 });
 
 test('the final petrification turn invokes a stoning death', async () => {
-    freshStoningRoom();
+    freshHeroConditionRoom();
     startHeroPetrification({ turns: 1, killer: 'cockatrice egg' });
     const deaths = [];
 

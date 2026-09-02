@@ -14,20 +14,11 @@ import {
     knownInventoryObject, knownInventoryWeapon,
 } from './support/game-objects.js';
 import {
-    installPolymorphedHero, wearHeroObject,
+    freshHeroConditionRoom, installPolymorphedHero, wearHeroObject,
 } from './support/hero-state.js';
-import { freshObjectRoom } from './support/object-room.js';
-
-function freshIllnessRoom() {
-    freshObjectRoom({
-        heroX: 13,
-        heroY: 10,
-        recalculateVision: false,
-    });
-}
 
 test('fatal illness worsens and reaches the normal death path', async () => {
-    freshIllnessRoom();
+    freshHeroConditionRoom();
     startHeroSickness({
         state: game,
         turns: 7,
@@ -59,7 +50,7 @@ test('fatal illness worsens and reaches the normal death path', async () => {
 });
 
 test('the Constitution recovery roll can cure food poisoning', async () => {
-    freshIllnessRoom();
+    freshHeroConditionRoom();
     const constitution = game.u.acurr.a[A_CON];
     startHeroSickness({
         state: game,
@@ -84,7 +75,7 @@ test('the Constitution recovery roll can cure food poisoning', async () => {
 });
 
 test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
-    freshIllnessRoom();
+    freshHeroConditionRoom();
     game.u.uhunger = 900;
     startHeroSickness({
         state: game,
@@ -120,7 +111,7 @@ test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
 });
 
 test('a rat form cannot vomit away food poisoning', async () => {
-    freshIllnessRoom();
+    freshHeroConditionRoom();
     installPolymorphedHero('sewer rat', { turns: 20 });
     startHeroSickness({
         state: game,
@@ -143,7 +134,7 @@ test('a rat form cannot vomit away food poisoning', async () => {
 
 test('a vomiting yellow dragon breathes acid on its weapon and armor',
     async () => {
-        freshIllnessRoom();
+        freshHeroConditionRoom();
         installPolymorphedHero('yellow dragon', { turns: 20 });
         const sword = knownInventoryWeapon(LONG_SWORD);
         game.uwep = sword;

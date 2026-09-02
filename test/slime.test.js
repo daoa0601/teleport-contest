@@ -20,19 +20,12 @@ import {
 } from '../js/slime.js';
 import { liveMonster } from './support/monsters.js';
 import { knownInventoryObject } from './support/game-objects.js';
-import { wearHeroObject } from './support/hero-state.js';
-import { freshObjectRoom } from './support/object-room.js';
-
-function freshSlimeRoom() {
-    freshObjectRoom({
-        heroX: 13,
-        heroY: 10,
-        recalculateVision: false,
-    });
-}
+import {
+    freshHeroConditionRoom, wearHeroObject,
+} from './support/hero-state.js';
 
 test('a green slime touch infects and still deals its physical damage', () => {
-    freshSlimeRoom();
+    freshHeroConditionRoom();
     const slime = liveMonster({
         m_id: 2080,
         mnum: PM_GREEN_SLIME,
@@ -68,7 +61,7 @@ test('a green slime touch infects and still deals its physical damage', () => {
 
 test('the slime countdown strips speed and interrupts the current action',
     async () => {
-        freshSlimeRoom();
+        freshHeroConditionRoom();
         game.u.fast = true;
         game.u.veryFast = true;
         game.u.veryFastTurns = 40;
@@ -96,7 +89,7 @@ test('the slime countdown strips speed and interrupts the current action',
 
 test('the final slime turn changes form before invoking slime death',
     async () => {
-        freshSlimeRoom();
+        freshHeroConditionRoom();
         startHeroSliming({ state: game, turns: 1, killer: 'green slime' });
         const armor = wearHeroObject(
             knownInventoryObject(LEATHER_ARMOR), 'uarm', W_ARM,
@@ -140,7 +133,7 @@ test('the final slime turn changes form before invoking slime death',
 
 test('burning slime clears its countdown, killer, and false appearance',
     async () => {
-        freshSlimeRoom();
+        freshHeroConditionRoom();
         startHeroSliming({ state: game, turns: 4, killer: 'green slime' });
         game.u.m_ap_type = M_AP_MONSTER;
         game.u.mappearance = PM_GREEN_SLIME;

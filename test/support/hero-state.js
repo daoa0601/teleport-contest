@@ -62,6 +62,15 @@ export function freshMonsterAbilityRoom(formName, {
     });
 }
 
+export function freshHeroConditionRoom(options = {}) {
+    return freshObjectRoom({
+        heroX: 13,
+        heroY: 10,
+        recalculateVision: false,
+        ...options,
+    });
+}
+
 export function installHumanWerewolfHero({ beast = false } = {}) {
     const attributes = Array(6).fill(12);
     game.urole = { key: 'archeologist', mnum: 0 };
