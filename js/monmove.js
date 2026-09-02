@@ -9,11 +9,11 @@ import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
 import {
-    clearThrownObject, MONSTER_POLEARMS, monsterVolleyCount,
+    clearThrownObject, MONSTER_POLEARMS,
     monsterWieldedWeapon, objectTypeName, placeAndStackThrownObject,
-    placeThrownObject, projectileDamageAgainstHero,
+    placeThrownObject,
     RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
-    splitMonsterMissile,
+    throwMonsterWeaponAtHero,
 } from './monster_throw.js';
 import { sessionIsNight } from './monster_sound.js';
 export { sessionIsNight } from './monster_sound.js';
@@ -255,7 +255,6 @@ const GEM_CLASS = 13;
 const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
-const VENOM_CLASS = 17;
 const DOGFOOD = 0;
 const CADAVER = 1;
 const ACCFOOD = 2;
@@ -3798,131 +3797,10 @@ function maybeThrowRangedWeapon(
         && recordRandom(random, calls, Math.max(1, BOLT_LIM - distance)) !== 0)
         return null;
 
-    const launcher = monsterWieldedWeapon(monster);
-    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(weapon));
-    const launched = !!(launcherNames
-        && launcherNames.has(objectTypeName(launcher)));
-    const volley = monsterVolleyCount(
-        monster, weapon, launcher, rollOne,
-    );
-    const missile = splitMonsterMissile(monster, weapon);
-    // C mthrowu.c:m_throw() exposes the OBJ_FREE missile through
-    // gt.thrownobj before traversal.  A fatal losehp() never returns to this
-    // function, so end-of-game cleanup must be able to recover this identity.
-    state._thrownObject = missile;
-    monster.weaponCheck = NEED_WEAPON;
-
-    const dx = Math.sign(heroX - monster.mx);
-    const dy = Math.sign(heroY - monster.my);
-    let x = monster.mx;
-    let y = monster.my;
-    const flightPath = [];
-    for (let remaining = distance; remaining > 0; remaining--) {
-        x += dx;
-        y += dy;
-        const target = state.level?.monsters?.find(candidate =>
-            candidate !== monster && !candidate.dead
-            && (candidate.mhp ?? 1) > 0
-            && candidate.mx === x && candidate.my === y);
-        if (!target) {
-            if (x === heroX && y === heroY) {
-                const dexterity = state?.u?.acurr?.a?.[A_DEX] ?? 10;
-                const catchChance = 100 - dexterity
-                    - (['monk', 'rogue'].includes(state?.urole?.key)
-                        ? 20 : 0);
-                const catchEligible = !state?.blind
-                    && !(state?.u?.blindTurns > 0)
-                    && !state?.u?.confused && !state?.u?.stunned
-                    && !state?.u?.fumbling
-                    && missile.oclass !== VENOM_CLASS;
-                const caught = catchEligible
-                    && recordRandom(
-                        random, calls, Math.max(1, catchChance),
-                    ) === 0;
-                if (caught) {
-                    (state.inventory ||= []).push(missile);
-                    missile.where = 'invent';
-                    clearThrownObject(state, missile);
-                    return {
-                        weapon: missile,
-                        appearance: missile.dknown
-                            ? objectTypeName(missile)
-                            : OBJECT_DESCRIPTIONS[missile.otyp]
-                                || objectTypeName(missile) || 'weapon',
-                        heroTarget: true, caught: true, volley,
-                        launched, flightPath, flightGlyph: ')',
-                    };
-                }
-
-                const damage = projectileDamageAgainstHero(
-                    missile, rollOne,
-                );
-                let hitLevel = Math.max(
-                    -4, 3 - distmin(heroX, heroY, monster.mx, monster.my),
-                );
-                hitLevel += 8 + (missile.spe ?? 0);
-                const hitRoll = rollOne(20);
-                calls.push('rnd(20)');
-                const hit = (state?.u?.uac ?? 10) + hitLevel > hitRoll;
-                if (hit) {
-                    const preHitHp = state.u.uhp ?? 1;
-                    state.u.uhp = Math.max(
-                        0, preHitHp - damage,
-                    );
-                    return {
-                        weapon: missile,
-                        appearance: missile.dknown
-                            ? objectTypeName(missile)
-                            : OBJECT_DESCRIPTIONS[missile.otyp]
-                                || objectTypeName(missile) || 'weapon',
-                        heroTarget: true, hit, hitRoll, hitLevel, damage,
-                        preHitHp,
-                        volley, launched, flightPath, flightGlyph: ')',
-                        deferredFloorResolution: true,
-                    };
-                }
-
-                // A miss reaches m_throw()'s ordinary end-of-flight probe;
-                // the spent missile then lands at the hero's square.
-                recordRandom(random, calls, 5);
-                placeAndStackThrownObject(state, missile, x, y);
-                return {
-                    weapon: missile,
-                    appearance: missile.dknown
-                        ? objectTypeName(missile)
-                        : OBJECT_DESCRIPTIONS[missile.otyp]
-                            || objectTypeName(missile) || 'weapon',
-                    heroTarget: true, hit, hitRoll, hitLevel, damage,
-                    volley, launched, flightPath, flightGlyph: ')',
-                };
-            }
-            recordRandom(random, calls, 5);
-            flightPath.push({ x, y });
-            continue;
-        }
-
-        const hitRoll = rollOne(20);
-        calls.push('rnd(20)');
-        const hit = 5 + findMonsterArmorClass(target) >= hitRoll;
-        let damage = 0;
-        if (hit) {
-            const sides = Math.max(1, OBJECT_SMALL_DAMAGE[weapon.otyp] || 1);
-            damage = rollOne(sides);
-            calls.push(`rnd(${sides})`);
-            target.mhp = Math.max(0, (target.mhp ?? 1) - damage);
-        }
-        placeAndStackThrownObject(state, missile, x, y);
-        return {
-            weapon: missile,
-            appearance: missile.dknown
-                ? objectTypeName(missile)
-                : OBJECT_DESCRIPTIONS[missile.otyp]
-                    || objectTypeName(missile) || 'weapon',
-            target, hit, hitRoll, damage, volley,
-            launched, flightPath, flightGlyph: ')',
-        };
-    }
-    return null;
+    return throwMonsterWeaponAtHero(monster, state, weapon, {
+        random: range => recordRandom(random, calls, range),
+        rollOne,
+    });
 }
 
 function reachesDistantPhaseFour(monster, movement, state) {

@@ -75,7 +75,9 @@ import {
 import {
     makePlural, simpleObjectNameWithArticle,
 } from './object_grammar.js';
-import { presentMonsterProjectileShot } from './monster_throw.js';
+import {
+    presentMonsterProjectileContact, presentMonsterProjectileShot,
+} from './monster_throw.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
@@ -5725,6 +5727,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 let transientFlightCell = null;
                 for (const cell of ranged.flightPath || []) {
+                    if (cell.contact) {
+                        await presentMonsterProjectileContact(
+                            cell.contact, queueTurnMessage,
+                        );
+                    }
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                     transientFlightCell = null;

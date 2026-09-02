@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon, selectRangedWeapon,
-    throwMonsterWeaponAtMonster,
+    throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
 import { NEED_WEAPON } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
@@ -85,6 +85,30 @@ test('a tame orc shoots an arrow with its bow', () => {
         ),
         true,
     );
+});
+
+test('a hostile monster can throw a dagger at the hero', () => {
+    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
+    const dagger = carriedObject(DAGGER);
+    const orc = addMonsterToLevel(liveMonster({
+        species: 'orc',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+        inventory: [dagger],
+    }));
+    const hitPointsBefore = game.u.uhp;
+
+    const shot = throwMonsterWeaponAtHero(orc, game, dagger, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+
+    assert.equal(shot.heroTarget, true);
+    assert.equal(shot.hit, true);
+    assert.equal(game.u.uhp, hitPointsBefore - 1);
+    assert.equal(orc.inventory.includes(dagger), false);
 });
 
 test('a missed intervening monster does not hide the later hit', async () => {
