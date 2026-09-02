@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import {
     FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
-    IS_POOL, STRAT_WAITMASK,
+    IS_POOL, STRAT_WAITMASK, WATER,
 } from './const.js';
 import { dryFountainAt } from './fountain_terrain.js';
 import {
@@ -146,22 +146,37 @@ export function levelHasCeiling(state = game) {
     return !(In_endgame(state.u?.uz) && !Is_earthlevel(state.u?.uz));
 }
 
+function monsterFliesOrFloats(monster) {
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
+    return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
+}
+
 export function monsterInAir(monster, state = game) {
     if (!monster) return false;
+    if (monsterFliesOrFloats(monster)) return true;
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    if ((flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT)
-        return true;
     return !!(flags & M1_CLING)
         && levelHasCeiling(state)
         && !!monster.mundetected;
 }
 
-export function monsterSurvivesPool(monster) {
+export function monsterSurvivesPool(monster, { waterWall = false } = {}) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    return !!(flags & (
-        M1_SWIM | M1_CLING | M1_AMPHIBIOUS | M1_BREATHLESS
-    ));
+    const safeFlags = M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS
+        | (waterWall ? 0 : M1_CLING);
+    return !!(flags & safeFlags);
+}
+
+function levelIsWaterLevel(state) {
+    return !!state.level?.flags?.is_waterlevel
+        || (state === game && Is_waterlevel(state.u?.uz));
+}
+
+function heroKeepsSteedAboveWater(monster, state, waterWall) {
+    if (waterWall || state.u?.usteed !== monster) return false;
+    return !!(state.u?.flying || state.u?.flight || state.flying
+        || state.u?.levitating || state.u?.levitation || state.levitating);
 }
 
 export function rollMonsterPoolReaction(
@@ -169,8 +184,16 @@ export function rollMonsterPoolReaction(
     state = game,
     { random = rn2, rollDice = d } = {},
 ) {
-    if (monsterInAir(monster, state) || monsterSurvivesPool(monster))
+    const location = state.level?.at?.(monster?.mx, monster?.my);
+    const waterWall = location?.typ === WATER;
+    const waterLevel = levelIsWaterLevel(state);
+    const safelyAirborne = !waterWall && !waterLevel
+        && monsterFliesOrFloats(monster);
+    if (heroKeepsSteedAboveWater(monster, state, waterWall)
+        || safelyAirborne
+        || monsterSurvivesPool(monster, { waterWall })) {
         return { kind: 'safe' };
+    }
 
     if (monster.mnum === PM_IRON_GOLEM && random(5) === 0) {
         const damage = rollDice(2, 6);
@@ -201,9 +224,7 @@ export function monsterLavaReaction(monster, state = game) {
 export function applyDryLandEel(monster, state = game, random = rn2) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const waterLevel = state === game
-        ? Is_waterlevel(state.u?.uz)
-        : !!state.level?.flags?.is_waterlevel;
+    const waterLevel = levelIsWaterLevel(state);
     if (!location || IS_POOL(location.typ) || waterLevel
         || MONSTER_SYMBOL[monster.mnum] !== S_EEL
         || (flags & M1_BREATHLESS)) return false;
@@ -293,7 +314,10 @@ export async function resolveMonsterLiquid(
         throw new TypeError('minliquid requires the monster death handler');
     }
 
-    const inPool = IS_POOL(location.typ);
+    const waterLevel = levelIsWaterLevel(state);
+    const waterWall = location.typ === WATER;
+    const inPool = IS_POOL(location.typ)
+        && (!monsterFliesOrFloats(monster) || waterLevel);
     const inFountain = location.typ === FOUNTAIN;
     if (monster.mnum === PM_GREMLIN && (inPool || inFountain)
         && random(3) !== 0) {
@@ -320,7 +344,7 @@ export async function resolveMonsterLiquid(
         return { kind: 'split', survived: true, clone, fountainDried };
     }
 
-    if (inPool) {
+    if (inPool || waterWall) {
         const reaction = rollMonsterPoolReaction(monster, state, {
             random, rollDice,
         });

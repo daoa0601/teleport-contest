@@ -6,7 +6,7 @@ import {
     mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
 } from '../js/monmove.js';
 import {
-    FOUNTAIN, IRONBARS, LAVAPOOL, ROOM, W_WEP,
+    FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
@@ -191,6 +191,68 @@ test('a gremlin can multiply in a fountain and dry it up', async () => {
     assert.equal(level.at(12, 10).typ, ROOM);
     assert.equal(level.flags.nfountains, 0);
     assert.deepEqual(messages, ['The fountain dries up!']);
+});
+
+test('flight does not keep a monster above the Plane of Water', async () => {
+    const level = freshObjectRoom();
+    level.flags.is_waterlevel = true;
+    level.at(12, 10).typ = POOL;
+    const dragon = addMonster({
+        species: 'red dragon',
+        x: 12,
+        y: 10,
+    });
+    const messages = [];
+
+    const result = await resolveMonsterLiquid(dragon, game, {
+        announce: async message => messages.push(message),
+        finishDeath: finishMonsterLiquidDeath,
+        random: () => 0,
+    });
+
+    assert.equal(result.dead, true);
+    assert.equal(level.monsters.includes(dragon), false);
+    assert.deepEqual(messages, ['The red dragon drowns.']);
+});
+
+test('a flying hero keeps their steed above water', async () => {
+    const level = freshObjectRoom();
+    level.flags.is_waterlevel = true;
+    level.at(12, 10).typ = POOL;
+    const pony = addMonster({
+        species: 'pony',
+        x: 12,
+        y: 10,
+    });
+    game.u.usteed = pony;
+    game.u.flying = true;
+
+    await resolveMonsterLiquid(pony, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        random: () => 0,
+    });
+
+    assert.equal(level.monsters.includes(pony), true);
+    assert.equal(pony.mhp, 20);
+});
+
+test('a water wall drowns a monster clinging to the ceiling', async () => {
+    const level = freshObjectRoom();
+    level.at(12, 10).typ = WATER;
+    const piercer = addMonster({
+        species: 'rock piercer',
+        x: 12,
+        y: 10,
+        mundetected: 1,
+    });
+
+    const result = await resolveMonsterLiquid(piercer, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        random: () => 0,
+    });
+
+    assert.equal(result.dead, true);
+    assert.equal(level.monsters.includes(piercer), false);
 });
 
 test('an engulfer carries only a form which fits through iron bars', () => {
