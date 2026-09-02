@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { visibleCellsFrom, vision_reset } from '../js/vision.js';
+import { freshGame } from './support/game-state.js';
 
 test('off-hero visibility preserves C callback traversal order', () => {
-    resetGame();
-    game.level = {
+    freshGame({ level: {
         at: () => ({ typ: 25 }), // ROOM
-    };
+    } });
     vision_reset();
 
     const cells = visibleCellsFrom(40, 10, 9);

@@ -1,26 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
 import { SPE_HASTE_SELF } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
+import { freshGame } from './support/game-state.js';
 
 function freshCaster() {
-    resetGame();
-    resetInputState();
-    game.urole = { key: 'wizard' };
-    game.u = {
-        ulevel: 8,
-        uen: 40,
-        uhunger: 900,
-        ualign: { type: 0, record: 0 },
-    };
-    game.moves = 40;
-    game.context = {};
-    game.flags = {};
-    game.inventory = [];
+    freshGame({
+        role: 'wizard',
+        hero: {
+            ulevel: 8,
+            uen: 40,
+            ualign: { type: 0, record: 0 },
+        },
+        moves: 40,
+        context: {},
+        flags: {},
+    });
     initRng(701n);
 }
 

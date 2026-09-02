@@ -4,11 +4,11 @@ import assert from 'node:assert/strict';
 import {
     dippedCoinMessage, resolveDippedCoinFate,
 } from '../js/fountain_effects.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 
 test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
     const top = resolveDippedCoinFate({
@@ -78,8 +78,7 @@ test('looted and adjacent fountain fates perform no coin work', () => {
 });
 
 test('mkgold allocates once, merges by identity, and repairs coin weight', () => {
-    resetGame();
-    game.level = new GameMap();
+    freshGame();
     initRng(4500n);
     const first = mkgold(51, 4, 5);
     const firstId = first.o_id;

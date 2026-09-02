@@ -1,27 +1,32 @@
-import { GameMap } from '../../js/game.js';
-import { game, resetGame } from '../../js/gstate.js';
+import { game } from '../../js/gstate.js';
 import { MAXNROFROOMS } from '../../js/const.js';
 import { init_objects } from '../../js/o_init.js';
 import { init_rect } from '../../js/rect.js';
 import { initRng } from '../../js/rng.js';
+import { freshGame } from './game-state.js';
 
 export function freshSpecialLevel({
     prototype, variant, seed, depth = 11, defaultLit = false,
     monsterAlignment = null,
 }) {
-    resetGame();
-    game.u = {
-        ux: 1, uy: 1, ux0: 1, uy0: 1,
-        uz: { dnum: 0, dlevel: depth },
-        ulevel: Math.max(1, Math.min(depth, 30)),
-        uhp: 80, uhpmax: 80,
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-        uhave: {}, ualign: { type: 0 },
-    };
-    game.flags = {};
-    game.context = {};
-    game.moves = 2;
+    const attributes = Array(6).fill(12);
+    freshGame({
+        heroX: 1,
+        heroY: 1,
+        hero: {
+            uz: { dnum: 0, dlevel: depth },
+            ulevel: Math.max(1, Math.min(depth, 30)),
+            uhp: 80,
+            uhpmax: 80,
+            acurr: { a: attributes.slice() },
+            amax: { a: attributes.slice() },
+            uhave: {},
+            ualign: { type: 0 },
+        },
+        flags: {},
+        context: {},
+        moves: 2,
+    });
     game.in_mklev = true;
     game.dungeons = [{
         dname: 'The Dungeons of Doom',
@@ -29,7 +34,6 @@ export function freshSpecialLevel({
         num_dunlevs: 30,
         flags: {},
     }];
-    game.level = new GameMap();
     game.level.subrooms = [];
     game.level.nsubroom = 0;
     game.stairs = null;

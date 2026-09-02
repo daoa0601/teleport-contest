@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { initRng, rnl } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 
 function firstLuckOutcome(luck) {
-    resetGame();
-    game.u = { uluck: luck };
+    freshGame({ hero: { uluck: luck } });
     initRng(1n);
     return rnl(20);
 }

@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { freshGame } from './support/game-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 test('save and restore preserve entity identity across every loaded level', () => {
-    resetGame();
     const storage = memoryStorage();
     const level = new GameMap();
     const cachedLevel = new GameMap();
@@ -19,15 +19,17 @@ test('save and restore preserve entity identity across every loaded level', () =
     bag.contents.push(coin);
     level.monsters.push(pet);
 
+    freshGame({
+        level,
+        inventory: [weapon, bag],
+        hero: { ustuck: pet },
+        moves: 12,
+    });
     Object.assign(game, {
         plname: 'Schema',
-        level,
         _levelCache: new Map([['0:2', { level: cachedLevel, stairs: null }]]),
-        inventory: [weapon, bag],
         uwep: weapon,
         startingPet: pet,
-        u: { ustuck: pet },
-        moves: 12,
     });
 
     assert.equal(saveGame(storage), true);

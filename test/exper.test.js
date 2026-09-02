@@ -6,9 +6,10 @@ import {
     monsterExperience, newExperienceThreshold,
 } from '../js/exper.js';
 import { A_CON, A_WIS } from '../js/const.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 
 const monster = (name, state = {}) => ({
     mnum: MONSTER_NAME.indexOf(name),
@@ -41,12 +42,19 @@ test('more_experienced adds experience and fourfold score', () => {
 });
 
 test('a gained level retains the HP and power that losing it removes', () => {
-    resetGame();
-    initRng(712n);
     const attributes = Array(6).fill(10);
     attributes[A_CON] = 14;
     attributes[A_WIS] = 12;
-    game.flags = { female: false };
+    freshGame({
+        flags: { female: false },
+        hero: {
+            ulevel: 1, ulevelmax: 1,
+            uhp: 10, uhpmax: 10, uhppeak: 10,
+            uen: 5, uenmax: 5, uenpeak: 5,
+            uexp: 19,
+            acurr: { a: attributes },
+        },
+    });
     game.urole = {
         key: 'archeologist', name: { m: 'Archeologist' }, xlev: 10,
         title: [{ m: 'Digger' }],
@@ -57,13 +65,7 @@ test('a gained level retains the HP and power that losing it removes', () => {
         hpadv: { lofix: 0, lornd: 0 },
         enadv: { lofix: 0, lornd: 0 },
     };
-    game.u = {
-        ulevel: 1, ulevelmax: 1,
-        uhp: 10, uhpmax: 10, uhppeak: 10,
-        uen: 5, uenmax: 5, uenpeak: 5,
-        uexp: 19,
-        acurr: { a: attributes },
-    };
+    initRng(712n);
 
     gainExperienceLevel();
     const hpGain = game.u.uhpinc[1];

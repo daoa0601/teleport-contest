@@ -4,28 +4,27 @@ import assert from 'node:assert/strict';
 import {
     ROOM, ROOMOFFSET, SHOPBASE, TELEP_TRAP,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
 import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
     moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from '../js/teleport.js';
+import { freshGame } from './support/game-state.js';
 import { liveMonster } from './support/monsters.js';
 
 function teleportState() {
-    resetGame();
-    game.level = new GameMap();
+    freshGame({
+        hero: {
+            uz: { dnum: 0, dlevel: 4 },
+            umonster: 340,
+        },
+        context: {
+            run: 1, mv: true, travel: true, travel1: true, nopick: true,
+        },
+        moves: 20,
+    });
     game.level.flags.noteleport = false;
-    game.u = {
-        ux: 10, uy: 10, ux0: 10, uy0: 10,
-        uz: { dnum: 0, dlevel: 4 },
-        umonster: 340,
-    };
-    game.context = {
-        run: 1, mv: true, travel: true, travel1: true, nopick: true,
-    };
-    game.moves = 20;
     game.dungeons = [{ flags: {} }];
     return game;
 }

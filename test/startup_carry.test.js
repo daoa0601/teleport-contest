@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { carriedGold, containedGold, hiddenGold } from '../js/gold.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { goldInsightLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
@@ -16,6 +16,7 @@ import {
 import {
     inventoryWeight, invWeight, objectWeight, weightCapacity,
 } from '../js/weight.js';
+import { freshGame } from './support/game-state.js';
 import { prepareHeroStartup } from './support/startup.js';
 
 
@@ -46,11 +47,12 @@ test('contained gold respects knowledge at every enclosing boundary', () => {
 });
 
 test('gold insight hides unknown containers until final disclosure', () => {
-    resetGame();
+    freshGame({
+        inventory: [{
+            otyp: SACK, cknown: false, contents: [coin(60)],
+        }],
+    });
     game._goldCount = 0;
-    game.inventory = [{
-        otyp: SACK, cknown: false, contents: [coin(60)],
-    }];
     assert.deepEqual(goldInsightLines(false), [
         '  Your wallet is empty.',
     ]);

@@ -1,11 +1,10 @@
 import { ROOM } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { GameDisplay } from '../../js/game_display.js';
-import { game, resetGame } from '../../js/gstate.js';
-import { resetInputState } from '../../js/input.js';
+import { game } from '../../js/gstate.js';
 import { initRng } from '../../js/rng.js';
 import { vision_reset } from '../../js/vision.js';
-import { installLiveCommandHero } from './live-command-state.js';
+import { freshGame } from './game-state.js';
 
 export function freshPlayableRoom({
     left = 8,
@@ -17,8 +16,6 @@ export function freshPlayableRoom({
     role = 'caveman',
     hero = {},
 } = {}) {
-    resetGame();
-
     const level = new GameMap();
     for (let x = left; x <= right; x++) {
         for (let y = top; y <= bottom; y++) {
@@ -31,15 +28,8 @@ export function freshPlayableRoom({
         }
     }
 
-    installLiveCommandHero({ role, level, x: heroX, y: heroY });
+    freshGame({ level, role, heroX, heroY, hero });
     vision_reset();
-    Object.assign(game.u, hero);
-    game.inventory = [];
-    game.uwep = null;
-    game.uswapwep = null;
-    game.uquiver = null;
-    game.animationFrame = async () => {};
-    resetInputState();
     return level;
 }
 

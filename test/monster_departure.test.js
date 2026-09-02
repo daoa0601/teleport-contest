@@ -4,17 +4,17 @@ import assert from 'node:assert/strict';
 import {
     AMULET_OF_YENDOR, CORPSE, ORCISH_DAGGER,
 } from '../js/object_data.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { removeWishGrantingMonster } from '../js/monster_departure.js';
 import { initRng } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 import { liveMonster } from './support/monsters.js';
 
 function installDepartureState(monster) {
-    resetGame();
-    game.level = new GameMap();
+    freshGame({
+        hero: { ustuck: monster, uswallow: true },
+    });
     game.level.monsters = [monster, { mnum: 0 }];
-    game.u = { ux: 10, uy: 10, ustuck: monster, uswallow: true };
     initRng(3n);
 }
 

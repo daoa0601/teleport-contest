@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { A_CON, A_DEX, A_INT } from '../js/const.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
@@ -13,7 +13,7 @@ import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
     hitMonsterWithSupportedPotion,
 } from '../js/potion_hit.js';
-import { pushKey, pushKeys, resetInputState } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import {
@@ -22,6 +22,7 @@ import {
 import {
     installHumanWerewolfHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
+import { freshGame } from './support/game-state.js';
 import { liveMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
@@ -46,9 +47,7 @@ function potionTarget(mnum, overrides = {}) {
 }
 
 function freshPotionState(hero = { hallucinationTurns: 0 }) {
-    resetGame();
-    resetInputState();
-    game.u = hero;
+    freshGame({ hero });
 }
 
 function installDirectWereHero({ beast = false } = {}) {
