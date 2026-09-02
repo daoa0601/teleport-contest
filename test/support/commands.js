@@ -12,6 +12,11 @@ export async function throwInventoryObject(
     await rhack('t'.charCodeAt(0));
 }
 
+export async function applyInventoryObject(object) {
+    pushKey(typeof object === 'string' ? object : object.invlet);
+    await rhack('a'.charCodeAt(0));
+}
+
 export async function runMonsterAbilityCommand(followupKeys = '') {
     pushKeys(`monster\n${followupKeys}`);
     await rhack('#'.charCodeAt(0));

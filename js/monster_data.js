@@ -98,6 +98,7 @@ export function monsterTypeName(mnum, female = false) {
 
 // C ref: mondata.h nonliving().  Symbol numbers use the generated S_* order.
 const M2_UNDEAD = 0x00000002;
+const M2_JEWELS = 0x20000000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 const PM_FLOATING_EYE = 28;
@@ -108,6 +109,7 @@ const PM_VAMPIRE_LEADER = 227;
 const PM_VLAD_THE_IMPALER = 228;
 const PM_MANES = 50;
 const PM_AIR_ELEMENTAL = 154;
+const S_UNICORN = 21;
 const S_VORTEX = 22;
 const S_GOLEM = 55;
 
@@ -126,6 +128,11 @@ export function monsterIsAnimal(monster) {
 export function monsterIsWhirly(monster) {
     return monster?.mnum === PM_AIR_ELEMENTAL
         || MONSTER_SYMBOL[monster?.mnum] === S_VORTEX;
+}
+
+export function monsterIsUnicorn(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_UNICORN
+        && !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_JEWELS);
 }
 
 export function monsterIsMindFlayer(mnum) {

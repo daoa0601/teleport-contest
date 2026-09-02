@@ -78,6 +78,9 @@ import {
 import {
     heroCanRemovePunishment, useHeroNymphAbility,
 } from './hero_nymph_ability.js';
+import {
+    heroCanUseUnicornHorn, useUnicornHorn,
+} from './unicorn_horn.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -163,7 +166,7 @@ import {
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_GAIN_ENERGY,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
-    MAGIC_MARKER,
+    MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
@@ -5751,6 +5754,11 @@ async function domonability() {
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
+    if (heroCanUseUnicornHorn(game)) {
+        const result = await useUnicornHorn({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
     if (heroCanShriek(game)) {
         const result = await useHeroShriek({ state: game });
         game.context.move = result.spentTime ? 1 : 0;
@@ -8859,6 +8867,14 @@ async function doapply(cannedInvlet = null) {
             }
             if (item.otyp === MAGIC_MARKER) {
                 await useMagicMarker();
+                return;
+            }
+            if (item.otyp === UNICORN_HORN) {
+                const result = await useUnicornHorn({
+                    object: item,
+                    state: game,
+                });
+                game.context.move = result.spentTime ? 1 : 0;
                 return;
             }
             if (PLAYABLE_INSTRUMENTS.has(item.otyp)) {
