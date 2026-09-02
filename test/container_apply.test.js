@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { syncHeroGoldCache } from '../js/hero_gold.js';
 import { pushKeys } from '../js/input.js';
@@ -19,13 +18,10 @@ import { initRng } from '../js/rng.js';
 import {
     floorObject, inventoryObject,
 } from './support/game-objects.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshCommandRoom } from './support/playable-room.js';
 
 function freshContainerGame(...objects) {
-    freshPlayableRoom();
-    game.inventory = objects;
-    game.nhDisplay = new GameDisplay(null);
-    initRng(48201n);
+    freshCommandRoom({ inventory: objects, seed: 48201n });
 }
 
 async function applyObject(keys) {
@@ -261,15 +257,13 @@ test('an ice box pauses and resumes corpse decay', async () => {
 });
 
 test('floor loot uses the same container transfer as apply', async () => {
-    const level = freshPlayableRoom();
-    game.nhDisplay = new GameDisplay(null);
+    const level = freshCommandRoom({ seed: 48202n });
     const chest = floorObject(CHEST, 10, 10, { cknown: true });
     const club = inventoryObject(CLUB, 'b', {
         where: 'contained',
         container: chest,
     });
     chest.contents = [club];
-    initRng(48202n);
     pushKeys('loot\noa\n');
 
     await rhack('#'.charCodeAt(0));

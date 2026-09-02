@@ -1,7 +1,9 @@
 import { ROOM } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
+import { GameDisplay } from '../../js/game_display.js';
 import { game, resetGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
+import { initRng } from '../../js/rng.js';
 import { vision_reset } from '../../js/vision.js';
 import { installLiveCommandHero } from './live-command-state.js';
 
@@ -38,5 +40,17 @@ export function freshPlayableRoom({
     game.uquiver = null;
     game.animationFrame = async () => {};
     resetInputState();
+    return level;
+}
+
+export function freshCommandRoom({
+    inventory = [],
+    seed,
+    ...room
+} = {}) {
+    const level = freshPlayableRoom(room);
+    game.inventory = inventory;
+    game.nhDisplay = new GameDisplay(null);
+    if (seed !== undefined) initRng(seed);
     return level;
 }

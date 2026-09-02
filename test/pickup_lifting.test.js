@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
@@ -15,13 +14,10 @@ import { initRng } from '../js/rng.js';
 import {
     floorObject, inventoryObject,
 } from './support/game-objects.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshCommandRoom } from './support/playable-room.js';
 
 function freshPickupGame(inventory = []) {
-    freshPlayableRoom();
-    game.inventory = inventory;
-    game.nhDisplay = new GameDisplay(null);
-    initRng(32001n);
+    freshCommandRoom({ inventory, seed: 32001n });
 }
 
 function carriedRocks(count) {
