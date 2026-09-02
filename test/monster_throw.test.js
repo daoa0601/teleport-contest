@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     continueMonsterWeaponVolley,
     finishDeferredRangedProjectileHit,
-    finishHeroProjectileHit,
+    finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
@@ -13,7 +13,7 @@ import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CREAM_PIE, CROSSBOW,
-    CROSSBOW_BOLT, DAGGER, DART, ELVEN_ARROW, ELVEN_BOW,
+    CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, STATUE,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -132,6 +132,62 @@ test('a cream pie blinds a monster without hurting it', async () => {
         'The jackal is blinded by the pie.',
     ]);
 });
+
+test('a cockatrice egg turns an intervening monster into a statue',
+    async () => {
+        freshRangedCombatRoom({
+            heroX: 12,
+            heroY: 10,
+            gameplaySeed: 1n,
+            recalculateVision: true,
+        });
+        game.nhDisplay = new GameDisplay(null);
+        const egg = carriedObject(EGG, {
+            corpsenm: 10,
+            known: true,
+        });
+        const orc = addMonsterToLevel(rangedMonster('orc', {
+            inventory: [egg],
+        }));
+        const target = addMonsterToLevel(rangedTarget('jackal', {
+            x: 11,
+        }));
+        const attack = throwMonsterWeaponAtHero(orc, game, egg, {
+            random: () => 1,
+            rollOne: () => 1,
+        });
+        const shot = attack.shots[0];
+        const messages = [];
+        const publish = async message => messages.push(message);
+
+        await presentMonsterProjectileShot(
+            shot, PROJECTILE_GLYPH, game, { publish },
+        );
+        const result = await finishMonsterProjectileHit(shot, game, {
+            publish,
+            finishPetrifiedMonster: monster =>
+                finishEnvironmentalMonsterDeath(monster, game, {
+                    noCorpse: true,
+                    publish,
+                }),
+        });
+        finishDeferredRangedProjectileHit(shot, game, () => 0);
+
+        assert.equal(result.deathFinished, true);
+        assert.equal(game.level.monsters.includes(target), false);
+        assert.equal(
+            floorObjectsAt(game.level, 11, 10).some(
+                object => object.otyp === STATUE
+                    && object.corpsenm === target.mnum,
+            ),
+            true,
+        );
+        assert.equal(egg.where, 'gone');
+        assert.deepEqual(messages, [
+            'Splat!  The jackal is hit with a cockatrice egg!',
+            'The jackal turns to stone.',
+        ]);
+    });
 
 test('poison resistance stops the poison on a thrown dart', async () => {
     freshRangedCombatRoom({
@@ -284,6 +340,34 @@ test('a cream pie blinds the hero without hurting them', async () => {
     assert.equal(game.u.ucreamed, 5);
     assert.equal(pie.where, 'gone');
     assert.deepEqual(messages, ["Yecch!  You've been creamed."]);
+});
+
+test('a cockatrice egg starts petrifying the hero', async () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        hero: { uhp: 12, uhpmax: 12 },
+        gameplaySeed: 1n,
+    });
+    const egg = carriedObject(EGG, {
+        corpsenm: 10,
+        known: true,
+    });
+    const orc = addMonsterToLevel(rangedMonster('orc', {
+        inventory: [egg],
+    }));
+    const attack = throwMonsterWeaponAtHero(orc, game, egg, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+
+    await finishHeroProjectileHit(attack.shots[0], game, {
+        random: () => 0,
+    });
+
+    assert.equal(game.u.uhp, 12);
+    assert.equal(game.u.stonedTurns, 5);
+    assert.equal(egg.where, 'gone');
 });
 
 test('a poisoned dart damages the hero after its ordinary hit', async () => {

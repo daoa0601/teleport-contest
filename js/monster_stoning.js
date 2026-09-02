@@ -54,20 +54,20 @@ export function monsterResistsStoning(monster) {
     return !!(resistance & MR_STONE);
 }
 
-async function turnGolemToStone(monster) {
+async function turnGolemToStone(monster, publish) {
     if (MONSTER_SYMBOL[monster.mnum] !== S_GOLEM
         || monster.mnum === PM_STONE_GOLEM
         || speciesWasGenocided(PM_STONE_GOLEM)) return false;
 
     const visible = canSeeMonster(monster, monster.mx, monster.my);
     if (visible) {
-        await plineWithContinuation(
+        await publish(
             `${monsterSubject(monster)} solidifies...`,
         );
     }
     const changed = shapechangeMonster(monster, PM_STONE_GOLEM);
     if (visible) {
-        await plineWithContinuation(changed
+        await publish(changed
             ? `Now it's a ${monsterTypeName(monster.mnum)}.`
             : '... and returns to normal.');
     }
@@ -75,7 +75,7 @@ async function turnGolemToStone(monster) {
     return true;
 }
 
-async function restoreShapechanger(monster) {
+async function restoreShapechanger(monster, publish) {
     const baseForm = monster?.cham;
     if (!Number.isInteger(baseForm) || baseForm < 0
         || baseForm === monster.mnum || speciesWasGenocided(baseForm)) {
@@ -97,7 +97,7 @@ async function restoreShapechanger(monster) {
     if (canSeeMonster(monster, monster.mx, monster.my)) {
         const subject = vampire
             ? `The lapidifying ${oldName}` : `The ${oldName}`;
-        await plineWithContinuation(
+        await publish(
             `${subject} turns into ${monsterTypeName(baseForm)}!`,
         );
     }
@@ -162,20 +162,21 @@ function createStoneRemains(monster) {
 export async function petrifyMonster(monster, {
     creditHero = false,
     finishDeath,
+    publish = plineWithContinuation,
 } = {}) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
         return { changed: false, survived: false };
     if (monsterResistsStoning(monster))
         return { changed: false, survived: true };
-    if (await turnGolemToStone(monster))
+    if (await turnGolemToStone(monster, publish))
         return { changed: true, survived: true };
-    if (await restoreShapechanger(monster))
+    if (await restoreShapechanger(monster, publish))
         return { changed: true, survived: true };
 
     monster.mspeed = 0;
     monster.fast = false;
     if (cansee(monster.mx, monster.my)) {
-        await plineWithContinuation(
+        await publish(
             `${monsterSubject(monster)} turns to stone.`,
         );
     }

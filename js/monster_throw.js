@@ -16,13 +16,17 @@ import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
 import {
+    monsterResistsStoning, petrifyMonster,
+} from './monster_stoning.js';
+import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BLINDING_VENOM, CREAM_PIE, FLINT, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    BLINDING_VENOM, CREAM_PIE, EGG, FLINT, OBJECT_DESCRIPTIONS,
+    OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
+import { deleteObject } from './object_delete.js';
 import { isPoisonableObject } from './object_properties.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { resolvePoisonedHero } from './poison.js';
@@ -30,6 +34,7 @@ import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { finishHeroDeath } from './end.js';
+import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -49,6 +54,9 @@ const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const BLINDING_PROJECTILES = new Set([CREAM_PIE, BLINDING_VENOM]);
+const ZERO_DAMAGE_HERO_PROJECTILES = new Set([
+    CREAM_PIE, BLINDING_VENOM, EGG,
+]);
 
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
 const RANGED_WEAPON_PREFERENCE = [
@@ -266,7 +274,8 @@ export function finishDeferredRangedProjectileHit(
         && subtype >= -24 && subtype <= -23;
     const magicStone = objectTypeName(object) === 'loadstone'
         || objectTypeName(object) === 'luckstone';
-    let broken = BLINDING_PROJECTILES.has(object.otyp);
+    let broken = BLINDING_PROJECTILES.has(object.otyp)
+        || (shot.hit && object.otyp === EGG);
     if (!broken && shot.hit && (ammo || missile) && !magicStone) {
         const chance = 3 + Math.max(
             object.oeroded ?? 0, object.oeroded2 ?? 0,
@@ -277,8 +286,7 @@ export function finishDeferredRangedProjectileHit(
     }
     if (broken) {
         random(100);
-        object.where = 'gone';
-        object.ox = object.oy = 0;
+        deleteObject(object, state);
         clearThrownObject(state, object);
     } else {
         const x = shot.impactX ?? state.u?.ux ?? 0;
@@ -345,11 +353,39 @@ export async function finishHeroProjectileHit(
         );
         if (blindness) await publish(blindness.message);
     }
+    if (shot.hit && shot.weapon?.otyp === EGG)
+        await hitByPetrifyingEgg(shot.weapon, state);
     finishDeferredRangedProjectileHit(shot, state, random);
     return { died: false, lifeSaved };
 }
 
-export async function presentMonsterProjectileContact(contact, publish) {
+export async function finishMonsterProjectileHit(
+    shot, state, { finishPetrifiedMonster, publish } = {},
+) {
+    if (!shot?.hit || !shot.petrifyingEgg || !shot.target)
+        return { handled: false, deathFinished: false };
+    if (!state.level?.monsters?.includes(shot.target))
+        return { handled: false, deathFinished: false };
+
+    const petrification = await petrifyMonster(shot.target, {
+        finishDeath: finishPetrifiedMonster,
+        publish,
+    });
+    const deathFinished = !petrification.survived;
+    let damage = 0;
+    if (petrification.survived
+        && !monsterResistsStoning(shot.target)) {
+        damage = shot.eggImpactDamage;
+        shot.target.mhp = Math.max(0, shot.target.mhp - damage);
+    }
+    shot.damage = damage;
+    shot.targetDied = (shot.target.mhp ?? 0) <= 0;
+    return { handled: true, deathFinished, petrification };
+}
+
+export async function presentMonsterProjectileContact(
+    contact, publish, { showDeath = true } = {},
+) {
     const x = contact.x ?? contact.impactX ?? contact.target?.mx;
     const y = contact.y ?? contact.impactY ?? contact.target?.my;
     if (!cansee(x, y)) return;
@@ -361,9 +397,17 @@ export async function presentMonsterProjectileContact(contact, publish) {
             contact.target.mnum, !!contact.target.female,
         )}`
         : 'it';
-    await publish(contact.hit
-        ? `The ${contact.appearance} hits ${target}.`
-        : `The ${contact.appearance} misses ${target}.`);
+    if (contact.hit && contact.weapon?.otyp === EGG) {
+        const subject = target === 'it' ? 'It' : `The ${target.slice(4)}`;
+        const article = /^[aeiou]/i.test(contact.appearance) ? 'an' : 'a';
+        await publish(
+            `Splat!  ${subject} is hit with ${article} ${contact.appearance}!`,
+        );
+    } else {
+        await publish(contact.hit
+            ? `The ${contact.appearance} hits ${target}.`
+            : `The ${contact.appearance} misses ${target}.`);
+    }
     if (contact.poisonResisted)
         await publish(`The poison doesn't seem to affect ${target}.`);
     else if (contact.poisonDeadly)
@@ -372,7 +416,7 @@ export async function presentMonsterProjectileContact(contact, publish) {
         const cause = contact.weapon?.otyp === CREAM_PIE ? 'pie' : 'venom';
         await publish(`The ${target.slice(4)} is blinded by the ${cause}.`);
     }
-    if (contact.targetDied) {
+    if (contact.targetDied && showDeath) {
         const subject = target === 'it'
             ? 'It' : `The ${target.slice(4)}`;
         await publish(`${subject} is killed!`);
@@ -445,7 +489,7 @@ export async function presentMonsterProjectileShot(
 }
 
 export function projectileDamageAgainstHero(object, rollOne = rnd) {
-    if (BLINDING_PROJECTILES.has(object.otyp)) return 0;
+    if (ZERO_DAMAGE_HERO_PROJECTILES.has(object.otyp)) return 0;
     const sides = Math.max(1, OBJECT_SMALL_DAMAGE[object.otyp] || 1);
     let damage = rollOne(sides);
     const weaponLike = object.oclass === WEAPON_CLASS
@@ -470,6 +514,10 @@ function projectileDamageAgainstMonster(object, monster, rollOne) {
 }
 
 function missileAppearance(missile) {
+    if (missile.otyp === EGG && missile.known
+        && MONSTER_NAME[missile.corpsenm]) {
+        return `${MONSTER_NAME[missile.corpsenm]} egg`;
+    }
     const name = missile.dknown
         ? objectTypeName(missile)
         : OBJECT_DESCRIPTIONS[missile.otyp]
@@ -502,6 +550,10 @@ function hitMonsterWithMissile(
     let damage = hit
         ? projectileDamageAgainstMonster(missile, defender, rollOne)
         : 0;
+    const petrifyingEgg = hit && missile.otyp === EGG
+        && touchPetrifies(missile.corpsenm);
+    const eggImpactDamage = petrifyingEgg ? damage : 0;
+    if (petrifyingEgg) damage = 0;
     let poisonResisted = false;
     let poisonDeadly = false;
     if (hit && missile.opoisoned && isPoisonableObject(missile)) {
@@ -521,9 +573,11 @@ function hitMonsterWithMissile(
     const blindness = hit ? blindMonsterWithThrownObject(
         defender, missile.otyp, { state, rollOne },
     ) : null;
+    const appearance = missileAppearance(missile);
+    if (petrifyingEgg) missile.known = true;
     return {
         weapon: missile,
-        appearance: missileAppearance(missile),
+        appearance,
         target: defender,
         x: defender.mx,
         y: defender.my,
@@ -534,6 +588,8 @@ function hitMonsterWithMissile(
         damage,
         poisonResisted,
         poisonDeadly,
+        petrifyingEgg,
+        eggImpactDamage,
         blinded: blindness?.wasSeeing ?? false,
         blindIncrement: blindness?.blindIncrement ?? 0,
     };
@@ -670,7 +726,7 @@ function throwOneMonsterMissileAtHero(
             }
 
             const damage = projectileDamageAgainstHero(missile, rollOne);
-            const hitLevel = BLINDING_PROJECTILES.has(missile.otyp)
+            const hitLevel = ZERO_DAMAGE_HERO_PROJECTILES.has(missile.otyp)
                 ? 8
                 : Math.max(
                     -4, 3 - distmin(heroX, heroY, source.mx, source.my),

@@ -80,7 +80,7 @@ import {
 import {
     continueMonsterWeaponVolley,
     finishDeferredRangedProjectileHit,
-    finishHeroProjectileHit,
+    finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
 import {
@@ -5914,7 +5914,21 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     || impactVisible),
                         },
                     );
-                if (ranged.targetDied) {
+                const eggHit = await finishMonsterProjectileHit(
+                    ranged, game, {
+                        finishPetrifiedMonster: target =>
+                            finishEnvironmentalMonsterDeath(target, game, {
+                                noCorpse: true,
+                                visible: targetVisible,
+                                spotted: canProjectMonster(
+                                    target, target.mx, target.my,
+                                ),
+                                publish: queueTurnMessage,
+                            }),
+                        publish: queueTurnMessage,
+                    },
+                );
+                if (ranged.targetDied && !eggHit.deathFinished) {
                     const death = await finishEnvironmentalMonsterDeath(
                         ranged.target, game, {
                             visible: targetVisible,

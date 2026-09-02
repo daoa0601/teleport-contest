@@ -213,6 +213,21 @@ export async function eatPetrifyingEgg(object) {
     return { started, transformed: false };
 }
 
+export async function hitByPetrifyingEgg(object, state = game) {
+    if (object?.otyp !== EGG || !touchPetrifies(object.corpsenm)
+        || heroResistsStoning(state)) {
+        return { started: false, transformed: false };
+    }
+
+    if (heroCanBecomeStoneGolem(state)) {
+        await polymonHero(PM_STONE_GOLEM);
+        return { started: false, transformed: true };
+    }
+
+    const started = startHeroPetrification({ state });
+    return { started, transformed: false };
+}
+
 export async function tastePetrifyingFlesh(object, {
     publish = plineWithContinuation,
     die = finishHeroDeath,

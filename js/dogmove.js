@@ -22,6 +22,7 @@ import {
 } from './monster_spit.js';
 import {
     continueMonsterWeaponVolley, finishDeferredRangedProjectileHit,
+    finishMonsterProjectileHit, presentMonsterProjectileContact,
     throwMonsterWeaponAtMonster,
 } from './monster_throw.js';
 import { makePlural } from './object_grammar.js';
@@ -343,12 +344,6 @@ export function monsterCoughMessage(monster, state) {
         ? `${monsterSentenceSubject(monster)} coughs.` : 'You hear a cough.';
 }
 
-function middleSentenceSubject(monster) {
-    const subject = monsterSentenceSubject(monster);
-    return subject.startsWith('The ')
-        ? `the ${subject.slice(4)}` : subject;
-}
-
 async function presentRetaliationWeapons(
     monster, attacks, state, publish, finishMonsterKill, random, rollOne,
 ) {
@@ -364,15 +359,21 @@ async function presentRetaliationWeapons(
         }
         let shot = attack.shots[0];
         while (shot) {
-            if (shot.target && canProjectMonster(
-                shot.target, shot.target.mx, shot.target.my,
-            )) {
-                await publish(`The ${shot.appearance} ${
-                    shot.hit ? 'hits' : 'misses'
-                } ${middleSentenceSubject(shot.target)}.`);
-            }
+            if (shot.target)
+                await presentMonsterProjectileContact(
+                    shot, publish, { showDeath: false },
+                );
+            const eggHit = await finishMonsterProjectileHit(
+                shot, state, {
+                    finishPetrifiedMonster: target => finishMonsterKill(
+                        target, { noCorpse: true, showKillMessage: false },
+                    ),
+                    publish,
+                },
+            );
             if ((shot.target.mhp ?? 0) <= 0
-                && state.level?.monsters?.includes(shot.target)) {
+                && state.level?.monsters?.includes(shot.target)
+                && !eggHit.deathFinished) {
                 if (canProjectMonster(
                     shot.target, shot.target.mx, shot.target.my,
                 )) {
