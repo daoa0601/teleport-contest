@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import {
-    CARROT, EUCALYPTUS_LEAF, SPRIG_OF_WOLFSBANE,
+    CARROT, EGG, EUCALYPTUS_LEAF, SPRIG_OF_WOLFSBANE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
@@ -71,4 +71,21 @@ test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
     assert.equal(game.u.umonnum, game.u.umonster);
     assert.equal(game.u.mh, 0);
     assert.equal(game.inventory.includes(wolfsbane), false);
+});
+
+test('eating a cockatrice egg starts petrification', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    const egg = carriedObject(EGG, {
+        age: game.moves,
+        corpsenm: 10,
+    });
+    game.inventory = [egg];
+    pushKey('a');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.u.stonedTurns, 5);
+    assert.equal(game.u.stoned, true);
+    assert.equal(game.inventory.includes(egg), false);
 });

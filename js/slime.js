@@ -164,9 +164,7 @@ function removeHeroSpeed(state) {
 function cancelHeroPetrification(state) {
     const hero = state.u;
     hero.stonedTurns = 0;
-    hero.petrifyingTurns = 0;
     hero.stoned = false;
-    hero.petrifying = false;
     delete hero.stoneKiller;
 }
 

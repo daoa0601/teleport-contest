@@ -18,7 +18,7 @@ import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, EUCALYPTUS_LEAF,
+    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, EGG, EUCALYPTUS_LEAF,
     FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, OBJECT_DELAY,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION, SPRIG_OF_WOLFSBANE,
 } from './object_data.js';
@@ -29,6 +29,9 @@ import {
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
 import { PM_GREEN_SLIME, startHeroSliming } from './slime.js';
+import {
+    eatPetrifyingEgg, tastePetrifyingFlesh,
+} from './stoning.js';
 import { purifyHeroLycanthropy } from './were.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 
@@ -397,10 +400,15 @@ function applyMealNutrition(g, meal, usedtime) {
     }
 }
 
-function applyCorpsePreEffects(g, food) {
-    if (food?.corpsenm !== PM_GREEN_SLIME) return null;
-    return startHeroSliming({ state: g })
+async function applyCorpsePreEffects(g, food) {
+    const petrification = await tastePetrifyingFlesh(food);
+    if (petrification.stopped)
+        return { stopped: true, message: null };
+    if (food?.corpsenm !== PM_GREEN_SLIME)
+        return { stopped: false, message: null };
+    const message = startHeroSliming({ state: g })
         ? "You don't feel very well." : null;
+    return { stopped: false, message };
 }
 
 // C eat.c:cpostfx()/eye_of_newt_buzz().  Corpse post-effects happen after
@@ -424,6 +432,10 @@ function applyCorpsePostEffects(g, corpse) {
 }
 
 async function applyOrdinaryFoodPostEffects(g, food) {
+    if (food.otyp === EGG) {
+        await eatPetrifyingEgg(food);
+        return;
+    }
     if (food.otyp === CARROT) {
         const sight = setHeroBlindnessTurns(g.u?.ucreamed ?? 0, g);
         if (sight.regainedSight)
@@ -528,7 +540,13 @@ async function beginCorpseMeal(corpse, floorPile = null) {
         game.context.move = 1;
         return;
     }
-    const preEffectMessage = applyCorpsePreEffects(game, corpse);
+    game._pending_message = [conductMessage, meal.tasteMessage]
+        .filter(Boolean).join('  ');
+    const preEffect = await applyCorpsePreEffects(game, corpse);
+    if (preEffect.stopped) {
+        game.context.move = 1;
+        return;
+    }
     await startFoodMeal({
         ...meal,
         object: corpse,
@@ -537,7 +555,7 @@ async function beginCorpseMeal(corpse, floorPile = null) {
         carried: !floorPile,
         corpseLike: true,
         finishMessage: `You finish eating the ${corpseName}.`,
-    }, [conductMessage, meal.tasteMessage, preEffectMessage]);
+    }, [conductMessage, meal.tasteMessage, preEffect.message]);
 }
 
 function ordinaryFoodName(item) {

@@ -7,6 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
 import { startHeroSliming } from '../js/slime.js';
+import { startHeroPetrification } from '../js/stoning.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function freshTurnArena() {
@@ -119,6 +120,21 @@ test('slime infection advances during an ordinary world turn', async () => {
 
     assert.equal(game.u.slimedTurns, 6);
     assert.match(game._pending_message, /Your limbs are getting oozy\.$/);
+    pushKeys(' ');
+    await nextInput;
+});
+
+test('petrification advances during an ordinary world turn', async () => {
+    const inputGate = freshTurnArena();
+    startHeroPetrification({ state: game, killer: 'cockatrice egg' });
+    pushKeys('h');
+
+    await moveloop_core();
+    const nextInput = moveloop_core();
+    await inputGate.waitUntilBlocked();
+
+    assert.equal(game.u.stonedTurns, 4);
+    assert.match(game._pending_message, /You are slowing down\.$/);
     pushKeys(' ');
     await nextInput;
 });

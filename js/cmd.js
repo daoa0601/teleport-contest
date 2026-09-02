@@ -6255,7 +6255,7 @@ function wizardIntrinsicAccelerator(index) {
 function wizardIntrinsicTimeout(name) {
     const field = {
         invulnerable: 'invulnerableTurns',
-        petrifying: 'petrifyingTurns',
+        petrifying: 'stonedTurns',
         'becoming slime': 'slimedTurns',
         strangling: 'strangledTurns',
         'fatally sick': 'sickTurns',

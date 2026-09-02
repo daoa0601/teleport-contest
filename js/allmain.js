@@ -181,6 +181,9 @@ import {
     advanceHeroSliming, clearHeroSliming,
     finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
 } from './slime.js';
+import {
+    advanceHeroPetrification, heroIsPetrifying,
+} from './stoning.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
@@ -1707,6 +1710,28 @@ function finishInitialTurnMaintenanceAfterObjectTimers({
     // timeout.c:nh_timeout() returns before decrementing any property while
     // that prayer-only flag is active.
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
+    if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'petrification requires live turn maintenance',
+            );
+        }
+        return {
+            deferredPetrificationTimeout: true,
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+            prayerTimeoutFreeze,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterPetrification({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterPetrification({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
     if (!prayerTimeoutFreeze && heroIsSliming(game)) {
         if (!deferAmbientMessage) {
             throw new Error(
@@ -2053,6 +2078,15 @@ async function initialTurnMaintenanceWithTty(
         await runAndPresentClaimedObjectTimer(claimed, phase.sourceTurn);
         if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
         phase = finishInitialTurnMaintenanceAfterObjectTimers(phase);
+    }
+    while (phase?.deferredPetrificationTimeout) {
+        await advanceHeroPetrification({
+            state: game,
+            publish: queueTurnMessage,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return phase.moveAmount;
+        phase = finishInitialTurnMaintenanceAfterPetrification(phase);
     }
     while (phase?.deferredSlimeTimeout) {
         await advanceHeroSliming({
