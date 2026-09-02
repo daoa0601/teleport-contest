@@ -93,7 +93,8 @@ import { splitObjectStack } from './object_stack.js';
 import { deleteObject } from './object_delete.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
-    addObjectToMonsterInventory,
+    addObjectToMonsterInventory, clearMonsterCarriedObjectState,
+    removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
@@ -1168,7 +1169,7 @@ export async function rhack(key) {
             : 'Autopickup: OFF.');
         game.context.move = 0;
     } else if (ch === ',') {
-        await pickupFloorObject();
+        await pickupAtHero();
     } else if (ch === '>') {
         await ordinaryDescend();
     } else if (ch === '<') {
@@ -2896,11 +2897,10 @@ async function gotoLevel(targetDepth, {
                 );
             }
             await showFloorPile(arrivalPile, false, feature);
-            // pickup.c:pickup(1) performs check_here() before its anatomy
-            // rejection.  A blind punished hero therefore feels the two
-            // attached objects, dismisses that temporary window, and only
-            // then learns that the current form cannot pick anything up.
-            if (heroHasNoHands(game)) {
+            // pickup.c:pickup(1) performs check_here() before notake().
+            // A blind hero in a form which cannot carry objects sees this
+            // rejection only after dismissing the temporary pile window.
+            if (heroCannotTake(game)) {
                 await pline(
                     'You are physically incapable of picking anything up.',
                 );
@@ -3195,15 +3195,24 @@ function preparePickedInventoryObject(object) {
     };
 }
 
-function removeFloorObjects(pile, selected) {
+function removePickupObjects(source, selected) {
+    if (source.monster) {
+        for (const object of selected) {
+            removeObjectFromMonsterInventory(source.monster, object);
+            clearMonsterCarriedObjectState(object);
+        }
+        return;
+    }
+
     const selectedSet = new Set(selected);
-    for (let index = pile.length - 1; index >= 0; index--) {
-        if (selectedSet.has(pile[index])) pile.splice(index, 1);
+    for (let index = source.objects.length - 1; index >= 0; index--) {
+        if (selectedSet.has(source.objects[index]))
+            source.objects.splice(index, 1);
     }
 }
 
-function collectFloorPickupMessages(pile, selected) {
-    removeFloorObjects(pile, selected);
+function collectPickupMessages(source, selected) {
+    removePickupObjects(source, selected);
     const messages = [];
     const shopQuotes = [];
     const comparisonMessages = [];
@@ -3218,11 +3227,12 @@ function collectFloorPickupMessages(pile, selected) {
             const total = previous ? ` (${heroGoldAmount(game)} in total)` : '';
             messages.push(`$ - ${pickupObjectDescription(pickedView)}${total}.`);
         } else {
-            const transaction = addShopObjectToBill(object);
+            const transaction = source.monster
+                ? null : addShopObjectToBill(object);
             if (transaction) {
-                const noun = floorObjectDescription(object)
-                    .replace(/^(?:an?|the)\s+/, '');
-                const quote = billedPickupQuote(transaction, noun);
+                const quote = billedPickupQuote(
+                    transaction, pickupObjectNoun(object),
+                );
                 if (quote) shopQuotes.push(quote);
             }
             const prepared = preparePickedInventoryObject(object);
@@ -3245,12 +3255,12 @@ function observePickupObject(object) {
     recordObjectEncounter(object.otyp);
 }
 
-function splitFloorStack(object, count, pile) {
+function splitPickupStack(object, count, objects) {
     if (count >= objectQuantity(object)) return object;
     const split = splitObjectStack(object, count, game);
     if (!split) return object;
-    const index = pile.indexOf(object);
-    pile.splice(index < 0 ? pile.length : index + 1, 0, split);
+    const index = objects.indexOf(object);
+    objects.splice(index < 0 ? objects.length : index + 1, 0, split);
     return split;
 }
 
@@ -3264,11 +3274,11 @@ async function reviveTouchedRider(corpse) {
     return true;
 }
 
-async function prepareScareScrollPickup(object, requested, pile) {
+async function prepareScareScrollPickup(object, requested, source) {
     const count = await carryableObjectCount({ object, count: requested });
     if (count < 1) return { decision: 'stop' };
 
-    const scroll = splitFloorStack(object, count, pile);
+    const scroll = splitPickupStack(object, count, source.objects);
     if (scroll.blessed) {
         scroll.blessed = false;
         return { decision: 'lift', object: scroll, count };
@@ -3287,13 +3297,13 @@ async function prepareScareScrollPickup(object, requested, pile) {
     return { decision: 'consumed' };
 }
 
-async function liftFloorSelections(pile, selected) {
+async function liftPickupSelections(source, selected) {
     const lifted = [];
     let consumed = 0;
     let attempted = false;
     for (const selection of selected) {
         let object = selection?.value || selection;
-        if (!pile.includes(object)) continue;
+        if (!source.objects.includes(object)) continue;
         attempted = true;
         observePickupObject(object);
 
@@ -3314,7 +3324,7 @@ async function liftFloorSelections(pile, selected) {
         requested = requested > 0 ? requested : objectQuantity(object);
         if (object.otyp === SCR_SCARE_MONSTER) {
             const prepared = await prepareScareScrollPickup(
-                object, requested, pile,
+                object, requested, source,
             );
             if (prepared.decision === 'stop') break;
             if (prepared.decision === 'consumed') {
@@ -3342,7 +3352,27 @@ async function liftFloorSelections(pile, selected) {
     return { attempted, consumed, lifted };
 }
 
-async function commitFloorPickup(pile, selected, x, y) {
+function pickupObjectNoun(object) {
+    return floorObjectDescription(object).replace(/^(?:an?|the)\s+/, '');
+}
+
+async function rejectWornPickupObjects(source, selected) {
+    if (!source.monster) return selected;
+    const allowed = [];
+    for (const selection of selected) {
+        const object = selection?.value || selection;
+        if ((object.owornmask ?? 0) === 0) {
+            allowed.push(selection);
+            continue;
+        }
+        await plineWithContinuation(
+            `You can't pick the ${pickupObjectNoun(object)} up.`,
+        );
+    }
+    return allowed;
+}
+
+async function commitPickup(source, selected) {
     if (!selected.length) {
         await docrt();
         await bot();
@@ -3351,10 +3381,16 @@ async function commitFloorPickup(pile, selected, x, y) {
         return 0;
     }
 
-    const pickup = await liftFloorSelections(pile, selected);
+    selected = await rejectWornPickupObjects(source, selected);
+    if (!selected.length) {
+        game.context.move = 0;
+        return 0;
+    }
+
+    const pickup = await liftPickupSelections(source, selected);
     if (!pickup.lifted.length) {
-        if (pickup.consumed) {
-            newsym(x, y);
+        if (pickup.consumed && !source.monster) {
+            newsym(source.x, source.y);
             await bot();
         }
         game.context.move = pickup.attempted ? 1 : 0;
@@ -3362,7 +3398,7 @@ async function commitFloorPickup(pile, selected, x, y) {
     }
     const {
         messages, shopQuotes, comparisonMessages,
-    } = collectFloorPickupMessages(pile, pickup.lifted);
+    } = collectPickupMessages(source, pickup.lifted);
     const capacity = nearCapacity(game);
     const loadPrefix = pickupLoadPrefix(capacity);
     const pickupMessage = loadPrefix
@@ -3370,7 +3406,7 @@ async function commitFloorPickup(pile, selected, x, y) {
         : messages.join('  ');
     await docrt();
     await bot();
-    newsym(x, y);
+    if (!source.monster) newsym(source.x, source.y);
     for (const quote of shopQuotes) await plineWithContinuation(quote);
     for (const comparison of comparisonMessages)
         await moreUntilDismissed(`${comparison}--More--`);
@@ -3384,14 +3420,29 @@ async function commitFloorPickup(pile, selected, x, y) {
     return pickup.lifted.length + pickup.consumed;
 }
 
-async function pickupFloorObject() {
+function pickupSourceAtHero() {
     const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
+    const monster = game.u?.uswallow ? game.u?.ustuck : null;
+    if (monster) {
+        return {
+            x, y, monster,
+            objects: monster.minvent || monster.inventory || [],
+        };
+    }
+    return {
+        x, y, monster: null,
+        objects: game.level?.objects?.[x]?.[y] || [],
+    };
+}
+
+async function pickupAtHero() {
+    const source = pickupSourceAtHero();
     // pickup.c excludes the hero's attached chain from object counts and
     // selection.  It remains linked to the floor pile for ball.c.
-    const objects = pile.filter(object => object !== game.uchain
-        && object !== game.u?.uchain);
-    if (heroHasNoHands(game)) {
+    const objects = source.monster ? [...source.objects]
+        : source.objects.filter(object => object !== game.uchain
+            && object !== game.u?.uchain);
+    if (!source.monster && heroCannotTake(game)) {
         await pline(
             'You are physically incapable of picking anything up.',
         );
@@ -3405,7 +3456,7 @@ async function pickupFloorObject() {
     }
 
     if (objects.length === 1) {
-        await commitFloorPickup(pile, [objects[0]], x, y);
+        await commitPickup(source, [objects[0]]);
         return;
     }
 
@@ -3435,7 +3486,7 @@ async function pickupFloorObject() {
     const selected = await showMultiSelectWindow({
         title: 'Pick up what?', sections, left: 41, returnCounts: true,
     });
-    await commitFloorPickup(pile, selected, x, y);
+    await commitPickup(source, selected);
 }
 
 async function doWalletQuery() {
@@ -6617,14 +6668,14 @@ async function wizTeleportPosition() {
     if (destinationPile.length) {
         // safe_teleds()->spoteffects()->pickup(1) shares the same blind
         // look_here transaction as level arrival: tactile topline, temporary
-        // pile window, then the current form's pickup-capability rejection.
+        // pile window, then notake() rejects forms which cannot carry objects.
         if (game.blind) {
             await plineWithContinuation(
                 'You try to feel what is lying here on the floor.',
             );
         }
         await showFloorPile(destinationPile, false, destinationFeature);
-        if (heroHasNoHands(game)) {
+        if (heroCannotTake(game)) {
             await pline(
                 'You are physically incapable of picking anything up.',
             );
@@ -11225,9 +11276,9 @@ export async function finishDestinationSpotEffects({
         const selected = objects.filter(autopickupAllows);
         let pickedCount = 0;
         if (selected.length) {
-            pickedCount = await commitFloorPickup(
-                floorPile, selected, newx, newy,
-            );
+            pickedCount = await commitPickup({
+                objects: floorPile, monster: null, x: newx, y: newy,
+            }, selected);
             objects = floorPile.filter(object => object !== game.uchain
                 && object !== game.u?.uchain);
         }

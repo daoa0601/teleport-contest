@@ -3,17 +3,19 @@ import assert from 'node:assert/strict';
 
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
-import { W_AMUL } from '../js/const.js';
+import { W_AMUL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, CHEST, CLUB, CORPSE, DART, FOOD_RATION,
     HEAVY_IRON_BALL, LOADSTONE, ROCK, SCR_SCARE_MONSTER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorObject, inventoryObject,
+    floorObject, inventoryObject, looseObject,
 } from './support/game-objects.js';
+import { addMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
 function freshPickupGame(inventory = []) {
@@ -25,6 +27,21 @@ function carriedRocks(count) {
         quantity: count,
         nomerge: true,
     });
+}
+
+function swallowHeroWith(...objects) {
+    const worm = addMonster({
+        mnum: 115,
+        x: game.u.ux,
+        y: game.u.uy,
+        hitPoints: 30,
+        level: 15,
+    });
+    for (const object of objects)
+        addObjectToMonsterInventory(worm, object);
+    game.u.uswallow = 1;
+    game.u.ustuck = worm;
+    return worm;
 }
 
 test('floor pickup honors a count chosen from a multi-object pile', async () => {
@@ -232,4 +249,49 @@ test('an unliftable scare scroll remains unchanged', async () => {
     assert.equal(scroll.spe, 0);
     assert.equal(game.level.objects[10][10].includes(scroll), true);
     assert.equal(game.inventory.includes(scroll), false);
+});
+
+test('a swallowed hero can pick up an object inside the monster', async () => {
+    freshPickupGame();
+    const club = looseObject(CLUB);
+    const worm = swallowHeroWith(club);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(club), true);
+    assert.equal(worm.minvent.includes(club), false);
+    assert.equal(club.where, 'inventory');
+    assert.equal(club.carrierMid, undefined);
+    assert.equal(game.context.move, 1);
+});
+
+test('a swallowed hero cannot take the monster weapon', async () => {
+    freshPickupGame();
+    const club = looseObject(CLUB, {
+        owornmask: W_WEP,
+        wielded: true,
+    });
+    const worm = swallowHeroWith(club);
+    worm.mw = club;
+    worm.misc_worn_check = W_WEP;
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(worm.minvent.includes(club), true);
+    assert.equal(game.inventory.includes(club), false);
+    assert.equal(club.where, 'minvent');
+    assert.equal(game.context.move, 0);
+});
+
+test('a handless form which can carry objects can pick one up', async () => {
+    freshPickupGame();
+    game.u.umonster = 260;
+    game.u.umonnum = 8;
+    game.u.mtimedone = 100;
+    const club = floorObject(CLUB, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(club), true);
+    assert.equal(game.context.move, 1);
 });
