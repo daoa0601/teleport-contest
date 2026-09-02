@@ -3,9 +3,10 @@
 
 import { game } from './gstate.js';
 import {
-    G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA, IS_POOL,
-    STRAT_WAITMASK,
+    FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
+    IS_POOL, STRAT_WAITMASK,
 } from './const.js';
+import { dryFountainAt } from './fountain_terrain.js';
 import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
@@ -171,9 +172,6 @@ export function rollMonsterPoolReaction(
     if (monsterInAir(monster, state) || monsterSurvivesPool(monster))
         return { kind: 'safe' };
 
-    if (monster.mnum === PM_GREMLIN && random(3) !== 0)
-        return { kind: 'split' };
-
     if (monster.mnum === PM_IRON_GOLEM && random(5) === 0) {
         const damage = rollDice(2, 6);
         return {
@@ -295,15 +293,38 @@ export async function resolveMonsterLiquid(
         throw new TypeError('minliquid requires the monster death handler');
     }
 
-    if (IS_POOL(location.typ)) {
+    const inPool = IS_POOL(location.typ);
+    const inFountain = location.typ === FOUNTAIN;
+    if (monster.mnum === PM_GREMLIN && (inPool || inFountain)
+        && random(3) !== 0) {
+        const clone = splitMonster(monster, state, {
+            monsterMoving,
+            random,
+        });
+        let fountainDried = false;
+        if (clone && inFountain) {
+            const dryup = dryFountainAt(x, y, {
+                causedByHero: false,
+                random,
+                state,
+            });
+            fountainDried = dryup.dried;
+            if (fountainDried && state === game && cansee(x, y))
+                await announce('The fountain dries up!');
+        }
+        if (inPool) {
+            await waterDamageChain(
+                monster.minvent || monster.inventory || [], [], state,
+            );
+        }
+        return { kind: 'split', survived: true, clone, fountainDried };
+    }
+
+    if (inPool) {
         const reaction = rollMonsterPoolReaction(monster, state, {
             random, rollDice,
         });
-        if (reaction.kind === 'split') {
-            reaction.clone = splitMonster(
-                monster, state, { monsterMoving: true, random },
-            );
-        } else if (reaction.kind === 'rust') {
+        if (reaction.kind === 'rust') {
             monster.mhp = (monster.mhp ?? 1) - reaction.damage;
             if (monster.mhpmax > reaction.damage)
                 monster.mhpmax -= reaction.damage;

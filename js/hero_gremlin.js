@@ -4,9 +4,8 @@
 import { FOUNTAIN } from './const.js';
 import { isPoolAt } from './dbridge.js';
 import { plineWithContinuation } from './display.js';
-import {
-    dryFountainTerrain, reportFountainWarning,
-} from './fountain.js';
+import { reportFountainWarning } from './fountain.js';
+import { dryFountainAt } from './fountain_terrain.js';
 import { game } from './gstate.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -35,7 +34,7 @@ export async function useHeroGremlinSplit({
     if (location?.typ === FOUNTAIN) {
         const clone = await splitGremlin(state, publish);
         if (clone) {
-            const result = dryFountainTerrain(location, true);
+            const result = dryFountainAt(state.u.ux, state.u.uy, { state });
             if (result.dried)
                 await publish('The fountain dries up!');
             await reportFountainWarning(result.warning);

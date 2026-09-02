@@ -1,17 +1,11 @@
-// Live fountain changes shared by drinking, dipping, and sitting.
-// C ref: fountain.c dryup() and sit.c dosit().
+// Fountain messages and the hero's sitting reaction.
+// C refs: fountain.c dryup() and sit.c dosit().
 
-import { FOUNTAIN, F_WARNED, ROOM } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
+import { dryFountainAt } from './fountain_terrain.js';
 import { game } from './gstate.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { monsterTypeName } from './monster_data.js';
-import { inTown } from './room.js';
-import { rn2 } from './rng.js';
-import { couldsee } from './vision.js';
-
-const PM_WATCHMAN = 282;
-const PM_WATCH_CAPTAIN = 283;
 
 function indefiniteArticle(text) {
     return /^[aeiou]/i.test(text) ? 'an' : 'a';
@@ -20,43 +14,6 @@ function indefiniteArticle(text) {
 function monsterName(monster) {
     return monster?.name
         || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
-function visiblePeacefulWatchman() {
-    return (game.level?.monsters || []).find(monster =>
-        (monster?.mhp ?? 1) > 0
-        && (monster.mnum === PM_WATCHMAN
-            || monster.mnum === PM_WATCH_CAPTAIN)
-        && !!monster.mpeaceful
-        && couldsee(monster.mx, monster.my));
-}
-
-export function dryFountainTerrain(location, causedByHero = true) {
-    if (location?.typ !== FOUNTAIN)
-        return { dried: false, warning: null };
-    const alreadyWarned = !!((location.looted ?? 0) & F_WARNED);
-    if (rn2(3) !== 0 && !alreadyWarned)
-        return { dried: false, warning: null };
-
-    if (causedByHero
-        && inTown(game.level, game.u.ux, game.u.uy)
-        && !alreadyWarned) {
-        location.looted = (location.looted ?? 0) | F_WARNED;
-        return {
-            dried: false,
-            warning: visiblePeacefulWatchman() || 'trickle',
-        };
-    }
-
-    location.typ = ROOM;
-    location.flags = 0;
-    location.looted = 0;
-    location.blessedftn = 0;
-    game.level.flags.nfountains = Math.max(
-        0, (game.level.flags.nfountains ?? 1) - 1,
-    );
-    newsym(game.u.ux, game.u.uy);
-    return { dried: true, warning: null };
 }
 
 export async function reportFountainWarning(warning) {
@@ -85,9 +42,9 @@ export async function splitSittingGremlin() {
     const clone = await splitHeroMonsterForm(game);
     if (!clone) return null;
     await plineWithContinuation('You multiply!');
-    const result = dryFountainTerrain(
-        game.level?.at(game.u.ux, game.u.uy), true,
-    );
+    const result = dryFountainAt(game.u.ux, game.u.uy);
+    if (result.dried)
+        await plineWithContinuation('The fountain dries up!');
     await reportFountainWarning(result.warning);
     return clone;
 }

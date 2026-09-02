@@ -5,7 +5,9 @@ import {
     allocateMonsterMovement, finishMonsterLiquidDeath,
     mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
 } from '../js/monmove.js';
-import { IRONBARS, LAVAPOOL, ROOM, W_WEP } from '../js/const.js';
+import {
+    FOUNTAIN, IRONBARS, LAVAPOOL, ROOM, W_WEP,
+} from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -161,6 +163,34 @@ test('a land monster in lava burns and drops what it carried', async () => {
     assert.equal(result.dead, true);
     assert.equal(level.monsters.includes(ant), false);
     assert.equal(level.objects[12][10].includes(rock), true);
+});
+
+test('a gremlin can multiply in a fountain and dry it up', async () => {
+    const level = freshObjectRoom();
+    level.at(12, 10).typ = FOUNTAIN;
+    level.flags.nfountains = 1;
+    const gremlin = addMonster({
+        species: 'gremlin',
+        x: 12,
+        y: 10,
+        hitPoints: 12,
+    });
+    const messages = [];
+
+    const result = await resolveMonsterLiquid(gremlin, game, {
+        announce: async message => messages.push(message),
+        finishDeath: finishMonsterLiquidDeath,
+        monsterMoving: false,
+        random: rolls([1, 0]),
+    });
+
+    assert.ok(result.clone);
+    assert.equal(level.monsters.length, 2);
+    assert.equal(gremlin.mhp, 6);
+    assert.equal(result.clone.mhp, 6);
+    assert.equal(level.at(12, 10).typ, ROOM);
+    assert.equal(level.flags.nfountains, 0);
+    assert.deepEqual(messages, ['The fountain dries up!']);
 });
 
 test('an engulfer carries only a form which fits through iron bars', () => {

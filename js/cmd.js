@@ -252,9 +252,8 @@ import {
     applyFountainSnakeActors,
     resolveDippedBucFate, resolveDippedSensationFate,
 } from './fountain_effects.js';
-import {
-    dryFountainTerrain, reportFountainWarning,
-} from './fountain.js';
+import { reportFountainWarning } from './fountain.js';
+import { dryFountainAt } from './fountain_terrain.js';
 import { heroArmName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { dist2, distmin, dungeonDepth } from './hacklib.js';
@@ -1888,7 +1887,7 @@ async function drinkFountain(loc) {
 
     // dryup(): the first use dries this ordinary dungeon fountain on a
     // one-in-three roll and turns it back into ordinary room floor.
-    const dryup = dryFountainTerrain(loc);
+    const dryup = dryFountainAt(game.u.ux, game.u.uy);
     if (dryup.dried) await pline('The fountain dries up!');
     await reportFountainWarning(dryup.warning);
 }
@@ -5993,7 +5992,7 @@ async function dipFountain(object, loc) {
             exerciseAttribute(A_WIS, false);
         }
 
-        const dryup = dryFountainTerrain(loc);
+        const dryup = dryFountainAt(game.u.ux, game.u.uy);
         if (dryup.dried)
             await plineWithContinuation('The fountain dries up!');
         await reportFountainWarning(dryup.warning);
@@ -6003,7 +6002,7 @@ async function dipFountain(object, loc) {
     }
     // The selected random effect precedes dryup() even when it is a no-op.
     // Numbered effect cases remain independent owners.
-    const dryup = dryFountainTerrain(loc);
+    const dryup = dryFountainAt(game.u.ux, game.u.uy);
     if (dryup.dried) {
         eventMessage += `${
             eventMessage ? '  ' : ''
