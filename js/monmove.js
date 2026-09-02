@@ -2,7 +2,7 @@
 // C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
 // monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().
 
-import { d, rnl, rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
@@ -37,7 +37,7 @@ import {
     OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE, IRON_CHAIN,
-    OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
+    OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
     SLIME_MOLD,
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
@@ -92,7 +92,6 @@ import {
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
-import { hasWornProperty } from './properties.js';
 import { msummon } from './minion.js';
 import {
     randomMonsterRelocation, monsterIsScaredAt, teleportMonsterFromTrap,
@@ -7155,220 +7154,6 @@ export function resumeDeferredHeroContact(
     }
     attack.deferredPostHit = false;
     return action;
-}
-
-function heroWornArmor(state, slot) {
-    return state?.[slot] || state?.u?.[slot] || null;
-}
-
-function heroHasAcidProtectedInventory(state) {
-    return hasWornProperty('acidResistance', state);
-}
-
-function heroArmorErosionResult(
-    object, verbose, erosionKind, state, random, calls,
-) {
-    const corrosion = erosionKind === 'corrosion';
-    const rot = erosionKind === 'rot';
-    const objectName = object.name || object.description
-        || OBJECT_NAMES[object.otyp] || 'armor';
-    // trap.c:erode_obj(ERODE_CORRODE) asks inventory_resistance_check()
-    // before grease, material, proof, blessing, or erosion degree.  Only an
-    // equipped resistance source qualifies; an intrinsic hero resistance
-    // does not protect carried objects.  The source probability is 99%.
-    if (corrosion && heroHasAcidProtectedInventory(state)
-        && recordRandom(random, calls, 100) < 99) {
-        return { result: 'nothing', message: null };
-    }
-    if (!rot && object.greased) {
-        return {
-            result: 'greased',
-            message: `Your ${objectName} is protected by the layer of grease!`,
-            finalize: { kind: 'grease', object },
-        };
-    }
-
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    const vulnerable = rot
-        ? (material <= 8 && material !== 1) || material === 10
-        : corrosion ? material === 11 || material === 13
-            : material === 11;
-    const proof = !!(object.oerodeproof
-        || (rot ? object.rotproof
-            : corrosion ? object.corrodeproof : object.rustproof));
-    const cause = rot ? 'decay' : corrosion ? 'corrosion' : 'oxidation';
-    if (!vulnerable || proof && object.rknown) {
-        return {
-            result: 'nothing',
-            message: verbose
-                ? `Your ${objectName} is not affected by ${cause}.` : null,
-        };
-    }
-    if (proof || object.blessed && rnl(4) === 0) {
-        return {
-            result: 'nothing',
-            message: proof
-                ? `Somehow, your ${objectName} is not affected by the ${cause}.`
-                : null,
-            finalize: proof ? { kind: 'proof', object } : null,
-        };
-    }
-
-    const field = corrosion || rot ? 'oeroded2' : 'oeroded';
-    const oldErosion = object[field] ?? 0;
-    if (oldErosion >= 3) {
-        return {
-            result: 'nothing',
-            message: verbose
-                ? `Your ${objectName} looks completely ${
-                    rot ? 'rotten' : corrosion ? 'corroded' : 'rusted'
-                }.` : null,
-        };
-    }
-    const adverb = oldErosion + 1 === 3
-        ? ' completely' : oldErosion ? ' further' : '';
-    return {
-        result: 'damaged',
-        message: `Your ${objectName} ${
-            rot ? 'rots' : corrosion ? 'corrodes' : 'rusts'
-        }${adverb}!`,
-        finalize: { kind: 'damage', object, field, oldErosion },
-    };
-}
-
-// Resume mhitm_ad_{rust,corr,dcay}()->erode_armor() after hitmsg() has crossed
-// any
-// tty boundary.  Head/shield/glove/boot candidates retry on ER_NOTHING; body
-// selection stops after its cloak/suit/shirt attempt even when non-vulnerable.
-function resumeDeferredHeroArmorErosion(
-    action, state, erosionKind, random = rn2,
-) {
-    const attack = action?.movement?.attack;
-    const deferredField = erosionKind === 'corrosion'
-        ? 'deferredCorrosionArmor'
-        : erosionKind === 'rot' ? 'deferredDecayArmor'
-            : 'deferredRustArmor';
-    if (!attack?.[deferredField]) return null;
-    const calls = action.calls;
-    let message = null;
-    let finalize = null;
-    let continueArmor = false;
-
-    for (;;) {
-        message = null;
-        finalize = null;
-        continueArmor = false;
-        const slot = recordRandom(random, calls, 5);
-        let target = null;
-        let verbose = false;
-        let bodySlot = false;
-        if (slot === 0) {
-            target = heroWornArmor(state, 'uarmh');
-        } else if (slot === 1) {
-            bodySlot = true;
-            verbose = true;
-            target = heroWornArmor(state, 'uarmc')
-                || heroWornArmor(state, 'uarm')
-                || heroWornArmor(state, 'uarmu');
-        } else if (slot === 2) {
-            target = heroWornArmor(state, 'uarms');
-        } else if (slot === 3) {
-            target = heroWornArmor(state, 'uarmg');
-        } else {
-            target = heroWornArmor(state, 'uarmf');
-        }
-
-        if (!target) {
-            if (bodySlot) break;
-            continue;
-        }
-        const erosion = heroArmorErosionResult(
-            target, verbose, erosionKind, state, random, calls,
-        );
-        message = erosion.message;
-        finalize = erosion.finalize;
-        continueArmor = !bodySlot && erosion.result === 'nothing';
-        // A visible ER_NOTHING result (notably actual proof) suspends inside
-        // erode_obj(); erode_armor's retry must not preselect another slot
-        // until that message has crossed tty and proof learning has committed.
-        if (message) break;
-        if (bodySlot || erosion.result !== 'nothing') break;
-    }
-
-    attack[deferredField] = false;
-    attack.deferredArmorErosionFinalize = {
-        ...(finalize || { kind: 'none' }),
-        continueArmor, deferredField,
-    };
-    return { message };
-}
-
-export function resumeDeferredHeroRustArmor(
-    action, state, random = rn2,
-) {
-    return resumeDeferredHeroArmorErosion(action, state, 'rust', random);
-}
-
-export function resumeDeferredHeroCorrosionArmor(
-    action, state, random = rn2,
-) {
-    return resumeDeferredHeroArmorErosion(
-        action, state, 'corrosion', random,
-    );
-}
-
-export function resumeDeferredHeroDecayArmor(
-    action, state, random = rn2,
-) {
-    return resumeDeferredHeroArmorErosion(action, state, 'rot', random);
-}
-
-// Complete erode_obj() only after its first message has crossed tty.  Grease
-// wear and proof learning occur after protection prose; ordinary erosion state
-// likewise commits after the rust/corrosion line.  A worn-off carried grease
-// layer owns a second independently publishable sentence.
-function finishDeferredHeroArmorErosion(
-    action, state, random = rn2,
-) {
-    const attack = action?.movement?.attack;
-    const pending = attack?.deferredArmorErosionFinalize;
-    if (!pending) return null;
-    let message = null;
-    if (pending.kind === 'grease') {
-        if (recordRandom(random, action.calls, 2) === 0) {
-            pending.object.greased = false;
-            message = 'The grease dissolves.';
-        }
-    } else if (pending.kind === 'proof') {
-        pending.object.rknown = true;
-    } else if (pending.kind === 'damage') {
-        pending.object[pending.field] = pending.oldErosion + 1;
-        // allmain.c projects the changed ARM_BONUS through find_ac() at the
-        // once-per-input boundary after the monster/global transaction.
-        state._armorClassDirty = true;
-    }
-    delete attack.deferredArmorErosionFinalize;
-    if (pending.continueArmor) attack[pending.deferredField] = true;
-    else attack.deferredPostHit = true;
-    return { message };
-}
-
-export function finishDeferredHeroRustArmor(
-    action, state, random = rn2,
-) {
-    return finishDeferredHeroArmorErosion(action, state, random);
-}
-
-export function finishDeferredHeroCorrosionArmor(
-    action, state, random = rn2,
-) {
-    return finishDeferredHeroArmorErosion(action, state, random);
-}
-
-export function finishDeferredHeroDecayArmor(
-    action, state, random = rn2,
-) {
-    return finishDeferredHeroArmorErosion(action, state, random);
 }
 
 function heroFormSticks(state) {

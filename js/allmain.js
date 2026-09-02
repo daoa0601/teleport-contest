@@ -115,16 +115,12 @@ import {
     allocateMonsterMovement, beginDeferredHeroCloneWizard,
     continueDeferredHeroAttack,
     beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
-    finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
-    finishDeferredHeroRustArmor,
     finishDeferredRangedProjectileHit,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
     resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
     resumeDeferredHeroSticking,
-    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
-    resumeDeferredHeroRustArmor,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
@@ -167,6 +163,12 @@ import {
     scanMonsterMovement,
     updateMonsterDistress,
 } from './monmove.js';
+import {
+    finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
+    finishDeferredHeroRustArmor,
+    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
+    resumeDeferredHeroRustArmor,
+} from './hero_armor_erosion.js';
 import {
     killGenocidedMonster, resolveMonsterLiquid, wakeMonstersNear,
     wakeMonstersNearWithMessages,
