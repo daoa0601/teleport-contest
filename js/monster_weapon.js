@@ -10,7 +10,20 @@ import { dropObjectFromMonsterInventory } from './monster_inventory.js';
 export function monsterWieldedWeapon(monster) {
     return monster?.mw
         || (monster?.minvent || monster?.inventory || [])
-            .find(object => object?.wielded);
+            .find(object => object?.wielded
+                || ((object?.owornmask ?? 0) & W_WEP));
+}
+
+export function unwieldMonsterWeapon(monster) {
+    const weapon = monsterWieldedWeapon(monster);
+    if (!weapon) return null;
+
+    monster.mw = null;
+    weapon.owornmask = (weapon.owornmask ?? 0) & ~W_WEP;
+    weapon.wielded = false;
+    weapon.worn = weapon.owornmask !== 0;
+    monster.weaponCheck = NEED_WEAPON;
+    return weapon;
 }
 
 export function updateMonsterWeaponAfterPolymorph(monster, state = game) {

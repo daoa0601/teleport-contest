@@ -17,6 +17,7 @@ import {
     runClaimedObjectRotTimer,
 } from './mklev.js';
 import { initialShapechangedBirth } from './monster_polymorph.js';
+import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
 import { level_difficulty } from './dungeon.js';
 import {
@@ -180,7 +181,7 @@ import {
     heroEveryturnEffect, runMonsterEveryturnEffects,
     runQuietMonsterActions,
     scanMonsterMovement,
-    updateMonsterDistress,
+    monsterDistressEvents,
 } from './monmove.js';
 import {
     finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
@@ -1630,8 +1631,8 @@ async function runLevelRegionTurn() {
     });
 }
 
-function initialTurnMaintenanceRng(
-    completedTurn = game.moves || 1, deferAmbientMessage = false,
+async function beginInitialTurnMaintenance(
+    completedTurn = game.moves || 1,
 ) {
     // allmain.c runs mcalcdistress() before allocating the next movement
     // ration. Regeneration, were-change checks, and temporary maladies count
@@ -1640,45 +1641,29 @@ function initialTurnMaintenanceRng(
     // boundary with the new displayed turn already in game.moves, so monster
     // periodic regeneration must inspect the preceding turn number.
     game.were_changes = 0;
-    const distress = updateMonsterDistress(
+    for (const event of monsterDistressEvents(
         game.level?.monsters || [], game, rn2, completedTurn - 1,
-    );
-    const monsterChanges = distress.flatMap(result => {
-        const changes = [];
-        if (result.changedShape?.message)
-            changes.push({ kind: 'shape', change: result.changedShape });
-        if (result.changedWere?.transformationMessage
-            || result.changedWere?.howlMessage) {
-            changes.push({ kind: 'were', change: result.changedWere });
-        }
-        return changes;
-    });
-    if (deferAmbientMessage && monsterChanges.length) {
-        return {
-            monsterChangesToPresent: monsterChanges,
-            completedTurn,
-            deferAmbientMessage,
-        };
-    }
-    for (const { kind, change } of monsterChanges) {
-        if (kind === 'shape') {
-            appendTurnMessage(change.message);
+    )) {
+        if (event.kind === 'shape-change') {
+            if (event.change.message)
+                await queueTurnMessage(event.change.message);
+            await monsterSelfTouchAfterPolymorph(event.monster, {
+                creditHero: true,
+                finishDeath: (monster, options) =>
+                    finishEnvironmentalMonsterDeath(monster, game, options),
+                publish: queueTurnMessage,
+                state: game,
+            });
             continue;
         }
-        if (change.transformationMessage)
-            appendTurnMessage(change.transformationMessage);
-        if (change.howlMessage)
-            appendTurnMessage(change.howlMessage);
-        if (change.wakeDistance) {
-            wakeMonstersNear(
-                change.monster.mx,
-                change.monster.my,
-                change.wakeDistance,
-            );
-        }
+        await presentWereChange(event.change, {
+            publish: queueTurnMessage,
+            wakeNearby: (x, y, distance) =>
+                wakeMonstersNear(x, y, distance, game),
+        });
     }
     return finishInitialTurnMaintenanceAfterMonsterDistress(
-        completedTurn, deferAmbientMessage,
+        completedTurn, true,
     );
 }
 
@@ -2167,23 +2152,7 @@ async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
 async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
-    let phase = initialTurnMaintenanceRng(completedTurn, true);
-    while (phase?.monsterChangesToPresent) {
-        for (const { kind, change } of phase.monsterChangesToPresent) {
-            if (kind === 'shape') {
-                await queueTurnMessage(change.message);
-                continue;
-            }
-            await presentWereChange(change, {
-                publish: queueTurnMessage,
-                wakeNearby: (x, y, distance) =>
-                    wakeMonstersNear(x, y, distance, game),
-            });
-        }
-        phase = finishInitialTurnMaintenanceAfterMonsterDistress(
-            phase.completedTurn, phase.deferAmbientMessage,
-        );
-    }
+    let phase = await beginInitialTurnMaintenance(completedTurn);
     while (phase?.deferredObjectTimer) {
         const claimed = claimNextDueObjectTimer(
             game, phase.sourceTurn,

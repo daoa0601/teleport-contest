@@ -10,6 +10,7 @@ import { mksobj } from './mklev.js';
 import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
+import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { MONSTER_FLAGS2, monsterTypeName } from './monster_data.js';
 import { changeMonsterFormWithAppearance } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
@@ -133,6 +134,7 @@ export function applyMonsterPolymorphTrap(
     const changed = !!change;
     return {
         kind: 'polymorph-trap',
+        monster,
         trap,
         changed,
         leashReleaseMessage: change?.leashReleased
@@ -148,6 +150,9 @@ export async function finishMonsterPolymorphTrap(
     {
         publish = async () => {},
         revealTrap = () => {},
+        finishDeath,
+        rollOne,
+        state = game,
     } = {},
 ) {
     if (!event || event.finished) return event;
@@ -157,6 +162,16 @@ export async function finishMonsterPolymorphTrap(
 
     if (event.formChangeMessage)
         await publish(event.formChangeMessage);
+
+    if (event.changed) {
+        const selfTouch = await monsterSelfTouchAfterPolymorph(event.monster, {
+            finishDeath,
+            publish,
+            rollOne,
+            state,
+        });
+        if (!selfTouch.survived) event.killed = true;
+    }
 
     if (event.inSight) {
         event.trap.tseen = true;

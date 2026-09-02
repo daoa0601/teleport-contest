@@ -1083,12 +1083,13 @@ export function heroEveryturnEffect(state = game, random = rn2) {
 
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
 // prepends them to fmon, so this once-per-global-turn phase traverses the
-// reverse of creation order just like movement allocation does.
-export function updateMonsterDistress(
+// reverse of creation order just like movement allocation does. Yielding at
+// each transformation lets its messages and consequences finish before the
+// next source-ordered random decision.
+export function* monsterDistressEvents(
     monsters = [], state = {}, random = rn2,
     distressTurn = state.moves ?? 1,
 ) {
-    const results = [];
     for (const monster of monstersInFmonOrder(monsters)) {
         if (!monster) continue;
         if ((distressTurn % 20 === 0
@@ -1102,16 +1103,28 @@ export function updateMonsterDistress(
         const changedShape = decideMonsterShapeChange(
             monster, state, random,
         );
+        if (changedShape) {
+            yield {
+                kind: 'shape-change',
+                monster,
+                change: changedShape,
+            };
+        }
         const changedWere = wereChange(monster, state, random);
+        if (changedWere) {
+            yield {
+                kind: 'were-change',
+                monster,
+                change: changedWere,
+            };
+        }
         if ((monster.mblinded ?? 0) > 0 && --monster.mblinded === 0)
             monster.mcansee = 1;
         if ((monster.mfrozen ?? 0) > 0 && --monster.mfrozen === 0)
             monster.mcanmove = 1;
         if ((monster.mfleetim ?? 0) > 0 && --monster.mfleetim === 0)
             monster.mflee = 0;
-        results.push({ monster, changedWere, changedShape });
     }
-    return results;
 }
 
 // C ref: mon.c mcalcmove(). `random` is injectable for deterministic unit
@@ -7481,6 +7494,7 @@ export async function resumeDeferredMonsterTrap(
             random,
             rollOne: recordedRollOne,
             describeMonster,
+            state,
         });
         break;
     case 'falling-rock':
@@ -7515,8 +7529,11 @@ export async function resumeDeferredMonsterTrap(
         break;
     case 'polymorph-trap':
         await finishMonsterPolymorphTrap(event, {
+            finishDeath,
             publish,
             revealTrap,
+            rollOne: recordedRollOne,
+            state,
         });
         break;
     default:

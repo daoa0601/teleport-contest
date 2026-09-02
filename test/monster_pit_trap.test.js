@@ -1,11 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT } from '../js/const.js';
+import { PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import {
     resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
+import {
+    AMULET_OF_LIFE_SAVING, CORPSE, STATUE,
+} from '../js/object_data.js';
+import { knownObject } from './support/game-objects.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('a grounded monster falls into a pit', async () => {
@@ -38,3 +45,57 @@ test('a flying monster passes over a pit', () => {
     assert.equal(monster.mhp, 20);
     assert.equal(trap.tseen ?? false, false);
 });
+
+test('falling makes a monster touch its wielded cockatrice corpse',
+    async () => {
+        const { level, monster } = freshMonsterTrapRoom(PIT, {
+            monster: { species: 'giant' },
+        });
+        const corpse = knownObject(CORPSE, { corpsenm: 10 });
+        equipMonsterObject(monster, corpse, W_WEP);
+        const messages = [];
+
+        const action = triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: async message => messages.push(message),
+        });
+
+        assert.equal(level.monsters.includes(monster), false);
+        assert.ok(floorObjectsAt(level, 11, 10).some(object =>
+            object.otyp === STATUE && object.corpsenm === monster.mnum));
+        const fall = messages.findIndex(message =>
+            message.includes('falls into a pit'));
+        const touch = messages.findIndex(message =>
+            message.includes('touches the cockatrice corpse'));
+        assert.ok(fall >= 0 && touch > fall);
+    });
+
+test('a life-saved monster stops wielding the corpse that petrified it',
+    async () => {
+        const { level, monster } = freshMonsterTrapRoom(PIT, {
+            monster: { species: 'giant' },
+        });
+        const corpse = equipMonsterObject(
+            monster,
+            knownObject(CORPSE, { corpsenm: 10 }),
+            W_WEP,
+        );
+        equipMonsterObject(
+            monster,
+            knownObject(AMULET_OF_LIFE_SAVING),
+            W_AMUL,
+        );
+        pushKeys(' '.repeat(12));
+
+        const action = triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: async () => {},
+            rollOne: () => 1,
+        });
+
+        assert.equal(level.monsters.includes(monster), true);
+        assert.ok(monster.mhp > 0);
+        assert.equal(monster.inventory.includes(corpse), true);
+        assert.equal(monster.mw, null);
+        assert.equal(corpse.owornmask & W_WEP, 0);
+    });

@@ -1,7 +1,9 @@
 // Monster petrification and the statue left behind.
 // C refs: trap.c minstapetrify(), mon.c mon_to_stone() and monstone().
 
-import { G_GENOD, W_ARM, W_ARMC, W_ARMU } from './const.js';
+import {
+    G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU,
+} from './const.js';
 import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
@@ -14,17 +16,21 @@ import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
 import { clearMonsterCarriedObjectState } from './monster_inventory.js';
+import {
+    monsterWieldedWeapon, unwieldMonsterWeapon,
+} from './monster_weapon.js';
 import { mkcorpstat, mksobj } from './mklev.js';
 import {
     MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { BOULDER, ROCK, STATUE } from './object_data.js';
+import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { useMonsterStoningCure } from './monster_stoning_cure.js';
 import { rn2, rnd } from './rng.js';
+import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 
@@ -46,6 +52,61 @@ function monsterSubject(monster) {
 export function monsterWearsTorsoArmor(monster) {
     return (monster?.minvent || monster?.inventory || []).some(object =>
         ((object.owornmask ?? 0) & TORSO_ARMOR) !== 0);
+}
+
+function monsterWearsGloves(monster) {
+    return !!((monster?.misc_worn_check ?? 0) & W_ARMG)
+        || (monster?.minvent || monster?.inventory || []).some(object =>
+            ((object.owornmask ?? 0) & W_ARMG) !== 0);
+}
+
+function selfTouchSubject(monster, prefix) {
+    const subject = monsterSubject(monster);
+    if (!prefix || monster.name) return subject;
+    return subject.charAt(0).toLowerCase() + subject.slice(1);
+}
+
+// C trap.c:mselftouch(). Falling can force contact even through gloves;
+// newcham() only calls this after the new body has lost its gloves.
+export async function monsterSelfTouch(monster, {
+    prefix = '',
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    rollOne = rnd,
+    state = game,
+} = {}) {
+    const corpse = monsterWieldedWeapon(monster);
+    if (!corpse || corpse.otyp !== CORPSE
+        || !touchPetrifies(corpse.corpsenm)
+        || monsterHasStoneResistance(monster)) {
+        return { touched: false, survived: true };
+    }
+
+    if (cansee(monster.mx, monster.my)) {
+        await publish(
+            `${prefix}${selfTouchSubject(monster, prefix)} touches the ${
+                monsterTypeName(corpse.corpsenm)
+            } corpse.`,
+        );
+    }
+    const petrification = await petrifyMonsterFromContact(monster, {
+        creditHero, finishDeath, publish, rollOne, state,
+    });
+    if (petrification.survived && !monsterWearsGloves(monster)
+        && !monsterHasStoneResistance(monster)) {
+        unwieldMonsterWeapon(monster);
+    }
+    return { touched: true, corpse, ...petrification };
+}
+
+export async function monsterSelfTouchAfterPolymorph(monster, options = {}) {
+    if (monsterWearsGloves(monster))
+        return { touched: false, survived: true };
+    return monsterSelfTouch(monster, {
+        ...options,
+        prefix: 'No longer petrify-resistant, ',
+    });
 }
 
 export async function petrifyMonsterFromContact(monster, {

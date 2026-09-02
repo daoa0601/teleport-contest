@@ -4,6 +4,7 @@
 import { SPIKED_PIT, W_ARMF } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { monsterSelfTouch } from './monster_stoning.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
@@ -76,6 +77,7 @@ export async function finishMonsterPitTrap(
         random,
         rollOne = rnd,
         describeMonster = ordinaryMonsterSubject,
+        state = game,
     } = {},
 ) {
     if (!event || event.finished) return event;
@@ -92,6 +94,19 @@ export async function finishMonsterPitTrap(
         event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");
+    }
+
+    const selfTouch = await monsterSelfTouch(monster, {
+        prefix: 'Falling, ',
+        finishDeath,
+        publish,
+        rollOne,
+        state,
+    });
+    if (!selfTouch.survived) {
+        event.killed = true;
+        event.finished = true;
+        return event;
     }
 
     const damage = rollOne(event.damageSides);
