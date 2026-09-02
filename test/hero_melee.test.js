@@ -10,36 +10,37 @@ import { inventoryObject } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
-function installLichenArena(role) {
+function installMeleeArena(role, species = 'lichen', overrides = {}) {
     const level = freshPlayableRoom({
         left: 10, right: 11, top: 10, bottom: 10, role,
     });
-    const lichen = addMonster({
-        mnum: 158, m_id: 77,
+    const monster = addMonster({
+        species, m_id: 77,
         x: 11, y: 10,
         hitPoints: 100,
         level: 0,
         mac: 10,
         minvis: 0,
         mundetected: 0,
+        ...overrides,
     });
-    return { level, lichen };
+    return { level, monster };
 }
 
-function equipKatana() {
-    const katana = inventoryObject(
-        OBJECT_NAMES.indexOf('katana'), 'a', {
+function equipWeapon(name) {
+    const weapon = inventoryObject(
+        OBJECT_NAMES.indexOf(name), 'a', {
             spe: 0, enchantment: 0, worn: true, owornmask: 1,
         },
     );
-    game.inventory = [katana];
-    game.uwep = katana;
-    return katana;
+    game.inventory = [weapon];
+    game.uwep = weapon;
+    return weapon;
 }
 
 async function lichenMeleeOutcome(role) {
-    const { level, lichen } = installLichenArena(role);
-    equipKatana();
+    const { level, monster: lichen } = installMeleeArena(role);
+    equipWeapon('katana');
 
     initRng(901n);
     await rhack('l'.charCodeAt(0));
@@ -52,8 +53,8 @@ async function lichenMeleeOutcome(role) {
 }
 
 async function twoWeaponLichenOutcome(role) {
-    const { level, lichen } = installLichenArena(role);
-    const katana = equipKatana();
+    const { level, monster: lichen } = installMeleeArena(role);
+    const katana = equipWeapon('katana');
     const wakizashi = inventoryObject(
         OBJECT_NAMES.indexOf('short sword'), 'b', {
             // NetHack represents the Samurai's wakizashi as a short sword
@@ -111,7 +112,7 @@ test('two-weapon combat attempts an off-hand strike for every role',
     });
 
 test('a powerful unarmed strike can shove a small monster', async () => {
-    const { lichen } = installLichenArena('samurai');
+    const { monster: lichen } = installMeleeArena('samurai');
     Object.assign(game.level.at(12, 10), {
         typ: ROOM, lit: true, waslit: true, seenv: 255,
     });
@@ -127,3 +128,21 @@ test('a powerful unarmed strike can shove a small monster', async () => {
     assert.ok(lichen.mhp < 100);
     assert.match(game._pending_message, /powerful strike/);
 });
+
+test('an ordinary dagger passes through a shade without breaking conduct',
+    async () => {
+        const { monster: shade } = installMeleeArena(
+            'tourist', 'shade', { mac: 100 },
+        );
+        equipWeapon('dagger');
+
+        initRng(902n);
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(shade.mhp, 100);
+        assert.equal(game.u.uconduct.weaphit ?? 0, 0);
+        assert.match(
+            game._pending_message,
+            /Your dagger passes harmlessly through the shade\./,
+        );
+    });

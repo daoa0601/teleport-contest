@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 
 import { artifactByName } from '../js/artifacts.js';
 import {
-    ACID_VENOM, AXE, BULLWHIP, DAGGER, HEAVY_IRON_BALL, LONG_SWORD,
+    ACID_VENOM, AXE, BOW, BULLWHIP, DAGGER, HEAVY_IRON_BALL, LONG_SWORD,
     OBJECT_NAMES, OBJECT_WEIGHT,
 } from '../js/object_data.js';
-import { rollPhysicalWeaponDamage } from '../js/weapon_damage.js';
+import {
+    rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
+} from '../js/weapon_damage.js';
 import { carriedObject } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 
@@ -35,6 +37,21 @@ test('a leather whip cannot hurt a thick-skinned monster', () => {
     const damage = maximumDamage(whip, 'mastodon');
 
     assert.equal(damage, 0);
+});
+
+test('a bow swung in melee uses improvised damage without weapon skill', () => {
+    const bow = carriedObject(BOW);
+    const monster = liveMonster({ species: 'jackal' });
+
+    const hit = rollHeroMeleeWeaponDamage(
+        bow, monster, { rollOne: maximumRoll },
+    );
+
+    assert.deepEqual(hit, {
+        damage: 2,
+        usesArtifact: false,
+        usesSkill: false,
+    });
 });
 
 test('a dagger blessing still hurts a shade when its blade passes through', () => {

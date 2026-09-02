@@ -4,7 +4,10 @@
 import {
     artifactDoublesWeaponDamage, artifactEmitsLight, artifactStrikesShade,
 } from './artifacts.js';
-import { P_AXE, WT_IRON_BALL_INCR } from './const.js';
+import {
+    P_AXE, P_BOOMERANG, P_BOW, P_CROSSBOW, P_DART, P_LANCE,
+    P_POLEARMS, WT_IRON_BALL_INCR,
+} from './const.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import {
     HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -175,6 +178,40 @@ export function rollPhysicalWeaponDamage(
         object, monster, { hatesBlessings, hatesSilver }, rollOne,
     );
     return applyErosion(object, damage);
+}
+
+export function rollHeroMeleeWeaponDamage(
+    object, monster, { mounted = false, rollOne = rnd } = {},
+) {
+    const objectClass = object.oclass || objectClassForType(object.otyp);
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const weaponOrTool = objectClass === WEAPON_CLASS
+        || (objectClass === TOOL_CLASS && skill !== 0);
+    const gem = objectClass === GEM_CLASS;
+    if (!weaponOrTool && !gem) return null;
+
+    const launcher = objectClass === WEAPON_CLASS
+        && skill >= P_BOW && skill <= P_CROSSBOW;
+    const ammunition = (objectClass === WEAPON_CLASS || gem)
+        && skill >= -P_CROSSBOW && skill <= -P_BOW;
+    const missile = weaponOrTool
+        && skill >= -P_BOOMERANG && skill <= -P_DART;
+    const polearm = weaponOrTool
+        && (skill === P_POLEARMS || skill === P_LANCE);
+    const improvised = launcher || ammunition || missile
+        || (!mounted && polearm);
+
+    if (!improvised) {
+        const damage = rollPhysicalWeaponDamage(object, monster, { rollOne });
+        return { damage, usesArtifact: true, usesSkill: true };
+    }
+
+    const silver = OBJECT_MATERIAL[object.otyp] === SILVER;
+    let damage = monsterIsShade(monster)
+        && !silver && !artifactStrikesShade(object) ? 0 : rollOne(2);
+    if (silver && monsterHatesSilver(monster))
+        damage += rollOne(damage > 0 ? 20 : 10);
+    return { damage, usesArtifact: false, usesSkill: false };
 }
 
 export function rollPhysicalWeaponDamageAgainstHero(

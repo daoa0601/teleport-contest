@@ -191,7 +191,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL, MONSTER_ALIGNMENT,
-    monsterIsNonliving, monsterTypeName,
+    monsterIsNonliving, monsterIsShade, monsterTypeName,
 } from './monster_data.js';
 import { nameToMonster } from './mondata.js';
 import {
@@ -223,7 +223,10 @@ import {
 import { monsterNoiseMessage } from './monster_sound.js';
 import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { strengthDamageBonus } from './weapon_damage.js';
+import {
+    rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
+    strengthDamageBonus,
+} from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
 import { dosit } from './sit.js';
@@ -11032,36 +11035,32 @@ async function attackHostileMonster(monster, x, y, {
     }
 
     if (primaryStrike) exerciseAttribute(A_DEX, true);
-    if (attackWeapon) {
-        if (!game.u.uconduct) game.u.uconduct = {};
-        const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
-        game.u.uconduct.weaphit = (game.u.uconduct.weaphit || 0) + 1;
-        if (firstWeaponHit) {
-            const weaponName = attackWeapon.name
-                || OBJECT_NAMES[attackWeapon.otyp] || 'weapon';
-            recordGameLogEvent(
-                `hit with a wielded weapon (${weaponName}) for the first time`,
-            );
-        }
+    const attackObjectClass = attackWeapon
+        ? attackWeapon.oclass || objectClassForType(attackWeapon.otyp) : 0;
+    const weaponDamage = bareHanded ? null : rollHeroMeleeWeaponDamage(
+        attackWeapon, monster, { mounted: !!game.u?.usteed },
+    );
+    let damage;
+    if (bareHanded) {
+        damage = rnd(martialArtist ? 4 : 2);
+    } else if (weaponDamage) {
+        damage = weaponDamage.damage;
+    } else if ([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]
+        .includes(attackWeapon.otyp)) {
+        damage = rollPhysicalWeaponDamage(attackWeapon, monster);
+    } else {
+        const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
+        const damageRange = (targetIsLarge
+            ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)[attackWeapon.otyp];
+        damage = Math.max(
+            0, rnd(damageRange || 4) + (attackWeapon?.spe ?? 0),
+        );
     }
-    // C mondata.h:bigmonst() begins at MZ_LARGE (3), not MZ_HUGE (4).
-    // Weapon large-damage dice therefore apply to tigers, horses, and other
-    // ordinary Large targets as well as Huge and Gigantic monsters.
-    const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
-    const weaponDamageRange = attackWeapon
-        ? (targetIsLarge ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)
-            [attackWeapon.otyp]
-        : 0;
-    let damage = bareHanded ? rnd(martialArtist ? 4 : 2)
-        : Math.max(0, rnd(weaponDamageRange || 4)
-            + (attackWeapon?.spe ?? 0));
-    // hmon_hitmon_weapon_melee() decides whether to train from dmgval()
-    // before artifact_hit() adjusts damage.  Grayswandir's PHYS(5, 0) then
-    // adds that base damage again before Strength and ring bonuses.
-    const trainsWeapon = !bareHanded && damage > 1;
-    if (!bareHanded) {
+    const trainsWeapon = weaponDamage?.usesSkill && damage > 1;
+    if (weaponDamage?.usesArtifact) {
         damage += artifactDamageBonus(attackWeapon, monster, damage);
     }
+    const damageCanUseBonuses = damage > 0;
     if (trainsWeapon) {
         recordWeaponPractice(
             game, twoWeaponActive ? 36
@@ -11082,9 +11081,10 @@ async function attackHostileMonster(monster, x, y, {
     // Polymorphed heroes do not receive dbon(); the current role-shaped state
     // uses the ordinary hero path.
     const polymorphed = !!(game.u?.polymorphed || game.u?.upolyd);
-    const weaponSkillDamage = bareHanded ? 0 : weaponSkillDamageBonus(
-        game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
-    );
+    const weaponSkillDamage = weaponDamage?.usesSkill
+        ? weaponSkillDamageBonus(
+            game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
+        ) : 0;
     const ordinaryStrengthDamage = polymorphed ? 0
         : strengthDamageBonus(currentAttribute(A_STR));
     const strengthDamage = twoWeaponActive
@@ -11092,10 +11092,29 @@ async function attackHostileMonster(monster, x, y, {
             (3 * Math.abs(ordinaryStrengthDamage) + 2) / 4,
         )
         : ordinaryStrengthDamage;
-    damage += (game.u?.udaminc ?? game.udaminc ?? 0)
-        + strengthDamage
-        + weaponSkillDamage;
-    damage = Math.max(1, damage);
+    if (damageCanUseBonuses) {
+        damage += (game.u?.udaminc ?? game.udaminc ?? 0)
+            + strengthDamage
+            + weaponSkillDamage;
+        damage = Math.max(1, damage);
+    } else if (!monsterIsShade(monster)) {
+        damage = 1;
+    }
+    const weaponConduct = attackObjectClass === 2
+        || (attackObjectClass === 6
+            && (OBJECT_SUBTYPE[attackWeapon.otyp] ?? 0) !== 0);
+    if (weaponConduct && damage > 0) {
+        if (!game.u.uconduct) game.u.uconduct = {};
+        const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
+        game.u.uconduct.weaphit = (game.u.uconduct.weaphit || 0) + 1;
+        if (firstWeaponHit) {
+            const weaponName = attackWeapon.name
+                || OBJECT_NAMES[attackWeapon.otyp] || 'weapon';
+            recordGameLogEvent(
+                `hit with a wielded weapon (${weaponName}) for the first time`,
+            );
+        }
+    }
     const wakeMonsterAfterHit = async () => {
         if (!monster.msleeping) return;
         const wakeMessage = canProjectMonster(
@@ -11129,6 +11148,18 @@ async function attackHostileMonster(monster, x, y, {
             nearby.mstrategy = (nearby.mstrategy ?? 0) & ~STRAT_WAITMASK;
         }
     };
+    if (damage === 0 && monsterIsShade(monster)) {
+        const weaponName = attackWeapon?.name
+            || OBJECT_NAMES[attackWeapon?.otyp] || 'attack';
+        await plineWithContinuation(
+            `Your ${weaponName} passes harmlessly through ${
+                displayedMonsterObject()
+            }.`,
+        );
+        await wakeMonsterAfterHit();
+        if (primaryStrike) passiveContact(monster, true);
+        return finishStrike();
+    }
     let stagger = { staggered: false };
     if (bareHanded && !game.uarm && !game.uarms && damage > 1
         && !polymorphed) {
