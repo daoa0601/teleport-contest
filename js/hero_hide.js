@@ -25,12 +25,6 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 
 const M1_HUMANOID = 0x00020000;
 const S_MIMIC = 13;
-const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
-const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');
-
-function webMaker(form) {
-    return form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER;
-}
 
 function heroHidingAbility(state) {
     const form = heroMonsterForm(state);
@@ -50,10 +44,8 @@ function heroHidingAbility(state) {
     };
 }
 
-export function heroCanHideDirectly(state = game) {
-    const ability = heroHidingAbility(state);
-    // A cave spider must choose between hiding and spinning a web first.
-    return !!ability && !webMaker(ability.form);
+export function heroHasHidingAbility(state = game) {
+    return !!heroHidingAbility(state);
 }
 
 function revealHero(ability, state, refresh) {

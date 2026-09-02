@@ -68,7 +68,10 @@ import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import {
     heroCanSummonWerePack, useHeroWereSummon,
 } from './were.js';
-import { heroCanHideDirectly, useHeroHide } from './hero_hide.js';
+import { heroHasHidingAbility, useHeroHide } from './hero_hide.js';
+import {
+    chooseSpiderAbility, heroCanSpinWeb, useHeroWeb,
+} from './hero_web.js';
 import {
     heroCanMindBlast, useHeroMindBlast,
 } from './hero_mind_blast.js';
@@ -5688,6 +5691,14 @@ async function domonability() {
         game.context.move = 0;
         return;
     }
+    const canHide = heroHasHidingAbility(game);
+    const canSpinWeb = heroCanSpinWeb(game);
+    const spiderChoice = canHide && canSpinWeb
+        ? await chooseSpiderAbility() : null;
+    if (canHide && canSpinWeb && !spiderChoice) {
+        game.context.move = 0;
+        return;
+    }
     const breath = heroBreathAttack(game);
     if (breath) {
         const result = await useHeroBreath({
@@ -5720,8 +5731,13 @@ async function domonability() {
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
-    if (heroCanHideDirectly(game)) {
+    if (spiderChoice === 'hide' || (!spiderChoice && canHide)) {
         const result = await useHeroHide({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (spiderChoice === 'spin' || (!spiderChoice && canSpinWeb)) {
+        const result = await useHeroWeb({ state: game });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
