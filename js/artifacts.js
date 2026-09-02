@@ -5,9 +5,29 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { game } from './gstate.js';
-import { A_WIS } from './const.js';
+import { Upolyd } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
-import { OBJECT_NAMES } from './object_data.js';
+import {
+    OBJECT_MATERIAL, OBJECT_NAMES,
+} from './object_data.js';
+import {
+    MONSTER_FLAGS2, MONSTER_SYMBOL,
+} from './monster_data.js';
+
+const M2_UNDEAD = 0x00000002;
+const M2_WERE = 0x00000004;
+const M2_ELF = 0x00000010;
+const M2_ORC = 0x00000080;
+const M2_DEMON = 0x00000100;
+const M2_GIANT = 0x00002000;
+const S_IMP = 9;
+const S_DRAGON = 30;
+const S_OGRE = 41;
+const S_TROLL = 46;
+const S_VAMPIRE = 48;
+const PM_TENGU = 55;
+const PM_SHADE = 288;
+const SILVER = 14;
 
 const RAW_ARTIFACTS = [
     ['Excalibur', 'long sword', 1, 'knight', true, true, null],
@@ -120,6 +140,19 @@ const SUPPORTED_ATTACK_PROFILES = new Map([
 // set_artifact_intrinsic() installs them under the weapon equipment mask.
 const SUPPORTED_WIELDED_PROPERTIES = new Map([
     ['Grayswandir', ['hallucinationResistance']],
+]);
+
+const ARTIFACT_BANES = new Map([
+    ['Grimtooth', { flag: M2_ELF }],
+    ['Orcrist', { flag: M2_ORC }],
+    ['Sting', { flag: M2_ORC }],
+    ['Dragonbane', { symbol: S_DRAGON }],
+    ['Demonbane', { flag: M2_DEMON }],
+    ['Werebane', { flag: M2_WERE }],
+    ['Giantslayer', { flag: M2_GIANT }],
+    ['Ogresmasher', { symbol: S_OGRE }],
+    ['Trollsbane', { symbol: S_TROLL }],
+    ['Sunsword', { flag: M2_UNDEAD }],
 ]);
 
 function fuzzyArtifactName(value) {
@@ -270,31 +303,53 @@ export function artifactDamageBonus(
         : Math.max(baseWeaponDamage, 1);
 }
 
-// C artifact.c:touch_artifact() hero branch.  The current block needs the
-// alignment refusal probe even when it does not blast; retain the complete
-// common damage/exercise transaction so future artifact wishes do not need a
-// second owner.
-export function touchArtifactByHero(object, artifact) {
-    if (!object?.oartifact || !artifact) return { allowed: true, blasted: false };
+function heroSpecies() {
+    if (Upolyd(game.u)) return game.u.umonnum;
+    return game.flags?.female
+        ? game.urace?.femalenum ?? game.urace?.malenum
+        : game.urace?.malenum;
+}
+
+function artifactBaneApplies(artifact) {
+    const bane = ARTIFACT_BANES.get(artifact?.name);
+    if (!bane) return false;
+    const mnum = heroSpecies();
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    if (bane.flag === M2_WERE
+        && Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0) return true;
+    return bane.flag ? !!(flags & bane.flag)
+        : MONSTER_SYMBOL[mnum] === bane.symbol;
+}
+
+function heroHatesSilver() {
+    if (Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0) return true;
+    const mnum = heroSpecies();
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
+    return !!(flags & (M2_WERE | M2_DEMON))
+        || symbol === S_VAMPIRE || mnum === PM_SHADE
+        || (symbol === S_IMP && mnum !== PM_TENGU);
+}
+
+// C artifact.c:touch_artifact() hero branch up to its blast message.
+export function resolveHeroArtifactTouch(object, artifact) {
+    if (!object?.oartifact || !artifact) {
+        return { allowed: true, blasted: false };
+    }
     const heroRole = game.urole?.key || null;
     const heroAlignment = game.u?.ualign?.type ?? 0;
     const alignmentRecord = game.u?.ualign?.record ?? 0;
     const badClass = artifact.selfWilled
         && !!artifact.role && artifact.role !== heroRole;
-    const badAlignment = artifact.restricted
+    let badAlignment = artifact.restricted
         && artifact.alignment !== null
         && (artifact.alignment !== heroAlignment || alignmentRecord < 0);
+    if (!badAlignment) badAlignment = artifactBaneApplies(artifact);
 
     let blasted = false;
     if (((badClass || badAlignment) && artifact.selfWilled)
         || (badAlignment && rn2(4) === 0)) {
         blasted = true;
-        const antimagic = !!game.u?.antimagic;
-        const damage = d(antimagic ? 2 : 4, 4);
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-        if (!Array.isArray(game.u._exercise))
-            game.u._exercise = Array(6).fill(0);
-        game.u._exercise[A_WIS] -= rn2(2);
     }
 
     return {
@@ -303,4 +358,17 @@ export function touchArtifactByHero(object, artifact) {
         badClass,
         badAlignment,
     };
+}
+
+export function applyHeroArtifactBlast(object, artifact) {
+    const antimagic = !!game.u?.antimagic;
+    let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
+    if (OBJECT_MATERIAL[object.otyp] === SILVER && heroHatesSilver()) {
+        let silverDamage = rnd(10);
+        if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+            silverDamage = Math.trunc((silverDamage + 1) / 2);
+        damage += silverDamage;
+    }
+    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
+    return damage;
 }

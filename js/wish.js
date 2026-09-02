@@ -2,7 +2,7 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 
-import { touchArtifactByHero } from './artifacts.js';
+import { touchArtifactByHero } from './artifact_touch.js';
 import { IRONBARS, POOL, WATER } from './const.js';
 import {
     bot, docrtRecalc, flushPendingTopline, flush_screen, newsym, pline,
@@ -149,13 +149,10 @@ export async function makeWish({
     const clericBucKnowledge = game.urole?.key === 'priest';
     if (clericBucKnowledge) result.object.bknown = true;
     if (result.artifact) {
-        const touch = touchArtifactByHero(result.object, result.artifact);
-        if (touch.blasted) {
-            await plineWithContinuation(
-                `You are blasted by ${result.artifact.name}'s power!`,
-            );
-        }
-        if (!touch.allowed) {
+        const touch = await touchArtifactByHero(
+            result.object, result.artifact,
+        );
+        if (!touch.allowed || touch.died) {
             game.context.move = 0;
             return;
         }

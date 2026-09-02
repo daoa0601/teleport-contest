@@ -108,8 +108,8 @@ import {
 } from './objnam.js';
 import {
     artifactById, artifactDamageBonus, artifactToHitBonus,
-    touchArtifactByHero,
 } from './artifacts.js';
+import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
     CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
@@ -5183,13 +5183,8 @@ async function doinvoke() {
     const artifact = object.oartifact
         ? artifactById(object.oartifact) : null;
     if (artifact) {
-        const touch = touchArtifactByHero(object, artifact);
-        if (touch.blasted) {
-            await plineWithContinuation(
-                `You are blasted by ${artifact.name}'s power!`,
-            );
-        }
-        if (!touch.allowed) {
+        const touch = await touchArtifactByHero(object, artifact);
+        if (!touch.allowed || touch.died) {
             game.context.move = 1;
             return;
         }
@@ -7482,13 +7477,8 @@ async function dowield(cannedInvlet = null) {
     }
     if (object.oartifact) {
         const artifact = artifactById(object.oartifact);
-        const touch = touchArtifactByHero(object, artifact);
-        if (touch.blasted) {
-            await plineWithContinuation(
-                `You are blasted by ${artifact.name}'s power!`,
-            );
-        }
-        if (!touch.allowed) {
+        const touch = await touchArtifactByHero(object, artifact);
+        if (!touch.allowed || touch.died) {
             game.context.move = 1;
             return;
         }

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
@@ -166,6 +167,29 @@ test('gloves make a cockatrice corpse safe to put away', async () => {
 
     assert.deepEqual(chest.contents, [corpse]);
     assert.ok(game.u.uhp > 0);
+});
+
+test('a self-willed artifact can refuse to leave a container', async () => {
+    const artifact = artifactByName('The Orb of Detection');
+    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const orb = inventoryObject(artifact.baseType, null, {
+        where: 'contained',
+        container: chest,
+        oartifact: artifact.id,
+        oextra: { oname: artifact.name },
+    });
+    chest.contents = [orb];
+    freshContainerGame(chest);
+    game.u.ualign.type = -1;
+    game.u.ualign.record = 0;
+    game.u.uhp = game.u.uhpmax = 100;
+    initRng(8401n);
+
+    await applyObject(`aoa\n${' '.repeat(10)}`);
+
+    assert.deepEqual(chest.contents, [orb]);
+    assert.equal(orb.where, 'contained');
+    assert.ok(game.u.uhp < 100);
 });
 
 test('a carried locked chest must be put down before it can be opened',

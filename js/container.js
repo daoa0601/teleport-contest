@@ -2,6 +2,7 @@
 // C refs: pickup.c use_container(), in_container(), out_container().
 
 import { bot, docrt, flush_screen, pline, plineWithContinuation } from './display.js';
+import { touchArtifactByHero } from './artifact_touch.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
@@ -564,6 +565,17 @@ export async function takeFromContainer(
         return { moved: false, message: null };
     const transfer = splitForTransfer(object, count, state);
     object = transfer.object;
+    if (object.oartifact) {
+        const touch = await touchArtifactByHero(object);
+        if (!touch.allowed || touch.died) {
+            restoreRejectedSplit(transfer, state);
+            return {
+                moved: false,
+                stop: touch.died,
+                message: null,
+            };
+        }
+    }
     if (await touchPetrifyingCorpse(object)) {
         restoreRejectedSplit(transfer, state);
         return { moved: false, stop: true, message: null };
