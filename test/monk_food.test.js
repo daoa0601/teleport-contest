@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
-import { CORPSE, MEATBALL } from '../js/object_data.js';
+import {
+    CORPSE, FOOD_RATION, GLOB_OF_GREEN_SLIME, MEATBALL,
+} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { PM_GREEN_SLIME } from '../js/slime.js';
 import {
-    carriedObject, floorObject,
+    carriedObject, floorObject, knownObject,
 } from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -44,7 +46,7 @@ test('a carried meat corpse applies the live Monk conduct penalty', async () => 
     assert.match(game._pending_message, /finish eating the goblin corpse/);
 });
 
-test('finishing a green slime corpse starts the transformation countdown',
+test('the first bite of green slime starts the transformation countdown',
     async () => {
         freshWeaponArena();
         initRng(45300n);
@@ -57,6 +59,10 @@ test('finishing a green slime corpse starts the transformation countdown',
         pushKey('a');
 
         await rhack('e'.charCodeAt(0));
+        assert.equal(game.u.slimedTurns, 10);
+        assert.equal(game.inventory.includes(corpse), true);
+        assert.match(game._pending_message, /You don't feel very well\.$/);
+
         pushKey(' ');
         pushKey(' ');
         for (let turn = 0; turn < 10 && game._occupation; turn++)
@@ -64,8 +70,68 @@ test('finishing a green slime corpse starts the transformation countdown',
 
         assert.equal(game.u.slimedTurns, 10);
         assert.equal(game.inventory.includes(corpse), false);
-        assert.match(game._pending_message, /You don't feel very well\.$/);
+        assert.match(
+            game._pending_message,
+            /finish eating the green slime corpse/,
+        );
     });
+
+test('a food ration remains in the pack until its last bite', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    game.u.uhunger = 900;
+    const ration = carriedObject(FOOD_RATION, { age: game.moves });
+    game.inventory = [ration];
+    pushKey('a');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(ration), true);
+    assert.equal(game.u.uhunger, 1060);
+    assert.equal(game._occupation?.key, 'eat-food');
+
+    for (let bite = 1; bite < 5; bite++)
+        await continueCountedCommand(game);
+
+    assert.equal(game.inventory.includes(ration), true);
+    assert.equal(game.u.uhunger, 1700);
+
+    pushKey(' ');
+    await continueCountedCommand(game);
+
+    assert.equal(game.inventory.includes(ration), false);
+    assert.equal(game._occupation, null);
+    assert.match(game._pending_message, /finish eating the food ration/);
+});
+
+test('a green slime glob is a multi-turn slime meal', async () => {
+    freshWeaponArena();
+    initRng(45300n);
+    const glob = knownObject(GLOB_OF_GREEN_SLIME, {
+        invlet: 'a',
+        where: 'inventory',
+        age: game.moves,
+    });
+    game.inventory = [glob];
+    pushKey('a');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.u.slimedTurns, 10);
+    assert.equal(game.inventory.includes(glob), true);
+    assert.equal(game._occupation?.key, 'eat-food');
+
+    pushKey(' ');
+    for (let turn = 0; turn < 3; turn++)
+        await continueCountedCommand(game);
+
+    assert.equal(game.inventory.includes(glob), false);
+    assert.equal(game._occupation, null);
+    assert.match(
+        game._pending_message,
+        /finish eating the glob of green slime/,
+    );
+});
 
 test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     async () => {

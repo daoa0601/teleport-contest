@@ -177,7 +177,7 @@ test('a reviving corpse stops being the hero\'s meal', async () => {
     const corpse = place_object(trollCorpse(), 12, 10);
     corpse.oeaten = 30;
     game._occupation = {
-        key: 'eat-corpse',
+        key: 'eat-food',
         object: corpse,
         remaining: 3,
     };

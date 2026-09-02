@@ -413,10 +413,12 @@ function containerBlocksRevival(location) {
 
 function stopCorpseMeal(corpse, state) {
     const occupation = state._occupation;
-    if (occupation?.key !== 'eat-corpse' || occupation.object !== corpse)
+    if (occupation?.key !== 'eat-food' || occupation.object !== corpse)
         return;
     if (!corpse.oeaten) corpse.oeaten = 1;
     state._occupation = null;
+    if (state.context?.victual?.piece === corpse)
+        state.context.victual = null;
 }
 
 async function reviveCorpse(

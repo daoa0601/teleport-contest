@@ -15,15 +15,16 @@ import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, FORTUNE_COOKIE, LEMBAS_WAFER,
-    OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION,
+    CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, FOOD_RATION, FORTUNE_COOKIE,
+    LEMBAS_WAFER, OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_NUTRITION,
 } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
 import { PM_GREEN_SLIME, startHeroSliming } from './slime.js';
-import { exceedsActionCapacity } from './weight.js';
+import { exceedsActionCapacity, objectWeight } from './weight.js';
 
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
@@ -86,9 +87,8 @@ function heroDietFlags() {
     return M1_OMNIVORE;
 }
 
-// C hack.c:rounddiv() for the positive values used by doeat().  Corpse eating
-// delay is rounded after touchfood()/consume_oeaten() has established how much
-// nutrition remains, rather than being fixed from the original corpse weight.
+// C hack.c:rounddiv() for the positive values used by doeat().  A partly eaten
+// item takes only the fraction of its original eating time that remains.
 function roundDivPositive(value, divisor) {
     if (divisor <= 0) return 0;
     const quotient = Math.trunc(value / divisor);
@@ -96,15 +96,15 @@ function roundDivPositive(value, divisor) {
     return quotient + Number(2 * remainder >= divisor);
 }
 
-function corpseMealTiming(corpse, baseReqtime, baseNutrition) {
-    const remainingNutrition = corpse.oeaten ?? 0;
+function mealTiming(food, baseReqtime, baseNutrition) {
+    const remainingNutrition = food.oeaten ?? 0;
     const reqtime = baseNutrition === 0 ? 0
         : roundDivPositive(baseReqtime * remainingNutrition, baseNutrition);
-    const nutritionNmod = !reqtime || !remainingNutrition ? 0
-        : remainingNutrition >= reqtime
-            ? -Math.trunc(remainingNutrition / reqtime)
-            : reqtime % remainingNutrition;
-    return { reqtime, nutritionNmod, remainingNutrition };
+    const nutritionPerBite = reqtime && remainingNutrition >= reqtime
+        ? Math.trunc(remainingNutrition / reqtime) : 0;
+    const nutritionSkipInterval = reqtime && remainingNutrition < reqtime
+        ? reqtime % remainingNutrition : 0;
+    return { reqtime, nutritionPerBite, nutritionSkipInterval };
 }
 
 // C eat.c:rottenfood().  The three tests are deliberately separate and in
@@ -179,8 +179,11 @@ function touchFood(item, floorPile = null) {
             game.inventory.push(touched);
         }
     }
-    if (!touched.oeaten)
-        touched.oeaten = OBJECT_NUTRITION[touched.otyp] || 0;
+    if (!touched.oeaten) {
+        touched.oeaten = touched.globby
+            ? touched.owt ?? 0
+            : OBJECT_NUTRITION[touched.otyp] || 0;
+    }
     return touched;
 }
 
@@ -245,6 +248,7 @@ function ordinaryFoodIsRotten(item) {
 
 function normalCorpseMeal(corpse, corpseName) {
     const mnum = corpse.corpsenm;
+    const glob = !!corpse.globby;
     const neverRots = nonrottingCorpse(mnum);
     let rotted = 0;
     if (!neverRots) {
@@ -255,7 +259,10 @@ function normalCorpseMeal(corpse, corpseName) {
         else if (corpse.blessed) rotted -= 2;
     }
 
-    const [weight = 0, nutrition = 0] = MONSTER_BODY_META[mnum] ?? [];
+    const [speciesWeight = 0, speciesNutrition = 0]
+        = MONSTER_BODY_META[mnum] ?? [];
+    const weight = glob ? corpse.owt ?? 0 : speciesWeight;
+    const nutrition = glob ? corpse.owt ?? 0 : speciesNutrition;
     const baseReqtime = 3 + (weight >> 6);
     // doeat() calls touchfood() before eatcorpse().  oeaten is persistent
     // object state so interrupted and rotten meals resume from the right
@@ -269,7 +276,7 @@ function normalCorpseMeal(corpse, corpseName) {
     if ((MONSTER_FLAGS1[mnum] & M1_POIS) && rn2(5) !== 0) {
         const poisonResistance = !!game.u?.poisonResistance;
         return {
-            ...corpseMealTiming(corpse, baseReqtime, nutrition),
+            ...mealTiming(corpse, baseReqtime, nutrition),
             object: corpse,
             tasteMessage: poisonResistance
                 ? 'Ecch - that must have been poisonous!  You seem unaffected by the poison.'
@@ -277,7 +284,6 @@ function normalCorpseMeal(corpse, corpseName) {
             poisonStrengthLoss: poisonResistance ? 0 : rnd(4),
             poisonDamage: poisonResistance ? 0 : rnd(15),
             poisonBranch: true,
-            rottenBranch: false,
         };
     }
 
@@ -287,11 +293,10 @@ function normalCorpseMeal(corpse, corpseName) {
     const sickResistance = !!game.u?.sickResistance;
     if ((rotted > 5 || (rotted > 3 && rn2(5) !== 0)) && !sickResistance) {
         return {
-            ...corpseMealTiming(corpse, baseReqtime, nutrition),
+            ...mealTiming(corpse, baseReqtime, nutrition),
             object: corpse,
             tasteMessage: game.u?.sick ? 'You feel very sick.' : 'You feel sick.',
             illnessDamage: rnd(8),
-            rottenBranch: false,
         };
     }
 
@@ -303,12 +308,11 @@ function normalCorpseMeal(corpse, corpseName) {
         if (!effect.passedOut && nutrition > 0)
             corpse.oeaten >>= 2;
         return {
-            ...corpseMealTiming(corpse, baseReqtime, nutrition),
+            ...mealTiming(corpse, baseReqtime, nutrition),
             object: corpse,
             tasteMessage: effect.message,
-            rottenBranch: true,
             passedOut: effect.passedOut,
-            rotsAway: nutrition === 0,
+            rotsAway: speciesNutrition === 0,
         };
     }
 
@@ -336,10 +340,9 @@ function normalCorpseMeal(corpse, corpseName) {
         : palatable ? flavor.slice(1) : 'terrible';
     const punctuation = yummy || !palatable ? '!' : '.';
     return {
-        ...corpseMealTiming(corpse, baseReqtime, nutrition),
+        ...mealTiming(corpse, baseReqtime, nutrition),
         object: corpse,
         tasteMessage: `This ${corpseName} ${useIs ? 'is' : 'tastes'} ${adjective}${punctuation}`,
-        rottenBranch: false,
     };
 }
 
@@ -375,23 +378,28 @@ function applyCorpsePoisonDamage(meal) {
     }
 }
 
-function applyCorpseNutrition(g, meal, usedtime) {
-    const nmod = meal.nutritionNmod ?? 0;
-    const amount = nmod < 0 ? -nmod
-        : nmod > 0 && (usedtime % nmod) !== 0 ? 1 : 0;
+function applyMealNutrition(g, meal, usedtime) {
+    const perBite = meal.nutritionPerBite ?? 0;
+    const skipInterval = meal.nutritionSkipInterval ?? 0;
+    const amount = perBite || (skipInterval > 0
+        && usedtime % skipInterval !== 0 ? 1 : 0);
     if (amount > 0)
         g.u.uhunger = (g.u.uhunger ?? 900) + amount;
-    if (amount > 0 && meal.object && Number.isInteger(meal.object.oeaten))
-        meal.object.oeaten = Math.max(0, meal.object.oeaten - amount);
+    if (amount > 0 && meal.object && Number.isInteger(meal.object.oeaten)) {
+        meal.object.oeaten = Math.max(1, meal.object.oeaten - amount);
+        meal.object.owt = objectWeight(meal.object);
+    }
+}
+
+function applyCorpsePreEffects(g, food) {
+    if (food?.corpsenm !== PM_GREEN_SLIME) return null;
+    return startHeroSliming({ state: g })
+        ? "You don't feel very well." : null;
 }
 
 // C eat.c:cpostfx()/eye_of_newt_buzz().  Corpse post-effects happen after
 // the finish message and before the consumed floor identity is released.
 function applyCorpsePostEffects(g, corpse) {
-    if (corpse?.corpsenm === PM_GREEN_SLIME) {
-        return startHeroSliming({ state: g })
-            ? "You don't feel very well." : null;
-    }
     if (corpse?.corpsenm !== 322) return null; // PM_NEWT
     const u = g.u;
     if (rn2(3) !== 0 || 3 * (u.uen ?? 0) <= 2 * (u.uenmax ?? 0)) {
@@ -409,12 +417,15 @@ function applyCorpsePostEffects(g, corpse) {
     return null;
 }
 
-async function finishCorpseMeal(g, meal, showFinishMessage) {
+async function finishFoodMeal(g, meal, showFinishMessage) {
+    if (g.context?.victual?.piece === meal.object)
+        g.context.victual = null;
     if (showFinishMessage && meal.finishMessage) {
         // done_eating(TRUE) prints this after the initial taste or hazard.
         await plineWithContinuation(meal.finishMessage);
     }
-    const postEffectMessage = applyCorpsePostEffects(g, meal.object);
+    const postEffectMessage = meal.corpseLike
+        ? applyCorpsePostEffects(g, meal.object) : null;
     if (postEffectMessage)
         await plineWithContinuation(postEffectMessage);
     if (meal.carried) {
@@ -429,24 +440,44 @@ async function finishCorpseMeal(g, meal, showFinishMessage) {
     }
 }
 
-export async function continueCorpseMeal(occupation, state = game) {
+export async function continueFoodMeal(occupation, state = game) {
     occupation.remaining--;
     occupation.usedtime = (occupation.usedtime ?? 1) + 1;
     if (occupation.remaining > 0)
-        applyCorpseNutrition(state, occupation, occupation.usedtime);
+        applyMealNutrition(state, occupation, occupation.usedtime);
     if (occupation.remaining <= 0) {
-        await finishCorpseMeal(state, occupation, true);
+        await finishFoodMeal(state, occupation, true);
         state._occupation = null;
     }
     state.context.move = 1;
     return true;
 }
 
+async function startFoodMeal(meal, messages) {
+    game._pending_message = messages.filter(Boolean).join('  ');
+    applyMealNutrition(game, meal, 0);
+    const occupation = {
+        key: 'eat-food',
+        ...meal,
+        remaining: meal.reqtime,
+        usedtime: 1,
+    };
+    game.context.victual = { piece: meal.object };
+    if (meal.reqtime <= 1) {
+        await finishFoodMeal(game, occupation, false);
+        game._occupation = null;
+    } else {
+        game._occupation = occupation;
+    }
+    game.context.move = 1;
+}
+
 async function beginCorpseMeal(corpse, floorPile = null) {
     const x = floorPile ? (corpse.ox ?? game.u?.ux) : game.u?.ux;
     const y = floorPile ? (corpse.oy ?? game.u?.uy) : game.u?.uy;
-    const corpseName = corpse.name
-        || `${MONSTER_NAME[corpse.corpsenm] || 'monster'} corpse`;
+    const corpseName = corpse.name || (corpse.globby
+        ? OBJECT_NAMES[corpse.otyp]
+        : `${MONSTER_NAME[corpse.corpsenm] || 'monster'} corpse`);
     const conductMessage = recordFoodConduct(corpse, corpse.corpsenm);
     const meal = normalCorpseMeal(corpse, corpseName);
     if (meal.poisonBranch) applyCorpsePoisonDamage(meal);
@@ -454,39 +485,78 @@ async function beginCorpseMeal(corpse, floorPile = null) {
         game.u.uhp = Math.max(0,
             (game.u.uhp ?? 1) - meal.illnessDamage);
     }
-    game._pending_message = [conductMessage, meal.tasteMessage]
-        .filter(Boolean).join('  ');
     if (meal.rotsAway) {
+        game._pending_message = [conductMessage, meal.tasteMessage]
+            .filter(Boolean).join('  ');
         consumeTouchedFood(corpse, floorPile);
         game.context.move = 1;
         return;
     }
     if (meal.passedOut) {
+        game._pending_message = [conductMessage, meal.tasteMessage]
+            .filter(Boolean).join('  ');
         game.context.move = 1;
         return;
     }
-    applyCorpseNutrition(game, meal, 0);
-    const corpseOccupation = {
-        key: 'eat-corpse',
+    const preEffectMessage = applyCorpsePreEffects(game, corpse);
+    await startFoodMeal({
+        ...meal,
         object: corpse,
         x,
         y,
         carried: !floorPile,
-        // start_eating() takes the first bite now.  eatfood() remains busy
-        // through usedtime == reqtime and finishes on the next callback.
-        remaining: meal.reqtime,
-        usedtime: 1,
-        nutritionNmod: meal.nutritionNmod,
+        corpseLike: true,
         finishMessage: `You finish eating the ${corpseName}.`,
-        rottenBranch: meal.rottenBranch,
-    };
-    if (meal.reqtime <= 1) {
-        await finishCorpseMeal(game, corpseOccupation, false);
-        game._occupation = null;
-    } else {
-        game._occupation = corpseOccupation;
+    }, [conductMessage, meal.tasteMessage, preEffectMessage]);
+}
+
+function ordinaryFoodName(item) {
+    return item.name || OBJECT_NAMES[item.otyp] || 'food';
+}
+
+function ordinaryFirstBiteMessage(item) {
+    const name = ordinaryFoodName(item);
+    if (item.otyp === FOOD_RATION) {
+        if ((game.u?.uhunger ?? 900) <= 200)
+            return 'This food really hits the spot!';
+        if ((game.u?.uhunger ?? 900) < 700)
+            return 'This satiates your stomach!';
+        return null;
     }
-    game.context.move = 1;
+    if (item.otyp === CRAM_RATION)
+        return `This ${name} is ${item.cursed ? 'terrible!' : 'bland.'}`;
+    return `This ${name} is ${item.cursed ? 'terrible!' : 'delicious!'}`;
+}
+
+async function beginOrdinaryFoodMeal(item, floorPile, conductMessage) {
+    const baseNutrition = OBJECT_NUTRITION[item.otyp] || 0;
+    let firstBiteMessage;
+    if (ordinaryFoodIsRotten(item)) {
+        const effect = rottenFoodEffect();
+        item.oeaten = Math.max(1, (item.oeaten || 0) >> 1);
+        if (effect.passedOut) {
+            item.orotten = true;
+            game._pending_message = [conductMessage, effect.message]
+                .filter(Boolean).join('  ');
+            game.context.move = 1;
+            return;
+        }
+        firstBiteMessage = effect.message;
+    } else {
+        if (item.otyp === CLOVE_OF_GARLIC) garlicBreath();
+        firstBiteMessage = ordinaryFirstBiteMessage(item);
+    }
+
+    const name = ordinaryFoodName(item);
+    await startFoodMeal({
+        ...mealTiming(item, OBJECT_DELAY[item.otyp] || 0, baseNutrition),
+        object: item,
+        x: floorPile ? (item.ox ?? game.u?.ux) : game.u?.ux,
+        y: floorPile ? (item.oy ?? game.u?.uy) : game.u?.uy,
+        carried: !floorPile,
+        corpseLike: false,
+        finishMessage: `You finish eating the ${name}.`,
+    }, [conductMessage, firstBiteMessage]);
 }
 
 // C refs: mondata.c:olfaction(), eat.c:garlic_breath(), and
@@ -657,7 +727,8 @@ export async function doeat() {
 
     // doeat() breaks food conduct as soon as a committed meal begins, before
     // touchfood(), freshness, and first-bite effects.
-    const conductMessage = item.otyp === CORPSE
+    const corpseLike = item.otyp === CORPSE || item.globby;
+    const conductMessage = corpseLike
         ? null : recordFoodConduct(item);
 
     // touchfood() precedes both the freshness gate and every first-bite
@@ -665,7 +736,7 @@ export async function doeat() {
     // their starting stacks before doeat() rolls rn2(7).
     item = touchFood(item, itemFloorPile);
 
-    if (item.otyp === CORPSE) {
+    if (corpseLike) {
         await beginCorpseMeal(item, itemFloorPile);
         return;
     }
@@ -681,45 +752,5 @@ export async function doeat() {
         return;
     }
 
-    const rotten = ordinaryFoodIsRotten(item);
-    if (rotten) {
-        const effect = rottenFoodEffect();
-        item.oeaten = Math.max(1, (item.oeaten || 0) >> 1);
-        if (effect.passedOut) {
-            item.orotten = true;
-            await pline([conductMessage, effect.message]
-                .filter(Boolean).join('  '));
-            game.context.move = 1;
-            return;
-        }
-
-        // A non-fainting rotten result still takes the first bite.  One-turn
-        // food is consumed immediately, but only its halved nutrition remains.
-        if ((OBJECT_DELAY[item.otyp] || 0) === 1) {
-            game.u.uhunger = (game.u.uhunger ?? 900) + item.oeaten;
-            consumeTouchedFood(item, itemFloorPile);
-        }
-        await pline([conductMessage, effect.message]
-            .filter(Boolean).join('  '));
-        game.context.move = 1;
-        return;
-    }
-
-    // eat.c:fprefx() applies garlic_breath() on the first bite, before the
-    // command returns ECMD_TIME and moveloop_core scans retained actors.
-    if (item.otyp === CLOVE_OF_GARLIC)
-        garlicBreath();
-
-    // A one-turn food takes its sole bite immediately.  OBJECT_NUTRITION is
-    // generated from objects[].oc_nutrition, so garlic and other instant
-    // foods use the same nutrition table without name-specific values.
-    if ((OBJECT_DELAY[item.otyp] || 0) === 1) {
-        game.u.uhunger = (game.u.uhunger ?? 900)
-            + (OBJECT_NUTRITION[item.otyp] || 0);
-    }
-
-    consumeTouchedFood(item, itemFloorPile);
-    await pline([conductMessage, `This ${item.name} is delicious!`]
-        .filter(Boolean).join('  '));
-    game.context.move = 1;
+    await beginOrdinaryFoodMeal(item, itemFloorPile, conductMessage);
 }

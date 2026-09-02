@@ -55,7 +55,7 @@ import {
 import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
-import { continueCorpseMeal, doeat } from './eat.js';
+import { continueFoodMeal, doeat } from './eat.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
@@ -914,8 +914,8 @@ export async function continueCountedCommand(g = game) {
         g.context.move = 1;
         return true;
     }
-    if (occupation.key === 'eat-corpse') {
-        return continueCorpseMeal(occupation, g);
+    if (occupation.key === 'eat-food') {
+        return continueFoodMeal(occupation, g);
     }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);
