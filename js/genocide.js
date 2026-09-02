@@ -26,8 +26,6 @@ const G_GENO = 0x0020;
 const G_UNIQ = 0x1000;
 const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
-const RACE_MONSTER_NAMES = ['human', 'elf', 'dwarf', 'gnome', 'orc'];
-
 function heroRoleMonster() {
     if (Number.isInteger(game.u?.umonster)) return game.u.umonster;
     return nameToMonster(game.urole?.key || game.urole?.name || '');
@@ -35,10 +33,8 @@ function heroRoleMonster() {
 
 function heroRaceMonster() {
     const raceNumber = game.urace?.mnum;
-    const raceName = Number.isInteger(raceNumber)
-        ? RACE_MONSTER_NAMES[raceNumber]
-        : game.urace?.noun || game.urace?.name || 'human';
-    return nameToMonster(raceName);
+    if (Number.isInteger(raceNumber)) return raceNumber;
+    return nameToMonster(game.urace?.noun || game.urace?.name || 'human');
 }
 
 function heroOwnSpecies(mnum) {

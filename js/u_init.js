@@ -889,7 +889,7 @@ export function inventoryItem(raw, presentation = null) {
         };
     }
     if (SHORT_SWORD_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        const orcish = game.urace?.mnum === 4;
+        const orcish = game.urace?.raceIndex === 4;
         view = raw.otyp === SHORT_SWORD ? {
             ...view,
             name: orcish ? 'orcish short sword' : 'short sword',
@@ -898,7 +898,7 @@ export function inventoryItem(raw, presentation = null) {
         } : { ...view, omitUncursed: true };
     }
     if (DAGGER_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        view = raw.otyp === DAGGER && game.urace?.mnum === 4
+        view = raw.otyp === DAGGER && game.urace?.raceIndex === 4
             ? {
                 ...view, name: 'orcish dagger', plural: 'orcish daggers',
                 omitUncursed: true,
@@ -1164,7 +1164,7 @@ function iniInv(table) {
         }
 
         const substituted = INITIAL_RACE_SUBSTITUTIONS
-            .get(game.urace?.mnum)?.get(raw.otyp);
+            .get(game.urace?.raceIndex)?.get(raw.otyp);
         if (substituted !== undefined) {
             raw.otyp = substituted;
             raw.owt = OBJECT_WEIGHT[substituted] ?? raw.owt;
@@ -1307,7 +1307,7 @@ const WISHING_INVENTORY = [
 ];
 
 function uInitRaceInventoryAndKnowledge(role) {
-    const race = game.urace?.mnum;
+    const race = game.urace?.raceIndex;
     let preknown = [];
     if (race === 1) {
         // u_init.c:u_init_race().  Non-warrior elves receive exactly one
@@ -1555,7 +1555,7 @@ export function uInitInventoryAttrs() {
         { class: 'Armor', name: 'pair of iron shoes', appearance: 'hard shoes', preknown: true },
         { class: 'Armor', name: 'pair of high boots', appearance: 'jackboots', preknown: true },
         { class: 'Scrolls', name: 'scroll of punishment', appearance: 'ELAM EBOW' },
-    ] : role === 'rogue' && game.urace?.mnum === 4 ? [
+    ] : role === 'rogue' && game.urace?.raceIndex === 4 ? [
         { class: 'Weapons', name: 'elven dagger', appearance: 'runed dagger', preknown: true },
         { class: 'Weapons', name: 'orcish dagger', appearance: 'crude dagger' },
         { class: 'Weapons', name: 'orcish short sword', appearance: 'crude short sword' },
