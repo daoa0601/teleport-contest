@@ -6,12 +6,12 @@ import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
-import { heroHeadName } from './body_parts.js';
+import { heroArmName, heroHeadName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
     HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP,
-    ROLLING_BOULDER_TRAP, SLP_GAS_TRAP,
+    ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
@@ -28,15 +28,16 @@ import {
 } from './hero_invisibility.js';
 import { distmin } from './hacklib.js';
 import {
-    canFallThrough, place_object, remove_object, stack_object,
+    canFallThrough, place_object, remove_object, splitHeroMonsterForm,
+    stack_object,
 } from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {
     MONSTER_FLAGS1, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';
 import {
-    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES,
-    OBJECT_SMALL_DAMAGE, ROCK,
+    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, ROCK,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectEncounter } from './object_knowledge.js';
@@ -75,6 +76,9 @@ import {
     monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
     putMonsterToSleep,
 } from './monster_sleep.js';
+import { splashLitObject, waterDamageObject } from './trap.js';
+import { heroIsPolymorphed, rehumanizeHero } from './polyself.js';
+import { finishHeroDeath } from './end.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -82,6 +86,8 @@ const M1_BREATHLESS = 0x00000400;
 const M1_UNSOLID = 0x00100000;
 const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
+const PM_GREMLIN = 40;
+const PM_IRON_GOLEM = 259;
 const PM_PIT_FIEND = 300;
 const IRON = 11;
 const MZ_HUGE = 4;
@@ -917,6 +923,117 @@ async function triggerBearTrap(trap, { failedUntrap = false } = {}) {
     exerciseAttribute(A_DEX, false);
 }
 
+function heroObject(slot) {
+    return game[slot] || game.u?.[slot] || null;
+}
+
+function rustTargetName(object, fallback) {
+    return object?.name || OBJECT_NAMES[object?.otyp] || fallback;
+}
+
+async function wetHeroObject(object, description) {
+    const messages = [];
+    const result = await waterDamageObject(object, messages, game, {
+        force: true,
+        description,
+    });
+    for (const message of messages) await plineWithContinuation(message);
+    return result;
+}
+
+async function rustIronGolemHero() {
+    const hero = game.u;
+    await plineWithContinuation('You are covered with rust!');
+    const damage = physicalDamage(hero.mhmax ?? hero.mh ?? 1);
+    hero.mh = (hero.mh ?? 1) - damage;
+    if (hero.mh > 0) return;
+    if (!(hero.unchanging || game.unchanging)) {
+        const restored = rehumanizeHero(game);
+        if (restored.changed) {
+            await plineWithContinuation(
+                `You return to ${restored.race} form!`,
+            );
+        }
+        return;
+    }
+    await finishHeroDeath({ killer: 'rusting away' });
+}
+
+async function triggerRustTrap(trap) {
+    const hero = game.u;
+    trap.tseen = true;
+    const target = rn2(5);
+
+    if (target === 0) {
+        await plineWithContinuation(
+            `A gush of water hits you on the ${heroHeadName(game)}!`,
+        );
+        const helmet = heroObject('uarmh');
+        await wetHeroObject(
+            helmet, rustTargetName(helmet, 'helmet'),
+        );
+    } else if (target === 1) {
+        await plineWithContinuation(
+            `A gush of water hits your left ${heroArmName(game)}!`,
+        );
+        const shield = heroObject('uarms');
+        const shieldResult = await wetHeroObject(shield, 'shield');
+        if (shieldResult === 'nothing') {
+            const primary = heroObject('uwep');
+            const secondary = heroObject('uswapwep');
+            let weapon = null;
+            if (hero.twoweap) weapon = secondary;
+            else if (primary && OBJECT_BIMANUAL[primary.otyp])
+                weapon = primary;
+            await wetHeroObject(
+                weapon, rustTargetName(weapon, 'weapon'),
+            );
+            const gloves = heroObject('uarmg');
+            await wetHeroObject(
+                gloves, rustTargetName(gloves, 'gloves'),
+            );
+        }
+    } else if (target === 2) {
+        await plineWithContinuation(
+            `A gush of water hits your right ${heroArmName(game)}!`,
+        );
+        const weapon = heroObject('uwep');
+        await wetHeroObject(
+            weapon, rustTargetName(weapon, 'weapon'),
+        );
+        const gloves = heroObject('uarmg');
+        await wetHeroObject(
+            gloves, rustTargetName(gloves, 'gloves'),
+        );
+    } else {
+        await plineWithContinuation('A gush of water hits you!');
+        for (const object of game.inventory || []) {
+            if (!object.lamplit || object === heroObject('uwep')) continue;
+            if (hero.twoweap && object === heroObject('uswapwep')) continue;
+            const messages = [];
+            splashLitObject(object, messages, game);
+            for (const message of messages)
+                await plineWithContinuation(message);
+        }
+        const cloak = heroObject('uarmc');
+        const suit = heroObject('uarm');
+        const shirt = heroObject('uarmu');
+        const torso = cloak || suit || shirt;
+        const fallback = cloak ? 'cloak' : shirt ? 'shirt' : 'armor';
+        await wetHeroObject(
+            torso, rustTargetName(torso, fallback),
+        );
+    }
+
+    if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {
+        await rustIronGolemHero();
+    } else if (heroIsPolymorphed(game) && hero.umonnum === PM_GREMLIN
+        && rn2(3) !== 0) {
+        const clone = await splitHeroMonsterForm(game);
+        if (clone) await plineWithContinuation('You multiply!');
+    }
+}
+
 export async function prepareHoleFall(trap) {
     if (!trap || (trap.ttyp !== HOLE && trap.ttyp !== TRAPDOOR)) return null;
     if (!canFallThrough(game.u?.uz)) {
@@ -992,6 +1109,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case SLP_GAS_TRAP:
         await triggerSleepingGasTrap(trap);
+        break;
+    case RUST_TRAP:
+        await triggerRustTrap(trap);
         break;
     case BEAR_TRAP:
         await triggerBearTrap(trap, { failedUntrap });

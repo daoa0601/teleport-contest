@@ -4,15 +4,19 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import {
     ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM, SLP_GAS_TRAP,
-    SQKY_BOARD,
+    RUST_TRAP, SQKY_BOARD, W_ARMH,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
-import { ARROW, HEAVY_IRON_BALL, ROCK, STATUE } from '../js/object_data.js';
+import {
+    ARROW, HEAVY_IRON_BALL, ORCISH_HELM, ROCK, STATUE,
+} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
+import { inventoryObject } from './support/game-objects.js';
+import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { addMonster, addPet } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
@@ -171,6 +175,21 @@ test('sleeping gas stops a susceptible hero', async () => {
     assert.equal(trap.tseen, true);
     assert.ok(game._helplessTurns >= 1 && game._helplessTurns <= 25);
     assert.equal(game._helplessReason, 'sleeping');
+});
+
+test('a rust trap can rust the helmet worn by the hero', async () => {
+    const level = freshWeaponArena();
+    const helmet = inventoryObject(ORCISH_HELM, 'a', { oeroded: 0 });
+    game.inventory = [helmet];
+    wearHeroObject(helmet, 'uarmh', W_ARMH);
+    const trap = addTrap(level, RUST_TRAP, 11, 10, { tseen: false });
+    initRng(1n);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(trap.tseen, true);
+    assert.equal(helmet.oeroded, 1);
 });
 
 test('stepping on a statue trap releases its monster', async () => {

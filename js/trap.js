@@ -3,13 +3,15 @@
 // water_damage(), and erode_obj().
 
 import {
-    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP,
-    W_WEP,
+    IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
+    W_ARMS, W_ARMU, W_SWAPWEP, W_WEP,
 } from './const.js';
-import { findArmorClass } from './armor.js';
+import { findArmorClass, heroHasWaterWalking } from './armor.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsFlying } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import {
@@ -199,27 +201,125 @@ function explodingPotionMessage(object, state) {
         : `Some ${noun}s explode!`;
 }
 
+function waterObjectName(object, description = null) {
+    if (description) return description;
+    if (object.name) return object.name;
+    const name = OBJECT_NAMES[object.otyp] || 'object';
+    if (object.oclass === 8) return `potion of ${name}`;
+    if (object.oclass === 9) return `scroll of ${name}`;
+    if (object.oclass === 10) return `spellbook of ${name}`;
+    return name;
+}
+
+function waterObjectIsPlural(object, description = null) {
+    const name = waterObjectName(object, description);
+    return (object.quan ?? object.quantity ?? 1) !== 1
+        || /(?:boots|shoes|gloves|gauntlets|lenses|scales)$/u.test(name);
+}
+
+function carriedByHero(object, state) {
+    return (state.inventory || []).includes(object);
+}
+
+function heroLanternIsDunked(state) {
+    const location = state.level?.at?.(state.u?.ux, state.u?.uy);
+    if (!location || !IS_POOL(location.typ)) return false;
+    return state.level?.flags?.is_waterlevel || Is_waterlevel(state.u?.uz)
+        || !(state.u?.levitating || state.levitating
+            || heroIsFlying(state) || heroHasWaterWalking(state));
+}
+
+export function splashLitObject(object, messages = [], state = game) {
+    if (!object?.lamplit) return false;
+    const carried = carriedByHero(object, state);
+    let dunkedLantern = false;
+    if (object.otyp === BRASS_LANTERN && carried) {
+        const visible = !heroIsBlind(state);
+        const audible = !heroIsDeaf(state);
+        if (visible || audible) {
+            const action = audible && visible
+                ? 'crackles and flickers'
+                : audible ? 'crackles' : 'flickers';
+            messages.push(`Your ${waterObjectName(object)} ${action}.`);
+        }
+        dunkedLantern = heroLanternIsDunked(state);
+        if (!dunkedLantern) return false;
+    }
+
+    if (!endObjectBurn(object, state, state.moves ?? 0))
+        object.lamplit = false;
+    if (carried && !heroIsBlind(state)) {
+        const plural = waterObjectIsPlural(object);
+        messages.push(
+            `Your ${waterObjectName(object)} ${plural ? 'go' : 'goes'} out!`,
+        );
+    }
+    if (dunkedLantern) {
+        const age = object.age ?? 0;
+        object.age = age - (age > 200 ? 100 : Math.trunc(age / 2));
+    }
+    return true;
+}
+
+function rustMetalObject(object, description, luckRoll) {
+    if (!object || (OBJECT_MATERIAL[object.otyp] ?? 0) !== 11)
+        return { outcome: 'nothing' };
+
+    const proof = !!(object.oerodeproof || object.rustproof);
+    if (proof && object.rknown) return { outcome: 'nothing' };
+    if (proof) {
+        object.rknown = true;
+        return {
+            outcome: 'nothing', kind: 'rustproof', object, description,
+        };
+    }
+    if (object.blessed && luckRoll(4) === 0)
+        return { outcome: 'nothing' };
+
+    const oldErosion = object.oeroded ?? 0;
+    if (oldErosion >= 3) return { outcome: 'nothing' };
+    object.oeroded = oldErosion + 1;
+    return {
+        outcome: 'damaged', kind: 'rusted', object, description,
+        erosion: object.oeroded,
+    };
+}
+
 export async function waterDamageObject(
     object,
     messages = [],
     state = game,
+    {
+        force = false,
+        description = null,
+        random = rn2,
+        luckRoll = rnl,
+    } = {},
 ) {
-    if (!object) return false;
+    if (!object) return 'nothing';
+    if (splashLitObject(object, messages, state)) return 'damaged';
     const spe = object.spe ?? 0;
-    if (object.otyp === CAN_OF_GREASE && spe > 0) return false;
+    if (object.otyp === CAN_OF_GREASE && spe > 0) return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
-        object.spe = spe + rnd(7 - spe);
-        return false;
+        object.spe = spe + 1 + random(7 - spe);
+        return 'nothing';
     }
     if (object.greased) {
-        if (rn2(2) === 0) {
+        if (random(2) === 0) {
             object.greased = false;
+            if (carriedByHero(object, state)) {
+                messages.push(
+                    `The grease on your ${
+                        waterObjectName(object, description)
+                    } washes off.`,
+                );
+            }
             if (object.otyp === POT_ACID) {
                 messages.push(explodingPotionMessage(object, state));
-                return true;
+                return 'destroyed';
             }
         }
-        return false;
+        return 'greased';
     }
 
     const isContainer = object.otyp >= LARGE_BOX
@@ -229,63 +329,108 @@ export async function waterDamageObject(
             || object.otyp === ICE_BOX
             || object.otyp === LARGE_BOX
             || object.otyp === CHEST;
-        const leaks = !waterproof || (object.cursed && rn2(3) === 0);
-        if (leaks)
+        const leaks = !waterproof || (object.cursed && random(3) === 0);
+        if (leaks) {
+            if (carriedByHero(object, state)) {
+                messages.push(
+                    `Some water gets into your ${
+                        waterObjectName(object, description)
+                    }!`,
+                );
+            }
             await waterDamageChain(objectContents(object), messages, state);
-        return false;
+            return 'damaged';
+        }
+        if (carriedByHero(object, state)
+            && !heroIsBlind(state) && !state.underwater) {
+            messages.push(
+                `The water cannot get into your ${
+                    waterObjectName(object, description)
+                }.`,
+            );
+        }
+        return 'damaged';
     }
 
-    if (((state.u?.uluck ?? 0) + 5) > rn2(20)) return false;
+    if (!force && ((state.u?.uluck ?? 0) + 5) > random(20))
+        return 'nothing';
+
+    const name = waterObjectName(object, description);
+    const plural = waterObjectIsPlural(object, description);
+    const carried = carriedByHero(object, state);
 
     if (object.oclass === 9) {
         if (object.otyp !== SCR_BLANK_PAPER) {
+            if (carried)
+                messages.push(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
             object.otyp = SCR_BLANK_PAPER;
             object.dknown = false;
             object.spe = 0;
+            return 'damaged';
         }
-        return false;
+        return 'nothing';
     }
     if (object.oclass === 10) {
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             if (cansee(object.ox, object.oy))
                 messages.push('Steam rises from the Book of the Dead.');
-            return false;
+            return 'nothing';
         }
         if (object.otyp !== SPE_BLANK_PAPER) {
+            if (carried)
+                messages.push(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
             if (object.spestudied)
-                object.spestudied = rn2(object.spestudied);
+                object.spestudied = random(object.spestudied);
             object.otyp = SPE_BLANK_PAPER;
             object.dknown = false;
+            return 'damaged';
         }
-        return false;
+        return 'nothing';
     }
     if (object.oclass === 8) {
         if (object.otyp === POT_ACID) {
             messages.push(explodingPotionMessage(object, state));
-            return true;
+            return 'destroyed';
         }
         if (object.odiluted) {
+            if (carried) {
+                messages.push(
+                    `Your ${name} ${plural ? 'dilute' : 'dilutes'} further.`,
+                );
+            }
             object.otyp = POT_WATER;
             object.dknown = false;
             object.blessed = false;
             object.cursed = false;
             object.odiluted = 0;
+            return 'damaged';
         } else if (object.otyp !== POT_WATER) {
+            if (carried)
+                messages.push(`Your ${name} ${plural ? 'dilute' : 'dilutes'}.`);
             object.odiluted = 1;
+            return 'damaged';
         }
-        return false;
+        return 'nothing';
     }
 
-    if (OBJECT_MATERIAL[object.otyp] === 11) {
-        const proof = !!(object.oerodeproof || object.rustproof);
-        if (proof) {
-            object.rknown = true;
-            return false;
+    const rust = rustMetalObject(object, name, luckRoll);
+    if (rust.kind === 'rustproof' && carried) {
+        messages.push(
+            `Somehow, your ${name} ${
+                plural ? 'are' : 'is'
+            } not affected by the oxidation.`,
+        );
+    } else if (rust.outcome === 'damaged') {
+        if (carried) {
+            const suffix = rust.erosion === 3
+                ? ' completely' : rust.erosion > 1 ? ' further' : '';
+            messages.push(
+                `Your ${name} ${plural ? 'rust' : 'rusts'}${suffix}!`,
+            );
         }
-        if (object.blessed && rnl(4) === 0) return false;
-        object.oeroded = Math.min(3, (object.oeroded || 0) + 1);
+        if (object.owornmask) state._armorClassDirty = true;
     }
-    return false;
+    return rust.outcome;
 }
 
 export async function waterDamageChain(
@@ -295,7 +440,8 @@ export async function waterDamageChain(
 ) {
     if (!Array.isArray(objects)) return messages;
     for (const object of [...objects]) {
-        if (!await waterDamageObject(object, messages, state)) continue;
+        const result = await waterDamageObject(object, messages, state);
+        if (result !== 'destroyed') continue;
         const index = objects.indexOf(object);
         if (index >= 0) objects.splice(index, 1);
     }
@@ -335,28 +481,7 @@ function rustObject(
         };
     }
 
-    if ((OBJECT_MATERIAL[object.otyp] ?? 0) !== 11)
-        return { outcome: 'nothing' };
-
-    const proof = !!(object.oerodeproof || object.rustproof);
-    if (proof && object.rknown) return { outcome: 'nothing' };
-    if (proof) {
-        object.rknown = true;
-        return {
-            outcome: 'nothing', kind: 'rustproof', object, description,
-        };
-    }
-    if (object.blessed) {
-        if (luckRoll(4) === 0) return { outcome: 'nothing' };
-    }
-
-    const oldErosion = object.oeroded ?? 0;
-    if (oldErosion >= 3) return { outcome: 'nothing' };
-    object.oeroded = oldErosion + 1;
-    return {
-        outcome: 'damaged', kind: 'rusted', object, description,
-        erosion: object.oeroded,
-    };
+    return rustMetalObject(object, description, luckRoll);
 }
 
 function addWaterEffect(event, effect) {
