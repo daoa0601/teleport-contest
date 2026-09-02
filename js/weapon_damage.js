@@ -1,14 +1,19 @@
 // weapon_damage.js — Shared physical weapon die, enchantment, and erosion.
 // C refs: weapon.c:dmgval(), weapon.c:dbon().
 
-import { Upolyd } from './const.js';
 import {
-    OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
-    OBJECT_SUBTYPE,
+    artifactDoublesWeaponDamage, artifactEmitsLight, artifactStrikesShade,
+} from './artifacts.js';
+import { P_AXE, WT_IRON_BALL_INCR } from './const.js';
+import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import {
+    HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import {
-    MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver,
-    monsterSpeciesHatesSilver,
+    MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight,
+    monsterHatesSilver, monsterIsShade, monsterIsThickSkinned,
+    monsterIsWooden,
 } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { rnd } from './rng.js';
@@ -18,6 +23,7 @@ const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
+const LEATHER = 7;
 const SILVER = 14;
 
 function objectTypes(names) {
@@ -30,7 +36,9 @@ const LARGE_FIXED_ONE = objectTypes([
     'elven broadsword', 'broadsword',
 ]);
 const LARGE_RND4 = objectTypes(['flail', 'ranseur', 'voulge']);
-const LARGE_RND6 = objectTypes(['halberd', 'spetum']);
+const LARGE_RND6 = objectTypes([
+    'splash of acid venom', 'halberd', 'spetum',
+]);
 const LARGE_2D4 = objectTypes(['battle-axe', 'bardiche', 'trident']);
 const LARGE_2D6 = objectTypes([
     'tsurugi', 'dwarvish mattock', 'two-handed sword',
@@ -45,7 +53,7 @@ const SMALL_RND4 = objectTypes([
     'morning star', 'ranseur', 'broadsword', 'elven broadsword', 'runesword',
     'voulge',
 ]);
-const SMALL_RND6 = objectTypes([]);
+const SMALL_RND6 = objectTypes(['splash of acid venom']);
 
 function damageProfile(object, monster) {
     const large = (MONSTER_SIZE[monster?.mnum] ?? 2) >= 3;
@@ -89,24 +97,52 @@ function canHaveTargetDamageBonus(object) {
         || objectClass === CHAIN_CLASS;
 }
 
+function applyTargetBaseRules(object, monster, damage, rollOne) {
+    const material = OBJECT_MATERIAL[object.otyp];
+    if (material <= LEATHER && monsterIsThickSkinned(monster)) damage = 0;
+    if (monsterIsShade(monster)
+        && material !== SILVER && !artifactStrikesShade(object)) damage = 0;
+
+    if (object.otyp === HEAVY_IRON_BALL && damage > 0) {
+        const baseWeight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
+        const extraWeight = Math.max(0, (object.owt ?? baseWeight) - baseWeight);
+        const increments = Math.trunc(extraWeight / WT_IRON_BALL_INCR);
+        if (increments > 0) {
+            damage += rollOne(4 * increments);
+            damage = Math.min(damage, 25);
+        }
+    }
+    return damage;
+}
+
 function targetDamageBonus(
-    object, { hatesBlessings, hatesSilver }, rollOne,
+    object, monster, { hatesBlessings, hatesSilver }, rollOne,
 ) {
     if (!canHaveTargetDamageBonus(object)) return 0;
     let bonus = 0;
     if (object.blessed && hatesBlessings) bonus += rollOne(4);
+    if (Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) === P_AXE
+        && monsterIsWooden(monster)) bonus += rollOne(4);
     if (OBJECT_MATERIAL[object.otyp] === SILVER && hatesSilver)
         bonus += rollOne(20);
-    return bonus;
+    if (artifactEmitsLight(object) && object.lamplit
+        && monsterHatesLight(monster)) bonus += rollOne(8);
+    return bonus > 1 && artifactDoublesWeaponDamage(object, monster)
+        ? Math.trunc((bonus + 1) / 2) : bonus;
 }
 
 function maximumTargetDamageBonus(object, monster) {
     if (!canHaveTargetDamageBonus(object)) return 0;
     let bonus = 0;
     if (object.blessed && monsterHatesBlessings(monster)) bonus += 4;
+    if (Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) === P_AXE
+        && monsterIsWooden(monster)) bonus += 4;
     if (OBJECT_MATERIAL[object.otyp] === SILVER
         && monsterHatesSilver(monster)) bonus += 20;
-    return bonus;
+    if (artifactEmitsLight(object) && object.lamplit
+        && monsterHatesLight(monster)) bonus += 8;
+    return bonus > 1 && artifactDoublesWeaponDamage(object, monster)
+        ? Math.trunc((bonus + 1) / 2) : bonus;
 }
 
 function applyErosion(object, damage) {
@@ -134,22 +170,11 @@ export function rollPhysicalWeaponDamage(
     if (profile.twoD4) damage += rollDice(2, 4);
     if (profile.twoD6) damage += rollDice(2, 6);
     damage = addWeaponEnchantment(object, damage);
+    damage = applyTargetBaseRules(object, monster, damage, rollOne);
     damage += targetDamageBonus(
-        object, { hatesBlessings, hatesSilver }, rollOne,
+        object, monster, { hatesBlessings, hatesSilver }, rollOne,
     );
     return applyErosion(object, damage);
-}
-
-function heroMonsterNumber(state) {
-    if (Upolyd(state.u)) return state.u.umonnum;
-    return state.flags?.female
-        ? state.urace?.femalenum ?? state.urace?.malenum
-        : state.urace?.malenum;
-}
-
-export function heroHatesSilver(state) {
-    if (Number.isInteger(state.u?.ulycn) && state.u.ulycn >= 0) return true;
-    return monsterSpeciesHatesSilver(heroMonsterNumber(state));
 }
 
 export function rollPhysicalWeaponDamageAgainstHero(
@@ -157,7 +182,7 @@ export function rollPhysicalWeaponDamageAgainstHero(
 ) {
     return rollPhysicalWeaponDamage(
         object,
-        { mnum: heroMonsterNumber(state) },
+        { mnum: heroSpecies(state) },
         { ...options, hatesSilver: heroHatesSilver(state) },
     );
 }
@@ -170,6 +195,9 @@ export function maximumPhysicalWeaponDamage(object, monster) {
     if (profile.twoD4) damage += 8;
     if (profile.twoD6) damage += 12;
     damage = addWeaponEnchantment(object, damage);
+    damage = applyTargetBaseRules(
+        object, monster, damage, range => range,
+    );
     damage += maximumTargetDamageBonus(object, monster);
     return applyErosion(object, damage);
 }

@@ -39,7 +39,7 @@ import {
     prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
-import { acidVenomDamage } from './venom.js';
+import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
@@ -182,7 +182,7 @@ async function hitMonsterWithVenom({
         await publish(`Your venom hits ${targetName(monster)} harmlessly.`);
     } else {
         await publish(`Your venom burns ${targetName(monster)}!`);
-        damage = acidVenomDamage(rollOne);
+        damage = rollPhysicalWeaponDamage(venom, monster, { rollOne });
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     }
     deleteObject(venom, state);

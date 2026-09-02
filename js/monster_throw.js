@@ -33,9 +33,9 @@ import {
 import { resolvePoisonedHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
+import { heroHatesSilver } from './hero_species.js';
 import {
-    heroHatesSilver, rollPhysicalWeaponDamage,
-    rollPhysicalWeaponDamageAgainstHero,
+    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
 import { finishHeroDeath } from './end.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';

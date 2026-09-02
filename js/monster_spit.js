@@ -21,7 +21,9 @@ import { heroIsBlind } from './senses.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import { finishHeroDeath } from './end.js';
-import { acidVenomDamage } from './venom.js';
+import {
+    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
+} from './weapon_damage.js';
 
 export function monsterSpitAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
@@ -111,7 +113,9 @@ function hitMonster(monster, spit, state, random, rollOne) {
     if (!hit) return;
 
     if (spit.venom.otyp === ACID_VENOM) {
-        spit.damage = acidVenomDamage(rollOne);
+        spit.damage = rollPhysicalWeaponDamage(
+            spit.venom, monster, { rollOne },
+        );
         if (monsterHasAcidResistance(monster)) {
             spit.damage = 0;
             spit.resisted = true;
@@ -135,7 +139,9 @@ function hitHero(source, spit, state, random, rollOne) {
     let hitLevel = 8;
     spit.heroWasBlind = heroIsBlind(state);
     if (spit.venom.otyp === ACID_VENOM) {
-        damage = acidVenomDamage(rollOne);
+        damage = rollPhysicalWeaponDamageAgainstHero(
+            spit.venom, state, { rollOne },
+        );
         const distance = distmin(
             state.u.ux, state.u.uy, source.mx, source.my,
         );

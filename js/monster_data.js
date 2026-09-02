@@ -103,6 +103,7 @@ const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
+const M1_THICK_HIDE = 0x00200000;
 const PM_FLOATING_EYE = 28;
 const PM_MIND_FLAYER = 48;
 const PM_MASTER_MIND_FLAYER = 49;
@@ -112,7 +113,9 @@ const PM_VAMPIRE_BAT = 129;
 const PM_VAMPIRE = 226;
 const PM_MANES = 50;
 const PM_AIR_ELEMENTAL = 154;
+const PM_GREMLIN = 40;
 const PM_TENGU = 55;
+const PM_WOOD_GOLEM = 254;
 const PM_SHADE = 288;
 const S_IMP = 9;
 const S_UNICORN = 21;
@@ -192,6 +195,22 @@ export function monsterSpeciesHatesSilver(mnum) {
 export function monsterHatesSilver(monster) {
     return monsterIsVampireShifter(monster)
         || monsterSpeciesHatesSilver(monster?.mnum);
+}
+
+export function monsterIsThickSkinned(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_THICK_HIDE);
+}
+
+export function monsterIsWooden(monster) {
+    return monster?.mnum === PM_WOOD_GOLEM;
+}
+
+export function monsterHatesLight(monster) {
+    return monster?.mnum === PM_GREMLIN;
+}
+
+export function monsterIsShade(monster) {
+    return monster?.mnum === PM_SHADE;
 }
 
 export function monsterIsNonliving(mnum) {

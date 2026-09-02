@@ -5,13 +5,12 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { game } from './gstate.js';
-import { Upolyd } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     OBJECT_MATERIAL, OBJECT_NAMES,
 } from './object_data.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { heroHatesSilver } from './weapon_damage.js';
+import { heroHatesSilver, heroSpecies } from './hero_species.js';
 
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
@@ -299,17 +298,24 @@ export function artifactDamageBonus(
         : Math.max(baseWeaponDamage, 1);
 }
 
-function heroSpecies() {
-    if (Upolyd(game.u)) return game.u.umonnum;
-    return game.flags?.female
-        ? game.urace?.femalenum ?? game.urace?.malenum
-        : game.urace?.malenum;
+export function artifactDoublesWeaponDamage(object, defender) {
+    const artifact = artifactById(object?.oartifact);
+    return supportedAttackApplies(artifact, defender)
+        && artifact.attack.damageDie === 0;
+}
+
+export function artifactEmitsLight(object) {
+    return artifactById(object?.oartifact)?.name === 'Sunsword';
+}
+
+export function artifactStrikesShade(object) {
+    return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
 
 function artifactBaneApplies(artifact) {
     const bane = ARTIFACT_BANES.get(artifact?.name);
     if (!bane) return false;
-    const mnum = heroSpecies();
+    const mnum = heroSpecies(game);
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     if (bane.flag === M2_WERE
         && Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0) return true;
