@@ -5356,25 +5356,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 wakeMonstersNear(monster.mx, monster.my, 25);
             }
         }
-        if (movement?.petBreath?.launched) {
-            const message = monsterBreathMessage(
-                monster, movement.petBreath,
-            );
-            if (message) await queueTurnMessage(message);
-            await resolveMonsterBreathAttack(
-                monster, movement.petBreath, game, {
-                    publish: queueTurnMessage,
-                    finishMonsterKill: (target, death) =>
-                        finishMonsterRayDeath(
-                            target, death, game, queueTurnMessage,
-                        ),
-                },
-            );
-            if (game._occupation)
-                game._interruptedMultiActionDebt = true;
-            game._occupation = null;
-            if (game._runState) stopRun(game);
-        }
         if (movement?.breathAttack) {
             const breath = movement.breathAttack;
             if (breath.cough && !game.deaf) {
@@ -5885,6 +5866,31 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                     ranged.targetDied = !death.survived;
                 }
+            }
+        }
+        if (movement?.petBreath) {
+            if (movement.petBreath.cough) {
+                const message = monsterCoughMessage(monster, game);
+                if (message) await queueTurnMessage(message);
+            }
+            if (movement.petBreath.launched) {
+                const message = monsterBreathMessage(
+                    monster, movement.petBreath,
+                );
+                if (message) await queueTurnMessage(message);
+                await resolveMonsterBreathAttack(
+                    monster, movement.petBreath, game, {
+                        publish: queueTurnMessage,
+                        finishMonsterKill: (target, death) =>
+                            finishMonsterRayDeath(
+                                target, death, game, queueTurnMessage,
+                            ),
+                    },
+                );
+                if (game._occupation)
+                    game._interruptedMultiActionDebt = true;
+                game._occupation = null;
+                if (game._runState) stopRun(game);
             }
         }
         // dogmove.c:dog_eat() always commits nutrition/removal, but narrates

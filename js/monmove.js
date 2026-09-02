@@ -3147,7 +3147,10 @@ function movePet(
             ? { spitAttack: rangedAttack }
             : rangedAttack.kind === 'weapon'
                 ? { rangedAttacks: rangedAttack.attacks }
-                : { petBreath: rangedAttack };
+                : {
+                    petBreath: rangedAttack,
+                    rangedAttacks: rangedAttack.weaponAttacks,
+                };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
             wieldedWeapon: rangedAttack.readiedWeapon,

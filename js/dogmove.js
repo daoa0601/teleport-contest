@@ -248,13 +248,14 @@ export function beginPetRangedAttack(
                 if ((target.mhp ?? 0) <= 0) break;
             }
         } else if (attack[0] === AT_BREA) {
-            if (weaponAttacks.length) break;
             const breath = beginBreathAtTarget(
                 pet, target, state, random, attack,
             );
             if (breath.launched || breath.cough) {
                 return {
-                    kind: 'breath', readiedWeapon, ...breath,
+                    kind: 'breath', readiedWeapon, weaponAttacks,
+                    madeAttack: weaponAttacks.length > 0,
+                    ...breath,
                 };
             }
         } else if (attack[0] === AT_SPIT && target !== state.u) {
