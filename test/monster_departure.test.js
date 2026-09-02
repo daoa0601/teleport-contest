@@ -8,6 +8,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { removeWishGrantingMonster } from '../js/monster_departure.js';
 import { initRng } from '../js/rng.js';
+import { liveMonster } from './support/monsters.js';
 
 function installDepartureState(monster) {
     resetGame();
@@ -24,11 +25,10 @@ test('wish departure leaves protected identities and removes ordinary cargo', ()
         where: 'monster', worn: true, owornmask: 4,
     };
     const ordinary = { otyp: ORCISH_DAGGER, where: 'monster' };
-    const monster = {
-        mnum: 315, mx: 11, my: 10, mhp: 12,
-        minvent: [invocation, quest, ordinary], hasInventory: true,
-    };
-    monster.inventory = monster.minvent;
+    const monster = liveMonster({
+        mnum: 315, x: 11, y: 10, hitPoints: 12,
+        inventory: [invocation, quest, ordinary], hasInventory: true,
+    });
     installDepartureState(monster);
 
     const result = removeWishGrantingMonster(monster, {
@@ -53,11 +53,10 @@ test('wish departure leaves protected identities and removes ordinary cargo', ()
 
 test('Rider corpses survive departure as floor identities', () => {
     const rider = { otyp: CORPSE, corpsenm: 311, where: 'monster' };
-    const monster = {
-        mnum: 289, mx: 12, my: 9, mhp: 20,
-        minvent: [rider], hasInventory: true,
-    };
-    monster.inventory = monster.minvent;
+    const monster = liveMonster({
+        mnum: 289, x: 12, y: 9, hitPoints: 20,
+        inventory: [rider], hasInventory: true,
+    });
     installDepartureState(monster);
 
     const result = removeWishGrantingMonster(monster, {

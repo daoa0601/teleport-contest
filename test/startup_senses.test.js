@@ -3,30 +3,25 @@ import assert from 'node:assert/strict';
 
 import { artifactByName } from '../js/artifacts.js';
 import { _statusLine2 } from '../js/display.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
-import { init_objects } from '../js/o_init.js';
 import { LENSES } from '../js/object_data.js';
 import { parseNethackrc } from '../js/options.js';
-import { initRng } from '../js/rng.js';
-import { aligns, races, roles } from '../js/roles.js';
 import {
     blindnessBlocked, blindfolded, syncBlindness, syncDeafness,
 } from '../js/senses.js';
-import { uInitMisc } from '../js/u_init.js';
 import { cansee, couldsee } from '../js/vision.js';
+import { prepareHeroStartup } from './support/startup.js';
 
 
 function initializeSenses(flags) {
-    resetGame();
-    initRng(9182n);
-    game.urole = roles.find(role => role.key === 'wizard');
-    game.urace = races.find(race => race.name === 'human');
-    game.initAlignment = aligns.find(alignment => alignment.name === 'neutral');
-    game.flags = { ...flags };
-    init_objects();
-    uInitMisc(1);
+    prepareHeroStartup({
+        role: 'wizard',
+        alignment: 'neutral',
+        flags,
+        seed: 9182n,
+    });
     game.u.uconduct = {};
     return game;
 }

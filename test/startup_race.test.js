@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
-import { init_objects } from '../js/o_init.js';
+import { game } from '../js/gstate.js';
 import {
     CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK,
     DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
@@ -12,26 +11,19 @@ import {
     ORCISH_SHORT_SWORD, ORCISH_SPEAR, TOUCHSTONE, URUK_HAI_SHIELD,
     WAN_WISHING,
 } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
-import { aligns, races, roles } from '../js/roles.js';
-import {
-    finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
-} from '../js/u_init.js';
+import { races, roles } from '../js/roles.js';
+import { uInitInventoryAttrs } from '../js/u_init.js';
+import { completeHeroStartup } from './support/startup.js';
 
 const FOOD_CLASS = 7;
 
 function start(roleKey, raceName, { explore = false, seed = 123n } = {}) {
-    resetGame();
-    initRng(seed);
-    game.urole = roles.find(role => role.key === roleKey);
-    game.urace = races.find(race => race.name === raceName);
-    game.initAlignment = aligns.find(alignment => alignment.name === 'chaotic');
-    game.flags = { explore };
-    init_objects();
-    uInitMisc(1);
-    assert.equal(uInitInventoryAttrs(), true);
-    assert.equal(finishStartingDiscoveries(), true);
-    return game;
+    return completeHeroStartup({
+        role: roleKey,
+        race: raceName,
+        flags: { explore },
+        seed,
+    });
 }
 
 test('Gnome Ranger substitutes and equips its source crossbow loadout', () => {

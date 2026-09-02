@@ -8,6 +8,17 @@ import { triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyMonsterRustTrap } from '../js/trap.js';
+import { liveMonster } from './support/monsters.js';
+
+function monsterAtTrap(overrides = {}) {
+    return liveMonster({
+        mnum: 16,
+        x: 11,
+        y: 10,
+        hitPoints: 8,
+        ...overrides,
+    });
+}
 
 function trapState(monster, trap = null) {
     return {
@@ -21,7 +32,7 @@ function trapState(monster, trap = null) {
 }
 
 test('immediate mintrap entry is a zero-work boundary without a trap', () => {
-    const monster = { mnum: 16, mx: 11, my: 10, mhp: 8 };
+    const monster = monsterAtTrap();
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster),
     );
@@ -32,7 +43,7 @@ test('immediate mintrap entry is a zero-work boundary without a trap', () => {
 });
 
 test('immediate mintrap entry delegates web state to the existing engine', () => {
-    const monster = { mnum: 16, mx: 11, my: 10, mhp: 8 };
+    const monster = monsterAtTrap();
     const trap = { tx: 11, ty: 10, ttyp: WEB, tseen: false };
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster, trap),
@@ -45,10 +56,9 @@ test('immediate mintrap entry delegates web state to the existing engine', () =>
 });
 
 test('a monster which recognizes a web can avoid becoming trapped', () => {
-    const monster = {
-        mnum: 16, mx: 11, my: 10, mhp: 8,
+    const monster = monsterAtTrap({
         mtrapseen: 1 << (WEB - 1),
-    };
+    });
     const trap = { tx: 11, ty: 10, ttyp: WEB, tseen: true };
     initRng(3n); // first rn2(4) is 3, so source avoidance succeeds
     const result = triggerImmediateMonsterTrap(
@@ -62,10 +72,9 @@ test('a monster which recognizes a web can avoid becoming trapped', () => {
 });
 
 test('a monster can avoid a familiar ordinary teleport trap', () => {
-    const monster = {
-        mnum: 16, mx: 11, my: 10, mhp: 8,
+    const monster = monsterAtTrap({
         mtrapseen: 1 << (TELEP_TRAP - 1),
-    };
+    });
     const trap = { tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true };
     initRng(3n);
 
@@ -78,11 +87,10 @@ test('a monster can avoid a familiar ordinary teleport trap', () => {
 });
 
 test('a fixed teleport trap sends a monster to its free destination', () => {
-    const monster = {
-        mnum: 16, mx: 11, my: 10, mhp: 8,
+    const monster = monsterAtTrap({
         mtrapseen: 1 << (TELEP_TRAP - 1),
         mtrack: [{ x: 9, y: 10 }],
-    };
+    });
     const trap = {
         tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true,
         teledest: { x: 15, y: 10 },
@@ -99,7 +107,7 @@ test('a fixed teleport trap sends a monster to its free destination', () => {
 });
 
 test('visible bear trap returns the existing deferred-damage handoff', () => {
-    const monster = { mnum: 100, mx: 11, my: 10, mhp: 20 };
+    const monster = monsterAtTrap({ mnum: 100, hitPoints: 20 });
     const trap = { tx: 11, ty: 10, ttyp: BEAR_TRAP, tseen: false };
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster, trap),
@@ -116,10 +124,9 @@ test('rust-trap water rusts an iron helmet worn by a monster', () => {
     const helmet = {
         otyp: ORCISH_HELM, owornmask: W_ARMH, oeroded: 0,
     };
-    const monster = {
-        mnum: 16, mx: 11, my: 10, mhp: 8,
-        minvent: [helmet],
-    };
+    const monster = monsterAtTrap({
+        inventory: [helmet],
+    });
     const event = applyMonsterRustTrap(monster, trapState(monster), {
         roll: range => range === 5 ? 0 : 1,
     });

@@ -9,15 +9,14 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
 import {
     BAG_OF_HOLDING, GOLD_PIECE, SACK, SPLINT_MAIL,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
-import { initRng } from '../js/rng.js';
-import { aligns, races, roles } from '../js/roles.js';
+import { races, roles } from '../js/roles.js';
 import {
-    uInitCarryAttrBoost, uInitInventoryAttrs, uInitMisc,
+    uInitCarryAttrBoost, uInitInventoryAttrs,
 } from '../js/u_init.js';
 import {
     inventoryWeight, invWeight, objectWeight, weightCapacity,
 } from '../js/weight.js';
+import { prepareHeroStartup } from './support/startup.js';
 
 
 function coin(quantity) {
@@ -139,23 +138,20 @@ test('startup carry boost exhausts Strength before Constitution', () => {
 });
 
 test('startup keeps each attribute under its C attribute name', () => {
-    resetGame();
-    initRng(124n);
-    const fixedAttributes = [10, 11, 12, 13, 14, 15];
-    game.urole = {
+    const attributes = [10, 11, 12, 13, 14, 15];
+    const role = {
         ...roles.find(role => role.key === 'priest'),
-        attrbase: fixedAttributes,
+        attrbase: attributes,
         attrdist: [100, 0, 0, 0, 0, 0],
     };
-    game.urace = {
+    const race = {
         ...races.find(race => race.name === 'human'),
-        attrmin: fixedAttributes,
-        attrmax: fixedAttributes,
+        attrmin: attributes,
+        attrmax: attributes,
     };
-    game.initAlignment = aligns.find(alignment => alignment.name === 'neutral');
-    game.flags = {};
-    init_objects();
-    uInitMisc(1);
+    prepareHeroStartup({
+        role, race, alignment: 'neutral', seed: 124n,
+    });
 
     assert.equal(uInitInventoryAttrs(), true);
     assert.equal(game.u.acurr.a[A_STR], 10);
@@ -182,14 +178,7 @@ test('startup carry boost stops honestly when both attributes are capped', () =>
 
 test('all role startups leave source bookkeeping and capacity coherent', () => {
     for (const role of roles) {
-        resetGame();
-        initRng(123n);
-        game.urole = role;
-        game.urace = races.find(race => race.name === 'human');
-        game.initAlignment = aligns.find(alignment => alignment.name === 'neutral');
-        game.flags = {};
-        init_objects();
-        uInitMisc(1);
+        prepareHeroStartup({ role, alignment: 'neutral' });
         assert.equal(uInitInventoryAttrs(), true, role.key);
         assert.ok(invWeight(game) <= 0, role.key);
         assert.equal(

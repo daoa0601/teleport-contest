@@ -3,34 +3,23 @@ import assert from 'node:assert/strict';
 
 import { ROOM } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import {
     FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING,
     SPE_PROTECTION, TOUCHSTONE, WAN_WISHING,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import { parseNethackrc } from '../js/options.js';
-import { initRng } from '../js/rng.js';
-import { aligns, races, roles } from '../js/roles.js';
+import { roles } from '../js/roles.js';
+import { makedog } from '../js/u_init.js';
 import {
-    finishStartingDiscoveries, makedog, uInitInventoryAttrs, uInitMisc,
-} from '../js/u_init.js';
+    completeHeroStartup, prepareHeroStartup,
+} from './support/startup.js';
 
 
 function start(roleKey, raceName = 'human', flags = { pauper: true }) {
-    resetGame();
-    initRng(123n);
-    game.urole = roles.find(role => role.key === roleKey);
-    game.urace = races.find(race => race.name === raceName);
-    game.initAlignment = aligns.find(alignment => alignment.name === 'chaotic');
-    game.flags = { ...flags };
-    init_objects();
-    uInitMisc(1);
-    assert.equal(uInitInventoryAttrs(), true);
-    assert.equal(finishStartingDiscoveries(), true);
-    return game;
+    return completeHeroStartup({ role: roleKey, race: raceName, flags });
 }
 
 test('pauper implies nudist at its option position and allows later override', () => {
@@ -119,14 +108,12 @@ test('standalone nudist constructs no hero armor without becoming pauper', () =>
 });
 
 function startingPony(pauper) {
-    resetGame();
-    initRng(456n);
-    game.urole = roles.find(role => role.key === 'knight');
-    game.urace = races.find(race => race.name === 'human');
-    game.initAlignment = aligns.find(alignment => alignment.name === 'lawful');
-    game.flags = { pauper };
-    init_objects();
-    uInitMisc(1);
+    prepareHeroStartup({
+        role: 'knight',
+        alignment: 'lawful',
+        flags: { pauper },
+        seed: 456n,
+    });
     game.u.ux = 40;
     game.u.uy = 10;
     game.level = {

@@ -1,26 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { currentConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
-import { init_objects } from '../js/o_init.js';
-import { initRng } from '../js/rng.js';
-import { aligns, races, roles } from '../js/roles.js';
 import {
-    finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
+    finishStartingDiscoveries, uInitInventoryAttrs,
 } from '../js/u_init.js';
 import { screenText } from './support/screen.js';
+import { prepareHeroStartup } from './support/startup.js';
 
 function wizardCandidate(seed = 8271n) {
-    resetGame();
-    initRng(seed);
-    game.urole = roles.find(role => role.key === 'wizard');
-    game.urace = races.find(race => race.name === 'human');
-    game.initAlignment = aligns.find(alignment => alignment.name === 'neutral');
-    game.flags = { reroll: true };
-    init_objects();
-    uInitMisc(1);
+    prepareHeroStartup({
+        role: 'wizard',
+        alignment: 'neutral',
+        flags: { reroll: true },
+        seed,
+    });
     assert.equal(uInitInventoryAttrs(), true);
     return game;
 }

@@ -88,7 +88,6 @@ test('disintegration breath destroys a shield before hurting its wearer',
             y: 10,
             hitPoints: 20,
             mac: 99,
-            minvent: [shield],
             inventory: [shield],
         });
 
@@ -115,7 +114,6 @@ test('fatal disintegration destroys ordinary gear but spares black scales',
             y: 10,
             hitPoints: 1,
             mac: 99,
-            minvent: [sword, scales],
             inventory: [sword, scales],
         });
 
@@ -145,7 +143,6 @@ test('acid breath corrodes a monster weapon and armor', async () => {
         hitPoints: 20,
         mac: 99,
         weapon: sword,
-        minvent: [sword, helmet],
         inventory: [sword, helmet],
     });
 

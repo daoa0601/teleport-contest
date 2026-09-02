@@ -11,6 +11,7 @@ import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
     moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from '../js/teleport.js';
+import { liveMonster } from './support/monsters.js';
 
 function teleportState() {
     resetGame();
@@ -33,7 +34,9 @@ test('random teleport skips occupied squares, boulders, and traps', () => {
     const state = teleportState();
     for (const x of [5, 6, 7, 8])
         state.level.at(x, 5).typ = ROOM;
-    state.level.monsters.push({ mnum: 16, mx: 5, my: 5, mhp: 8 });
+    state.level.monsters.push(liveMonster({
+        mnum: 16, x: 5, y: 5, hitPoints: 8,
+    }));
     state.level.objects[6] = [];
     state.level.objects[6][5] = [{ otyp: BOULDER }];
     state.level.traps.push({ tx: 7, ty: 5, ttyp: TELEP_TRAP });
@@ -54,10 +57,10 @@ test('fixed teleport clears its destination before moving the hero', () => {
         for (let y = 9; y <= 11; y++)
             state.level.at(x, y).typ = ROOM;
     }
-    const monster = {
-        m_id: 17, mnum: 16, mx: 20, my: 10, mhp: 8,
+    const monster = liveMonster({
+        m_id: 17, mnum: 16, x: 20, y: 10, hitPoints: 8,
         mtrack: [{ x: 1, y: 1 }],
-    };
+    });
     state.level.monsters.push(monster);
 
     const cleared = clearFixedTeleportDestination(20, 10, state, () => 0);
@@ -95,7 +98,9 @@ test('monster relocation searches the map after random attempts fail', () => {
     const state = teleportState();
     state.level.at(10, 10).typ = ROOM;
     state.level.at(40, 10).typ = ROOM;
-    const monster = { mnum: 16, mx: 10, my: 10, mhp: 8 };
+    const monster = liveMonster({
+        mnum: 16, x: 10, y: 10, hitPoints: 8,
+    });
     state.level.monsters.push(monster);
 
     const relocation = randomMonsterRelocation(
@@ -121,13 +126,13 @@ test('a shopkeeper teleports within its own shop', () => {
         state.level.at(x, y).typ = ROOM;
         state.level.at(x, y).roomno = roomno;
     }
-    const monster = {
-        mnum: 16, mx: 10, my: 10, mhp: 8, isshk: true,
+    const monster = liveMonster({
+        mnum: 16, x: 10, y: 10, hitPoints: 8, isshk: true,
         eshk: {
             shoproom: shopRoomno,
             shoplevel: { ...state.u.uz },
         },
-    };
+    });
     state.level.monsters.push(monster);
     const xs = [20, 12];
 

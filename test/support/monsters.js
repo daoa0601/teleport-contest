@@ -8,9 +8,11 @@ export function liveMonster({
     y,
     hitPoints = 20,
     level = 1,
+    inventory: listedInventory,
+    minvent,
     ...overrides
 }) {
-    const inventory = [];
+    const inventory = listedInventory ?? minvent ?? [];
     return {
         mnum: mnum ?? MONSTER_NAME.indexOf(species),
         mx: x,
