@@ -1,13 +1,13 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 const persistentNames = `
     Luck _activeSpecialLevel _armorClassDirty _artifactDiscoveries _artifactExistByBase _artifactExistCount _artifactExists
     _artifactRuntime _blindFromMonsterForm _bonesEncountered _bonesSaved _bubbleTraversalUp _canMakeBones _characterPickerUsed
     _commandCount _deathKiller _deathShopSettlement _deepestLevel _encounteredObjectTypes _encumbranceLevel _farMonsterNoise
-    _fobjSerial _genocidedMonsters _goldCount _helplessAfter _helplessDoneMessage _helplessReason
+    _fobjSerial _genocidedMonsters _helplessAfter _helplessDoneMessage _helplessReason
     _helplessRunmodeDelayPending _helplessTurns _heroActionSeq _heroTrack _initialGoldCount _initialPwBonus _kickedLoc
     _knownObjectTypes _lastBoulderPushMove _lastDemigodAggravation _lastDemigodNasty _lastInvNr _lastPushedBoulder _lastRandomMonsterGeneration
     _last_message _levelAnnotations _levelCache _lifeSavedCount _maintenanceMove _monsterMovementInitialized

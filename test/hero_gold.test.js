@@ -28,7 +28,6 @@ test('picking up floor gold moves that identity into the dollar inventory slot',
         assert.equal(floorGold.invlet, '$');
         assert.equal(floorGold.where, 'inventory');
         assert.equal(floorGold.pickup_prev, true);
-        assert.equal(game._goldCount, 37);
     });
 
 test('picking up more gold merges to one live purse identity', async () => {
@@ -45,7 +44,6 @@ test('picking up more gold merges to one live purse identity', async () => {
     assert.equal(floorGold.where, 'gone');
     assert.equal(floorGold.quantity, 0);
     assert.equal(purse.pickup_prev, true);
-    assert.equal(game._goldCount, 18);
     assert.equal(game.context.move, 1);
 });
 
@@ -58,7 +56,6 @@ test('dropping the purse moves the same identity to the floor', async () => {
 
     assert.equal(heroGoldObject(game), null);
     assert.equal(heroGoldAmount(game), 0);
-    assert.equal(game._goldCount, 0);
     assert.ok(floorObjects(level).includes(purse));
     assert.equal(purse.where, 'floor');
     assert.equal(purse.quantity, 19);
@@ -98,7 +95,6 @@ test('quivered gold detaches one coin while preserving the purse identity',
             object.otyp === GOLD_PIECE);
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 4);
-        assert.equal(game._goldCount, 4);
         assert.equal(game.uquiver, purse);
         assert.equal(purse.quantity, 4);
         assert.equal(landed.length, 1);
@@ -168,7 +164,6 @@ test('partial shop payment preserves the purse identity and exact remainder',
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 13);
         assert.equal(purse.quantity, 13);
-        assert.equal(game._goldCount, 13);
         assert.equal(resident.gold, 7);
         assert.equal(merchandise.unpaid, false);
         assert.equal(resident.eshk.bill.length, 0);

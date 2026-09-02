@@ -31,7 +31,6 @@ test('direct throw moves the whole purse through its strength-weight range',
 
         assert.equal(heroGoldObject(game), null);
         assert.equal(heroGoldAmount(game), 0);
-        assert.equal(game._goldCount, 0);
         assert.equal(purse.quantity, 100);
         assert.equal(purse.where, 'floor');
         assert.deepEqual([purse.ox, purse.oy], [15, 10]);

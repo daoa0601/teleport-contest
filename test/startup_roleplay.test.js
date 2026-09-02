@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { ROOM } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { game } from '../js/gstate.js';
+import { heroGoldAmount } from '../js/hero_gold.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import {
@@ -56,7 +57,7 @@ test('every pauper role starts empty, untrained, and selectively preknown', () =
         });
         assert.deepEqual(state.inventory, [], role.key);
         assert.deepEqual(state.spells, [], role.key);
-        assert.equal(state._goldCount, 0, role.key);
+        assert.equal(heroGoldAmount(state), 0, role.key);
         assert.equal(state._initialGoldCount, 0, role.key);
         assert.equal(state.u.weapon_slots, 2, role.key);
         assert.equal(

@@ -2,7 +2,6 @@
 // C refs: mkobj.c obj_extract_self(), shk.c obfree(), and delete_contents().
 
 import { game } from './gstate.js';
-import { syncHeroGoldCache } from './hero_gold.js';
 import {
     objectsInTimerGraph, stopAllObjectTimers,
 } from './object_timers.js';
@@ -95,6 +94,5 @@ export function deleteObject(object, state = game) {
     object.lamplit = false;
     object.buried = false;
     delete object.carrierMid;
-    syncHeroGoldCache(state);
     return true;
 }

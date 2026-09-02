@@ -6,9 +6,7 @@ import { touchArtifactByHero } from './artifact_touch.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
-import {
-    addHeroGoldObject, syncHeroGoldCache,
-} from './hero_gold.js';
+import { addHeroGoldObject } from './hero_gold.js';
 import { nhgetch } from './input.js';
 import { inventoryItemDescription } from './invent.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
@@ -371,7 +369,6 @@ function removeFromInventory(object, state) {
     state.inventory = (state.inventory || [])
         .filter(candidate => candidate !== object);
     clearEquipment(object, state);
-    if (object.otyp === GOLD_PIECE) syncHeroGoldCache(state);
 }
 
 function addToInventory(object, state) {
@@ -463,8 +460,6 @@ function splitForTransfer(object, count, state) {
     const split = splitObjectStack(object, amount, state);
     if (!split) return { object, parent: null, bill: null };
     const bill = splitShopBill(object, split, state);
-    if (object.otyp === GOLD_PIECE && object.where === 'inventory')
-        syncHeroGoldCache(state);
     return { object: split, parent: object, bill };
 }
 
@@ -472,10 +467,6 @@ function restoreRejectedSplit(transfer, state) {
     if (!transfer.parent) return;
     if (rejoinObjectStack(transfer.parent, transfer.object, state)) {
         rejoinShopBill(transfer.bill);
-        if (transfer.parent.otyp === GOLD_PIECE
-            && transfer.parent.where === 'inventory') {
-            syncHeroGoldCache(state);
-        }
         return;
     }
 

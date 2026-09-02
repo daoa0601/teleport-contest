@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { syncHeroGoldCache } from '../js/hero_gold.js';
+import { heroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys } from '../js/input.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB,
@@ -123,12 +123,11 @@ test('moving some gold keeps the purse and container amounts separate',
             quantity: 5,
         });
         freshContainerGame(chest, gold);
-        syncHeroGoldCache(game);
 
         await applyObject('ai2$\n');
 
         assert.equal(gold.quan, 3);
-        assert.equal(game._goldCount, 3);
+        assert.equal(heroGoldAmount(game), 3);
         assert.equal(chest.contents[0].quan, 2);
         assert.equal(chest.contents[0].where, 'contained');
     });

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
+import { heroGoldAmount } from '../js/hero_gold.js';
 import {
     CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK,
     DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
@@ -94,14 +95,14 @@ test('discover-mode wishing inventory is role-general and follows race startup',
 
 test('role money is initialized after startup and cannot leak across reruns', () => {
     const healer = start('healer', 'human', { explore: true });
-    assert.ok(healer._goldCount >= 1001 && healer._goldCount <= 2000);
-    assert.equal(healer._initialGoldCount, healer._goldCount);
+    assert.ok(heroGoldAmount(healer) >= 1001 && heroGoldAmount(healer) <= 2000);
+    assert.equal(healer._initialGoldCount, heroGoldAmount(healer));
     assert.ok(healer.inventory.some(object => object.otyp === WAN_WISHING));
 
     healer.urole = roles.find(role => role.key === 'ranger');
     healer.urace = races.find(race => race.name === 'human');
     healer.flags = { explore: false };
     assert.equal(uInitInventoryAttrs(), true);
-    assert.equal(healer._goldCount, 0);
+    assert.equal(heroGoldAmount(healer), 0);
     assert.equal(healer._initialGoldCount, 0);
 });

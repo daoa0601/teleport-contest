@@ -1,7 +1,5 @@
-// hero_gold.js — Canonical top-level hero COIN_CLASS identity.
-// C refs: invent.c addinv()/freeinv()/splitobj(), mkobj.c weight().
-// `_goldCount` is retained only as a synchronized compatibility cache while
-// older regression harnesses transition to inspecting the live `$` object.
+// The hero's carried gold is the COIN_CLASS object in inventory.
+// C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
 
 import { nextIdent } from './ident.js';
 import { markJustPicked } from './just_picked.js';
@@ -40,37 +38,7 @@ export function heroGoldObject(state) {
 
 export function heroGoldAmount(state) {
     const object = heroGoldObject(state);
-    return object ? quantity(object)
-        : Math.max(0, Math.trunc(state?._goldCount ?? 0));
-}
-
-export function syncHeroGoldCache(state) {
-    const object = heroGoldObject(state);
-    state._goldCount = object ? quantity(object) : 0;
-    return state._goldCount;
-}
-
-export function ensureHeroGoldObject(state) {
-    let object = heroGoldObject(state);
-    if (object) return object;
-    const amount = Math.max(0, Math.trunc(state?._goldCount ?? 0));
-    if (!amount) return null;
-    object = normalizeGoldObject({
-        o_id: nextIdent(),
-        where: 'inventory',
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        owornmask: 0,
-        contents: [],
-        objectTimers: [],
-        timed: 0,
-    }, amount);
-    state.inventory ||= [];
-    state.inventory.unshift(object);
-    syncHeroGoldCache(state);
-    return object;
+    return object ? quantity(object) : 0;
 }
 
 export function addHeroGoldObject(state, incoming) {
@@ -84,7 +52,6 @@ export function addHeroGoldObject(state, incoming) {
         incoming.where = 'gone';
         incoming.ox = incoming.oy = 0;
         incoming.quan = incoming.quantity = 0;
-        syncHeroGoldCache(state);
         return { object: markJustPicked(existing), merged: true };
     }
     normalizeGoldObject(incoming, amount);
@@ -94,7 +61,6 @@ export function addHeroGoldObject(state, incoming) {
     incoming.owornmask = incoming.owornmask ?? 0;
     state.inventory ||= [];
     if (!state.inventory.includes(incoming)) state.inventory.unshift(incoming);
-    syncHeroGoldCache(state);
     return { object: markJustPicked(incoming), merged: false };
 }
 
@@ -111,21 +77,30 @@ export function setHeroGoldAmount(state, amount) {
             object.where = 'gone';
             object.quan = object.quantity = 0;
         }
-        state._goldCount = 0;
         return null;
     }
-    object ||= ensureHeroGoldObject(state);
     if (!object) {
-        state._goldCount = amount;
-        object = ensureHeroGoldObject(state);
+        object = normalizeGoldObject({
+            o_id: nextIdent(),
+            where: 'inventory',
+            worn: false,
+            wielded: false,
+            alternate: false,
+            ready: false,
+            owornmask: 0,
+            contents: [],
+            objectTimers: [],
+            timed: 0,
+        }, amount);
+        state.inventory ||= [];
+        state.inventory.unshift(object);
     }
     normalizeGoldObject(object, amount);
-    syncHeroGoldCache(state);
     return object;
 }
 
 export function detachHeroGold(state, requested = null) {
-    const object = ensureHeroGoldObject(state);
+    const object = heroGoldObject(state);
     if (!object) return null;
     const amount = quantity(object);
     const count = requested === null
@@ -137,7 +112,6 @@ export function detachHeroGold(state, requested = null) {
         object.ready = false;
         object.owornmask = 0;
         object.where = 'free';
-        state._goldCount = 0;
         return object;
     }
     normalizeGoldObject(object, amount - count);
@@ -151,6 +125,5 @@ export function detachHeroGold(state, requested = null) {
         where: 'free',
         container: null,
     }, count);
-    syncHeroGoldCache(state);
     return detached;
 }

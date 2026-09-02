@@ -271,8 +271,7 @@ import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
 import {
-    addHeroGoldObject, detachHeroGold, ensureHeroGoldObject,
-    heroGoldAmount, setHeroGoldAmount, syncHeroGoldCache,
+    addHeroGoldObject, detachHeroGold, heroGoldAmount, setHeroGoldAmount,
 } from './hero_gold.js';
 import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
@@ -8917,9 +8916,6 @@ function hasFreeBasicInventoryLetter() {
 }
 
 async function doquiverCore(verb) {
-    // Legacy saves and older harnesses may still carry only the compatibility
-    // amount.  A mutating inventory command materializes its source identity.
-    ensureHeroGoldObject(game);
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
         game.context.move = 0;
@@ -9297,7 +9293,6 @@ async function dothrow(
         : Math.max(0, suppliedShotLimit || 0);
     game._commandCount = 0;
     if (!capabilityChecked && !await okToThrow()) return;
-    ensureHeroGoldObject(game);
 
     // getobj("throw") changes its suggested class when the primary weapon is
     // a sling: ordinary weapons become downplayed and GEM_CLASS sling ammo is
@@ -9471,7 +9466,6 @@ async function dothrow(
         splitObjectId = nextIdent(); // splitobj()
         item.quantity = selectedQuantity - 1;
         item.quan = item.quantity;
-        if (thrownObjectClass === 12) syncHeroGoldCache(game);
     }
     const adjacentMonster = game.level?.monsters?.find(candidate =>
         !candidate.dead && (candidate.mhp ?? 1) > 0
@@ -10595,7 +10589,6 @@ async function dothrow(
             if (index >= 0) game.inventory.splice(index, 1);
             if (game.uquiver === item) setQuiverObject(null, game);
         }
-        if (thrownObjectClass === 12) syncHeroGoldCache(game);
         let x = game.u.ux, y = game.u.uy;
         const nx = x + DIR_DX[direction], ny = y + DIR_DY[direction];
         if (!blocksMove(nx, ny)) {

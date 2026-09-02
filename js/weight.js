@@ -11,7 +11,6 @@ import {
 } from './monster_data.js';
 import { A_CON, A_STR, Is_airlevel } from './const.js';
 import { currentAttribute } from './attrib.js';
-import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
@@ -118,11 +117,7 @@ export function inventoryWeight(state) {
         if (object.otyp === BOULDER && throwsRocks) return total;
         return total + objectWeight(object);
     }, 0);
-    // Canonical states carry one `$` object.  The fallback keeps older saved
-    // aggregate states readable until restoration materializes that identity.
-    const purseWeight = heroGoldObject(state) ? 0
-        : Math.trunc((heroGoldAmount(state) + 50) / 100);
-    return objectWeightTotal + purseWeight;
+    return objectWeightTotal;
 }
 
 export function weightCapacity(state) {

@@ -35,7 +35,7 @@ test('contained gold respects knowledge at every enclosing boundary', () => {
         otyp: SACK, cknown: false,
         contents: [coin(40), unknownNested, knownNested],
     };
-    const state = { _goldCount: 30, inventory: [top] };
+    const state = { inventory: [coin(30), top] };
 
     assert.equal(containedGold(top, true), 170);
     assert.equal(hiddenGold(state, true), 170);
@@ -52,7 +52,6 @@ test('gold insight hides unknown containers until final disclosure', () => {
             otyp: SACK, cknown: false, contents: [coin(60)],
         }],
     });
-    game._goldCount = 0;
     assert.deepEqual(goldInsightLines(false), [
         '  Your wallet is empty.',
     ]);
@@ -61,7 +60,7 @@ test('gold insight hides unknown containers until final disclosure', () => {
         '  you had 60 zorkmids stashed away in your pack.',
     ]);
     game.inventory[0].cknown = true;
-    game._goldCount = 30;
+    game.inventory.unshift(coin(30));
     assert.deepEqual(goldInsightLines(false), [
         '  Your wallet contains 30 zorkmids, and',
         '  you have 60 more stashed away in your pack.',
@@ -109,7 +108,6 @@ function carryState({ strength, constitution, strengthMax = 18,
             amax: { a: maximum },
         },
         inventory,
-        _goldCount: 0,
     };
 }
 
@@ -183,11 +181,7 @@ test('all role startups leave source bookkeeping and capacity coherent', () => {
         prepareHeroStartup({ role, alignment: 'neutral' });
         assert.equal(uInitInventoryAttrs(), true, role.key);
         assert.ok(invWeight(game) <= 0, role.key);
-        assert.equal(
-            game._initialGoldCount,
-            (game._goldCount || 0) + hiddenGold(game, true),
-            role.key,
-        );
+        assert.equal(game._initialGoldCount, carriedGold(game, true), role.key);
     }
 });
 
@@ -205,8 +199,5 @@ test('fresh carry startup reaches a live turn with zero bridges', async () => {
 
     assert.ok(result.getScreens().length > 0);
     assert.ok(invWeight(game) <= 0);
-    assert.equal(
-        game._initialGoldCount,
-        (game._goldCount || 0) + hiddenGold(game, true),
-    );
+    assert.equal(game._initialGoldCount, carriedGold(game, true));
 });

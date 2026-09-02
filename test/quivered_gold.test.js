@@ -73,7 +73,6 @@ test('splitting a heavy coin stack recalculates parent and child weight',
         assert.equal(purse.quantity, 4049);
         assert.equal(purse.owt, 40);
         assert.equal(heroGoldAmount(game), 4049);
-        assert.equal(game._goldCount, 4049);
         assert.equal(coin.owt, 1);
         assert.deepEqual([coin.ox, coin.oy], [15, 10]);
     });
