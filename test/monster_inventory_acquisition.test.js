@@ -26,7 +26,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, addPet } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -151,13 +151,13 @@ test('special-level inventory transfer removes floor ownership and head-links',
 test('pet mpickobj ownership survives the complete pickup and release cycle',
     () => {
         freshInventoryState(2105);
-        const pet = inventoryMonster(705, {
+        const pet = addPet({
+            m_id: 705,
             mnum: 100,
             x: 13,
             mux: game.u.ux, muy: game.u.uy,
             level: 4,
             hitPoints: 20,
-            pet: true,
             mtame: 10,
             edog: { apport: 1 },
         });

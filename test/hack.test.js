@@ -15,6 +15,7 @@ import {
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { carriedObject as inventoryObject } from './support/game-objects.js';
+import { liveMonster, livePet } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function liquidAtHero(terrain) {
@@ -261,16 +262,13 @@ test('a no-teleport level blocks escape without spending power', async () => {
 
 test('a grounded steed drowns before the hero tries to crawl out', async () => {
     const level = poolAtHero();
-    const steed = {
+    const steed = livePet({
         mnum: MONSTER_NAME.indexOf('pony'),
-        mx: game.u.ux,
-        my: game.u.uy,
-        mhp: 8,
-        mhpmax: 8,
+        x: game.u.ux,
+        y: game.u.uy,
+        hitPoints: 8,
         mtame: 20,
-        pet: true,
-        minvent: [],
-    };
+    });
     game.u.usteed = steed;
     level.monsters = [];
     const alignmentBefore = game.u.ualign.record;
@@ -291,16 +289,13 @@ test('a grounded steed drowns before the hero tries to crawl out', async () => {
 
 test('a flying steed keeps its rider above the pool', async () => {
     poolAtHero();
-    const steed = {
+    const steed = livePet({
         mnum: MONSTER_NAME.indexOf('couatl'),
-        mx: game.u.ux,
-        my: game.u.uy,
-        mhp: 20,
-        mhpmax: 20,
+        x: game.u.ux,
+        y: game.u.uy,
+        hitPoints: 20,
         mtame: 20,
-        pet: true,
-        minvent: [],
-    };
+    });
     game.u.usteed = steed;
 
     const result = await heroLiquidEffects({
@@ -491,14 +486,14 @@ test('entering a pool releases every leash', async () => {
     level.at(10, 10).typ = POOL;
     game.u.amphibious = true;
     game.u.uluck = 100;
-    const pet = {
+    const pet = liveMonster({
         mnum: 16,
         m_id: 7001,
-        mx: 11,
-        my: 10,
-        mhp: 8,
+        x: 11,
+        y: 10,
+        hitPoints: 8,
         mleashed: 1,
-    };
+    });
     level.monsters = [pet];
     const leash = inventoryObject(LEASH, {
         oclass: 6,

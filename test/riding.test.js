@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset_new_level } from '../js/vision.js';
-import { liveMonster } from './support/monsters.js';
+import { livePet } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshKnightArena() {
@@ -17,15 +17,13 @@ function freshKnightArena() {
 }
 
 function pony(overrides = {}) {
-    return liveMonster({
+    return livePet({
         mnum: 100,
         name: 'pony',
         x: 11,
         y: 10,
         hitPoints: 8,
         mtame: 20,
-        mpeaceful: true,
-        pet: true,
         saddled: true,
         edog: { hungrytime: 1001 },
         ...overrides,

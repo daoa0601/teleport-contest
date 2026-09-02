@@ -12,7 +12,7 @@ import { mkcorpstat } from '../js/mklev.js';
 import { HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
-import { liveMonster } from './support/monsters.js';
+import { addPet } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('escaping a web takes a movement attempt without moving the hero',
@@ -39,12 +39,10 @@ test('climbing from a pit leaves the hero on the pit square', async () => {
 });
 
 test('a trapped hero cannot swap places with a pet', async () => {
-    const level = freshWeaponArena();
-    const dog = liveMonster({
+    freshWeaponArena();
+    const dog = addPet({
         mnum: 16, x: 11, y: 10, hitPoints: 8,
-        pet: true, mtame: 10,
     });
-    level.monsters.push(dog);
     game.u.utrap = 1;
     game.u.utraptype = TT_WEB;
 

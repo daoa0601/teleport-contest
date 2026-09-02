@@ -40,10 +40,34 @@ export function deadMonster(options) {
     });
 }
 
-export function addMonster(options, state = game) {
-    const monster = liveMonster(options);
+export function livePet(options) {
+    return liveMonster({
+        mpeaceful: 1,
+        mtame: 10,
+        pet: true,
+        edog: {},
+        ...options,
+    });
+}
+
+export function deadPet(options) {
+    return livePet({
+        ...options,
+        mhp: 0,
+    });
+}
+
+function addToLevel(monster, state) {
     if (monster.m_id === undefined)
         monster.m_id = 1000 + state.level.monsters.length;
     state.level.monsters.push(monster);
     return monster;
+}
+
+export function addMonster(options, state = game) {
+    return addToLevel(liveMonster(options), state);
+}
+
+export function addPet(options, state = game) {
+    return addToLevel(livePet(options), state);
 }

@@ -19,7 +19,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { untimedCorpse } from './support/game-objects.js';
-import { deadMonster, liveMonster } from './support/monsters.js';
+import { deadMonster, deadPet, liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
@@ -114,15 +114,13 @@ test('a corpse made from a named monster restores that monster', async () => {
 
 test('a pet killed by the hero does not revive tame', async () => {
     freshState();
-    const deadPet = deadMonster({
+    const deadTroll = deadPet({
         m_id: 92,
         mnum: PM_TROLL,
         x: 12, y: 10,
         level: 9,
         hitPoints: 20,
-        mpeaceful: 1,
         mtame: 10,
-        pet: true,
         meating: 4,
         edog: {
             abuse: 0,
@@ -133,7 +131,7 @@ test('a pet killed by the hero does not revive tame', async () => {
         },
     });
     const corpse = mkcorpstat(
-        CORPSE, deadPet, PM_TROLL, 12, 10, 8,
+        CORPSE, deadTroll, PM_TROLL, 12, 10, 8,
     );
     stopAllObjectTimers(corpse);
 
@@ -143,7 +141,7 @@ test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.pet, false);
     assert.equal(event.monster.mpeaceful, 1);
     assert.equal(event.monster.meating, 0);
-    assert.ok(event.monster.mhpmax > deadPet.mhpmax);
+    assert.ok(event.monster.mhpmax > deadTroll.mhpmax);
     assert.equal(event.monster.mhp, event.monster.mhpmax);
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
 });

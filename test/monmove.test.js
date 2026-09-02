@@ -11,7 +11,7 @@ import { game } from '../js/gstate.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
-import { addMonster, liveMonster } from './support/monsters.js';
+import { addMonster, addPet, liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function rolls(values) {
@@ -55,15 +55,13 @@ test('a tame red dragon bites and claws an adjacent enemy', () => {
         heroY: 10,
         recalculateVision: false,
     });
-    const dragon = addMonster({
+    const dragon = addPet({
         species: 'red dragon',
         x: 10,
         y: 10,
         hitPoints: 100,
         level: 15,
         mtame: 20,
-        pet: true,
-        mpeaceful: 1,
         edog: { hungrytime: 1000 },
     });
     const goblin = addMonster({
