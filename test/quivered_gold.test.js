@@ -7,7 +7,7 @@ import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedGold, fireQuiveredGold, goldMonster, readyGold, throwGold,
+    addGoldMonster, carriedGold, fireQuiveredGold, readyGold, throwGold,
 } from './support/gold-arena.js';
 import {
     floorObjects, floorObjectsAt,
@@ -109,10 +109,9 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29105);
-        const leprechaun = goldMonster({
+        const leprechaun = addGoldMonster({
             m_id: 29106, mpeaceful: 1, msleeping: 1,
         });
-        level.monsters.push(leprechaun);
         initRng(2n);
 
         await fireQuiveredGold('l');
@@ -128,10 +127,9 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29107);
-        const leprechaun = goldMonster({
+        const leprechaun = addGoldMonster({
             m_id: 29108, mpeaceful: 1, msleeping: 1,
         });
-        level.monsters.push(leprechaun);
         initRng(1n);
 
         await fireQuiveredGold('l', ' ');
@@ -147,11 +145,10 @@ test('targeting can thaw an immobilized monster before the coin misses',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29109);
-        const leprechaun = goldMonster({
+        const leprechaun = addGoldMonster({
             m_id: 29110, mpeaceful: 1, msleeping: 1,
             mcanmove: 0, mfrozen: 6,
         });
-        level.monsters.push(leprechaun);
         initRng(13n);
 
         await fireQuiveredGold('l');
@@ -169,11 +166,10 @@ test('a swallowed quivered coin wakes the engulfer and enters its inventory',
     async () => {
         const level = freshWeaponArena();
         const purse = await quiver(5, 29111);
-        const engulfer = goldMonster({
+        const engulfer = addGoldMonster({
             m_id: 29112, mnum: 202, mx: 10, my: 10,
             mpeaceful: 1, msleeping: 1,
         });
-        level.monsters.push(engulfer);
         game.u.uswallow = true;
         game.u.ustuck = engulfer;
 
