@@ -2,7 +2,7 @@
 // C refs: mondata.c touch_petrifies()/poly_when_stoned(),
 // pickup.c fatal_corpse_mistake(), and trap.c instapetrify().
 
-import { G_GENOD } from './const.js';
+import { G_GENOD, STONING } from './const.js';
 import { pline } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
@@ -61,6 +61,7 @@ export async function touchPetrifyingCorpse(object, {
         killer: corpse,
         deathVerb: 'turned to stone',
         deathLineShown: true,
+        deathType: STONING,
     });
     return { died };
 }
