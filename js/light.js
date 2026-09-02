@@ -15,7 +15,7 @@ import { tameMonster } from './dog.js';
 import { makemonNear } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import {
-    MONSTER_SYMBOL, monsterDigests, monsterTypeName,
+    monsterDigests, monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
@@ -45,8 +45,6 @@ const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
 const PM_YELLOW_LIGHT = 118;
 const PM_BLACK_LIGHT = 119;
-const PM_AIR_ELEMENTAL = 154;
-const S_VORTEX = 22;
 
 function heroIsBlind() {
     return !!(game.blind || (game.u?.blindTurns ?? 0) > 0);
@@ -59,9 +57,7 @@ function swallowedLightMessage() {
         || monsterTypeName(swallower.mnum, !!swallower.female);
     const subject = `The ${name}`;
     if (monsterDigests(swallower)) return `${subject}'s stomach is lit.`;
-    const whirly = MONSTER_SYMBOL[swallower.mnum] === S_VORTEX
-        || swallower.mnum === PM_AIR_ELEMENTAL;
-    return whirly
+    return monsterIsWhirly(swallower)
         ? `${subject} shines briefly.`
         : `${subject} glistens.`;
 }

@@ -14,7 +14,7 @@ import {
 } from './monmove.js';
 import { wakeMonster } from './monster_anger.js';
 import {
-    MONSTER_SYMBOL, monsterTypeName,
+    monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
@@ -26,8 +26,6 @@ import {
 } from './properties.js';
 import { rn2, rnd } from './rng.js';
 
-const PM_AIR_ELEMENTAL = 154;
-const S_VORTEX = 22;
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
 };
@@ -46,11 +44,6 @@ function rayCellIsOpen(x, y, state) {
     if (!location || !ZAP_POS(location.typ)) return false;
     return location.typ !== DOOR
         || !(location.doormask & (D_CLOSED | D_LOCKED));
-}
-
-function isWhirly(monster) {
-    return monster?.mnum === PM_AIR_ELEMENTAL
-        || MONSTER_SYMBOL[monster?.mnum] === S_VORTEX;
 }
 
 async function expelHero(monster, state, random, roll) {
@@ -93,7 +86,7 @@ async function affectMonster(monster, kind, source, state, options) {
             }
         }
         if (kind === 'slow' && state.u?.uswallow
-            && state.u?.ustuck === monster && isWhirly(monster)) {
+            && state.u?.ustuck === monster && monsterIsWhirly(monster)) {
             await expelHero(monster, state, options.random, options.roll);
         }
     }
