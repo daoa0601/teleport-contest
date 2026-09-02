@@ -177,6 +177,15 @@ export function objectTimers(object) {
     return timersFor(object).map(timer => ({ ...timer }));
 }
 
+export function copyObjectTimers(source, destination, state = game) {
+    for (const timer of objectTimers(source)) {
+        scheduleObjectTimer(
+            destination, timer.kind, timer.deadline, state,
+        );
+    }
+    return objectTimers(destination);
+}
+
 export function levelTimers(state = game) {
     return levelTimersFor(state).map(timer => ({ ...timer }));
 }

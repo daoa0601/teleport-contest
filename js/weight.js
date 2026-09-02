@@ -2,7 +2,7 @@
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
 
 import {
-    BAG_OF_HOLDING, OBJECT_NUTRITION, OBJECT_WEIGHT,
+    BAG_OF_HOLDING, CORPSE, OBJECT_NUTRITION, OBJECT_WEIGHT,
 } from './object_data.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
@@ -42,6 +42,18 @@ export function objectWeight(object) {
     // SHRINK_GLOB mutate their complete weight directly in owt.  This check
     // precedes partly-eaten food scaling because oeaten is also glob mass.
     if (object.globby) return object.owt ?? base ?? 0;
+    if (object.otyp === CORPSE && Number.isInteger(object.corpsenm)) {
+        const [bodyWeight = 0, nutrition = 0]
+            = MONSTER_BODY_META[object.corpsenm] || [];
+        const fullWeight = bodyWeight * quantity(object);
+        if ((object.oeaten ?? 0) > 0) {
+            const fullNutrition = nutrition * quantity(object);
+            return Math.max(1, fullNutrition > 0
+                ? Math.trunc(fullWeight * object.oeaten / fullNutrition)
+                : 0);
+        }
+        return fullWeight;
+    }
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition.  touchfood() splits stacks first, but retain the
     // quantity-aware formula for restored objects and future constructors.

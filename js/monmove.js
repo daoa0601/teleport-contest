@@ -13,6 +13,7 @@ import {
 } from './armor.js';
 import { nextIdent } from './ident.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
+import { splitObjectStack } from './object_stack.js';
 import {
     map_invisible, newsym, randomDisplayMonsterName,
     randomDisplayMonsterSubject, swallowed, unmap_invisible,
@@ -873,14 +874,6 @@ function monsterObjectWeight(object) {
     return (OBJECT_WEIGHT[object.otyp] ?? 0) * quantity;
 }
 
-function objectWeightAtQuantity(object, quantity) {
-    if (object.otyp === GOLD_PIECE)
-        return Math.trunc((quantity + 50) / 100);
-    if (object.otyp === CORPSE && Number.isInteger(object.corpsenm))
-        return MONSTER_BODY_META[object.corpsenm]?.[0] ?? 0;
-    return (OBJECT_WEIGHT[object.otyp] ?? 0) * quantity;
-}
-
 function currentMonsterLoad(monster) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     const inventory = monster?.minvent || monster?.inventory || [];
@@ -963,18 +956,7 @@ function pickUpMonsterFloorObject(monster, state) {
         // mon.c:mpickstuff() splits the carryable portion from the floor
         // parent before extracting it.  splitobj() allocates a distinct id
         // even when the child immediately enters monster inventory.
-        carriedObject = {
-            ...object,
-            o_id: nextIdent(),
-            quan: carryAmount,
-            quantity: carryAmount,
-            owt: objectWeightAtQuantity(object, carryAmount),
-            owornmask: 0,
-        };
-        const remainder = quantity - carryAmount;
-        object.quan = remainder;
-        object.quantity = remainder;
-        object.owt = objectWeightAtQuantity(object, remainder);
+        carriedObject = splitObjectStack(object, carryAmount, state);
     } else {
         [carriedObject] = pile.splice(index, 1);
     }
@@ -2787,18 +2769,11 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
                 const quantity = object.quan ?? object.quantity ?? 1;
                 let pickedUp = object;
                 if (carryAmount !== quantity) {
-                    pickedUp = {
-                        ...object,
-                        o_id: nextIdent(),
-                        quan: carryAmount,
-                        quantity: carryAmount,
-                        owt: objectWeightAtQuantity(object, carryAmount),
-                        where: 'free',
-                    };
+                    pickedUp = splitObjectStack(
+                        object, carryAmount, state,
+                    );
+                    pickedUp.where = 'free';
                     calls.push('rnd(2)');
-                    const remainder = quantity - carryAmount;
-                    object.quan = object.quantity = remainder;
-                    object.owt = objectWeightAtQuantity(object, remainder);
                 } else {
                     const index = pile.indexOf(object);
                     if (index >= 0) pile.splice(index, 1);

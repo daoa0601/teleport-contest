@@ -23,12 +23,13 @@ function objectClass(otyp) {
 }
 
 function testObject(otyp, overrides = {}) {
+    const quantity = overrides.quan ?? overrides.quantity ?? 1;
     return {
         otyp,
         name: OBJECT_NAMES[otyp],
         oclass: objectClass(otyp),
-        quan: 1,
-        quantity: 1,
+        quan: quantity,
+        quantity,
         blessed: false,
         cursed: false,
         bknown: true,
@@ -37,6 +38,8 @@ function testObject(otyp, overrides = {}) {
         objectTimers: [],
         timed: 0,
         ...overrides,
+        quan: quantity,
+        quantity,
     };
 }
 

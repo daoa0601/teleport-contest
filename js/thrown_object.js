@@ -2,8 +2,7 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj().
 
 import { LOST_THROWN } from './const.js';
-import { nextIdent } from './ident.js';
-import { OBJECT_WEIGHT } from './object_data.js';
+import { splitObjectStack } from './object_stack.js';
 
 const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
@@ -19,27 +18,11 @@ export function detachThrownUnit(
 ) {
     let thrown = item;
     if (selectedQuantity > 1) {
-        if (splitObjectId == null) splitObjectId = nextIdent();
-        const unitWeight = OBJECT_WEIGHT[item.otyp]
-            ?? Math.max(1, Math.trunc((item.owt ?? 1) / selectedQuantity));
-        item.quantity = selectedQuantity - 1;
-        item.quan = item.quantity;
-        item.owt = unitWeight * item.quantity;
-        thrown = {
-            ...item,
-            o_id: splitObjectId,
-            invlet: null,
-            quan: 1,
-            quantity: 1,
-            owt: unitWeight,
-            owornmask: 0,
-            worn: false,
-            wornSlot: null,
-            ready: false,
-            where: 'free',
-            objectTimers: [],
-            timed: 0,
-        };
+        thrown = splitObjectStack(
+            item, 1, state, splitObjectId,
+        );
+        thrown.invlet = null;
+        thrown.where = 'free';
     } else {
         const index = state.inventory.indexOf(item);
         if (index >= 0) state.inventory.splice(index, 1);

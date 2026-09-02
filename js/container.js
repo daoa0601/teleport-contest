@@ -25,10 +25,14 @@ import {
 } from './object_data.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import {
+    objectQuantity, rejoinObjectStack, splitObjectStack,
+} from './object_stack.js';
+import {
     OBJECT_TIMER_KIND, stopObjectTimer,
 } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
 import { d, rn2 } from './rng.js';
+import { rejoinShopBill, splitShopBill } from './shk.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
 import {
@@ -67,9 +71,7 @@ export function isContainer(object) {
     return !!object && CONTAINER_TYPES.has(object.otyp);
 }
 
-function quantity(object) {
-    return object?.quan ?? object?.quantity ?? 1;
-}
+const quantity = objectQuantity;
 
 function indefiniteArticle(noun) {
     return /^[aeiou]/i.test(noun) ? 'an' : 'a';
@@ -235,6 +237,7 @@ async function chooseObjects(title, objects, useInventoryLetters) {
         title,
         sections: selectionSections(objects, useInventoryLetters),
         left: 41,
+        returnCounts: true,
     });
 }
 
@@ -457,9 +460,49 @@ function rejectedPutMessage(container, object, state) {
     return null;
 }
 
-export function putIntoContainer(container, object, state = game) {
+function transferQuantity(object, count) {
+    const total = quantity(object);
+    return count > 0 ? Math.min(Math.trunc(count), total) : total;
+}
+
+function splitForTransfer(object, count, state) {
+    const amount = transferQuantity(object, count);
+    const split = splitObjectStack(object, amount, state);
+    if (!split) return { object, parent: null, bill: null };
+    const bill = splitShopBill(object, split, state);
+    if (object.otyp === GOLD_PIECE && object.where === 'inventory')
+        syncHeroGoldCache(state);
+    return { object: split, parent: object, bill };
+}
+
+function restoreRejectedSplit(transfer, state) {
+    if (!transfer.parent) return;
+    if (rejoinObjectStack(transfer.parent, transfer.object, state)) {
+        rejoinShopBill(transfer.bill);
+        if (transfer.parent.otyp === GOLD_PIECE
+            && transfer.parent.where === 'inventory') {
+            syncHeroGoldCache(state);
+        }
+        return;
+    }
+
+    if (transfer.parent.where !== 'inventory') return;
+    const inventory = state.inventory || (state.inventory = []);
+    const parentIndex = inventory.indexOf(transfer.parent);
+    if (!inventory.includes(transfer.object))
+        inventory.splice(parentIndex + 1, 0, transfer.object);
+}
+
+export function putIntoContainer(
+    container, object, state = game, count = -1,
+) {
+    const transfer = splitForTransfer(object, count, state);
+    object = transfer.object;
     const rejected = rejectedPutMessage(container, object, state);
-    if (rejected) return { moved: false, message: rejected };
+    if (rejected) {
+        restoreRejectedSplit(transfer, state);
+        return { moved: false, message: rejected };
+    }
 
     removeFromInventory(object, state);
     if (object.lamplit) endObjectBurn(object, state, state.moves ?? 0);
@@ -477,6 +520,7 @@ export function putIntoContainer(container, object, state = game) {
     container.contents.unshift(object);
     container.cknown = true;
     updateContainerWeights(container);
+    state._capacityDirty = true;
     return {
         moved: true,
         message: `You put ${objectDescription(object)} into the ${
@@ -484,20 +528,44 @@ export function putIntoContainer(container, object, state = game) {
     };
 }
 
-function extraWeightWhenRemoved(container, object, state) {
-    if (!carriedContainer(container, state)) return objectWeight(object);
-    const before = objectWeight(container);
-    const contents = container.contents;
-    container.contents = contents.filter(candidate => candidate !== object);
-    const after = objectWeight(container);
-    container.contents = contents;
-    return objectWeight(object) + after - before;
+function weightAtQuantity(object, count) {
+    if (count >= quantity(object)) return objectWeight(object);
+    return objectWeight({
+        ...object,
+        quan: count,
+        quantity: count,
+    });
 }
 
-export function takeFromContainer(container, object, state = game) {
+function extraWeightWhenRemoved(container, object, count, state) {
+    const amount = transferQuantity(object, count);
+    const selectedWeight = weightAtQuantity(object, amount);
+    if (!carriedContainer(container, state)) return selectedWeight;
+    const before = objectWeight(container);
+    const total = quantity(object);
+    const contents = container.contents;
+    const oldQuan = object.quan;
+    const oldQuantity = object.quantity;
+    if (amount < total) {
+        object.quan = object.quantity = total - amount;
+    } else {
+        container.contents = contents.filter(candidate => candidate !== object);
+    }
+    const after = objectWeight(container);
+    object.quan = oldQuan;
+    object.quantity = oldQuantity;
+    container.contents = contents;
+    return selectedWeight + after - before;
+}
+
+export function takeFromContainer(
+    container, object, state = game, count = -1,
+) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
-    const extraWeight = extraWeightWhenRemoved(container, object, state);
+    const extraWeight = extraWeightWhenRemoved(
+        container, object, count, state,
+    );
     if (calcCapacity(state, extraWeight) >= OVERLOADED) {
         return {
             moved: false,
@@ -505,8 +573,12 @@ export function takeFromContainer(container, object, state = game) {
         };
     }
 
-    container.contents = container.contents
-        .filter(candidate => candidate !== object);
+    const transfer = splitForTransfer(object, count, state);
+    object = transfer.object;
+    if (!transfer.parent) {
+        container.contents = container.contents
+            .filter(candidate => candidate !== object);
+    }
     object.container = null;
     object.where = 'free';
     if (container.otyp === ICE_BOX) thawObject(object, state);
@@ -543,7 +615,11 @@ async function takeSelectedObjects(container) {
     const eligible = matchingObjects(container.contents, matchers);
     const selected = await chooseObjects('Take out what?', eligible, false);
     const results = [];
-    for (const object of selected) results.push(takeFromContainer(container, object));
+    for (const selection of selected) {
+        results.push(takeFromContainer(
+            container, selection.value, game, selection.count,
+        ));
+    }
     await reportResults(results);
     return results;
 }
@@ -564,8 +640,10 @@ async function putSelectedObjects(container, stashOne = false) {
         selected = await chooseObjects('Put in what?', eligible, true);
     }
     const results = [];
-    for (const object of selected) {
-        const result = putIntoContainer(container, object);
+    for (const selection of selected) {
+        const result = putIntoContainer(
+            container, selection.value, game, selection.count,
+        );
         results.push(result);
         if (result.destroyedContainer) break;
     }

@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
+import { syncHeroGoldCache } from '../js/hero_gold.js';
 import { pushKeys } from '../js/input.js';
 import {
-    AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, ICE_BOX,
-    LARGE_BOX,
+    AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART,
+    GOLD_PIECE, ICE_BOX, LARGE_BOX, LOADSTONE,
 } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
@@ -63,6 +64,73 @@ test('applying a carried chest can take its item back out', async () => {
     assert.equal(game.context.move, 1);
 });
 
+test('a container menu can move part of a carried stack', async () => {
+    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const darts = inventoryObject(DART, 'b', {
+        quantity: 5,
+    });
+    freshContainerGame(chest, darts);
+
+    await applyObject('ai2b\n');
+
+    assert.equal(darts.quan, 3);
+    assert.equal(game.inventory.includes(darts), true);
+    assert.equal(chest.contents.length, 1);
+    assert.equal(chest.contents[0].quan, 2);
+    assert.equal(chest.contents[0].where, 'contained');
+});
+
+test('a container menu can take part of a contained stack', async () => {
+    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const darts = inventoryObject(DART, 'b', {
+        where: 'contained',
+        container: chest,
+        quantity: 5,
+    });
+    chest.contents = [darts];
+    freshContainerGame(chest);
+
+    await applyObject('ao2a\n');
+
+    assert.equal(darts.quan, 3);
+    assert.deepEqual(chest.contents, [darts]);
+    const carried = game.inventory.find(object => object.otyp === DART);
+    assert.equal(carried.quan, 2);
+    assert.equal(carried.where, 'inventory');
+});
+
+test('a rejected partial transfer restores the carried stack', async () => {
+    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const loadstones = inventoryObject(LOADSTONE, 'b', {
+        cursed: true,
+        quantity: 5,
+    });
+    freshContainerGame(chest, loadstones);
+
+    await applyObject('ai2b\n');
+
+    assert.equal(loadstones.quan, 5);
+    assert.deepEqual(game.inventory, [chest, loadstones]);
+    assert.deepEqual(chest.contents, []);
+});
+
+test('moving some gold keeps the purse and container amounts separate',
+    async () => {
+        const chest = inventoryObject(CHEST, 'a', { cknown: true });
+        const gold = inventoryObject(GOLD_PIECE, '$', {
+            quantity: 5,
+        });
+        freshContainerGame(chest, gold);
+        syncHeroGoldCache(game);
+
+        await applyObject('ai2$\n');
+
+        assert.equal(gold.quan, 3);
+        assert.equal(game._goldCount, 3);
+        assert.equal(chest.contents[0].quan, 2);
+        assert.equal(chest.contents[0].where, 'contained');
+    });
+
 test('a carried locked chest must be put down before it can be opened',
     async () => {
         const chest = inventoryObject(CHEST, 'a', {
@@ -112,7 +180,7 @@ test('an ice box pauses and resumes corpse decay', async () => {
     const iceBox = inventoryObject(ICE_BOX, 'a', { cknown: true });
     const corpse = inventoryObject(CORPSE, 'b', {
         age: 10,
-        corpsenm: 260,
+        corpsenm: 0,
     });
     freshContainerGame(iceBox, corpse);
     game.moves = 40;

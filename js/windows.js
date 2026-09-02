@@ -275,14 +275,25 @@ export async function showChoiceWindow({
 export async function showMultiSelectWindow({
     title, sections, left = null, omitHeadings = false, introLines = [],
     blankAfterTitle = true, pageLocalKeys = false,
-    titleAttr = ATR_INVERSE,
+    titleAttr = ATR_INVERSE, returnCounts = false,
 }) {
     const d = display();
     if (!d) return [];
 
     const allItems = sections.flatMap(section => section.items || []);
     const selected = new Set();
+    const selectedCounts = new Map();
     let page = 0;
+    let pendingCount = null;
+    const selectionMarker = item => selected.has(item)
+        ? selectedCounts.has(item) ? '#' : '+'
+        : '-';
+    const selectedValues = () => allItems
+        .filter(item => selected.has(item))
+        .map(item => returnCounts ? {
+            value: item.value,
+            count: selectedCounts.get(item) ?? -1,
+        } : item.value);
     const render = () => {
         const rows = [
             { text: title, attr: titleAttr },
@@ -299,7 +310,7 @@ export async function showMultiSelectWindow({
                     rows.push({ text: '--', attr: ATR_NONE });
                 itemRows.push({ row: rows.length, item });
                 rows.push({
-                    text: `${item.key} ${selected.has(item) ? '+' : '-'} ${item.text}`,
+                    text: `${item.key} ${selectionMarker(item)} ${item.text}`,
                     attr: ATR_NONE,
                     item,
                 });
@@ -326,7 +337,7 @@ export async function showMultiSelectWindow({
         const pageRows = unkeyedPageRows.map(row => !row.item ? row : ({
             ...row,
             text: `${pageKeys.get(row.item)} ${
-                selected.has(row.item) ? '+' : '-'
+                selectionMarker(row.item)
             } ${row.item.text}`,
         }));
         const marker = paged ? `(${page + 1} of ${pageCount})` : '(end)';
@@ -353,10 +364,26 @@ export async function showMultiSelectWindow({
     for (;;) {
         const { pageCount, pageItems, pageKeys } = render();
         const key = await nhgetch();
-        if (key === 27) return [];
+        if (returnCounts && key >= 48 && key <= 57) {
+            const digit = key - 48;
+            const next = Math.min(
+                Number.MAX_SAFE_INTEGER,
+                (pendingCount ?? 0) * 10 + digit,
+            );
+            if (next > 0) pendingCount = next;
+            continue;
+        }
+        if (key === 27) {
+            if (pendingCount !== null) {
+                pendingCount = null;
+                continue;
+            }
+            return [];
+        }
+        const count = pendingCount;
+        pendingCount = null;
         if (key === 10 || key === 13) {
-            return allItems.filter(item => selected.has(item))
-                .map(item => item.value);
+            return selectedValues();
         }
         const letter = String.fromCharCode(key);
         if (letter === ' ') {
@@ -366,28 +393,41 @@ export async function showMultiSelectWindow({
             }
             // tty PICK_ANY: Space is next-page only while another page
             // exists.  On the last (including only) page it commits.
-            return allItems.filter(item => selected.has(item))
-                .map(item => item.value);
+            return selectedValues();
         }
         if (pageCount > 1 && letter === '<') {
             page = (page + pageCount - 1) % pageCount;
             continue;
         }
         if (letter === '@') {
-            if (selected.size === allItems.length) selected.clear();
-            else for (const candidate of allItems) selected.add(candidate);
+            if (selected.size === allItems.length) {
+                selected.clear();
+                selectedCounts.clear();
+            } else {
+                for (const candidate of allItems) selected.add(candidate);
+                selectedCounts.clear();
+            }
             continue;
         }
         if (letter === '.') {
-            for (const candidate of pageItems) selected.add(candidate);
+            for (const candidate of pageItems) {
+                selected.add(candidate);
+                selectedCounts.delete(candidate);
+            }
             continue;
         }
         const item = pageLocalKeys
             ? pageItems.find(candidate => pageKeys.get(candidate) === letter)
             : allItems.find(candidate => candidate.key === letter);
         if (!item) continue;
-        if (selected.has(item)) selected.delete(item);
-        else selected.add(item);
+        if (selected.has(item) && count === null) {
+            selected.delete(item);
+            selectedCounts.delete(item);
+        } else {
+            selected.add(item);
+            if (count === null) selectedCounts.delete(item);
+            else selectedCounts.set(item, count);
+        }
     }
 }
 
