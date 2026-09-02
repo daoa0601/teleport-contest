@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROOM, SQKY_BOARD,
+    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM, SQKY_BOARD,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
-import { ARROW, HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
+import { ARROW, HEAVY_IRON_BALL, ROCK, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
@@ -145,6 +145,20 @@ test('a squeaky board wakes nearby monsters', async () => {
 
     assert.equal(trap.tseen, true);
     assert.equal(sleeper.msleeping, 0);
+});
+
+test('a falling-rock trap drops a rock and hurts the hero', async () => {
+    const level = freshWeaponArena();
+    const trap = addTrap(level, ROCKTRAP, 11, 10, { tseen: false });
+    game.u.uhp = game.u.uhpmax = 40;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(trap.tseen, true);
+    assert.ok(game.u.uhp < 40);
+    assert.ok(floorObjectsAt(level, 11, 10).some(
+        object => object.otyp === ROCK && object.where === 'floor',
+    ));
 });
 
 test('stepping on a statue trap releases its monster', async () => {

@@ -3,6 +3,7 @@
 
 import { exerciseAttribute } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
+import { objectIsHardHelmet } from './armor.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
     D_TRAPPED, CORPSTAT_HISTORIC, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
@@ -29,8 +30,7 @@ import { monsterResistsEffect } from './monster_resistance.js';
 import { breakFloorObject } from './object_breakage.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BOULDER, OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_USES_KNOWN,
-    ROCK, STATUE,
+    BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE,
 } from './object_data.js';
 import {
     heroFormHidesUnderObjects, rehumanizeHero,
@@ -42,10 +42,6 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { objectWeight } from './weight.js';
 
 const GEM_CLASS = 13;
-const ARM_HELM = 2;
-const IRON = 11;
-const MITHRIL = 17;
-const GLASS = 19;
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -320,13 +316,6 @@ async function hitHero(state, options) {
     return true;
 }
 
-function hardHelmet(state) {
-    const helmet = state.uarmh || state.u?.uarmh;
-    if (!helmet || OBJECT_SUBTYPE[helmet.otyp] !== ARM_HELM) return false;
-    const material = OBJECT_MATERIAL[helmet.otyp] ?? 0;
-    return material >= IRON && material <= MITHRIL || material === GLASS;
-}
-
 function onQuestStartLevel(state) {
     const level = state.u?.uz;
     return !!level && level.dnum === state.quest_dnum
@@ -342,7 +331,8 @@ async function dropRockFromCeiling(state, random, roll) {
     await pline(
         'A rock is dislodged from the ceiling and falls on your head.',
     );
-    let damage = roll(hardHelmet(state) ? 2 : 6);
+    const helmet = state.uarmh || state.u?.uarmh;
+    let damage = roll(objectIsHardHelmet(helmet) ? 2 : 6);
     if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
         damage = Math.ceil(damage / 2);
     const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';

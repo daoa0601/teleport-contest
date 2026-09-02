@@ -137,6 +137,19 @@ export function monsterHandName(mnum) {
     return 'foreclaw';
 }
 
+export function monsterHeadName(mnum) {
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB)
+        return 'cerebral area';
+    if (symbol === S_EYE || symbol === S_LIGHT) return 'body';
+    if (symbol === S_FUNGUS) return 'cap area';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'central core';
+    if (symbol === S_WORM) return 'anterior segment';
+    if (symbol === S_SPIDER) return 'cephalothorax';
+    return 'head';
+}
+
 function currentHeroMonsterNumber(state) {
     if (Number.isInteger(state.u?.umonnum)) return state.u.umonnum;
     if (Number.isInteger(state.u?.umonster)) return state.u.umonster;
@@ -155,4 +168,8 @@ export function heroFootName(state = game) {
 
 export function heroHandName(state = game) {
     return monsterHandName(currentHeroMonsterNumber(state));
+}
+
+export function heroHeadName(state = game) {
+    return monsterHeadName(currentHeroMonsterNumber(state));
 }

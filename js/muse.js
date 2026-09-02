@@ -2,6 +2,7 @@
 // C refs: muse.c rnd_offensive_item(), rnd_defensive_item(), rnd_misc_item().
 
 import { game } from './gstate.js';
+import { objectIsHardHelmet } from './armor.js';
 import { rn2 } from './rng.js';
 import { W_ARMH } from './const.js';
 import {
@@ -10,7 +11,7 @@ import {
 } from './monster_data.js';
 import { AT_EXPL } from './monster_attack_types.js';
 import {
-    AMULET_OF_LIFE_SAVING, OBJECT_MATERIAL, OBJECT_SUBTYPE,
+    AMULET_OF_LIFE_SAVING,
     POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING,
     POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
     POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED,
@@ -31,10 +32,6 @@ const S_GHOST = 54;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
 const PM_PESTILENCE = 312;
-const ARM_HELM = 2;
-const IRON = 11;
-const MITHRIL = 17;
-const GLASS = 19;
 
 function rejectsRandomItem(monster) {
     const mndx = monster?.mnum;
@@ -52,13 +49,6 @@ function wornHelmet(monster) {
         || object.wornSlot === 'helmet') || null;
 }
 
-function hardHelmet(monster) {
-    const helmet = wornHelmet(monster);
-    if (!helmet || OBJECT_SUBTYPE[helmet.otyp] !== ARM_HELM) return false;
-    const material = OBJECT_MATERIAL[helmet.otyp] ?? 0;
-    return material >= IRON && material <= MITHRIL || material === GLASS;
-}
-
 export function randomOffensiveMonsterItem(monster) {
     if (!monster || rejectsRandomItem(monster)) return 0;
     const mndx = monster.mnum;
@@ -68,7 +58,7 @@ export function randomOffensiveMonsterItem(monster) {
     switch (rn2(9 - Number(difficulty < 4) + 4 * Number(difficulty > 6))) {
     case 0: {
         const flags = MONSTER_FLAGS1[mndx] ?? 0;
-        if (hardHelmet(monster)
+        if (objectIsHardHelmet(wornHelmet(monster))
             || (flags & (M1_AMORPHOUS | M1_WALLWALK | M1_UNSOLID))
             || MONSTER_SYMBOL[mndx] === S_GHOST) return SCR_EARTH;
         return WAN_STRIKING;

@@ -5,10 +5,13 @@
 import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
+import { objectIsHardHelmet } from './armor.js';
+import { heroHeadName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
     HOLE, ICE, IS_LAVA, IS_POOL,
-    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP,
+    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP,
+    ROLLING_BOULDER_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
@@ -32,8 +35,8 @@ import {
     MONSTER_FLAGS1, MONSTER_SIZE,
 } from './monster_data.js';
 import {
-    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL,
-    OBJECT_SMALL_DAMAGE,
+    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_SMALL_DAMAGE, ROCK,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectEncounter } from './object_knowledge.js';
@@ -62,9 +65,12 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { wakeMonstersNear } from './mon.js';
+import { ceilingName } from './terrain_name.js';
+import { simpleObjectNameWithArticle } from './object_grammar.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
+const M1_UNSOLID = 0x00100000;
 const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
 const PM_PIT_FIEND = 300;
@@ -685,6 +691,69 @@ async function triggerSqueakyBoard(
     wakeMonstersNear(hero.ux, hero.uy, 40, game);
 }
 
+function heroPassesRocks() {
+    const flags = heroFormFlags();
+    return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
+}
+
+async function triggerFallingRockTrap(trap) {
+    const hero = game.u;
+    const ceiling = ceilingName(hero.ux, hero.uy, game);
+    if (trap.once && trap.tseen && rn2(15) === 0) {
+        await plineWithContinuation(
+            `A trap door in the ${ceiling} opens, but nothing falls out!`,
+        );
+        const trapIndex = game.level.traps.indexOf(trap);
+        if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
+        newsym(hero.ux, hero.uy);
+        return;
+    }
+
+    let damage = d(2, 6);
+    trap.once = true;
+    trap.tseen = true;
+    const rock = makeTrapMissile(ROCK, trap);
+    place_object(rock, hero.ux, hero.uy);
+    await plineWithContinuation(
+        `A trap door in the ${ceiling} opens and ${
+            simpleObjectNameWithArticle(rock)
+        } falls on your ${heroHeadName(game)}!`,
+    );
+
+    let harmless = false;
+    const helmet = game.uarmh || hero.uarmh;
+    if (helmet) {
+        if (heroPassesRocks()) {
+            await plineWithContinuation(
+                `Unfortunately, you are wearing ${
+                    simpleObjectNameWithArticle(helmet)
+                }.`,
+            );
+            damage = 2;
+        } else if (objectIsHardHelmet(helmet)) {
+            await plineWithContinuation(
+                'Fortunately, you are wearing a hard helmet.',
+            );
+            damage = 2;
+        } else if (game.flags?.verbose !== false) {
+            const name = helmet.name || OBJECT_NAMES[helmet.otyp] || 'helmet';
+            await plineWithContinuation(`Your ${name} does not protect you.`);
+        }
+    } else if (heroPassesRocks()) {
+        await plineWithContinuation('It passes harmlessly through you.');
+        harmless = true;
+    }
+
+    if (!(game.blind || heroIsBlind(game)))
+        recordObjectEncounter(ROCK, game);
+    stack_object(rock, game);
+    newsym(hero.ux, hero.uy);
+    if (!harmless) {
+        losePhysicalHitPoints(damage);
+        exerciseAttribute(A_STR, false);
+    }
+}
+
 function boulderAt(x, y) {
     return game.level?.objects?.[x]?.[y]
         ?.find(object => object.otyp === BOULDER) ?? null;
@@ -879,6 +948,9 @@ export async function triggerHeroTrap(trap, {
         break;
     case SQKY_BOARD:
         await triggerSqueakyBoard(trap, { viaSitting, failedUntrap });
+        break;
+    case ROCKTRAP:
+        await triggerFallingRockTrap(trap);
         break;
     case ROLLING_BOULDER_TRAP:
         await triggerRollingBoulderTrap(trap);

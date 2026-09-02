@@ -39,6 +39,9 @@ export const OBJECT_ARMOR_BONUS = Object.freeze([
 
 const ARMOR_FIRST = 89;
 const ARMOR_LAST = 172;
+const IRON = 11;
+const MITHRIL = 17;
+const GLASS = 19;
 const ARMOR_SLOTS = Object.freeze([
     'uarm', 'uarmc', 'uarmh', 'uarmf', 'uarms', 'uarmg', 'uarmu',
 ]);
@@ -121,6 +124,12 @@ export function armorSlotFor(otyp) {
     if (otyp >= 159 && otyp <= 162) return 'uarmg';
     if (otyp >= 163 && otyp <= 172) return 'uarmf';
     return null;
+}
+
+export function objectIsHardHelmet(object) {
+    if (armorSlotFor(object?.otyp) !== 'uarmh') return false;
+    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    return material >= IRON && material <= MITHRIL || material === GLASS;
 }
 
 export function wornArmorInDestroyOrder(state = game) {
