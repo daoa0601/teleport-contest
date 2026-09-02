@@ -8,7 +8,7 @@ import {
     A_CHA, A_CON, A_STR, Upolyd,
 } from './const.js';
 import { game } from './gstate.js';
-import { d, rn2 } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
@@ -59,9 +59,11 @@ export async function resolvePoisonedHero({
     state = game,
     random = rn2,
     rollDice = d,
+    rollOne = rnd,
     publish = async () => undefined,
     onResisted = null,
     poisonResistant = null,
+    thrownWeapon = false,
 }) {
     let pagerOwned = false;
     const line = async message => {
@@ -70,8 +72,13 @@ export async function resolvePoisonedHero({
             pagerOwned = true;
     };
 
-    const blast = reason === 'blast';
-    if (!blast) await line(`${reason} was poisoned!`);
+    const poisonReason = String(reason || '');
+    const blast = poisonReason === 'blast';
+    if (!blast && !/poison/iu.test(poisonReason)) {
+        const article = /^[A-Z]/u.test(poisonReason) ? '' : 'The ';
+        const verb = poisonReason.endsWith('s') ? 'were' : 'was';
+        await line(`${article}${poisonReason} ${verb} poisoned!`);
+    }
     const hero = state.u;
     const resisted = poisonResistant
         ?? !!(hero.poisonResistance || hero.poison_resistance);
@@ -82,7 +89,8 @@ export async function resolvePoisonedHero({
     }
 
     const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
-    const outcome = fatal ? random(fatal) : 1;
+    const outcome = fatal
+        ? random(fatal + (thrownWeapon ? 20 : 0)) : 1;
     let damage = 0;
     if (outcome === 0 && attribute !== A_CHA) {
         damage = 6 + rollDice(4, 6);
@@ -114,14 +122,14 @@ export async function resolvePoisonedHero({
                 await line(poisonEffectMessage(attribute, state));
         }
     } else if (outcome > 5) {
-        damage = 6 + random(10);
-        if (/^(?:the )?gas cloud$/iu.test(reason)
+        damage = thrownWeapon ? rollOne(6) : 6 + random(10);
+        if (/^(?:the )?gas cloud$/iu.test(poisonReason)
             && (hero.halfGasDamage || hero.half_gas_damage)) {
             damage = Math.trunc((damage + 1) / 2);
         }
         hero.uhp = Math.max(0, (hero.uhp ?? 1) - damage);
     } else {
-        const loss = rollDice(2, 2);
+        const loss = thrownWeapon || !fatal ? 1 : rollDice(2, 2);
         const result = adjustAttribute(attribute, -loss, state);
         if (attributeChanged(result))
             await line(poisonEffectMessage(attribute, state));

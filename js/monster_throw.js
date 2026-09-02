@@ -2,7 +2,7 @@
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
 import {
-    A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
+    A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON, POISONING,
     P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
@@ -22,7 +22,8 @@ import {
 } from './object_data.js';
 import { isPoisonableObject } from './object_properties.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
-import { rn2, rnd } from './rng.js';
+import { resolvePoisonedHero } from './poison.js';
+import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { finishHeroDeath } from './end.js';
@@ -291,20 +292,51 @@ export async function finishHeroProjectileHit(
     shot, state, {
         beforeFinalDeath,
         finishDeath = finishHeroDeath,
+        publish = async () => undefined,
         random = rn2,
+        rollDice = d,
+        rollOne = rnd,
     } = {},
 ) {
-    const fatal = (state.u?.uhp ?? 1) < 1;
-    if (fatal && await finishDeath({
-        killer: shot.appearance || 'weapon',
+    const killer = objectTypeName(shot.weapon)
+        || shot.appearance || 'weapon';
+    const baseHitWasFatal = (state.u?.uhp ?? 1) < 1;
+    if (baseHitWasFatal && await finishDeath({
+        killer,
         beforeFinalDeath,
     })) {
         return { died: true, lifeSaved: false };
     }
 
     exerciseAttribute(A_STR, false, state);
+    let lifeSaved = baseHitWasFatal;
+    const poisoned = shot.hit && shot.weapon?.opoisoned
+        && isPoisonableObject(shot.weapon);
+    if (poisoned) {
+        const poison = await resolvePoisonedHero({
+            reason: shot.appearance,
+            attribute: A_STR,
+            fatal: baseHitWasFatal ? 0 : 10,
+            state,
+            random,
+            rollDice,
+            rollOne,
+            publish,
+            thrownWeapon: true,
+        });
+        if (poison.deadly) {
+            if (await finishDeath({
+                killer,
+                beforeFinalDeath,
+                deathType: POISONING,
+            })) {
+                return { died: true, lifeSaved: false };
+            }
+            lifeSaved = true;
+        }
+    }
     finishDeferredRangedProjectileHit(shot, state, random);
-    return { died: false, lifeSaved: fatal };
+    return { died: false, lifeSaved };
 }
 
 export async function presentMonsterProjectileContact(contact, publish) {
@@ -422,10 +454,12 @@ function projectileDamageAgainstMonster(object, monster, rollOne) {
 }
 
 function missileAppearance(missile) {
-    return missile.dknown
+    const name = missile.dknown
         ? objectTypeName(missile)
         : OBJECT_DESCRIPTIONS[missile.otyp]
             || objectTypeName(missile) || 'weapon';
+    return missile.opoisoned && isPoisonableObject(missile)
+        ? `poisoned ${name}` : name;
 }
 
 function livingMonsterAt(state, source, x, y) {
@@ -469,7 +503,7 @@ function hitMonsterWithMissile(
         defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
     }
     return {
-        appearance: objectTypeName(missile) || 'weapon',
+        appearance: missileAppearance(missile),
         target: defender,
         x: defender.mx,
         y: defender.my,
@@ -529,7 +563,7 @@ function throwOneMonsterMissile(
 
     return {
         weapon: missile,
-        appearance: objectTypeName(missile) || 'weapon',
+        appearance: missileAppearance(missile),
         target: null,
         hit: false,
         damage: 0,

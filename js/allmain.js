@@ -5839,6 +5839,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             }
                             const result = await finishHeroProjectileHit(
                                 ranged, game, {
+                                    publish: queueTurnMessage,
                                     beforeFinalDeath: () =>
                                         restoreUnvisitedMonsterMovement(
                                             monsterScan, actorIndex,

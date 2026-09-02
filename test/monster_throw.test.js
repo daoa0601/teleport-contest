@@ -9,7 +9,7 @@ import {
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
-import { NEED_WEAPON, W_AMUL } from '../js/const.js';
+import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER,
@@ -131,7 +131,7 @@ test('poison resistance stops the poison on a thrown dart', async () => {
 
     assert.equal(target.mhp, 19);
     assert.deepEqual(messages, [
-        'The dart hits the green dragon.',
+        'The poisoned dart hits the green dragon.',
         "The poison doesn't seem to affect the green dragon.",
     ]);
 });
@@ -165,7 +165,7 @@ test('deadly poison on a thrown dart kills the monster', async () => {
 
     assert.equal(target.mhp, 0);
     assert.deepEqual(messages, [
-        'The dart hits the purple worm.',
+        'The poisoned dart hits the purple worm.',
         'The poison was deadly...',
         'The purple worm is killed!',
     ]);
@@ -223,6 +223,67 @@ test('a hostile monster can throw a dagger at the hero and land it', () => {
         floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
         true,
     );
+});
+
+test('a poisoned dart damages the hero after its ordinary hit', async () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        hero: { uhp: 12, uhpmax: 12 },
+        gameplaySeed: 1n,
+    });
+    const dart = carriedObject(DART, { opoisoned: 1 });
+    const orc = addMonsterToLevel(rangedMonster('orc', {
+        inventory: [dart],
+    }));
+    const attack = throwMonsterWeaponAtHero(orc, game, dart, {
+        random: () => 1,
+        rollOne: () => 2,
+    });
+
+    await finishHeroProjectileHit(attack.shots[0], game, {
+        random: range => range === 30 ? 6 : 0,
+        rollOne: () => 2,
+    });
+
+    assert.equal(game.u.uhp, 8);
+});
+
+test('impact life saving limits thrown poison to strength loss', async () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        gameplaySeed: 1n,
+    });
+    game.nhDisplay = new GameDisplay(null);
+    const amulet = wearHeroObject(
+        knownInventoryObject(AMULET_OF_LIFE_SAVING),
+        'uamul',
+        W_AMUL,
+    );
+    game.u.uhp = 1;
+    const originalStrength = game.u.acurr.a[A_STR];
+    const dart = carriedObject(DART, { opoisoned: 1 });
+    const orc = addMonsterToLevel(rangedMonster('orc', {
+        inventory: [dart],
+    }));
+    const attack = throwMonsterWeaponAtHero(orc, game, dart, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+    pushKeys(' '.repeat(12));
+
+    const result = await finishHeroProjectileHit(
+        attack.shots[0], game, { random: () => 0 },
+    );
+
+    assert.equal(result.lifeSaved, true);
+    assert.ok(game.u.uhp > 0);
+    assert.equal(game.u.acurr.a[A_STR], originalStrength - 1);
+    assert.equal(game.inventory.includes(amulet), false);
+    assert.equal(floorObjectsAt(
+        game.level, game.u.ux, game.u.uy,
+    ).includes(dart), true);
 });
 
 test('a hostile rogue throws its full dagger volley at the hero', () => {
