@@ -25,7 +25,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const PM_PURPLE_WORM = 115;
 
-function freshMapPotionState(distance = 2) {
+function freshMapPotionState(distance = 2, monsterOptions = {}) {
     const attributes = Array(6).fill(12);
     attributes[A_DEX] = 18;
 
@@ -53,6 +53,7 @@ function freshMapPotionState(distance = 2) {
         x: 10 + distance,
         y: 10,
         hitPoints: 12,
+        ...monsterOptions,
     });
     return monster;
 }
@@ -309,11 +310,9 @@ test('cursed map potion reaches its target and reveals it',
 
 test('live acid-resistant target takes only impact chip and leaves radius asleep',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 6,
-            mhp: 20,
-            mhpmax: 20,
+            hitPoints: 20,
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2712);
@@ -334,11 +333,9 @@ test('live worn acid-protection armor limits damage to the impact chip',
             { otyp: 144, mask: W_ARMC },
             { otyp: 110, mask: W_ARM },
         ]) {
-            const monster = freshMapPotionState(2);
-            Object.assign(monster, {
+            const monster = freshMapPotionState(2, {
                 mnum: 289,
-                mhp: 20,
-                mhpmax: 20,
+                hitPoints: 20,
                 msleeping: 1,
                 misc_worn_check: equipment.mask,
             });
@@ -363,11 +360,9 @@ test('live worn acid-protection armor limits damage to the impact chip',
 
 test('live magic-resistant acid target avoids acid and radius damage',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 48,
-            mhp: 20,
-            mhpmax: 20,
+            hitPoints: 20,
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2713);
@@ -384,11 +379,9 @@ test('live magic-resistant acid target avoids acid and radius damage',
 
 test('live acid damage wakes the audible source radius before survival',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 289,
-            mhp: 20,
-            mhpmax: 20,
+            hitPoints: 20,
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2714, {
@@ -408,11 +401,9 @@ test('live acid damage wakes the audible source radius before survival',
     });
 
 test('live acid damages a silent target without radius wake', async () => {
-    const monster = freshMapPotionState(2);
-    Object.assign(monster, {
+    const monster = freshMapPotionState(2, {
         mnum: 99,
-        mhp: 20,
-        mhpmax: 20,
+        hitPoints: 20,
         msleeping: 1,
     });
     const neighbor = addSleepingNeighbor(2715);
@@ -433,11 +424,9 @@ test('live cursed acid hurts more than blessed acid under the same seed',
             { blessed: true, cursed: false, maxLoss: 5 },
             { blessed: false, cursed: true, maxLoss: 17 },
         ]) {
-            const monster = freshMapPotionState(2);
-            Object.assign(monster, {
+            const monster = freshMapPotionState(2, {
                 mnum: 289,
-                mhp: 40,
-                mhpmax: 40,
+                hitPoints: 40,
             });
             const potion = knownInventoryObject(POT_ACID);
             potion.blessed = specimen.blessed;
@@ -455,11 +444,10 @@ test('live cursed acid hurts more than blessed acid under the same seed',
     });
 
 test('live fatal acid crosses the ordinary map death continuation', async () => {
-    const monster = freshMapPotionState(2);
-    Object.assign(monster, {
+    const monster = freshMapPotionState(2, {
         mnum: 289,
-        mhp: 2,
-        mhpmax: 20,
+        hitPoints: 2,
+        maxHitPoints: 20,
     });
     const potion = knownInventoryObject(POT_ACID);
 
@@ -474,11 +462,9 @@ test('live fatal acid crosses the ordinary map death continuation', async () => 
 
 test('live blessed water damages a demon and wakes its source-radius neighbors',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 289,
-            mhp: 20,
-            mhpmax: 20,
+            hitPoints: 20,
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2710, {
@@ -498,11 +484,10 @@ test('live blessed water damages a demon and wakes its source-radius neighbors',
 
 test('live cursed water heals a demon without taking the hostile wake branch',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 289,
-            mhp: 8,
-            mhpmax: 20,
+            hitPoints: 8,
+            maxHitPoints: 20,
             msleeping: 1,
         });
         const potion = knownInventoryObject(POT_WATER);
@@ -518,11 +503,9 @@ test('live cursed water heals a demon without taking the hostile wake branch',
 
 test('live blessed water damages silent undead without waking its neighbors',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 187,
-            mhp: 20,
-            mhpmax: 20,
+            hitPoints: 20,
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2711);
@@ -541,11 +524,10 @@ test('live blessed water damages silent undead without waking its neighbors',
 test('live cursed water changes a human were only without shape protection',
     async () => {
         for (const protectedHero of [false, true]) {
-            const monster = freshMapPotionState(2);
-            Object.assign(monster, {
+            const monster = freshMapPotionState(2, {
                 mnum: 263,
-                mhp: 10,
-                mhpmax: 20,
+                hitPoints: 10,
+                maxHitPoints: 20,
                 msleeping: 1,
             });
             game.u.protectionFromShapeChangers = protectedHero;
@@ -563,11 +545,9 @@ test('live cursed water changes a human were only without shape protection',
     });
 
 test('live ordinary water rusts a surviving iron golem', async () => {
-    const monster = freshMapPotionState(2);
-    Object.assign(monster, {
+    const monster = freshMapPotionState(2, {
         mnum: 259,
-        mhp: 20,
-        mhpmax: 20,
+        hitPoints: 20,
         msleeping: 1,
     });
     const potion = knownInventoryObject(POT_WATER);
@@ -584,11 +564,9 @@ test('live ordinary water rusts a surviving iron golem', async () => {
 
 test('live water contact clones a hostile gremlin with split hit points',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 40,
-            mhp: 12,
-            mhpmax: 12,
+            hitPoints: 12,
             msleeping: 1,
         });
         const potion = knownInventoryObject(POT_WATER);
@@ -634,11 +612,9 @@ test('two-square water vapor can multiply a live gremlin hero', async () => {
 });
 
 test('live blessed water rehumanizes an unequipped beast were', async () => {
-    const monster = freshMapPotionState(2);
-    Object.assign(monster, {
+    const monster = freshMapPotionState(2, {
         mnum: 21,
-        mhp: 20,
-        mhpmax: 20,
+        hitPoints: 20,
         movement: 18,
         mmove: 18,
     });
@@ -688,11 +664,10 @@ test('three-square water contact bypasses unreachable hero-vapor prompts',
 
 test('live fatal iron-golem water creates source special chain drops',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 259,
-            mhp: 2,
-            mhpmax: 20,
+            hitPoints: 2,
+            maxHitPoints: 20,
             name: 'Ferrum',
         });
         game.u.ulevel = 30;
@@ -720,11 +695,10 @@ test('live fatal iron-golem water creates source special chain drops',
 
 test('live fatal blessed water uses the ordinary map death continuation',
     async () => {
-        const monster = freshMapPotionState(2);
-        Object.assign(monster, {
+        const monster = freshMapPotionState(2, {
             mnum: 289,
-            mhp: 2,
-            mhpmax: 20,
+            hitPoints: 2,
+            maxHitPoints: 20,
         });
         const potion = knownInventoryObject(POT_WATER);
         potion.blessed = true;
