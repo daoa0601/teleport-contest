@@ -3,7 +3,7 @@
 // and uhitm.c hmon() venom cases.
 
 import { currentAttribute } from './attrib.js';
-import { A_DEX, IS_SOFT, LOST_THROWN, W_ARMH } from './const.js';
+import { A_DEX, IS_SOFT, LOST_THROWN } from './const.js';
 import {
     canProjectMonster, newsym, plineWithContinuation,
 } from './display.js';
@@ -25,7 +25,7 @@ import {
 } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, OBJECT_DESCRIPTIONS,
+    ACID_VENOM, BLINDING_VENOM,
 } from './object_data.js';
 import { heroMonsterForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
@@ -36,6 +36,9 @@ import {
     prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
+import {
+    acidVenomDamage, monsterCanBeBlindedByVenom,
+} from './venom.js';
 
 const M1_NOEYES = 0x00001000;
 
@@ -57,15 +60,6 @@ function targetName(monster) {
     if (!canProjectMonster(monster, monster.mx, monster.my)) return 'it';
     return monster.name
         || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
-
-function monsterCanBeBlinded(monster, state) {
-    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES) return false;
-    if (!monster.mcansee && (monster.mblinded ?? 0) === 0) return false;
-    if (state.u?.uswallow) return false;
-    return !(monster.minvent || monster.inventory || []).some(object =>
-        ((object.owornmask ?? 0) & W_ARMH)
-        && OBJECT_DESCRIPTIONS[object.otyp] === 'visored helmet');
 }
 
 function heroCanBeBlinded(state) {
@@ -173,7 +167,9 @@ async function hitMonsterWithVenom({
 
     if (venom.otyp === BLINDING_VENOM) {
         const further = monster.mcansee ? '' : ' further';
-        if (monsterCanBeBlinded(monster, state)) {
+        if (monsterCanBeBlindedByVenom(monster, {
+            heroInsideTarget: !!state.u?.uswallow,
+        })) {
             await publish(heroIsBlind(state)
                 ? 'Splash!'
                 : `The venom blinds ${targetName(monster)}${further}!`);
@@ -194,7 +190,7 @@ async function hitMonsterWithVenom({
         await publish(`Your venom hits ${targetName(monster)} harmlessly.`);
     } else {
         await publish(`Your venom burns ${targetName(monster)}!`);
-        damage = rollOne(6) + rollOne(6);
+        damage = acidVenomDamage(rollOne);
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     }
     deleteObject(venom, state);

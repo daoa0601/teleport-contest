@@ -41,6 +41,61 @@ test('a black naga can spit acid at another monster', () => {
     assert.deepEqual([naga.mx, naga.my], [9, 10]);
 });
 
+test('acid venom does not hurt an acid-resistant monster', () => {
+    freshObjectRoom({ heroX: 15, heroY: 12 });
+    const naga = addMonster({
+        species: 'black naga',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+    });
+    const dragon = addMonster({
+        species: 'yellow dragon',
+        x: 12,
+        y: 10,
+        hitPoints: 12,
+    });
+
+    const spit = beginMonsterSpitAttack(naga, dragon.mx, dragon.my, {
+        random: () => 0,
+    });
+    resolveMonsterSpitFlight(naga, spit, game, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+
+    assert.equal(dragon.mhp, 12);
+});
+
+test('blinding venom cannot blind an eyeless monster', () => {
+    freshObjectRoom({ heroX: 15, heroY: 12 });
+    const cobra = addMonster({
+        species: 'cobra',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+    });
+    const cube = addMonster({
+        species: 'gelatinous cube',
+        x: 12,
+        y: 10,
+        hitPoints: 12,
+    });
+
+    const spit = beginMonsterSpitAttack(cobra, cube.mx, cube.my, {
+        random: () => 0,
+    });
+    resolveMonsterSpitFlight(cobra, spit, game, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+
+    assert.equal(cube.mcansee, 1);
+    assert.equal(cube.mblinded, undefined);
+});
+
 test('a tame black naga spits at a distant monster instead of moving', () => {
     freshRangedCombatRoom({ gameplaySeed: 3n });
     const naga = addMonsterToLevel(rangedPet('black naga'));

@@ -16,6 +16,10 @@ import {
 import { rn2, rnd } from './rng.js';
 import { syncBlindness } from './senses.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterHasAcidResistance } from './monster_resistance.js';
+import {
+    acidVenomDamage, monsterCanBeBlindedByVenom,
+} from './venom.js';
 
 export function monsterSpitAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
@@ -89,10 +93,6 @@ function destroyVenom(venom, random) {
     venom.destroyed = true;
 }
 
-function acidVenomDamage(rollOne) {
-    return rollOne(6) + rollOne(6);
-}
-
 function livingMonsterAt(state, source, x, y) {
     return state.level?.monsters?.find(monster =>
         monster !== source && !monster.dead && (monster.mhp ?? 1) > 0
@@ -110,15 +110,21 @@ function hitMonster(monster, spit, random, rollOne) {
 
     if (spit.venom.otyp === ACID_VENOM) {
         spit.damage = acidVenomDamage(rollOne);
+        if (monsterHasAcidResistance(monster)) {
+            spit.damage = 0;
+            spit.resisted = true;
+        }
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - spit.damage);
-    } else {
+    } else if (monsterCanBeBlindedByVenom(monster)) {
         const blindIncrement = rollOne(25) + 20;
+        spit.newlyBlinded = !!monster.mcansee;
         monster.mcansee = 0;
         monster.mblinded = Math.min(
             127, (monster.mblinded ?? 0) + blindIncrement,
         );
         spit.blindIncrement = blindIncrement;
     }
+    spit.targetDied = (monster.mhp ?? 0) <= 0;
     destroyVenom(spit.venom, random);
 }
 

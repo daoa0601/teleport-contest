@@ -5521,8 +5521,22 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (targetVisible) {
                         const targetName = quietMonsterName(spit.target);
                         await queueTurnMessage(spit.hit
-                            ? `The venom hits the ${targetName}.`
-                            : `The venom misses the ${targetName}.`);
+                            ? `The ${spit.appearance} hits the ${targetName}.`
+                            : `The ${spit.appearance} misses the ${targetName}.`);
+                        if (spit.resisted) {
+                            await queueTurnMessage(
+                                `The ${targetName} is unaffected.`,
+                            );
+                        } else if (spit.hit
+                            && spit.venom?.otyp === ACID_VENOM) {
+                            await queueTurnMessage(
+                                `The acid burns the ${targetName}!`,
+                            );
+                        } else if (spit.newlyBlinded) {
+                            await queueTurnMessage(
+                                `The ${targetName} is blinded by the venom.`,
+                            );
+                        }
                         if (spit.targetDied) {
                             await queueTurnMessage(
                                 `The ${targetName} is killed!`,

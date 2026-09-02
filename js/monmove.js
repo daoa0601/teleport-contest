@@ -4078,10 +4078,6 @@ export function resumeDeferredSpitAttack(
             return result;
         },
     });
-    if (result.target && (result.target.mhp ?? 0) <= 0
-        && state.level?.monsters?.includes(result.target)) {
-        result.targetDied = true;
-    }
     return result;
 }
 
