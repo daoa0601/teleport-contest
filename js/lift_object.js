@@ -172,6 +172,25 @@ function resetRejectedScareScroll(object, container) {
     if (!container && object.otyp === SCR_SCARE_MONSTER) object.spe = 0;
 }
 
+export async function carryableObjectCount({
+    object,
+    container = null,
+    count = objectQuantity(object),
+    telekinesis = false,
+    state = game,
+}) {
+    const total = objectQuantity(object);
+    const requested = Math.max(
+        0, Math.min(Math.trunc(count || total), total),
+    );
+    const lifted = maximumLiftedCount(object, requested, container, state);
+    if (lifted < requested && lifted > 0)
+        await reportPartialLift(object, lifted, container, telekinesis);
+    if (lifted < 1)
+        await reportUnliftable(object, container, state, telekinesis);
+    return lifted;
+}
+
 export async function liftObject({
     object,
     container = null,
@@ -202,11 +221,10 @@ export async function liftObject({
         return { decision: 'stop', count: 0 };
     }
 
-    const liftedCount = maximumLiftedCount(object, count, container, state);
-    if (liftedCount < count && liftedCount > 0)
-        await reportPartialLift(object, liftedCount, container, telekinesis);
+    const liftedCount = await carryableObjectCount({
+        object, container, count, telekinesis, state,
+    });
     if (liftedCount < 1) {
-        await reportUnliftable(object, container, state, telekinesis);
         resetRejectedScareScroll(object, container);
         return { decision: 'stop', count: 0 };
     }

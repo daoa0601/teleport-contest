@@ -86,8 +86,11 @@ import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
     inventoryItem,
 } from './u_init.js';
-import { liftObject } from './lift_object.js';
+import {
+    carryableObjectCount, liftObject,
+} from './lift_object.js';
 import { splitObjectStack } from './object_stack.js';
+import { deleteObject } from './object_delete.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     addObjectToMonsterInventory,
@@ -123,7 +126,7 @@ import {
     DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
-    STATUE, IRON_CHAIN,
+    STATUE, IRON_CHAIN, SCR_SCARE_MONSTER,
     RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
@@ -167,7 +170,8 @@ import {
 } from './monworn.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
-import { isZombieMaker } from './corpse_species.js';
+import { isRider, isZombieMaker } from './corpse_species.js';
+import { reviveCorpseImmediately } from './corpse_revival.js';
 import {
     killGenocidedMonsters, wakeMonstersNear,
 } from './mon.js';
@@ -221,6 +225,7 @@ import {
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
+import { touchPetrifyingCorpse } from './stoning.js';
 import {
     beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
 } from './ball.js';
@@ -3232,18 +3237,97 @@ function collectFloorPickupMessages(pile, selected) {
     return { messages, shopQuotes, comparisonMessages };
 }
 
+function observePickupObject(object) {
+    const hallucinating = game.u?.hallucinating
+        || (game.u?.hallucinationTurns ?? 0) > 0;
+    if (heroIsBlind(game) || hallucinating) return;
+    object.dknown = true;
+    recordObjectEncounter(object.otyp);
+}
+
+function splitFloorStack(object, count, pile) {
+    if (count >= objectQuantity(object)) return object;
+    const split = splitObjectStack(object, count, game);
+    if (!split) return object;
+    const index = pile.indexOf(object);
+    pile.splice(index < 0 ? pile.length : index + 1, 0, split);
+    return split;
+}
+
+async function reviveTouchedRider(corpse) {
+    if (!isRider(corpse.corpsenm)) return false;
+    await pline('At your touch, the corpse suddenly moves...');
+    const revival = await reviveCorpseImmediately(corpse, game);
+    for (const message of revival?.messages || [])
+        await plineWithContinuation(message);
+    exerciseAttribute(A_WIS, false);
+    return true;
+}
+
+async function prepareScareScrollPickup(object, requested, pile) {
+    const count = await carryableObjectCount({ object, count: requested });
+    if (count < 1) return { decision: 'stop' };
+
+    const scroll = splitFloorStack(object, count, pile);
+    if (scroll.blessed) {
+        scroll.blessed = false;
+        return { decision: 'lift', object: scroll, count };
+    }
+    if (!(scroll.spe ?? 0) && !scroll.cursed) {
+        scroll.spe = 1;
+        return { decision: 'lift', object: scroll, count };
+    }
+
+    const quantity = objectQuantity(scroll);
+    await pline(`The scroll${quantity === 1 ? '' : 's'} ${
+        quantity === 1 ? 'turns' : 'turn'} to dust as you pick ${
+        quantity === 1 ? 'it' : 'them'} up.`);
+    await tryCallObjectType(scroll);
+    deleteObject(scroll, game);
+    return { decision: 'consumed' };
+}
+
 async function liftFloorSelections(pile, selected) {
     const lifted = [];
+    let consumed = 0;
     let attempted = false;
     for (const selection of selected) {
-        const object = selection?.value || selection;
+        let object = selection?.value || selection;
         if (!pile.includes(object)) continue;
         attempted = true;
-        const requested = selection?.value
+        observePickupObject(object);
+
+        if (object.oartifact) {
+            const touch = await touchArtifactByHero(object);
+            if (!touch.allowed || touch.died) {
+                if (touch.died) break;
+                continue;
+            }
+        }
+        if (object.otyp === CORPSE) {
+            if (await touchPetrifyingCorpse(object)) break;
+            if (await reviveTouchedRider(object)) break;
+        }
+
+        let requested = selection?.value
             ? selection.count : objectQuantity(object);
+        requested = requested > 0 ? requested : objectQuantity(object);
+        if (object.otyp === SCR_SCARE_MONSTER) {
+            const prepared = await prepareScareScrollPickup(
+                object, requested, pile,
+            );
+            if (prepared.decision === 'stop') break;
+            if (prepared.decision === 'consumed') {
+                consumed++;
+                continue;
+            }
+            object = prepared.object;
+            requested = prepared.count;
+        }
+
         const result = await liftObject({
             object,
-            count: requested > 0 ? requested : objectQuantity(object),
+            count: requested,
         });
         if (result.decision === 'lift') {
             let liftedObject = object;
@@ -3255,7 +3339,7 @@ async function liftFloorSelections(pile, selected) {
         }
         if (result.decision === 'stop') break;
     }
-    return { attempted, lifted };
+    return { attempted, consumed, lifted };
 }
 
 async function commitFloorPickup(pile, selected, x, y) {
@@ -3269,8 +3353,12 @@ async function commitFloorPickup(pile, selected, x, y) {
 
     const pickup = await liftFloorSelections(pile, selected);
     if (!pickup.lifted.length) {
+        if (pickup.consumed) {
+            newsym(x, y);
+            await bot();
+        }
         game.context.move = pickup.attempted ? 1 : 0;
-        return 0;
+        return pickup.consumed;
     }
     const {
         messages, shopQuotes, comparisonMessages,
@@ -3293,7 +3381,7 @@ async function commitFloorPickup(pile, selected, x, y) {
     // capacity state and can itself suspend while replacing this top line.
     game._capacityDirty = true;
     game.context.move = 1;
-    return pickup.lifted.length;
+    return pickup.lifted.length + pickup.consumed;
 }
 
 async function pickupFloorObject() {

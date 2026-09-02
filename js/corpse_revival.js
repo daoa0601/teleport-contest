@@ -464,6 +464,11 @@ async function reviveCorpse(
     };
 }
 
+export async function reviveCorpseImmediately(corpse, state = game) {
+    if (!corpse) return null;
+    return reviveCorpse(corpse, state, state.moves ?? 0);
+}
+
 export async function reviveCorpseByMagic(corpse, state = game) {
     if (!corpse) return null;
     const noRevive = corpse.norevive;
