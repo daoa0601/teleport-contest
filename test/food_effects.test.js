@@ -35,6 +35,7 @@ test('eating an uncursed eucalyptus leaf cures illness and nausea',
         freshObjectRoom({ gameplaySeed: 45300n });
         game.u.sick = true;
         game.u.sickTurns = 18;
+        game.u.sickType = SICK_VOMITABLE;
         game.u.vomiting = true;
         game.u.vomitingTurns = 9;
         const leaf = knownInventoryObject(EUCALYPTUS_LEAF, {

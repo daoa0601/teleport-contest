@@ -54,7 +54,7 @@ import {
 } from './spell.js';
 import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import {
-    cureHeroIllness, startHeroSickness,
+    cureHeroIllness, startHeroSickness, startHeroVomiting, vomitHero,
 } from './hero_illness.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
@@ -1503,15 +1503,6 @@ async function doquaff() {
     game.context.move = 1;
 }
 
-// C eat.c:vomit().  Both sink sewage and foul fountain water enter the same
-// negative-multi state; the command's elapsed turn advances -2 to -1 and a
-// second global actor/maintenance pass reaches the recovery message.
-function beginVomiting() {
-    game._helplessTurns = 2;
-    game._helplessReason = 'vomiting';
-    game._helplessDoneMessage = 'You can move again.';
-}
-
 async function drinkSink(loc) {
     const result = rn2(20);
     if (result === 0) {
@@ -1536,7 +1527,7 @@ async function drinkSink(loc) {
         const constitution = game.u?.acurr?.a?.[A_CON] ?? 10;
         game.u.uhunger = (game.u.uhunger ?? 900)
             - (11 + rn2(Math.max(1, 30 - constitution)));
-        beginVomiting();
+        await vomitHero({ state: game });
     } else if (result === 11) {
         await pline('You hear clanking from the pipes...');
     } else if (result === 12) {
@@ -1771,6 +1762,7 @@ async function summonFountainSnakes() {
 async function drinkFountain(loc) {
     let fountainMessage = '';
     let continueFountainMessage = false;
+    let vomitAfterMessage = false;
     const fate = rnd(30);
     if (fate < 10) {
         // fountain.c:drinkfountain() handles the ordinary low-fate draught
@@ -1785,7 +1777,7 @@ async function drinkFountain(loc) {
         // of nutrition, then nomul(-2) makes the next two global turns happen
         // without accepting a hero command.
         game.u.uhunger = (game.u.uhunger ?? 900) - (11 + rn2(20));
-        beginVomiting();
+        vomitAfterMessage = true;
     } else if (fate === 21) {
         fountainMessage = 'The water is contaminated!';
         if (game.u?.poisonResistance) {
@@ -1840,17 +1832,17 @@ async function drinkFountain(loc) {
         fountainMessage =
             `This tepid ${displayLiquidName('water')} is tasteless.`;
     }
-    // dryup(): the first use dries this ordinary dungeon fountain on a
-    // one-in-three roll and turns it back into ordinary room floor.
-    const dryup = dryFountainTerrain(loc);
-    if (dryup.dried) {
-        fountainMessage += `${fountainMessage ? '  ' : ''}The fountain dries up!`;
-    }
     if (fountainMessage) {
         if (continueFountainMessage)
             await plineWithContinuation(fountainMessage);
         else await pline(fountainMessage);
     }
+    if (vomitAfterMessage) await vomitHero({ state: game });
+
+    // dryup(): the first use dries this ordinary dungeon fountain on a
+    // one-in-three roll and turns it back into ordinary room floor.
+    const dryup = dryFountainTerrain(loc);
+    if (dryup.dried) await pline('The fountain dries up!');
     await reportFountainWarning(dryup.warning);
 }
 
@@ -6408,6 +6400,12 @@ async function wizIntrinsic() {
         });
         if (sickness.message)
             queuePropertyMessage('fatally sick', sickness.message);
+    }
+    if (selections.includes('vomiting')) {
+        const oldTimeout = game.u.vomitingTurns ?? 0;
+        startHeroVomiting({ state: game, turns: oldTimeout + 30 });
+        queuePropertyMessage('vomiting',
+            `You are${oldTimeout ? ' still' : ''} vomiting.`);
     }
     if (selections.includes('blinded')) {
         const oldTimeout = game.u.blindTurns ?? 0;

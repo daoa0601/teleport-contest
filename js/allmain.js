@@ -179,7 +179,8 @@ import {
 import { polymonHero, rehumanizeHero } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
-    advanceHeroSickness, heroIsSick,
+    advanceHeroSickness, advanceHeroVomiting, heroIsSick,
+    heroIsVomiting,
 } from './hero_illness.js';
 import {
     advanceHeroSliming, clearHeroSliming,
@@ -1758,6 +1759,28 @@ function finishInitialTurnMaintenanceAfterSlime({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
     prayerTimeoutFreeze,
 }) {
+    if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'vomiting requires live turn maintenance',
+            );
+        }
+        return {
+            deferredVomitingTimeout: true,
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+            prayerTimeoutFreeze,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterVomiting({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterVomiting({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
     if (!prayerTimeoutFreeze && heroIsSick(game)) {
         if (!deferAmbientMessage) {
             throw new Error(
@@ -2114,6 +2137,13 @@ async function initialTurnMaintenanceWithTty(
         });
         if (game.program_state?.gameover) return phase.moveAmount;
         phase = finishInitialTurnMaintenanceAfterSlime(phase);
+    }
+    while (phase?.deferredVomitingTimeout) {
+        await advanceHeroVomiting({
+            state: game,
+            publish: queueTurnMessage,
+        });
+        phase = finishInitialTurnMaintenanceAfterVomiting(phase);
     }
     while (phase?.deferredSicknessTimeout) {
         await advanceHeroSickness({

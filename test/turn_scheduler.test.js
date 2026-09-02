@@ -6,7 +6,9 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
-import { startHeroSickness } from '../js/hero_illness.js';
+import {
+    startHeroSickness, startHeroVomiting,
+} from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { carriedObject } from './support/game-objects.js';
@@ -148,3 +150,28 @@ test('fatal sickness advances during an ordinary world turn', async () => {
     pushKeys(' ');
     await nextInput;
 });
+
+test('nausea advances before sickness during an ordinary world turn',
+    async () => {
+        const inputGate = freshTurnArena();
+        startHeroVomiting({ state: game, turns: 15 });
+        startHeroSickness({
+            state: game,
+            turns: 7,
+            cause: 'tainted meat',
+        });
+        pushKeys('h');
+
+        await moveloop_core();
+        const nextInput = moveloop_core();
+        await inputGate.waitUntilBlocked();
+
+        assert.equal(game.u.vomitingTurns, 14);
+        assert.equal(game.u.sickTurns, 6);
+        assert.match(
+            game._pending_message,
+            /mildly nauseated.*sickness feels worse/,
+        );
+        pushKeys(' ');
+        await nextInput;
+    });
