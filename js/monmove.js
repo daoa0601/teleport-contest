@@ -77,6 +77,10 @@ import {
     removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
+    currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount,
+} from './monster_carry.js';
+export { monsterCanCarryObject } from './monster_carry.js';
+import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
@@ -112,7 +116,7 @@ import {
     IS_WALL,
     IRONBARS, LAVAPOOL, LAVAWALL,
     MAGIC_PORTAL, OPENDOOR, TELEP_TRAP,
-    ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, MAX_CARR_CAP,
+    ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
     M_AP_OBJECT, RUST_TRAP,
     PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE,
@@ -126,7 +130,7 @@ import {
     W_ARMOR,
     W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL,
     Upolyd, is_pit, isok,
-    WEB, WT_ELF, WT_HUMAN, WT_TOOMUCH_DIAGONAL,
+    WEB, WT_ELF, WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 
 export const NORMAL_SPEED = 12;
@@ -178,7 +182,6 @@ const S_ELEMENTAL = 31;
 const S_GHOST = 54;
 const S_SNAKE = 45;
 const S_EEL = 57;
-const S_DRAGON = 30;
 const PM_ETTIN = 174;
 const PM_JABBERWOCK = 178;
 const PM_FIRE_ELEMENTAL = 155;
@@ -236,7 +239,6 @@ const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 const VENOM_CLASS = 17;
-const MZ_HUMAN = 2;
 const DOGFOOD = 0;
 const CADAVER = 1;
 const ACCFOOD = 2;
@@ -857,71 +859,6 @@ function monsterWantsFloorObject(monster, object) {
 function specialFloorPrize(object) {
     return !!(object?.minesPrize || object?.sokoPrize
         || object?.isMinesPrize || object?.isSokoPrize);
-}
-
-// C mon.c:curr_mon_load(), max_mon_load(), and can_carry().  Corpses are the
-// important boundary here: their object table weight is zero because the
-// actual weight belongs to the represented monster species.
-function monsterObjectWeight(object) {
-    if (!object) return 0;
-    const quantity = object.quan ?? object.quantity ?? 1;
-    // C obj.h:GOLD_WT().  Coins are weighed by the hundred, rounded at
-    // fifty, rather than by the ordinary object-table unit weight.
-    if (object.otyp === GOLD_PIECE)
-        return Math.trunc((quantity + 50) / 100);
-    if (object.otyp === CORPSE && Number.isInteger(object.corpsenm))
-        return MONSTER_BODY_META[object.corpsenm]?.[0] ?? 0;
-    if (Number.isFinite(object.owt) && object.owt > 0) return object.owt;
-    return (OBJECT_WEIGHT[object.otyp] ?? 0) * quantity;
-}
-
-function currentMonsterLoad(monster) {
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const saddle = monster?.saddle && !inventory.includes(monster.saddle)
-        ? [monster.saddle] : [];
-    return [...inventory, ...saddle].reduce((total, object) => {
-        if (object?.otyp === BOULDER && (flags & M2_ROCKTHROW)) return total;
-        return total + monsterObjectWeight(object);
-    }, 0);
-}
-
-function maxMonsterLoad(monster) {
-    const bodyWeight = MONSTER_BODY_META[monster?.mnum]?.[0] ?? 0;
-    const size = MONSTER_SIZE[monster?.mnum] ?? 0;
-    const strong = !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_STRONG);
-    let capacity;
-    if (!bodyWeight)
-        capacity = Math.trunc(MAX_CARR_CAP * size / MZ_HUMAN);
-    else if (!strong || bodyWeight > WT_HUMAN)
-        capacity = Math.trunc(MAX_CARR_CAP * bodyWeight / WT_HUMAN);
-    else capacity = MAX_CARR_CAP;
-    if (!strong) capacity = Math.trunc(capacity / 2);
-    return Math.max(1, capacity);
-}
-
-function monsterCarryAmount(monster, object) {
-    if (!monster || !object) return 0;
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    if (quantity > 1) {
-        const glomper = MONSTER_SYMBOL[monster.mnum] === S_DRAGON
-            && (object.otyp === GOLD_PIECE
-                || object.oclass === GEM_CLASS)
-            || (MONSTER_ATTACKS[monster.mnum] || [])
-                .some(([attackType]) => attackType === AT_ENGL);
-        if ((flags1 & M1_NOHANDS) && !glomper) return 1;
-    }
-    if ((flags2 & M2_ROCKTHROW) && object.otyp === BOULDER) return quantity;
-    if (monster.isshk) return quantity;
-    if (monster.mpeaceful && !monster.mtame && !monster.pet) return 0;
-    return currentMonsterLoad(monster) + monsterObjectWeight(object)
-        <= maxMonsterLoad(monster) ? quantity : 0;
-}
-
-export function monsterCanCarryObject(monster, object) {
-    return monsterCarryAmount(monster, object) > 0;
 }
 
 function monsterRejectsOrdinaryCorpsePickup(monster, object) {
