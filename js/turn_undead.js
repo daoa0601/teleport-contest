@@ -110,7 +110,7 @@ async function turnOneMonster(monster, state, options) {
         return 'turned';
     }
 
-    await makeMonsterFlee(monster, state);
+    await makeMonsterFlee(monster, { state });
     return 'fled';
 }
 

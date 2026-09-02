@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
-    Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, ROWNO, STRAT_WAITMASK,
+    Is_astralevel, ROWNO, STRAT_WAITMASK,
 } from './const.js';
 import { tameMonster } from './dog.js';
 import {
@@ -19,6 +19,7 @@ import {
     MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
+import { makeMonsterFlee } from './monster_flee.js';
 import {
     BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,
     MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE,
@@ -93,20 +94,6 @@ function instrumentCanScare(monster) {
     return true;
 }
 
-async function makeMonsterFlee(monster) {
-    monster.mfleetim = 0;
-    if (!monster.mflee && cansee(monster.mx, monster.my)
-        && monster.m_ap_type !== M_AP_FURNITURE
-        && monster.m_ap_type !== M_AP_OBJECT) {
-        const name = MONSTER_NAME[monster.mnum] || 'monster';
-        await plineWithContinuation(monster.mcanmove === 0
-            ? `The immobile ${name} seems to flinch.`
-            : `The ${name} turns to flee.`);
-    }
-    monster.mflee = 1;
-    monster._track = [];
-}
-
 async function awakenMonster(monster, scary) {
     monster.msleeping = 0;
     monster.mcanmove = 1;
@@ -121,7 +108,7 @@ async function awakenMonster(monster, scary) {
         || ((MONSTER_FLAGS1[monster.mnum] || 0) & M1_MINDLESS)
         || monsterResistsInstrument(monster)
         || !instrumentCanScare(monster)) return;
-    await makeMonsterFlee(monster);
+    await makeMonsterFlee(monster, { publish: plineWithContinuation });
 }
 
 async function awakenMonsters(distance) {

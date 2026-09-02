@@ -119,7 +119,7 @@ async function turnMonster(monster, source, state, options) {
         await options.finishMonsterKill(monster, monster.mx, monster.my);
         return;
     }
-    if (!resisted) await makeMonsterFlee(monster, state);
+    if (!resisted) await makeMonsterFlee(monster, { state });
     await options.wakeMonster(monster);
 }
 
