@@ -6,44 +6,27 @@ import { pushKeys } from '../js/input.js';
 import { place_object } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
-import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { turnUndeadInDirection } from '../js/undead_turning.js';
-import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand, untimedCorpse } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN_ZOMBIE = 244;
 
 function freshState() {
-    freshPlayableRoom({
-        left: 7, right: 18, top: 6, bottom: 14,
+    freshObjectRoom({
+        right: 18,
         role: 'wizard',
         hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
             uen: 40,
             uenmax: 40,
             uhunger: 900,
-            ualign: { type: 0, record: 0 },
-            uconduct: {},
-            uhave: {},
         },
+        objectInitializationSeed: 700n,
     });
-    game.moves = 40;
-    game.mvitals = [];
-    game.flags = {};
-    game.context = {};
-    vision_reset_new_level();
-    vision_recalc(0);
-    initRng(700n);
-    init_objects();
 }
 
 function trollCorpse() {

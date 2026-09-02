@@ -11,15 +11,14 @@ import { pushKey } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { FIGURINE } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { vision_recalc } from '../js/vision.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 
 const PM_WUMPUS = 84;
@@ -27,33 +26,7 @@ const PM_LEOCROTTA = 83;
 const PM_FLOATING_EYE = 28;
 
 function freshFigurineState() {
-    freshPlayableRoom({
-        left: 7,
-        right: 16,
-        top: 6,
-        bottom: 14,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            ualign: { type: 0, record: 0 },
-            acurr: { a: Array(6).fill(12) },
-            amax: { a: Array(6).fill(12) },
-            uconduct: {},
-            uhave: {},
-            blindTurns: 0,
-        },
-    });
-    game.moves = 40;
-    game.mvitals = [];
-    game.flags = {};
-    game.context = {};
-    game.in_mklev = false;
-    vision_reset_new_level();
-    vision_recalc(0);
-    initRng(999n);
-    init_objects();
+    freshObjectRoom();
 }
 
 function carriedFigurine({

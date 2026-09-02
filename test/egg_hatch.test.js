@@ -9,45 +9,25 @@ import { game } from '../js/gstate.js';
 import { mksobj, place_object } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { EGG } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import {
-    cansee, vision_recalc, vision_reset_new_level,
-} from '../js/vision.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 
 function freshEggState(seed) {
-    freshPlayableRoom({
+    freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            acurr: { a: Array(6).fill(12) },
-            amax: { a: Array(6).fill(12) },
-            uhave: {},
-            blindTurns: 0,
-            deafTurns: 0,
-        },
+        hero: { deafTurns: 0 },
+        flags: { female: true },
+        context: { move: 0, nopick: false },
+        moves: 2,
+        gameplaySeed: seed,
     });
-    game.flags = { female: true };
-    game.context = { move: 0, nopick: false };
-    game.moves = 2;
-    game.mvitals = [];
-    game.in_mklev = false;
-    vision_reset_new_level();
-    vision_recalc(0);
     assert.equal(cansee(12, 10), true);
-
-    initRng(999n);
-    init_objects();
-    initRng(BigInt(seed));
 }
 
 

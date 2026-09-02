@@ -23,10 +23,8 @@ import {
     POT_WATER, RIN_POLYMORPH_CONTROL, ROCK,
     SCR_BLANK_PAPER, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import { vision_reset_new_level } from '../js/vision.js';
 import {
     knownInventoryObject, knownInventoryWeapon, knownObject,
 } from './support/game-objects.js';
@@ -35,7 +33,7 @@ import {
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
@@ -47,21 +45,14 @@ const PM_GREMLIN = 40;
 const PM_ARCHEOLOGIST = 331;
 
 function freshSwallowedState(mnum) {
-    freshPlayableRoom({
+    freshObjectRoom({
         right: 12,
         hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
             uhitinc: 0,
             uluck: 0,
-            ualign: { type: 0, record: 0 },
-            acurr: { a: Array(6).fill(12) },
-            amax: { a: Array(6).fill(12) },
-            uconduct: {},
-            uhave: {},
         },
+        context: { move: 0 },
+        recalculateVision: false,
     });
     const engulfer = addMonster({
         m_id: 2300 + mnum,
@@ -75,14 +66,6 @@ function freshSwallowedState(mnum) {
         uswallow: 1,
         ustuck: engulfer,
     });
-    game.flags = {};
-    game.context = { move: 0 };
-    game.moves = 40;
-    game.mvitals = [];
-    game.in_mklev = false;
-    vision_reset_new_level();
-    initRng(999n);
-    init_objects();
     return engulfer;
 }
 

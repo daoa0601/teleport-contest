@@ -12,43 +12,22 @@ import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
-import { initRng } from '../js/rng.js';
-import {
-    cansee, vision_recalc, vision_reset_new_level,
-} from '../js/vision.js';
+import { cansee } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 
 function freshGlobState(seed = 1) {
-    freshPlayableRoom({
+    freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            acurr: { a: Array(6).fill(12) },
-            amax: { a: Array(6).fill(12) },
-            uhave: {},
-            blindTurns: 0,
-        },
+        context: { move: 0, nopick: false },
+        gameplaySeed: seed,
     });
-    game.context = { move: 0, nopick: false };
-    game.moves = 40;
-    game.in_mklev = false;
-    vision_reset_new_level();
-    vision_recalc(0);
     assert.equal(cansee(12, 10), true);
-
-    initRng(999n);
-    init_objects();
-    initRng(BigInt(seed));
 }
 
 

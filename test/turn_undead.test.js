@@ -2,42 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { init_objects } from '../js/o_init.js';
-import { initRng } from '../js/rng.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
-import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
 
 function freshPriest(alignment = 1) {
-    freshPlayableRoom({
+    freshObjectRoom({
         left: 6, right: 14, top: 6, bottom: 14,
         role: 'priest',
         hero: {
             uz: { dnum: 0, dlevel: 6 },
             ulevel: 6,
-            uhp: 40,
-            uhpmax: 40,
             ualign: { type: alignment, record: 0 },
-            uconduct: {},
-            uhave: {},
         },
+        moves: 50,
+        objectInitializationSeed: 44n,
     });
     game.urole.gods = {
         lawful: 'Athena', neutral: 'Hermes', chaotic: 'Loki',
     };
-    game.moves = 50;
-    game.context = {};
-    game.flags = {};
-    game.mvitals = [];
     game.dungeons = [{ dname: 'The Dungeons of Doom' }];
-    vision_reset_new_level();
-    vision_recalc(0);
-    initRng(44n);
-    init_objects();
 }
 
 test('a lawful priest destroys a zombie and frightens a tougher mummy',

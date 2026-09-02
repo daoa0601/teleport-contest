@@ -13,16 +13,14 @@ import {
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { restoreMonsterTraits } from '../js/monster_traits.js';
 import { CORPSE, SACK } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { deadMonster, liveMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
 const PM_HUMAN = 260;
@@ -38,28 +36,7 @@ const PM_DOPPELGANGER = 270;
 const PM_WIZARD_OF_YENDOR = 285;
 
 function freshState() {
-    freshPlayableRoom({
-        left: 7, right: 16, top: 6, bottom: 14,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            ualign: { type: 0, record: 0 },
-            uconduct: {},
-            uhave: {},
-            blindTurns: 0,
-        },
-    });
-    game.moves = 40;
-    game.mvitals = [];
-    game.flags = {};
-    game.context = {};
-    game.in_mklev = false;
-    vision_reset_new_level();
-    vision_recalc(0);
-    initRng(900n);
-    init_objects();
+    freshObjectRoom({ objectInitializationSeed: 900n });
 }
 
 function trollCorpse() {

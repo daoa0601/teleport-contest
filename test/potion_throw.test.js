@@ -14,23 +14,21 @@ import {
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
     POT_WATER, RIN_POLYMORPH_CONTROL,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, wearHeroObject,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 const PM_PURPLE_WORM = 115;
 
 function freshMapPotionState(distance = 2) {
     const attributes = Array(6).fill(12);
     attributes[A_DEX] = 18;
 
-    freshPlayableRoom({
+    freshObjectRoom({
         hero: {
             uz: { dnum: 0, dlevel: 4 },
             ulevel: 4,
@@ -44,6 +42,9 @@ function freshMapPotionState(distance = 2) {
             uswallow: 0,
             ustuck: null,
         },
+        context: { move: 0 },
+        moves: 60,
+        objectInitializationSeed: 1n,
     });
     const monster = addMonster({
         m_id: 2700 + distance,
@@ -52,14 +53,6 @@ function freshMapPotionState(distance = 2) {
         y: 10,
         hitPoints: 12,
     });
-    game.flags = {};
-    game.context = { move: 0 };
-    game.moves = 60;
-    game.in_mklev = false;
-    vision_reset_new_level();
-    vision_recalc(0);
-    initRng(1n);
-    init_objects();
     return monster;
 }
 

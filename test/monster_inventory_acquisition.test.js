@@ -20,7 +20,6 @@ import {
     DAGGER, FAKE_AMULET_OF_YENDOR, FIGURINE, GLOB_OF_GRAY_OOZE,
     GOLD_PIECE, MACE, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING,
 } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
     scheduleObjectTimer, stopAllObjectTimers,
@@ -28,7 +27,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 
 const PM_LEPRECHAUN = 63;
@@ -36,35 +35,16 @@ const PM_SHOPKEEPER = 271;
 const SKELETON_KEY = 221;
 
 function freshInventoryState(seed = 1) {
-    freshPlayableRoom({
-        left: 7,
+    freshObjectRoom({
         right: 17,
-        top: 6,
-        bottom: 14,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            ualign: { type: 0, record: 0 },
-            uhave: {},
-            acurr: { a: Array(6).fill(12) },
-            amax: { a: Array(6).fill(12) },
-        },
+        gameplaySeed: seed,
+        recalculateVision: false,
     });
-    game.flags = {};
-    game.context = {};
-    game.moves = 40;
-    game.mvitals = [];
     game.dungeons = [{
         dname: 'The Dungeons of Doom',
         depth_start: 1,
         num_dunlevs: 30,
     }];
-    game.in_mklev = false;
-    initRng(999n);
-    init_objects();
-    initRng(BigInt(seed));
 }
 
 function inventoryMonster(m_id, overrides = {}) {

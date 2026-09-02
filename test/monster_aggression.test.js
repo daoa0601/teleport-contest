@@ -8,42 +8,23 @@ import {
     resumeDeferredMonsterContact,
 } from '../js/monmove.js';
 import { CORPSE } from '../js/object_data.js';
-import { init_objects } from '../js/o_init.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
-import { initRng } from '../js/rng.js';
 import { liveMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 const PM_GIANT = 169;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_GIANT_ZOMBIE = 247;
 
 function freshState() {
-    freshPlayableRoom({
-        left: 7,
-        right: 16,
-        top: 6,
-        bottom: 14,
+    freshObjectRoom({
         heroX: 13,
         heroY: 10,
-        hero: {
-            uz: { dnum: 0, dlevel: 8 },
-            ulevel: 8,
-            uhp: 40,
-            uhpmax: 40,
-            acurr: { a: [12, 12, 12, 12, 12, 12] },
-            ualign: { type: 0, record: 0 },
-        },
+        objectInitializationSeed: 700n,
+        recalculateVision: false,
     });
-    game.moves = 40;
-    game.flags = {};
-    game.context = {};
-    game.mvitals = [];
-    game.in_mklev = false;
-    initRng(700n);
-    init_objects();
 }
 
 function arenaMonster(options) {
