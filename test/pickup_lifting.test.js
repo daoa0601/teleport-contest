@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_LIFE_SAVING, CHEST, CLUB, CORPSE, DART, FOOD_RATION,
+    AMULET_OF_LIFE_SAVING, BOW, CHEST, CLUB, CORPSE, DART, FOOD_RATION,
     HEAVY_IRON_BALL, LOADSTONE, ROCK, SCR_SCARE_MONSTER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -57,6 +57,32 @@ test('floor pickup honors a count chosen from a multi-object pile', async () => 
     assert.equal(darts.quan, 15);
     assert.equal(game.level.objects[10][10].includes(darts), true);
     assert.equal(game.level.objects[10][10].includes(ration), true);
+});
+
+test('a new pickup replaces the previous just-picked batch', async () => {
+    const club = inventoryObject(CLUB, 'a', { pickup_prev: true });
+    freshPickupGame([club]);
+    const ration = floorObject(FOOD_RATION, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(club.pickup_prev, false);
+    assert.equal(ration.pickup_prev, true);
+});
+
+test('picking up a bones bow adjusts it for a left-handed hero', async () => {
+    freshPickupGame();
+    game.u.rightHanded = false;
+    const bow = floorObject(BOW, 10, 10, {
+        ghostly: true,
+        name: 'bow',
+    });
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(bow.ghostly, false);
+    assert.match(game._pending_message,
+        /make adjustments to the bow to suit your left hand\.$/);
 });
 
 test('floor pickup takes the largest stack that remains below overload',

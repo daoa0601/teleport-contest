@@ -45,7 +45,10 @@ test('applying a carried chest can put an ordinary item inside', async () => {
 });
 
 test('applying a carried chest can take its item back out', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = inventoryObject(CHEST, 'a', {
+        cknown: true,
+        pickup_prev: true,
+    });
     const club = inventoryObject(CLUB, 'b', {
         where: 'contained',
         container: chest,
@@ -59,6 +62,8 @@ test('applying a carried chest can take its item back out', async () => {
     assert.equal(game.inventory.includes(club), true);
     assert.equal(club.where, 'inventory');
     assert.equal(club.container, null);
+    assert.equal(chest.pickup_prev, false);
+    assert.equal(club.pickup_prev, true);
     assert.equal(game.context.move, 1);
 });
 

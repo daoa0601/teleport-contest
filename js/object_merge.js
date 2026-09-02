@@ -169,7 +169,7 @@ export function mergeObjectStacks(survivor, incoming, state = game) {
     if (!!survivor.known !== !!incoming.known) survivor.known = true;
     if (!!survivor.rknown !== !!incoming.rknown) survivor.rknown = true;
     if (!!survivor.bknown !== !!incoming.bknown) survivor.bknown = true;
-    if (incoming.pickup_prev && survivor.where === 'invent')
+    if (incoming.pickup_prev && survivor.where === 'inventory')
         survivor.pickup_prev = true;
     if (incoming.bypass) survivor.bypass = true;
 

@@ -4,6 +4,7 @@
 // older regression harnesses transition to inspecting the live `$` object.
 
 import { nextIdent } from './ident.js';
+import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
 
 const COIN_CLASS = 12;
@@ -84,7 +85,7 @@ export function addHeroGoldObject(state, incoming) {
         incoming.ox = incoming.oy = 0;
         incoming.quan = incoming.quantity = 0;
         syncHeroGoldCache(state);
-        return { object: existing, merged: true };
+        return { object: markJustPicked(existing), merged: true };
     }
     normalizeGoldObject(incoming, amount);
     incoming.where = 'inventory';
@@ -94,7 +95,7 @@ export function addHeroGoldObject(state, incoming) {
     state.inventory ||= [];
     if (!state.inventory.includes(incoming)) state.inventory.unshift(incoming);
     syncHeroGoldCache(state);
-    return { object: incoming, merged: false };
+    return { object: markJustPicked(incoming), merged: false };
 }
 
 export function setHeroGoldAmount(state, amount) {

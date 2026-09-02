@@ -27,6 +27,7 @@ test('picking up floor gold moves that identity into the dollar inventory slot',
         assert.equal(heroGoldAmount(game), 37);
         assert.equal(floorGold.invlet, '$');
         assert.equal(floorGold.where, 'inventory');
+        assert.equal(floorGold.pickup_prev, true);
         assert.equal(game._goldCount, 37);
     });
 
@@ -43,6 +44,7 @@ test('picking up more gold merges to one live purse identity', async () => {
         object.otyp === GOLD_PIECE).length, 1);
     assert.equal(floorGold.where, 'gone');
     assert.equal(floorGold.quantity, 0);
+    assert.equal(purse.pickup_prev, true);
     assert.equal(game._goldCount, 18);
     assert.equal(game.context.move, 1);
 });

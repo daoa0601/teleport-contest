@@ -33,6 +33,7 @@ export const ORCISH_ARROW = 20;
 export const CROSSBOW_BOLT = 23;
 export const YA = 22;
 export const DART = 24;
+export const BOOMERANG = 26;
 export const SPEAR = 27;
 export const ELVEN_SPEAR = 28;
 export const ORCISH_SPEAR = 29;

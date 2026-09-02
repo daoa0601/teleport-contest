@@ -11,6 +11,7 @@ import {
 } from './hero_gold.js';
 import { nhgetch } from './input.js';
 import { inventoryItemDescription } from './invent.js';
+import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import {
@@ -375,13 +376,14 @@ function removeFromInventory(object, state) {
 function addToInventory(object, state) {
     const existing = (state.inventory || []).find(candidate =>
         mergable(candidate, object, state));
-    if (existing) return mergeObjectStacks(existing, object, state);
+    if (existing)
+        return markJustPicked(mergeObjectStacks(existing, object, state));
     object.dknown = true;
     assignInventoryLetter(object);
     object.where = 'inventory';
     state.inventory ||= [];
     state.inventory.push(object);
-    return object;
+    return markJustPicked(object);
 }
 
 function freezeObject(object, state) {
@@ -528,6 +530,7 @@ export async function putIntoContainer(
 
 export async function takeFromContainer(
     container, object, state = game, count = -1,
+    { resetJustPicked = false } = {},
 ) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
@@ -567,6 +570,7 @@ export async function takeFromContainer(
     object.container = null;
     object.where = 'free';
     if (container.otyp === ICE_BOX) thawObject(object, state);
+    if (resetJustPicked) clearJustPicked(state);
 
     let carried;
     if (object.otyp === GOLD_PIECE) {
@@ -600,10 +604,13 @@ async function takeSelectedObjects(container) {
     const eligible = matchingObjects(container.contents, matchers);
     const selected = await chooseObjects('Take out what?', eligible, false);
     const results = [];
+    let resetJustPicked = true;
     for (const selection of selected) {
         results.push(await takeFromContainer(
             container, selection.value, game, selection.count,
+            { resetJustPicked },
         ));
+        if (results.at(-1).moved) resetJustPicked = false;
         if (results.at(-1).stop) break;
     }
     await reportResults(results);

@@ -94,6 +94,8 @@ import { deleteObject } from './object_delete.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { pickupLocationProblem } from './pickup_location.js';
+import { finishGhostlyPickup } from './bones_object.js';
+import { clearJustPicked, markJustPicked } from './just_picked.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
     removeObjectFromMonsterInventory,
@@ -3135,6 +3137,7 @@ function preparePickedInventoryObject(object) {
         const total = game.flags?.verbose === false
             ? '.' : ` (${totalQuantity} in total).`;
         return {
+            object: existing,
             message: `${existing.invlet} - ${
                 pickupObjectDescription(pickedView)
             }${total}`,
@@ -3190,8 +3193,10 @@ function preparePickedInventoryObject(object) {
     }
     object.where = 'inventory';
     game.inventory.push(object);
+    markJustPicked(object);
     attachCursedFigurineTimer(object, game);
     return {
+        object,
         message: `${object.invlet} - ${pickupObjectDescription(object)}.`,
         comparisonLearned: false,
     };
@@ -3225,9 +3230,11 @@ function collectPickupMessages(source, selected) {
                 ...object, quan: quantity, quantity,
             };
             const previous = heroGoldAmount(game);
-            addHeroGoldObject(game, object);
+            const carried = addHeroGoldObject(game, object).object;
             const total = previous ? ` (${heroGoldAmount(game)} in total)` : '';
             messages.push(`$ - ${pickupObjectDescription(pickedView)}${total}.`);
+            const ghostlyMessage = finishGhostlyPickup(carried, game);
+            if (ghostlyMessage) messages.push(ghostlyMessage);
         } else {
             const transaction = source.monster
                 ? null : addShopObjectToBill(object);
@@ -3239,6 +3246,8 @@ function collectPickupMessages(source, selected) {
             }
             const prepared = preparePickedInventoryObject(object);
             messages.push(prepared.message);
+            const ghostlyMessage = finishGhostlyPickup(prepared.object, game);
+            if (ghostlyMessage) messages.push(ghostlyMessage);
             if (prepared.comparisonLearned) {
                 comparisonMessages.push(
                     'You learn more about your items by comparing them.',
@@ -3389,6 +3398,7 @@ async function commitPickup(source, selected) {
         return 0;
     }
 
+    clearJustPicked(game);
     const pickup = await liftPickupSelections(source, selected);
     if (!pickup.lifted.length) {
         if (pickup.consumed && !source.monster) {
