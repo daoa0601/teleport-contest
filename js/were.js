@@ -1,5 +1,6 @@
-// were.js — Shared deterministic were-creature form transition.
-// C refs: were.c counter_were(), new_were(); mondata.c set_mon_data().
+// Were-creature transformations and hero lycanthropy.
+// C refs: were.c counter_were(), new_were(), you_unwere();
+// mondata.c set_mon_data().
 
 import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
@@ -163,6 +164,47 @@ export async function applyHeroWaterVaporChange({
         return { kind: 'transformed', changed: true, transformed };
     }
     return { kind: 'unaffected', changed: false };
+}
+
+export async function purifyHeroLycanthropy({
+    state = game,
+    publish = plineWithContinuation,
+} = {}) {
+    const hero = state.u || (state.u = {});
+    const inWereForm = isWereMonster({ mnum: hero.umonnum });
+    const infected = Number.isInteger(hero.ulycn) && hero.ulycn >= 0;
+    if (!infected && !inWereForm) return { cured: false, changed: false };
+
+    await publish('You feel purified.');
+    hero.ulycn = -1;
+
+    if (!inWereForm) return { cured: true, changed: false };
+
+    const unchanging = heroIsUnchanging(state);
+    const nearbyThreat = !unchanging && threateningMonsterNearby(state);
+    const controllable = controllableWereChange(state);
+    let remain = false;
+    if (!unchanging && !nearbyThreat && controllable) {
+        remain = await queryControlledWereChange(
+            state, 'Remain in beast form?',
+        );
+    }
+
+    if (!unchanging && !nearbyThreat && (!controllable || !remain)) {
+        const restored = rehumanizeHero(state);
+        if (restored.regainedSight && state === game) vision_recalc(0);
+        if (restored.changed) {
+            await publish(`You return to ${restored.race} form!${
+                restored.regainedSight ? '  You can see again.' : ''
+            }`);
+            if (restored.encumbranceMessage)
+                await publish(restored.encumbranceMessage);
+        }
+        return { cured: true, changed: restored.changed, restored };
+    }
+
+    if (!hero.mtimedone) hero.mtimedone = 200 + rn2(200);
+    return { cured: true, changed: false };
 }
 
 export function heroHasProtectionFromShapeChangers(state = game) {

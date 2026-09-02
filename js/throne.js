@@ -17,6 +17,7 @@ import { finishHeroDeath } from './end.js';
 import { loseExperienceLevel } from './exper.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game } from './gstate.js';
+import { cureHeroSickness } from './hero_illness.js';
 import {
     heroGoldAmount, setHeroGoldAmount,
 } from './hero_gold.js';
@@ -142,8 +143,7 @@ function healHeroCompletely() {
     hero.uhp = hero.uhpmax;
     hero.ucreamed = 0;
     hero.blindTurns = 0;
-    hero.sick = false;
-    hero.sickTurns = 0;
+    cureHeroSickness(game);
     hero._woundedLegTurns = 0;
     hero._woundedLegSide = null;
     syncBlindness(game);

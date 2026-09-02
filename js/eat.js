@@ -12,18 +12,24 @@ import { inventoryItemDescription } from './invent.js';
 import { nextIdent } from './ident.js';
 import { getRumor } from './mklev.js';
 import {
+    cureHeroSickness, cureHeroVomiting,
+} from './hero_illness.js';
+import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, FOOD_RATION, FORTUNE_COOKIE,
-    LEMBAS_WAFER, OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES,
-    OBJECT_NUTRITION,
+    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, EUCALYPTUS_LEAF,
+    FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, OBJECT_DELAY,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION, SPRIG_OF_WOLFSBANE,
 } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
-import { syncBlindness, syncDeafness } from './senses.js';
+import {
+    setHeroBlindnessTurns, syncBlindness, syncDeafness,
+} from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
 import { PM_GREEN_SLIME, startHeroSliming } from './slime.js';
+import { purifyHeroLycanthropy } from './were.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 
 const M1_CARNIVORE = 0x20000000;
@@ -417,6 +423,28 @@ function applyCorpsePostEffects(g, corpse) {
     return null;
 }
 
+async function applyOrdinaryFoodPostEffects(g, food) {
+    if (food.otyp === CARROT) {
+        const sight = setHeroBlindnessTurns(g.u?.ucreamed ?? 0, g);
+        if (sight.regainedSight)
+            await plineWithContinuation('You can see again.');
+        return;
+    }
+    if (food.otyp === SPRIG_OF_WOLFSBANE) {
+        await purifyHeroLycanthropy({ state: g });
+        return;
+    }
+    if (food.otyp === EUCALYPTUS_LEAF && !food.cursed) {
+        if (cureHeroSickness(g)) {
+            await plineWithContinuation(
+                'You feel cured.  What a relief!',
+            );
+        }
+        if (cureHeroVomiting(g))
+            await plineWithContinuation('You feel much less nauseated now.');
+    }
+}
+
 async function finishFoodMeal(g, meal, showFinishMessage) {
     if (g.context?.victual?.piece === meal.object)
         g.context.victual = null;
@@ -428,6 +456,8 @@ async function finishFoodMeal(g, meal, showFinishMessage) {
         ? applyCorpsePostEffects(g, meal.object) : null;
     if (postEffectMessage)
         await plineWithContinuation(postEffectMessage);
+    if (!meal.corpseLike)
+        await applyOrdinaryFoodPostEffects(g, meal.object);
     if (meal.carried) {
         consumeTouchedFood(meal.object);
     } else {

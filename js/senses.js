@@ -44,6 +44,15 @@ export function syncBlindness(state = game) {
     return blind;
 }
 
+export function setHeroBlindnessTurns(turns, state = game) {
+    const wasBlind = heroIsBlind(state);
+    const hero = state.u || (state.u = {});
+    hero.blindTurns = Math.max(0, turns);
+    const blind = syncBlindness(state);
+    if (wasBlind !== blind) state.vision_full_recalc = 1;
+    return { blind, regainedSight: wasBlind && !blind };
+}
+
 export function permanentDeaf(state = game) {
     return !!state.u?.uroleplay?.deaf;
 }

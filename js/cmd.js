@@ -53,6 +53,7 @@ import {
     castKnownSpell, continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
 import { applyPotionLikeInvisibility } from './hero_invisibility.js';
+import { cureHeroIllness } from './hero_illness.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -1396,10 +1397,7 @@ async function doquaff() {
                 syncDeafness(game);
             }
             if (potion.blessed) {
-                game.u.vomiting = false;
-                game.u.vomitingTurns = 0;
-                game.u.sick = false;
-                game.u.sickTurns = 0;
+                cureHeroIllness(game);
             }
             exerciseAttribute(A_CON, true);
     } else if (potion.otyp === POT_EXTRA_HEALING) {
@@ -1423,10 +1421,7 @@ async function doquaff() {
             game.u.deafTurns = 0;
             syncDeafness(game);
             if (!potion.cursed) {
-                game.u.vomiting = false;
-                game.u.vomitingTurns = 0;
-                game.u.sick = false;
-                game.u.sickTurns = 0;
+                cureHeroIllness(game);
             }
             if (wasBlind && !game.blind) {
                 game.vision_full_recalc = 1;
