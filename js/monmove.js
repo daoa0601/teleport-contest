@@ -69,6 +69,7 @@ import {
     createHarmlessGasCloudSelection, createSteamCloud,
 } from './regions.js';
 import { syncBlindness } from './senses.js';
+import { touchPetrifies } from './stoning.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -927,9 +928,9 @@ function monsterRejectsOrdinaryCorpsePickup(monster, object) {
     if (object?.otyp !== CORPSE
         || MONSTER_SYMBOL[monster?.mnum] === S_NYMPH) return false;
     const corpsenm = object.corpsenm;
-    const touchPetrifies = corpsenm === 9 || corpsenm === 10;
+    const petrifiesOnTouch = touchPetrifies(corpsenm);
     const acidic = !!((MONSTER_FLAGS1[corpsenm] ?? 0) & M1_ACID);
-    return !touchPetrifies && corpsenm !== PM_LIZARD && !acidic;
+    return !petrifiesOnTouch && corpsenm !== PM_LIZARD && !acidic;
 }
 
 // C mon.c:mpickstuff() and monmove.c:postmov().  An interested monster takes

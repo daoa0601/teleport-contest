@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
+import { W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { syncHeroGoldCache } from '../js/hero_gold.js';
 import { pushKeys } from '../js/input.js';
 import {
-    AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART,
-    GOLD_PIECE, ICE_BOX, LARGE_BOX, LOADSTONE,
+    AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB,
+    CORPSE, DART, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEATHER_GLOVES, LOADSTONE,
 } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
@@ -130,6 +131,42 @@ test('moving some gold keeps the purse and container amounts separate',
         assert.equal(chest.contents[0].quan, 2);
         assert.equal(chest.contents[0].where, 'contained');
     });
+
+test('touching one cockatrice corpse restores its stack and stops transfer',
+    async () => {
+        const chest = inventoryObject(CHEST, 'a', { cknown: true });
+        const corpse = inventoryObject(CORPSE, 'b', {
+            corpsenm: 10,
+            quantity: 2,
+        });
+        const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, 'c', {
+            worn: true,
+            owornmask: W_AMUL,
+        });
+        freshContainerGame(chest, corpse, amulet);
+        game.uamul = game.u.uamul = amulet;
+
+        await applyObject(`aic\n1b\n${' '.repeat(10)}`);
+
+        assert.equal(game.inventory.includes(corpse), true);
+        assert.equal(corpse.quan, 2);
+        assert.deepEqual(chest.contents, []);
+        assert.equal(game.inventory.includes(amulet), false);
+        assert.ok(game.u.uhp > 0);
+    });
+
+test('gloves make a cockatrice corpse safe to put away', async () => {
+    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const corpse = inventoryObject(CORPSE, 'b', { corpsenm: 10 });
+    const gloves = inventoryObject(LEATHER_GLOVES, 'c', { worn: true });
+    freshContainerGame(chest, corpse, gloves);
+    game.uarmg = game.u.uarmg = gloves;
+
+    await applyObject('aic\nb\n');
+
+    assert.deepEqual(chest.contents, [corpse]);
+    assert.ok(game.u.uhp > 0);
+});
 
 test('a carried locked chest must be put down before it can be opened',
     async () => {

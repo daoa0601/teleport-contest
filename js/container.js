@@ -33,6 +33,7 @@ import {
 import { heroHasNoHands } from './polyself.js';
 import { d, rn2 } from './rng.js';
 import { rejoinShopBill, splitShopBill } from './shk.js';
+import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
 import {
@@ -486,18 +487,26 @@ function restoreRejectedSplit(transfer, state) {
         return;
     }
 
-    if (transfer.parent.where !== 'inventory') return;
-    const inventory = state.inventory || (state.inventory = []);
-    const parentIndex = inventory.indexOf(transfer.parent);
-    if (!inventory.includes(transfer.object))
-        inventory.splice(parentIndex + 1, 0, transfer.object);
+    let owner = null;
+    if (transfer.parent.where === 'inventory') {
+        owner = state.inventory || (state.inventory = []);
+    } else if (transfer.parent.where === 'contained') {
+        owner = transfer.parent.container?.contents;
+    }
+    if (!owner || owner.includes(transfer.object)) return;
+    const parentIndex = owner.indexOf(transfer.parent);
+    owner.splice(parentIndex + 1, 0, transfer.object);
 }
 
-export function putIntoContainer(
+export async function putIntoContainer(
     container, object, state = game, count = -1,
 ) {
     const transfer = splitForTransfer(object, count, state);
     object = transfer.object;
+    if (await touchPetrifyingCorpse(object)) {
+        restoreRejectedSplit(transfer, state);
+        return { moved: false, stop: true, message: null };
+    }
     const rejected = rejectedPutMessage(container, object, state);
     if (rejected) {
         restoreRejectedSplit(transfer, state);
@@ -528,53 +537,46 @@ export function putIntoContainer(
     };
 }
 
-function weightAtQuantity(object, count) {
-    if (count >= quantity(object)) return objectWeight(object);
-    return objectWeight({
-        ...object,
-        quan: count,
-        quantity: count,
-    });
-}
-
-function extraWeightWhenRemoved(container, object, count, state) {
-    const amount = transferQuantity(object, count);
-    const selectedWeight = weightAtQuantity(object, amount);
+function extraWeightWhenRemoved(container, transfer, state) {
+    const object = transfer.object;
+    const selectedWeight = objectWeight(object);
     if (!carriedContainer(container, state)) return selectedWeight;
-    const before = objectWeight(container);
-    const total = quantity(object);
     const contents = container.contents;
-    const oldQuan = object.quan;
-    const oldQuantity = object.quantity;
-    if (amount < total) {
-        object.quan = object.quantity = total - amount;
+    let before;
+    let after;
+    if (transfer.parent) {
+        after = objectWeight(container);
+        container.contents = [object, ...contents];
+        before = objectWeight(container);
     } else {
+        before = objectWeight(container);
         container.contents = contents.filter(candidate => candidate !== object);
+        after = objectWeight(container);
     }
-    const after = objectWeight(container);
-    object.quan = oldQuan;
-    object.quantity = oldQuantity;
     container.contents = contents;
     return selectedWeight + after - before;
 }
 
-export function takeFromContainer(
+export async function takeFromContainer(
     container, object, state = game, count = -1,
 ) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
-    const extraWeight = extraWeightWhenRemoved(
-        container, object, count, state,
-    );
+    const transfer = splitForTransfer(object, count, state);
+    object = transfer.object;
+    if (await touchPetrifyingCorpse(object)) {
+        restoreRejectedSplit(transfer, state);
+        return { moved: false, stop: true, message: null };
+    }
+    const extraWeight = extraWeightWhenRemoved(container, transfer, state);
     if (calcCapacity(state, extraWeight) >= OVERLOADED) {
+        restoreRejectedSplit(transfer, state);
         return {
             moved: false,
             message: `You cannot lift ${objectDescription(object)}.`,
         };
     }
 
-    const transfer = splitForTransfer(object, count, state);
-    object = transfer.object;
     if (!transfer.parent) {
         container.contents = container.contents
             .filter(candidate => candidate !== object);
@@ -616,9 +618,10 @@ async function takeSelectedObjects(container) {
     const selected = await chooseObjects('Take out what?', eligible, false);
     const results = [];
     for (const selection of selected) {
-        results.push(takeFromContainer(
+        results.push(await takeFromContainer(
             container, selection.value, game, selection.count,
         ));
+        if (results.at(-1).stop) break;
     }
     await reportResults(results);
     return results;
@@ -641,11 +644,11 @@ async function putSelectedObjects(container, stashOne = false) {
     }
     const results = [];
     for (const selection of selected) {
-        const result = putIntoContainer(
+        const result = await putIntoContainer(
             container, selection.value, game, selection.count,
         );
         results.push(result);
-        if (result.destroyedContainer) break;
+        if (result.destroyedContainer || result.stop) break;
     }
     await reportResults(results);
     return results;
@@ -771,6 +774,7 @@ export async function useContainer(container, {
     const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
     const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
     const putInFirst = action === keys.reverse;
+    let stopped = false;
 
     if (takeOut && !putInFirst) {
         if (!container.contents.length) {
@@ -780,10 +784,11 @@ export async function useContainer(container, {
         } else {
             const results = await takeSelectedObjects(container);
             if (results.some(result => result.moved)) spentTime = true;
+            stopped = results.some(result => result.stop);
         }
     }
 
-    if (putIn || action === keys.stash) {
+    if (!stopped && (putIn || action === keys.stash)) {
         const hasOtherInventory = (game.inventory || [])
             .some(object => object !== container);
         if (!hasOtherInventory) {
@@ -794,13 +799,14 @@ export async function useContainer(container, {
                 container, action === keys.stash,
             );
             if (results.some(result => result.moved)) spentTime = true;
+            stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
                 return { spentTime: true, container: null };
             }
         }
     }
 
-    if (takeOut && putInFirst && container.contents?.length) {
+    if (!stopped && takeOut && putInFirst && container.contents?.length) {
         const results = await takeSelectedObjects(container);
         if (results.some(result => result.moved)) spentTime = true;
     }

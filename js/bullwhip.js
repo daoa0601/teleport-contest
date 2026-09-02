@@ -22,7 +22,7 @@ import {
 } from './mklev.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,
     monsterTypeName,
 } from './monster_data.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
@@ -31,10 +31,11 @@ import {
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import {
-    heroIsPolymorphed, polymonHero, rehumanizeHero,
+    heroIsPolymorphed, rehumanizeHero,
 } from './polyself.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
+import { touchPetrifyingCorpse } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { collectNearbyCoords } from './u_init.js';
@@ -43,10 +44,6 @@ import { strengthDamageBonus } from './weapon_damage.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 
 const PM_GRID_BUG = 116;
-const PM_CHICKATRICE = 9;
-const PM_COCKATRICE = 10;
-const PM_STONE_GOLEM = 257;
-const S_GOLEM = 55;
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_WALLWALK = 0x00000008;
@@ -257,40 +254,16 @@ function clearMonsterWeapon(monster, object) {
     object.where = 'free';
 }
 
-function touchPetrifies(mnum) {
-    return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
-}
-
-function heroTurnsToStoneGolem(state) {
-    const form = state.u?.umonnum;
-    return heroIsPolymorphed(state)
-        && MONSTER_SYMBOL[form] === S_GOLEM
-        && form !== PM_STONE_GOLEM;
-}
-
 async function snatchPetrifyingCorpse(weapon, state) {
-    const gloves = state.uarmg || state.u?.uarmg;
-    const resistsStone = state.u?.stoneResistance
-        || state.u?.stone_resistance;
-    if (weapon.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm)
-        || gloves || resistsStone) return false;
-
-    if (heroTurnsToStoneGolem(state)) {
-        await polymonHero(PM_STONE_GOLEM);
-        return false;
-    }
-
-    const corpseName = objectWithArticle(weapon);
-    await pline(`Snatching ${corpseName} is a fatal mistake.`);
-    place_object(weapon, state.u.ux, state.u.uy);
-    await pline('You turn to stone...');
-    const died = await finishHeroDeath({
-        killer: corpseName,
-        deathVerb: 'turned to stone',
-        deathLineShown: true,
+    const petrification = await touchPetrifyingCorpse(weapon, {
+        action: 'Snatching',
+        beforeDeath: () => place_object(
+            weapon, state.u.ux, state.u.uy,
+        ),
     });
-    if (!died) remove_object(weapon);
-    return died;
+    if (!petrification) return false;
+    if (!petrification.died) remove_object(weapon);
+    return petrification.died;
 }
 
 async function disarmMonster(monster, weapon, proficiency, holdObject, state) {

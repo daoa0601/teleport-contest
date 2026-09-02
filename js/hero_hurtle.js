@@ -37,13 +37,12 @@ import { rehumanizeHero } from './polyself.js';
 import { rnd } from './rng.js';
 import { stopRun } from './runmode.js';
 import { checkSpecialRoom } from './shk.js';
+import { touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
 import { destroyFireInventory } from './zap.js';
 import { vision_recalc } from './vision.js';
 
 const M1_WALLWALK = 0x00000008;
-const PM_CHICKATRICE = 9;
-const PM_COCKATRICE = 10;
 const HUMAN_WEIGHT = 1450;
 
 function heroForm() {
@@ -198,10 +197,6 @@ function indefiniteMonsterName(monster) {
 function heroWearsTorsoArmor() {
     return !!(game.uarmu || game.uarm || game.uarmc
         || game.u?.uarmu || game.u?.uarm || game.u?.uarmc);
-}
-
-function touchPetrifies(mnum) {
-    return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
 }
 
 async function collideWithMonster(monster, x, y, options) {
