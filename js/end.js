@@ -19,14 +19,11 @@ import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
-    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, GRAVE, MM_NONAME,
-    isok,
+    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, isok,
 } from './const.js';
-import { AMULET_OF_LIFE_SAVING, CORPSE } from './object_data.js';
-import {
-    bonesLevelExists, makemonAt, mksobj, place_object, saveBonesLevel,
-    stack_object,
-} from './mklev.js';
+import { AMULET_OF_LIFE_SAVING } from './object_data.js';
+import { place_object, stack_object } from './mklev.js';
+import { createBonesFromDeath } from './bones_death.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 
@@ -63,76 +60,6 @@ export function probeCanMakeBones(random = rn2) {
     if (dungeonDepth <= 0) return false;
     const roll = random(1 + (dungeonDepth >> 2));
     return roll !== 0 || !!game.flags?.debug;
-}
-
-// C refs: end.c:really_done() and bones.c:savebones()/drop_upon_death().
-// Disclosure has already finished before this owner is entered.  The named
-// corpse and ghost use the ordinary constructors so identity, temporary
-// corpse state, timeout, HP, and monster inventory initialization retain
-// their source RNG ownership.
-async function createOrdinaryBones() {
-    if (!game._canMakeBones) return false;
-    const x = game.u?.ux ?? 0;
-    const y = game.u?.uy ?? 0;
-
-    const corpse = mksobj(CORPSE, true, false);
-    corpse.corpsenm = game.urace?.mnum ?? 260;
-    corpse.name = `${game.plname || 'player'} corpse`;
-    corpse.oname = game.plname || 'player';
-    place_object(corpse, x, y);
-
-    const deathSquare = game.level?.at?.(x, y);
-    if (deathSquare) {
-        deathSquare.typ = GRAVE;
-        deathSquare.emptygrave = 1;
-        deathSquare.graveText = `${game.plname || 'player'}, killed by ${
-            game._deathKiller || 'an unknown cause'
-        }`;
-    }
-
-    if (game.flags?.debug) {
-        const save = await promptDeathQuestion('Save bones? [yn] (n) ');
-        if (save !== 'y') return false;
-    }
-    if (bonesLevelExists()) {
-        if (!game.flags?.debug) return false;
-        const replace = await promptDeathQuestion(
-            'Bones file already exists.  Replace it? [yn] (n) ',
-        );
-        if (replace !== 'y') return false;
-    }
-
-    // The inventory array retains gi.invent head-to-tail order.
-    while ((game.inventory || []).length) {
-        const object = game.inventory.shift();
-        object.owornmask = 0;
-        object.worn = false;
-        object.wornSlot = null;
-        if (rn2(5)) {
-            object.blessed = false;
-            object.cursed = true;
-        }
-        rn2(8);
-        place_object(object, x, y);
-    }
-
-    game.in_mklev = true;
-    let ghost;
-    try {
-        ghost = await makemonAt(287, x, y, MM_NONAME);
-    } finally {
-        game.in_mklev = false;
-    }
-    if (ghost) {
-        ghost.name = game.plname || 'player';
-        ghost.m_lev = game.u?.ulevel || 1;
-        ghost.mhp = ghost.mhpmax = game.u?.uhpmax || 1;
-        ghost.female = !!game.flags?.female;
-        ghost.msleeping = 1;
-        corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
-    }
-    game._bonesSaved = saveBonesLevel();
-    return game._bonesSaved;
 }
 
 // C refs: end.c done()/savelife() and o_init.c makeknown().  The fatal-hit
@@ -906,7 +833,7 @@ export async function finishOrdinaryDeath({
     }
     if (overview === 'q') return;
 
-    await createOrdinaryBones();
+    await createBonesFromDeath(promptDeathQuestion);
 
     const summary = deathSummaryValues();
     renderDeathSummaryPage(killer, summary, { deathVerb, deathCause });

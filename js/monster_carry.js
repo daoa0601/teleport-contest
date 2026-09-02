@@ -3,7 +3,7 @@
 import { MAX_CARR_CAP, WT_HUMAN } from './const.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
-    MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_HAS_WEAPON_ATTACK, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     BOULDER, CORPSE, GOLD_PIECE, OBJECT_WEIGHT,
@@ -14,6 +14,10 @@ const GEM_CLASS = 13;
 const M1_NOHANDS = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
+const M2_GREEDY = 0x10000000;
+const M2_JEWELS = 0x20000000;
+const M2_COLLECT = 0x40000000;
+const M2_MAGIC = 0x80000000;
 const MZ_HUMAN = 2;
 const S_DRAGON = 30;
 
@@ -74,4 +78,10 @@ export function monsterCarryAmount(monster, object) {
 
 export function monsterCanCarryObject(monster, object) {
     return monsterCarryAmount(monster, object) > 0;
+}
+
+export function monsterLikesObjects(monster) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    return !!(flags & (M2_GREEDY | M2_JEWELS | M2_COLLECT | M2_MAGIC))
+        || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
 }
