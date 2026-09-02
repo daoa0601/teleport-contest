@@ -10,27 +10,14 @@ import { initRng } from '../js/rng.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from '../js/zap.js';
+import { carriedObject } from './support/game-objects.js';
 
 test('carried paper burns and an exposed candle catches light', async () => {
-    const scroll = {
-        otyp: SCR_IDENTIFY,
-        oclass: 9,
-        name: 'identify',
-        quan: 1,
-        quantity: 1,
-        where: 'inventory',
-    };
-    const candle = {
-        otyp: TALLOW_CANDLE,
-        oclass: 6,
-        name: 'tallow candle',
-        quan: 1,
-        quantity: 1,
+    const scroll = carriedObject(SCR_IDENTIFY);
+    const candle = carriedObject(TALLOW_CANDLE, {
         age: 80,
         lamplit: false,
-        where: 'inventory',
-        objectTimers: [],
-    };
+    });
     const state = {
         moves: 10,
         inventory: [scroll, candle],
@@ -68,14 +55,7 @@ test('carried paper burns and an exposed candle catches light', async () => {
 });
 
 test('cold shatters carried potions', async () => {
-    const potion = {
-        otyp: POT_HEALING,
-        oclass: 8,
-        name: 'healing',
-        quan: 2,
-        quantity: 2,
-        where: 'inventory',
-    };
+    const potion = carriedObject(POT_HEALING, { quan: 2 });
     const state = {
         inventory: [potion],
         u: { uhp: 20, acurr: { a: Array(6).fill(10) } },
@@ -99,15 +79,9 @@ test('cold shatters carried potions', async () => {
 
 test('electricity can recharge a charged ring instead of destroying it',
     async () => {
-        const ring = {
-            otyp: RIN_PROTECTION,
-            oclass: 4,
-            name: 'protection',
-            quan: 1,
-            quantity: 1,
+        const ring = carriedObject(RIN_PROTECTION, {
             spe: 0,
-            where: 'inventory',
-        };
+        });
         const state = {
             inventory: [ring],
             u: { uhp: 20, uac: 10 },

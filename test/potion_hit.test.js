@@ -1267,11 +1267,12 @@ test('controlled cursed vapor accepts change despite a nearby threat',
         installDirectWereHero();
         wearPolymorphControlRing();
         game.u.detectMonsters = true;
-        game.level.monsters = [{
+        game.level.monsters = [liveMonster({
             mnum: PM_PURPLE_WORM,
-            mx: 11, my: 10,
-            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
-        }];
+            x: 11,
+            y: 10,
+            hitPoints: 20,
+        })];
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 
@@ -1339,11 +1340,12 @@ test('a nearby threat blocks controlled blessed vapor before prompting',
         wearPolymorphControlRing();
         game.u.mtimedone = 0;
         game.u.detectMonsters = true;
-        game.level.monsters = [{
+        game.level.monsters = [liveMonster({
             mnum: PM_PURPLE_WORM,
-            mx: 11, my: 10,
-            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
-        }];
+            x: 11,
+            y: 10,
+            hitPoints: 20,
+        })];
         const potion = potionObject(POT_WATER);
         potion.blessed = true;
 
@@ -1411,11 +1413,12 @@ test('a spotted adjacent threat suppresses cursed-water were change',
     async () => {
         installDirectWereHero();
         game.u.detectMonsters = true;
-        game.level.monsters = [{
+        game.level.monsters = [liveMonster({
             mnum: PM_PURPLE_WORM,
-            mx: 11, my: 10,
-            mhp: 20, mcanmove: 1, msleeping: 0, mpeaceful: 0,
-        }];
+            x: 11,
+            y: 10,
+            hitPoints: 20,
+        })];
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 

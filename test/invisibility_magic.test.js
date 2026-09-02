@@ -15,18 +15,6 @@ import {
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-const PM_JACKAL = 12;
-
-function addJackal() {
-    return addMonster({
-        m_id: 901,
-        mnum: PM_JACKAL,
-        x: 12,
-        y: 10,
-        hitPoints: 8,
-    });
-}
-
 test('drinking an invisibility potion makes the hero invisible', async () => {
     freshWeaponArena();
     const potion = carriedObject(POT_INVISIBILITY);
@@ -61,7 +49,13 @@ test('the invisibility spell affects the hero without asking for a direction',
 test('a make-invisible wand turns a visible monster transparent', async () => {
     freshWeaponArena();
     game.u.seeInvisible = true;
-    const monster = addJackal();
+    const monster = addMonster({
+        species: 'jackal',
+        m_id: 901,
+        x: 12,
+        y: 10,
+        hitPoints: 8,
+    });
     const wand = chargedWand(WAN_MAKE_INVISIBLE, { charges: 2 });
     game.inventory = [wand];
     pushKeys('al');
