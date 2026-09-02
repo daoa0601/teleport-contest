@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    I_SPECIAL, NO_WEAPON_WANTED, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
-    W_ARMS, W_ARMU, W_SADDLE, W_WEP,
+    DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, NO_WEAPON_WANTED,
+    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE,
+    W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monmove.js';
 import { wakeMonstersNear } from '../js/monster_wake.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -202,4 +205,42 @@ test('a wounded vampire shape returns to its natural form', () => {
 
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('vampire'));
     assert.equal(change.message, 'The fog cloud turns into a vampire!');
+});
+
+test('a killed vampire shape rises in its natural form', async () => {
+    const level = freshObjectRoom();
+    const vampire = MONSTER_NAME.indexOf('vampire');
+    const monster = addMonster({
+        species: 'fog cloud', x: 11, y: 10, cham: vampire,
+    });
+
+    const removed = await finishHeroMonsterKill(
+        monster, monster.mx, monster.my, { showKillMessage: false },
+    );
+
+    assert.equal(removed, false);
+    assert.equal(monster.mnum, vampire);
+    assert.equal(monster.mhp > 0, true);
+    assert.equal(level.monsters.includes(monster), true);
+});
+
+test('a vampire becoming solid inside a closed door smashes it', async () => {
+    const level = freshObjectRoom();
+    const door = level.at(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    const vampire = MONSTER_NAME.indexOf('vampire');
+    const monster = addMonster({
+        species: 'fog cloud', x: 11, y: 10, hitPoints: 0, cham: vampire,
+    });
+    const messages = [];
+
+    const death = await finishEnvironmentalMonsterDeath(monster, game, {
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(death.survived, true);
+    assert.equal(monster.mnum, vampire);
+    assert.equal(door.doormask, D_NODOOR);
+    assert.ok(messages.some(message => message.includes('door is smashed')));
 });

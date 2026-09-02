@@ -4,7 +4,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_STR, COLNO, G_GENOD, G_NOCORPSE, Is_rogue_level, ROWNO, TAINT_AGE,
+    A_STR, COLNO, G_NOCORPSE, Is_rogue_level, ROWNO, TAINT_AGE,
 } from './const.js';
 import {
     canProjectMonster, docrt, flush_screen, newsym, plineWithContinuation,
@@ -23,7 +23,7 @@ import {
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { markQuestLeaderDead } from './quest.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
+import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE,
@@ -241,10 +241,6 @@ function recordKilledPet(monster) {
     if (pet) pet.killed_by_u = 1;
 }
 
-function monsterSpeciesWasGenocided(monster) {
-    return !!((game.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_GENOD);
-}
-
 export async function finishHeroMonsterKill(monster, x, y, {
     wasTame = (monster?.mtame ?? (monster?.pet ? 1 : 0)) > 0,
     hallucinating = !!(game.u?.hallucinating
@@ -302,19 +298,17 @@ export async function finishHeroMonsterKill(monster, x, y, {
         );
     }
 
-    const lifeSaver = wornMonsterLifeSaver(monster);
-    if (lifeSaver) {
-        const saved = await lifeSaveMonster(monster, lifeSaver, {
-            visible: deathLocationVisible,
-            spotted: deathWasSpotted,
-            petSpotted: deathWasSpotted,
-            genocided: monsterSpeciesWasGenocided(monster),
-        });
-        if (saved.survived) {
-            if (!deathLocationVisible)
-                await plineWithContinuation('Maybe not...');
-            return false;
-        }
+    const recovery = await preventMonsterDeath(monster, {
+        visible: deathLocationVisible,
+        spotted: deathWasSpotted,
+        petSpotted: deathWasSpotted,
+        disintegrated: noCorpse,
+        state: game,
+    });
+    if (recovery.survived) {
+        if (!deathLocationVisible && !recovery.messageShown)
+            await plineWithContinuation('Maybe not...');
+        return false;
     }
 
     if (wasInside) {

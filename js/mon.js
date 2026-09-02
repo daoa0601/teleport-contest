@@ -11,7 +11,7 @@ import {
     canSeeMonster, newsym,
 } from './display.js';
 import {
-    lifeSaveMonster, wornMonsterLifeSaver,
+    lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver,
 } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import {
@@ -24,7 +24,7 @@ import { EGG } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
 } from './object_timers.js';
-import { d, rn2 } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
@@ -248,18 +248,21 @@ function monsterLiquidName(monster) {
     return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
 }
 
-async function tryMonsterLifeSaving(
-    monster, state, saveMonster = lifeSaveMonster,
+async function recoverMonsterFromLiquid(
+    monster, state, {
+        announce, saveMonster, random, rollOne,
+    },
 ) {
-    const amulet = wornMonsterLifeSaver(monster);
-    if (!amulet || state !== game) return null;
     monster.mhp = 0;
-    return saveMonster(monster, amulet, {
+    return preventMonsterDeath(monster, {
+        state,
         visible: cansee(monster.mx, monster.my),
         spotted: canSeeMonster(monster, monster.mx, monster.my),
-        genocided: !!((state.mvitals?.[monster.mnum]?.mvflags ?? 0)
-            & G_GENOD),
         petSpotted: canSeeMonster(monster, monster.mx, monster.my),
+        publish: announce,
+        saveMonster,
+        random,
+        rollOne,
     });
 }
 
@@ -272,6 +275,7 @@ export async function resolveMonsterLiquid(
         monsterMoving = true,
         random = rn2,
         rollDice = d,
+        rollOne = rnd,
         saveMonster = lifeSaveMonster,
     } = {},
 ) {
@@ -326,10 +330,12 @@ export async function resolveMonsterLiquid(
             if (state === game && cansee(x, y))
                 await announce(`The ${monsterLiquidName(monster)} rusts.`);
             if (monster.mhp <= 0) {
-                const saved = await tryMonsterLifeSaving(
-                    monster, state, saveMonster,
+                const recovery = await recoverMonsterFromLiquid(
+                    monster, state, {
+                        announce, saveMonster, random, rollOne,
+                    },
                 );
-                if (!saved?.survived) {
+                if (!recovery.survived) {
                     await waterDamageChain(
                         monster.minvent || monster.inventory || [], [], state,
                     );
@@ -353,10 +359,12 @@ export async function resolveMonsterLiquid(
                     ? `The ${monsterLiquidName(monster)} drowns.`
                     : `You drown the ${monsterLiquidName(monster)}.`);
             monster.mhp = 0;
-            const saved = await tryMonsterLifeSaving(
-                monster, state, saveMonster,
+            const recovery = await recoverMonsterFromLiquid(
+                monster, state, {
+                    announce, saveMonster, random, rollOne,
+                },
             );
-            if (!saved?.survived) {
+            if (!recovery.survived) {
                 await waterDamageChain(
                     monster.minvent || monster.inventory || [], [], state,
                 );
@@ -365,14 +373,13 @@ export async function resolveMonsterLiquid(
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
             );
-            const relocation = randomMonsterRelocation(
-                monster, state, calls, random,
-            );
+            const relocation = monsterInAir(monster, state) ? null
+                : randomMonsterRelocation(monster, state, calls, random);
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
             }
-            return { survived: true, lifeSaving: saved, relocation };
+            return { survived: true, relocation };
         }
     } else {
         const lava = monsterLavaReaction(monster, state);
@@ -406,10 +413,12 @@ export async function resolveMonsterLiquid(
             }
 
             if (monster.mhp <= 0) {
-                const saved = await tryMonsterLifeSaving(
-                    monster, state, saveMonster,
+                const recovery = await recoverMonsterFromLiquid(
+                    monster, state, {
+                        announce, saveMonster, random, rollOne,
+                    },
                 );
-                if (!saved?.survived)
+                if (!recovery.survived)
                     return finishDeath(monster, state, random, calls, false);
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))

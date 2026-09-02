@@ -128,7 +128,7 @@ import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
+import { preventMonsterDeath } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory, dropObjectFromMonsterInventory,
@@ -8350,18 +8350,17 @@ export async function finishEnvironmentalMonsterDeath(
         publish = plineWithContinuation,
     } = {},
 ) {
-    const lifeSaver = wornMonsterLifeSaver(monster);
-    if (lifeSaver) {
-        const saved = await lifeSaveMonster(monster, lifeSaver, {
-            creditedKill: deathMessage,
-            visible,
-            spotted,
-            petSpotted: spotted,
-        });
-        if (saved.survived) return { monster, survived: true, corpse: null };
-    } else if (deathMessage) {
-        await publish(deathMessage);
-    }
+    const recovery = await preventMonsterDeath(monster, {
+        creditedKill: deathMessage,
+        visible,
+        spotted,
+        petSpotted: spotted,
+        state,
+        publish,
+        random,
+    });
+    if (recovery.survived)
+        return { monster, survived: true, corpse: null };
 
     const calls = [];
     const x = monster.mx;

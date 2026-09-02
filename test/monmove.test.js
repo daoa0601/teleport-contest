@@ -248,6 +248,29 @@ test('flight does not keep a monster above the Plane of Water', async () => {
     assert.deepEqual(messages, ['The red dragon drowns.']);
 });
 
+test('a drowning vampire wolf rises as a flying vampire leader', async () => {
+    const level = freshObjectRoom();
+    level.at(12, 10).typ = POOL;
+    const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
+    const wolf = addMonster({
+        species: 'wolf', x: 12, y: 10, cham: vampireLeader,
+    });
+    const messages = [];
+
+    const result = await resolveMonsterLiquid(wolf, game, {
+        announce: async message => messages.push(message),
+        finishDeath: finishMonsterLiquidDeath,
+    });
+
+    assert.equal(result.survived, true);
+    assert.equal(result.relocation, null);
+    assert.equal(wolf.mnum, vampireLeader);
+    assert.deepEqual({ x: wolf.mx, y: wolf.my }, { x: 12, y: 10 });
+    assert.equal(level.monsters.includes(wolf), true);
+    assert.ok(messages.some(message =>
+        message.includes('rises as a vampire')));
+});
+
 test('a flying hero keeps their steed above water', async () => {
     const level = freshObjectRoom();
     level.flags.is_waterlevel = true;
