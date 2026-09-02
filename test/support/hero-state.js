@@ -38,6 +38,30 @@ export function freshRoomWithPolymorphedHero(formName, {
     return level;
 }
 
+export function freshMonsterAbilityRoom(formName, {
+    energy,
+    polymorph = {},
+    ...room
+} = {}) {
+    const energyState = energy === undefined ? {} : {
+        uen: energy,
+        uenmax: energy,
+    };
+    return freshRoomWithPolymorphedHero(formName, {
+        left: 2,
+        right: 30,
+        top: 4,
+        bottom: 16,
+        heroX: 10,
+        heroY: 10,
+        ...room,
+        polymorph: {
+            ...energyState,
+            ...polymorph,
+        },
+    });
+}
+
 export function installHumanWerewolfHero({ beast = false } = {}) {
     const attributes = Array(6).fill(12);
     game.urole = { key: 'archeologist', mnum: 0 };

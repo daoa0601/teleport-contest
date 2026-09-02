@@ -5,24 +5,11 @@ import { game } from '../js/gstate.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
 
-function installMindFlayerHero(energy = 20) {
-    freshRoomWithPolymorphedHero('mind flayer', {
-        left: 2,
-        right: 24,
-        top: 4,
-        bottom: 16,
-        polymorph: {
-            uen: energy,
-            uenmax: energy,
-        },
-    });
-}
-
 test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
-    installMindFlayerHero();
+    freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
     const target = addMonster({
         species: 'floating eye',
         x: 11,
@@ -64,7 +51,7 @@ test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
 
 test('blind and sighted telepaths are found by their source chances',
     async () => {
-        installMindFlayerHero();
+        freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
         const blindEye = addMonster({
             species: 'floating eye',
             x: 11,
@@ -98,7 +85,7 @@ test('blind and sighted telepaths are found by their source chances',
     });
 
 test('trying to mind blast without enough energy takes no time', async () => {
-    installMindFlayerHero(9);
+    freshMonsterAbilityRoom('mind flayer', { energy: 9, right: 24 });
     const messages = [];
 
     const result = await useHeroMindBlast({

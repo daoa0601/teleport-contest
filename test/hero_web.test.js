@@ -7,7 +7,7 @@ import { useHeroWeb } from '../js/hero_web.js';
 import { DART, ROCK } from '../js/object_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
 
 function webAtHero() {
@@ -17,7 +17,7 @@ function webAtHero() {
 }
 
 test('a giant spider can spin a web', async () => {
-    freshRoomWithPolymorphedHero('giant spider');
+    freshMonsterAbilityRoom('giant spider');
 
     await runMonsterAbilityCommand();
 
@@ -26,7 +26,7 @@ test('a giant spider can spin a web', async () => {
 });
 
 test('a cave spider can choose hiding instead of spinning', async () => {
-    freshRoomWithPolymorphedHero('cave spider');
+    freshMonsterAbilityRoom('cave spider');
     floorObject(ROCK, game.u.ux, game.u.uy);
 
     await runMonsterAbilityCommand('h');
@@ -36,7 +36,7 @@ test('a cave spider can choose hiding instead of spinning', async () => {
 });
 
 test('a spider cannot anchor a web in water', async () => {
-    const level = freshRoomWithPolymorphedHero('giant spider');
+    const level = freshMonsterAbilityRoom('giant spider');
     level.at(game.u.ux, game.u.uy).typ = POOL;
 
     await runMonsterAbilityCommand();
@@ -46,7 +46,7 @@ test('a spider cannot anchor a web in water', async () => {
 });
 
 test('webbing over a pit removes it and buries its contents', async () => {
-    const level = freshRoomWithPolymorphedHero('giant spider');
+    const level = freshMonsterAbilityRoom('giant spider');
     const dart = floorObject(DART, game.u.ux, game.u.uy);
     level.traps.push({
         tx: game.u.ux, ty: game.u.uy, ttyp: PIT, tseen: true,
@@ -60,11 +60,8 @@ test('webbing over a pit removes it and buries its contents', async () => {
 });
 
 test('web fluid makes an animal release a swallowed spider', async () => {
-    freshRoomWithPolymorphedHero('giant spider', {
-        left: 2,
+    freshMonsterAbilityRoom('giant spider', {
         right: 24,
-        top: 4,
-        bottom: 16,
         gameplaySeed: 918,
     });
     const worm = addMonster({

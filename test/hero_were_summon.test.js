@@ -5,26 +5,19 @@ import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { useHeroWereSummon } from '../js/were.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 
-function installWerewolfHero(energy) {
-    return freshRoomWithPolymorphedHero('werewolf', {
-        left: 2,
-        right: 30,
+function freshWerewolfAbilityRoom(energy) {
+    return freshMonsterAbilityRoom('werewolf', {
         top: 3,
         bottom: 17,
-        heroX: 10,
-        heroY: 10,
         gameplaySeed: 314,
-        polymorph: {
-            uen: energy,
-            uenmax: energy,
-        },
+        energy,
     });
 }
 
 test('a werewolf uses #monster to call tame wolves', async () => {
-    const level = installWerewolfHero(30);
+    const level = freshWerewolfAbilityRoom(30);
     await runMonsterAbilityCommand(' '.repeat(8));
 
     const helpers = level.monsters.filter(monster => monster.mtame > 0);
@@ -36,7 +29,7 @@ test('a werewolf uses #monster to call tame wolves', async () => {
 });
 
 test('a were-creature without enough energy cannot call help', async () => {
-    const level = installWerewolfHero(9);
+    const level = freshWerewolfAbilityRoom(9);
 
     const result = await useHeroWereSummon({
         state: game,

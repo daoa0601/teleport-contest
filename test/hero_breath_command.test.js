@@ -11,24 +11,9 @@ import {
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-
-function installBreathingHero(formName) {
-    return freshRoomWithPolymorphedHero(formName, {
-        left: 2,
-        right: 30,
-        top: 4,
-        bottom: 16,
-        heroX: 10,
-        heroY: 10,
-        polymorph: {
-            uen: 30,
-            uenmax: 30,
-        },
-    });
-}
 
 function breathe(direction, options = {}) {
     return useHeroBreath({
@@ -45,7 +30,7 @@ function breathe(direction, options = {}) {
 }
 
 test('a winter wolf uses #monster to breathe frost at a target', async () => {
-    const level = installBreathingHero('winter wolf');
+    const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const jackal = addMonster({
         species: 'jackal',
         m_id: 81,
@@ -66,7 +51,7 @@ test('a winter wolf uses #monster to breathe frost at a target', async () => {
 
 test('cancelling breath direction spends energy but does not spend a turn',
     async () => {
-        installBreathingHero('red dragon');
+        freshMonsterAbilityRoom('red dragon', { energy: 30 });
 
         const result = await breathe(27);
 
@@ -77,7 +62,7 @@ test('cancelling breath direction spends energy but does not spend a turn',
 
 test('disintegration breath destroys a shield before hurting its wearer',
     async () => {
-        installBreathingHero('black dragon');
+        freshMonsterAbilityRoom('black dragon', { energy: 30 });
         const shield = knownObject(SMALL_SHIELD, {
             where: 'minvent', worn: true, owornmask: W_ARMS,
         });
@@ -102,7 +87,7 @@ test('disintegration breath destroys a shield before hurting its wearer',
 
 test('fatal disintegration destroys ordinary gear but spares black scales',
     async () => {
-        installBreathingHero('black dragon');
+        freshMonsterAbilityRoom('black dragon', { energy: 30 });
         const sword = knownObject(LONG_SWORD, { where: 'minvent' });
         const scales = knownObject(BLACK_DRAGON_SCALES, {
             where: 'minvent',
@@ -128,7 +113,7 @@ test('fatal disintegration destroys ordinary gear but spares black scales',
     });
 
 test('acid breath corrodes a monster weapon and armor', async () => {
-    installBreathingHero('yellow dragon');
+    freshMonsterAbilityRoom('yellow dragon', { energy: 30 });
     const sword = knownObject(LONG_SWORD, {
         where: 'minvent', worn: true, owornmask: W_WEP,
     });
@@ -157,7 +142,7 @@ test('acid breath corrodes a monster weapon and armor', async () => {
 });
 
 test('lightning breath can melt iron bars', async () => {
-    const level = installBreathingHero('blue dragon');
+    const level = freshMonsterAbilityRoom('blue dragon', { energy: 30 });
     level.at(11, 10).typ = IRONBARS;
 
     await breathe('l', {
@@ -169,7 +154,7 @@ test('lightning breath can melt iron bars', async () => {
 });
 
 test('breath fired while swallowed hits the engulfer directly', async () => {
-    installBreathingHero('winter wolf');
+    freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const worm = addMonster({
         species: 'purple worm',
         x: game.u.ux,

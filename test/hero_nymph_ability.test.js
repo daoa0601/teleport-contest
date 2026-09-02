@@ -9,12 +9,8 @@ import {
     freshRoomWithPolymorphedHero, installPunishedHero,
 } from './support/hero-state.js';
 
-function installNymphHero() {
-    freshRoomWithPolymorphedHero('water nymph');
-}
-
 test('a nymph uses #monster to remove her ball and chain', async () => {
-    installNymphHero();
+    freshRoomWithPolymorphedHero('water nymph');
     const { ball, chain } = installPunishedHero();
     const pile = game.level.objects[game.u.ux][game.u.uy];
     await runMonsterAbilityCommand();
@@ -30,7 +26,7 @@ test('a nymph uses #monster to remove her ball and chain', async () => {
 
 test('an unchained nymph reports the buried ball without spending time',
     async () => {
-        installNymphHero();
+        freshRoomWithPolymorphedHero('water nymph');
         game.u.utrap = 3;
         game.u.utraptype = TT_BURIEDBALL;
         const messages = [];
@@ -47,7 +43,7 @@ test('an unchained nymph reports the buried ball without spending time',
     });
 
 test('an unpunished nymph has no chain to remove', async () => {
-    installNymphHero();
+    freshRoomWithPolymorphedHero('water nymph');
     const messages = [];
 
     const result = await useHeroNymphAbility({

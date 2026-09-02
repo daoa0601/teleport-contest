@@ -4,24 +4,8 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
-
-function installGazingHero(formName, hero = {}) {
-    freshRoomWithPolymorphedHero(formName, {
-        left: 2,
-        right: 30,
-        top: 4,
-        bottom: 16,
-        heroX: 10,
-        heroY: 10,
-        polymorph: {
-            uen: 30,
-            uenmax: 30,
-            ...hero,
-        },
-    });
-}
 
 function gaze(options = {}) {
     return useHeroGaze({
@@ -33,7 +17,7 @@ function gaze(options = {}) {
 }
 
 test('an umber hulk uses #monster to confuse a visible monster', async () => {
-    installGazingHero('umber hulk');
+    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     const jackal = addMonster({
         species: 'jackal',
         x: 11,
@@ -47,7 +31,10 @@ test('an umber hulk uses #monster to confuse a visible monster', async () => {
 });
 
 test('a blind hero cannot use a gaze attack', async () => {
-    installGazingHero('umber hulk', { blindTurns: 3 });
+    freshMonsterAbilityRoom('umber hulk', {
+        energy: 30,
+        polymorph: { blindTurns: 3 },
+    });
     addMonster({ species: 'jackal', x: 11, y: 10 });
 
     const result = await gaze();
@@ -58,7 +45,7 @@ test('a blind hero cannot use a gaze attack', async () => {
 });
 
 test('a pyrolisk fiery gaze burns a monster', async () => {
-    installGazingHero('pyrolisk');
+    freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
     const jackal = addMonster({
         species: 'jackal',
         x: 11,
@@ -76,7 +63,7 @@ test('a pyrolisk fiery gaze burns a monster', async () => {
 });
 
 test('gazing at a floating eye can freeze the hero', async () => {
-    installGazingHero('umber hulk');
+    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     addMonster({
         species: 'floating eye',
         x: 11,

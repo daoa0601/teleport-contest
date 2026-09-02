@@ -4,20 +4,9 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
-import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-
-function installSpittingHero(formName) {
-    return freshRoomWithPolymorphedHero(formName, {
-        left: 2,
-        right: 30,
-        top: 4,
-        bottom: 16,
-        heroX: 10,
-        heroY: 10,
-    });
-}
 
 function direction(key, dx = 0, dy = 0, dz = 0) {
     return { key, dx, dy, dz };
@@ -34,7 +23,7 @@ function spit(aim, options = {}) {
 }
 
 test('a cobra uses #monster to spit venom', async () => {
-    const level = installSpittingHero('cobra');
+    const level = freshMonsterAbilityRoom('cobra');
     await runMonsterAbilityCommand(`l${' '.repeat(8)}`);
 
     assert.equal(game.context.move, 1);
@@ -43,7 +32,7 @@ test('a cobra uses #monster to spit venom', async () => {
 
 test('cancelling a spit direction creates no venom and spends no turn',
     async () => {
-        const level = installSpittingHero('cobra');
+        const level = freshMonsterAbilityRoom('cobra');
 
         const result = await spit(null);
 
@@ -53,7 +42,7 @@ test('cancelling a spit direction creates no venom and spends no turn',
     });
 
 test('cobra venom blinds a monster without hurting it', async () => {
-    installSpittingHero('cobra');
+    freshMonsterAbilityRoom('cobra');
     const jackal = addMonster({
         species: 'jackal',
         x: 11,
@@ -73,7 +62,7 @@ test('cobra venom blinds a monster without hurting it', async () => {
 });
 
 test('black naga venom burns a monster', async () => {
-    installSpittingHero('black naga');
+    freshMonsterAbilityRoom('black naga');
     const jackal = addMonster({
         species: 'jackal',
         x: 11,
@@ -92,7 +81,7 @@ test('black naga venom burns a monster', async () => {
 
 test('venom which reaches a wall splashes on the last open square',
     async () => {
-        const level = installSpittingHero('cobra');
+        const level = freshMonsterAbilityRoom('cobra');
         level.at(12, 10).typ = 0;
 
         const result = await spit(direction('l', 1, 0), {
@@ -105,7 +94,7 @@ test('venom which reaches a wall splashes on the last open square',
     });
 
 test('spitting blinding venom upward can blind the hero', async () => {
-    installSpittingHero('cobra');
+    freshMonsterAbilityRoom('cobra');
 
     const result = await spit(direction('<', 0, 0, -1), {
         publish: async () => undefined,
@@ -120,7 +109,7 @@ test('spitting blinding venom upward can blind the hero', async () => {
 });
 
 test('blinding venom cannot reach an engulfer eyes from inside', async () => {
-    installSpittingHero('cobra');
+    freshMonsterAbilityRoom('cobra');
     const worm = addMonster({
         species: 'purple worm',
         x: game.u.ux,
@@ -142,7 +131,7 @@ test('blinding venom cannot reach an engulfer eyes from inside', async () => {
 });
 
 test('acid venom which kills an engulfer releases the hero', async () => {
-    installSpittingHero('black naga');
+    freshMonsterAbilityRoom('black naga');
     const jackal = addMonster({
         species: 'jackal',
         x: game.u.ux,
