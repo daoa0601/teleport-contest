@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     allocateMonsterMovement, finishMonsterLiquidDeath,
     mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
+    resolveDeferredMonsterBreath, runQuietMonsterActions,
 } from '../js/monmove.js';
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
@@ -152,6 +153,33 @@ test('a silver weapon sears a lycanthropic hero in melee', () => {
 
     assert.equal(action.movement.attack.effect, 'physical-weapon');
     assert.equal(game.u.uhp, 68);
+});
+
+test('a monster fire blast makes a shifted vampire rise', async () => {
+    const level = freshObjectRoom({
+        heroX: 14, heroY: 10, recalculateVision: false,
+    });
+    const dragon = addMonster({
+        species: 'red dragon', x: 10, y: 10,
+        hitPoints: 100, level: 15, mux: 14, muy: 10,
+    });
+    const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
+    const wolf = addMonster({
+        species: 'wolf', x: 12, y: 10,
+        hitPoints: 1, maxHitPoints: 20, cham: vampireLeader,
+    });
+    const [action] = runQuietMonsterActions(
+        [dragon], game, () => 1, (count, sides) => count * sides, () => 1,
+    );
+
+    await resolveDeferredMonsterBreath(
+        action, game, async () => {},
+        () => 1, (count, sides) => count * sides, () => 1,
+    );
+
+    assert.equal(wolf.mnum, vampireLeader);
+    assert.equal(wolf.mhp > 0, true);
+    assert.equal(level.monsters.includes(wolf), true);
 });
 
 test('a land monster in lava burns and drops what it carried', async () => {

@@ -107,7 +107,7 @@ import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
 import { heroFormSticks, rehumanizeHero } from './polyself.js';
 import {
-    clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
+    cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
 } from './vision.js';
 import { recordVanquished } from './end.js';
@@ -264,8 +264,6 @@ const PM_LEATHER_GOLEM = 253;
 const PM_FLESH_GOLEM = 255;
 const PM_LIZARD = 326;
 const PM_IRON_GOLEM = 259;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const WAN_MAGIC_MISSILE = 429;
@@ -3844,53 +3842,6 @@ function rayPositionOpen(state, x, y) {
         && ((loc.doormask ?? 0) & (D_CLOSED | D_LOCKED)));
 }
 
-// C refs: zap.c:dobuzz() -> mon.c:monkilled()/mondied().  A fatal
-// monster-origin ray resolves death, invisible-memory cleanup, and the corpse
-// decision before it proceeds to the next beam cell.  That ordering is also
-// a tty boundary: an unseen death produces no hit line which could suspend
-// the ray before the next target's zap_hit().
-function rayMonsterLeavesCorpse(monster, state, random, calls) {
-    const flags = state?.level?.flags || {};
-    if (flags.rogue_level || flags.deathdrops === false) return false;
-    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
-    if (flags.graveyard && undead
-        && recordRandom(random, calls, 3) !== 0) return false;
-
-    const mnum = monster.mnum;
-    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
-            || mnum === PM_LIZARD) && !monster.mcloned)
-        || MONSTER_SYMBOL[mnum] === S_GOLEM
-        || (mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD)
-        || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
-        || !!monster.isshk;
-    if (guaranteed) return true;
-    const frequency = (MONSTER_GENO[mnum] ?? 0) & 0x7;
-    const range = 2 + Number(frequency < 2)
-        + Number((MONSTER_SIZE[mnum] ?? 2) === 0);
-    return recordRandom(random, calls, range) === 0;
-}
-
-function finishRangedKilledMonster(monster, state, random, calls) {
-    const x = monster.mx, y = monster.my;
-    detachDeadMonster(monster, state);
-
-    const leavesCorpse = rayMonsterLeavesCorpse(
-        monster, state, random, calls,
-    );
-    const corpseForm = undeadToCorpse(monster.mnum);
-    const convertedUndeadCorpse = corpseForm !== monster.mnum;
-    if (leavesCorpse && (convertedUndeadCorpse
-        || !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE))) {
-        const corpse = mksobj(CORPSE, true, false);
-        corpse.corpsenm = corpseForm;
-        corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
-        if (convertedUndeadCorpse)
-            corpse.age = Math.max(1, state?.moves ?? 1) - 51;
-        placeThrownObject(state, corpse, x, y);
-    }
-    if (state === game) newsym(x, y);
-}
-
 // Resume dobuzz() for a natural fire breath.  Message delivery is injected
 // by allmain so an await keeps the same C actor transaction alive across tty
 // acknowledgements; every mutation and core draw remains owned here.
@@ -3963,12 +3914,17 @@ export async function resolveDeferredMonsterBreath(
                     && !!(state.viz_array?.[target.my]?.[target.mx] & 0x2);
                 const died = (target.mhp ?? 0) <= 0;
                 if (died) {
-                    if (seen && emitMessage) {
-                        await emitMessage(
-                            `The ${MONSTER_NAME[target.mnum]} is killed by the blast of fire!`,
-                        );
-                    }
-                    finishRangedKilledMonster(target, state, random, calls);
+                    const deathMessage = seen
+                        ? `The ${MONSTER_NAME[target.mnum]
+                        } is killed by the blast of fire!`
+                        : null;
+                    await finishMonsterRayDeath(target, {
+                        deathMessage,
+                        visible: seen,
+                        spotted: canProjectMonster(
+                            target, target.mx, target.my,
+                        ),
+                    }, state, emitMessage || plineWithContinuation, random);
                 } else if (emitMessage) {
                     await emitMessage(
                         `The blast of fire hits ${
@@ -8378,11 +8334,13 @@ export function finishMonsterRayDeath(
     random = rn2,
 ) {
     return finishEnvironmentalMonsterDeath(monster, state, {
+        deathMessage: death.deathMessage,
         random,
         publish,
         noCorpse: death.noCorpse,
-        visible: cansee(monster.mx, monster.my),
-        spotted: canProjectMonster(monster, monster.mx, monster.my),
+        visible: death.visible ?? cansee(monster.mx, monster.my),
+        spotted: death.spotted
+            ?? canProjectMonster(monster, monster.mx, monster.my),
     });
 }
 
@@ -8428,6 +8386,7 @@ export function runQuietMonsterActions(
         }
         // Eels get one pre-dochug opportunity to hide again.  A stranded eel
         // still owns the 1-in-4 probe, but hideunder() fails on dry terrain.
+        const eel = MONSTER_SYMBOL[monster.mnum] === S_EEL;
         const eelInSight = !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
         const canSeeInvisible = !!(state?.u?.seeInvisible
             || state?.u?.see_invisible);
