@@ -1,9 +1,8 @@
 // The #monster water-splitting ability for a hero in gremlin form.
 // C ref: cmd.c domonability().
 
-import {
-    DB_MOAT, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, MOAT, POOL, WATER,
-} from './const.js';
+import { FOUNTAIN } from './const.js';
+import { isPoolAt } from './dbridge.js';
 import { plineWithContinuation } from './display.js';
 import {
     dryFountainTerrain, reportFountainWarning,
@@ -17,12 +16,6 @@ const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
 
 export function heroCanSplitLikeGremlin(state = game) {
     return heroMonsterForm(state) === PM_GREMLIN;
-}
-
-function locationContainsWater(location) {
-    if ([POOL, MOAT, WATER].includes(location?.typ)) return true;
-    return location?.typ === DRAWBRIDGE_UP
-        && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_MOAT;
 }
 
 async function splitGremlin(state, publish) {
@@ -50,7 +43,7 @@ export async function useHeroGremlinSplit({
         return { used: true, spentTime: false, clone };
     }
 
-    if (locationContainsWater(location)) {
+    if (isPoolAt(state.u.ux, state.u.uy, state)) {
         const clone = await splitGremlin(state, publish);
         return { used: true, spentTime: false, clone };
     }

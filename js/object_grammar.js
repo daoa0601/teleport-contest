@@ -1,6 +1,8 @@
 // object_grammar.js — Shared source-level noun grammar for object names.
 // C refs: obj.h pair_of(), objnam.c armor_simple_name()/obj_typename().
 
+import { OBJECT_NAMES } from './object_data.js';
+
 export function armorUsesPairGrammar(actualName) {
     return /(?:gloves|gauntlets|boots|shoes)(?: of .+)?$/
         .test(String(actualName || ''));
@@ -11,6 +13,14 @@ export function armorPresentationName(name, actualName = name) {
     if (/dragon scales$/.test(String(actualName || '')))
         return `set of ${name}`;
     return name;
+}
+
+// C ref: objnam.c ansimpleoname().
+export function simpleObjectNameWithArticle(object) {
+    const noun = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
+    const quantity = object?.quan ?? object?.quantity ?? 1;
+    if (quantity > 1) return `${quantity} ${makePlural(noun)}`;
+    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
 }
 
 // C ref: objnam.c:makeplural().  This owner is also used for hallucinated

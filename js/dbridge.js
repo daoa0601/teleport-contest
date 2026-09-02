@@ -5,7 +5,7 @@ import {
     DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH,
     DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
     D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL,
-    MOAT, ROOM, W_NONDIGGABLE, isok,
+    MOAT, POOL, ROOM, WATER, W_NONDIGGABLE, isok,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
@@ -29,6 +29,15 @@ function directionFromBridgeToWall(bridge) {
     if (direction === DB_SOUTH) return { dx: 0, dy: 1 };
     if (direction === DB_EAST) return { dx: 1, dy: 0 };
     return { dx: -1, dy: 0 };
+}
+
+// C ref: dbridge.c is_pool().
+export function isPoolAt(x, y, state = game) {
+    const location = state.level?.at?.(x, y);
+    if (!location) return false;
+    if ([POOL, MOAT, WATER].includes(location.typ)) return true;
+    return location.typ === DRAWBRIDGE_UP
+        && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_MOAT;
 }
 
 export function drawbridgeWallAt(x, y, state = game) {

@@ -67,6 +67,7 @@ import {
     POT_SLEEPING, TALLOW_CANDLE,
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
+import { simpleObjectNameWithArticle } from './object_grammar.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
@@ -2923,13 +2924,6 @@ function distantMonsterObjectName(object) {
 // C mon.c:hideunder() snapshots ansimpleoname() before the actor becomes
 // undetected. Unlike doname(), this deliberately omits BUC, enchantment,
 // and shuffled-description knowledge.
-function simpleHideUnderObjectName(object) {
-    const noun = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
-    const quantity = object?.quan ?? object?.quantity ?? 1;
-    if (quantity > 1) return `${quantity} ${noun}s`;
-    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
-}
-
 // C mhitm.c:hitmm().  Monster-versus-monster wording has its own switch:
 // unlike hero-facing combat, AT_KICK is not special and falls through to
 // "hits".  Keep the simple attack names normalized by monmove.js here.
@@ -4208,7 +4202,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 newsym(monster.mx, monster.my);
                 monster.mundetected = hiddenState;
                 const hidingPlace = concealment.under
-                    || simpleHideUnderObjectName(concealment.object);
+                    || simpleObjectNameWithArticle(concealment.object);
                 await queueTurnMessage(
                     `You see the ${quietMonsterName(monster)} ${
                         concealment.verb
