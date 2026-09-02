@@ -11,6 +11,7 @@ import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { applyInventoryObject } from './support/commands.js';
 import { inventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -28,9 +29,7 @@ test('blessed royal jelly turns a killer bee egg into a queen bee egg',
         });
         game.inventory = [jelly, egg];
         initRng(4401n);
-        pushKeys('ab ');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(jelly, 'b ');
 
         assert.equal(jelly.quan, 1);
         assert.equal(egg.corpsenm, 5);
@@ -74,9 +73,7 @@ test('royal jelly returns to its stack when there is no egg', async () => {
     });
     game.inventory = [jelly];
     initRng(4403n);
-    pushKeys('a');
-
-    await rhack('a'.charCodeAt(0));
+    await applyInventoryObject(jelly);
 
     assert.deepEqual(game.inventory, [jelly]);
     assert.equal(jelly.quan, 2);

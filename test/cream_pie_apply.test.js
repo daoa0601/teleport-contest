@@ -1,13 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { W_TOOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
 import { BLINDFOLD, CREAM_PIE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
+import { applyInventoryObject } from './support/commands.js';
 import { inventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -21,9 +20,7 @@ test('applying one pie from a stack blinds the hero without taking a turn',
         });
         game.inventory = [pies];
         initRng(4301n);
-        pushKeys('a ');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(pies, ' ');
 
         assert.equal(pies.quan, 1);
         assert.equal(pies.quantity, 1);
@@ -48,9 +45,7 @@ test("a blindfold keeps an applied cream pie out of the hero's eyes",
         game.ublindf = game.u.ublindf = blindfold;
         syncBlindness(game);
         initRng(4302n);
-        pushKeys('a');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(pie);
 
         assert.equal(pie.where, 'gone');
         assert.equal(game.inventory.includes(pie), false);
@@ -68,9 +63,7 @@ test('another cream pie adds more goop while the hero is already blind',
         game.u.ucreamed = 2;
         syncBlindness(game);
         initRng(4303n);
-        pushKeys('a ');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(pie, ' ');
 
         assert.ok(game.u.blindTurns > 5);
         assert.ok(game.u.ucreamed > 2);

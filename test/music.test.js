@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mksobj } from '../js/mklev.js';
@@ -10,6 +9,7 @@ import {
     BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP,
 } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { applyInventoryObject } from './support/commands.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -72,9 +72,7 @@ test('a bugle calls every soldier on the level to battle', async () => {
 test('applying a leather drum plays it', async () => {
     freshWeaponArena();
     const drum = addInventoryItem(instrument(LEATHER_DRUM));
-    pushKeys('a          ');
-
-    await rhack('a'.charCodeAt(0));
+    await applyInventoryObject(drum, '          ');
 
     assert.ok(game.u.deafTurns >= 30);
     assert.equal(game.context.move, 1);

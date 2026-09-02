@@ -12,8 +12,9 @@ export async function throwInventoryObject(
     await rhack('t'.charCodeAt(0));
 }
 
-export async function applyInventoryObject(object = 'a') {
+export async function applyInventoryObject(object = 'a', followupKeys = '') {
     pushKey(typeof object === 'string' ? object : object.invlet);
+    pushKeys(followupKeys);
     await rhack('a'.charCodeAt(0));
 }
 

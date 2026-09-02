@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
 import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { applyInventoryObject } from './support/commands.js';
 import { floorObject, inventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -33,9 +32,7 @@ test('applying an unwielded grappling hook wields it before targeting',
     async () => {
         freshPlayableRoom();
         const hook = installHook({ wielded: false });
-        pushKeys('a');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(hook);
 
         assert.equal(game.uwep, hook);
         assert.equal(game.context.move, 1);
@@ -44,13 +41,11 @@ test('applying an unwielded grappling hook wields it before targeting',
 test('a grappling hook snags one object from a visible floor square',
     async () => {
         freshPlayableRoom();
-        installHook();
+        const hook = installHook();
         const rock = floorObject(ROCK, 12, 10);
         game._travelTipShown = true;
         initRng(3n);
-        pushKeys('all.');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(hook, 'll.');
 
         assert.equal(game.inventory.includes(rock), true);
         assert.equal(floorObjectsAt(game.level, 12, 10).includes(rock), false);
@@ -60,12 +55,10 @@ test('a grappling hook snags one object from a visible floor square',
 test('a grappling hook can yank the hero one square toward solid terrain',
     async () => {
         freshPlayableRoom();
-        installHook();
+        const hook = installHook();
         game._travelTipShown = true;
         initRng(2n);
-        pushKeys('all.');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(hook, 'll.');
 
         assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
         assert.equal(game.context.move, 1);
@@ -74,7 +67,7 @@ test('a grappling hook can yank the hero one square toward solid terrain',
 test('a grappling hook strikes at range without charging melee hunger',
     async () => {
         freshPlayableRoom();
-        installHook({ enchantment: 20 });
+        const hook = installHook({ enchantment: 20 });
         const monster = addMonster({
             mnum: 12,
             x: 12,
@@ -84,9 +77,7 @@ test('a grappling hook strikes at range without charging melee hunger',
         const hungerBefore = game.u.uhunger;
         game._travelTipShown = true;
         initRng(14n);
-        pushKeys('all.');
-
-        await rhack('a'.charCodeAt(0));
+        await applyInventoryObject(hook, 'll.');
 
         assert.ok(monster.mhp < 100);
         assert.equal(game.u.uhunger, hungerBefore);
@@ -95,7 +86,7 @@ test('a grappling hook strikes at range without charging melee hunger',
 
 test('a grappling hook can pull a tiny monster next to the hero', async () => {
     freshPlayableRoom({ hero: { uhp: 100, uhpmax: 100 } });
-    installHook();
+    const hook = installHook();
     const monster = addMonster({
         mnum: 0,
         x: 12,
@@ -104,9 +95,7 @@ test('a grappling hook can pull a tiny monster next to the hero', async () => {
     });
     game._travelTipShown = true;
     initRng(113n);
-    pushKeys('all.');
-
-    await rhack('a'.charCodeAt(0));
+    await applyInventoryObject(hook, 'll.');
 
     assert.notDeepEqual([monster.mx, monster.my], [12, 10]);
     assert.equal(Math.max(
