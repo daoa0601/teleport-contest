@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    continueMonsterWeaponVolleyAtHero,
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
@@ -16,12 +17,12 @@ import {
     finishDeferredRangedProjectileHit, quietMonsterActionRng,
 } from '../js/monmove.js';
 import { carriedObject } from './support/game-objects.js';
-import { floorObjectsAt } from './support/level-state.js';
 import {
-    addMonsterToLevel, liveMonster,
-} from './support/monsters.js';
+    floorObjectQuantityAt, floorObjectsAt,
+} from './support/level-state.js';
+import { addMonsterToLevel, liveMonster } from './support/monsters.js';
 import {
-    freshRangedCombatRoom, rangedPet, rangedTarget,
+    freshRangedCombatRoom, rangedMonster, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 
 test('a monster readies the launcher required by its ammunition', () => {
@@ -92,12 +93,7 @@ test('a tame orc shoots an arrow with its bow', () => {
 test('a hostile monster can throw a dagger at the hero and land it', () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
     const dagger = carriedObject(DAGGER);
-    const orc = addMonsterToLevel(liveMonster({
-        species: 'orc',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
+    const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [dagger],
     }));
     const hitPointsBefore = game.u.uhp;
@@ -118,6 +114,38 @@ test('a hostile monster can throw a dagger at the hero and land it', () => {
         floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
         true,
     );
+});
+
+test('a hostile rogue throws its full dagger volley at the hero', () => {
+    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
+    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const rogue = addMonsterToLevel(rangedMonster('rogue', {
+        inventory: [daggers],
+    }));
+    const hitPointsBefore = game.u.uhp;
+    const rolls = [2, 1, 1, 1, 1, 1, 1];
+    const options = {
+        random: () => 1,
+        rollOne: () => rolls.shift(),
+    };
+
+    const attack = throwMonsterWeaponAtHero(
+        rogue, game, daggers, options,
+    );
+    finishDeferredRangedProjectileHit(attack.shots[0], game, () => 0);
+    while (continueMonsterWeaponVolleyAtHero(attack, game, options)) {
+        finishDeferredRangedProjectileHit(
+            attack.shots.at(-1), game, () => 0,
+        );
+    }
+
+    assert.equal(attack.shots.length, 3);
+    assert.equal(game.u.uhp, hitPointsBefore - 3);
+    assert.equal(
+        floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
+        3,
+    );
+    assert.equal(daggers.quan, 1);
 });
 
 test('a missed intervening monster does not hide the later hit', async () => {
@@ -195,10 +223,7 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
         rollOne: range => range,
     });
 
-    const landedArrows = floorObjectsAt(game.level, 12, 10)
-        .filter(object => object.otyp === ELVEN_ARROW)
-        .reduce((total, object) => total + object.quan, 0);
-    assert.equal(landedArrows, 3);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, ELVEN_ARROW), 3);
     assert.equal(archer.inventory.includes(arrows), false);
     assert.ok(target.mhp < 100);
 });
@@ -218,10 +243,7 @@ test('a rogue player monster gets its dagger volley bonus', () => {
         rollOne: range => range,
     });
 
-    const landedDaggers = floorObjectsAt(game.level, 12, 10)
-        .filter(object => object.otyp === DAGGER)
-        .reduce((total, object) => total + object.quan, 0);
-    assert.equal(landedDaggers, 3);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
     assert.equal(daggers.quan, 1);
 });
 
@@ -236,10 +258,7 @@ test('an orc captain uses both of its weapon attacks', () => {
 
     quietMonsterActionRng(captain, game);
 
-    const landedDaggers = floorObjectsAt(game.level, 12, 10)
-        .filter(object => object.otyp === DAGGER)
-        .reduce((total, object) => total + object.quan, 0);
-    assert.equal(landedDaggers, 2);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 2);
     assert.equal(captain.inventory.includes(daggers), false);
     assert.ok(target.mhp < 100);
 });

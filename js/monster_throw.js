@@ -596,7 +596,38 @@ export function throwMonsterWeaponAtHero(
     const shot = throwOneMonsterMissileAtHero(
         source, state, weapon, launched, random, rollOne,
     );
-    return shot ? { ...shot, volley, launched } : null;
+    return shot ? {
+        ...shot,
+        source,
+        missileStack: weapon,
+        volley,
+        shots: [shot],
+        launched,
+    } : null;
+}
+
+export function continueMonsterWeaponVolleyAtHero(
+    attack, state, {
+        random = rn2,
+        rollOne = rnd,
+    } = {},
+) {
+    if (!attack?.shots
+        || attack.shots.length >= attack.volley
+        || (attack.source?.mhp ?? 1) <= 0
+        || (state.u?.uhp ?? 1) <= 0) {
+        return null;
+    }
+    const shot = throwOneMonsterMissileAtHero(
+        attack.source,
+        state,
+        attack.missileStack,
+        attack.launched,
+        random,
+        rollOne,
+    );
+    if (shot) attack.shots.push(shot);
+    return shot;
 }
 
 export function throwMonsterWeaponAtMonster(

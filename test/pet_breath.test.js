@@ -8,7 +8,9 @@ import {
     freshRangedCombatRoom, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 import { carriedObject } from './support/game-objects.js';
-import { floorObjectsAt } from './support/level-state.js';
+import {
+    floorObjectQuantityAt, floorObjectsAt,
+} from './support/level-state.js';
 import {
     resolveMonsterBreathAttack,
 } from '../js/dogmove.js';
@@ -151,8 +153,5 @@ test('a ranged target can throw weapons back at a pet', async () => {
 
     assert.ok(target.mhp < 200);
     assert.ok(dragon.mhp < 100);
-    const returnedDaggers = floorObjectsAt(game.level, 10, 10)
-        .filter(object => object.otyp === DAGGER)
-        .reduce((total, object) => total + object.quan, 0);
-    assert.equal(returnedDaggers, 2);
+    assert.equal(floorObjectQuantityAt(game.level, 10, 10, DAGGER), 2);
 });

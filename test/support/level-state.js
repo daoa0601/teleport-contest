@@ -20,6 +20,12 @@ export function floorObjectsAt(level, x, y) {
     return level.objects?.[x]?.[y] || [];
 }
 
+export function floorObjectQuantityAt(level, x, y, type) {
+    return floorObjectsAt(level, x, y)
+        .filter(object => object.otyp === type)
+        .reduce((total, object) => total + object.quan, 0);
+}
+
 export function levelStairs(state) {
     const stairs = [];
     for (let stair = state.stairs; stair; stair = stair.next)

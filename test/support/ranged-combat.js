@@ -11,16 +11,26 @@ export function freshRangedCombatRoom(options = {}) {
     });
 }
 
-export function rangedPet(species, options = {}) {
-    return livePet({
+function rangedActorOptions(species, options) {
+    return {
         species,
         x: 9,
         y: 10,
         hitPoints: 30,
         level: 8,
+        ...options,
+    };
+}
+
+export function rangedMonster(species, options = {}) {
+    return liveMonster(rangedActorOptions(species, options));
+}
+
+export function rangedPet(species, options = {}) {
+    return livePet(rangedActorOptions(species, {
         edog: { hungrytime: 1000 },
         ...options,
-    });
+    }));
 }
 
 export function rangedTarget(species = 'jackal', options = {}) {

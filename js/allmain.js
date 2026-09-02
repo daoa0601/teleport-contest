@@ -76,6 +76,7 @@ import {
     makePlural, simpleObjectNameWithArticle,
 } from './object_grammar.js';
 import {
+    continueMonsterWeaponVolleyAtHero,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
 import {
@@ -5637,51 +5638,72 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         const rangedAttacks = movement?.rangedAttacks
             || (movement?.rangedAttack ? [movement.rangedAttack] : []);
-        for (const ranged of rangedAttacks) {
+        const rangedQueue = rangedAttacks.flatMap(attack => {
+            const shots = attack.missileStack
+                ? attack.shots.slice(0, 1)
+                : attack.shots || [attack];
+            return shots.map((ranged, index) => ({
+                attack,
+                ranged,
+                announce: index === 0,
+            }));
+        });
+        for (let rangedIndex = 0;
+            rangedIndex < rangedQueue.length;
+            rangedIndex++) {
+            const { attack: rangedAttack, ranged, announce }
+                = rangedQueue[rangedIndex];
             const rangedAppearance = ranged.appearance || 'weapon';
             const rangedArticle = /^[aeiou]/i.test(rangedAppearance)
                 ? 'an' : 'a';
-            const rangedObject = ranged.volley > 1
-                ? `${ranged.volley} ${makePlural(rangedAppearance)}`
-                : `${rangedArticle} ${rangedAppearance}`;
-            const rangedShots = ranged.shots || [ranged];
+            const launchAppearance = rangedAttack.appearance
+                || rangedAppearance;
+            const launchArticle = /^[aeiou]/i.test(launchAppearance)
+                ? 'an' : 'a';
+            const rangedObject = rangedAttack.volley > 1
+                ? `${rangedAttack.volley} ${makePlural(launchAppearance)}`
+                : `${launchArticle} ${launchAppearance}`;
             // C mthrowu.c:thrwmu() calls nomul(0) after launching.  The
             // interruption belongs to the shot even when an intervening pet,
             // rather than the hero, is struck; counted search and running
             // must not resume after the rest of this monster scan settles.
-            if (game._occupation)
-                game._interruptedMultiActionDebt = true;
-            game._occupation = null;
+            if (announce) {
+                if (game._occupation)
+                    game._interruptedMultiActionDebt = true;
+                game._occupation = null;
+            }
             // stop_occupation() also clears CQ_CANNED.  In particular, a
             // projectile launched after wield_tool() prevents the queued
             // tool operation from silently resuming at the next input.
-            game._cannedCommands = [];
-            if (game._runState) stopRun(game);
+            if (announce) {
+                game._cannedCommands = [];
+                if (game._runState) stopRun(game);
+            }
             if (!actorWasSeen && !monsterIsSeen && ranged.weapon)
                 ranged.weapon.dknown = false;
             if (ranged.weapon && (ranged.heroTarget
-                || rangedShots.some(shot => (shot.flightPath || [])
-                    .some(cell => cansee(cell.x, cell.y)))
-                || rangedShots.some(shot => Number.isFinite(shot.impactX)
-                    && Number.isFinite(shot.impactY)
-                    && cansee(shot.impactX, shot.impactY))
+                || (ranged.flightPath || [])
+                    .some(cell => cansee(cell.x, cell.y))
+                || (Number.isFinite(ranged.impactX)
+                    && Number.isFinite(ranged.impactY)
+                    && cansee(ranged.impactX, ranged.impactY))
                 || (ranged.target
                     && cansee(ranged.target.mx, ranged.target.my)))) {
                 ranged.weapon.dknown = true;
                 recordObjectEncounter(ranged.weapon.otyp);
             }
-            if (actorWasSeen || monsterIsSeen) {
-                const aimedAt = ranged.aimedAt
+            if (announce && (actorWasSeen || monsterIsSeen)) {
+                const aimedAt = rangedAttack.aimedAt
                     ? ` at ${canProjectMonster(
-                        ranged.aimedAt,
-                        ranged.aimedAt.mx,
-                        ranged.aimedAt.my,
-                    ) ? `the ${quietMonsterName(ranged.aimedAt)}`
+                        rangedAttack.aimedAt,
+                        rangedAttack.aimedAt.mx,
+                        rangedAttack.aimedAt.my,
+                    ) ? `the ${quietMonsterName(rangedAttack.aimedAt)}`
                         : 'something'}`
                     : '';
                 await queueTurnMessage(
                     `The ${quietMonsterName(monster)} ${
-                        ranged.launched ? 'shoots' : 'throws'
+                        rangedAttack.launched ? 'shoots' : 'throws'
                     } ${rangedObject}${aimedAt}!`,
                 );
             }
@@ -5864,35 +5886,43 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
             }
             if (!ranged.heroTarget) {
-                for (const shot of rangedShots) {
-                    const shotGlyph = shot.weapon
-                        ? transientObjectGlyph(shot.weapon)
-                        : projectileGlyph;
-                    const impactVisible = Number.isFinite(shot.impactX)
-                        && Number.isFinite(shot.impactY)
-                        && cansee(shot.impactX, shot.impactY);
-                    const { targetVisible } =
-                        await presentMonsterProjectileShot(
-                            shot, shotGlyph, game, {
-                                publish: queueTurnMessage,
-                                showMissWithoutTarget: ranged.volley > 1
-                                    && (actorWasSeen || monsterIsSeen
-                                        || impactVisible),
-                            },
-                        );
-                    if (!shot.targetDied) continue;
+                const impactVisible = Number.isFinite(ranged.impactX)
+                    && Number.isFinite(ranged.impactY)
+                    && cansee(ranged.impactX, ranged.impactY);
+                const { targetVisible } =
+                    await presentMonsterProjectileShot(
+                        ranged, projectileGlyph, game, {
+                            publish: queueTurnMessage,
+                            showMissWithoutTarget: rangedAttack.volley > 1
+                                && (actorWasSeen || monsterIsSeen
+                                    || impactVisible),
+                        },
+                    );
+                if (ranged.targetDied) {
                     const death = await finishEnvironmentalMonsterDeath(
-                        shot.target, game, {
+                        ranged.target, game, {
                             visible: targetVisible,
                             spotted: canProjectMonster(
-                                shot.target,
-                                shot.target.mx,
-                                shot.target.my,
+                                ranged.target,
+                                ranged.target.mx,
+                                ranged.target.my,
                             ),
                             publish: queueTurnMessage,
                         },
                     );
-                    shot.targetDied = !death.survived;
+                    ranged.targetDied = !death.survived;
+                }
+            }
+            if (rangedAttack.missileStack) {
+                const nextShot = continueMonsterWeaponVolleyAtHero(
+                    rangedAttack, game,
+                );
+                if (nextShot) {
+                    rangedQueue.push({
+                        attack: rangedAttack,
+                        ranged: nextShot,
+                        announce: false,
+                    });
                 }
             }
         }
