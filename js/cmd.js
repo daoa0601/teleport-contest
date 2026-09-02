@@ -64,6 +64,7 @@ import { heroGazeAttack, useHeroGaze } from './hero_gaze.js';
 import {
     heroCanSplitLikeGremlin, useHeroGremlinSplit,
 } from './hero_gremlin.js';
+import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import {
     heroCanSummonWerePack, useHeroWereSummon,
 } from './were.js';
@@ -5725,6 +5726,11 @@ async function domonability() {
     }
     if (heroCanSplitLikeGremlin(game)) {
         const result = await useHeroGremlinSplit({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (heroCanShriek(game)) {
+        const result = await useHeroShriek({ state: game });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
