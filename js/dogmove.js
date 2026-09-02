@@ -215,29 +215,19 @@ function beginBreathAtTarget(
     return { target, attack, launched: true };
 }
 
-export function beginPetRangedAttack(
-    pet, state, {
-        forced = false,
+export function beginMonsterRangedAttack(
+    monster, target, state, {
         random = rn2,
         rollOne = rnd,
     } = {},
 ) {
-    const target = bestPetRangedTarget(
-        pet, state, { forced, random, rollOne },
-    );
-    const hungry = !pet.isminion
-        && (state.moves ?? 1) > ((pet.edog?.hungrytime ?? 0) + DOG_HUNGRY);
-    if (!target || (hungry && random(5) !== 0)) {
-        return { target, launched: false, makeNoise: forced };
-    }
-
-    pet.mlstmv = sourceTurn(state);
+    monster.mlstmv = sourceTurn(state);
     let readiedWeapon = null;
     const weaponAttacks = [];
-    for (const attack of MONSTER_ATTACKS[pet.mnum] || []) {
+    for (const attack of MONSTER_ATTACKS[monster.mnum] || []) {
         if (attack[0] === AT_WEAP && target !== state.u) {
             const weaponAttack = throwMonsterWeaponAtMonster(
-                pet, target, state, { random, rollOne },
+                monster, target, state, { random, rollOne },
             );
             if (weaponAttack?.readiedWeapon) {
                 readiedWeapon = weaponAttack.readiedWeapon;
@@ -249,7 +239,7 @@ export function beginPetRangedAttack(
             }
         } else if (attack[0] === AT_BREA) {
             const breath = beginBreathAtTarget(
-                pet, target, state, random, attack,
+                monster, target, state, random, attack,
             );
             if (breath.launched || breath.cough) {
                 return {
@@ -262,7 +252,7 @@ export function beginPetRangedAttack(
             if (weaponAttacks.length) break;
             const position = targetPosition(target, state);
             const spit = beginMonsterSpitAttack(
-                pet, position.x, position.y,
+                monster, position.x, position.y,
                 { attack, random },
             );
             if (spit?.launched || spit?.dryRattle) {
@@ -287,6 +277,26 @@ export function beginPetRangedAttack(
         };
     }
     return { target, launched: false, readiedWeapon };
+}
+
+export function beginPetRangedAttack(
+    pet, state, {
+        forced = false,
+        random = rn2,
+        rollOne = rnd,
+    } = {},
+) {
+    const target = bestPetRangedTarget(
+        pet, state, { forced, random, rollOne },
+    );
+    const hungry = !pet.isminion
+        && (state.moves ?? 1) > ((pet.edog?.hungrytime ?? 0) + DOG_HUNGRY);
+    if (!target || (hungry && random(5) !== 0)) {
+        return { target, launched: false, makeNoise: forced };
+    }
+    return beginMonsterRangedAttack(
+        pet, target, state, { random, rollOne },
+    );
 }
 
 export function monsterBreathMessage(monster, breath) {
