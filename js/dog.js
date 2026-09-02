@@ -4,6 +4,7 @@
 import { currentAttribute } from './attrib.js';
 import { A_CHA } from './const.js';
 import { game } from './gstate.js';
+import { releaseMonsterLeash } from './monster_leash.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { rn2 } from './rng.js';
 
@@ -75,10 +76,7 @@ export function makePetWary(
 
     monster.pet = monster.mtame > 0;
     if (!monster.mtame) {
-        monster.mleashed = 0;
-        for (const object of state.inventory || []) {
-            if (object.leashmon === monster.m_id) object.leashmon = 0;
-        }
+        releaseMonsterLeash(monster, state);
         if (state.u?.usteed === monster) state.u.usteed = null;
         if (state.u?.ustuck === monster) {
             state.u.ustuck = null;

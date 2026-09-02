@@ -13,12 +13,13 @@ import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
 } from './end.js';
 import { game } from './gstate.js';
+import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { splitHeroMonsterForm, place_object, stack_object } from './mklev.js';
 import {
     MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LOADSTONE, OBJECT_MATERIAL,
+    AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL,
     OBJECT_NAMES,
 } from './object_data.js';
 import {
@@ -528,17 +529,6 @@ function emergencyDisrobe(state, random) {
     return { escaped: true, dropped };
 }
 
-function releaseLeashes(state) {
-    const leashed = (state.level?.monsters || []).filter(monster =>
-        monster?.mleashed && (monster.mhp ?? 1) > 0);
-    if (!leashed.length) return 0;
-    for (const monster of leashed) monster.mleashed = 0;
-    for (const object of state.inventory || []) {
-        if (object.otyp === LEASH) object.leashmon = 0;
-    }
-    return leashed.length;
-}
-
 function heroMovedWithinPool(state, x, y) {
     if (!state.u?.uinwater) return false;
     const previousX = Number.isInteger(state.u.ux0) ? state.u.ux0 : x;
@@ -776,7 +766,7 @@ export async function heroLiquidEffects({
         };
     }
 
-    const leashCount = releaseLeashes(state);
+    const leashCount = releaseAllMonsterLeashes(state);
     if (leashCount) {
         await publish(leashCount === 1
             ? 'The leash slips loose.' : 'The leashes slip loose.');

@@ -3,6 +3,7 @@
 
 import { game } from './gstate.js';
 import { heroHasConflict } from './hero_conflict.js';
+import { releaseMonsterLeash } from './monster_leash.js';
 import { A_CON, A_DEX, A_STR } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { couldsee } from './vision.js';
@@ -129,7 +130,7 @@ export async function abuseKickedPet(monster, potentialDamage, {
         if (!monster.edog) monster.edog = {};
         monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
     }
-    if (!monster.mtame && monster.mleashed) monster.mleashed = false;
+    if (!monster.mtame) releaseMonsterLeash(monster, state);
 
     if (monster.mx !== 0) {
         const yelps = monster.mtame > 0 && rn2(monster.mtame) !== 0;

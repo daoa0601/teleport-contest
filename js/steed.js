@@ -13,7 +13,8 @@ import {
     MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { BOULDER, LEASH } from './object_data.js';
+import { releaseMonsterLeash } from './monster_leash.js';
+import { BOULDER } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { promptKey } from './tty_prompts.js';
@@ -236,10 +237,7 @@ function unnamedSteedMessage(steed) {
 
 async function releaseSteedLeash(steed, state, announce) {
     if (!steed.mleashed) return;
-    steed.mleashed = 0;
-    const leash = (state.inventory || []).find(object =>
-        object.otyp === LEASH && object.leashmon === steed.m_id);
-    if (leash) leash.leashmon = 0;
+    releaseMonsterLeash(steed, state);
 
     const name = steed.name || `The ${monsterTypeName(
         steed.mnum, !!steed.female,

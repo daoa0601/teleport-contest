@@ -2,6 +2,9 @@
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 
 import { game } from './gstate.js';
+import {
+    leashAttachedToMonster, releaseMonsterLeash,
+} from './monster_leash.js';
 import { rn2, rnd } from './rng.js';
 import {
     A_STR, ACCESSIBLE, ALTAR, COLNO, D_CLOSED, D_LOCKED, DOOR, FAINTED,
@@ -587,11 +590,9 @@ export function prepareHeroTeleport(state = game, random = rn2) {
         moveLeashedMonsterNextToHero(monster, state, random);
         if (distanceToHero(monster, state) <= 1) continue;
 
-        const leash = state.inventory?.find(object =>
-            object.otyp === LEASH && object.leashmon === monster.m_id);
+        const leash = leashAttachedToMonster(monster, state);
         if (!leash || leash.cursed) return { allowed: false, messages };
-        monster.mleashed = 0;
-        leash.leashmon = 0;
+        releaseMonsterLeash(monster, state);
         const leashedCount = state.level.monsters.filter(candidate =>
             candidate.mleashed).length;
         messages.push(`You feel ${leashedCount ? 'a' : 'the'} leash go slack.`);
@@ -612,13 +613,11 @@ export function prepareMonsterTeleport(
     if (!monster?.mleashed)
         return { allowed: true, leashReleased: false };
 
-    const leash = state.inventory?.find(object =>
-        object.otyp === LEASH && object.leashmon === monster.m_id);
+    const leash = leashAttachedToMonster(monster, state);
     if (leash?.cursed && !force)
         return { allowed: false, leashReleased: false, cursedLeash: true };
 
-    monster.mleashed = 0;
-    if (leash) leash.leashmon = 0;
+    releaseMonsterLeash(monster, state);
     return { allowed: true, leashReleased: true };
 }
 
