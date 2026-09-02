@@ -13,6 +13,9 @@ import {
 } from './armor.js';
 import { nextIdent } from './ident.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
+import {
+    moveExpelledMonster, releaseHeroFromMonster,
+} from './hero_expulsion.js';
 import { splitObjectStack } from './object_stack.js';
 import {
     map_invisible, newsym, randomDisplayMonsterName,
@@ -6824,36 +6827,7 @@ export function beginDeferredHeroExpulsion(action, state) {
     if (!attack?.deferredExpulsion || attack.expulsionBegun) return null;
     const monster = action.monster;
     attack.expulsionBegun = true;
-    state.u.ustuck = null;
-    state.u.uswallow = 0;
-    state.u.uswldtim = 0;
-    state.u.ux = monster.mx;
-    state.u.uy = monster.my;
-    state.vision_full_recalc = 1;
-    return { oldx: monster.mx, oldy: monster.my };
-}
-
-function expulsionDestinationOk(monster, state, x, y) {
-    if (!isok(x, y) || x === state.u?.ux && y === state.u?.uy) return false;
-    if (state.level?.monsters?.some(candidate => candidate !== monster
-        && !candidate.dead && candidate.mx === x && candidate.my === y)) {
-        return false;
-    }
-    const loc = state.level?.at?.(x, y);
-    if (!loc || IS_OBSTRUCTED(loc.typ)) return false;
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const airborne = !!(flags & M1_FLY)
-        || MONSTER_SYMBOL[monster?.mnum] === S_EYE
-        || MONSTER_SYMBOL[monster?.mnum] === S_LIGHT;
-    if (loc.typ === WATER && !(flags & M1_SWIM)) return false;
-    if (IS_POOL(loc.typ) && !airborne && !(flags & M1_SWIM)) return false;
-    if (IS_LAVA(loc.typ) && !airborne
-        && monster?.mnum !== PM_FIRE_ELEMENTAL
-        && monster?.mnum !== PM_SALAMANDER) return false;
-    const pile = state.level?.objects?.[x]?.[y] || [];
-    if (pile.some(object => object.otyp === BOULDER)
-        && !((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_ROCKTHROW)) return false;
-    return true;
+    return releaseHeroFromMonster(monster, state);
 }
 
 function covetousObjectMatchesMask(object, mask, state) {
@@ -6997,24 +6971,12 @@ export function finishDeferredHeroExpulsion(
     if (!attack?.expulsionBegun || !attack.deferredExpulsion) return null;
     const monster = action.monster;
     const calls = action.calls;
-    monster.mspec_used = rollOne(2);
-    calls.push('rnd(2)');
-    const candidates = collectNearbyCoords(
-        state.u.ux, state.u.uy, 3, random, calls,
-    );
-    const destination = candidates.find(({ x, y }) =>
-        expulsionDestinationOk(monster, state, x, y));
-    const oldx = monster.mx, oldy = monster.my;
-    if (destination) {
-        monster.mx = destination.x;
-        monster.my = destination.y;
-    }
+    const movement = moveExpelledMonster(monster, state, {
+        random, rollOne, calls,
+    });
     attack.deferredExpulsion = false;
     attack.expulsionBegun = false;
-    return {
-        oldx, oldy, x: monster.mx, y: monster.my,
-        moved: oldx !== monster.mx || oldy !== monster.my,
-    };
+    return movement;
 }
 
 // Continue an ordinary natural hit after its visible hit message has been
