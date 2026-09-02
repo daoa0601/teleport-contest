@@ -114,7 +114,9 @@ import {
 import {
     isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
 } from './corpse_species.js';
-import { golemHitPoints } from './monster_hit_points.js';
+import {
+    adjustedMonsterLevel, newMonsterHitPoints,
+} from './monster_hit_points.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
@@ -1304,36 +1306,6 @@ export function mkcorpstat(
     return place_object(otmp, x, y);
 }
 
-// C ref: makemon.c adj_lev() and mkclass_aligned().  mkclass does not pick
-// directly from the source-table order: NetHack first sorts every regular
-// monster by class and difficulty.  The original index is the stable tie
-// breaker for the generated monster table used by this version.
-export function adjustedMonsterLevel(mndx) {
-    // attrib.c:adjalign() calls mon.c:adj_erinys() after every new negative
-    // alignment adjustment.  Erinys' live species level is 7 + accumulated
-    // abuse, capped at 50; it is then passed through ordinary adj_lev().
-    const baseLevel = mndx === PM_ERINYS
-        ? Math.min(50, (MONSTER_LEVEL[mndx] || 0)
-            + (game.u?.ualign?.abuse ?? 0))
-        : MONSTER_LEVEL[mndx] || 0;
-    // makemon.c:adj_lev() gives the Wizard a separate resurrection curve:
-    // his base level rises once per recorded death and is not constrained by
-    // ordinary dungeon/hero adjustment or the 3/2 species cap.
-    if (mndx === PM_WIZARD_OF_YENDOR) {
-        const deaths = game._vanquishedCounts?.get?.(mndx)?.count || 0;
-        return Math.min(49, baseLevel + deaths);
-    }
-    if (baseLevel > 49) return 50;
-    let adjusted = baseLevel;
-    const depthDelta = level_difficulty() - baseLevel;
-    if (depthDelta < 0) adjusted--;
-    else adjusted += Math.trunc(depthDelta / 5);
-    const heroDelta = (game.u?.ulevel || 1) - baseLevel;
-    if (heroDelta > 0) adjusted += Math.trunc(heroDelta / 4);
-    const upperLimit = Math.min(49, Math.trunc(3 * baseLevel / 2));
-    return Math.min(upperLimit, Math.max(0, adjusted));
-}
-
 const monsterGenerationOrder = Array.from(
     { length: SPECIAL_PM }, (_, mndx) => mndx,
 ).sort((left, right) => {
@@ -1618,42 +1590,6 @@ const M_INITWEAP_SWITCH_CLASSES = new Set([
     57, // S_LIZARD
     56, // S_DEMON
 ]);
-
-// C ref: makemon.c newmonhp().  Shapechanging calls the same constructor a
-// second time, so keep the dice policy in one owner rather than duplicating a
-// partial mplayer-only branch inside makemon().
-export function newMonsterHitPoints(mndx) {
-    const rawLevel = MONSTER_LEVEL[mndx] ?? 0;
-    let level = adjustedMonsterLevel(mndx);
-    const fixedGolemHp = golemHitPoints(mndx);
-    let hp, minimumBase = 0;
-    if (fixedGolemHp != null) {
-        hp = fixedGolemHp;
-    } else if (mndx >= 311 && mndx <= 313) {
-        // Riders retain their high attack level but use deliberately low HP.
-        minimumBase = 10;
-        hp = d(10, 8);
-    } else if (rawLevel > 49) {
-        // Special fixed-HP monsters encode their HP in the permonst level.
-        hp = 2 * (rawLevel - 6);
-        level = Math.trunc(hp / 4);
-    } else if (MONSTER_SYMBOL[mndx] === 30 && mndx >= 143) {
-        // Adult dragons use N*(4+d4) in the dungeon and fixed N*8 in
-        // the endgame rather than the ordinary Nd8 roll.
-        minimumBase = level;
-        hp = In_endgame(game.u?.uz) ? 8 * level : 4 * level + d(level, 4);
-    } else if (!level) {
-        minimumBase = 1;
-        hp = rnd(4);
-    } else {
-        minimumBase = level;
-        hp = d(level, 8);
-    }
-    // newmonhp() guarantees at least one point above the theoretical
-    // all-ones minimum.  For a level-zero monster that minimum is one.
-    if (minimumBase && hp === minimumBase) hp++;
-    return { level, hp };
-}
 
 function monsterIndexByName(name) {
     const mndx = MONSTER_NAME.indexOf(name);

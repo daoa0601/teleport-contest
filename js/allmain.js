@@ -3,12 +3,13 @@
 
 import { game } from './gstate.js';
 import { finishMonsterGrowth } from './monster_growth.js';
+import { newMonsterHitPoints } from './monster_hit_points.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
-    initialMonsterSleepState, newMonsterHitPoints, peaceMinded, rndmonnum,
+    initialMonsterSleepState, peaceMinded, rndmonnum,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     finishBuriedZombieTimer,
