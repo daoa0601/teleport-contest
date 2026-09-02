@@ -13,16 +13,12 @@ import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function monsterOnMine(species, gameplaySeed) {
-    return freshMonsterTrapRoom(LANDMINE, {
-        gameplaySeed,
-        monster: { species, hitPoints: 30 },
-    });
-}
-
 test('a heavy monster sets off a land mine and falls into the new pit',
     async () => {
-        const { monster, trap } = monsterOnMine('giant', 1n);
+        const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+            gameplaySeed: 1n,
+            monster: { species: 'giant', hitPoints: 30 },
+        });
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
@@ -40,7 +36,10 @@ test('a heavy monster sets off a land mine and falls into the new pit',
     });
 
 test('a light monster can cross a land mine without setting it off', () => {
-    const { monster, trap } = monsterOnMine('gnome', 1n);
+    const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+        gameplaySeed: 1n,
+        monster: { species: 'gnome', hitPoints: 30 },
+    });
 
     const action = triggerImmediateMonsterTrap(monster, game);
 
@@ -50,7 +49,10 @@ test('a light monster can cross a land mine without setting it off', () => {
 
 test('a flying monster can reveal a land mine without detonating it',
     async () => {
-        const { monster, trap } = monsterOnMine('red dragon', 2n);
+        const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+            gameplaySeed: 2n,
+            monster: { species: 'red dragon', hitPoints: 30 },
+        });
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);

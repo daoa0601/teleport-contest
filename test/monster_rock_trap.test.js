@@ -10,16 +10,12 @@ import { ROCK } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function monsterOnRockTrap(species) {
-    return freshMonsterTrapRoom(ROCKTRAP, {
-        gameplaySeed: 23n,
-        monster: { species },
-    });
-}
-
 test('a falling-rock trap hits a visible monster and drops its rock',
     async () => {
-        const { level, monster, trap } = monsterOnRockTrap('giant');
+        const { level, monster, trap } = freshMonsterTrapRoom(ROCKTRAP, {
+            gameplaySeed: 23n,
+            monster: { species: 'giant' },
+        });
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
@@ -36,7 +32,10 @@ test('a falling-rock trap hits a visible monster and drops its rock',
     });
 
 test('a falling rock passes harmlessly through a xorn', async () => {
-    const { level, monster } = monsterOnRockTrap('xorn');
+    const { level, monster } = freshMonsterTrapRoom(ROCKTRAP, {
+        gameplaySeed: 23n,
+        monster: { species: 'xorn' },
+    });
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
