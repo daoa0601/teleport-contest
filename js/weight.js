@@ -2,7 +2,9 @@
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
 
 import {
-    BAG_OF_HOLDING, CORPSE, OBJECT_NUTRITION, OBJECT_WEIGHT,
+    BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE,
+    HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_NUTRITION, OBJECT_WEIGHT,
+    OILSKIN_SACK, SACK, STATUE, TALLOW_CANDLE,
 } from './object_data.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
@@ -19,9 +21,13 @@ export const EXT_ENCUMBER = 4;
 export const OVERLOADED = 5;
 
 const M2_STRONG = 0x04000000;
+const M2_ROCKTHROW = 0x08000000;
 const S_NYMPH = 14;
 const MZ_HUMAN = 2;
 const WT_HUMAN = 1450;
+const WEIGHTED_CONTENT_TYPES = new Set([
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, STATUE,
+]);
 
 function quantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
@@ -66,8 +72,17 @@ export function objectWeight(object) {
             ));
         }
     }
-    if (Array.isArray(object.contents)) {
-        let contentsWeight = object.contents.reduce(
+    if (WEIGHTED_CONTENT_TYPES.has(object.otyp)) {
+        let ownWeight = base || object.owt || 0;
+        if (object.otyp === STATUE && Number.isInteger(object.corpsenm)) {
+            const bodyWeight = MONSTER_BODY_META[object.corpsenm]?.[0] ?? 0;
+            const size = MONSTER_SIZE[object.corpsenm] ?? 0;
+            ownWeight = Math.max(
+                Math.trunc(3 * bodyWeight / 2),
+                (2 * size + 1) * 100,
+            ) * quantity(object);
+        }
+        let contentsWeight = (object.contents || []).reduce(
             (total, content) => total + objectWeight(content), 0,
         );
         if (object.otyp === BAG_OF_HOLDING) {
@@ -75,8 +90,12 @@ export function objectWeight(object) {
                 : object.blessed ? Math.trunc((contentsWeight + 3) / 4)
                     : Math.trunc((contentsWeight + 1) / 2);
         }
-        return (base || object.owt || 0) + contentsWeight;
+        return ownWeight + contentsWeight;
     }
+    if (object.otyp === HEAVY_IRON_BALL && object.owt)
+        return object.owt;
+    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.spe)
+        return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
     if (base > 0) return base * quantity(object);
     return object.owt ?? 0;
 }
@@ -89,11 +108,14 @@ function condensedStrength(value) {
 
 export function inventoryWeight(state) {
     const inventory = state.inventory || [];
+    const throwsRocks = Number.isInteger(state.u?.umonnum)
+        && !!((MONSTER_FLAGS2[state.u.umonnum] ?? 0) & M2_ROCKTHROW);
     const objectWeightTotal = inventory.reduce((total, object) => {
         // NetHack's only coin denomination weighs one unit per 100 coins,
         // rounded after combining the entire inventory stack.
         if (object.oclass === 12)
             return total + Math.trunc((quantity(object) + 50) / 100);
+        if (object.otyp === BOULDER && throwsRocks) return total;
         return total + objectWeight(object);
     }, 0);
     // Canonical states carry one `$` object.  The fallback keeps older saved
@@ -122,11 +144,22 @@ export function weightCapacity(state) {
             capacity = Math.trunc(capacity * bodyWeight / WT_HUMAN);
         }
     }
-    // hack.c:weight_cap(): Air grants the same maximum carrying capacity as
-    // levitation, and that shortcut precedes wounded-leg reductions.
-    if (Is_airlevel(state.u?.uz)) capacity = 1000;
-    else if (state.u?._woundedLegSide === 'both') capacity -= 200;
-    else if (state.u?._woundedLegSide) capacity -= 100;
+    const steedMnum = state.u?.usteed?.mnum;
+    const strongSteed = Number.isInteger(steedMnum)
+        && !!((MONSTER_FLAGS2[steedMnum] ?? 0) & M2_STRONG);
+    const levitating = !!(
+        state.u?.levitating || state.u?.levitation || state.levitating
+    );
+    if (levitating || Is_airlevel(state.u?.uz) || strongSteed) {
+        capacity = 1000;
+    } else {
+        capacity = Math.min(1000, capacity);
+        const flying = state.u?.flying || state.u?.flight || state.flying;
+        if (!flying) {
+            if (state.u?._woundedLegSide === 'both') capacity -= 200;
+            else if (state.u?._woundedLegSide) capacity -= 100;
+        }
+    }
     return Math.max(1, Math.min(1000, capacity));
 }
 

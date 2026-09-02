@@ -86,6 +86,8 @@ import {
     addInventoryItem, assignInventoryLetter, collectNearbyCoords,
     inventoryItem,
 } from './u_init.js';
+import { liftObject } from './lift_object.js';
+import { splitObjectStack } from './object_stack.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     addObjectToMonsterInventory,
@@ -3230,18 +3232,49 @@ function collectFloorPickupMessages(pile, selected) {
     return { messages, shopQuotes, comparisonMessages };
 }
 
+async function liftFloorSelections(pile, selected) {
+    const lifted = [];
+    let attempted = false;
+    for (const selection of selected) {
+        const object = selection?.value || selection;
+        if (!pile.includes(object)) continue;
+        attempted = true;
+        const requested = selection?.value
+            ? selection.count : objectQuantity(object);
+        const result = await liftObject({
+            object,
+            count: requested > 0 ? requested : objectQuantity(object),
+        });
+        if (result.decision === 'lift') {
+            let liftedObject = object;
+            if (result.count < objectQuantity(object)
+                && object.otyp !== LOADSTONE) {
+                liftedObject = splitObjectStack(object, result.count, game);
+            }
+            if (liftedObject) lifted.push(liftedObject);
+        }
+        if (result.decision === 'stop') break;
+    }
+    return { attempted, lifted };
+}
+
 async function commitFloorPickup(pile, selected, x, y) {
     if (!selected.length) {
         await docrt();
         await bot();
         await flush_screen(1);
         game.context.move = 0;
-        return;
+        return 0;
     }
 
+    const pickup = await liftFloorSelections(pile, selected);
+    if (!pickup.lifted.length) {
+        game.context.move = pickup.attempted ? 1 : 0;
+        return 0;
+    }
     const {
         messages, shopQuotes, comparisonMessages,
-    } = collectFloorPickupMessages(pile, selected);
+    } = collectFloorPickupMessages(pile, pickup.lifted);
     const capacity = nearCapacity(game);
     const loadPrefix = pickupLoadPrefix(capacity);
     const pickupMessage = loadPrefix
@@ -3260,6 +3293,7 @@ async function commitFloorPickup(pile, selected, x, y) {
     // capacity state and can itself suspend while replacing this top line.
     game._capacityDirty = true;
     game.context.move = 1;
+    return pickup.lifted.length;
 }
 
 async function pickupFloorObject() {
@@ -3311,7 +3345,7 @@ async function pickupFloorObject() {
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
-        title: 'Pick up what?', sections, left: 41,
+        title: 'Pick up what?', sections, left: 41, returnCounts: true,
     });
     await commitFloorPickup(pile, selected, x, y);
 }
@@ -11101,8 +11135,11 @@ export async function finishDestinationSpotEffects({
     } else if (objects.length && game.flags?.pickup
         && !game.context.nopick) {
         const selected = objects.filter(autopickupAllows);
+        let pickedCount = 0;
         if (selected.length) {
-            await commitFloorPickup(floorPile, selected, newx, newy);
+            pickedCount = await commitFloorPickup(
+                floorPile, selected, newx, newy,
+            );
             objects = floorPile.filter(object => object !== game.uchain
                 && object !== game.u?.uchain);
         }
@@ -11117,7 +11154,7 @@ export async function finishDestinationSpotEffects({
         }
         if (objects.length > 1) {
             await showFloorPile(
-                objects, selected.length > 0, destinationFeature,
+                objects, pickedCount > 0, destinationFeature,
             );
         } else if (objects.length === 1) {
             if (destinationFeature)

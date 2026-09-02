@@ -11,6 +11,7 @@ import {
 } from './hero_gold.js';
 import { nhgetch } from './input.js';
 import { inventoryItemDescription } from './invent.js';
+import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import {
     makemonNear, place_object, startCorpseTimeout,
@@ -37,9 +38,7 @@ import { rejoinShopBill, splitShopBill } from './shk.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
-import {
-    calcCapacity, objectWeight, OVERLOADED,
-} from './weight.js';
+import { objectWeight } from './weight.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
     showMultiSelectWindow,
@@ -385,17 +384,6 @@ function addToInventory(object, state) {
     return object;
 }
 
-function carriedContainer(container, state) {
-    let current = container;
-    const visited = new Set();
-    while (current?.where === 'contained' && !visited.has(current)) {
-        visited.add(current);
-        current = current.container;
-    }
-    return current?.where === 'inventory'
-        && (state.inventory || []).includes(current);
-}
-
 function freezeObject(object, state) {
     if (object.ageRelative) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
@@ -538,37 +526,14 @@ export async function putIntoContainer(
     };
 }
 
-function extraWeightWhenRemoved(container, transfer, state) {
-    const object = transfer.object;
-    const selectedWeight = objectWeight(object);
-    if (!carriedContainer(container, state)) return selectedWeight;
-    const contents = container.contents;
-    let before;
-    let after;
-    if (transfer.parent) {
-        after = objectWeight(container);
-        container.contents = [object, ...contents];
-        before = objectWeight(container);
-    } else {
-        before = objectWeight(container);
-        container.contents = contents.filter(candidate => candidate !== object);
-        after = objectWeight(container);
-    }
-    container.contents = contents;
-    return selectedWeight + after - before;
-}
-
 export async function takeFromContainer(
     container, object, state = game, count = -1,
 ) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
-    const transfer = splitForTransfer(object, count, state);
-    object = transfer.object;
     if (object.oartifact) {
         const touch = await touchArtifactByHero(object);
         if (!touch.allowed || touch.died) {
-            restoreRejectedSplit(transfer, state);
             return {
                 moved: false,
                 stop: touch.died,
@@ -577,18 +542,24 @@ export async function takeFromContainer(
         }
     }
     if (await touchPetrifyingCorpse(object)) {
-        restoreRejectedSplit(transfer, state);
         return { moved: false, stop: true, message: null };
     }
-    const extraWeight = extraWeightWhenRemoved(container, transfer, state);
-    if (calcCapacity(state, extraWeight) >= OVERLOADED) {
-        restoreRejectedSplit(transfer, state);
+    const lift = await liftObject({
+        object,
+        container,
+        count: transferQuantity(object, count),
+        state,
+    });
+    if (lift.decision !== 'lift') {
         return {
             moved: false,
-            message: `You cannot lift ${objectDescription(object)}.`,
+            stop: lift.decision === 'stop',
+            message: null,
         };
     }
 
+    const transfer = splitForTransfer(object, lift.count, state);
+    object = transfer.object;
     if (!transfer.parent) {
         container.contents = container.contents
             .filter(candidate => candidate !== object);

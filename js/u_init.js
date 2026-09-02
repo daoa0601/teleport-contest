@@ -969,6 +969,7 @@ export function assignInventoryLetter(item) {
         game._lastInvNr = index;
         break;
     }
+    if (!item.invlet) item.invlet = '#';
     return item;
 }
 
