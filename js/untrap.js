@@ -23,7 +23,10 @@ import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { mksobj, place_object, stack_object } from './mklev.js';
+import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
+import {
+    buryFloorObjectsAt, mksobj, place_object, stack_object,
+} from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { finishEnvironmentalMonsterDeath } from './monmove.js';
 import { setMonsterMalign } from './monster_alignment.js';
@@ -42,7 +45,7 @@ import {
 } from './polyself.js';
 import { promptYesNoQuit } from './query.js';
 import { d, rnd, rn2, rnl } from './rng.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import {
     resolveImmediatePetrification, touchPetrifies,
 } from './stoning.js';
@@ -51,6 +54,7 @@ import {
     EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight,
 } from './weight.js';
 import { isBlade } from './weapon_type.js';
+import { cansee } from './vision.js';
 
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
@@ -252,6 +256,12 @@ export async function untrap({
         if (used !== null) return used;
     }
 
+    const doorMimic = monsterAt(state, x, y);
+    if (isDoorMimic(doorMimic, state)) {
+        await revealMimic(doorMimic, state, publish);
+        return true;
+    }
+
     return handleDoor(x, y, {
         state,
         force,
@@ -292,6 +302,12 @@ async function handleFloorTrap(trap, options) {
         await publish(
             `You cannot deal with the ${trapName(trap)} while trapped${here ? ' in it' : ''}!`,
         );
+        return true;
+    }
+
+    const mimic = monsterAt(state, trap.tx, trap.ty);
+    if (isObjectOrFurnitureMimic(mimic, state)) {
+        await revealMimic(mimic, state, publish);
         return true;
     }
 
@@ -653,6 +669,26 @@ async function helpMonsterOut(monster, trap, options) {
     await rewardMonsterRescue(trap, monster, {
         state, publish, random, luckRandom,
     });
+    await fillPitWithBoulder(trap.tx, trap.ty, state, publish);
+    return true;
+}
+
+async function fillPitWithBoulder(x, y, state, publish) {
+    const trap = trapAt(state, x, y);
+    if (!trap || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT)) return false;
+    const boulder = (state.level?.objects?.[x]?.[y] || [])
+        .find(object => object.otyp === BOULDER);
+    if (!boulder) return false;
+
+    deleteObject(boulder, state);
+    removeTrap(trap, state);
+    buryFloorObjectsAt(x, y, state);
+    if (!heroIsBlind(state) && cansee(x, y)) {
+        await publish('The boulder fills a pit.');
+    } else if (!heroIsDeaf(state)) {
+        await publish('You hear a boulder settle.');
+    }
+    newsym(x, y);
     return true;
 }
 

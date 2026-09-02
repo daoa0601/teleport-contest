@@ -201,6 +201,7 @@ import {
     monsterIsNonliving, monsterIsShade, monsterTypeName,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
+import { revealMimic } from './mimic.js';
 import { nameToMonster } from './mondata.js';
 import {
     gainExperienceLevel, gainLevelAbilities,
@@ -11216,35 +11217,6 @@ async function markUnseenMonsterBeforeAttack(monster, x, y) {
     return true;
 }
 
-// C refs: uhitm.c attack_checks(), stumble_onto_mimic(),
-// that_is_a_mimic().  A visible object-disguised mimic consumes the attempted
-// move as a reveal, before hero melee and before the ordinary monster turn.
-// object_from_map() constructs a temporary object to name the remembered
-// glyph, so even this presentation-only branch owns next_ident()'s rnd(2).
-async function stumbleOntoObjectMimic(monster, x, y) {
-    if (monster?.m_ap_type !== M_AP_OBJECT
-        || game.u?.protectionFromShapeChangers
-        || monsterHasWarningProjection(monster)) return false;
-
-    nextIdent();
-    const appearance = OBJECT_NAMES[monster.mappearance] || 'strange object';
-    const mimic = MONSTER_NAME[monster.mnum] || 'mimic';
-    await pline(
-        `That ${appearance} is ${indefiniteArticle(mimic)} ${mimic}!`,
-    );
-
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    monster.msleeping = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!game.u?.ustuck && !monster.mflee
-        && [64, 65, 66].includes(monster.mnum)) {
-        game.u.ustuck = monster;
-    }
-    newsym(x, y);
-    return true;
-}
-
 // C ref: hack.c:domove_fight_empty().  A forced attack and an ordinary move
 // into remembered invisible-monster knowledge converge here after actor
 // lookup.  Both spend the action without entering terrain movement; only the
@@ -11666,7 +11638,7 @@ async function domove(dx, dy, explicitAttempt = true) {
                 ballChainMove,
             });
         }
-        if (await stumbleOntoObjectMimic(monster, newx, newy))
+        if (await revealMimic(monster))
             return true;
         if (await markUnseenMonsterBeforeAttack(monster, newx, newy))
             return true;

@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    BEAR_TRAP, DOOR, D_CLOSED, D_TRAPPED,
+    BEAR_TRAP, DOOR, D_CLOSED, D_TRAPPED, M_AP_FURNITURE,
+    M_AP_OBJECT, PIT,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { BEARTRAP, CHEST } from '../js/object_data.js';
+import { BEARTRAP, BOULDER, CHEST } from '../js/object_data.js';
 import { invokeInventoryObject } from './support/commands.js';
 import {
     artifactObject, floorObject,
@@ -15,7 +16,10 @@ import {
 import {
     addTrap, floorObjectsAt,
 } from './support/level-state.js';
+import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+const CLOSED_DOOR_APPEARANCE = 15;
 
 test('a ranger can disarm an adjacent bear trap', async () => {
     const level = freshObjectRoom({ role: 'ranger' });
@@ -30,6 +34,69 @@ test('a ranger can disarm an adjacent bear trap', async () => {
             .some(object => object.otyp === BEARTRAP),
         true,
     );
+    assert.equal(game.context.move, 1);
+});
+
+test('untrapping reveals a monster disguised over the trap', async () => {
+    const level = freshObjectRoom({ role: 'ranger' });
+    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    const mimic = addMonster({
+        mnum: 64,
+        x: 11,
+        y: 10,
+        m_ap_type: M_AP_OBJECT,
+        mappearance: CHEST,
+        msleeping: 1,
+    });
+    pushKeys('untrap\nl');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(mimic.m_ap_type, 0);
+    assert.equal(mimic.msleeping, 0);
+    assert.equal(level.traps.includes(trap), true);
+    assert.equal(game.context.move, 1);
+});
+
+test('untrapping toward a disguised door reveals its mimic', async () => {
+    freshObjectRoom();
+    const mimic = addMonster({
+        mnum: 64,
+        x: 11,
+        y: 10,
+        m_ap_type: M_AP_FURNITURE,
+        mappearance: CLOSED_DOOR_APPEARANCE,
+        msleeping: 1,
+    });
+    pushKeys('untrap\nl');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(mimic.m_ap_type, 0);
+    assert.equal(mimic.msleeping, 0);
+    assert.equal(game.context.move, 1);
+});
+
+test('a boulder fills a pit after its monster is pulled out', async () => {
+    const level = freshObjectRoom({ role: 'ranger' });
+    const trap = addTrap(level, PIT, 11, 10, {
+        tseen: true,
+        madeby_u: true,
+    });
+    const monster = addMonster({
+        mnum: 12,
+        x: 11,
+        y: 10,
+        mtrapped: 1,
+    });
+    const boulder = floorObject(BOULDER, 11, 10);
+    pushKeys('untrap\nl');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(monster.mtrapped, 0);
+    assert.equal(level.traps.includes(trap), false);
+    assert.equal(boulder.where, 'gone');
     assert.equal(game.context.move, 1);
 });
 
