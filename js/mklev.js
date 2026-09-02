@@ -120,6 +120,7 @@ import {
 import {
     initialShapechangedBirth, shapechangeMonster,
 } from './monster_polymorph.js';
+import { initializeMonsterWormBody } from './monster_worm.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
@@ -1631,50 +1632,6 @@ function randomMonsterPosition(mndx) {
     return null;
 }
 
-// C refs: makemon.c initworm() and worm.c place_worm_tail_randomly().
-// A long worm owns one head actor plus lightweight occupied tail cells.  Each
-// requested segment shuffles every direction before choosing the first legal
-// adjacent square; the complete shuffle remains observable even when its
-// first candidate succeeds.
-function initializeLongWormTail(monster, allowTail) {
-    const used = new Set((game.level?.monsters || [])
-        .map(candidate => candidate.wormno)
-        .filter(Boolean));
-    let wormno = 1;
-    while (wormno < 32 && used.has(wormno)) wormno++;
-    if (wormno >= 32) return;
-
-    monster.wormno = wormno;
-    monster.wormSegments = [];
-    const requestedSegments = allowTail ? rn2(5) : 0;
-    let ox = monster.mx, oy = monster.my;
-    for (let segment = 0; segment < requestedSegments; segment++) {
-        const directions = Array.from({ length: 8 }, (_, index) => index);
-        for (let remaining = 8; remaining > 0; remaining--) {
-            const selected = rn2(remaining);
-            [
-                directions[selected],
-                directions[remaining - 1],
-            ] = [
-                directions[remaining - 1],
-                directions[selected],
-            ];
-        }
-        let next = null;
-        for (const direction of directions) {
-            const x = ox + xdir[direction], y = oy + ydir[direction];
-            if (monsterGoodPosition(PM_LONG_WORM, x, y)) {
-                next = { x, y };
-                break;
-            }
-        }
-        if (!next) break;
-        monster.wormSegments.push(next);
-        ox = next.x;
-        oy = next.y;
-    }
-}
-
 async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (mdat == null && game.level?.flags?.rndmongen === false) return null;
     if (x === 0 && y === 0) {
@@ -1771,7 +1728,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
 
     if (mndx === PM_LONG_WORM)
-        initializeLongWormTail(pendingMonster, !(mmflags & MM_NOTAIL));
+        initializeMonsterWormBody(pendingMonster, {
+            allowTail: !(mmflags & MM_NOTAIL),
+        });
 
     // C makemon() type setup: spiders and snakes born during level creation
     // receive a random floor object before they hide beneath it.

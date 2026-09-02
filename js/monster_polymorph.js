@@ -14,6 +14,9 @@ import {
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
 } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
+import {
+    initializeMonsterWormBody, removeMonsterWormBody,
+} from './monster_worm.js';
 
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
@@ -44,6 +47,7 @@ const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_STUDENT = MONSTER_NAME.indexOf('student');
 const PM_APPRENTICE = MONSTER_NAME.indexOf('apprentice');
 const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
+const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const POLYMORPH_IMMUNE_MONSTERS = new Set([
     'Nazgul', 'erinys', 'Death', 'Pestilence', 'Famine',
 ].map(monsterIndexByName));
@@ -384,6 +388,7 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     }
     if (targetMnum == null || targetMnum === monster.mnum) return false;
 
+    if (monster.wormno) removeMonsterWormBody(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
@@ -418,6 +423,8 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
         && !shapechangerProtectionActive()) {
         monster.cham = targetMnum;
     }
+    if (targetMnum === PM_LONG_WORM)
+        initializeMonsterWormBody(monster);
     monster.meverseen = 0;
     return true;
 }
