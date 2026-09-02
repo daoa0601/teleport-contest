@@ -21,10 +21,9 @@ import {
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { objectWeight } from './weight.js';
 import {
-    heroIsPolymorphed, polymonHero, rehumanizeHero,
+    heroIsPolymorphed, heroIsUnchanging, polymonHero, rehumanizeHero,
 } from './polyself.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsUnchanging } from './were.js';
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;

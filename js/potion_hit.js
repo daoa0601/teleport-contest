@@ -49,10 +49,11 @@ import {
 import { objectTypeKnown } from './shk.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
-    applyHeroWaterVaporChange, heroHasProtectionFromShapeChangers,
-    transformWereMonster,
+    applyHeroWaterVaporChange, transformWereMonster,
 } from './were.js';
-import { heroFormSticks } from './polyself.js';
+import {
+    heroFormSticks, heroHasProtectionFromShapeChangers,
+} from './polyself.js';
 
 const PM_PESTILENCE = 312;
 const PM_ARCHEOLOGIST = 331;

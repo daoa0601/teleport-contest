@@ -12,7 +12,10 @@ import {
 import {
     AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
 } from './monster_attack_types.js';
-import { LENSES, OBJECT_MATERIAL } from './object_data.js';
+import {
+    AMULET_OF_UNCHANGING, LENSES, OBJECT_MATERIAL,
+    RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
+} from './object_data.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { place_object } from './mklev.js';
@@ -73,6 +76,44 @@ const OLFACTIONLESS_SYMBOLS = new Set([
     42, // S_PUDDING
     55, // S_GOLEM
 ]);
+
+function wornPropertyObject(state, otyp, slots) {
+    return slots.some(slot => {
+        const object = state[slot] || state.u?.[slot];
+        return object?.otyp === otyp && object.worn !== false;
+    });
+}
+
+export function heroHasPolymorphControl(state = game) {
+    return !!(state.u?.polymorphControl || state.polymorphControl)
+        || wornPropertyObject(
+            state, RIN_POLYMORPH_CONTROL, ['uleft', 'uright'],
+        );
+}
+
+export function heroIsUnchanging(state = game) {
+    return !!(state.u?.unchanging || state.unchanging)
+        || wornPropertyObject(state, AMULET_OF_UNCHANGING, ['uamul']);
+}
+
+export function heroCanControlPolymorph(state = game) {
+    const unaware = !!(state.u?.unaware || state.unaware
+        || state._helplessReason === 'unconscious from rotten food'
+        || state._helplessReason === 'sleeping off a magical draught');
+    const stunned = !!(state.u?.stunned
+        || (state.u?.stunnedTurns ?? 0) > 0);
+    return heroHasPolymorphControl(state) && !unaware && !stunned;
+}
+
+export function heroHasProtectionFromShapeChangers(state = game) {
+    if (state.u?.protectionFromShapeChangers
+        || state.protectionFromShapeChangers) return true;
+    return wornPropertyObject(
+        state,
+        RIN_PROTECTION_FROM_SHAPE_CHANGERS,
+        ['uleft', 'uright'],
+    );
+}
 
 export function heroIsPolymorphed(state = game) {
     const u = state.u;

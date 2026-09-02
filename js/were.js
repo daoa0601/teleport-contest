@@ -13,11 +13,9 @@ import {
     MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    AMULET_OF_UNCHANGING, RIN_POLYMORPH_CONTROL,
-    RIN_PROTECTION_FROM_SHAPE_CHANGERS,
-} from './object_data.js';
-import {
-    heroIsPolymorphed, heroMonsterForm, polymonHero, rehumanizeHero,
+    heroCanControlPolymorph, heroHasProtectionFromShapeChangers,
+    heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero,
+    rehumanizeHero,
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
@@ -49,13 +47,6 @@ const PM_WINTER_WOLF = 24;
 const PM_HUMAN_WERERAT = 261;
 const PM_HUMAN_WEREJACKAL = 262;
 const PM_HUMAN_WEREWOLF = 263;
-
-function wornPropertyObject(state, otyp, slots) {
-    return slots.some(slot => {
-        const object = state[slot] || state.u?.[slot];
-        return object?.otyp === otyp && object.worn !== false;
-    });
-}
 
 function summonedWereAlly(form, random) {
     if (form === PM_WERERAT || form === PM_HUMAN_WERERAT) {
@@ -111,39 +102,12 @@ export async function useHeroWereSummon({
     return { used: true, spentTime: true, helpers };
 }
 
-export function heroHasPolymorphControl(state = game) {
-    return !!(state.u?.polymorphControl || state.polymorphControl)
-        || wornPropertyObject(
-            state, RIN_POLYMORPH_CONTROL, ['uleft', 'uright'],
-        );
-}
-
-export function heroIsUnchanging(state = game) {
-    return !!(state.u?.unchanging || state.unchanging)
-        || wornPropertyObject(state, AMULET_OF_UNCHANGING, ['uamul']);
-}
-
-function heroIsUnaware(state) {
-    return !!(state.u?.unaware || state.unaware
-        || state._helplessReason === 'unconscious from rotten food'
-        || state._helplessReason === 'sleeping off a magical draught');
-}
-
-function heroIsStunned(state) {
-    return !!(state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0);
-}
-
 function lycanthropeBeastMnum(state) {
     const mnum = state.u?.ulycn;
     if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         return null;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     return (flags & M2_WERE) && !(flags & M2_HUMAN) ? mnum : null;
-}
-
-function controllableWereChange(state) {
-    return heroHasPolymorphControl(state)
-        && !heroIsStunned(state) && !heroIsUnaware(state);
 }
 
 function beastFormName(beast) {
@@ -181,7 +145,7 @@ export async function applyHeroWaterVaporChange({
         const unchanging = heroIsUnchanging(state);
         const nearbyThreat = !unchanging
             && threateningMonsterNearby(state);
-        const controllable = controllableWereChange(state);
+        const controllable = heroCanControlPolymorph(state);
         let remain = false;
         if (!unchanging && !nearbyThreat && controllable) {
             remain = await queryControlledWereChange(
@@ -216,7 +180,7 @@ export async function applyHeroWaterVaporChange({
         && u.umonnum !== beast) {
         if (heroIsUnchanging(state))
             return { kind: 'blocked', changed: false };
-        if (controllableWereChange(state)) {
+        if (heroCanControlPolymorph(state)) {
             const name = beastFormName(beast);
             const article = /^[aeiou]/iu.test(name) ? 'an' : 'a';
             const accepted = await queryControlledWereChange(
@@ -253,7 +217,7 @@ export async function purifyHeroLycanthropy({
 
     const unchanging = heroIsUnchanging(state);
     const nearbyThreat = !unchanging && threateningMonsterNearby(state);
-    const controllable = controllableWereChange(state);
+    const controllable = heroCanControlPolymorph(state);
     let remain = false;
     if (!unchanging && !nearbyThreat && controllable) {
         remain = await queryControlledWereChange(
@@ -276,14 +240,6 @@ export async function purifyHeroLycanthropy({
 
     if (!hero.mtimedone) hero.mtimedone = 200 + rn2(200);
     return { cured: true, changed: false };
-}
-
-export function heroHasProtectionFromShapeChangers(state = game) {
-    if (state.u?.protectionFromShapeChangers
-        || state.protectionFromShapeChangers) return true;
-    return [state.uleft, state.uright, state.u?.uleft, state.u?.uright]
-        .some(object => object?.otyp === RIN_PROTECTION_FROM_SHAPE_CHANGERS
-            && object.worn !== false);
 }
 
 export function isWereMonster(monster) {

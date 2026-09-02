@@ -111,9 +111,9 @@ import {
 } from './teleport_rules.js';
 import { applyMonsterRustTrap, burnArmorByFire } from './trap.js';
 import {
-    heroHasProtectionFromShapeChangers, isHumanWereMonster, isWereMonster,
-    transformWereMonster,
+    isHumanWereMonster, isWereMonster, transformWereMonster,
 } from './were.js';
+import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import {
     A_CHA, A_DEX, A_STR,
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
