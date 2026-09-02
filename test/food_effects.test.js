@@ -2,27 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { A_DEX, A_STR } from '../js/const.js';
+import { A_DEX, A_STR, SICK_VOMITABLE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
-    APPLE, CARROT, EGG, EUCALYPTUS_LEAF, FORTUNE_COOKIE,
+    APPLE, CARROT, CORPSE, EGG, EUCALYPTUS_LEAF, FORTUNE_COOKIE,
     LUMP_OF_ROYAL_JELLY, SPRIG_OF_WOLFSBANE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
-import { carriedObject } from './support/game-objects.js';
+import { knownInventoryObject } from './support/game-objects.js';
 import { installHumanWerewolfHero } from './support/hero-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 test('eating a carrot clears temporary blindness', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.u.blindTurns = 12;
     game.u.ucreamed = 0;
     syncBlindness(game);
-    const carrot = carriedObject(CARROT, { age: game.moves });
-    game.inventory = [carrot];
+    const carrot = knownInventoryObject(CARROT, { age: game.moves });
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -34,16 +32,14 @@ test('eating a carrot clears temporary blindness', async () => {
 
 test('eating an uncursed eucalyptus leaf cures illness and nausea',
     async () => {
-        freshWeaponArena();
-        initRng(45300n);
+        freshObjectRoom({ gameplaySeed: 45300n });
         game.u.sick = true;
         game.u.sickTurns = 18;
         game.u.vomiting = true;
         game.u.vomitingTurns = 9;
-        const leaf = carriedObject(EUCALYPTUS_LEAF, {
+        const leaf = knownInventoryObject(EUCALYPTUS_LEAF, {
             age: game.moves,
         });
-        game.inventory = [leaf];
         pushKey('a');
         pushKey(' ');
 
@@ -57,13 +53,11 @@ test('eating an uncursed eucalyptus leaf cures illness and nausea',
     });
 
 test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     installHumanWerewolfHero({ beast: true });
-    const wolfsbane = carriedObject(SPRIG_OF_WOLFSBANE, {
+    const wolfsbane = knownInventoryObject(SPRIG_OF_WOLFSBANE, {
         age: game.moves,
     });
-    game.inventory = [wolfsbane];
     pushKey('a');
     pushKey(' ');
 
@@ -76,13 +70,11 @@ test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
 });
 
 test('eating a cockatrice egg starts petrification', async () => {
-    freshWeaponArena();
-    initRng(45300n);
-    const egg = carriedObject(EGG, {
+    freshObjectRoom({ gameplaySeed: 45300n });
+    const egg = knownInventoryObject(EGG, {
         age: game.moves,
         corpsenm: 10,
     });
-    game.inventory = [egg];
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -93,18 +85,16 @@ test('eating a cockatrice egg starts petrification', async () => {
 });
 
 test('eating royal jelly strengthens and heals the hero', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.u.uhp = 5;
     game.u.uhpmax = 40;
     game.u._woundedLegTurns = 12;
     game.u._woundedLegSide = 'left';
     game.u.acurr.a[A_DEX]--;
     const strength = game.u.acurr.a[A_STR];
-    const jelly = carriedObject(LUMP_OF_ROYAL_JELLY, {
+    const jelly = knownInventoryObject(LUMP_OF_ROYAL_JELLY, {
         age: game.moves,
     });
-    game.inventory = [jelly];
     pushKeys('a   ');
 
     await rhack('e'.charCodeAt(0));
@@ -116,13 +106,12 @@ test('eating royal jelly strengthens and heals the hero', async () => {
 });
 
 test('eating a cursed apple puts the hero to sleep', async () => {
-    freshWeaponArena();
-    initRng(45300n);
-    const apple = carriedObject(APPLE, {
+    freshObjectRoom({ gameplaySeed: 45300n });
+    const apple = knownInventoryObject(APPLE, {
         age: game.moves,
         cursed: true,
     });
-    game.inventory = [apple];
+    initRng(45300n);
     pushKeys('a  ');
 
     await rhack('e'.charCodeAt(0));
@@ -134,14 +123,12 @@ test('eating a cursed apple puts the hero to sleep', async () => {
 });
 
 test('reading a fortune cookie grants nutrition and literacy', async () => {
-    freshWeaponArena();
-    initRng(45300n);
+    freshObjectRoom({ gameplaySeed: 45300n });
     game.u.uhunger = 900;
     game.u.uconduct = {};
-    const cookie = carriedObject(FORTUNE_COOKIE, {
+    const cookie = knownInventoryObject(FORTUNE_COOKIE, {
         age: game.moves,
     });
-    game.inventory = [cookie];
     pushKeys('a    ');
 
     await rhack('e'.charCodeAt(0));
@@ -149,4 +136,24 @@ test('reading a fortune cookie grants nutrition and literacy', async () => {
     assert.equal(game.u.uhunger, 940);
     assert.equal(game.u.uconduct.literate, 1);
     assert.equal(game.inventory.includes(cookie), false);
+});
+
+test('a tainted corpse is consumed and starts fatal sickness', async () => {
+    freshObjectRoom({ gameplaySeed: 45300n });
+    game.moves = 1000;
+    const corpse = knownInventoryObject(CORPSE, {
+        age: 1,
+        corpsenm: 70,
+        name: 'goblin corpse',
+    });
+    pushKey('a');
+
+    await rhack('e'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(corpse), false);
+    assert.equal(!!game._occupation, false);
+    assert.ok(game.u.sickTurns >= 10);
+    assert.ok(game.u.sickTurns <= 19);
+    assert.ok(game.u.sickType & SICK_VOMITABLE);
+    assert.match(game._pending_message, /tainted/);
 });

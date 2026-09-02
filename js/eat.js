@@ -2,7 +2,7 @@
 // C ref: eat.c.
 
 import { adjustHeroAlignment } from './alignment.js';
-import { A_STR } from './const.js';
+import { A_STR, SICK_VOMITABLE } from './const.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
@@ -12,7 +12,7 @@ import { inventoryItemDescription } from './invent.js';
 import { nextIdent } from './ident.js';
 import { getRumor } from './mklev.js';
 import {
-    cureHeroSickness, cureHeroVomiting,
+    cureHeroSickness, cureHeroVomiting, heroIsSick, startHeroSickness,
 } from './hero_illness.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import {
@@ -32,9 +32,12 @@ import {
 } from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
-import { PM_GREEN_SLIME, startHeroSliming } from './slime.js';
 import {
-    eatPetrifyingEgg, tastePetrifyingFlesh,
+    heroCanBeSlimed, PM_GREEN_SLIME, startHeroSliming,
+} from './slime.js';
+import {
+    eatPetrifyingEgg, heroWouldPetrifyFromFlesh,
+    tastePetrifyingFlesh,
 } from './stoning.js';
 import { purifyHeroLycanthropy } from './were.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
@@ -270,6 +273,35 @@ function normalCorpseMeal(corpse, corpseName) {
         rotted = Math.trunc(((game.moves ?? 1) - age) / (10 + rn2(20)));
         if (corpse.cursed) rotted += 2;
         else if (corpse.blessed) rotted -= 2;
+    }
+
+    const stoneable = heroWouldPetrifyFromFlesh(mnum, game);
+    const slimeable = mnum === PM_GREEN_SLIME && heroCanBeSlimed(game);
+    if (!glob && !stoneable && !slimeable && rotted > 5) {
+        const foodKind = MONSTER_SYMBOL[mnum] === S_FUNGUS
+            ? 'fungoid vegetation'
+            : vegetarianCorpse(mnum) ? 'protoplasm' : 'meat';
+        const sickResistance = !!(
+            game.u?.sickResistance || game.u?.sick_resistance
+        );
+        let sicknessTurns = null;
+        if (!sickResistance) {
+            sicknessTurns = rn1(10, 10);
+            if (heroIsSick(game) && sicknessTurns > game.u.sickTurns) {
+                sicknessTurns = game.u.sickTurns > 1
+                    ? game.u.sickTurns - 1 : 1;
+            }
+        }
+        return {
+            object: corpse,
+            tainted: true,
+            tasteMessage: `Ulch - that ${foodKind} was tainted!`,
+            sicknessTurns,
+            sicknessCause: `rotted ${corpseName}`,
+            followupMessage: sickResistance
+                ? "It doesn't seem at all sickening, though..."
+                : '(It must have died too long ago to be safe to eat.)',
+        };
     }
 
     const [speciesWeight = 0, speciesNutrition = 0]
@@ -574,6 +606,25 @@ async function beginCorpseMeal(corpse, floorPile = null) {
         : `${MONSTER_NAME[corpse.corpsenm] || 'monster'} corpse`);
     const conductMessage = recordFoodConduct(corpse, corpse.corpsenm);
     const meal = normalCorpseMeal(corpse, corpseName);
+    if (meal.tainted) {
+        let sicknessMessage = null;
+        if (meal.sicknessTurns !== null) {
+            const sickness = startHeroSickness({
+                state: game,
+                turns: meal.sicknessTurns,
+                cause: meal.sicknessCause,
+                type: SICK_VOMITABLE,
+            });
+            sicknessMessage = sickness.message;
+        }
+        game._pending_message = [
+            conductMessage, meal.tasteMessage,
+            sicknessMessage, meal.followupMessage,
+        ].filter(Boolean).join('  ');
+        consumeTouchedFood(corpse, floorPile);
+        game.context.move = 1;
+        return;
+    }
     if (meal.poisonBranch) applyCorpsePoisonDamage(meal);
     if (meal.illnessDamage) {
         game.u.uhp = Math.max(0,

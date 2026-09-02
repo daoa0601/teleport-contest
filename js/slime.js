@@ -49,6 +49,13 @@ function heroIsSlimeproof(state = game) {
         || heroIsNoncorporeal(state);
 }
 
+export function heroCanBeSlimed(state = game) {
+    const hero = state.u || {};
+    return !heroIsSliming(state)
+        && !hero.unchanging && !state.unchanging
+        && !heroIsSlimeproof(state);
+}
+
 export function heroIsSliming(state = game) {
     return (state.u?.slimedTurns ?? 0) > 0 || !!state.u?.slimed;
 }
@@ -59,9 +66,7 @@ export function startHeroSliming({
     killer = '',
 } = {}) {
     const hero = state.u || (state.u = {});
-    if (heroIsSliming(state)
-        || hero.unchanging || state.unchanging
-        || heroIsSlimeproof(state)) return false;
+    if (!heroCanBeSlimed(state)) return false;
     hero.slimedTurns = turns;
     hero.slimed = turns > 0;
     hero.slimeKiller = killer;

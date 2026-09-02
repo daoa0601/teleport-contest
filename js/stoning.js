@@ -33,8 +33,8 @@ export function fleshPetrifies(mnum) {
     return touchPetrifies(mnum) || mnum === PM_MEDUSA;
 }
 
-function heroResistsStoning() {
-    return !!(game.u?.stoneResistance || game.u?.stone_resistance);
+function heroResistsStoning(state = game) {
+    return !!(state.u?.stoneResistance || state.u?.stone_resistance);
 }
 
 export function heroIsPetrifying(state = game) {
@@ -145,15 +145,24 @@ export async function advanceHeroPetrification({
     return { active: false, died: !!died, turns: 0 };
 }
 
-function heroCanBecomeStoneGolem() {
-    const form = game.u?.umonnum;
-    const stoneGolemGenocided = !!(
-        (game.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD
-    );
-    return heroIsPolymorphed(game)
+function heroPolymorphsWhenStoned(state = game) {
+    const form = state.u?.umonnum;
+    return heroIsPolymorphed(state)
         && MONSTER_SYMBOL[form] === S_GOLEM
-        && form !== PM_STONE_GOLEM
-        && !stoneGolemGenocided;
+        && form !== PM_STONE_GOLEM;
+}
+
+function heroCanBecomeStoneGolem(state = game) {
+    const stoneGolemGenocided = !!(
+        (state.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD
+    );
+    return heroPolymorphsWhenStoned(state) && !stoneGolemGenocided;
+}
+
+export function heroWouldPetrifyFromFlesh(mnum, state = game) {
+    return fleshPetrifies(mnum)
+        && !heroResistsStoning(state)
+        && !heroPolymorphsWhenStoned(state);
 }
 
 function corpseWithArticle(object) {

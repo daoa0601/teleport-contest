@@ -179,6 +179,9 @@ import {
 import { polymonHero, rehumanizeHero } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
+    advanceHeroSickness, heroIsSick,
+} from './hero_illness.js';
+import {
     advanceHeroSliming, clearHeroSliming,
     finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
 } from './slime.js';
@@ -1755,6 +1758,28 @@ function finishInitialTurnMaintenanceAfterSlime({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
     prayerTimeoutFreeze,
 }) {
+    if (!prayerTimeoutFreeze && heroIsSick(game)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'fatal sickness requires live turn maintenance',
+            );
+        }
+        return {
+            deferredSicknessTimeout: true,
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+            prayerTimeoutFreeze,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterSickness({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterSickness({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
     if (!prayerTimeoutFreeze && (game.u?.stunnedTurns ?? 0) > 0) {
         const remaining = game.u.stunnedTurns - 1;
         if (remaining === 0) {
@@ -2089,6 +2114,15 @@ async function initialTurnMaintenanceWithTty(
         });
         if (game.program_state?.gameover) return phase.moveAmount;
         phase = finishInitialTurnMaintenanceAfterSlime(phase);
+    }
+    while (phase?.deferredSicknessTimeout) {
+        await advanceHeroSickness({
+            state: game,
+            publish: queueTurnMessage,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return phase.moveAmount;
+        phase = finishInitialTurnMaintenanceAfterSickness(phase);
     }
     while (phase?.deferredTimeoutMessage) {
         await queueTurnMessage(phase.message);

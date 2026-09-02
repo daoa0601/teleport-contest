@@ -6,8 +6,10 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
+import { startHeroSickness } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
+import { carriedObject } from './support/game-objects.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function freshTurnArena() {
@@ -34,21 +36,10 @@ async function runUntilInput(inputGate, maxCycles) {
 test('helplessness advances through live global turns',
     async () => {
         const inputGate = freshTurnArena();
-        game.inventory = [{
-            otyp: POT_PARALYSIS,
-            invlet: 'a',
+        game.inventory = [carriedObject(POT_PARALYSIS, {
             name: 'potion of paralysis',
             plural: 'potions of paralysis',
-            class: 'Potions',
-            oclass: 8,
-            quan: 1,
-            quantity: 1,
-            where: 'inventory',
-            cursed: false,
-            blessed: false,
-            bknown: true,
-            dknown: true,
-        }];
+        })];
         pushKeys('qa');
 
         const returnedToInput = await runUntilInput(inputGate, 60);
@@ -135,6 +126,25 @@ test('petrification advances during an ordinary world turn', async () => {
 
     assert.equal(game.u.stonedTurns, 4);
     assert.match(game._pending_message, /You are slowing down\.$/);
+    pushKeys(' ');
+    await nextInput;
+});
+
+test('fatal sickness advances during an ordinary world turn', async () => {
+    const inputGate = freshTurnArena();
+    startHeroSickness({
+        state: game,
+        turns: 7,
+        cause: 'rotted goblin corpse',
+    });
+    pushKeys('h');
+
+    await moveloop_core();
+    const nextInput = moveloop_core();
+    await inputGate.waitUntilBlocked();
+
+    assert.equal(game.u.sickTurns, 6);
+    assert.match(game._pending_message, /Your sickness feels worse\.$/);
     pushKeys(' ');
     await nextInput;
 });

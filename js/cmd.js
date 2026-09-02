@@ -53,7 +53,9 @@ import {
     castKnownSpell, continueSpellbookStudy, docast, dovspell,
 } from './spell.js';
 import { applyPotionLikeInvisibility } from './hero_invisibility.js';
-import { cureHeroIllness } from './hero_illness.js';
+import {
+    cureHeroIllness, startHeroSickness,
+} from './hero_illness.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -309,7 +311,7 @@ import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS,
+    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE,
     BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
     FOUNTAIN, SINK,
@@ -6322,11 +6324,14 @@ async function wizIntrinsic() {
     // therefore begin from an empty topline, not "# wizintrinsic".
     game._pending_message = '';
     game._retained_message = '';
-    const timeoutMessages = [];
+    const propertyMessages = [];
+    const queuePropertyMessage = (property, message) => {
+        propertyMessages.push({ property, message });
+    };
     if (selections.includes('invulnerable')) {
         const oldTimeout = game.u.invulnerableTurns ?? 0;
         game.u.invulnerableTurns = oldTimeout + 30;
-        timeoutMessages.push(
+        queuePropertyMessage('invulnerable',
             `Timeout for invulnerable ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6336,7 +6341,7 @@ async function wizIntrinsic() {
         const oldTimeout = game.u.veryFastTurns ?? 0;
         game.u.veryFastTurns = oldTimeout + 30;
         game.u.veryFast = true;
-        timeoutMessages.push(
+        queuePropertyMessage('very fast',
             `Timeout for very fast ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6346,7 +6351,7 @@ async function wizIntrinsic() {
         const oldTimeout = game.u.halfSpellDamageTurns ?? 0;
         game.u.halfSpellDamageTurns = oldTimeout + 30;
         game.u.halfSpellDamage = true;
-        timeoutMessages.push(
+        queuePropertyMessage('half spell damage',
             `Timeout for half spell damage ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6356,7 +6361,7 @@ async function wizIntrinsic() {
         const oldTimeout = game.u.halfPhysicalDamageTurns ?? 0;
         game.u.halfPhysicalDamageTurns = oldTimeout + 30;
         game.u.halfPhysicalDamage = true;
-        timeoutMessages.push(
+        queuePropertyMessage('half physical damage',
             `Timeout for half physical damage ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6366,7 +6371,7 @@ async function wizIntrinsic() {
         const oldTimeout = game.u.shockResistanceTurns ?? 0;
         game.u.shockResistanceTurns = oldTimeout + 30;
         game.u.shockResistance = true;
-        timeoutMessages.push(
+        queuePropertyMessage('shock resistance',
             `Timeout for shock resistance ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6376,7 +6381,7 @@ async function wizIntrinsic() {
         const oldTimeout = game.u.magicResistanceTurns ?? 0;
         game.u.magicResistanceTurns = oldTimeout + 30;
         game.u.antimagic = true;
-        timeoutMessages.push(
+        queuePropertyMessage('magic resistance',
             `Timeout for magic resistance ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
@@ -6387,11 +6392,22 @@ async function wizIntrinsic() {
         game.u.invisibleTurns = oldTimeout + 30;
         game.u.invisible = true;
         game.u.invis = true;
-        timeoutMessages.push(
+        queuePropertyMessage('invisible',
             `Timeout for invisible ${
                 oldTimeout ? 'increased by' : 'set to'
             } 30.`,
         );
+    }
+    if (selections.includes('fatally sick')) {
+        const oldTimeout = game.u.sickTurns ?? 0;
+        const sickness = startHeroSickness({
+            state: game,
+            turns: oldTimeout || 30,
+            cause: '#wizintrinsic',
+            type: rn2(2) === 0 ? SICK_VOMITABLE : SICK_NONVOMITABLE,
+        });
+        if (sickness.message)
+            queuePropertyMessage('fatally sick', sickness.message);
     }
     if (selections.includes('blinded')) {
         const oldTimeout = game.u.blindTurns ?? 0;
@@ -6450,18 +6466,15 @@ async function wizIntrinsic() {
         await docrtRecalc();
         return;
     }
-    if (timeoutMessages.length) {
+    if (propertyMessages.length) {
         // wiz_intrinsic() walks select_menu() results in global property
         // order and calls pline() once per selection.  Short lines compose on
         // tty's topline; an overflowing later line pages the earlier one.
         // The final docrt() then forces whichever line remains.
-        timeoutMessages.sort((left, right) => {
-            const propertyIndex = message =>
-                WIZARD_INTRINSIC_PROPERTIES.findIndex(name =>
-                    message.startsWith(`Timeout for ${name} `));
-            return propertyIndex(left) - propertyIndex(right);
-        });
-        for (const message of timeoutMessages)
+        propertyMessages.sort((left, right) =>
+            WIZARD_INTRINSIC_PROPERTIES.indexOf(left.property)
+            - WIZARD_INTRINSIC_PROPERTIES.indexOf(right.property));
+        for (const { message } of propertyMessages)
             await plineWithContinuation(message);
         await flushPendingTopline();
     }
