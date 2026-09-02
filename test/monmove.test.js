@@ -11,9 +11,13 @@ import {
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
-import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
+import {
+    OBJECT_NAMES, ROCK, SCR_TELEPORTATION,
+} from '../js/object_data.js';
 import { roles } from '../js/roles.js';
-import { carriedObject, looseObject } from './support/game-objects.js';
+import {
+    carriedObject, knownObject, looseObject,
+} from './support/game-objects.js';
 import {
     addMonster, addPet, equipMonsterObject, liveMonster,
 } from './support/monsters.js';
@@ -170,6 +174,29 @@ test('a land monster in lava burns and drops what it carried', async () => {
     assert.equal(level.monsters.includes(ant), false);
     assert.equal(level.objects[12][10].includes(rock), true);
 });
+
+test('a monster which survives lava burns vulnerable carried items',
+    async () => {
+        const level = freshObjectRoom({ recalculateVision: false });
+        level.at(12, 10).typ = LAVAPOOL;
+        const scroll = knownObject(SCR_TELEPORTATION, {
+            where: 'minvent',
+        });
+        const fireAnt = addMonster({
+            species: 'fire ant',
+            x: 12,
+            y: 10,
+            inventory: [scroll],
+        });
+
+        await resolveMonsterLiquid(fireAnt, game, {
+            finishDeath: finishMonsterLiquidDeath,
+            random: range => range - 1,
+        });
+
+        assert.equal(fireAnt.mhp, 19);
+        assert.deepEqual(fireAnt.minvent, []);
+    });
 
 test('a gremlin can multiply in a fountain and dry it up', async () => {
     const level = freshObjectRoom();

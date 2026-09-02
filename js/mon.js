@@ -27,6 +27,7 @@ import {
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
+import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
 import { cansee } from './vision.js';
 
@@ -206,13 +207,17 @@ export function rollMonsterPoolReaction(
     return { kind: 'drown' };
 }
 
+function monsterLikesLava(monster) {
+    return monster?.mnum === PM_FIRE_ELEMENTAL
+        || monster?.mnum === PM_SALAMANDER;
+}
+
 export function monsterLavaReaction(monster, state = game) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !IS_LAVA(location.typ)) return null;
 
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const likesLava = monster.mnum === PM_FIRE_ELEMENTAL
-        || monster.mnum === PM_SALAMANDER;
+    const likesLava = monsterLikesLava(monster);
     if (monsterInAir(monster, state) || (flags & M1_CLING) || likesLava)
         return { kind: 'safe' };
     const fireResistant = !!(
@@ -441,6 +446,17 @@ export async function resolveMonsterLiquid(
                 if (!saved?.survived)
                     return finishDeath(monster, state, random, calls, false);
             }
+            if (monsterInAir(monster, state) || monsterLikesLava(monster))
+                return { survived: true };
+            await fireDamageChain(
+                monster.minvent || monster.inventory || [],
+                {
+                    carrier: monster,
+                    publish: announce,
+                    random,
+                    state,
+                },
+            );
             const relocation = randomMonsterRelocation(
                 monster, state, calls, random,
             );
