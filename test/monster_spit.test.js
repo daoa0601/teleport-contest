@@ -5,7 +5,6 @@ import {
     beginMonsterSpitAttack, finishHeroSpitHit, resolveMonsterSpitFlight,
 } from '../js/monster_spit.js';
 import { W_AMUL, W_ARMH } from '../js/const.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
@@ -14,26 +13,15 @@ import { quietMonsterActionRng } from '../js/monmove.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addMonster, addMonsterToLevel, addPet } from './support/monsters.js';
+import { addMonsterToLevel } from './support/monsters.js';
 import {
     freshRangedCombatRoom, rangedMonster, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 
 test('a black naga can spit acid at another monster', () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const naga = addMonster({
-        species: 'black naga',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-    });
-    const target = addMonster({
-        species: 'jackal',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-    });
+    const naga = addMonsterToLevel(rangedMonster('black naga'));
+    const target = addMonsterToLevel(rangedTarget());
 
     const spit = beginMonsterSpitAttack(naga, target.mx, target.my, {
         random: () => 0,
@@ -49,19 +37,8 @@ test('a black naga can spit acid at another monster', () => {
 
 test('acid venom does not hurt an acid-resistant monster', () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const naga = addMonster({
-        species: 'black naga',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-    });
-    const dragon = addMonster({
-        species: 'yellow dragon',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-    });
+    const naga = addMonsterToLevel(rangedMonster('black naga'));
+    const dragon = addMonsterToLevel(rangedTarget('yellow dragon'));
 
     const spit = beginMonsterSpitAttack(naga, dragon.mx, dragon.my, {
         random: () => 0,
@@ -76,19 +53,8 @@ test('acid venom does not hurt an acid-resistant monster', () => {
 
 test('blinding venom cannot blind an eyeless monster', () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const cobra = addMonster({
-        species: 'cobra',
-        x: 9,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-    });
-    const cube = addMonster({
-        species: 'gelatinous cube',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-    });
+    const cobra = addMonsterToLevel(rangedMonster('cobra'));
+    const cube = addMonsterToLevel(rangedTarget('gelatinous cube'));
 
     const spit = beginMonsterSpitAttack(cobra, cube.mx, cube.my, {
         random: () => 0,
@@ -108,7 +74,6 @@ test('life saving rescues the hero from fatal acid venom', async () => {
         heroY: 10,
         gameplaySeed: 1n,
     });
-    game.nhDisplay = new GameDisplay(null);
     const amulet = wearHeroObject(
         knownInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
@@ -173,20 +138,10 @@ test('a tame black naga spits at a distant monster instead of moving', () => {
 
 test('a cobra can spit back after a ranged attack', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12, gameplaySeed: 7n });
-    const pet = addPet({
-        species: 'orc',
-        x: 9,
-        y: 10,
+    const pet = addMonsterToLevel(rangedPet('orc', { edog: {} }));
+    const cobra = addMonsterToLevel(rangedTarget('cobra', {
         hitPoints: 30,
-        level: 8,
-    });
-    const cobra = addMonster({
-        species: 'cobra',
-        x: 12,
-        y: 10,
-        hitPoints: 30,
-        level: 8,
-    });
+    }));
 
     await resolveRangedRetaliation(pet, cobra, game, {
         publish: async () => {},

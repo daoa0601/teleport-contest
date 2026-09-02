@@ -10,7 +10,6 @@ import {
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
 import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
-import { GameDisplay } from '../js/game_display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
@@ -106,7 +105,6 @@ test('a poisoned dart adds poison damage to a susceptible monster', () => {
 
 test('a cream pie blinds a monster without hurting it', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    game.nhDisplay = new GameDisplay(null);
     const pie = carriedObject(CREAM_PIE);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [pie],
@@ -143,7 +141,6 @@ test('a cockatrice egg turns an intervening monster into a statue',
             gameplaySeed: 1n,
             recalculateVision: true,
         });
-        game.nhDisplay = new GameDisplay(null);
         const egg = carriedObject(EGG, {
             corpsenm: 10,
             known: true,
@@ -200,7 +197,6 @@ test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
             gameplaySeed: 1n,
             recalculateVision: true,
         });
-        game.nhDisplay = new GameDisplay(null);
         const egg = carriedObject(EGG, {
             corpsenm: 10,
             known: true,
@@ -262,7 +258,6 @@ test('poison resistance stops the poison on a thrown dart', async () => {
         gameplaySeed: 1n,
         recalculateVision: true,
     });
-    game.nhDisplay = new GameDisplay(null);
     const dart = carriedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dart],
@@ -296,7 +291,6 @@ test('deadly poison on a thrown dart kills the monster', async () => {
         gameplaySeed: 1n,
         recalculateVision: true,
     });
-    game.nhDisplay = new GameDisplay(null);
     const dart = carriedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dart],
@@ -468,7 +462,6 @@ test('impact life saving limits thrown poison to strength loss', async () => {
         heroY: 10,
         gameplaySeed: 1n,
     });
-    game.nhDisplay = new GameDisplay(null);
     const amulet = wearHeroObject(
         knownInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
@@ -532,7 +525,6 @@ test('a hostile rogue throws its full dagger volley at the hero', () => {
 
 test('life saving lets a hostile monster finish its dagger volley', async () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    game.nhDisplay = new GameDisplay(null);
     const amulet = wearHeroObject(
         knownInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
@@ -621,7 +613,6 @@ test('a monster life-saves before the next dagger is thrown', async () => {
 
 test('a missed intervening monster does not hide the later hit', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    game.nhDisplay = new GameDisplay(null);
     const dagger = carriedObject(DAGGER);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dagger],
