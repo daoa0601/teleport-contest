@@ -55,6 +55,37 @@ test('the Sceptre of Might doubles damage against opposing alignments', () => {
     assert.equal(artifactDamageBonus(sceptre, angel, 7, maximumRoll), 0);
 });
 
+test('Frost Brand bonuses stop at cold-resistant monsters', () => {
+    const frostBrand = artifactObject('Frost Brand');
+    const jackal = liveMonster({ species: 'jackal' });
+    const winterWolf = liveMonster({ species: 'winter wolf' });
+
+    assert.equal(artifactToHitBonus(frostBrand, jackal, maximumRoll), 5);
+    assert.equal(
+        artifactDamageBonus(frostBrand, jackal, 7, maximumRoll),
+        7,
+    );
+    assert.equal(artifactToHitBonus(frostBrand, winterWolf, maximumRoll), 0);
+    assert.equal(
+        artifactDamageBonus(frostBrand, winterWolf, 7, maximumRoll),
+        0,
+    );
+});
+
+test('an artifact defense blocks the matching special attack', () => {
+    const frostBrand = artifactObject('Frost Brand');
+    const jackal = liveMonster({
+        species: 'jackal',
+        weapon: artifactObject('Frost Brand'),
+    });
+
+    assert.equal(artifactToHitBonus(frostBrand, jackal, maximumRoll), 0);
+    assert.equal(
+        artifactDamageBonus(frostBrand, jackal, 7, maximumRoll),
+        0,
+    );
+});
+
 test('Grimtooth rejects an elf hero', () => {
     game.flags = { female: false };
     game.urace = { mnum: 264 };

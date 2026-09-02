@@ -2,7 +2,8 @@
 // C refs: dothrow.c thitmonst() and uhitm.c hmon(HMON_APPLIED).
 
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { artifactDamageBonus, artifactToHitBonus } from './artifacts.js';
+import { applyArtifactHitToMonster } from './artifact_hit.js';
+import { artifactToHitBonus } from './artifacts.js';
 import { A_DEX, A_STR } from './const.js';
 import {
     canProjectMonster, canSeeMonster, plineWithContinuation,
@@ -105,16 +106,29 @@ function appliedHitThreshold(monster, weapon, state) {
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
 
-function rollAppliedDamage(monster, weapon, state) {
+async function rollAppliedDamage(monster, weapon, state) {
     let damage = rollPhysicalWeaponDamage(weapon, monster);
     const trainsSkill = damage > 1;
-    damage += artifactDamageBonus(weapon, monster, damage);
+    const artifactHit = await applyArtifactHitToMonster(
+        weapon, monster, damage, {
+            state,
+            visible: canProjectMonster(monster, monster.mx, monster.my),
+            describeTarget: () => targetObject(monster, state) || 'it',
+            describeCarrier: () => targetName(monster, state),
+            publish: plineWithContinuation,
+        },
+    );
+    damage = artifactHit.damage;
     damage += (state.u?.udaminc ?? state.udaminc ?? 0)
         + strengthDamageBonus(currentAttribute(A_STR, state))
         + weaponSkillDamageBonus(
             state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0),
         );
-    return { damage: Math.max(1, damage), trainsSkill };
+    return {
+        damage: Math.max(1, damage),
+        trainsSkill,
+        specialMessage: artifactHit.specialMessage,
+    };
 }
 
 function recordWeaponHit(weapon, damage, state) {
@@ -174,7 +188,7 @@ export async function hitMonsterWithAppliedWeapon(
     }
 
     exerciseAttribute(A_DEX, true, state);
-    const { damage, trainsSkill } = rollAppliedDamage(
+    const { damage, trainsSkill, specialMessage } = await rollAppliedDamage(
         monster, weapon, state,
     );
     recordWeaponHit(weapon, damage, state);
@@ -186,11 +200,13 @@ export async function hitMonsterWithAppliedWeapon(
 
     if (damage === 0) {
         const namedTarget = targetObject(monster, state);
-        await plineWithContinuation(
-            `The ${weaponName} passes harmlessly through ${
-                namedTarget || 'it'
-            }.`,
-        );
+        if (!specialMessage) {
+            await plineWithContinuation(
+                `The ${weaponName} passes harmlessly through ${
+                    namedTarget || 'it'
+                }.`,
+            );
+        }
         await wakeAttackedMonster(monster);
         await applyProjectileObjectPassive(monster, weapon);
         return true;
@@ -203,9 +219,11 @@ export async function hitMonsterWithAppliedWeapon(
         const namedTarget = targetObject(monster, state);
         const punctuation = canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
-        await plineWithContinuation(
-            `The ${weaponName} hits ${namedTarget || 'it'}${punctuation}`,
-        );
+        if (!specialMessage) {
+            await plineWithContinuation(
+                `The ${weaponName} hits ${namedTarget || 'it'}${punctuation}`,
+            );
+        }
         await wakeAttackedMonster(monster);
         const fleeRoll = rn2(25);
         if (fleeRoll === 0

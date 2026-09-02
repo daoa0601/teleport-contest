@@ -153,8 +153,9 @@ import {
     objectStatePrefix, unseenObjectNoun,
 } from './objnam.js';
 import {
-    artifactById, artifactDamageBonus, artifactToHitBonus,
+    artifactById, artifactToHitBonus,
 } from './artifacts.js';
+import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
@@ -11057,9 +11058,16 @@ async function attackHostileMonster(monster, x, y, {
         );
     }
     const trainsWeapon = weaponDamage?.usesSkill && damage > 1;
-    if (weaponDamage?.usesArtifact) {
-        damage += artifactDamageBonus(attackWeapon, monster, damage);
-    }
+    const artifactHit = weaponDamage?.usesArtifact
+        ? await applyArtifactHitToMonster(attackWeapon, monster, damage, {
+            state: game,
+            visible: cansee(monster.mx, monster.my),
+            describeTarget: displayedMonsterObject,
+            describeCarrier: displayedMonsterName,
+            publish: plineWithContinuation,
+        })
+        : { damage, specialMessage: false };
+    damage = artifactHit.damage;
     const damageCanUseBonuses = damage > 0;
     if (trainsWeapon) {
         recordWeaponPractice(
@@ -11151,11 +11159,13 @@ async function attackHostileMonster(monster, x, y, {
     if (damage === 0 && monsterIsShade(monster)) {
         const weaponName = attackWeapon?.name
             || OBJECT_NAMES[attackWeapon?.otyp] || 'attack';
-        await plineWithContinuation(
-            `Your ${weaponName} passes harmlessly through ${
-                displayedMonsterObject()
-            }.`,
-        );
+        if (!artifactHit.specialMessage) {
+            await plineWithContinuation(
+                `Your ${weaponName} passes harmlessly through ${
+                    displayedMonsterObject()
+                }.`,
+            );
+        }
         await wakeMonsterAfterHit();
         if (primaryStrike) passiveContact(monster, true);
         return finishStrike();
@@ -11195,7 +11205,7 @@ async function attackHostileMonster(monster, x, y, {
         const hitPunctuation = game.flags?.verbose !== false
             && canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
-        if (!stagger.staggered) {
+        if (!stagger.staggered && !artifactHit.specialMessage) {
             await plineWithContinuation(
                 `You hit ${displayedMonsterObject()}${hitPunctuation}`,
             );

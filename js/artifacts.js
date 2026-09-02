@@ -5,14 +5,20 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { ARTIFACT_DATA } from './artifact_data.js';
+import { heroHasDrainResistance } from './armor.js';
 import { game } from './gstate.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     OBJECT_MATERIAL, OBJECT_NAMES,
 } from './object_data.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL,
+    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE,
+    MONSTER_SYMBOL,
 } from './monster_data.js';
+import {
+    monsterHasColdResistance, monsterHasDrainResistance,
+    monsterHasFireResistance, monsterHasShockResistance,
+} from './monster_resistance.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';
 
@@ -158,9 +164,82 @@ export function artifactExistCount() {
     return game._artifactExistCount ?? existenceSet().size;
 }
 
-function physicalAttackApplies(artifact, defender, hero = false) {
+function defendedByArtifact(artifact, damageType) {
+    return artifact?.defense === damageType;
+}
+
+function carriedArtifactDefends(inventory, damageType, state) {
+    return (inventory || []).some(object =>
+        artifactById(object?.oartifact, state)?.carriedDefense === damageType);
+}
+
+function artifactDefenseApplies(defender, damageType, hero, state) {
+    const weapon = hero
+        ? state.uwep || state.u?.uwep
+        : defender.weapon || defender.mw;
+    if (defendedByArtifact(
+        artifactById(weapon?.oartifact, state), damageType,
+    )) {
+        return true;
+    }
+    const inventory = hero
+        ? state.inventory
+        : defender.minvent || defender.inventory;
+    return carriedArtifactDefends(inventory, damageType, state);
+}
+
+function resistanceAttackApplies(
+    artifact, defender, { hero, random, state },
+) {
+    const damageType = artifact.attack.damageType;
+    if (artifactDefenseApplies(defender, damageType, hero, state))
+        return false;
+    if (hero) {
+        const heroState = state.u || {};
+        const currentForm = { mnum: heroSpecies(state) };
+        if (damageType === 'fire')
+            return !(heroState.fireResistance || heroState.fire_resistance
+                || monsterHasFireResistance(currentForm));
+        if (damageType === 'cold')
+            return !(heroState.coldResistance || heroState.cold_resistance
+                || monsterHasColdResistance(currentForm));
+        if (damageType === 'shock')
+            return !(heroState.shockResistance || heroState.shock_resistance
+                || monsterHasShockResistance(currentForm));
+        if (damageType === 'life-drain')
+            return !(heroHasDrainResistance(state)
+                || monsterHasDrainResistance(currentForm)
+                || (Number.isInteger(heroState.ulycn)
+                    && heroState.ulycn >= 0));
+        if (damageType === 'stun') return !heroState.antimagic;
+        return false;
+    }
+    if (damageType === 'fire') return !monsterHasFireResistance(defender);
+    if (damageType === 'cold') return !monsterHasColdResistance(defender);
+    if (damageType === 'shock') return !monsterHasShockResistance(defender);
+    if (damageType === 'life-drain')
+        return !monsterHasDrainResistance(defender);
+    if (damageType === 'stun') {
+        if (defender.antimagic || defender.resistsMagic) return false;
+        const resistance = MONSTER_MAGIC_RESISTANCE[defender.mnum] ?? 0;
+        return random(100) >= resistance;
+    }
+    return false;
+}
+
+function artifactAttackApplies(
+    artifact,
+    defender,
+    { hero = false, random = rn2, state = game } = {},
+) {
     const attack = artifact?.attack;
-    if (!defender || attack?.damageType !== 'physical') return false;
+    if (!defender || !attack) return false;
+
+    if (attack.target.kind === 'resistance') {
+        return resistanceAttackApplies(
+            artifact, defender, { hero, random, state },
+        );
+    }
 
     const mnum = defender.mnum;
     switch (attack.target.kind) {
@@ -170,13 +249,13 @@ function physicalAttackApplies(artifact, defender, hero = false) {
         const flag = FLAG2_TARGETS[attack.target.value] ?? 0;
         return !!((MONSTER_FLAGS2[mnum] ?? 0) & flag)
             || (hero && attack.target.value === 'M2_WERE'
-                && Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0);
+                && Number.isInteger(state.u?.ulycn) && state.u.ulycn >= 0);
     }
     case 'symbol':
         return MONSTER_SYMBOL[mnum]
             === SYMBOL_TARGETS[attack.target.value];
     case 'alignment': {
-        const alignment = hero ? game.u?.ualign?.type
+        const alignment = hero ? state.u?.ualign?.type
             : defender.maligntyp ?? MONSTER_ALIGNMENT[mnum];
         if (hero) return alignment !== artifact.alignment;
         return alignment === -128
@@ -188,9 +267,11 @@ function physicalAttackApplies(artifact, defender, hero = false) {
 }
 
 // C weapon.c:hitval() calls spec_abon() before hitum() rolls its ordinary d20.
-export function artifactToHitBonus(object, defender, roll = rnd) {
-    const artifact = artifactById(object?.oartifact);
-    if (!physicalAttackApplies(artifact, defender)
+export function artifactToHitBonus(
+    object, defender, roll = rnd, { random = rn2, state = game } = {},
+) {
+    const artifact = artifactById(object?.oartifact, state);
+    if (!artifactAttackApplies(artifact, defender, { random, state })
         || !(artifact.attack.toHitDie > 0)) return 0;
     return roll(artifact.attack.toHitDie);
 }
@@ -200,19 +281,22 @@ export function artifactToHitBonus(object, defender, roll = rnd) {
 // are added later by hmon_hitmon_dmg_recalc(), so callers pass only dmgval().
 export function artifactDamageBonus(
     object, defender, baseWeaponDamage, roll = rnd,
+    { random = rn2, state = game } = {},
 ) {
-    const artifact = artifactById(object?.oartifact);
+    const artifact = artifactById(object?.oartifact, state);
     const applies = artifact?.name === 'Grimtooth'
-        || physicalAttackApplies(artifact, defender);
-    if (!applies || artifact.attack.damageType !== 'physical') return 0;
+        || artifactAttackApplies(artifact, defender, { random, state });
+    if (!applies) return 0;
     return artifact.attack.damageDie > 0
         ? roll(artifact.attack.damageDie)
         : Math.max(baseWeaponDamage, 1);
 }
 
-export function artifactDoublesWeaponDamage(object, defender) {
-    const artifact = artifactById(object?.oartifact);
-    return physicalAttackApplies(artifact, defender)
+export function artifactDoublesWeaponDamage(
+    object, defender, { random = rn2, state = game } = {},
+) {
+    const artifact = artifactById(object?.oartifact, state);
+    return artifactAttackApplies(artifact, defender, { random, state })
         && artifact.attack.damageDie === 0;
 }
 
@@ -227,8 +311,8 @@ export function artifactStrikesShade(object) {
 function artifactBaneApplies(artifact) {
     if (!['flag2', 'symbol', 'alignment']
         .includes(artifact?.attack?.target?.kind)) return false;
-    return physicalAttackApplies(
-        artifact, { mnum: heroSpecies(game) }, true,
+    return artifactAttackApplies(
+        artifact, { mnum: heroSpecies(game) }, { hero: true },
     );
 }
 

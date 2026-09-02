@@ -12,36 +12,21 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
-import { MONSTER_NAME, MONSTER_RESISTS } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
+import {
+    monsterHasColdResistance, monsterHasFireResistance,
+} from './monster_resistance.js';
 import { rehumanizeHero } from './polyself.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { clearHeroSliming } from './slime.js';
 
-const MR_FIRE = 0x01;
-const MR_COLD = 0x02;
 const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
 
 function insideExplosion(targetX, targetY, x, y) {
     return Math.abs(targetX - x) <= 1 && Math.abs(targetY - y) <= 1;
-}
-
-function resistanceBits(monster) {
-    return (MONSTER_RESISTS[monster?.mnum] ?? 0)
-        | (monster?.mextrinsics ?? 0)
-        | (monster?.mintrinsics ?? 0);
-}
-
-function monsterResistsFire(monster) {
-    return !!(resistanceBits(monster) & MR_FIRE)
-        || !!monster?.fireResistance || !!monster?.defendedFire;
-}
-
-function monsterResistsCold(monster) {
-    return !!(resistanceBits(monster) & MR_COLD)
-        || !!monster?.coldResistance || !!monster?.defendedCold;
 }
 
 async function elementalDamageFunctions() {
@@ -113,10 +98,10 @@ export async function createFireExplosion(x, y, damage, {
         });
 
         let directDamage = damage;
-        if (monsterResistsFire(monster)) {
+        if (monsterHasFireResistance(monster)) {
             directDamage = 0;
             await shieldeff(monster.mx, monster.my, state);
-        } else if (monsterResistsCold(monster)) {
+        } else if (monsterHasColdResistance(monster)) {
             directDamage *= 2;
         }
         monster.mhp = Math.max(
