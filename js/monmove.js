@@ -8,6 +8,13 @@ import { beginPetRangedAttack } from './dogmove.js';
 import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
+import {
+    clearThrownObject, MONSTER_POLEARMS, monsterVolleyCount,
+    monsterWieldedWeapon, objectTypeName, placeAndStackThrownObject,
+    placeThrownObject, projectileDamageAgainstHero,
+    RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
+    splitMonsterMissile,
+} from './monster_throw.js';
 import { sessionIsNight } from './monster_sound.js';
 export { sessionIsNight } from './monster_sound.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
@@ -17,7 +24,6 @@ import { loseExperienceLevel } from './exper.js';
 import {
     heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced,
 } from './armor.js';
-import { nextIdent } from './ident.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -139,7 +145,7 @@ import {
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     G_GONE, G_NOCORPSE,
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
-    NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED,
+    NEED_WEAPON, NO_WEAPON_WANTED,
     MM_NOWAIT, NOTONL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
     UNLOCKDOOR, VIBRATING_SQUARE,
     WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
@@ -178,8 +184,6 @@ const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
 const MR_SLEEP = 0x04;
 const M2_WANDER = 0x00800000;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
 const M2_GREEDY = 0x10000000;
@@ -459,61 +463,6 @@ function selectHandToHandWeapon(monster) {
     return best;
 }
 
-// C weapon.c:rwep[] order.  A melee weapon is not automatically a legal
-// missile: in particular, a soldier carrying only a short sword reaches
-// select_rwep() failure before lined_up() and its boulder-bypass RNG.
-const RANGED_WEAPON_PREFERENCE = [
-    'dwarvish spear', 'silver spear', 'elven spear', 'spear', 'orcish spear',
-    'javelin', 'shuriken', 'ya', 'silver arrow', 'elven arrow', 'arrow',
-    'orcish arrow', 'crossbow bolt', 'silver dagger', 'elven dagger',
-    'dagger', 'orcish dagger', 'knife', 'flint', 'rock', 'loadstone',
-    'luckstone', 'dart', 'cream pie',
-];
-
-const RANGED_LAUNCHERS = new Map([
-    ['ya', new Set(['yumi'])],
-    ['silver arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['elven arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['orcish arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['crossbow bolt', new Set(['crossbow'])],
-    ['flint', new Set(['sling'])],
-    ['rock', new Set(['sling'])],
-    ['loadstone', new Set(['sling'])],
-    ['luckstone', new Set(['sling'])],
-]);
-const MONSTER_POLEARMS = new Set([
-    'halberd', 'bardiche', 'spetum', 'bill-guisarme', 'voulge', 'ranseur',
-    'guisarme', 'glaive', 'lucern hammer', 'bec de corbin', 'fauchard',
-    'partisan', 'lance',
-]);
-
-function objectTypeName(object) {
-    return object?.name || OBJECT_NAMES[object?.otyp] || '';
-}
-
-function selectRangedWeapon(monster) {
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const carriedNames = new Set(inventory.map(objectTypeName));
-    for (const name of RANGED_WEAPON_PREFERENCE) {
-        const launcherNames = RANGED_LAUNCHERS.get(name);
-        if (launcherNames
-            && !Array.from(launcherNames).some(launcher =>
-                carriedNames.has(launcher))) continue;
-        const weapon = inventory.find(object => objectTypeName(object) === name
-            && !(name === 'loadstone' && object.cursed)
-            && !(object.artifact || object.oartifact));
-        if (weapon) return weapon;
-    }
-    return null;
-}
-
-function monsterWieldedWeapon(monster) {
-    return monster?.mw
-        || (monster?.minvent || monster?.inventory || [])
-            .find(object => object?.wielded);
-}
-
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
 // diggable destination while unarmed, but it must spend this action readying
 // the appropriate tool before a later turn can enter and excavate the square.
@@ -555,161 +504,6 @@ function readyMonsterDiggingWeapon(monster, state, x, y) {
     tool.wielded = true;
     monster.weaponCheck = NO_WEAPON_WANTED;
     return tool;
-}
-
-// C weapon.c:mon_wield_item(NEED_RANGED_WEAPON).  thrwmu() asks the
-// monster to ready a launcher before it selects and fires ammunition.
-// Switching launchers consumes the remainder of this action; already
-// wielding the selected launcher is a zero-time check and permits the shot.
-function readyRangedMonsterWeapon(monster) {
-    const current = monsterWieldedWeapon(monster);
-    if (monster?.weaponCheck !== NEED_WEAPON && current) return null;
-
-    monster.weaponCheck = NEED_RANGED_WEAPON;
-    const missile = selectRangedWeapon(monster);
-    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(missile));
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const launcher = launcherNames
-        ? inventory.find(object => launcherNames.has(objectTypeName(object)))
-        : null;
-
-    // hands_obj is mon_wield_item()'s no-launcher result: no wield
-    // transaction is needed, so thrwmu() may proceed immediately.
-    if (!launcher) {
-        monster.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-    if (current?.otyp === launcher.otyp) {
-        monster.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-
-    if (current) current.wielded = false;
-    monster.mw = launcher;
-    launcher.wielded = true;
-    monster.weaponCheck = NEED_WEAPON;
-    return launcher;
-}
-
-// C mthrowu.c:monmulti().  The randomized base volley is chosen before
-// class/race bonuses and before the stack is split into individual missiles.
-function monsterVolleyCount(monster, missile, launcher, rollOne, calls) {
-    const quantity = missile?.quan ?? missile?.quantity ?? 1;
-    const missileName = objectTypeName(missile);
-    const launcherNames = RANGED_LAUNCHERS.get(missileName);
-    const matchingLauncher = !!(launcherNames
-        && launcherNames.has(objectTypeName(launcher)));
-    const stackableWeapon = missile?.oclass === WEAPON_CLASS
-        || missile?.class === 'Weapons';
-    if (quantity <= 1 || monster?.mconf
-        || (!matchingLauncher && !stackableWeapon)) return 1;
-
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    let maximum = 1;
-    if (flags & M2_PRINCE) maximum += 2;
-    else if (flags & M2_LORD) maximum++;
-    if (missileName === 'elven arrow' && !missile.cursed) maximum++;
-    if (objectTypeName(launcher) === 'elven bow'
-        && matchingLauncher && !launcher?.cursed) maximum++;
-    if (matchingLauncher && (launcher?.spe ?? 0) > 1)
-        maximum += Math.trunc(((launcher.spe ?? 0) + 1) / 3);
-
-    let volley = rollOne(maximum);
-    calls.push(`rnd(${maximum})`);
-    // Monster-role and racial bonuses are post-roll in C.  The generated
-    // metadata exposes the races directly; role-shaped mplayers can supply
-    // their source bonus as multishotClassBonus when constructed.
-    volley += monster.multishotClassBonus ?? 0;
-    const speciesFlags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    if (((speciesFlags & 0x00000010)
-            && missileName === 'elven arrow'
-            && objectTypeName(launcher) === 'elven bow')
-        || ((speciesFlags & 0x00000080)
-            && missileName === 'orcish arrow'
-            && objectTypeName(launcher) === 'orcish bow')
-        || ((speciesFlags & 0x00000040)
-            && missileName === 'crossbow bolt'
-            && objectTypeName(launcher) === 'crossbow')) {
-        volley++;
-    }
-    return Math.max(1, Math.min(quantity, volley));
-}
-
-function splitMonsterMissile(monster, missile, calls) {
-    const inventory = monster.minvent || monster.inventory || [];
-    const quantity = missile.quan ?? missile.quantity ?? 1;
-    if (quantity > 1) {
-        const single = { ...missile };
-        single.o_id = nextIdent();
-        calls.push('rnd(2)');
-        single.quan = single.quantity = 1;
-        single.owt = OBJECT_WEIGHT[single.otyp] ?? single.owt ?? 1;
-        single.wielded = false;
-        single.worn = false;
-        single.where = 'free';
-        missile.quan = missile.quantity = quantity - 1;
-        missile.owt = (OBJECT_WEIGHT[missile.otyp] ?? 1) * (quantity - 1);
-        return single;
-    }
-
-    const index = inventory.indexOf(missile);
-    if (index >= 0) inventory.splice(index, 1);
-    if (monster.mw === missile) monster.mw = null;
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    missile.wielded = false;
-    missile.worn = false;
-    missile.where = 'free';
-    return missile;
-}
-
-function placeThrownObject(state, object, x, y) {
-    object.ox = x;
-    object.oy = y;
-    object.where = 'floor';
-    state._fobjSerial = (state._fobjSerial || 0) + 1;
-    object._fobjOrder = state._fobjSerial;
-    if (!state.level.objects[x]) state.level.objects[x] = [];
-    if (!state.level.objects[x][y]) state.level.objects[x][y] = [];
-    state.level.objects[x][y].unshift(object);
-}
-
-function clearThrownObject(state, object) {
-    if (state?._thrownObject === object) state._thrownObject = null;
-}
-
-// C mthrowu.c:drop_throw() places a surviving missile and immediately runs
-// stackobj().  The global thrown-object owner is cleared only after that floor
-// lifecycle completes.
-function placeAndStackThrownObject(state, object, x, y) {
-    placeThrownObject(state, object, x, y);
-    stack_object(object, state);
-    clearThrownObject(state, object);
-    return object;
-}
-
-// C weapon.c:dmgval() followed by mthrowu.c:m_throw()'s minimum-damage
-// clamp.  The current hero target is human-sized, so this owns the ordinary
-// small-target die, weapon enchantment, and erosion adjustment without any
-// additional RNG calls.
-function projectileDamageAgainstHero(object, rollOne, calls) {
-    const sides = Math.max(1, OBJECT_SMALL_DAMAGE[object.otyp] || 1);
-    let damage = rollOne(sides);
-    calls.push(`rnd(${sides})`);
-    const weaponLike = object.oclass === WEAPON_CLASS
-        || (object.oclass === TOOL_CLASS
-            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
-    if (weaponLike) {
-        damage += object.spe ?? 0;
-        if (damage < 0) damage = 0;
-    }
-    if (damage > 0) {
-        damage = Math.max(
-            1,
-            damage - Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0),
-        );
-    }
-    return Math.max(1, damage);
 }
 
 // C mthrowu.c:drop_throw()->should_mulch_missile().  A projectile which hit
@@ -3999,9 +3793,9 @@ function maybeThrowRangedWeapon(
     const launched = !!(launcherNames
         && launcherNames.has(objectTypeName(launcher)));
     const volley = monsterVolleyCount(
-        monster, weapon, launcher, rollOne, calls,
+        monster, weapon, launcher, rollOne,
     );
-    const missile = splitMonsterMissile(monster, weapon, calls);
+    const missile = splitMonsterMissile(monster, weapon);
     // C mthrowu.c:m_throw() exposes the OBJ_FREE missile through
     // gt.thrownobj before traversal.  A fatal losehp() never returns to this
     // function, so end-of-game cleanup must be able to recover this identity.
@@ -4051,7 +3845,7 @@ function maybeThrowRangedWeapon(
                 }
 
                 const damage = projectileDamageAgainstHero(
-                    missile, rollOne, calls,
+                    missile, rollOne,
                 );
                 let hitLevel = Math.max(
                     -4, 3 - distmin(heroX, heroY, monster.mx, monster.my),
