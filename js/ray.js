@@ -5,7 +5,7 @@ import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_WIS, COLNO, DOOR, D_CLOSED, D_LOCKED, In_mines, IS_ROOM, IS_WALL,
-    Is_airlevel, ROWNO, STONE, W_AMUL, W_ARM, W_ARMS, W_WEP, ZAP_POS,
+    Is_airlevel, ROWNO, STONE, W_AMUL, W_ARM, W_ARMS, ZAP_POS,
 } from './const.js';
 import {
     flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell,
@@ -14,6 +14,7 @@ import { game } from './gstate.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_NAME,
 } from './monster_data.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION,
     SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES,
@@ -91,8 +92,7 @@ export function monsterReflectionSource(monster, state = game) {
     if (shield?.otyp === SHIELD_OF_REFLECTION)
         return { noun: 'shield', object: shield };
 
-    const weapon = monster?.weapon || monster?.mw
-        || monsterWornObject(monster, W_WEP);
+    const weapon = monsterWieldedWeapon(monster);
     const artifactName = artifactById(weapon?.oartifact, state)?.name;
     if (artifactName === 'Dragonbane'
         || artifactName === 'The Longbow of Diana') {

@@ -5,13 +5,13 @@ import {
     artifactByName, artifactDamageBonus, artifactToHitBonus,
     resolveHeroArtifactTouch,
 } from '../js/artifacts.js';
-import { W_ARM } from '../js/const.js';
+import { W_ARM, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, carriedObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
-import { liveMonster } from './support/monsters.js';
+import { equipMonsterObject, liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
 
@@ -77,10 +77,8 @@ test('Frost Brand bonuses stop at cold-resistant monsters', () => {
 
 test('an artifact defense blocks the matching special attack', () => {
     const frostBrand = artifactObject('Frost Brand');
-    const jackal = liveMonster({
-        species: 'jackal',
-        weapon: artifactObject('Frost Brand'),
-    });
+    const jackal = liveMonster({ species: 'jackal' });
+    equipMonsterObject(jackal, artifactObject('Frost Brand'), W_WEP);
 
     assert.equal(artifactToHitBonus(frostBrand, jackal, maximumRoll), 0);
     assert.equal(

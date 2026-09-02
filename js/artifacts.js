@@ -15,6 +15,7 @@ import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE,
     MONSTER_SYMBOL,
 } from './monster_data.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     monsterHasColdResistance, monsterHasDrainResistance,
     monsterHasFireResistance, monsterHasShockResistance,
@@ -176,7 +177,7 @@ function carriedArtifactDefends(inventory, damageType, state) {
 function artifactDefenseApplies(defender, damageType, hero, state) {
     const weapon = hero
         ? state.uwep || state.u?.uwep
-        : defender.weapon || defender.mw;
+        : monsterWieldedWeapon(defender);
     if (defendedByArtifact(
         artifactById(weapon?.oartifact, state), damageType,
     )) {

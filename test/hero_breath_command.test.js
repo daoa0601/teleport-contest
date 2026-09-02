@@ -13,7 +13,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 
 function breathe(direction, options = {}) {
     return useHeroBreath({
@@ -120,15 +120,15 @@ test('acid breath corrodes a monster weapon and armor', async () => {
     const helmet = knownObject(HELMET, {
         where: 'minvent', worn: true, owornmask: W_ARMH,
     });
-    addMonster({
+    const jackal = addMonster({
         species: 'jackal',
         x: 11,
         y: 10,
         hitPoints: 20,
         mac: 99,
-        weapon: sword,
-        inventory: [sword, helmet],
     });
+    equipMonsterObject(jackal, sword, W_WEP);
+    equipMonsterObject(jackal, helmet, W_ARMH);
 
     await breathe('l', {
         publish: async () => undefined,

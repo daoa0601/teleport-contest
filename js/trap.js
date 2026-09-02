@@ -14,6 +14,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX,
     LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OILSKIN_SACK,
@@ -186,10 +187,6 @@ export function monsterTrapVisibility(monster, state = game) {
 function wornObject(monster, mask) {
     return inventoryOf(monster).find(object =>
         ((object.owornmask ?? 0) & mask) !== 0) || null;
-}
-
-function wieldedObject(monster) {
-    return monster?.mw || wornObject(monster, W_WEP);
 }
 
 function objectDescription(object, fallback) {
@@ -643,7 +640,7 @@ export function applyMonsterRustTrap(
             shield, 'shield', monster, state, roll, luckRoll,
         ));
         if (shieldResult === 'nothing') {
-            const weapon = wieldedObject(monster);
+            const weapon = monsterWieldedWeapon(monster);
             if (weapon && OBJECT_BIMANUAL[weapon.otyp]) {
                 addWaterEffect(event, rustObject(
                     weapon, objectDescription(weapon, 'weapon'),
@@ -658,7 +655,7 @@ export function applyMonsterRustTrap(
         }
     } else if (targetRoll === 2) {
         event.target = 'right-arm';
-        const weapon = wieldedObject(monster);
+        const weapon = monsterWieldedWeapon(monster);
         addWaterEffect(event, rustObject(
             weapon, objectDescription(weapon, 'weapon'),
             monster, state, roll, luckRoll,

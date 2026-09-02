@@ -297,8 +297,7 @@ function heroBlocksShapeChange(state) {
 }
 
 function monsterHasTransformEquipment(monster) {
-    if ((monster?.misc_worn_check ?? 0) !== 0
-        || monster?.weapon || monster?.wieldedWeapon) return true;
+    if ((monster?.misc_worn_check ?? 0) !== 0) return true;
     return (monster?.minvent || monster?.inventory || []).some(object =>
         (object?.owornmask ?? 0) !== 0 || object?.worn || object?.wielded);
 }

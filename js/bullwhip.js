@@ -25,6 +25,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
 } from './object_data.js';
@@ -230,14 +231,8 @@ async function damageHeroWithWhip(whip, state) {
     });
 }
 
-function monsterWeapon(monster) {
-    return monster?.mw || monster?.weapon || monster?.wieldedWeapon || null;
-}
-
 function clearMonsterWeapon(monster, object) {
     removeObjectFromMonsterInventory(monster, object);
-    if (monster.weapon === object) monster.weapon = null;
-    if (monster.wieldedWeapon === object) monster.wieldedWeapon = null;
 }
 
 async function snatchPetrifyingCorpse(weapon, state) {
@@ -397,7 +392,7 @@ async function attackMonsterWithWhip(
             monster, monster.mx, monster.my, state,
         );
     }
-    const weapon = spottedBefore ? monsterWeapon(monster) : null;
+    const weapon = spottedBefore ? monsterWieldedWeapon(monster) : null;
     if (weapon) {
         await disarmMonster(
             monster, weapon, proficiency, holdObject, state,

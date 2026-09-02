@@ -3,7 +3,7 @@
 
 import {
     G_NOCORPSE, STRAT_WAITMASK,
-    W_ARM, W_ARMC, W_ARMU, W_ARMS, W_WEP,
+    W_ARM, W_ARMC, W_ARMU, W_ARMS,
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import {
@@ -18,9 +18,11 @@ import {
     damageMonsterObjectWithAcid, corrodeRandomMonsterArmor,
 } from './monster_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
+import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME,
 } from './monster_data.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE,
     AD_MAGM, AD_RBRE, AD_SLEE, AT_EXPL, AT_GAZE,
@@ -377,7 +379,7 @@ async function hitMonsterWithBreath(
     } else if (damageType === AD_ACID && !inherentResistance) {
         if (random(6) === 0) {
             await damageMonsterObjectWithAcid(
-                monster, monsterWeapon(monster),
+                monster, monsterWieldedWeapon(monster),
                 { state, publish, random },
             );
         }
@@ -406,19 +408,19 @@ async function disintegrateMonster(monster, state) {
 
     const shield = monsterWornObject(monster, W_ARMS);
     if (shield) {
-        removeMonsterObject(monster, shield);
+        destroyObjectFromMonsterInventory(monster, shield, state);
         return { damage: 0, armorDestroyed: shield, resisted: false };
     }
     const suit = monsterWornObject(monster, W_ARM);
     if (suit) {
         const cloak = monsterWornObject(monster, W_ARMC);
-        if (cloak) removeMonsterObject(monster, cloak);
-        removeMonsterObject(monster, suit);
+        if (cloak) destroyObjectFromMonsterInventory(monster, cloak, state);
+        destroyObjectFromMonsterInventory(monster, suit, state);
         return { damage: 0, armorDestroyed: suit, resisted: false };
     }
     for (const mask of [W_ARMC, W_ARMU]) {
         const object = monsterWornObject(monster, mask);
-        if (object) removeMonsterObject(monster, object);
+        if (object) destroyObjectFromMonsterInventory(monster, object, state);
     }
     monster.mhp = 0;
     return { damage: 0, disintegrated: true, noCorpse: true };
@@ -485,29 +487,13 @@ function wakeMonster(monster, angered) {
     if (angered) monster.mpeaceful = 0;
 }
 
-function removeMonsterObject(monster, object) {
-    const wornMask = object.owornmask ?? 0;
-    const inventory = (monster.minvent || monster.inventory || [])
-        .filter(candidate => candidate !== object);
-    monster.minvent = inventory;
-    monster.inventory = inventory;
-    monster.hasInventory = inventory.length > 0;
-    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~wornMask;
-    if (monster.weapon === object) monster.weapon = null;
-    if (monster.mw === object) monster.mw = null;
-    object.owornmask = 0;
-    object.worn = false;
-    object.where = 'gone';
-    object.ocarry = null;
-}
-
 function destroyDisintegratedMonsterInventory(monster, state, random) {
     const lifeSaver = wornMonsterLifeSaver(monster);
     const inventory = [...(monster.minvent || monster.inventory || [])];
     for (const object of inventory) {
         if (objectSurvivesDisintegration(object, lifeSaver, state, random))
             continue;
-        removeMonsterObject(monster, object);
+        destroyObjectFromMonsterInventory(monster, object, state);
     }
 }
 
@@ -529,11 +515,6 @@ function monsterWornObject(monster, mask) {
         || null;
 }
 
-function monsterWeapon(monster) {
-    if (monster.weapon) return monster.weapon;
-    return monsterWornObject(monster, W_WEP);
-}
-
 function monsterResistsMagic(monster) {
     if (monster.resistsMagic || monster.antimagic) return true;
     const name = MONSTER_NAME[monster.mnum];
@@ -553,8 +534,7 @@ function monsterResistsBlindness(monster, state) {
         ([attackType, damageType]) => damageType === AD_BLND
             && (attackType === AT_EXPL || attackType === AT_GAZE),
     )) return true;
-    const weapon = monster.weapon || monster.mw
-        || monsterWornObject(monster, W_WEP);
+    const weapon = monsterWieldedWeapon(monster);
     return artifactById(weapon?.oartifact, state)?.name === 'Sunsword';
 }
 
