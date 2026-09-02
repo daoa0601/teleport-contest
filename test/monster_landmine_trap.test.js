@@ -9,20 +9,15 @@ import {
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';
-import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function monsterOnMine(species, gameplaySeed, hitPoints = 30) {
-    const level = freshObjectRoom({ gameplaySeed });
-    const monster = addMonster({
-        species,
-        x: 11,
-        y: 10,
-        hitPoints,
+function monsterOnMine(species, gameplaySeed) {
+    return freshMonsterTrapRoom(LANDMINE, {
+        gameplaySeed,
+        monster: { species, hitPoints: 30 },
     });
-    const trap = addTrap(level, LANDMINE, 11, 10);
-    return { level, monster, trap };
 }
 
 test('a heavy monster sets off a land mine and falls into the new pit',

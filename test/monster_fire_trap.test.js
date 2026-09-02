@@ -15,9 +15,8 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
-import { addTrap, floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { floorObjects } from './support/level-state.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function freshMonsterFireTrap({
     trapType = FIRE_TRAP,
@@ -27,22 +26,20 @@ function freshMonsterFireTrap({
     maxHitPoints = hitPoints,
     ...monsterState
 } = {}) {
-    const level = freshObjectRoom();
-    const monster = addMonster({
-        species,
-        x: 11,
-        y: 10,
-        hitPoints,
-        maxHitPoints,
-        mpeaceful: 1,
-        ...monsterState,
+    const result = freshMonsterTrapRoom(trapType, {
+        monster: {
+            species,
+            hitPoints,
+            maxHitPoints,
+            mpeaceful: 1,
+            ...monsterState,
+        },
     });
-    const trap = addTrap(level, trapType, 11, 10);
     if (!visible) {
         game.blind = true;
         game.u.blindTurns = 1;
     }
-    return { monster, trap };
+    return result;
 }
 
 function quietFireRandom(range) {

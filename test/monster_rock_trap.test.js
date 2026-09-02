@@ -7,20 +7,14 @@ import {
     resumeDeferredMonsterRockTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
-import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function monsterOnRockTrap(species) {
-    const level = freshObjectRoom({ gameplaySeed: 23n });
-    const monster = addMonster({
-        species,
-        x: 11,
-        y: 10,
-        hitPoints: 20,
+    return freshMonsterTrapRoom(ROCKTRAP, {
+        gameplaySeed: 23n,
+        monster: { species },
     });
-    const trap = addTrap(level, ROCKTRAP, 11, 10);
-    return { level, monster, trap };
 }
 
 test('a falling-rock trap hits a visible monster and drops its rock',

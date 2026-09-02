@@ -6,18 +6,12 @@ import { game } from '../js/gstate.js';
 import {
     resumeDeferredMonsterSleepGasTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
-import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('sleeping gas puts a susceptible visible monster to sleep', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 31n });
-    const monster = addMonster({
-        species: 'giant',
-        x: 11,
-        y: 10,
+    const { monster, trap } = freshMonsterTrapRoom(SLP_GAS_TRAP, {
+        gameplaySeed: 31n,
     });
-    const trap = addTrap(level, SLP_GAS_TRAP, 11, 10);
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);

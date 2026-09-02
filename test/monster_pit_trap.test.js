@@ -6,20 +6,12 @@ import { game } from '../js/gstate.js';
 import {
     resumeDeferredMonsterPitTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
-import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function monsterOnPit(species) {
-    const level = freshObjectRoom();
-    const monster = addMonster({
-        species,
-        x: 11,
-        y: 10,
-        hitPoints: 20,
+    return freshMonsterTrapRoom(PIT, {
+        monster: { species },
     });
-    const trap = addTrap(level, PIT, 11, 10);
-    return { monster, trap };
 }
 
 test('a grounded monster falls into a pit', async () => {

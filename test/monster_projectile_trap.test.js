@@ -7,20 +7,11 @@ import {
     resumeDeferredMonsterProjectileTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ARROW } from '../js/object_data.js';
-import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
-import { freshObjectRoom } from './support/object-room.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function monsterOnArrowTrap(gameplaySeed) {
-    const level = freshObjectRoom({ gameplaySeed });
-    const monster = addMonster({
-        species: 'giant',
-        x: 11,
-        y: 10,
-        hitPoints: 20,
-    });
-    const trap = addTrap(level, ARROW_TRAP, 11, 10);
-    return { level, monster, trap };
+    return freshMonsterTrapRoom(ARROW_TRAP, { gameplaySeed });
 }
 
 test('an arrow trap hits a visible monster', async () => {
