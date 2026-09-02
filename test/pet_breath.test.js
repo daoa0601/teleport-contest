@@ -12,7 +12,7 @@ import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
 import {
-    resolveMonsterBreathAttack,
+    continueMonsterRangedTurn, resolveMonsterBreathAttack,
 } from '../js/dogmove.js';
 import { game } from '../js/gstate.js';
 import { DAGGER } from '../js/object_data.js';
@@ -124,7 +124,12 @@ test('an iron golem throws before using its breath attack', async () => {
         random: () => 0,
     });
     const hitPointsAfterDagger = target.mhp;
-    await resolveBreath(golem, action.movement.petBreath);
+    const breath = continueMonsterRangedTurn(
+        action.movement.petRangedTurn,
+        game,
+        { random: () => 1 },
+    )?.attack;
+    await resolveBreath(golem, breath);
 
     const daggerLanded = floorObjectsAt(game.level, 12, 10)
         .some(object => object.otyp === DAGGER);

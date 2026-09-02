@@ -222,67 +222,87 @@ function beginBreathAtTarget(
     return { target, attack, launched: true };
 }
 
-export function beginMonsterRangedAttack(
-    monster, target, state, {
+function rangedTargetStillPresent(turn, state) {
+    if (turn.target === state.u) return (state.u?.uhp ?? 1) > 0;
+    return state.level?.monsters?.includes(turn.target)
+        && (turn.target?.mhp ?? 0) > 0;
+}
+
+export function continueMonsterRangedTurn(
+    turn, state, {
         random = rn2,
         rollOne = rnd,
     } = {},
 ) {
-    monster.mlstmv = sourceTurn(state);
-    let readiedWeapon = null;
-    const weaponAttacks = [];
-    for (const attack of MONSTER_ATTACKS[monster.mnum] || []) {
-        if (attack[0] === AT_WEAP && target !== state.u) {
+    turn.current = null;
+    if (turn.complete
+        || (turn.monster?.mhp ?? 1) <= 0
+        || !rangedTargetStillPresent(turn, state)) {
+        turn.complete = true;
+        return null;
+    }
+
+    const attacks = MONSTER_ATTACKS[turn.monster.mnum] || [];
+    while (turn.nextSlot < attacks.length) {
+        const attack = attacks[turn.nextSlot++];
+        if (attack[0] === AT_WEAP && turn.target !== state.u) {
             const weaponAttack = throwMonsterWeaponAtMonster(
-                monster, target, state, { random, rollOne },
+                turn.monster, turn.target, state, { random, rollOne },
             );
             if (weaponAttack?.readiedWeapon) {
-                readiedWeapon = weaponAttack.readiedWeapon;
+                turn.readiedWeapon = weaponAttack.readiedWeapon;
                 continue;
             }
             if (weaponAttack?.madeAttack) {
-                weaponAttacks.push(weaponAttack);
-                if ((target.mhp ?? 0) <= 0) break;
+                turn.usedWeapon = true;
+                turn.current = { kind: 'weapon', attack: weaponAttack };
+                return turn.current;
             }
         } else if (attack[0] === AT_BREA) {
             const breath = beginBreathAtTarget(
-                monster, target, state, random, attack,
+                turn.monster, turn.target, state, random, attack,
             );
             if (breath.launched || breath.cough) {
-                return {
-                    kind: 'breath', readiedWeapon, weaponAttacks,
-                    madeAttack: weaponAttacks.length > 0,
-                    ...breath,
-                };
+                turn.current = { kind: 'breath', attack: breath };
+                return turn.current;
             }
-        } else if (attack[0] === AT_SPIT && target !== state.u) {
-            if (weaponAttacks.length) break;
-            const position = targetPosition(target, state);
+        } else if (attack[0] === AT_SPIT && turn.target !== state.u) {
+            const position = targetPosition(turn.target, state);
             const spit = beginMonsterSpitAttack(
-                monster, position.x, position.y,
+                turn.monster, position.x, position.y,
                 { attack, random },
             );
             if (spit?.launched || spit?.dryRattle) {
-                return {
-                    kind: 'spit', target, readiedWeapon, ...spit,
+                turn.current = {
+                    kind: 'spit',
+                    attack: { target: turn.target, ...spit },
                 };
+                return turn.current;
             }
         }
     }
-    if (weaponAttacks.length) {
-        return {
-            kind: 'weapon',
-            target,
-            launched: true,
-            madeAttack: true,
-            attacks: weaponAttacks,
-            readiedWeapon,
-        };
-    }
-    return { target, launched: false, readiedWeapon };
+    turn.complete = true;
+    return null;
 }
 
-export function beginPetRangedAttack(
+export function beginMonsterRangedTurn(
+    monster, target, state, options = {},
+) {
+    monster.mlstmv = sourceTurn(state);
+    const turn = {
+        monster,
+        target,
+        nextSlot: 0,
+        current: null,
+        complete: false,
+        readiedWeapon: null,
+        usedWeapon: false,
+    };
+    continueMonsterRangedTurn(turn, state, options);
+    return turn;
+}
+
+export function beginPetRangedTurn(
     pet, state, {
         forced = false,
         random = rn2,
@@ -295,9 +315,16 @@ export function beginPetRangedAttack(
     const hungry = !pet.isminion
         && (state.moves ?? 1) > ((pet.edog?.hungrytime ?? 0) + DOG_HUNGRY);
     if (!target || (hungry && random(5) !== 0)) {
-        return { target, launched: false, makeNoise: forced };
+        return {
+            monster: pet,
+            target,
+            current: null,
+            complete: true,
+            readiedWeapon: null,
+            makeNoise: forced,
+        };
     }
-    return beginMonsterRangedAttack(
+    return beginMonsterRangedTurn(
         pet, target, state, { random, rollOne },
     );
 }
@@ -368,56 +395,58 @@ async function presentRetaliationWeapons(
 }
 
 async function resolveRetaliationAttack(
-    monster, target, attack, state, {
+    monster, target, turn, state, {
         publish, finishMonsterKill, random, rollDice, rollOne,
     },
 ) {
-    const weaponAttacks = attack.kind === 'weapon'
-        ? attack.attacks : attack.weaponAttacks || [];
-    const targetDied = await presentRetaliationWeapons(
-        monster, weaponAttacks, state, publish, finishMonsterKill,
-        random, rollOne,
-    );
-    if (targetDied) return attack;
-
-    if (attack.kind === 'breath') {
-        const message = attack.cough
-            ? monsterCoughMessage(monster, state)
-            : monsterBreathMessage(monster, attack);
-        if (message) await publish(message);
-        if (attack.launched) {
-            await resolveMonsterBreathAttack(monster, attack, state, {
-                publish,
-                finishMonsterKill,
-                random,
-                rollDice,
-                rollOne,
-                allowRetaliation: false,
-            });
-        }
-    } else if (attack.kind === 'spit') {
-        const message = attack.dryRattle
-            ? monsterDryRattleMessage(monster, state)
-            : canProjectMonster(monster, monster.mx, monster.my)
-                ? `${monsterSentenceSubject(monster)} spits venom!`
-                : null;
-        if (message) await publish(message);
-        if (attack.launched) {
-            resolveMonsterSpitFlight(monster, attack, state, {
+    while (turn.current) {
+        const { kind, attack } = turn.current;
+        if (kind === 'weapon') {
+            const targetDied = await presentRetaliationWeapons(
+                monster, [attack], state, publish, finishMonsterKill,
                 random, rollOne,
-            });
-            if ((target.mhp ?? 0) <= 0
-                && state.level?.monsters?.includes(target)) {
-                if (canProjectMonster(target, target.mx, target.my)) {
-                    await publish(
-                        `${monsterSentenceSubject(target)} is killed!`,
-                    );
+            );
+            if (targetDied) return turn;
+        } else if (kind === 'breath') {
+            const message = attack.cough
+                ? monsterCoughMessage(monster, state)
+                : monsterBreathMessage(monster, attack);
+            if (message) await publish(message);
+            if (attack.launched) {
+                await resolveMonsterBreathAttack(monster, attack, state, {
+                    publish,
+                    finishMonsterKill,
+                    random,
+                    rollDice,
+                    rollOne,
+                    allowRetaliation: false,
+                });
+            }
+        } else if (kind === 'spit') {
+            const message = attack.dryRattle
+                ? monsterDryRattleMessage(monster, state)
+                : canProjectMonster(monster, monster.mx, monster.my)
+                    ? `${monsterSentenceSubject(monster)} spits venom!`
+                    : null;
+            if (message) await publish(message);
+            if (attack.launched) {
+                resolveMonsterSpitFlight(monster, attack, state, {
+                    random, rollOne,
+                });
+                if ((target.mhp ?? 0) <= 0
+                    && state.level?.monsters?.includes(target)) {
+                    if (canProjectMonster(target, target.mx, target.my)) {
+                        await publish(
+                            `${monsterSentenceSubject(target)} is killed!`,
+                        );
+                    }
+                    await finishMonsterKill(target, { noCorpse: false });
                 }
-                await finishMonsterKill(target, { noCorpse: false });
             }
         }
+        continueMonsterRangedTurn(turn, state, { random, rollOne });
     }
-    return attack;
+    return turn;
 }
 
 export async function resolveRangedRetaliation(
@@ -437,7 +466,7 @@ export async function resolveRangedRetaliation(
         return null;
     }
 
-    const response = beginMonsterRangedAttack(
+    const response = beginMonsterRangedTurn(
         target, attacker, state, { random, rollOne },
     );
     await resolveRetaliationAttack(

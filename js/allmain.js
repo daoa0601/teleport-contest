@@ -31,8 +31,8 @@ import {
 } from './cmd.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
-    monsterBreathMessage, monsterCoughMessage, resolveMonsterBreathAttack,
-    resolveRangedRetaliation,
+    continueMonsterRangedTurn, monsterBreathMessage, monsterCoughMessage,
+    resolveMonsterBreathAttack, resolveRangedRetaliation,
 } from './dogmove.js';
 import { monsterDryRattleMessage } from './monster_spit.js';
 import { angerMonster } from './monster_anger.js';
@@ -5549,6 +5549,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                 }
             }
+            if (movement.petRangedTurn?.current?.attack === spit) {
+                continueMonsterRangedTurn(
+                    movement.petRangedTurn, game,
+                );
+            }
         }
         if (movement?.offensivePotion) {
             const potion = movement.offensivePotion;
@@ -5905,6 +5910,22 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         ranged: nextShot,
                         announce: false,
                     });
+                } else if (movement?.petRangedTurn?.current?.attack
+                    === rangedAttack) {
+                    const nextAttack = continueMonsterRangedTurn(
+                        movement.petRangedTurn, game,
+                    );
+                    if (nextAttack?.kind === 'weapon') {
+                        rangedQueue.push({
+                            attack: nextAttack.attack,
+                            ranged: nextAttack.attack.shots[0],
+                            announce: true,
+                        });
+                    } else if (nextAttack?.kind === 'breath') {
+                        movement.petBreath = nextAttack.attack;
+                    } else if (nextAttack?.kind === 'spit') {
+                        movement.spitAttack = nextAttack.attack;
+                    }
                 }
             }
         }
@@ -5939,6 +5960,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game._interruptedMultiActionDebt = true;
                 game._occupation = null;
                 if (game._runState) stopRun(game);
+            }
+            if (movement.petRangedTurn?.current?.attack
+                === movement.petBreath) {
+                continueMonsterRangedTurn(
+                    movement.petRangedTurn, game,
+                );
             }
         }
         // dogmove.c:dog_eat() always commits nutrition/removal, but narrates

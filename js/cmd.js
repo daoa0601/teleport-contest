@@ -60,7 +60,7 @@ import {
 import { heroBreathAttack } from './hero_breath.js';
 import { useHeroBreath } from './hero_breath_command.js';
 import {
-    beginPetRangedAttack, monsterBreathAttack, monsterBreathMessage,
+    beginPetRangedTurn, monsterBreathAttack, monsterBreathMessage,
     monsterCoughMessage, resolveMonsterBreathAttack,
 } from './dogmove.js';
 import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
@@ -5664,14 +5664,16 @@ async function wizMap() {
 
 // C ref: cmd.c:domonability().
 async function useSteedBreathAbility(steed) {
-    const breath = beginPetRangedAttack(steed, game, { forced: true });
-    if (breath.makeNoise) {
+    const turn = beginPetRangedTurn(steed, game, { forced: true });
+    const breath = turn.current?.kind === 'breath'
+        ? turn.current.attack : null;
+    if (turn.makeNoise) {
         const noise = monsterNoiseMessage(steed, game);
         if (noise) await pline(noise);
-    } else if (breath.cough) {
+    } else if (breath?.cough) {
         const message = monsterCoughMessage(steed, game);
         if (message) await pline(message);
-    } else if (breath.launched) {
+    } else if (breath?.launched) {
         const message = monsterBreathMessage(steed, breath);
         if (message) await plineWithContinuation(message);
         await resolveMonsterBreathAttack(steed, breath, game, {

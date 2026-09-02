@@ -4,7 +4,7 @@
 
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
-import { beginPetRangedAttack } from './dogmove.js';
+import { beginPetRangedTurn } from './dogmove.js';
 import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
@@ -3069,7 +3069,7 @@ function movePet(
     const movePlan = {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
     };
-    const rangedAttack = beginPetRangedAttack(monster, state, {
+    const rangedTurn = beginPetRangedTurn(monster, state, {
         random: range => recordRandom(random, calls, range),
         rollOne: range => {
             const result = rollOne(range);
@@ -3077,27 +3077,27 @@ function movePet(
             return result;
         },
     });
-    movePlan.wieldedWeapon = rangedAttack.readiedWeapon;
-    if (rangedAttack.launched || rangedAttack.madeAttack) {
-        const attack = rangedAttack.kind === 'spit'
-            ? { spitAttack: rangedAttack }
-            : rangedAttack.kind === 'weapon'
-                ? { rangedAttacks: rangedAttack.attacks }
-                : {
-                    petBreath: rangedAttack,
-                    rangedAttacks: rangedAttack.weaponAttacks,
-                };
+    movePlan.wieldedWeapon = rangedTurn.readiedWeapon;
+    const current = rangedTurn.current;
+    if (current && (current.attack.launched || rangedTurn.usedWeapon)) {
+        const attack = current.kind === 'spit'
+            ? { spitAttack: current.attack }
+            : current.kind === 'weapon'
+                ? { rangedAttacks: [current.attack] }
+                : { petBreath: current.attack };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            wieldedWeapon: rangedAttack.readiedWeapon,
+            wieldedWeapon: rangedTurn.readiedWeapon,
+            petRangedTurn: rangedTurn,
             ...attack,
             actionCompleted: true,
         };
     }
-    if (rangedAttack.cough || rangedAttack.dryRattle) {
+    if (current?.attack.cough || current?.attack.dryRattle) {
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            petRangedAttack: rangedAttack,
+            petRangedAttack: current.attack,
+            petRangedTurn: rangedTurn,
             petMovePlan: movePlan,
             deferredPetRangedNoise: true,
         };

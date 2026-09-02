@@ -18,6 +18,9 @@ import {
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
+    beginMonsterRangedTurn, continueMonsterRangedTurn,
+} from '../js/dogmove.js';
+import {
     finishEnvironmentalMonsterDeath, quietMonsterActionRng,
 } from '../js/monmove.js';
 import {
@@ -360,4 +363,36 @@ test('a rogue player monster gets its dagger volley bonus', () => {
 
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
     assert.equal(daggers.quan, 1);
+});
+
+test('a second weapon attack starts after the first dagger lands', () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n });
+    const daggers = carriedObject(DAGGER, { quan: 2 });
+    const captain = addMonsterToLevel(rangedPet('orc-captain', {
+        inventory: [daggers],
+    }));
+    const target = addMonsterToLevel(rangedTarget('jackal', {
+        hitPoints: 100,
+    }));
+    const options = { random: () => 0, rollOne: () => 1 };
+
+    const turn = beginMonsterRangedTurn(captain, target, game, options);
+    const firstAttack = turn.current.attack;
+
+    assert.equal(daggers.quan, 1);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 0);
+
+    finishRangedAttacks([firstAttack], game, options);
+    const hitPointsAfterFirstAttack = target.mhp;
+    const secondAttack = continueMonsterRangedTurn(
+        turn, game, options,
+    ).attack;
+
+    assert.ok(target.mhp < hitPointsAfterFirstAttack);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 1);
+
+    finishRangedAttacks([secondAttack], game, options);
+
+    assert.equal(captain.inventory.includes(daggers), false);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 2);
 });
