@@ -14,6 +14,7 @@ import {
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
+import { prepareBonesObjectForSave } from './bones_object.js';
 import { decodeSavedGraph, encodeSavedGraph } from './saved_graph.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
@@ -125,7 +126,7 @@ import { makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { artifactByName, nameArtifact } from './artifacts.js';
+import { artifactById, artifactByName, nameArtifact } from './artifacts.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
@@ -4355,6 +4356,36 @@ function eachObjectInBonesGraph(level, visit) {
     eachTopLevelBonesObject(level, walk);
 }
 
+function resetBonesObjectList(objects, ghostly) {
+    const kept = [];
+    for (const object of objects || []) {
+        object.contents = resetBonesObjectList(object.contents, false);
+        for (const content of object.contents)
+            content.container = object;
+        if (object.in_use) continue;
+        if (ghostly) object.ghostly = true;
+        kept.push(prepareBonesObjectForSave(object));
+    }
+    return kept;
+}
+
+function resetBonesObjectsForSave(level) {
+    for (const monster of level?.monsters || []) {
+        const inventory = resetBonesObjectList(
+            monster.minvent || monster.inventory, true,
+        );
+        monster.minvent = monster.inventory = inventory;
+        monster.hasInventory = inventory.length > 0;
+    }
+    for (let x = 0; x < (level?.objects?.length || 0); x++) {
+        const column = level.objects[x];
+        if (!column) continue;
+        for (let y = 0; y < column.length; y++)
+            column[y] = resetBonesObjectList(column[y], true);
+    }
+    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, true);
+}
+
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
 // the level graph only. The saved-graph codec retains entity aliases and
 // container back-pointers; getbones() restores the GameMap prototype.
@@ -4389,10 +4420,9 @@ export function saveBonesLevel() {
     }
     for (const trap of payload.level.traps || []) {
         trap.madeby_u = 0;
+        trap.tseen = trap.ttyp === HOLE;
     }
-    eachTopLevelBonesObject(payload.level, object => {
-        object.ghostly = true;
-    });
+    resetBonesObjectsForSave(payload.level);
 
     // savebones() removes the dead hero and all of their remembered glyphs
     // before savelev(). Terrain lighting itself remains part of the level.
@@ -4509,6 +4539,39 @@ function renewBonesIdentities(level) {
     eachTopLevelBonesObject(level, repairContainedObjects);
 }
 
+function sanitizeBonesName(name) {
+    return [...String(name || '')].map(character => {
+        const code = character.charCodeAt(0);
+        if (code < 32 || code === 127) return '.';
+        if (code > 127) return '_';
+        return character;
+    }).join('');
+}
+
+function removeBonesArtifactIdentity(object) {
+    object.oartifact = 0;
+    object.artifact = false;
+    delete object.oname;
+    if (object.oextra) delete object.oextra.oname;
+}
+
+function restoreBonesObjects(level) {
+    eachObjectInBonesGraph(level, object => {
+        if (object.oartifact) {
+            const artifact = artifactById(object.oartifact);
+            if (!artifact || artifact.questArtifact
+                || !nameArtifact(object, artifact)) {
+                removeBonesArtifactIdentity(object);
+            }
+            return;
+        }
+        if (object.oname) object.oname = sanitizeBonesName(object.oname);
+        if (object.oextra?.oname) {
+            object.oextra.oname = sanitizeBonesName(object.oextra.oname);
+        }
+    });
+}
+
 function restoreBonesMonsterAttitudes(level) {
     for (const monster of level?.monsters || []) {
         if (!monster.isshk) {
@@ -4571,6 +4634,7 @@ async function getbones() {
         x: point.x, y: point.y,
     }));
     renewBonesIdentities(game.level);
+    restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = true;

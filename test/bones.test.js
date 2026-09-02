@@ -1,12 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import {
+    artifactByName, initializeArtifacts, nameArtifact,
+} from '../js/artifacts.js';
+import { HOLE, PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mklev, place_object, saveBonesLevel } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    CHEST, CORPSE, DAGGER, ROCK,
+    AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR,
+    FOOD_RATION, ROCK, STATUE,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { knownObject } from './support/game-objects.js';
@@ -31,7 +36,7 @@ function freshBonesRoom(storage) {
     init_objects();
 }
 
-test('bones restore gives entities fresh ids and preserves their links',
+test('bones restore resets old hero state and repairs entity links',
     async () => {
         const storage = memoryStorage();
         freshBonesRoom(storage);
@@ -42,7 +47,18 @@ test('bones restore gives entities fresh ids and preserves their links',
             x: 12,
             y: 10,
         });
-        const dagger = knownObject(DAGGER);
+        const dagger = knownObject(DAGGER, {
+            invlet: 'a',
+            lknown: true,
+            cknown: true,
+            tknown: true,
+            rknown: true,
+            no_charge: true,
+            how_lost: 4,
+            pickup_prev: true,
+            oname: 'old hero dagger',
+            oextra: { oname: 'old hero dagger' },
+        });
         linkObjectToMonsterInventory(ghost, dagger);
 
         const corpse = knownObject(CORPSE, {
@@ -59,9 +75,31 @@ test('bones restore gives entities fresh ids and preserves their links',
         chest.contents = [rock];
         place_object(chest, 13, 10);
 
+        const amulet = knownObject(AMULET_OF_YENDOR);
+        place_object(amulet, 14, 10);
+        place_object(knownObject(FOOD_RATION, { in_use: true }), 15, 10);
+        const grayswandir = artifactByName('Grayswandir');
+        const bonesArtifact = knownObject(grayswandir.baseType);
+        assert.equal(nameArtifact(bonesArtifact, grayswandir), true);
+        place_object(bonesArtifact, 18, 10);
+        const statue = knownObject(STATUE, {
+            oname: 'old\u0001name',
+            oextra: { oname: 'old\u0001name' },
+        });
+        place_object(statue, 19, 10);
+        game.level.traps.push(
+            { ttyp: HOLE, tx: 16, ty: 10, tseen: false, madeby_u: true },
+            { ttyp: PIT, tx: 17, ty: 10, tseen: true, madeby_u: true },
+        );
+
         assert.equal(saveBonesLevel(), true);
 
         freshBonesRoom(storage);
+        initializeArtifacts(game);
+        const currentArtifact = knownObject(grayswandir.baseType);
+        assert.equal(nameArtifact(currentArtifact, grayswandir), true);
+        currentArtifact.where = 'inventory';
+        game.inventory.push(currentArtifact);
         pushKeys('yn');
         await mklev();
 
@@ -72,6 +110,12 @@ test('bones restore gives entities fresh ids and preserves their links',
             object.otyp === CORPSE);
         const restoredChest = restoredObjects.find(object =>
             object.otyp === CHEST);
+        const restoredAmulet = restoredObjects.find(object =>
+            object.otyp === FAKE_AMULET_OF_YENDOR);
+        const restoredArtifact = restoredObjects.find(object =>
+            object.otyp === grayswandir.baseType);
+        const restoredStatue = restoredObjects.find(object =>
+            object.otyp === STATUE);
         const restoredDagger = restoredGhost.minvent[0];
         const restoredRock = restoredChest.contents[0];
         const newIds = [
@@ -88,4 +132,34 @@ test('bones restore gives entities fresh ids and preserves their links',
         assert.equal(restoredGhost.inventory, restoredGhost.minvent);
         assert.equal(restoredDagger.carrierMid, restoredGhost.m_id);
         assert.equal(restoredRock.container, restoredChest);
+        assert.equal(restoredDagger.known, false);
+        assert.equal(restoredDagger.dknown, false);
+        assert.equal(restoredDagger.bknown, false);
+        assert.equal(restoredDagger.rknown, false);
+        assert.equal(restoredDagger.invlet, null);
+        assert.equal(restoredDagger.no_charge, false);
+        assert.equal(restoredDagger.how_lost, 0);
+        assert.equal(restoredDagger.pickup_prev, false);
+        assert.equal(restoredDagger.oname, undefined);
+        assert.equal(restoredDagger.oextra.oname, undefined);
+        assert.equal(restoredDagger.ghostly, true);
+        assert.equal(!!restoredRock.ghostly, false);
+        assert.equal(restoredAmulet.cursed, true);
+        assert.equal(restoredAmulet.bknown, false);
+        assert.equal(restoredAmulet.buc, undefined);
+        assert.equal(restoredArtifact.oartifact, 0);
+        assert.equal(restoredArtifact.artifact, false);
+        assert.equal(restoredArtifact.oextra.oname, undefined);
+        assert.equal(restoredStatue.oname, 'old.name');
+        assert.equal(restoredStatue.oextra.oname, 'old.name');
+        assert.equal(restoredObjects.some(object =>
+            object.otyp === FOOD_RATION), false);
+        const restoredHole = game.level.traps.find(trap =>
+            trap.ttyp === HOLE);
+        const restoredPit = game.level.traps.find(trap =>
+            trap.ttyp === PIT);
+        assert.equal(restoredHole.tseen, true);
+        assert.equal(restoredHole.madeby_u, 0);
+        assert.equal(restoredPit.tseen, false);
+        assert.equal(restoredPit.madeby_u, 0);
     });
