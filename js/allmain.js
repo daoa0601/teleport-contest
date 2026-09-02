@@ -91,7 +91,7 @@ import {
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel, Is_waterlevel,
-    TT_LAVA, squeakyBoardNoteWithArticle,
+    TT_LAVA,
 } from './const.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
@@ -2432,36 +2432,6 @@ function monsterTrapEscapeMessage(monster) {
     return 'The monster pulls free of the bear trap.';
 }
 
-const M1_MINDLESS = 0x00010000;
-const G_UNIQ = 0x1000;
-
-function monsterSqueakyBoardMessage(monster, event, inSight) {
-    const note = squeakyBoardNoteWithArticle(event?.note);
-    if (!note) return null;
-    if (inSight) {
-        event.trap.tseen = true;
-        if (!game.deaf) {
-            return `A board beneath the ${quietMonsterName(
-                monster,
-            )} squeaks ${note} loudly.`;
-        }
-        if (!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_MINDLESS)) {
-            return `The ${quietMonsterName(
-                monster,
-            )} stops momentarily and appears to cringe.`;
-        }
-        return null;
-    }
-    if (game.deaf) return null;
-    const range = couldsee(monster.mx, monster.my)
-        ? BOLT_LIM + 1 : BOLT_LIM - 3;
-    const proximity = dist2(
-        monster.mx, monster.my,
-        game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my,
-    ) <= range * range ? 'nearby' : 'in the distance';
-    return `You hear ${note} squeak ${proximity}.`;
-}
-
 function monsterAttackMessage(monster, attack, previousAttack = null) {
     if (attack.effect === 'engulf-tick'
         || attack.effect === 'item-theft') return null;
@@ -4053,12 +4023,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (movement?.trapEscape?.escaped && monsterIsSeen)
             await queueTurnMessage(monsterTrapEscapeMessage(monster));
-        if (movement?.trap?.kind === 'squeaky-board') {
-            const message = monsterSqueakyBoardMessage(
-                monster, movement.trap, monsterIsSeen,
-            );
-            if (message) await queueTurnMessage(message);
-        }
         if (movement?.trap?.kind === 'rust-trap') {
             const event = movement.trap;
             await presentMonsterRustTrap({
@@ -6320,19 +6284,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (!movement?.moved) continue;
     }
     runEveryturnVisits(monsterScan.actors.length);
-    for (const wake of game._deferredMonsterTrapWakes || []) {
-        for (const monster of game.level?.monsters || []) {
-            if (!monster || (monster.mhp ?? 1) <= 0) continue;
-            if (dist2(monster.mx, monster.my, wake.x, wake.y)
-                >= wake.distance) continue;
-            monster.msleeping = 0;
-            if (!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
-                && Number.isInteger(monster.mstrategy)) {
-                monster.mstrategy &= ~STRAT_WAITMASK;
-            }
-        }
-    }
-    game._deferredMonsterTrapWakes = [];
     delete game._statusAcOverride;
     // Erosion mutates worn armor during movemon(), but C does not run
     // find_ac() until the actor scan has finished.  Only after that boundary

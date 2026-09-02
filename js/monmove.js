@@ -49,6 +49,9 @@ import {
     beginMonsterSleepGasTrap, finishMonsterSleepGasTrap,
     sleepGasTrapNeedsResume,
 } from './sleep_gas_trap.js';
+import {
+    beginMonsterSqueakyBoard, finishMonsterSqueakyBoard,
+} from './squeaky_board_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -4523,30 +4526,20 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === SQKY_BOARD) {
-        // trap.c:trapeffect_sqky_board().  An airborne monster does not
-        // depress the board.  First-time ground contact has no RNG and
-        // teaches nearby monsters the trap.
-        if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY) return null;
+        const event = beginMonsterSqueakyBoard(monster, trap, state);
+        if (!event) return null;
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
+            const avoided = {
+                kind: 'known-trap-avoided', trap, damage: 0,
+            };
+            movement.trap = avoided;
+            return avoided;
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        // The scheduler scans a fixed actor list. Defer wake_nearto() so it
-        // affects the next scan without adding actors to the current one.
-        if (!state._deferredMonsterTrapWakes)
-            state._deferredMonsterTrapWakes = [];
-        state._deferredMonsterTrapWakes.push({
-            x: trap.tx, y: trap.ty, distance: 40,
-        });
-        const event = {
-            kind: 'squeaky-board', trap,
-            note: trap.tnote, damage: 0, killed: false,
-        };
         movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
@@ -7551,6 +7544,13 @@ export async function resumeDeferredMonsterTrap(
     case 'sleep-gas':
         await finishMonsterSleepGasTrap(action.monster, event, {
             publish,
+            describeMonster,
+        });
+        break;
+    case 'squeaky-board':
+        await finishMonsterSqueakyBoard(action.monster, event, state, {
+            publish,
+            monsterName,
             describeMonster,
         });
         break;
