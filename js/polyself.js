@@ -51,6 +51,7 @@ const MZ_SMALL = 1;
 const MZ_HUMAN = 2;
 const MZ_LARGE = 3;
 const MZ_HUGE = 4;
+const S_MIMIC = 13;
 const S_VORTEX = 22;
 const S_CENTAUR = 29;
 const S_DRAGON = 30;
