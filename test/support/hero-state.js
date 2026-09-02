@@ -1,8 +1,11 @@
 import { game } from '../../js/gstate.js';
-import { W_RINGR } from '../../js/const.js';
+import { W_BALL, W_CHAIN, W_RINGR } from '../../js/const.js';
+import { place_object } from '../../js/mklev.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
-import { RIN_POLYMORPH_CONTROL } from '../../js/object_data.js';
-import { knownInventoryObject } from './game-objects.js';
+import {
+    HEAVY_IRON_BALL, IRON_CHAIN, RIN_POLYMORPH_CONTROL,
+} from '../../js/object_data.js';
+import { knownInventoryObject, knownObject } from './game-objects.js';
 
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
@@ -63,4 +66,15 @@ export function wearPolymorphControlRing() {
         'uright',
         W_RINGR,
     );
+}
+
+export function installPunishedHero() {
+    const ball = knownObject(HEAVY_IRON_BALL, { owornmask: W_BALL });
+    const chain = knownObject(IRON_CHAIN, { owornmask: W_CHAIN });
+    place_object(ball, game.u.ux, game.u.uy);
+    place_object(chain, game.u.ux, game.u.uy);
+    game.uball = game.u.uball = ball;
+    game.uchain = game.u.uchain = chain;
+    game.u.punished = true;
+    return { ball, chain };
 }

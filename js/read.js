@@ -18,7 +18,7 @@ import {
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
 import {
-    mkobj, place_object, remove_object, stack_object,
+    mkobj, place_object, stack_object,
 } from './mklev.js';
 import { doClassGenocide, doGenocide } from './genocide.js';
 import {
@@ -47,6 +47,7 @@ import {
 } from './armor.js';
 import { exceedsActionCapacity } from './weight.js';
 import { monsterSaddle } from './steed.js';
+import { unpunishHero } from './punishment.js';
 
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
@@ -288,26 +289,6 @@ function removeCurseFeeling(confused) {
     }
     return confused ? 'like you need some help.'
         : 'like someone is helping you.';
-}
-
-function unpunishHero() {
-    const chain = game.uchain || game.u?.uchain;
-    const ball = game.uball || game.u?.uball;
-    if (chain) {
-        const x = chain.ox;
-        const y = chain.oy;
-        remove_object(chain);
-        chain.owornmask = (chain.owornmask ?? 0) & ~W_CHAIN;
-        chain.where = 'gone';
-        chain.ox = chain.oy = 0;
-        if (Number.isInteger(x) && Number.isInteger(y)) newsym(x, y);
-    }
-    if (ball) ball.owornmask = (ball.owornmask ?? 0) & ~W_BALL;
-    game.uchain = game.uball = null;
-    if (game.u) {
-        game.u.uchain = game.u.uball = null;
-        game.u.punished = false;
-    }
 }
 
 async function releaseBuriedBall(publish) {

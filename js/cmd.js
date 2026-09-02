@@ -61,6 +61,9 @@ import { useHeroBreath } from './hero_breath_command.js';
 import {
     heroCanMindBlast, useHeroMindBlast,
 } from './hero_mind_blast.js';
+import {
+    heroCanRemovePunishment, useHeroNymphAbility,
+} from './hero_nymph_ability.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -5681,6 +5684,11 @@ async function domonability() {
             attack: breath,
             finishMonsterKill: finishHeroMonsterKill,
         });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (heroCanRemovePunishment(game)) {
+        const result = await useHeroNymphAbility({ state: game });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }

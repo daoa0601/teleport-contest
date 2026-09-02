@@ -1114,13 +1114,13 @@ export function stack_object(obj, state = game) {
 // retaining its coordinates for callers which are about to move and re-place
 // it.  Keeping this paired with place_object() gives ball/chain movement and
 // later floor transactions one authoritative pile-lifecycle boundary.
-export function remove_object(otmp) {
-    if (!otmp || !game.level) return otmp;
-    const pile = game.level.objects?.[otmp.ox]?.[otmp.oy];
+export function remove_object(otmp, state = game) {
+    if (!otmp || !state.level) return otmp;
+    const pile = state.level.objects?.[otmp.ox]?.[otmp.oy];
     const index = pile?.indexOf(otmp) ?? -1;
     if (index >= 0) pile.splice(index, 1);
     otmp.where = 'free';
-    updateCorpseIceTimer(otmp, otmp.ox, otmp.oy, false);
+    updateCorpseIceTimer(otmp, otmp.ox, otmp.oy, false, state);
     return otmp;
 }
 const PM_LICHEN = 158;
