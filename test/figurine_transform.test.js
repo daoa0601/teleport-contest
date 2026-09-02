@@ -395,8 +395,11 @@ test('occupied floor square consumes figurine as construction failure',
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
         game.u.ux = x + 2;
-        game.level.monsters.push({
-            mnum: PM_LEOCROTTA, mx: x, my: y, mhp: 20, mhpmax: 20,
+        addMonster({
+            mnum: PM_LEOCROTTA,
+            x,
+            y,
+            hitPoints: 20,
         });
         vision_recalc(0);
 

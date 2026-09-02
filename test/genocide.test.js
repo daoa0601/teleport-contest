@@ -11,6 +11,7 @@ import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from '../js/object_timers.js';
 import { inventoryObject } from './support/game-objects.js';
+import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('monster lookup accepts source names, plurals, and class descriptions', () => {
@@ -23,11 +24,14 @@ test('monster lookup accepts source names, plurals, and class descriptions', () 
 test('genocide removes the species, drops its inventory, and sterilizes eggs', async () => {
     freshWeaponArena();
     const carried = inventoryObject(CLUB, null, { where: 'monster' });
-    const ant = {
-        mnum: 0, m_id: 40, mx: 12, my: 10,
-        mhp: 4, mhpmax: 4, minvent: [carried], inventory: [carried],
-    };
-    game.level.monsters.push(ant);
+    const ant = addMonster({
+        mnum: 0,
+        m_id: 40,
+        x: 12,
+        y: 10,
+        hitPoints: 4,
+        inventory: [carried],
+    });
     const egg = {
         otyp: EGG, oclass: 7, corpsenm: 0,
         quan: 1, quantity: 1, where: 'inventory',

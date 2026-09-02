@@ -8,6 +8,7 @@ import {
 } from '../js/monster_data.js';
 import { resumeDeferredMovementSpell } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
+import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 const M2_DEMON = 0x00000100;
@@ -30,17 +31,14 @@ test('the Wizard summons demons beside the hero', async () => {
 test('a monster spell completes its demon summon in Gehennom', async () => {
     freshWeaponArena();
     game.dungeons = [{ flags: { hellish: true } }];
-    const wizard = {
+    const wizard = addMonster({
         mnum: MONSTER_NAME.indexOf('Wizard of Yendor'),
-        mx: 12,
-        my: 10,
+        x: 12,
+        y: 10,
         mux: game.u.ux,
         muy: game.u.uy,
-        mhp: 100,
-        mhpmax: 100,
-        mcanmove: 1,
-    };
-    game.level.monsters.push(wizard);
+        hitPoints: 100,
+    });
     const action = {
         monster: wizard,
         calls: [],
