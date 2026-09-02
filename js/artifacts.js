@@ -45,10 +45,6 @@ const SYMBOL_TARGETS = {
     S_OGRE,
     S_TROLL,
 };
-const QUEST_ARTIFACT_NAMES = new Set(
-    roles.map(role => role.artifactName).filter(Boolean),
-);
-
 function wieldedProperties(artifact) {
     return artifact.flags.includes('SPFX_HALRES')
         ? ['hallucinationResistance'] : [];
@@ -62,13 +58,17 @@ function fuzzyArtifactName(value) {
         .toLowerCase();
 }
 
+const QUEST_ARTIFACT_NAMES = new Set(
+    roles.map(role => fuzzyArtifactName(role.artifactName)).filter(Boolean),
+);
+
 export const ARTIFACTS = ARTIFACT_DATA.map(artifact => ({
     ...artifact,
     baseName: OBJECT_NAMES[artifact.baseType],
     selfWilled: artifact.flags.includes('SPFX_INTEL'),
     restricted: artifact.flags.includes('SPFX_RESTR'),
     noGeneration: artifact.flags.includes('SPFX_NOGEN'),
-    questArtifact: QUEST_ARTIFACT_NAMES.has(artifact.name),
+    questArtifact: QUEST_ARTIFACT_NAMES.has(fuzzyArtifactName(artifact.name)),
     wieldedProperties: wieldedProperties(artifact),
 }));
 
