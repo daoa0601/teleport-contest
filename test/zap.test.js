@@ -23,10 +23,16 @@ import {
 import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
-import { zapColdRay, zapDeathRay, zapFireRay } from '../js/zap.js';
+import {
+    zapCancellationRay, zapColdRay, zapDeathRay, zapFireRay,
+} from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
+
+function highestRoll(range) {
+    return range - 1;
+}
 
 test('sleep resistance prevents self-zap helplessness', async () => {
     freshWeaponArena();
@@ -44,6 +50,33 @@ test('sleep resistance prevents self-zap helplessness', async () => {
     assert.equal(game._helplessTurns, undefined);
     assert.equal(game._pending_message, "You don't feel sleepy!");
     assert.equal(game.context.move, 1);
+});
+
+test('cancellation restores a werewolf to human form', async () => {
+    freshWeaponArena();
+    const werewolf = liveMonster({
+        species: 'werewolf', x: 11, y: 10,
+    });
+    game.level.monsters = [werewolf];
+
+    await zapCancellationRay('l', { random: highestRoll });
+
+    assert.equal(werewolf.mnum, 263);
+    assert.equal(werewolf.mcan, 1);
+});
+
+test('cancellation destroys a clay golem', async () => {
+    freshWeaponArena();
+    const golem = liveMonster({
+        species: 'clay golem', x: 11, y: 10,
+    });
+    game.level.monsters = [golem];
+    pushKeys(' '.repeat(20));
+
+    await zapCancellationRay('l', { random: highestRoll });
+
+    assert.equal(golem.dead, true);
+    assert.equal(game.level.monsters.includes(golem), false);
 });
 
 test('an empty wand does nothing without asking for a direction', async () => {

@@ -23,6 +23,7 @@ import {
 import { game } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { finishHeroDeath } from './end.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { meltIce } from './ice.js';
 import { selectInventoryObject } from './invent.js';
 import {
@@ -31,6 +32,8 @@ import {
 import { doEnlightenmentEffect } from './insight.js';
 import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
+import { cancelMonster } from './monster_cancellation.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
 import {
@@ -1527,14 +1530,18 @@ export async function zapDeathRay(
 
 export async function zapCancellationRay(
     direction,
-    { wakeMonster = async () => {} } = {},
+    {
+        wakeMonster = async () => {},
+        finishMonsterKill = finishHeroMonsterKill,
+        random = rn2,
+    } = {},
 ) {
     exerciseAttribute(A_WIS, true);
     const dx = DIR_DX[direction] || 0;
     const dy = DIR_DY[direction] || 0;
     let x = game.u.ux;
     let y = game.u.uy;
-    let range = 6 + rn2(8);
+    let range = 6 + random(8);
 
     while (range-- > 0) {
         x += dx;
@@ -1543,14 +1550,13 @@ export async function zapCancellationRay(
         const monster = rayMonsterAt(x, y);
         if (!monster) continue;
 
-        const defenseLevel = Math.max(1, Math.min(
-            50, monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 1,
-        ));
-        const resistanceRange = 100 + 12 - defenseLevel;
-        const resisted = rn2(resistanceRange)
-            < (MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0);
-        if (!resisted) monster.mcan = 1;
-        await wakeMonster(monster);
+        revealMonsterAppearance(monster);
+        const result = await cancelMonster(monster, {
+            attackLevel: 12,
+            finishMonsterKill,
+            random,
+        });
+        if (!result.killed) await wakeMonster(monster);
         break;
     }
 }
