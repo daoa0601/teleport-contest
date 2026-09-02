@@ -1,3 +1,6 @@
+import { artifactById, nameArtifact } from './artifacts.js';
+import { ROOMOFFSET, SHOPBASE } from './const.js';
+import { game } from './gstate.js';
 import {
     AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW,
     CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW,
@@ -8,6 +11,8 @@ import {
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
 import { OBJECT_TIMER_KIND } from './object_timers.js';
 import { curseObjectState } from './object_state.js';
+import { roomForRoomno } from './room.js';
+import { shopkeeperInOwnShop } from './shk.js';
 import { objectWeight } from './weight.js';
 
 const HANDED_WEAPONS = new Set([
@@ -100,6 +105,64 @@ export function prepareBonesObjectForSave(object) {
         curseObjectState(object);
     }
     delete object.buc;
+    return object;
+}
+
+function sanitizeBonesName(name) {
+    return [...String(name || '')].map(character => {
+        const code = character.charCodeAt(0);
+        if (code < 32 || code === 127) return '.';
+        if (code > 127) return '_';
+        return character;
+    }).join('');
+}
+
+function removeArtifactIdentity(object) {
+    object.oartifact = 0;
+    object.artifact = false;
+    delete object.oname;
+    if (object.oextra) delete object.oextra.oname;
+}
+
+function outermostContainer(object) {
+    let current = object;
+    const visited = new Set();
+    while (current?.where === 'contained' && current.container
+        && !visited.has(current)) {
+        visited.add(current);
+        current = current.container;
+    }
+    return current;
+}
+
+function isInStaffedShop(object, state) {
+    const top = outermostContainer(object);
+    if (top?.where !== 'floor') return false;
+    const location = state.level?.at?.(top.ox, top.oy);
+    if (!location || location.edge || location.roomno < ROOMOFFSET)
+        return false;
+    const room = roomForRoomno(state.level, location.roomno);
+    return (room?.rtype ?? 0) >= SHOPBASE
+        && shopkeeperInOwnShop(room.resident, state);
+}
+
+export function prepareBonesObjectForRestore(object, state = game) {
+    if (!object) return object;
+    if (object.oartifact) {
+        const artifact = artifactById(object.oartifact, state);
+        if (!artifact || artifact.questArtifact
+            || !nameArtifact(object, artifact)) {
+            removeArtifactIdentity(object);
+        }
+    } else {
+        if (object.oname) object.oname = sanitizeBonesName(object.oname);
+        if (object.oextra?.oname) {
+            object.oextra.oname = sanitizeBonesName(object.oextra.oname);
+        }
+    }
+
+    if (object.oclass === 7 && (object.oeaten ?? 0) > 0)
+        object.no_charge = isInStaffedShop(object, state);
     return object;
 }
 

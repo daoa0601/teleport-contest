@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     artifactByName, initializeArtifacts, nameArtifact,
 } from '../js/artifacts.js';
-import { HOLE, PIT } from '../js/const.js';
+import { HOLE, PIT, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mklev, place_object, saveBonesLevel } from '../js/mklev.js';
@@ -19,6 +19,7 @@ import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
+import { addStaffedShop } from './support/shop.js';
 
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
@@ -163,3 +164,26 @@ test('bones restore resets old hero state and repairs entity links',
         assert.equal(restoredPit.tseen, false);
         assert.equal(restoredPit.madeby_u, 0);
     });
+
+test('bones keep partly eaten food free in its staffed shop', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    addStaffedShop({ shopType: SHOPBASE + 5 });
+    const chest = knownObject(CHEST);
+    const ration = knownObject(FOOD_RATION, {
+        where: 'contained',
+        container: chest,
+        oeaten: 400,
+    });
+    chest.contents = [ration];
+    place_object(chest, 12, 10);
+    assert.equal(saveBonesLevel(), true);
+
+    freshBonesRoom(storage);
+    pushKeys('yn');
+    await mklev();
+
+    const restoredChest = floorObjects(game.level).find(object =>
+        object.otyp === CHEST);
+    assert.equal(restoredChest.contents[0].no_charge, true);
+});

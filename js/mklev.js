@@ -14,7 +14,9 @@ import {
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
-import { prepareBonesObjectForSave } from './bones_object.js';
+import {
+    prepareBonesObjectForRestore, prepareBonesObjectForSave,
+} from './bones_object.js';
 import { decodeSavedGraph, encodeSavedGraph } from './saved_graph.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
@@ -126,7 +128,7 @@ import { makeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { artifactById, artifactByName, nameArtifact } from './artifacts.js';
+import { artifactByName, nameArtifact } from './artifacts.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
@@ -4539,37 +4541,9 @@ function renewBonesIdentities(level) {
     eachTopLevelBonesObject(level, repairContainedObjects);
 }
 
-function sanitizeBonesName(name) {
-    return [...String(name || '')].map(character => {
-        const code = character.charCodeAt(0);
-        if (code < 32 || code === 127) return '.';
-        if (code > 127) return '_';
-        return character;
-    }).join('');
-}
-
-function removeBonesArtifactIdentity(object) {
-    object.oartifact = 0;
-    object.artifact = false;
-    delete object.oname;
-    if (object.oextra) delete object.oextra.oname;
-}
-
 function restoreBonesObjects(level) {
-    eachObjectInBonesGraph(level, object => {
-        if (object.oartifact) {
-            const artifact = artifactById(object.oartifact);
-            if (!artifact || artifact.questArtifact
-                || !nameArtifact(object, artifact)) {
-                removeBonesArtifactIdentity(object);
-            }
-            return;
-        }
-        if (object.oname) object.oname = sanitizeBonesName(object.oname);
-        if (object.oextra?.oname) {
-            object.oextra.oname = sanitizeBonesName(object.oextra.oname);
-        }
-    });
+    eachObjectInBonesGraph(level, object =>
+        prepareBonesObjectForRestore(object, game));
 }
 
 function restoreBonesMonsterAttitudes(level) {

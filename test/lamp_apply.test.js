@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { ROOM, ROOMOFFSET, SHOPBASE } from '../js/const.js';
+import { ROOM, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { transformMagicLampToOilLamp } from '../js/light.js';
@@ -16,6 +16,7 @@ import {
 } from '../js/vision.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import { freshCommandRoom } from './support/playable-room.js';
+import { addStaffedShop } from './support/shop.js';
 
 function freshLampState(otyp, overrides = {}, seed = 1n) {
     freshCommandRoom({
@@ -50,39 +51,12 @@ async function applyInventoryA() {
 }
 
 function installLightingShop(lamp) {
-    const room = {
-        lx: 8, hx: 14, ly: 8, hy: 12,
-        rtype: SHOPBASE + 11,
-    };
-    const shopkeeper = {
-        isshk: true,
-        dead: false,
-        mhp: 20,
-        mx: 11, my: 10,
-        mpeaceful: 1,
-        mute: false,
-        eshk: {
-            shoproom: ROOMOFFSET,
-            shoptype: SHOPBASE + 11,
-            shoplevel: { dnum: 0, dlevel: 1 },
-            shk: { x: 11, y: 10 },
-            shd: { x: 8, y: 10 },
-            debit: 0,
-            bill: [{
-                bo_id: lamp.o_id, bquan: 1, useup: false, price: 10,
-            }],
-        },
-    };
-    room.resident = shopkeeper;
-    game.level.rooms = [room];
-    game.level.nroom = 1;
-    game.level.monsters = [shopkeeper];
-    for (const [x, y] of [[10, 10], [11, 10]]) {
-        const location = game.level.at(x, y);
-        location.typ = ROOM;
-        location.roomno = ROOMOFFSET;
-        location.edge = 0;
-    }
+    const { shopkeeper } = addStaffedShop({
+        shopType: SHOPBASE + 11,
+        bill: [{
+            bo_id: lamp.o_id, bquan: 1, useup: false, price: 10,
+        }],
+    });
     return shopkeeper;
 }
 
