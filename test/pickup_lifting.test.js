@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
-import { W_AMUL, W_WEP } from '../js/const.js';
+import { PIT, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -294,4 +294,54 @@ test('a handless form which can carry objects can pick one up', async () => {
 
     assert.equal(game.inventory.includes(club), true);
     assert.equal(game.context.move, 1);
+});
+
+test('levitation keeps floor objects out of reach', async () => {
+    freshPickupGame();
+    game.u.levitating = true;
+    const club = floorObject(CLUB, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.level.objects[10][10].includes(club), true);
+    assert.equal(game.inventory.includes(club), false);
+    assert.equal(game.context.move, 0);
+});
+
+test('a hero at a pit edge cannot reach an object at the bottom', async () => {
+    freshPickupGame();
+    game.level.traps.push({ ttyp: PIT, tx: 10, ty: 10, tseen: true });
+    const club = floorObject(CLUB, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.level.objects[10][10].includes(club), true);
+    assert.equal(game.inventory.includes(club), false);
+    assert.equal(game.context.move, 0);
+});
+
+test('a hero inside a pit can pick up an object at the bottom', async () => {
+    freshPickupGame();
+    game.level.traps.push({ ttyp: PIT, tx: 10, ty: 10, tseen: true });
+    game.u.utrap = 3;
+    game.u.utraptype = TT_PIT;
+    const club = floorObject(CLUB, 10, 10);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(club), true);
+    assert.equal(game.context.move, 1);
+});
+
+test('autopickup leaves an unreachable floor object behind', async () => {
+    freshPickupGame();
+    game.flags.pickup = true;
+    game.u.levitating = true;
+    const club = floorObject(CLUB, 11, 10);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.level.objects[11][10].includes(club), true);
+    assert.equal(game.inventory.includes(club), false);
 });

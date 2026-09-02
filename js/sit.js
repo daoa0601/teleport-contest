@@ -9,6 +9,7 @@ import {
 import { exerciseAttribute } from './attrib.js';
 import { pline } from './display.js';
 import { game } from './gstate.js';
+import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
 import {
     mksobj, place_object, remove_object, set_corpsenm, stack_object,
@@ -77,22 +78,6 @@ function formSticks() {
         damageType === AD_STCK
         || (damageType === AD_WRAP && attackType !== AT_ENGL)
         || attackType === AT_HUGS);
-}
-
-function holderHugs(holder) {
-    return (MONSTER_ATTACKS[holder?.mnum] || [])
-        .some(([attackType]) => attackType === AT_HUGS);
-}
-
-function canReachFloor() {
-    const u = game.u || {};
-    if (u.uswallow) return false;
-    if (u.ustuck && !formSticks() && holderHugs(u.ustuck)) return false;
-    if ((u.levitating || game.levitating)
-        && !game.level?.flags?.is_airlevel
-        && !game.level?.flags?.is_waterlevel) return false;
-    if (u.uundetected && (formFlags() & M1_HIDE)) return false;
-    return true;
 }
 
 function monsterName(monster) {
@@ -303,7 +288,7 @@ export async function dosit({
     if (u?.uundetected && (formFlags() & M1_HIDE)
         && currentForm() !== PM_TRAPPER) u.uundetected = 0;
 
-    if (!canReachFloor()) {
+    if (!heroCanReachFloor(game)) {
         if (u?.uswallow) await pline('There are no seats in here!');
         else if (u?.levitating || game.levitating)
             await pline('You tumble in place.');

@@ -26,6 +26,5 @@ export function installLiveCommandHero({ role, level, x, y }) {
         amax: { a: [10, 10, 10, 10, 10, 10] },
         ualign: { type: 1, record: 10 },
         uconduct: {},
-        _weaponSkills: { 4: 1 },
     };
 }

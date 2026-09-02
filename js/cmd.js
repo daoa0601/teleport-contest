@@ -92,6 +92,7 @@ import {
 import { splitObjectStack } from './object_stack.js';
 import { deleteObject } from './object_delete.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { heroCanReachFloor } from './floor_reach.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
     removeObjectFromMonsterInventory,
@@ -328,7 +329,7 @@ import {
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    P_BOW, P_SLING, P_SKILLED, P_EXPERT, PARANOID_HIT, isok,
+    P_BOW, P_SLING, P_SKILLED, P_EXPERT, PARANOID_HIT, is_pit, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -3437,6 +3438,16 @@ function pickupSourceAtHero() {
 
 async function pickupAtHero() {
     const source = pickupSourceAtHero();
+    if (!source.monster) {
+        const trap = game.level?.traps?.find(candidate =>
+            candidate.tx === source.x && candidate.ty === source.y);
+        if (!heroCanReachFloor(game, {
+            checkPit: is_pit(trap?.ttyp),
+        })) {
+            game.context.move = 0;
+            return;
+        }
+    }
     // pickup.c excludes the hero's attached chain from object counts and
     // selection.  It remains linked to the floor pile for ball.c.
     const objects = source.monster ? [...source.objects]
@@ -11243,13 +11254,27 @@ export async function finishDestinationSpotEffects({
     // one topline when they fit.
     const destinationFeature = skipDestinationFeature
         ? '' : dungeonFeatureSentenceAt(newx, newy);
+    const floorTrap = game.level?.traps?.find(candidate =>
+        candidate.tx === newx && candidate.ty === newy);
+    const autopickupRequested = objects.length && game.flags?.pickup
+        && !game.context.nopick;
+    const deepLiquid = (IS_POOL(loc?.typ)
+        && !(game.u?.uinwater || game.underwater)) || IS_LAVA(loc?.typ);
+    const floorOutOfReach = !heroCanReachFloor(game, {
+        checkPit: is_pit(floorTrap?.ttyp),
+    });
+    const cannotCarry = heroCannotTake(game);
+    const hideFloorObjects = autopickupRequested
+        && (deepLiquid || floorOutOfReach);
     // C pickup()/check_here(): arriving on any floor object terminates a
     // non-travel run before the next automatic square. This input boundary
     // is behaviorally significant even when autopickup leaves the object in
     // place.
     if (objects.length && game._runState?.mode !== 8
         && !game.context.nopick) stopRun();
-    if (objects.length && !game.flags?.pickup) {
+    if (objects.length && !hideFloorObjects
+        && (!game.flags?.pickup
+            || (autopickupRequested && cannotCarry))) {
         if (game.blind) {
             // invent.c:look_here() emits the tactile surface probe before it
             // describes any remaining object.  Its feel_location() call also
@@ -11271,7 +11296,12 @@ export async function finishDestinationSpotEffects({
                 }.`,
             );
         }
-    } else if (objects.length && game.flags?.pickup
+        if (autopickupRequested && cannotCarry) {
+            await pline(
+                'You are physically incapable of picking anything up.',
+            );
+        }
+    } else if (objects.length && !hideFloorObjects && game.flags?.pickup
         && !game.context.nopick) {
         const selected = objects.filter(autopickupAllows);
         let pickedCount = 0;

@@ -3,6 +3,7 @@
 //         hack.c maybe_smudge_engr().
 
 import { game } from './gstate.js';
+import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';
 import {
     DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, ICE,
@@ -104,21 +105,11 @@ export function wipeEngravingAt(
     return true;
 }
 
-function canReachFloor() {
-    const u = game.u || {};
-    if (u.uswallow) return false;
-    if ((u.levitating || game.levitating)
-        && !game.level?.flags?.is_airlevel
-        && !game.level?.flags?.is_waterlevel) return false;
-    if (u.usteed && (u.ridingSkill ?? 0) < 2) return false;
-    return true;
-}
-
 // C's function-call argument is evaluated before wipeEngravingAt() discovers
 // nowipeout.  Lua tutorial engravings therefore still own rnd(5) when an
 // explicit movement leaves or enters one, despite degrade=false.
 export function maybeSmudgeEngravings(x1, y1, x2, y2) {
-    if (!canReachFloor()) return;
+    if (!heroCanReachFloor(game, { checkPit: true })) return;
     const departure = engravingAt(x1, y1);
     if (departure && departure.engr_type !== HEADSTONE)
         wipeEngravingAt(x1, y1, rnd(5), false);
@@ -131,7 +122,7 @@ export function maybeSmudgeEngravings(x1, y1, x2, y2) {
 
 function readingMessages(engraving, x, y) {
     const blind = !!game.blind;
-    const canFeel = canReachFloor();
+    const canFeel = heroCanReachFloor(game, { checkPit: true });
     let first = null;
     switch (engraving.engr_type) {
     case DUST:
