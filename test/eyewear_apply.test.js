@@ -1,18 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { W_TOOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
 import { BLINDFOLD, LENSES } from '../js/object_data.js';
+import { applyInventoryObject } from './support/commands.js';
 import { inventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-
-async function applyInventoryObject(letter) {
-    pushKey(letter);
-    await rhack('a'.charCodeAt(0));
-}
 
 test('applying a blindfold wears it and applying it again removes it',
     async () => {

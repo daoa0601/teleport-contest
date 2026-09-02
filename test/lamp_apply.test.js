@@ -1,10 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { ROOM, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
 import { transformMagicLampToOilLamp } from '../js/light.js';
 import {
     BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP,
@@ -14,6 +12,9 @@ import { initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
+import {
+    applyInventoryObject as applyInventoryA,
+} from './support/commands.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import { freshCommandRoom } from './support/playable-room.js';
 import { addStaffedShop } from './support/shop.js';
@@ -43,11 +44,6 @@ function freshLampState(otyp, overrides = {}, seed = 1n) {
     });
     initRng(seed);
     return lamp;
-}
-
-async function applyInventoryA() {
-    pushKey('a');
-    await rhack('a'.charCodeAt(0));
 }
 
 function installLightingShop(lamp) {
