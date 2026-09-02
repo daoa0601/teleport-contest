@@ -197,6 +197,7 @@ import {
     finishOrdinaryDeath,
     probeCanMakeBones, restoreHeroAfterDeath,
 } from './end.js';
+import { setHeroRemainsFromMonster } from './death_remains.js';
 import { runLevelRegions } from './regions.js';
 import {
     maintainVaultResidence, continueVaultGuardArrival,
@@ -5003,6 +5004,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 // above has not physically repainted status yet.
                 if (!retainStatusThroughDeathWindow)
                     delete game._statusHpOverride;
+                setHeroRemainsFromMonster(monster, game);
                 const lifeSaving = beginHeroLifeSaving();
                 if (lifeSaving) {
                     // done() normalizes HP before it emits the life-saving

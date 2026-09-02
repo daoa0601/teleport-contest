@@ -20,13 +20,15 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
     A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, isok,
-    LEAVESTATUE, NON_PM, STONING,
 } from './const.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { place_object, stack_object } from './mklev.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
+import {
+    clearHeroRemains, setHeroRemainsFromDeath,
+} from './death_remains.js';
 
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
 
@@ -106,7 +108,7 @@ export function completeHeroLifeSaving(transaction) {
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
     game._helplessDoneMessage = '';
-    game.u.ugrave_arise = NON_PM;
+    clearHeroRemains(game);
     rebasePrayerAfterLifeSaving(game);
     game._lifeSavedCount = (game._lifeSavedCount || 0) + 1;
     return true;
@@ -128,7 +130,7 @@ export function restoreHeroAfterDeath() {
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
     game._helplessDoneMessage = '';
-    game.u.ugrave_arise = NON_PM;
+    clearHeroRemains(game);
     rebasePrayerAfterLifeSaving(game);
     return game.u.uhp;
 }
@@ -172,7 +174,7 @@ export async function finishHeroDeath({
         }
     }
 
-    game.u.ugrave_arise = deathType === STONING ? LEAVESTATUE : NON_PM;
+    setHeroRemainsFromDeath(deathType, game);
     game._canMakeBones = probeCanMakeBones();
     await finishOrdinaryDeath({ killer, deathCause, deathVerb });
     return true;

@@ -1,8 +1,11 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 
 import {
-    GRAVE, isok, LEAVESTATUE, MM_NONAME, NON_PM,
+    GRAVE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT,
 } from './const.js';
+import {
+    completeBonesMonster, giveHeroResistancesToMonster,
+} from './bones_monster.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
 import {
@@ -13,14 +16,17 @@ import {
     monsterCanCarryObject, monsterLikesObjects,
 } from './monster_carry.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
+import { initializeMonsterArmor } from './monworn.js';
 import { addObjectToContainer } from './object_container.js';
-import { CORPSE, STATUE } from './object_data.js';
+import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { objectWeight } from './weight.js';
 
 const PM_HUMAN = 260;
 const PM_GHOST = 287;
+const S_MUMMY = 39;
 
 function clearHeroCarriedState(object) {
     object.owornmask = 0;
@@ -60,7 +66,9 @@ function giveDeathDropToNearbyMonster(object, x, y) {
     return true;
 }
 
-export function dropHeroInventoryForBones(x, y, { container = null } = {}) {
+export function dropHeroInventoryForBones(
+    x, y, { carrier = null, container = null } = {},
+) {
     game.u.twoweap = false;
     while ((game.inventory || []).length) {
         const object = game.inventory.shift();
@@ -68,6 +76,10 @@ export function dropHeroInventoryForBones(x, y, { container = null } = {}) {
             endObjectBurn(object, game, game.moves ?? 0);
         clearHeroCarriedState(object);
         if (rn2(5)) curseObjectState(object);
+        if (carrier) {
+            linkObjectToMonsterInventory(carrier, object);
+            continue;
+        }
         if (container) {
             addObjectToContainer(container, object, game);
             continue;
@@ -77,6 +89,25 @@ export function dropHeroInventoryForBones(x, y, { container = null } = {}) {
         place_object(object, x, y);
     }
     if (container) container.owt = objectWeight(container);
+}
+
+async function makeBonesMonster(mnum, x, y, flags) {
+    game.in_mklev = true;
+    try {
+        return await makemonAt(mnum, x, y, flags);
+    } finally {
+        game.in_mklev = false;
+    }
+}
+
+function addMummyWrapping(monster) {
+    if (MONSTER_SYMBOL[monster.mnum] !== S_MUMMY
+        || monster.minvent.some(object => object.otyp === MUMMY_WRAPPING)) {
+        return;
+    }
+    linkObjectToMonsterInventory(
+        monster, mksobj(MUMMY_WRAPPING, true, false),
+    );
 }
 
 export async function createBonesFromDeath(promptDeathQuestion) {
@@ -124,21 +155,28 @@ export async function createBonesFromDeath(promptDeathQuestion) {
         return game._bonesSaved;
     }
 
+    if (arise >= 0) {
+        const monster = await makeBonesMonster(arise, x, y, NO_MINVENT);
+        if (!monster) {
+            dropHeroInventoryForBones(x, y);
+            game.u.ugrave_arise = NON_PM;
+            game._bonesSaved = false;
+            return false;
+        }
+        giveHeroResistancesToMonster(monster, game);
+        dropHeroInventoryForBones(x, y, { carrier: monster });
+        addMummyWrapping(monster);
+        initializeMonsterArmor(monster);
+        completeBonesMonster(monster, game);
+        game._bonesSaved = saveBonesLevel();
+        return game._bonesSaved;
+    }
+
     dropHeroInventoryForBones(x, y);
 
-    game.in_mklev = true;
-    let ghost;
-    try {
-        ghost = await makemonAt(PM_GHOST, x, y, MM_NONAME);
-    } finally {
-        game.in_mklev = false;
-    }
+    const ghost = await makeBonesMonster(PM_GHOST, x, y, MM_NONAME);
     if (ghost) {
-        ghost.name = game.plname || 'player';
-        ghost.m_lev = game.u?.ulevel || 1;
-        ghost.mhp = ghost.mhpmax = game.u?.uhpmax || 1;
-        ghost.female = !!game.flags?.female;
-        ghost.msleeping = 1;
+        completeBonesMonster(ghost, game);
         if (corpse) {
             corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
         }
