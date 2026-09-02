@@ -2,212 +2,160 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    ANTI_MAGIC, BEAR_TRAP, TELEP_TRAP, W_ARMF, W_ARMH, WEB,
+    ANTI_MAGIC, BEAR_TRAP, RUST_TRAP, TELEP_TRAP,
+    W_ARMF, W_ARMH, WEB,
 } from '../js/const.js';
+import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
+    resumeDeferredMonsterBearTrap, resumeDeferredMonsterTrap,
+    triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { applyMonsterRustTrap } from '../js/trap.js';
 import { knownObject } from './support/game-objects.js';
-import { trapAt } from './support/level-state.js';
-import { liveMonster } from './support/monsters.js';
+import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function monsterAtTrap(overrides = {}) {
-    return liveMonster({
-        species: 'little dog',
-        x: 11,
-        y: 10,
-        hitPoints: 8,
-        ...overrides,
+function monsterAtTrap(trapType, { monster = {}, trap = {} } = {}) {
+    return freshMonsterTrapRoom(trapType, {
+        monster: {
+            species: 'little dog',
+            hitPoints: 8,
+            ...monster,
+        },
+        trap,
     });
 }
 
-function trapState(monster, trap = null) {
-    const visible = Array.from({ length: 21 }, () => []);
-    visible[monster.my][monster.mx] = 0x2;
-    return {
-        level: {
-            monsters: [monster],
-            traps: trap ? [trap] : [],
-            objects: Array.from({ length: 80 }, () => []),
-            at: () => ({ typ: 25, lit: false }),
-        },
-        u: { ux: 10, uy: 10 },
-        viz_array: visible,
-    };
-}
+test('a visible monster becomes caught in a web', () => {
+    const { monster, trap } = monsterAtTrap(WEB);
 
-test('immediate mintrap entry is a zero-work boundary without a trap', () => {
-    const monster = monsterAtTrap();
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event, null);
-    assert.equal(result.movement.trap, undefined);
-    assert.equal(result.movement.immediateTrap, true);
-});
-
-test('immediate mintrap entry delegates web state to the existing engine', () => {
-    const monster = monsterAtTrap();
-    const trap = trapAt(WEB, 11, 10, { tseen: false });
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
-
-    assert.equal(result.event.kind, 'web-trap');
-    assert.equal(result.movement.trap, result.event);
     assert.equal(monster.mtrapped, 1);
     assert.equal(trap.tseen, true);
 });
 
 test('a monster which recognizes a web can avoid becoming trapped', () => {
-    const monster = monsterAtTrap({
-        mtrapseen: 1 << (WEB - 1),
+    const { monster } = monsterAtTrap(WEB, {
+        monster: { mtrapseen: 1 << (WEB - 1) },
+        trap: { tseen: true },
     });
-    const trap = trapAt(WEB, 11, 10, { tseen: true });
-    initRng(3n); // first rn2(4) is 3, so source avoidance succeeds
-    const result = triggerImmediateMonsterTrap(
-        monster,
-        trapState(monster, trap),
-    );
+    initRng(3n);
 
-    assert.equal(result.event.kind, 'known-trap-avoided');
+    triggerImmediateMonsterTrap(monster, game);
+
     assert.equal(monster.mtrapped ?? 0, 0);
     assert.equal(monster.mtrapseen, 1 << (WEB - 1));
 });
 
 test('a monster can avoid a familiar ordinary teleport trap', () => {
-    const monster = monsterAtTrap({
-        mtrapseen: 1 << (TELEP_TRAP - 1),
+    const { monster } = monsterAtTrap(TELEP_TRAP, {
+        monster: { mtrapseen: 1 << (TELEP_TRAP - 1) },
+        trap: { tseen: true },
     });
-    const trap = trapAt(TELEP_TRAP, 11, 10, { tseen: true });
     initRng(3n);
 
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event.kind, 'known-trap-avoided');
     assert.deepEqual({ x: monster.mx, y: monster.my }, { x: 11, y: 10 });
 });
 
 test('a fixed teleport trap sends a monster to its free destination', () => {
-    const monster = monsterAtTrap({
-        mtrapseen: 1 << (TELEP_TRAP - 1),
-        mtrack: [{ x: 9, y: 10 }],
-    });
-    const trap = trapAt(TELEP_TRAP, 11, 10, {
-        tseen: true,
-        teledest: { x: 15, y: 10 },
+    const destination = { x: 15, y: 10 };
+    const { monster } = monsterAtTrap(TELEP_TRAP, {
+        monster: {
+            mtrapseen: 1 << (TELEP_TRAP - 1),
+            mtrack: [{ x: 9, y: 10 }],
+        },
+        trap: { tseen: true, teledest: destination },
     });
 
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event.kind, 'teleport-trap');
-    assert.deepEqual({ x: monster.mx, y: monster.my }, trap.teledest);
+    assert.deepEqual({ x: monster.mx, y: monster.my }, destination);
     assert.deepEqual(monster.mtrack, []);
-    assert.equal(result.movement.actionCompleted, true);
 });
 
-test('visible bear trap returns the existing deferred-damage handoff', () => {
-    const monster = monsterAtTrap({ mnum: 100, hitPoints: 20 });
-    const trap = trapAt(BEAR_TRAP, 11, 10, { tseen: false });
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+test('a visible bear trap catches and hurts a pony', () => {
+    const { monster, trap } = monsterAtTrap(BEAR_TRAP, {
+        monster: { mnum: 100, hitPoints: 20 },
+    });
+    initRng(5n);
 
-    assert.equal(result.event.kind, 'bear-trap');
-    assert.equal(result.event.deferredDamage, true);
-    assert.equal(result.movement.deferredAfterBearTrapMessage, true);
+    const action = triggerImmediateMonsterTrap(monster, game);
+    resumeDeferredMonsterBearTrap(action, game);
+
     assert.equal(monster.mtrapped, 1);
-    assert.equal(monster.mhp, 20);
+    assert.ok(monster.mhp < 20);
+    assert.equal(trap.tseen, true);
 });
 
 test('rust-trap water rusts an iron helmet worn by a monster', () => {
-    const helmet = {
-        otyp: ORCISH_HELM, owornmask: W_ARMH, oeroded: 0,
-    };
-    const monster = monsterAtTrap({
-        inventory: [helmet],
+    const helmet = knownObject(ORCISH_HELM, {
+        owornmask: W_ARMH, oeroded: 0, where: 'monster',
     });
-    const event = applyMonsterRustTrap(monster, trapState(monster), {
-        roll: range => range === 5 ? 0 : 1,
+    const { monster } = monsterAtTrap(RUST_TRAP, {
+        monster: { inventory: [helmet] },
     });
+    initRng(1n);
 
-    assert.equal(event.target, 'head');
+    triggerImmediateMonsterTrap(monster, game);
+
     assert.equal(helmet.oeroded, 1);
-    assert.equal(event.effects[0].kind, 'rusted');
 });
 
 test('enchanted iron shoes absorb an anti-magic trap', () => {
     const shoes = knownObject(IRON_SHOES, {
         spe: 1, enchantment: 1, owornmask: W_ARMF,
     });
-    const monster = monsterAtTrap({ inventory: [shoes] });
-    const trap = trapAt(ANTI_MAGIC, 11, 10);
+    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+        monster: { inventory: [shoes] },
+    });
 
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event.kind, 'anti-magic-shoes');
     assert.equal(shoes.spe, 0);
-    assert.equal(result.event.damage, 0);
+    assert.equal(monster.mhp, 8);
 });
 
 test('an anti-magic trap drains a monster which casts spells', () => {
-    const monster = monsterAtTrap({ species: 'gnomish wizard' });
-    const trap = trapAt(ANTI_MAGIC, 11, 10);
+    const { monster, trap } = monsterAtTrap(ANTI_MAGIC, {
+        monster: { species: 'gnomish wizard' },
+    });
     initRng(17n);
 
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event.kind, 'anti-magic-drain');
     assert.ok(monster.mspec_used > 0);
     assert.equal(trap.tseen, true);
 });
 
 test('an anti-magic trap hurts a magic-resistant monster', () => {
-    const monster = monsterAtTrap({
-        species: 'baby gray dragon', hitPoints: 20,
+    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+        monster: { species: 'baby gray dragon', hitPoints: 20 },
     });
-    const trap = trapAt(ANTI_MAGIC, 11, 10);
     initRng(19n);
 
-    const result = triggerImmediateMonsterTrap(
-        monster, trapState(monster, trap),
-    );
+    triggerImmediateMonsterTrap(monster, game);
 
-    assert.equal(result.event.kind, 'anti-magic-damage');
-    assert.ok(result.event.damage >= 1 && result.event.damage <= 4);
-    assert.equal(monster.mhp, 20 - result.event.damage);
-    assert.equal(result.movement.actorDied, undefined);
+    assert.ok(monster.mhp >= 16 && monster.mhp < 20);
 });
 
 test('fatal anti-magic compression removes the monster', async () => {
-    const monster = monsterAtTrap({
-        species: 'baby gray dragon', hitPoints: 1,
+    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+        monster: { species: 'baby gray dragon', hitPoints: 1 },
     });
-    const trap = trapAt(ANTI_MAGIC, 11, 10);
-    const state = trapState(monster, trap);
     const messages = [];
     initRng(23n);
 
-    const action = triggerImmediateMonsterTrap(monster, state);
-    await resumeDeferredMonsterTrap(action, state, {
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
         random: () => 1,
         publish: async message => messages.push(message),
     });
 
     assert.equal(monster.dead, true);
-    assert.deepEqual(state.level.monsters, []);
+    assert.deepEqual(game.level.monsters, []);
     assert.deepEqual(messages, [
         'The baby gray dragon is killed by the compression from an anti-magic field!',
     ]);

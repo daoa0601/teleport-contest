@@ -4802,7 +4802,7 @@ export function triggerImmediateMonsterTrap(
     const event = triggerMonsterTrap(
         monster, state, movement, rn2, d, rnd, calls,
     );
-    return { monster, movement, event };
+    return { monster, movement, event, calls };
 }
 
 function handleMonsterDoor(monster, state, movement, rollOne = rnd, calls = []) {
@@ -8211,7 +8211,7 @@ export function resumeDeferredPetMove(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
-    if (monsterTrapResultIsDeferred(movement)) {
+    if (movement.deferredAfterMonsterTrap) {
         action.movement = movement;
         return action;
     }
