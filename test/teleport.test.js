@@ -11,6 +11,7 @@ import {
     moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from '../js/teleport.js';
 import { freshGame } from './support/game-state.js';
+import { addTrap } from './support/level-state.js';
 import { liveMonster } from './support/monsters.js';
 
 function teleportState() {
@@ -38,7 +39,7 @@ test('random teleport skips occupied squares, boulders, and traps', () => {
     }));
     state.level.objects[6] = [];
     state.level.objects[6][5] = [{ otyp: BOULDER }];
-    state.level.traps.push({ tx: 7, ty: 5, ttyp: TELEP_TRAP });
+    addTrap(state.level, TELEP_TRAP, 7, 5);
     const xs = [5, 6, 7, 8];
 
     const destination = safeTeleportDestination(

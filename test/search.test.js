@@ -7,6 +7,7 @@ import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
 import { STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { addTrap } from './support/level-state.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
@@ -17,12 +18,7 @@ test('searching beside a statue trap releases its monster', async () => {
     const y = game.u.uy - 1;
     initRng(9403n);
     const statue = mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
-    level.traps.push({
-        ttyp: STATUE_TRAP,
-        tx: x,
-        ty: y,
-        tseen: false,
-    });
+    addTrap(level, STATUE_TRAP, x, y, { tseen: false });
     initRng(14n);
 
     await rhack('s'.charCodeAt(0));

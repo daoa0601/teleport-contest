@@ -8,6 +8,7 @@ import { triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyMonsterRustTrap } from '../js/trap.js';
+import { trapAt } from './support/level-state.js';
 import { liveMonster } from './support/monsters.js';
 
 function monsterAtTrap(overrides = {}) {
@@ -44,7 +45,7 @@ test('immediate mintrap entry is a zero-work boundary without a trap', () => {
 
 test('immediate mintrap entry delegates web state to the existing engine', () => {
     const monster = monsterAtTrap();
-    const trap = { tx: 11, ty: 10, ttyp: WEB, tseen: false };
+    const trap = trapAt(WEB, 11, 10, { tseen: false });
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster, trap),
     );
@@ -59,7 +60,7 @@ test('a monster which recognizes a web can avoid becoming trapped', () => {
     const monster = monsterAtTrap({
         mtrapseen: 1 << (WEB - 1),
     });
-    const trap = { tx: 11, ty: 10, ttyp: WEB, tseen: true };
+    const trap = trapAt(WEB, 11, 10, { tseen: true });
     initRng(3n); // first rn2(4) is 3, so source avoidance succeeds
     const result = triggerImmediateMonsterTrap(
         monster,
@@ -75,7 +76,7 @@ test('a monster can avoid a familiar ordinary teleport trap', () => {
     const monster = monsterAtTrap({
         mtrapseen: 1 << (TELEP_TRAP - 1),
     });
-    const trap = { tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true };
+    const trap = trapAt(TELEP_TRAP, 11, 10, { tseen: true });
     initRng(3n);
 
     const result = triggerImmediateMonsterTrap(
@@ -91,10 +92,10 @@ test('a fixed teleport trap sends a monster to its free destination', () => {
         mtrapseen: 1 << (TELEP_TRAP - 1),
         mtrack: [{ x: 9, y: 10 }],
     });
-    const trap = {
-        tx: 11, ty: 10, ttyp: TELEP_TRAP, tseen: true,
+    const trap = trapAt(TELEP_TRAP, 11, 10, {
+        tseen: true,
         teledest: { x: 15, y: 10 },
-    };
+    });
 
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster, trap),
@@ -108,7 +109,7 @@ test('a fixed teleport trap sends a monster to its free destination', () => {
 
 test('visible bear trap returns the existing deferred-damage handoff', () => {
     const monster = monsterAtTrap({ mnum: 100, hitPoints: 20 });
-    const trap = { tx: 11, ty: 10, ttyp: BEAR_TRAP, tseen: false };
+    const trap = trapAt(BEAR_TRAP, 11, 10, { tseen: false });
     const result = triggerImmediateMonsterTrap(
         monster, trapState(monster, trap),
     );

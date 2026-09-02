@@ -11,7 +11,7 @@ import {
     addGoldMonster, carriedGold, looseGold, throwGold,
 } from './support/gold-arena.js';
 import {
-    floorObjects, floorObjectsAt,
+    addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -106,8 +106,7 @@ test('distant iron bars can stop thrown gold on the preceding square',
 
 test('a web can stop the whole purse at its live trap identity', async () => {
     const level = freshWeaponArena();
-    const web = { tx: 12, ty: 10, ttyp: WEB, tseen: false };
-    level.traps.push(web);
+    const web = addTrap(level, WEB, 12, 10, { tseen: false });
     const purse = carriedGold(100, 29029);
     initRng(1n);
 

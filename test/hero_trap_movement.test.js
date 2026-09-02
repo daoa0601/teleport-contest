@@ -12,6 +12,7 @@ import { mkcorpstat } from '../js/mklev.js';
 import { HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
+import { addTrap } from './support/level-state.js';
 import { addPet } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -89,10 +90,9 @@ test('pulling a buried ball free restores the ball and chain', async () => {
 test('the invocation square reveals itself when the hero steps on it',
     async () => {
         const level = freshWeaponArena();
-        const square = {
-            ttyp: VIBRATING_SQUARE, tx: 11, ty: 10, tseen: false,
-        };
-        level.traps = [square];
+        const square = addTrap(
+            level, VIBRATING_SQUARE, 11, 10, { tseen: false },
+        );
         game.dungeons = [{ num_dunlevs: 30, flags: { hellish: true } }];
         game.u.uz = { dnum: 0, dlevel: 29 };
 
@@ -108,10 +108,7 @@ test('the invocation square reveals itself when the hero steps on it',
 
 test('stepping on a fire trap burns the hero', async () => {
     const level = freshWeaponArena();
-    const trap = {
-        ttyp: FIRE_TRAP, tx: 11, ty: 10, tseen: false,
-    };
-    level.traps = [trap];
+    const trap = addTrap(level, FIRE_TRAP, 11, 10, { tseen: false });
     game.u.uhp = game.u.uhpmax = 40;
 
     await rhack('l'.charCodeAt(0));
@@ -125,12 +122,7 @@ test('stepping on a statue trap releases its monster', async () => {
     const level = freshWeaponArena();
     initRng(9402n);
     const statue = mkcorpstat(STATUE, null, 12, 11, 10, 0);
-    level.traps = [{
-        ttyp: STATUE_TRAP,
-        tx: 11,
-        ty: 10,
-        tseen: false,
-    }];
+    addTrap(level, STATUE_TRAP, 11, 10, { tseen: false });
 
     await rhack('l'.charCodeAt(0));
 
@@ -153,16 +145,12 @@ test('stepping into a magic portal moves the hero to its other end',
                 });
             }
         }
-        const sourcePortal = {
-            ttyp: MAGIC_PORTAL, tx: 11, ty: 10,
+        const sourcePortal = addTrap(source, MAGIC_PORTAL, 11, 10, {
             dst: { dnum: 0, dlevel: 2 }, tseen: false,
-        };
-        const destinationPortal = {
-            ttyp: MAGIC_PORTAL, tx: 15, ty: 10,
+        });
+        const destinationPortal = addTrap(destination, MAGIC_PORTAL, 15, 10, {
             dst: { dnum: 0, dlevel: 1 }, tseen: false,
-        };
-        source.traps = [sourcePortal];
-        destination.traps = [destinationPortal];
+        });
         game.u.uz = { dnum: 0, dlevel: 1 };
         game.dungeons = [{
             dname: 'The Dungeons of Doom', num_dunlevs: 2, flags: {},

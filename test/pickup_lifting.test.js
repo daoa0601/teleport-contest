@@ -14,6 +14,7 @@ import { initRng } from '../js/rng.js';
 import {
     floorArtifact, floorObject, inventoryObject, looseObject,
 } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
@@ -331,7 +332,7 @@ test('levitation keeps floor objects out of reach', async () => {
 
 test('a hero at a pit edge cannot reach an object at the bottom', async () => {
     freshPickupGame();
-    game.level.traps.push({ ttyp: PIT, tx: 10, ty: 10, tseen: true });
+    addTrap(game.level, PIT, 10, 10, { tseen: true });
     const club = floorObject(CLUB, 10, 10);
 
     await rhack(','.charCodeAt(0));
@@ -343,7 +344,7 @@ test('a hero at a pit edge cannot reach an object at the bottom', async () => {
 
 test('a hero inside a pit can pick up an object at the bottom', async () => {
     freshPickupGame();
-    game.level.traps.push({ ttyp: PIT, tx: 10, ty: 10, tseen: true });
+    addTrap(game.level, PIT, 10, 10, { tseen: true });
     game.u.utrap = 3;
     game.u.utraptype = TT_PIT;
     const club = floorObject(CLUB, 10, 10);

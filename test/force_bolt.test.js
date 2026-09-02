@@ -20,6 +20,7 @@ import { dozap } from '../js/zap.js';
 import {
     chargedWand, floorObject, looseObject,
 } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -159,12 +160,7 @@ test('force bolt releases the monster from a statue trap', async () => {
     const club = looseObject(CLUB, { where: 'contained' });
     club.container = statue;
     statue.contents = [club];
-    game.level.traps.push({
-        ttyp: STATUE_TRAP,
-        tx: 12,
-        ty: 10,
-        tseen: false,
-    });
+    addTrap(game.level, STATUE_TRAP, 12, 10, { tseen: false });
     pushKeys('l');
 
     await castKnownSpell(forceBoltSpell());
@@ -246,14 +242,12 @@ test('force bolt shatters a trapdoor and schedules the fall', async () => {
     freshWizard();
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [{ num_dunlevs: 3 }];
-    const trap = {
-        ttyp: TRAPDOOR,
-        tx: game.u.ux,
-        ty: game.u.uy,
-        tseen: true,
-        dst: { dnum: 0, dlevel: 2 },
-    };
-    game.level.traps.push(trap);
+    const trap = addTrap(
+        game.level, TRAPDOOR, game.u.ux, game.u.uy, {
+            tseen: true,
+            dst: { dnum: 0, dlevel: 2 },
+        },
+    );
     let levelChange = null;
     pushKeys('>');
 

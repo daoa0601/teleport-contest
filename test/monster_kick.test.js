@@ -15,6 +15,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { carriedObject } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
 import { liveMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -150,12 +151,7 @@ test('kicking a statue trap releases its monster', async () => {
     const y = 10;
     initRng(9403n);
     const statue = mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
-    level.traps.push({
-        ttyp: STATUE_TRAP,
-        tx: x,
-        ty: y,
-        tseen: false,
-    });
+    addTrap(level, STATUE_TRAP, x, y, { tseen: false });
     initRng(17n);
     pushKey('l');
 

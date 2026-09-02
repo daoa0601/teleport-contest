@@ -10,7 +10,7 @@ import {
     addGoldMonster, carriedGold, fireQuiveredGold, readyGold, throwGold,
 } from './support/gold-arena.js';
 import {
-    floorObjects, floorObjectsAt,
+    addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -238,8 +238,7 @@ test('throwing the last quivered coin transfers its original identity',
 test('a web can stop the live detached coin without disturbing the parent',
     async () => {
         const level = freshWeaponArena();
-        const web = { tx: 12, ty: 10, ttyp: WEB, tseen: false };
-        level.traps.push(web);
+        const web = addTrap(level, WEB, 12, 10, { tseen: false });
         const purse = await quiver(5, 29115);
         initRng(2n);
 

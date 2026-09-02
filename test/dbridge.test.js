@@ -11,6 +11,7 @@ import { playInstrument } from '../js/music.js';
 import { destroyDrawbridge } from '../js/dbridge.js';
 import { BOULDER, ROCK, WOODEN_HARP } from '../js/object_data.js';
 import { mksobj, place_object } from '../js/mklev.js';
+import { addTrap } from './support/level-state.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -72,7 +73,7 @@ test('opening a drawbridge destroys objects and traps on the span',
             where: 'free',
         };
         place_object(rock, 12, 10);
-        level.traps.push({ tx: 12, ty: 10, ttyp: PIT });
+        addTrap(level, PIT, 12, 10);
         pushKeys(`nABCDE\n${' '.repeat(20)}`);
 
         await playInstrument(harp());

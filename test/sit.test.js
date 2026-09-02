@@ -20,6 +20,7 @@ import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { floorObject, inventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -115,7 +116,7 @@ test('a cockatrice held by another monster cannot sit down', async () => {
 
 test('sitting on a bear trap catches the hero', async () => {
     const level = freshWeaponArena();
-    level.traps.push({ tx: 10, ty: 10, ttyp: BEAR_TRAP });
+    addTrap(level, BEAR_TRAP, 10, 10);
     pushKeys('sit\n');
 
     await rhack('#'.charCodeAt(0));
@@ -125,10 +126,7 @@ test('sitting on a bear trap catches the hero', async () => {
 
 test('sitting on a teleport trap moves the hero', async () => {
     const level = freshWeaponArena();
-    level.traps.push({
-        tx: 10,
-        ty: 10,
-        ttyp: TELEP_TRAP,
+    addTrap(level, TELEP_TRAP, 10, 10, {
         teledest: { x: 12, y: 10 },
     });
     pushKeys('sit\n');
@@ -140,7 +138,7 @@ test('sitting on a teleport trap moves the hero', async () => {
 
 test('sitting over a pit leaves the hero trapped in it', async () => {
     const level = freshWeaponArena();
-    level.traps.push({ tx: 10, ty: 10, ttyp: PIT });
+    addTrap(level, PIT, 10, 10);
     pushKeys('sit\n');
 
     await rhack('#'.charCodeAt(0));
@@ -150,7 +148,7 @@ test('sitting over a pit leaves the hero trapped in it', async () => {
 
 test('sitting on a web entangles the hero', async () => {
     const level = freshWeaponArena();
-    level.traps.push({ tx: 10, ty: 10, ttyp: WEB });
+    addTrap(level, WEB, 10, 10);
     pushKeys('sit\n');
 
     await rhack('#'.charCodeAt(0));
@@ -160,8 +158,7 @@ test('sitting on a web entangles the hero', async () => {
 
 test('sitting on a land mine blasts a pit under the hero', async () => {
     const level = freshWeaponArena();
-    const mine = { tx: 10, ty: 10, ttyp: LANDMINE };
-    level.traps.push(mine);
+    const mine = addTrap(level, LANDMINE, 10, 10);
     pushKeys('sit\n  ');
 
     await rhack('#'.charCodeAt(0));

@@ -5,6 +5,7 @@ import {
     ARROW_TRAP, CORR, SCORR, SDOOR,
 } from '../js/const.js';
 import { mapLevel } from '../js/detect.js';
+import { addTrap } from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('mapping finds secret corridors but preserves other secrets', () => {
@@ -12,13 +13,8 @@ test('mapping finds secret corridors but preserves other secrets', () => {
     level.flags.hero_memory = true;
     level.at(30, 9).typ = SCORR;
     level.at(31, 9).typ = SDOOR;
-    const hiddenTrap = {
-        ttyp: ARROW_TRAP, tx: 32, ty: 9, tseen: false,
-    };
-    const knownTrap = {
-        ttyp: ARROW_TRAP, tx: 33, ty: 9, tseen: true,
-    };
-    level.traps.push(hiddenTrap, knownTrap);
+    const hiddenTrap = addTrap(level, ARROW_TRAP, 32, 9, { tseen: false });
+    addTrap(level, ARROW_TRAP, 33, 9, { tseen: true });
 
     mapLevel();
 

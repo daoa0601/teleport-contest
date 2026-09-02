@@ -8,6 +8,7 @@ import { DART, ROCK } from '../js/object_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 
 function webAtHero() {
@@ -48,9 +49,7 @@ test('a spider cannot anchor a web in water', async () => {
 test('webbing over a pit removes it and buries its contents', async () => {
     const level = freshMonsterAbilityRoom('giant spider');
     const dart = floorObject(DART, game.u.ux, game.u.uy);
-    level.traps.push({
-        tx: game.u.ux, ty: game.u.uy, ttyp: PIT, tseen: true,
-    });
+    addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
 
     await runMonsterAbilityCommand();
 

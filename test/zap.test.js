@@ -27,6 +27,7 @@ import {
     zapCancellationRay, zapColdRay, zapDeathRay, zapFireRay,
 } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -130,8 +131,7 @@ test('secret door detection reveals nearby hidden terrain and traps', async () =
     const hiddenDoor = level.at(12, 10);
     hiddenDoor.typ = SDOOR;
     hiddenDoor.doormask = 0;
-    const hiddenTrap = { ttyp: WEB, tx: 11, ty: 11, tseen: false };
-    level.traps.push(hiddenTrap);
+    const hiddenTrap = addTrap(level, WEB, 11, 11, { tseen: false });
     game.viz_array[10][12] |= COULD_SEE;
     game.viz_array[11][11] |= COULD_SEE;
     const wand = chargedWand(WAN_SECRET_DOOR_DETECTION);
@@ -313,8 +313,7 @@ test('a fire ray burns a web and consumes the closed door behind it', async () =
     game.u.blindTurns = 10;
     game.viz_array[10][11] = 0;
     game.viz_array[10][12] = 0;
-    const web = { ttyp: WEB, tx: 11, ty: 10, tseen: true };
-    level.traps.push(web);
+    const web = addTrap(level, WEB, 11, 10, { tseen: true });
     const door = level.at(12, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
