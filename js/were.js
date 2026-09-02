@@ -2,9 +2,12 @@
 // C refs: were.c counter_were(), new_were(), you_unwere();
 // mondata.c set_mon_data().
 
+import { exerciseAttribute } from './attrib.js';
+import { A_WIS, PARANOID_WERECHANGE } from './const.js';
+import { tameMonster } from './dog.js';
 import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { makemonNear, splitHeroMonsterForm } from './mklev.js';
 import { newsym, plineWithContinuation } from './display.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -13,12 +16,11 @@ import {
     AMULET_OF_UNCHANGING, RIN_POLYMORPH_CONTROL,
     RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
-import { PARANOID_WERECHANGE } from './const.js';
 import {
-    heroIsPolymorphed, polymonHero, rehumanizeHero,
+    heroIsPolymorphed, heroMonsterForm, polymonHero, rehumanizeHero,
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { vision_recalc } from './vision.js';
 
 const M2_WERE = 0x00000004;
@@ -32,12 +34,81 @@ const COUNTER_WERE = new Map([
     [91, 261], [261, 91], // wererat <-> human wererat
 ]);
 const PM_GREMLIN = 40;
+const PM_SEWER_RAT = 88;
+const PM_GIANT_RAT = 89;
+const PM_RABID_RAT = 90;
+const PM_WERERAT = 91;
+const PM_JACKAL = 12;
+const PM_FOX = 13;
+const PM_COYOTE = 14;
+const PM_WEREJACKAL = 15;
+const PM_WOLF = 20;
+const PM_WEREWOLF = 21;
+const PM_WARG = 23;
+const PM_WINTER_WOLF = 24;
+const PM_HUMAN_WERERAT = 261;
+const PM_HUMAN_WEREJACKAL = 262;
+const PM_HUMAN_WEREWOLF = 263;
 
 function wornPropertyObject(state, otyp, slots) {
     return slots.some(slot => {
         const object = state[slot] || state.u?.[slot];
         return object?.otyp === otyp && object.worn !== false;
     });
+}
+
+function summonedWereAlly(form, random) {
+    if (form === PM_WERERAT || form === PM_HUMAN_WERERAT) {
+        return random(3) ? PM_SEWER_RAT
+            : random(3) ? PM_GIANT_RAT : PM_RABID_RAT;
+    }
+    if (form === PM_WEREJACKAL || form === PM_HUMAN_WEREJACKAL) {
+        return random(7) ? PM_JACKAL
+            : random(3) ? PM_COYOTE : PM_FOX;
+    }
+    if (form === PM_WEREWOLF || form === PM_HUMAN_WEREWOLF) {
+        return random(5) ? PM_WOLF
+            : random(2) ? PM_WARG : PM_WINTER_WOLF;
+    }
+    return null;
+}
+
+export function heroCanSummonWerePack(state = game) {
+    const form = heroMonsterForm(state);
+    return form !== null && isWereMonster({ mnum: form });
+}
+
+export async function useHeroWereSummon({
+    state = game,
+    publish = plineWithContinuation,
+    random = rn2,
+    rollOne = rnd,
+} = {}) {
+    if (!heroCanSummonWerePack(state))
+        return { used: false, spentTime: false, reason: 'not-were' };
+    if ((state.u?.uen ?? 0) < 10) {
+        await publish('You lack the energy to send forth a call for help!');
+        return { used: false, spentTime: false, reason: 'energy' };
+    }
+
+    state.u.uen -= 10;
+    await publish('You call upon your brethren for help!');
+    exerciseAttribute(A_WIS, true, state);
+
+    const helpers = [];
+    const form = heroMonsterForm(state);
+    for (let count = rollOne(5); count > 0; count--) {
+        const species = summonedWereAlly(form, random);
+        if (species === null) continue;
+        const monster = await makemonNear(
+            species, state.u.ux, state.u.uy, 0, true,
+        );
+        if (!monster) continue;
+        tameMonster(monster, state);
+        helpers.push(monster);
+    }
+    if (!helpers.length) await publish('But none arrive.');
+    return { used: true, spentTime: true, helpers };
 }
 
 export function heroHasPolymorphControl(state = game) {
