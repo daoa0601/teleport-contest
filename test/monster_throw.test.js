@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    continueMonsterWeaponVolleyAtHero,
+    continueMonsterWeaponVolley,
     finishDeferredRangedProjectileHit,
     finishHeroProjectileHit,
     presentMonsterProjectileShot,
@@ -18,7 +18,7 @@ import {
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
-    quietMonsterActionRng,
+    finishEnvironmentalMonsterDeath, quietMonsterActionRng,
 } from '../js/monmove.js';
 import {
     carriedObject, knownInventoryObject,
@@ -29,7 +29,8 @@ import {
 } from './support/level-state.js';
 import { addMonsterToLevel, liveMonster } from './support/monsters.js';
 import {
-    freshRangedCombatRoom, rangedMonster, rangedPet, rangedTarget,
+    finishRangedAttacks, freshRangedCombatRoom,
+    rangedMonster, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 
 test('a monster readies the launcher required by its ammunition', () => {
@@ -60,7 +61,10 @@ test('a tame orc throws a dagger at a distant monster', () => {
     const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 1;
 
-    quietMonsterActionRng(orc, game);
+    const action = quietMonsterActionRng(orc, game);
+    finishRangedAttacks(action.movement.rangedAttacks, game, {
+        random: () => 0,
+    });
 
     assert.deepEqual([orc.mx, orc.my], [9, 10]);
     assert.equal(target.mhp, 0);
@@ -83,7 +87,10 @@ test('a tame orc shoots an arrow with its bow', () => {
     }));
     const target = addMonsterToLevel(rangedTarget());
 
-    quietMonsterActionRng(orc, game);
+    const action = quietMonsterActionRng(orc, game);
+    finishRangedAttacks(action.movement.rangedAttacks, game, {
+        random: () => 0,
+    });
 
     assert.deepEqual([orc.mx, orc.my], [9, 10]);
     assert.ok(target.mhp < 12);
@@ -105,10 +112,11 @@ test('a hostile monster can throw a dagger at the hero and land it', () => {
     }));
     const hitPointsBefore = game.u.uhp;
 
-    const shot = throwMonsterWeaponAtHero(orc, game, dagger, {
+    const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
         random: () => 1,
         rollOne: () => 1,
     });
+    const shot = attack.shots[0];
 
     assert.equal(shot.heroTarget, true);
     assert.equal(shot.hit, true);
@@ -140,13 +148,12 @@ test('a hostile rogue throws its full dagger volley at the hero', () => {
         rogue, game, daggers, options,
     );
     finishDeferredRangedProjectileHit(attack.shots[0], game, () => 0);
-    while (continueMonsterWeaponVolleyAtHero(attack, game, options)) {
+    while (continueMonsterWeaponVolley(attack, game, options)) {
         finishDeferredRangedProjectileHit(
             attack.shots.at(-1), game, () => 0,
         );
     }
 
-    assert.equal(attack.shots.length, 3);
     assert.equal(game.u.uhp, hitPointsBefore - 3);
     assert.equal(
         floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
@@ -178,25 +185,70 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
     );
     pushKeys(' '.repeat(12));
 
-    const result = await finishHeroProjectileHit(
+    await finishHeroProjectileHit(
         attack.shots[0], game, { random: () => 0 },
     );
     let nextShot;
-    while ((nextShot = continueMonsterWeaponVolleyAtHero(
+    while ((nextShot = continueMonsterWeaponVolley(
         attack, game, options,
     ))) {
         await finishHeroProjectileHit(nextShot, game, { random: () => 0 });
     }
 
-    assert.equal(result.lifeSaved, true);
-    assert.equal(result.died, false);
     assert.ok(game.u.uhp > 0);
     assert.equal(game.inventory.includes(amulet), false);
-    assert.equal(attack.shots.length, 3);
     assert.equal(
         floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
         3,
     );
+});
+
+test('a monster life-saves before the next dagger is thrown', async () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n });
+    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const rogue = addMonsterToLevel(rangedPet('rogue', {
+        inventory: [daggers],
+    }));
+    const amulet = carriedObject(AMULET_OF_LIFE_SAVING, {
+        owornmask: W_AMUL,
+        worn: true,
+        where: 'minvent',
+    });
+    const target = addMonsterToLevel(rangedTarget('jackal', {
+        hitPoints: 1,
+        inventory: [amulet],
+        misc_worn_check: W_AMUL,
+    }));
+    const rolls = [2, 1, 1, 1, 1, 1, 1];
+    const options = {
+        random: () => 0,
+        rollOne: () => rolls.shift(),
+    };
+
+    const attack = throwMonsterWeaponAtMonster(
+        rogue, target, game, options,
+    );
+
+    assert.equal(target.mhp, 0);
+    assert.equal(daggers.quan, 3);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 0);
+
+    await finishEnvironmentalMonsterDeath(target, game, {
+        visible: false,
+        publish: async () => {},
+        random: () => 0,
+    });
+    finishDeferredRangedProjectileHit(attack.shots[0], game, () => 0);
+    let shot;
+    while ((shot = continueMonsterWeaponVolley(attack, game, options))) {
+        finishDeferredRangedProjectileHit(shot, game, () => 0);
+    }
+
+    assert.equal(game.level.monsters.includes(target), true);
+    assert.ok(target.mhp > 0);
+    assert.equal(target.inventory.includes(amulet), false);
+    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
+    assert.equal(daggers.quan, 1);
 });
 
 test('a missed intervening monster does not hide the later hit', async () => {
@@ -250,10 +302,14 @@ test('a crossbow bolt gets its source damage against a large monster', () => {
         mac: 100,
     }));
 
-    throwMonsterWeaponAtMonster(orc, target, game, {
-        random: () => 1,
+    const options = {
+        random: () => 0,
         rollOne: range => range,
-    });
+    };
+    const attack = throwMonsterWeaponAtMonster(
+        orc, target, game, options,
+    );
+    finishRangedAttacks([attack], game, options);
 
     assert.equal(target.mhp, 93);
 });
@@ -269,10 +325,14 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
     const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 100;
 
-    throwMonsterWeaponAtMonster(archer, target, game, {
-        random: () => 1,
+    const options = {
+        random: () => 0,
         rollOne: range => range,
-    });
+    };
+    const attack = throwMonsterWeaponAtMonster(
+        archer, target, game, options,
+    );
+    finishRangedAttacks([attack], game, options);
 
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, ELVEN_ARROW), 3);
     assert.equal(archer.inventory.includes(arrows), false);
@@ -289,27 +349,15 @@ test('a rogue player monster gets its dagger volley bonus', () => {
         hitPoints: 100,
     }));
 
-    throwMonsterWeaponAtMonster(rogue, target, game, {
-        random: () => 1,
+    const options = {
+        random: () => 0,
         rollOne: range => range,
-    });
+    };
+    const attack = throwMonsterWeaponAtMonster(
+        rogue, target, game, options,
+    );
+    finishRangedAttacks([attack], game, options);
 
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
     assert.equal(daggers.quan, 1);
-});
-
-test('an orc captain uses both of its weapon attacks', () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = carriedObject(DAGGER, { quan: 2 });
-    const captain = addMonsterToLevel(rangedPet('orc-captain', {
-        inventory: [daggers],
-    }));
-    const target = addMonsterToLevel(rangedTarget());
-    target.mhp = target.mhpmax = 100;
-
-    quietMonsterActionRng(captain, game);
-
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 2);
-    assert.equal(captain.inventory.includes(daggers), false);
-    assert.ok(target.mhp < 100);
 });

@@ -1,3 +1,6 @@
+import {
+    continueMonsterWeaponVolley, finishDeferredRangedProjectileHit,
+} from '../../js/monster_throw.js';
 import { freshObjectRoom } from './object-room.js';
 import { liveMonster, livePet } from './monsters.js';
 
@@ -43,4 +46,16 @@ export function rangedTarget(species = 'jackal', options = {}) {
         mac: 20,
         ...options,
     });
+}
+
+export function finishRangedAttacks(attacks, state, options = {}) {
+    for (const attack of attacks || []) {
+        let shot = attack.shots[0];
+        while (shot) {
+            finishDeferredRangedProjectileHit(
+                shot, state, options.random,
+            );
+            shot = continueMonsterWeaponVolley(attack, state, options);
+        }
+    }
 }

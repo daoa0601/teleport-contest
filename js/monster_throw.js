@@ -260,7 +260,7 @@ export function finishDeferredRangedProjectileHit(
     const magicStone = objectTypeName(object) === 'loadstone'
         || objectTypeName(object) === 'luckstone';
     let broken = false;
-    if ((ammo || missile) && !magicStone) {
+    if (shot.hit && (ammo || missile) && !magicStone) {
         const chance = 3 + Math.max(
             object.oeroded ?? 0, object.oeroded2 ?? 0,
         ) - (object.spe ?? 0);
@@ -274,8 +274,10 @@ export function finishDeferredRangedProjectileHit(
         object.ox = object.oy = 0;
         clearThrownObject(state, object);
     } else {
+        const x = shot.impactX ?? state.u?.ux ?? 0;
+        const y = shot.impactY ?? state.u?.uy ?? 0;
         placeAndStackThrownObject(
-            state, object, state.u?.ux ?? 0, state.u?.uy ?? 0,
+            state, object, x, y,
         );
     }
     shot.floorResolved = true;
@@ -493,7 +495,6 @@ function throwOneMonsterMissile(
                 continue;
             }
         }
-        placeAndStackThrownObject(state, missile, x, y);
         return {
             weapon: missile,
             ...contact,
@@ -502,10 +503,10 @@ function throwOneMonsterMissile(
             flightGlyph: ')',
             impactX: x,
             impactY: y,
+            deferredFloorResolution: true,
         };
     }
 
-    placeAndStackThrownObject(state, missile, x, y);
     return {
         weapon: missile,
         appearance: objectTypeName(missile) || 'weapon',
@@ -517,6 +518,7 @@ function throwOneMonsterMissile(
         flightGlyph: ')',
         impactX: x,
         impactY: y,
+        deferredFloorResolution: true,
     };
 }
 
@@ -643,6 +645,23 @@ function throwOneMonsterMissileAtHero(
     return null;
 }
 
+function newMonsterWeaponVolley({
+    source, aimedAt = null, targetKind, weapon, launched, volley, shot,
+}) {
+    return {
+        attempted: true,
+        madeAttack: true,
+        source,
+        aimedAt,
+        targetKind,
+        missileStack: weapon,
+        appearance: shot.appearance,
+        volley,
+        shots: [shot],
+        launched,
+    };
+}
+
 export function throwMonsterWeaponAtHero(
     source, state, weapon, {
         random = rn2,
@@ -658,36 +677,41 @@ export function throwMonsterWeaponAtHero(
     const shot = throwOneMonsterMissileAtHero(
         source, state, weapon, launched, random, rollOne,
     );
-    return shot ? {
-        ...shot,
+    return shot ? newMonsterWeaponVolley({
         source,
-        missileStack: weapon,
+        targetKind: 'hero',
+        weapon,
         volley,
-        shots: [shot],
         launched,
-    } : null;
+        shot,
+    }) : null;
 }
 
-export function continueMonsterWeaponVolleyAtHero(
+export function continueMonsterWeaponVolley(
     attack, state, {
         random = rn2,
         rollOne = rnd,
     } = {},
 ) {
+    const targetAlive = attack?.targetKind === 'hero'
+        ? (state.u?.uhp ?? 1) > 0
+        : state.level?.monsters?.includes(attack?.aimedAt)
+            && (attack.aimedAt?.mhp ?? 0) > 0;
     if (!attack?.shots
         || attack.shots.length >= attack.volley
         || (attack.source?.mhp ?? 1) <= 0
-        || (state.u?.uhp ?? 1) <= 0) {
+        || !targetAlive) {
         return null;
     }
-    const shot = throwOneMonsterMissileAtHero(
-        attack.source,
-        state,
-        attack.missileStack,
-        attack.launched,
-        random,
-        rollOne,
-    );
+    const shot = attack.targetKind === 'hero'
+        ? throwOneMonsterMissileAtHero(
+            attack.source, state, attack.missileStack,
+            attack.launched, random, rollOne,
+        )
+        : throwOneMonsterMissile(
+            attack.source, attack.aimedAt, state, attack.missileStack,
+            attack.launched, random, rollOne,
+        );
     if (shot) attack.shots.push(shot);
     return shot;
 }
@@ -726,24 +750,16 @@ export function throwMonsterWeaponAtMonster(
 
     const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
     source.weaponCheck = NEED_WEAPON;
-    const shots = [];
-    for (let shot = 0; shot < volley; shot++) {
-        shots.push(throwOneMonsterMissile(
-            source, target, state, weapon, launched, random, rollOne,
-        ));
-        if ((source.mhp ?? 1) <= 0) break;
-    }
-    const firstShot = shots[0];
-    return {
-        attempted: true,
-        madeAttack: true,
-        ...firstShot,
-        hit: shots.some(shot => shot.hit),
-        damage: shots.reduce((total, shot) => total + shot.damage, 0),
-        target: shots.find(shot => shot.target)?.target || null,
+    const shot = throwOneMonsterMissile(
+        source, target, state, weapon, launched, random, rollOne,
+    );
+    return newMonsterWeaponVolley({
+        source,
         aimedAt: target,
+        targetKind: 'monster',
+        weapon,
         volley,
-        shots,
         launched,
-    };
+        shot,
+    });
 }

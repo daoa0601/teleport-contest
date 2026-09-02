@@ -20,7 +20,11 @@ import {
     beginMonsterSpitAttack, monsterDryRattleMessage,
     resolveMonsterSpitFlight,
 } from './monster_spit.js';
-import { throwMonsterWeaponAtMonster } from './monster_throw.js';
+import {
+    continueMonsterWeaponVolley, finishDeferredRangedProjectileHit,
+    throwMonsterWeaponAtMonster,
+} from './monster_throw.js';
+import { makePlural } from './object_grammar.js';
 import { clearPath } from './vision.js';
 
 const DOG_HUNGRY = 300;
@@ -266,15 +270,11 @@ export function beginMonsterRangedAttack(
         }
     }
     if (weaponAttacks.length) {
-        const firstAttack = weaponAttacks[0];
         return {
             kind: 'weapon',
-            ...firstAttack,
-            hit: weaponAttacks.some(attack => attack.hit),
-            damage: weaponAttacks.reduce(
-                (total, attack) => total + attack.damage,
-                0,
-            ),
+            target,
+            launched: true,
+            madeAttack: true,
             attacks: weaponAttacks,
             readiedWeapon,
         };
@@ -323,18 +323,21 @@ function middleSentenceSubject(monster) {
 }
 
 async function presentRetaliationWeapons(
-    monster, attacks, state, publish, finishMonsterKill,
+    monster, attacks, state, publish, finishMonsterKill, random, rollOne,
 ) {
     for (const attack of attacks) {
         if (canProjectMonster(monster, monster.mx, monster.my)) {
             const article = /^[aeiou]/i.test(attack.appearance) ? 'an' : 'a';
+            const object = attack.volley > 1
+                ? `${attack.volley} ${makePlural(attack.appearance)}`
+                : `${article} ${attack.appearance}`;
             await publish(`${monsterSentenceSubject(monster)} ${
                 attack.launched ? 'shoots' : 'throws'
-            } ${article} ${attack.appearance}!`);
+            } ${object}!`);
         }
-        for (const shot of attack.shots || [attack]) {
-            if (!shot.target) continue;
-            if (canProjectMonster(
+        let shot = attack.shots[0];
+        while (shot) {
+            if (shot.target && canProjectMonster(
                 shot.target, shot.target.mx, shot.target.my,
             )) {
                 await publish(`The ${shot.appearance} ${
@@ -351,8 +354,14 @@ async function presentRetaliationWeapons(
                     );
                 }
                 await finishMonsterKill(shot.target, { noCorpse: false });
-                return true;
+                shot.targetDied = !state.level?.monsters?.includes(shot.target)
+                    || (shot.target.mhp ?? 0) <= 0;
             }
+            finishDeferredRangedProjectileHit(shot, state, random);
+            if (shot.targetDied && shot.target === attack.aimedAt) return true;
+            shot = continueMonsterWeaponVolley(
+                attack, state, { random, rollOne },
+            );
         }
     }
     return false;
@@ -367,6 +376,7 @@ async function resolveRetaliationAttack(
         ? attack.attacks : attack.weaponAttacks || [];
     const targetDied = await presentRetaliationWeapons(
         monster, weaponAttacks, state, publish, finishMonsterKill,
+        random, rollOne,
     );
     if (targetDied) return attack;
 

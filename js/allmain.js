@@ -76,7 +76,8 @@ import {
     makePlural, simpleObjectNameWithArticle,
 } from './object_grammar.js';
 import {
-    continueMonsterWeaponVolleyAtHero,
+    continueMonsterWeaponVolley,
+    finishDeferredRangedProjectileHit,
     finishHeroProjectileHit,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
@@ -5892,9 +5893,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                     ranged.targetDied = !death.survived;
                 }
+                finishDeferredRangedProjectileHit(ranged, game);
             }
             if (rangedAttack.missileStack) {
-                const nextShot = continueMonsterWeaponVolleyAtHero(
+                const nextShot = continueMonsterWeaponVolley(
                     rangedAttack, game,
                 );
                 if (nextShot) {
@@ -5908,7 +5910,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (rangedAttacks.length && !movement?.petBreath
             && (monster.mtame || monster.pet)) {
-            const target = rangedAttacks.find(attack => attack.target)?.target;
+            const target = rangedAttacks.find(attack => attack.aimedAt)
+                ?.aimedAt;
             movement.rangedRetaliation = await resolvePetRangedResponse(
                 monster, target, movement,
             );

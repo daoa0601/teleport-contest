@@ -5,7 +5,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { addMonsterToLevel } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 import {
-    freshRangedCombatRoom, rangedPet, rangedTarget,
+    finishRangedAttacks, freshRangedCombatRoom, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 import { carriedObject } from './support/game-objects.js';
 import {
@@ -120,6 +120,9 @@ test('an iron golem throws before using its breath attack', async () => {
     }));
 
     const action = quietMonsterActionRng(golem, game);
+    finishRangedAttacks(action.movement.rangedAttacks, game, {
+        random: () => 0,
+    });
     const hitPointsAfterDagger = target.mhp;
     await resolveBreath(golem, action.movement.petBreath);
 
