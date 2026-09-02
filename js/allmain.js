@@ -160,6 +160,7 @@ import {
     resumeDeferredMonsterLandMine,
     resumeDeferredMonsterPitTrap,
     resumeDeferredMonsterRockTrap,
+    resumeDeferredMonsterSleepGasTrap,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -4047,6 +4048,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             movement = action.movement;
             if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
+        if (movement?.trap?.kind === 'sleep-gas'
+            && movement.deferredAfterMonsterSleepGasTrap) {
+            const event = movement.trap;
+            await resumeDeferredMonsterSleepGasTrap(action, game, {
+                publish: queueTurnMessage,
+                describeMonster: visibleMonsterSubject,
+            });
+            movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
+        }
         if (movement?.trap?.kind === 'fire-trap'
             && movement.deferredAfterMonsterFireTrap) {
             const event = movement.trap;
@@ -4121,13 +4132,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster, movement.trap, monsterIsSeen,
             );
             if (message) await queueTurnMessage(message);
-        }
-        if (movement?.trap?.kind === 'sleep-gas'
-            && movement.trap.slept && monsterIsSeen) {
-            movement.trap.trap.tseen = true;
-            await queueTurnMessage(
-                `${visibleMonsterSubject(monster)} suddenly falls asleep!`,
-            );
         }
         if (movement?.trap?.kind === 'rust-trap') {
             const event = movement.trap;

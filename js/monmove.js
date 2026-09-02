@@ -45,6 +45,10 @@ import {
     beginMonsterProjectileTrap, finishMonsterProjectileTrap,
     projectileTrapNeedsResume,
 } from './projectile_trap.js';
+import {
+    beginMonsterSleepGasTrap, finishMonsterSleepGasTrap,
+    sleepGasTrapNeedsResume,
+} from './sleep_gas_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -129,10 +133,6 @@ import {
     monsterCanFogWithEmptyInventory, monsterCanOozeWithEmptyInventory,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
-import {
-    monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
-    putMonsterToSleep,
-} from './monster_sleep.js';
 import { randomBottleName } from './potion_hit.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
@@ -4550,9 +4550,6 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
-        // trap.c:mintrap()/trapeffect_slp_gas_trap().  Knowledge and the
-        // ordinary 3-in-4 avoidance gate belong to mintrap(); the gas effect
-        // then rolls its duration only for a susceptible, active breather.
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4561,25 +4558,16 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const resistant = monsterResistsSleep(monster);
-        const breathless = monsterIsBreathless(monster);
-        const helpless = monsterIsHelpless(monster);
-        let duration = 0;
-        let slept = false;
-        if (!resistant && !breathless && !helpless) {
-            duration = rollOne(25);
-            calls.push('rnd(25)');
-            // sleep_monst() repeats intrinsic resistance and additionally
-            // checks defended(AD_SLEE).  With how=-1 it performs no magic-
-            // resistance roll; a successful timed sleep is stored in
-            // mcanmove/mfrozen and terminates any meal.
-            slept = putMonsterToSleep(monster, duration);
-        }
-        const event = {
-            kind: 'sleep-gas', trap, duration, slept,
-            damage: 0, killed: false,
-        };
+        const event = beginMonsterSleepGasTrap(monster, trap, state, {
+            rollOne: range => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
         movement.trap = event;
+        if (sleepGasTrapNeedsResume(event))
+            movement.deferredAfterMonsterSleepGasTrap = true;
         return event;
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
@@ -7374,6 +7362,7 @@ function monsterTrapResultIsDeferred(movement) {
         || movement.deferredAfterMonsterLandMine
         || movement.deferredAfterMonsterPitTrap
         || movement.deferredAfterMonsterRockTrap
+        || movement.deferredAfterMonsterSleepGasTrap
         || movement.deferredAfterAntiMagicTrapMessage
         || movement.deferredAfterAntiMagicTrapDeath);
 }
@@ -7707,6 +7696,31 @@ export async function resumeDeferredMonsterRockTrap(
         return action;
     }
 
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG,
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterSleepGasTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterSleepGasTrap
+        || event?.kind !== 'sleep-gas') return action;
+    delete movement.deferredAfterMonsterSleepGasTrap;
+    await finishMonsterSleepGasTrap(action.monster, event, {
+        publish,
+        describeMonster,
+    });
     continueAfterMonsterTrap(
         action, state, random, rollDice, rollOne,
         action.calls || DISCARDED_CALL_LOG,
