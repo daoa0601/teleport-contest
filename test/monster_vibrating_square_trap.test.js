@@ -8,16 +8,10 @@ import {
 } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function monsterOnVibratingSquare(options) {
-    return freshMonsterTrapRoom(VIBRATING_SQUARE, {
-        monster: options,
-    });
-}
-
 test('a visible monster reveals the vibrating square under its feet',
     async () => {
-        const { monster, trap } = monsterOnVibratingSquare({
-            species: 'giant',
+        const { monster, trap } = freshMonsterTrapRoom(VIBRATING_SQUARE, {
+            monster: { species: 'giant' },
         });
         const messages = [];
 
@@ -31,8 +25,8 @@ test('a visible monster reveals the vibrating square under its feet',
     });
 
 test('the vibration appears beneath an airborne monster', async () => {
-    const { monster, trap } = monsterOnVibratingSquare({
-        species: 'red dragon',
+    const { monster, trap } = freshMonsterTrapRoom(VIBRATING_SQUARE, {
+        monster: { species: 'red dragon' },
     });
     const messages = [];
 
@@ -46,8 +40,8 @@ test('the vibration appears beneath an airborne monster', async () => {
 });
 
 test('an unseen monster makes the nearby ground vibrate', async () => {
-    const { monster, trap } = monsterOnVibratingSquare({
-        species: 'giant', minvis: 1,
+    const { monster, trap } = freshMonsterTrapRoom(VIBRATING_SQUARE, {
+        monster: { species: 'giant', minvis: 1 },
     });
     const messages = [];
 

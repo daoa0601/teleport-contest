@@ -10,12 +10,10 @@ import { ARROW } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function monsterOnArrowTrap(gameplaySeed) {
-    return freshMonsterTrapRoom(ARROW_TRAP, { gameplaySeed });
-}
-
 test('an arrow trap hits a visible monster', async () => {
-    const { level, monster, trap } = monsterOnArrowTrap(1n);
+    const { level, monster, trap } = freshMonsterTrapRoom(ARROW_TRAP, {
+        gameplaySeed: 1n,
+    });
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
@@ -32,7 +30,9 @@ test('an arrow trap hits a visible monster', async () => {
 });
 
 test('an arrow that misses remains on the floor', async () => {
-    const { level, monster } = monsterOnArrowTrap(9n);
+    const { level, monster } = freshMonsterTrapRoom(ARROW_TRAP, {
+        gameplaySeed: 9n,
+    });
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);

@@ -8,14 +8,10 @@ import {
 } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function monsterOnPit(species) {
-    return freshMonsterTrapRoom(PIT, {
-        monster: { species },
-    });
-}
-
 test('a grounded monster falls into a pit', async () => {
-    const { monster, trap } = monsterOnPit('giant');
+    const { monster, trap } = freshMonsterTrapRoom(PIT, {
+        monster: { species: 'giant' },
+    });
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
@@ -31,7 +27,9 @@ test('a grounded monster falls into a pit', async () => {
 });
 
 test('a flying monster passes over a pit', () => {
-    const { monster, trap } = monsterOnPit('red dragon');
+    const { monster, trap } = freshMonsterTrapRoom(PIT, {
+        monster: { species: 'red dragon' },
+    });
 
     const action = triggerImmediateMonsterTrap(monster, game);
 
