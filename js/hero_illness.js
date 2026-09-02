@@ -19,6 +19,9 @@ import {
 import { heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rn2 } from './rng.js';
+import {
+    heroAcidBreathAttack, hitHeroWithAcidBreath,
+} from './zap.js';
 
 const S_RODENT = 18;
 const M1_ACID = 0x08000000;
@@ -138,6 +141,8 @@ export async function vomitHero({
     publish = pline,
     angerAltar = altarWrath,
     melt = meltIce,
+    random = rn2,
+    rollDice = d,
 } = {}) {
     const hero = state.u || (state.u = {});
     const cannotVomit = heroCannotVomit(state);
@@ -157,6 +162,19 @@ export async function vomitHero({
         return { spewed: false, cannotVomit };
 
     const x = hero.ux, y = hero.uy;
+    const acidBreath = heroAcidBreathAttack(state);
+    if (acidBreath) {
+        await publish('You breathe acid on yourself...');
+        const breath = await hitHeroWithAcidBreath({
+            state,
+            attack: acidBreath,
+            publish,
+            random,
+            rollDice,
+        });
+        if (breath.heroDied)
+            return { spewed: true, cannotVomit: false, heroDied: true };
+    }
     if (state.level?.at(x, y)?.typ === ALTAR)
         await angerAltar(x, y, state);
     const form = heroMonsterForm(state);

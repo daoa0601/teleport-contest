@@ -168,7 +168,7 @@ import {
     finishDeferredHeroRustArmor,
     resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
     resumeDeferredHeroRustArmor,
-} from './hero_armor_erosion.js';
+} from './hero_erosion.js';
 import {
     killGenocidedMonster, resolveMonsterLiquid, wakeMonstersNear,
     wakeMonstersNearWithMessages,

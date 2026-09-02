@@ -1,16 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
+import {
+    A_CON, SICK_NONVOMITABLE, SICK_VOMITABLE, W_ARM,
+} from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
     advanceHeroSickness, advanceHeroVomiting, startHeroSickness,
     startHeroVomiting, vomitHero,
 } from '../js/hero_illness.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CHAIN_MAIL, LONG_SWORD } from '../js/object_data.js';
+import {
+    knownInventoryObject, knownInventoryWeapon,
+} from './support/game-objects.js';
+import { wearHeroObject } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-const PM_SEWER_RAT = 88;
-const PM_ARCHEOLOGIST = 331;
+const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
+const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
+const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 
 function freshIllnessRoom() {
     freshObjectRoom({
@@ -138,3 +147,43 @@ test('a rat form cannot vomit away food poisoning', async () => {
     assert.equal(game.u.sick, true);
     assert.equal(game._helplessTurns, 2);
 });
+
+test('a vomiting yellow dragon breathes acid on its weapon and armor',
+    async () => {
+        freshIllnessRoom();
+        Object.assign(game.u, {
+            umonster: PM_ARCHEOLOGIST,
+            umonnum: PM_YELLOW_DRAGON,
+            mtimedone: 20,
+            mh: 40,
+            mhmax: 40,
+        });
+        const sword = knownInventoryWeapon(LONG_SWORD);
+        game.uwep = sword;
+        game.u.uwep = sword;
+        const mail = wearHeroObject(
+            knownInventoryObject(CHAIN_MAIL), 'uarm', W_ARM,
+        );
+        const rolls = [0, 0, 1];
+        const messages = [];
+
+        await vomitHero({
+            state: game,
+            publish: async message => messages.push(message),
+            random: range => {
+                const value = rolls.shift();
+                assert.ok(value >= 0 && value < range);
+                return value;
+            },
+        });
+
+        assert.deepEqual(messages, [
+            'You breathe acid on yourself...',
+            "The acid doesn't hurt.",
+            'Your long sword corrodes!',
+            'Your chain mail corrodes!',
+        ]);
+        assert.equal(game.u.mh, 40);
+        assert.equal(sword.oeroded2, 1);
+        assert.equal(mail.oeroded2, 1);
+    });
