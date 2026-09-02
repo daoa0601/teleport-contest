@@ -2,7 +2,13 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj().
 
 import { LOST_THROWN } from './const.js';
+import {
+    flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell,
+    transientObjectGlyph,
+} from './display.js';
+import { game } from './gstate.js';
 import { splitObjectStack } from './object_stack.js';
+import { cansee } from './vision.js';
 
 const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
@@ -38,4 +44,35 @@ export function detachThrownUnit(
     }
     thrown.how_lost = LOST_THROWN;
     return thrown;
+}
+
+export async function captureThrownObjectFlight(
+    object, flightPath, state = game,
+) {
+    const glyph = transientObjectGlyph(object);
+    let transientCell = null;
+    let transientCursor = null;
+    try {
+        for (const cell of flightPath) {
+            if (cansee(cell.x, cell.y)) {
+                if (transientCell)
+                    newsym(transientCell.x, transientCell.y);
+                show_glyph_cell(
+                    cell.x, cell.y, glyph.ch, glyph.color,
+                    glyph.decgfx, glyph.attr,
+                );
+                transientCell = cell;
+                transientCursor = lastDirtyMapCursor()
+                    ?? [cell.x, cell.y + 1];
+            }
+            const frameCursor = transientCursor ?? lastDirtyMapCursor();
+            await flush_screen(1);
+            if (frameCursor)
+                state.nhDisplay?.setCursor(...frameCursor);
+            await state.animationFrame?.();
+        }
+    } finally {
+        if (transientCell)
+            newsym(transientCell.x, transientCell.y);
+    }
 }

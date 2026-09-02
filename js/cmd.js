@@ -28,7 +28,7 @@ import {
     monsterHasWarningProjection,
     see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName,
     randomDisplayMonsterSubject, see_monsters, see_objects, see_traps,
-    transientObjectGlyph, lastDirtyMapCursor,
+    transientObjectGlyph,
     map_object, map_invisible,
     unmap_invisible,
 } from './display.js';
@@ -120,6 +120,7 @@ import {
     setQuiverObject,
 } from './quiver.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
+import { captureThrownObjectFlight } from './thrown_object.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
     destroyMulchedProjectile, shouldMulchMissile,
@@ -9184,35 +9185,6 @@ async function dofire(cannedShotLimit = null) {
         if (quiverSelectionSpentTime && !game.context.move)
             game.context.move = 1;
         return;
-    }
-}
-
-async function captureThrownObjectFlight(object, flightPath) {
-    const glyph = transientObjectGlyph(object);
-    let transientCell = null;
-    let transientCursor = null;
-    try {
-        for (const cell of flightPath) {
-            if (cansee(cell.x, cell.y)) {
-                if (transientCell)
-                    newsym(transientCell.x, transientCell.y);
-                show_glyph_cell(
-                    cell.x, cell.y, glyph.ch, glyph.color,
-                    glyph.decgfx, glyph.attr,
-                );
-                transientCell = cell;
-                transientCursor = lastDirtyMapCursor()
-                    ?? [cell.x, cell.y + 1];
-            }
-            const frameCursor = transientCursor ?? lastDirtyMapCursor();
-            await flush_screen(1);
-            if (frameCursor)
-                game.nhDisplay?.setCursor(...frameCursor);
-            await game.animationFrame?.();
-        }
-    } finally {
-        if (transientCell)
-            newsym(transientCell.x, transientCell.y);
     }
 }
 
