@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { useHeroWereSummon } from '../js/were.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 function installWerewolfHero(energy) {
@@ -26,9 +25,7 @@ function installWerewolfHero(energy) {
 
 test('a werewolf uses #monster to call tame wolves', async () => {
     const level = installWerewolfHero(30);
-    pushKeys(`monster\n${' '.repeat(8)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(' '.repeat(8));
 
     const helpers = level.monsters.filter(monster => monster.mtame > 0);
     assert.ok(helpers.length >= 1 && helpers.length <= 5);

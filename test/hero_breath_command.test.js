@@ -1,16 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { IRONBARS, ROOM, W_ARMH, W_ARMS, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroBreathAttack } from '../js/hero_breath.js';
 import { useHeroBreath } from '../js/hero_breath_command.js';
-import { pushKeys } from '../js/input.js';
 import {
     BLACK_DRAGON_SCALES, HELMET, LONG_SWORD, SMALL_SHIELD,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -58,9 +57,7 @@ test('a winter wolf uses #monster to breathe frost at a target', async () => {
         peaceful: false,
     });
     initRng(7n);
-    pushKeys(`monster\nl${' '.repeat(12)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(`l${' '.repeat(12)}`);
 
     assert.equal(game.u.uen, 15);
     assert.equal(game.context.move, 1);

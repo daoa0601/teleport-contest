@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
-import { pushKeys } from '../js/input.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -36,9 +35,7 @@ function spit(aim, options = {}) {
 
 test('a cobra uses #monster to spit venom', async () => {
     const level = installSpittingHero('cobra');
-    pushKeys(`monster\nl${' '.repeat(8)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(`l${' '.repeat(8)}`);
 
     assert.equal(game.context.move, 1);
     assert.equal(floorObjects(level).length, 0);

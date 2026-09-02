@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
-import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
 
@@ -53,9 +52,7 @@ test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
         mcansee: 0,
     });
     initRng(7n);
-    pushKeys(`monster\n${' '.repeat(20)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(' '.repeat(20));
 
     assert.equal(game.u.uen, 10);
     assert.equal(game.context.move, 1);

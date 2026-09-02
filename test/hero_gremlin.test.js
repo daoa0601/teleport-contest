@@ -2,10 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { POOL, ROOM } from '../js/const.js';
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
@@ -32,9 +31,7 @@ function installGremlinHero(terrain) {
 
 test('a gremlin can multiply while standing on a pool', async () => {
     const level = installGremlinHero(POOL);
-    pushKeys(`monster\n${' '.repeat(4)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(' '.repeat(4));
 
     const clone = level.monsters.find(monster =>
         monster.mnum === PM_GREMLIN && monster.mtame > 0);
@@ -46,9 +43,7 @@ test('a gremlin can multiply while standing on a pool', async () => {
 
 test('a gremlin cannot multiply away from water', async () => {
     const level = installGremlinHero(ROOM);
-    pushKeys('monster\n');
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand();
 
     assert.equal(level.monsters.length, 0);
     assert.equal(game.u.mh, 17);

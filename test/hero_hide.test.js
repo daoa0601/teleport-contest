@@ -1,27 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { STONING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
-import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, ROCK } from '../js/object_data.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
-
-async function useMonsterAbility() {
-    pushKeys('monster\n');
-    await rhack('#'.charCodeAt(0));
-}
 
 test('a trapper can hide on the floor', async () => {
     freshRoomWithPolymorphedHero('trapper');
 
-    await useMonsterAbility();
+    await runMonsterAbilityCommand();
 
     assert.equal(game.u.uundetected, 1);
     assert.equal(game.context.move, 1);
@@ -30,14 +24,14 @@ test('a trapper can hide on the floor', async () => {
 test('a snake needs an object to hide underneath', async () => {
     freshRoomWithPolymorphedHero('garter snake');
 
-    await useMonsterAbility();
+    await runMonsterAbilityCommand();
 
     assert.equal(game.u.uundetected, 0);
     assert.equal(game.context.move, 0);
     assert.match(game._pending_message, /nothing to hide under/);
 
     floorObject(ROCK, game.u.ux, game.u.uy);
-    await useMonsterAbility();
+    await runMonsterAbilityCommand();
 
     assert.equal(game.u.uundetected, 1);
     assert.equal(game.context.move, 1);
@@ -47,7 +41,7 @@ test('a hiding mimic is drawn as an object', async () => {
     freshRoomWithPolymorphedHero('small mimic');
     game.nhDisplay = new GameDisplay(null);
 
-    await useMonsterAbility();
+    await runMonsterAbilityCommand();
     await flush_screen(1);
 
     const cell = game.nhDisplay.grid[game.u.uy + 1][game.u.ux - 1];

@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
-import { pushKeys } from '../js/input.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
 
@@ -40,9 +39,7 @@ test('an umber hulk uses #monster to confuse a visible monster', async () => {
         x: 11,
         y: 10,
     });
-    pushKeys(`monster\n${' '.repeat(6)}`);
-
-    await rhack('#'.charCodeAt(0));
+    await runMonsterAbilityCommand(' '.repeat(6));
 
     assert.equal(jackal.mconf, 1);
     assert.equal(game.u.uen, 15);
