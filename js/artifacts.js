@@ -263,6 +263,7 @@ export function nameArtifact(object, artifact) {
         ...(object.oextra || {}),
         oname: artifact.name,
     };
+    if (artifact.invokePower === 'fling-poison') object.opoisoned = 1;
     object.age = 0;
     object.quan = 1;
     object.quantity = 1;

@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    ARTIFACTS, artifactById, artifactByName, initializeArtifacts,
+    ARTIFACTS, artifactById, artifactByName, initializeArtifacts, nameArtifact,
 } from '../js/artifacts.js';
+import { game } from '../js/gstate.js';
 import { roles } from '../js/roles.js';
 
 test('artifact enum excludes the disabled Palantir slot', () => {
@@ -75,4 +76,14 @@ test('Excalibur retains Knight role ownership only for Knights', () => {
         artifactByName('The Magic Mirror of Merlin', state).role,
         'knight',
     );
+});
+
+test('naming Grimtooth permanently poisons its dagger', () => {
+    initializeArtifacts(game);
+    const grimtooth = artifactByName('Grimtooth');
+    const dagger = { otyp: grimtooth.baseType };
+
+    nameArtifact(dagger, grimtooth);
+
+    assert.equal(dagger.opoisoned, 1);
 });

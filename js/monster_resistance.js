@@ -11,10 +11,15 @@ import {
 import { rn2 } from './rng.js';
 
 const MR_ACID = 0x40;
+const MR_POISON = 0x20;
+
+function monsterResistanceBits(monster) {
+    return (MONSTER_RESISTS[monster?.mnum] ?? 0)
+        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+}
 
 export function monsterHasAcidResistance(monster) {
-    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
-        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
+    const resistanceBits = monsterResistanceBits(monster);
     if ((resistanceBits & MR_ACID) || monster?.acidResistance
         || monster?.acid_resistance) return true;
 
@@ -28,6 +33,12 @@ export function monsterHasAcidResistance(monster) {
             && !!(wornMask & W_ARMC);
         return dragonArmor || smock;
     });
+}
+
+export function monsterHasPoisonResistance(monster) {
+    return !!(monsterResistanceBits(monster) & MR_POISON)
+        || !!monster?.poisonResistance
+        || !!monster?.poison_resistance;
 }
 
 export function monsterResistsEffect(

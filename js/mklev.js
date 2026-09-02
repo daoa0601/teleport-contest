@@ -154,6 +154,9 @@ import {
     curseObjectState, objectResistsDestruction,
 } from './object_state.js';
 import {
+    isMultiGeneratedWeapon, isPoisonableObject,
+} from './object_properties.js';
+import {
     mergable as objectsMergable, mergeObjectStacks,
 } from './object_merge.js';
 import { addObjectToContainer } from './object_container.js';
@@ -649,15 +652,6 @@ function bcsign(otmp) {
     return Number(!!otmp.blessed) - Number(!!otmp.cursed);
 }
 
-function isMultigen(otmp) {
-    const skill = OBJECT_SUBTYPE[otmp.otyp];
-    return otmp.oclass === WEAPON_CLASS && skill >= -24 && skill <= -20;
-}
-
-function isPoisonable(otmp) {
-    return isMultigen(otmp);
-}
-
 function mayGenerateEroded(otmp) {
     // C ref: may_generate_eroded(): starting inventory is pristine, while
     // objects produced by mklev on move zero may still be damaged.
@@ -703,7 +697,7 @@ function mksobj_init(otmp, artif) {
     const otyp = otmp.otyp;
     switch (otmp.oclass) {
     case WEAPON_CLASS:
-        if (isMultigen(otmp)) otmp.quan = rn1(6, 6);
+        if (isMultiGeneratedWeapon(otmp)) otmp.quan = rn1(6, 6);
         if (!rn2(11)) {
             otmp.spe = rne(3);
             otmp.blessed = !!rn2(2);
@@ -713,7 +707,7 @@ function mksobj_init(otmp, artif) {
         } else {
             blessorcurse(otmp, 10);
         }
-        if (isPoisonable(otmp)) otmp.opoisoned = rn2(100) === 0;
+        if (isPoisonableObject(otmp)) otmp.opoisoned = rn2(100) === 0;
         // The artifact roll can succeed for a base weapon which has no
         // matching artifact entry; mk_artifact() then leaves it ordinary.
         if (artif

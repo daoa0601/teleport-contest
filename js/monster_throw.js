@@ -20,6 +20,8 @@ import {
     FLINT, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
+import { isPoisonableObject } from './object_properties.js';
+import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
@@ -320,6 +322,10 @@ export async function presentMonsterProjectileContact(contact, publish) {
     await publish(contact.hit
         ? `The ${contact.appearance} hits ${target}.`
         : `The ${contact.appearance} misses ${target}.`);
+    if (contact.poisonResisted)
+        await publish(`The poison doesn't seem to affect ${target}.`);
+    else if (contact.poisonDeadly)
+        await publish('The poison was deadly...');
     if (contact.targetDied) {
         const subject = target === 'it'
             ? 'It' : `The ${target.slice(4)}`;
@@ -435,7 +441,7 @@ function positionsAreLinedUp(source, target) {
 }
 
 function hitMonsterWithMissile(
-    source, intendedTarget, defender, missile, rollOne,
+    source, intendedTarget, defender, missile, random, rollOne,
 ) {
     let hitThreshold = 5 + findMonsterArmorClass(defender);
     const sourceLevel = source.m_lev ?? MONSTER_LEVEL[source.mnum] ?? 0;
@@ -443,9 +449,21 @@ function hitMonsterWithMissile(
         hitThreshold += sourceLevel - 5;
     const hitRoll = rollOne(20);
     const hit = hitThreshold >= hitRoll;
-    const damage = hit
+    let damage = hit
         ? projectileDamageAgainstMonster(missile, defender, rollOne)
         : 0;
+    let poisonResisted = false;
+    let poisonDeadly = false;
+    if (hit && missile.opoisoned && isPoisonableObject(missile)) {
+        if (monsterHasPoisonResistance(defender)) {
+            poisonResisted = true;
+        } else if (random(30)) {
+            damage += rollOne(6);
+        } else {
+            poisonDeadly = true;
+            damage = defender.mhp ?? 1;
+        }
+    }
     if (hit) {
         defender.msleeping = 0;
         defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
@@ -460,6 +478,8 @@ function hitMonsterWithMissile(
         hitRoll,
         hitThreshold,
         damage,
+        poisonResisted,
+        poisonDeadly,
     };
 }
 
@@ -486,7 +506,7 @@ function throwOneMonsterMissile(
         }
 
         const contact = hitMonsterWithMissile(
-            source, target, defender, missile, rollOne,
+            source, target, defender, missile, random, rollOne,
         );
         if (!contact.hit) {
             random(5);
@@ -543,7 +563,7 @@ function throwOneMonsterMissileAtHero(
         const defender = livingMonsterAt(state, source, x, y);
         if (defender) {
             const contact = hitMonsterWithMissile(
-                source, null, defender, missile, rollOne,
+                source, null, defender, missile, random, rollOne,
             );
             if (!contact.hit) {
                 random(5);

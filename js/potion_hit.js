@@ -35,7 +35,9 @@ import {
 import {
     AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
-import { monsterHasAcidResistance } from './monster_resistance.js';
+import {
+    monsterHasAcidResistance, monsterHasPoisonResistance,
+} from './monster_resistance.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
@@ -73,7 +75,6 @@ const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
-const MR_POISON = 0x20;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
@@ -233,10 +234,7 @@ function heroHasVaporShield(state) {
 }
 
 function sicknessCannotHarmMonster(monster) {
-    const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
-        | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
-    return !!(resistanceBits & MR_POISON)
-        || !!monster?.poisonResistance
+    return monsterHasPoisonResistance(monster)
         || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
             attack[1] === AD_DISE || attack[1] === AD_PEST);
 }

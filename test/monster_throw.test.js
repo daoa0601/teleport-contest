@@ -13,7 +13,7 @@ import { NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER,
-    ELVEN_ARROW, ELVEN_BOW,
+    DART, ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -35,6 +35,8 @@ import {
     finishRangedAttacks, freshRangedCombatRoom,
     rangedMonster, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
+
+const PROJECTILE_GLYPH = { ch: ')', color: 0, decgfx: false, attr: 0 };
 
 test('a monster readies the launcher required by its ammunition', () => {
     const bow = carriedObject(BOW);
@@ -78,6 +80,95 @@ test('a tame orc throws a dagger at a distant monster', () => {
         ),
         true,
     );
+});
+
+test('a poisoned dart adds poison damage to a susceptible monster', () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n });
+    const dart = carriedObject(DART, { opoisoned: 1 });
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dart],
+    }));
+    const target = addMonsterToLevel(rangedTarget('purple worm', {
+        hitPoints: 20,
+        mac: 100,
+    }));
+    const options = { random: () => 1, rollOne: () => 1 };
+
+    const attack = throwMonsterWeaponAtMonster(
+        orc, target, game, options,
+    );
+    finishRangedAttacks([attack], game, options);
+
+    assert.equal(target.mhp, 18);
+});
+
+test('poison resistance stops the poison on a thrown dart', async () => {
+    freshRangedCombatRoom({
+        gameplaySeed: 1n,
+        recalculateVision: true,
+    });
+    game.nhDisplay = new GameDisplay(null);
+    const dart = carriedObject(DART, { opoisoned: 1 });
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dart],
+    }));
+    const target = addMonsterToLevel(rangedTarget('green dragon', {
+        hitPoints: 20,
+        mac: 100,
+    }));
+    const options = { random: () => 1, rollOne: () => 1 };
+
+    const attack = throwMonsterWeaponAtMonster(
+        orc, target, game, options,
+    );
+    const messages = [];
+    await presentMonsterProjectileShot(
+        attack.shots[0],
+        PROJECTILE_GLYPH,
+        game,
+        { publish: async message => messages.push(message) },
+    );
+
+    assert.equal(target.mhp, 19);
+    assert.deepEqual(messages, [
+        'The dart hits the green dragon.',
+        "The poison doesn't seem to affect the green dragon.",
+    ]);
+});
+
+test('deadly poison on a thrown dart kills the monster', async () => {
+    freshRangedCombatRoom({
+        gameplaySeed: 1n,
+        recalculateVision: true,
+    });
+    game.nhDisplay = new GameDisplay(null);
+    const dart = carriedObject(DART, { opoisoned: 1 });
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dart],
+    }));
+    const target = addMonsterToLevel(rangedTarget('purple worm', {
+        hitPoints: 20,
+        mac: 100,
+    }));
+    const options = { random: () => 0, rollOne: () => 1 };
+
+    const attack = throwMonsterWeaponAtMonster(
+        orc, target, game, options,
+    );
+    const messages = [];
+    await presentMonsterProjectileShot(
+        attack.shots[0],
+        PROJECTILE_GLYPH,
+        game,
+        { publish: async message => messages.push(message) },
+    );
+
+    assert.equal(target.mhp, 0);
+    assert.deepEqual(messages, [
+        'The dart hits the purple worm.',
+        'The poison was deadly...',
+        'The purple worm is killed!',
+    ]);
 });
 
 test('a tame orc shoots an arrow with its bow', () => {
@@ -279,7 +370,7 @@ test('a missed intervening monster does not hide the later hit', async () => {
     const messages = [];
     await presentMonsterProjectileShot(
         attack.shots[0],
-        { ch: ')', color: 0, decgfx: false, attr: 0 },
+        PROJECTILE_GLYPH,
         game,
         { publish: async message => messages.push(message) },
     );
