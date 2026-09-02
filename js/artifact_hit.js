@@ -6,6 +6,7 @@ import { Upolyd } from './const.js';
 import { game } from './gstate.js';
 import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
+import { applyMagicbaneHit } from './magicbane.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import {
     MONSTER_NAME, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous,
@@ -211,6 +212,16 @@ export async function applyArtifactHitToMonster(
         return applyLifeDrain(artifact, monster, damage, {
             state,
             visible,
+            describeTarget,
+            publish,
+            random,
+            rollOne,
+        });
+    }
+    if (artifact.name === 'Magicbane' && dieRoll >= 1 && dieRoll <= 8) {
+        return applyMagicbaneHit(object, monster, damage, bonus > 0, {
+            state,
+            dieRoll,
             describeTarget,
             publish,
             random,

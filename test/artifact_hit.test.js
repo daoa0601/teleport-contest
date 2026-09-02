@@ -88,6 +88,60 @@ test('Stormbringer drains a monster level and heals its wielder', async () => {
     assert.equal(game.u.uhp, 9);
 });
 
+test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
+    freshObjectRoom({
+        hero: { uen: 2, uenmax: 3, uenpeak: 3 },
+    });
+    const monster = liveMonster({
+        species: 'gnomish wizard', x: 12, y: 10,
+    });
+    const messages = [];
+
+    const hit = await applyArtifactHitToMonster(
+        artifactObject('Magicbane', { spe: 0 }), monster, 4, {
+            state: game,
+            dieRoll: 1,
+            describeTarget: () => 'the gnomish wizard',
+            publish: async message => messages.push(message),
+            random: range => range - 1,
+            rollOne: maximumRoll,
+        },
+    );
+
+    assert.equal(hit.damage, 24);
+    assert.equal(monster.mcan, 1);
+    assert.equal(game.u.uen, 3);
+    assert.equal(game.u.uenmax, 4);
+    assert.equal(game.u.uenpeak, 4);
+    assert.match(messages[0], /cancels the gnomish wizard/);
+    assert.match(messages[1], /absorb magical energy/);
+});
+
+test('Magicbane scares a surviving monster for three turns', async () => {
+    freshObjectRoom();
+    const monster = liveMonster({
+        species: 'jackal', x: 12, y: 10, hitPoints: 30,
+    });
+    const messages = [];
+
+    const hit = await applyArtifactHitToMonster(
+        artifactObject('Magicbane', { spe: 0 }), monster, 4, {
+            state: game,
+            dieRoll: 3,
+            describeTarget: () => 'the jackal',
+            publish: async message => messages.push(message),
+            random: range => range - 1,
+            rollOne: maximumRoll,
+        },
+    );
+
+    assert.equal(hit.damage, 20);
+    assert.equal(monster.mflee, 1);
+    assert.equal(monster.mfleetim, 3);
+    assert.equal(monster.mstun, undefined);
+    assert.match(messages[0], /scares the jackal/);
+});
+
 test('the Tsurugi bisects small monsters and cuts deeply into large ones',
     async () => {
         freshObjectRoom();

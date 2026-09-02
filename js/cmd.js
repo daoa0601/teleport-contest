@@ -194,6 +194,7 @@ import {
     MONSTER_SYMBOL, MONSTER_ALIGNMENT,
     monsterIsNonliving, monsterIsShade, monsterTypeName,
 } from './monster_data.js';
+import { monsterStatusLine } from './monster_status.js';
 import { nameToMonster } from './mondata.js';
 import {
     gainExperienceLevel, gainLevelAbilities,
@@ -8425,34 +8426,6 @@ function stethoscopePiousness() {
 function stethoscopeAlignment() {
     const alignment = game.u?.ualign?.type ?? 0;
     return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-}
-
-function monsterStatusLine(monster) {
-    const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-    const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
-    const alignmentName = alignment === -128 ? 'unaligned'
-        : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-    const sizeName = ({
-        0: 'tiny', 1: 'small', 2: 'medium', 3: 'large',
-        4: 'huge', 7: 'gigantic',
-    })[MONSTER_SIZE[monster.mnum]] || 'unknown size';
-    const article = monster.mtame ? 'your' : 'the';
-    const conditions = [];
-    if (monster.mtame) conditions.push('tame');
-    else if (monster.mpeaceful) conditions.push('peaceful');
-    if (monster.mcan) conditions.push('cancelled');
-    if (monster.mconf) conditions.push('confused');
-    if (monster.mblinded || monster.mcansee === 0) conditions.push('blind');
-    if (monster.mstun) conditions.push('stunned');
-    if (monster.msleeping) conditions.push('asleep');
-    else if (monster.mcanmove === 0) conditions.push("can't move");
-    if (monster.mflee) conditions.push('scared');
-    if (monster.mtrapped) conditions.push('trapped');
-    if (monster.minvis) conditions.push('invisible');
-    const conditionText = conditions.length ? `, ${conditions.join(', ')}` : '';
-    const armorClass = monster.ac
-        ?? MONSTER_EXPERIENCE_META[monster.mnum]?.[0] ?? 10;
-    return `Status of ${article} ${monsterName} (${alignmentName}, ${sizeName}):  Level ${monster.m_lev ?? 0}  HP ${monster.mhp}(${monster.mhpmax})  AC ${armorClass}${conditionText}.`;
 }
 
 async function useStethoscope(item) {
