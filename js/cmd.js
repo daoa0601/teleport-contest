@@ -60,6 +60,7 @@ import {
 import { heroBreathAttack } from './hero_breath.js';
 import { useHeroBreath } from './hero_breath_command.js';
 import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
+import { heroGazeAttack, useHeroGaze } from './hero_gaze.js';
 import {
     heroCanSummonWerePack, useHeroWereSummon,
 } from './were.js';
@@ -5700,6 +5701,12 @@ async function domonability() {
     }
     if (heroCanRemovePunishment(game)) {
         const result = await useHeroNymphAbility({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    const gaze = heroGazeAttack(game);
+    if (gaze) {
+        const result = await useHeroGaze({ state: game, attack: gaze });
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
