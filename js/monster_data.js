@@ -126,6 +126,12 @@ const S_VORTEX = 22;
 const S_VAMPIRE = 48;
 const S_GHOST = 54;
 const S_GOLEM = 55;
+const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
+    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
+
+export function monsterClassSymbol(mnum) {
+    return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] ?? '?';
+}
 
 export function monsterIsUndead(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_UNDEAD);

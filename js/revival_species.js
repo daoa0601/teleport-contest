@@ -3,8 +3,8 @@
 
 import { MM_FEMALE, MM_MALE } from './const.js';
 import { game } from './gstate.js';
-import { shapechangeMonster } from './mklev.js';
 import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 
 const G_UNIQ = 0x1000;
 const M2_SHAPESHIFTER = 0x00004000;

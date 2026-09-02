@@ -14,11 +14,12 @@ import {
 } from './mondeath.js';
 import { clearMonsterCarriedObjectState } from './monster_inventory.js';
 import {
-    mkcorpstat, mksobj, place_object, shapechangeMonster, stack_object,
+    mkcorpstat, mksobj, place_object, stack_object,
 } from './mklev.js';
 import {
     MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import { BOULDER, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';

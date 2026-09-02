@@ -12,7 +12,7 @@ import {
 import { makePetWary } from './dog.js';
 import { game } from './gstate.js';
 import {
-    makemonAt, makemonNear, remove_object, shapechangeMonster,
+    makemonAt, makemonNear, remove_object,
 } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
@@ -20,6 +20,7 @@ import {
     monsterIsNonliving, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';

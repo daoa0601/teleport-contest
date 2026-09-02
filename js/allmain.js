@@ -8,14 +8,15 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rnd } from './rng.js';
 import {
-    initialShapechangedBirth, mklev, l_nhcore_init, mksobj,
-    initialMonsterSleepState, peaceMinded, rndmonnum,
+    mklev, l_nhcore_init, mksobj, initialMonsterSleepState,
+    peaceMinded, rndmonnum,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
     finishBuriedZombieTimer,
     runClaimedMeltIceTimer,
     runClaimedObjectRotTimer,
 } from './mklev.js';
+import { initialShapechangedBirth } from './monster_polymorph.js';
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
 import { level_difficulty } from './dungeon.js';
 import {
@@ -222,7 +223,8 @@ import { dist2, dungeonDepth } from './hacklib.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
+    MONSTER_SOUND, MONSTER_SYMBOL, monsterClassSymbol, monsterIsNonliving,
+    monsterTypeName,
 } from './monster_data.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
@@ -704,14 +706,12 @@ function randomMonsterRecord(mnum, x, y) {
     // boundary in the transcript.
     const peaceful = peaceMinded(mnum);
     const sleeping = initialMonsterSleepState(mnum);
-    const classSymbols = ['', ...'abcdefghijklmnopqrstuvwxyz',
-        ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
     const monster = {
         mnum, m_id: monsterId, mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female, msleeping: sleeping,
         mpeaceful: peaceful ? 1 : 0,
         mcanmove: 1, movement: 0, mmove: MONSTER_MOVE[mnum] ?? 0,
-        mspeed: 0, symbol: classSymbols[MONSTER_SYMBOL[mnum] || 0] || '?',
+        mspeed: 0, symbol: monsterClassSymbol(mnum),
         color: MONSTER_COLOR[mnum],
         mtrack: [],
     };

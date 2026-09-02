@@ -5,9 +5,9 @@ import { M_AP_MONSTER } from './const.js';
 import { canProjectMonster, pline } from './display.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { shapechangeMonster } from './mklev.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { rn2 } from './rng.js';
 import {

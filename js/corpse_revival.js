@@ -12,7 +12,7 @@ import { makePetWary, tameMonster } from './dog.js';
 import { game } from './gstate.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, maketrap,
-    riderRevivalTime, set_corpsenm, shapechangeMonster,
+    riderRevivalTime, set_corpsenm,
 } from './mklev.js';
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME,
@@ -20,6 +20,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { restoreMonsterTraits } from './monster_traits.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import {
     linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';

@@ -96,9 +96,10 @@ import {
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
 } from './object_data.js';
 import {
-    makemonNear, mkcorpstat, mksobj, place_object, shapechangeMonster,
+    makemonNear, mkcorpstat, mksobj, place_object,
     summonNastyMonsters, stack_object, undeadToCorpse,
 } from './mklev.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';

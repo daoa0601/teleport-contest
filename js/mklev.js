@@ -109,7 +109,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
-    SPECIAL_PM,
+    SPECIAL_PM, monsterClassSymbol,
 } from './monster_data.js';
 import {
     isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
@@ -117,6 +117,9 @@ import {
 import {
     adjustedMonsterLevel, newMonsterHitPoints,
 } from './monster_hit_points.js';
+import {
+    initialShapechangedBirth, shapechangeMonster,
+} from './monster_polymorph.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
@@ -299,18 +302,10 @@ const PM_CAPTAIN = 281;
 const K_RATION = 294;
 const C_RATION = 295;
 const BUGLE = 256;
-const PM_WOLF = 20;
-const PM_FOG_CLOUD = 106;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
 const PM_VLAD_THE_IMPALER = 228;
-const PM_VAMPIRE_BAT = 129;
-const PM_JABBERWOCK = 178;
-const PM_ARCHON = 125;
-const PM_DOPPELGANGER = 270;
-const PM_SANDESTIN = 301;
-const PM_CHAMELEON = 327;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD_OF_YENDOR = 285;
 const PM_DEATH = 311;
@@ -1480,13 +1475,11 @@ const M2_ELF = 0x00000010;
 const M2_DWARF = 0x00000020;
 const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
-const M2_NOPOLY = 0x00000001;
 const M2_DEMON = 0x00000100;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
 const M2_GIANT = 0x00002000;
-const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
@@ -1495,8 +1488,6 @@ const M2_PEACEFUL = 0x00200000;
 const M2_NASTY = 0x02000000;
 const M2_STRONG = 0x04000000;
 const M2_GREEDY = 0x10000000;
-const M1_HUMANOID = 0x00020000;
-const M1_ANIMAL = 0x00040000;
 const G_LGROUP = 0x0040;
 const G_SGROUP = 0x0080;
 
@@ -1569,8 +1560,6 @@ async function initMonsterGroup(mndx, x, y, countRange, mmflags) {
     }
 }
 
-const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
-    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 // makemon.c:m_initweap() classes with an explicit switch arm.  Even when a
 // particular arm gives no weapon, it skips the default rnd(14-2*bias) table
 // and proceeds directly to the common rn2(75) tail.
@@ -1590,363 +1579,6 @@ const M_INITWEAP_SWITCH_CLASSES = new Set([
     57, // S_LIZARD
     56, // S_DEMON
 ]);
-
-function monsterIndexByName(name) {
-    const mndx = MONSTER_NAME.indexOf(name);
-    if (mndx < 0) throw new Error(`Unknown monster identity: ${name}`);
-    return mndx;
-}
-
-// C ref: wizard.c nasties[].  Sandestins and doppelgangers share this
-// reservoir when choosing a difficult initial form.
-const NASTY_MONSTERS = [
-    'cockatrice', 'ettin', 'stalker', 'minotaur',
-    'owlbear', 'purple worm', 'xan', 'umber hulk',
-    'xorn', 'zruty', 'leocrotta', 'baluchitherium',
-    'carnivorous ape', 'fire elemental', 'jabberwock',
-    'iron golem', 'ochre jelly', 'green slime',
-    'displacer beast', 'genetic engineer',
-    'black dragon', 'red dragon', 'arch-lich', 'vampire leader',
-    'master mind flayer', 'disenchanter', 'winged gargoyle',
-    'storm giant', 'Olog-hai', 'elf-noble', 'elven monarch',
-    'ogre tyrant', 'captain', 'gremlin',
-    'silver dragon', 'orange dragon', 'green dragon', 'yellow dragon',
-    'guardian naga', 'fire giant', 'Aleax', 'couatl',
-    'horned devil', 'barbed devil',
-].map(monsterIndexByName);
-
-// The subset of mondata.c grownups[] reachable from nasties[].  C only
-// accepts a demotion whose name is not a juvenile form.
-const NASTY_BIG_TO_LITTLE = new Map([
-    ['cockatrice', 'chickatrice'],
-    ['purple worm', 'baby purple worm'],
-    ['black dragon', 'baby black dragon'],
-    ['red dragon', 'baby red dragon'],
-    ['silver dragon', 'baby silver dragon'],
-    ['orange dragon', 'baby orange dragon'],
-    ['green dragon', 'baby green dragon'],
-    ['yellow dragon', 'baby yellow dragon'],
-    ['arch-lich', 'master lich'],
-    ['vampire leader', 'vampire'],
-    ['master mind flayer', 'mind flayer'],
-    ['elf-noble', 'elf'],
-    ['elven monarch', 'elf-noble'],
-    ['ogre tyrant', 'ogre leader'],
-    ['captain', 'lieutenant'],
-].map(([large, small]) => [
-    monsterIndexByName(large), monsterIndexByName(small),
-]));
-
-function monsterClassSymbol(mndx) {
-    return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mndx] || 0] || '?';
-}
-
-function monsterIsGenocided(mndx) {
-    return !!((game.mvitals?.[mndx]?.mvflags ?? 0) & 0x02);
-}
-
-function pickNastyShape(difficultyCap) {
-    let result = NASTY_MONSTERS[rn2(NASTY_MONSTERS.length)];
-    if (Is_rogue_level(game.u?.uz)
-        && !/^[A-Z]$/.test(monsterClassSymbol(result))) {
-        result = NASTY_MONSTERS[rn2(NASTY_MONSTERS.length)];
-    }
-
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-    const outOfPlaceMask = inHell ? 0x0800 : 0x0400; // G_NOHELL : G_HELL
-    const shouldDemote = monsterIsGenocided(result)
-        || (difficultyCap > 0
-            && (MONSTER_DIFFICULTY[result] ?? 0) >= difficultyCap)
-        || !!((MONSTER_GENO[result] ?? 0) & outOfPlaceMask);
-    const alternate = shouldDemote
-        ? (NASTY_BIG_TO_LITTLE.get(result) ?? result) : result;
-    if (alternate !== result && !monsterIsGenocided(alternate)) {
-        const name = MONSTER_NAME[alternate] ?? '';
-        if (!name.startsWith('baby ')
-            && !/(?: hatchling| pup| cub)$/.test(name)) {
-            result = alternate;
-        }
-    }
-    return result;
-}
-
-function isPlayerMonster(mndx) {
-    return mndx >= PM_ARCHAEOLOGIST && mndx <= PM_WIZARD;
-}
-
-function acceptsShapechangerForm(baseMndx, targetMndx) {
-    if (!Number.isInteger(targetMndx) || targetMndx < 0
-        || monsterIsGenocided(targetMndx)) return false;
-    if (isPlayerMonster(targetMndx) || targetMndx === baseMndx) return true;
-    return !((MONSTER_FLAGS2[targetMndx] ?? 0) & M2_NOPOLY);
-}
-
-function randomDoppelgangerFallback(baseMndx) {
-    let targetMndx = -1;
-    let tryCount = 50;
-    do {
-        targetMndx = rn2(SPECIAL_PM);
-        --tryCount;
-    } while (tryCount > 0
-        && !acceptsShapechangerForm(baseMndx, targetMndx)
-        && tryCount > 40
-        && Is_rogue_level(game.u?.uz)
-        && !/^[A-Z]$/.test(monsterClassSymbol(targetMndx)));
-    return targetMndx;
-}
-
-function selectDoppelgangerFormOnce() {
-    let targetMndx = -1;
-    if (!rn2(7)) {
-        targetMndx = pickNastyShape(
-            (MONSTER_DIFFICULTY[PM_JABBERWOCK] ?? 0) - 1,
-        );
-    } else if (rn2(3)) {
-        // topten.c tt_doppel().  The contest recorder and sandbox expose an
-        // empty RECORD file: every observed get_rnd_toptenentry() consumes
-        // its rank roll, then returns NULL and takes the role fallback.
-        if (rn2(13)) rnd(10);
-        targetMndx = rn1(
-            PM_WIZARD - PM_ARCHAEOLOGIST + 1, PM_ARCHAEOLOGIST,
-        );
-    } else if (!rn2(3)) {
-        targetMndx = rn1(
-            PM_APPRENTICE - PM_STUDENT + 1, PM_STUDENT,
-        );
-        if (targetMndx === game.urole?.guardnum) targetMndx = -1;
-    } else {
-        let tryCount = 5;
-        do {
-            targetMndx = rn2(SPECIAL_PM);
-            if ((MONSTER_FLAGS1[targetMndx] ?? 0) & M1_HUMANOID
-                && !((MONSTER_FLAGS2[targetMndx] ?? 0) & M2_NOPOLY)) {
-                break;
-            }
-            targetMndx = -1;
-        } while (--tryCount > 0);
-    }
-    if (targetMndx < 0)
-        targetMndx = randomDoppelgangerFallback(PM_DOPPELGANGER);
-    return targetMndx;
-}
-
-function selectDoppelgangerForm() {
-    // newcham() retries select_newcham_form()/accept_newcham_form() up to
-    // twenty times.  The natural form is an accepted result: callers decide
-    // whether it is a no-op from the monster's current form.
-    for (let tryCount = 20; tryCount > 0; --tryCount) {
-        const targetMndx = selectDoppelgangerFormOnce();
-        if (acceptsShapechangerForm(PM_DOPPELGANGER, targetMndx))
-            return targetMndx;
-    }
-    return null;
-}
-
-function selectChameleonForm() {
-    // mon.c select_newcham_form(): one third of chameleon changes use the
-    // process-global animal table; the others enter the ordinary random-form
-    // path.  newcham() retries rejected forms up to twenty times.
-    // mon.c:mon_animal_list() walks mons[] in PM index order.  This is not
-    // mkclass()'s class/difficulty generation order; the distinction is
-    // observable whenever the chosen animal has different hit dice.
-    const animals = Array.from({ length: SPECIAL_PM }, (_, mndx) => mndx)
-        .filter(mndx => (MONSTER_FLAGS1[mndx] ?? 0) & M1_ANIMAL);
-    for (let tryCount = 20; tryCount > 0; --tryCount) {
-        const targetMndx = !rn2(3)
-            ? animals[rn2(animals.length)]
-            : randomDoppelgangerFallback(PM_CHAMELEON);
-        if (acceptsShapechangerForm(PM_CHAMELEON, targetMndx))
-            return targetMndx;
-    }
-    return null;
-}
-
-function selectInitialDoppelgangerForm() {
-    const targetMndx = selectDoppelgangerForm();
-    return targetMndx === PM_DOPPELGANGER ? null : targetMndx;
-}
-
-function selectInitialChameleonForm() {
-    const targetMndx = selectChameleonForm();
-    return targetMndx === PM_CHAMELEON ? null : targetMndx;
-}
-
-function selectInitialSandestinForm() {
-    // mon.c:select_newcham_form() normally chooses from pick_nasty(), but a
-    // one-in-seven result falls through to the ordinary random-form picker.
-    // newcham() repeats rejected forms up to twenty times.
-    for (let tryCount = 20; tryCount > 0; --tryCount) {
-        const targetMndx = rn2(7)
-            ? pickNastyShape((MONSTER_DIFFICULTY[PM_ARCHON] ?? 0) - 1)
-            : randomDoppelgangerFallback(PM_SANDESTIN);
-        if (acceptsShapechangerForm(PM_SANDESTIN, targetMndx))
-            return targetMndx === PM_SANDESTIN ? null : targetMndx;
-    }
-    return null;
-}
-
-function shapechangerGender(baseMndx, targetMndx, female) {
-    const flags = MONSTER_FLAGS2[targetMndx] ?? 0;
-    if (flags & M2_MALE) return false;
-    if (flags & M2_FEMALE) return true;
-    if (flags & M2_NEUTER) return female;
-
-    // mgender_from_permonst() evaluates the roll before suppressing a
-    // vampire's actual toggle, so vampshifters still consume rn2(10).
-    const toggle = !rn2(10);
-    const vampireShape = targetMndx === PM_VAMPIRE
-        || targetMndx === PM_VAMPIRE_LEADER
-        || targetMndx === PM_VLAD_THE_IMPALER;
-    const vampireBase = baseMndx === PM_VAMPIRE
-        || baseMndx === PM_VAMPIRE_LEADER
-        || baseMndx === PM_VLAD_THE_IMPALER;
-    return toggle && !(vampireShape || vampireBase) ? !female : female;
-}
-
-// C ref: mon.c:pickvampshape().  Live vampire shifters select from their
-// natural form, wolf (leaders), fog cloud, and vampire bat, then sometimes
-// revert to the natural form instead of oscillating between two alternates.
-// Keep this separate from birth selection because the final rn2(4) depends
-// on the monster's current form.
-function pickVampireShape(monster) {
-    const baseMndx = monster.cham;
-    const uppercaseOnly = Is_rogue_level(game.u?.uz);
-    let targetMndx = baseMndx;
-    let wolfChance = 10;
-
-    if (baseMndx === PM_VLAD_THE_IMPALER) {
-        const inventory = monster.minvent || monster.inventory || [];
-        if (inventory.some(object =>
-            object.otyp === CANDELABRUM_OF_INVOCATION)) return baseMndx;
-        wolfChance = 3;
-    }
-    if (baseMndx === PM_VAMPIRE_LEADER
-        || baseMndx === PM_VLAD_THE_IMPALER) {
-        const loc = game.level?.at?.(monster.mx, monster.my);
-        if (!rn2(wolfChance) && !uppercaseOnly
-            && !IS_POOL(loc?.typ) && !IS_LAVA(loc?.typ)) {
-            targetMndx = PM_WOLF;
-        }
-    }
-    if (targetMndx === baseMndx) {
-        targetMndx = !rn2(4) && !uppercaseOnly
-            ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
-    }
-    if (monsterIsGenocided(targetMndx)
-        || (monster.mnum !== baseMndx && !rn2(4))) return baseMndx;
-    return targetMndx;
-}
-
-function shapechangerProtectionActive() {
-    return !!(
-        game.u?.protectionFromShapeChangers
-        || game.protectionFromShapeChangers
-    );
-}
-
-function naturalShapechanger(mnum) {
-    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
-}
-
-function initialShapechangedMonster({
-    monsterId, baseMndx, targetMndx, x, y, female, sleeping, peaceful,
-}) {
-    const shapedFemale = shapechangerGender(baseMndx, targetMndx, female);
-    const { level, hp } = newMonsterHitPoints(targetMndx);
-    const permanentlyInvisible = targetMndx === PM_STALKER
-        || targetMndx === PM_BLACK_LIGHT;
-    return {
-        m_id: monsterId, mnum: targetMndx, cham: baseMndx,
-        mx: x, my: y, mhp: hp, mhpmax: hp,
-        m_lev: level, female: shapedFemale,
-        msleeping: sleeping, mpeaceful: peaceful ? 1 : 0, mcanmove: 1,
-        minvis: permanentlyInvisible, perminvis: permanentlyInvisible,
-        movement: 0, mmove: MONSTER_MOVE[targetMndx] ?? 0, mspeed: 0,
-        symbol: monsterClassSymbol(targetMndx),
-        color: MONSTER_COLOR[targetMndx], hasInventory: false,
-        minvent: [], inventory: [], weaponCheck: 0,
-    };
-}
-
-// C refs: makemon.c:pm_to_cham()/newcham().  Monster births outside mklev
-// enter the same initial shapechange transaction as level-construction
-// births: retain the already-allocated identity and attitude, choose a form,
-// reroll gender/HP for that form, and suppress all starting inventory.
-export function initialShapechangedBirth(monster) {
-    const baseMndx = monster?.mnum;
-    if (!naturalShapechanger(baseMndx) || shapechangerProtectionActive())
-        return null;
-    let targetMndx = null;
-    if (baseMndx === PM_DOPPELGANGER) {
-        targetMndx = selectInitialDoppelgangerForm();
-    } else if (baseMndx === PM_CHAMELEON) {
-        targetMndx = selectInitialChameleonForm();
-    } else if (baseMndx === PM_SANDESTIN) {
-        targetMndx = selectInitialSandestinForm();
-    } else if (baseMndx === PM_VAMPIRE || baseMndx === PM_VAMPIRE_LEADER) {
-        if (baseMndx === PM_VAMPIRE_LEADER && !rn2(10))
-            targetMndx = PM_WOLF;
-        else
-            targetMndx = !rn2(4) ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
-    }
-    if (targetMndx == null) {
-        monster.cham = baseMndx;
-        return null;
-    }
-    return initialShapechangedMonster({
-        monsterId: monster.m_id,
-        baseMndx,
-        targetMndx,
-        x: monster.mx,
-        y: monster.my,
-        female: monster.female,
-        sleeping: monster.msleeping ?? 0,
-        peaceful: !!monster.mpeaceful,
-    });
-}
-
-// C refs: mon.c:decide_to_shapeshift()/newcham().  Birth-time and live
-// shapechanging share form selection, gender, and newmonhp(), but a live
-// monster keeps its identity, inventory, and current HP fraction.
-export function shapechangeMonster(monster, forcedTargetMndx = null) {
-    const baseMndx = monster?.cham;
-    let targetMndx = forcedTargetMndx;
-    if (targetMndx == null && baseMndx === PM_DOPPELGANGER) {
-        targetMndx = selectDoppelgangerForm();
-    } else if (targetMndx == null && baseMndx === PM_CHAMELEON) {
-        targetMndx = selectChameleonForm();
-    } else if (targetMndx == null && (
-        baseMndx === PM_VAMPIRE
-        || baseMndx === PM_VAMPIRE_LEADER
-        || baseMndx === PM_VLAD_THE_IMPALER
-    )) {
-        targetMndx = pickVampireShape(monster);
-    }
-    if (targetMndx == null || targetMndx === monster.mnum) return false;
-
-    const oldHp = Math.max(1, monster.mhp ?? 1);
-    const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
-    const shapedFemale = shapechangerGender(
-        baseMndx, targetMndx, !!monster.female,
-    );
-    const { level, hp } = newMonsterHitPoints(targetMndx);
-    const scaledHp = Math.trunc(oldHp * hp / oldMax);
-    const permanentlyInvisible = targetMndx === PM_STALKER
-        || targetMndx === PM_BLACK_LIGHT;
-
-    monster.mnum = targetMndx;
-    monster.m_lev = level;
-    monster.mhpmax = hp;
-    monster.mhp = Math.max(1, Math.min(hp, scaledHp));
-    monster.female = shapedFemale;
-    monster.mmove = MONSTER_MOVE[targetMndx] ?? monster.mmove ?? 0;
-    monster.symbol = monsterClassSymbol(targetMndx);
-    monster.color = MONSTER_COLOR[targetMndx];
-    monster.perminvis = permanentlyInvisible;
-    monster.minvis = monster.invis_blkd ? 0 : permanentlyInvisible;
-    monster.meverseen = 0;
-    return true;
-}
 
 function monsterOccupiesPosition(monster, x, y) {
     return !!monster && (monster.mhp ?? 1) > 0 && (
@@ -2109,8 +1741,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const monsterInventory = [];
     const pendingMonster = {
         m_id: monsterId,
-        mnum: mndx, mx: x, my: y, mhp: hp,
-        m_lev: baseLevel, mpeaceful: peaceful ? 1 : 0,
+        mnum: mndx, mx: x, my: y, mhp: hp, mhpmax: hp,
+        m_lev: baseLevel, female: monsterFemale,
+        msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -2123,30 +1756,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         generatedGhostName = useGhostList ? rn2(34) : -1;
     }
 
-    const canShapechange = naturalShapechanger(mndx)
-        && !shapechangerProtectionActive();
-    let initialShape = null;
-    if (canShapechange && mndx === PM_DOPPELGANGER) {
-        initialShape = selectInitialDoppelgangerForm();
-    } else if (canShapechange && mndx === PM_CHAMELEON) {
-        initialShape = selectInitialChameleonForm();
-    } else if (canShapechange && mndx === PM_SANDESTIN) {
-        initialShape = selectInitialSandestinForm();
-    } else if (canShapechange
-        && (mndx === PM_VAMPIRE || mndx === PM_VAMPIRE_LEADER)) {
-        // mon.c pickvampshape()/newcham(): initial vampire shapechanging
-        // happens after birth gender but suppresses all starting inventory.
-        if (mndx === PM_VAMPIRE_LEADER && !rn2(10))
-            initialShape = PM_WOLF;
-        else
-            initialShape = !rn2(4) ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
-    }
-    if (initialShape != null) {
-        const shaped = initialShapechangedMonster({
-            monsterId, baseMndx: mndx, targetMndx: initialShape,
-            x, y, female: monsterFemale, sleeping: monsterSleeping,
-            peaceful,
-        });
+    const shaped = initialShapechangedBirth(pendingMonster);
+    if (shaped) {
         if (requestedByHero)
             setMonsterApparentHeroPosition(shaped, game, rn2);
         game.level.monsters[monsterIndex] = shaped;
@@ -3027,7 +2638,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         movement: 0, mmove: MONSTER_MOVE[mndx] ?? 0,
         permspeed: hellishNativeBat ? 2 : 0,
         mspeed: hellishNativeBat ? 2 : 0,
-        symbol: MONSTER_CLASS_SYMBOLS[classIndex] || '?',
+        symbol: monsterClassSymbol(mndx),
         color: MONSTER_COLOR[mndx],
         hasInventory: hasMonsterInventory,
         minvent: monsterInventory,
@@ -3051,7 +2662,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         monster.wormno = pendingMonster.wormno;
         monster.wormSegments = pendingMonster.wormSegments;
     }
-    if (canShapechange) monster.cham = mndx;
+    if (Number.isInteger(pendingMonster.cham))
+        monster.cham = pendingMonster.cham;
     if (mndx === PM_WIZARD_OF_YENDOR) {
         monster.iswiz = true;
         game.context.no_of_wizards =

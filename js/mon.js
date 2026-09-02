@@ -18,8 +18,9 @@ import {
     MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
 } from './monster_data.js';
 import {
-    place_object, shapechangeMonster, stack_object,
+    place_object, stack_object,
 } from './mklev.js';
+import { shapechangeMonster } from './monster_polymorph.js';
 import { EGG } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
