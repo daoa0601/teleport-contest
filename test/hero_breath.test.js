@@ -3,21 +3,13 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { hitHeroWithBreath } from '../js/hero_breath.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
 import { startHeroSliming } from '../js/slime.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-
-const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 
 function polymorphHeroInto(name) {
     freshObjectRoom({ recalculateVision: false });
-    Object.assign(game.u, {
-        umonster: PM_ARCHEOLOGIST,
-        umonnum: MONSTER_NAME.indexOf(name),
-        mtimedone: 100,
-        mh: 40,
-        mhmax: 40,
-    });
+    installPolymorphedHero(name);
 }
 
 test('red-dragon breath burns slime without hurting its fireproof body',

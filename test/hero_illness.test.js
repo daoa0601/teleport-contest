@@ -9,17 +9,14 @@ import {
     advanceHeroSickness, advanceHeroVomiting, startHeroSickness,
     startHeroVomiting, vomitHero,
 } from '../js/hero_illness.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
 import { CHAIN_MAIL, LONG_SWORD } from '../js/object_data.js';
 import {
     knownInventoryObject, knownInventoryWeapon,
 } from './support/game-objects.js';
-import { wearHeroObject } from './support/hero-state.js';
+import {
+    installPolymorphedHero, wearHeroObject,
+} from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-
-const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
-const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
-const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 
 function freshIllnessRoom() {
     freshObjectRoom({
@@ -124,11 +121,7 @@ test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
 
 test('a rat form cannot vomit away food poisoning', async () => {
     freshIllnessRoom();
-    Object.assign(game.u, {
-        umonster: PM_ARCHEOLOGIST,
-        umonnum: PM_SEWER_RAT,
-        mtimedone: 20,
-    });
+    installPolymorphedHero('sewer rat', { turns: 20 });
     startHeroSickness({
         state: game,
         turns: 30,
@@ -151,13 +144,7 @@ test('a rat form cannot vomit away food poisoning', async () => {
 test('a vomiting yellow dragon breathes acid on its weapon and armor',
     async () => {
         freshIllnessRoom();
-        Object.assign(game.u, {
-            umonster: PM_ARCHEOLOGIST,
-            umonnum: PM_YELLOW_DRAGON,
-            mtimedone: 20,
-            mh: 40,
-            mhmax: 40,
-        });
+        installPolymorphedHero('yellow dragon', { turns: 20 });
         const sword = knownInventoryWeapon(LONG_SWORD);
         game.uwep = sword;
         game.u.uwep = sword;

@@ -19,6 +19,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { floorObject, inventoryObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
@@ -82,12 +83,9 @@ test('a gremlin sitting in water creates a tame clone', async () => {
     level.at(10, 10).typ = FOUNTAIN;
     game.plname = 'Splitter';
     game.mvitals = [];
-    Object.assign(game.u, {
-        umonster: 331,
-        umonnum: 40,
-        mtimedone: 300,
-        mh: 17,
-        mhmax: 17,
+    installPolymorphedHero('gremlin', {
+        turns: 300,
+        hitPoints: 17,
     });
     initRng(3510n);
     pushKeys('sit\n');

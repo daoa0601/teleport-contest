@@ -17,7 +17,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, wearHeroObject,
+    installHumanWerewolfHero, installPolymorphedHero, wearHeroObject,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -614,12 +614,9 @@ test('live water contact clones a hostile gremlin with split hit points',
 test('two-square water vapor can multiply a live gremlin hero', async () => {
     freshMapPotionState(2);
     game.plname = 'Splitter';
-    Object.assign(game.u, {
-        umonster: 331,
-        umonnum: 40,
-        mtimedone: 300,
-        mh: 17,
-        mhmax: 17,
+    installPolymorphedHero('gremlin', {
+        turns: 300,
+        hitPoints: 17,
     });
     const potion = knownInventoryObject(POT_WATER);
 
