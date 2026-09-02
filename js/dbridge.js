@@ -40,6 +40,14 @@ export function isPoolAt(x, y, state = game) {
         && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_MOAT;
 }
 
+export function isLavaAt(x, y, state = game) {
+    const location = state.level?.at?.(x, y);
+    if (!location) return false;
+    if (location.typ === LAVAPOOL) return true;
+    return location.typ === DRAWBRIDGE_UP
+        && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_LAVA;
+}
+
 export function drawbridgeWallAt(x, y, state = game) {
     const bridge = state.level?.at(x, y);
     if (!bridge || !IS_DRAWBRIDGE(bridge.typ)) return null;

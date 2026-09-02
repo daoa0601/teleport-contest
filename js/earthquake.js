@@ -5,14 +5,15 @@ import { adjustHeroAlignment } from './alignment.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR,
-    DB_LAVA, DB_MOAT, DB_UNDER, DOOR, DRAWBRIDGE_UP, D_NODOOR,
+    DB_MOAT, DB_UNDER, DOOR, DRAWBRIDGE_UP, D_NODOOR,
     FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO,
-    SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, WATER, is_pit,
+    SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
     M_AP_MONSTER, M_AP_NOTHING, STRAT_WAITMASK,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
 } from './display.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
@@ -57,19 +58,6 @@ function isMoatAt(x, y) {
     return location.typ === MOAT
         || (location.typ === DRAWBRIDGE_UP
             && ((location.drawbridgemask || 0) & DB_UNDER) === DB_MOAT);
-}
-
-function isLavaAt(x, y) {
-    const location = game.level?.at(x, y);
-    if (!location) return false;
-    return location.typ === LAVAPOOL
-        || (location.typ === DRAWBRIDGE_UP
-            && ((location.drawbridgemask || 0) & DB_UNDER) === DB_LAVA);
-}
-
-function isPoolAt(x, y) {
-    const location = game.level?.at(x, y);
-    return !!location && [POOL, MOAT, WATER].includes(location.typ);
 }
 
 function liquidForHole(x, y) {
