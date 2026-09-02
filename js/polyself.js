@@ -259,6 +259,8 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
 
     u.mtimedone = 500 + rn2(500);
     u.umonnum = mnum;
+    u.m_ap_type = 0;
+    u.mappearance = 0;
     // do_wear.c:find_ac() starts from mons[u.umonnum].ac.  Keep that
     // form-owned base explicit so every existing equipment/protection
     // contribution can continue through the shared armor calculator.
@@ -314,7 +316,10 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
 // C polyself.c:polymon().  Selection and legality remain caller-owned; this
 // function owns the accepted form, equipment, encumbrance, and verbose
 // ability transaction for controlled and involuntary transformations alike.
-export async function polymonHero(mnum, { sexChangeAllowed = false } = {}) {
+export async function polymonHero(mnum, {
+    sexChangeAllowed = false,
+    announceForm = true,
+} = {}) {
     const previousCapacity = nearCapacity(game);
     const wasPolymorphed = heroIsPolymorphed(game);
     const previousMnum = game.u?.umonnum;
@@ -325,6 +330,8 @@ export async function polymonHero(mnum, { sexChangeAllowed = false } = {}) {
     const formMessage = wasPolymorphed && previousMnum === mnum
         ? `You feel like a new ${monsterName}!`
         : `You turn into ${article} ${monsterName}!`;
+    const withFormMessage = message => announceForm
+        ? `${formMessage}  ${message}` : message;
     const suit = game.uarm || game.u?.uarm;
     const cloak = game.uarmc || game.u?.uarmc;
     const shirt = game.uarmu || game.u?.uarmu;
@@ -371,15 +378,15 @@ export async function polymonHero(mnum, { sexChangeAllowed = false } = {}) {
         // pre-find_ac status while projecting the new glyph through dropx.
         newsym(game.u.ux, game.u.uy);
         await moreUntilDismissed(
-            `${formMessage}  You find you must drop your tool!--More--`,
+            `${withFormMessage('You find you must drop your tool!')}--More--`,
         );
         dropCarriedObject(weapon, ['uwep']);
     } else if (breaksArmor) {
         // C polymon() publishes the accepted form before break_armor().
         // Sequential continuation calls preserve the exact point at which a
         // later garment line forces tty to page the already-pending prose.
-        await plineWithContinuation(formMessage);
-        sequentialEquipmentMessages = true;
+        if (announceForm) await plineWithContinuation(formMessage);
+        sequentialEquipmentMessages = announceForm;
         if (suit) {
             await plineWithContinuation('You break out of your armor!');
             destroyCarriedObject(suit, ['uarm']);
@@ -409,15 +416,15 @@ export async function polymonHero(mnum, { sexChangeAllowed = false } = {}) {
         // the small form, while its pre-removal AC is still painted.
         newsym(game.u.ux, game.u.uy);
         await moreUntilDismissed(
-            `${formMessage}  You shrink out of your cloak!--More--`,
+            `${withFormMessage('You shrink out of your cloak!')}--More--`,
         );
         dropCarriedObject(cloak, ['uarmc']);
     } else if (noHands && weapon && !gloves) {
         await moreUntilDismissed(
-            `${formMessage}  You find you must drop your tool!--More--`,
+            `${withFormMessage('You find you must drop your tool!')}--More--`,
         );
         dropCarriedObject(weapon, ['uwep']);
-    } else {
+    } else if (announceForm) {
         await pline(formMessage);
     }
 

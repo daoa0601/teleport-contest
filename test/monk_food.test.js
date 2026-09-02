@@ -6,6 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CORPSE, MEATBALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { PM_GREEN_SLIME } from '../js/slime.js';
 import {
     carriedObject, floorObject,
 } from './support/game-objects.js';
@@ -42,6 +43,29 @@ test('a carried meat corpse applies the live Monk conduct penalty', async () => 
     assert.equal(game.inventory.includes(corpse), false);
     assert.match(game._pending_message, /finish eating the goblin corpse/);
 });
+
+test('finishing a green slime corpse starts the transformation countdown',
+    async () => {
+        freshWeaponArena();
+        initRng(45300n);
+        const corpse = carriedObject(CORPSE, {
+            corpsenm: PM_GREEN_SLIME,
+            name: 'green slime corpse',
+            age: game.moves,
+        });
+        game.inventory = [corpse];
+        pushKey('a');
+
+        await rhack('e'.charCodeAt(0));
+        pushKey(' ');
+        pushKey(' ');
+        for (let turn = 0; turn < 10 && game._occupation; turn++)
+            await continueCountedCommand(game);
+
+        assert.equal(game.u.slimedTurns, 10);
+        assert.equal(game.inventory.includes(corpse), false);
+        assert.match(game._pending_message, /You don't feel very well\.$/);
+    });
 
 test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     async () => {

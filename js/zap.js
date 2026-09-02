@@ -76,6 +76,7 @@ import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
 import { forceBoltInDirection } from './force_bolt.js';
 import { makeInvisibleInDirection } from './monster_invisibility_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
+import { clearHeroSliming } from './slime.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -1347,9 +1348,7 @@ export async function zapFireRay(
                         await shieldeff(game.u.ux, game.u.uy);
                         await plineWithContinuation("You don't feel hot!");
                     }
-                    if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
-                        game.u.slimedTurns = 0;
-                        game.u.slimed = false;
+                    if (clearHeroSliming(game)) {
                         await plineWithContinuation(
                             'The slime that covers you is burned away!',
                         );
@@ -2125,9 +2124,7 @@ export async function zapHeroWithFire() {
         await plineWithContinuation("You've set yourself afire!");
     }
 
-    if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
-        game.u.slimedTurns = 0;
-        game.u.slimed = false;
+    if (clearHeroSliming(game)) {
         await plineWithContinuation(
             'The slime that covers you is burned away!',
         );

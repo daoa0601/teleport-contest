@@ -19,7 +19,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
-    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, isok,
+    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, Upolyd, isok,
 } from './const.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { place_object, stack_object } from './mklev.js';
@@ -103,6 +103,8 @@ export function completeHeroLifeSaving(transaction) {
     const constitution = attributes?.[A_CON] ?? 3;
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
+    if (Upolyd(game.u))
+        game.u.mh = Math.min(game.u.mhmax ?? giveHp, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;
     game.context.move = 0;
     game._helplessTurns = 1;

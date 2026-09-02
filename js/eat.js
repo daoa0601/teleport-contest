@@ -22,6 +22,7 @@ import { d, rn2, rnd } from './rng.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { promptKey } from './tty_prompts.js';
 import { assignInventoryLetter } from './u_init.js';
+import { PM_GREEN_SLIME, startHeroSliming } from './slime.js';
 import { exceedsActionCapacity } from './weight.js';
 
 const M1_CARNIVORE = 0x20000000;
@@ -387,6 +388,10 @@ function applyCorpseNutrition(g, meal, usedtime) {
 // C eat.c:cpostfx()/eye_of_newt_buzz().  Corpse post-effects happen after
 // the finish message and before the consumed floor identity is released.
 function applyCorpsePostEffects(g, corpse) {
+    if (corpse?.corpsenm === PM_GREEN_SLIME) {
+        return startHeroSliming({ state: g })
+            ? "You don't feel very well." : null;
+    }
     if (corpse?.corpsenm !== 322) return null; // PM_NEWT
     const u = g.u;
     if (rn2(3) !== 0 || 3 * (u.uen ?? 0) <= 2 * (u.uenmax ?? 0)) {

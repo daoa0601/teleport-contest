@@ -176,7 +176,11 @@ import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { rehumanizeHero } from './polyself.js';
+import { polymonHero, rehumanizeHero } from './polyself.js';
+import {
+    advanceHeroSliming, clearHeroSliming,
+    finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
+} from './slime.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
@@ -1703,6 +1707,28 @@ function finishInitialTurnMaintenanceAfterObjectTimers({
     // timeout.c:nh_timeout() returns before decrementing any property while
     // that prayer-only flag is active.
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
+    if (!prayerTimeoutFreeze && heroIsSliming(game)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'slime transformation requires live turn maintenance',
+            );
+        }
+        return {
+            deferredSlimeTimeout: true,
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+            prayerTimeoutFreeze,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterSlime({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterSlime({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}) {
     if (!prayerTimeoutFreeze && (game.u?.stunnedTurns ?? 0) > 0) {
         const remaining = game.u.stunnedTurns - 1;
         if (remaining === 0) {
@@ -2027,6 +2053,18 @@ async function initialTurnMaintenanceWithTty(
         await runAndPresentClaimedObjectTimer(claimed, phase.sourceTurn);
         if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
         phase = finishInitialTurnMaintenanceAfterObjectTimers(phase);
+    }
+    while (phase?.deferredSlimeTimeout) {
+        await advanceHeroSliming({
+            state: game,
+            publish: queueTurnMessage,
+            repaint: newsym,
+            randomMonsterName: randomDisplayMonsterName,
+            transform: polymonHero,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return phase.moveAmount;
+        phase = finishInitialTurnMaintenanceAfterSlime(phase);
     }
     while (phase?.deferredTimeoutMessage) {
         await queueTurnMessage(phase.message);
@@ -2940,9 +2978,7 @@ async function resolveDeferredHeroFirePillar(action, heroAttack) {
     if (game.u?.halfSpellDamage || game.u?.half_spell_damage)
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
 
-    if ((game.u?.slimedTurns ?? 0) > 0 || game.u?.slimed) {
-        game.u.slimedTurns = 0;
-        game.u.slimed = false;
+    if (clearHeroSliming(game)) {
         await queueTurnMessage(
             'The slime that covers you is burned away!',
         );
@@ -4565,6 +4601,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                     }
                 }
+                if (heroAttack.deferredSlimeEffect)
+                    resumeDeferredHeroSlime(action, game);
+                if (heroAttack.slimeEffectMessage) {
+                    const slimeDismissal = await queueTurnMessage(
+                        heroAttack.slimeEffectMessage,
+                    );
+                    heroAttack.slimeEffectMessage = null;
+                    if (slimeDismissal !== null
+                        && slimeDismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                    }
+                }
+                if (heroAttack.slimeStartPending)
+                    finishDeferredHeroSlime(action, game);
                 if (heroAttack.deferredColdNegation)
                     resumeDeferredHeroColdSpecial(action, game);
                 if (heroAttack.coldEffectMessage) {

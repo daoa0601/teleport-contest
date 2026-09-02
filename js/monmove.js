@@ -70,6 +70,7 @@ import {
 } from './regions.js';
 import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
+import { clearHeroSliming } from './slime.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -270,6 +271,7 @@ const AD_STCK = 19;
 const AD_DREN = 16;
 const AD_LEGS = 17;
 const AD_STON = 18;
+const AD_SLIM = 40;
 const AD_SITM = 21;
 const AD_SEDU = 22;
 const AD_ENCH = 41;
@@ -6387,6 +6389,21 @@ function basicMonsterAttack(
             attackType, damageType, effect: 'stun-natural',
             deferredStunGate: true, oldFormMnum,
         }, monster, attackIndex);
+    } else if (hit && damageType === AD_SLIM) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        const armorProtection = state?.u?._magicNegation ?? 0;
+        const cancelled = !!monster.mcan;
+        const negated = cancelled
+            || recordRandom(random, calls, 10) < 3 * armorProtection;
+        return retainHeroAttackContinuation({
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, effect: 'slime-natural',
+            slimeNegated: negated,
+            slimeCancelled: cancelled,
+            deferredSlimeEffect: true,
+            oldFormMnum,
+        }, monster, attackIndex);
     } else if (hit && damageType === AD_STON) {
         // mhitm_ad_ston() rolls the declared 0d0 before hitmsg().  Its hiss
         // gate belongs after that visible contact line, so keep the remaining
@@ -6739,10 +6756,7 @@ export function resumeDeferredHeroFireSpecial(
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
         }
     }
-    if (!attack.negated
-        && ((state.u?.slimedTurns ?? 0) > 0 || state.u?.slimed)) {
-        state.u.slimedTurns = 0;
-        state.u.slimed = false;
+    if (!attack.negated && clearHeroSliming(state)) {
         attack.slimeBurnedMessage
             = 'The slime that covers you is burned away!';
     }

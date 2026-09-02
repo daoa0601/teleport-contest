@@ -17,6 +17,7 @@ import { rehumanizeHero } from './polyself.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
+import { clearHeroSliming } from './slime.js';
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
@@ -134,9 +135,7 @@ export async function createFireExplosion(x, y, damage, {
     const hero = state.u;
     if (insideExplosion(hero.ux, hero.uy, x, y)) {
         await publish(`You are caught in the ${name}!`);
-        if ((hero.slimedTurns ?? 0) > 0 || hero.slimed) {
-            hero.slimedTurns = 0;
-            hero.slimed = false;
+        if (clearHeroSliming(state)) {
             await publish('The slime that covers you is burned away!');
         }
         await burnHeroArmor(state, publish, [], random);

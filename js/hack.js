@@ -39,6 +39,7 @@ import {
     heroKnowsLavaWalking, heroKnowsWaterWalking,
 } from './armor.js';
 import { levelHasCeiling } from './mon.js';
+import { clearHeroSliming, heroIsSliming } from './slime.js';
 
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
@@ -276,10 +277,7 @@ function damageHeroInLava(state, amount) {
 }
 
 export async function burnAwayHeroSlime(state, publish) {
-    const hero = state.u;
-    if (!((hero.slimedTurns ?? 0) > 0 || hero.slimed)) return false;
-    hero.slimedTurns = 0;
-    hero.slimed = false;
+    if (!clearHeroSliming(state)) return false;
     await publish('The slime that covers you is burned away!');
     return true;
 }
@@ -458,7 +456,7 @@ export async function sinkHeroIntoLava({
 
     if (!hero.umoved) {
         const message = 'You sink deeper into the lava.';
-        const slimeBurns = ((hero.slimedTurns ?? 0) > 0 || hero.slimed)
+        const slimeBurns = heroIsSliming(state)
             && rollOne(9) >= (hero.slimedTurns ?? 0);
         if (slimeBurns
             || (state._last_message !== message

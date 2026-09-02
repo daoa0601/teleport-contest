@@ -6,6 +6,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS } from '../js/object_data.js';
+import { startHeroSliming } from '../js/slime.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function freshTurnArena() {
@@ -105,4 +106,19 @@ test('poison clouds act after old blindness expires for the turn', async () => {
     assert.equal(game.u.blindTurns, 1);
     assert.equal(game.blind, true);
     assert.equal(game.level.regions[0].ttl, 2);
+});
+
+test('slime infection advances during an ordinary world turn', async () => {
+    const inputGate = freshTurnArena();
+    startHeroSliming({ state: game, turns: 7, killer: 'green slime' });
+    pushKeys('h');
+
+    await moveloop_core();
+    const nextInput = moveloop_core();
+    await inputGate.waitUntilBlocked();
+
+    assert.equal(game.u.slimedTurns, 6);
+    assert.match(game._pending_message, /Your limbs are getting oozy\.$/);
+    pushKeys(' ');
+    await nextInput;
 });
