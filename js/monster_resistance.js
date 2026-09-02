@@ -12,6 +12,7 @@ import { rn2 } from './rng.js';
 
 const MR_ACID = 0x40;
 const MR_POISON = 0x20;
+const MR_STONE = 0x80;
 
 function monsterResistanceBits(monster) {
     return (MONSTER_RESISTS[monster?.mnum] ?? 0)
@@ -39,6 +40,12 @@ export function monsterHasPoisonResistance(monster) {
     return !!(monsterResistanceBits(monster) & MR_POISON)
         || !!monster?.poisonResistance
         || !!monster?.poison_resistance;
+}
+
+export function monsterHasStoneResistance(monster) {
+    return !!(monsterResistanceBits(monster) & MR_STONE)
+        || !!monster?.stoneResistance
+        || !!monster?.stone_resistance;
 }
 
 export function monsterResistsEffect(

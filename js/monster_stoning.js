@@ -17,16 +17,17 @@ import {
     mkcorpstat, mksobj, place_object, shapechangeMonster, stack_object,
 } from './mklev.js';
 import {
-    MONSTER_GENO, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterTypeName,
+    MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { BOULDER, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
-import { rn2 } from './rng.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { useMonsterStoningCure } from './monster_stoning_cure.js';
+import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 
-const MR_STONE = 0x80;
 const S_GOLEM = 55;
 const PM_STONE_GOLEM = 257;
 const G_UNIQ = 0x1000;
@@ -47,11 +48,27 @@ export function monsterWearsTorsoArmor(monster) {
         ((object.owornmask ?? 0) & TORSO_ARMOR) !== 0);
 }
 
-export function monsterResistsStoning(monster) {
-    const resistance = (MONSTER_RESISTS[monster?.mnum] ?? 0)
-        | (monster?.mextrinsics ?? 0)
-        | (monster?.mintrinsics ?? 0);
-    return !!(resistance & MR_STONE);
+export async function petrifyMonsterFromContact(monster, {
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    rollOne = rnd,
+    state = game,
+} = {}) {
+    const cure = await useMonsterStoningCure(monster, {
+        finishDeath, publish, rollOne, state,
+    });
+    if (cure.consumed) {
+        return {
+            changed: true,
+            survived: !cure.died,
+            cured: !cure.died,
+            cure,
+        };
+    }
+    return petrifyMonster(monster, {
+        creditHero, finishDeath, publish,
+    });
 }
 
 async function turnGolemToStone(monster, publish) {
@@ -82,7 +99,7 @@ async function restoreShapechanger(monster, publish) {
         return false;
     }
     const vampire = VAMPIRE_FORMS.has(baseForm);
-    const resistantBase = !!((MONSTER_RESISTS[baseForm] ?? 0) & MR_STONE);
+    const resistantBase = monsterHasStoneResistance({ mnum: baseForm });
     if (!vampire && !resistantBase) return false;
 
     const oldName = monsterTypeName(monster.mnum, !!monster.female);
@@ -159,22 +176,25 @@ function createStoneRemains(monster) {
     return stack_object(statue, game);
 }
 
-export async function petrifyMonster(monster, {
+async function petrifyMonster(monster, {
     creditHero = false,
     finishDeath,
     publish = plineWithContinuation,
 } = {}) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
         return { changed: false, survived: false };
-    if (monsterResistsStoning(monster))
+    if (monsterHasStoneResistance(monster))
         return { changed: false, survived: true };
     if (await turnGolemToStone(monster, publish))
         return { changed: true, survived: true };
     if (await restoreShapechanger(monster, publish))
         return { changed: true, survived: true };
 
-    monster.mspeed = 0;
-    monster.fast = false;
+    const speed = adjustMonsterSpeed(monster, -3);
+    const speedMessage = game.flags?.verbose === false
+        ? null : monsterSpeedMessage(speed, monsterSubject(monster));
+    if (cansee(monster.mx, monster.my) && speedMessage)
+        await publish(speedMessage);
     if (cansee(monster.mx, monster.my)) {
         await publish(
             `${monsterSubject(monster)} turns to stone.`,
@@ -197,7 +217,7 @@ export async function petrifyMonster(monster, {
         throw new TypeError('petrifyMonster requires a death function');
     monster.mtrapped = 0;
     const remains = createStoneRemains(monster);
-    await finishDeath(monster);
+    await finishDeath(monster, { noCorpse: true });
     newsym(monster.mx, monster.my);
     return { changed: true, survived: false, remains };
 }

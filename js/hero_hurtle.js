@@ -27,7 +27,7 @@ import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import {
-    monsterWearsTorsoArmor, petrifyMonster,
+    monsterWearsTorsoArmor, petrifyMonsterFromContact,
 } from './monster_stoning.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
@@ -225,9 +225,9 @@ async function collideWithMonster(monster, x, y, options) {
         }
     }
     if (touchPetrifies(heroForm()) && !monsterWearsTorsoArmor(monster)) {
-        await petrifyMonster(monster, {
+        await petrifyMonsterFromContact(monster, {
             creditHero: true,
-            finishDeath: options.finishPetrifiedMonster,
+            finishDeath: options.finishMonsterDeath,
         });
     }
     wakeMonstersNear(x, y, 10);
@@ -390,7 +390,7 @@ export async function hurtleHero(dx, dy, range, {
     finishTeleport = null,
     gotoLevel = null,
     chooseTeleportDestination = null,
-    finishPetrifiedMonster = null,
+    finishMonsterDeath = null,
 } = {}) {
     if (heroIsPunished()
         && !game.inventory?.includes(game.uball || game.u?.uball)) {
@@ -422,7 +422,7 @@ export async function hurtleHero(dx, dy, range, {
     const remaining = { value: range };
     const options = {
         finishTeleport, gotoLevel, chooseTeleportDestination,
-        finishPetrifiedMonster,
+        finishMonsterDeath,
     };
     while (remaining.value) {
         const x = game.u.ux + dx;

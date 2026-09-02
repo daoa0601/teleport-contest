@@ -11,9 +11,11 @@ import {
 } from '../js/monster_throw.js';
 import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, ARROW, BOW, CREAM_PIE, CROSSBOW,
-    CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, STATUE,
+    AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
+    CROSSBOW, CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW,
+    ELVEN_BOW, STATUE,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -165,9 +167,9 @@ test('a cockatrice egg turns an intervening monster into a statue',
         );
         const result = await finishMonsterProjectileHit(shot, game, {
             publish,
-            finishPetrifiedMonster: monster =>
+            finishMonsterDeath: (monster, death) =>
                 finishEnvironmentalMonsterDeath(monster, game, {
-                    noCorpse: true,
+                    noCorpse: death.noCorpse,
                     publish,
                 }),
         });
@@ -185,7 +187,73 @@ test('a cockatrice egg turns an intervening monster into a statue',
         assert.equal(egg.where, 'gone');
         assert.deepEqual(messages, [
             'Splat!  The jackal is hit with a cockatrice egg!',
+            'The jackal is slowing down.',
             'The jackal turns to stone.',
+        ]);
+    });
+
+test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
+    async () => {
+        freshRangedCombatRoom({
+            heroX: 12,
+            heroY: 10,
+            gameplaySeed: 1n,
+            recalculateVision: true,
+        });
+        game.nhDisplay = new GameDisplay(null);
+        const egg = carriedObject(EGG, {
+            corpsenm: 10,
+            known: true,
+        });
+        const lizard = carriedObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf('lizard'),
+            where: 'minvent',
+        });
+        const orc = addMonsterToLevel(rangedMonster('orc', {
+            inventory: [egg],
+        }));
+        const target = addMonsterToLevel(rangedTarget('jackal', {
+            x: 11,
+            hitPoints: 12,
+            inventory: [lizard],
+            movement: 12,
+        }));
+        const attack = throwMonsterWeaponAtHero(orc, game, egg, {
+            random: () => 1,
+            rollOne: () => 1,
+        });
+        const shot = attack.shots[0];
+        const messages = [];
+        const publish = async message => messages.push(message);
+
+        await presentMonsterProjectileShot(
+            shot, PROJECTILE_GLYPH, game, { publish },
+        );
+        await finishMonsterProjectileHit(shot, game, {
+            publish,
+            rollOne: () => 1,
+            finishMonsterDeath: (monster, death) =>
+                finishEnvironmentalMonsterDeath(monster, game, {
+                    noCorpse: death.noCorpse,
+                    publish,
+                }),
+        });
+        finishDeferredRangedProjectileHit(shot, game, () => 0);
+
+        assert.equal(target.mhp, 12);
+        assert.equal(target.inventory.includes(lizard), false);
+        assert.equal(target.movement, 0);
+        assert.equal(
+            floorObjectsAt(game.level, 11, 10).some(
+                object => object.otyp === STATUE,
+            ),
+            false,
+        );
+        assert.deepEqual(messages, [
+            'Splat!  The jackal is hit with a cockatrice egg!',
+            'The jackal is slowing down.',
+            'The jackal eats a lizard corpse.',
+            'The jackal seems limber!',
         ]);
     });
 

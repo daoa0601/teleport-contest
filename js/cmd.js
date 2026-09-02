@@ -3789,19 +3789,23 @@ async function damageHeroFromKick(amount, x, y) {
     return finishHeroDeath({ killer: kickDeathReason(x, y) });
 }
 
+function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
+    return finishHeroMonsterKill(
+        monster, monster.mx, monster.my, {
+            showKillMessage: false,
+            noCorpse,
+            recordConduct: false,
+        },
+    );
+}
+
 async function recoilFromKick(range) {
     return hurtleHero(-game.u.dx, -game.u.dy, range, {
         verbose: true,
         finishTeleport: finishTeleportArrival,
         gotoLevel,
         chooseTeleportDestination: askTeleportDestination,
-        finishPetrifiedMonster: monster => finishHeroMonsterKill(
-            monster, monster.mx, monster.my, {
-                showKillMessage: false,
-                noCorpse: true,
-                recordConduct: false,
-            },
-        ),
+        finishMonsterDeath: finishHurtleMonsterDeath,
     });
 }
 
@@ -8829,14 +8833,7 @@ async function doapply(cannedInvlet = null) {
                         finishTeleport: finishTeleportArrival,
                         gotoLevel,
                         chooseTeleportDestination: askTeleportDestination,
-                        finishPetrifiedMonster: monster =>
-                            finishHeroMonsterKill(
-                                monster, monster.mx, monster.my, {
-                                    showKillMessage: false,
-                                    noCorpse: true,
-                                    recordConduct: false,
-                                },
-                            ),
+                        finishMonsterDeath: finishHurtleMonsterDeath,
                     }),
                 });
                 if (result.resume) {

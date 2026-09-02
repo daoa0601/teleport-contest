@@ -5916,9 +5916,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                 const eggHit = await finishMonsterProjectileHit(
                     ranged, game, {
-                        finishPetrifiedMonster: target =>
+                        finishMonsterDeath: (target, death) =>
                             finishEnvironmentalMonsterDeath(target, game, {
-                                noCorpse: true,
+                                noCorpse: death.noCorpse,
                                 visible: targetVisible,
                                 spotted: canProjectMonster(
                                     target, target.mx, target.my,

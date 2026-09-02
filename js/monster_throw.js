@@ -15,9 +15,7 @@ import {
 import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
-import {
-    monsterResistsStoning, petrifyMonster,
-} from './monster_stoning.js';
+import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName,
 } from './monster_data.js';
@@ -28,7 +26,9 @@ import {
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { isPoisonableObject } from './object_properties.js';
-import { monsterHasPoisonResistance } from './monster_resistance.js';
+import {
+    monsterHasPoisonResistance, monsterHasStoneResistance,
+} from './monster_resistance.js';
 import { resolvePoisonedHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
@@ -360,21 +360,25 @@ export async function finishHeroProjectileHit(
 }
 
 export async function finishMonsterProjectileHit(
-    shot, state, { finishPetrifiedMonster, publish } = {},
+    shot, state, {
+        finishMonsterDeath,
+        publish,
+        rollOne = rnd,
+    } = {},
 ) {
     if (!shot?.hit || !shot.petrifyingEgg || !shot.target)
         return { handled: false, deathFinished: false };
     if (!state.level?.monsters?.includes(shot.target))
         return { handled: false, deathFinished: false };
 
-    const petrification = await petrifyMonster(shot.target, {
-        finishDeath: finishPetrifiedMonster,
-        publish,
+    const petrification = await petrifyMonsterFromContact(shot.target, {
+        finishDeath: finishMonsterDeath,
+        publish, rollOne, state,
     });
     const deathFinished = !petrification.survived;
     let damage = 0;
     if (petrification.survived
-        && !monsterResistsStoning(shot.target)) {
+        && !monsterHasStoneResistance(shot.target)) {
         damage = shot.eggImpactDamage;
         shot.target.mhp = Math.max(0, shot.target.mhp - damage);
     }

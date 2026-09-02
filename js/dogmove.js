@@ -365,10 +365,13 @@ async function presentRetaliationWeapons(
                 );
             const eggHit = await finishMonsterProjectileHit(
                 shot, state, {
-                    finishPetrifiedMonster: target => finishMonsterKill(
-                        target, { noCorpse: true, showKillMessage: false },
+                    finishMonsterDeath: (target, death) => finishMonsterKill(
+                        target, {
+                            noCorpse: death.noCorpse,
+                            showKillMessage: false,
+                        },
                     ),
-                    publish,
+                    publish, rollOne,
                 },
             );
             if ((shot.target.mhp ?? 0) <= 0
