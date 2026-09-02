@@ -6,9 +6,9 @@ import {
     heroFootName, heroHandName, monsterHandName,
 } from './body_parts.js';
 import {
-    ACCESSIBLE, A_DEX, A_STR, COLNO, DOOR, IS_AIR, IS_FURNITURE, IS_LAVA,
-    IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_airlevel, Is_waterlevel,
-    LAVAWALL, ROWNO, SDOOR, TT_PIT, W_NONPASSWALL, isok,
+    ACCESSIBLE, A_DEX, A_STR, COLNO, IS_FURNITURE, IS_LAVA,
+    IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel,
+    LAVAWALL, ROWNO, TT_PIT, W_NONPASSWALL, isok,
 } from './const.js';
 import {
     canSpotMonster, map_invisible, newsym, pline,
@@ -36,7 +36,7 @@ import {
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { touchPetrifyingCorpse } from './stoning.js';
-import { surfaceName } from './terrain_name.js';
+import { ceilingName, surfaceName } from './terrain_name.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { collectNearbyCoords } from './u_init.js';
 import { vision_recalc, vision_reset } from './vision.js';
@@ -124,15 +124,6 @@ function monsterAt(x, y, state) {
     return (state.level?.monsters || []).find(monster =>
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
-}
-
-function ceilingName(state) {
-    const type = state.level?.at?.(state.u.ux, state.u.uy)?.typ;
-    if (Is_waterlevel(state.u?.uz)) return 'water above';
-    if (IS_AIR(type)) return 'sky';
-    if (state.underwater || state.u?.uinwater) return "water's surface";
-    return IS_ROOM(type) || IS_WALL(type) || type === DOOR || type === SDOOR
-        ? 'ceiling' : 'rock cavern';
 }
 
 function removeHeroObject(object, state, { destroy = false } = {}) {
@@ -475,7 +466,9 @@ export async function useBullwhip(
     } else if (state.underwater || hero.uinwater) {
         await pline('There is too much resistance to flick your bullwhip.');
     } else if (hero.dz < 0) {
-        await pline(`You flick a bug off of the ${ceilingName(state)}.`);
+        await pline(`You flick a bug off of the ${
+            ceilingName(state.u.ux, state.u.uy, state)
+        }.`);
     } else if (!hero.dz && (IS_WATERWALL(
         state.level?.at?.(targetX, targetY)?.typ,
     ) || state.level?.at?.(targetX, targetY)?.typ === LAVAWALL)) {

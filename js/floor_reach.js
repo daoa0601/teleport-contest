@@ -7,32 +7,18 @@ import {
 } from './const.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_ATTACKS, MONSTER_SIZE,
 } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import {
-    heroFormFlags, heroFormSticks, heroMonsterForm,
+    heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm,
 } from './polyself.js';
 
-const M1_FLY = 0x00000001;
-const M1_CLING = 0x00000010;
-const M1_HIDE = 0x00000100;
 const MZ_HUGE = 4;
-const S_MIMIC = 13;
 
 function holderHugs(holder) {
     return (MONSTER_ATTACKS[holder?.mnum] || [])
         .some(([attackType]) => attackType === AT_HUGS);
-}
-
-function heroHidesOnCeiling(state) {
-    const form = heroMonsterForm(state);
-    if (form == null || !state.u?.uundetected) return false;
-    const flags = heroFormFlags(state);
-    const symbol = MONSTER_SYMBOL[form];
-    return !!(flags & M1_HIDE)
-        && (!!(flags & M1_FLY)
-            || (!!(flags & M1_CLING) && symbol !== S_MIMIC));
 }
 
 function ridingSkill(state) {
@@ -79,8 +65,7 @@ export function floorReachProblem(
     if (heroHidesOnCeiling(state)) return 'ceiling';
 
     const form = heroMonsterForm(state);
-    const flags = heroFormFlags(state);
-    if (hero.flying || hero.flight || state.flying || (flags & M1_FLY)
+    if (heroIsFlying(state)
         || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
         return null;
     }

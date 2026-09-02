@@ -11,12 +11,12 @@ import { game } from './gstate.js';
 import {
     MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
 } from './monster_data.js';
-import { heroFormFlags, heroMonsterForm } from './polyself.js';
+import {
+    heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm,
+} from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 
-const M1_FLY = 0x00000001;
-const M1_CLING = 0x00000010;
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
 const S_LIGHT = 25;
@@ -37,10 +37,9 @@ function heroStaysAboveLiquid(state) {
     const flags = heroFormFlags(state);
     const symbol = form == null ? null : MONSTER_SYMBOL[form];
     const floater = symbol === S_EYE || symbol === S_LIGHT;
-    const flying = hero.flying || hero.flight || state.flying
-        || !!(flags & M1_FLY);
+    const flying = heroIsFlying(state);
     const breathless = hero.breathless || !!(flags & M1_BREATHLESS);
-    return heroHasWaterWalking(state) || floater || !!(flags & M1_CLING)
+    return heroHasWaterWalking(state) || floater || heroFormClings(state)
         || (flying && !breathless);
 }
 

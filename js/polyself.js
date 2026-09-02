@@ -34,6 +34,9 @@ const M1_NOLIMBS = 0x00006000;
 const M1_NOHEAD = 0x00008000;
 const M1_SLITHY = 0x00080000;
 const M1_FLY = 0x00000001;
+const M1_CLING = 0x00000010;
+const M1_CONCEAL = 0x00000080;
+const M1_HIDE = 0x00000100;
 const M1_OVIPAROUS = 0x00400000;
 const M1_HUMANOID = 0x00020000;
 const M2_MALE = 0x00010000;
@@ -86,6 +89,31 @@ export function heroMonsterForm(state = game) {
 export function heroFormFlags(state = game) {
     const form = heroMonsterForm(state);
     return form == null ? 0 : MONSTER_FLAGS1[form] ?? 0;
+}
+
+export function heroIsFlying(state = game) {
+    return !!(state.u?.flying || state.u?.flight || state.flying)
+        || !!(heroFormFlags(state) & M1_FLY);
+}
+
+export function heroFormClings(state = game) {
+    return !!(heroFormFlags(state) & M1_CLING);
+}
+
+export function heroFormHidesUnderObjects(state = game) {
+    return !!(heroFormFlags(state) & M1_CONCEAL);
+}
+
+export function heroFormHidesWithoutCover(state = game) {
+    return !!(heroFormFlags(state) & M1_HIDE);
+}
+
+export function heroHidesOnCeiling(state = game) {
+    const form = heroMonsterForm(state);
+    if (form == null || !state.u?.uundetected
+        || !heroFormHidesWithoutCover(state)) return false;
+    return heroIsFlying(state)
+        || (heroFormClings(state) && MONSTER_SYMBOL[form] !== S_MIMIC);
 }
 
 // C ref: mondata.c sticks().

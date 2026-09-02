@@ -4,7 +4,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import {
     CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG,
-    MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP, Upolyd,
+    MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP,
 } from './const.js';
 import {
     canSpotMonster, newsym, pline, randomDisplayMonsterName,
@@ -16,7 +16,7 @@ import {
 } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_SOUND,
+    MONSTER_GENO, MONSTER_SOUND,
     monsterIsNonliving, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
@@ -24,6 +24,7 @@ import { restoreMonsterTraits } from './monster_traits.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { stopAllObjectTimers } from './object_timers.js';
+import { heroFormHidesUnderObjects } from './polyself.js';
 import { markQuestLeaderAlive } from './quest.js';
 import {
     bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement,
@@ -32,7 +33,6 @@ import {
 import { cansee } from './vision.js';
 
 const G_UNIQ = 0x1000;
-const M1_CONCEAL = 0x00000080;
 const MS_GUARDIAN = 38;
 
 function monsterAt(x, y, state) {
@@ -154,11 +154,10 @@ function deleteStatue(statue) {
 }
 
 function revealHeroWithoutCover(x, y, state) {
-    if (state.u?.ux !== x || state.u?.uy !== y || !Upolyd(state.u)) return;
-    const hidesUnder = !!((MONSTER_FLAGS1[state.u.umonnum] ?? 0)
-        & M1_CONCEAL);
+    if (state.u?.ux !== x || state.u?.uy !== y) return;
     const pile = state.level?.objects?.[x]?.[y] || [];
-    if (state.u.uundetected && hidesUnder && pile.length === 0)
+    if (state.u.uundetected && heroFormHidesUnderObjects(state)
+        && pile.length === 0)
         state.u.uundetected = 0;
 }
 

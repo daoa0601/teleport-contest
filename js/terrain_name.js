@@ -2,7 +2,7 @@
 
 import {
     ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE,
-    IS_AIR, IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, SDOOR,
+    IS_AIR, IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, Is_waterlevel, SDOOR,
 } from './const.js';
 import { game } from './gstate.js';
 
@@ -20,4 +20,14 @@ export function surfaceName(x, y, state = game) {
     if (IS_WALL(type) || type === SDOOR) return 'wall';
     if (type === DOOR) return 'doorway';
     return IS_ROOM(type) ? 'floor' : 'ground';
+}
+
+// C ref: dungeon.c ceiling().
+export function ceilingName(x, y, state = game) {
+    const type = state.level?.at?.(x, y)?.typ;
+    if (Is_waterlevel(state.u?.uz)) return 'water above';
+    if (IS_AIR(type)) return 'sky';
+    if (state.underwater || state.u?.uinwater) return "water's surface";
+    return IS_ROOM(type) || IS_WALL(type) || type === DOOR || type === SDOOR
+        ? 'ceiling' : 'rock cavern';
 }

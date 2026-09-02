@@ -23,7 +23,7 @@ import {
 } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { breakFloorObject } from './object_breakage.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -31,7 +31,9 @@ import {
     BOULDER, OBJECT_MATERIAL, OBJECT_SUBTYPE, OBJECT_USES_KNOWN,
     ROCK, STATUE,
 } from './object_data.js';
-import { rehumanizeHero } from './polyself.js';
+import {
+    heroFormHidesUnderObjects, rehumanizeHero,
+} from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -43,7 +45,6 @@ const ARM_HELM = 2;
 const IRON = 11;
 const MITHRIL = 17;
 const GLASS = 19;
-const M1_CONCEAL = 0x00000080;
 
 const DIR_DX = {
     h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
@@ -140,18 +141,14 @@ async function turnIntoRocks(object, x, y, state, random) {
     newsym(x, y);
 }
 
-function heroHidesUnderFloorObject(state) {
-    return !!state.u?.uundetected
-        && !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_CONCEAL);
-}
-
 async function breakFloorObjects(x, y, state, options, direction = null) {
     const originalPile = state.level?.objects?.[x]?.[y] || [];
     if (!originalPile.length) return { rangeHit: false, identified: false };
 
     let rangeHit = false;
     let identified = false;
-    const hidingUnder = heroHidesUnderFloorObject(state);
+    const hidingUnder = !!state.u?.uundetected
+        && heroFormHidesUnderObjects(state);
     const originalTop = originalPile[0];
     const upward = direction === '<';
     const downward = direction === '>';

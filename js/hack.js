@@ -15,13 +15,16 @@ import {
 import { game } from './gstate.js';
 import { splitHeroMonsterForm, place_object, stack_object } from './mklev.js';
 import {
-    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LOADSTONE, OBJECT_MATERIAL,
     OBJECT_NAMES,
 } from './object_data.js';
-import { rehumanizeHero } from './polyself.js';
+import {
+    heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
+    rehumanizeHero,
+} from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, waterDamageChain } from './trap.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
@@ -43,20 +46,16 @@ import { clearHeroSliming, heroIsSliming } from './slime.js';
 
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
-const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
-const M1_CLING = 0x00000010;
 const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
-const M1_HIDE = 0x00000100;
 const M1_SLITHY = 0x00080000;
 const M1_UNSOLID = 0x00100000;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
-const S_MIMIC = 13;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
 const PM_GREMLIN = 40;
@@ -66,33 +65,15 @@ const PM_FIRE_ELEMENTAL = 155;
 const PM_IRON_GOLEM = 259;
 const PM_SALAMANDER = 329;
 
-function heroFormFlags(state) {
-    if (!(state.u?.mtimedone > 0)
-        || !Number.isInteger(state.u?.umonnum)) return 0;
-    return MONSTER_FLAGS1[state.u.umonnum] ?? 0;
-}
-
 function heroIsInAir(state) {
     const hero = state.u || {};
-    if (hero.levitating || hero.levitation
-        || hero.flying || hero.flight) return true;
-    const flags = heroFormFlags(state);
+    if (hero.levitating || hero.levitation) return true;
     const symbol = hero.mtimedone > 0
         ? MONSTER_SYMBOL[hero.umonnum] : null;
-    return !!(flags & M1_FLY)
+    return heroIsFlying(state)
         || symbol === S_EYE
         || symbol === S_LIGHT
-        || (!!(flags & M1_CLING) && levelHasCeiling(state));
-}
-
-function heroIsHiddenOnCeiling(state) {
-    const hero = state.u || {};
-    if (!(hero.mtimedone > 0) || !hero.uundetected) return false;
-    const flags = heroFormFlags(state);
-    const symbol = MONSTER_SYMBOL[hero.umonnum];
-    return !!(flags & M1_HIDE)
-        && (!!(flags & M1_FLY)
-            || (!!(flags & M1_CLING) && symbol !== S_MIMIC));
+        || (heroFormClings(state) && levelHasCeiling(state));
 }
 
 function heroFloorType(state, x, y) {
@@ -718,7 +699,7 @@ export async function heroLiquidEffects({
         || u.ustuck || airborne)
         return leftWater ? { left: true } : null;
     if (u.usteed && !steedIsGrounded(u.usteed, state)) return null;
-    if (heroIsHiddenOnCeiling(state))
+    if (heroHidesOnCeiling(state))
         return leftWater ? { left: true } : null;
 
     if (u.usteed) {

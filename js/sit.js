@@ -25,7 +25,8 @@ import {
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
-    heroFormFlags, heroFormSticks, heroMonsterForm,
+    heroFormFlags, heroFormHidesWithoutCover, heroFormSticks,
+    heroMonsterForm,
 } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -39,7 +40,6 @@ const COIN_CLASS = 12;
 const CLOTH = 6;
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
-const M1_HIDE = 0x00000100;
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
 const M1_OVIPAROUS = 0x00400000;
@@ -264,7 +264,7 @@ export async function dosit({
         game.context.move = 0;
         return;
     }
-    if (u?.uundetected && (heroFormFlags(game) & M1_HIDE)
+    if (u?.uundetected && heroFormHidesWithoutCover(game)
         && heroMonsterForm(game) !== PM_TRAPPER) u.uundetected = 0;
 
     if (!heroCanReachFloor(game)) {
