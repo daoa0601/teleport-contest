@@ -115,11 +115,14 @@ async function applySpikePoison() {
     }
 }
 
-async function triggerPit(trap, { viaSitting = false } = {}) {
+async function triggerPit(
+    trap,
+    { viaSitting = false, failedUntrap = false } = {},
+) {
     const hero = game.u;
     const formFlags = heroFormFlags();
-    if (hero.levitating || game.levitating
-        || ((hero.flying || game.flying) && !viaSitting)) return;
+    if (!failedUntrap && (hero.levitating || game.levitating
+        || ((hero.flying || game.flying) && !viaSitting))) return;
     trap.tseen = true;
     if (formFlags & M1_CLING) {
         await plineWithContinuation(
@@ -161,7 +164,10 @@ function webTrapDuration() {
     return 0;
 }
 
-async function triggerWeb(trap, { viaSitting = false } = {}) {
+async function triggerWeb(
+    trap,
+    { viaSitting = false, failedUntrap = false } = {},
+) {
     const hero = game.u;
     trap.tseen = true;
     const form = heroMonsterForm();
@@ -171,7 +177,7 @@ async function triggerWeb(trap, { viaSitting = false } = {}) {
             : 'There is a spider web here.');
         return;
     }
-    await plineWithContinuation(viaSitting
+    await plineWithContinuation(viaSitting || failedUntrap
         ? 'You are caught by a spider web!'
         : 'You stumble into a spider web!');
     const turns = webTrapDuration();
@@ -185,12 +191,12 @@ async function triggerWeb(trap, { viaSitting = false } = {}) {
     }
 }
 
-async function triggerLandmine(trap) {
+async function triggerLandmine(trap, { failedUntrap = false } = {}) {
     const hero = game.u;
     let damage = rnd(16);
     if (heroWearsIronShoes()) damage = Math.trunc((damage + 3) / 4);
-    const airborne = hero.levitating || game.levitating
-        || hero.flying || game.flying;
+    const airborne = !failedUntrap && (hero.levitating || game.levitating
+        || hero.flying || game.flying);
     if (airborne) {
         const alreadySeen = !!trap.tseen;
         if (!alreadySeen && rn2(3) !== 0) return;
@@ -214,7 +220,7 @@ async function triggerLandmine(trap) {
     trap.ttyp = PIT;
     trap.madeby_u = false;
     losePhysicalHitPoints(damage);
-    await triggerPit(trap);
+    await triggerPit(trap, { failedUntrap });
     newsym(hero.ux, hero.uy);
 }
 
@@ -687,8 +693,10 @@ async function triggerRollingBoulderTrap(trap) {
     newsym(finish.x, finish.y);
 }
 
-async function triggerBearTrap(trap) {
+async function triggerBearTrap(trap, { failedUntrap = false } = {}) {
     const hero = game.u;
+    if (!failedUntrap && (hero.levitating || game.levitating
+        || hero.flying || game.flying)) return;
     const damage = d(2, 4);
     const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
     trap.tseen = true;
@@ -767,6 +775,7 @@ export async function triggerHeroTrap(trap, {
     finishTeleport = null,
     gotoLevel = null,
     viaSitting = false,
+    failedUntrap = false,
 } = {}) {
     if (!trap) return false;
     stopRun();
@@ -787,7 +796,7 @@ export async function triggerHeroTrap(trap, {
         await triggerRollingBoulderTrap(trap);
         break;
     case BEAR_TRAP:
-        await triggerBearTrap(trap);
+        await triggerBearTrap(trap, { failedUntrap });
         break;
     case FIRE_TRAP:
         await triggerHeroFireTrap(trap);
@@ -801,16 +810,16 @@ export async function triggerHeroTrap(trap, {
         break;
     case PIT:
     case SPIKED_PIT:
-        await triggerPit(trap, { viaSitting });
+        await triggerPit(trap, { viaSitting, failedUntrap });
         break;
     case WEB:
-        await triggerWeb(trap, { viaSitting });
+        await triggerWeb(trap, { viaSitting, failedUntrap });
         break;
     case STATUE_TRAP:
         await activateStatueTrapAt(trap.tx, trap.ty);
         break;
     case LANDMINE:
-        await triggerLandmine(trap);
+        await triggerLandmine(trap, { failedUntrap });
         break;
     case VIBRATING_SQUARE:
         revealVibratingSquare(trap);

@@ -159,6 +159,27 @@ function heroCanBecomeStoneGolem(state = game) {
     return heroPolymorphsWhenStoned(state) && !stoneGolemGenocided;
 }
 
+export async function resolveImmediatePetrification({
+    state = game,
+    killer,
+    publish = plineWithContinuation,
+    die = finishHeroDeath,
+} = {}) {
+    if (heroCanBecomeStoneGolem(state)) {
+        await polymonHero(PM_STONE_GOLEM);
+        return { died: false, transformed: true };
+    }
+
+    await publish('You turn to stone...');
+    const died = await die({
+        killer,
+        deathVerb: 'turned to stone',
+        deathLineShown: true,
+        deathType: STONING,
+    });
+    return { died: !!died, transformed: false };
+}
+
 export function heroWouldPetrifyFromFlesh(mnum, state = game) {
     return fleshPetrifies(mnum)
         && !heroResistsStoning(state)
@@ -179,22 +200,14 @@ export async function touchPetrifyingCorpse(object, {
     if (object?.otyp !== CORPSE || !touchPetrifies(object.corpsenm)
         || gloves || heroResistsStoning()) return null;
 
-    if (heroCanBecomeStoneGolem()) {
-        await polymonHero(PM_STONE_GOLEM);
-        return null;
-    }
-
     const corpse = corpseWithArticle(object);
     await pline(`${action} ${corpse} is a fatal mistake.`);
     await beforeDeath?.();
-    await pline('You turn to stone...');
-    const died = await finishHeroDeath({
+    const result = await resolveImmediatePetrification({
         killer: corpse,
-        deathVerb: 'turned to stone',
-        deathLineShown: true,
-        deathType: STONING,
+        publish: pline,
     });
-    return { died };
+    return result.transformed ? null : { died: result.died };
 }
 
 export async function eatPetrifyingEgg(object) {

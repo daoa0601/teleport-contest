@@ -22,11 +22,12 @@ import { d, rnd, rnz } from './rng.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { addInventoryItem } from './u_init.js';
+import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
 
 const SUPPORTED_POWERS = new Set([
     'healing', 'energy-boost', 'enlightening', 'create-ammo',
-    'invisibility', 'conflict',
+    'invisibility', 'conflict', 'untrap',
 ]);
 
 const PROPERTY_POWERS = Object.freeze({
@@ -176,6 +177,7 @@ export async function invokeArtifactPower(
         rollDice = d,
         rollOne = rnd,
         scaledRandom = rnz,
+        enterTrap = null,
     } = {},
 ) {
     const power = artifact?.invokePower;
@@ -203,6 +205,13 @@ export async function invokeArtifactPower(
     case 'create-ammo':
         invokeCreateAmmo(object, rollOne);
         break;
+    case 'untrap': {
+        const spentTime = await untrap({
+            state, force: true, enterTrap, publish,
+        });
+        if (!spentTime) object.age = 0;
+        return { used: true, ready: true, spentTime };
+    }
     }
     return { used: true, ready: true };
 }

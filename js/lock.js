@@ -4,7 +4,7 @@
 import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, P_SABER,
+    A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE,
     W_QUIVER, W_SWAPWEP, W_WEP,
 } from './const.js';
 import {
@@ -23,6 +23,7 @@ import { heroHasNoHands } from './polyself.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2 } from './rng.js';
 import { objectWeight } from './weight.js';
+import { isBlade } from './weapon_type.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -157,12 +158,6 @@ function isForceableWeapon(weapon) {
         return skill >= P_DAGGER && skill <= P_LANCE && skill !== P_FLAIL;
     }
     return weapon.oclass === ROCK_CLASS;
-}
-
-function isBlade(weapon) {
-    const skill = OBJECT_SUBTYPE[weapon?.otyp] || 0;
-    return weapon?.oclass === WEAPON_CLASS
-        && skill >= P_DAGGER && skill <= P_SABER;
 }
 
 function isPick(weapon) {

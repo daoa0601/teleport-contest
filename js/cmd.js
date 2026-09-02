@@ -237,6 +237,7 @@ import {
 } from './weapon_damage.js';
 export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
+import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import {
     heroCanMoveFromTrap, triggerHeroTrapAt,
@@ -5357,7 +5358,9 @@ async function runExtendedCommand(command) {
     if (command === 'offer') return dooffer();
     if (command === 'dip') return dodip();
     if (command === 'turn') return doturn();
-    if (command === 'untrap') return dountrap();
+    if (command === 'untrap') {
+        return doUntrap({ enterTrap: moveIntoFailedUntrap });
+    }
     if (command === 'wipe') return dowipe();
     if (command === 'monster') return domonability();
     if (command === 'polyself') return wizPolyself();
@@ -5416,9 +5419,11 @@ async function doinvoke() {
         return;
     }
 
-    const invocation = await invokeArtifactPower(object, artifact);
+    const invocation = await invokeArtifactPower(object, artifact, {
+        enterTrap: moveIntoFailedUntrap,
+    });
     if (invocation.used) {
-        game.context.move = 1;
+        game.context.move = invocation.spentTime === false ? 0 : 1;
         return;
     }
     await pline('Nothing happens.');
@@ -5619,34 +5624,47 @@ async function dooffer() {
     game.context.move = 1;
 }
 
-// C ref: trap.c dountrap().  Direction acquisition is its own zero-time
-// command boundary; Escape cancels before any adjacent trap/container policy.
-async function dountrap() {
-    // trap.c:could_untrap() rejects capability before opening getdir().
-    if (nearCapacity(game) >= HVY_ENCUMBER) {
-        await pline("You're too strained to do that.");
-        game.context.move = 0;
-        return;
-    }
-    const form = game.u?.umonnum;
-    const webmaker = form === 94 || form === 96;
-    if ((heroHasNoHands(game) && !webmaker)
-        || (Number.isInteger(form) && (MONSTER_MOVE[form] ?? 0) === 0)) {
-        await pline('And just how do you expect to do that?');
-        game.context.move = 0;
-        return;
-    }
-    const direction = await promptKey('In what direction? ');
-    if (direction === 27) {
-        game._pending_message = '';
-        game.context.move = 0;
-        return;
-    }
+async function moveIntoFailedUntrap(trap) {
+    const u = game.u;
+    const newx = trap.tx;
+    const newy = trap.ty;
+    const dx = newx - u.ux;
+    const dy = newy - u.uy;
+    const loc = game.level?.at?.(newx, newy);
+    if (!loc || blocksMove(newx, newy)
+        || (dx && dy && blocksDiagonalDoor(
+            game.level?.at?.(u.ux, u.uy), loc,
+        ))) return false;
 
-    // Adjacent trap discovery, chest trap removal, and monster rescue branch
-    // after a concrete direction is supplied.
-    await pline('You find no traps there.');
-    game.context.move = 1;
+    const ballChainMove = beginBallAndChainMove(newx, newy);
+    if (ballChainMove?.blocked) return false;
+
+    const oldx = u.ux;
+    const oldy = u.uy;
+    u.ux0 = oldx;
+    u.uy0 = oldy;
+    u.ux = newx;
+    u.uy = newy;
+    if (u.usteed) {
+        u.usteed.mx = newx;
+        u.usteed.my = newy;
+    }
+    trap.tseen = false;
+    await finishMovedHero({
+        oldx,
+        oldy,
+        newx,
+        newy,
+        loc,
+        explicitAttempt: true,
+        ballChainMove,
+        trapOptions: { failedUntrap: true },
+    });
+    const remainingTrap = game.level?.traps?.find(candidate =>
+        candidate.tx === u.ux && candidate.ty === u.uy);
+    if (remainingTrap) remainingTrap.tseen = true;
+    exerciseAttribute(A_WIS, false);
+    return true;
 }
 
 // C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
@@ -11272,7 +11290,7 @@ async function fightEmptyDestination(x, y) {
 // returning directly from a special movement helper would silently skip the
 // floor transaction even though the hero has changed squares.
 export async function finishDestinationSpotEffects({
-    oldx, oldy, newx, newy, loc, explicitAttempt,
+    oldx, oldy, newx, newy, loc, explicitAttempt, trapOptions = {},
 }) {
     // C spoteffects() updates special-room/shop membership after liquid entry
     // effects and before destination pickup or traps.
@@ -11396,6 +11414,7 @@ export async function finishDestinationSpotEffects({
     if (await triggerHeroTrapAt(newx, newy, {
         finishTeleport: finishTeleportArrival,
         gotoLevel,
+        ...trapOptions,
     })) return true;
     if (explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, newx, newy);
@@ -11407,6 +11426,7 @@ export async function finishDestinationSpotEffects({
 // termination, u_on_newpos/vision work, and spoteffects in this order.
 async function finishMovedHero({
     oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null,
+    trapOptions = {},
 }) {
     const u = game.u;
     // C hack.c:domove_core() sets this only in the common tail after map
@@ -11456,7 +11476,7 @@ async function finishMovedHero({
     if (liquid?.moved || liquid?.died) return true;
 
     const finished = await finishDestinationSpotEffects({
-        oldx, oldy, newx, newy, loc, explicitAttempt,
+        oldx, oldy, newx, newy, loc, explicitAttempt, trapOptions,
     });
     // Native domove() installs nomul(-2) for a costly ball drag after
     // spoteffects, then reaches its runmode-delay tail before any monster or
