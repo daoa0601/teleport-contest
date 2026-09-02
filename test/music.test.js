@@ -4,20 +4,20 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { mksobj } from '../js/mklev.js';
 import { playInstrument } from '../js/music.js';
 import {
     BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP,
 } from '../js/object_data.js';
+import { addInventoryItem } from '../js/u_init.js';
 import { liveMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-function instrument(otyp, name, spe = 0) {
-    return {
-        otyp,
-        name,
+function instrument(otyp, spe = 0) {
+    return Object.assign(mksobj(otyp, true, false), {
         spe,
         charges: { current: spe, recharged: 0 },
-    };
+    });
 }
 
 test('a charged magic flute puts nearby monsters to sleep', async () => {
@@ -25,7 +25,7 @@ test('a charged magic flute puts nearby monsters to sleep', async () => {
     game.u.ulevel = 5;
     const target = liveMonster({ mnum: 0, x: 11, y: 10 });
     level.monsters = [target];
-    const flute = instrument(MAGIC_FLUTE, 'magic flute', 2);
+    const flute = instrument(MAGIC_FLUTE, 2);
     pushKeys('y          ');
 
     await playInstrument(flute);
@@ -44,7 +44,7 @@ test('a skilled harp player calms nearby nymphs', async () => {
     level.monsters = [nymph];
     pushKeys('y          ');
 
-    await playInstrument(instrument(WOODEN_HARP, 'wooden harp'));
+    await playInstrument(instrument(WOODEN_HARP));
 
     assert.equal(nymph.mpeaceful, 1);
 });
@@ -61,7 +61,7 @@ test('a bugle calls every soldier on the level to battle', async () => {
     level.monsters = [soldier];
     pushKeys('y          ');
 
-    await playInstrument(instrument(BUGLE, 'bugle'));
+    await playInstrument(instrument(BUGLE));
 
     assert.equal(soldier.mpeaceful, 0);
     assert.equal(soldier.msleeping, 0);
@@ -71,15 +71,7 @@ test('a bugle calls every soldier on the level to battle', async () => {
 
 test('applying a leather drum plays it', async () => {
     freshWeaponArena();
-    const drum = {
-        ...instrument(LEATHER_DRUM, 'drum'),
-        invlet: 'a',
-        oclass: 6,
-        quan: 1,
-        quantity: 1,
-        where: 'inventory',
-    };
-    game.inventory = [drum];
+    const drum = addInventoryItem(instrument(LEATHER_DRUM));
     pushKeys('a          ');
 
     await rhack('a'.charCodeAt(0));
@@ -94,7 +86,7 @@ test('a fire horn shoots a ray and spends one charge', async () => {
         mnum: 0, x: 11, y: 10, hitPoints: 100, mac: 100,
     });
     level.monsters = [target];
-    const horn = instrument(FIRE_HORN, 'fire horn', 2);
+    const horn = instrument(FIRE_HORN, 2);
     pushKeys('y          l          ');
 
     await playInstrument(horn);
@@ -109,7 +101,7 @@ test('cold resistance protects against a frost horn aimed at yourself',
         freshWeaponArena();
         game.u.coldResistance = true;
         game.u.uhp = game.u.uhpmax = 100;
-        const horn = instrument(FROST_HORN, 'frost horn', 1);
+        const horn = instrument(FROST_HORN, 1);
         pushKeys('y          .          ');
 
         await playInstrument(horn);
@@ -125,7 +117,7 @@ test('an empty fire horn behaves like an ordinary horn', async () => {
         mnum: 0, x: 11, y: 10, msleeping: 1,
     });
     level.monsters = [target];
-    const horn = instrument(FIRE_HORN, 'fire horn');
+    const horn = instrument(FIRE_HORN);
     pushKeys('y          ');
 
     await playInstrument(horn);

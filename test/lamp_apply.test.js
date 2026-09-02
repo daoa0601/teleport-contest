@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
-import { pushKey, resetInputState } from '../js/input.js';
+import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { transformMagicLampToOilLamp } from '../js/light.js';
 import {
     BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP,
@@ -15,66 +14,40 @@ import { initRng } from '../js/rng.js';
 import {
     cansee, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';
+import { knownInventoryObject } from './support/game-objects.js';
+import { freshCommandRoom } from './support/playable-room.js';
 
-
-function lampObject(otyp, overrides = {}) {
-    const names = new Map([
-        [BRASS_LANTERN, ['brass lantern', 'brass lanterns', 9102]],
-        [OIL_LAMP, ['oil lamp', 'oil lamps', 9101]],
-        [MAGIC_LAMP, ['magic lamp', 'magic lamps', 9103]],
-    ]);
-    const [name, plural, id] = names.get(otyp);
-    return {
-        otyp,
-        o_id: id,
-        oclass: 6,
-        invlet: 'a',
-        name,
-        plural,
-        quantity: 1,
-        quan: 1,
-        where: 'inventory',
-        contents: [],
+function freshLampState(otyp, overrides = {}, seed = 1n) {
+    freshCommandRoom({
+        seed,
+        hero: {
+            uz: { dnum: 0, dlevel: 1 },
+            ulevel: 1,
+            uhp: 20, uhpmax: 20,
+            acurr: { a: Array(6).fill(15) },
+            amax: { a: Array(6).fill(15) },
+            uhave: {},
+            blindTurns: 0,
+            deafTurns: 0,
+        },
+    });
+    game.flags = {};
+    game.moves = 40;
+    vision_reset_new_level();
+    const lamp = knownInventoryObject(otyp, {
         age: 200,
         spe: 1,
         lamplit: false,
-        timed: 0,
-        objectTimers: [],
-        typeKnown: true,
-        dknown: true,
         ...overrides,
-    };
-}
-
-function freshLampState(object, seed = 1n) {
-    resetGame();
-    game.u = {
-        ux: 10, uy: 10,
-        uz: { dnum: 0, dlevel: 1 },
-        ulevel: 1,
-        uhp: 20, uhpmax: 20,
-        acurr: { a: Array(6).fill(15) },
-        amax: { a: Array(6).fill(15) },
-        uhave: {},
-        blindTurns: 0,
-        deafTurns: 0,
-    };
-    game.context = { move: 0, nopick: false };
-    game.flags = {};
-    game.moves = 40;
-    game.level = new GameMap();
-    game.inventory = [object];
-    vision_reset_new_level();
+    });
     initRng(seed);
-    resetInputState();
-    return object;
+    return lamp;
 }
 
 async function applyInventoryA() {
     pushKey('a');
     await rhack('a'.charCodeAt(0));
 }
-
 
 function installLightingShop(lamp) {
     const room = {
@@ -115,7 +88,7 @@ function installLightingShop(lamp) {
 
 test('applying a timed lamp starts it and manual off restores unspent fuel',
     async () => {
-        const lamp = freshLampState(lampObject(OIL_LAMP));
+        const lamp = freshLampState(OIL_LAMP);
 
         await applyInventoryA();
         assert.equal(game._pending_message, 'Your lamp is now on.');
@@ -136,7 +109,7 @@ test('applying a timed lamp starts it and manual off restores unspent fuel',
 
 test('lit lamps switch off before underwater rejection is considered',
     async () => {
-        const lantern = freshLampState(lampObject(BRASS_LANTERN));
+        const lantern = freshLampState(BRASS_LANTERN);
         await applyInventoryA();
         game.u.uinwater = 1;
         game.moves = 50;
@@ -150,9 +123,7 @@ test('lit lamps switch off before underwater rejection is considered',
 
 test('magic lamp keeps untimed mobile light until explicitly switched off',
     async () => {
-        const lamp = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40 },
-        ));
+        const lamp = freshLampState(MAGIC_LAMP, { age: 40 });
         for (let x = 8; x <= 13; x++) {
             const location = game.level.at(x, 10);
             location.typ = ROOM;
@@ -183,9 +154,7 @@ test('magic lamp keeps untimed mobile light until explicitly switched off',
 
 test('lit magic-lamp release changes type and acquires an oil burn timer',
     async () => {
-        const lamp = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40 },
-        ));
+        const lamp = freshLampState(MAGIC_LAMP, { age: 40 });
         await applyInventoryA();
         assert.equal(lamp.lamplit, true);
         assert.deepEqual(objectTimers(lamp), []);
@@ -205,7 +174,7 @@ test('lit magic-lamp release changes type and acquires an oil burn timer',
 
 test('unlit underwater and empty lamps refuse without creating timers',
     async () => {
-        let lamp = freshLampState(lampObject(OIL_LAMP));
+        let lamp = freshLampState(OIL_LAMP);
         game.u.uinwater = 1;
         await applyInventoryA();
         assert.equal(game._pending_message, 'This is not a diving lamp.');
@@ -213,24 +182,20 @@ test('unlit underwater and empty lamps refuse without creating timers',
         assert.equal(lamp.lamplit, false);
         assert.deepEqual(objectTimers(lamp), []);
 
-        lamp = freshLampState(lampObject(OIL_LAMP, { age: 0 }));
+        lamp = freshLampState(OIL_LAMP, { age: 0 });
         await applyInventoryA();
         assert.equal(game._pending_message, 'This oil lamp has no oil.');
         assert.equal(lamp.lamplit, false);
         assert.deepEqual(objectTimers(lamp), []);
 
-        const lantern = freshLampState(lampObject(
-            BRASS_LANTERN, { age: 0 },
-        ));
+        const lantern = freshLampState(BRASS_LANTERN, { age: 0 });
         game.u.permaBlind = true;
         await applyInventoryA();
         assert.equal(game._pending_message, 'Nothing seems to happen.');
         assert.equal(lantern.lamplit, false);
         assert.deepEqual(objectTimers(lantern), []);
 
-        const magic = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40, spe: 0 },
-        ));
+        const magic = freshLampState(MAGIC_LAMP, { age: 40, spe: 0 });
         await applyInventoryA();
         assert.equal(game._pending_message, 'This magic lamp has no oil.');
         assert.equal(magic.lamplit, false);
@@ -239,51 +204,43 @@ test('unlit underwater and empty lamps refuse without creating timers',
 
 test('cursed lamps preserve spill, flicker, blind, and success outcomes',
     async () => {
-        let lamp = freshLampState(lampObject(
-            OIL_LAMP, { cursed: true },
-        ), 5n);
+        let lamp = freshLampState(OIL_LAMP, { cursed: true }, 5n);
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The lamp spills and covers your fingers with oil.');
         assert.equal(game.u.glibTurns, 10);
         assert.equal(lamp.lamplit, false);
 
-        lamp = freshLampState(lampObject(
-            OIL_LAMP, { cursed: true },
-        ), 4n);
+        lamp = freshLampState(OIL_LAMP, { cursed: true }, 4n);
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The oil lamp flickers for a moment, then dies.');
         assert.equal(lamp.lamplit, false);
 
-        const lantern = freshLampState(lampObject(
-            BRASS_LANTERN, { cursed: true },
-        ), 4n);
+        const lantern = freshLampState(BRASS_LANTERN, { cursed: true }, 4n);
         game.u.permaBlind = true;
         await applyInventoryA();
         assert.equal(game._pending_message, 'Nothing seems to happen.');
         assert.equal(lantern.lamplit, false);
 
-        let magic = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40, cursed: true },
-        ), 5n);
+        let magic = freshLampState(
+            MAGIC_LAMP, { age: 40, cursed: true }, 5n,
+        );
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The lamp spills and covers your fingers with oil.');
         assert.equal(game.u.glibTurns, 10);
         assert.equal(magic.lamplit, false);
 
-        magic = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40, cursed: true },
-        ), 4n);
+        magic = freshLampState(
+            MAGIC_LAMP, { age: 40, cursed: true }, 4n,
+        );
         await applyInventoryA();
         assert.equal(game._pending_message,
             'The magic lamp flickers for a moment, then dies.');
         assert.equal(magic.lamplit, false);
 
-        lamp = freshLampState(lampObject(
-            OIL_LAMP, { cursed: true },
-        ), 1n);
+        lamp = freshLampState(OIL_LAMP, { cursed: true }, 1n);
         await applyInventoryA();
         assert.equal(game._pending_message, 'Your lamp is now on.');
         assert.equal(lamp.lamplit, true);
@@ -291,9 +248,7 @@ test('cursed lamps preserve spill, flicker, blind, and success outcomes',
 
 test('unpaid timed and magic lamps charge source-order usage fees',
     async () => {
-        const lamp = freshLampState(lampObject(
-            OIL_LAMP, { unpaid: true },
-        ), 1n);
+        const lamp = freshLampState(OIL_LAMP, { unpaid: true }, 1n);
         const shopkeeper = installLightingShop(lamp);
 
         await applyInventoryA();
@@ -302,9 +257,9 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.equal(shopkeeper.eshk.debit, 10);
         assert.equal(lamp.lamplit, true);
 
-        const magic = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40, unpaid: true },
-        ), 1n);
+        const magic = freshLampState(
+            MAGIC_LAMP, { age: 40, unpaid: true }, 1n,
+        );
         const magicShopkeeper = installLightingShop(magic);
         await applyInventoryA();
         assert.match(game._pending_message, /Usage fee, 10 zorkmids\./);
@@ -313,9 +268,9 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         assert.equal(magic.lamplit, true);
         assert.deepEqual(objectTimers(magic), []);
 
-        const deafMagic = freshLampState(lampObject(
-            MAGIC_LAMP, { age: 40, unpaid: true },
-        ), 1n);
+        const deafMagic = freshLampState(
+            MAGIC_LAMP, { age: 40, unpaid: true }, 1n,
+        );
         game.u.deafTurns = 5;
         const deafShopkeeper = installLightingShop(deafMagic);
         await applyInventoryA();
