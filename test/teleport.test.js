@@ -12,7 +12,7 @@ import {
 } from '../js/teleport.js';
 import { freshGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster } from './support/monsters.js';
 
 function teleportState() {
     freshGame({
@@ -34,9 +34,7 @@ test('random teleport skips occupied squares, boulders, and traps', () => {
     const state = teleportState();
     for (const x of [5, 6, 7, 8])
         state.level.at(x, 5).typ = ROOM;
-    state.level.monsters.push(liveMonster({
-        mnum: 16, x: 5, y: 5, hitPoints: 8,
-    }));
+    addMonster({ species: 'little dog', x: 5, y: 5, hitPoints: 8 }, state);
     state.level.objects[6] = [];
     state.level.objects[6][5] = [{ otyp: BOULDER }];
     addTrap(state.level, TELEP_TRAP, 7, 5);
@@ -57,11 +55,10 @@ test('fixed teleport clears its destination before moving the hero', () => {
         for (let y = 9; y <= 11; y++)
             state.level.at(x, y).typ = ROOM;
     }
-    const monster = liveMonster({
-        m_id: 17, mnum: 16, x: 20, y: 10, hitPoints: 8,
+    const monster = addMonster({
+        m_id: 17, species: 'little dog', x: 20, y: 10, hitPoints: 8,
         mtrack: [{ x: 1, y: 1 }],
-    });
-    state.level.monsters.push(monster);
+    }, state);
 
     const cleared = clearFixedTeleportDestination(20, 10, state, () => 0);
     assert.equal(cleared.cleared, true);
@@ -98,10 +95,9 @@ test('monster relocation searches the map after random attempts fail', () => {
     const state = teleportState();
     state.level.at(10, 10).typ = ROOM;
     state.level.at(40, 10).typ = ROOM;
-    const monster = liveMonster({
-        mnum: 16, x: 10, y: 10, hitPoints: 8,
-    });
-    state.level.monsters.push(monster);
+    const monster = addMonster({
+        species: 'little dog', x: 10, y: 10, hitPoints: 8,
+    }, state);
 
     const relocation = randomMonsterRelocation(
         monster, state, [], () => 0, () => 1,
@@ -126,14 +122,13 @@ test('a shopkeeper teleports within its own shop', () => {
         state.level.at(x, y).typ = ROOM;
         state.level.at(x, y).roomno = roomno;
     }
-    const monster = liveMonster({
-        mnum: 16, x: 10, y: 10, hitPoints: 8, isshk: true,
+    const monster = addMonster({
+        species: 'little dog', x: 10, y: 10, hitPoints: 8, isshk: true,
         eshk: {
             shoproom: shopRoomno,
             shoplevel: { ...state.u.uz },
         },
-    });
-    state.level.monsters.push(monster);
+    }, state);
     const xs = [20, 12];
 
     const relocation = randomMonsterRelocation(
