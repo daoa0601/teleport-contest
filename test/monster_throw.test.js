@@ -9,7 +9,7 @@ import {
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
-import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
+import { A_STR, NEED_WEAPON, W_AMUL, W_WEP } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
@@ -31,7 +31,9 @@ import { wearHeroObject } from './support/hero-state.js';
 import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
-import { addMonsterToLevel, liveMonster } from './support/monsters.js';
+import {
+    addMonsterToLevel, equipMonsterObject, liveMonster,
+} from './support/monsters.js';
 import {
     finishRangedAttacks, freshRangedCombatRoom,
     rangedMonster, rangedPet, rangedTarget,
@@ -384,10 +386,9 @@ test('a tame orc shoots an arrow with its bow', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrow = carriedObject(ARROW);
     const bow = carriedObject(BOW, { wielded: true });
-    const orc = addMonsterToLevel(rangedPet('orc', {
-        inventory: [arrow, bow],
-        mw: bow,
-    }));
+    const orc = addMonsterToLevel(rangedPet('orc'));
+    equipMonsterObject(orc, arrow, 0);
+    equipMonsterObject(orc, bow, W_WEP);
     const target = addMonsterToLevel(rangedTarget());
 
     const action = quietMonsterActionRng(orc, game);
@@ -712,10 +713,9 @@ test('a crossbow bolt gets its source damage against a large monster', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const bolt = carriedObject(CROSSBOW_BOLT);
     const crossbow = carriedObject(CROSSBOW, { wielded: true });
-    const orc = addMonsterToLevel(rangedPet('orc', {
-        inventory: [bolt, crossbow],
-        mw: crossbow,
-    }));
+    const orc = addMonsterToLevel(rangedPet('orc'));
+    equipMonsterObject(orc, bolt, 0);
+    equipMonsterObject(orc, crossbow, W_WEP);
     const target = addMonsterToLevel(rangedTarget('purple worm', {
         hitPoints: 100,
         mac: 100,
@@ -737,10 +737,9 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrows = carriedObject(ELVEN_ARROW, { quan: 3 });
     const bow = carriedObject(ELVEN_BOW, { wielded: true });
-    const archer = addMonsterToLevel(rangedPet('elf-noble', {
-        inventory: [arrows, bow],
-        mw: bow,
-    }));
+    const archer = addMonsterToLevel(rangedPet('elf-noble'));
+    equipMonsterObject(archer, arrows, 0);
+    equipMonsterObject(archer, bow, W_WEP);
     const target = addMonsterToLevel(rangedTarget());
     target.mhp = target.mhpmax = 100;
 

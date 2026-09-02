@@ -7,10 +7,10 @@ import {
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import {
-    CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
+    ALCHEMY_SMOCK, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
-    POT_WATER,
+    POT_WATER, YELLOW_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
@@ -330,22 +330,17 @@ test('live acid-resistant target takes only impact chip and leaves radius asleep
 test('live worn acid-protection armor limits damage to the impact chip',
     async () => {
         for (const equipment of [
-            { otyp: 144, mask: W_ARMC },
-            { otyp: 110, mask: W_ARM },
+            { otyp: ALCHEMY_SMOCK, mask: W_ARMC },
+            { otyp: YELLOW_DRAGON_SCALE_MAIL, mask: W_ARM },
         ]) {
             const monster = freshMapPotionState(2, {
                 mnum: 289,
                 hitPoints: 20,
                 msleeping: 1,
-                misc_worn_check: equipment.mask,
             });
-            const armor = {
-                otyp: equipment.otyp,
-                owornmask: equipment.mask,
-                worn: true,
-            };
-            monster.minvent = [armor];
-            monster.inventory = monster.minvent;
+            const armor = equipMonsterObject(
+                monster, knownObject(equipment.otyp), equipment.mask,
+            );
             const potion = knownInventoryObject(POT_ACID);
 
             initRng(2702n);

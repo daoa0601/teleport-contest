@@ -5,7 +5,7 @@ import {
     allocateMonsterMovement, finishMonsterLiquidDeath,
     mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
 } from '../js/monmove.js';
-import { IRONBARS, LAVAPOOL, ROOM } from '../js/const.js';
+import { IRONBARS, LAVAPOOL, ROOM, W_WEP } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -13,7 +13,9 @@ import { resolveMonsterLiquid } from '../js/mon.js';
 import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 import { carriedObject } from './support/game-objects.js';
-import { addMonster, addPet, liveMonster } from './support/monsters.js';
+import {
+    addMonster, addPet, equipMonsterObject, liveMonster,
+} from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function rolls(values) {
@@ -112,11 +114,10 @@ test('a silver weapon sears a lycanthropic hero in melee', () => {
         y: 10,
         hitPoints: 30,
         level: 10,
-        inventory: [silverDagger],
-        mw: silverDagger,
         mux: 10,
         muy: 10,
     });
+    equipMonsterObject(soldier, silverDagger, W_WEP);
 
     const action = quietMonsterActionRng(
         soldier,

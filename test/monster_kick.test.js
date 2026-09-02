@@ -16,7 +16,7 @@ import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { carriedObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { liveMonster } from './support/monsters.js';
+import { equipMonsterObject, liveMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
@@ -191,8 +191,7 @@ test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
             where: 'minvent',
             owt: 30,
         });
-        human.minvent = human.inventory = [club];
-        human.hasInventory = true;
+        equipMonsterObject(human, club, 0);
         game.level.at(11, 10).typ = STONE;
         game.u.levitating = true;
         game.u.mtimedone = 100;
@@ -222,9 +221,7 @@ test('a worn life-saving amulet saves a monster from petrifying recoil',
             worn: true,
             where: 'minvent',
         });
-        human.minvent = human.inventory = [amulet];
-        human.hasInventory = true;
-        human.misc_worn_check = W_AMUL;
+        equipMonsterObject(human, amulet, W_AMUL);
         game.level.at(11, 10).typ = STONE;
         game.u.levitating = true;
         game.u.mtimedone = 100;

@@ -15,7 +15,7 @@ import {
     floorArtifact, floorObject, inventoryObject, looseObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
 function freshPickupGame(inventory = []) {
@@ -293,9 +293,8 @@ test('a swallowed hero cannot take the monster weapon', async () => {
         owornmask: W_WEP,
         wielded: true,
     });
-    const worm = swallowHeroWith(club);
-    worm.mw = club;
-    worm.misc_worn_check = W_WEP;
+    const worm = swallowHeroWith();
+    equipMonsterObject(worm, club, W_WEP);
 
     await rhack(','.charCodeAt(0));
 
