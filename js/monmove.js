@@ -5,6 +5,9 @@
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { beginPetBreathAttack } from './dogmove.js';
+import {
+    beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
+} from './monster_spit.js';
 import { sessionIsNight } from './monster_sound.js';
 export { sessionIsNight } from './monster_sound.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
@@ -39,9 +42,9 @@ import {
     AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
-    ACID_VENOM, AMULET_OF_YENDOR, APPLE, BANANA,
+    AMULET_OF_YENDOR, APPLE, BANANA,
     BELL_OF_OPENING, BULLWHIP,
-    BLINDING_VENOM, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION,
+    BOULDER, CARROT, CANDELABRUM_OF_INVOCATION,
     CLOAK_OF_MAGIC_RESISTANCE,
     CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG,
     FAKE_AMULET_OF_YENDOR, FLINT,
@@ -4129,25 +4132,6 @@ function reachesDistantPhaseFour(monster, movement, state) {
     return targetDistance >= 3 && targetDistance <= BOLT_LIM * BOLT_LIM;
 }
 
-function destroyTransientVenom(venom, random, calls) {
-    // dothrow.c:drop_throw() always breaks VENOM_CLASS.  delobj() protects
-    // even an ordinary transient object through obj_resists(0, 0), so a
-    // launched splash owns this final draw.  spitmm()'s unlaunched obfree()
-    // path deliberately does not.
-    recordRandom(random, calls, 100);
-    venom.destroyed = true;
-}
-
-function acidVenomDamage(rollOne, calls) {
-    // weapon.c:dmgval(): acid venom has an ordinary 1d6 damage field plus its
-    // explicit ACID_VENOM rnd(6) adjustment against both hero size classes.
-    const base = rollOne(6);
-    calls.push('rnd(6)');
-    const acid = rollOne(6);
-    calls.push('rnd(6)');
-    return base + acid;
-}
-
 // C mhitu.c:mattacku() -> mthrowu.c:breamu()/breamm().  The launch gate is
 // part of the quiet actor slice, but dobuzz() is resumable presentation: a
 // floor-effect or hit line can fill tty's topline before the ray has applied
@@ -4434,123 +4418,6 @@ export async function resolveDeferredMonsterBreath(
     return breath;
 }
 
-function resolveSpitFlight(
-    monster, spit, state, random, rollOne, calls,
-) {
-    const heroX = state?.u?.ux ?? spit.targetX;
-    const heroY = state?.u?.uy ?? spit.targetY;
-    const dx = Math.sign(spit.targetX - monster.mx);
-    const dy = Math.sign(spit.targetY - monster.my);
-    const flightPath = [];
-    let x = monster.mx;
-    let y = monster.my;
-
-    for (let step = 1; step <= spit.distance; step++) {
-        x += dx;
-        y += dy;
-        const remaining = spit.distance - step;
-        const target = state?.level?.monsters?.find(candidate =>
-            candidate !== monster && !candidate.dead
-            && (candidate.mhp ?? 1) > 0
-            && candidate.mx === x && candidate.my === y);
-
-        if (target) {
-            const hitRoll = rollOne(20);
-            calls.push('rnd(20)');
-            const threshold = 5 + findMonsterArmorClass(target);
-            const hit = threshold >= hitRoll;
-            spit.target = target;
-            spit.hitRoll = hitRoll;
-            spit.hitThreshold = threshold;
-            spit.hit = hit;
-            if (hit) {
-                if (spit.venom.otyp === ACID_VENOM) {
-                    spit.damage = acidVenomDamage(rollOne, calls);
-                    target.mhp = Math.max(
-                        0, (target.mhp ?? 1) - spit.damage,
-                    );
-                } else {
-                    const blindIncrement = rollOne(25) + 20;
-                    calls.push('rnd(25)');
-                    target.mcansee = 0;
-                    target.mblinded = Math.min(
-                        127, (target.mblinded ?? 0) + blindIncrement,
-                    );
-                    spit.blindIncrement = blindIncrement;
-                }
-                destroyTransientVenom(spit.venom, random, calls);
-                spit.flightPath = flightPath;
-                return spit;
-            }
-            if (remaining === 0) {
-                destroyTransientVenom(spit.venom, random, calls);
-                spit.flightPath = flightPath;
-                return spit;
-            }
-        } else if (x === heroX && y === heroY) {
-            let damage = 0;
-            let hitLevel = 8;
-            spit.heroWasBlind = !!state?.blind
-                || (state?.u?.blindTurns ?? 0) > 0;
-            if (spit.venom.otyp === ACID_VENOM) {
-                damage = acidVenomDamage(rollOne, calls);
-                const distance = distmin(
-                    heroX, heroY, monster.mx, monster.my,
-                );
-                hitLevel = Math.max(-4, 3 - distance)
-                    + 8 + (spit.venom.spe ?? 0);
-            }
-            const hitRoll = rollOne(20);
-            calls.push('rnd(20)');
-            const hitThreshold = (state?.u?.uac ?? 10) + hitLevel;
-            const hit = hitThreshold > hitRoll;
-            spit.heroTarget = true;
-            spit.hitRoll = hitRoll;
-            spit.hitThreshold = hitThreshold;
-            spit.hit = hit;
-            spit.damage = hit ? damage : 0;
-            if (hit) {
-                if (spit.venom.otyp === ACID_VENOM) {
-                    const acidResistant = !!(state?.u?.acidResistance
-                        || state?.u?.acid_resistance);
-                    if (!acidResistant) {
-                        state.u.uhp = Math.max(
-                            0, (state.u.uhp ?? 1) - damage,
-                        );
-                    } else {
-                        spit.damage = 0;
-                        spit.resisted = true;
-                    }
-                } else if (!state?.u?.noEyes) {
-                    const blindIncrement = rollOne(25);
-                    calls.push('rnd(25)');
-                    state.u.ucreamed = (state.u.ucreamed ?? 0)
-                        + blindIncrement;
-                    state.u.blindTurns = (state.u.blindTurns ?? 0)
-                        + blindIncrement;
-                    syncBlindness(state);
-                    spit.blindIncrement = blindIncrement;
-                }
-                destroyTransientVenom(spit.venom, random, calls);
-                spit.flightPath = flightPath;
-                return spit;
-            }
-        }
-
-        // m_throw() performs forcehit's probe after every non-stopping square,
-        // including the hero square after thitu() reports a miss.
-        recordRandom(random, calls, 5);
-        if (remaining === 0) {
-            destroyTransientVenom(spit.venom, random, calls);
-            spit.flightPath = flightPath;
-            return spit;
-        }
-        flightPath.push({ x, y });
-    }
-    spit.flightPath = flightPath;
-    return spit;
-}
-
 // C mhitu.c:mattacku() -> mthrowu.c:spitmu()/spitmm().  Object construction
 // and the distance-scaled launch trial occur before any projectile traversal.
 // A successful launch is deliberately left suspended so allmain can project
@@ -4558,51 +4425,26 @@ function resolveSpitFlight(
 function maybeSpitAtHero(
     monster, movement, state, random, rollOne, calls,
 ) {
-    const attacks = (MONSTER_ATTACKS[monster?.mnum] || [])
-        .filter(([attackType]) => attackType === AT_SPIT);
-    if (!attacks.length || !reachesDistantPhaseFour(monster, movement, state))
+    const attack = monsterSpitAttack(monster);
+    if (!attack || !reachesDistantPhaseFour(monster, movement, state))
         return null;
 
     if (!movement.phaseFourArmorClassEvaluated) {
         sourceHeroArmorClass(state, rollOne, calls);
         movement.phaseFourArmorClassEvaluated = true;
     }
-    if (monster.mcan) {
-        return {
-            attempted: true, launched: false, dryRattle: true,
-        };
-    }
-    if (!monsterLinedUpWithPerceivedHero(monster, state, random, calls))
-        return null;
-
-    const [, damageType] = attacks[0];
-    const venomType = damageType === AD_ACID
-        ? ACID_VENOM
-        : damageType === AD_BLND || damageType === AD_DRST
-            ? BLINDING_VENOM : ACID_VENOM;
-    const venom = mksobj(venomType, true, false);
-    // Venom initialization has no type-specific gameplay draw; next_ident()
-    // is its sole RNG owner.
-    calls.push('rnd(2)');
     const targetX = Number.isFinite(monster.mux)
         ? monster.mux : state?.u?.ux ?? monster.mx;
     const targetY = Number.isFinite(monster.muy)
         ? monster.muy : state?.u?.uy ?? monster.my;
-    const distance = distmin(monster.mx, monster.my, targetX, targetY);
-    const launchRange = BOLT_LIM - distance;
-    const launchRoll = recordRandom(random, calls, launchRange);
-    if (launchRoll !== 0) {
-        venom.destroyed = true;
-        return {
-            attempted: true, launched: false, launchRoll, launchRange,
-            venom, targetX, targetY, distance,
-        };
-    }
-    return {
-        attempted: true, launched: true, launchRoll, launchRange,
-        venom, appearance: OBJECT_DESCRIPTIONS[venomType] || 'splash of venom',
-        targetX, targetY, distance, deferredFlight: true,
-    };
+    if (!monster.mcan
+        && !monsterLinedUpWithPerceivedHero(
+            monster, state, random, calls,
+        )) return null;
+    return beginMonsterSpitAttack(monster, targetX, targetY, {
+        attack,
+        random: range => recordRandom(random, calls, range),
+    });
 }
 
 export function resumeDeferredSpitAttack(
@@ -4610,10 +4452,14 @@ export function resumeDeferredSpitAttack(
 ) {
     const spit = action?.movement?.spitAttack;
     if (!spit?.deferredFlight) return spit || null;
-    delete spit.deferredFlight;
-    return resolveSpitFlight(
-        action.monster, spit, state, random, rollOne, action.calls,
-    );
+    return resolveMonsterSpitFlight(action.monster, spit, state, {
+        random: range => recordRandom(random, action.calls, range),
+        rollOne: range => {
+            const result = rollOne(range);
+            action.calls.push(`rnd(${range})`);
+            return result;
+        },
+    });
 }
 
 function pointsOnline(x0, y0, x1, y1) {
