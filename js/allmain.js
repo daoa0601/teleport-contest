@@ -4024,22 +4024,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 newsym(movement.x, movement.y);
             }
         }
-        if (movement?.trap?.kind === 'projectile-trap'
-            && movement.trap.visible
-            && movement.deferredAfterProjectileTrapMessage) {
+        if ((movement?.trap?.kind === 'projectile-trap'
+            || movement?.trap?.kind === 'spent-projectile-trap')
+            && movement.deferredAfterMonsterProjectileTrap) {
             const event = movement.trap;
-            const projectile = event.projectileType === DART
-                ? 'dart' : 'arrow';
-            const noun = event.pendingMissile?.opoisoned
-                ? `poisoned ${projectile}` : projectile;
-            const article = /^[aeiou]/i.test(noun) ? 'an' : 'a';
-            await queueTurnMessage(
-                `${visibleMonsterSubject(monster)} is ${
-                    event.hit ? 'hit' : 'almost hit'
-                } by ${article} ${noun}!`,
-            );
-            resumeDeferredMonsterProjectileTrap(action, game);
+            await resumeDeferredMonsterProjectileTrap(action, game, {
+                publish: queueTurnMessage,
+                describeMonster: visibleMonsterSubject,
+            });
             movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
         if ((movement?.trap?.kind === 'falling-rock'
             || movement?.trap?.kind === 'spent-rock-trap')

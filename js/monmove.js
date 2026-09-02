@@ -41,6 +41,10 @@ import {
 import {
     beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume,
 } from './rock_trap.js';
+import {
+    beginMonsterProjectileTrap, finishMonsterProjectileTrap,
+    projectileTrapNeedsResume,
+} from './projectile_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -111,7 +115,6 @@ import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { makeTrapMissile } from './trap_missile.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -4298,53 +4301,6 @@ function placeAndStackTrapMissile(object, state, x, y) {
     return stack_object(object, state);
 }
 
-function finishMonsterProjectileTrap(
-    event, monster, state, movement, random, rollOne, calls,
-) {
-    if (!event || event.resolved) return event;
-    const missile = event.pendingMissile;
-    if (event.hit) {
-        const damageTable = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
-            ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
-        const damageSides = Math.max(
-            1, damageTable[event.projectileType] || 1,
-        );
-        let damage = rollOne(damageSides);
-        calls.push(`rnd(${damageSides})`);
-        damage += missile?.spe ?? 0;
-        if (damage < 0) damage = 0;
-        if (damage > 0) {
-            damage = Math.max(1, damage - Math.max(
-                missile?.oeroded ?? 0,
-                missile?.oeroded2 ?? 0,
-            ));
-        }
-        damage = Math.max(1, damage);
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-        event.damage = damage;
-        event.missileConsumed = true;
-        if (monster.mhp <= 0) {
-            detachDeadMonster(monster, state);
-            const corpse = createOrdinaryMonsterCorpse(
-                monster, state, random, calls,
-            );
-            event.death = { corpseCreated: !!corpse, corpse };
-            movement.actorDied = true;
-            movement.actionCompleted = true;
-        }
-    } else {
-        event.missile = placeAndStackTrapMissile(
-            missile, state, event.trap.tx, event.trap.ty,
-        );
-        event.missileConsumed = false;
-    }
-    delete event.pendingMissile;
-    event.monsterHpAfter = monster.mhp;
-    event.killed = monster.mhp <= 0;
-    event.resolved = true;
-    return event;
-}
-
 function migrateMonsterOffLevel(monster, state, trap, {
     kind, mode, confused = false,
 }) {
@@ -4627,14 +4583,6 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
-        // trap.c:mintrap()->trapeffect_{arrow,dart}_trap()->thitm().  The
-        // visible hit/miss pline can suspend on an older topline after the
-        // missile constructor and to-hit roll, but before damage, death, or
-        // floor placement.  Preserve that split as an explicit continuation.
-        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
-            && (!monster.minvis || state?.u?.seeInvisible
-                || state?.u?.see_invisible);
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4643,49 +4591,17 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        if (trap.once && trap.tseen
-            && recordRandom(random, calls, 15) === 0) {
-            const trapIndex = state.level.traps.indexOf(trap);
-            if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
-            const event = {
-                kind: 'spent-projectile-trap', trap, visible: false,
-                damage: 0, killed: false,
-            };
-            movement.trap = event;
-            return event;
-        }
-        trap.once = true;
-
-        const projectileType = trap.ttyp === DART_TRAP ? DART : ARROW;
-        const missile = makeTrapMissile(projectileType, trap);
-        if (projectileType === DART
-            && recordRandom(random, calls, 6) === 0) {
-            missile.opoisoned = 1;
-        }
-
-        const hitRoll = rollOne(20);
-        calls.push('rnd(20)');
-        const attackLevel = projectileType === DART ? 7 : 8;
-        const hitThreshold = findMonsterArmorClass(monster)
-            + attackLevel + (missile.spe ?? 0);
-        const hit = hitThreshold <= hitRoll;
-        const monsterHpBefore = monster.mhp ?? 1;
-        const event = {
-            kind: 'projectile-trap', trap, visible,
-            projectileType, pendingMissile: missile,
-            missileConsumed: null, hitRoll, hitThreshold, hit,
-            monsterHpBefore, monsterHpAfter: monster.mhp,
-            damage: 0, killed: false, death: null, resolved: false,
-        };
+        const event = beginMonsterProjectileTrap(monster, trap, state, {
+            random: range => recordRandom(random, calls, range),
+            rollOne: range => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
         movement.trap = event;
-        if (visible) {
-            trap.tseen = true;
-            movement.deferredAfterProjectileTrapMessage = true;
-        } else {
-            finishMonsterProjectileTrap(
-                event, monster, state, movement, random, rollOne, calls,
-            );
-        }
+        if (projectileTrapNeedsResume(event))
+            movement.deferredAfterMonsterProjectileTrap = true;
         return event;
     }
     if (trap.ttyp === ROCKTRAP) {
@@ -7453,7 +7369,7 @@ function distantPhaseFourAttackSetup(
 }
 
 function monsterTrapResultIsDeferred(movement) {
-    return !!(movement.deferredAfterProjectileTrapMessage
+    return !!(movement.deferredAfterMonsterProjectileTrap
         || movement.deferredAfterMonsterFireTrap
         || movement.deferredAfterMonsterLandMine
         || movement.deferredAfterMonsterPitTrap
@@ -7557,19 +7473,41 @@ function continueAfterMonsterTrap(
     return action;
 }
 
-export function resumeDeferredMonsterProjectileTrap(
-    action, state, random = rn2, rollDice = d, rollOne = rnd,
+export async function resumeDeferredMonsterProjectileTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        describeMonster,
+    } = {},
 ) {
     const movement = action?.movement;
-    if (!movement?.deferredAfterProjectileTrapMessage) return action;
-    delete movement.deferredAfterProjectileTrapMessage;
-    finishMonsterProjectileTrap(
-        movement.trap, action.monster, state, movement,
-        random, rollOne, action.calls,
+    if (!movement?.deferredAfterMonsterProjectileTrap) return action;
+    delete movement.deferredAfterMonsterProjectileTrap;
+    const calls = action.calls || DISCARDED_CALL_LOG;
+    const recordedRollOne = range => {
+        const result = rollOne(range);
+        calls.push(`rnd(${range})`);
+        return result;
+    };
+    await finishMonsterProjectileTrap(
+        action.monster, movement.trap, state, {
+            finishDeath: (monster, options) =>
+                finishEnvironmentalMonsterDeath(monster, state, options),
+            publish,
+            random,
+            rollOne: recordedRollOne,
+            describeMonster,
+        },
     );
+    if (movement.trap.killed) {
+        movement.actorDied = true;
+        movement.actionCompleted = true;
+        return action;
+    }
     continueAfterMonsterTrap(
-        action, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG,
+        action, state, random, rollDice, rollOne, calls,
     );
     return action;
 }
