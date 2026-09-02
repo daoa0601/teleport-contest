@@ -5,7 +5,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR,
-    DB_MOAT, DB_UNDER, DOOR, DRAWBRIDGE_UP, D_NODOOR,
+    DOOR, D_NODOOR,
     FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO,
     SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
     M_AP_MONSTER, M_AP_NOTHING, STRAT_WAITMASK,
@@ -13,10 +13,10 @@ import {
 import {
     newsym, plineWithContinuation,
 } from './display.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
+import { liquidForHole } from './hole.js';
 import { igniteItems } from './light.js';
 import {
     buryFloorObjectsAt, maketrap, remove_object,
@@ -50,36 +50,6 @@ function trapAt(x, y) {
 function removeTrap(trap) {
     const index = game.level?.traps?.indexOf(trap) ?? -1;
     if (index >= 0) game.level.traps.splice(index, 1);
-}
-
-function isMoatAt(x, y) {
-    const location = game.level?.at(x, y);
-    if (!location) return false;
-    return location.typ === MOAT
-        || (location.typ === DRAWBRIDGE_UP
-            && ((location.drawbridgemask || 0) & DB_UNDER) === DB_MOAT);
-}
-
-function liquidForHole(x, y) {
-    let pools = 0;
-    let moats = 0;
-    let lava = 0;
-    for (let nearX = Math.max(1, x - 1);
-        nearX <= Math.min(COLNO - 1, x + 1);
-        nearX++) {
-        for (let nearY = Math.max(0, y - 1);
-            nearY <= Math.min(ROWNO - 1, y + 1);
-            nearY++) {
-            if (isMoatAt(nearX, nearY)) moats++;
-            else if (isPoolAt(nearX, nearY)) pools++;
-            else if (isLavaAt(nearX, nearY)) lava++;
-        }
-    }
-    pools = Math.trunc(pools / 3);
-    if (lava > moats + pools && rn2(lava + 1)) return LAVAPOOL;
-    if (moats > 0 && rn2(moats + 1)) return MOAT;
-    if (pools > 0 && rn2(pools + 1)) return POOL;
-    return ROOM;
 }
 
 function terrainAfterPit(originalType) {

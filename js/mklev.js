@@ -3819,23 +3819,22 @@ export function buryFloorObjectsAt(x, y, state = game) {
     return buried;
 }
 
-// C ref: trap.c:fill_pit() -> do.c:flooreffects().  The new pit survives
-// unless a floor boulder settles into it; that consumes the boulder, removes
-// the pit, and buries the rest of the floor pile.  revive_corpse() calls this
-// only after its visible/audible presentation has completed.
-export function finishBuriedZombieTimer(event, state = game) {
-    if (!event || event.kind !== 'revived' || event.finished) return event;
-    const x = event.monster?.mx, y = event.monster?.my;
+// C ref: trap.c:fill_pit() -> do.c:flooreffects().  A boulder on a pit or
+// hole consumes both, then buries the rest of the floor pile.
+export function fillPitWithBoulderAt(x, y, state = game) {
     const trap = state.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y
         && (is_pit(candidate.ttyp) || is_hole(candidate.ttyp)));
     const boulder = state.level?.objects?.[x]?.[y]?.find(object =>
         object.otyp === BOULDER);
-    event.finished = true;
-    event.pitFilled = false;
-    event.filledByBoulder = null;
-    event.buriedFloorObjects = [];
-    if (!trap || !boulder) return event;
+    if (!trap || !boulder) {
+        return {
+            filled: false,
+            trap: trap || null,
+            boulder: boulder || null,
+            buriedFloorObjects: [],
+        };
+    }
 
     const pile = state.level.objects[x][y];
     const boulderIndex = pile.indexOf(boulder);
@@ -3846,9 +3845,22 @@ export function finishBuriedZombieTimer(event, state = game) {
     boulder.ox = boulder.oy = 0;
     const trapIndex = state.level.traps.indexOf(trap);
     if (trapIndex >= 0) state.level.traps.splice(trapIndex, 1);
-    event.pitFilled = true;
-    event.filledByBoulder = boulder;
-    event.buriedFloorObjects = buryFloorObjectsAt(x, y, state);
+    const buriedFloorObjects = buryFloorObjectsAt(x, y, state);
+    return {
+        filled: true, trap, boulder, buriedFloorObjects,
+    };
+}
+
+// revive_corpse() reaches fill_pit() only after its visible or audible
+// presentation has completed.
+export function finishBuriedZombieTimer(event, state = game) {
+    if (!event || event.kind !== 'revived' || event.finished) return event;
+    const x = event.monster?.mx, y = event.monster?.my;
+    const result = fillPitWithBoulderAt(x, y, state);
+    event.finished = true;
+    event.pitFilled = result.filled;
+    event.filledByBoulder = result.filled ? result.boulder : null;
+    event.buriedFloorObjects = result.buriedFloorObjects;
     return event;
 }
 
