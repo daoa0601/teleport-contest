@@ -6,12 +6,13 @@ import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import {
-    A_CON, A_DEX, A_STR, BEAR_TRAP, DART_TRAP, FIRE_TRAP, ICE, IS_LAVA,
-    HOLE, IS_POOL,
+    A_CON, A_DEX, A_STR, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
+    HOLE, ICE, IS_LAVA, IS_POOL,
     LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROLLING_BOULDER_TRAP,
-    SPIKED_PIT, STATUE_TRAP, TRAPDOOR,
+    SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
+    squeakyBoardNoteWithArticle,
 } from './const.js';
 import {
     flush_screen, lastDirtyMapCursor, map_trap, newsym, pline,
@@ -24,15 +25,18 @@ import {
 } from './hero_invisibility.js';
 import { distmin } from './hacklib.js';
 import {
-    canFallThrough, mksobj, place_object, remove_object,
+    canFallThrough, place_object, remove_object, stack_object,
 } from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {
     MONSTER_FLAGS1, MONSTER_SIZE,
 } from './monster_data.js';
 import {
-    BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_SMALL_DAMAGE,
+    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_MATERIAL,
+    OBJECT_SMALL_DAMAGE,
 } from './object_data.js';
+import { deleteObject } from './object_delete.js';
+import { recordObjectEncounter } from './object_knowledge.js';
 import { d, rn2, rnd } from './rng.js';
 import { stopRun } from './runmode.js';
 import { artifactById } from './artifacts.js';
@@ -53,6 +57,11 @@ import { hasInvokedProperty } from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
+import { resolvePoisonedHero } from './poison.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { makeTrapMissile } from './trap_missile.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { wakeMonstersNear } from './mon.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -74,10 +83,14 @@ function loseHitPoints(amount) {
     game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - amount);
 }
 
-function losePhysicalHitPoints(amount) {
+function physicalDamage(amount) {
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         amount = Math.trunc((amount + 1) / 2);
-    loseHitPoints(amount);
+    return amount;
+}
+
+function losePhysicalHitPoints(amount) {
+    loseHitPoints(physicalDamage(amount));
 }
 
 function heroWearsIronShoes() {
@@ -571,34 +584,105 @@ async function triggerMagicTrap(trap) {
     if (message) await pline(message);
 }
 
-async function triggerDartTrap(trap) {
+async function triggerProjectileTrap(trap) {
     const hero = game.u;
-    trap.once = true;
-    trap.tseen = true;
+    const blind = !!game.blind || heroIsBlind(game);
+    const deaf = !!game.deaf || heroIsDeaf(game);
+    const arrowTrap = trap.ttyp === ARROW_TRAP;
+    const objectType = arrowTrap ? ARROW : DART;
+    const noun = arrowTrap ? 'arrow' : 'little dart';
+    const article = arrowTrap ? 'an' : 'a';
+    const subject = arrowTrap ? 'An arrow' : 'A little dart';
+    const attackLevel = arrowTrap ? 8 : 7;
 
-    const dart = mksobj(DART, true, false);
-    dart.quan = dart.quantity = 1;
-    dart.owt = 1;
-    dart.opoisoned = rn2(6) === 0 ? 1 : 0;
-    dart.ox = trap.tx;
-    dart.oy = trap.ty;
-    const damage = rnd(3) + (dart.spe ?? 0);
-    const dieroll = rnd(20);
-    const hit = (hero.uac ?? 10) + 7 > dieroll;
-    if (hit) {
-        hero.uhp = Math.max(0, (hero.uhp ?? 1) - damage);
-        exerciseAttribute(A_STR, false);
-        const punctuation = damage <= 4 ? '.' : '!';
-        game._pending_message = 'A little dart shoots out at you!  '
-            + `You are hit by a little dart${punctuation}`;
+    if (trap.once && trap.tseen && rn2(15) === 0) {
+        if (!deaf) {
+            await plineWithContinuation(
+                arrowTrap ? 'You hear a loud click!' : 'You hear a soft click.',
+            );
+        }
+        const trapIndex = game.level.traps.indexOf(trap);
+        if (trapIndex >= 0) game.level.traps.splice(trapIndex, 1);
+        newsym(trap.tx, trap.ty);
         return;
     }
 
-    place_object(dart, trap.tx, trap.ty);
+    trap.once = true;
+    trap.tseen = true;
+    await plineWithContinuation(`${subject} shoots out at you!`);
+
+    const missile = makeTrapMissile(objectType, trap);
+    if (!arrowTrap && rn2(6) === 0) missile.opoisoned = 1;
+    const damage = physicalDamage(
+        rollPhysicalWeaponDamageAgainstHero(missile, game),
+    );
+    const dieroll = rnd(20);
+    const threshold = (hero.uac ?? 10) + attackLevel;
+    const hit = threshold > dieroll;
+    if (hit) {
+        const punctuation = damage <= 4 ? '.' : '!';
+        await plineWithContinuation(
+            blind || game.flags?.verbose === false
+                ? `You are hit${punctuation}`
+                : `You are hit by ${article} ${noun}${punctuation}`,
+        );
+        loseHitPoints(damage);
+        exerciseAttribute(A_STR, false);
+        if (missile.opoisoned) {
+            await resolvePoisonedHero({
+                reason: 'dart',
+                attribute: A_CON,
+                fatal: 10,
+                state: game,
+                thrownWeapon: true,
+                publish: plineWithContinuation,
+            });
+        }
+        deleteObject(missile, game);
+        return;
+    }
+
+    place_object(missile, trap.tx, trap.ty);
+    if (!blind) recordObjectEncounter(objectType, game);
+    stack_object(missile, game);
     newsym(trap.tx, trap.ty);
-    game._pending_message = dieroll - ((hero.uac ?? 10) + 7) < 2
-        ? 'A little dart shoots out at you!  You are almost hit by a little dart.'
-        : 'A little dart shoots out at you!  A little dart misses you.';
+    const miss = blind || game.flags?.verbose === false
+        ? 'It misses.'
+        : threshold > dieroll - 2
+            ? `You are almost hit by ${article} ${noun}.`
+            : `${subject} misses you.`;
+    await plineWithContinuation(miss);
+}
+
+async function triggerSqueakyBoard(
+    trap,
+    { viaSitting = false, failedUntrap = false } = {},
+) {
+    const hero = game.u;
+    const blind = !!game.blind || heroIsBlind(game);
+    const deaf = !!game.deaf || heroIsDeaf(game);
+    const flying = !!(hero.flying || game.flying);
+    const airborne = !!(hero.levitating || game.levitating || flying);
+    const forced = failedUntrap || (flying && viaSitting);
+    if (airborne && !forced) {
+        if (!blind) {
+            trap.tseen = true;
+            const hallucinating = !!(hero.hallucinating
+                || (hero.hallucinationTurns ?? 0) > 0);
+            await plineWithContinuation(hallucinating
+                ? 'You notice a crease in the linoleum.'
+                : 'You notice a loose board below you.');
+        }
+        return;
+    }
+
+    trap.tseen = true;
+    await plineWithContinuation(deaf
+        ? 'A board beneath you vibrates.'
+        : `A board beneath you squeaks ${
+            squeakyBoardNoteWithArticle(trap.tnote) || 'a note'
+        } loudly.`);
+    wakeMonstersNear(hero.ux, hero.uy, 40, game);
 }
 
 function boulderAt(x, y) {
@@ -789,8 +873,12 @@ export async function triggerHeroTrap(trap, {
     }
     case TELEP_TRAP:
         return triggerTeleportTrap(trap, finishTeleport);
+    case ARROW_TRAP:
     case DART_TRAP:
-        await triggerDartTrap(trap);
+        await triggerProjectileTrap(trap);
+        break;
+    case SQKY_BOARD:
+        await triggerSqueakyBoard(trap, { viaSitting, failedUntrap });
         break;
     case ROLLING_BOULDER_TRAP:
         await triggerRollingBoulderTrap(trap);

@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    FIRE_TRAP, MAGIC_PORTAL, ROOM, TT_BURIEDBALL, TT_PIT, TT_WEB,
-    STATUE_TRAP, VIBRATING_SQUARE,
+    ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROOM, SQKY_BOARD,
+    TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
-import { HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
+import { ARROW, HEAVY_IRON_BALL, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
-import { addTrap } from './support/level-state.js';
-import { addPet } from './support/monsters.js';
+import { addTrap, floorObjectsAt } from './support/level-state.js';
+import { addMonster, addPet } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('escaping a web takes a movement attempt without moving the hero',
@@ -116,6 +116,35 @@ test('stepping on a fire trap burns the hero', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(trap.tseen, true);
     assert.ok(game.u.uhp < 40);
+});
+
+test('a missed arrow trap leaves its arrow on the floor', async () => {
+    const level = freshWeaponArena();
+    const trap = addTrap(level, ARROW_TRAP, 11, 10, { tseen: false });
+    game.u.uac = -20;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(trap.tseen, true);
+    assert.ok(floorObjectsAt(level, 11, 10).some(
+        object => object.otyp === ARROW && object.where === 'floor',
+    ));
+});
+
+test('a squeaky board wakes nearby monsters', async () => {
+    const level = freshWeaponArena();
+    const trap = addTrap(level, SQKY_BOARD, 11, 10, {
+        tseen: false,
+        tnote: 0,
+    });
+    const sleeper = addMonster({
+        species: 'jackal', x: 13, y: 10, msleeping: 1,
+    });
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(trap.tseen, true);
+    assert.equal(sleeper.msleeping, 0);
 });
 
 test('stepping on a statue trap releases its monster', async () => {

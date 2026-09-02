@@ -60,7 +60,7 @@ import {
     OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE, IRON_CHAIN,
-    OBJECT_SUBTYPE, OBJECT_WEIGHT, PICK_AXE, ROCK,
+    OBJECT_SUBTYPE, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
     SLIME_MOLD,
     SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, WAN_STRIKING,
@@ -95,6 +95,7 @@ import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { makeTrapMissile } from './trap_missile.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -4269,20 +4270,6 @@ function releaseFromMonsterTrap(monster, state, random, calls) {
         return { held: true, escaped: false, trap };
     monster.mtrapped = 0;
     return { held: false, escaped: true, trap };
-}
-
-// C trap.c:t_missile() deliberately pays the ordinary constructor (including
-// a multigen draw for arrows, darts, and rocks), then normalizes that identity
-// back to one trap missile.  thitm() either consumes it on a hit or places it
-// after a miss; stackobj() can then merge it into an older compatible pile.
-function makeTrapMissile(otyp, trap) {
-    const missile = mksobj(otyp, true, false);
-    missile.quan = missile.quantity = 1;
-    missile.owt = OBJECT_WEIGHT[otyp] ?? missile.owt ?? 1;
-    missile.opoisoned = 0;
-    missile.ox = trap.tx;
-    missile.oy = trap.ty;
-    return missile;
 }
 
 function placeAndStackTrapMissile(object, state, x, y) {

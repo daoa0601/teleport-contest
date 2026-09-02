@@ -2287,6 +2287,18 @@ export const TRAP_EXPLANATIONS = [
     'vibrating square', 'trapped door', 'trapped chest',
 ];
 
+const SQUEAKY_BOARD_NOTES = [
+    'C note', 'D flat', 'D note', 'E flat',
+    'E note', 'F note', 'F sharp', 'G note',
+    'G sharp', 'A note', 'B flat', 'B note',
+];
+
+export function squeakyBoardNoteWithArticle(index) {
+    const note = SQUEAKY_BOARD_NOTES[index];
+    if (!note) return '';
+    return `${/^[aeiou]/i.test(note) ? 'an' : 'a'} ${note}`;
+}
+
 // Trap helpers (trap.h)
 export function is_pit(ttyp) { return ttyp === PIT || ttyp === SPIKED_PIT; }
 export function is_hole(ttyp) { return ttyp === HOLE || ttyp === TRAPDOOR; }

@@ -91,7 +91,7 @@ import {
     STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, NEED_WEAPON,
     MOD_ENCUMBER, W_ACCESSORY, W_WEAPONS, LR_UPTELE,
     M_AP_MONSTER, Upolyd, Is_airlevel, Is_waterlevel,
-    TT_LAVA,
+    TT_LAVA, squeakyBoardNoteWithArticle,
 } from './const.js';
 import {
     collectNearbyCoords, uInitMisc, makedog, uInitInventoryAttrs,
@@ -2432,24 +2432,18 @@ function monsterTrapEscapeMessage(monster) {
     return 'The monster pulls free of the bear trap.';
 }
 
-const SQUEAKY_BOARD_NOTES = [
-    'C note', 'D flat', 'D note', 'E flat',
-    'E note', 'F note', 'F sharp', 'G note',
-    'G sharp', 'A note', 'B flat', 'B note',
-];
 const M1_MINDLESS = 0x00010000;
 const G_UNIQ = 0x1000;
 
 function monsterSqueakyBoardMessage(monster, event, inSight) {
-    const note = SQUEAKY_BOARD_NOTES[event?.note];
+    const note = squeakyBoardNoteWithArticle(event?.note);
     if (!note) return null;
     if (inSight) {
         event.trap.tseen = true;
         if (!game.deaf) {
-            const article = /^[aeiou]/i.test(note) ? 'an' : 'a';
             return `A board beneath the ${quietMonsterName(
                 monster,
-            )} squeaks ${article} ${note} loudly.`;
+            )} squeaks ${note} loudly.`;
         }
         if (!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_MINDLESS)) {
             return `The ${quietMonsterName(
@@ -2459,14 +2453,13 @@ function monsterSqueakyBoardMessage(monster, event, inSight) {
         return null;
     }
     if (game.deaf) return null;
-    const article = /^[aeiou]/i.test(note) ? 'an' : 'a';
     const range = couldsee(monster.mx, monster.my)
         ? BOLT_LIM + 1 : BOLT_LIM - 3;
     const proximity = dist2(
         monster.mx, monster.my,
         game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my,
     ) <= range * range ? 'nearby' : 'in the distance';
-    return `You hear ${article} ${note} squeak ${proximity}.`;
+    return `You hear ${note} squeak ${proximity}.`;
 }
 
 function monsterAttackMessage(monster, attack, previousAttack = null) {
