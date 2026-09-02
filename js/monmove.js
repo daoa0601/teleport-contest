@@ -32,6 +32,9 @@ import {
 import {
     beginMonsterFireTrap, finishMonsterFireTrap,
 } from './fire_trap.js';
+import {
+    beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume,
+} from './landmine_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -168,7 +171,7 @@ import {
     W_ARMOR,
     W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL,
     Upolyd, is_pit, isok,
-    WEB, WT_ELF, WT_TOOMUCH_DIAGONAL,
+    WEB, WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 
 export const NORMAL_SPEED = 12;
@@ -4772,39 +4775,17 @@ function triggerMonsterTrap(
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
 
-        // trap.c:trapeffect_landmine().  Damage is rolled before the
-        // weight-sensitive trigger check, even when a light monster fails to
-        // depress the mine and the trap remains intact.
-        const rawDamage = rollOne(16);
-        calls.push('rnd(16)');
-        const ironShoes = (monster.minvent || monster.inventory || [])
-            .some(object => object?.otyp === IRON_SHOES
-                && ((object?.owornmask ?? 0) & W_ARMF));
-        const damage = ironShoes
-            ? Math.trunc((rawDamage + 3) / 4) : rawDamage;
-        const bodyWeight = MONSTER_BODY_META[monster.mnum]?.[0] ?? 0;
-        const triggerRoll = recordRandom(
-            random, calls, Math.max(1, bodyWeight + 1),
-        );
-        const triggerWeight = Math.trunc(WT_ELF / 2);
-        if (triggerRoll < triggerWeight) {
-            const event = {
-                kind: 'landmine-not-triggered', trap,
-                rawDamage, damage, bodyWeight, triggerRoll, triggerWeight,
-                damageApplied: 0, killed: false,
-            };
-            movement.trap = event;
-            return event;
-        }
-
-        // TODO: continue the explosion through scatter, pit conversion,
-        // thitm(), recursive pit damage, and fill_pit().
-        const event = {
-            kind: 'landmine-explosion-pending', trap,
-            rawDamage, damage, bodyWeight, triggerRoll, triggerWeight,
-            damageApplied: 0, killed: false,
-        };
+        const event = beginMonsterLandMine(monster, trap, state, {
+            random: range => recordRandom(random, calls, range),
+            rollOne: range => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
         movement.trap = event;
+        if (landMineNeedsResume(event))
+            movement.deferredAfterMonsterLandMine = true;
         return event;
     }
     if (trap.ttyp === FIRE_TRAP) {
@@ -7529,6 +7510,7 @@ function distantPhaseFourAttackSetup(
 function monsterTrapResultIsDeferred(movement) {
     return !!(movement.deferredAfterProjectileTrapMessage
         || movement.deferredAfterMonsterFireTrap
+        || movement.deferredAfterMonsterLandMine
         || movement.deferredAfterAntiMagicTrapMessage
         || movement.deferredAfterAntiMagicTrapDeath);
 }
@@ -7708,6 +7690,51 @@ export async function resumeDeferredMonsterFireTrap(
     completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
         action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterLandMine(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        monsterName,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterLandMine
+        || event?.kind !== 'land-mine') return action;
+    delete movement.deferredAfterMonsterLandMine;
+    const calls = action.calls || DISCARDED_CALL_LOG;
+    const recordedRandom = range => recordRandom(random, calls, range);
+    const recordedRollOne = range => {
+        const result = rollOne(range);
+        calls.push(`rnd(${range})`);
+        return result;
+    };
+
+    await finishMonsterLandMine(action.monster, event, state, {
+        finishDeath: (monster, options) =>
+            finishEnvironmentalMonsterDeath(monster, state, options),
+        publish,
+        random: recordedRandom,
+        rollOne: recordedRollOne,
+        monsterName,
+        describeMonster,
+    });
+    if (event.killed) {
+        movement.actorDied = true;
+        movement.actionCompleted = true;
+        return action;
+    }
+
+    completeMovedMonsterAction(
+        action.monster, movement, state, random, rollDice, rollOne,
+        calls, { trapAlreadyHandled: true },
     );
     return action;
 }

@@ -157,6 +157,7 @@ import {
     resumeDeferredMonsterAntiMagicTrap,
     resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterFireTrap,
+    resumeDeferredMonsterLandMine,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -4042,6 +4043,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             && movement.deferredAfterMonsterFireTrap) {
             const event = movement.trap;
             await resumeDeferredMonsterFireTrap(action, game, {
+                publish: queueTurnMessage,
+                monsterName: quietMonsterName,
+                describeMonster: visibleMonsterSubject,
+            });
+            movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
+        }
+        if (movement?.trap?.kind === 'land-mine'
+            && movement.deferredAfterMonsterLandMine) {
+            const event = movement.trap;
+            await resumeDeferredMonsterLandMine(action, game, {
                 publish: queueTurnMessage,
                 monsterName: quietMonsterName,
                 describeMonster: visibleMonsterSubject,
