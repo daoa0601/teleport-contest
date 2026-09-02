@@ -7,7 +7,8 @@ import { newExperienceThreshold } from './exper.js';
 import {
     MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
+    MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterIsVampire,
+    validVampireShiftForm,
 } from './monster_data.js';
 import {
     AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
@@ -99,6 +100,7 @@ export function heroIsUnchanging(state = game) {
 export function heroCanControlPolymorph(state = game) {
     const unaware = !!(state.u?.unaware || state.unaware
         || state._helplessReason === 'unconscious from rotten food'
+        || state._helplessReason === 'unconscious from drinking'
         || state._helplessReason === 'sleeping off a magical draught');
     const stunned = !!(state.u?.stunned
         || (state.u?.stunnedTurns ?? 0) > 0);
@@ -232,6 +234,7 @@ export function rehumanizeHero(state = game) {
     u.mh = 0;
     u.mhmax = 0;
     u.mtimedone = 0;
+    u.mcham = -1;
     u.uundetected = 0;
     delete u.formArmorClass;
     delete u.flying;
@@ -303,6 +306,7 @@ function heroSurfaceName() {
 function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
+    const remainedVampireShifter = validVampireShiftForm(u.mcham, mnum);
     const wasPolymorphed = heroIsPolymorphed(game);
     if (!wasPolymorphed) {
         u.macurr = { a: [...(u.acurr?.a || [])] };
@@ -343,6 +347,9 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
 
     u.mtimedone = 500 + rn2(500);
     u.umonnum = mnum;
+    if (heroHasProtectionFromShapeChangers(game)) u.mcham = -1;
+    else if (monsterIsVampire(mnum)) u.mcham = mnum;
+    else if (!remainedVampireShifter) u.mcham = -1;
     u.m_ap_type = 0;
     u.mappearance = 0;
     // do_wear.c:find_ac() starts from mons[u.umonnum].ac.  Keep that

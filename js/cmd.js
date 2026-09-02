@@ -81,6 +81,9 @@ import {
 import {
     heroCanUseUnicornHorn, useUnicornHorn,
 } from './unicorn_horn.js';
+import {
+    heroCanChangeVampireShape, useHeroVampireShift,
+} from './vampire_shift.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -5761,6 +5764,11 @@ async function domonability() {
     }
     if (heroCanShriek(game)) {
         const result = await useHeroShriek({ state: game });
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (heroCanChangeVampireShape(game)) {
+        const result = await useHeroVampireShift();
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }

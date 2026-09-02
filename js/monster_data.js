@@ -104,13 +104,15 @@ const M1_ANIMAL = 0x00040000;
 const PM_FLOATING_EYE = 28;
 const PM_MIND_FLAYER = 48;
 const PM_MASTER_MIND_FLAYER = 49;
+const PM_WOLF = 20;
+const PM_FOG_CLOUD = 106;
+const PM_VAMPIRE_BAT = 129;
 const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
-const PM_VLAD_THE_IMPALER = 228;
 const PM_MANES = 50;
 const PM_AIR_ELEMENTAL = 154;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
+const S_VAMPIRE = 48;
 const S_GOLEM = 55;
 
 export function monsterIsUndead(mnum) {
@@ -135,6 +137,18 @@ export function monsterIsUnicorn(mnum) {
         && !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_JEWELS);
 }
 
+export function monsterIsVampire(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_VAMPIRE;
+}
+
+// C ref: mon.c:valid_vampshiftform().
+export function validVampireShiftForm(base, form) {
+    return monsterIsVampire(base)
+        && (form === PM_VAMPIRE_BAT
+            || form === PM_FOG_CLOUD
+            || (form === PM_WOLF && base !== PM_VAMPIRE));
+}
+
 export function monsterIsMindFlayer(mnum) {
     return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER;
 }
@@ -152,8 +166,7 @@ export function monsterDigests(monster) {
 }
 
 export function monsterIsVampireShifter(monster) {
-    return [PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER]
-        .includes(monster?.cham);
+    return monsterIsVampire(monster?.cham);
 }
 
 export function monsterIsNonliving(mnum) {
