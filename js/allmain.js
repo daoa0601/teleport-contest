@@ -34,7 +34,9 @@ import {
     continueMonsterRangedTurn, monsterBreathMessage, monsterCoughMessage,
     resolveMonsterBreathAttack, resolveRangedRetaliation,
 } from './dogmove.js';
-import { monsterDryRattleMessage } from './monster_spit.js';
+import {
+    finishHeroSpitHit, monsterDryRattleMessage,
+} from './monster_spit.js';
 import { angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
@@ -5500,6 +5502,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 await queueTurnMessage(
                                     'The venom blinds you.',
                                 );
+                            }
+                            const died = await finishHeroSpitHit(
+                                spit, game, {
+                                    beforeFinalDeath: () =>
+                                        restoreUnvisitedMonsterMovement(
+                                            monsterScan, actorIndex,
+                                        ),
+                                },
+                            );
+                            if (died) {
+                                game.context.move = 0;
+                                return;
                             }
                         }
                         await captureVenomCell({

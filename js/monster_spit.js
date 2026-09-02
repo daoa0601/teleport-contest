@@ -11,12 +11,13 @@ import {
 } from './monster_attack_types.js';
 import { MONSTER_ATTACKS } from './monster_data.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, OBJECT_DESCRIPTIONS,
+    ACID_VENOM, BLINDING_VENOM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { syncBlindness } from './senses.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
+import { finishHeroDeath } from './end.js';
 import {
     acidVenomDamage, monsterCanBeBlindedByVenom,
 } from './venom.js';
@@ -231,4 +232,22 @@ export function resolveMonsterSpitFlight(
         source.edog.hungrytime -= 5;
     }
     return result;
+}
+
+export async function finishHeroSpitHit(
+    spit, state, {
+        beforeFinalDeath,
+        finishDeath = finishHeroDeath,
+    } = {},
+) {
+    if (!spit?.heroTarget || !spit.hit
+        || spit.venom?.otyp !== ACID_VENOM
+        || (state.u?.uhp ?? 1) > 0) {
+        return false;
+    }
+    return finishDeath({
+        killer: OBJECT_NAMES[spit.venom?.otyp]
+            || spit.appearance || 'splash of venom',
+        beforeFinalDeath,
+    });
 }
