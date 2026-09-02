@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
+import { POOL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -12,6 +13,7 @@ import {
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { carriedObject } from './support/game-objects.js';
+import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function freshTurnArena() {
@@ -76,6 +78,26 @@ test('a burdened hero waits for a complete movement ration',
         assert.equal(returnedToInput, true);
         assert.equal(game.moves, before.moves + 2);
         assert.equal(game.u.uhunger, before.hunger - 2);
+    });
+
+test('a stationary monster in water is checked during world maintenance',
+    async () => {
+        const inputGate = freshTurnArena();
+        game.level.at(12, 10).typ = POOL;
+        const oracle = addMonster({
+            species: 'Oracle',
+            x: 12,
+            y: 10,
+            mpeaceful: 1,
+            movement: 0,
+        });
+        pushKeys('.');
+
+        await runUntilInput(inputGate, 8);
+
+        assert.equal(game.level.monsters.includes(oracle), false);
+        assert.equal(game.u.uconduct.killer, 1);
+        assert.match(game._pending_message, /You drown the Oracle\./);
     });
 
 test('poison clouds act after old blindness expires for the turn', async () => {

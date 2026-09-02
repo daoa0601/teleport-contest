@@ -32,7 +32,9 @@ import {
     getLine, promptYesNo, performQuestExpulsion,
     resurrectWizard, rhack,
 } from './cmd.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import {
+    finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
+} from './hero_monster_death.js';
 import {
     continueMonsterRangedTurn, monsterBreathMessage, monsterCoughMessage,
     resolveMonsterBreathAttack, resolveRangedRetaliation,
@@ -1631,9 +1633,7 @@ async function runLevelRegionTurn() {
     });
 }
 
-async function beginInitialTurnMaintenance(
-    completedTurn = game.moves || 1,
-) {
+async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
     // allmain.c runs mcalcdistress() before allocating the next movement
     // ration. Regeneration, were-change checks, and temporary maladies count
     // down once per global turn, independent of the monster's own speed.
@@ -1644,6 +1644,15 @@ async function beginInitialTurnMaintenance(
     for (const event of monsterDistressEvents(
         game.level?.monsters || [], game, rn2, completedTurn - 1,
     )) {
+        if (event.kind === 'stationary-liquid') {
+            if (game.vision_full_recalc) vision_recalc(0);
+            await resolveMonsterLiquid(event.monster, game, {
+                announce: queueTurnMessage,
+                monsterMoving: false,
+                finishDeath: finishHeroLiquidMonsterDeath,
+            });
+            continue;
+        }
         if (event.kind === 'shape-change') {
             if (event.change.message)
                 await queueTurnMessage(event.change.message);

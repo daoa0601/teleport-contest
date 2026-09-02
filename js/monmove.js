@@ -1092,6 +1092,10 @@ export function* monsterDistressEvents(
 ) {
     for (const monster of monstersInFmonOrder(monsters)) {
         if (!monster) continue;
+        if ((MONSTER_MOVE[monster.mnum] ?? 0) === 0) {
+            yield { kind: 'stationary-liquid', monster };
+            if (monster.dead || (monster.mhp ?? 1) <= 0) continue;
+        }
         if ((distressTurn % 20 === 0
                 || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_REGEN))
             && Number.isFinite(monster.mhp)

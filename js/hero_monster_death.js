@@ -477,3 +477,28 @@ export async function finishHeroMonsterKill(monster, x, y, {
     adjustHeroAlignment(monsterDeathMalign(monster));
     return true;
 }
+
+// When the hero creates water under a monster, minliquid() calls xkilled()
+// without printing a second kill line.
+export async function finishHeroLiquidMonsterDeath(
+    monster, _state, _random, calls, leaveCorpse, options = {},
+) {
+    const x = monster.mx;
+    const y = monster.my;
+    const killed = await finishHeroMonsterKill(monster, x, y, {
+        ...options,
+        showKillMessage: false,
+        weaponHit: false,
+        noCorpse: !leaveCorpse,
+    });
+    return {
+        oldx: x,
+        oldy: y,
+        x,
+        y,
+        moved: false,
+        dead: killed,
+        actionCompleted: killed,
+        calls,
+    };
+}

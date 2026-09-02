@@ -218,7 +218,9 @@ import {
     findMonsterArmorClass,
     nameMonsterForCreationArmorChecks,
 } from './monworn.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import {
+    finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
+} from './hero_monster_death.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { isRider, isZombieMaker } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -11092,16 +11094,14 @@ async function attackHostileMonster(monster, x, y, {
                 ? `The ${displayedMonsterName()}`
                 : monsterInstanceDisplayName(target),
             wakeMonster: wakeMonsterAfterHit,
-            finishLiquidDeath: async (victim, state, random, calls,
-                leaveCorpse) => {
-                await finishHeroMonsterKill(victim, victim.mx, victim.my, {
-                    showKillMessage: false,
-                    noCorpse: !leaveCorpse,
+            finishLiquidDeath: (
+                victim, state, random, calls, leaveCorpse,
+            ) => finishHeroLiquidMonsterDeath(
+                victim, state, random, calls, leaveCorpse, {
                     hallucinating,
                     nameMonster: displayedMonsterName,
-                });
-                return { dead: true, calls };
-            },
+                },
+            ),
         });
     }
     if (!stagger.dead)
